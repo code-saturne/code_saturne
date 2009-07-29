@@ -248,7 +248,7 @@ integer          icorua, icorub, iflxma, iflxmb
 integer          iterns, inslst, icvrge, iuetbo, ivsvdr
 integer          iwflms, iwflmb
 integer          iwcf  , iph   , iflmas, iflmab
-integer          italim, itrfin, ineefl
+integer          italim, itrfin, itrfup, ineefl
 integer          iflalf, iflalb, iprale, icoale
 integer          maxelt, ils, iilzfb, nbzfmx, nozfmx, iqcalc
 
@@ -859,7 +859,7 @@ if (ivrtex.eq.1) then
 
   iphas  = 1
   iappel = 2
-  call usvort                                                     &
+  call usvort &
   !==========
  ( ifnia1 , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
@@ -886,7 +886,7 @@ if (ivrtex.eq.1) then
   endif
 
   if(irangp.le.0) then
-    call vortex                                                   &
+    call vortex &
     !==========
  ( ia(iivrce) , ra(ivisv)  , ra(ixyzv) ,                          &
    ra(iyzcel) , ra(iuvort) , ra(ivvort),                          &
@@ -899,6 +899,7 @@ if (ivrtex.eq.1) then
 ! -- Fin de zone Methode des vortex
 
 endif
+
 
 ! --- Methode ALE : debut de boucle d'implicitation du deplacement des
 !       structures. ITRFIN=0 indique qu'on a besoin de refaire une iteration
@@ -934,701 +935,724 @@ if (iale.eq.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
 
 endif
 
- 300  continue
+300 continue
 
 
-call memcli                                                       &
-!==========
- ( idbia1 , idbra1 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   isvhb  , isvtb  ,                                              &
-   iicodc , ircodc ,                                              &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &
-   icoefu , irijip , iuetbo , ivsvdr , ihbord , itbord ,          &
-   ifinia , ifinra )
+! --- Boucle sur navsto pour couplage vitesse/pression
+!     on s'arrete a NTERUP ou quand TOUTES les phases on converge
+!     ITRFUP=0 indique qu'on a besoin de refaire une iteration
+!     pour Syrthes, T1D ou rayonnement.
+itrfup = 1
 
-call precli                                                       &
-!==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicodc)      , ia(iizfpp)      ,                            &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra(ircodc) , ra(icoefu) ,                                      &
-   ra(iw1   ) , ra(iw2   ) , ra(iw3   ) ,                         &
-   ra(iw4   ) , ra(iw5   ) , ra(iw6   ) ,                         &
-   rdevel , rtuser , ra     )
+iximpa = 1
+iuvwk  = 1
+itrava = 1
+if (nterup.gt.1) then
+  iximpa = idbra1
+  iuvwk  = iximpa + ncelet*ndim*nphas
+  itrava = iuvwk  + ncelet*ndim*nphas
+  idbra1 = itrava + ncelet*ndim*nphas
+
+  if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
+
+endif
 
 
-if (imatis.eq.0) then
+icvrge = 0
+inslst = 0
+iterns = 1
+do while (iterns.le.nterup)
 
-! ON NE FAIT PAS DE MATISSE
 
-!     - Interface Code_Saturne
-!       ======================
+  call memcli &
+  !==========
+( idbia1 , idbra1 ,                                              &
+  ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+  nnod   , lndfac , lndfbr , ncelbr ,                            &
+  nvar   , nscal  , nphas  ,                                     &
+  isvhb  , isvtb  ,                                              &
+  iicodc , ircodc ,                                              &
+  iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &
+  icoefu , irijip , iuetbo , ivsvdr , ihbord , itbord ,          &
+  ifinia , ifinra )
 
-  if (iihmpr.eq.1) then
+  call precli &
+  !==========
+( ifinia , ifinra ,                                              &
+  ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+  nnod   , lndfac , lndfbr , ncelbr ,                            &
+  nvar   , nscal  , nphas  ,                                     &
+  nideve , nrdeve , nituse , nrtuse ,                            &
+  ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+  ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+  ia(iicodc)      , ia(iizfpp)      ,                            &
+  idevel , ituser , ia     ,                                     &
+  xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  coefa  , coefb  ,                                              &
+  ra(ircodc) , ra(icoefu) ,                                      &
+  ra(iw1   ) , ra(iw2   ) , ra(iw3   ) ,                         &
+  ra(iw4   ) , ra(iw5   ) , ra(iw6   ) ,                         &
+  rdevel , rtuser , ra     )
 
-! N.B. Zones de face de bord : on utilise provisoirement les zones des
-!    physiques particulieres, meme sans physique particuliere
-!    -> sera modifie lors de la restructuration des zones de bord
 
-    call uiclim                                                   &
-    !==========
- ( ntcabs, nfabor,                                                &
-   nozppm, ncharm, ncharb, nclpch,                                &
-   iindef, ientre, iparoi, iparug, isymet, isolib,                &
-   iqimp,  icalke, ientat, ientcp, inmoxy, iprofm,                &
-   ia(iitypf), ia(iizfpp), ia(iicodc),                            &
-   dtref,  ttcabs, surfbo, cdgfbo,                                &
-   qimp,   qimpat, qimpcp, dh,     xintur,                        &
-   timpat, timpcp, distch, ra(ircodc) )
+  if (imatis.eq.0) then
+
+  ! ON NE FAIT PAS DE MATISSE
+
+  !     - Interface Code_Saturne
+  !       ======================
+
+    if (iihmpr.eq.1) then
+
+    ! N.B. Zones de face de bord : on utilise provisoirement les zones des
+    !    physiques particulieres, meme sans physique particuliere
+    !    -> sera modifie lors de la restructuration des zones de bord
+
+      call uiclim &
+      !==========
+    ( ntcabs, nfabor,                                                &
+      nozppm, ncharm, ncharb, nclpch,                                &
+      iindef, ientre, iparoi, iparug, isymet, isolib,                &
+      iqimp,  icalke, ientat, ientcp, inmoxy, iprofm,                &
+      ia(iitypf), ia(iizfpp), ia(iicodc),                            &
+      dtref,  ttcabs, surfbo, cdgfbo,                                &
+      qimp,   qimpat, qimpcp, dh,     xintur,                        &
+      timpat, timpcp, distch, ra(ircodc) )
+
+      if (ippmod(iphpar).eq.0) then
+
+      ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE NI DE MATISSE
+
+        nbzfmx = nbzppm
+        nozfmx = nozppm
+        iilzfb = ifinia
+        ifnia1 = iilzfb + nbzfmx
+        iqcalc = ifinra
+        ifnra1 = iqcalc + nozfmx
+        CALL IASIZE('TRIDIM',IFNIA1)
+        CALL RASIZE('TRIDIM',IFNRA1)
+
+        call stdtcl &
+        !==========
+      ( ifnia1 , ifnra1 ,                                              &
+        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+        nnod   , lndfac , lndfbr , ncelbr ,                            &
+        nvar   , nscal  , nphas  , nbzfmx , nozfmx ,                   &
+        nideve , nrdeve , nituse , nrtuse ,                            &
+        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+        ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+        iqimp  , icalke , qimp   , dh , xintur,                        &
+        ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp)   , &
+        ia(iilzfb)      , idevel , ituser , ia     ,                   &
+        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+        dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+        coefa  , coefb  , ra(ircodc)      ,                            &
+        ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+        ra(icoefu)      , ra(iqcalc)      ,                            &
+        rdevel , rtuser , ra     )
+
+      endif
+
+    endif
+
+    !     - Sous-programme utilisateur
+    !       ==========================
 
     if (ippmod(iphpar).eq.0) then
 
-! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE NI DE MATISSE
-
-      nbzfmx = nbzppm
-      nozfmx = nozppm
-      iilzfb = ifinia
-      ifnia1 = iilzfb + nbzfmx
-      iqcalc = ifinra
-      ifnra1 = iqcalc + nozfmx
+      ils    = ifinia
+      ifnia1 = ils + maxelt
       CALL IASIZE('TRIDIM',IFNIA1)
-      CALL RASIZE('TRIDIM',IFNRA1)
 
-      call stdtcl                                                 &
+      call usclim &
       !==========
- ( ifnia1 , ifnra1 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  , nbzfmx , nozfmx ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   iqimp  , icalke , qimp   , dh , xintur,                        &
-   ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp)   , &
-   ia(iilzfb)      , idevel , ituser , ia     ,                   &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ircodc)      ,                            &
-   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-   ra(icoefu)      , ra(iqcalc)      ,                            &
-   rdevel , rtuser , ra     )
+    ( ifnia1 , ifinra ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
+      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+      ia(iicodc)      , ia(iitrif)   , ia(iitypf)   ,                &
+      idevel , ituser , ia     ,                                     &
+      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      coefa  , coefb  , ra(ircodc)      ,                            &
+      ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+      ra(icoefu)      ,                                              &
+      rdevel , rtuser , ra     )
+
+    else
+
+      ! ON FAIT DE LA PHYSIQUE PARTICULIERE (MAIS PAS DE MATISSE)
+
+      call ppclim &
+      !==========
+    ( ifinia , ifinra ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+      ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp) ,   &
+      idevel , ituser , ia     ,                                     &
+      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      coefa  , coefb  , ra(ircodc)      ,                            &
+      ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+      ra(icoefu)      ,                                              &
+      rdevel , rtuser , ra     )
+
+    endif
+
+    !     - Interface Code_Saturne
+    !       ======================
+
+    if(iihmpr.eq.1) then
+
+      call uiclve &
+      !==========
+    ( nfabor, nozppm,                                                &
+      iindef, ientre, iparoi, iparug, isymet, isolib,                &
+      ia(iitypf), ia(iizfpp) )
 
     endif
 
   endif
 
-!     - Sous-programme utilisateur
-!       ==========================
+  ! -- Methode des vortex en L.E.S. :
+  !    (Transfert des vortex dans les tableaux RCODCL)
 
-  if (ippmod(iphpar).eq.0) then
+  if(ivrtex.eq.1) then
+
+    call vor2cl &
+    !==========
+  ( ifinia , ifinra ,                                              &
+    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+    nnod   , lndfac , lndfbr , ncelbr ,                            &
+    nvar   , nscal  , nphas  ,                                     &
+    nideve , nrdeve , nituse , nrtuse ,                            &
+    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+    ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
+    idevel , ia(iirepv)      , ituser , ia     ,                   &
+    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    coefa  , coefb  , ra(ircodc)      ,                            &
+    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+    ra(icoefu)       ,                                             &
+    rdevel , rtuser , ra     )
+
+  endif
+
+  ! --- Couplage code/code entre deux instances (ou plus) de Code_Saturne
+  !       On s'occupe ici du couplage via les faces de bord, et de la
+  !       transformation de l'information reçue en condition limite.
+
+  if (nbrcpl.gt.0) then
+
+    call cscfbr &
+    !==========
+  ( ifinia , ifinra ,                                              &
+    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+    nnod   , lndfac , lndfbr , ncelbr ,                            &
+    nvar   , nscal  , nphas  ,                                     &
+    nideve , nrdeve , nituse , nrtuse ,                            &
+    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+    ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
+    idevel , ituser , ia    ,                                      &
+    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    coefa  , coefb  , ra(ircodc)      ,                            &
+    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+    ra(icoefu)      ,                                              &
+    rdevel , rtuser , ra     )
+
+  endif
+
+  ! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
+
+  if (iale.eq.1) then
+
+    do ii = 1, nnod
+      ia(iimpal+ii-1) = 0
+    enddo
+
+    ! - Interface Code_Saturne
+    !   ======================
+
+    if (iihmpr.eq.1) then
+
+      call uialcl &
+      !==========
+    ( nfabor, nozppm,                    &
+      ibfixe, igliss, ivimpo,            &
+      ia(iialty), ipnfbr, nnod, nodfbr,  &
+      ia(iimpal),                        &
+      ra(idepal),                        &
+      dtref, ttcabs, ntcabs,             &
+      iuma, ivma, iwma,                  &
+      ra(ircodc)  )
+
+    endif
 
     ils    = ifinia
     ifnia1 = ils + maxelt
     CALL IASIZE('TRIDIM',IFNIA1)
 
-    call usclim                                                   &
+    call usalcl &
     !==========
- ( ifnia1 , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicodc)      , ia(iitrif)   , ia(iitypf)   ,                &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ircodc)      ,                            &
-   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-   ra(icoefu)      ,                                              &
-   rdevel , rtuser , ra     )
+  ( ifnia1 , ifinra , itrale ,                                     &
+    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+    nnod   , lndfac , lndfbr , ncelbr ,                            &
+    nvar   , nscal  , nphas  ,                                     &
+    nideve , nrdeve , nituse , nrtuse ,                            &
+    ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
+    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+    ia(iicodc)      , ia(iitypf)      , ia(iialty)      ,          &
+    ia(iimpal)      ,                                              &
+    idevel , ituser , ia     ,                                     &
+    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    coefa  , coefb  , ra(ircodc)      ,                            &
+    ra(ixyzn0)      , ra(idepal)      ,                            &
+    rdevel , rtuser , ra     )
 
-  else
+    !     Au cas ou l'utilisateur aurait touche DEPALE sans mettre IMPALE=1, on
+    !       remet le deplacement initial
+    do ii  = 1, nnod
+      if (ia(iimpal+ii-1).eq.0) then
+        ra(idepal+ii-1       ) = xyznod(1,ii)-ra(ixyzn0+(ii-1)*ndim  )
+        ra(idepal+ii-1+  nnod) = xyznod(2,ii)-ra(ixyzn0+(ii-1)*ndim+1)
+        ra(idepal+ii-1+2*nnod) = xyznod(3,ii)-ra(ixyzn0+(ii-1)*ndim+2)
+      endif
+    enddo
 
-! ON FAIT DE LA PHYSIQUE PARTICULIERE (MAIS PAS DE MATISSE)
+    !     En cas de couplage de structures, on calcule un deplacement predit
+    if (nbstru.gt.0.or.nbaste.gt.0) then
 
-    call ppclim                                                   &
-    !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp) ,   &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ircodc)      ,                            &
-   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-   ra(icoefu)      ,                                              &
-   rdevel , rtuser , ra     )
+      call strpre &
+      !==========
+    ( ifinia , ifinra , itrale , italim , ineefl ,                   &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      ifacel , ifabor , ifmfbr , ifmcel , iprfml,                    &
+      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+      ia(iimpal)      ,                                              &
+      idevel , ituser , ia     ,                                     &
+      xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
+      xyznod , volume ,                                              &
+      rtp    , rtpa   , propce , propfa , propfb ,                   &
+      coefa  , coefb  ,                                              &
+      ra(iflalf), ra(iflalb), ra(iprale), ra(icoale), ra(idepal),    &
+      rdevel , rtuser , ra  )
 
-  endif
-
-!     - Interface Code_Saturne
-!       ======================
-
-  if(iihmpr.eq.1) then
-
-    call uiclve                                                   &
-    !==========
- ( nfabor, nozppm,                                                &
-   iindef, ientre, iparoi, iparug, isymet, isolib,                &
-   ia(iitypf), ia(iizfpp) )
-
-  endif
-
-endif
-
-! -- Methode des vortex en L.E.S. :
-!    (Transfert des vortex dans les tableaux RCODCL)
-
-if(ivrtex.eq.1) then
-
-  call vor2cl                                                     &
-  !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
-   idevel , ia(iirepv)      , ituser , ia     ,                   &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ircodc)      ,                            &
-   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-   ra(icoefu)       ,                                             &
-   rdevel , rtuser , ra     )
-
-endif
-
-! --- Couplage code/code entre deux instances (ou plus) de Code_Saturne
-!       On s'occupe ici du couplage via les faces de bord, et de la
-!       transformation de l'information reçue en condition limite.
-
-if (nbrcpl.gt.0) then
-
-  call cscfbr                                                     &
-  !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
-   idevel , ituser , ia    ,                                      &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ircodc)      ,                            &
-   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-   ra(icoefu)      ,                                              &
-   rdevel , rtuser , ra     )
-
-endif
-
-! -- Methode ALE (CL de vitesse de maillage et deplacement aux noeuds)
-
-if (iale.eq.1) then
-
-  do ii = 1, nnod
-    ia(iimpal+ii-1) = 0
-  enddo
-
-  ! - Interface Code_Saturne
-  !   ======================
-
-  if (iihmpr.eq.1) then
-
-    call uialcl &
-    !==========
-  ( nfabor, nozppm,                    &
-    ibfixe, igliss, ivimpo,            &
-    ia(iialty), ipnfbr, nnod, nodfbr,  &
-    ia(iimpal),                        &
-    ra(idepal),                        &
-    dtref, ttcabs, ntcabs,             &
-    iuma, ivma, iwma,                  &
-    ra(ircodc)  )
-
-  endif
-
-  ils    = ifinia
-  ifnia1 = ils + maxelt
-  CALL IASIZE('TRIDIM',IFNIA1)
-
-  call usalcl                                                     &
-  !==========
- ( ifnia1 , ifinra , itrale ,                                     &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicodc)      , ia(iitypf)      , ia(iialty)      ,          &
-   ia(iimpal)      ,                                              &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ircodc)      ,                            &
-   ra(ixyzn0)      , ra(idepal)      ,                            &
-   rdevel , rtuser , ra     )
-
-!     Au cas ou l'utilisateur aurait touche DEPALE sans mettre IMPALE=1, on
-!       remet le deplacement initial
-  do ii  = 1, nnod
-    if (ia(iimpal+ii-1).eq.0) then
-      ra(idepal+ii-1       ) =                                    &
-           xyznod(1,ii)-ra(ixyzn0+(ii-1)*ndim  )
-      ra(idepal+ii-1+  nnod) =                                    &
-           xyznod(2,ii)-ra(ixyzn0+(ii-1)*ndim+1)
-      ra(idepal+ii-1+2*nnod) =                                    &
-           xyznod(3,ii)-ra(ixyzn0+(ii-1)*ndim+2)
     endif
-  enddo
 
-!     En cas de couplage de structures, on calcule un deplacement predit
-  if (nbstru.gt.0.or.nbaste.gt.0) then
+  endif
 
-    call strpre                                                   &
+  !     UNE FOIS CERTAINS CODES DE CONDITIONS LIMITES INITIALISES PAR
+  !     L'UTILISATEUR, ON PEUT COMPLETER CES CODES PAR LES COUPLAGES
+  !     AUX BORDS (TYPE SYRTHES), SAUF SI ON DOIT Y REPASSER ENSUITE
+
+  if (itrfin.eq.1 .and. itrfup.eq.1) then
+
+    call coupbi &
     !==========
- ( ifinia , ifinra , itrale , italim , ineefl ,                   &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml,                    &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iimpal)      ,                                              &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-   xyznod , volume ,                                              &
-   rtp    , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
-   ra(iflalf), ra(iflalb), ra(iprale), ra(icoale), ra(idepal),    &
-   rdevel , rtuser , ra  )
+  ( ifinia , ifinra ,                                              &
+    nfabor ,                                                       &
+    nvar   , nscal  , nphas  ,                                     &
+    nideve , nrdeve , nituse , nrtuse ,                            &
+    ia(iicodc) ,                                                   &
+    idevel , ituser , ia     ,                                     &
+    ra(ircodc) ,                                                   &
+    rdevel , rtuser , ra     )
+
+    if (nfpt1t.gt.0) then
+      call cou1di &
+      !==========
+    ( ifinia , ifinra ,                                              &
+      nfabor ,                                                       &
+      nvar   , nscal  , nphas  ,                                     &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      isvtb  , ia(iicodc) ,                                          &
+      idevel , ituser , ia     ,                                     &
+      ra(ircodc) ,                                                   &
+      rdevel , rtuser , ra     )
+    endif
 
   endif
 
-endif
 
-!     UNE FOIS CERTAINS CODES DE CONDITIONS LIMITES INITIALISES PAR
-!     L'UTILISATEUR, ON PEUT COMPLETER CES CODES PAR LES COUPLAGES
-!     AUX BORDS (TYPE SYRTHES), SAUF SI ON DOIT Y REPASSER ENSUITE
+  if(iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
 
-if (itrfin.eq.1) then
-
-  call coupbi                                                     &
-  !==========
- ( ifinia , ifinra ,                                              &
-   nfabor ,                                                       &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ia(iicodc) ,                                                   &
-   idevel , ituser , ia     ,                                     &
-   ra(ircodc) ,                                                   &
-   rdevel , rtuser , ra     )
-
-  if (nfpt1t.gt.0) then
-    call cou1di                                                   &
+    call memra3 &
     !==========
- ( ifinia , ifinra ,                                              &
-   nfabor ,                                                       &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   isvtb  , ia(iicodc) ,                                          &
-   idevel , ituser , ia     ,                                     &
-   ra(ircodc) ,                                                   &
-   rdevel , rtuser , ra     )
+  ( ifinia , ifinra ,                                              &
+    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+    nnod   , lndfac , lndfbr , ncelbr ,                            &
+    nvar   , nscal  , nphas  ,                                     &
+    iisoth , itek   , itext  , itint  ,                            &
+    ifinib , ifinrb )
+
+    call raycli &
+    !==========
+  ( ifinib , ifinrb ,                                              &
+    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+    nnod   , lndfac , lndfbr , ncelbr ,                            &
+    nvar   , nscal  , nphas  ,                                     &
+    nideve , nrdeve , nituse , nrtuse , isvhb  , isvtb  ,          &
+    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+    ia(iicodc) , ia(iitrif)   , ia(iitypf)   ,                     &
+
+    ia(iizfrd) , ia(iisoth)      ,                                 &
+
+    idevel , ituser , ia     ,                                     &
+    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    ra(ircodc)      ,                                              &
+    coefa  , coefb  , ra(ihbord)      , ra(itbord)      ,          &
+    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+
+    ra(itext)  , ra(itint) ,  ra(itek)   ,                         &
+
+    rdevel , rtuser , ra     )
+
   endif
 
-endif
+  !     ON CALCULE LES COEFFICIENTS ASSOCIES AUX CONDITIONS LIMITES
 
-
-if(iirayo.gt.0 .and. itrfin.eq.1) then
-
-  call memra3                                                     &
+  call condli &
   !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   iisoth , itek   , itext  , itint  ,                            &
-   ifinib , ifinrb )
-
-  call raycli                                                     &
-  !==========
- ( ifinib , ifinrb ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , isvhb  , isvtb  ,          &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicodc) , ia(iitrif)   , ia(iitypf)   ,                     &
-
-   ia(iizfrd) , ia(iisoth)      ,                                 &
-
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-                                                ra(ircodc)      , &
-   coefa  , coefb  , ra(ihbord)      , ra(itbord)      ,          &
-   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-
-   ra(itext)  , ra(itint) ,  ra(itek)   ,                         &
-
-   rdevel , rtuser , ra     )
-
-endif
-
-!     ON CALCULE LES COEFFICIENTS ASSOCIES AUX CONDITIONS LIMITES
-
-call condli                                                       &
-!==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , isvhb  , isvtb  ,          &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicodc)      , isostd ,                                     &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-                                                ra(ircodc)      , &
-   coefa  , coefb  , ra(iuetbo) , ra(ivsvdr)  ,                   &
-   ra(ihbord)  , ra(itbord)      ,                                &
-   frcxt  ,                                                       &
-   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-                              ra(icoefu)      , ra(irijip)      , &
-   rdevel , rtuser , ra     )
+( ifinia , ifinra ,                                              &
+  ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+  nnod   , lndfac , lndfbr , ncelbr ,                            &
+  nvar   , nscal  , nphas  ,                                     &
+  nideve , nrdeve , nituse , nrtuse , isvhb  , isvtb  ,          &
+  ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+  ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+  ia(iicodc)      , isostd ,                                     &
+  idevel , ituser , ia     ,                                     &
+  xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  ra(ircodc)      ,                                              &
+  coefa  , coefb  , ra(iuetbo) , ra(ivsvdr)  ,                   &
+  ra(ihbord)  , ra(itbord)      ,                                &
+  frcxt  ,                                                       &
+  ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+  ra(icoefu)      , ra(irijip)      ,                            &
+  rdevel , rtuser , ra     )
 
 
-!     UNE FOIS LES COEFFICIENTS CALCULES, ON PEUT EN DEDUIRE PLUS
-!     FACILEMENT (I.E. SANS RECALCULS INUTILES) LES TERMES A
-!     ENVOYER POUR LES COUPLAGES AUX BORDS (TYPE SYRTHES)
+  !     UNE FOIS LES COEFFICIENTS CALCULES, ON PEUT EN DEDUIRE PLUS
+  !     FACILEMENT (I.E. SANS RECALCULS INUTILES) LES TERMES A
+  !     ENVOYER POUR LES COUPLAGES AUX BORDS (TYPE SYRTHES)
 
 
-! On indique si la variable couplee est l'enthalpie
-ientha = 0
-if(isvtb.gt.0) then
-  if(iscsth(isvtb).eq.2) then
-    ientha = 1
-  endif
-endif
-
-! Compressible : on indique si la variable couple est l'energie
-
-if ( ippmod(icompf).ge.0 ) then
+  ! On indique si la variable couplee est l'enthalpie
+  ientha = 0
   if(isvtb.gt.0) then
-    if(iscsth(isvtb).eq.3) then
-      ientha = 2
+    if(iscsth(isvtb).eq.2) then
+      ientha = 1
     endif
   endif
-endif
 
-! On recupere le Cp de la phase couplee
-!  (ou de la phase 1, si pas de couplage)
-iphas = 1
-if(isvtb.gt.0) then
-  iphas = iphsca(isvtb)
-endif
-if(icp(iphas).gt.0) then
-  ippcp = ipproc(icp(iphas))
-  ncp   = ncelet
-  cpcst = 0.d0
-else
-  ippcp = ifinra
-  ncp   = 1
-  cpcst = cp0(iphas)
-endif
+  ! Compressible : on indique si la variable couple est l'energie
 
-! En compressible et si on couple ave l'energie
-! on recupere de Cv de la phase couplee
+  if ( ippmod(icompf).ge.0 ) then
+    if(isvtb.gt.0) then
+      if(iscsth(isvtb).eq.3) then
+        ientha = 2
+      endif
+    endif
+  endif
 
-if ( ippmod(icompf).ge.0 .and. ientha .eq. 2 ) then
+  ! On recupere le Cp de la phase couplee
+  !  (ou de la phase 1, si pas de couplage)
+  iphas = 1
+  if(isvtb.gt.0) then
+    iphas = iphsca(isvtb)
+  endif
+  if(icp(iphas).gt.0) then
+    ippcp = ipproc(icp(iphas))
+    ncp   = ncelet
+    cpcst = 0.d0
+  else
+    ippcp = ifinra
+    ncp   = 1
+    cpcst = cp0(iphas)
+  endif
 
-  iphas = iphsca(isvtb)
-  if(icv(iphas).gt.0) then
-    ippcv = ipproc(icv(iphas))
-    ncv   = ncelet
-    cvcst = 0.d0
+  ! En compressible et si on couple ave l'energie
+  ! on recupere de Cv de la phase couplee
+
+  if ( ippmod(icompf).ge.0 .and. ientha .eq. 2 ) then
+
+    iphas = iphsca(isvtb)
+    if(icv(iphas).gt.0) then
+      ippcv = ipproc(icv(iphas))
+      ncv   = ncelet
+      cvcst = 0.d0
+    else
+      ippcv = ifinra
+      ncv   = 1
+      cvcst = cv0(iphas)
+    endif
   else
     ippcv = ifinra
     ncv   = 1
-    cvcst = cv0(iphas)
+    cvcst = 0.d0
   endif
-else
-  ippcv = ifinra
-  ncv   = 1
-  cvcst = 0.d0
-endif
 
-! On envoie le tout vers SYRTHES, en distinguant CP
-!  constant ou variable
-if (itrfin.eq.1) then
+  ! On envoie le tout vers SYRTHES, en distinguant CP
+  !  constant ou variable
+  if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-  call coupbo                                                     &
-  !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  , isvtb  ,                            &
-   nideve , nrdeve , nituse , nrtuse , ncp  , ncv , ientha ,      &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   cpcst  , propce(1,ippcp) , cvcst  , propce(1,ippcv),           &
-   ra(ihbord)      , ra(itbord)      ,                            &
-   rdevel , rtuser , ra     )
-
-
-  if (nfpt1t.gt.0) then
-    call cou1do                                                   &
+    call coupbo &
     !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  , ncp    , nfpt1d ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml,                    &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ientha , ia(iifpt1), ia(iiclt1),                               &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-   xyznod , volume ,                                              &
-   ra(itppt1), ra(itept1), ra(ihept1),                            &
-   ra(ifept1), ra(ixlmt1), ra(ircpt1), ra(idtpt1),                &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  ,                                              &
-   cpcst  , propce(1,ippcp) , ra(ihbord) , ra(itbord)  ,          &
-   rdevel , rtuser , ra     )
+  ( ifinia , ifinra ,                                              &
+    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+    nnod   , lndfac , lndfbr , ncelbr ,                            &
+    nvar   , nscal  , nphas  , isvtb  ,                            &
+    nideve , nrdeve , nituse , nrtuse , ncp  , ncv , ientha ,      &
+    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+    idevel , ituser , ia     ,                                     &
+    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    coefa  , coefb  ,                                              &
+    cpcst  , propce(1,ippcp) , cvcst  , propce(1,ippcv),           &
+    ra(ihbord)      , ra(itbord)      ,                            &
+    rdevel , rtuser , ra     )
+
+
+    if (nfpt1t.gt.0) then
+      call cou1do &
+      !==========
+    ( ifinia , ifinra ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  , ncp    , nfpt1d ,                   &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      ifacel , ifabor , ifmfbr , ifmcel , iprfml,                    &
+      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+      ientha , ia(iifpt1), ia(iiclt1),                               &
+      idevel , ituser , ia     ,                                     &
+      xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
+      xyznod , volume ,                                              &
+      ra(itppt1), ra(itept1), ra(ihept1),                            &
+      ra(ifept1), ra(ixlmt1), ra(ircpt1), ra(idtpt1),                &
+      dt     , rtpa   , propce , propfa , propfb ,                   &
+      coefa  , coefb  ,                                              &
+      cpcst  , propce(1,ippcp) , ra(ihbord) , ra(itbord)  ,          &
+      rdevel , rtuser , ra     )
+    endif
   endif
-endif
 
-!     ON N'A PLUS BESOIN DE ISVHB OU ISVHT (POUR HBORD ET TBORD)
-!     A PARTIR D'ICI
-
+  !     ON N'A PLUS BESOIN DE ISVHB OU ISVHT (POUR HBORD ET TBORD)
+  !     A PARTIR D'ICI
 
 
-!     CALCUL DE LA DISTANCE A LA PAROI
-!       (Nouvel algorithme. L'ancien est dans condli)
-!     En ALE on ne fait ce calcul qu'a la premiere des
-!       sous-iterations d'implicitation ITALIM, car le maillage
-!       n'est pas modifie dans les sous-iterations suivantes
 
-if (italim.eq.1) then
+  !     CALCUL DE LA DISTANCE A LA PAROI
+  !       (Nouvel algorithme. L'ancien est dans condli)
+  !     En ALE on ne fait ce calcul qu'a la premiere des
+  !       sous-iterations d'implicitation ITALIM, car le maillage
+  !       n'est pas modifie dans les sous-iterations suivantes
+
+  if (italim.eq.1) then
+
+    if(ineedy.eq.1.and.iwarny.ge.1) then
+      call dmtmps(tdist1)
+    endif
+
+
+    ! On ne fait le calcul que s'il y a des parois (RA(IDIPAR) est reserve
+    !   et initialise a GRAND avant. S'il n'y a pas de paroi, il restera = GRAND)
+
+    ! Pour le moment, on suppose que l'on peut se contenter de faire
+    !  cela au premier passage, sauf avec les maillages mobiles. Attention donc
+    !  aux conditions aux limites variables (faces qui deviennent des parois ou
+    !  parois qui deviennent autre chose)
+
+    ! Nombre de faces de paroi
+    if(ipass.eq.1) then
+      if(ineedy.eq.1) then
+        infpar = 0
+        do ifac = 1, nfabor
+          if(ia(iitypf-1+ifac).eq.iparoi .or.                       &
+               ia(iitypf-1+ifac).eq.iparug) then
+            infpar = infpar+1
+          endif
+        enddo
+        if(irangp.ge.0) then
+          call parcpt(infpar)
+        endif
+      endif
+    endif
+
+
+    !     On calcule la distance a la paroi
+    !          si elle doit etre mise a jour
+    !       et si on en a besoin,
+    !       et si on a choisi ce mode de calcul,
+    if( imajdy.eq.0.and.ineedy.eq.1.and.abs(icdpar).eq.1) then
+
+      !     S'il n'y a pas de paroi, on garde l'initialisation a GRAND
+      if(infpar.eq.0) then
+        imajdy = 1
+
+        !     S'il y a des parois, il faut calculer
+      else
+
+
+        !     On doit conserver la memoire de memcli a cause de RA(IUETBO)
+        !       dans DISTYP (uniquement en LES avec van Driest mais tant pis)
+
+        call memdis &
+        !==========
+    ( ifinia , ifinra ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      iviscf , iviscb , idam   , ixam   , ismbr  , irovsd ,          &
+      irtdp  , icofay , icofby ,                                     &
+      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
+      iw8    , iw9    ,                                              &
+      ifinib , ifinrb )
+
+        call distpr &
+        !==========
+    ( ifinib , ifinrb ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+      ipnfac , nodfac , ipnfbr , nodfbr , ia(iitypf)      ,          &
+      idevel , ituser , ia     ,                                     &
+      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+      ra(idipar)      ,                                              &
+      ra(iviscf)      , ra(iviscb)      ,                            &
+      ra(idam)        , ra(ixam)        ,                            &
+      ra(ismbr )      , ra(irovsd)      ,                            &
+      ra(irtdp)       , ra(icofay)      , ra(icofby)      ,          &
+      ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6), ra(iw7), &
+      ra(iw8), ra(iw9),                                              &
+      rdevel , rtuser , ra     )
+
+        !     La distance n'a plus a etre mise a jour sauf en ALE
+        if (iale.eq.0) imajdy = 1
+
+      endif
+    endif
+
+  endif
+
+
+  !     CALCUL DE L'AMORTISSEMENT DE VAN DRIEST
+  !     OU CALCUL DE Y+ POUR LE LAGRANGIEN
+
+
+  do iphas = 1, nphas
+
+    !       Pour passer en argument
+    iphass = iphas
+
+    !     On calcule y+ si on en a besoin
+
+    if( (itytur(iphas).eq.4.and.idries(iphas).eq.1)                 &
+         .or. (iilagr.ge.1 .and. iroule.eq.2) ) then
+
+      !       On calcule si on a demande ce mode de calcul
+      !               et s'il y a des parois (si pas de paroi, pas de y+)
+      if(abs(icdpar).eq.1.and.infpar.gt.0) then
+
+        iismph = iisymp+nfabor*(iphas-1)
+
+        !     On doit conserver la memoire de memcli a cause de RA(IUETBO)
+        !       dans DISTYP
+
+        call memdyp &
+        !==========
+      ( ifinia , ifinra ,                                              &
+        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+        nnod   , lndfac , lndfbr , ncelbr ,                            &
+        nvar   , nscal  , nphas  ,                                     &
+        nideve , nrdeve , nituse , nrtuse ,                            &
+        idam   , ixam   , ismbr  , irovsd ,                            &
+        irtdp  , idrtdp ,                                              &
+        iqfx   , iqfy   , iqfz   , icoefq , iirho  , iirhob ,          &
+        iflua  , iflub  ,                                              &
+        icoax  , icobx  , icoay  , icoby  , icoaz  , icobz  ,          &
+        iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
+        iw8    , iw9    ,                                              &
+        ifinib , ifinrb )
+
+        call distyp                                                 &
+        !==========
+      ( ifinib , ifinrb ,                                              &
+        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+        nnod   , lndfac , lndfbr , ncelbr ,                            &
+        nvar   , nscal  , nphas  , iphass ,                            &
+        nideve , nrdeve , nituse , nrtuse ,                            &
+        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+        ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+        ia(iitypf) , ia(iismph),                                       &
+        idevel , ituser , ia     ,                                     &
+        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+        ra(idipar), propce    , ra(iuetbo), ra(iyppar),                &
+        ra(idam  ), ra(ixam  ), ra(ismbr ), ra(irovsd),                &
+        ra(irtdp ), ra(idrtdp),                                        &
+        ra(iqfx  ), ra(iqfy  ), ra(iqfz  ), ra(icoefq),                &
+        ra(iirho ), ra(iirhob),                            &
+        ra(iflua ), ra(iflub ),                                        &
+        ra(icoax ), ra(icobx ), ra(icoay ), ra(icoby ),                &
+        ra(icoaz ), ra(icobz ),                            &
+        ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6), ra(iw7), &
+        ra(iw8), ra(iw9),                                              &
+        rdevel , rtuser , ra     )
+
+      endif
+
+    endif
+
+    if (itytur(iphas).eq.4 .and. idries(iphas).eq.1) then
+
+      !     Pas d'amortissement si pas de paroi
+      if(infpar.gt.0) then
+        if(iifapa(iphas).gt.0) then
+          iiifap = iifapa(iphas)
+        else
+          iiifap = ifinib
+        endif
+        call vandri &
+        !==========
+      ( ndim   , ncelet , ncel   , nfac   , nfabor , nphas ,         &
+        nideve , nrdeve , nituse , nrtuse , iphass ,                 &
+        ia(iitypf) , ifabor, ia(iiifap),                             &
+        idevel , ituser , ia     ,                                   &
+        xyzcen , cdgfbo , ra(iuetbo) , ra(ivsvdr) , ra(iyppar) ,     &
+        propce , rdevel , rtuser , ra     )
+      endif
+
+    endif
+
+  enddo
 
   if(ineedy.eq.1.and.iwarny.ge.1) then
-    call dmtmps(tdist1)
+    call dmtmps(tdist2)
+    tditot = tdist2-tdist1
+    if (irangp.ge.0) call parsom (tditot)
+                     !==========
+    write(nfecra,4010)tditot
   endif
-
-
-!     On ne fait le calcul que s'il y a des parois (RA(IDIPAR) est reserve
-!       et initialise a GRAND avant. S'il n'y a pas de paroi, il restera = GRAND)
-
-!     Pour le moment, on suppose que l'on peut se contenter de faire
-!       cela au premier passage, sauf avec les maillages mobiles. Attention donc
-!       aux conditions aux limites variables (faces qui deviennent des parois ou
-!       parois qui deviennent autre chose)
-
-!     Nombre de faces de paroi
-  if(ipass.eq.1) then
-    if(ineedy.eq.1) then
-      infpar = 0
-      do ifac = 1, nfabor
-        if(ia(iitypf-1+ifac).eq.iparoi .or.                       &
-           ia(iitypf-1+ifac).eq.iparug) then
-          infpar = infpar+1
-        endif
-      enddo
-      if(irangp.ge.0) then
-        call parcpt(infpar)
-      endif
-    endif
-  endif
-
-
-!     On calcule la distance a la paroi
-!          si elle doit etre mise a jour
-!       et si on en a besoin,
-!       et si on a choisi ce mode de calcul,
-if( imajdy.eq.0.and.ineedy.eq.1.and.abs(icdpar).eq.1) then
-
-!     S'il n'y a pas de paroi, on garde l'initialisation a GRAND
-  if(infpar.eq.0) then
-    imajdy = 1
-
-!     S'il y a des parois, il faut calculer
-  else
-
-
-!     On doit conserver la memoire de memcli a cause de RA(IUETBO)
-!       dans DISTYP (uniquement en LES avec van Driest mais tant pis)
-
-      call memdis                                                 &
-      !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   iviscf , iviscb , idam   , ixam   , ismbr  , irovsd ,          &
-   irtdp  , icofay , icofby ,                                     &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-   iw8    , iw9    ,                                              &
-   ifinib , ifinrb )
-
-      call distpr                                                 &
-      !==========
- ( ifinib , ifinrb ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , ia(iitypf)      ,          &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   ra(idipar)      ,                                              &
-   ra(iviscf)      , ra(iviscb)      ,                            &
-   ra(idam)        , ra(ixam)        ,                            &
-   ra(ismbr )      , ra(irovsd)      ,                            &
-   ra(irtdp)       , ra(icofay)      , ra(icofby)      ,          &
-   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6), ra(iw7), &
-   ra(iw8), ra(iw9),                                              &
-   rdevel , rtuser , ra     )
-
-!     La distance n'a plus a etre mise a jour sauf en ALE
-      if (iale.eq.0) imajdy = 1
-
-    endif
-  endif
-
-endif
-
-
-!     CALCUL DE L'AMORTISSEMENT DE VAN DRIEST
-!     OU CALCUL DE Y+ POUR LE LAGRANGIEN
-
-
-do iphas = 1, nphas
-
-!       Pour passer en argument
-  iphass = iphas
-
-!     On calcule y+ si on en a besoin
-
-  if( (itytur(iphas).eq.4.and.idries(iphas).eq.1)                 &
-       .or. (iilagr.ge.1 .and. iroule.eq.2) ) then
-
-!       On calcule si on a demande ce mode de calcul
-!               et s'il y a des parois (si pas de paroi, pas de y+)
-    if(abs(icdpar).eq.1.and.infpar.gt.0) then
-
-      iismph = iisymp+nfabor*(iphas-1)
-
-!     On doit conserver la memoire de memcli a cause de RA(IUETBO)
-!       dans DISTYP
-
-      call memdyp                                                 &
-      !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idam   , ixam   , ismbr  , irovsd ,                            &
-   irtdp  , idrtdp ,                                              &
-   iqfx   , iqfy   , iqfz   , icoefq , iirho  , iirhob ,          &
-   iflua  , iflub  ,                                              &
-   icoax  , icobx  , icoay  , icoby  , icoaz  , icobz  ,          &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-   iw8    , iw9    ,                                              &
-   ifinib , ifinrb )
-
-      call distyp                                                 &
-      !==========
- ( ifinib , ifinrb ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  , iphass ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iitypf) , ia(iismph),                                       &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   ra(idipar), propce    , ra(iuetbo), ra(iyppar),                &
-   ra(idam  ), ra(ixam  ), ra(ismbr ), ra(irovsd),                &
-   ra(irtdp ), ra(idrtdp),                                        &
-   ra(iqfx  ), ra(iqfy  ), ra(iqfz  ), ra(icoefq),                &
-               ra(iirho ), ra(iirhob),                            &
-   ra(iflua ), ra(iflub ),                                        &
-   ra(icoax ), ra(icobx ), ra(icoay ), ra(icoby ),                &
-               ra(icoaz ), ra(icobz ),                            &
-   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6), ra(iw7), &
-   ra(iw8), ra(iw9),                                              &
-   rdevel , rtuser , ra     )
-
-    endif
-
-  endif
-
-  if (itytur(iphas).eq.4 .and. idries(iphas).eq.1) then
-
-!     Pas d'amortissement si pas de paroi
-    if(infpar.gt.0) then
-      if(iifapa(iphas).gt.0) then
-        iiifap = iifapa(iphas)
-      else
-        iiifap = ifinib
-      endif
-      call vandri                                                 &
-      !==========
-  (  ndim   , ncelet , ncel   , nfac   , nfabor , nphas ,         &
-     nideve , nrdeve , nituse , nrtuse , iphass ,                 &
-     ia(iitypf) , ifabor, ia(iiifap),                             &
-     idevel , ituser , ia     ,                                   &
-     xyzcen , cdgfbo , ra(iuetbo) , ra(ivsvdr) , ra(iyppar) ,     &
-     propce , rdevel , rtuser , ra     )
-    endif
-
-  endif
-
-enddo
-
-if(ineedy.eq.1.and.iwarny.ge.1) then
-  call dmtmps(tdist2)
-  tditot = tdist2-tdist1
-  if (irangp.ge.0) call parsom (tditot)
-                             !==========
-  write(nfecra,4010)tditot
-endif
 
 
 !===============================================================================
@@ -1636,56 +1660,56 @@ endif
 !      ON SORT ICI
 !===============================================================================
 
-if (inpdt0.eq.1.and.isuite.eq.0) goto 200
+  if (inpdt0.eq.1.and.isuite.eq.0) goto 200
 
-if (iilagr.eq.3) goto 200
+  if (iilagr.eq.3) goto 200
 
 !===============================================================================
 ! 11. RESOLUTION DE LA VITESSE DE MAILLAGE EN ALE
 !===============================================================================
 
-if (iale.eq.1) then
+  if (iale.eq.1) then
 
-  if (itrale.eq.0 .or. itrale.gt.nalinf) then
+    if (itrale.eq.0 .or. itrale.gt.nalinf) then
 
-    call memale                                                   &
-    !==========
- ( idbia1 , idbra1 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   iviscf , iviscb , idam   , ixam   ,                            &
-   idrtp  , ismbr  , irovsd ,                                     &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-   iw8    , iw9    ,                                              &
-   ifinia , ifinra )
+      call memale &
+      !==========
+    ( idbia1 , idbra1 ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      iviscf , iviscb , idam   , ixam   ,                            &
+      idrtp  , ismbr  , irovsd ,                                     &
+      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
+      iw8    , iw9    ,                                              &
+      ifinia , ifinra )
 
-    call alelap                                                   &
-    !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra(iviscf) , ra(iviscb) ,                                      &
-   ra(idam  ) , ra(ixam  ) ,                                      &
-   ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,                         &
-   ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),             &
-   ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
-   rdevel , rtuser , ra     )
+      call alelap &
+      !==========
+    ( ifinia , ifinra ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+      idevel , ituser , ia     ,                                     &
+      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      coefa  , coefb  ,                                              &
+      ra(iviscf) , ra(iviscb) ,                                      &
+      ra(idam  ) , ra(ixam  ) ,                                      &
+      ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,                         &
+      ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),             &
+      ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
+      rdevel , rtuser , ra     )
+
+    endif
+
+    if (itrale.eq.0) goto 200
 
   endif
-
-  if (itrale.eq.0) goto 200
-
-endif
 
 !===============================================================================
 ! 11. CALCUL A CHAMP DE VITESSE NON FIGE :
@@ -1693,170 +1717,165 @@ endif
 !    ON SUPPOSE QUE TOUTES LES PHASES SONT FIGEES OU AUCUNE
 !===============================================================================
 
-if (iccvfg.eq.0) then
-!    ========================
+  ! En cas de champ de vitesse fige, on ne boucle pas sur U/P
+  if (iccvfg.eq.0) then
+  !===============
 
 !===============================================================================
 ! 12. RESOLUTION MASSE (MODULE COMPRESSIBLE UNIQUEMENT)
 !===============================================================================
-  if ( ippmod(icompf).ge.0 ) then
 
-    if(iwarni(iu(1)).ge.1) then
-      write(nfecra,1080)
-    endif
+    ! Le module compressible n'est pas compatible avec la boucle U/P
+    if ( ippmod(icompf).ge.0 ) then
 
-    call memcfm                                                   &
-    !==========
- ( idbia1 , idbra1 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idtr   , iviscf , iviscb , idam   , ixam   ,                   &
-   idrtp  , ismbr  , irovsd ,                                     &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &
-   iw7    , iw8    , iw9    , iw10   , iw11   , iw12   ,          &
-   iwflms , iwflmb ,                                              &
-   icoefu ,                                                       &
-   ifinia , ifinra )
+      if(iwarni(iu(1)).ge.1) then
+        write(nfecra,1080)
+      endif
 
-    do iphas = 1, nphas
-
-      iscal = irho(iphas)
-
-      call cfmsvl                                                 &
+      call memcfm &
       !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas)   , ncetsm(iphas)   ,                            &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
-   ia(iitpsm(iphas))        ,                                     &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra(ickupd(iphas))        , ra(ismace(iphas))        ,          &
-   ra(iviscf) , ra(iviscb)  ,                                     &
-   ra(idam  ) , ra(ixam  )  ,                                     &
-   ra(idrtp ) , ra(ismbr )  , ra(irovsd) ,                        &
-   ra(iw1   ) , ra(iw2   )  , ra(iw3   ) ,                        &
-   ra(iw4   ) , ra(iw5   )  , ra(iw6   ) ,                        &
-   ra(iw7   ) , ra(iw8   )  , ra(iw9   ) ,                        &
-   ra(iw10  ) , ra(iw11  )  , ra(iw12  ) ,                        &
-   ra(iwflms) , ra(iwflmb)  ,                                     &
-   ra(icoefu) ,                                                   &
-   rdevel , rtuser , ra     )
+    ( idbia1 , idbra1 ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      idtr   , iviscf , iviscb , idam   , ixam   ,                   &
+      idrtp  , ismbr  , irovsd ,                                     &
+      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &
+      iw7    , iw8    , iw9    , iw10   , iw11   , iw12   ,          &
+      iwflms , iwflmb ,                                              &
+      icoefu ,                                                       &
+      ifinia , ifinra )
 
-    enddo
+      do iphas = 1, nphas
 
-  endif
+        iscal = irho(iphas)
+
+        call cfmsvl &
+        !==========
+      ( ifinia , ifinra ,                                              &
+        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+        nnod   , lndfac , lndfbr , ncelbr ,                            &
+        nvar   , nscal  , nphas  ,                                     &
+        ncepdc(iphas)   , ncetsm(iphas)   ,                            &
+        nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+        ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+        ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
+        ia(iitpsm(iphas))        ,                                     &
+        idevel , ituser , ia     ,                                     &
+        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+        dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+        coefa  , coefb  ,                                              &
+        ra(ickupd(iphas))        , ra(ismace(iphas))        ,          &
+        ra(iviscf) , ra(iviscb)  ,                                     &
+        ra(idam  ) , ra(ixam  )  ,                                     &
+        ra(idrtp ) , ra(ismbr )  , ra(irovsd) ,                        &
+        ra(iw1   ) , ra(iw2   )  , ra(iw3   ) ,                        &
+        ra(iw4   ) , ra(iw5   )  , ra(iw6   ) ,                        &
+        ra(iw7   ) , ra(iw8   )  , ra(iw9   ) ,                        &
+        ra(iw10  ) , ra(iw11  )  , ra(iw12  ) ,                        &
+        ra(iwflms) , ra(iwflmb)  ,                                     &
+        ra(icoefu) ,                                                   &
+        rdevel , rtuser , ra     )
+
+      enddo
+
+    endif
 
 !===============================================================================
 ! 13. RESOLUTION QUANTITE DE MOUVEMENT ET MASSE (INCOMPRESSIBLE)
 !===============================================================================
 
-  if(iwarni(iu(1)).ge.1) then
-    write(nfecra,1040)
-  endif
+    if(iwarni(iu(1)).ge.1) then
+      write(nfecra,1040)
+    endif
 
-  call memnav                                                     &
-  !==========
- ( idbia1 , idbra1 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   iviscf , iviscb , ivisfi , ivisbi ,                            &
-   idam   , ixam   ,                                              &
-   idrtp  , igrdp  , ismbr  , irovsd ,                            &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-   iw8    , iw9    , iw10   , idfrcx , ifrchy , idfrhy ,          &
-   icoefu , iesflm , iesflb , itrava , iximpa ,                   &
-   iuvwk  ,                                                       &
-   ifinia , ifinra )
+    call memnav &
+    !==========
+  ( idbia1 , idbra1 ,                                              &
+    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+    nnod   , lndfac , lndfbr , ncelbr ,                            &
+    nvar   , nscal  , nphas  ,                                     &
+    nideve , nrdeve , nituse , nrtuse ,                            &
+    iviscf , iviscb , ivisfi , ivisbi ,                            &
+    idam   , ixam   ,                                              &
+    idrtp  , igrdp  , ismbr  , irovsd ,                            &
+    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
+    iw8    , iw9    , iw10   , idfrcx , ifrchy , idfrhy ,          &
+    icoefu , iesflm , iesflb ,                                     &
+    ifinia , ifinra )
 
-!     SI LE COMPRESSIBLE SANS CHOC EST ACTIF, ON RESOUT AVEC CFQDMV
-  if ( ippmod(icompf).ge.0 ) then
+    !     SI LE COMPRESSIBLE SANS CHOC EST ACTIF, ON RESOUT AVEC CFQDMV
+    if ( ippmod(icompf).ge.0 ) then
 
-    do iphas = 1, nphas
+      do iphas = 1, nphas
 
-      iuiph  = iu(iphas)
-      iflmas = ipprof(ifluma(iuiph))
-      iflmab = ipprob(ifluma(iuiph))
-      iph    = iphas
+        iuiph  = iu(iphas)
+        iflmas = ipprof(ifluma(iuiph))
+        iflmab = ipprob(ifluma(iuiph))
+        iph    = iphas
 
-      call cfqdmv                                                 &
+        call cfqdmv &
+        !==========
+      ( ifinia , ifinra ,                                              &
+        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+        nnod   , lndfac , lndfbr , ncelbr ,                            &
+        nvar   , nscal  , nphas  ,                                     &
+        ncepdc(iphas)   , ncetsm(iphas)   ,                            &
+        nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+        ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+        ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
+        ia(iitpsm(iphas))        ,                                     &
+        idevel , ituser , ia     ,                                     &
+        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+        dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+        propfa(1,iflmas), propfb(1,iflmab),                            &
+        coefa  , coefb  ,                                              &
+        ra(ickupd(iphas))        , ra(ismace(iphas))        ,          &
+        frcxt  , ra(idfrcx)      , ra(itpuco)      , ra(igrdp)       , &
+        ra(iviscf) , ra(iviscb)  , ra(ivisfi) , ra(ivisbi)  ,          &
+        ra(idam  ) , ra(ixam  )  ,                                     &
+        ra(idrtp ) , ra(ismbr )  , ra(irovsd) ,                        &
+        ra(iw1   ) , ra(iw2   )  , ra(iw3   ) ,                        &
+        ra(iw4   ) , ra(iw5   )  , ra(iw6   ) ,                        &
+        ra(iw7   ) , ra(iw8   )  , ra(iw9   ) ,                        &
+        ra(icoefu) ,                                                   &
+        rdevel , rtuser , ra     )
+
+      enddo
+
+    else
+
+      call navsto &
       !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas)   , ncetsm(iphas)   ,                            &
-   nideve , nrdeve , nituse , nrtuse , iph    ,                   &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
-   ia(iitpsm(iphas))        ,                                     &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
-   coefa  , coefb  ,                                              &
-   ra(ickupd(iphas))        , ra(ismace(iphas))        ,          &
-   frcxt  , ra(idfrcx)      , ra(itpuco)      , ra(igrdp)       , &
-   ra(iviscf) , ra(iviscb)  , ra(ivisfi) , ra(ivisbi)  ,          &
-   ra(idam  ) , ra(ixam  )  ,                                     &
-   ra(idrtp ) , ra(ismbr )  , ra(irovsd) ,                        &
-   ra(iw1   ) , ra(iw2   )  , ra(iw3   ) ,                        &
-   ra(iw4   ) , ra(iw5   )  , ra(iw6   ) ,                        &
-   ra(iw7   ) , ra(iw8   )  , ra(iw9   ) ,                        &
-   ra(icoefu) ,                                                   &
-   rdevel , rtuser , ra     )
+    ( ifinia , ifinra ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  , iterns , icvrge ,                   &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+      isostd ,                                                       &
+      idevel , ituser , ia     ,                                     &
+      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      tslagr , coefa  , coefb  , frcxt  ,                            &
+      ra(itrava) , ra(iximpa) , ra(iuvwk ) ,                         &
+      ra(iviscf) , ra(iviscb) , ra(ivisfi) , ra(ivisbi) ,            &
+      ra(idam  ) , ra(ixam  ) ,                                      &
+      ra(idrtp ) , ra(igrdp ) , ra(ismbr ) , ra(irovsd) ,            &
+      ra(iw1   ) , ra(iw2   ) , ra(iw3   ) ,                         &
+      ra(iw4   ) , ra(iw5   ) , ra(iw6   ) ,                         &
+      ra(iw7   ) , ra(iw8   ) , ra(iw9   ) , ra(iw10  ) ,            &
+      ra(idfrcx) , ra(ifrchy) , ra(idfrhy) ,                         &
+      ra(icoefu) , ra(iesflm) , ra(iesflb),                          &
+      rdevel , rtuser , ra     )
 
-    enddo
-
-  else
-
-! --- Boucle sur navsto pour couplage vitesse/pression
-!     on s'arrete a NTERUP ou quand TOUTES les phases on converge
-
-    icvrge = 0
-    inslst = 0
-    do iterns = 1, nterup
-
-      call navsto                                                 &
-      !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  , iterns , icvrge ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   isostd ,                                                       &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   tslagr , coefa  , coefb  , frcxt  ,                            &
-   ra(itrava) , ra(iximpa) , ra(iuvwk ) ,                         &
-   ra(iviscf) , ra(iviscb) , ra(ivisfi) , ra(ivisbi) ,            &
-   ra(idam  ) , ra(ixam  ) ,                                      &
-   ra(idrtp ) , ra(igrdp ) , ra(ismbr ) , ra(irovsd) ,            &
-   ra(iw1   ) , ra(iw2   ) , ra(iw3   ) ,                         &
-   ra(iw4   ) , ra(iw5   ) , ra(iw6   ) ,                         &
-   ra(iw7   ) , ra(iw8   ) , ra(iw9   ) , ra(iw10  ) ,            &
-   ra(idfrcx) , ra(ifrchy) , ra(idfrhy) ,                         &
-   ra(icoefu) , ra(iesflm) , ra(iesflb),                          &
-   rdevel , rtuser , ra     )
-
-!     Mise a jour de la pression si on utilise un couplage vitesse/pression
-!       par point fixe
-!     En parallele, l'echange est fait au debut de navsto.
+      !     Mise a jour de la pression si on utilise un couplage vitesse/pression
+      !       par point fixe
+      !     En parallele, l'echange est fait au debut de navsto.
       if(nterup.gt.1) then
         do iphas = 1, nphas
           ipriph  = ipr(iphas)
@@ -1866,99 +1885,121 @@ if (iccvfg.eq.0) then
         enddo
       endif
 
-!     Si c'est la derniere iteration : INSLST = 1
+      !     Si c'est la derniere iteration : INSLST = 1
       if((icvrge.eq.1).or.(iterns.eq.nterup)) then
-        inslst = 1
+
+        ! Si on a besoin de refaire une nouvelle iteration pour SYRTHES,
+        ! rayonnement, paroi thermique 1D...
+        ! ET que l'on est a la derniere iteration en ALE !
+
+        ! ...alors, on remet a zero les indicateurs de convergence
+        if (itrfup.eq.0.and.itrfin.eq.1) then
+          itrfup = 1
+          icvrge = 0
+          iterns = iterns - 1
+
+        ! ...sinon, on termine
+        else
+          inslst = 1
+        endif
+
       endif
 
-!     Si ISTMPF(IPHAS).EQ.0 (explicite) on ne traite pas le flux de
-!       masse a la derniere iteration
-!     Sinon on traite le flux de masse a toutes les iterations
+      !     Si ISTMPF(IPHAS).EQ.0 (explicite) on ne traite pas le flux de
+      !       masse a la derniere iteration
+      !     Sinon on traite le flux de masse a toutes les iterations
 
-!     On teste le flux de masse de la phase 1 (toutes les phases sont
-!     necessairement traitees de la meme facon, cf. VERINI)
-      if( (istmpf(1).eq.0.and.inslst.eq.0).or.                    &
-           (istmpf(1).ne.0                ) ) then
+      !     On teste le flux de masse de la phase 1 (toutes les phases sont
+      !     necessairement traitees de la meme facon, cf. VERINI)
+      if( (istmpf(1).eq.0.and.inslst.eq.0) .or. istmpf(1).ne.0) then
         iappel = 3
-        call schtmp                                               &
+        call schtmp &
         !==========
- ( idbia1 , idbra1 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  , iappel ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , isostd ,                   &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   rdevel , rtuser ,                                              &
-   ra     )
+      ( idbia1 , idbra1 ,                                              &
+        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+        nnod   , lndfac , lndfbr , ncelbr ,                            &
+        nvar   , nscal  , nphas  , iappel ,                            &
+        nideve , nrdeve , nituse , nrtuse ,                            &
+        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+        ipnfac , nodfac , ipnfbr , nodfbr , isostd ,                   &
+        idevel , ituser , ia     ,                                     &
+        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+        dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+        coefa  , coefb  ,                                              &
+        rdevel , rtuser ,                                              &
+        ra     )
       endif
 
-      if(inslst.eq.1) goto 100
+      if (inslst.eq.1) goto 100
 
-    enddo
+    endif
 
-  endif
+  endif ! Fin si calcul sur champ de vitesse figee
 
- 100    continue
+  iterns = iterns + 1
+
+enddo
+
+100 continue
+
+! Calcul sur champ de vitesse fige SUITE (a cause de la boule U/P)
+if (iccvfg.eq.0) then
+!===============
 
 !===============================================================================
 ! 14.  DEPLACEMENT DES STRUCTURES EN ALE ET TEST DE BOUCLAGE IMPLICITE
 !===============================================================================
 
-if (nbstru.gt.0.or.nbaste.gt.0) then
+  if (nbstru.gt.0.or.nbaste.gt.0) then
 
-  call strdep                                                     &
-  !==========
- ( idbia1 , idbra1 , itrale , italim , itrfin ,                   &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr , nvar   ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra(iflalf), ra(iflalb), ra(icoale), ra(iprale), ra(idepal),    &
-   rdevel , rtuser ,                                              &
-   ra     )
+    call strdep &
+    !==========
+  ( idbia1 , idbra1 , itrale , italim , itrfin ,                   &
+    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+    nnod   , lndfac , lndfbr , ncelbr , nvar   ,                   &
+    nideve , nrdeve , nituse , nrtuse ,                            &
+    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+    idevel , ituser , ia     ,                                     &
+    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    coefa  , coefb  ,                                              &
+    ra(iflalf), ra(iflalb), ra(icoale), ra(iprale), ra(idepal),    &
+    rdevel , rtuser ,                                              &
+    ra     )
 
-!     On boucle eventuellement sur de deplacement des structures
-  if (itrfin.ne.-1) then
-    italim = italim + 1
-    goto 300
+    !     On boucle eventuellement sur de deplacement des structures
+    if (itrfin.ne.-1) then
+      italim = italim + 1
+      goto 300
+    endif
+
   endif
 
-endif
+  ! --- On libere les tableaux IFLALF, IFLALB ICOALE et IPRALE
 
-! --- On libere les tableaux IFLALF, IFLALB ICOALE et IPRALE
-
-!     On ne passe dans SCHTMP que si ISTMPF(IPHAS).EQ.0 (explicite)
-!     On teste le flux de masse de la phase 1 (toutes les phases sont
-!     necessairement traitees de la meme facon, cf. VERINI)
-!     pour conserver
-if( istmpf(1).eq.0 ) then
-  iappel = 4
-  call schtmp                                                     &
-  !==========
- ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  , iappel ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , isostd ,                   &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   rdevel , rtuser ,                                              &
-   ra     )
-endif
+  !     On ne passe dans SCHTMP que si ISTMPF(IPHAS).EQ.0 (explicite)
+  !     On teste le flux de masse de la phase 1 (toutes les phases sont
+  !     necessairement traitees de la meme facon, cf. VERINI)
+  !     pour conserver
+  if( istmpf(1).eq.0 ) then
+    iappel = 4
+    call schtmp &
+    !==========
+  ( idebia , idebra ,                                              &
+    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+    nnod   , lndfac , lndfbr , ncelbr ,                            &
+    nvar   , nscal  , nphas  , iappel ,                            &
+    nideve , nrdeve , nituse , nrtuse ,                            &
+    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+    ipnfac , nodfac , ipnfbr , nodfbr , isostd ,                   &
+    idevel , ituser , ia     ,                                     &
+    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+    coefa  , coefb  ,                                              &
+    rdevel , rtuser ,                                              &
+    ra     )
+  endif
 
 !===============================================================================
 ! 15. RESOLUTION TURBULENCE
@@ -1995,18 +2036,18 @@ endif
 
       ikiph  = ik  (iphas)
 
-      call memkep                                                 &
+      call memkep &
       !==========
- ( idbia1 , idbra1 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idtr   , iviscf , iviscb , idam   , ixam   ,                   &
-   idrtp  , ismbr  , irovsd , itinsk , itinse , idivu ,           &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-   iw8    , iw9    ,                                              &
-   ifinia , ifinra )
+    ( idbia1 , idbra1 ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      idtr   , iviscf , iviscb , idam   , ixam   ,                   &
+      idrtp  , ismbr  , irovsd , itinsk , itinse , idivu ,           &
+      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
+      iw8    , iw9    ,                                              &
+      ifinia , ifinra )
 
       if(cdtvar(ikiph).ne.1.d0) then
         do iel = 1, ncel
@@ -2018,45 +2059,45 @@ endif
         enddo
       endif
 
-      call turbke                                                 &
+      call turbke &
       !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , ncetsm(iphas) ,                                &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
-   tslagr   ,                                                     &
-   coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
-   ra(iviscf) , ra(iviscb) , ra(iprv2f),                          &
-   ra(idam  ) , ra(ixam  ) ,                                      &
-   ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itinsk) , ra(itinse),&
-   ra(idivu ) , ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),&
-   ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
-   rdevel , rtuser , ra     )
+    ( ifinia , ifinra ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      ncepdc(iphas) , ncetsm(iphas) ,                                &
+      nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+      ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+      idevel , ituser , ia     ,                                     &
+      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+      ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
+      tslagr   ,                                                     &
+      coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+      ra(iviscf) , ra(iviscb) , ra(iprv2f),                          &
+      ra(idam  ) , ra(ixam  ) ,                                      &
+      ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itinsk) , ra(itinse),&
+      ra(idivu ) , ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),&
+      ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
+      rdevel , rtuser , ra     )
 
       if( iturb(iphas).eq.50 )  then
 
         iphiph  = iphi(iphas)
 
-        call memv2f                                               &
+        call memv2f &
         !==========
- ( idbia1 , idbra1 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idtr   , iviscf , iviscb , idam   , ixam   ,                   &
-   idrtp  , ismbr  , irovsd ,                                     &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-   iw8    , iw9    , iw10   ,                                     &
-   ifinia , ifinra )
+      ( idbia1 , idbra1 ,                                              &
+        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+        nnod   , lndfac , lndfbr , ncelbr ,                            &
+        nvar   , nscal  , nphas  ,                                     &
+        nideve , nrdeve , nituse , nrtuse ,                            &
+        idtr   , iviscf , iviscb , idam   , ixam   ,                   &
+        idrtp  , ismbr  , irovsd ,                                     &
+        iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
+        iw8    , iw9    , iw10   ,                                     &
+        ifinia , ifinra )
 
         if(cdtvar(iphiph).ne.1.d0) then
           do iel = 1, ncel
@@ -2068,41 +2109,39 @@ endif
           enddo
         endif
 
-        call resv2f                                               &
+        call resv2f &
         !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , ncetsm(iphas) ,                                &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
-   coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
-   ra(iviscf) , ra(iviscb) , ra(iprv2f),                          &
-   ra(idam  ) , ra(ixam  ) ,                                      &
-   ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,                         &
-   ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),             &
-   ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
-   ra(iw10  ) , rdevel , rtuser , ra     )
+      ( ifinia , ifinra ,                                              &
+        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+        nnod   , lndfac , lndfbr , ncelbr ,                            &
+        nvar   , nscal  , nphas  ,                                     &
+        ncepdc(iphas) , ncetsm(iphas) ,                                &
+        nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+        ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+        ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+        idevel , ituser , ia     ,                                     &
+        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+        ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
+        coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+        ra(iviscf) , ra(iviscb) , ra(iprv2f),                          &
+        ra(idam  ) , ra(ixam  ) ,                                      &
+        ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,                         &
+        ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),             &
+        ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
+        ra(iw10  ) , rdevel , rtuser , ra     )
 
       endif
 
-!  RELAXATION DE K ET EPSILON SI IKECOU=0 EN INSTATIONNAIRE
+      !  RELAXATION DE K ET EPSILON SI IKECOU=0 EN INSTATIONNAIRE
       if (ikecou(iphas).eq.0 .and. idtvar.ge.0) then
         ikiph  = ik (iphas)
         ieiph  = iep(iphas)
         relaxk = relaxv(ikiph)
         relaxe = relaxv(ieiph)
         do iel = 1,ncel
-          rtp(iel,ikiph) = relaxk*rtp(iel,ikiph)                  &
-                             + (1.d0-relaxk)*rtpa(iel,ikiph)
-          rtp(iel,ieiph) = relaxe*rtp(iel,ieiph)                  &
-                             + (1.d0-relaxe)*rtpa(iel,ieiph)
+          rtp(iel,ikiph) = relaxk*rtp(iel,ikiph) + (1.d0-relaxk)*rtpa(iel,ikiph)
+          rtp(iel,ieiph) = relaxe*rtp(iel,ieiph) + (1.d0-relaxe)*rtpa(iel,ieiph)
         enddo
       endif
 
@@ -2110,19 +2149,19 @@ endif
 
       ir11ip = ir11(iphas)
 
-      call memrij                                                 &
+      call memrij &
       !==========
- ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , iturb(iphas) ,             &
-   idtr   , iviscf , iviscb , icoefx ,                            &
-   idam   , ixam   , idrtp  ,                                     &
-   ismbr  , irovsd , igrdvt , iprodu , igrarx , igrary , igrarz , &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-   iw8    , iw9    ,                                              &
-   ifinia , ifinra )
+    ( idebia , idebra ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      nideve , nrdeve , nituse , nrtuse , iturb(iphas) ,             &
+      idtr   , iviscf , iviscb , icoefx ,                            &
+      idam   , ixam   , idrtp  ,                                     &
+      ismbr  , irovsd , igrdvt , iprodu , igrarx , igrary , igrarz , &
+      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
+      iw8    , iw9    ,                                              &
+      ifinia , ifinra )
 
       if(cdtvar(ir11ip).ne.1.d0) then
         do iel = 1, ncel
@@ -2134,46 +2173,46 @@ endif
         enddo
       endif
 
-      call turrij                                                 &
+      call turrij &
       !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , ncetsm(iphas) ,                                &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
-   tslagr   ,                                                     &
-   coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
-   ra(iviscf) , ra(iviscb) , ra(icoefx),                          &
-   ra(idam  ) , ra(ixam  ) ,                                      &
-   ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(igrdvt) ,            &
-   ra(iprodu) , ra(igrarx) , ra(igrary) , ra(igrarz) ,            &
-   ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ) ,            &
-   ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
-   rdevel , rtuser , ra     )
+    ( ifinia , ifinra ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      ncepdc(iphas) , ncetsm(iphas) ,                                &
+      nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+      ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+      idevel , ituser , ia     ,                                     &
+      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+      ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
+      tslagr   ,                                                     &
+      coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+      ra(iviscf) , ra(iviscb) , ra(icoefx),                          &
+      ra(idam  ) , ra(ixam  ) ,                                      &
+      ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(igrdvt) ,            &
+      ra(iprodu) , ra(igrarx) , ra(igrary) , ra(igrarz) ,            &
+      ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ) ,            &
+      ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
+      rdevel , rtuser , ra     )
 
     else if( iturb(iphas).eq.60 ) then
 
       ikiph  = ik  (iphas)
 
-      call memkom                                                 &
+      call memkom &
       !==========
- ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idtr   , iviscf , iviscb , idam   , ixam   ,                   &
-   idrtp  , ismbr  , irovsd , itinsk , itinse , idivu  ,          &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-   iw8    , iw9    ,                                              &
-   ifinia , ifinra )
+    ( idebia , idebra ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      nideve , nrdeve , nituse , nrtuse ,                            &
+      idtr   , iviscf , iviscb , idam   , ixam   ,                   &
+      idrtp  , ismbr  , irovsd , itinsk , itinse , idivu  ,          &
+      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
+      iw8    , iw9    ,                                              &
+      ifinia , ifinra )
 
       if(cdtvar(ikiph).ne.1.d0) then
         do iel = 1, ncel
@@ -2187,39 +2226,37 @@ endif
 
       call turbkw                                                 &
       !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , ncetsm(iphas) ,                                &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
-   tslagr   ,                                                     &
-   coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
-   ra(is2kw(iphas)), ra(idvukw(iphas)),                           &
-   ra(iviscf) , ra(iviscb) ,                                      &
-   ra(idam  ) , ra(ixam  ) ,                                      &
-   ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itinsk) , ra(itinse),&
-   ra(idivu ) , ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),&
-   ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
-   rdevel , rtuser , ra     )
+    ( ifinia , ifinra ,                                              &
+      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+      nnod   , lndfac , lndfbr , ncelbr ,                            &
+      nvar   , nscal  , nphas  ,                                     &
+      ncepdc(iphas) , ncetsm(iphas) ,                                &
+      nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+      ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+      idevel , ituser , ia     ,                                     &
+      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+      ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
+      tslagr   ,                                                     &
+      coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+      ra(is2kw(iphas)), ra(idvukw(iphas)),                           &
+      ra(iviscf) , ra(iviscb) ,                                      &
+      ra(idam  ) , ra(ixam  ) ,                                      &
+      ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itinsk) , ra(itinse),&
+      ra(idivu ) , ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),&
+      ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
+      rdevel , rtuser , ra     )
 
-!  RELAXATION DE K ET OMEGA SI IKECOU=0
+      !  RELAXATION DE K ET OMEGA SI IKECOU=0
       if (ikecou(iphas).eq.0 .and. idtvar.ge.0) then
         ikiph   = ik  (iphas)
         iomiph  = iomg(iphas)
         relaxk = relaxv(ikiph )
         relaxw = relaxv(iomiph)
         do iel = 1,ncel
-          rtp(iel,ikiph)  = relaxk*rtp(iel,ikiph)                 &
-                             + (1.d0-relaxk)*rtpa(iel,ikiph)
-          rtp(iel,iomiph) = relaxw*rtp(iel,iomiph)                &
-                             + (1.d0-relaxw)*rtpa(iel,iomiph)
+          rtp(iel,ikiph)  = relaxk*rtp(iel,ikiph) +(1.d0-relaxk)*rtpa(iel,ikiph)
+          rtp(iel,iomiph) = relaxw*rtp(iel,iomiph)+(1.d0-relaxw)*rtpa(iel,iomiph)
         enddo
       endif
 
@@ -2227,11 +2264,7 @@ endif
 
   enddo
 
-
-!  FIN DU TEST SUR ICCVFG : CI DESSOUS
-! ========================
-
-endif
+endif  ! Fin si calcul sur champ de vitesse fige SUITE
 
 
 !     Ici on peut liberer les eventuels tableaux SKW et DIVUKW
@@ -2481,4 +2514,4 @@ call schtmp                                                       &
 ! FIN
 !----
 
-end
+end subroutine

@@ -517,6 +517,7 @@ endif
 if(nterup.gt.1) then
 
   if(ipucou.eq.1.or.indest.eq.1.or.                               &
+       ippmod(icompf).ge.0.or.iccvfg.eq.1.or.                     &
        iphydr.eq.1.or.icalhy.eq.1.or.idtvar.eq.-1) then
     write(nfecra,2141) nterup
     iok = iok + 1
@@ -2424,6 +2425,8 @@ endif
 '@    - prise en compte specifique de la pression             ',/,&
 '@      hydrostatique (IPHYDR et ICALHY)                      ',/,&
 '@    - algorithme stationnaire (IDTVAR=-1)                   ',/,&
+'@    - module compressible (IPPMOD(ICOMPF)>=0)               ',/,&
+'@    - champ de vitesse fige (ICCVFG=1)                      ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -4921,6 +4924,8 @@ endif
 '@      contribution  (IPHYDR et ICALHY)                      ',/,&
 '@    - time-step variable with space or iteration or         ',/,&
 '@      steady-state   algorithm(IDTVAR=-1)                   ',/,&
+'@    - compressible module (IPPMOD(ICOMPF)>=0)               ',/,&
+'@    - frozen velocity field (ICCVFG=1)                      ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
 '@ Check the input data given via User Interface or in usini1.',/,&

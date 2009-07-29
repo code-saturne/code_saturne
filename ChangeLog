@@ -1,3 +1,11 @@
+* 29/07/2009 - David Monfort <david.monfort@edf.fr>
+  Move loop on velocity/pressure system so that it includes
+  the boundary conditions calculation.
+  modified routines:
+    src/base/memnav.f90
+    src/base/tridim.f90
+    src/base/verini.f90
+
 * 28/07/2009 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
   Use selection mechanism for exchange zone definition.
   added routine:

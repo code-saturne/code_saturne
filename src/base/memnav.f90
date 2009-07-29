@@ -38,8 +38,7 @@ subroutine memnav &
    idrtp  , igrdp  , ismbr  , irovsd ,                            &
    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
    iw8    , iw9    , iw10   , idfrcx , ifrchy , idfrhy ,          &
-   icoefu , iesflm , iesflb , itrava , iximpa ,                   &
-   iuvwk  ,                                                       &
+   icoefu , iesflm , iesflb ,                                     &
    ifinia , ifinra )
 
 !===============================================================================
@@ -84,9 +83,6 @@ subroutine memnav &
 ! ifrchy           ! e  ! --> ! "pointeur" sur frchy                           !
 ! idfrhy           ! e  ! --> ! "pointeur" sur dfrchy                          !
 !iesflm, iesflb    ! e  ! --> ! "pointeur" sur esflum et esflub                !
-! itrava           ! e  ! --> ! "pointeur" sur trava                           !
-! iximpa           ! e  ! --> ! "pointeur" sur ixmpa                           !
-! iuvwk            ! e  ! --> ! "pointeur" sur uvwk                            !
 ! ifinia           ! e  ! --> ! pointeur de la premiere case libre             !
 !                  !    !     !  dans ia en sortie                             !
 ! ifinra           ! e  ! --> ! pointeur de la premiere case libre             !
@@ -127,7 +123,6 @@ integer          iw1    , iw2    , iw3    , iw4    , iw5    , iw6
 integer          iw7    , iw8    , iw9    , iw10
 integer          idfrcx , ifrchy , idfrhy
 integer          icoefu , iesflm , iesflb
-integer          itrava , iximpa , iuvwk
 integer          ifinia , ifinra
 
 integer          idebia , idebra , iphas, irij
@@ -194,16 +189,7 @@ idfrhy =       ifrchy + ncelet*ndim*icalhy
 icoefu =       idfrhy + ncelet*ndim*icalhy
 iesflm =       icoefu + nfabor*ndim
 iesflb =       iesflm + nfac*iescat
-iximpa =       iesflb + nfabor*iescat
-if(nterup.gt.1) then
-  iuvwk  =       iximpa + ncelet*ndim*nphas
-  itrava =       iuvwk  + ncelet*ndim*nphas
-  ifinra =       itrava + ncelet*ndim*nphas
-else
-  iuvwk  =       iximpa
-  itrava =       iuvwk
-  ifinra =       itrava
-endif
+ifinra =       iesflb + nfabor*iescat
 
 ! Dans une phase d'optimisation memoire, on pourra faire pointer
 !  esflum et esflub sur fluint et flubrd dans le cas (rare)
