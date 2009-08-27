@@ -1593,7 +1593,7 @@ do iphas = 1, nphas
 !                On recupere le flux h(Ti'-Tp) (sortant ou
 !                             negatif si gain pour le fluide) en W/m2
 
-             propfb(1,ipprob(ifconv)-1+ifac) =                    &
+              propfb(ifac,ipprob(ifconv)) =                       &
                    hint*( (1.d0-coefb(ifac,iclvaf))*thbord(ifac)  &
                          - coefa(ifac,iclvaf))
 

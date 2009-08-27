@@ -1,3 +1,9 @@
+* 27/08/2009 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
+  Fix a wrong indirection to access radiative fluxes in cell
+  properties array.
+  modified routine:
+    src/base/condli.f90
+
 * 29/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix BLAS ESSL link on BlueGene systems.
   modified scripts:
