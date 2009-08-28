@@ -1,3 +1,9 @@
+* 28/08/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a bug when raising false floating-point exceptions on Itanium
+  systems due to speculative tests in optimized builds.
+  modified routine:
+    src/apps/cs_solver.c
+
 * 28/08/2009 - David Monfort <david.monfort@edf.fr>
   Fix a missing call of usray1 in initialization part.
   modified routine:
