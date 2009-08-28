@@ -249,6 +249,12 @@ if(iihmpr.eq.1) then
 
 endif
 
+!   - Sous-programme utilisateur
+!     ==========================
+
+call usray1
+!==========
+
 ! --- Parametres dependant du nombre de scalaires utilisateurs
 
 !     Moyenne du carre des fluctuations d'un scalaire UTILISATEUR

@@ -1,3 +1,8 @@
+* 28/08/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a missing call of usray1 in initialization part.
+  modified routine:
+    src/base/iniusi.f90
+
 * 27/08/2009 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
   Fix a wrong indirection to access radiative fluxes in cell
   properties array.
