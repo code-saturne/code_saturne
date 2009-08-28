@@ -658,7 +658,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
   for f in uscpcl.f90 usd3pc.f90 usebuc.f90 uslwcc.f90 usfucl.f90
   do
     if [ -f "${SRC}/${f}" -a ! -f JANAF ] ; then
-      cp ${datadir}/data/thch/JANAF JANAF
+      cp ${pkgdatadir}/data/thch/JANAF JANAF
     fi
   done
   #

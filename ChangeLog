@@ -1,3 +1,10 @@
+* 28/08/2009 - David Monfort <david.monfort@edf.fr>
+  Fix JANAF file location in user directory. It is now searched in
+  installation directory. Do not install it anymore in user data dir.
+  modified scripts:
+    bin/cs_create.py
+    bin/runcase.in
+
 * 28/08/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a bug when raising false floating-point exceptions on Itanium
   systems due to speculative tests in optimized builds.
