@@ -621,7 +621,7 @@ if (nfin.eq.1) then
   FICH = ' '
   fich = entet
   call verlon (fich,ii1,ii2,lpos)
-  FICH(II2+1:II2+8) = '.geo===='
+  FICH(II2+1:II2+8) = '.geo****'
   call verlon (fich,ii1,ii2,lpos)
   NAME = ' '
   NAME = 'model:                 1    '
@@ -649,7 +649,7 @@ if (nfin.eq.1) then
     name(ii2+1:ii2+n2)=fich(n1:n2)
     ii2 = ii2 + n2
     call verlon (name,ii1,ii2,lpos)
-    NAME(II2+1:II2+11) = '.tpssej===='
+    NAME(II2+1:II2+11) = '.tpssej****'
     ii2 = ii2 + 11
     WRITE(IMPLA1,'(A)') NAME(II1:II2)
   endif
@@ -661,7 +661,7 @@ if (nfin.eq.1) then
     name(ii2+1:ii2+n2)=fich(n1:n2)
     ii2 = ii2 + n2
     call verlon (name,ii1,ii2,lpos)
-    NAME(II2+1:II2+11) = '.temper===='
+    NAME(II2+1:II2+11) = '.temper****'
     ii2 = ii2 + 11
     WRITE(IMPLA1,'(A)') NAME(II1:II2)
   endif
@@ -673,7 +673,7 @@ if (nfin.eq.1) then
     name(ii2+1:ii2+n2)=fich(n1:n2)
     ii2 = ii2 + n2
     call verlon (name,ii1,ii2,lpos)
-    NAME(II2+1:II2+11) = '.diamet===='
+    NAME(II2+1:II2+11) = '.diamet****'
     ii2 = ii2 + 11
     WRITE(IMPLA1,'(A)') NAME(II1:II2)
   endif
@@ -685,7 +685,7 @@ if (nfin.eq.1) then
     name(ii2+1:ii2+n2)=fich(n1:n2)
     ii2 = ii2 + n2
     call verlon (name,ii1,ii2,lpos)
-    NAME(II2+1:II2+11) = '.massep===='
+    NAME(II2+1:II2+11) = '.massep****'
     ii2 = ii2 + 11
     WRITE(IMPLA1,'(A)') NAME(II1:II2)
   endif
@@ -697,7 +697,7 @@ if (nfin.eq.1) then
     name(ii2+1:ii2+n2)=fich(n1:n2)
     ii2 = ii2 + n2
     call verlon (name,ii1,ii2,lpos)
-    NAME(II2+1:II2+11) = '.tempch===='
+    NAME(II2+1:II2+11) = '.tempch****'
     ii2 = ii2 + 11
     WRITE(IMPLA1,'(A)') NAME(II1:II2)
   endif
@@ -709,7 +709,7 @@ if (nfin.eq.1) then
     name(ii2+1:ii2+n2)=fich(n1:n2)
     ii2 = ii2 + n2
     call verlon (name,ii1,ii2,lpos)
-    NAME(II2+1:II2+11) = '.dck===='
+    NAME(II2+1:II2+11) = '.dck****'
     ii2 = ii2 + 8
     WRITE(IMPLA1,'(A)') NAME(II1:II2)
   endif
@@ -721,7 +721,7 @@ if (nfin.eq.1) then
     name(ii2+1:ii2+n2)=fich(n1:n2)
     ii2 = ii2 + n2
     call verlon (name,ii1,ii2,lpos)
-    NAME(II2+1:II2+11) = '.mch===='
+    NAME(II2+1:II2+11) = '.mch****'
     ii2 = ii2 + 8
     WRITE(IMPLA1,'(A)') NAME(II1:II2)
   endif
@@ -733,7 +733,7 @@ if (nfin.eq.1) then
     name(ii2+1:ii2+n2)=fich(n1:n2)
     ii2 = ii2 + n2
     call verlon (name,ii1,ii2,lpos)
-    NAME(II2+1:II2+11) = '.mck===='
+    NAME(II2+1:II2+11) = '.mck****'
     ii2 = ii2 + 8
     WRITE(IMPLA1,'(A)') NAME(II1:II2)
   endif
@@ -745,7 +745,7 @@ if (nfin.eq.1) then
     name(ii2+1:ii2+n2)=fich(n1:n2)
     ii2 = ii2 + n2
     call verlon (name,ii1,ii2,lpos)
-    NAME(II2+1:II2+11) = '.vitflu===='
+    NAME(II2+1:II2+11) = '.vitflu****'
     ii2 = ii2 + 11
     WRITE(IMPLA1,'(A)') NAME(II1:II2)
   endif
@@ -757,7 +757,7 @@ if (nfin.eq.1) then
     name(ii2+1:ii2+n2)=fich(n1:n2)
     ii2 = ii2 + n2
     call verlon (name,ii1,ii2,lpos)
-    NAME(II2+1:II2+11) = '.vitpar===='
+    NAME(II2+1:II2+11) = '.vitpar****'
     ii2 = ii2 + 11
     WRITE(IMPLA1,'(A)') NAME(II1:II2)
   endif

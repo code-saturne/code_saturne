@@ -1,3 +1,10 @@
+* 31/08/2009 - Boris Arcen <boris-externe.arcen@edf.fr>
+  Fix EnSight format output for Lagrangian post-processing.
+  Wildcard "stars" symbols were changed in "=" signs by the scripts
+  that convert subroutines from fixed to free Fortran form.
+  modified routine:
+    src/lagr/enswaf.f90
+
 * 31/08/2009 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
   Move the second call to varpos just after the first pass in usray1,
   so that the code is aware of the activation of the radiative transfer
