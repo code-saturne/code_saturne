@@ -226,13 +226,6 @@ endif
 call usppmo
 !==========
 
-! --- Varpos
-!     Verification et construction de ISCAPP
-!      2ieme passage
-call varpos(nmodpp)
-!==========
-
-
 ! --- Activation du module transferts radiatifs
 
 !     Il est necessaire de connaitre l'activation du module transferts
@@ -254,6 +247,13 @@ endif
 
 call usray1
 !==========
+
+! --- Varpos
+!     Verification et construction de ISCAPP
+!      2ieme passage
+call varpos(nmodpp)
+!==========
+
 
 ! --- Parametres dependant du nombre de scalaires utilisateurs
 

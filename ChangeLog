@@ -1,3 +1,10 @@
+* 31/08/2009 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
+  Move the second call to varpos just after the first pass in usray1,
+  so that the code is aware of the activation of the radiative transfer
+  module while reading thermochemistry files.
+  modified routine:
+    src/base/iniusi.f90
+
 * 28/08/2009 - David Monfort <david.monfort@edf.fr>
   Fix JANAF file location in user directory. It is now searched in
   installation directory. Do not install it anymore in user data dir.
