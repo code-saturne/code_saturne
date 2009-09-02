@@ -49,6 +49,7 @@ Topics:
   help
   check_consistency
   check_mesh
+  compile
   config
   create
   gui
