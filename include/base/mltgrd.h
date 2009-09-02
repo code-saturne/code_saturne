@@ -40,7 +40,7 @@
 
 integer           ncegrm, ngrmax,                                 &
                   nagmx0(nvarmx), iagmx0(nvarmx), ncpmgr(nvarmx)
-common / imultg / ncegrm, ngrmax,                                 &
+common / ioptmg / ncegrm, ngrmax,                                 &
                   nagmx0, iagmx0, ncpmgr
 
 ! FIN

@@ -1,4 +1,9 @@
 * 02/09/2009 - David Monfort <david.monfort@edf.fr>
+  Fix two blocks of commons whose names were identical.
+  modified routine:
+    include/base/mltgrd.h
+
+* 02/09/2009 - David Monfort <david.monfort@edf.fr>
   Fix a missing test on electric arc modelling that lead in the use
   of an undefined pointer (on imaginary potential).
   modified routines:
