@@ -1,4 +1,10 @@
 * 02/09/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a wrong indirection for variables name array (with multigrid
+  algorithm for purely diffusive scalars).
+  modified routine:
+    include/base/codits.h
+
+* 02/09/2009 - David Monfort <david.monfort@edf.fr>
   Fix two blocks of commons whose names were identical.
   modified routine:
     include/base/mltgrd.h

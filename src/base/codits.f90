@@ -419,7 +419,7 @@ if (imgrp.gt.0) then
 
 ! --- Creation de la hierarchie de maillages
 
-  chaine = nomvar(ivar)
+  chaine = nomvar(ipp)
   iwarnp = iwarni(ivar)
   iagmax = iagmx0(ivar)
   nagmax = nagmx0(ivar)
