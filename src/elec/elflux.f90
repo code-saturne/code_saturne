@@ -222,7 +222,11 @@ idebra = idbra0
 
 ! --- Numero des grandeurs physiques
 ipcsig = ipproc(ivisls(ipotr))
-ipcsii = ipproc(ivisls(ipoti))
+
+if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+  ipcsii = ipproc(ivisls(ipoti))
+endif
+
 ipcefj = ipproc(iefjou)
 ipcdc1 = ipproc(idjr(1))
 ipcdc2 = ipproc(idjr(2))

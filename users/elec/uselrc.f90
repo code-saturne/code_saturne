@@ -208,7 +208,7 @@ integer          ipdcrp , idimve
 double precision somje , coepoa , coefav , coepot
 double precision emax  , aiex   , amex
 double precision rayo  , econs  , z1     , z2   , posi
-double precision elcou , dtj    , dtjm   , delhsh , cdtj , cpmx
+double precision dtj   , dtjm   , delhsh , cdtj , cpmx
 double precision xelec , yelec  , zelec
 
 !===============================================================================

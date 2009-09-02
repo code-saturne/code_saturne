@@ -149,8 +149,8 @@ common / rclaqu / xclaq , yclaq , zclaq
 integer           ielcor
 common / iecorr / ielcor
 
-double precision  couimp , dpot , puisim , coejou
-common / recorr / couimp , dpot , puisim , coejou
+double precision  couimp , dpot , puisim , coejou, elcou
+common / recorr / couimp , dpot , puisim , coejou, elcou
 
 !--> DONNEES POUR LES ESPECES AYANT UN IMPACT
 !    SUR LE PROBLEME ELECTRIQUE

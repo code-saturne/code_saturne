@@ -1,3 +1,18 @@
+* 02/09/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a missing test on electric arc modelling that lead in the use
+  of an undefined pointer (on imaginary potential).
+  modified routines:
+    src/elec/elflux.f90
+
+* 02/09/2009 - Clarisse Delalondre <clarisse.delalondre@edf.fr>
+  Add a new common so that "elcou" variable can be used ni several
+  routines (see uselrc.f90 for the meaning). Change some incorrect
+  comments.
+  modified routines:
+    include/elec/elincl.h
+    users/elec/uselen.f90
+    users/elec/uselrc.f90
+
 * 31/08/2009 - Boris Arcen <boris-externe.arcen@edf.fr>
   Fix EnSight format output for Lagrangian post-processing.
   Wildcard "stars" symbols were changed in "=" signs by the scripts

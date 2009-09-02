@@ -341,7 +341,7 @@ if(nummai.eq.-1) then
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
    w1(1,1) , w1(1,2) , w1(1,3) ,                                  &
-!       d POTR /dx   d POTR /dy   d POTR /dz
+!       d POTI /dx   d POTI /dy   d POTI /dz
    w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
    rdevel , rtuser , ra     )
 
@@ -408,7 +408,7 @@ if(nummai.eq.-1) then
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
    w1(1,1) , w1(1,2) , w1(1,3) ,                                  &
-!       d POTR /dx   d POTR /dy   d POTR /dz
+!       d POTI /dx   d POTI /dy   d POTI /dz
    w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
    rdevel , rtuser , ra     )
 
