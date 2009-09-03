@@ -56,7 +56,7 @@ Topics:
   plot_probes
 
 Options:
-  -h, --help  show this help message and exit""" 
+  -h, --help  show this help message and exit"""
 
     print usage % {'prog':sys.argv[0]}
 

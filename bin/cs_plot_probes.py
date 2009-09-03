@@ -30,7 +30,7 @@ from optparse import OptionParser
 def process_cmd_line(argv):
     """
     Processes the passed command line arguments.
-    
+
     Input Argument:
       arg -- This can be either a list of arguments as in
              sys.argv[1:] or a string that is similar to the one

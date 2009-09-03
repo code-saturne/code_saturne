@@ -55,7 +55,7 @@ import cs_config
 def process_cmd_line(argv):
     """
     Processes the passed command line arguments.
-    
+
     Input Argument:
       arg -- This can be either a list of arguments as in
              sys.argv[1:] or a string that is similar to the one
@@ -146,7 +146,7 @@ def launch_manual(reader, m):
             os.filestart(manual)
 
         elif os.name == "posix":
-            
+
             for t in sys_tools:
                 cmd = t + ' ' + manual + ' 2>/dev/null &'
                 try: os.system(cmd)
@@ -174,7 +174,7 @@ def main(argv):
 
     if version:
         print_version()
-        
+
     for m in manuals:
         launch_manual(reader, m)
 

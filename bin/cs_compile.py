@@ -34,7 +34,7 @@ import cs_config
 def process_cmd_line(argv):
     """
     Processes the passed command line arguments.
-    
+
     Input Argument:
       arg -- This can be either a list of arguments as in
              sys.argv[1:] or a string that is similar to the one
@@ -290,7 +290,7 @@ def main(argv):
     """
 
     test_mode, force_link, src_dir, dest_dir, opt_libs, link_syrthes = process_cmd_line(argv)
-        
+
     if test_mode == True:
         dest_dir = None
 

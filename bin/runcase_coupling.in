@@ -134,7 +134,7 @@ export TERM=xterm
 STUDY=STUDYNAME
 CASE=CASENAME
 #
-# Parameters for the 1st instance 
+# Parameters for the 1st instance
 # -------------------------------
 PARAM_1=
 MESH_1=
@@ -160,7 +160,7 @@ PARTITION_LIST_1=
 USER_INPUT_FILES_1=""
 USER_OUTPUT_FILES_1=""
 #
-# Parameters for the 2nd instance 
+# Parameters for the 2nd instance
 # -------------------------------
 PARAM_2=
 MESH_2=

@@ -108,7 +108,7 @@ def make_executable(filename):
     Give executable permission to a given file.
     Equivalent to `chmod +x` shell function.
     """
-    
+
     st   = os.stat(filename)
     mode = st[stat.ST_MODE]
     os.chmod(filename, mode | stat.S_IEXEC)
@@ -125,13 +125,13 @@ def comments(filename, use_gui):
     """
     Comment or uncomment examples in user files.
     """
-    
+
     fd = file(filename, 'r')
     fdt = file(filename+'.tmp','w')
-    
+
     kwd_beg = re.compile('EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START')
     kwd_end = re.compile('EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END')
-    
+
 
     if use_gui:
 
@@ -152,7 +152,7 @@ def comments(filename, use_gui):
         for line in fd:
             if not kwd_beg.search(line) and not kwd_end.search(line):
                 fdt.write(line)
-            
+
     fd.close()
     fdt.close()
 
@@ -172,7 +172,7 @@ class Study:
         """
         Initialize the structure for a study.
         """
-        
+
         self.name = string.upper(name)
         self.cases = []
         for c in cases:
@@ -212,7 +212,7 @@ class Study:
             os.mkdir(casename)
         except:
             sys.exit(1)
-            
+
         os.chdir(casename)
 
         # Loop for dependency on the number of instances of Code_Saturne
@@ -233,12 +233,12 @@ class Study:
             os.mkdir(thch)
             for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE']:
                 shutil.copy(os.path.join(thch_distpath, f), thch)
-        
+
             if self.use_gui:
-        
+
                 csguiname = 'SaturneGUI'
                 csguiscript = os.path.join(datadir, csguiname)
-            
+
                 shutil.copy(csguiscript, data)
                 make_executable(os.path.join(data, csguiname))
 
@@ -248,7 +248,7 @@ class Study:
                 src = 'SRC'
             else:
                 src = 'SRC.%(inst)d' % { 'inst' : i+1 }
-                
+
             os.mkdir(src)
 
             users = os.path.join(src, 'REFERENCE')
@@ -281,7 +281,7 @@ class Study:
                 src_syr = 'SRC_SYR'
             else:
                 src_syr = 'SRC_SYR.%(inst)d' % { 'inst' : i+1 }
-                
+
             os.mkdir(src_syr)
 
             users_syr = os.path.join(src_syr, 'REFERENCE')
@@ -298,7 +298,7 @@ class Study:
 
         scripts = 'SCRIPTS'
         os.mkdir(scripts)
-        
+
         shutil.copy(os.path.join(datadir, 'runcase.help'), scripts)
 
         if self.n_sat == 1:
@@ -330,12 +330,12 @@ class Study:
             line = re.sub(kwd3, casename, line)
             line = re.sub(kwd4, repbase, line)
             fdt.write(line)
-                
+
         fd.close()
         fdt.close()
 
         shutil.move(runcase_tmp, runcase)
-        
+
         make_executable(runcase)
 
 
@@ -343,7 +343,7 @@ class Study:
         """
         Dump the structure of a study.
         """
-        
+
         print "Name  of the study:", self.name
         print "Names of the cases:", self.cases
         print "Use of the GUI:", self.use_gui
@@ -353,7 +353,7 @@ class Study:
             print "Number of SYRTHES instances:", self.n_syr
         print
 
-        
+
 #-------------------------------------------------------------------------------
 # Creation of the study directory
 #-------------------------------------------------------------------------------
@@ -369,7 +369,7 @@ def main(argv):
                            Version %(csvers)s
 =================================================================
     """ % { 'csvers': cs_config.package.version }
-    
+
     myStudy = process_cmd_line(argv)
 
     print welcome

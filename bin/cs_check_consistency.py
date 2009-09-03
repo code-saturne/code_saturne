@@ -35,7 +35,7 @@ from optparse import OptionParser
 def process_cmd_line(argv):
     """
     Processes the passed command line arguments.
-    
+
     Input Argument:
       arg -- This can be either a list of arguments as in
              sys.argv[1:] or a string that is similar to the one
@@ -96,7 +96,7 @@ def check_consistency(param, src_dir, n_procs):
     or 1 if they are incompatible.
     """
 
-    # List of the different available modules in Code_Saturne 
+    # List of the different available modules in Code_Saturne
     modules = ['base', 'lagr', 'rayt', 'cplv', 'fuel', 'c3pt', 'cebu',
                'clwc', 'elec', 'cfbl', 'atmo', 'ctwr']
 
@@ -195,7 +195,7 @@ def main(argv):
     """
 
     n_procs, param, src_dir = process_cmd_line(argv)
-        
+
     ret_val = check_consistency(param, src_dir, n_procs)
     sys.exit(ret_val)
 
