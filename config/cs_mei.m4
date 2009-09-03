@@ -51,6 +51,10 @@ if test "x$mei" = "xtrue" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
+  if test "x$with_mei" != "x" ; then
+    mei_prefix=$with_mei
+  fi
+
   if test "x$with_mei_include" != "x" ; then
     MEI_CPPFLAGS="-I$with_mei_include"
   elif test "x$with_mei" != "x" ; then
@@ -59,10 +63,8 @@ if test "x$mei" = "xtrue" ; then
 
   if test "x$with_mei_lib" != "x" ; then
     MEI_LDFLAGS="-L$with_mei_lib"
-    mei_libdir=$with_mei_lib
   elif test "x$with_mei" != "x" ; then
     MEI_LDFLAGS="-L$with_mei/lib"
-    mei_libdir=$with_mei/lib
   fi
 
   MEI_LIBS="-lmei"
@@ -103,7 +105,7 @@ AC_SUBST(MEI_CPPFLAGS)
 AC_SUBST(MEI_LDFLAGS)
 AC_SUBST(MEI_LIBS)
 
-AC_SUBST(mei_libdir)
+AC_SUBST(mei_prefix)
 
 ])dnl
 

@@ -1,5 +1,4 @@
 #!@cs_python@
-# @configure_input@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
@@ -25,17 +24,17 @@ import os
 import sys
 
 # Trick so that one doesn't have to set the PYTHONPATH variable
-prefix = "@prefix@"
-pythondir = os.path.join(prefix, "lib", "python@PYTHON_VERSION@", "site-packages")
-pkgpythondir = os.path.join(pythondir, "@PACKAGE@")
-sys.path.insert(0, pkgpythondir)
+cspath = '@pkgpythondir@'
 
-# Same trick for the MEI library (supposed to be installed in site-packages/mei)
-meilibdir = "@mei_libdir@"
-pythondir = os.path.join(meilibdir, "python@PYTHON_VERSION@", "site-packages")
-meipythondir = os.path.join(pythondir, "mei")
-if os.path.isdir(meipythondir):
-   sys.path.insert(0, meipythondir)
+# Similar trick for the MEI library
+# (consistent with autoconf/automake behavior for MEI)
+from distutils import sysconfig
+meipath = os.path.join(sysconfig.get_python_lib(0, 0, prefix='@mei_prefix@'),
+                       'mei')
+
+for p in [meipath, cspath]:
+   if os.path.isdir(p) and not p in sys.path:
+      sys.path.insert(0, p)
 
 import cs_config
 

@@ -1,3 +1,14 @@
+* 02/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Fix a potential issue when replacing "@strings@" with autoconf,
+  it is preferred to use Makefile for this purpose. Also, fix the
+  installation path for MEI (mimicking automake process).
+  modified scripts:
+    bin/cs.in
+    config/cs_mei.m4
+    configure.ac
+    Makefile.am
+
 * 02/09/2009 - David Monfort <david.monfort@edf.fr>
   Fix a wrong indirection for variables name array (with multigrid
   algorithm for purely diffusive scalars).

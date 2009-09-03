@@ -66,6 +66,40 @@ DISTCLEANFILES = cs_config.h
 
 ACLOCAL_AMFLAGS = -I config
 
+# Replace paths in Python scripts.
+# The following command and targets are adapted from an example in
+# autoconf. The autoconf documentation recommends changing scripts
+# through Makefile targets rather than through configure, and
+# cites its own automate and autoheader as examples.
+
+edit = sed \
+	-e 's|@prefix[@]|$(prefix)|g' \
+	-e 's|@exec_prefix[@]|$(exec_prefix)|g' \
+	-e 's|@bindir[@]|$(bindir)|g' \
+	-e 's|@includedir[@]|$(includedir)|g' \
+	-e 's|@libdir[@]|$(libdir)|g' \
+	-e 's|@datarootdir[@]|$(datarootdir)|g' \
+	-e 's|@datadir[@]|$(datadir)|g' \
+	-e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
+	-e 's|@docdir[@]|$(docdir)|g' \
+	-e 's|@pdfdir[@]|$(pdfdir)|g' \
+	-e 's|@cs_python[@]|$(cs_python)|g' \
+	-e 's|@pythondir[@]|$(pythondir)|g' \
+	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
+	-e 's|@mei_prefix[@]|$(mei_prefix)|g' \
+	-e 's|@ecs_prefix[@]|$(ecs_prefix)|g' \
+	-e 's|@syrthes_prefix[@]|$(syrthes_prefix)|g' \
+	-e 's|@PYTHON_VERSION[@]|$(PYTHON_VERSION)|g'
+
+bin/cs: Makefile
+	rm -f $@ $@.tmp
+	srcdir=''; \
+	test -f ./$@.in || srcdir=$(srcdir)/; \
+	$(edit) $${srcdir}$@.in >$@.tmp
+	mv $@.tmp $@
+
+bin/cs: $(srcdir)/bin/cs.in 
+
 # Install binary scripts
 
 nodist_bin_SCRIPTS = \
