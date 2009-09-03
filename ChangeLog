@@ -1,4 +1,10 @@
-* 02/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+* 03/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Admin scripts improvement.
+  modified scripts:
+    sbin/backup
+    sbin/rmb
+
+* 03/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Fix a potential issue when replacing "@strings@" with autoconf,
   it is preferred to use Makefile for this purpose. Also, fix the
