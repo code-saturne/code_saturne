@@ -1,3 +1,17 @@
+* 03/09/2009 - David Monfort <david.monfort@edf.fr>
+  Update the gui version number, accordingly with the cs_config
+  information.
+  modified scripts:
+    bin/cs_config.py.in
+    bin/cs_info.py
+    gui/cs_gui.py
+    gui/Makefile.am
+    gui/setup.py
+  modified routines:
+    gui/Base/Common.py
+    gui/Base/MainView.py
+    gui/Pages/BatchRunningModel.py
+
 * 03/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Admin scripts improvement.
   modified scripts:

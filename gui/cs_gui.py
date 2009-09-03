@@ -70,9 +70,11 @@ try:
 except:
     pass
 
-from Base.Common import VERSION, icon_base_path
+from Base.Common import icon_base_path
 from Base.CommandLine import usage, process_cmd_line
 from Base.MainView import MainView
+
+import cs_config
 
 #-------------------------------------------------------------------------------
 # Help messages
@@ -84,7 +86,7 @@ if ('-h' in sys.argv[1:]) or ('--help' in sys.argv[1:]):
 
 
 if ('-v' in sys.argv[1:]) or ('--version' in sys.argv[1:]):
-    print "Graphical users interface of Code_Saturne %s" % VERSION
+    print "Graphical users interface of Code_Saturne %s" % cs_config.package.version
     sys.exit(0)
 
 #-------------------------------------------------------------------------------
@@ -111,7 +113,7 @@ def main(argv):
         splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
         splash.setMask(pixmap.mask()) # this is usefull if the splashscreen is not a regular ractangle...
         splash.show()
-        splash.showMessage('GUI %sStarting...' % VERSION,
+        splash.showMessage('GUI %s starting...' % cs_config.package.version,
                            Qt.AlignHCenter | Qt.AlignVCenter, Qt.black)
         app.processEvents()
         QTimer.singleShot(1500, splash.hide)

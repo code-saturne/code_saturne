@@ -31,5 +31,4 @@ cs_gui.py
 # Install data
 
 nobase_pkgpython_DATA = \
-$(srcdir)/Base/icons/SplashScreen/logocs.png \
-VERSION
+$(srcdir)/Base/icons/SplashScreen/logocs.png

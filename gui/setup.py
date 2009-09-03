@@ -78,7 +78,6 @@ if map(int, string.split(PYQT_VERSION_STR, ".")) < [4, 3, 0]:
 # Distribution or installation
 #-------------------------------------------------------------------------------
 
-from Base.Common import VERSION
 from distutils.core import setup
 from distutils.sysconfig import get_python_lib
 
@@ -95,7 +94,6 @@ for i in range(len(sys.argv)):
         break
 
 setup(name='cs_gui',
-      version=VERSION,
       url='www.code-saturne.org',
       description='Graphical user interface of Code_Saturne CFD code',
       license='GNU GPL',
@@ -105,7 +103,7 @@ setup(name='cs_gui',
       package_dir={ 'ncs' : '.', 'ncs.Base' : 'Base', 'ncs.Pages' : 'Pages'},
       packages=['ncs', 'ncs.Base', 'ncs.Pages'],
       data_files=[(install_dir,
-                  ["AUTHORS", "COPYING", "VERSION"]),
+                  ["AUTHORS", "COPYING"]),
                   (os.path.join(install_dir, "Base", "icons", "SplashScreen"),
                   [os.path.join("Base", "icons", "SplashScreen", "logocs.png")])]
       )

@@ -64,7 +64,7 @@ import XMLengine
 from XMLinitialize import *
 from XMLmodel import *
 from Toolbox import GuiParam, displaySelectedPage
-from Common import VERSION, XML_DOC_VERSION
+from Common import XML_DOC_VERSION
 
 try:
     import Pages
@@ -827,12 +827,14 @@ class MainView(QMainWindow, Ui_MainForm):
          - version
          - contact
         """
-        msg = "Code_Saturne\n"                              +\
-              "version " + VERSION + "\n"                   +\
-              "For information about this application "     +\
-              "please contact:\n\n"                         +\
-              "saturne-support@edf.fr\n\n"                  +\
-              "Please visit our site:\n"                    +\
+        import cs_config
+
+        msg = "Code_Saturne\n"                                +\
+              "version " + cs_config.package.version + "\n\n" +\
+              "For information about this application "       +\
+              "please contact:\n\n"                           +\
+              "saturne-support@edf.fr\n\n"                    +\
+              "Please visit our site:\n"                      +\
               "http://www.code-saturne.org"
         QMessageBox.about(self, 'Code_Saturne Interface', msg)
 

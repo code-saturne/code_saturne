@@ -100,13 +100,7 @@ def print_version():
     Print Code_Saturne version.
     """
 
-    msg = """
- Code_Saturne version: %(solver)s
- Preprocessor version: %(prepro)s
-    """
-
-    print msg % {'solver':cs_config.dirs.prefix,
-                 'prepro':cs_config.dirs.ecs_prefix}
+    print "Code_Saturne version: %s" % cs_config.package.version
 
 
 #-------------------------------------------------------------------------------

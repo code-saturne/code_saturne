@@ -115,7 +115,6 @@ class BatchRunningModel(Model):
         self.dicoValues = {}
         self.dicoValues['SOLCOM'] = '0'
         self.dicoValues['PARAM'] = ""
-        self.dicoValues['VERSION'] = ""
         self.dicoValues['NUMBER_OF_PROCESSORS'] = '1'
         self.dicoValues['PROCESSOR_LIST'] = ""
         self.dicoValues['PARTITION_LIST'] = ""
@@ -436,7 +435,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         '#SOLCOM=6\n'\
         'SOLCOM=999\n'\
         'PARAM=NEW.xml\n'\
-        'VERSION=tutu\n'\
         'NUMBER_OF_PROCESSORS=2\n'\
         'PROCESSOR_LIST=\n'\
         'PARTITION_LIST=\n'\
@@ -596,7 +594,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'USER_INPUT_FILES': 'data',
         'COMMAND_JOIN': '',
         'COMMAND_REORIENT': ' --reorient ',
-        'VERSION': 'tutu',
         'CS_TMP_PREFIX': '/home/toto',
         'COMMAND_SYRTHES': '',
         'PBS_ppn': '2',

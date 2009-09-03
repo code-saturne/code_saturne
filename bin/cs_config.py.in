@@ -47,30 +47,14 @@ class package:
 class dirs:
     prefix = "@prefix@"
     exec_prefix = "@exec_prefix@"
-    if exec_prefix == "${prefix}":
-        exec_prefix = prefix
     bindir = "@bindir@"
-    if bindir == "${exec_prefix}/bin":
-        bindir = os.path.join(exec_prefix, "bin")
     includedir = "@includedir@"
-    if includedir == "${prefix}/include":
-        includedir = os.path.join(prefix, "include")
     libdir = "@libdir@"
-    if libdir == "${exec_prefix}/lib":
-        libdir = os.path.join(exec_prefix, "lib")
     datarootdir = "@datarootdir@"
-    if datarootdir == "${prefix}/share":
-        datarootdir = os.path.join(prefix, "share")
     datadir = "@datadir@"
-    if datadir == "${datarootdir}":
-        datadir = datarootdir
     pkgdatadir = os.path.join(datadir, "@PACKAGE@")
     docdir = "@docdir@"
-    if docdir == "${datarootdir}/doc/${PACKAGE_TARNAME}":
-        docdir = os.path.join(datarootdir, "doc", "@PACKAGE_TARNAME@")
     pdfdir = "@pdfdir@"
-    if pdfdir == "${docdir}":
-        pdfdir = docdir
     ecs_prefix = "@ecs_prefix@"
     ecs_exec_prefix = ecs_prefix
     ecs_bindir = os.path.join(ecs_exec_prefix, "bin")
