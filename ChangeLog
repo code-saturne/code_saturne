@@ -1,3 +1,14 @@
+* 03/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Build improvement in autotools (compiler flags, FVM detection).
+  modified scripts:
+    bin/cs_config.py.in
+    bin/runcase_coupling.in
+    bin/runcase.in
+    config/cs_auto_flags.sh
+    config/cs_fvm.m4
+    config/cs_mpi.m4
+    config/cs_syrthes.m4
+
 * 03/09/2009 - David Monfort <david.monfort@edf.fr>
   Update the gui version number, accordingly with the cs_config
   information.

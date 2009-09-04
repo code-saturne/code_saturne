@@ -349,7 +349,7 @@ cd $RUN
 # not on the default path. This is a peculiar use of make, but allows
 # us to avoid defining the MPI configuration in multiple files.
 
-CS_MPI_PATH=@MPI_BIN@
+CS_MPI_PATH=@mpi_bindir@
 
 # NUMBER_OF_PROCESSORS is determined here if not already set;
 # MPIHOSTS, MPIRUN, MPIBOOT, MPIHALT, and NUMBER_OF_NODES are

@@ -316,7 +316,7 @@ done
 # not on the default path. This is a peculiar use of make, but allows
 # us to avoid defining the MPI configuration in multiple files.
 
-CS_MPI_PATH=@MPI_BIN@
+CS_MPI_PATH=@mpi_bindir@
 
 N_PROCS=0
 I=0

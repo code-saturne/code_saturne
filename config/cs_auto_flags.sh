@@ -583,7 +583,7 @@ if test "$?" = "0" ; then
   test -n "$cs_fc_vers_patch" || cs_fc_vers_patch=0
 
   # Default compiler flags
-  fcflags_default="-x f95-cpp-input"
+  fcflags_default="-x f95-cpp-input -Wall -Wno-unused"
   fcflags_default_dbg="-g -fbounds-check"
   fcflags_default_opt="-O"
   fcflags_default_hot="-O2"
@@ -831,6 +831,9 @@ if test "$cs_ibm_bg_type" = "L" ; then #  For Blue Gene/L
   bg_sys_ldflags="-L/bgl/BlueLight/ppcfloor/bglsys/lib"
   bg_sys_libs="-lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lnss_files -lnss_dns -lresolv"
   bg_trace="/bgl/local/lib/libmpitrace.a"
+  if test ! -f "$bg_trace" ; then
+    bg_trace=""
+  fi
 
   ldflags_default="${ldflags_default} -Wl,-allow-multiple-definition -L/opt/ibmcmp/xlmass/bg/4.3/blrts_lib ${bg_sys_ldflags}"
   libs_default="-lmass -lmassv ${bg_trace} ${bg_sys_libs}"
@@ -841,6 +844,9 @@ elif test "$cs_ibm_bg_type" = "P" ; then #  For Blue Gene/P
   bg_sys_ldflags="-L/bgsys/drivers/ppcfloor/comm/lib -L/bgsys/drivers/ppcfloor/runtime/SPI"
   bg_sys_libs="-lmpich.cnk -ldcmfcoll.cnk -ldcmf.cnk -lSPI.cna -lrt -lpthread"
   bg_trace="/bgsys/local/tools_ibm/lib/libmpitrace.a"
+  if test ! -f "$bg_trace" ; then
+    bg_trace=""
+  fi
 
   ldflags_default="${ldflags_default} -Wl,-allow-multiple-definition -L/opt/ibmcmp/xlmass/bg/4.4/bglib ${bg_sys_ldflags}"
   libs_default="-lmass -lmassv ${bg_trace} ${bg_sys_libs}"

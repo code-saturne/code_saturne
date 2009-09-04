@@ -53,9 +53,9 @@ AC_ARG_WITH(mpi-lib, [AS_HELP_STRING([--with-mpi-lib=PATH], [specify directory f
 
 if test "x$mpi" = "xtrue" ; then
   if test "x$with_mpi_exec" != "x" ; then
-    MPI_BIN="$with_mpi_exec"
+    mpi_bindir="$with_mpi_exec"
   elif test "x$with_mpi" != "x" ; then
-    MPI_BIN="$with_mpi/bin"
+    mpi_bindir="$with_mpi/bin"
   fi
   if test "x$with_mpi_include" != "x" ; then
     MPI_CPPFLAGS="$MPI_CPPFLAGS -I$with_mpi_include"
@@ -64,8 +64,10 @@ if test "x$mpi" = "xtrue" ; then
   fi
   if test "x$with_mpi_lib" != "x" ; then
     MPI_LDFLAGS="$MPI_LDFLAGS -L$with_mpi_lib"
+    mpi_libdir="$with_mpi_lib"
   elif test "x$with_mpi" != "x" ; then
     MPI_LDFLAGS="$MPI_LDFLAGS -L$with_mpi/lib"
+    mpi_libdir="$with_mpi/lib"
   fi
 fi
 
@@ -185,8 +187,15 @@ if test "x$mpi" = "xtrue" -a "x$cs_have_mpi" = "xno" ; then
     # determine the correct mpi startup syntax (especially when multiple
     # librairies are installed on the same machine).
     CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
-    MPI_TYPE=""
-    if test "x$MPI_TYPE" = "x"; then
+    mpi_type=""
+    if test "x$cs_ibm_bg_type" != "x" ; then
+      if test "x$cs_ibm_bg_type" = "L" ; then
+        mpi_type=BGL_MPI
+      elif test "x$cs_ibm_bg_type" = "P" ; then
+        mpi_type=BGP_MPI
+      fi
+    fi
+    if test "x$mpi_type" = "x"; then
       AC_EGREP_CPP([mpich2],
                    [
                     #include <mpi.h>
@@ -194,9 +203,9 @@ if test "x$mpi" = "xtrue" -a "x$cs_have_mpi" = "xno" ; then
                     mpich2
                     #endif
                     ],
-		    [MPI_TYPE=MPICH2])
+		    [mpi_type=MPICH2])
     fi
-    if test "x$MPI_TYPE" = "x"; then
+    if test "x$mpi_type" = "x"; then
       AC_EGREP_CPP([ompi],
                    [
                     #include <mpi.h>
@@ -204,9 +213,9 @@ if test "x$mpi" = "xtrue" -a "x$cs_have_mpi" = "xno" ; then
                     ompi
                     #endif
                     ],
-		    [MPI_TYPE=OpenMPI])
+		    [mpi_type=OpenMPI])
     fi
-    if test "x$MPI_TYPE" = "x"; then
+    if test "x$mpi_type" = "x"; then
       AC_EGREP_CPP([mpibull2],
                    [
                     #include <mpi.h>
@@ -214,9 +223,9 @@ if test "x$mpi" = "xtrue" -a "x$cs_have_mpi" = "xno" ; then
                     mpibull2
                     #endif
                     ],
-		    [MPI_TYPE=MPIBULL2])
+		    [mpi_type=MPIBULL2])
     fi
-    if test "x$MPI_TYPE" = "x"; then
+    if test "x$mpi_type" = "x"; then
       AC_EGREP_CPP([lam_mpi],
                    [
                     #include <mpi.h>
@@ -224,9 +233,9 @@ if test "x$mpi" = "xtrue" -a "x$cs_have_mpi" = "xno" ; then
                     lam_mpi
                     #endif
                     ],
-		    [MPI_TYPE=LAM_MPI])
+		    [mpi_type=LAM_MPI])
     fi
-    if test "x$MPI_TYPE" = "x"; then
+    if test "x$mpi_type" = "x"; then
       AC_EGREP_CPP([hp_mpi],
                    [
                     #include <mpi.h>
@@ -234,7 +243,7 @@ if test "x$mpi" = "xtrue" -a "x$cs_have_mpi" = "xno" ; then
                     hp_mpi
                     #endif
                     ],
-		    [MPI_TYPE=HP_MPI])
+		    [mpi_type=HP_MPI])
     fi
   fi
 
@@ -253,8 +262,9 @@ AM_CONDITIONAL(HAVE_MPI, test x$cs_have_mpi = xyes)
 AC_SUBST(MPI_CPPFLAGS)
 AC_SUBST(MPI_LDFLAGS)
 AC_SUBST(MPI_LIBS)
-AC_SUBST(MPI_BIN)
-AC_SUBST(MPI_TYPE)
+AC_SUBST(mpi_type)
+AC_SUBST(mpi_bindir)
+AC_SUBST(mpi_libdir)
 
 ])dnl
 

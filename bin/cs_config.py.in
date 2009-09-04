@@ -47,14 +47,30 @@ class package:
 class dirs:
     prefix = "@prefix@"
     exec_prefix = "@exec_prefix@"
+    if exec_prefix == "${prefix}":
+        exec_prefix = prefix
     bindir = "@bindir@"
+    if bindir == "${exec_prefix}/bin":
+        bindir = os.path.join(exec_prefix, "bin")
     includedir = "@includedir@"
+    if includedir == "${prefix}/include":
+        includedir = os.path.join(prefix, "include")
     libdir = "@libdir@"
+    if libdir == "${exec_prefix}/lib":
+        libdir = os.path.join(exec_prefix, "lib")
     datarootdir = "@datarootdir@"
+    if datarootdir == "${prefix}/share":
+        datarootdir = os.path.join(prefix, "share")
     datadir = "@datadir@"
+    if datadir == "${datarootdir}":
+        datadir = datarootdir
     pkgdatadir = os.path.join(datadir, "@PACKAGE@")
     docdir = "@docdir@"
+    if docdir == "${datarootdir}/doc/${PACKAGE_TARNAME}":
+        docdir = os.path.join(datarootdir, "doc", "@PACKAGE_TARNAME@")
     pdfdir = "@pdfdir@"
+    if pdfdir == "${docdir}":
+        pdfdir = docdir
     ecs_prefix = "@ecs_prefix@"
     ecs_exec_prefix = ecs_prefix
     ecs_bindir = os.path.join(ecs_exec_prefix, "bin")
@@ -64,8 +80,9 @@ class dirs:
 #--------------------------
 
 class mpi_lib:
-    type = "@MPI_TYPE@"
-    bindir = "@MPI_BIN@"
+    type = "@mpi_type@"
+    bindir = "@mpi_bindir@"
+    libdir = "@mpi_libdir@"
 
 # Build tools, option, and libraries
 #-----------------------------------
@@ -115,6 +132,7 @@ Auxiliary information:
 MPI library information:
   mpi_lib.type = %(mpi_type)s
   mpi_lib.bindir = %(mpi_bindir)s
+  mpi_lib.libdir = %(mpi_libdir)s
 
 Compilers and associated options:
   cc = %(cc)s
@@ -134,6 +152,7 @@ Compilers and associated options:
             'pkgdata':dirs.pkgdatadir, 'doc':dirs.docdir, 'pdf':dirs.pdfdir,
             'ecs':dirs.ecs_prefix, 'syrthes':dirs.syrthes_prefix,
             'mpi_type':mpi_lib.type, 'mpi_bindir':mpi_lib.bindir,
+            'mpi_libdir':mpi_libdir,
             'cc':build.cc, 'fc':build.fc,
             'cppflags':build.cppflags, 'cflags':build.cflags,
             'fcflags':build.fcflags, 'ldflags':build.ldflags,
