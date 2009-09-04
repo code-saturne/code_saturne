@@ -117,7 +117,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         self.modelDirection = ComboModel(self.comboBoxDirection, 3, 1)
         self.modelDirection.addItem(self.tr("normal direction to the inlet"), 'normal')
-        self.modelDirection.addItem(self.tr("specified coordiates"), 'coordinates')
+        self.modelDirection.addItem(self.tr("specified coordinates"), 'coordinates')
         self.modelDirection.addItem(self.tr("user profile"), 'formula')
 
         # Validators
