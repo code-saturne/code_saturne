@@ -6009,7 +6009,7 @@ endif
 '@  For compressible and SYRTHES coupling                     ',/,&
 '@    the coupled scalar must be energy.                      ',/,&
 '@  here it is scalar                      ',I10               ,/,&
-'@    which is not the energy  here since                        '&
+'@    which is not the energy  here since                     ',/,&
 '@                    ISCSTH(',I10   ,') = ',I10               ,/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
