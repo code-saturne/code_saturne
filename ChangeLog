@@ -1,4 +1,9 @@
 * 09/09/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix an issue in the mesh cleaning stage of the joining algorithm.
+  modified routine:
+    src/base/cs_join_mesh.c
+
+* 09/09/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix a memory leak in case of conforming joining.
   modified routine:
     src/base/cs_join.c

@@ -326,16 +326,14 @@ _remove_empty_edges(cs_join_mesh_t  *mesh,
     cs_int_t  s = mesh->face_vtx_idx[i] - 1;
     cs_int_t  e = mesh->face_vtx_idx[i+1] - 1;
 
-    mesh->face_vtx_lst[shift++] = mesh->face_vtx_lst[s];
+    if (mesh->face_vtx_lst[e-1] != mesh->face_vtx_lst[s])
+      mesh->face_vtx_lst[shift++] = mesh->face_vtx_lst[s];
 
     /* Loop on face vertices */
 
-    for (j = s + 1; j < e - 1; j++)
+    for (j = s; j < e - 1; j++)
       if (mesh->face_vtx_lst[j] != mesh->face_vtx_lst[j+1])
-        mesh->face_vtx_lst[shift++] = mesh->face_vtx_lst[j];
-
-    if (mesh->face_vtx_lst[e-1] != mesh->face_vtx_lst[s])
-      mesh->face_vtx_lst[shift++] = mesh->face_vtx_lst[e-1];
+        mesh->face_vtx_lst[shift++] = mesh->face_vtx_lst[j+1];
 
     new_face_vtx_idx[i+1] = shift + 1;
 
@@ -523,6 +521,7 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
 
   } /* End of loop on faces */
 
+  n_g_modified_faces = n_modified_faces;
   fvm_parall_counter(&n_g_modified_faces, 1);
 
   bft_printf("  Degenerate connectivity for %lu faces.\n"
