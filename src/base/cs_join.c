@@ -520,7 +520,7 @@ _extract_mesh(const char              *name,
                           vtx_data);
 
     if (param.verbosity > 1)
-      bft_printf(_("  Global number of selected vertices: %11d\n\n"),
+      bft_printf(_("  Global number of selected vertices: %9u\n\n"),
                  selection->n_g_vertices);
 
     fvm_io_num_destroy(select_vtx_io_num);
@@ -529,7 +529,7 @@ _extract_mesh(const char              *name,
 
 #endif /* defined(HAVE_MPI) */
 
-  /* Define the join mesh strcuture from the selected faces and the
+  /* Define the join mesh structure from the selected faces and the
      related vtx_data on selected vertices */
 
   join_mesh = cs_join_mesh_create_from_extract(name,
@@ -896,13 +896,20 @@ _intersect_edges(cs_join_param_t          param,
   }
 #endif
 
-  if (join_type == CS_JOIN_TYPE_CONFORM)
-    bft_printf(_("\n  Joining operation is conforming.\n"));
-  else if (join_type == CS_JOIN_TYPE_NO_CONFORM)
-    bft_printf(_("\n  Joining operation is non-conforming.\n"));
-  bft_printf_flush();
+  if (join_type == CS_JOIN_TYPE_CONFORM) {
 
-  if (join_type == CS_JOIN_TYPE_NO_CONFORM) {
+    bft_printf(_("\n  Joining operation is conform.\n"));
+    bft_printf_flush();
+
+    inter_set = cs_join_inter_set_destroy(inter_set);
+
+  }
+  else {
+
+    assert(join_type == CS_JOIN_TYPE_NO_CONFORM);
+
+    bft_printf(_("\n  Joining operation is non-conform.\n"));
+    bft_printf_flush();
 
     /* Creation of new vertices. Update list of equivalent vertices.
        Associate to each intersection a vertex (old or created) */
@@ -1132,7 +1139,7 @@ _merge_vertices(cs_join_param_t           param,
  *  work_face_normal     <--  normal based on the original face definition
  *  rank_face_gnum_index <--  index on face global numering to determine the
  *                            related rank
- *  p_work_join_mesh    <->  pointer to a cs_join_mesh_t structure
+ *  p_work_join_mesh     <->  pointer to a cs_join_mesh_t structure
  *  local_join_mesh      <--  pointer to a cs_join_mesh_t structure
  *  p_mesh               <->  pointer to cs_mesh_t struct.
  *---------------------------------------------------------------------------*/
@@ -1669,7 +1676,6 @@ cs_join_all(void)
       fclose(dbg_file);
     }
 
-    cs_debug_glob_mesh_dump("FinalGlobalVertices", mesh);
 #endif
 
 #if defined(HAVE_MPI)   /* Synchronization */

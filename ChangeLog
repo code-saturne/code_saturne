@@ -1,4 +1,9 @@
 * 09/09/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix a memory leak in case of conforming joining.
+  modified routine:
+    src/base/cs_join.c
+
+* 09/09/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix a bug in "single element" building.
   modified routine:
     src/base/cs_join_util.c
