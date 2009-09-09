@@ -442,7 +442,7 @@ _add_single_vertices(fvm_interface_set_t    *interfaces,
                      cs_join_sync_t         *single)
 {
   int  request_count, distant_rank, n_interfaces, total_size;
-  int  i, j, id, ii, shift, last_found_rank;
+  int  id, ii, last_found_rank;
 
   int  count_size = 0;
   fvm_lnum_t  n_entities = 0;
@@ -663,7 +663,7 @@ _add_coupled_vertices(fvm_interface_set_t    *interfaces,
                       int                    *related_ranks,
                       cs_join_sync_t         *coupled)
 {
-  int  i, j, id, ii, shift;
+  int  id, ii;
   int  request_count, distant_rank, n_interfaces, total_size, last_found_rank;
 
   int  count_size = 0;
@@ -990,6 +990,7 @@ _add_s_edge(cs_int_t      vertex_tag[],
  *  b_f2v_lst    -->  border "face -> vertex" connect. list
  *  i_f2v_idx    -->  interior "face -> vertex" connect. index
  *  i_f2v_lst    -->  interior "face -> vertex" connect. list
+ *  i_face_cells -->  interior face -> cells connect.
  *  s_edges      <->  pointer to the single edges structure to define
  *---------------------------------------------------------------------------*/
 
@@ -1002,6 +1003,7 @@ _add_single_edges(fvm_interface_set_t   *ifs,
                   cs_int_t               b_f2v_lst[],
                   cs_int_t               i_f2v_idx[],
                   cs_int_t               i_f2v_lst[],
+                  cs_int_t               i_face_cells[],
                   cs_join_sync_t        *s_edges)
 {
   cs_int_t  i, j, fid, save, shift, s, e, n_sel_edges;
@@ -1010,7 +1012,7 @@ _add_single_edges(fvm_interface_set_t   *ifs,
   int  *tmp_edges = NULL;
   cs_int_t  *count = NULL, *sel_v2v_idx = NULL, *sel_v2v_lst = NULL;
 
-  /* Build selected edges */
+  /* Build a vertex -> vertex connectivity for the selected border faces  */
 
   BFT_MALLOC(sel_v2v_idx, n_vertices + 1, cs_int_t);
 
@@ -1104,27 +1106,32 @@ _add_single_edges(fvm_interface_set_t   *ifs,
   for (i = 0; i < selection->n_i_adj_faces; i++) {
 
     fid = selection->i_adj_faces[i] - 1;
-    s = i_f2v_idx[fid] - 1;
-    e = i_f2v_idx[fid+1] - 1;
 
-    for (j = s; j < e - 1; j++)
+    if (i_face_cells[2*fid] == 0 || i_face_cells[2*fid+1] == 0) {
+
+      s = i_f2v_idx[fid] - 1;
+      e = i_f2v_idx[fid+1] - 1;
+
+      for (j = s; j < e - 1; j++)
+        _add_s_edge(vertex_tag,
+                    i_f2v_lst[j]-1,
+                    i_f2v_lst[j+1]-1,
+                    sel_v2v_idx,
+                    sel_v2v_lst,
+                    &tmp_size,
+                    &max_size,
+                    &tmp_edges);
+
       _add_s_edge(vertex_tag,
-                  i_f2v_lst[j]-1,
-                  i_f2v_lst[j+1]-1,
+                  i_f2v_lst[e-1]-1,
+                  i_f2v_lst[s]-1,
                   sel_v2v_idx,
                   sel_v2v_lst,
                   &tmp_size,
                   &max_size,
                   &tmp_edges);
 
-    _add_s_edge(vertex_tag,
-                i_f2v_lst[e-1]-1,
-                i_f2v_lst[s]-1,
-                sel_v2v_idx,
-                sel_v2v_lst,
-                &tmp_size,
-                &max_size,
-                &tmp_edges);
+    } /* Face on a parallel frontier */
 
   }
 
@@ -1155,11 +1162,12 @@ _add_single_edges(fvm_interface_set_t   *ifs,
       s_edges->index[i] = 0;
       s_edges->ranks[i] = -1;
     }
+    s_edges->index[n_interfaces] = 0;
 
     for (i = 0; i < n_interfaces; i++) {
 
       interface = fvm_interface_set_get(ifs, i);
-      distant_rank   = fvm_interface_rank(interface);
+      distant_rank = fvm_interface_rank(interface);
       n_entities = fvm_interface_size(interface);
       local_num = fvm_interface_get_local_num(interface);
 
@@ -1195,7 +1203,7 @@ _add_single_edges(fvm_interface_set_t   *ifs,
       if (edge_tag[j] == 0)
         bft_error(__FILE__, __LINE__, 0,
                   _(" Can't find the distant rank in the interface set"
-                    " for the current edge [%d, %d] (local num.\n"),
+                    " for the current edge [%d, %d] (local num.)\n"),
                   s_edges->array[2*j], s_edges->array[2*j+1]);
 
     /* Memory management */
@@ -1488,6 +1496,7 @@ _add_coupled_edges(fvm_interface_set_t   *ifs,
  *  i_f2v_lst       -->  interior "face -> vertex" connect. list
  *  n_vertices      -->  number of vertices in the parent mesh
  *  v_gnum          -->  global vertex numbering (NULL if n_ranks = 1)
+ *  i_face_cells    -->  interior face -> cells connect.
  *  join_select     <->  pointer to a fvm_join_selection_t structure
  *---------------------------------------------------------------------------*/
 
@@ -1498,6 +1507,7 @@ _get_single_elements(cs_int_t            b_f2v_idx[],
                      cs_int_t            i_f2v_lst[],
                      cs_int_t            n_vertices,
                      fvm_gnum_t          v_gnum[],
+                     cs_int_t            i_face_cells[],
                      cs_join_select_t   *selection)
 {
   cs_int_t  i;
@@ -1569,6 +1579,7 @@ _get_single_elements(cs_int_t            b_f2v_idx[],
                     b_f2v_lst,
                     i_f2v_idx,
                     i_f2v_lst,
+                    i_face_cells,
                     selection->s_edges);
 
   MPI_Allreduce(&(selection->s_edges->n_elts), &n_g_elts, 1, FVM_MPI_GNUM,
@@ -2008,7 +2019,7 @@ cs_join_param_define(int     join_id,
    param.edge_equiv_tol_coef = etf;
 
   /* Parameter to switch on/off the influence of adjacent faces in the
-     computation of tolerance */
+     computation of tolerance (Not a user-defined parameter) */
 
    param.include_adj_faces = true;  /* Default value: true */
 
@@ -2180,6 +2191,15 @@ cs_join_select_create(const char  *selection_criteria,
 
   assert(selection->n_g_faces == selection->compact_rank_index[n_ranks]);
 
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Selected faces for the joining operation:\n"));
+  for (i = 0; i < selection->n_faces; i++)
+    bft_printf(" %9d | %9d | %10u | %10u\n",
+               i, selection->faces[i], selection->compact_face_gnum[i],
+               selection->cell_gnum[i]);
+  bft_printf("\n");
+#endif
+
   /* Extract selected vertices from the selected border faces */
 
   _extract_vertices(selection->n_faces,
@@ -2189,6 +2209,13 @@ cs_join_select_create(const char  *selection_criteria,
                     mesh->n_vertices,
                     &(selection->n_vertices),
                     &(selection->vertices));
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Select vertices for the joining operation:\n"));
+  for (i = 0; i < selection->n_vertices; i++)
+    bft_printf(" %9d | %9d\n", i, selection->vertices[i]);
+  bft_printf("\n");
+#endif
 
   /* Extract list of border faces contiguous to the selected vertices  */
 
@@ -2208,6 +2235,13 @@ cs_join_select_create(const char  *selection_criteria,
                    selection->n_faces,
                    selection->faces);
 
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Contiguous border faces for the joining operation:\n"));
+  for (i = 0; i < selection->n_b_adj_faces; i++)
+    bft_printf(" %9d | %9d\n", i, selection->b_adj_faces[i]);
+  bft_printf("\n");
+#endif
+
   /* Extract list of interior faces contiguous to the selected vertices */
 
   _extract_contig_faces(mesh->n_vertices,
@@ -2218,6 +2252,13 @@ cs_join_select_create(const char  *selection_criteria,
                         mesh->i_face_vtx_lst,
                         &(selection->n_i_adj_faces),
                         &(selection->i_adj_faces));
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Contiguous interior faces for the joining operation:\n"));
+  for (i = 0; i < selection->n_i_adj_faces; i++)
+    bft_printf(" %9d | %9d\n", i, selection->i_adj_faces[i]);
+  bft_printf("\n");
+#endif
 
    /* Check if there is no forgotten vertex in the selection.
       Otherwise define structures to enable future synchronization.
@@ -2231,6 +2272,7 @@ cs_join_select_create(const char  *selection_criteria,
                          mesh->i_face_vtx_lst,
                          mesh->n_vertices,
                          mesh->global_vtx_num,
+                         mesh->i_face_cells,
                          selection);
 #endif
 
@@ -2243,49 +2285,17 @@ cs_join_select_create(const char  *selection_criteria,
       bft_printf(" %5d | %11u\n", i, selection->compact_rank_index[i]);
     bft_printf("\n");
 
-    if (verbosity > 2) {
-
-      if (selection->do_single_sync == true) {
-        bft_printf("\n Information about single/coupled elements:\n");
-        bft_printf("   Number of single vertices : %6d with %3d related ranks\n",
-                   selection->s_vertices->n_elts, selection->s_vertices->n_ranks);
-        bft_printf("   Number of coupled vertices: %6d with %3d related ranks\n",
-                   selection->c_vertices->n_elts, selection->c_vertices->n_ranks);
-        bft_printf("   Number of single edges    : %6d with %3d related ranks\n",
-                   selection->s_edges->n_elts, selection->s_edges->n_ranks);
-        bft_printf("   Number of coupled edges   : %6d with %3d related ranks\n",
-                   selection->c_edges->n_elts, selection->c_edges->n_ranks);
-      }
-
-      bft_printf(_("\n  Selected faces for the joining operation:\n"));
-      for (i = 0; i < selection->n_faces; i++)
-        bft_printf(" %9d | %9d | %10u | %10u\n",
-                   i, selection->faces[i], selection->compact_face_gnum[i],
-                   selection->cell_gnum[i]);
-      bft_printf("\n");
-
-      bft_printf(_("\n  Select vertices for the joining operation:\n"));
-      for (i = 0; i < selection->n_vertices; i++)
-        bft_printf(" %9d | %9d\n", i, selection->vertices[i]);
-      bft_printf("\n");
-
-      if (verbosity > 3) {
-
-        bft_printf
-          (_("\n  Contiguous border faces for the joining operation:\n"));
-        for (i = 0; i < selection->n_b_adj_faces; i++)
-          bft_printf(" %9d | %9d\n", i, selection->b_adj_faces[i]);
-        bft_printf("\n");
-
-        bft_printf
-          (_("\n  Contiguous interior faces for the joining operation:\n"));
-        for (i = 0; i < selection->n_i_adj_faces; i++)
-          bft_printf(" %9d | %9d\n", i, selection->i_adj_faces[i]);
-        bft_printf("\n");
-
-      } /* End if verbosity > 3 */
-
-    } /* End if verbosity > 2 */
+    if (selection->do_single_sync == true) {
+      bft_printf("\n Information about single/coupled elements:\n");
+      bft_printf("   Number of single vertices : %6d with %3d related ranks\n",
+                 selection->s_vertices->n_elts, selection->s_vertices->n_ranks);
+      bft_printf("   Number of coupled vertices: %6d with %3d related ranks\n",
+                 selection->c_vertices->n_elts, selection->c_vertices->n_ranks);
+      bft_printf("   Number of single edges    : %6d with %3d related ranks\n",
+                 selection->s_edges->n_elts, selection->s_edges->n_ranks);
+      bft_printf("   Number of coupled edges   : %6d with %3d related ranks\n",
+                 selection->c_edges->n_elts, selection->c_edges->n_ranks);
+    }
 
     bft_printf_flush();
 
