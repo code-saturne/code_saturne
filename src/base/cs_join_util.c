@@ -374,7 +374,6 @@ _extract_contig_faces(cs_int_t         n_vertices,
   *contig_faces = _contig_faces;
 }
 
-#if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------
  * Initialize a structure for the synchronization of single
  * elements
@@ -422,6 +421,7 @@ _destroy_join_sync(cs_join_sync_t   **sync)
   *sync = _sync;
 }
 
+#if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------
  * Define a structure used for synchronizing "single" vertices.
  * Use a fvm_interface_t structure to help the build.
