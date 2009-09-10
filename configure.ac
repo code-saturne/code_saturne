@@ -535,7 +535,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  doc/theory/Makefile doc/theory/graphics/Makefile
                  doc/tutorial/Makefile doc/tutorial/graphics/Makefile
                  doc/user/Makefile doc/user/graphics/Makefile
-                 bin/cs_config.py
+                 bin/cs_config_build.py
                  bin/runcase bin/runcase_coupling bin/SaturneGUI])
 
 #------------------------------------------------------------------------------

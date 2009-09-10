@@ -1,4 +1,5 @@
 #!@cs_python@
+# Main scrip of Code_Saturne, generated from cs.in by make.
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
@@ -35,8 +36,6 @@ meipath = os.path.join(sysconfig.get_python_lib(0, 0, prefix='@mei_prefix@'),
 for p in [meipath, cspath]:
    if os.path.isdir(p) and not p in sys.path:
       sys.path.insert(0, p)
-
-import cs_config
 
 #-------------------------------------------------------------------------------
 

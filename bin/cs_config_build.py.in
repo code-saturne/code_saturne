@@ -1,0 +1,117 @@
+#!@cs_python@
+# @configure_input@
+#============================================================================
+#
+#     This file is part of the Code_Saturne Kernel, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 2009 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne Kernel is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne Kernel is distributed in the hope that it will be
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#============================================================================
+
+#-------------------------------------------------------------------------------
+
+@cs_config_comments@
+
+#-------------------------------------------------------------------------------
+
+# Build tools, option, and libraries
+#-----------------------------------
+
+class build:
+    cc="@CC@"
+    fc="@FC@"
+    cppflags="@CPPFLAGS@ @FVM_CPPFLAGS@ @MEI_CPPFLAGS@ @BFT_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@"
+    cflags="@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@"
+    fcflags="@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@"
+    ldflags="@FVM_LDFLAGS@ @MEI_LDFLAGS@ @BFT_LDFLAGS@ @MPI_LDFLAGS@ @LIBXML2_LDFLAGS@ @BLAS_LDFLAGS@ @LDFLAGS@"
+    libs="@FVM_LIBS@ @MEI_LIBS@ @BFT_LIBS@ @MPI_LIBS@ @LIBXML2_LIBS@ @BLAS_LIBS@ @FCLIBS@ @LIBS@"
+    rpath="@LDRPATH@"
+
+class build_syrthes:
+    cc="@SYRTHES_CC@"
+    fc="@SYRTHES_FC@"
+    cppflags="@SYRTHES_CPPFLAGS@"
+    cflags="@SYRTHES_CFLAGS@"
+    fcflags="@SYRTHES_FCFLAGS@"
+    ldflags="@SYRTHES_LDFLAGS@"
+    libs="@SYRTHES_LIBS@ @SYRTHES_FCLIBS@"
+
+#-------------------------------------------------------------------------------
+
+def get_config():
+    """
+    Get the configuration information.
+    """
+    msg = """\
+Compilers and associated options:
+  cc = %(cc)s
+  fc = %(fc)s
+  cppflags = %(cppflags)s
+  cflags = %(cflags)s
+  fcflags = %(fcflags)s
+  ldflags = %(ldflags)s
+  libs = %(libs)s
+  rpath = %(rpath)s\
+"""
+
+    return msg \
+        % { 'cc':build.cc, 'fc':build.fc,
+            'cppflags':build.cppflags, 'cflags':build.cflags,
+            'fcflags':build.fcflags, 'ldflags':build.ldflags,
+            'libs':build.libs, 'rpath':build.rpath }
+
+#-------------------------------------------------------------------------------
+
+def get_config_syrthes():
+    """
+    Get the configuration information.
+    """
+    msg = """\
+Compilers and associated options for SYRTHES build:
+  cc = %(cc)s
+  fc = %(fc)s
+  cppflags = %(cppflags)s
+  cflags = %(cflags)s
+  fcflags = %(fcflags)s
+  ldflags = %(ldflags)s
+  libs = %(libs)s\
+"""
+
+    return msg \
+        % { 'cc':build_syrthes.cc, 'fc':build_syrthes.fc,
+            'cppflags':build_syrthes.cppflags, 'cflags':build_syrthes.cflags,
+            'fcflags':build_syrthes.fcflags, 'ldflags':build_syrthes.ldflags,
+            'libs':build_syrthes.libs }
+
+#-------------------------------------------------------------------------------
+
+def main(argv):
+    """
+    Main configuration info function.
+    """
+    import sys
+    sys.stdout.write("%(b)s\n\n%(s)s\n" %
+                     {'b':get_config(),
+                      's':get_config_syrthes()})
+
+if __name__ == '__main__':
+    import sys
+    main(sys.argv[1:])

@@ -50,10 +50,12 @@ sbin/rmb \
 $(ac_aux_dir)/cs_auto_flags.sh \
 $(ac_aux_dir)/cs_bft.m4 \
 $(ac_aux_dir)/cs_blas.m4 \
+$(ac_aux_dir)/cs_config_info.m4 \
 $(ac_aux_dir)/cs_fvm.m4 \
 $(ac_aux_dir)/cs_libxml2.m4 \
+$(ac_aux_dir)/cs_mei.m4 \
 $(ac_aux_dir)/cs_mpi.m4 \
-$(ac_aux_dir)/cs_tools.m4
+$(ac_aux_dir)/cs_syrthes.m4
 
 # One adds two whole sub-directories and get rid of the .svn
 # directories with a dist-hook. The reason for this trick is that
@@ -89,9 +91,16 @@ edit = sed \
 	-e 's|@mei_prefix[@]|$(mei_prefix)|g' \
 	-e 's|@ecs_prefix[@]|$(ecs_prefix)|g' \
 	-e 's|@syrthes_prefix[@]|$(syrthes_prefix)|g' \
-	-e 's|@PYTHON_VERSION[@]|$(PYTHON_VERSION)|g'
+	-e 's|@mpi_type[@]|$(mpi_type)|g' \
+	-e 's|@mpi_bindir[@]|$(mpi_bindir)|g' \
+	-e 's|@mpi_libdir[@]|$(mpi_libdir)|g' \
+	-e 's|@PYTHON_VERSION[@]|$(PYTHON_VERSION)|g' \
+	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
+	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g'
 
-bin/cs: Makefile
+edit_scripts = bin/cs bin/cs_config.py
+
+$(edit_scripts): Makefile
 	rm -f $@ $@.tmp
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
@@ -99,6 +108,7 @@ bin/cs: Makefile
 	mv $@.tmp $@
 
 bin/cs: $(srcdir)/bin/cs.in 
+bin/cs_config.py: bin/cs_config.py.in 
 
 # Install binary scripts
 
@@ -107,11 +117,14 @@ bin/cs
 
 # Install Python library
 
+nodist_pkgpython_PYTHON = \
+bin/cs_config.py \
+bin/cs_config_build.py
+
 dist_pkgpython_PYTHON = \
 bin/cs_check_consistency.py \
 bin/cs_check_mesh.py \
 bin/cs_compile.py \
-bin/cs_config.py \
 bin/cs_create.py \
 bin/cs_info.py \
 bin/cs_plot_probes.py

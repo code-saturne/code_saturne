@@ -27,7 +27,8 @@ import tempfile
 
 from optparse import OptionParser
 
-import cs_config
+from cs_config import dirs
+from cs_config_build import build, build_syrthes
 
 #-------------------------------------------------------------------------------
 
@@ -38,8 +39,8 @@ def process_cmd_line(argv):
     Input Argument:
       arg -- This can be either a list of arguments as in
              sys.argv[1:] or a string that is similar to the one
-             passed on the command line.  If it is a string the
-             string is split to create a list of arguments.
+             passed on the command line.  If it is a string,
+             it is split to create a list of arguments.
     """
 
     parser = OptionParser(usage="usage: %prog [options]")
@@ -73,6 +74,7 @@ def process_cmd_line(argv):
     parser.set_defaults(src_dir=os.getcwd())
     parser.set_defaults(dest_dir=os.getcwd())
     parser.set_defaults(opt_libs="")
+    parser.set_defaults(log_name=None)
     parser.set_defaults(link_syrthes=False)
 
     (options, args) = parser.parse_args(argv)
@@ -85,17 +87,18 @@ def process_cmd_line(argv):
     src_dir = os.path.expandvars(src_dir)
     src_dir = os.path.abspath(src_dir)
     if not os.path.isdir(src_dir):
-        print "Error: %s is not a directory" % src_dir
+        sys.stderr.write('Error: ' + src_dir + ' is not a directory')
         sys.exit(1)
 
     dest_dir = os.path.expanduser(options.dest_dir)
     dest_dir = os.path.expandvars(dest_dir)
     dest_dir = os.path.abspath(dest_dir)
     if not os.path.isdir(dest_dir):
-        print "Error: %s is not a directory" % dest_dir
+        sys.stderr.write('Error: ' + dest_dir + ' is not a directory')
         sys.exit(1)
 
-    return options.test_mode, options.force_link, src_dir, dest_dir, options.opt_libs, options.link_syrthes
+    return options.test_mode, options.force_link, \
+           src_dir, dest_dir, options.opt_libs, options.link_syrthes
 
 #-------------------------------------------------------------------------------
 
@@ -111,7 +114,7 @@ def so_dirs_path(flags):
     for arg in args:
         if arg[0:2] == '-L' and arg[0:6] != '-L/usr' and arg[0:6] != '-L/lib':
             if first == True:
-                retval = " " + cs_config.build.rpath + ":" + arg[2:]
+                retval = " " + build.rpath + ":" + arg[2:]
                 first = False
             else:
                 retval = retval + ":" + arg[2:]
@@ -161,38 +164,39 @@ def compile_and_link(srcdir, destdir, optlibs, force_link):
     f_files = fnmatch.filter(dir_files, '*.[fF]90')
 
     for f in c_files:
-        cmd = cs_config.build.cc
+        cmd = build.cc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
-        cmd = cmd + " -I" + os.path.join(cs_config.dirs.prefix, "include")
+        cmd = cmd + " -I" + os.path.join(dirs.prefix, "include")
         cmd = cmd + " -DHAVE_CONFIG_H"
-        cmd = cmd + " " + cs_config.build.cppflags
-        cmd = cmd + " " + cs_config.build.cflags
+        cmd = cmd + " " + build.cppflags
+        cmd = cmd + " " + build.cflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd) != 0:
             retval = 1
 
     for f in f_files:
-        cmd = cs_config.build.fc
+        cmd = build.fc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
-        cmd = cmd + " -I" + os.path.join(cs_config.dirs.prefix, "include")
-        cmd = cmd + " " + cs_config.build.fcflags
+        cmd = cmd + " -I" + os.path.join(dirs.prefix, "include")
+        cmd = cmd + " " + build.fcflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd) != 0:
             retval = 1
 
     if retval == 0 and (force_link or (len(c_files) + len(f_files)) > 0):
-        cmd = cs_config.build.cc
+        cmd = build.cc
         cmd = cmd + " -o " + exec_name
         if (len(c_files) + len(f_files)) > 0:
           cmd = cmd + " *.o"
-        cmd = cmd + " -L" + os.path.join(cs_config.dirs.prefix, "lib")
+        cmd = cmd + " -L" + os.path.join(dirs.prefix, "lib")
         cmd = cmd + " -lsaturne"
-        if len(optlibs) > 0:
-            cmd = cmd + " " + optlibs
-        cmd = cmd + " " + cs_config.build.ldflags + " " + cs_config.build.libs
-        if cs_config.build.rpath != "":
+        if optlibs != None:
+            if len(optlibs) > 0:
+                cmd = cmd + " " + optlibs
+        cmd = cmd + " " + build.ldflags + " " + build.libs
+        if build.rpath != "":
             cmd = cmd + " " + so_dirs_path(cmd)
         if run_command(cmd) != 0:
             retval = 1
@@ -229,43 +233,46 @@ def compile_and_link_syrthes(srcdir, destdir):
 
     # Find files to compile in source path
 
-    dir_files = os.listdir(srcdir)
+    if srcdir != None:
+        dir_files = os.listdir(srcdir)
+    else:
+        dir_files = []
 
     c_files = fnmatch.filter(dir_files, '*.c')
     h_files = fnmatch.filter(dir_files, '*.h')
     f_files = fnmatch.filter(dir_files, '*.[fF]')
 
     for f in c_files:
-        cmd = cs_config.build_syrthes.cc
+        cmd = build_syrthes.cc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
-        cmd = cmd + " " + cs_config.build_syrthes.cppflags
-        cmd = cmd + " " + cs_config.build_syrthes.cflags
+        cmd = cmd + " " + build_syrthes.cppflags
+        cmd = cmd + " " + build_syrthes.cflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd) != 0:
             retval = 1
 
     for f in f_files:
-        cmd = cs_config.build_syrthes.fc
+        cmd = build_syrthes.fc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
-        cmd = cmd + " " + cs_config.build_syrthes.cppflags
-        cmd = cmd + " " + cs_config.build_syrthes.fcflags
+        cmd = cmd + " " + build_syrthes.cppflags
+        cmd = cmd + " " + build_syrthes.fcflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd) != 0:
             retval = 1
 
     if retval == 0:
         # Link with Code_Saturne C compiler
-        cmd = cs_config.build.cc
+        cmd = build.cc
         cmd = cmd + " -o " + exec_name
         if (len(f_files)) > 0:
           cmd = cmd + " *.o"
-        cmd = cmd + " -L" + os.path.join(cs_config.dirs.prefix, "lib")
+        cmd = cmd + " -L" + os.path.join(dirs.prefix, "lib")
         cmd = cmd + " -lsyrcs"
-        cmd = cmd + " " + cs_config.build_syrthes.ldflags
-        cmd = cmd + " " + cs_config.build_syrthes.libs
-        if cs_config.build.rpath != "":
+        cmd = cmd + " " + build_syrthes.ldflags
+        cmd = cmd + " " + build_syrthes.libs
+        if build.rpath != "":
             cmd = cmd + " " + so_dirs_path(cmd)
         if run_command(cmd) != 0:
             retval = 1
@@ -279,6 +286,8 @@ def compile_and_link_syrthes(srcdir, destdir):
 
     os.chdir(call_dir)
     os.rmdir(temp_dir)
+
+    return retval
 
 #-------------------------------------------------------------------------------
 # Main
@@ -302,7 +311,7 @@ def main(argv):
     sys.exit(retcode)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])
 
 #-------------------------------------------------------------------------------

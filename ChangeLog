@@ -1,4 +1,17 @@
 * 10/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Modifications to how the config info are handled to avoid potential
+  issues (split configuration info into build/install info).
+  added scripts:
+    bin/cs_config_build.py.in
+  modified scripts:
+    bin/cs_compile.py
+    bin/cs_config.py.in
+    bin/cs.in
+    configure.ac
+    Makefile.am
+
+* 10/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Updating Itanium compiler options for hot optimizations.
   modified scripts:
     config/cs_auto_flags.sh

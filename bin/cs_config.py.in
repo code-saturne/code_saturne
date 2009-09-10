@@ -1,5 +1,5 @@
 #!@cs_python@
-# @configure_input@
+# Paths associated with Code_Saturne, generated from cs_config.py.in by make.
 #============================================================================
 #
 #     This file is part of the Code_Saturne Kernel, element of the
@@ -28,10 +28,6 @@
 
 #-------------------------------------------------------------------------------
 
-@cs_config_comments@
-
-#-------------------------------------------------------------------------------
-
 import os.path
 
 # Package Version
@@ -47,30 +43,14 @@ class package:
 class dirs:
     prefix = "@prefix@"
     exec_prefix = "@exec_prefix@"
-    if exec_prefix == "${prefix}":
-        exec_prefix = prefix
     bindir = "@bindir@"
-    if bindir == "${exec_prefix}/bin":
-        bindir = os.path.join(exec_prefix, "bin")
     includedir = "@includedir@"
-    if includedir == "${prefix}/include":
-        includedir = os.path.join(prefix, "include")
     libdir = "@libdir@"
-    if libdir == "${exec_prefix}/lib":
-        libdir = os.path.join(exec_prefix, "lib")
     datarootdir = "@datarootdir@"
-    if datarootdir == "${prefix}/share":
-        datarootdir = os.path.join(prefix, "share")
     datadir = "@datadir@"
-    if datadir == "${datarootdir}":
-        datadir = datarootdir
-    pkgdatadir = os.path.join(datadir, "@PACKAGE@")
+    pkgdatadir = "@pkgdatadir@"
     docdir = "@docdir@"
-    if docdir == "${datarootdir}/doc/${PACKAGE_TARNAME}":
-        docdir = os.path.join(datarootdir, "doc", "@PACKAGE_TARNAME@")
     pdfdir = "@pdfdir@"
-    if pdfdir == "${docdir}":
-        pdfdir = docdir
     ecs_prefix = "@ecs_prefix@"
     ecs_exec_prefix = ecs_prefix
     ecs_bindir = os.path.join(ecs_exec_prefix, "bin")
@@ -83,28 +63,6 @@ class mpi_lib:
     type = "@mpi_type@"
     bindir = "@mpi_bindir@"
     libdir = "@mpi_libdir@"
-
-# Build tools, option, and libraries
-#-----------------------------------
-
-class build:
-    cc="@CC@"
-    fc="@FC@"
-    cppflags="@CPPFLAGS@ @BFT_CPPFLAGS@ @FVM_CPPFLAGS@ @MEI_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@"
-    cflags="@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@"
-    fcflags="@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@"
-    ldflags="@MEI_LDFLAGS@ @FVM_LDFLAGS@ @BFT_LDFLAGS@ @MPI_LDFLAGS@ @BLAS_LDFLAGS@ @LIBXML2_LDFLAGS@ @LDFLAGS@"
-    libs="@MEI_LIBS@ @FVM_LIBS@ @BFT_LIBS@ @MPI_LIBS@ @BLAS_LIBS@ @LIBXML2_LIBS@ @LIBS@ @FCLIBS@"
-    rpath="@LDRPATH@"
-
-class build_syrthes:
-    cc="@SYRTHES_CC@"
-    fc="@SYRTHES_FC@"
-    cppflags="@SYRTHES_CPPFLAGS@"
-    cflags="@SYRTHES_CFLAGS@"
-    fcflags="@SYRTHES_FCFLAGS@"
-    ldflags="@SYRTHES_LDFLAGS@"
-    libs="@SYRTHES_LIBS@ @SYRTHES_FCLIBS@"
 
 #-------------------------------------------------------------------------------
 
@@ -132,17 +90,7 @@ Auxiliary information:
 MPI library information:
   mpi_lib.type = %(mpi_type)s
   mpi_lib.bindir = %(mpi_bindir)s
-  mpi_lib.libdir = %(mpi_libdir)s
-
-Compilers and associated options:
-  cc = %(cc)s
-  fc = %(fc)s
-  cppflags = %(cppflags)s
-  cflags = %(cflags)s
-  fcflags = %(fcflags)s
-  ldflags = %(ldflags)s
-  libs = %(libs)s
-  rpath = %(rpath)s\
+  mpi_lib.libdir = %(mpi_libdir)s\
 """
 
     return msg \
@@ -152,11 +100,7 @@ Compilers and associated options:
             'pkgdata':dirs.pkgdatadir, 'doc':dirs.docdir, 'pdf':dirs.pdfdir,
             'ecs':dirs.ecs_prefix, 'syrthes':dirs.syrthes_prefix,
             'mpi_type':mpi_lib.type, 'mpi_bindir':mpi_lib.bindir,
-            'mpi_libdir':mpi_libdir,
-            'cc':build.cc, 'fc':build.fc,
-            'cppflags':build.cppflags, 'cflags':build.cflags,
-            'fcflags':build.fcflags, 'ldflags':build.ldflags,
-            'libs':build.libs, 'rpath':build.rpath }
+            'mpi_libdir':mpi_lib.libdir }
 
 #-------------------------------------------------------------------------------
 
@@ -164,8 +108,14 @@ def main(argv):
     """
     Main configuration info function.
     """
-    print get_config()
+    import sys
+    import cs_config_build
+    sys.stdout.write("%(d)s\n\n%(b)s\n\n%(s)s\n" %
+                     {'d':get_config(),
+                      'b':cs_config_build.get_config(),
+                      's':cs_config_build.get_config_syrthes()})
 
 if __name__ == '__main__':
-    main(argv)
+    import sys
+    main(sys.argv[1:])
 
