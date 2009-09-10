@@ -254,6 +254,7 @@ elif test "x$cs_gcc" = "xicc"; then
   case "$host-os-$host_cpu" in
     *ia64)
       cflags_default_opt="-O2 -mcpu=itanium2-p9000"
+      cflags_default_hot="-O3 -mcpu=itanium2-p9000"
       cflags_default_ext="-fp-model extended"
       ;;
   esac

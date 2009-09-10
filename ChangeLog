@@ -1,4 +1,9 @@
 * 10/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Updating Itanium compiler options for hot optimizations.
+  modified scripts:
+    config/cs_auto_flags.sh
+
+* 10/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor adaptations in the joining algorithm code, relative to
   porting to MPI1 and code cleaning.
   modified routine:
@@ -55,6 +60,8 @@
     gui/Base/Common.py
     gui/Base/MainView.py
     gui/Pages/BatchRunningModel.py
+  removed file:
+    gui/VERSION
 
 * 03/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Admin scripts improvement.
