@@ -1,3 +1,16 @@
+* 10/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor adaptations in the joining algorithm code, relative to
+  porting to MPI1 and code cleaning.
+  modified routine:
+    include/base/cs_join_util.h
+    src/base/cs_join.c
+    src/base/cs_join_intersect.c
+    src/base/cs_join_merge.c
+    src/base/cs_join_mesh.c
+    src/base/cs_join_split.c
+    src/base/cs_join_update.c
+    src/base/cs_join_util.c
+
 * 09/09/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix an issue in the mesh cleaning stage of the joining algorithm.
   modified routine:

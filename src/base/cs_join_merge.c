@@ -2423,6 +2423,8 @@ _update_inter_edges_after_merge(const cs_int_t           o2n_vtx_id[],
   *p_inter_edges = inter_edges;
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Define send_rank_index and send_faces to prepare the exchange of new faces
  * between mesh structures.
@@ -2569,6 +2571,8 @@ _get_faces_to_send(cs_int_t           n_faces,
   *p_send_rank_index = send_rank_index;
   *p_send_faces = send_faces;
 }
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Update local_mesh by redistributing mesh.

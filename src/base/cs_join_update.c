@@ -2962,7 +2962,7 @@ _reorient_faces(cs_mesh_t       *mesh,
     _get_face_quantity(n_face_vertices,
                        face_vtx_coord,
                        face_barycenter,
-                       face_normal);  // unitary
+                       face_normal);  /* unitary */
 
     /*  Cb: cell barycenter
         Fb: face barycenter

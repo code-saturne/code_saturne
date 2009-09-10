@@ -132,6 +132,8 @@ _dot_product(const double  v1[],
   return result;
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Find for each face of the list its related rank
  *
@@ -170,8 +172,6 @@ _get_rank_from_index(cs_int_t          n_elts,
 
   return rank_list;
 }
-
-#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Get the index on ranks and th list of faces to send from a list of global
@@ -715,9 +715,15 @@ cs_join_mesh_create_vtx_datatype(void)
 
   /* Define array of displacements */
 
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2)
   MPI_Get_address(&v_data, displacements);
   MPI_Get_address(&v_data.gnum, displacements + 1);
   MPI_Get_address(&v_data.coord, displacements + 2);
+#else
+  MPI_Address(&v_data, displacements);
+  MPI_Address(&v_data.gnum, displacements + 1);
+  MPI_Address(&v_data.coord, displacements + 2);
+#endif
 
   displacements[2] -= displacements[0];
   displacements[1] -= displacements[0];
@@ -725,7 +731,11 @@ cs_join_mesh_create_vtx_datatype(void)
 
   /* Create new datatype */
 
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2)
   MPI_Type_create_struct(3, blocklengths, displacements, types, &new_type);
+#else
+  MPI_Type_struct(3, blocklengths, displacements, types, &new_type);
+#endif
 
   MPI_Type_commit(&new_type);
 

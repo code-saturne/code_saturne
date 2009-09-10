@@ -66,7 +66,7 @@ BEGIN_C_DECLS
 typedef enum {
 
   CS_JOIN_TYPE_CONFORM,
-  CS_JOIN_TYPE_NO_CONFORM,
+  CS_JOIN_TYPE_NO_CONFORM
 
 } cs_join_type_t;
 

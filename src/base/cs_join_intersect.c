@@ -1211,15 +1211,24 @@ _create_exch_inter_datatype(void)
 
   /* Define array of displacements */
 
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2)
   MPI_Get_address(&inter, displacements);
   MPI_Get_address(&inter.curv_abs, displacements + 1);
+#else
+  MPI_Address(&inter, displacements);
+  MPI_Address(&inter.curv_abs, displacements + 1);
+#endif
 
   displacements[1] -= displacements[0];
   displacements[0] = 0;
 
   /* Create new datatype */
 
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2)
   MPI_Type_create_struct(2, blocklengths, displacements, types, &new_type);
+#else
+  MPI_Type_struct(2, blocklengths, displacements, types, &new_type);
+#endif
   MPI_Type_commit(&new_type);
 
   return new_type;

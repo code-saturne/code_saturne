@@ -270,6 +270,8 @@ _renumber_local_ordered_i(cs_int_t          n_elts,
   *new_glist = _new_glist;
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Define send_rank_index and send_faces to prepare the exchange of new faces
  * between mesh structures.
@@ -418,6 +420,8 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
   *send_rank_index = _send_rank_index;
   *send_faces = _send_faces;
 }
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Define the head_edges and ext_edges lists.
@@ -676,7 +680,9 @@ _split_face(cs_int_t                face_id,
   const cs_join_vertex_t  *vertices = work->vertices;
   const cs_real_t  min_limit_cos = -1.1, max_limit_cos = 1.1;
 
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
   cs_bool_t  tst_dbg = (verbosity > 3 ? true : false);
+#endif
 
   /* To be implemented ... */
   cs_int_t  *face_face_connect = NULL;

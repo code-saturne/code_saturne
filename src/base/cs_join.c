@@ -520,8 +520,8 @@ _extract_mesh(const char              *name,
                           vtx_data);
 
     if (param.verbosity > 1)
-      bft_printf(_("  Global number of selected vertices: %9u\n\n"),
-                 selection->n_g_vertices);
+      bft_printf(_("  Global number of selected vertices: %11lu\n\n"),
+                 (unsigned long)(selection->n_g_vertices));
 
     fvm_io_num_destroy(select_vtx_io_num);
 
@@ -898,7 +898,7 @@ _intersect_edges(cs_join_param_t          param,
 
   if (join_type == CS_JOIN_TYPE_CONFORM) {
 
-    bft_printf(_("\n  Joining operation is conform.\n"));
+    bft_printf(_("\n  Joining operation is conforming.\n"));
     bft_printf_flush();
 
     inter_set = cs_join_inter_set_destroy(inter_set);
@@ -908,7 +908,7 @@ _intersect_edges(cs_join_param_t          param,
 
     assert(join_type == CS_JOIN_TYPE_NO_CONFORM);
 
-    bft_printf(_("\n  Joining operation is non-conform.\n"));
+    bft_printf(_("\n  Joining operation is non-conforming.\n"));
     bft_printf_flush();
 
     /* Creation of new vertices. Update list of equivalent vertices.

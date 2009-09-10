@@ -1131,7 +1131,7 @@ _add_single_edges(fvm_interface_set_t   *ifs,
                   &max_size,
                   &tmp_edges);
 
-    } /* Face on a parallel frontier */
+    } /* Face on a parallel boundary */
 
   }
 
