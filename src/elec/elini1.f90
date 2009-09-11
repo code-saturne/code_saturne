@@ -192,7 +192,7 @@ if(ippmod(ielarc).ge.2) then
     idiff (ivar) = 1
     idifft(ivar) = 0
     idircl(ivar) = 1
-    imgr  (ivar) = 1
+    imgr  (ivar) = 0
   enddo
 endif
 

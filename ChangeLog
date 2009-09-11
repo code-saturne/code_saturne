@@ -1,3 +1,9 @@
+* 10/09/2009 - David Monfort <david.monfort@edf.fr>
+  Disable by default the multigrid algorithm for the potential vector
+  in MHD as it does not seem to work correctly.
+  modified routine:
+    src/elec/elini1.f90
+
 * 10/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Modifications to how the config info are handled to avoid potential
