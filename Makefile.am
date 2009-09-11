@@ -98,7 +98,7 @@ edit = sed \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g'
 
-edit_scripts = bin/cs bin/cs_config.py
+edit_scripts = bin/cs bin/cs_config.py bin/runcase.py 
 
 $(edit_scripts): Makefile
 	rm -f $@ $@.tmp
@@ -109,6 +109,7 @@ $(edit_scripts): Makefile
 
 bin/cs: $(srcdir)/bin/cs.in 
 bin/cs_config.py: bin/cs_config.py.in 
+bin/runcase.py: $(srcdir)/bin/runcase.py.in 
 
 # Install binary scripts
 
@@ -122,10 +123,13 @@ bin/cs_config.py \
 bin/cs_config_build.py
 
 dist_pkgpython_PYTHON = \
+bin/cs_case.py \
+bin/cs_case_domain.py \
 bin/cs_check_consistency.py \
 bin/cs_check_mesh.py \
 bin/cs_compile.py \
 bin/cs_create.py \
+bin/cs_exec_environment.py \
 bin/cs_info.py \
 bin/cs_plot_probes.py
 
@@ -133,7 +137,7 @@ bin/cs_plot_probes.py
 
 nodist_pkgdata_DATA = \
 bin/runcase \
-bin/runcase_coupling \
+bin/runcase.py \
 bin/SaturneGUI
 
 dist_pkgdata_DATA = \

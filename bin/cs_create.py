@@ -69,6 +69,10 @@ def process_cmd_line(argv):
                       action="store_false",
                       help="don't use the GUI")
 
+    parser.add_option("--new-runcase", dest="new_runcase",
+                      action="store_true",
+                      help="use the new Python runcase")
+
     parser.add_option("--nsat", dest="n_sat", type="int",
                       metavar="<nsat>",
                       help="specify the number of Code_Saturne instances")
@@ -78,6 +82,7 @@ def process_cmd_line(argv):
                       help="specify the number of SYRTHES instances")
 
     parser.set_defaults(use_gui=True)
+    parser.set_defaults(new_runcase=False)
     parser.set_defaults(study_name=os.path.basename(os.getcwd()))
     parser.set_defaults(cases_name=[])
     parser.set_defaults(n_sat=1)
@@ -94,6 +99,7 @@ def process_cmd_line(argv):
     return Study(options.study_name,
                  options.cases_name,
                  options.use_gui,
+                 options.new_runcase,
                  options.n_sat,
                  options.n_syr)
 
@@ -168,16 +174,17 @@ def comments(filename, use_gui):
 class Study:
 
 
-    def __init__(self, name, cases, use_gui, n_sat, n_syr):
+    def __init__(self, name, cases, use_gui, new_runcase, n_sat, n_syr):
         """
         Initialize the structure for a study.
         """
 
-        self.name = string.upper(name)
+        self.name = name
         self.cases = []
         for c in cases:
             self.cases.append(string.upper(c))
         self.use_gui = use_gui
+        self.new_runcase = new_runcase
         self.n_sat = n_sat
         self.n_syr = n_syr
 
@@ -299,14 +306,14 @@ class Study:
         scripts = 'SCRIPTS'
         os.mkdir(scripts)
 
-        shutil.copy(os.path.join(datadir, 'runcase.help'), scripts)
-
-        if self.n_sat == 1:
+        if self.n_sat == 1 and not self.new_runcase:
+            shutil.copy(os.path.join(datadir, 'runcase.help'), scripts)
             shutil.copy(os.path.join(datadir, 'runcase'), scripts)
-            runcase = os.path.join(scripts, 'runcase')
         else:
-            shutil.copy(os.path.join(datadir, 'runcase_coupling'), scripts)
-            runcase = os.path.join(scripts, 'runcase_coupling')
+            shutil.copy(os.path.join(datadir, 'runcase.py'),
+                        os.path.join(scripts, 'runcase'))
+
+        runcase = os.path.join(scripts, 'runcase')
 
         kwd1 = re.compile('nameandcase')
         kwd2 = re.compile('STUDYNAME')
@@ -335,7 +342,6 @@ class Study:
         fdt.close()
 
         shutil.move(runcase_tmp, runcase)
-
         make_executable(runcase)
 
 
@@ -346,7 +352,8 @@ class Study:
 
         print "Name  of the study:", self.name
         print "Names of the cases:", self.cases
-        print "Use of the GUI:", self.use_gui
+        print "Use the GUI:", self.use_gui
+        print "Use the Python runcase:", self.new_runcase
         if self.n_sat > 1:
             print "Number of Code_Saturne instances:", self.n_sat
         if self.n_syr > 0:

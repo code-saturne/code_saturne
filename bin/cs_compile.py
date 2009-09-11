@@ -22,13 +22,14 @@
 import fnmatch
 import os
 import sys
-import subprocess
 import tempfile
 
 from optparse import OptionParser
 
 from cs_config import dirs
 from cs_config_build import build, build_syrthes
+
+from cs_exec_environment import run_command
 
 #-------------------------------------------------------------------------------
 
@@ -123,23 +124,8 @@ def so_dirs_path(flags):
 
 #-------------------------------------------------------------------------------
 
-def run_command(cmd):
-    """
-    Run a command.
-    """
-    print cmd
-    p = subprocess.Popen(cmd,
-                         shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    output = p.communicate()
-    print output[0], output[1]
-
-    return p.returncode
-
-#-------------------------------------------------------------------------------
-
-def compile_and_link(srcdir, destdir, optlibs, force_link):
+def compile_and_link(srcdir, destdir, optlibs, force_link,
+                     stdout = sys.stdout, stderr = sys.stderr):
     """
     Compilation and link function.
     """
@@ -172,7 +158,7 @@ def compile_and_link(srcdir, destdir, optlibs, force_link):
         cmd = cmd + " " + build.cppflags
         cmd = cmd + " " + build.cflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
-        if run_command(cmd) != 0:
+        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     for f in f_files:
@@ -182,7 +168,7 @@ def compile_and_link(srcdir, destdir, optlibs, force_link):
         cmd = cmd + " -I" + os.path.join(dirs.prefix, "include")
         cmd = cmd + " " + build.fcflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
-        if run_command(cmd) != 0:
+        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     if retval == 0 and (force_link or (len(c_files) + len(f_files)) > 0):
@@ -198,7 +184,7 @@ def compile_and_link(srcdir, destdir, optlibs, force_link):
         cmd = cmd + " " + build.ldflags + " " + build.libs
         if build.rpath != "":
             cmd = cmd + " " + so_dirs_path(cmd)
-        if run_command(cmd) != 0:
+        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     # Cleanup
@@ -215,7 +201,8 @@ def compile_and_link(srcdir, destdir, optlibs, force_link):
 
 #-------------------------------------------------------------------------------
 
-def compile_and_link_syrthes(srcdir, destdir):
+def compile_and_link_syrthes(srcdir, destdir,
+                             stdout = sys.stdout, stderr = sys.stderr):
     """
     Compilation and link function.
     """
@@ -249,7 +236,7 @@ def compile_and_link_syrthes(srcdir, destdir):
         cmd = cmd + " " + build_syrthes.cppflags
         cmd = cmd + " " + build_syrthes.cflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
-        if run_command(cmd) != 0:
+        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     for f in f_files:
@@ -259,7 +246,7 @@ def compile_and_link_syrthes(srcdir, destdir):
         cmd = cmd + " " + build_syrthes.cppflags
         cmd = cmd + " " + build_syrthes.fcflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
-        if run_command(cmd) != 0:
+        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     if retval == 0:
@@ -274,7 +261,7 @@ def compile_and_link_syrthes(srcdir, destdir):
         cmd = cmd + " " + build_syrthes.libs
         if build.rpath != "":
             cmd = cmd + " " + so_dirs_path(cmd)
-        if run_command(cmd) != 0:
+        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     # Cleanup

@@ -1,4 +1,24 @@
-* 10/09/2009 - David Monfort <david.monfort@edf.fr>
+* 11/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Add a new Python runcase script with more code coupling capabilities
+  and more aware of MPI and batch environments.
+  Add an option to the create command to use this script and relax the
+  constraint on the upppercase name of the study.
+  Some other modifications relative to scripts.
+  added scripts:
+    bin/cs_case_domain.py
+    bin/cs_case.py
+    bin/cs_exec_environment.py
+    bin/runcase.py.in
+  removed script:
+    bin/runcase_coupling.in
+  modified scripts:
+    bin/cs_compile.py
+    bin/cs_create.py
+    configure.ac
+    Makefile.am
+
+* 11/09/2009 - David Monfort <david.monfort@edf.fr>
   Disable by default the multigrid algorithm for the potential vector
   in MHD as it does not seem to work correctly.
   modified routine:
