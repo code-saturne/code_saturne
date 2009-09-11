@@ -1,3 +1,12 @@
+* 11/09/2009 - David Monfort <david.monfort@edf.fr>
+  Change FVM and BFT CPPFLAGS order so that one can find FVM headers,
+  before BFT ones.
+  modified scripts:
+    src/apps/Makefile.am
+    src/base/Makefile.am
+    src/ctwr/Makefile.am
+    src/lagr/Makefile.am
+
 * 11/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a Fortran m4 file for module detection and further tests (e.g.
   flush subroutine detection).
