@@ -1,4 +1,12 @@
 * 11/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a Fortran m4 file for module detection and further tests (e.g.
+  flush subroutine detection).
+  added script:
+    config/cs_fortran.m4
+  modified script:
+    Makefile.am
+
+* 11/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Merge the preprocessor user guide into Code_Saturne user guide.
   added files:
     doc/user/graphics/join_tolerance.fig

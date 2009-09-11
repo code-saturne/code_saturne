@@ -51,6 +51,7 @@ $(ac_aux_dir)/cs_auto_flags.sh \
 $(ac_aux_dir)/cs_bft.m4 \
 $(ac_aux_dir)/cs_blas.m4 \
 $(ac_aux_dir)/cs_config_info.m4 \
+$(ac_aux_dir)/cs_fortran.m4 \
 $(ac_aux_dir)/cs_fvm.m4 \
 $(ac_aux_dir)/cs_libxml2.m4 \
 $(ac_aux_dir)/cs_mei.m4 \
