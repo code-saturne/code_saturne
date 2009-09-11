@@ -269,8 +269,8 @@ directory \texttt{RESU}.
 &        \texttt{syrthes.env}                &\syrthes configuration file\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/SRC:}}&{\bf \CS user subroutines }\\
 &        \texttt{REFERENCE}                   &        examples of a user subroutines\\
-&        \texttt{usclim.F}                  &user subroutines used for the present the calculation\\
-&        \texttt{usini1.F}  &\\
+&        \texttt{usclim.f90}                 &user subroutines used for the present the calculation\\
+&        \texttt{usini1.f90} &\\
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/RESU:}}&{\bf results}\\
 &        \texttt{CHR.ENSIGHT.08211921}              &directory containing the \CS
                                            post-processing results\\
@@ -289,7 +289,7 @@ directory \texttt{RESU}.
 &        \texttt{RES\_USERS.08211921}  &optional directory containing the
                                      user results files\\
 &        \texttt{RESTART.08211921}       &directory containing the \CS restart files \\
-&        \texttt{compil.log.08211921}  &compilation report\\
+&        \texttt{compile.log.08211921}  &compilation report\\
 &     \texttt{study.xml.08211921}   &Graphical User Interface parameter file
                                     used for the\\
 &                                   &calculation 08211921\\
@@ -330,56 +330,36 @@ the
 \subsubsection{\CS Kernel library files}
 %==================================
 \label{prg_library}%
-Below are given information about the content of the \CS base directories. They
-are not of vital interest for the user, but given only as general
-information. Indeed, the case preparer \texttt{cs\_create} automatically extracts the
+Information about the content of the \CS base directories is given below. It
+is not of vital interest for the user, but given only as general
+information. Indeed, the case preparer command \texttt{cs~create} automatically extracts the
 necessary files and prepares the launch script without the user having to go
 directly into the \CS base directories (see \S\ref{prg_cscreate}).
-The \texttt{cs\_info} gives direct
+The \texttt{cs~info} command gives direct
 access to the most needed information (especially the user and programmer's
 guides and the tutorial) without the user having to look for them in the \CS
 directories.
 
-
-The subdirectory \texttt{arch} contains the libraries and compiled
-executables, followed by a subdirectory allowing to distinguished the
-architectures (named as referenced here after):
-\begin{list}{$\bullet$}{}
-\item\texttt{Blue\_Gene\_L} for the EDF BlueGene/L machine
-\item\texttt{Blue\_Gene\_P} for the EDF BlueGene/P machine
-\item\texttt{Linux} for general 32-bit Intel or AMD machines under Linux
-\item\texttt{Linux\_x86\_64} for general 64-bit Intel or AMD machines under Linux
-\item\texttt{Linux\_Ch} for the Chatou cluster
-\item\texttt{Linux\_IA64} for Itanium clusters (Platine cluster at the CCRT)
-\end{list}
-
-For each architecture, a subdirectory (named after \texttt{NOM\_ARCH})
-stores the compiled library (\texttt{libsaturne.so} in \texttt{lib}
-and executable in
-\texttt{bin}\footnote{This executable is used only for standalone mesh
-analysis or when no user routines are defined. In a standard \CS run,
-the executable is recompiled to allow for user routines to be taken
-into account.}).
+The subdirectories \texttt{\{prefix\}/lib} and \texttt{\{prefix\}/bin }
+contain the libraries and compiled executables respectively.
 
 The data files (for instance thermochemical data) are located in the
 directory \texttt{data}.
 
-The source files, when available, are stored in the directory \texttt{src},
-under subdirectories corresponding to each module: \texttt{base} (general
-routines), \texttt{cfbl} (compressible flows),
+The user subroutines are available in the directory \texttt{users},
+under subdirectories corresponding to each module:
+\texttt{base} (general routines),
+\texttt{cfbl} (compressible flows),
 \texttt{cogz} (gas combustion),
-\texttt{cplv} (pulverised coal combustion), \texttt{elec} (electric module),
+\texttt{cplv} (pulverised coal combustion),
+\texttt{ctwr} (cooling towers modelling),
+\texttt{elec} (electric module),
 \texttt{fuel} (heavy fuel oil combustion module),
 \texttt{lagr} (lagrangian module,
 \texttt{mati} (Matisse module),
-\texttt{pprt} (general specific physics routines) and \texttt{rayt} (radiative heat
-transfer).
-
-The user subroutines are available in the directory \texttt{users},
-under similar subdirectories corresponding to each module: \texttt{base},
-\texttt{cfbl}, \texttt{cogz}, \texttt{cplv}, \texttt{elec},
-\texttt{fuel}, \texttt{lagr}, \texttt{pprt} and \texttt{rayt}.
-The case preparer \texttt{cs\_create} copies all these files in the
+\texttt{pprt} (general specific physics routines) and
+\texttt{rayt} (radiative heat transfer).
+The case preparer command \texttt{cs~create} copies all these files in the
 user directory \texttt{SRC/REFERENCE} during the case preparation.
 
 The ``include'' files are available in the directory
@@ -404,14 +384,14 @@ prepare and run a standard case:
 \begin{list}{$\bullet$}{}
 
 \item Check the version of \CS set for use in the environment variables
-(\texttt{cs info --version}). If it does not correspond to the desired version,
+(\texttt{cs~info --version}). If it does not correspond to the desired version,
 update the \texttt{.profile} file to set the environment
 variables correctly. Log out of the session and
 log in again to take the modifications into account properly (cf.
 \S\ref{prg_environnementCS}).
 
-\item Prepare the different directories using \texttt{cs create}(see
-\S\ref{prg_cscreate}) and, when needed, add the directories \texttt{DATA\_SYR}
+\item Prepare the different directories using the \texttt{cs~create} command
+(see \S\ref{prg_cscreate}) and, when needed, add the directories \texttt{DATA\_SYR}
 and \texttt{SRC\_SYR} which are required to accomodate the \syrthes files.
 
 \item Place the mesh(es) in the directory \texttt{MESH}. Make sure they are
@@ -451,7 +431,7 @@ compulsory.
 
   \item{\bf For the specific physics ``gas combustion'':}
 
-(not compliant with the Graphical User Interface in version \verscs)
+(not accessible through the Graphical User Interface in version \verscs)
     \begin{list}{}{}
         \item {\em compulsory:}
         \begin{list}{-}{}
@@ -509,9 +489,9 @@ compulsory.
     \end{list}
 
      \item{\bf For the specific physics ``electric module''
-      (Joule effect and electric arc):}
+      (Joule effect and electric arcs):}
 
-(not compliant with the Graphical User Interface in version \verscs)
+(not accessible through the Graphical User Interface in version \verscs)
     \begin{list}{}{}
        \item {\em compulsory:}
         \begin{list}{-}{}
@@ -540,9 +520,9 @@ compulsory.
         \end{list}
     \end{list}
 
-     \item{\bf For the specific physics ``heavy fuel oil combustion module'':)}
+     \item{\bf For the specific physics ``heavy fuel oil combustion module'':}
 
-(not compliant with the Graphical User Interface in version \verscs)
+(not accessible through the Graphical User Interface in version \verscs)
     \begin{list}{}{}
         \item {\em compulsory:}
         \begin{list}{-}{}
@@ -572,7 +552,7 @@ compulsory.
 
 (the continuous phase is managed in the same way as for a case of standard
 physics)\\
-(the Lagrangian module is not compliant with the Graphical User Interface in
+(the Lagrangian module is not accessible through the Graphical User Interface in
 version \verscs)
     \begin{list}{}{}
         \item {\em compulsory:}
@@ -593,7 +573,7 @@ version \verscs)
 
    \item {\bf For the compressible module:}
 
-(not compliant with the Graphical User Interface in version \verscs)
+(not accessible through the Graphical User Interface in version \verscs)
     \begin{list}{}{}
         \item {\em compulsory:}
         \begin{list}{-}{}
@@ -728,21 +708,21 @@ way whenever they wish.
 \subsection{Case preparer}
 %==================================
 \label{prg_cscreate}%
-The case preparer \texttt{cs create} automatically creates a
+The case preparer command \texttt{cs~create} automatically creates a
 study directory according to the typical architecture and copies and
 pre-fills an example of calculation launch script.
 
-The syntax of \texttt{cs create} is as follows:
+The syntax of \texttt{cs~create} is as follows:
 
 \noindent
-\texttt{cs create --study STUDY CASE\_NAME1 CASE\_NAME2...}\\
+\texttt{cs~create --study STUDY CASE\_NAME1 CASE\_NAME2...}\\
 creates a study directory \texttt{STUDY} with case subdirectories
 \texttt{CASE\_NAME1} and \texttt{CASE\_NAME2}...
 If no case name is given, a default case directory called \texttt{CASE1} is
 created.
 
 \noindent
-\texttt{cs create --case DEBIT3 --case DEBIT4}\\
+\texttt{cs~create --case DEBIT3 --case DEBIT4}\\
 executed in the directory \texttt{STUDY} adds the case directories
 \texttt{DEBIT3} and \texttt{DEBIT4}.
 
@@ -750,18 +730,18 @@ An option \texttt{--nogui} is available for the use of \CS
 without Graphic Interface (see \S\ref{prg_gui}). This option must
 be either the first or the last argument and appear only once.
 
-In the directory \texttt{DATA}, \texttt{cs create} places a
+In the directory \texttt{DATA}, the \texttt{cs~create} command places a
 subdirectory \texttt{THCH} containing examples of thermochemical data
 files used for pulverised coal combustion,
 gas combustion or electric arc. The file to be used for the calculation must be
 copied directly in the \texttt{DATA} directory and its name must be referenced
 in the launch script in the variable THERMOCHEMISTRY\_DATA. All other files in
 the \texttt{DATA} or in the \texttt{THCH} will be ignored.\\
-\texttt{cs create} also places in the directory \texttt{DATA} the launch script
-for the Graphical User Interface:  \texttt{SaturneGUI}.
+The \texttt{cs~create} command also places in the directory \texttt{DATA}
+the launch script for the Graphical User Interface: \texttt{SaturneGUI}.
 
 
-In the directory \texttt{SRC}, \texttt{cs create} creates a
+In the directory \texttt{SRC}, the \texttt{cs~create} command creates a
 subdirectory \texttt{REFERENCE} containing all the user subroutines,
 classified by module type:  \texttt{base},
 \texttt{cfbl}, \texttt{cogz}, \texttt{cplv}, \texttt{elec}, \texttt{fuel},
@@ -769,8 +749,8 @@ classified by module type:  \texttt{base},
 Only the user subroutines placed directly under
 the directory \texttt{SRC} will be considered. The others will be ignored.
 
-In the directory \texttt{SCRIPTS}, \texttt{cs create} copies and pre-fills an
-example of the launch script: \texttt{runcase}.
+In the directory \texttt{SCRIPTS}, the \texttt{cs~create} command copies and
+pre-fills an example of the launch script: \texttt{runcase}.
 The study, case and user name are filled
 automatically in the launch script, as are the paths leading to the
 different directories. Other parameters must be specified in the script
@@ -809,7 +789,7 @@ each other. The following formats are currently supported by \CS:
 These formats are described in greater detail in the following sections.
 Unless a specific option is used, the \pcs determines the mesh format directly
 from the file suffix: %
-{\em``\texttt{.case}''} for the \ensight (6 or Gold),
+{\em``\texttt{.case}''} for \ensight (6 or Gold),
 {\em``\texttt{.ccm}''} for STAR-CCM+,
 {\em``\texttt{.cgns}''} for CGNS,
 {\em``\texttt{.des}''} for \simail,
@@ -820,7 +800,7 @@ from the file suffix: %
 {\em``\texttt{.ngeom}''} for pro-STAR/STAR4,
 {\em``\texttt{.unv}''} for I-deas universal.
 
-Note that the preprocessor can read zipped mesh files directly (for Formats
+Note that the preprocessor can read gzipped mesh files directly (for Formats
 other than MED or CGNS, which use specific external libraries) on most machines.
 
 %==================================
@@ -830,8 +810,8 @@ other than MED or CGNS, which use specific external libraries) on most machines.
 \subsubsubsection{NOPO/\simail (INRIA/SIMULOG)%
 \label{fmtdesc:des}}
 
-This format output by \simail is still heavily used at MFEE. We do not
-currently handle cylindrical or spherical coordinate, but it seems that
+This format output by \simail is still heavily used at EDF. We do not
+currently handle cylindrical or spherical coordinates, but it seems that
 \simail always outputs meshes in cartesian coordinates, even if points
 have been defined in another system. Most ``classical'' element types
 are usable, except for pyramids.
@@ -878,7 +858,7 @@ Documentation:     & Simail user documentation and release notes or
 \subsubsubsection{\ideas universal file%
 \label{fmtdesc:unv}}
 
-This format was heavily used in the 1990's and early 2000's, and though
+This format was very popular in the 1990's and early 2000's, and though
 the I-deas tool has not focused on the CFD (or even meshing) market since
 many years, it is handled (at least in part) by many tools, and may
 be considered as a major ``legacy'' format. It may contain many different
@@ -1029,24 +1009,24 @@ Documentation:     & documentation and source code provided by CD-adapco\\
 \subsubsubsection{\ensight 6%
 \label{fmtdesc:ensight6}}
 
-This format is used for output by the \emph{Harpoon} meshing tool, developed
+This format is used for output by the \harpoon meshing tool, developed
 by Sharc Ltd (also the distributor of \ensight for the United Kingdom).
 It is also the default output format for some older tools developed or used
 at MFEE (including versions 1.0 and 1.1 of \CS).
 This format may represent all ``classical'' element types.
 
-Designed for post processing, it does not explicit handle the definition
+Designed for post processing, it does not explicitely handle the definition
 of surface patches or volume zones, but allows the use of many \emph{parts}
 (i.e. groups of elements) which use a common vertex list.
-A possible convention (used at least by \emph{Harpoon}) is to add surface
+A possible convention (used at least by \harpoon) is to add surface
 elements to the volume mesh, using one \emph{part} per group. The volume
 mesh may also be separated into several \emph{parts} so as to identify
 different zones. As \emph{part} names may contain up to 80 characters,
 we do not transform them into groups (whose names could be unwieldy),
 so we simply interpret their number as a color.
 
-Also note that files produced by \emph{Harpoon} may contain badly oriented
-prisms, so the Preprocessor orientation correction option
+Also note that files produced by \harpoon may contain badly oriented
+prisms, so the \pcs orientation correction option
 (\texttt{--reorient})may need to be used. Meshes built by this tool also
 contain hanging nodes, with non-conforming elements sharing some vertices.
 The \texttt{--join --semi-conf} preprocessor option must thus be used.
@@ -1088,9 +1068,9 @@ tool. This tool has both meshing and post-processing functionality,
 but \CS only imports meshes.
 
 Note that some meshes produced by\gmsh man contain some badly oriented
-elements, so the Preprocessor's \texttt{-reorient} option may be necessary.
+elements, so the \pcs's \texttt{-reorient} option may be necessary.
 
-The Preprocessor handles versions 1 and 2 of this array. In version 1,
+The \pcs handles versions 1 and 2 of this array. In version 1,
 two labels are associated with each element: the first defines the
 element's physical entity  number, the second defines it' elementary
 entity number. Using version 2, it is possible to associate an
@@ -1202,8 +1182,8 @@ do not necessarily support the whole format specification.
 Especially, VTK does not support material types, and has only recently
 added support for polyhedral elements in \ensightg files (interpreted
 as convex point sets, and not true polyhedra, but at least usable).
-Also, both \ensightg 8.2 and VTK allow for automatic distribution, reducing
-the usefulness of pre-distributed meshes with per-processor files.
+Also, both \ensightg (8.2 and above) and VTK allow for automatic distribution,
+reducing the usefulness of pre-distributed meshes with per-processor files.
 
 This format may be used as an input format, similar to \ensight 6.
 Compared to the latter, each \emph{part} has its own coordinates and vertex
@@ -1231,7 +1211,7 @@ Zone selection:    & possibility of defining element materials (not used), or
                      interpret part number as color number if vertex IDs are
                      given\\
 \hline
-Compatibility:     & files readable by \ensight 7.4 to 8.2, as well as tools
+Compatibility:     & files readable by \ensight 7.4 to 9.0, as well as tools
                      based on the \href{http://www.vtk.org}{\vtk} library,
                      especially \paraview\ (\url{http://www.paraview.org})\\
 \hline
@@ -1249,8 +1229,8 @@ a \med working group comprising members of EDF R\&D and CEA (the \CS team
 being represented). This is the reference format for the
 \href{http://www.opencascade.org/SALOME/Salome.html}{\emph SALOME} environment.
 This format is quite complete, allowing the definition of all ``classical''
-element types, in nodal or descending connectivity. Since \med 2.2 in the
-autumn of 2003, this format may handle polygonal faces and polyhedral cells,
+element types, in nodal or descending connectivity. Since \med 2.2 in 2003,
+this format may handle polygonal faces and polyhedral cells,
 as well as the definition of structured meshes.
 
 This format, which requires a library also depending on the free HDF5 library,
@@ -1350,7 +1330,8 @@ Regarding support of polygons (\emph{ngons} in the CGNS standard), even the
 verification tools published alongside the CGNS library are unable
 to handle them, and report errors in valid files containing such elements.
 VisIt 1.11.1 reports an error when a mesh contains such faces, while
-\ensightg 8 ignores them.
+\ensightg 8 ignores them. CGNS 3 should improve this situation,
+allowing for polyhedra, but it is still in beta stage as of August 2009.
 
 \smallskip \noindent
 \begin{tabular}[top]{|p{4.5cm}%
@@ -1454,12 +1435,12 @@ also possible, but has some limitations).
 The use of files of the ``Common Solver'' type\footnote{File type specifically
 developped for the early prototype versions of \CS (\texttt{tlc}) extension}
 is still possible but is deprecated. Such files are read directly from the
-Kernel, without the Preprocessor.
+Kernel, without the \pcs.
 The variable SOLCOM must
  be set to 1 in the launch scripts. Many potentialities of \CS are not
 usable with this file format (mesh joining with hanging nodes, periodicity,
 parallel computing, ...).
-For all the other formats, the Preprocessor must be used (SOLCOM=0).
+For all the other formats, the \pcs must be used (SOLCOM=0).
 
 %==================================
 \subsubsection{Meshing remarks}
@@ -1476,34 +1457,9 @@ be false (particularly if thermal phenomena are involved). For more details
 on these constraints, see the keyword \texttt{ITURB}.
 
 %==================================
-\subsection{Preprocessing}
-%==================================
-The Preprocessor module of \CS reads the
-mesh file(s) (under any supported format) and transfers the necessary
-information to the Kernel. Mesh joining and domain partitioning for parallel
-calculations are made during this phase. In case of periodic boundary
-conditions, the Preprocessor module also identifies the boundary faces that are
-related through periodicity and creates the corresponding connectivity table.
-
-For a complete information on the Preprocessor module, please refer to the
-corresponding user's guide \cite{ecsuser}.
-
-%==================================
-\subsubsection{Preprocessor command line options}
+\subsection{Preprocessor command line options}
 %==================================
 \label{prg_optappelecs}%
-A complete description of the Preprocessor command line options can be found in
-\cite{ecsmu}. The executable of the Preprocessor module is \texttt{cs\_preprocess},
-accessible directly once the environment variables of \CS are set
-properly. A summary of the command line options is also given by the
-command \texttt{cs\_preprocess --help}.
-
-For the main options, the launch script \texttt{runcase} contains
-corresponding environment variables at its beginning, that are used
-later when the executable is called. This way, the user only has to
-fill these variables and doesn't need to search deep in the script for
-the Preprocessor command line.
-
 The main options are:
 \begin{list}{$\bullet$}{}
 \item \texttt{--help}: gives a summary of the different command line options
@@ -1514,8 +1470,8 @@ used. The launch script automatically calls the Preprocessor with the option
 specified the different meshes to be used.
 
 \item \texttt{--join}: triggers the mesh joining functions. If nothing more is
-specified, every area of contact between two meshes will be pasted together. The
-joining can be limited to certain selected faces. For instance, to paste only
+specified, every area of contact between two meshes will be joined together. The
+joining can be limited to certain selected faces. For instance, to join only
 the faces of colors 6 and 7, the full option will be \mbox{\texttt{--join --color
 6 7}}. These options are to be specified in the \texttt{COMMAND\_JOIN} variable in
 the launch script, to be automatically passed to the command line.
@@ -1665,7 +1621,7 @@ command line options.
 %==================================
 \label{prg_runcase}%
 
-The case preparer \texttt{cs create} places an example of launch script,
+The case preparer command \texttt{cs~create} places an example of launch script,
 \texttt{runcase}, in the \texttt{SCRIPTS} directory. This script is quite general
 and known to work on every architecture \CS has been tested on. The beginning
 if the script contains the definition of certain parameters (environment
@@ -1700,10 +1656,10 @@ Kernel (see \ref{prg_optappelnoy})
 
 \begin{list}{$\bullet$}{}
 \item \texttt{STUDY}: name of the study directory (automatically set by
-\texttt{cs create}, see \S\ref{prg_architecture})
+\texttt{cs~create}, see \S\ref{prg_architecture})
 
 \item \texttt{CASE}: name of the case directory (automatically set by
-\texttt{cs create}, see \S\ref{prg_architecture})
+\texttt{cs~create}, see \S\ref{prg_architecture})
 
 \item \texttt{PARAM}: name of the Interface parameter file, if necessary (see
 \ref{prg_optappelnoy})
@@ -1805,23 +1761,23 @@ adaptation with the software Homard. This option is still under development and
 restricted to developpers use.
 
 \item \texttt{CASEDIR}: root directory of the calculation. This variable is
-automatically set by \texttt{cs create} and should not be changed.
+automatically set by \texttt{cs~create} and should not be changed.
 
 \item \texttt{DATA}: DATA directory of the case (see \ref{prg_architecture}).
-This variable is automatically set by \texttt{cs create} and should not be
+This variable is automatically set by \texttt{cs~create} and should not be
 changed.
 
 \item \texttt{RESU}: RESU directory of the case (see \ref{prg_architecture}).
-This variable is automatically set by \texttt{cs create} and should not be
+This variable is automatically set by \texttt{cs~create} and should not be
 changed.
 
 \item \texttt{SRC}: SRC directory of the case (see \ref{prg_architecture}).
-This variable is automatically set by \texttt{cs create} and should not be
+This variable is automatically set by \texttt{cs~create} and should not be
 changed.
 
 \item \texttt{SCRIPTS}: SCRIPTS directory of the case (see
 \ref{prg_architecture}). This variable is automatically set by
-\texttt{cs create} and should not be changed.
+\texttt{cs~create} and should not be changed.
 
 \item \texttt{RESTART\_IN}: directory containing the files for calculation
 restart.
@@ -1830,7 +1786,7 @@ restart.
 
 \item \texttt{MESHDIR}: directory containing the mesh files (see
 \ref{prg_architecture}). This variable is automatically set by
-\texttt{cs create} and should generally not be changed.
+\texttt{cs~create} and should generally not be changed.
 
 \item \texttt{DATA\_SYR}: directory for the \syrthes data. This directory has
 to be created by the user. It is advised to keep the location proposed
@@ -1965,20 +1921,20 @@ Prepare batch analysis), the PARAM section is filled automatically as are the
 other parameters specified through the Interface.
 
 
-\minititre{Note: option \texttt{--nogui} of cs create}
+\minititre{Note: option \texttt{--nogui} of the \texttt{cs~create} command}
 When a calculation is using the Interface but, for some reason, some extra
 parameters need to be specified in the subroutine \texttt{usini1}, the latter
 must be placed in the directory \texttt{SRC}. But, while doing this, all the
 parameters appearing in \texttt{usini1} will also be taken into account. In
 order to prevent the user from having to respecify in \texttt{usini1} all that
-he has already specified through the Interface, \texttt{cs create} automatically
+he has already specified through the Interface, \texttt{cs~create} automatically
 comments out the examples in \texttt{usini1} (\texttt{Cex} at the beginning of
 each line) while copying it in the directory \texttt{REFERENCE}. Therefore, the user
 only needs to uncomment the specific parts of \texttt{usini1} he wants to modify,
 and the rest of the examples will be ignored.\\
 On the contrary, if the Interface will not be used, then all the parameters in
 \texttt{usini1} have to be specified. In that case, using the \texttt{--nogui}
-option of \texttt{cs create} will prevent it from commenting \texttt{usini1}
+option of \texttt{cs~create} will prevent it from commenting \texttt{usini1}
 out, thus saving the user the tedious task of uncommenting all the lines (and
 the risk of skipping some of them).
 
@@ -2159,6 +2115,567 @@ functions, the full list of corresponding entities is not maintained,
 so each entity must be compared to the criterion at each time step.
 Heavy use of many selection criteria containing geometric functions
 may thus lead to reduced performance.
+
+%==================================
+\section{Preprocessing}
+%==================================
+
+The \pcs module of \CS reads the
+mesh file(s) (under any supported format) and translates the necessary
+information into a Kernel input file. Mesh joining and domain partitioning for parallel
+calculations are done at this stage. In case of periodic boundary
+conditions, the \pcs module also identifies the boundary faces that are
+related through periodicity and generates the corresponding connectivity.
+
+The executable of the \pcs module is \texttt{cs\_preprocess},
+and the most useful options and sub-options are described briefly here.
+To obtain a complete and up-to-date list of options and environment
+variables, use the following command:
+\texttt{cs\_preprocess~-h} or \texttt{cs\_preprocess~--help}. Many options,
+such as this one, accept a short and a long version.
+
+For the main options, the launch script \texttt{runcase} contains
+corresponding variables, that are used to define options for the
+\pcs. This way, the user only has to define these variables
+and does not detailed knowledge of the \pcs command line.
+
+Nonetheless, it may be useful to call the \pcs manually
+in certain situations, especially for frequent verification when
+building a mesh, so its use is described here. Verification
+may also be done using the \texttt{cs~check\_mesh} command,
+which takes a subset of the same command-line arguments.
+
+The \pcs is controlled using command-line arguments, some of these
+accepting sub-arguments. It is possible to complete the command-line
+with a file, using the same syntax as the command-line, but also
+allowing multiple lines and comments. A few environment variables
+allow an expert user to modify some behaviors or to obtain
+a trace of memory management.
+
+%==================================
+\subsection{\pcs options and sub-options\label{sec:optpcs_ssopt}}
+%==================================
+
+Main choices are done using command-line options. Sub-option arguments
+must directly follow the one activating the corresponding option, and
+the definition of sub-options ends with the first argument which does
+not match the same sub-option. Some options may be applied multiple
+times. For example, \texttt{-j} being the option which activates
+face joining, \texttt{--fraction} the sub-option modifying the
+default tolerance, and  \texttt{--color} a face selection sub-option:
+
+\texttt{cs\_preprocess -m fluid.msh -j --fraction 0.2 --color 2 --color 3 -j}
+
+\noindent means that we apply a joining to boundary faces of
+color $2$ or $3$ of mesh \texttt{fluid.msh} with a tolerance of $0.2$,
+then that we apply a second joining to all remaining boundary faces
+(with default parameters), while:
+
+\texttt{cs\_preprocess -m fluid.msh -j --fraction 0.2 -color 2 -j --color 3}
+
+\noindent means that we apply a joining to boundary faces of
+color $2$ of mesh \texttt{fluid.msh} with a tolerance of $0.2$,
+then that we apply a second joining to boundary faces of color $3$
+(with default values for other parameters).
+
+\subsubsection{Option files\label{sec:optpcs:input}}
+
+It is possible to complete the command-line with a file, using the same
+syntax as the command-line, but allowing the addition of arbitrary line
+jumps and comments. On a given line, anything that follows a\texttt{\#}
+character until the end of the line is ignored in such a file.
+The use of such a file is activated by the argument \texttt{-i}.
+If for example a file \texttt{pp\_cmd} contains the following
+lines:
+
+\noindent
+\begin{tabular}{l l}
+\texttt{--ensight} & \texttt{\# activate EnSight output}\\
+\texttt{--med}     & \texttt{\# activate MED output}\\
+\end{tabular}
+
+\noindent
+\begin{tabular}{l l}
+then command:     & \texttt{cs\_preprocess -i pp\_cmd -m mesh.unv}\\
+is equivalent to: & \texttt{cs\_preprocess -m mesh.unv --ensight --med}\\
+\end{tabular}
+
+The use of option files may circumvent command-line length limits
+(now rarely an issue), and allows easier manipulation and better
+readability of complex option combinations.
+
+\subsubsection{Mesh selection\label{sec:optpcs:mesh}}
+
+Any use of the preprocessor requires one or several meshes (except for
+\texttt{cs\_preprocess} and \texttt{cs\_preprocess~-h} which respectively
+print the version number and list of options).
+They are selected using the \texttt{--mesh} or \texttt{-m} option, followed
+by th list of meshes to read. The file format is usually automatically
+determined based on its extension (c.f. \ref{sec:formats_in}
+page~\pageref{sec:formats_in}) but this option also allows a \texttt{--format}
+sub-option, to force the format choice of selected files.
+
+For formats allowing multiple meshes in a single file, the
+\texttt{--num} sub-option followed by a strictly positive integer allows
+selection of a specific mesh; by default, the first mesh is selected.
+
+For meshes in CGNS format, we may in addition use the \texttt{--grp-cel}
+or \texttt{--grp-fac} sub-options, followed by the \texttt{section}
+or \texttt{zone} keywords, to define additional groups of cell or faces
+based on the organization of the mesh in sections or zones. The sub-options
+have no effect on meshes of other formats.
+
+We may define as many mesh selections as we wish. Meshes are read and
+automatically compounded (but not joined) in the order of their appearance.
+For example:
+
+\noindent
+\texttt{cs\_preprocess -m file.1 file.2 --format ideas -m branch.cgns --grp-cel section}
+
+\noindent
+reads mesh files \texttt{file.1} and \texttt{file.2} as \ideas files,
+and appends the first mesh from the \texttt{branch.cgns} file,
+on which additional groups of cells corresponding to the CGNS section
+names to which cells belong.
+
+\subsubsection{Post-processing output\label{sec:optpcs:post}}
+
+By default, the \pcs does not generate any post-processor output.
+By adding \texttt{--ensight}, \texttt{--med}, or \texttt{--cgns} to
+the command-line arguments, the output of the mesh to the indicated format
+is provoked. It is possible to generate output to different formats
+simultaneously. Note that we will obtain additional surface meshes
+corresponding to the calculation domain boundary, to faces joined
+or modified by joinings or periodicity, etc. Note also that
+periodic faces are not considered to be part of the domain boundary.
+\footnote{Periodicity is interpreted as a ``geometric'' condition
+rather than a classical boundary condition.}
+
+We consider 4 types of output: the volume mesh (output before possible
+joinings), the boundary mesh, informational meshes (such as faces
+stemming from or modified by a joining of periodicity, or
+selected interior faces), and meshes outlining to zones with errors.
+By default, all types of meshes are output. If one or several of
+the three filtering sub-options is used , only the meshes of the
+requested types will be output, as well as meshes corresponding to
+zones with errors (non-filterable). The filtering sub-options
+are: \texttt{--volume}, \texttt{--boundary}, and \texttt{--info}.
+
+One may also optionally avoid outputting polygons or polyhedra
+by adding the \texttt{--discard-poly} sub-option.
+This allow working around bugs or limited polyhedron support
+in visualization tools or limitations of the CGNS 2 format.
+In this case, the post-processing output will be incomplete,
+but at least readable.
+
+In the case of \emph{EnSight Gold} output, we may use the
+\texttt{--simple} sub-option to avoid splitting the output in
+several \emph{parts} corresponding to different attributes
+(colors and groups) borne by this mesh.
+
+Still in the case of the \emph{EnSight Gold} output, we may
+force the output in text mode using the \texttt{--text} sub-option,
+or force binary output to ``big-endian'' variant using the
+\texttt{--big-endian} sub-option. By default, the output is native
+binary.
+
+Finally, in the case of output in the \emph{MED} format, we may
+force the conversion of attributes (colors) to groups using
+the \texttt{--color-to-group} sub-option.
+
+\subsubsection{Faces selection\label{sec:optpcs:select}}
+
+Selection of faces occurs at several levels, especially for conforming
+joining.
+
+It is also possible to select a set of interior faces bearing attributes
+(colors or groups) for verification purposes using the option
+\texttt{--int-face}. The \pcs prints the number of interior faces
+matching a selection criterion, and if in addition post-processing
+output is activated, a surface mesh corresponding to the selected faces
+will be generated.
+
+\pcs selection criteria are more limited than those
+used by th kernel, and are generated using the following sub-options:
+
+\noindent
+\begin{tabular}{l l}
+\texttt{--color} $c_1$ $c_2$ ... $c_n$~ &
+to select faces of the indicated color numbers\\
+\texttt{--group} $g_1$ $g_2$ ... $g_n$~ &
+to select faces of the groups named\\
+\texttt{--invsel} &
+to use the complement of the indicated colors and groups\\
+\end{tabular}
+
+The same selection sub-options are used for conforming joining, periodicity,
+and interior faces verification. In the case of joining and periodicity,
+the selection is automatically restricted to boundary faces, while
+in the case of interior face verification, it is restricted to
+interior faces bearing attributes.
+
+For example, to select all interior faces of mesh \texttt{example.des}
+which bear an attribute (color or group), but are not of color 2 and do not
+belong to group ``inlet'', with output of an \emph{Ensight Gold} part
+and with no kernel output (using \texttt{-sc}), we use the following
+command line (the \verb=\= character marks line continuation):
+
+\noindent
+\begin{tabular}{l l l}
+\texttt{cs\_preprocess} & \texttt{-m example.des -sc --ensight } \verb=\= \\
+         & \texttt{--int-face --group entree --color 2 --invsel}\\
+\end{tabular}
+
+\subsubsection{Joining of non-conforming meshes\label{sec:optpcs:join}}
+
+Conforming joining of possibly non-conforming meshes is one of the
+\pcs's main functions. To activate it, use the \texttt{--join} or
+\texttt{-j} command-line options, possibly followed by face selection
+criteria and sub-options controlling associated tolerance parameters.
+
+For a simple mesh, it is rarely useful to specify face selection
+criteria, as joining is sufficiently automated to detect which faces
+may actually be joined. For a more complex mesh, or a mesh with thin
+walls which we want to avoid transforming into interior faces, it is
+recommended to filter boundary faces that may be joined by using
+face selection sub-arguments (see \S\ref{sec:formats_in}). This has the
+additional advantage of reducing the number of faces to test for
+in the intersection/overlap search, and thus reduced to time
+required by the joining algorithm.
+
+One may also modify tolerance criteria using 2 sub-options:
+
+\noindent
+\begin{tabular}[top]{p{3.0cm}%
+                     >{\PreserveBackslash\raggedright\hspace{0pt}}p{12.0cm}}
+\texttt{--fraction} $r$  &
+assigns value $r$ (where $0 < r < 0,49$) to the maximum
+intersection distance multiplier ($0,1$ by default). The maximum
+intersection distance for a given vertex is based on the length of
+the shortest incident edge, multiplied by $r$. The maximum intersection
+at a given point along an edge is interpolated from that at its
+vertices, as shown on the left of figure \ref{fig_join_tolerance}; \\
+\texttt{--plane} $c$ &
+assigns the minimum cosine between normals for two faces to be
+considered coplanar ($0,8$ by default, which corresponds to almost 37°);
+this parameter is used in the second stage of the algorithm, to
+reconstruct conforming faces, as shown on the right of figure
+\ref{fig_join_tolerance}.\\
+\end{tabular}
+
+\begin{figure}[hp]
+\centerline{
+\includegraphics*[width=14cm]{join_tolerance}}
+\caption{Maximum intersection tolerance and faces normal angle
+\label{fig_join_tolerance}}
+\end{figure}
+
+In practice, we are sometimes led to increase the maximum intersection
+distance multiplier to $0.2$ or even $0.3$ when joining curved surfaces,
+so that all intersection are detected. As this influences merging
+of vertices and thus simplification of reconstructed faces, but also
+deformation of ``lateral'' faces, it is recommended only to modify it
+if necessary. As for the \texttt{--plane} sub-option, its use has
+only been necessary on a few meshes up to now, and always in the
+sense of reducing the tolerance (i.e. bringing the minimum cosine closer
+to 1) so that face reconstruction does not try to generate faces
+from initial faces on different surfaces.
+
+As an example, to join faces with color $2$ of the mesh \texttt{mesh.des}
+with an intersection distance multiplier of  $0.15$, then joining all
+remaining joinable boundary faces with a default parameter of $0.1$,
+we may use the following command:
+
+\texttt{cs\_preprocess -m mesh.des -j --fraction 0.15 --color 2 -j}
+
+In cases where any two faces to join always have at least one common vertex
+(which is the case with meshes containing hanging nodes generated by
+tools such as \harpoon), we may use the \texttt{--semi-conf}
+sub-option, for a much faster edge intersection search than with
+the usual algorithm.
+
+\subsubsection{Periodicity\label{sec:optpcs:period}}
+
+Handling of periodicity is based on an extension of conforming joining,
+as shown on figure \ref{fig_join_periodic}. It is thus not necessary
+that periodic faces be conforming (though it usually leads to better
+mesh quality). All sub-options relative to conforming joining of
+non-conforming faces also apply to periodicity. Note also that
+once pre-processed, 2 periodic faces have the same orientation
+(possibly adjusted by periodicity of rotation).
+
+\begin{figure}[hp]
+\centerline{
+\includegraphics*[height=8cm]{join_periodic}}
+\caption{Matching of periodic faces
+\label{fig_join_periodic}}
+\end{figure}
+
+The sub-option for a translation-type periodicity is \texttt{--trans} followed
+by the three translation vector components $(tx, ty, tz)$.
+The sub-option for a rotation-type periodicity is \texttt{--rota}, 
+which must be completed either by:
+
+\noindent
+\texttt{--angle} $\alpha$ \texttt{--dir} $dx$ $dy$ $dz$
+
+\noindent
+where $\alpha$ is the rotation angle in degrees and $(dx, dy, dz)$ defines
+the rotation axis (using the trigonometric orientation), or by:
+
+\noindent
+\texttt{--matrix} $m11$ $m12$ $m13$ $m21$ $m22$ $m23$ $m31$ $m32$ $m33$
+
+\noindent
+where 
+\begin{math}
+  \left( \begin{smallmatrix}
+     m_{11} & m_{12} & m_{13} \\ m_{21} & m_{22} & m_{23} \\ m_{31} & m_{32} & m_{33}
+  \end{smallmatrix} \right)
+\end{math}
+ defines the rotation matrix.
+
+In either case, we may define an invariant point different from $(0, 0, 0)$
+by adding the rotation sub-option \texttt{--invpt} $px$ $py$ $pz$.
+A translation and a rotation may be combined: in this case, the composite
+transformation is always $R \circ T$, independently of the order in which
+the translation and rotation are defined.
+
+The orientation of the transformations has no importance (but in the
+case of a composite transformation $R \circ T$, $R$ and $T$ must be
+consistent).
+As with joining, it is recommended to filter boundary faces to process
+using a selection criterion. As many periodicities may be built as desired,
+as long as boundary faces are present. One a periodicity is handled,
+faces having periodic matches do not appear as boundary faces, but as
+interior faces, and are thus not available anymore for other
+periodicities.
+
+We finish with the example of a periodicity of rotation of $90$ degrees around
+an axis of direction $(0, 0, 1)$ passing through $(1, 0, 0)$,
+for faces of group ``perio\_1'' and with a joining tolerance of $20\%$ (the
+\verb=\= character marks line continuation):
+
+\noindent
+\begin{tabular}{l l l}
+\texttt{--perio} & \texttt{--rota --angle 90 --dir 0 0 1 --invpt 1 0 0} \verb=\= \\
+ & \texttt{--fraction 0.2 --group perio\_1}\\
+\end{tabular}
+
+\subsubsection{Element orientation correction\label{sec:optpcs:orient}}
+
+We may active the possible element orientation correction using the
+\texttt{--reorient} option.
+
+Note that we cannot guarantee correction (or even detection) of a bad
+orientation in all cases.
+Not all local numbering possibilities of elements are tested,
+as we focus on ``usual'' numbering permutations. Moreover,
+the algorithms used may produce false positives or fail to find
+a correct renumbering in the case of highly non convex elements.
+In this case, nothing may be done short of modifying the mesh, as
+without a convexity hypothesis, it is not always possible to choose
+between two possible definitions starting from a point set.
+
+With a post-processing option such as \texttt{--ensight},
+visualizable meshes of corrected elements as well as remaining
+badly oriented elements are generated.
+
+\subsection{Environment variables\label{sec:envvpcs}}
+
+Setting a few environment variables specific to the \pcs allows modifying
+its default behavior. In general, if a given behavior is modifiable
+through an environment variable rather than by a command-line option,
+it has little interest for a non-developer, or its modification is
+potentially hazardous. The environment variables used by the \pcs
+are described here:
+
+\envvar{CS\_PREPROCESS\_MEM\_LOG}
+
+Allows defining a file name in which memory allocation, reallocation,
+and freeing is logged.
+
+\envvar{CS\_PREPROCESS\_MIN\_EDGE\_LEN}
+
+Under the indicated length ($10^{-15}$ by default), an edge is considered
+to be degenerate and its vertices will be merged after the transformation
+to descending connectivity. Degenerate edges and faces will thus be
+removed. Hence, the post-processed element does not change, but the
+Kernel may handle a prism where the preprocessor input contained a
+hexahedron with two identical vertex couples (and thus a face of zero
+surface). If the \pcs does not print any information relative to this
+type of correction, it means that it has not been necessary. To completely
+deactivate this automatic correction, a negative value may be assigned
+to this environment variable.
+
+\envvar{CS\_PREPROCESS\_IGNORE\_IDEAS\_COO\_SYS}
+
+If this variable is defined and is a strictly positive integer, coordinate
+systems in \ideas universal format files will be ignored. The behavior
+of the \pcs will thus be the same as that of versions 1.0 et 1.1.
+Note that in any case, non Cartesian coordinate systems are not handled yet.
+
+\envvar{CS\_PREPROCESS\_JOIN\_MAX\_SUB\_FACES}
+
+Defines the number of new faces originating from an initial face ($100$
+by default) above which we consider that the joining reconstruction has
+probably entered an infinite loop and has thus failed.
+This criterion is the last to intervene in the detection of errors and
+only comes into play in pathological cases probably related to excessive
+deformation of faces to join (and thus a too large tolerance factor).
+It should not be necessary to increase it for a mesh really intended for
+a calculation, as $100$ faces correspond to a refinement ratio of $10$
+in each direction for joined cells, which is excessive from a numerical
+standpoint.
+
+\subsubsection{System environment variables\label{sec:envpcs:sys}}
+
+Some system environment variables may also modify the behavior of
+the \pcs. For example, if the \pcs was compiled with \med support
+on an architecture allowing shared (dynamic) libraries, the
+\texttt {LD\_PRELOAD} environment variable may be used to define a
+``prioritary'' path to load \med or HDF5 libraries, and thus experiment
+with another version of these libraries without recompiling the \pcs.
+To determine which shared libraries are used by an executable file, use
+the following command: \texttt{ldd~\{executable\_path\}}.
+
+\subsection{Optional functionality\label{sec:pcs:lib_opt}}
+
+Some functions of the \pcs are based on external libraries,
+which may not always be available. It is thus possible to configure
+and compile the \pcs so as not to use these libraries.
+When running the \pcs, the supported options are printed.
+The following optional libraries may be used:
+
+\begin{itemize}
+
+\item CGNS library. In its absence, \hyperref[fmtdesc:cgns]{CGNS}
+      format support is deactivated.
+
+\item \med-file library. In its absence, \hyperref[fmtdesc:med]{\med}
+      format is simply deactivated.
+
+\item Read compressed files using Zlib. With this option, it is
+      possible to diretly read mesh files compressed with a
+      \emph{gzip} type algorithm and bearing a \emph{.gz} extension.
+      This is limited to formats not already based on an external
+      library (i.e. it is not usable with CGNS or \med files),
+      and has memory and CPU time overhead, but may be practical.
+      Without this library, files must be uncompressed before use.
+
+\end{itemize}
+
+\subsection{General remarks}
+
+Note that the \pcs is in general capable of reading all ``classical''
+element types present in mesh files (triangles, quadrangles, tetrahedra,
+pyramids, prisms, and hexahedra).
+Quadratic or cubic elements are converted upon reading into their
+linear counterparts. Vertices referenced by no element (isolated vertices
+or centers of higher-degree elements) are discarded. Meshes are read
+in the order defined by the user and are appended, vertex and element
+indices being incremented appropriately.
+\footnote{Possible entity labels are not maintained, as they would
+probably not be unique when appending multiple meshes.}
+
+At this stage, volume elements are sorted by type, and the fluid domain
+post-processing output is generated if required. Conforming joining,
+which may transform cells into general polyhedra only occurs
+after this. This allows bypassing a limitation of most post-processing
+tools, which do not handle polyhedral elements.
+\emph{It is possible to require the simultaneous output with
+multiple formats.}
+
+In general, colors or groups assigned to vertices are ignored.
+selections are thus based on faces or cells. with tools such
+as \simail, faces of volume elements may be referenced directly, while
+with \ideas or SALOME, a layer of surface elements bearing the required
+colors and groups must be added. Internally, the \pcs always considers
+that a layer of surface elements is added (i.e. when reading a \simail
+mesh, additional faces are generated to bear cell face colors.
+When building the descending connectivity, all faces with the
+same topology are merged: the initial presence of two layers of identical
+surface elements bearing different colors would thus lead to
+a calculation mesh with faces bearing two colors.
+
+\subsection{Files passed to the Kernel\label{sec:pcs:mode_comm}}
+
+Data passed to the Kernel by the \pcs is transmitted using a
+binary file, using ``big endian'' data representation, named
+\texttt{preprocessor\_output}.
+
+When using the \pcs for mesh verification, data for the Kernel
+is usually not needed. In this case, the \texttt{-sc} option may be
+used to simulate output, without creation of a {\tt preprocessor\_output}
+file.
+
+%==================================
+\section{Partitioning for parallel runs\label{sec:parall}}
+%==================================
+
+Graph partitioning (using the optional \emph{METIS}) is done using
+a secondary executable,\\
+\texttt{cs\_partition},
+which reads the file produced by the \pcs and builds one or
+several ``cell $\rightarrow$ domain'' distribution files, named
+{\tt domain\_number\_\it{p}} for a partitioning on $p$ sub-domains.
+
+This separation leads to extra work for the Kernel, which must
+redistribute data read in the  {\tt preprocessor\_output} file
+based on the associated partitioning, but avoids requiring
+re-running the \pcs whenever running on a different number of
+files. This useful mainly for large files (20 to 100 million
+cells, for which running the \pcs may require several hours and
+a machine with a very large memory capacity. Simple domain
+partitioning requires much less time, and in general slightly
+less memory than the \pcs.
+
+Without partitioning (for example if the \emph{METIS} library
+is not available, or the partitioner has not been run
+for the required number of sub-domains), the Kernel will
+use a built-in partitioning using a space-filling curve
+(Z-curve) technique. This usually leads to partitionings
+of lower quality than with graph partitioning, but parallel
+performance remains reasonable.
+
+\subsection{Options\label{sec:optcmd:parall}}
+
+To list the partitioner's options, use the following command:
+{\tt cs\_partition~-h} 
+
+We provide the list of required partitionings an optionally additional
+options. For example, to simulate a partitioning for calculations on
+64 and 128 processes with no output, we may use the following command:
+
+\texttt{cs\_partition 64 128 -no-write}
+
+\subsubsection{Ignore periodicity\label{sec:optcmdpart:noperiod}}
+
+By default, face periodicity relations are taken into account when building
+the ``cell $\rightarrow$ cell'' connectivity graph used for partitioning.
+This allows better partitioning optimization, but increases the probability
+of having groups of cells at opposite sides of the domain in a same
+sub-domain. This is not an issue for standard calculations, but may
+degrade performance of search algorithms based on bounding boxes.
+It is thus possible to ignore periodicity when partitioning a mesh
+using the \texttt{-no-perio} option.
+
+Note that nothing guarantees that a graph partitioner will not place
+disjoint cells in the same sub-domain independently of this option,
+but this behavior is rare.
+
+\subsubsection{Simulation mode\label{sec:optpart:nowrite}}
+
+Using the \texttt{-no-write} option, we can tell the partitioner
+not to output a {\tt domain\_number\_\it{p}} file.
+Partitioning is thus computed, but not saved.
+
+\subsubsection{Environment variables\label{sec:optpart:envvar}}
+
+\envvar{CS\_PARTITION\_MEM\_LOG}
+
+Allows defining a file name in which memory allocations, reallocations,
+and frees will be logged.
 
 %==================================
 \section{Main variables}
@@ -2482,42 +2999,43 @@ multidimensional arrays listed below. In some paricular subroutines,
 some variables may be given a more explicit name, in order to ease the
 comprehension.
 
-\variab{PROPCE}{PROPCE(NCELET,NPROCE)}{RA}{Properties defined at the
+\variab{propce}{propce(ncelet,nproce)}{ra}{Properties defined at the
 cell centers. For instance: density, viscosity ...}
 
-\variab{PROPFA}{PROPFA(NFAC,NPROFA)}{RA}{Properties defined at the
+\variab{propfa}{propfa(nfac,nprofa)}{ra}{Properties defined at the
 internal faces. For instance: mass flow across internal faces}
 
-\variab{PROPFB}{PROPFB(NFABOR,NPROFB)}{RA}{Properties defined at the
+\variab{propfb}{propfb(nfabor,nprofb)}{ra}{Properties defined at the
 boundary faces. For instance: mass flow across boundary faces, density
 at boundary faces ...}
 
-\variab{RTP}{RTP(NCELET,NVAR)}{RA}{Array storing the values of the solved
+\variab{rtp}{rtp(ncelet,nvar)}{ra}{Array storing the values of the solved
 variables at the current time step}
 
-\variab{RTPA}{RTPA(NCELET,NVAR)}{RA}{Array storing the values of the solved
+\variab{rtpa}{rtpa(ncelet,nvar)}{ra}{Array storing the values of the solved
 variables at the previous time step}
 
 \bigskip
 
-\underline{Concerning RTP and RTPA}
+\underline{About \texttt{rtp} and \texttt{rtpa}}
 
 The indexes allowing to mark out the different variables (from 1 to
-NVAR) are integers available in a ``common'' file called
+\texttt{nvar}) are integers available in a ``common'' file called
 \texttt{numvar.h}. Some solved variables (pressure, velocity, turbulence)
 depend on the considered phase, and the index which refers to it is then a
-array of size NPHSMX, the maximum number of phases.
+array of size \texttt{nphsmx}, the maximum number of phases.
 
-For example, IPR(IPHAS) refers to the variable ``pressure'' of the phase
-IPHAS (with 1$\leqslant$IPHAS$\leqslant$NPHAS): the pressure of the
-phase IPHAS in the cell IEL at the current time step is therefore
-RTP(IEL,IPR(IPHAS)).
+For example, \texttt{ipr(iphas)} refers to the variable ``pressure'' of
+the phase \texttt{iphas} (with 1$\leqslant$iphas$\leqslant$nphas):
+the pressure of the phase \texttt{iphas} in the cell \texttt{iel}
+at the current time step is therefore \texttt{rtp(iel,ipr(iphas))}.
 
 The list of integers referring to solved variables is given below. These
-variable index-numbers are not only used for the RTP and RTPA arrays, but also
-for some arrays of variable associated options (for instance, BLENCV(IK(IPHAS))
-is the percentage of second-order convective scheme for the turbulent energy of
-the phase IPHAS when a corresponding turbulent model is used).
+variable index-numbers are not only used for the \texttt{rtp} and
+\texttt{rtpa} arrays, but also for some arrays of variable associated options
+(for instance, \texttt{blencv(ik(iphas))} is the percentage of second-order
+convective scheme for the turbulent energy of
+the phase \texttt{iphas} when a corresponding turbulent model is used).
 
 \begin{list}{$\bullet$}{}
 \item IPR(IPHAS)\index{IPR}: pressure\footnote{IPR(IPHAS) corresponds to a
@@ -3712,7 +4230,7 @@ subroutine. In the case that a parameter is specified in the interface
  and in the user subroutine, it is the value in the user subroutine that
  is taken into acount. It is for that reason that all the examples of
  user subroutines are placed in the \texttt{REFERENCE} directory by the
- case preparer \texttt{cs create}.
+ case preparer \texttt{cs~create}.
 
 
 
@@ -3866,11 +4384,11 @@ $\bullet\ $ When using the interface, only the
 supplementary parameters (which can not be defined in the interface)
 should appear in \texttt{usini1}. To spare the user the necessity to
 delete the other parameters appearing as examples in the subroutine, the
-utility program \texttt{cs create} comments automatically all the
+utility program \texttt{cs~create} comments automatically all the
 example lines of \texttt{usini1} with a code \texttt{!ex}. The user
 needs then only to uncomment the lines which are useful in his
 case. This function of
-\texttt{cs create} can be inactivated with
+\texttt{cs~create} can be inactivated with
 the option \texttt{--nogui} (useful if the user knows that he will not
 use the interface).
 
@@ -3902,7 +4420,7 @@ For more details about the treatment of boundary conditions, the user
 may refer to the theoretical and computer documentation \cite{theory} of
 the subroutine \texttt{condli} (for the wall conditions, see
 \texttt{clptur}) (to access to this document on a workstation, use
-\mbox{\texttt{cs info --guide theory}}).
+\mbox{\texttt{cs~info --guide theory}}).
 
 From the user point of view, the boundary conditions are totally
 determined by three arrays\footnote{except with Lagrangien}~: ITYPFB(NFABOR,NPHAS)\index{ITYPFB},

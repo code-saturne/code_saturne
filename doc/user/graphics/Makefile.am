@@ -24,6 +24,8 @@
 
 FIGFILES = \
 cs_components.fig \
+join_periodic.fig \
+join_tolerance.fig \
 vortex.fig
 
 # Other files

@@ -1,4 +1,14 @@
 * 11/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Merge the preprocessor user guide into Code_Saturne user guide.
+  added files:
+    doc/user/graphics/join_tolerance.fig
+    doc/user/graphics/join_periodic.fig
+  modified files:
+    doc/style/csmacros.sty
+    doc/user/graphics/Makefile.am
+    doc/user/saturne1.tex
+
+* 11/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Add a new Python runcase script with more code coupling capabilities
   and more aware of MPI and batch environments.
