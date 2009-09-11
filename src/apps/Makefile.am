@@ -26,7 +26,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/include/base \
 -I$(top_srcdir)/include/ctwr \
 -I$(top_srcdir)/include/lagr \
-@FVM_CPPFLAGS@ @BFT_CPPFLAGS@ @MEI_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@
+@FVM_CPPFLAGS@ @MEI_CPPFLAGS@ @BFT_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@
 
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 
@@ -57,8 +57,8 @@ libsaturne_la_LDFLAGS = -no-undefined -version 0:0:0
 bin_PROGRAMS = cs_solver
 cs_solver_SOURCES =
 cs_solver_LDADD = libsaturne.la \
-@MEI_LDFLAGS@ @MEI_LIBS@ \
 @FVM_LDFLAGS@ @FVM_LIBS@ \
+@MEI_LDFLAGS@ @MEI_LIBS@ \
 @BFT_LDFLAGS@ @BFT_LIBS@ \
 @MPI_LDFLAGS@ @MPI_LIBS@ \
 @LIBXML2_LDFLAGS@ @LIBXML2_LIBS@ \

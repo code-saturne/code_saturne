@@ -1,6 +1,6 @@
 * 11/09/2009 - David Monfort <david.monfort@edf.fr>
   Change FVM and BFT CPPFLAGS order so that one can find FVM headers,
-  before BFT ones.
+  before BFT ones (and same trick for MEI).
   modified scripts:
     src/apps/Makefile.am
     src/base/Makefile.am
