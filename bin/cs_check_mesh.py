@@ -23,25 +23,11 @@ import optparse
 import os, re
 import sys, shutil
 import string
-import subprocess
 import tempfile
 
 import cs_config
 
-#-------------------------------------------------------------------------------
-
-def run_command(cmd):
-    """
-    Run a command.
-    """
-    p = subprocess.Popen(cmd,
-                         shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    output = p.communicate()
-    print output[0], output[1]
-
-    return p.returncode
+from cs_exec_environment import run_command
 
 #-------------------------------------------------------------------------------
 

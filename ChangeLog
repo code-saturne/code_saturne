@@ -1,4 +1,9 @@
 * 14/09/2009 - David Monfort <david.monfort@edf.fr>
+  Make use of the cs_exec_environment instead of subprocess module.
+  modified script:
+    bin/cs_check_mesh.py
+
+* 14/09/2009 - David Monfort <david.monfort@edf.fr>
   Remove "have" function as it may not be found.
   modified script:
     extras/bash_completion/code_saturne
