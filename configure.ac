@@ -531,6 +531,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  doc/Makefile doc/style/csvers.tex
                  doc/howto/Makefile doc/howto/graphics/Makefile
+                 doc/developper/Makefile doc/developper/graphics/Makefile
                  doc/refcard/Makefile doc/refcard/graphics/Makefile
                  doc/theory/Makefile doc/theory/graphics/Makefile
                  doc/tutorial/Makefile doc/tutorial/graphics/Makefile

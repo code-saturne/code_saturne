@@ -20,12 +20,27 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-SUBDIRS = developper howto refcard theory tutorial user
+# Xfig files to process
 
-EXTRA_DIST = \
-style/csdoc.sty \
-style/csindex.sty \
-style/csmacros.sty \
-style/csvers.tex.in \
-style/logocs.png \
-style/logoedf.png
+FIGFILES =
+
+# Generated documents (pdf files)
+
+PDF_FIGFILES = $(FIGFILES:.fig=.pdf)
+
+# New suffixes and targets
+
+SUFFIXES = .fig .pdf
+
+.fig.pdf:
+	fig2dev -L pdf $< > $@
+
+# One redefines here the standard pdf targets of automake
+# so that they handle generation from LaTeX documents.
+
+pdf-local: $(PDF_FIGFILES)
+
+clean-local:
+	-rm -f $(PDF_FIGFILES)
+
+distclean-local: clean-local

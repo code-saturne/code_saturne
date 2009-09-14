@@ -1,3 +1,16 @@
+* 14/09/2009 - David Monfort <david.monfort@edf.fr>
+  Add a template for the developper documentation.
+  added files:
+    doc/developper
+    doc/developper/developper.tex
+    doc/developper/graphics
+    doc/developper/graphics/Makefile.am
+    doc/developper/input
+    doc/developper/Makefile.am
+  modified scripts:
+    configure.ac
+    doc/Makefile.am
+
 * 14/09/2009 - Marc Sakiz <marc.sakiz@edf.fr>
   Add an option to xmgrace for the window size.
   modified script:
