@@ -176,6 +176,12 @@ doc/manpages/cs_info.1 \
 doc/manpages/cs_plot_probes.1 \
 doc/manpages/cs_solver.1
 
+# Install bash completion script
+
+bashcompletiondir = ${sysconfdir}/bash_completion.d
+bashcompletiondir_DATA = \
+extras/bash_completion/code_saturne
+
 # Finish user files installation
 # - tag with the package version number
 # - remove the test preventing from using a source file

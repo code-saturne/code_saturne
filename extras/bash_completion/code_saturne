@@ -1,0 +1,163 @@
+#------------------------------------------------------------------------------
+#   This file is part of the Code_Saturne Kernel, element of the
+#   Code_Saturne CFD tool.
+#
+#   Copyright (C) 2009 EDF S.A., France
+#
+#   The Code_Saturne Kernel is free software; you can redistribute it
+#   and/or modify it under the terms of the GNU General Public License
+#   as published by the Free Software Foundation; either version 2 of
+#   the License, or (at your option) any later version.
+#
+#   The Code_Saturne Kernel is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public Licence
+#   along with the Code_Saturne Kernel; if not, write to the
+#   Free Software Foundation, Inc.,
+#   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#-------------------------------------------------------------------------------
+
+# Batch completion script for:
+# - "cs"        user Python script
+# - "cs_solver" binary executable
+
+have cs &&
+_cs() {
+
+    local cur prev cmds cmdOpts helpOpts
+
+    COMPREPLY=()
+
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    # Possible commands, as given by "cs help"
+    cmds="help compile config create gui info"
+    cmds="${cmds} check_consistency check_mesh plot_probes"
+
+    # Help options
+    helpOpts="-h --help"
+
+    if [[ ${COMP_CWORD} -eq 1 ]]; then
+	COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
+	return 0
+    fi
+
+    # Certain tokens preclude further activity
+    if [[ ${prev} == @(-h|--help|-v|--version) ]]; then
+	return 0
+    fi
+
+    # Parse arguments and set various variables about what was found.
+    #
+    # cmd: the current command if available
+    local cmd=${COMP_WORDS[1]}
+
+    # Check options depending on the command and the previous token
+    case ${cmd} in
+	check_consistency)
+	    case ${prev} in
+		-p|--param)  _filedir; return 0;;
+		-s|--source) _filedir -d; return 0;;
+		-n|--nproc)  COMPREPLY=( ); return 0;;
+		*) cmdOpts="-p --param -s --source -n --nproc";;
+	    esac
+	    ;;
+	compile)
+	    case ${prev} in
+		-d|--dest)   _filedir -d; return 0;;
+		-s|--source) _filedir -d; return 0;;
+		*) cmdOpts="-t --test -f --force -s --source -d --dest \
+                     --opt-libs --syrthes";;
+	    esac
+	    ;;
+	create)
+	    case ${prev} in
+		-c|--case)     COMPREPLY=( ); return 0;;
+		-s|--study)    COMPREPLY=( ); return 0;;
+		--nsat|--nsyr) COMPREPLY=( ); return 0;;
+		*) cmdOpts="-s --study -c --case -n --nogui \
+                     --new-runcase --nsat --nsyr";;
+	    esac
+	    ;;
+	gui)
+	    case ${prev} in
+		-f|--file)  _filedir; return 0;;
+		-b|--batch) COMPREPLY=( ); return 0;;
+		*) cmdOpts="-f --file -b --batch -n --new -m --matisse \
+                     --not-tree -z --no-splash";;
+	    esac
+	    ;;
+	info)
+	    case ${prev} in
+		-r|--reader) COMPREPLY=( $(compgen -W "evince gpdf kpdf xpdf acroread" -- ${cur}) ); return 0;;
+		-g|--guide)  COMPREPLY=( $(compgen -W "refcard theory tutorial user" -- ${cur}) ); return 0;;
+		*) cmdOpts="-r --reader -g --guide --version"
+	    esac
+	    ;;
+	*)
+	    cmdOpts=""
+	    ;;
+    esac
+
+    # Add help options for every command but "help"
+    [[ "${cmd}" != "help" ]] && cmdOpts="${helpOpts} ${cmdOpts}"
+
+
+    COMPREPLY=( $(compgen -W "${cmdOpts}" -- ${cur}) )
+
+}
+[ "${have:-}" ] && complete -F _cs cs
+
+# -------------------------------------------------
+
+have cs_solver &&
+_cs_solver() {
+
+    local cur prev options opt
+
+    COMPREPLY=()
+
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    options="--solcom --mpi --mpi-io -q --quality --benchmark --cwf \
+             --log --logp -p --param --syr-socket \
+             -h --help --version"
+
+    if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]]; then
+	COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
+	return 0
+    fi
+
+    # Certain tokens preclude further activity
+    if [[ ${prev} == @(-h|--help|-v|--version) ]]; then
+	return 0
+    fi
+
+    case "${prev}" in
+	--cwf|--syr-socket)
+	    COMPREPLY=( )
+	    ;;
+	--log)
+	    COMPREPLY=( $(compgen -W "0 1" -- ${cur}) )
+	    ;;
+	--logp)
+	    COMPREPLY=( $(compgen -W "-1 0 1" -- ${cur}) )
+	    ;;
+	--mpi-io)
+	    COMPREPLY=( $(compgen -W "0 1 2" -- ${cur}) )
+	    ;;
+	-p|--param)
+	    _filedir
+	    ;;
+	*)
+	    COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
+	    ;;
+    esac
+
+}
+[ "${have:-}" ] && complete -F _cs_solver cs_solver

@@ -1,3 +1,10 @@
+* 14/09/2009 - David Monfort <david.monfort@edf.fr>
+  Add a bash completion script for cs and cs_solver.
+  added script:
+    extras/bash_completion/code_saturne
+  modified script:
+    Makefile.am
+
 * 13/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Adapt the code that waits for a MPI_Abort in case of errors. There
   should not be now any spurious error file.
