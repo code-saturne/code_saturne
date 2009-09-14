@@ -195,30 +195,13 @@ cs_run(void)
 
   cs_base_system_info();
 
+  cs_io_defaults_info();
+
   /* Initialize global structures for main mesh */
 
   cs_glob_mesh = cs_mesh_create();
   cs_glob_mesh_builder = cs_mesh_builder_create();
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
-
-  /* Initialize reading of Preprocessor output */
-
-  if (opts.ifoenv != 0) {
-#if defined(FVM_HAVE_MPI)
-    cs_glob_pp_io = cs_io_initialize("preprocessor_output",
-                                     "Face-based mesh definition, R0",
-                                     CS_IO_MODE_READ,
-                                     cs_glob_io_hints,
-                                     CS_IO_ECHO_OPEN_CLOSE,
-                                     cs_glob_mpi_comm);
-#else
-    cs_glob_pp_io = cs_io_initialize("preprocessor_output",
-                                     "Face-based mesh definition, R0",
-                                     CS_IO_MODE_READ,
-                                     CS_IO_ECHO_OPEN_CLOSE,
-                                     -1);
-#endif
-  }
 
   /* Call main calculation initialization function or help */
 
@@ -614,6 +597,10 @@ main(int    argc,
   /* Log-file header and command line arguments recap */
 
   cs_opts_logfile_head(argc, argv);
+
+  /* MPI-IO options */
+
+  cs_io_set_defaults(opts.mpi_io_mode);
 
   /* In case of use with SALOME, optional connection with CFD_Proxy
      launcher or load and start of YACS module */

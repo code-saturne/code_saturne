@@ -2122,14 +2122,33 @@ void CS_PROCF(ledevi, LEDEVI)
   fvm_gnum_t n_elts = 0;
   cs_bool_t  dim_read = false;
   cs_bool_t  end_read = false;
-  cs_io_t  *pp_in = cs_glob_pp_io;
+  cs_io_t  *pp_in = NULL;
   cs_mesh_t  *mesh = cs_glob_mesh;
   _mesh_reader_t *mr = NULL;
 
   const char  *unexpected_msg = N_("Message of type <%s> on <%s>\n"
                                    "unexpected or of incorrect size");
 
-  /* Initialize parameter values */
+  /* Initialize reading of Preprocessor output */
+
+#if defined(FVM_HAVE_MPI)
+  cs_glob_pp_io = cs_io_initialize("preprocessor_output",
+                                   "Face-based mesh definition, R0",
+                                   CS_IO_MODE_READ,
+                                   cs_glob_io_hints,
+                                   CS_IO_ECHO_OPEN_CLOSE,
+                                   cs_glob_mpi_comm);
+#else
+  cs_glob_pp_io = cs_io_initialize("preprocessor_output",
+                                   "Face-based mesh definition, R0",
+                                   CS_IO_MODE_READ,
+                                   CS_IO_ECHO_OPEN_CLOSE,
+                                   -1);
+#endif
+
+  pp_in = cs_glob_pp_io;
+
+   /* Initialize parameter values */
 
   *ndim = 3;
   *nfml = 0;

@@ -1,3 +1,15 @@
+* 13/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a mpi_io option to the command line so that one can use FVM
+  compiled with MPI/IO support and decide at runtime which type of I/O
+  to use.
+  modified routines:
+    include/base/cs_io.h
+    include/base/cs_opts.h
+    src/apps/cs_solver.c
+    src/base/cs_io.c
+    src/base/cs_opts.c
+    src/base/cs_preprocessor_data.c
+
 * 11/09/2009 - David Monfort <david.monfort@edf.fr>
   Change FVM and BFT CPPFLAGS order so that one can find FVM headers,
   before BFT ones (and same trick for MEI).

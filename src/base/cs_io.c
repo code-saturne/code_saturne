@@ -2037,31 +2037,6 @@ _dump_index(const cs_io_sec_index_t  *idx)
 }
 
 /*============================================================================
- * Public functions definition for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Set the default kernel IO hints to the specified value.
- *
- * Fortran interface :
- *
- * SUBROUTINE IOHINT (IHINT)
- * *****************
- *
- * INTEGER          IHINT       : <-> : IO hints (bit mask)
- *                                        0: default
- *                                        1: disable MPI IO
- *                                        4: MPI IO uses explicit offsets
- *                                        8: MPI IO uses individual pointers
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (iohint, IOHINT) (const cs_int_t  *ihint)
-{
-  cs_glob_io_hints = *ihint;
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -3115,6 +3090,64 @@ cs_io_write_block_buffer(const char      *sec_name,
                (global_num_start-1)*stride + 1,
                (global_num_end -1)*stride + 1,
                elt_type, elts);
+}
+
+/*----------------------------------------------------------------------------
+ * Print information on default options for file access.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_defaults_info(void)
+{
+  cs_bool_t  mpi_io = false;
+  const char *fmt = N_("  I/O mode:          %s\n");
+
+#if defined(FVM_HAVE_MPI_IO)
+
+  if (cs_glob_n_ranks > 1) {
+    if (cs_glob_io_hints & FVM_FILE_EXPLICIT_OFFSETS) {
+      bft_printf(_(fmt), _("MPI-IO, explicit offsets"));
+      mpi_io = true;
+    }
+    else if (cs_glob_io_hints & FVM_FILE_INDIVIDUAL_POINTERS) {
+      bft_printf(_(fmt), _("MPI-IO, individual file pointers"));
+      mpi_io = true;
+    }
+    if (mpi_io == false || (cs_glob_io_hints & FVM_FILE_NO_MPI_IO))
+      bft_printf(_(fmt), _("serial IO\n\n"));
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Set the default semantics for file access.
+ *
+ * Allowed values for mpi_io_mode are:
+ *   0: no MPI-IO,
+ *   1: MPI-IO with explicit offsets,
+ *   2: MPI-IO with individual file pointers
+ *
+ * Invalid values (for example an MPI-IO mode with no MPI or MPI-IO
+ * support) are silently ignored.
+ *
+ * parameters:
+ *   mpi_io_mode <-- mode for default semantics
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_set_defaults(int  mpi_io_mode)
+{
+#if defined(HAVE_MPI)
+
+  if (mpi_io_mode == 0)
+    cs_glob_io_hints = FVM_FILE_NO_MPI_IO;
+  else if (mpi_io_mode == 1)
+    cs_glob_io_hints = FVM_FILE_EXPLICIT_OFFSETS;
+  else if (mpi_io_mode == 2)
+    cs_glob_io_hints = FVM_FILE_INDIVIDUAL_POINTERS;
+
+#endif
 }
 
 /*----------------------------------------------------------------------------
