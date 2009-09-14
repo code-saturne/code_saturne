@@ -309,13 +309,22 @@ _cs_base_err_vprintf(const char  *format,
 
     else {
 #if defined(HAVE_SLEEP)
+      /* Wait a few seconds, so that if rank 0 also has encountered an error,
+         it may kill other ranks through MPI_Abort, so that only rank 0 will
+         generate an error file. If rank 0 has not encountered the error,
+         proceed normally after the wait.
+         As sleep() may be interrupted by a signal, repeat as long as the wait
+         time is not elapsed; */
       int wait_time = (cs_glob_n_ranks < 64) ? 1: 10;
-      sleep(wait_time); /* Wait a few seconds, so that if rank 0 also
-                           has encountered an error, it may kill
-                           other ranks through MPI_Abort, so that
-                           only rank 0 will generate an error file.
-                           If rank 0 has not encountered the error,
-                           proceed normally after the wait. */
+      double stime = bft_timer_wtime();
+      double etime = 0.0;
+      do {
+        sleep(wait_time);
+        etime = bft_timer_wtime();
+      }
+      while (etime > -0.5 && etime - stime > wait_time); /* etime = -1 only if
+                                                            bft_timer_wtime()
+                                                            is unusable. */
 #endif
       sprintf(nom_fic_err, "error_n%04d", cs_glob_rank_id + 1);
     }

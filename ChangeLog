@@ -1,4 +1,10 @@
 * 13/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Adapt the code that waits for a MPI_Abort in case of errors. There
+  should not be now any spurious error file.
+  modified routine:
+    src/base/cs_base.c
+
+* 13/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a Fortran wrapper for MPI_Barrier (mainly for debugging purpose).
   modified routines:
     include/base/cs_parall.h
