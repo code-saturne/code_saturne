@@ -81,7 +81,7 @@ def plot(f):
 
     # Run XmGrace -nxy command
 
-    cmd = "xmgrace -nxy" + " " + temp_file[1]
+    cmd = "xmgrace -geometry 1100x850 -nxy" + " " + temp_file[1]
     run_command(cmd)
 
     # Cleanup and exit
