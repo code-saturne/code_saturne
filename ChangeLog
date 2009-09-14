@@ -1,4 +1,9 @@
 * 14/09/2009 - David Monfort <david.monfort@edf.fr>
+  Remove "have" function as it may not be found.
+  modified script:
+    extras/bash_completion/code_saturne
+
+* 14/09/2009 - David Monfort <david.monfort@edf.fr>
   Add a bash completion script for cs and cs_solver.
   added script:
     extras/bash_completion/code_saturne

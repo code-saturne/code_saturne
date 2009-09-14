@@ -24,7 +24,6 @@
 # - "cs"        user Python script
 # - "cs_solver" binary executable
 
-have cs &&
 _cs() {
 
     local cur prev cmds cmdOpts helpOpts
@@ -110,11 +109,10 @@ _cs() {
     COMPREPLY=( $(compgen -W "${cmdOpts}" -- ${cur}) )
 
 }
-[ "${have:-}" ] && complete -F _cs cs
+complete -F _cs cs
 
 # -------------------------------------------------
 
-have cs_solver &&
 _cs_solver() {
 
     local cur prev options opt
@@ -160,4 +158,4 @@ _cs_solver() {
     esac
 
 }
-[ "${have:-}" ] && complete -F _cs_solver cs_solver
+complete -F _cs_solver cs_solver
