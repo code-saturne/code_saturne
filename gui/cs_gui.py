@@ -35,6 +35,8 @@ Parse command line arguments and launch the GUI.
 
 import os, sys, string
 
+from optparse import OptionParser
+
 if not hasattr(sys, 'version_info') or sys.version_info <= (2, 4, 0, 'final'):
     raise SystemExit, "Graphical users interface of Code_Saturne "\
                       "requires python 2.4 or later."
@@ -71,23 +73,73 @@ except:
     pass
 
 from Base.Common import icon_base_path
-from Base.CommandLine import usage, process_cmd_line
 from Base.MainView import MainView
 
 import cs_config
 
 #-------------------------------------------------------------------------------
-# Help messages
+# Processes the passed command line arguments
 #-------------------------------------------------------------------------------
 
-if ('-h' in sys.argv[1:]) or ('--help' in sys.argv[1:]):
-    print usage()
-    sys.exit(0)
+def process_cmd_line(argv):
+    """
+    Processes the passed command line arguments.
+    """
+
+    parser = OptionParser(usage="usage: %prog [options]")
+
+    parser.add_option("-f", "--file", dest="file_name", type="string",
+                      metavar="<file>",
+                      help="upload a previous case at the interface start")
+
+    parser.add_option("-b", "--batch", dest="batch_file", type="string",
+                      metavar="<batchfile>",
+                      help="set batchrunning window with batch file")
+
+    parser.add_option("-n", "--new", dest="new",
+                      action="store_true",
+                      help="open a new case")
+
+    parser.add_option("-r", "--read-only", dest="read_only",
+                      action="store_true",
+                      help="load file in read only mode")
+
+    parser.add_option("-z", "--no-splash", dest="splash_screen",
+                      action="store_false",
+                      help="load file in read only mode")
+
+    parser.add_option("--no-tree", dest="tree_window",
+                      action="store_false",
+                      help="load file in read only mode")
 
 
-if ('-v' in sys.argv[1:]) or ('--version' in sys.argv[1:]):
-    print "Graphical users interface of Code_Saturne %s" % cs_config.package.version
-    sys.exit(0)
+    parser.set_defaults(matisse=False)
+    parser.set_defaults(read_only=False)
+    parser.set_defaults(splash_screen=True)
+    parser.set_defaults(tree_window=True)
+
+    (options, args) = parser.parse_args(argv)
+
+
+    if options.new and options.file_name:
+        parser.error("Options --new and --file are mutually exclusive")
+
+    if options.batch_file and not options.file_name:
+        parser.error("Option --batch requires --file")
+
+    if len(args) > 0:
+        if options.file_name or len(args) > 1:
+            parser.error("Multiple filenames are given")
+        else:
+            options.file_name = args[0]
+
+    batch_window = False
+    if options.batch_file:
+        batch_window = True
+        options.batch_file = os.path.basename(options.batch_file)
+
+    return options.file_name, options.splash_screen, options.matisse, \
+        batch_window, options.batch_file, options.tree_window, options.read_only
 
 #-------------------------------------------------------------------------------
 # Start point of the Graphical User Interface

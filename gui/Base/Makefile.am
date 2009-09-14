@@ -34,7 +34,6 @@ __init__.py \
 resource_base_rc.py \
 BrowserForm.py \
 BrowserView.py \
-CommandLine.py \
 Common.py \
 IdForm.py \
 IdView.py \

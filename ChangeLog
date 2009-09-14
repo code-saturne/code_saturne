@@ -1,4 +1,12 @@
 * 14/09/2009 - David Monfort <david.monfort@edf.fr>
+  Move from getopt to optparse module for command line parsing.
+  removed routine:
+    gui/Base/CommandLine.py
+  modified routines:
+    gui/Base/Makefile.am
+    gui/cs_gui.py
+
+* 14/09/2009 - David Monfort <david.monfort@edf.fr>
   Add a template for the developper documentation.
   added files:
     doc/developper
