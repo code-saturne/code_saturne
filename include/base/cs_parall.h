@@ -569,6 +569,21 @@ CS_PROCF (parfbg, PARFBG)(cs_int_t   *lnum,
                           cs_int_t   *rankid,
                           cs_int_t   *gnum);
 
+/*----------------------------------------------------------------------------
+ * Call a barrier in case of parallelism
+ *
+ * This function should not be necessary in production code,
+ * but it may be useful for debugging purposes.
+ *
+ * Fortran interface :
+ *
+ * SUBROUTINE PARBAR
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (parbar, PARBAR)(void);
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/

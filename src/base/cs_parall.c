@@ -1366,6 +1366,28 @@ cs_parall_interface_sr(fvm_interface_set_t  *interfaces,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Call a barrier in case of parallelism
+ *
+ * This function should not be necessary in production code,
+ * but it may be useful for debugging purposes.
+ *
+ * Fortran interface :
+ *
+ * SUBROUTINE PARBAR
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (parbar, PARBAR)(void)
+{
+#if defined(HAVE_MPI)
+
+  MPI_Barrier(cs_glob_mpi_comm);
+
+#endif
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
