@@ -179,7 +179,7 @@ doc/manpages/cs_solver.1
 # Install bash completion script
 
 bashcompletiondir = ${sysconfdir}/bash_completion.d
-bashcompletiondir_DATA = \
+bashcompletion_DATA = \
 extras/bash_completion/code_saturne
 
 # Finish user files installation
