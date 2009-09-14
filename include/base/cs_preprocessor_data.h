@@ -52,6 +52,26 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Query or modification of the option for domain partitioning when no
+ * partitioning file is present.
+ *
+ * This function returns 1 or 2 according to the selected algorithm.
+ *
+ * Fortran interface :
+ *
+ * SUBROUTINE ALGDOM (IOPT)
+ * *****************
+ *
+ * INTEGER          IOPT        : <-> : Choice of the partitioning base
+ *                                        0: query
+ *                                        1: initial numbering
+ *                                        2: space-filling curve (default)
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (algdom, ALGDOM)(cs_int_t  *iopt);
+
+/*----------------------------------------------------------------------------
  * Receive messages from the pre-processor about the dimensions of mesh
  * parameters
  *
@@ -79,6 +99,23 @@ void CS_PROCF(ledevi, LEDEVI)
 /*============================================================================
  *  Public functions definition
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Query or modification of the option for domain partitioning when no
+ * partitioning file is present.
+ *
+ *  0 : query
+ *  1 : partition based on initial numbering
+ *  2 : partition based on space-filling curve (default)
+ *
+ * choice <-- of partitioning algorithm.
+ *
+ * returns:
+ *   1 or 2 according to the selected algorithm.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_preprocessor_data_part_choice(int choice);
 
 /*----------------------------------------------------------------------------
  * Read pre-processor mesh data and finalize input.

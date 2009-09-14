@@ -34,10 +34,6 @@
 #include "cs_config.h"
 #endif
 
-/* To use Space-filling curve (Morton) for decomposition, define USE_SFC */
-#undef USE_SFC
-/* #define USE_SFC 1 */
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -140,6 +136,8 @@ typedef struct {
 /*============================================================================
  *  Global variables
  *============================================================================*/
+
+static cs_bool_t  _use_sfc = true;
 
 static _mesh_reader_t *_cs_glob_mesh_reader = NULL;
 
@@ -349,9 +347,11 @@ _read_cell_rank(cs_mesh_t       *mesh,
   /* Test if file exists */
 
   if (! bft_file_isreg(file_name)) {
-    bft_printf(_(" No \"%s\" file available;\n"
-                 "   an unoptimized domain partitioning will be used.\n"),
-               file_name);
+    bft_printf(_(" No \"%s\" file available;\n"), file_name);
+    if (_use_sfc == false)
+      bft_printf(_("   an unoptimized domain partitioning will be used.\n"));
+    else
+      bft_printf(_("   domain partitioning will use a space-filling curve.\n"));
     return;
   }
 
@@ -1278,8 +1278,6 @@ _extract_periodic_faces_l(cs_mesh_builder_t        *mb,
 
 #if defined(HAVE_MPI)
 
-#if defined(USE_SFC)
-
 /*----------------------------------------------------------------------------
  * Compute cell centers using minimal local data.
  *
@@ -1668,8 +1666,6 @@ _cell_rank_by_sfc(const _mesh_reader_t     *mr,
   cell_io_num = fvm_io_num_destroy(cell_io_num);
 }
 
-#endif /* defined(USE_SFC) */
-
 /*----------------------------------------------------------------------------
  * Organize data read by blocks in parallel and build most mesh structures.
  *
@@ -1722,8 +1718,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
   if (mr->read_cell_rank != 0)
     use_cell_rank = 1;
 
-#if defined(USE_SFC)
-  else if (mr->read_cell_rank == 0) {
+  else if (_use_sfc == true && mr->read_cell_rank == 0) {
 
     fvm_lnum_t _n_cells = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
 
@@ -1733,7 +1728,6 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
     use_cell_rank = 1;
   }
-#endif
 
   if (use_cell_rank != 0) {
 
@@ -2092,6 +2086,29 @@ _decompose_data_l(cs_mesh_t          *mesh,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Query or modification of the option for domain partitioning when no
+ * partitioning file is present.
+ *
+ * This function returns 1 or 2 according to the selected algorithm.
+ *
+ * Fortran interface :
+ *
+ * SUBROUTINE ALGDOM (IOPT)
+ * *****************
+ *
+ * INTEGER          IOPT        : <-> : Choice of the partitioning base
+ *                                        0: query
+ *                                        1: initial numbering
+ *                                        2: space-filling curve (default)
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF(algdom, ALGDOM)(cs_int_t  *iopt)
+{
+  *iopt = cs_preprocessor_data_part_choice(*iopt);
+}
+
+/*----------------------------------------------------------------------------
  * Receive messages from the pre-processor about the dimensions of mesh
  * parameters
  *
@@ -2418,6 +2435,46 @@ void CS_PROCF(ledevi, LEDEVI)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Query or modification of the option for domain partitioning when no
+ * partitioning file is present.
+ *
+ *  0 : query
+ *  1 : partition based on initial numbering
+ *  2 : partition based on space-filling curve (default)
+ *
+ * choice <-- of partitioning algorithm.
+ *
+ * returns:
+ *   1 or 2 according to the selected algorithm.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_preprocessor_data_part_choice(int choice)
+{
+  int retval = 0;
+
+  if (choice < 0 || choice > 2)
+    bft_error(__FILE__, __LINE__,0,
+              _("The algorithm selection indicator for domain partitioning\n"
+                "can take the following values:\n"
+                "  1: partition based on initial numbering\n"
+                "  2: partition based on space-filling curve\n"
+                "and not %d."), choice);
+
+  if (choice == 1)
+    _use_sfc = false;
+  else if (choice == 2)
+    _use_sfc = true;
+
+  if (_use_sfc == true)
+    retval = 2;
+  else
+    retval = 1;
+
+  return retval;
+}
 
 /*----------------------------------------------------------------------------
  * Read pre-processor mesh data and finalize input.

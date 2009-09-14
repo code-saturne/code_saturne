@@ -1,4 +1,11 @@
 * 13/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  The space-filling-curve algorithm for domain splitting is activated
+  by default. A Fortran subroutine is available to change this choice.
+  modified routines:
+    include/base/cs_preprocessor_data.h
+    src/base/cs_preprocessor_data.c
+
+* 13/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a mpi_io option to the command line so that one can use FVM
   compiled with MPI/IO support and decide at runtime which type of I/O
   to use.
