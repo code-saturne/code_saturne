@@ -112,12 +112,12 @@ cs_coupling_discover_mpi_apps(int          app_num,
 
     int i, n_apps, app_id;
 
-    _cs_glob_coupling_mpi_app_num = app_num;
-
     /* App_type contains a string such as
        "Code_Saturne 1.4.0" or "NEPTUNE_CFD 1.2.1" */
 
     const char app_type[] = CS_APP_NAME " " CS_APP_VERSION;
+
+    _cs_glob_coupling_mpi_app_num = app_num;
 
     if (cs_glob_rank_id < 1) {
       bft_printf(_("\n"

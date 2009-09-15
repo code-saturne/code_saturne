@@ -1080,6 +1080,40 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
+! --- Linear solver parameters (for each unknown)
+
+!     iresol = -1:           default
+!     iresol = 1000*ipol +j: ipol is the degree of the Neumann polynomial
+!                            used for preconditioning,
+!                            j = 0: conjugate gradient,
+!                            j = 1: Jacobi
+!                            j = 2: bi-CgStab
+
+!     nitmax: maximum number of iterations for each unknown ivar
+!     epsilo: relative precision for the solution of the linear system.
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+iutile = 0
+if (iutile.eq.1) then
+
+  iphas = 1
+  iresol(iu(iphas)) = 2
+  iresol(iv(iphas)) = 2
+  iresol(iw(iphas)) = 2
+  if(nscaus.ge.1) then
+    do ii = 1, nscaus
+      iresol(isca(ii)) = 2
+      nitmax(isca(ii)) = 5000
+      epsilo(isca(ii)) = 1.d-6
+    enddo
+  endif
+
+endif
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+
 ! --- Algebraic multigrid parameters
 
 !     imgr = 0: no multigrid
@@ -1533,7 +1567,7 @@ integer iverif
 
 ! Local variables
 
-integer iphas, ipp, imom
+integer ii, iphas, ipp, imom, iutile
 
 !===============================================================================
 
@@ -1611,11 +1645,33 @@ iecaux = 1
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
-! --- no log (listing) output
+! Frequency of log output
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ntlist = 1
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+! Log (listing) verbosity
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+iutile = 0
+if (iutile.eq.1) then
+
+  iphas = 1
+
+  do ii = 1, nvar
+    iwarni(ii) = 1
+  enddo
+
+  iwarni(ipr(iphas)) = 2
+  iwarni(iu(iphas)) = 2
+  iwarni(iv(iphas)) = 2
+  iwarni(iw(iphas)) = 2
+
+endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
@@ -1827,28 +1883,28 @@ elseif(itytur(iphas).eq.3) then
 
 elseif(iturb(iphas).eq.50) then
 
-!     energie turbulente
+  ! turbulent kinetic energy
   ipp = ipprtp(ik    (iphas))
   nomvar(ipp)   = 'EnerTurb'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!     dissipation turbulente
+  ! turbulent dissipation
   ipp = ipprtp(iep   (iphas))
   nomvar(ipp)   = 'Dissip'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!     phi
+  ! phi
   ipp = ipprtp(iphi  (iphas))
   nomvar(ipp)   = 'Phi'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!     f_barre
+  ! f_bar
   ipp = ipprtp(ifb   (iphas))
   nomvar(ipp)   = 'f_barre'
   ichrvr(ipp)   = 1
@@ -2094,7 +2150,7 @@ if(1.eq.1) return
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1. DIMENSION DES MACROS TABLEAUX IA ET RA :
+! 1. Size of macro arrays ia and ra:
 
 !  The user may need to modify the size of integer and real work
 !    arrays here: longia and longra respectively.
@@ -2129,7 +2185,7 @@ longra = 0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 !===============================================================================
-! 2. DIMENSIONS DES TABLEAUX UTILISATEUR ITUSER ET RTUSER
+! 2. Size of macro arrays ituser and rtuser:
 !===============================================================================
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START

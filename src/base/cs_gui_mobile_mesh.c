@@ -120,7 +120,7 @@ enum ale_boundary_nature
     ale_boundary_nature_internal_coupling,
     ale_boundary_nature_external_coupling,
     ale_boundary_nature_fixed_velocity,
-    ale_boundary_nature_fixed_displacement,
+    ale_boundary_nature_fixed_displacement
 };
 
 /*============================================================================
@@ -146,7 +146,7 @@ cs_gui_iale_parameter(const char   *const param,
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "thermophysical_models", "ale_method", param);
 
-  if (cs_gui_strcmp(param,"mesh_viscosity") ){
+  if (cs_gui_strcmp(param,"mesh_viscosity")) {
 
     cs_xpath_add_attribute(&path, "type");
     type = cs_gui_get_attribute_value(path);
@@ -252,7 +252,7 @@ cs_gui_init_mei_tree(char         *formula,
                      unsigned int variable_nbr,
                      const double dtref,
                      const double ttcabs,
-                     const int    ntcabs )
+                     const int    ntcabs)
 {
     unsigned int i = 0;
 
@@ -260,14 +260,14 @@ cs_gui_init_mei_tree(char         *formula,
     mei_tree_t *tree = mei_tree_new(formula);
 
     /* Insert variables into mei_tree */
-    for( i = 0; i < variable_nbr; ++i )
+    for (i = 0; i < variable_nbr; ++i)
     {
         double value = 0;
 
         /* Read value from variables_value if it is not null 0 otherwise */
-        if( variables_value )
+        if (variables_value)
             value = variables_value[i];
-        mei_tree_insert(tree, variables[i], value );
+        mei_tree_insert(tree, variables[i], value);
     }
 
     /* Add commun variables: dt, t, nbIter */
@@ -281,7 +281,7 @@ cs_gui_init_mei_tree(char         *formula,
                       _("Error: can not interprete expression: %s\n"), tree->string);
 
     /* Check for symbols */
-    for( i = 0; i < symbol_nbr; ++i )
+    for (i = 0; i < symbol_nbr; ++i)
     {
         const char* symbol = symbols[i];
 
@@ -294,7 +294,7 @@ cs_gui_init_mei_tree(char         *formula,
 
     return tree;
 }
-#endif // HAVE_MEI
+#endif /* HAVE_MEI */
 
 /*----------------------------------------------------------------------------
  *  Get the ale property choice
@@ -303,6 +303,8 @@ cs_gui_init_mei_tree(char         *formula,
 static enum ale_property_choice
 get_ale_property_choice(void)
 {
+    char *choice_str;
+
     enum ale_property_choice choice = ale_property_choice_user_function;
     char *path = cs_xpath_init_path();
 
@@ -310,11 +312,11 @@ get_ale_property_choice(void)
     cs_xpath_add_test_attribute(&path, "label", "mesh_vi1");
     cs_xpath_add_attribute(&path, "choice");
 
-    char *choice_str = cs_gui_get_attribute_value(path);
+    choice_str = cs_gui_get_attribute_value(path);
 
-    if (cs_gui_strcmp( choice_str , "user_function" ) )
+    if (cs_gui_strcmp(choice_str , "user_function"))
         choice = ale_property_choice_user_function;
-    else if (cs_gui_strcmp( choice_str , "user_subroutine" ) )
+    else if (cs_gui_strcmp(choice_str , "user_subroutine"))
         choice = ale_property_choice_user_subroutine;
     else
         bft_error(__FILE__, __LINE__, 0,
@@ -331,12 +333,14 @@ get_ale_property_choice(void)
 static char *
 get_ale_formula(void)
 {
+    char *aleFormula;
+
     char *path = cs_xpath_short_path();
     cs_xpath_add_element(&path, "ale_method");
     cs_xpath_add_element(&path, "formula");
     cs_xpath_add_function_text(&path);
 
-    char *aleFormula =  cs_gui_get_text_value(path);
+    aleFormula =  cs_gui_get_text_value(path);
     BFT_FREE(path);
     return aleFormula;
 }
@@ -348,12 +352,14 @@ get_ale_formula(void)
 static char *
 get_ale_mesh_viscosity(void)
 {
+    char *viscosityType;
+
     char *path = cs_xpath_short_path();
     cs_xpath_add_element(&path, "ale_method");
     cs_xpath_add_element(&path, "mesh_viscosity");
     cs_xpath_add_attribute(&path, "type");
 
-    char *viscosityType = cs_gui_get_attribute_value(path);
+    viscosityType = cs_gui_get_attribute_value(path);
     BFT_FREE(path);
     return viscosityType;
 }
@@ -362,14 +368,16 @@ get_ale_mesh_viscosity(void)
  * Get the ale boundary formula
  *
  * parameters:
- * label        --> boundary label
- * choice       --> nature: "fixed_velocity" or "fixed_displacement"
+ *   label        --> boundary label
+ *   choice       --> nature: "fixed_velocity" or "fixed_displacement"
  *----------------------------------------------------------------------------*/
 
 static char*
 get_ale_boundary_formula(const char *const label,
                                      const char *const choice)
 {
+    char* formula;
+
     char *path = cs_xpath_init_path();
     cs_xpath_add_elements(&path, 2, "boundary_conditions",  "wall");
     cs_xpath_add_test_attribute(&path, "label", label);
@@ -378,7 +386,7 @@ get_ale_boundary_formula(const char *const label,
     cs_xpath_add_element(&path, "formula");
     cs_xpath_add_function_text(&path);
 
-    char* formula = cs_gui_get_text_value(path);
+    formula = cs_gui_get_text_value(path);
     BFT_FREE(path);
 
     return formula;
@@ -388,32 +396,36 @@ get_ale_boundary_formula(const char *const label,
  * Get uialcl data for fixed displacement
  *
  * parameters:
- * label        --> boundary label
- * begin        --> begin index for nodfbr
- * end          --> end index for nodfbr
- * nnod         --> number of node
- * nodfbr       --> NODFBR
- * impale       <-- IMPALE
- * depale       <-- DEPALE
- * dtref        --> time step
- * ttcabs       --> current time
- * ntcabs       --> current iteration number
+ *   label        --> boundary label
+ *   begin        --> begin index for nodfbr
+ *   end          --> end index for nodfbr
+ *   nnod         --> number of node
+ *   nodfbr       --> NODFBR
+ *   impale       <-- IMPALE
+ *   depale       <-- DEPALE
+ *   dtref        --> time step
+ *   ttcabs       --> current time
+ *   ntcabs       --> current iteration number
  *----------------------------------------------------------------------------*/
 
 static void
 uialcl_fixed_displacement(const char *const label,
-                                      const int         begin,
-                                      const int         end,
-                                      const int  *const nnod,
-                                      const int  *const nodfbr,
-                                            int  *const impale,
-                                     double *const      depale,
-                                     const double       dtref,
-                                     const double       ttcabs,
-                                     const int          ntcabs )
+                          const int         begin,
+                          const int         end,
+                          const int  *const nnod,
+                          const int  *const nodfbr,
+                          int        *const impale,
+                          double     *const depale,
+                          const double      dtref,
+                          const double      ttcabs,
+                          const int         ntcabs)
 {
+    int ii = 0;
 #ifdef HAVE_MEI
-    const char*  variables[3] = { "mesh_x", "mesh_y", "mesh_z" };
+    mei_tree_t *ev;
+    double X_mesh, Y_mesh, Z_mesh;
+
+    const char*  variables[3] = {"mesh_x", "mesh_y", "mesh_z"};
     unsigned int variable_nbr = 3;
 
     /* Get formula */
@@ -421,26 +433,25 @@ uialcl_fixed_displacement(const char *const label,
 
     if (!formula)
         bft_error(__FILE__, __LINE__, 0,
-            _("Boundary nature formula is null for %s.\n"), label );
+            _("Boundary nature formula is null for %s.\n"), label);
 
     /* Init mei */
-    mei_tree_t *ev = cs_gui_init_mei_tree(formula, variables, variable_nbr,
-                                          0, 0, 0, dtref, ttcabs, ntcabs );
+    ev = cs_gui_init_mei_tree(formula, variables, variable_nbr,
+                              0, 0, 0, dtref, ttcabs, ntcabs);
 
     mei_evaluate(ev);
 
     /* Get mei results */
-    double X_mesh = mei_tree_lookup(ev, "mesh_x");
-    double Y_mesh = mei_tree_lookup(ev, "mesh_y");
-    double Z_mesh = mei_tree_lookup(ev, "mesh_z");
+    X_mesh = mei_tree_lookup(ev, "mesh_x");
+    Y_mesh = mei_tree_lookup(ev, "mesh_y");
+    Z_mesh = mei_tree_lookup(ev, "mesh_z");
 
     BFT_FREE(formula);
     mei_tree_destroy(ev);
-#endif // HAVE_MEI
+#endif /* HAVE_MEI */
 
     /* Set depale and impale */
-    int ii = 0;
-    for( ii = begin; ii < end; ++ii )
+    for (ii = begin; ii < end; ++ii)
     {
         int inod = nodfbr[ii-1] - 1;
         if (impale[inod] == 0)
@@ -449,64 +460,65 @@ uialcl_fixed_displacement(const char *const label,
             depale[inod + 0 * (*nnod)] = X_mesh;
             depale[inod + 1 * (*nnod)] = Y_mesh;
             depale[inod + 2 * (*nnod)] = Z_mesh;
-#endif // HAVE_MEI
+#endif /* HAVE_MEI */
             impale[inod] = 1;
         }
     }
 }
 
 /*-----------------------------------------------------------------------------
- * Get uialcl data for fixed velicity
+ * Get uialcl data for fixed velocity
  *
  * parameters:
- * label        --> boundary label
- * iuma         --> IUMA
- * ivma         --> IVMA
- * iwma         --> IWMA
- * nfabor       --> Number of boundary faces
- * ifbr         --> ifbr
- * rcodcl       <-- RCODCL
- * dtref        --> time step
- * ttcabs       --> current time
- * ntcabs       --> current iteration number
+ *   label        --> boundary label
+ *   iuma         --> IUMA
+ *   ivma         --> IVMA
+ *   iwma         --> IWMA
+ *   nfabor       --> Number of boundary faces
+ *   ifbr         --> ifbr
+ *   rcodcl       <-- RCODCL
+ *   dtref        --> time step
+ *   ttcabs       --> current time
+ *   ntcabs       --> current iteration number
  *----------------------------------------------------------------------------*/
 
 static void
-uialcl_fixed_velocity( const char*   label,
-                                   const int     iuma,
-                                   const int     ivma,
-                                   const int     iwma,
-                                   const int     nfabor,
-                                   const int     ifbr,
-                                   double *const rcodcl,
-                                   const double  dtref,
-                                   const double  ttcabs,
-                                   const int     ntcabs )
+uialcl_fixed_velocity(const char*   label,
+                      const int     iuma,
+                      const int     ivma,
+                      const int     iwma,
+                      const int     nfabor,
+                      const int     ifbr,
+                      double *const rcodcl,
+                      const double  dtref,
+                      const double  ttcabs,
+                      const int     ntcabs)
 {
 #ifdef HAVE_MEI
+    mei_tree_t *ev;
     const char*  variables[3] = { "mesh_u", "mesh_v", "mesh_w" };
 
-    // Get formula
+    /* Get formula */
     char* formula = get_ale_boundary_formula(label, "fixed_velocity");
 
     if (!formula)
         bft_error(__FILE__, __LINE__, 0,
-            _("Boundary nature formula is null for %s.\n"), label );
+            _("Boundary nature formula is null for %s.\n"), label);
 
-    // Init MEI
-    mei_tree_t *ev = cs_gui_init_mei_tree(formula, variables, 3, 0, 0, 0,
-                                          dtref, ttcabs, ntcabs );
+    /* Init MEI */
+    ev = cs_gui_init_mei_tree(formula, variables, 3, 0, 0, 0,
+                              dtref, ttcabs, ntcabs);
 
     mei_evaluate(ev);
 
-    // Fill  rcodcl
+    /* Fill  rcodcl */
     rcodcl[ (iuma-1) * nfabor + ifbr ] = mei_tree_lookup(ev, "mesh_u");
     rcodcl[ (ivma-1) * nfabor + ifbr ] = mei_tree_lookup(ev, "mesh_v");
     rcodcl[ (iwma-1) * nfabor + ifbr ] = mei_tree_lookup(ev, "mesh_w");
 
     BFT_FREE(formula);
     mei_tree_destroy(ev);
-#endif // HAVE_MEI
+#endif /* HAVE_MEI */
 }
 
 /*-----------------------------------------------------------------------------
@@ -517,8 +529,10 @@ uialcl_fixed_velocity( const char*   label,
  *----------------------------------------------------------------------------*/
 
 static enum ale_boundary_nature
-get_ale_boundary_nature( const char *const label)
+get_ale_boundary_nature(const char *const label)
 {
+  char *ale_boundary_nature;
+
   enum ale_boundary_nature nature = ale_boundary_nature_fixed_wall;
 
   char *path = cs_xpath_init_path();
@@ -527,7 +541,7 @@ get_ale_boundary_nature( const char *const label)
   cs_xpath_add_test_attribute(&path, "label", label);
   cs_xpath_add_element(&path, "ale");
   cs_xpath_add_attribute(&path, "choice");
-  char *ale_boundary_nature = cs_gui_get_attribute_value(path);
+  ale_boundary_nature = cs_gui_get_attribute_value(path);
 
   if (cs_gui_strcmp(ale_boundary_nature, "fixed_boundary"))
     nature = ale_boundary_nature_fixed_wall;
@@ -552,21 +566,22 @@ get_ale_boundary_nature( const char *const label)
  * Get boundary attribute like nature or label
  *
  * parameters:
- * ith_zone  --> boundary index
- * nodeName  --> xml attribute name. for example, "nature" or "label"
+ *   ith_zone  --> boundary index
+ *   nodeName  --> xml attribute name. for example, "nature" or "label"
  *----------------------------------------------------------------------------*/
 
 static char*
 get_boundary_attribute(unsigned int ith_zone,
                        const char   *nodeName)
 {
+    char *result;
     char *path = cs_xpath_init_path();
 
     cs_xpath_add_element(&path, "boundary_conditions");
     cs_xpath_add_element_num(&path, "boundary", ith_zone);
     cs_xpath_add_attribute(&path, nodeName);
 
-    char *result = cs_gui_get_attribute_value(path);
+    result = cs_gui_get_attribute_value(path);
 
     BFT_FREE(path);
     return result;
@@ -575,14 +590,14 @@ get_boundary_attribute(unsigned int ith_zone,
 
 /*-----------------------------------------------------------------------------
  * Init xpath for internal coupling with:
-
-    boundary_conditions/wall[label=label]/
-    ale[choice=internal_coupling]/node_name, node_sub_name/text()
-
+ *
+ * boundary_conditions/wall[label=label]/
+ * ale[choice=internal_coupling]/node_name, node_sub_name/text()
+ *
  * parameters:
- * label            --> boundary label
- * node_name        --> xml node name ("initial_displacement")
- * node_sub_name    --> xml child node of node_name ("X")
+ *   label            --> boundary label
+ *   node_name        --> xml node name ("initial_displacement")
+ *   node_sub_name    --> xml child node of node_name ("X")
  *----------------------------------------------------------------------------*/
 
 static char*
@@ -609,9 +624,9 @@ init_internal_coupling_xpath(const char* label,
  * Get internal coupling double
  *
  * parameters:
- * label            --> boundary label
- * node_name        --> xml node name ("initial_displacement")
- * node_sub_name    --> xml child node of node_name ("X")
+ *   label            --> boundary label
+ *   node_name        --> xml node name ("initial_displacement")
+ *   node_sub_name    --> xml child node of node_name ("X")
  *----------------------------------------------------------------------------*/
 
 static double
@@ -622,7 +637,7 @@ get_internal_coupling_double(const char* label,
   double value = 0;
   char *path = init_internal_coupling_xpath(label, node_name, node_sub_name);
 
-  if( !cs_gui_get_double(path, &value ) )
+  if (!cs_gui_get_double(path, &value))
   {
     bft_error(__FILE__, __LINE__, 0,
               _("cannot get value for %s %s %s"),
@@ -638,9 +653,9 @@ get_internal_coupling_double(const char* label,
  * Get internal coupling string
  *
  * parameters:
- * label            --> boundary label
- * node_name        --> xml node name ("initial_displacement")
- * node_sub_name    --> xml child node of node_name ("formula")
+ *   label            --> boundary label
+ *   node_name        --> xml node name ("initial_displacement")
+ *   node_sub_name    --> xml child node of node_name ("formula")
  *----------------------------------------------------------------------------*/
 
 static char*
@@ -661,15 +676,15 @@ get_internal_coupling_string(const char* label,
  * Retreive internal coupling x, y and z XML values
  *
  * parameters:
- * label      --> boundary label
- * node_name  --> xml node name ("initial_displacement")
- * xyz        <-- result matrix
+ *   label      --> boundary label
+ *   node_name  --> xml node name ("initial_displacement")
+ *   xyz        <-- result matrix
  *----------------------------------------------------------------------------*/
 
 static void
 get_internal_coupling_xyz_values(const char *label,
                                  const char *node_name,
-                                 double      xyz[3] )
+                                 double      xyz[3])
 {
     xyz[0] = get_internal_coupling_double(label, node_name, "X");
     xyz[1] = get_internal_coupling_double(label, node_name, "Y");
@@ -681,7 +696,7 @@ get_internal_coupling_xyz_values(const char *label,
  * Retreive internal coupling advanced windows double value
  *
  * parameters:
- * node_name  --> xml node name ("displacement_prediction_alpha")
+ *   node_name  --> xml node name ("displacement_prediction_alpha")
  *----------------------------------------------------------------------------*/
 
 static void
@@ -703,7 +718,7 @@ get_uistr1_advanced_double(const char *const keyword,
  * Retreive internal coupling advanced windows checkbox value
  *
  * parameters:
- * node_name  --> xml node name ("monitor_point_synchronisation")
+ *   node_name  --> xml node name ("monitor_point_synchronisation")
  *----------------------------------------------------------------------------*/
 
 static void
@@ -724,17 +739,17 @@ get_uistr1_advanced_checkbox(const char *const keyword, int *const value)
  * Retreive data the internal coupling matrices
  *
  * parameters:
- * label            --> boundary label
- * node_name        --> xml matrix node name
- * symbols          --> see cs_gui_init_mei_tree
- * symbol_nbr       --> see cs_gui_init_mei_tree
- * variables        --> see cs_gui_init_mei_tree
- * variables_value  --> see cs_gui_init_mei_tree
- * variable_nbr     --> see cs_gui_init_mei_tree
- * output_matrix,   <-- result matrix
- * dtref            --> time step
- * ttcabs           --> current time
- * ntcabs           --> current iteration number
+ *   label            --> boundary label
+ *   node_name        --> xml matrix node name
+ *   symbols          --> see cs_gui_init_mei_tree
+ *   symbol_nbr       --> see cs_gui_init_mei_tree
+ *   variables        --> see cs_gui_init_mei_tree
+ *   variables_value  --> see cs_gui_init_mei_tree
+ *   variable_nbr     --> see cs_gui_init_mei_tree
+ *   output_matrix,   <-- result matrix
+ *   dtref            --> time step
+ *   ttcabs           --> current time
+ *   ntcabs           --> current iteration number
  *----------------------------------------------------------------------------*/
 
 static void
@@ -751,7 +766,9 @@ get_internal_coupling_matrix(const char    *label,
                              const int     ntcabs)
 {
 #ifdef HAVE_MEI
-    // Get the formula
+    /* Get the formula */
+    mei_tree_t *tree;
+
     unsigned int i = 0;
     char *matrix = get_internal_coupling_string(label, node_name, "formula");
 
@@ -759,13 +776,13 @@ get_internal_coupling_matrix(const char    *label,
         bft_error(__FILE__, __LINE__, 0,
                   _("Formula is null for %s %s"), label, node_name);
 
-    // Initialize mei
-    mei_tree_t *tree = cs_gui_init_mei_tree(matrix, symbols, symbol_nbr,
-                                            variables, variables_value, variable_nbr,
-                                            dtref, ttcabs, ntcabs );
+    /* Initialize mei */
+    tree = cs_gui_init_mei_tree(matrix, symbols, symbol_nbr,
+                                variables, variables_value, variable_nbr,
+                                dtref, ttcabs, ntcabs);
     mei_evaluate(tree);
 
-    // Read matrix values
+    /* Read matrix values */
     for (i = 0; i < symbol_nbr; ++i)
     {
         const char *symbol = symbols[i];
@@ -773,22 +790,22 @@ get_internal_coupling_matrix(const char    *label,
     }
     BFT_FREE(matrix);
     mei_tree_destroy(tree);
-#endif // HAVE_MEI
+#endif /* HAVE_MEI */
 }
 
 /*-----------------------------------------------------------------------------
  * Retreive data for internal coupling for a specific boundary
  *
  * parameters:
- * label    --> boundary label
- * xmstru   <-- Mass matrix
- * xcstr    <-- Damping matrix
- * xkstru   <-- Stiffness matrix
- * forstr   <-- Fluid force matrix
- * istruc   --> internal coupling boundary index
- * dtref    --> time step
- * ttcabs   --> current time
- * ntcabs   --> current iteration number
+ *   label    --> boundary label
+ *   xmstru   <-- Mass matrix
+ *   xcstr    <-- Damping matrix
+ *   xkstru   <-- Stiffness matrix
+ *   forstr   <-- Fluid force matrix
+ *   istruc   --> internal coupling boundary index
+ *   dtref    --> time step
+ *   ttcabs   --> current time
+ *   ntcabs   --> current iteration number
  *----------------------------------------------------------------------------*/
 
 static void
@@ -808,7 +825,11 @@ get_uistr2_data(const char    *label,
     const char   *force_symbols[] = {"fx", "fy", "fz"};
     unsigned int force_symbol_nbr = sizeof(force_symbols) / sizeof(force_symbols[0]);
 
-    // Get mass matrix, damping matrix and stiffness matrix
+    const unsigned int  variable_nbr = 3;
+    const char *variables[3] = {"fluid_fx", "fluid_fy", "fluid_fz"};
+    double variable_values[3];
+
+    /* Get mass matrix, damping matrix and stiffness matrix */
     get_internal_coupling_matrix(label, "mass_matrix", symbols,
                                  symbol_nbr, 0, 0, 0,
                                  &xmstru[istruc * symbol_nbr],
@@ -822,21 +843,17 @@ get_uistr2_data(const char    *label,
                                  &xkstru[istruc * symbol_nbr],
                                  dtref, ttcabs, ntcabs);
 
-    const unsigned int  variable_nbr = 3;
-    const char *variables[3] = { "fluid_fx", "fluid_fy", "fluid_fz" };
-    double variable_values[3];
+    /* Set variable for fluid force matrix */
+    variable_values[0] = forstr[istruc * force_symbol_nbr + 0];
+    variable_values[1] = forstr[istruc * force_symbol_nbr + 1];
+    variable_values[2] = forstr[istruc * force_symbol_nbr + 2];
 
-    // Set variable for fluid force matrix
-    variable_values[0] = forstr[istruc * force_symbol_nbr + 0 ];
-    variable_values[1] = forstr[istruc * force_symbol_nbr + 1 ];
-    variable_values[2] = forstr[istruc * force_symbol_nbr + 2 ];
-
-    // Get fluid force matrix
+    /* Get fluid force matrix */
     get_internal_coupling_matrix(label, "fluid_force_matrix",
                                  force_symbols, force_symbol_nbr,
                                  variables, variable_values, variable_nbr,
                                  &forstr[istruc * force_symbol_nbr],
-                                 dtref, ttcabs, ntcabs );
+                                 dtref, ttcabs, ntcabs);
 }
 
 /*-----------------------------------------------------------------------------
@@ -851,6 +868,9 @@ get_uistr2_data(const char    *label,
 static int
 get_coupling_post_synchronization_status(void)
 {
+    char *statusStr;
+    int  status;
+
     char *path = cs_xpath_init_path();
 
     cs_xpath_add_elements(&path, 3, "thermophysical_models",
@@ -858,8 +878,8 @@ get_coupling_post_synchronization_status(void)
                           "external_coupling_post_synchronization");
     cs_xpath_add_attribute(&path, "status");
 
-    char *statusStr = cs_gui_get_attribute_value(path);
-    int  status     = cs_gui_strcmp(statusStr, "on");
+    statusStr = cs_gui_get_attribute_value(path);
+    status    = cs_gui_strcmp(statusStr, "on");
 
     BFT_FREE(statusStr);
     BFT_FREE(path);
@@ -884,16 +904,19 @@ static int
 get_external_coupling_ddl(const char *const label,
                           const char *const node_name)
 {
+    char* choice;
+    int isOn;
+
     char *path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "boundary_conditions",  "wall");
+    cs_xpath_add_elements(&path, 2, "boundary_conditions", "wall");
     cs_xpath_add_test_attribute(&path, "label", label);
     cs_xpath_add_element(&path, "ale");
     cs_xpath_add_test_attribute(&path, "choice", "external_coupling");
     cs_xpath_add_element(&path, node_name);
     cs_xpath_add_attribute(&path, "choice");
 
-    char* choice = cs_gui_get_attribute_value(path);
-    int isOn = cs_gui_strcmp(choice, "on");
+    choice = cs_gui_get_attribute_value(path);
+    isOn = cs_gui_strcmp(choice, "on");
 
     BFT_FREE(choice);
     BFT_FREE(path);
@@ -918,14 +941,14 @@ get_external_coupling_ddl(const char *const label,
  * ntcabs   --> current iteration number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
-                                 double         *const viscmx,
-                                 double         *const viscmy,
-                                 double         *const viscmz,
-                                 const double   *const xyzcen,
-                                 double *const         dtref,
-                                 double *const         ttcabs,
-                                 const    int *const   ntcabs)
+void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
+                                double         *const viscmx,
+                                double         *const viscmy,
+                                double         *const viscmz,
+                                const double   *const xyzcen,
+                                double         *const dtref,
+                                double         *const ttcabs,
+                                const int      *const ntcabs)
 {
 #if defined(HAVE_MEI)
     int          iel            = 0;
@@ -934,9 +957,10 @@ void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
     unsigned int variable_nbr   = 1;
 
     /* Check if user function is selection */
-    if( get_ale_property_choice() == ale_property_choice_user_function )
+    if (get_ale_property_choice() == ale_property_choice_user_function)
     {
         /* Get formula */
+        mei_tree_t *ev;
         char *aleFormula    = get_ale_formula();
         char *viscosityType = get_ale_mesh_viscosity();
         unsigned int isOrthotrop = cs_gui_strcmp(viscosityType, "orthotrop");
@@ -949,9 +973,9 @@ void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
                     _("Formula is null for ale.\n"));
 
         /* Init mei */
-        mei_tree_t *ev = cs_gui_init_mei_tree(aleFormula, variables,
-                                              variable_nbr, symbols, 0, 3,
-                                              *dtref, *ttcabs, *ntcabs);
+        ev = cs_gui_init_mei_tree(aleFormula, variables,
+                                  variable_nbr, symbols, 0, 3,
+                                  *dtref, *ttcabs, *ntcabs);
 
         /* for each cell, update the value of the table of symbols for each scalar
             (including the thermal scalar), and evaluate the interpreter */
@@ -964,7 +988,7 @@ void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
 
             mei_evaluate(ev);
 
-            // Set viscmx, viscmy and viscmz
+            /* Set viscmx, viscmy and viscmz */
             viscmx[iel] = mei_tree_lookup(ev, "mesh_vi1");
             if (isOrthotrop)
             {
@@ -976,7 +1000,7 @@ void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
         BFT_FREE(aleFormula);
         BFT_FREE(viscosityType);
     }
-#endif // HAVE_MEI
+#endif /* HAVE_MEI */
 }
 
 /*----------------------------------------------------------------------------
@@ -1040,40 +1064,40 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
  *  uialcl
  *
  * parameters:
- * nfabor       --> Number of boundary faces
- * nozppm       --> Max number of boundary conditions zone
- * ialtyb       --> ialtyb
- * ipnfbr       --> First node position for each boundary in nodfbr
- * nodfbr       --> uialcl_fixed_displacement
- * impale       --> uialcl_fixed_displacement
- * depale       --> See uialcl_fixed_displacement
- * dtref        --> time step
- * ttcabs       --> current time
- * ntcabs       --> current iteration number
- * iuma         --> See uialcl_fixed_velocity
- * ivma         --> See uialcl_fixed_velocity
- * iwma         --> See uialcl_fixed_velocity
- * rcodcl       --> See uialcl_fixed_velocity
+ *   nfabor       --> Number of boundary faces
+ *   nozppm       --> Max number of boundary conditions zone
+ *   ialtyb       --> ialtyb
+ *   ipnfbr       --> First node position for each boundary in nodfbr
+ *   nodfbr       --> uialcl_fixed_displacement
+ *   impale       --> uialcl_fixed_displacement
+ *   depale       --> See uialcl_fixed_displacement
+ *   dtref        --> time step
+ *   ttcabs       --> current time
+ *   ntcabs       --> current iteration number
+ *   iuma         --> See uialcl_fixed_velocity
+ *   ivma         --> See uialcl_fixed_velocity
+ *   iwma         --> See uialcl_fixed_velocity
+ *   rcodcl       --> See uialcl_fixed_velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialcl, UIALCL) ( const int *const    nfabor,
-                                 const int *const    nozppm,
-                                 const int *const    ibfixe,
-                                 const int *const    igliss,
-                                 const int *const    ivimpo,
-                                 int       *const    ialtyb,
-                                 const int *const    ipnfbr,
-                                 const int *const    nnod,
-                                 const int *const    nodfbr,
-                                       int *const    impale,
-                                       double *const depale,
-                                 double *const       dtref,
-                                 double *const       ttcabs,
-                                 const    int *const ntcabs,
-                                 const int *const    iuma,
-                                 const int *const    ivma,
-                                 const int *const    iwma,
-                                       double *const rcodcl  )
+void CS_PROCF (uialcl, UIALCL) (const int *const    nfabor,
+                                const int *const    nozppm,
+                                const int *const    ibfixe,
+                                const int *const    igliss,
+                                const int *const    ivimpo,
+                                int       *const    ialtyb,
+                                const int *const    ipnfbr,
+                                const int *const    nnod,
+                                const int *const    nodfbr,
+                                int       *const    impale,
+                                double    *const    depale,
+                                double    *const    dtref,
+                                double    *const    ttcabs,
+                                const int *const    ntcabs,
+                                const int *const    iuma,
+                                const int *const    ivma,
+                                const int *const    iwma,
+                                double    *const    rcodcl)
 {
     int  izone        = 0;
     int  ifac         = 0;
@@ -1110,7 +1134,7 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nfabor,
                 ialtyb[ifbr]  = *igliss;
             }
         }
-        else if( nature == ale_boundary_nature_fixed_displacement )
+        else if (nature == ale_boundary_nature_fixed_displacement)
         {
             for (ifac = 0; ifac < faces; ifac++)
             {
@@ -1120,14 +1144,14 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nfabor,
                                           *dtref, *ttcabs, *ntcabs);
             }
         }
-        else if( nature == ale_boundary_nature_fixed_velocity )
+        else if (nature == ale_boundary_nature_fixed_velocity)
         {
             for (ifac = 0; ifac < faces; ifac++)
             {
                 int ifbr = faces_list[ifac]-1;
                 uialcl_fixed_velocity(label, *iuma, *ivma, *iwma,
                                       *nfabor, ifbr, rcodcl,
-                                      *dtref, *ttcabs, *ntcabs );
+                                      *dtref, *ttcabs, *ntcabs);
                 ialtyb[ifbr]  = *ivimpo;
             }
         }
@@ -1139,27 +1163,28 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nfabor,
  * Retreive data for internal coupling. Called once at initialization
  *
  * parameters:
- * nfabor   --> Number of boundary faces
- * idfstr   --> Structure definition
- * aexxst   <--  Displacement prediction alpha
- * bexxst   <-- Displacement prediction beta
- * cfopre   <-- Stress prediction alpha
- * ihistr   <-- Monitor point synchronisation
- * xstr0    <-- Values of the initial displacement
- * xstreq   <-- Values of the equilibrium displacement
- * vstr0    <-- Values of the initial velocity
+ *   nfabor   --> Number of boundary faces
+ *   idfstr   --> Structure definition
+ *   aexxst   <--  Displacement prediction alpha
+ *   bexxst   <-- Displacement prediction beta
+ *   cfopre   <-- Stress prediction alpha
+ *   ihistr   <-- Monitor point synchronisation
+ *   xstr0    <-- Values of the initial displacement
+ *   xstreq   <-- Values of the equilibrium displacement
+ *   vstr0    <-- Values of the initial velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uistr1, UISTR1) ( const int *const nfabor,
-                                 int       *const idfstr,
-                                 double           *aexxst,
-                                 double           *bexxst,
-                                 double           *cfopre,
-                                 int              *ihistr,
-                                 double           *xstr0,
-                                 double           *xstreq,
-                                 double           *vstr0 )
+void CS_PROCF (uistr1, UISTR1) (const int *const nfabor,
+                                int       *const idfstr,
+                                double           *aexxst,
+                                double           *bexxst,
+                                double           *cfopre,
+                                int              *ihistr,
+                                double           *xstr0,
+                                double           *xstreq,
+                                double           *vstr0)
 {
+    int  zones;
     int  izone        = 0;
     int  ifac         = 0;
     int  faces        = 0;
@@ -1167,24 +1192,24 @@ void CS_PROCF (uistr1, UISTR1) ( const int *const nfabor,
     int  *faces_list  = NULL;
     unsigned int    istruct = 0;
 
-    // Get advanced data
+    /* Get advanced data */
     get_uistr1_advanced_double("displacement_prediction_alpha", aexxst);
     get_uistr1_advanced_double("displacement_prediction_beta", bexxst);
     get_uistr1_advanced_double("stress_prediction_alpha", cfopre);
     get_uistr1_advanced_checkbox("monitor_point_synchronisation", ihistr);
 
-    int zones = cs_gui_boundary_zones_number();
+    zones = cs_gui_boundary_zones_number();
 
-    // At each time-step, loop on boundary faces
+    /* At each time-step, loop on boundary faces */
     for (izone=0 ; izone < zones ; izone++)
     {
         char *nature = get_boundary_attribute(izone + 1, "nature");
         char *label  = get_boundary_attribute(izone + 1, "label");
 
-            // Keep only internal coupling
+        /* Keep only internal coupling */
         if (get_ale_boundary_nature(label) == ale_boundary_nature_internal_coupling)
         {
-            // Read initial_displacement, equilibrium_displacement and initial_velocity
+            /* Read initial_displacement, equilibrium_displacement and initial_velocity */
             get_internal_coupling_xyz_values(label, "initial_displacement",
                                              &xstr0[3 * istruct]);
             get_internal_coupling_xyz_values(label, "equilibrium_displacement",
@@ -1193,7 +1218,7 @@ void CS_PROCF (uistr1, UISTR1) ( const int *const nfabor,
                                              &vstr0[3 * istruct]);
 
             faces_list = cs_gui_get_faces_list(izone, label, *nfabor, 0, &faces);
-            // Set idfstr to positiv index starting at 1
+            /* Set idfstr to positiv index starting at 1 */
             for (ifac = 0; ifac < faces; ifac++)
             {
                 ifbr = faces_list[ifac]-1;
@@ -1211,13 +1236,13 @@ void CS_PROCF (uistr1, UISTR1) ( const int *const nfabor,
  * Retreive data for internal coupling. Called at each step
  *
  * parameters:
- * xmstru       <-- Mass matrix
- * xcstr        <-- Damping matrix
- * xkstru       <-- Stiffness matrix
- * forstr       <-- Fluid force matrix
- * dtref        -->   time step
- * ttcabs       --> current time
- * ntcabs       --> current iteration number
+ *   xmstru       <-- Mass matrix
+ *   xcstr        <-- Damping matrix
+ *   xkstru       <-- Stiffness matrix
+ *   forstr       <-- Fluid force matrix
+ *   dtref        -->   time step
+ *   ttcabs       --> current time
+ *   ntcabs       --> current iteration number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
@@ -1233,21 +1258,23 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
 
     int zones   = cs_gui_boundary_zones_number();
 
-    // At each time-step, loop on boundary faces
+    /* At each time-step, loop on boundary faces */
     for (izone=0 ; izone < zones ; izone++)
     {
         const char *label = boundaries->label[izone];
 
-        // Keep only internal coupling
+        /* Keep only internal coupling */
         if (get_ale_boundary_nature(label) == ale_boundary_nature_internal_coupling)
         {
-            // Read internal coupling data for boundaries
-            //for (int ii=0; ii<3; ii++)
-            //{
-            //    xmstru = 0.
-            //    xkstru = 0.
-            //    xcstru = 0.
-            //}
+#if 0
+            /* Read internal coupling data for boundaries */
+            for (int ii=0; ii<3; ii++)
+            {
+                xmstru = 0.;
+                xkstru = 0.;
+                xcstru = 0.;
+            }
+#endif
             get_uistr2_data(label,
                             xmstru,
                             xcstru,
@@ -1266,17 +1293,17 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
  * Retreive data for external coupling
  *
  * parameters:
- * nfabor    <-- Number of boundary faces
- * idfstr    <-- Structure definition
- * asddlf    <-- Block of the DDL forces
- * isyncp    <---
+ *   nfabor    <-- Number of boundary faces
+ *   idfstr    <-- Structure definition
+ *   asddlf    <-- Block of the DDL forces
+ *   isyncp    <---
  *----------------------------------------------------------------------------*/
 
 void
 CS_PROCF (uiaste, UIASTE) (const int *const nfabor,
-                              int    *const    idfstr,
-                              double *const    asddlf,
-                              int    *const    isyncp )
+                           int       *const idfstr,
+                           double    *const asddlf,
+                           int       *const isyncp)
 {
     int faces   = 0;
     int izone   = 0;
@@ -1286,25 +1313,25 @@ CS_PROCF (uiaste, UIASTE) (const int *const nfabor,
 
     int zones = cs_gui_boundary_zones_number();
 
-    // Get the coupling post synchronization status
+    /* Get the coupling post synchronization status */
     *isyncp = get_coupling_post_synchronization_status() ? 1 : 0;
 
-    // At each time-step, loop on boundary faces
+    /* At each time-step, loop on boundary faces */
     for (izone=0 ; izone < zones ; izone++)
     {
         const char *label  = boundaries->label[izone];
 
-        // Keep only internal coupling
+        /* Keep only internal coupling */
         if (get_ale_boundary_nature(label) == ale_boundary_nature_external_coupling)
         {
             int* faces_list = cs_gui_get_faces_list(izone, label, *nfabor, 0, &faces);
 
-            // Get DDLX, DDLY and DDLZ values
+            /* Get DDLX, DDLY and DDLZ values */
             asddlf[istruct * 3 + 0] = get_external_coupling_ddl(label, "DDLX") ? 0 : 1;
             asddlf[istruct * 3 + 1] = get_external_coupling_ddl(label, "DDLY") ? 0 : 1;
             asddlf[istruct * 3 + 2] = get_external_coupling_ddl(label, "DDLZ") ? 0 : 1;
 
-            // Set idfstr with negativ value starting from -1
+            /* Set idfstr with negativ value starting from -1 */
             for (ifac = 0; ifac < faces; ifac++)
             {
                 ifbr = faces_list[ifac]-1;

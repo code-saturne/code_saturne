@@ -1696,7 +1696,7 @@ cs_restart_write_section(cs_restart_t  *restart,
   double timing[2];
 
   cs_int_t         n_tot_vals, n_glob_ents, n_ents;
-  fvm_datatype_t   elt_type;
+  fvm_datatype_t   elt_type = FVM_DATATYPE_NULL;
 
   const fvm_gnum_t  *ent_global_num;
 

@@ -60,7 +60,7 @@ typedef enum {
   CS_PROXY_TYPE_string,
   CS_PROXY_TYPE_int,
   CS_PROXY_TYPE_float,
-  CS_PROXY_TYPE_double,
+  CS_PROXY_TYPE_double
 } cs_proxy_type_t;
 
 typedef enum {

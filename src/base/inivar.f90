@@ -235,7 +235,7 @@ endif
 maxelt = max(ncelet, nfac, nfabor)
 ils    = idebia
 ifinia = ils + maxelt
-CALL IASIZE('INIVAR',IFINIA)
+call iasize('inivar',IFINIA)
 
 call usiniv                                                       &
 !==========

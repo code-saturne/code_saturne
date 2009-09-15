@@ -87,14 +87,12 @@ CS_PROCF (algdom, ALGDOM)(cs_int_t  *iopt);
  * INTEGER          IPEROT      : <-- : Number of rotation periodicities
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(ledevi, LEDEVI)
-(
- cs_int_t   *ndim,
- cs_int_t   *nfml,
- cs_int_t   *nprfml,
- cs_int_t   *iperio,
- cs_int_t   *iperot
-);
+void
+CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
+                         cs_int_t   *nfml,
+                         cs_int_t   *nprfml,
+                         cs_int_t   *iperio,
+                         cs_int_t   *iperot);
 
 /*============================================================================
  *  Public functions definition

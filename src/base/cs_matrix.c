@@ -321,8 +321,8 @@ static int _cs_glob_matrix_prefetch_rows = 2048;
 
 static char _cs_glob_perio_ignore_error_str[]
   = N_("Matrix product with CS_PERIO_IGNORE rotation mode not yet\n"
-       "implemented in this case, use cs_matrix_vector_multiply_nosync\n"
-       "with an external halo synchronization, prededed by a backup and\n"
+       "implemented in this case; use cs_matrix_vector_multiply_nosync\n"
+       "with an external halo synchronization, preceded by a backup and\n"
        "followed by a restoration of the rotation halo.");
 
 /*============================================================================
@@ -2220,7 +2220,6 @@ _mat_vec_p_l_csr_sym(const cs_matrix_t   *matrix,
 
     for (jj = sym_jj_start; jj < n_cols; jj++)
       y[col_id[jj]] += (m_row[jj]*x[ii]);
-
   }
 
 }

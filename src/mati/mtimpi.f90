@@ -25,7 +25,7 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine mtimpi
+subroutine mtimpi
 !================
 
 
@@ -86,9 +86,8 @@ double precision ureel , betmat, hrfmat, richar
 ! --- Ouverture du fichier
 !       (il sera ferme au dernier pas de temps par mtproj)
 
-NAME='resuMatisse'
-open(unit=impmat,file=name,                                       &
-         FORM='FORMATTED', STATUS='UNKNOWN', ERR=900)
+name='resuMatisse'
+open(unit=impmat,file=name, form='formatted', status='unknown', err=900)
 goto 950
 
 !   - En cas d'erreur : message et stop
@@ -116,9 +115,9 @@ write(impmat,1002)
 write(impmat,1001)
 
 if (itypen.eq.1) then
-   WRITE(IMPMAT,2096) ' Emm  '
+   write(impmat,2096) ' Emm  '
 else
-   WRITE(IMPMAT,2096) ' Vault'
+   write(impmat,2096) ' Vault'
 endif
 
 if (ialveo.eq.0) then
@@ -200,9 +199,9 @@ write(impmat,1001)
 
 write(impmat,4107) icofor
 if (iconlg.eq.1) then
-  WRITE(IMPMAT,4108) ' En ligne        '
+  write(impmat,4108) ' En ligne        '
 else
-  WRITE(IMPMAT,4108) ' Pas triangulaire'
+  write(impmat,4108) ' Pas triangulaire'
 endif
 write(impmat,4109) ialveo
 write(impmat,4110) debmas
@@ -531,9 +530,9 @@ endif
 ! --- Erreurs
 
  9998 format(/,                                                   &
-'Code_Saturne : Erreur d''initialisation :',/,              &
+'Code_Saturne : Erreur d''initialisation :',/,                    &
 'Impossible d''ouvrir le fichier : ',A,/)
- 9999 format(                                                           &
+ 9999 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

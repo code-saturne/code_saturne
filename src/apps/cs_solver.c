@@ -35,7 +35,7 @@
 
 /* On glibc-based systems, define _GNU_SOURCE so as to enable floating-point
    error exceptions; on Itanium, optimized code may raise such exceptions
-   due to speculative execution, so we only enable raising of such execptions
+   due to speculative execution, so we only enable raising of such exceptions
    for code compiled in debug mode, where reduced optimization should not lead
    to such exceptions, and locating the "true" origin of floating-point
    exceptions is helpful. */
@@ -395,8 +395,8 @@ cs_run(void)
 
     bft_printf(_("\n"
                  " --- Main Fortran work arrays:\n"
-                 "       LONGIA =   %10d (Number of integers)\n"
-                 "       LONGRA =   %10d (Number of reals)\n"
+                 "       longia =   %10d (Number of integers)\n"
+                 "       longra =   %10d (Number of reals)\n"
                  "       (%d bytes/integer, %d bytes/real)\n"),
                iasize, rasize,
                sizeof(cs_int_t)/sizeof(char),
@@ -405,14 +405,14 @@ cs_run(void)
     if (nideve > 0 || nrdeve >0)
       bft_printf(_("\n"
                    " --- Developer Fortran work arrays:\n"
-                   "       NIDEVE =   %10d (Number of integer)\n"
-                   "       NRDEVE =   %10d (Number of reals)\n"),
+                   "       nideve =   %10d (Number of integer)\n"
+                   "       nrdeve =   %10d (Number of reals)\n"),
                  nideve, nrdeve);
 
     bft_printf(_("\n"
                  " --- User Fortran work arrays:\n"
-                 "       NITUSE =   %10d (Number of integers)\n"
-                 "       NRTUSE =   %10d (Number of reals)\n\n"),
+                 "       nituse =   %10d (Number of integers)\n"
+                 "       nrtuse =   %10d (Number of reals)\n\n"),
                nituse, nrtuse);
 
     cs_base_mem_init_work(iasize, rasize, &ia, &ra);

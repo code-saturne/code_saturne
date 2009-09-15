@@ -181,6 +181,7 @@ struct _cs_io_t {
  * Static global variables
  *============================================================================*/
 
+static char  _type_name_none[] = "  ";
 static char  _type_name_char[] = "c ";  /* Character string */
 static char  _type_name_i4[] =   "i4";  /* Signed 32 bit integer */
 static char  _type_name_i8[] =   "i8";  /* Signed 64 bit integer */
@@ -598,6 +599,7 @@ _file_open(cs_io_t     *cs_io,
   default:
     assert(   cs_io->mode == CS_IO_MODE_READ
            || cs_io->mode == CS_IO_MODE_WRITE);
+    return;
   }
 
 
@@ -1186,6 +1188,7 @@ _echo_header(const char      *sec_name,
       break;
     default:
       assert(0);
+      type_name = _type_name_none;
     }
 
     bft_printf(_("    element type name:      \"%s\"\n"), type_name);
@@ -3116,7 +3119,6 @@ cs_io_defaults_info(void)
     if (mpi_io == false || (cs_glob_io_hints & FVM_FILE_NO_MPI_IO))
       bft_printf(_(fmt), _("serial IO\n\n"));
   }
-
 #endif
 }
 

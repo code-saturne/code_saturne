@@ -475,7 +475,7 @@ _inlet_coal(const int         izone,
         {
             BFT_MALLOC(path2, strlen(path1) + 1, char);
             strcpy(path2, path1);
-            //sprintf(coalname, "%.4s%2.2i", "coal", icharb+1);
+            /* sprintf(coalname, "%.4s%2.2i", "coal", icharb+1); */
             cs_xpath_add_test_attribute(&path2, "name", list_of_coals[icoal]);
 
             BFT_MALLOC(path3, strlen(path2) + 1, char);
@@ -508,7 +508,7 @@ _inlet_coal(const int         izone,
                 BFT_MALLOC(path5, strlen(path2) + 1, char);
                 strcpy(path5, path2);
 
-                //sprintf(classname, "%.5s%2.2i", "class", iratio+1);
+                /* sprintf(classname, "%.5s%2.2i", "class", iratio+1); */
                 cs_xpath_add_test_attribute(&path5, "name", list_of_classes[iratio]);
                 cs_xpath_add_function_text(&path5);
 
@@ -568,14 +568,14 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
                   _("Error: can not interprete expression: %s\n"), tree->string);
 
     /* check for symbols */
-    for( i = 0; i < symbol_size; ++i )
+    for (i = 0; i < symbol_size; ++i)
         if (mei_tree_find_symbol(tree, symbols[i]))
             bft_error(__FILE__, __LINE__, 0,
                       _("Error: can not find the required symbol: %s\n"), symbols[i]);
 
     return tree;
 }
-#endif // HAVE_MEI
+#endif /* HAVE_MEI */
 
 /*----------------------------------------------------------------------------
  * Boundary conditions treatment: global structure initialization
@@ -1055,6 +1055,7 @@ cs_gui_get_faces_list(const int   izone,
 {
     int  c_id        = 0;
     int  *faces_list = NULL;
+    char *description = NULL;
 
     int  boundary_zones = cs_gui_boundary_zone_number(izone + 1);
 
@@ -1063,7 +1064,7 @@ cs_gui_get_faces_list(const int   izone,
                 _("zone's label number %i is greater than %i,"
                 " the maximum allowed \n"), boundary_zones , nozppm);
 
-    char *description = cs_gui_boundary_zone_localization(label);
+    description = cs_gui_boundary_zone_localization(label);
 
     /* list of faces building */
     BFT_MALLOC(faces_list, nfabor, int);

@@ -581,8 +581,8 @@ do iphas = 1, nphas
     enddo
   endif
 
-! ifrslb = first free standard outlet face (ICODCL not modified)
-! itbslb = max of ifrslb on all ranks, standard outlet face presence inidcator
+! ifrslb = first free standard outlet face (icodcl not modified)
+! itbslb = max of ifrslb on all ranks, standard outlet face presence indicator
 
   ifrslb(iphas) = 0
   do ii = ifinty(isolib,iphas), idebty(isolib,iphas), -1
@@ -729,10 +729,10 @@ do iphas = 1, nphas
 !     S'il y a des faces de sortie libre, on cherche le premier
 !     proc sur lequel il y en a.
 
-!     On recupere aussi les coordonnees du point de reference pour les
-!     sorties, pour calculer PREF ensuite
+!     We also retrieve the coordinates of the reference point, so as to
+!     calculate pref later on.
 
-  if    (itbslb(iphas).gt.0) then
+  if (itbslb(iphas).gt.0) then
 
     if (irangp.ge.0) then
 
@@ -934,7 +934,7 @@ do iphas = 1, nphas
         ifac = itrifb(ii,iphas)
         if(icodcl(ifac,ivar).eq.0) then
           icodcl(ifac,ivar)   = 4
-!                RCODCL(IFAC,IVAR,1) = Modifie eventuellement par l'ALE
+!         rcodcl(ifac,ivar,1) = Modifie eventuellement par l'ALE
           rcodcl(ifac,ivar,2) = rinfin
           rcodcl(ifac,ivar,3) = 0.d0
         endif
@@ -969,7 +969,7 @@ do iphas = 1, nphas
         ifac = itrifb(ii,iphas)
         if(icodcl(ifac,ivar).eq.0) then
           icodcl(ifac,ivar)   = 5
-!               RCODCL(IFAC,IVAR,1) = Utilisateur
+!         rcodcl(ifac,ivar,1) = Utilisateur
           rcodcl(ifac,ivar,2) = rinfin
           rcodcl(ifac,ivar,3) = 0.d0
         endif
@@ -1026,9 +1026,9 @@ do iphas = 1, nphas
         ifac = itrifb(ii,iphas)
         if(icodcl(ifac,ivar).eq.0) then
           icodcl(ifac,ivar)   = 6
-!               RCODCL(IFAC,IVAR,1) = Utilisateur
+!         rcodcl(ifac,ivar,1) = Utilisateur
           rcodcl(ifac,ivar,2) = rinfin
-!               RCODCL(IFAC,IVAR,3) = Utilisateur
+!         rcodcl(ifac,ivar,3) = Utilisateur
         endif
       enddo
     elseif (                                                      &
@@ -1108,7 +1108,7 @@ do iphas = 1, nphas
             if (iok.eq.0.or.iok.eq.2) iok = iok + 1
           else
             icodcl(ifac,ivar) = 1
-!                 RCODCL(IFAC,IVAR,1) = Utilisateur
+!           rcodcl(ifac,ivar,1) = Utilisateur
             rcodcl(ifac,ivar,2) = rinfin
             rcodcl(ifac,ivar,3) = 0.d0
           endif
@@ -1127,7 +1127,7 @@ do iphas = 1, nphas
           endif
         else
           icodcl(ifac,ivar) = 1
-!               RCODCL(IFAC,IVAR,1) = Utilisateur
+!         rcodcl(ifac,ivar,1) = Utilisateur
           rcodcl(ifac,ivar,2) = rinfin
           rcodcl(ifac,ivar,3) = 0.d0
         endif
@@ -1173,7 +1173,7 @@ do iphas = 1, nphas
               rcodcl(ifac,ivar,3) = 0.d0
           else
               icodcl(ifac,ivar) = 1
-!                   RCODCL(IFAC,IVAR,1) = Utilisateur
+!             rcodcl(ifac,ivar,1) = Utilisateur
               rcodcl(ifac,ivar,2) = rinfin
               rcodcl(ifac,ivar,3) = 0.d0
          endif
@@ -1398,8 +1398,7 @@ do iphas = 1, nphas
             call parsom (flumty(ii))
           endif
           if(inb.gt.0) then
-            write(nfecra,7020)                                    &
-                 'Type utilisateur ',ii,inb,flumty(ii)
+            write(nfecra,7020) 'Type utilisateur ',ii,inb,flumty(ii)
           endif
         endif
       enddo
@@ -1485,8 +1484,7 @@ do iphas = 1, nphas
             call parsom (flumty(ii))
           endif
           if(inb.gt.0) then
-            write(nfecra,7020) &
-                 'Type utilisateur ',ii,inb,flumty(ii)
+            write(nfecra,7020) 'Type utilisateur ',ii,inb,flumty(ii)
           endif
         endif
       enddo

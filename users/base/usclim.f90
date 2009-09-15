@@ -449,10 +449,9 @@ subroutine usclim &
 !                  !    !     ! for scalars    cp*(viscls+visct/sigmas)*gradt  !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! coefu            ! ra ! --- ! tab de trav                                    !
+! coefu            ! ra ! --- ! work array                                     !
 !  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! tab reel complementaire developemt             !
-! rdevel(nideve)   ! ra ! <-- ! real work array for temporary developpement    !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
 ! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!

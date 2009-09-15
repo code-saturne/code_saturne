@@ -937,7 +937,7 @@ _matrix_vector_test(int                    n_runs,
                     cs_real_t             *restrict x,
                     cs_real_t             *restrict y)
 {
-  cs_int_t ii;
+  cs_int_t ii, jj;
   double wt, cpu;
   int    run_id;
   long   n_ops, n_ops_glob;
@@ -984,7 +984,7 @@ _matrix_vector_test(int                    n_runs,
                               y);
     test_sum += y[n_cells-1];
 #if 0
-    for (int jj = 0; jj < n_cells; jj++)
+    for (jj = 0; jj < n_cells; jj++)
       bft_printf("y[%d] = %12.4f\n", jj, y[jj]);
 #endif
   }
@@ -1311,6 +1311,7 @@ _sub_matrix_vector_test(int                  n_runs,
                         cs_real_t           *restrict x,
                         cs_real_t           *restrict y)
 {
+  cs_int_t  jj;
   double wt, cpu;
   int    run_id;
   long   n_ops, n_ops_glob;
@@ -1329,7 +1330,7 @@ _sub_matrix_vector_test(int                  n_runs,
     n_ops_glob = (  cs_glob_mesh->n_g_cells
                   + cs_glob_mesh->n_g_i_faces*2);
 
-  for (int jj = 0; jj < n_cells_ext; jj++)
+  for (jj = 0; jj < n_cells_ext; jj++)
     y[jj] = 0.0;
 
   /* Matrix.vector product, variant 0 */
@@ -1352,7 +1353,7 @@ _sub_matrix_vector_test(int                  n_runs,
 
   _print_stats(n_ops, n_ops_glob, wt, cpu);
 
-  for (int jj = 0; jj < n_cells_ext; jj++)
+  for (jj = 0; jj < n_cells_ext; jj++)
     y[jj] = 0.0;
 
   test_sum = 0.0;
@@ -1380,7 +1381,7 @@ _sub_matrix_vector_test(int                  n_runs,
   /* Matrix.vector product, contribute to faces only */
 
   BFT_MALLOC(ya, n_faces, cs_real_t);
-  for (int jj = 0; jj < n_faces; jj++)
+  for (jj = 0; jj < n_faces; jj++)
     ya[jj] = 0.0;
 
   test_sum = 0.0;

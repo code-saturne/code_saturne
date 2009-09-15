@@ -2082,7 +2082,7 @@ _decompose_data_l(cs_mesh_t          *mesh,
 }
 
 /*============================================================================
- *  Public functions definition for API Fortran
+ *  Public functions definition for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -2124,14 +2124,12 @@ CS_PROCF(algdom, ALGDOM)(cs_int_t  *iopt)
  * INTEGER          IPEROT      : <-- : Number of rotation periodicities
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(ledevi, LEDEVI)
-(
- cs_int_t   *ndim,
- cs_int_t   *nfml,
- cs_int_t   *nprfml,
- cs_int_t   *iperio,
- cs_int_t   *iperot
-)
+void
+CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
+                         cs_int_t   *nfml,
+                         cs_int_t   *nprfml,
+                         cs_int_t   *iperio,
+                         cs_int_t   *iperot)
 {
   cs_int_t  i;
   cs_io_sec_header_t  header;
@@ -2165,7 +2163,7 @@ void CS_PROCF(ledevi, LEDEVI)
 
   pp_in = cs_glob_pp_io;
 
-   /* Initialize parameter values */
+  /* Initialize parameter values */
 
   *ndim = 3;
   *nfml = 0;

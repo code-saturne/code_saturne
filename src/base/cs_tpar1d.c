@@ -264,7 +264,7 @@ void CS_PROCF (mait1d,MAIT1D)
  *                         :     : interface
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (tpar1d,TPAR1D)
+void CS_PROCF (tpar1d, TPAR1D)
 (
  cs_int_t *ii,
  cs_int_t *icdcle,
@@ -285,8 +285,9 @@ void CS_PROCF (tpar1d,TPAR1D)
   cs_real_t h2; /* thermal exchange coefficient on T(1) */
   cs_real_t f3; /* thermal flux on Tfluide */
   cs_real_t a4; /* extrapolation coefficient for temperature4 */
-  cs_real_t h5; /* thermal exchange coefficient on T(n) */
-  cs_real_t f6; /* thermal flux on Text */
+
+  cs_real_t h5 = 0.; /* thermal exchange coefficient on T(n) */
+  cs_real_t f6 = 0.; /* thermal flux on Text */
 
   cs_real_t m;
 

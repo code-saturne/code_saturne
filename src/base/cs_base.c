@@ -329,7 +329,7 @@ _cs_base_err_vprintf(const char  *format,
       sprintf(nom_fic_err, "error_n%04d", cs_glob_rank_id + 1);
     }
 
-    freopen(nom_fic_err, "w", stderr);
+    stderr = freopen(nom_fic_err, "w", stderr);
 
     initialized = true;
   }
@@ -869,10 +869,10 @@ void CS_PROCF (iasize, IASIZE)
     _caller[6] = '\0';
     bft_error
       (__FILE__, __LINE__, 0,
-       _(" Sub-routine calling IASIZE:                %s\n"
-         " Memory needed in IA (number of integers):  %d\n"
+       _(" Sub-routine calling iasize:                %s\n"
+         " Memory needed in ia (number of integers):  %d\n"
          "         available:                         %d\n\n"
-         " ----> Define IASIZE to a value at least equal to %d integers)."),
+         " ----> Define iasize to a value at least equal to %d integers)."),
        _caller, *memint, _cs_glob_mem_ia_size, *memint);
   }
 
@@ -913,10 +913,10 @@ void CS_PROCF (rasize, RASIZE)
     _caller[6] = '\0';
     bft_error
       (__FILE__, __LINE__, 0,
-       _(" Sub-routine calling RASIZE:             %s\n"
-         " Memory needed in RA (number of reals):  %d\n"
+       _(" Sub-routine calling rasize:             %s\n"
+         " Memory needed in ra (number of reals):  %d\n"
          "         available:                      %d\n\n"
-         " ----> Define RASIZE to a value at least equal to %d reals)."),
+         " ----> Define rasize to a value at least equal to %d reals)."),
        _caller, *memrdp, _cs_glob_mem_ra_size, *memrdp);
   }
 
@@ -1190,7 +1190,7 @@ cs_base_mem_fin(void)
   double valreal[2];
 
 #if defined(HAVE_MPI)
-  int  imax, imin;
+  int  imax = 0, imin = 0;
   double val_somme[2];
   int  ind_min[2];
   _cs_base_mpi_double_int_t  val_in[2], val_min[2], val_max[2];
@@ -1248,18 +1248,18 @@ cs_base_mem_fin(void)
 
     if (ind_val[ind_bil] == 1) {
 
-      for (itot = 0 ;
-           valreal[ind_bil] > 1024. && unite[itot] != 'p' ;
+      for (itot = 0;
+           valreal[ind_bil] > 1024. && unite[itot] != 'p';
            itot++)
         valreal[ind_bil] /= 1024.;
 #if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
-        for (imin = 0 ;
-             val_min[ind_bil].val > 1024. && unite[imin] != 'p' ;
+        for (imin = 0;
+             val_min[ind_bil].val > 1024. && unite[imin] != 'p';
              imin++)
           val_min[ind_bil].val /= 1024.;
-        for (imax = 0 ;
-             val_max[ind_bil].val > 1024. && unite[imax] != 'p' ;
+        for (imax = 0;
+             val_max[ind_bil].val > 1024. && unite[imax] != 'p';
              imax++)
           val_max[ind_bil].val /= 1024.;
       }
@@ -1267,17 +1267,17 @@ cs_base_mem_fin(void)
 
       /* Print to log file */
 
-      bft_printf (_("  %s %12.3f %cb\n"),
-                  _(type_bil[ind_bil]), valreal[ind_bil], unite[itot]);
+      bft_printf(_("  %s %12.3f %cb\n"),
+                 _(type_bil[ind_bil]), valreal[ind_bil], unite[itot]);
 
 #if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
-        bft_printf (_("                             "
-                      "local minimum: %12.3f %cb  (rank %d)\n"),
-                    val_min[ind_bil].val, unite[imin], val_min[ind_bil].rank);
-        bft_printf (_("                             "
-                      "local maximum: %12.3f %cb  (rank %d)\n"),
-                    val_max[ind_bil].val, unite[imax], val_max[ind_bil].rank);
+        bft_printf(_("                             "
+                     "local minimum: %12.3f %cb  (rank %d)\n"),
+                   val_min[ind_bil].val, unite[imin], val_min[ind_bil].rank);
+        bft_printf(_("                             "
+                     "local maximum: %12.3f %cb  (rank %d)\n"),
+                   val_max[ind_bil].val, unite[imax], val_max[ind_bil].rank);
       }
 #endif
     }
@@ -1522,8 +1522,6 @@ cs_base_system_info(void)
 #if defined(HAVE_OPENMP)
   bft_printf("  %s%d\n", _("OpenMP threads:    "), cs_glob_n_threads);
 #endif
-
-  bft_printf("\n");
 }
 
 /*----------------------------------------------------------------------------

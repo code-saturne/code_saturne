@@ -66,6 +66,7 @@
 
 #if (_CS_STDC_VERSION >= 199901L)
 #include <stdint.h>
+#include <stdbool.h>
 #endif
 
 #if defined(HAVE_MPI)
@@ -201,8 +202,14 @@ typedef char             cs_byte_t;     /* Byte (untyped memory unit) */
 
 typedef cs_real_t        cs_point_t[3];
 
+#if (_CS_STDC_VERSION >= 199901L)
+
+typedef _Bool cs_bool_t;                /* Boolean */
+
+#else
+
 typedef enum {                          /* Boolean */
-  CS_FALSE ,
+  CS_FALSE,
   CS_TRUE
 } cs_bool_t;
 
@@ -213,6 +220,8 @@ typedef enum {                          /* Boolean */
 #if !defined(true)
 #define true CS_TRUE
 #endif
+
+#endif /* (_CS_STDC_VERSION >= 199901L) */
 
 /* Mappings to MPI datatypes */
 

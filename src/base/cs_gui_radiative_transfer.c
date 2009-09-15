@@ -337,7 +337,7 @@ _radiative_boundary(const   char *const label,
                         param);
   cs_xpath_add_function_text(&path);
 
-  if (cs_gui_get_double(path, &res)){
+  if (cs_gui_get_double(path, &res)) {
     if (res != *value)
       *value = res;
   }
@@ -986,14 +986,17 @@ void CS_PROCF (uiray2, UIRAY2)
 
     /* list of faces building */
 
-//     description = cs_gui_boundary_zone_localization(boundary->label[izone]);
-//
-//     fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-//                           description,
-//                           &faces,
-//                           faces_list);
-//
-//     BFT_FREE(description);
+    /*
+     description = cs_gui_boundary_zone_localization(boundary->label[izone]);
+
+     fvm_selector_get_list(cs_glob_mesh->select_b_faces,
+                           description,
+                           &faces,
+                           faces_list);
+
+     BFT_FREE(description);
+    */
+
     faces_list = cs_gui_get_faces_list(izone,
                                        boundaries->label[izone],
                                        *nfabor, *nozppm, &faces);

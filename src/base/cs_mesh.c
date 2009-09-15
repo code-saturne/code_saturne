@@ -266,7 +266,7 @@ _display_histograms(cs_int_t        n_vals,
 }
 
 /*----------------------------------------------------------------------------
- * Write a sum-up about halo features in listing
+ * Write a summary about halo features in listing
  *
  * parameters:
  *   mesh                   <-- pointer to cs_mesh_t structure
@@ -278,35 +278,35 @@ _display_histograms(cs_int_t        n_vals,
 
 static void
 _print_halo_info(cs_mesh_t  *mesh,
-                 double      interface_time,
-                 double      halo_time,
-                 double      ext_neighborhood_time)
+                 double            interface_time,
+                 double            halo_time,
+                 double            ext_neighborhood_time)
 {
   cs_halo_t  *halo = mesh->halo;
 
   cs_int_t  *rank_buffer = NULL;
 
-  /* Sum-up of the computional times */
+  /* Summary of the computional times */
 
   bft_printf(_("\n Halo creation times summary\n\n"));
 
   if (mesh->n_domains > 1 || mesh->n_init_perio > 0)
-    bft_printf(_("     Creating interface:                       %.3g s\n"),
+    bft_printf(_("     Interface creation:                       %.3g s\n"),
                interface_time);
 
   if (mesh->halo_type == CS_HALO_EXTENDED)
-    bft_printf(_("     Creating extended connectivity:            %.3g s\n"),
+    bft_printf(_("     Extended connectivity creation:            %.3g s\n"),
                ext_neighborhood_time);
 
-  bft_printf(_("     Creating halo:                             %.3g s\n\n"),
+  bft_printf(_("     Halo creation:                             %.3g s\n\n"),
              halo_time);
 
 
   bft_printf(_("     Total time for halo creation:              %.3g s\n\n"),
              halo_time + interface_time + ext_neighborhood_time);
+
   bft_printf(" ----------------------------------------------------------\n\n");
 
-  /* Sum-up ghost cell distribution */
 
   bft_printf(_(" Number of standard cells:                             %d\n"),
              mesh->n_cells);
@@ -320,14 +320,13 @@ _print_halo_info(cs_mesh_t  *mesh,
                   rank_buffer     , 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
 
-    bft_printf(_("\n    Histogram of the number of cells per rank:\n\n"));
+    bft_printf(_("\n Histogram of the number of cells per rank:\n\n"));
 
     _display_histograms(mesh->n_domains, rank_buffer);
 
   } /* End if n_domains > 1 */
 
   bft_printf("\n ----------------------------------------------------------\n");
-  bft_printf_flush();
 
   bft_printf(_(" Number of cells + halo cells:                         %d\n\n"),
              mesh->n_cells_with_ghosts);
@@ -339,7 +338,7 @@ _print_halo_info(cs_mesh_t  *mesh,
                   rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
 
-    bft_printf(_("\n    Histogram of number of standard + halo cells (NCELET) "
+    bft_printf(_("\n Histogram of number of standard + halo cells "
                  "per rank:\n\n"));
 
     _display_histograms(mesh->n_domains, rank_buffer);
@@ -347,7 +346,6 @@ _print_halo_info(cs_mesh_t  *mesh,
   } /* End if n_domains > 1 */
 
   bft_printf("\n ----------------------------------------------------------\n");
-  bft_printf_flush();
 
   if (halo != NULL) {
 
@@ -370,7 +368,7 @@ _print_halo_info(cs_mesh_t  *mesh,
 #endif
 
       bft_printf
-        (_("\n    Histogram of the number of ghost cells per rank:\n\n"));
+        (_("\n Histogram of the number of ghost cells per rank:\n\n"));
 
       _display_histograms(mesh->n_domains, rank_buffer);
 
@@ -378,7 +376,6 @@ _print_halo_info(cs_mesh_t  *mesh,
 
     bft_printf("\n"
                " ----------------------------------------------------------\n");
-    bft_printf_flush();
 
     /* Sum-up of the number of neighbors */
 
@@ -403,13 +400,13 @@ _print_halo_info(cs_mesh_t  *mesh,
 
     bft_printf("\n"
                " ----------------------------------------------------------\n");
-    bft_printf_flush();
 
   } /* End if halo != NULL */
 
   if (mesh->n_domains > 1)
     BFT_FREE(rank_buffer);
 
+  bft_printf_flush();
 }
 
 /*============================================================================

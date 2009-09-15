@@ -279,6 +279,7 @@ main(int argc,
   printf("\n*** Interpretation de la ligne de commande ***\n");
   for (numarg = 0; numarg < argc; numarg++)
     printf("%s ",argv[numarg]);
+  printf("\n");
   fflush(stdout);
 
   numarg = 0;

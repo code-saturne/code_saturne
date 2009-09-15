@@ -844,7 +844,7 @@ _comm_mpi_open(syr_comm_t  *comm,
 static void
 _comm_sock_connect(syr_comm_t  *comm,
                    int          proc_id,
-                   const char  *host_name,
+                   char        *host_name,
                    int          port_num)
 {
 

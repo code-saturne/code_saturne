@@ -1868,8 +1868,8 @@ void CS_PROCF (pstev1, PSTEV1)
                                          by many Fortran compilers) */
 )
 {
-  cs_bool_t  use_parent;
-  cs_bool_t  interlace;
+  cs_bool_t  use_parent = false;
+  cs_bool_t  interlace = false;
 
   char  *var_name = NULL;
 

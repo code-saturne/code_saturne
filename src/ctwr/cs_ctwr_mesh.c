@@ -92,7 +92,7 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-enum {X, Y, Z} ;
+enum {X, Y, Z};
 
 #define CS_LOC_PRODUIT_SCALAIRE(vect1, vect2) \
   (vect1[X] * vect2[X] + vect1[Y] * vect2[Y] + vect1[Z] * vect2[Z])
@@ -143,7 +143,7 @@ MPI_Status status;
 void CS_PROCF(geoct, GEOCT) (void)
 {
   /* construction du maillage eau*/
-  cs_ctwr_maille(cs_glob_mesh, cs_glob_mesh_quantities );
+  cs_ctwr_maille(cs_glob_mesh, cs_glob_mesh_quantities);
 
   /* chainage des ct*/
   cs_ctwr_stacking();
@@ -151,7 +151,6 @@ void CS_PROCF(geoct, GEOCT) (void)
   cs_ctwr_adeau(cs_glob_mesh, cs_glob_mesh_quantities);
   /* construction de l'interpolation  EAU -> AIR   */
   cs_ctwr_adair();
-
 }
 
 
@@ -232,10 +231,10 @@ _is_coplanar(const cs_real_t *coord,
   i2 = 0;
   min = 1000.0;
 
-  for(i = 0; i < 4 ; i++){
+  for (i = 0; i < 4; i++) {
     ind = 0;
-    for(ii = 0; ii < 4 ; ii++){
-      if(ii != i){
+    for (ii = 0; ii < 4; ii++) {
+      if (ii != i) {
         vectBase[0][ind] = mat[ii][1];
         vectBase[1][ind] = mat[ii][2];
         vectBase[2][ind] = mat[ii][3];
@@ -246,11 +245,11 @@ _is_coplanar(const cs_real_t *coord,
     det += pow(-1,i) * mat[i][0] * CS_LOC_PRODUIT_SCALAIRE(vectBase[2], tmpRes);
   }
 
-  if (CS_ABS(det) <= (0.000001*dh) ) {
+  if (CS_ABS(det) <= (0.000001*dh)) {
     /*2D*/
-    for(i=0; i< nbvoi ; i++){
-      for(ii=i+1; ii< nbvoi ; ii++){
-        for(iii=ii+1; iii< nbvoi ; iii++){
+    for (i=0; i< nbvoi; i++) {
+      for (ii=i+1; ii< nbvoi; ii++) {
+        for (iii=ii+1; iii< nbvoi; iii++) {
           numi   = nvoi[i]   + decF;
           numii  = nvoi[ii]  + decF;
           numiii = nvoi[iii] + decF;
@@ -261,9 +260,9 @@ _is_coplanar(const cs_real_t *coord,
           vectBase[1][1] = coord[3*numiii+1] - coord[3*numi+1];
           vectBase[1][2] = coord[3*numiii+2] - coord[3*numi+2];
           CS_PRODUIT_VECTORIEL(tmpRes, vectBase[0],vectBase[1]);
-          if(   (CS_LOC_MODULE(tmpRes) > (0.000001*dh))
-           && (CS_ABS(CS_LOC_PRODUIT_SCALAIRE(vectBase[0],vectBase[1]))< min)
-          ){
+          if (   (CS_LOC_MODULE(tmpRes) > (0.000001*dh))
+              && (CS_ABS(CS_LOC_PRODUIT_SCALAIRE(vectBase[0],
+                                                 vectBase[1])) < min)) {
             i0 = i;
             i1 = ii;
             i2 = iii;
@@ -280,7 +279,7 @@ _is_coplanar(const cs_real_t *coord,
     return 3;
   }
 
-  if (i0 == 0 && i1 == 0 && i2 == 0){
+  if (i0 == 0 && i1 == 0 && i2 == 0) {
     /*1D*/
     vectBase[0][0] = coord[3*(nvoi[1]+ decF)  ] - coord[3*(nvoi[0]+ decF)  ];
     vectBase[0][1] = coord[3*(nvoi[1]+ decF)+1] - coord[3*(nvoi[0]+ decF)+1];
@@ -295,12 +294,12 @@ _is_coplanar(const cs_real_t *coord,
     vectBase[1][1] = coord[3*(nvoi[i2]+ decF)+1] - coord[3*(nvoi[i0]+ decF)+1];
     vectBase[1][2] = coord[3*(nvoi[i2]+ decF)+2] - coord[3*(nvoi[i0]+ decF)+2];
     CS_PRODUIT_VECTORIEL(tmpRes, vectBase[0],vectBase[1]);
-    CS_PRODUIT_VECTORIEL(vectBase[1] ,tmpRes,vectBase[0]);
+    CS_PRODUIT_VECTORIEL(vectBase[1], tmpRes,vectBase[0]);
     norme1= CS_LOC_MODULE(vectBase[0]);
     norme2= CS_LOC_MODULE(vectBase[1]);
-    vectBase[0][0] /= norme1 ; vectBase[1][0] /= norme2;
-    vectBase[0][1] /= norme1 ; vectBase[1][1] /= norme2;
-    vectBase[0][2] /= norme1 ; vectBase[1][2] /= norme2;
+    vectBase[0][0] /= norme1; vectBase[1][0] /= norme2;
+    vectBase[0][1] /= norme1; vectBase[1][1] /= norme2;
+    vectBase[0][2] /= norme1; vectBase[1][2] /= norme2;
     vectBase[2][0] = 0.0; vectBase[2][1] = 0.0; vectBase[2][2] = 0.0;
     return 2;
   }
@@ -321,34 +320,34 @@ _invmat(cs_real_t mat[4][4],
 
   err=1;
 
-  for(i = 0; i < idim + 1; i++)
-    for(j = 0; j < idim + 1; j++)
+  for (i = 0; i < idim + 1; i++)
+    for (j = 0; j < idim + 1; j++)
       matInv[i][j] = mat[i][j];
 
 
   i = 0;
-  while (err == 1 && (i < (idim+1))){
+  while (err == 1 && (i < (idim+1))) {
 
-    if (CS_ABS(matInv[i][i]) > 1.e-15){
+    if (CS_ABS(matInv[i][i]) > 1.e-15) {
 
       aux = 1.0/matInv[i][i];
 
-      for(j = 0; j < idim + 1; j++)
+      for (j = 0; j < idim + 1; j++)
          matInv[i][j] *=  aux;
 
       matInv[i][i]= aux;
 
-      for(k = 0; k < i; k++){
+      for (k = 0; k < i; k++) {
         aux = matInv[k][i];
-        for(j = 0; j < idim + 1; j++){
+        for (j = 0; j < idim + 1; j++) {
            matInv[k][j] -= aux * matInv[i][j];
         }
         matInv[k][i] = -aux *matInv[i][i];
       }
 
-      for(k = i + 1; k < idim + 1; k++){
+      for (k = i + 1; k < idim + 1; k++) {
         aux = matInv[k][i];
-        for(j = 0; j < idim + 1; j++){
+        for (j = 0; j < idim + 1; j++) {
            matInv[k][j] -= aux * matInv[i][j];
         }
         matInv[k][i] = -aux *matInv[i][i];
@@ -401,7 +400,7 @@ _weighting(const cs_real_t  dx,
     }
   }
 
-  return poids ;
+  return poids;
 }
 
 /*----------------------------------------------------------------------------
@@ -419,24 +418,24 @@ _dot_product_ng(const cs_int_t   ifac,
   cs_int_t idim;
   cs_real_t aux1,aux2;
 
-  n_sortant[2] = 0.0 ;
+  n_sortant[2] = 0.0;
   g_uni[2] = 0.0;
 
   aux1 = CS_LOC_MODULE(gravite);
 
-  for (idim = 0 ; idim < 3 ; idim++) {
+  for (idim = 0; idim < 3; idim++) {
     n_sortant[idim] = direction * surf_f[ifac*3+idim];
     g_uni[idim]= gravite[idim];
   }
 
   aux2 = CS_LOC_MODULE(n_sortant);
-  for (idim = 0 ; idim < dim ; idim++) {
+  for (idim = 0; idim < dim; idim++) {
     n_sortant[idim] /= aux2;
-    g_uni[idim] /= aux1 ;
+    g_uni[idim] /= aux1;
 
   }
 
-  return CS_LOC_PRODUIT_SCALAIRE(n_sortant , g_uni );
+  return CS_LOC_PRODUIT_SCALAIRE(n_sortant, g_uni);
 
 }
 
@@ -452,10 +451,10 @@ _search_height(cs_ctwr_zone_t   *ct,
                cs_real_t        *hmax)
 {
   cs_int_t    i, ifac, nb,nb_dist, axe, idx, ii, jj;
-  cs_real_t   *lst_xyz_sup ; /* coord des sommets de la face Sup */
-  cs_real_t   *lst_xyz_inf ; /* coord des sommets de la face Inf*/
-  cs_real_t   *lst_xyz_fi ;  /* coord des sommets proj de la face Inf*/
-  cs_real_t   *lst_xyz_fs ;  /* coord des sommets proj de la face Inf*/
+  cs_real_t   *lst_xyz_sup; /* coord des sommets de la face Sup */
+  cs_real_t   *lst_xyz_inf; /* coord des sommets de la face Inf*/
+  cs_real_t   *lst_xyz_fi;  /* coord des sommets proj de la face Inf*/
+  cs_real_t   *lst_xyz_fs;  /* coord des sommets proj de la face Inf*/
   cs_real_t   *hmin_dist;
   const fvm_coord_t *lst_xyz_dist = NULL;
 
@@ -465,26 +464,26 @@ _search_height(cs_ctwr_zone_t   *ct,
   cs_int_t  *faces_vtx_idx   = NULL;
   cs_int_t  *faces_vtx_lst   = NULL;
 
-  const double tolerance = 0.1  ;
+  const double tolerance = 0.1;
   fvm_nodal_t *fs_tmp_mesh = NULL;
   fvm_nodal_t *fi_tmp_mesh = NULL;
 
 
 
   double coeff[3], v_aux[3], vertex_coords[2];
-  double  v_x, v_y ;
+  double  v_x, v_y;
   double  v_f_x = 0., v_f_y = 0., v_f_z = 0.;
-  double a[3][3] = {{0., 0., 0.} ,
-                    {0., 0., 0.} ,
+  double a[3][3] = {{0., 0., 0.},
+                    {0., 0., 0.},
                     {0., 0., 0.} };
 
   double b_x[3] = {0., 0., 0. };
   double b_y[3] = {0., 0., 0. };
   double b_z[3] = {0., 0., 0. };
 
-  double matrice[6] = {0., 0., 0. ,0., 0., 0. };
+  double matrice[6] = {0., 0., 0., 0., 0., 0. };
 
-
+  fvm_locator_t   *locator = NULL;
 
   nb = (cs_int_t) fvm_nodal_get_n_entities(ct->face_sup_mesh, 0);
   BFT_MALLOC(lst_xyz_sup, nb*3, fvm_coord_t);
@@ -503,10 +502,10 @@ _search_height(cs_ctwr_zone_t   *ct,
 
   aux = 0.;
 
-  for (i = 0 ; i < 3 ; i++)
-    if(CS_ABS(gravite[i]) > aux) {
+  for (i = 0; i < 3; i++)
+    if (CS_ABS(gravite[i]) > aux) {
       axe = i;
-      aux = CS_ABS (gravite [ i ]);
+      aux = CS_ABS (gravite [i]);
     }
 
   if (axe == 0) {
@@ -534,13 +533,11 @@ _search_height(cs_ctwr_zone_t   *ct,
 
   nb = (cs_int_t) fvm_nodal_get_n_entities(fi_tmp_mesh, 0);
 
-  BFT_MALLOC(lst_xyz_fi , nb*2 , fvm_coord_t );
+  BFT_MALLOC(lst_xyz_fi, nb*2, fvm_coord_t);
 
   fvm_nodal_get_vertex_coords(fi_tmp_mesh, FVM_INTERLACE, lst_xyz_fi);
 
   /* Create locator on the proj surf  */
-
-  fvm_locator_t   *locator = NULL;
 
 #if defined(FVM_HAVE_MPI)
   locator = fvm_locator_create(tolerance,
@@ -562,45 +559,45 @@ _search_height(cs_ctwr_zone_t   *ct,
                         NULL,
                         lst_xyz_fs);
 
-  nb_dist = fvm_locator_get_n_dist_points(locator );
+  nb_dist = fvm_locator_get_n_dist_points(locator);
 
   /* Construction de la connectivite Face->sommet du projete  */
 
-  BFT_MALLOC(hmin_dist ,  nb_dist, fvm_coord_t );
+  BFT_MALLOC(hmin_dist, nb_dist, fvm_coord_t);
 
-  cs_reverse_vtx_faces_connect(fi_tmp_mesh        ,
-                                &(faces_vtx_idx ) ,
-                                &(faces_vtx_lst ) );
+  cs_reverse_vtx_faces_connect(fi_tmp_mesh,
+                                &(faces_vtx_idx),
+                                &(faces_vtx_lst));
 
-  location_fac = fvm_locator_get_dist_locations(locator );
-  lst_xyz_dist = fvm_locator_get_dist_coords(   locator );
+  location_fac = fvm_locator_get_dist_locations(locator);
+  lst_xyz_dist = fvm_locator_get_dist_coords(  locator);
 
-  for (i = 0 ; i < nb_dist ; i++) {
+  for (i = 0; i < nb_dist; i++) {
 
-    ifac = location_fac[ i ] - 1;
+    ifac = location_fac[i] - 1;
 
-    vertex_coords [0] = lst_xyz_dist [ i*2     ];
-    vertex_coords [1] = lst_xyz_dist [ i*2 + 1 ];
+    vertex_coords [0] = lst_xyz_dist [i*2    ];
+    vertex_coords [1] = lst_xyz_dist [i*2 + 1];
 
-    for(ii = 0; ii < 3 ; ii++){
-      b_x[ ii ] = 0. ;
-      b_y[ ii ] = 0. ;
-      b_z[ ii ] = 0. ;
-      for(jj = 0; jj < 3 ; jj++)
-        a[ ii ][ jj ] = 0.;
+    for (ii = 0; ii < 3; ii++) {
+      b_x[ii] = 0.;
+      b_y[ii] = 0.;
+      b_z[ii] = 0.;
+      for (jj = 0; jj < 3; jj++)
+        a[ii][jj] = 0.;
 
     }
 
 
-    for (idx = faces_vtx_idx[ ifac    ];
-         idx < faces_vtx_idx[ ifac +1 ]; idx++) {
+    for (idx = faces_vtx_idx[ifac   ];
+         idx < faces_vtx_idx[ifac +1]; idx++) {
 
-      v_x = lst_xyz_fi[faces_vtx_lst[ idx ]* 2     ];
-      v_y = lst_xyz_fi[faces_vtx_lst[ idx ]* 2 + 1 ];
+      v_x = lst_xyz_fi[faces_vtx_lst[idx]* 2    ];
+      v_y = lst_xyz_fi[faces_vtx_lst[idx]* 2 + 1];
 
-      v_f_x = lst_xyz_inf[faces_vtx_lst[ idx ]* 3     ];
-      v_f_y = lst_xyz_inf[faces_vtx_lst[ idx ]* 3 + 1 ];
-      v_f_z = lst_xyz_inf[faces_vtx_lst[ idx ]* 3 + 2 ];
+      v_f_x = lst_xyz_inf[faces_vtx_lst[idx]* 3    ];
+      v_f_y = lst_xyz_inf[faces_vtx_lst[idx]* 3 + 1];
+      v_f_z = lst_xyz_inf[faces_vtx_lst[idx]* 3 + 2];
 
       a[0][0] += v_x * v_x;
       a[0][1] += v_x * v_y;
@@ -633,7 +630,7 @@ _search_height(cs_ctwr_zone_t   *ct,
     a[2][0] = a[0][2];
     a[2][1] = a[1][2];
 
-    if (_inverse_3x3(a, b_x, coeff) == 0 ) {
+    if (_inverse_3x3(a, b_x, coeff) == 0) {
 
       v_aux[0] = -(  coeff[0]*vertex_coords[0]
                    + coeff[1]*vertex_coords[1]
@@ -660,7 +657,7 @@ _search_height(cs_ctwr_zone_t   *ct,
     else
       v_aux[2] = -v_f_z;
 
-    hmin_dist[i] =  CS_LOC_PRODUIT_SCALAIRE(v_aux , gravite)
+    hmin_dist[i] =  CS_LOC_PRODUIT_SCALAIRE(v_aux, gravite)
                   / CS_LOC_MODULE(gravite);
   }
 
@@ -668,13 +665,13 @@ _search_height(cs_ctwr_zone_t   *ct,
   fvm_locator_exchange_point_var(locator,
                                  hmin_dist, hmin, NULL, sizeof(cs_real_t),1,0);
 
-  for (i = 0 ; i < nb ; i++) {
+  for (i = 0; i < nb; i++) {
 
       v_aux[0] = -lst_xyz_sup[i*3    ];/* Opposite Vector to g */
       v_aux[1] = -lst_xyz_sup[i*3 + 1];
       v_aux[2] = -lst_xyz_sup[i*3 + 2];
 
-      aux = CS_LOC_PRODUIT_SCALAIRE(v_aux , gravite);
+      aux = CS_LOC_PRODUIT_SCALAIRE(v_aux, gravite);
       hmax[i] = aux / CS_LOC_MODULE(gravite); /* project on "g" axis */
 
   }
@@ -686,8 +683,8 @@ _search_height(cs_ctwr_zone_t   *ct,
    BFT_FREE(hmin_dist);
 
    locator = fvm_locator_destroy(locator);
-   fs_tmp_mesh = fvm_nodal_destroy(fs_tmp_mesh );
-   fi_tmp_mesh = fvm_nodal_destroy(fi_tmp_mesh );
+   fs_tmp_mesh = fvm_nodal_destroy(fs_tmp_mesh);
+   fi_tmp_mesh = fvm_nodal_destroy(fi_tmp_mesh);
 }
 
 
@@ -696,46 +693,40 @@ _search_height(cs_ctwr_zone_t   *ct,
  * Construction du maillage eau
  *----------------------------------------------------------------------------*/
 
-void cs_ctwr_maille
-(
-  const cs_mesh_t       *mesh,             /* <-- structure maillage associée */
-  const cs_mesh_quantities_t *mesh_quantities   /* <-- grandeurs du maillage  */
-)
+void cs_ctwr_maille(const cs_mesh_t             *mesh,
+                    const cs_mesh_quantities_t  *mesh_quantities)
 {
-
-
   cs_int_t   icel_1, icel_2, ii, length, nb, rank,
              dist_rank, res_loc, res_dist;
   cs_int_t   ifac, ict, icpt, icpti, icptl, icptla, icptfac,
              iaux, i, j;
-  cs_real_t  aux       , gravite[3], v_aux[3] , alpha ;
+  cs_real_t  aux, gravite[3], v_aux[3], alpha;
   fvm_coord_t *extrusion_vectors, *lst_xyz_cel, *lst_xyz;
   fvm_lnum_t  *lst_par_fac_sup;
   fvm_gnum_t  *fsup_gb_vt_num = NULL;
-  cs_real_t   *hmin_vect ;
-  cs_real_t   *hmax_vect ;
+  cs_real_t   *hmin_vect;
+  cs_real_t   *hmax_vect;
 
-  char  *mesh_name       = NULL ;
-  char  *export_name     = NULL ;
-  const double tolerance = 0.1  ;
+  char  *mesh_name       = NULL;
+  char  *export_name     = NULL;
+  const double tolerance = 0.1;
 
+  fvm_lnum_t   n_vertices;
 
-  fvm_gnum_t   n_vertices;
-
-  cs_int_t   *face_sup;      /* liste des faces internes superieures de la ct */
-                             /* de taille  (nbfac_sct )                       */
-  cs_int_t   *fbr_sup;       /* liste des faces de bord superieures de la ct  */
-                             /* de taille  (nbfbr_sct)                       */
-  cs_int_t   *face_inf;      /* liste des faces internes inferieures de la ct */
-                             /* de taille  (nbfac_ict)                        */
-  cs_int_t   *fbr_inf;       /* liste des faces de bord  inferieures de la ct */
-                             /* de taille  (nbfac_ict)                        */
-  cs_int_t   *face_lat;      /* liste des faces internes laterales de la ct   */
-                             /* de taille  (nbfac_lct )                       */
-  cs_int_t   *fbr_lat;       /* liste des faces de bord laterales de la ct    */
-                             /* de taille  (nbfbr_lct)                       */
-  cs_int_t   *face_ct;       /* liste des faces interne de la ct              */
-                             /* de taille  (nbfac_ct)                        */
+  cs_int_t   *face_sup;      /* liste des faces internes superieures de la ct
+                                de taille  (nbfac_sct) */
+  cs_int_t   *fbr_sup;       /* liste des faces de bord superieures de la ct
+                                de taille  (nbfbr_sct) */
+  cs_int_t   *face_inf;      /* liste des faces internes inferieures de la ct
+                                de taille  (nbfac_ict) */
+  cs_int_t   *fbr_inf;       /* liste des faces de bord  inferieures de la ct
+                                de taille  (nbfac_ict) */
+  cs_int_t   *face_lat;      /* liste des faces internes laterales de la ct
+                                de taille  (nbfac_lct) */
+  cs_int_t   *fbr_lat;       /* liste des faces de bord laterales de la ct
+                                de taille  (nbfbr_lct) */
+  cs_int_t   *face_ct;       /* liste des faces interne de la ct
+                                de taille  (nbfac_ct) */
 
 
   const cs_int_t  *i_face_cells  = mesh->i_face_cells;
@@ -759,7 +750,7 @@ void cs_ctwr_maille
   /*--------------------------------------------*/
   /* List of air nodes for each Exchange Area   */
   /*--------------------------------------------*/
-  for (ict=0 ; ict < cs_glob_ct_nbr ; ict++) {
+  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
 
     icpt = 0;
     ct = cs_glob_ct_tab[ict];
@@ -772,7 +763,7 @@ void cs_ctwr_maille
                                                    ct->nbevct,
                                                    ct->ze_cell_list);
 
-    BFT_MALLOC(ct->mark_ze,mesh->n_cells ,cs_int_t );
+    BFT_MALLOC(ct->mark_ze,mesh->n_cells, cs_int_t);
 
     /*----------------------------------------------------------*
      * Begin identification of air nodes for each Exchange Area *
@@ -798,29 +789,29 @@ void cs_ctwr_maille
    * des zones d'echanges et du nombre de faces superieures *
    * et inferieures                                         *
    *--------------------------------------------------------*/
-  for (ict=0 ; ict < cs_glob_ct_nbr ; ict++) {
+  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
     ct = cs_glob_ct_tab[ict];
     /* Contribution faces internes */
-    for (ifac = 0 ; ifac < mesh->n_i_faces ; ifac++) {
+    for (ifac = 0; ifac < mesh->n_i_faces; ifac++) {
       assert((ifac * 2 + 1) < (2*mesh->n_i_faces));
       icel_1 = i_face_cells[ifac * 2]     - 1;/* indice de la cellule 1 */
       icel_2 = i_face_cells[ifac * 2 + 1] - 1;/* indice  de la cellule 2 */
       /* Comparaison  des couleurs des cellules 1 et 2 */
-      if((ct->mark_ze[icel_1] == 1) ||
+      if ((ct->mark_ze[icel_1] == 1) ||
           (ct->mark_ze[icel_2] == 1)) {
         if  (ct->mark_ze[icel_1] != ct->mark_ze[icel_2]) {
           if (ct->mark_ze[icel_1] == 1) {
-            aux = _dot_product_ng(ifac ,ct->idimct, i_face_normal, gravite, 1);
+            aux = _dot_product_ng(ifac, ct->idimct, i_face_normal, gravite, 1);
           }
           if (ct->mark_ze[icel_2] == 1) {
-            aux = _dot_product_ng(ifac ,ct->idimct, i_face_normal, gravite, -1);
+            aux = _dot_product_ng(ifac, ct->idimct, i_face_normal, gravite, -1);
           }
 
-          if (aux < (-alpha) ){
+          if (aux < (-alpha)) {
             ct->nnpsct++;
             ct->nbfac_sct++;
           }else{
-            if (aux > alpha ){
+            if (aux > alpha) {
               ct->nbfac_ict++;
             }else{
               ct->nbfac_lct++;
@@ -834,17 +825,17 @@ void cs_ctwr_maille
     }  /* fin contribution faces internes */
 
     /* Contribution faces externes */
-    for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++) {
+    for (ifac = 0; ifac < mesh->n_b_faces; ifac++) {
       icel_1 = b_face_cells[ifac] - 1; /* indice de la cellule  */
       if (ct->mark_ze[icel_1] == 1) {
 
         aux = _dot_product_ng(ifac,ct->idimct, b_face_normal, gravite, 1);
 
-        if (aux < (-alpha) ){
+        if (aux < (-alpha)) {
           ct->nnpsct++;
           ct->nbfbr_sct++;
         }else{
-          if (aux > alpha  ){
+          if (aux > alpha) {
             ct->nbfbr_ict++;
           }else{
             ct->nbfbr_lct++;
@@ -856,13 +847,13 @@ void cs_ctwr_maille
 
     /* allocation memoire pour la liste des faces superieures et inferieures
     * des ct */
-    BFT_MALLOC(face_sup,ct->nbfac_sct ,cs_int_t );
-    BFT_MALLOC(face_inf,ct->nbfac_ict ,cs_int_t );
-    BFT_MALLOC(face_lat,ct->nbfac_lct ,cs_int_t );
-    BFT_MALLOC(fbr_sup ,ct->nbfbr_sct ,cs_int_t );
-    BFT_MALLOC(fbr_inf ,ct->nbfbr_ict ,cs_int_t );
-    BFT_MALLOC(fbr_lat ,ct->nbfbr_lct ,cs_int_t );
-    BFT_MALLOC(face_ct ,ct->nbfac_ct  ,cs_int_t );
+    BFT_MALLOC(face_sup,ct->nbfac_sct, cs_int_t);
+    BFT_MALLOC(face_inf,ct->nbfac_ict, cs_int_t);
+    BFT_MALLOC(face_lat,ct->nbfac_lct, cs_int_t);
+    BFT_MALLOC(fbr_sup, ct->nbfbr_sct, cs_int_t);
+    BFT_MALLOC(fbr_inf, ct->nbfbr_ict, cs_int_t);
+    BFT_MALLOC(fbr_lat, ct->nbfbr_lct, cs_int_t);
+    BFT_MALLOC(face_ct, ct->nbfac_ct, cs_int_t);
 
 
   /* --------------------------------------------------------*
@@ -878,32 +869,32 @@ void cs_ctwr_maille
    *-----------------------------------------------------------------*/
 
     /* Contribution faces internes */
-    icpt   = 0 ; /*indice tableau des faces  sup */
-    icpti  = 0 ; /*indice tableau des faces  inf */
-    icptla = 0 ; /*indice tableau des faces  laterales */
-    icptl  = 0 ; /*indice tableau des noeuds sup ct */
-    icptfac  = 0 ; /*indice tableau des noeuds sup ct */
+    icpt   = 0; /*indice tableau des faces  sup */
+    icpti  = 0; /*indice tableau des faces  inf */
+    icptla = 0; /*indice tableau des faces  laterales */
+    icptl  = 0; /*indice tableau des noeuds sup ct */
+    icptfac  = 0; /*indice tableau des noeuds sup ct */
     /* Boucle sur les faces internes du domaine */
-    for (ifac = 0 ; ifac < mesh->n_i_faces ; ifac++) {
+    for (ifac = 0; ifac < mesh->n_i_faces; ifac++) {
       icel_1 = i_face_cells[ifac * 2]     - 1; /* indice de la cellule 1 */
       icel_2 = i_face_cells[ifac * 2 + 1] - 1; /* indice  de la cellule 2 */
       /* Comparaison  couleur de la ct et couleur des cellules 1 et 2 */
-      if((ct->mark_ze[icel_1] == 1) ||
+      if ((ct->mark_ze[icel_1] == 1) ||
           (ct->mark_ze[icel_2] ==1)) {
         if  (ct->mark_ze[icel_1] != ct->mark_ze[icel_2]) {
           if (ct->mark_ze[icel_1] ==1) {
-            aux = _dot_product_ng(ifac ,ct->idimct, i_face_normal, gravite, 1);
+            aux = _dot_product_ng(ifac, ct->idimct, i_face_normal, gravite, 1);
           }
           if (ct->mark_ze[icel_2] == 1) {
-            aux = _dot_product_ng(ifac ,ct->idimct, i_face_normal, gravite, -1);
+            aux = _dot_product_ng(ifac, ct->idimct, i_face_normal, gravite, -1);
           }
 
-          if (aux < (-alpha) ){
+          if (aux < (-alpha)) {
             /*ajout d'une face sup de la ct*/
             face_sup[icpt] = ifac + 1;
             icpt ++;
           }else{
-            if (aux > alpha ){
+            if (aux > alpha) {
             /*ajout d'un face inf de la ct*/
             face_inf[icpti]  = ifac + 1;
             icpti ++;
@@ -923,25 +914,25 @@ void cs_ctwr_maille
 
     /* Contribution faces de bords */
     /* initialisation des indices */
-    icpt   = 0 ; /*indice tableau des faces  sup */
-    icpti  = 0 ; /*indice tableau des faces  inf */
-    icptla = 0 ; /*indice tableau des faces  laterales */
+    icpt   = 0; /*indice tableau des faces  sup */
+    icpti  = 0; /*indice tableau des faces  inf */
+    icptla = 0; /*indice tableau des faces  laterales */
 
 
 
-    for (ifac = 0 ; ifac < mesh->n_b_faces ; ifac++) {
+    for (ifac = 0; ifac < mesh->n_b_faces; ifac++) {
 
       icel_1 = b_face_cells[ifac] - 1;/* indice de la cellule  */
-      if ( ct->mark_ze[icel_1]== 1 ) {
+      if (ct->mark_ze[icel_1]== 1) {
 
         aux = _dot_product_ng(ifac, ct->idimct, b_face_normal, gravite, 1);
 
-        if (aux < (-alpha) ){
+        if (aux < (-alpha)) {
           /* ajout d'une face sup de la ct */
           fbr_sup[icpt]= ifac + 1;
           icpt ++;
         }else{
-          if (aux > alpha ){
+          if (aux > alpha) {
             /*ajout d'un face inf de la ct*/
             fbr_inf[icpti]= ifac + 1;
             icpti ++;
@@ -955,7 +946,7 @@ void cs_ctwr_maille
 
 
     /*---------------------------------------------------------*
-    * Creation des maillages surfacique en connectivité nodale*
+    * Creation des maillages surfacique en connectivite nodale*
     *---------------------------------------------------------*/
 
     /* mesh for superiors faces */
@@ -1028,7 +1019,7 @@ void cs_ctwr_maille
 
 
     /*--------------------------------------------------------------*
-    *  Fin creation des maillages surfacique en connectivité nodale*
+    *  Fin creation des maillages surfacique en connectivite nodale*
     *--------------------------------------------------------------*/
 
     /*--------------------------------------------------------------*
@@ -1040,19 +1031,19 @@ void cs_ctwr_maille
 
       nb   = cs_glob_n_ranks;
       rank = cs_glob_rank_id;
-      BFT_MALLOC(ct->cs_array_rank, nb, cs_int_t );
+      BFT_MALLOC(ct->cs_array_rank, nb, cs_int_t);
 
 
-      ct->cs_array_rank[ rank ] = res_loc = ct->nbevct;
+      ct->cs_array_rank[rank] = res_loc = ct->nbevct;
 
 
-      for(dist_rank = 0; dist_rank <  nb; dist_rank++ )
-        if(dist_rank != rank ){
-          MPI_Sendrecv(&res_loc,  1, CS_MPI_INT, dist_rank, CS_CT_MPI_TAG,
+      for (dist_rank = 0; dist_rank <  nb; dist_rank++)
+        if (dist_rank != rank) {
+          MPI_Sendrecv(&res_loc, 1, CS_MPI_INT, dist_rank, CS_CT_MPI_TAG,
                         &res_dist, 1, CS_MPI_INT, dist_rank, CS_CT_MPI_TAG,
                         cs_glob_mpi_comm, &status);
 
-          ct->cs_array_rank[ dist_rank ] = res_dist;
+          ct->cs_array_rank[dist_rank] = res_dist;
 
         }
     }
@@ -1070,46 +1061,41 @@ void cs_ctwr_maille
     nb = (cs_int_t) fvm_nodal_get_n_entities(ct->face_sup_mesh, 0);
 
 
-    BFT_MALLOC(hmax_vect , nb , fvm_coord_t );
-    BFT_MALLOC(hmin_vect , nb , fvm_coord_t );
+    BFT_MALLOC(hmax_vect, nb, fvm_coord_t);
+    BFT_MALLOC(hmin_vect, nb, fvm_coord_t);
 
-    _search_height(ct          ,
-                     gravite    ,
-                     hmin_vect  ,
-                     hmax_vect  );
+    _search_height(ct,
+                   gravite,
+                   hmin_vect,
+                   hmax_vect);
 
+    for (i = 0; i < nb; i++) {
 
-    for (i = 0 ; i < nb ; i++) {
+      aux = hmax_vect[i];
+      if (aux >= ct->hmax)
+        ct->hmax = aux;
 
-        aux = hmax_vect[ i ];
-        if (aux >= ct->hmax )
-          ct->hmax = aux;
-
-        aux = hmin_vect[ i ];
-        if (aux <= ct->hmin )
-          ct->hmin = aux;
+      aux = hmin_vect[i];
+      if (aux <= ct->hmin)
+        ct->hmin = aux;
     }
 
     /* loop on the sup faces for surface_in and surface_out */
-    BFT_MALLOC(lst_par_fac_sup , ct->nnpsct , fvm_lnum_t );
+    BFT_MALLOC(lst_par_fac_sup, ct->nnpsct, fvm_lnum_t);
 
     fvm_nodal_get_parent_num(ct->face_sup_mesh, 2, lst_par_fac_sup);
 
-    BFT_MALLOC(ct->surf_fac_sup , ct->nnpsct , cs_real_t );
+    BFT_MALLOC(ct->surf_fac_sup, ct->nnpsct, cs_real_t);
 
-    for (ifac = 0 ; ifac < ct->nnpsct ; ifac++) {
-      if(ifac< ct->nbfbr_sct ){
-        for (ii = 0 ; ii < 3 ; ii++){
-          v_aux[ii] = b_face_normal[3 * (cs_int_t) (lst_par_fac_sup[ ifac ] -1)
-                               + ii ];
-        }
+    for (ifac = 0; ifac < ct->nnpsct; ifac++) {
+      if (ifac< ct->nbfbr_sct) {
+        for (ii = 0; ii < 3; ii++)
+          v_aux[ii] = b_face_normal[3 * (lst_par_fac_sup[ifac] -1) + ii];
       }
       else{
-        for (ii = 0 ; ii < 3 ; ii++){
-          v_aux[ii] = i_face_normal[ 3 * (cs_int_t)
-                                (lst_par_fac_sup[ifac] - mesh->n_b_faces - 1)
-                                + ii ];
-          }
+        for (ii = 0; ii < 3; ii++)
+          v_aux[ii] = i_face_normal[3 * (  lst_par_fac_sup[ifac]
+                                         - mesh->n_b_faces - 1) + ii];
       }
       aux = CS_LOC_MODULE(v_aux);
       ct->surface_in += aux;
@@ -1126,25 +1112,25 @@ void cs_ctwr_maille
       nb   = cs_glob_n_ranks;
       rank = cs_glob_rank_id;
 
-      // TODO : changer ce bordel !!!!!!!!!!!!!!!!!
-      // sans doute equivalent a MPI_Allreduce(ct-hmax, ..., MPI_MAX)
+      /* TODO : changer ce bordel !!!!!!!!!!!!!!!!!
+         sans doute equivalent a MPI_Allreduce(ct-hmax, ..., MPI_MAX) */
 
-      if(ct->cs_array_rank[ rank ] != 0){
-        for(dist_rank = 0; dist_rank < nb; dist_rank++){
-          if(dist_rank != rank ){
-            if(ct->cs_array_rank [ dist_rank ] != 0 ){
+      if (ct->cs_array_rank[rank] != 0) {
+        for (dist_rank = 0; dist_rank < nb; dist_rank++) {
+          if (dist_rank != rank) {
+            if (ct->cs_array_rank [dist_rank] != 0) {
 
               MPI_Sendrecv(&ct->hmax, 1, CS_MPI_REAL, dist_rank, CS_CT_MPI_TAG,
                            &aux, 1, CS_MPI_REAL, dist_rank, CS_CT_MPI_TAG,
                            cs_glob_mpi_comm, &status);
 
-              if ( aux > ct->hmax ) ct->hmax = aux;
+              if (aux > ct->hmax) ct->hmax = aux;
 
               MPI_Sendrecv(&ct->hmin, 1, CS_MPI_REAL, dist_rank, CS_CT_MPI_TAG,
-                           &aux  , 1, CS_MPI_REAL, dist_rank, CS_CT_MPI_TAG,
-                         cs_glob_mpi_comm, &status);
+                           &aux, 1, CS_MPI_REAL, dist_rank, CS_CT_MPI_TAG,
+                           cs_glob_mpi_comm, &status);
 
-              if ( aux < ct->hmin ) ct->hmin = aux;
+              if (aux < ct->hmin) ct->hmin = aux;
 
             }
           }
@@ -1173,13 +1159,13 @@ void cs_ctwr_maille
     BFT_MALLOC(extrusion_vectors, (nb*3), fvm_coord_t);
 
 
-    for (i=0 ; i < nb ; i++){
+    for (i=0; i < nb; i++) {
 
-      aux =CS_ABS(hmax_vect[ i ] -  hmin_vect[ i ])/CS_LOC_MODULE(gravite);
+      aux =CS_ABS(hmax_vect[i] -  hmin_vect[i])/CS_LOC_MODULE(gravite);
 
-      extrusion_vectors[ i*3 ]    =  gravite[0] * aux;
-      extrusion_vectors[ i*3 + 1] =  gravite[1] * aux;
-      extrusion_vectors[ i*3 + 2] =  gravite[2] * aux;
+      extrusion_vectors[i*3]     =  gravite[0] * aux;
+      extrusion_vectors[i*3 + 1] =  gravite[1] * aux;
+      extrusion_vectors[i*3 + 2] =  gravite[2] * aux;
     }
 
 
@@ -1209,12 +1195,12 @@ void cs_ctwr_maille
 
     /* Creation of the cs_mesh_halo_t structure. */
 
-    bft_printf(_(" Création des halos\n"));
+    bft_printf(_(" Creating halos\n"));
     bft_printf_flush();
 
     ct->water_halo = cs_halo_create(interface_set);
 
-    bft_printf(_(" Définition des halos\n"));
+    bft_printf(_(" Defining halos\n"));
     bft_printf_flush();
 
     cs_ctwr_halo_define(ct, interface_set);
@@ -1232,7 +1218,7 @@ void cs_ctwr_maille
     ct->locat_water_air = fvm_locator_create(tolerance);
 #endif
 
-    BFT_MALLOC(lst_xyz_cel , ct->nbevct*3, fvm_coord_t);
+    BFT_MALLOC(lst_xyz_cel, ct->nbevct*3, fvm_coord_t);
 
     fvm_nodal_get_element_centers(ct->cell_mesh, FVM_INTERLACE, 3, lst_xyz_cel);
 
@@ -1254,10 +1240,9 @@ void cs_ctwr_maille
     ct->locat_air_water = fvm_locator_create(tolerance);
 #endif
 
-    BFT_MALLOC(lst_xyz, ct->nnpsct*ct->nelect*3, fvm_coord_t );
+    BFT_MALLOC(lst_xyz, ct->nnpsct*ct->nelect*3, fvm_coord_t);
 
     fvm_nodal_get_element_centers(ct->water_mesh, FVM_INTERLACE, 3, lst_xyz);
-
 
     fvm_locator_set_nodal(ct->locat_air_water,
                           ct->cell_mesh,
@@ -1267,20 +1252,19 @@ void cs_ctwr_maille
                           NULL,
                           lst_xyz);
 
-
-    BFT_FREE(mesh_name       );
-    BFT_FREE(export_name     );
-    BFT_FREE(face_sup        );
-    BFT_FREE(face_inf        );
-    BFT_FREE(face_lat        );
-    BFT_FREE(fbr_sup         );
-    BFT_FREE(lst_par_fac_sup );
-    BFT_FREE(fbr_inf         );
-    BFT_FREE(fbr_lat         );
-    BFT_FREE(face_ct         );
-    BFT_FREE(lst_xyz         );
-    BFT_FREE(lst_xyz_cel     );
-    BFT_FREE(fsup_gb_vt_num  );
+    BFT_FREE(mesh_name);
+    BFT_FREE(export_name);
+    BFT_FREE(face_sup);
+    BFT_FREE(face_inf);
+    BFT_FREE(face_lat);
+    BFT_FREE(fbr_sup);
+    BFT_FREE(lst_par_fac_sup);
+    BFT_FREE(fbr_inf);
+    BFT_FREE(fbr_lat);
+    BFT_FREE(face_ct);
+    BFT_FREE(lst_xyz);
+    BFT_FREE(lst_xyz_cel);
+    BFT_FREE(fsup_gb_vt_num);
 
   }
   /*--------------------------------------------*
@@ -1292,17 +1276,17 @@ void cs_ctwr_maille
    * Initialization of the water variables      *
    *--------------------------------------------*/
 
-  for (ict=0 ; ict < cs_glob_ct_nbr ; ict++) {
+  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
     ct = cs_glob_ct_tab[ict];
     /* Te */
-    BFT_MALLOC(ct->teau   ,(ct->nnpsct_with_ghosts*ct->nelect), cs_real_t);
+    BFT_MALLOC(ct->teau, (ct->nnpsct_with_ghosts*ct->nelect), cs_real_t);
     /* Fe */
-    BFT_MALLOC(ct->fem    ,(ct->nnpsct_with_ghosts*ct->nelect), cs_real_t);
+    BFT_MALLOC(ct->fem, (ct->nnpsct_with_ghosts*ct->nelect), cs_real_t);
     /* vg */
     BFT_MALLOC(ct->vgoutte,(ct->nnpsct_with_ghosts*ct->nelect), cs_real_t);
 
     /* initialisation*/
-    for (iaux = 0 ; iaux < (ct->nnpsct_with_ghosts*ct->nelect) ; iaux++) {
+    for (iaux = 0; iaux < (ct->nnpsct_with_ghosts*ct->nelect); iaux++) {
       /* temperature de l eau*/
       ct->teau[iaux]    = ct->cl_teau;
       /* debit massique par unite de surface */
@@ -1310,12 +1294,12 @@ void cs_ctwr_maille
       /* vitesse des gouttes */
       ct->vgoutte[iaux] = 0.0;
     }
-    /* Initialisation en tenant compte de l'écart de température imposé*/
-    aux = ct->deltat / ( (cs_real_t) (ct->nelect - 1)  ) ;
-    for (i = 0 ; i < ct->nnpsct_with_ghosts ; i++) {
-      for (j = 1 ; j < ct->nelect ; j++) {
-          ii = i*ct->nelect + j ;
-          ct->teau[ ii ] =  ct->teau[ ii - 1 ] - aux;
+    /* Initialisation en tenant compte de l'ecart de temperature impose*/
+    aux = ct->deltat / ((cs_real_t) (ct->nelect - 1));
+    for (i = 0; i < ct->nnpsct_with_ghosts; i++) {
+      for (j = 1; j < ct->nelect; j++) {
+          ii = i*ct->nelect + j;
+          ct->teau[ii] =  ct->teau[ii - 1] - aux;
         }
     }
 
@@ -1331,36 +1315,36 @@ void cs_ctwr_maille
   /*--------------------------------------------*
    * Initialisation des tableaux d interpolation*
    *--------------------------------------------*/
-  for (ict=0 ; ict < cs_glob_ct_nbr ; ict++) {
+  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
 
-    ct = cs_glob_ct_tab[ ict ];
+    ct = cs_glob_ct_tab[ict];
     /* Liste des voisins eau des cellules air */
-    nb = (int) fvm_locator_get_n_dist_points(ct->locat_air_water );
-    BFT_MALLOC(ct->voiseau,(nb * cs_ctwr_nmaxvoi ), cs_int_t );
+    nb = (int) fvm_locator_get_n_dist_points(ct->locat_air_water);
+    BFT_MALLOC(ct->voiseau,(nb * cs_ctwr_nmaxvoi), cs_int_t);
     /* Coefficients d interpolation eau pour l air*/
-    BFT_MALLOC(ct->coefeau , (nb * cs_ctwr_nmaxvoi ), cs_real_t );
+    BFT_MALLOC(ct->coefeau, (nb * cs_ctwr_nmaxvoi), cs_real_t);
     /* Positions dans la liste des voisins eau */
-    BFT_MALLOC(ct->pvoiseau, (nb + 1) , cs_int_t );
+    BFT_MALLOC(ct->pvoiseau, (nb + 1), cs_int_t);
     /* Liste des voisins air des noeuds eau */
 
-    ct->pvoiseau[ 0 ] = 0 ;
+    ct->pvoiseau[0] = 0;
 
-    for (iaux = 0 ; iaux < (nb *cs_ctwr_nmaxvoi) ; iaux++){
-      ct->voiseau[iaux] = -1 ;
+    for (iaux = 0; iaux < (nb *cs_ctwr_nmaxvoi); iaux++) {
+      ct->voiseau[iaux] = -1;
     }
 
-    nb = (int) fvm_locator_get_n_dist_points(ct->locat_water_air );
+    nb = (int) fvm_locator_get_n_dist_points(ct->locat_water_air);
 
-    BFT_MALLOC(ct->voisair  ,(nb * cs_ctwr_nmaxvoi ), cs_int_t  );
+    BFT_MALLOC(ct->voisair,(nb * cs_ctwr_nmaxvoi), cs_int_t);
     /* Positions dans la liste voisins air */
-    BFT_MALLOC(ct->pvoisair ,(    nb + 1   ), cs_int_t  );
+    BFT_MALLOC(ct->pvoisair, (nb + 1), cs_int_t);
     /* Coefficients d interpolation air pour l eau */
-    BFT_MALLOC(ct->coefair  ,( nb * cs_ctwr_nmaxvoi ), cs_real_t );
+    BFT_MALLOC(ct->coefair,(nb * cs_ctwr_nmaxvoi), cs_real_t);
 
     ct->pvoisair[0] = 0;
 
-    for (iaux = 0 ; iaux < (nb* cs_ctwr_nmaxvoi) ; iaux++){
-      ct->voisair[iaux] = -1 ;
+    for (iaux = 0; iaux < (nb* cs_ctwr_nmaxvoi); iaux++) {
+      ct->voisair[iaux] = -1;
     }
   }
   /*------------------------------------------------------*
@@ -1379,30 +1363,31 @@ void cs_ctwr_adeau
   const cs_mesh_quantities_t  *mesh_quantities
 )
 {
-  /* Coordonnées des centres des cellules  */
+  /* Coordonnees des centres des cellules  */
   const cs_real_t *coo_cel        = mesh_quantities->cell_cen;
-  const cs_int_t  *i_face_cells   = mesh->i_face_cells       ;
-#if 0 // Is it no more needed?
-  const cs_int_t  *cell_cells_idx = mesh->cell_cells_idx     ;
-  const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst     ;
-  const cs_int_t  *cell_family    = mesh->cell_family        ;
+  const cs_int_t  *i_face_cells   = mesh->i_face_cells;
+#if 0 /* Is it no more needed? */
+  const cs_int_t  *cell_cells_idx = mesh->cell_cells_idx;
+  const cs_int_t  *cell_cells_lst = mesh->cell_cells_lst;
+  const cs_int_t  *cell_family    = mesh->cell_family;
 #endif
 
   cs_int_t   ict, iwat,nb_node_water, ii, jj, iair, nbvois,
-             nbn, nvois[ cs_ctwr_nmaxvoi ], ifac, icel_1, icel_2,icel, lf, indice, dim;
+             nbn, ifac, icel_1, icel_2, lf, indice, dim;
+  cs_int_t   nvois[cs_ctwr_nmaxvoi];
   cs_real_t  dhi, dmin;
-  cs_real_t  xwat, ywat, zwat,
-             dx, dy, dz, dxx, dyy, dzz, coeff[ cs_ctwr_nmaxvoi ], ouv, aux;
+  cs_real_t  xwat, ywat, zwat, dx, dy, dz, dxx, dyy, dzz, ouv, aux;
+  cs_real_t  coeff[cs_ctwr_nmaxvoi];
   cs_real_t  vectBase[3][3];
   cs_real_t  cx, cy, cz, epgauss, w,
              pp[4][4],ppInv[4][4];
 
   const fvm_coord_t *lst_xyz_water = NULL;
-  fvm_coord_t *lst_xyz_cel  ;
-  fvm_lnum_t  *lst_par_fac  ;
-  fvm_lnum_t  *lst_par_cel  ;
+  fvm_coord_t *lst_xyz_cel ;
+  fvm_lnum_t  *lst_par_fac ;
+  fvm_lnum_t  *lst_par_cel ;
 
-  const fvm_lnum_t  *location_cel  = NULL;
+  const fvm_lnum_t  *location_cel = NULL;
 
   /*--------------------------------------------*
    * parametres et initialisation               *
@@ -1415,7 +1400,7 @@ void cs_ctwr_adeau
 
   /* Make sure with have extended neighborhood */
 
-#if 0 // Is it no more needed?
+#if 0 /* Is it no more needed ? */
   assert(cell_cells_idx != NULL);
 #endif
 
@@ -1423,13 +1408,13 @@ void cs_ctwr_adeau
    * Construction des coefficient d'interpolation*
    * sur chaque zone d echange ict               *
    *---------------------------------------------*/
-  for (ict=0 ; ict < cs_glob_ct_nbr ; ict++) {
+  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
 
     ct = cs_glob_ct_tab[ict];
 
-    nbn = 3 ;
+    nbn = 3;
     if (ct->idimct==3) {
-      nbn = 4 ;
+      nbn = 4;
     }
 
     /* Calcul de dh */
@@ -1445,81 +1430,83 @@ void cs_ctwr_adeau
     /* */
     lst_xyz_water   = fvm_locator_get_dist_coords(ct->locat_air_water);
 
-    BFT_MALLOC(lst_xyz_cel , ct->nbevct*3, fvm_coord_t );
-    fvm_nodal_get_element_centers(ct->cell_mesh, FVM_INTERLACE , 3 , lst_xyz_cel);
+    BFT_MALLOC(lst_xyz_cel, ct->nbevct*3, fvm_coord_t);
+    fvm_nodal_get_element_centers(ct->cell_mesh, FVM_INTERLACE, 3, lst_xyz_cel);
 
-    BFT_MALLOC(lst_par_cel , ct->nbevct, fvm_lnum_t );
+    BFT_MALLOC(lst_par_cel, ct->nbevct, fvm_lnum_t);
     fvm_nodal_get_parent_num(ct->cell_mesh, 3, lst_par_cel);
 
-    BFT_MALLOC(lst_par_fac , ct->nbfac_ct, fvm_lnum_t );
+    BFT_MALLOC(lst_par_fac, ct->nbfac_ct, fvm_lnum_t);
     fvm_nodal_get_parent_num(ct->fac_mesh, 2, lst_par_fac);
 
 
     /* boucle sur les noeuds eau */
-    for (iwat = 0 ; iwat < nb_node_water ; iwat++) {
+    for (iwat = 0; iwat < nb_node_water; iwat++) {
 
       /*--------------------------------------------*
        * Calcul des coord. du noeud a partir de     *
        *  celles du noeud de la face sup            *
        *   Noeud  = NoeudSup + iloc * dh *g / ||g|| *
        *--------------------------------------------*/
-      xwat = (cs_real_t) lst_xyz_water[ iwat*3     ] ;
-      ywat = (cs_real_t) lst_xyz_water[ iwat*3 + 1 ] ;
-      zwat = (cs_real_t) lst_xyz_water[ iwat*3 + 2 ] ;
+      xwat = (cs_real_t) lst_xyz_water[iwat*3    ];
+      ywat = (cs_real_t) lst_xyz_water[iwat*3 + 1];
+      zwat = (cs_real_t) lst_xyz_water[iwat*3 + 2];
 
       /*--------------------------------------------*
        * boucle sur les cellules appartenant a la ct*
        * recherche du noeud air le plus proche      *
        *--------------------------------------------*/
-      dmin = 1000. ;
+      dmin = 1000.;
       iair = location_cel[iwat] -1;
 
       /*--------------------------------------------*
        * initialiation matrice d interpolation et   *
-       *  tableau nvois[] et coeff[]          *
+       *  tableau nvois[] et coeff[]                *
        *--------------------------------------------*/
 
-      for (ii=0;ii<4;ii++){
-        for (jj=0;jj<4;jj++) {
+      for (ii=0; ii<4; ii++) {
+        for (jj=0; jj<4; jj++) {
           pp[jj][ii]   = 0.0;
           ppInv[jj][ii]= 0.0;
         }
       }
 
       for (jj=0;jj< cs_ctwr_nmaxvoi;jj++) {
-        coeff[jj]= -1.0 ;
-        nvois[jj]= -1  ;
+        coeff[jj]= -1.0;
+        nvois[jj]= -1 ;
       }
       /* fin initialisation */
 
       /*-------------------------------------------------*
        * Recherche des voisins du noeuds air le + proche *
-       *  boucle sur les faces internes du maillage        *
+       *  boucle sur les faces internes du maillage      *
        *-------------------------------------------------*/
-      nbvois = 1 ;
-      nvois[0] = iair ;
 
-      for (ifac = 0 ; ifac < ct->nbfac_ct ; ifac++) {
-        icel_1 = i_face_cells[ (lst_par_fac[ifac]- mesh->n_b_faces - 1) * 2    ]-1 ;
-        icel_2 = i_face_cells[ (lst_par_fac[ifac]- mesh->n_b_faces - 1) * 2 + 1]-1 ;
+      nbvois = 1;
+      nvois[0] = iair;
+
+      for (ifac = 0; ifac < ct->nbfac_ct; ifac++) {
+        icel_1 = i_face_cells[(lst_par_fac[ifac]- mesh->n_b_faces - 1) * 2    ]-1;
+        icel_2 = i_face_cells[(lst_par_fac[ifac]- mesh->n_b_faces - 1) * 2 + 1]-1;
         if (icel_1==iair) {
-          nvois[nbvois]=icel_2 ;
-          nbvois += 1 ;
+          nvois[nbvois]=icel_2;
+          nbvois += 1;
         }
         else if (icel_2==iair) {
-          nvois[nbvois]=icel_1 ;
-          nbvois += 1 ;
+          nvois[nbvois]=icel_1;
+          nbvois += 1;
         }
       }
 
-#if 0 // Is it no more needed?
-      for (icel = cell_cells_idx[ iair     ];
-            icel < cell_cells_idx[ iair + 1 ]; icel++) {
+#if 0 /* Is it no more needed ? */
+      for (icel = cell_cells_idx[iair    ];
+           icel < cell_cells_idx[iair + 1];
+           icel++) {
 
-         indice = cell_cells_lst[ icel ] - 1;
-         if (ct->mark_ze[indice+1]==1){
-            nvois[nbvois]= indice ;
-            nbvois += 1 ;
+         indice = cell_cells_lst[icel] - 1;
+         if (ct->mark_ze[indice+1]==1) {
+            nvois[nbvois]= indice;
+            nbvois += 1;
          }
       }
 #endif
@@ -1530,118 +1517,118 @@ void cs_ctwr_adeau
        *nombre de voisins insuffisant               *
        *--------------------------------------------*/
 
-      if (nbvois<nbn){
-        nbvois = 1 ;
-        nvois[0] = iair ;
-        coeff[0] = 1.0 ;
-        goto enregistre ;
+      if (nbvois<nbn) {
+        nbvois = 1;
+        nvois[0] = iair;
+        coeff[0] = 1.0;
+        goto enregistre;
       }
 
       dim = ct->idimct;
       vectBase[0][0] = 1.0; vectBase[1][0] = 0.0; vectBase[2][0] = 0.0;
       vectBase[0][1] = 0.0; vectBase[1][1] = 1.0; vectBase[2][1] = 0.0;
       vectBase[0][2] = 0.0; vectBase[1][2] = 0.0; vectBase[2][2] = 1.0;
-      passage2D : ;
+      passage2D :;
 
 
       /*--------------------------------------------*/
-      /* Calcul de l'ouverture de la fonction  de pondération*/
+      /* Calcul de l'ouverture de la fonction  de ponderation*/
       /*  egale au max de la distance entre le noeud eau et les voisins air */
       /*--------------------------------------------*/
-      ouv = 0. ;
-      for (ii = 0 ; ii < nbvois ; ii++) {
+      ouv = 0.;
+      for (ii = 0; ii < nbvois; ii++) {
         iair = nvois[ii];
-        dxx  =  (cs_real_t) (coo_cel[iair*3+0] - xwat );
-        dyy  =  (cs_real_t) (coo_cel[iair*3+1] - ywat );
-        dzz  =  (cs_real_t) (coo_cel[iair*3+2] - zwat );
+        dxx  =  (cs_real_t) (coo_cel[iair*3+0] - xwat);
+        dyy  =  (cs_real_t) (coo_cel[iair*3+1] - ywat);
+        dzz  =  (cs_real_t) (coo_cel[iair*3+2] - zwat);
 
         dx = dxx * vectBase[0][0] + dyy * vectBase[0][1] + dzz * vectBase[0][2];
         dy = dxx * vectBase[1][0] + dyy * vectBase[1][1] + dzz * vectBase[1][2];
         dz = dxx * vectBase[2][0] + dyy * vectBase[2][1] + dzz * vectBase[2][2];
 
-        aux =  pow(dx,2.)+pow(dy,2.)+pow(dz,2.) ;
+        aux =  pow(dx,2.)+pow(dy,2.)+pow(dz,2.);
         if (ouv<aux) {
           ouv = aux;
         }
       }
-      ouv = sqrt(ouv)*1.1 ;
+      ouv = sqrt(ouv)*1.1;
       /* fin calcul de l'ouverture */
 
       /*--------------------------------------------*/
       /*Construction de la matrice A               */
       /*--------------------------------------------*/
-      for (ii = 0 ; ii < nbvois ; ii++) {
+      for (ii = 0; ii < nbvois; ii++) {
 
         indice = nvois[ii];
-        dxx = (cs_real_t) (coo_cel[indice*3+0] - xwat) ;
-        dyy = (cs_real_t) (coo_cel[indice*3+1] - ywat) ;
-        dzz = (cs_real_t) (coo_cel[indice*3+2] - zwat) ;
+        dxx = (cs_real_t) (coo_cel[indice*3+0] - xwat);
+        dyy = (cs_real_t) (coo_cel[indice*3+1] - ywat);
+        dzz = (cs_real_t) (coo_cel[indice*3+2] - zwat);
 
         dx = dxx * vectBase[0][0] + dyy * vectBase[0][1] + dzz * vectBase[0][2];
         dy = dxx * vectBase[1][0] + dyy * vectBase[1][1] + dzz * vectBase[1][2];
         dz = dxx * vectBase[2][0] + dyy * vectBase[2][1] + dzz * vectBase[2][2];
 
         /* parametre de la fonction de ponderation*/
-        cx = 1.0 ;
-        cy = 1.0 ;
-        cz = 1.e10 ;
+        cx = 1.0;
+        cy = 1.0;
+        cz = 1.e10;
         lf = 3;
-        epgauss = 5.0 ;
+        epgauss = 5.0;
         if (dim==3) {
-          cz = 1.0 ;
+          cz = 1.0;
         }
         if (dim==1) {
-          cy = 1.e10 ;
-          cz = 1.e10 ;
+          cy = 1.e10;
+          cz = 1.e10;
         }
         /*fonction de ponderation*/
-        w  = _weighting(dx,dy,dz,ouv,lf,epgauss,cx,cy,cz) ;
-        if (dim == 1)/* 1D */{
-          pp[0][0] = w      + pp[0][0] ;
-          pp[0][1] = w*dx    + pp[0][1] ;
-          pp[1][0] = w*dx    + pp[1][0] ;
-          pp[1][1] = w*dx*dx + pp[1][1] ;
-        }else
-          if (dim == 2) /* 2D */{
-            pp[0][0] = w       + pp[0][0] ;
-            pp[0][1] = w*dx    + pp[0][1] ;
-            pp[0][2] = w*dy    + pp[0][2] ;
-            pp[1][0] = w*dx    + pp[1][0] ;
-            pp[1][1] = w*dx*dx + pp[1][1] ;
-            pp[1][2] = w*dx*dy + pp[1][2] ;
-            pp[2][0] = w*dy    + pp[2][0] ;
-            pp[2][1] = w*dx*dy + pp[2][1] ;
-            pp[2][2] = w*dy*dy + pp[2][2] ;
-          }
-          else if (dim == 3)/* 3D */{
-            pp[0][0] = w       + pp[0][0] ;
-            pp[0][1] = w*dx    + pp[0][1] ;
-            pp[0][2] = w*dy    + pp[0][2] ;
-            pp[0][3] = w*dz    + pp[0][3] ;
-            pp[1][0] = w*dx    + pp[1][0] ;
-            pp[1][1] = w*dx*dx + pp[1][1] ;
-            pp[1][2] = w*dy*dx + pp[1][2] ;
-            pp[1][3] = w*dz*dx + pp[1][3] ;
-            pp[2][0] = w*dy    + pp[2][0] ;
-            pp[2][1] = w*dx*dy + pp[2][1] ;
-            pp[2][2] = w*dy*dy + pp[2][2] ;
-            pp[2][3] = w*dz*dy + pp[2][3] ;
-            pp[3][0] = w*dz    + pp[3][0] ;
-            pp[3][1] = w*dx*dz + pp[3][1] ;
-            pp[3][2] = w*dy*dz + pp[3][2] ;
-            pp[3][3] = w*dz*dz + pp[3][3] ;
+        w  = _weighting(dx,dy,dz,ouv,lf,epgauss,cx,cy,cz);
+        if (dim == 1) { /* 1D */
+          pp[0][0] = w      + pp[0][0];
+          pp[0][1] = w*dx    + pp[0][1];
+          pp[1][0] = w*dx    + pp[1][0];
+          pp[1][1] = w*dx*dx + pp[1][1];
+        }
+        else if (dim == 2) { /* 2D */
+          pp[0][0] = w       + pp[0][0];
+          pp[0][1] = w*dx    + pp[0][1];
+          pp[0][2] = w*dy    + pp[0][2];
+          pp[1][0] = w*dx    + pp[1][0];
+          pp[1][1] = w*dx*dx + pp[1][1];
+          pp[1][2] = w*dx*dy + pp[1][2];
+          pp[2][0] = w*dy    + pp[2][0];
+          pp[2][1] = w*dx*dy + pp[2][1];
+          pp[2][2] = w*dy*dy + pp[2][2];
+        }
+        else if (dim == 3) {/* 3D */
+          pp[0][0] = w       + pp[0][0];
+          pp[0][1] = w*dx    + pp[0][1];
+          pp[0][2] = w*dy    + pp[0][2];
+          pp[0][3] = w*dz    + pp[0][3];
+          pp[1][0] = w*dx    + pp[1][0];
+          pp[1][1] = w*dx*dx + pp[1][1];
+          pp[1][2] = w*dy*dx + pp[1][2];
+          pp[1][3] = w*dz*dx + pp[1][3];
+          pp[2][0] = w*dy    + pp[2][0];
+          pp[2][1] = w*dx*dy + pp[2][1];
+          pp[2][2] = w*dy*dy + pp[2][2];
+          pp[2][3] = w*dz*dy + pp[2][3];
+          pp[3][0] = w*dz    + pp[3][0];
+          pp[3][1] = w*dx*dz + pp[3][1];
+          pp[3][2] = w*dy*dz + pp[3][2];
+          pp[3][3] = w*dz*dz + pp[3][3];
         }
       }
       /*Fin Construction de la matrice A */
-      if(ct->idimct == 3 && dim == 3){
-          dim  = _is_coplanar(coo_cel, nvois, nbvois, pp, vectBase, 0, dhi);
+      if (ct->idimct == 3 && dim == 3) {
+        dim  = _is_coplanar(coo_cel, nvois, nbvois, pp, vectBase, 0, dhi);
 
-            if(dim!= 3){
-              for (ii=0;ii<3;ii++)
-                for (jj=0;jj<3;jj++)
-                  pp[jj][ii]=0.0;
-              goto passage2D ;
-            }
+        if (dim!= 3) {
+          for (ii=0; ii<3; ii++)
+            for (jj=0; jj<3; jj++)
+              pp[jj][ii]=0.0;
+          goto passage2D;
+        }
 
       }
 
@@ -1655,68 +1642,68 @@ void cs_ctwr_adeau
       /*--------------------------------------------*/
       /* Calcul des coefficients                    */
       /*--------------------------------------------*/
-      for (ii = 0 ; ii < nbvois ; ii++){
+      for (ii = 0; ii < nbvois; ii++) {
 
         indice = nvois[ii];
-        dxx = (cs_real_t) (coo_cel[indice*3+0] - xwat );
-        dyy = (cs_real_t) (coo_cel[indice*3+1] - ywat );
-        dzz = (cs_real_t) (coo_cel[indice*3+2] - zwat );
+        dxx = (cs_real_t) (coo_cel[indice*3+0] - xwat);
+        dyy = (cs_real_t) (coo_cel[indice*3+1] - ywat);
+        dzz = (cs_real_t) (coo_cel[indice*3+2] - zwat);
 
         dx = dxx * vectBase[0][0] + dyy * vectBase[0][1] + dzz * vectBase[0][2];
         dy = dxx * vectBase[1][0] + dyy * vectBase[1][1] + dzz * vectBase[1][2];
         dz = dxx * vectBase[2][0] + dyy * vectBase[2][1] + dzz * vectBase[2][2];
 
         /* parametre de la fonction de ponderation*/
-        cx = 1.0 ;
-        cy = 1.0 ;
-        cz = 1.e10 ;
+        cx = 1.0;
+        cy = 1.0;
+        cz = 1.e10;
         lf = 3;
-        epgauss = 5.0 ;
+        epgauss = 5.0;
         if (dim==3) {
-          cz = 1.0 ;
+          cz = 1.0;
         }
         if (dim==1) {
-          cy = 1.e10 ;
-          cz = 1.e10 ;
+          cy = 1.e10;
+          cz = 1.e10;
         }
 
-        w  = _weighting(dx,dy,dz,ouv,lf,epgauss,cx,cy,cz) ;
+        w  = _weighting(dx,dy,dz,ouv,lf,epgauss,cx,cy,cz);
 
-        if (dim == 1){
+        if (dim == 1) {
           coeff[ii] = w*(ppInv[0][0]+ppInv[0][1]*dx);
         }
-        else if (dim ==2){
+        else if (dim ==2) {
           coeff[ii] = w*(ppInv[0][0]+ppInv[0][1]*dx+ppInv[0][2]*dy);
         }
-        else if (dim ==3){
-          coeff[ii] = w*(  ppInv[0][0]
+        else if (dim ==3) {
+          coeff[ii] = w*( ppInv[0][0]
                           +ppInv[0][1]*dx
                           +ppInv[0][2]*dy
-                          +ppInv[0][3]*dz );
+                          +ppInv[0][3]*dz);
         }
 
       }
       /* Fin Calcul des coefficients */
 
-      enregistre : ;
+      enregistre :;
 
       /*--------------------------------------------*/
       /* boucle while sur pvoiseau pour trouver le  */
       /* dernier indice                             */
       /*--------------------------------------------*/
-      indice = 0 ;
+      indice = 0;
       while (ct->voiseau[indice]!=-1) {
-        indice += 1 ;
+        indice += 1;
       }
       /*--------------------------------------------*
        * Ajout des voisins et des coefficients      *
        *--------------------------------------------*/
-      for (ii = 0 ; ii < nbvois ; ii++) {
-        ct->voiseau[indice+ii]  = nvois[ii] ;
+      for (ii = 0; ii < nbvois; ii++) {
+        ct->voiseau[indice+ii]  = nvois[ii];
         ct->coefeau[indice+ii]  = coeff[ii];
       }
 
-      ct->pvoiseau[iwat+1] = ct->pvoiseau[iwat] + nbvois ;
+      ct->pvoiseau[iwat+1] = ct->pvoiseau[iwat] + nbvois;
 
     }/* fin boucle sur iseg */
     BFT_FREE(lst_par_fac);
@@ -1733,18 +1720,19 @@ void cs_ctwr_adeau
  *-----------------------------------------------------------------------------*/
 void cs_ctwr_adair (void)
 {
-  /* Coordonnées des centres des cellules  */
+  /* Coordonnees des centres des cellules  */
 
   const fvm_coord_t  *lst_xyz_cel   = NULL;
   fvm_coord_t  *lst_xyz_water = NULL;
   const fvm_lnum_t   *location_cel  = NULL;
-  cs_int_t   ict,icol, ilig,ieau,ii,jj,iair,nbvois,
-             nbn,nvois[ cs_ctwr_nmaxvoi ],lf,indice;
+  cs_int_t   ict,icol, ilig,ieau,ii,jj,iair,nbvois,nbn,lf,indice;
+  cs_int_t   nvois[cs_ctwr_nmaxvoi];
   cs_int_t   dim, nb_air_node;
-  cs_real_t  dhi,dmin,dist,coeff[ cs_ctwr_nmaxvoi ],ouv,aux;
+  cs_real_t  dhi,dmin,dist,ouv,aux;
+  cs_real_t  coeff[cs_ctwr_nmaxvoi];
   cs_real_t  dx,dy,dz,dxx,dyy,dzz;
   cs_real_t  cx,cy,cz,epgauss,w;
-  cs_real_t  pp[4][4], ppInv[4][4] ;
+  cs_real_t  pp[4][4], ppInv[4][4];
   cs_real_t  vectBase[3][3];
   fvm_lnum_t loca_cel;
   cs_ctwr_zone_t  *ct;
@@ -1753,13 +1741,13 @@ void cs_ctwr_adair (void)
    * Construction des coefficient d'interpolation*
    * sur chaque zone d echange ict               *
    *---------------------------------------------*/
-  for (ict=0 ; ict < cs_glob_ct_nbr ; ict++) {
+  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
 
     ct = cs_glob_ct_tab[ict];
 
-    nbn = 3 ;
+    nbn = 3;
     if (ct->idimct==3) {
-      nbn = 4 ;
+      nbn = 4;
     }
 
 
@@ -1776,11 +1764,11 @@ void cs_ctwr_adair (void)
     location_cel = fvm_locator_get_dist_locations(ct->locat_water_air);
 
 
-    BFT_MALLOC(lst_xyz_water, (3*ct->nelect*ct->nnpsct) ,fvm_coord_t);
-    fvm_nodal_get_element_centers(ct->water_mesh,FVM_INTERLACE,3, lst_xyz_water );
+    BFT_MALLOC(lst_xyz_water, (3*ct->nelect*ct->nnpsct), fvm_coord_t);
+    fvm_nodal_get_element_centers(ct->water_mesh,FVM_INTERLACE,3, lst_xyz_water);
 
     if (ct->water_halo != NULL) {
-      BFT_REALLOC(lst_xyz_water, (3*ct->nelect*ct->nnpsct_with_ghosts) ,fvm_coord_t);
+      BFT_REALLOC(lst_xyz_water, (3*ct->nelect*ct->nnpsct_with_ghosts), fvm_coord_t);
       cs_halo_sync_var_strided(ct->water_halo, ct->halo_type, lst_xyz_water, 3);
 
     }
@@ -1788,7 +1776,7 @@ void cs_ctwr_adair (void)
      * Loops on the air nodes of teh exchange area*
      *--------------------------------------------*/
 
-    for (iair = 0 ; iair < nb_air_node ; iair++)  {
+    for (iair = 0; iair < nb_air_node; iair++)  {
 
        loca_cel = location_cel[iair] -1;
       /*--------------------------------------------*
@@ -1796,16 +1784,16 @@ void cs_ctwr_adair (void)
        * tableau nvois[] et coeff[]                 *
        *--------------------------------------------*/
 
-      for (ii=0;ii<4;ii++) {
-        for (jj=0;jj<4;jj++) {
+      for (ii=0; ii<4; ii++) {
+        for (jj=0; jj<4; jj++) {
           pp[jj][ii]=0.0;
           ppInv[jj][ii]=0.0;
         }
       }
 
-      for (jj=0;jj< cs_ctwr_nmaxvoi;jj++) {
-        coeff[jj]=0.0 ;
-        nvois[jj]= -1  ;
+      for (jj=0; jj< cs_ctwr_nmaxvoi; jj++) {
+        coeff[jj]=0.0;
+        nvois[jj]= -1;
       }/* fin initialisation */
 
       /*--------------------------------------------*
@@ -1814,28 +1802,28 @@ void cs_ctwr_adair (void)
        *--------------------------------------------*/
 
       /* indice du noeud air dans le maillage */
-      dmin   = 1000. ;
+      dmin   = 1000.;
 
-        if ((loca_cel%(ct->nelect) == 0 ) ||
-                  (loca_cel% (ct->nelect) == (ct->nelect-1) ))  {
-          for (jj = 0 ; jj < (ct->nelect*ct->nnpsct_with_ghosts); jj++) {
-            dx = (cs_real_t) (lst_xyz_water[3*jj  ] - lst_xyz_cel[iair*3  ]) ;
-            dy = (cs_real_t) (lst_xyz_water[3*jj+1] - lst_xyz_cel[iair*3+1]) ;
-            dz = (cs_real_t) (lst_xyz_water[3*jj+2] - lst_xyz_cel[iair*3+2]) ;
-            dist = (pow(dx,2.)+pow(dy,2.)+pow(dz,2.)) ;
-            if (dmin>dist ) {
-              dmin = dist ;
-              ieau = jj ;
+        if ((loca_cel%(ct->nelect) == 0) ||
+                  (loca_cel% (ct->nelect) == (ct->nelect-1)))  {
+          for (jj = 0; jj < (ct->nelect*ct->nnpsct_with_ghosts); jj++) {
+            dx = (cs_real_t) (lst_xyz_water[3*jj  ] - lst_xyz_cel[iair*3  ]);
+            dy = (cs_real_t) (lst_xyz_water[3*jj+1] - lst_xyz_cel[iair*3+1]);
+            dz = (cs_real_t) (lst_xyz_water[3*jj+2] - lst_xyz_cel[iair*3+2]);
+            dist = (pow(dx,2.)+pow(dy,2.)+pow(dz,2.));
+            if (dmin>dist) {
+              dmin = dist;
+              ieau = jj;
             }
           }
         }
 
       if (dmin<1000.) {
         /* Cellule air est en bordure inf ou sup, on saute l'etape suivante */
-        nbvois   = 1 ;
-        nvois[0] = ieau ;
-        coeff[0] = 1.0 ;
-        goto enregistre ;
+        nbvois   = 1;
+        nvois[0] = ieau;
+        coeff[0] = 1.0;
+        goto enregistre;
       }
       /*------------------------------------------------*
        * Fin Traitement particulier pour les noeuds air *
@@ -1849,7 +1837,7 @@ void cs_ctwr_adair (void)
        * les noeuds air qui ne sont                 *
        *  pas en bordure inferieure ou superieure   *
        *--------------------------------------------*/
-      nbvois = 1 ;
+      nbvois = 1;
       nvois[0] = loca_cel;
       /*---------------------------------------------*
        * Recherche du nombre de voisins du noeuds air*
@@ -1863,12 +1851,13 @@ void cs_ctwr_adair (void)
       nbvois+=2;
       icol = loca_cel/(ct->nelect);
       ilig = loca_cel%(ct->nelect);
-      for (ii = ct->fac_sup_connect_idx[ icol ] ;
-           ii < ct->fac_sup_connect_idx[ icol + 1 ] ; ii++) {
+      for (ii = ct->fac_sup_connect_idx[icol];
+           ii < ct->fac_sup_connect_idx[icol + 1];
+           ii++) {
 
-           nvois[indice++] = ct->nelect*ct->fac_sup_connect_lst[ ii ] + ilig-1;
-           nvois[indice++] = ct->nelect*ct->fac_sup_connect_lst[ ii ] + ilig  ;
-           nvois[indice++] = ct->nelect*ct->fac_sup_connect_lst[ ii ] + ilig+1;
+           nvois[indice++] = ct->nelect*ct->fac_sup_connect_lst[ii] + ilig-1;
+           nvois[indice++] = ct->nelect*ct->fac_sup_connect_lst[ii] + ilig ;
+           nvois[indice++] = ct->nelect*ct->fac_sup_connect_lst[ii] + ilig+1;
            nbvois += 3;
 
       }
@@ -1879,9 +1868,9 @@ void cs_ctwr_adair (void)
        *-------------------------------------------- */
 
       if (nbvois<nbn) {
-        nbvois   = 1 ;
-        coeff[0] = 1.0 ;
-        goto enregistre ;
+        nbvois   = 1;
+        coeff[0] = 1.0;
+        goto enregistre;
       }
 
        dim = ct->idimct;
@@ -1889,16 +1878,16 @@ void cs_ctwr_adair (void)
        vectBase[0][1] = 0.0; vectBase[1][1] = 1.0; vectBase[2][1] = 0.0;
        vectBase[0][2] = 0.0; vectBase[1][2] = 0.0; vectBase[2][2] = 1.0;
 
-       passage2D : ;
+       passage2D :;
 
       /*--------------------------------------------*
        * Calcul de l'ouverture de la fonction  de   *
-       * pondération egale au max de la distance    *
+       * ponderation egale au max de la distance    *
        *  entre le noeud air et les voisins eau     *
        *--------------------------------------------*/
-      ouv = 0. ;
-      for (ii = 0 ; ii < nbvois ; ii++) {
-        ieau = nvois[ii] ;
+      ouv = 0.;
+      for (ii = 0; ii < nbvois; ii++) {
+        ieau = nvois[ii];
         dxx = (cs_real_t) (lst_xyz_water[3*ieau]   - lst_xyz_cel[iair*3+0]);
         dyy = (cs_real_t) (lst_xyz_water[3*ieau+1] - lst_xyz_cel[iair*3+1]);
         dzz = (cs_real_t) (lst_xyz_water[3*ieau+2] - lst_xyz_cel[iair*3+2]);
@@ -1907,87 +1896,88 @@ void cs_ctwr_adair (void)
         dy = dxx * vectBase[1][0] + dyy * vectBase[1][1] + dzz * vectBase[1][2];
         dz = dxx * vectBase[2][0] + dyy * vectBase[2][1] + dzz * vectBase[2][2];
 
-        aux =  pow(dx,2.)+pow(dy,2.)+pow(dz,2.) ;
+        aux =  pow(dx,2.)+pow(dy,2.)+pow(dz,2.);
         if (ouv<aux) {
           ouv = aux;
         }
       }
-      ouv = sqrt(ouv)*1.1 ;
+      ouv = sqrt(ouv)*1.1;
       /* Fin de calcul de l'ouverture */
 
       /*--------------------------------------------*
        *Construction de la matrice A                *
        *--------------------------------------------*/
 
-      for (ii = 0 ; ii < nbvois ; ii++) {
+      for (ii = 0; ii < nbvois; ii++) {
 
-        ieau = nvois[ii] ;
-        dxx = (cs_real_t) (lst_xyz_water[3*ieau +0] - lst_xyz_cel[iair*3+0]) ;
-        dyy = (cs_real_t) (lst_xyz_water[3*ieau +1] - lst_xyz_cel[iair*3+1]) ;
-        dzz = (cs_real_t) (lst_xyz_water[3*ieau +2] - lst_xyz_cel[iair*3+2]) ;
+        ieau = nvois[ii];
+        dxx = (cs_real_t) (lst_xyz_water[3*ieau +0] - lst_xyz_cel[iair*3+0]);
+        dyy = (cs_real_t) (lst_xyz_water[3*ieau +1] - lst_xyz_cel[iair*3+1]);
+        dzz = (cs_real_t) (lst_xyz_water[3*ieau +2] - lst_xyz_cel[iair*3+2]);
 
         dx = dxx * vectBase[0][0] + dyy * vectBase[0][1] + dzz * vectBase[0][2];
         dy = dxx * vectBase[1][0] + dyy * vectBase[1][1] + dzz * vectBase[1][2];
         dz = dxx * vectBase[2][0] + dyy * vectBase[2][1] + dzz * vectBase[2][2];
         /* parametre de la fonction de ponderation*/
-        cx = 1.0 ;
-        cy = 1.0 ;
-        cz = 1.e10 ;
+        cx = 1.0;
+        cy = 1.0;
+        cz = 1.e10;
         lf = 3;
-        epgauss = 5.0 ;
+        epgauss = 5.0;
         if (dim==3) {
-          cz = 1.0 ;
+          cz = 1.0;
         }
         if (dim==1) {
-          cy = 1.e10 ;
-          cz = 1.e10 ;
+          cy = 1.e10;
+          cz = 1.e10;
         }
         /*fonction de ponderation*/
-        w  = _weighting(dx,dy,dz,ouv,lf,epgauss,cx,cy,cz) ;
+        w  = _weighting(dx,dy,dz,ouv,lf,epgauss,cx,cy,cz);
 
-        if (dim == 1)/* 1D */{
-            pp[0][0] = w       + pp[0][0] ;
-            pp[0][1] = w*dx    + pp[0][1] ;
-            pp[1][0] = w*dx    + pp[1][0] ;
-            pp[1][1] = w*dx*dx + pp[1][1] ;
-        }else if (dim == 2)/* 2D */{
-                  pp[0][0] = w     + pp[0][0] ;
-                  pp[0][1] = w*dx    + pp[0][1] ;
-                  pp[0][2] = w*dy    + pp[0][2] ;
-                  pp[1][0] = w*dx    + pp[1][0] ;
-                  pp[1][1] = w*dx*dx + pp[1][1] ;
-                  pp[1][2] = w*dx*dy + pp[1][2] ;
-                  pp[2][0] = w*dy    + pp[2][0] ;
-                  pp[2][1] = w*dx*dy + pp[2][1] ;
-                  pp[2][2] = w*dy*dy + pp[2][2] ;
-             }else if (dim == 3)/* 3D */{
-                        pp[0][0] = w       + pp[0][0] ;
-                        pp[0][1] = w*dx    + pp[0][1] ;
-                        pp[0][2] = w*dy    + pp[0][2] ;
-                        pp[0][3] = w*dz    + pp[0][3] ;
-                        pp[1][0] = w*dx    + pp[1][0] ;
-                        pp[1][1] = w*dx*dx + pp[1][1] ;
-                        pp[1][2] = w*dy*dx + pp[1][2] ;
-                        pp[1][3] = w*dz*dx + pp[1][3] ;
-                        pp[2][0] = w*dy    + pp[2][0] ;
-                        pp[2][1] = w*dx*dy + pp[2][1] ;
-                        pp[2][2] = w*dy*dy + pp[2][2] ;
-                        pp[2][3] = w*dz*dy + pp[2][3] ;
-                        pp[3][0] = w*dz    + pp[3][0] ;
-                        pp[3][1] = w*dx*dz + pp[3][1] ;
-                        pp[3][2] = w*dy*dz + pp[3][2] ;
-                        pp[3][3] = w*dz*dz + pp[3][3] ;
+        if (dim == 1) { /* 1D */
+          pp[0][0] = w       + pp[0][0];
+          pp[0][1] = w*dx    + pp[0][1];
+          pp[1][0] = w*dx    + pp[1][0];
+          pp[1][1] = w*dx*dx + pp[1][1];
+        }
+        else if (dim == 2) { /* 2D */
+          pp[0][0] = w     + pp[0][0];
+          pp[0][1] = w*dx    + pp[0][1];
+          pp[0][2] = w*dy    + pp[0][2];
+          pp[1][0] = w*dx    + pp[1][0];
+          pp[1][1] = w*dx*dx + pp[1][1];
+          pp[1][2] = w*dx*dy + pp[1][2];
+          pp[2][0] = w*dy    + pp[2][0];
+          pp[2][1] = w*dx*dy + pp[2][1];
+          pp[2][2] = w*dy*dy + pp[2][2];
+        }
+        else if (dim == 3) { /* 3D */
+          pp[0][0] = w       + pp[0][0];
+          pp[0][1] = w*dx    + pp[0][1];
+          pp[0][2] = w*dy    + pp[0][2];
+          pp[0][3] = w*dz    + pp[0][3];
+          pp[1][0] = w*dx    + pp[1][0];
+          pp[1][1] = w*dx*dx + pp[1][1];
+          pp[1][2] = w*dy*dx + pp[1][2];
+          pp[1][3] = w*dz*dx + pp[1][3];
+          pp[2][0] = w*dy    + pp[2][0];
+          pp[2][1] = w*dx*dy + pp[2][1];
+          pp[2][2] = w*dy*dy + pp[2][2];
+          pp[2][3] = w*dz*dy + pp[2][3];
+          pp[3][0] = w*dz    + pp[3][0];
+          pp[3][1] = w*dx*dz + pp[3][1];
+          pp[3][2] = w*dy*dz + pp[3][2];
+          pp[3][3] = w*dz*dz + pp[3][3];
+        }
 
-             }
-
-      }/* Fin de construction de la matrice A*/
-      if(ct->idimct == 3 && dim == 3){
+      } /* Fin de construction de la matrice A */
+      if (ct->idimct == 3 && dim == 3) {
         dim  = _is_coplanar(lst_xyz_water, nvois, nbvois, pp, vectBase,0,dhi);
-        if(dim!= 3) {
-          for (ii=0;ii<3;ii++)
-            for (jj=0;jj<3;jj++)
+        if (dim!= 3) {
+          for (ii=0; ii<3; ii++)
+            for (jj=0; jj<3; jj++)
               pp[jj][ii]=0.;
-          goto passage2D ;
+          goto passage2D;
         }
       }
 
@@ -2000,8 +1990,8 @@ void cs_ctwr_adair (void)
       /*--------------------------------------------*
        * Calcul des coefficients                    *
        *--------------------------------------------*/
-      for (ii = 0 ; ii < nbvois ; ii++) {
-        ieau = nvois[ii] ;
+      for (ii = 0; ii < nbvois; ii++) {
+        ieau = nvois[ii];
         dxx = (cs_real_t) (lst_xyz_water[3*ieau   ] - lst_xyz_cel[iair*3+0]);
         dyy = (cs_real_t) (lst_xyz_water[3*ieau +1] - lst_xyz_cel[iair*3+1]);
         dzz = (cs_real_t) (lst_xyz_water[3*ieau +2] - lst_xyz_cel[iair*3+2]);
@@ -2011,34 +2001,34 @@ void cs_ctwr_adair (void)
         dz = dxx * vectBase[2][0] + dyy * vectBase[2][1] + dzz * vectBase[2][2];
 
         /*parametre de la fonction de ponderation*/
-        cx = 1.0 ;
-        cy = 1.0 ;
-        cz = 1.e10 ;
+        cx = 1.0;
+        cy = 1.0;
+        cz = 1.e10;
         lf = 3;
-        epgauss = 5.0 ;
+        epgauss = 5.0;
         if (dim==3) {
-          cz = 1.0 ;
+          cz = 1.0;
         }
         if (dim==1) {
-          cy = 1.e10 ;
-          cz = 1.e10 ;
+          cy = 1.e10;
+          cz = 1.e10;
         }
 
-        w = _weighting(dx,dy,dz,ouv,lf,epgauss,cx,cy,cz) ;
+        w = _weighting(dx,dy,dz,ouv,lf,epgauss,cx,cy,cz);
 
 
 
-        if (dim == 1){
+        if (dim == 1) {
           coeff[ii] = w*(ppInv[0][0]+ppInv[0][1]*dx);
         }
-        else if (dim == 2){
+        else if (dim == 2) {
           coeff[ii] = w*(ppInv[0][0]+ppInv[0][1]*dx+ppInv[0][2]*dy);
         }
-        else if (dim == 3){
+        else if (dim == 3) {
           coeff[ii] = w*(ppInv[0][0]
                          +ppInv[0][1]*dx
                          +ppInv[0][2]*dy
-                         +ppInv[0][3]*dz );
+                         +ppInv[0][3]*dz);
         }
 
       }
@@ -2048,27 +2038,27 @@ void cs_ctwr_adair (void)
        * note :Reprise pour les noeuds air en bordure*
        * ou avec un nbre de voisin insuffisant       *
        *---------------------------------------------*/
-      enregistre : ;
+      enregistre :;
 
       /*--------------------------------------------*
        * trouver le dernier indice sur pvoisair     *
        *--------------------------------------------*/
-      indice = 0 ;
+      indice = 0;
       while (ct->voisair[indice]!=-1) {
-        indice += 1 ;
+        indice += 1;
       }
 
       /*--------------------------------------------*
        * Ajout des voisins et des coefficients      *
        *--------------------------------------------*/
-      for (icol = 0 ; icol < nbvois ; icol++)
+      for (icol = 0; icol < nbvois; icol++)
         {
-          ct->voisair[indice + icol]  = nvois[ icol ];
-          ct->coefair[indice + icol]  = coeff[ icol ];
+          ct->voisair[indice + icol]  = nvois[icol];
+          ct->coefair[indice + icol]  = coeff[icol];
          }
 
 
-      ct->pvoisair[iair+1] = ct->pvoisair[iair] + nbvois ;
+      ct->pvoisair[iair+1] = ct->pvoisair[iair] + nbvois;
     }
     /*---------------------------------------------*
      * fin de la boucle sur les noeuds air de la ct*
@@ -2095,10 +2085,10 @@ cs_ctwr_stacking(void)
   cs_real_t tmp;
   cs_real_t gravite[3];
   fvm_coord_t * lst_xyz;
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
   const double tolerance = 0.1;
 
   nb = cs_glob_ct_nbr  * cs_glob_ct_nbr;
-  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
   BFT_MALLOC(cs_stack_ct, nb, cs_int_t);
   BFT_MALLOC(cs_chain_ct, cs_glob_ct_nbr, cs_int_t);
@@ -2107,12 +2097,12 @@ cs_ctwr_stacking(void)
   gravite[1]= ct_prop->gravy;
   gravite[2]= ct_prop->gravz;
 
-  for (i=0 ; i < cs_glob_ct_nbr ; i++)
-    for (j=0 ; j < cs_glob_ct_nbr ; j++)
+  for (i=0; i < cs_glob_ct_nbr; i++)
+    for (j=0; j < cs_glob_ct_nbr; j++)
       cs_stack_ct[i*cs_glob_ct_nbr + j]=0;
 
-  for (i=0 ; i < cs_glob_ct_nbr; i++)
-    for (j=0 ; j < cs_glob_ct_nbr ; j++)
+  for (i=0; i < cs_glob_ct_nbr; i++)
+    for (j=0; j < cs_glob_ct_nbr; j++)
       if (CS_ABS(cs_glob_ct_tab[i]->hmax - cs_glob_ct_tab[j]->hmin)< 1.e-6)
         cs_stack_ct[i*cs_glob_ct_nbr + j] =1;
 
@@ -2124,13 +2114,13 @@ cs_ctwr_stacking(void)
     rank = cs_glob_rank_id;
 
     for (dist_rank = 0; dist_rank < cs_glob_n_ranks; dist_rank++)
-      if (dist_rank != rank){
+      if (dist_rank != rank) {
 
-        MPI_Sendrecv(cs_stack_ct, nb, CS_MPI_INT , dist_rank, CS_CT_MPI_TAG,
+        MPI_Sendrecv(cs_stack_ct, nb, CS_MPI_INT, dist_rank, CS_CT_MPI_TAG,
                      aux, nb, CS_MPI_INT, dist_rank, CS_CT_MPI_TAG,
                      cs_glob_mpi_comm, &status);
-        for (i=0 ; i < cs_glob_ct_nbr ; i++)
-          for (j=0 ; j < cs_glob_ct_nbr ; j++){
+        for (i=0; i < cs_glob_ct_nbr; i++)
+          for (j=0; j < cs_glob_ct_nbr; j++) {
             if (aux[i*cs_glob_ct_nbr + j] > cs_stack_ct[i*cs_glob_ct_nbr + j])
               cs_stack_ct[i*cs_glob_ct_nbr + j] = aux[i*cs_glob_ct_nbr + j];
           }
@@ -2143,42 +2133,42 @@ cs_ctwr_stacking(void)
 
   /* to order the exchange area */
     /*Init the chaining array */
-  for(i = 0; i < cs_glob_ct_nbr ; i++)
+  for (i = 0; i < cs_glob_ct_nbr; i++)
     cs_chain_ct[i] = i;
 
-  for (i = 0; i < cs_glob_ct_nbr ; i++)
-    for (j = i+1; j < cs_glob_ct_nbr ; j++)
-      if (cs_stack_ct[cs_chain_ct[i]*cs_glob_ct_nbr + cs_chain_ct[j]] == 1 ){
+  for (i = 0; i < cs_glob_ct_nbr; i++)
+    for (j = i+1; j < cs_glob_ct_nbr; j++)
+      if (cs_stack_ct[cs_chain_ct[i]*cs_glob_ct_nbr + cs_chain_ct[j]] == 1) {
         itmp = cs_chain_ct [i];
         cs_chain_ct [i] = cs_chain_ct [j];
         cs_chain_ct [j] = itmp;
       }
 
-  for(ict = 0; ict< cs_glob_ct_nbr ; ict++){
+  for (ict = 0; ict< cs_glob_ct_nbr; ict++) {
 
     ct = cs_glob_ct_tab[cs_chain_ct[ict]];
     nb_ct = 0;
 
-    for (ict_uw = 0 ; ict_uw < cs_glob_ct_nbr ; ict_uw++)
-      if (cs_stack_ct[cs_chain_ct[ict]*cs_glob_ct_nbr + cs_chain_ct[ict_uw]]
-          == 1){
+    for (ict_uw = 0; ict_uw < cs_glob_ct_nbr; ict_uw++)
+      if (   cs_stack_ct[cs_chain_ct[ict]*cs_glob_ct_nbr + cs_chain_ct[ict_uw]]
+          == 1) {
 
         nb_ct++;
         ct_upw = cs_glob_ct_tab[cs_chain_ct[ict_uw]];
 
-        BFT_MALLOC( lst_xyz ,
-                    3*(ct_upw->nbfac_ict+ct_upw->nbfbr_ict) ,fvm_coord_t);
+        BFT_MALLOC(lst_xyz,
+                   3*(ct_upw->nbfac_ict+ct_upw->nbfbr_ict), fvm_coord_t);
 
         fvm_nodal_get_element_centers
-                    ( ct_upw->face_inf_mesh,FVM_INTERLACE,2,lst_xyz );
+          (ct_upw->face_inf_mesh,FVM_INTERLACE,2,lst_xyz);
 
         tmp  = CS_ABS(ct_upw->hmax - ct_upw->hmin)/(ct_upw->nelect-1);
         tmp /= CS_LOC_MODULE(gravite);
 
-        for (i=0 ; i < (ct_upw->nbfac_ict+ct_upw->nbfbr_ict) ; i++){
-          lst_xyz[3*i + 0 ] -= tmp * gravite[0];
-          lst_xyz[3*i + 1 ] -= tmp * gravite[1];
-          lst_xyz[3*i + 2 ] -= tmp * gravite[2];
+        for (i=0; i < (ct_upw->nbfac_ict+ct_upw->nbfbr_ict); i++) {
+          lst_xyz[3*i + 0] -= tmp * gravite[0];
+          lst_xyz[3*i + 1] -= tmp * gravite[1];
+          lst_xyz[3*i + 2] -= tmp * gravite[2];
         }
 
         BFT_REALLOC(ct->locat_cell_ct_upwind, nb_ct, fvm_locator_t *);

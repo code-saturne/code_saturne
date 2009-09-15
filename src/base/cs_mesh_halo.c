@@ -1814,7 +1814,7 @@ _get_start_end_idx(cs_mesh_t    *mesh,
                    cs_int_t     *p_end_idx)
 {
   cs_int_t  i, n_par_gcells, n_per_gcells;
-  cs_int_t  start_idx, end_idx;
+  cs_int_t  start_idx = -1, end_idx = -1;
 
   const cs_int_t  n_c_domains = mesh->halo->n_c_domains;
 

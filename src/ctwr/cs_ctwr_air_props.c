@@ -220,11 +220,12 @@ cs_ctwr_xsath(const cs_real_t  th)
     const cs_real_t  Ax = 8.2969;
     const cs_real_t  Ay = 4.76955;
     const cs_real_t  A0 = 0.78614;
-    a1 = 10.7954;
     const cs_real_t  A2 = 5.028;
     const cs_real_t  A3 = 0.000150475;
     const cs_real_t  A4 = 0.00042873;
     cs_real_t  tt,px,py,g1,g2,g3,g4;
+
+    a1 = 10.7954;
 
     tt = th/T0;
     px = Ax * tt;
@@ -357,12 +358,13 @@ cs_ctwr_dxsath(const cs_real_t  th)
     const cs_real_t  Ax = 8.2969;
     const cs_real_t  Ay = 4.76955;
     const cs_real_t  A0 = 0.78614;
-    a1 = 10.7954;
     const cs_real_t  A2 = 5.028;
     const cs_real_t  A3 = 0.000150475;
     const cs_real_t  A4 = 0.00042873;
     cs_real_t  tt, px, px10, py, py10, pspr, pvpr,
                g1, g1pr, g2, g2pr, g3, g3pr, g4, g4pr;
+
+    a1 = 10.7954;
 
     tt = th / T0 ;
     px = Ax * tt;

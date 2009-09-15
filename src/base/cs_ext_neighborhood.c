@@ -1141,8 +1141,11 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
       if (cs_glob_n_ranks > 1) {
 
         unsigned long count_g[2];
-        unsigned long count_l[2] = {init_cell_cells_connect_size,
-                                    n_deleted_cells};
+        unsigned long count_l[2];
+
+        count_l[0] = init_cell_cells_connect_size;
+        count_l[1] = n_deleted_cells;
+
         MPI_Allreduce(count_l, count_g, 2, MPI_UNSIGNED_LONG,
                       MPI_SUM, cs_glob_mpi_comm);
 

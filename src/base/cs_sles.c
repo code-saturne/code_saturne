@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2008 EDF S.A., France
+ *     Copyright (C) 1998-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -1396,9 +1396,8 @@ _bi_cgstab(const char             *var_name,
 
     /* Compute pk */
 
-    for (ii = 0; ii < n_rows; ii++) {
+    for (ii = 0; ii < n_rows; ii++)
       pk[ii] = rk[ii] + omega*(pk[ii] - alpha*uk[ii]);
-    }
 
     /* Compute zk = c.pk */
 

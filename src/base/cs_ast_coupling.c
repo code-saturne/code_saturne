@@ -97,7 +97,7 @@ struct _cs_ast_coupling_t {
   fvm_gnum_t   n_g_faces;
   fvm_gnum_t   n_g_nodes;
 
-//#if defined(HAVE_MPI)
+  /* #if defined(HAVE_MPI) */
 
   cs_int_t    *n_faces_by_domain;
   cs_int_t    *n_nodes_by_domain;
@@ -107,7 +107,7 @@ struct _cs_ast_coupling_t {
 
   fvm_gnum_t  *NUM_GLOB_PTS;
 
-//#endif
+  /* #endif */
 
 };
 
@@ -286,7 +286,7 @@ void CS_PROCF(astfor, ASTFOR)
   const int  n_faces = *nbfast;
   const int  n_g_faces = ast_coupling->n_g_faces;
 
-  cs_real_t  *_forast;
+  cs_real_t  *_forast = NULL;
 
 
   if (cs_glob_rank_id <= 0)
@@ -353,9 +353,9 @@ void CS_PROCF(astcin, ASTCIN)
   const int  n_g_nodes = ast_coupling->n_g_nodes;
   const int  n_faces = *nbfast;
 
-  fvm_nodal_t *mesh_ifs;
+  fvm_nodal_t *mesh_ifs = NULL;
 
-  cs_real_t  *_xast, *xast;
+  cs_real_t  *_xast = NULL, *xast = NULL;
 
   n_nodes = ast_coupling->n_nodes_by_domain[local_rank];
 

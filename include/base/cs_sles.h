@@ -61,7 +61,7 @@ typedef enum {
   CS_SLES_PCG,       /* Preconditionned conjugate gradient */
   CS_SLES_JACOBI,    /* Jacobi */
   CS_SLES_BICGSTAB,  /* Bi-conjugate gradient stabilized */
-  CS_SLES_N_TYPES    /* Number of implemented resolution algorithms */
+  CS_SLES_N_TYPES    /* Number of resolution algorithms */
 
 } cs_sles_type_t;
 
