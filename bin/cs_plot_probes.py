@@ -21,8 +21,8 @@
 
 import os
 import sys
-import subprocess
 import tempfile
+from cs_exec_environment import run_command
 from optparse import OptionParser
 
 #-------------------------------------------------------------------------------
@@ -49,20 +49,6 @@ def process_cmd_line(argv):
         sys.exit(1)
 
     return file
-
-#-------------------------------------------------------------------------------
-
-def run_command(cmd):
-    """
-    Run a command.
-    """
-    p = subprocess.Popen(cmd,
-                         shell=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    p.wait()
-
-    return p.returncode
 
 #-------------------------------------------------------------------------------
 

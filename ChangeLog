@@ -1,4 +1,9 @@
 * 15/09/2009 - David Monfort <david.monfort@edf.fr>
+  Make use of the cs_exec_environment module in cs_plot_probes.
+  modified script:
+    bin/cs_plot_probes.py
+
+* 15/09/2009 - David Monfort <david.monfort@edf.fr>
   Remove unused MPE code (for MPI instrumentation).
   modified routines:
     include/base/cs_base.h
