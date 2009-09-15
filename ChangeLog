@@ -1,3 +1,8 @@
+* 15/09/2009 - David Monfort <david.monfort@edf.fr>
+  Update the COMPATIBILITY file
+  modified file:
+    COMPATIBILITY
+
 * 15/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor modifications related to C89 compilation, code cleaning and
   compilation warnings.
