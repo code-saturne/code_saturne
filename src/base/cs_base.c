@@ -180,23 +180,6 @@ static cs_int_t  _cs_glob_mem_ra_peak = 0;
 static cs_int_t  _cs_glob_mem_ia_size = 0;
 static cs_int_t  _cs_glob_mem_ra_size = 0;
 
-/* Global variables for instrumentation */
-
-#if defined(HAVE_MPI) && defined(HAVE_MPE)
-int  cs_glob_mpe_broadcast_a = 0;
-int  cs_glob_mpe_broadcast_b = 0;
-int  cs_glob_mpe_synchro_a = 0;
-int  cs_glob_mpe_synchro_b = 0;
-int  cs_glob_mpe_send_a = 0;
-int  cs_glob_mpe_send_b = 0;
-int  cs_glob_mpe_rcv_a = 0;
-int  cs_glob_mpe_rcv_b = 0;
-int  cs_glob_mpe_reduce_a = 0;
-int  cs_glob_mpe_reduce_b = 0;
-int  cs_glob_mpe_compute_a = 0;
-int  cs_glob_mpe_compute_b = 0;
-#endif
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -618,11 +601,6 @@ _cs_base_sig_fatal(int  signum)
 static void
 _cs_base_mpi_fin(void)
 {
-#if defined(HAVE_MPE)
-  if (cs_glob_n_ranks > 1)
-    _cs_base_prof_mpe_fin();
-#endif
-
 #if defined(FVM_HAVE_MPI)
   fvm_parall_set_mpi_comm(MPI_COMM_NULL);
 #endif
@@ -681,93 +659,6 @@ _cs_base_erreur_mpi(MPI_Comm  *comm,
 #endif
 #endif /* HAVE_MPI */
 
-
-#if defined(HAVE_MPI) && defined(HAVE_MPE)
-
-/*----------------------------------------------------------------------------
- * Initialize MPE instrumentation
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_base_prof_mpe_init(int  rank)
-{
-  int flag;
-
-  MPI_Initialized(&flag);
-
-  /* MPE_Init_log() and MPE_finish_log() are NOT required if the liblmpe.a
-     library is linked with  Code_Saturne. In this case, MPI_Init()
-     handles the call toe MPE_Init_log() */
-
-  if (flag) {
-
-    MPE_Init_log();
-
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_broadcast_a,
-                               &cs_glob_mpe_broadcast_b);
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_synchro_a,
-                               &cs_glob_mpe_synchro_b);
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_send_a,
-                               &cs_glob_mpe_send_b);
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_rcv_a,
-                               &cs_glob_mpe_rcv_b);
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_reduce_a,
-                               &cs_glob_mpe_reduce_b);
-    MPE_Log_get_state_eventIDs(&cs_glob_mpe_compute_a,
-                               &cs_glob_mpe_compute_b);
-
-    if (rank == 0) {
-
-      MPE_Describe_state(cs_glob_mpe_broadcast_a,
-                         cs_glob_mpe_broadcast_b,
-                         "Broadcast", "orange");
-      MPE_Describe_state(cs_glob_mpe_synchro_a,
-                         cs_glob_mpe_synchro_b,
-                         "MPI Barrier", "blue");
-      MPE_Describe_state(cs_glob_mpe_send_a,
-                         cs_glob_mpe_send_b,
-                         "Send", "yellow");
-      MPE_Describe_state(cs_glob_mpe_rcv_a,
-                         cs_glob_mpe_rcv_b,
-                         "Receive", "red");
-      MPE_Describe_state(cs_glob_mpe_reduce_a,
-                         cs_glob_mpe_reduce_b,
-                         "Reduce", "white");
-      MPE_Describe_state(cs_glob_mpe_compute_a,
-                         cs_glob_mpe_compute_b,
-                         "Compute", "green");
-
-      MPE_Start_log();
-      MPE_Log_event(cs_glob_mpe_compute_a, 0, NULL);
-
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Finalize MPE instrumentation
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_base_prof_mpe_fin(void)
-{
-  int flag, rank;
-
-  MPI_Initialized(&flag);
-
-  if (flag)
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  MPE_Log_event(cs_glob_mpe_compute_b, 0, NULL);
-  MPE_Log_sync_clocks();
-
-  if (rank == 0)
-    MPE_Finish_log("Code_Saturne");
-}
-
-#endif /* defined(HAVE_MPI) && defined(HAVE_MPE) */
 
 /*----------------------------------------------------------------------------
  * Maximum value of a counter and associated 6 character string
@@ -1013,11 +904,6 @@ cs_base_mpi_init(int  app_num)
       MPI_Errhandler_set(cs_glob_mpi_comm, errhandler);
     MPI_Errhandler_free(&errhandler);
   }
-#endif
-
-#if defined(HAVE_MPE)
-  if (cs_glob_n_ranks > 1)
-    _cs_base_prof_mpe_init(rank);
 #endif
 }
 

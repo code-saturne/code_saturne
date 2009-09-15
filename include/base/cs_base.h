@@ -70,13 +70,7 @@
 #endif
 
 #if defined(HAVE_MPI)
-
 #include <mpi.h>
-
-#if defined(HAVE_MPE)
-#include <mpe.h>
-#endif
-
 #endif
 
 #if defined(HAVE_OPENMP)
@@ -254,23 +248,6 @@ extern int  cs_glob_n_ranks;        /* Number of processes in group */
 
 #if defined(HAVE_MPI)
 extern MPI_Comm  cs_glob_mpi_comm;    /* Intra-communicator */
-#endif
-
-/* Global variables used for MPE instrumentation */
-
-#if defined(HAVE_MPI) && defined(HAVE_MPE)
-extern int  cs_glob_mpe_broadcast_a;
-extern int  cs_glob_mpe_broadcast_b;
-extern int  cs_glob_mpe_synchro_a;
-extern int  cs_glob_mpe_synchro_b;
-extern int  cs_glob_mpe_send_a;
-extern int  cs_glob_mpe_send_b;
-extern int  cs_glob_mpe_rcv_a;
-extern int  cs_glob_mpe_rcv_b;
-extern int  cs_glob_mpe_reduce_a;
-extern int  cs_glob_mpe_reduce_b;
-extern int  cs_glob_mpe_compute_a;
-extern int  cs_glob_mpe_compute_b;
 #endif
 
 /*============================================================================

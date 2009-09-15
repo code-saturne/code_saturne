@@ -1,3 +1,9 @@
+* 15/09/2009 - David Monfort <david.monfort@edf.fr>
+  Remove unused MPE code (for MPI instrumentation).
+  modified routines:
+    include/base/cs_base.h
+    src/base/cs_base.c
+
 * 15/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix the precision of the bi-CgStab linear solver (revert to
   the old behaviour of version 1.2 as it improves the solver
