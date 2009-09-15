@@ -1263,7 +1263,7 @@ _bi_cgstab(const char             *var_name,
   const char *sles_name;
   int cvg;
   cs_int_t  n_cols, n_rows, ii;
-  double  _epzero = EPZERO*EPZERO; /* smaller than epzero */
+  double  _epzero = 1e-30; /* smaller than epzero */
   double  ro_0, ro_1, alpha, beta, betam1, gamma, omega, ukres0;
   double  residue;
   cs_real_t  *_aux_vectors;

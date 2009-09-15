@@ -1,3 +1,10 @@
+* 15/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix the precision of the bi-CgStab linear solver (revert to
+  the old behaviour of version 1.2 as it improves the solver
+  converges).
+  modified routine:
+    src/base/cs_sles.c
+
 * 15/09/2009 - David Monfort <david.monfort@edf.fr>
   Update the COMPATIBILITY file
   modified file:
