@@ -1,3 +1,9 @@
+* 15/09/2009 - David Monfort <david.monfort@edf.fr>
+  Improve the bash completion script so that it removes redundant
+  or mutually exclusive options.
+  modified script:
+    extras/bash_completion/code_saturne
+
 * 14/09/2009 - David Monfort <david.monfort@edf.fr>
   Move from getopt to optparse module for command line parsing.
   removed routine:

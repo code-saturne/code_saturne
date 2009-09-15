@@ -26,29 +26,36 @@
 
 _cs() {
 
-    local cur prev cmds cmdOpts helpOpts
+    local cur prev opt cmds cmdOpts helpOpts caseOpts isCmd isOptCase opt i
 
     COMPREPLY=()
 
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    # Possible commands, as given by "cs help"
-    cmds="help compile config create gui info"
-    cmds="${cmds} check_consistency check_mesh plot_probes"
+    # Possible commands except "help", as given by "cs help"
+    cmds="check_consistency check_mesh plot_probes"
+    cmds="${cmds} compile config create gui info"
 
-    # Help options
+    # Help and Case options
     helpOpts="-h --help"
+    caseOpts="-c --case"
+
+    isCmd=0
+    isOptCase=0
 
     if [[ ${COMP_CWORD} -eq 1 ]]; then
-	COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
-	return 0
+        COMPREPLY=( $(compgen -W "help ${cmds}" -- ${cur}) )
+        return 0
     fi
 
     # Certain tokens preclude further activity
     if [[ ${prev} == @(-h|--help|-v|--version) ]]; then
-	return 0
+        return 0
     fi
+
+    # Check if previous token is a command or not
+    [[ ${prev} == @(${cmds// /|}) ]] && isCmd=1
 
     # Parse arguments and set various variables about what was found.
     #
@@ -57,53 +64,123 @@ _cs() {
 
     # Check options depending on the command and the previous token
     case ${cmd} in
-	check_consistency)
-	    case ${prev} in
-		-p|--param)  _filedir; return 0;;
-		-s|--source) _filedir -d; return 0;;
-		-n|--nproc)  COMPREPLY=( ); return 0;;
-		*) cmdOpts="-p --param -s --source -n --nproc";;
-	    esac
-	    ;;
-	compile)
-	    case ${prev} in
-		-d|--dest)   _filedir -d; return 0;;
-		-s|--source) _filedir -d; return 0;;
-		*) cmdOpts="-t --test -f --force -s --source -d --dest \
+        help)
+            case ${prev} in
+                help) COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) ); return 0;;
+                *) return 0;;
+            esac
+            ;;
+        check_consistency)
+            case ${prev} in
+                -p|--param)  _filedir; return 0;;
+                -s|--source) _filedir -d; return 0;;
+                -n|--nproc)  COMPREPLY=( ); return 0;;
+                *) cmdOpts="-p --param -s --source -n --nproc";;
+            esac
+            ;;
+        compile)
+            case ${prev} in
+                -d|--dest)   _filedir -d; return 0;;
+                -s|--source) _filedir -d; return 0;;
+                *) cmdOpts="-t --test -f --force -s --source -d --dest \
                      --opt-libs --syrthes";;
-	    esac
-	    ;;
-	create)
-	    case ${prev} in
-		-c|--case)     COMPREPLY=( ); return 0;;
-		-s|--study)    COMPREPLY=( ); return 0;;
-		--nsat|--nsyr) COMPREPLY=( ); return 0;;
-		*) cmdOpts="-s --study -c --case -n --nogui \
+            esac
+            ;;
+        create)
+            case ${prev} in
+                -c|--case)     COMPREPLY=( ); return 0;;
+                -s|--study)    COMPREPLY=( ); return 0;;
+                --nsat|--nsyr) COMPREPLY=( ); return 0;;
+                *) cmdOpts="-s --study -c --case -n --nogui \
                      --new-runcase --nsat --nsyr";;
-	    esac
-	    ;;
-	gui)
-	    case ${prev} in
-		-f|--file)  _filedir; return 0;;
-		-b|--batch) COMPREPLY=( ); return 0;;
-		*) cmdOpts="-f --file -b --batch -n --new -m --matisse \
-                     --not-tree -z --no-splash";;
-	    esac
-	    ;;
-	info)
-	    case ${prev} in
-		-r|--reader) COMPREPLY=( $(compgen -W "evince gpdf kpdf xpdf acroread" -- ${cur}) ); return 0;;
-		-g|--guide)  COMPREPLY=( $(compgen -W "refcard theory tutorial user" -- ${cur}) ); return 0;;
-		*) cmdOpts="-r --reader -g --guide --version"
-	    esac
-	    ;;
-	*)
-	    cmdOpts=""
-	    ;;
+            esac
+            ;;
+        gui)
+            case ${prev} in
+                -f|--file)  _filedir; return 0;;
+                -b|--batch) COMPREPLY=( ); return 0;;
+                *) cmdOpts="-f --file -b --batch -n --new -m --matisse \
+                     --no-tree -z --no-splash";;
+            esac
+            ;;
+        info)
+            case ${prev} in
+                -r|--reader) COMPREPLY=( $(compgen -W "evince gpdf kpdf xpdf acroread" -- ${cur}) ); return 0;;
+                -g|--guide)  COMPREPLY=( $(compgen -W "refcard theory tutorial user" -- ${cur}) ); return 0;;
+                *) cmdOpts="-r --reader -g --guide --version"
+            esac
+            ;;
+        *)
+            cmdOpts=""
+            ;;
     esac
 
+    # Take out options already given
+    for (( i=2; i<=$COMP_CWORD-1; ++i ))
+    do
+        opt=${COMP_WORDS[$i]}
+
+        local optBase
+
+        # Remove leading dashes and arguments
+        case $opt in
+            --*)    optBase=${opt/=*/} ;;
+            -*)     optBase=${opt:0:2} ;;
+        esac
+
+        cmdOpts=" $cmdOpts "
+        cmdOpts=${cmdOpts/ ${optBase} / }
+
+        # Take out alternatives and mutually exclusives
+        case $optBase in
+            -b)              cmdOpts=${cmdOpts/ --batch / } ;;
+            --batch)         cmdOpts=${cmdOpts/ -b / }
+                             cmdOpts=${cmdOpts/ --new / };;
+            -c)              cmdOpts=${cmdOpts/ --case / }; isOptcase=1 ;;
+            --case)          cmdOpts=${cmdOpts/ -c / }; isOptcase=1 ;;
+            -d)              cmdOpts=${cmdOpts/ --dest / } ;;
+            --dest)          cmdOpts=${cmdOpts/ -d / } ;;
+            -f)              cmdOpts=${cmdOpts/ --file / } ;;
+            --file)          cmdOpts=${cmdOpts/ -f / } ;;
+            -g)              cmdOpts=${cmdOpts/ --guide / } ;;
+            --guide)         cmdOpts=${cmdOpts/ -g / } ;;
+            -m)              cmdOpts=${cmdOpts/ --matisse / } ;;
+            --matisse)       cmdOpts=${cmdOpts/ -m / } ;;
+            -n)
+                case ${cmd} in
+                    check_consistency) cmdOpts=${cmdOpts/ --nproc / } ;;
+                    create)            cmdOpts=${cmdOpts/ --nogui / } ;;
+                    gui)               cmdOpts=${cmdOpts/ --new / } ;;
+                esac ;;
+            --new)           cmdOpts=${cmdOpts/ -n / }
+                             cmdOpts=${cmdOpts/ --batch / }
+                             cmdOpts=${cmdOpts/ --file / } ;;
+            --nogui)         cmdOpts=${cmdOpts/ -n / } ;;
+            --nproc)         cmdOpts=${cmdOpts/ -n / } ;;
+            --opt-libs)      cmdOpts=${cmdOpts/ --syrthes / } ;;
+            -p)              cmdOpts=${cmdOpts/ --param / } ;;
+            --param)         cmdOpts=${cmdOpts/ -p / } ;;
+            -r)              cmdOpts=${cmdOpts/ --reader / } ;;
+            --reader)        cmdOpts=${cmdOpts/ -r / } ;;
+            -s)
+                case ${cmd} in
+                    compile) cmdOpts=${cmdOpts/ --source / } ;;
+                    create)  cmdOpts=${cmdOpts/ --study / } ;;
+                esac ;;
+            --source)        cmdOpts=${cmdOpts/ -s / } ;;
+            --study)         cmdOpts=${cmdOpts/ -s / } ;;
+            --syrthes)       cmdOpts=${cmdOpts/ --opt-libs / } ;;
+            -t)              cmdOpts=${cmdOpts/ --test / } ;;
+            --test)          cmdOpts=${cmdOpts/ -t / } ;;
+        esac
+
+    done
+
+    # Add case options (may appear several times in command line of cs create)
+    [[ $isOptCase -eq 1 ]] && cmdOpts="${caseOpts} ${cmdOpts}"
+
     # Add help options for every command but "help"
-    [[ "${cmd}" != "help" ]] && cmdOpts="${helpOpts} ${cmdOpts}"
+    [[ $isCmd -eq 1 ]] && cmdOpts="${helpOpts} ${cmdOpts}"
 
 
     COMPREPLY=( $(compgen -W "${cmdOpts}" -- ${cur}) )
@@ -115,7 +192,7 @@ complete -F _cs cs
 
 _cs_solver() {
 
-    local cur prev options opt
+    local cur prev options helpOpts versOpts i
 
     COMPREPLY=()
 
@@ -123,39 +200,58 @@ _cs_solver() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     options="--solcom --mpi --mpi-io -q --quality --benchmark --cwf \
-             --log --logp -p --param --syr-socket \
-             -h --help --version"
+             --log --logp -p --param --syr-socket"
 
-    if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]]; then
-	COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
-	return 0
+    versOpts="--version"
+    helpOpts="-h --help"
+
+    if [[ ${COMP_CWORD} -eq 1 ]]; then
+        COMPREPLY=( $(compgen -W "${helpOpts} ${versOpts} ${options}" -- ${cur}) )
+        return 0
     fi
 
     # Certain tokens preclude further activity
     if [[ ${prev} == @(-h|--help|-v|--version) ]]; then
-	return 0
+        return 0
     fi
 
     case "${prev}" in
-	--cwf|--syr-socket)
-	    COMPREPLY=( )
-	    ;;
-	--log)
-	    COMPREPLY=( $(compgen -W "0 1" -- ${cur}) )
-	    ;;
-	--logp)
-	    COMPREPLY=( $(compgen -W "-1 0 1" -- ${cur}) )
-	    ;;
-	--mpi-io)
-	    COMPREPLY=( $(compgen -W "0 1 2" -- ${cur}) )
-	    ;;
-	-p|--param)
-	    _filedir
-	    ;;
-	*)
-	    COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
-	    ;;
+        --cwf|--syr-socket) COMPREPLY=( ); return 0;;
+        --log)  COMPREPLY=( $(compgen -W "0 1" -- ${cur}) ); return 0;;
+        --logp) COMPREPLY=( $(compgen -W "-1 0 1" -- ${cur}) ); return 0;;
+        -p|--param) _filedir; return 0;;
     esac
+
+    # Take out options already given
+    for (( i=1; i<=$COMP_CWORD-1; ++i ))
+    do
+        opt=${COMP_WORDS[$i]}
+
+        local optBase
+
+        # Remove leading dashes and arguments
+        case $opt in
+            --*)    optBase=${opt/=*/} ;;
+            -*)     optBase=${opt:0:2} ;;
+        esac
+
+        options=" $options "
+        options=${options/ ${optBase} / }
+
+        # Take out alternatives and mutually exclusives
+        case $optBase in
+            --mpi|--mpi-io)  options=${options/ --solcom / } ;;
+            -p)              options=${options/ --param / } ;;
+            --param)         options=${options/ -p / } ;;
+            -q)              options=${options/ --quality / } ;;
+            --quality)       options=${options/ -p / } ;;
+            --solcom)        options=${options/ --mpi / }
+                             options=${options/ --mpi-io / };;
+        esac
+
+    done
+
+    COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
 
 }
 complete -F _cs_solver cs_solver
