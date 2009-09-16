@@ -62,21 +62,23 @@ subroutine usalcl &
 !    ====================================================
 
 
-
-! INTRODUCTION
+! Introduction
 ! ============
 
-! On donne ici les conditions aux limites par face de bord, pour
-!    pour la vitesse de maillage uniquement (pour les autres
-!    variables, se reporter a l'Interface Graphique ou a usclim)
+! Here one defines boundary conditions on a per-face basis.
+
+! Boundary faces may be identified using the 'getfbr' subroutine.
+! The syntax of this subroutine is described in 'usclim' subroutine,
+! but a more thorough description can be found in the user guide.
 
 
-! On balaye les faces de bord et selon un critere on affecte tel
-!    ou tel type de conditions aux limites. Dans l'exemple donne
-!    ci dessous, c'est la couleur (propriete 1 de la famille)
-!    qui permet de distinguer les differents types de bord. On
-!    aurait pu aussi travailler avec les coordonnees du centre
-!    des faces, mais "c'eut ete moins pratique".
+! Boundary condition types
+! ========================
+
+! Boundary conditions setup for standard variables (pressure, velocity,
+! turbulence, scalars) is described precisely in 'usclim' subroutine.
+
+! Detailed explanation will be found in the theory guide.
 
 
 ! TYPE DE CONDITIONS AUX LIMITES
@@ -300,33 +302,6 @@ subroutine usalcl &
 !  de gerer directement la relation entre les conditions sur la vitesse de
 !  maillage et celles sur la vitesse fluide (les conditions aux limites du
 !  fluide pouvant etre modifiees dans cette routine).
-
-
-
-! IDENTIFICATION DES FACES DE BORD
-! ================================
-! L'identification des faces de bord concernees se fait grace
-! a la commande GETFBR.
-
-!  GETFBR(CHAINE,NLELT,LSTELT) :
-!  - CHAINE est une chaine de caractere fournie par l'utilisateur
-!    qui donne les criteres de selection
-!  - NLTELT est renvoye par la commande. C'est un entier qui
-!    correspond au nombre de faces de bord trouveees repondant au
-!    critere
-!  - LSTELT est renvoye par la commande. C'est un tableau d'entiers
-!    de taille NLTELT donnant la liste des faces de bord trouvees
-!    repondant au critere.
-
-!  CHAINE peut etre constitue de :
-!  - references de couleurs (ex. : 1, 8, 26, ...
-!  - references de groupes (ex. : entrees, groupe1, ...)
-!  - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
-!  Ces criteres peuvent etre combines par des operateurs logiques
-!  (AND et OR) et des parentheses
-!  ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
-!  les faces de bord de couleur 1, appartenant aux groupes 'groupe2'
-!  ou 'groupe3' et de coordonnee Y inferieure a 1.
 
 
 !-------------------------------------------------------------------------------

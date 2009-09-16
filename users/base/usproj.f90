@@ -84,34 +84,35 @@ subroutine usproj &
 !    PARALLELE (PARSOM)
 
 
-! IDENTIFICATION DES CELLULES/FACES DE BORD/FACES INTERNES
-! ========================================================
+! Cells, boundary faces and interior faces identification
+! =======================================================
 
-!  Les commandes GETCEL, GETFBR et GETFAC permettent d'identifier
-!  respectivement les cellules, faces ou faces de bord en fonction
-!  de differents criteres.
+! Cells, boundary faces and interior faces may be identified using
+! the subroutines 'getcel', 'getfbr' and 'getfac' (respectively).
 
-!  GETCEL(CHAINE,NLELT,LSTELT) :
-!  - CHAINE est une chaine de caractere fournie par l'utilisateur
-!    qui donne les criteres de selection
-!  - NLTELT est renvoye par la commande. C'est un entier qui
-!    correspond au nombre de cellules trouveees repondant au
-!    critere
-!  - LSTELT est renvoye par la commande. C'est un tableau d'entiers
-!    de taille NLTELT donnant la liste des cellules trouvees
-!    repondant au critere.
+!  getfbr(string, nelts, eltlst):
+!  - string is a user-supplied character string containing selection criteria;
+!  - nelts is set by the subroutine. It is an integer value corresponding to
+!    the number of boundary faces verifying the selection criteria;
+!  - lstelt is set by the subroutine. It is an integer array of size nelts
+!    containing the list of boundary faces verifying the selection criteria.
 
-!  CHAINE peut etre constitue de :
-!  - references de couleurs (ex. : 1, 8, 26, ...
-!  - references de groupes (ex. : entrees, groupe1, ...)
-!  - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
-!  Ces criteres peuvent etre combines par des operateurs logiques
-!  (AND et OR) et des parentheses
-!  ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
-!  les cellules de couleur 1, appartenant aux groupes 'groupe2'
-!  ou 'groupe3' et de coordonnee Y inferieure a 1.
+!  string may contain:
+!  - references to colors (ex.: 1, 8, 26, ...)
+!  - references to groups (ex.: inlet, group1, ...)
+!  - geometric criteria (ex. x < 0.1, y >= 0.25, ...)
+!  These criteria may be combined using logical operators ('and', 'or') and
+!  parentheses.
+!  Example: '1 and (group2 or group3) and y < 1' will select boundary faces
+!  of color 1, belonging to groups 'group2' or 'group3' and with face center
+!  coordinate y less than 1.
 
-!  La syntaxe des commandes GETFBR et GETFAC est identique.
+! Similarly, interior faces and cells can be identified using the 'getfac'
+! and 'getcel' subroutines (respectively). Their syntax are identical to
+! 'getfbr' syntax.
+
+! For a more thorough description of the criteria syntax, it can be referred
+! to the user guide.
 
 
 !-------------------------------------------------------------------------------

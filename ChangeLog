@@ -1,4 +1,51 @@
 * 16/09/2009 - David Monfort <david.monfort@edf.fr>
+  Remove redundant information on boundary face conditions
+  and elements selectionn based on a given criterion.
+  modified routines:
+    users/atmo/usatcl.f90
+    users/atmo/usativ.f90
+    users/base/usalcl.f90
+    users/base/usclim.f90
+    users/base/usiniv.f90
+    users/base/uskpdc.f90
+    users/base/usphyv.f90
+    users/base/usproj.f90
+    users/base/uspt1d.f90
+    users/base/ussatc.f90
+    users/base/usstru.f90
+    users/base/ustske.f90
+    users/base/ustskw.f90
+    users/base/ustsma.f90
+    users/base/ustsns.f90
+    users/base/ustsri.f90
+    users/base/ustssc.f90
+    users/base/ustsv2.f90
+    users/base/usvima.f90
+    users/base/usvort.f90
+    users/cfbl/uscfcl.f90
+    users/cfbl/uscfpv.f90
+    users/cfbl/uscfxi.f90
+    users/cogz/usd3pc.f90
+    users/cogz/usd3pi.f90
+    users/cogz/usebuc.f90
+    users/cogz/usebui.f90
+    users/cogz/uslwcc.f90
+    users/cogz/uslwci.f90
+    users/cplv/uscpcl.f90
+    users/cplv/uscpiv.f90
+    users/cplv/uscplc.f90
+    users/ctwr/usctcl.f90
+    users/ctwr/usctiv.f90
+    users/elec/uselcl.f90
+    users/elec/useliv.f90
+    users/elec/uselph.f90
+    users/elec/usetcl.f90
+    users/fuel/usfucl.f90
+    users/fuel/usfuiv.f90
+    users/lagr/uslag2.f90
+    users/rayt/usray2.f90
+
+* 16/09/2009 - David Monfort <david.monfort@edf.fr>
   Improve the bash completion script.
   modified script:
     extras/bash_completion/code_saturne

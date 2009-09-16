@@ -67,6 +67,15 @@ subroutine usvima &
 
 ! Les tableaux sont initialises a 1 au premier pas de temps.
 
+
+! Cells identification
+! ====================
+
+! Cells may be identified using the 'getcel' subroutine.
+! The syntax of this subroutine is described in the 'usclim' subroutine,
+! but a more thorough description can be found in the user guide.
+
+
 ! Arguments
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !

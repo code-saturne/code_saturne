@@ -109,6 +109,13 @@ subroutine usphyv &
 !    le strict necessaire.
 
 
+! Cells identification
+! ====================
+
+! Cells may be identified using the 'getcel' subroutine.
+! The syntax of this subroutine is described in the 'usclim' subroutine,
+! but a more thorough description can be found in the user guide.
+
 
 ! Arguments
 !__________________.____._____.________________________________________________.

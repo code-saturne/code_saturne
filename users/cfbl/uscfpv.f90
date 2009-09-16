@@ -106,32 +106,17 @@ subroutine uscfpv &
 !   precedent (sauf au premier pas de temps, ou les tableaux
 !   ITYPFB et ITRIFB n'ont pas ete renseignes)
 
-! L'identification des cellules concernees peut s'appuyer sur la
-! commande GETCEL.
-
-!  GETCEL(CHAINE,NLELT,LSTELT) :
-!  - CHAINE est une chaine de caractere fournie par l'utilisateur
-!    qui donne les criteres de selection
-!  - NLTELT est renvoye par la commande. C'est un entier qui
-!    correspond au nombre de cellules trouveees repondant au
-!    critere
-!  - LSTELT est renvoye par la commande. C'est un tableau d'entiers
-!    de taille NLTELT donnant la liste des cellules trouvees
-!    repondant au critere.
-
-!  CHAINE peut etre constitue de :
-!  - references de couleurs (ex. : 1, 8, 26, ...
-!  - references de groupes (ex. : entrees, groupe1, ...)
-!  - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
-!  Ces criteres peuvent etre combines par des operateurs logiques
-!  (AND et OR) et des parentheses
-!  ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
-!  les cellules de couleur 1, appartenant aux groupes 'groupe2'
-!  ou 'groupe3' et de coordonnee Y inferieure a 1.
 
 ! Il est conseille de ne garder dans ce sous programme que
 !    le strict necessaire.
 
+
+! Cells identification
+! ====================
+
+! Cells may be identified using the 'getcel' subroutine.
+! The syntax of this subroutine is described in the 'usclim' subroutine,
+! but a more thorough description can be found in the user guide.
 
 
 ! Arguments

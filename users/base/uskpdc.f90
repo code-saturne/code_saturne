@@ -90,34 +90,12 @@ subroutine uskpdc &
 !           ON A CHOISI DE REPRESENTER LA ZONE DE PDC SINGULIERE
 
 
-! IDENTIFICATION DES CELLULES/FACES DE BORD/FACES INTERNES
-! ========================================================
+! Cells identification
+! ====================
 
-!  Les commandes GETCEL, GETFBR et GETFAC permettent d'identifier
-!  respectivement les cellules, faces ou faces de bord en fonction
-!  de differents criteres.
-
-!  GETCEL(CHAINE,NLELT,LSTELT) :
-!  - CHAINE est une chaine de caractere fournie par l'utilisateur
-!    qui donne les criteres de selection
-!  - NLTELT est renvoye par la commande. C'est un entier qui
-!    correspond au nombre de cellules trouveees repondant au
-!    critere
-!  - LSTELT est renvoye par la commande. C'est un tableau d'entiers
-!    de taille NLTELT donnant la liste des cellules trouvees
-!    repondant au critere.
-
-!  CHAINE peut etre constitue de :
-!  - references de couleurs (ex. : 1, 8, 26, ...
-!  - references de groupes (ex. : entrees, groupe1, ...)
-!  - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
-!  Ces criteres peuvent etre combines par des operateurs logiques
-!  (AND et OR) et des parentheses
-!  ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
-!  les cellules de couleur 1, appartenant aux groupes 'groupe2'
-!  ou 'groupe3' et de coordonnee Y inferieure a 1.
-
-!  La syntaxe des commandes GETFBR et GETFAC est identique.
+! Cells may be identified using the 'getcel' subroutine.
+! The syntax of this subroutine is described in the 'usclim' subroutine,
+! but a more thorough description can be found in the user guide.
 
 
 !-------------------------------------------------------------------------------
