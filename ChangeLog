@@ -1,3 +1,8 @@
+* 16/09/2009 - David Monfort <david.monfort@edf.fr>
+  Improve the bash completion script.
+  modified script:
+    extras/bash_completion/code_saturne
+
 * 15/09/2009 - David Monfort <david.monfort@edf.fr>
   Make use of the cs_exec_environment module in cs_plot_probes.
   modified script:

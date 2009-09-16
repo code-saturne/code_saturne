@@ -26,7 +26,7 @@
 
 _cs() {
 
-    local cur prev opt cmds cmdOpts helpOpts caseOpts isCmd isOptCase opt i
+    local cur prev opt cmds cmdOpts opt i
 
     COMPREPLY=()
 
@@ -38,11 +38,16 @@ _cs() {
     cmds="${cmds} compile config create gui info"
 
     # Help and Case options
-    helpOpts="-h --help"
-    caseOpts="-c --case"
+    local helpOpts="-h --help"
+    local caseOpts="-c --case"
 
-    isCmd=0
-    isOptCase=0
+    # Readers and guides
+    local readers="evince gpdf kpdf xpdf acroread"
+    local guides="refcard theory tutorial user"
+
+    # Boolean values
+    local isCmd=0
+    local isOptCase=0
 
     if [[ ${COMP_CWORD} -eq 1 ]]; then
         COMPREPLY=( $(compgen -W "help ${cmds}" -- ${cur}) )
@@ -66,7 +71,10 @@ _cs() {
     case ${cmd} in
         help)
             case ${prev} in
-                help) COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) ); return 0;;
+                help)
+                    COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
+                    return 0
+                    ;;
                 *) return 0;;
             esac
             ;;
@@ -105,9 +113,21 @@ _cs() {
             ;;
         info)
             case ${prev} in
-                -r|--reader) COMPREPLY=( $(compgen -W "evince gpdf kpdf xpdf acroread" -- ${cur}) ); return 0;;
-                -g|--guide)  COMPREPLY=( $(compgen -W "refcard theory tutorial user" -- ${cur}) ); return 0;;
+                -r|--reader)
+                    COMPREPLY=( $(compgen -W "${readers}" -- ${cur}) )
+                    return 0
+                    ;;
+                -g|--guide)
+                    COMPREPLY=( $(compgen -W "${guides}" -- ${cur}) )
+                    return 0
+                    ;;
                 *) cmdOpts="-r --reader -g --guide --version"
+            esac
+            ;;
+        plot_probes)
+            case ${prev} in
+                plot_probes) _filedir "dat";;
+                *) return 0;;
             esac
             ;;
         *)
@@ -183,7 +203,7 @@ _cs() {
     [[ $isCmd -eq 1 ]] && cmdOpts="${helpOpts} ${cmdOpts}"
 
 
-    COMPREPLY=( $(compgen -W "${cmdOpts}" -- ${cur}) )
+    COMPREPLY=( ${COMPREPLY[@]} $(compgen -W "${cmdOpts}" -- ${cur}) )
 
 }
 complete -F _cs cs
@@ -192,7 +212,7 @@ complete -F _cs cs
 
 _cs_solver() {
 
-    local cur prev options helpOpts versOpts i
+    local cur prev options i
 
     COMPREPLY=()
 
@@ -202,11 +222,14 @@ _cs_solver() {
     options="--solcom --mpi --mpi-io -q --quality --benchmark --cwf \
              --log --logp -p --param --syr-socket"
 
-    versOpts="--version"
-    helpOpts="-h --help"
+    local versOpts="--version"
+    local helpOpts="-h --help"
+
+    local allOpts="${helpOpts} ${versOpts} ${options}"
+
 
     if [[ ${COMP_CWORD} -eq 1 ]]; then
-        COMPREPLY=( $(compgen -W "${helpOpts} ${versOpts} ${options}" -- ${cur}) )
+        COMPREPLY=( $(compgen -W "${allOpts}" -- ${cur}) )
         return 0
     fi
 
