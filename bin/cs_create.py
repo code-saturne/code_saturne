@@ -39,7 +39,7 @@ and the following classes:
 #-------------------------------------------------------------------------------
 
 import os, sys, pwd, shutil, stat
-import types, string, re
+import types, string, re, fnmatch
 from optparse import OptionParser
 
 import cs_config
@@ -65,13 +65,29 @@ def process_cmd_line(argv):
                       metavar="<case>", action="append",
                       help="create a new case")
 
-    parser.add_option("-n", "--nogui", dest="use_gui",
-                      action="store_false",
-                      help="don't use the GUI")
+    parser.add_option("--copy-from", dest="copy", type="string",
+                      metavar="<case>",
+                      help="create a case from another one")
 
     parser.add_option("--new-runcase", dest="new_runcase",
                       action="store_true",
                       help="use the new Python runcase")
+
+    parser.add_option("--nogui", dest="use_gui",
+                      action="store_false",
+                      help="don't use the GUI")
+
+    parser.add_option("--noref", dest="use_ref",
+                      action="store_false",
+                      help="don't copy references")
+
+    parser.add_option("-q", "--quiet",
+                      action="store_const", const=0, dest="verbose",
+                      help="do not output any information")
+
+    parser.add_option("-v", "--verbose",
+                      action="store_const", const=2, dest="verbose",
+                      help="dump study creation parameters")
 
     parser.add_option("--nsat", dest="n_sat", type="int",
                       metavar="<nsat>",
@@ -82,9 +98,12 @@ def process_cmd_line(argv):
                       help="specify the number of SYRTHES instances")
 
     parser.set_defaults(use_gui=True)
+    parser.set_defaults(use_ref=True)
     parser.set_defaults(new_runcase=False)
     parser.set_defaults(study_name=os.path.basename(os.getcwd()))
     parser.set_defaults(cases_name=[])
+    parser.set_defaults(copy=None)
+    parser.set_defaults(verbose=1)
     parser.set_defaults(n_sat=1)
     parser.set_defaults(n_syr=0)
 
@@ -96,10 +115,15 @@ def process_cmd_line(argv):
         else:
             options.cases_name = ["CASE1"]
 
+    if options.n_sat > 1: options.new_runcase = True
+
     return Study(options.study_name,
                  options.cases_name,
+                 options.copy,
                  options.use_gui,
+                 options.use_ref,
                  options.new_runcase,
+                 options.verbose,
                  options.n_sat,
                  options.n_syr)
 
@@ -174,7 +198,8 @@ def comments(filename, use_gui):
 class Study:
 
 
-    def __init__(self, name, cases, use_gui, new_runcase, n_sat, n_syr):
+    def __init__(self, name, cases, copy, use_gui, use_ref, new_runcase,
+                 verbose, n_sat, n_syr):
         """
         Initialize the structure for a study.
         """
@@ -183,8 +208,13 @@ class Study:
         self.cases = []
         for c in cases:
             self.cases.append(string.upper(c))
+        self.copy = copy
+        if self.copy is not None:
+            self.copy = os.path.abspath(self.copy)
         self.use_gui = use_gui
+        self.use_ref = use_ref
         self.new_runcase = new_runcase
+        self.verbose = verbose
         self.n_sat = n_sat
         self.n_syr = n_syr
 
@@ -195,10 +225,15 @@ class Study:
         """
 
         if self.name != os.path.basename(os.getcwd()):
+
+            if self.verbose > 0:
+                sys.stdout.write("  o Creating study '%s'...\n" % self.name)
+
             os.mkdir(self.name)
             os.chdir(self.name)
             os.mkdir('MESH')
             os.mkdir('POST')
+
         # Creating cases
         repbase = os.getcwd()
         for c in self.cases:
@@ -210,6 +245,9 @@ class Study:
         """
         Create a case for a Code_Saturne study.
         """
+
+        if self.verbose > 0:
+            sys.stdout.write("  o Creating case  '%s'...\n" % casename)
 
         datadir = os.path.join(cs_config.dirs.pkgdatadir)
         data_distpath  = os.path.join(datadir, 'data')
@@ -235,11 +273,13 @@ class Study:
 
             os.mkdir(data)
 
-            thch_distpath = os.path.join(data_distpath, 'thch')
-            thch          = os.path.join(data, 'THCH')
-            os.mkdir(thch)
-            for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE']:
-                shutil.copy(os.path.join(thch_distpath, f), thch)
+            if self.use_ref:
+
+                thch_distpath = os.path.join(data_distpath, 'thch')
+                thch          = os.path.join(data, 'THCH')
+                os.mkdir(thch)
+                for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE']:
+                    shutil.copy(os.path.join(thch_distpath, f), thch)
 
             if self.use_gui:
 
@@ -258,12 +298,37 @@ class Study:
 
             os.mkdir(src)
 
-            users = os.path.join(src, 'REFERENCE')
-            shutil.copytree(users_distpath, users)
+            if self.use_ref:
 
-            for file in ['usini1.f90','usalin.f90']:
-                f = os.path.join(users, 'base', file)
-                comments(f, self.use_gui)
+                users = os.path.join(src, 'REFERENCE')
+                shutil.copytree(users_distpath, users)
+
+                for file in ['usini1.f90','usalin.f90']:
+                    f = os.path.join(users, 'base', file)
+                    comments(f, self.use_gui)
+
+            # Copy data and source files from another case
+
+            if self.copy is not None:
+
+                ref_data = os.path.join(self.copy, data)
+                data_files = os.listdir(ref_data)
+                for f in data_files:
+                    abs_f = os.path.join(ref_data, f)
+                    if os.path.isfile(abs_f) and \
+                            f not in ['SaturneGUI', 'preprocessor_output']:
+                        shutil.copy(os.path.join(ref_data, abs_f), data)
+
+
+                ref_src = os.path.join(self.copy, src)
+                src_files = os.listdir(ref_src)
+
+                c_files = fnmatch.filter(src_files, '*.c')
+                h_files = fnmatch.filter(src_files, '*.h')
+                f_files = fnmatch.filter(src_files, '*.[fF]90')
+
+                for f in c_files + h_files + f_files:
+                    shutil.copy(os.path.join(ref_src, f), src)
 
 
         # Loop for dependency on the number of instances of SYRTHES
@@ -279,8 +344,11 @@ class Study:
 
             os.mkdir(data_syr)
 
-            data_ref_syr = os.path.join(data_syr, 'REFERENCE')
-            shutil.copytree(os.path.join(cs_config.dirs.syrthes_prefix, 'data'), data_ref_syr)
+            if self.use_ref:
+                data_ref_syr = os.path.join(data_syr, 'REFERENCE')
+                shutil.copytree(os.path.join(cs_config.dirs.syrthes_prefix,
+                                             'data'),
+                                data_ref_syr)
 
             # User source files directory
 
@@ -291,8 +359,11 @@ class Study:
 
             os.mkdir(src_syr)
 
-            users_syr = os.path.join(src_syr, 'REFERENCE')
-            shutil.copytree(os.path.join(cs_config.dirs.syrthes_prefix, 'usr'), users_syr)
+            if self.use_ref:
+                users_syr = os.path.join(src_syr, 'REFERENCE')
+                shutil.copytree(os.path.join(cs_config.dirs.syrthes_prefix,
+                                             'usr'),
+                                users_syr)
 
 
         # Results directory (only one for all instances)
@@ -306,7 +377,7 @@ class Study:
         scripts = 'SCRIPTS'
         os.mkdir(scripts)
 
-        if self.n_sat == 1 and not self.new_runcase:
+        if not self.new_runcase:
             shutil.copy(os.path.join(datadir, 'runcase.help'), scripts)
             shutil.copy(os.path.join(datadir, 'runcase'), scripts)
         else:
@@ -350,9 +421,13 @@ class Study:
         Dump the structure of a study.
         """
 
+        print
         print "Name  of the study:", self.name
         print "Names of the cases:", self.cases
+        if self.copy is not None:
+            print "Copy from case:", self.copy
         print "Use the GUI:", self.use_gui
+        print "Copy references:", self.use_ref
         print "Use the Python runcase:", self.new_runcase
         if self.n_sat > 1:
             print "Number of Code_Saturne instances:", self.n_sat
@@ -370,19 +445,19 @@ def main(argv):
     Main function.
     """
 
-    welcome = """
-=================================================================
-                Code_Saturne study/case generation
-                           Version %(csvers)s
-=================================================================
-    """ % { 'csvers': cs_config.package.version }
+    welcome = """\
+Code_Saturne %s study/case generation
+"""
 
-    myStudy = process_cmd_line(argv)
+    study = process_cmd_line(argv)
 
-    print welcome
+    if study.verbose > 0:
+        sys.stdout.write(welcome % cs_config.package.version)
 
-    myStudy.dump()
-    myStudy.create()
+    study.create()
+
+    if study.verbose > 1:
+        study.dump()
 
 
 if __name__ == "__main__":

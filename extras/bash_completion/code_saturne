@@ -99,8 +99,9 @@ _cs() {
                 -c|--case)     COMPREPLY=( ); return 0;;
                 -s|--study)    COMPREPLY=( ); return 0;;
                 --nsat|--nsyr) COMPREPLY=( ); return 0;;
-                *) cmdOpts="-s --study -c --case -n --nogui \
-                     --new-runcase --nsat --nsyr";;
+                --copy-from)   _filedir -d; return 0;;
+                *) cmdOpts="-s --study -c --case -n --nogui --noref --copy-from \
+                     --new-runcase --nsat --nsyr -q --quiet -v --verbose";;
             esac
             ;;
         gui)
@@ -169,17 +170,17 @@ _cs() {
             -n)
                 case ${cmd} in
                     check_consistency) cmdOpts=${cmdOpts/ --nproc / } ;;
-                    create)            cmdOpts=${cmdOpts/ --nogui / } ;;
                     gui)               cmdOpts=${cmdOpts/ --new / } ;;
                 esac ;;
             --new)           cmdOpts=${cmdOpts/ -n / }
                              cmdOpts=${cmdOpts/ --batch / }
                              cmdOpts=${cmdOpts/ --file / } ;;
-            --nogui)         cmdOpts=${cmdOpts/ -n / } ;;
             --nproc)         cmdOpts=${cmdOpts/ -n / } ;;
             --opt-libs)      cmdOpts=${cmdOpts/ --syrthes / } ;;
             -p)              cmdOpts=${cmdOpts/ --param / } ;;
             --param)         cmdOpts=${cmdOpts/ -p / } ;;
+            -q)              cmdOpts=${cmdOpts/ --quiet / } ;;
+            --quiet)         cmdOpts=${cmdOpts/ -q / } ;;
             -r)              cmdOpts=${cmdOpts/ --reader / } ;;
             --reader)        cmdOpts=${cmdOpts/ -r / } ;;
             -s)
@@ -192,6 +193,8 @@ _cs() {
             --syrthes)       cmdOpts=${cmdOpts/ --opt-libs / } ;;
             -t)              cmdOpts=${cmdOpts/ --test / } ;;
             --test)          cmdOpts=${cmdOpts/ -t / } ;;
+            -v)              cmdOpts=${cmdOpts/ --verbose / } ;;
+            --verbose)       cmdOpts=${cmdOpts/ -v / } ;;
         esac
 
     done

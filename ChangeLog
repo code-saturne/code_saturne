@@ -1,3 +1,9 @@
+* 18/09/2009 - David Monfort <david.monfort@edf.fr>
+  Add different options to the case creation commmand.
+  modified scripts:
+    bin/cs_create.py
+    extras/bash_completion/code_saturne
+
 * 16/09/2009 - David Monfort <david.monfort@edf.fr>
   Remove redundant information on boundary face conditions
   and elements selectionn based on a given criterion.
