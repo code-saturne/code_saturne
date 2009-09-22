@@ -1,4 +1,12 @@
 * 22/09/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a (very) long-standing bug related to the extrapolation of some physical
+  variables (specific heat and laminar viscosity of scalars). Fortunately,
+  the defaut value for the theta-scheme has been first order since the
+  the beginning (even with a second order scheme in time).
+  modified routine:
+    src/base/schtmp.f90
+
+* 22/09/2009 - David Monfort <david.monfort@edf.fr>
   Add a residue calculation to avoid uninitialized value (Bi-CGStab).
   modified routine:
     src/base/cs_sles.c

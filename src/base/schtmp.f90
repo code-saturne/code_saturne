@@ -455,7 +455,7 @@ elseif(iappel.eq.2) then
           varcp  = propce(iel,iicp  )
           propce(iel,iicp  ) = (1.d0+theta) * propce(iel,iicp  )  &
                              -       theta  * propce(iel,iicpa )
-          propce(iel,ipcvsa) = varcp
+          propce(iel,iicpa ) = varcp
         enddo
       endif
     endif
@@ -473,7 +473,7 @@ elseif(iappel.eq.2) then
           ipcvsa = ipproc(ivissa(iscal))
           if(ipcvsl.gt.0) then
             do iel = 1, ncel
-              viscos = propce(iel,ipcvsa)
+              viscos = propce(iel,ipcvsl)
               propce(iel,ipcvsl) = (1.d0+theta)*propce(iel,ipcvsl)&
                                  -       theta *propce(iel,ipcvsa)
               propce(iel,ipcvsa) = viscos
