@@ -277,14 +277,12 @@ _display_histograms(cs_int_t        n_vals,
  *----------------------------------------------------------------------------*/
 
 static void
-_print_halo_info(cs_mesh_t  *mesh,
+_print_halo_info(const cs_mesh_t  *mesh,
                  double            interface_time,
                  double            halo_time,
                  double            ext_neighborhood_time)
 {
   cs_halo_t  *halo = mesh->halo;
-
-  cs_int_t  *rank_buffer = NULL;
 
   /* Summary of the computional times */
 
@@ -307,9 +305,158 @@ _print_halo_info(cs_mesh_t  *mesh,
 
   bft_printf(" ----------------------------------------------------------\n\n");
 
+  bft_printf_flush();
+}
 
-  bft_printf(_(" Number of standard cells:                             %d\n"),
-             mesh->n_cells);
+/*----------------------------------------------------------------------------
+ * Write a summary about cell neighbor features in listing
+ *
+ * parameters:
+ *   mesh                   <-- pointer to cs_mesh_t structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_print_cell_neighbor_info(const cs_mesh_t  *mesh)
+{
+  cs_int_t i, j, k;
+  float step;
+
+  int n_steps = CS_MESH_N_SUBS;
+  int n_min_neighbors = 0;
+  int n_max_neighbors = 0;
+
+  fvm_gnum_t  count[CS_MESH_N_SUBS];
+
+  int  *n_cell_neighbors = NULL;
+
+  /* Summary of the number of cell neighbors */
+
+  BFT_MALLOC(n_cell_neighbors, mesh->n_cells_with_ghosts, int);
+
+  for (i = 0; i < mesh->n_cells_with_ghosts; i++)
+    n_cell_neighbors[i] = 0;
+
+  for (i = 0; i < mesh->n_i_faces; i++) {
+    cs_int_t c_id_0 = mesh->i_face_cells[i*2] - 1;
+    cs_int_t c_id_1 = mesh->i_face_cells[i*2 + 1] - 1;
+    n_cell_neighbors[c_id_0] += 1;
+    n_cell_neighbors[c_id_1] += 1;
+  }
+
+  if (mesh->n_cells > 0)
+    n_min_neighbors = n_cell_neighbors[0];
+
+  for (i = 0; i < mesh->n_cells; i++) {
+    if (n_cell_neighbors[i] < n_min_neighbors)
+      n_min_neighbors = n_cell_neighbors[i];
+    else if (n_cell_neighbors[i] > n_max_neighbors)
+      n_max_neighbors = n_cell_neighbors[i];
+  }
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    int n_g_min, n_g_max;
+
+    MPI_Allreduce(&n_min_neighbors, &n_g_min, 1, MPI_INT, MPI_MIN,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(&n_max_neighbors, &n_g_max, 1, MPI_INT, MPI_MAX,
+                  cs_glob_mpi_comm);
+
+    n_min_neighbors = n_g_min;
+    n_max_neighbors = n_g_max;
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  bft_printf(_("\n Histogram of the number of interior faces per cell:\n\n"));
+
+  bft_printf(_("    minimum value =         %10d\n"), n_min_neighbors);
+  bft_printf(_("    maximum value =         %10d\n\n"), n_max_neighbors);
+
+  /* Define axis subdivisions */
+
+  for (i = 0; i < CS_MESH_N_SUBS; i++)
+    count[i] = 0;
+
+  if (n_max_neighbors - n_min_neighbors > 0) {
+
+    if (n_max_neighbors - n_min_neighbors < n_steps)
+      n_steps = n_max_neighbors - n_min_neighbors;
+
+    step = (float)(n_max_neighbors - n_min_neighbors) / n_steps;
+
+    /* Loop on values */
+
+    for (i = 0; i < mesh->n_cells; i++) {
+
+      /* Associated subdivision */
+      for (j = 0, k = 1; k < n_steps; j++, k++) {
+        if (n_cell_neighbors[i] < n_min_neighbors + k*step)
+          break;
+      }
+      count[j] += 1;
+    }
+
+#if defined(HAVE_MPI)
+
+    if (cs_glob_n_ranks > 1) {
+
+      fvm_gnum_t g_count[CS_MESH_N_SUBS];
+
+      MPI_Allreduce(count, g_count, n_steps, FVM_MPI_GNUM, MPI_SUM,
+                    cs_glob_mpi_comm);
+
+      for (i = 0; i < n_steps; i++)
+        count[i] = g_count[i];
+    }
+
+#endif
+
+    for (i = 0, j = 1; i < n_steps - 1; i++, j++)
+      bft_printf("    %3d : [ %10d ; %10d [ = %10lu\n",
+                 i+1,
+                 (int)(n_min_neighbors + i*step),
+                 (int)(n_min_neighbors + j*step),
+                 (unsigned long)(count[i]));
+
+    bft_printf("    %3d : [ %10d ; %10d ] = %10lu\n",
+               n_steps,
+               (int)(n_min_neighbors + (n_steps - 1)*step),
+               n_max_neighbors,
+               (unsigned long)(count[n_steps - 1]));
+  }
+
+  else { /* if (n_min_neighbors == n_max_neighbors) */
+    bft_printf("    %3d : [ %10d ; %10d ] = %10lu\n",
+               1, n_min_neighbors, n_max_neighbors,
+               (unsigned long)mesh->n_g_cells);
+
+  }
+
+  bft_printf("\n ----------------------------------------------------------\n");
+
+  /* Cleanup */
+
+  BFT_FREE(n_cell_neighbors);
+}
+
+/*----------------------------------------------------------------------------
+ * Write a summary about mesh features in listing
+ *
+ * parameters:
+ *   mesh                   <-- pointer to cs_mesh_t structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_print_mesh_info(cs_mesh_t  *mesh)
+{
+  cs_halo_t  *halo = mesh->halo;
+
+  cs_int_t  *rank_buffer = NULL;
+
+  /* Summary of cell and ghost cell distribution */
 
   if (mesh->n_domains > 1) {
 
@@ -326,10 +473,13 @@ _print_halo_info(cs_mesh_t  *mesh,
 
   } /* End if n_domains > 1 */
 
-  bft_printf("\n ----------------------------------------------------------\n");
+  else
+    bft_printf
+      (_(" Number of cells:                                      %d\n"),
+       mesh->n_cells);
 
-  bft_printf(_(" Number of cells + halo cells:                         %d\n\n"),
-             mesh->n_cells_with_ghosts);
+
+  bft_printf("\n ----------------------------------------------------------\n");
 
   if (mesh->n_domains > 1) {
 
@@ -338,25 +488,24 @@ _print_halo_info(cs_mesh_t  *mesh,
                   rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
 
-    bft_printf(_("\n Histogram of number of standard + halo cells "
+    bft_printf(_("\n Histogram of the number of standard + halo cells "
                  "per rank:\n\n"));
 
     _display_histograms(mesh->n_domains, rank_buffer);
 
   } /* End if n_domains > 1 */
 
+  else
+    bft_printf
+      (_(" Number of cells + halo cells:                         %d\n\n"),
+       mesh->n_cells_with_ghosts);
+
+
   bft_printf("\n ----------------------------------------------------------\n");
 
   if (halo != NULL) {
 
     cs_int_t  n_std_ghost_cells = halo->n_elts[CS_HALO_STANDARD];
-
-    bft_printf(_("\n Local number of ghost cells:                    %10d\n"),
-               mesh->n_ghost_cells);
-    bft_printf(_("     in the standard neighborhood:              %10d\n"),
-               n_std_ghost_cells);
-    bft_printf(_("     in the extended neighborhood:              %10d\n"),
-               mesh->n_ghost_cells - n_std_ghost_cells);
 
     if (mesh->n_domains > 1) {
 
@@ -372,36 +521,112 @@ _print_halo_info(cs_mesh_t  *mesh,
 
       _display_histograms(mesh->n_domains, rank_buffer);
 
-    } /* If n_ranks > 1 */
-
-    bft_printf("\n"
-               " ----------------------------------------------------------\n");
-
-    /* Sum-up of the number of neighbors */
-
-    bft_printf(_("\n Number of neighboring domains:       %d\n"),
-               halo->n_c_domains);
-
-    if (mesh->n_domains > 1) {
-
-      cs_int_t  n_c_domains = halo->n_c_domains;
+      if (mesh->halo_type == CS_HALO_EXTENDED) {
 
 #if defined(HAVE_MPI)
-      MPI_Allgather(&n_c_domains, 1, CS_MPI_INT,
-                    rank_buffer , 1, CS_MPI_INT, cs_glob_mpi_comm);
+        MPI_Allgather(&n_std_ghost_cells, 1, CS_MPI_INT,
+                      rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
 #endif
 
-      bft_printf(_("\n    Histogram of the number of neighboring domains "
-                   "per rank:\n\n"));
+        bft_printf
+          (_("\n"
+             " Histogram of the number of ghost cells\n"
+             " in the standard neighborhood per rank:\n\n"));
 
-      _display_histograms(mesh->n_domains, rank_buffer);
+        _display_histograms(mesh->n_domains, rank_buffer);
+      }
 
     } /* If n_ranks > 1 */
+
+    else {
+      bft_printf(_("\n Number of ghost cells:                          %10d\n"),
+                 mesh->n_ghost_cells);
+      if (mesh->halo_type == CS_HALO_EXTENDED)
+        bft_printf(_("   in the standard neighborhood:              %10d\n"),
+                   n_std_ghost_cells);
+    }
 
     bft_printf("\n"
                " ----------------------------------------------------------\n");
 
   } /* End if halo != NULL */
+
+  /* Summary of faces distribution */
+
+  if (mesh->n_domains > 1) {
+
+#if defined(HAVE_MPI)
+    MPI_Allgather(&(mesh->n_i_faces), 1, CS_MPI_INT,
+                  rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
+#endif
+
+    bft_printf
+      (_("\n Histogram of the number of interior faces per rank:\n\n"));
+
+    _display_histograms(mesh->n_domains, rank_buffer);
+
+  } /* End if n_domains > 1 */
+
+  else
+    bft_printf
+      (_(" Number of interior faces                              %d\n"),
+       mesh->n_i_faces);
+
+
+  bft_printf("\n ----------------------------------------------------------\n");
+
+
+
+  if (mesh->n_domains > 1) {
+
+#if defined(HAVE_MPI)
+    MPI_Allgather(&(mesh->n_b_faces), 1, CS_MPI_INT,
+                  rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
+#endif
+
+    bft_printf
+      (_("\n Histogram of the number of boundary faces per rank:\n\n"));
+
+    _display_histograms(mesh->n_domains, rank_buffer);
+
+  } /* End if n_domains > 1 */
+
+  else
+    bft_printf
+      (_(" Number of boundary faces                              %d\n"),
+       mesh->n_b_faces);
+
+
+  bft_printf("\n ----------------------------------------------------------\n");
+
+  /* Add cell neighbor info */
+
+  _print_cell_neighbor_info(mesh);
+
+#if defined(HAVE_MPI)
+
+  /* Summary of the number of neighbors */
+
+  if (mesh->n_domains > 1) {
+
+    cs_int_t  n_c_domains = halo->n_c_domains;
+
+    MPI_Allgather(&n_c_domains, 1, CS_MPI_INT,
+                  rank_buffer , 1, CS_MPI_INT, cs_glob_mpi_comm);
+
+    bft_printf(_("\n Histogram of the number of neighboring domains "
+                 "per rank:\n\n"));
+
+    _display_histograms(mesh->n_domains, rank_buffer);
+
+    bft_printf("\n"
+               " ----------------------------------------------------------\n");
+
+  } /* If n_domains > 1 */
+
+#endif
+
+  /* Cleanup */
 
   if (mesh->n_domains > 1)
     BFT_FREE(rank_buffer);
@@ -1108,6 +1333,8 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
   else if (ivoset == 1)
     bft_printf(_("\n Extended connectivity creation (%.3g s)\n"),
                ext_neighborhood_time);
+
+  _print_mesh_info(mesh);
 }
 
 /*----------------------------------------------------------------------------

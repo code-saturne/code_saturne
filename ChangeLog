@@ -1,3 +1,8 @@
+* 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add more thorough information on load balancing (mesh-related information).
+  modified routine:
+    src/base/cs_mesh.c
+
 * 22/09/2009 - David Monfort <david.monfort@edf.fr>
   Avoid a warning on a potential truncature of a header related to particles
   tracking restart file (no impact on current code as variable names are
