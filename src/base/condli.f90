@@ -265,7 +265,7 @@ integer          ihcp  , iscal , iscat
 integer          inc   , iccocg, iphydp
 integer          iok   , iok1
 integer          icodcu
-integer          isoent, isorti
+integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
 integer          iuiph , iviph , iwiph , ipriph
 integer          ikiph , iepiph, iphiph, ifbiph, iomgip
@@ -1019,9 +1019,15 @@ do iphas = 1, nphas
 
   enddo
 
-  if ( mod(ntcabs,ntlist).eq.0 .or. iwarni(iu(1)).ge. 0 ) then
-    if(isorti.gt.0.and.(iwarni(iuiph).ge.2.or.isoent.gt.0)) then
-      write(nfecra,3010)iphas, isoent,isorti
+  if (mod(ntcabs,ntlist).eq.0 .or. iwarni(iu(1)).ge. 0) then
+    isocpt(1) = isoent
+    isocpt(2) = isorti
+    if (irangp.ge.0) then
+      ncpt = 2
+      call parism(ncpt, isocpt)
+    endif
+    if (isocpt(2).gt.0 .and. (iwarni(iuiph).ge.2.or.isocpt(1).gt.0)) then
+      write(nfecra,3010)iphas, isocpt(1), isocpt(2)
     endif
   endif
 

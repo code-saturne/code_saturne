@@ -1,4 +1,10 @@
 * 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Fix a wrong number of inflowing outlet in parallel runs.
+  modified routine:
+    src/base/condli.f90
+
+* 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a flush statement test (Fortran 2003) in autoconf pass.
   modified scripts:
     config/cs_fortran.m4
