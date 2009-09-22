@@ -546,25 +546,13 @@ _dot_products_2(cs_int_t          n_elts,
 
   if (x1 == x2 || x1 == y2 || y1 == x2 || y1 == y2) {
 
-#if ((defined(__INTEL_COMPILER) && defined(__ia64__)) || defined(__uxpvp__))
-
-    /* Use temporary variables to help compiler optimize */
+    /* Use temporary variables to help some compilers optimize */
     double _s0 = 0.0, _s1 = 0.0;
     for (ii = 0; ii < n_elts; ii++) {
       _s0 += x1[ii] * y1[ii];
       _s1 += x2[ii] * y2[ii];
     }
     s[0] = _s0; s[1] = _s1;
-
-#else
-
-    s[0] = 0.0; s[1] = 0.0;
-    for (ii = 0; ii < n_elts; ii++) {
-      s[0] += x1[ii] * y1[ii];
-      s[1] += x2[ii] * y2[ii];
-    }
-
-#endif
 
   }
   else {
