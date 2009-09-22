@@ -1,4 +1,9 @@
 * 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Merge two MPI_Bcast into a single one for optimization.
+  modified routine:
+    src/base/cs_parall.c
+
+* 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Force the preconditioner to be diagonal on coarse levels for the
   multigrid algorithm (otherwise the algorithm fails because the
   coarse matrices structure is not complete).

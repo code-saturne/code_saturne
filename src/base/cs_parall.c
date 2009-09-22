@@ -995,6 +995,8 @@ CS_PROCF (parfpt, PARFPT)(cs_int_t   *node,
 {
 #if defined(HAVE_MPI)
 
+  cs_int_t buf[2];
+
   _mpi_double_int_t  val_in, val_min;
 
   assert(sizeof(double) == sizeof(cs_real_t));
@@ -1007,8 +1009,13 @@ CS_PROCF (parfpt, PARFPT)(cs_int_t   *node,
 
   *ndrang = cs_glob_rank_id;
 
-  MPI_Bcast(node,   1, CS_MPI_INT, val_min.rank, cs_glob_mpi_comm);
-  MPI_Bcast(ndrang, 1, CS_MPI_INT, val_min.rank, cs_glob_mpi_comm);
+  buf[0] = *node;
+  buf[1] = *ndrang;
+
+  MPI_Bcast(buf, 2, CS_MPI_INT, val_min.rank, cs_glob_mpi_comm);
+
+  *node = buf[0];
+  *ndrang = buf[1];
 
 #endif
 
