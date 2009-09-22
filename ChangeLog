@@ -1,4 +1,11 @@
 * 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Force the preconditioner to be diagonal on coarse levels for the
+  multigrid algorithm (otherwise the algorithm fails because the
+  coarse matrices structure is not complete).
+  modified routine:
+    src/base/cs_mutigrid.c
+
+* 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add an optimized matrix.vector product in CSR format based on MKL.
   modified routine:
     src/base/cs_matrix.c

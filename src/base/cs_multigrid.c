@@ -1104,6 +1104,8 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
   for (level = 0; level < coarsest_level; level++) {
 
+    int _poly_degree = (level == 0) ? poly_degree : 0;
+
     _rhs_level = (level == 0) ?  rhs : _rhs[level];
 
     sprintf(var_lv_name, "%s:%04d", var_name, level);
@@ -1127,7 +1129,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                           _xa,
                           _matrix,
                           NULL,
-                          poly_degree,
+                          _poly_degree,
                           rotation_mode,
                           verbosity - 2,
                           n_max_iter[level*2],
@@ -1241,7 +1243,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                           _xa,
                           _matrix,
                           NULL,
-                          poly_degree,
+                          0, /* poly_degree */
                           rotation_mode,
                           verbosity - 2,
                           n_max_iter[level*2],
@@ -1313,7 +1315,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                               _xa,
                               _matrix,
                               NULL,
-                              poly_degree,
+                              0, /* poly_degree */
                               rotation_mode,
                               verbosity - 2,
                               n_max_iter[level*2 + 1],
