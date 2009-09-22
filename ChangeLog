@@ -1,3 +1,8 @@
+* 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add warning and error messages when reading restart files.
+  modified routine:
+    src/base/cs_restart.c
+
 * 22/09/2009 - David Monfort <david.monfort@edf.fr>
   Fix a (very) long-standing bug related to the extrapolation of some physical
   variables (specific heat and laminar viscosity of scalars). Fortunately,

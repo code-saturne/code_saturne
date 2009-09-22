@@ -1532,10 +1532,12 @@ cs_restart_read_section(cs_restart_t  *restart,
 {
   double timing[2];
 
-  cs_int_t   n_glob_ents, n_ents;
+  cs_int_t   n_ents;
+  fvm_gnum_t n_glob_ents;
+
   const fvm_gnum_t  *ent_global_num;
 
-  size_t rec_id;
+  size_t rec_id, rec_id_tmp;
   cs_io_sec_header_t header;
 
   cs_int_t _n_location_vals = n_location_vals;
@@ -1557,12 +1559,20 @@ cs_restart_read_section(cs_restart_t  *restart,
   }
 
   else {
-    if (location_id < 0 || location_id > (int)(restart->n_locations))
+    if (location_id < 0 || location_id > (int)(restart->n_locations)) {
+      bft_printf(_("  %s: location id %d for \"%s\" does not exist.\n"),
+                 restart->name, location_id, sec_name);
       return CS_RESTART_ERR_LOCATION;
-    if (   (restart->location[location_id-1]).n_glob_ents_f
-        != (restart->location[location_id-1]).n_glob_ents)
-      return CS_RESTART_ERR_LOCATION;
+    }
     n_glob_ents = (restart->location[location_id-1]).n_glob_ents;
+    if ((restart->location[location_id-1]).n_glob_ents_f != n_glob_ents) {
+      bft_printf(_("  %s: location id %d for \"%s\" has "
+                   "size %lu, but %lu is expected.\n"),
+                 restart->name, location_id, sec_name,
+                 (unsigned long)(restart->location[location_id-1]).n_glob_ents_f,
+                 (unsigned long)n_glob_ents);
+      return CS_RESTART_ERR_LOCATION;
+    }
     n_ents  = (restart->location[location_id-1]).n_ents;
     ent_global_num = (restart->location[location_id-1]).ent_global_num;
   }
@@ -1577,8 +1587,11 @@ cs_restart_read_section(cs_restart_t  *restart,
 
   /* If the record was not found */
 
-  if (rec_id >= index_size)
+  if (rec_id >= index_size) {
+    bft_printf(_("  %s: section \"%s\" not present.\n"),
+               restart->name, sec_name);
     return CS_RESTART_ERR_EXISTS;
+  }
 
   /*
     If the location does not fit: we search for a location of same
@@ -1589,6 +1602,7 @@ cs_restart_read_section(cs_restart_t  *restart,
 
   if (header.location_id != (size_t)location_id) {
 
+    rec_id_tmp = rec_id;
     rec_id++;
 
     while (rec_id < index_size) {
@@ -1599,23 +1613,34 @@ cs_restart_read_section(cs_restart_t  *restart,
       rec_id++;
     }
 
-    if (rec_id >= index_size)
+    if (rec_id >= index_size) {
+      header = cs_io_get_indexed_sec_header(restart->fh, rec_id_tmp);
+      bft_printf(_("  %s: section \"%s\" at location id %d but not at %d.\n"),
+                 restart->name, sec_name, header.location_id, location_id);
       return CS_RESTART_ERR_LOCATION;
+    }
   }
 
   /* If the number of values per location does not match */
 
   if (   (   header.location_id > 0
           && header.n_location_vals != (size_t)n_location_vals)
-      || (   header.location_id == 0 && header.n_vals != n_ents))
+      || (   header.location_id == 0 && header.n_vals != n_ents)) {
+    bft_printf(_("  %s: section \"%s\" has %d values per location and "
+                 " not %d.\n"),
+               restart->name, sec_name, (int)header.n_vals, (int)n_ents);
     return CS_RESTART_ERR_N_VALS;
+  }
 
   /* If the type of value does not match */
 
   if (header.elt_type == FVM_INT32 || header.elt_type == FVM_INT64) {
     cs_io_set_fvm_lnum(&header, restart->fh);
-    if (val_type != CS_TYPE_cs_int_t)
+    if (val_type != CS_TYPE_cs_int_t) {
+      bft_printf(_("  %s: section \"%s\" is not of integer type.\n"),
+                 restart->name, sec_name);
       return CS_RESTART_ERR_VAL_TYPE;
+    }
   }
   else if (header.elt_type == FVM_FLOAT || header.elt_type == FVM_DOUBLE) {
     if (sizeof(cs_real_t) != fvm_datatype_size[header.elt_type]) {
@@ -1624,8 +1649,11 @@ cs_restart_read_section(cs_restart_t  *restart,
       else
         header.elt_type = FVM_DOUBLE;
     }
-    if (val_type != CS_TYPE_cs_real_t)
+    if (val_type != CS_TYPE_cs_real_t) {
+      bft_printf(_("  %s: section \"%s\" is not of floating-point type.\n"),
+                 restart->name, sec_name);
       return CS_RESTART_ERR_VAL_TYPE;
+    }
   }
 
   /* Now set position in file to read data */
