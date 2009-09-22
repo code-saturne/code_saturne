@@ -357,6 +357,7 @@ class domain(base_domain):
                  join = None,                 # command-line options
                  periodicity = None,          # command-line options
                  partition_list = None,       # list of partitions
+                 partition_opts = None,       # partitioner options
                  solcom = False,              # use old geomet mesh file input
                  cut_warped_faces = None,     # command-line option
                  mode_args = None,            # --quality or --benchmark ?
@@ -398,6 +399,7 @@ class domain(base_domain):
         # Partition options
 
         self.partition_list = partition_list
+        self.partition_opts = partition_opts
 
         # Solver options
 
@@ -856,6 +858,9 @@ class domain(base_domain):
         # Build command
 
         cmd = os.path.join(cs_config.dirs.ecs_bindir, 'cs_partition')
+
+        if self.partition_opts != None:
+            cmd += ' ' + self.partition_opts
 
         if self.partition_list != None:
             cmd += ' ' + any_to_str(self.partition_list)
