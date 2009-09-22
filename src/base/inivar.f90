@@ -728,7 +728,11 @@ if (idtvar.ge.0) then
     call parmin (vdtmin)
     !==========
   endif
-  WRITE(NFECRA,2010)'PasDeTmp',VDTMIN,VDTMAX
+#if defined(_CS_LANG_FR)
+  write(nfecra,2010)'PasDeTmp',vdtmin,vdtmax
+#else
+  write(nfecra,2010)'TimeStep',vdtmin,vdtmax
+#endif
   write(nfecra,2020)
 
   if (vdtmin.le.zero) then
@@ -784,9 +788,15 @@ if(nbmomt.gt.0) then
                               vmomax(icdtmo(idtmom(imom))),       &
                               'Variable'
     elseif(idtmom(imom).lt.0) then
+#if defined(_CS_LANG_FR)
       write(nfecra,2040) imom,dtcmom(-idtmom(imom))       ,       &
                               dtcmom(-idtmom(imom))       ,       &
                               'Uniforme'
+#else
+      write(nfecra,2040) imom,dtcmom(-idtmom(imom))       ,       &
+                              dtcmom(-idtmom(imom))       ,       &
+                              'Uniform'
+#endif
     endif
   enddo
   write(nfecra,2050)

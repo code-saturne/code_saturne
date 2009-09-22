@@ -1,4 +1,10 @@
 * 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  English translation for variables and boundary conditions output.
+  modified routines:
+    src/base/inivar.f90
+    src/base/typecl.f90
+
+* 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Always use the IBM compiler optimized form for the dot product.
   modified routine:
     src/base/cs_sles.c

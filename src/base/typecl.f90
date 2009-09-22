@@ -391,35 +391,63 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = ientre
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Entree           ', ii, inb
+#else
+      write(nfecra,6020) 'Inlet            ', ii, inb
+#endif
       ii = iparoi
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Paroi lisse      ', ii, inb
+#else
+      write(nfecra,6020) 'Smooth wall      ', ii, inb
+#endif
       ii = iparug
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
+#else
+      write(nfecra,6020) 'Rough wall       ', ii, inb
+#endif
       ii = isymet
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Symetrie         ', ii, inb
+#else
+      write(nfecra,6020) 'Symmetry         ', ii, inb
+#endif
       ii = isolib
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Sortie libre     ', ii, inb
+#else
+      write(nfecra,6020) 'Free outlet      ', ii, inb
+#endif
 
       if (nbrcpl.ge.1) then
         ii = icscpl
         inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
         if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
         write(nfecra,6020) 'Couplage sat/sat ', ii, inb
+#else
+        write(nfecra,6020) 'Sat/Sat coupling ', ii, inb
+#endif
       endif
 
       ii = iindef
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Indefini         ', ii, inb
+#else
+      write(nfecra,6020) 'Undefined        ', ii, inb
+#endif
 
       do ii = 1, ntypmx
         if (ii.ne.ientre .and. &
@@ -432,7 +460,11 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
           inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
           if (irangp.ge.0) call parcpt (inb)
           if(inb.gt.0) then
+#if defined(_CS_LANG_FR)
             write(nfecra,6020) 'Type utilisateur ', ii, inb
+#else
+            write(nfecra,6020) 'User type        ', ii, inb
+#endif
           endif
         endif
       enddo
@@ -442,47 +474,83 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
       ii = ieqhcf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Entree sub. enth.', ii, inb
+#else
+      write(nfecra,6020) 'Sub. enth. inlet ', ii, inb
+#endif
 
       ii = ierucf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Entree subsonique', ii, inb
+#else
+      write(nfecra,6020) 'Subsonic inlet   ', ii, inb
+#endif
 
       ii = iesicf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Entree/Sortie imp', ii, inb
+#else
+      write(nfecra,6020) 'Imp inlet/outlet ', ii, inb
+#endif
 
       ii = isopcf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Sortie subsonique', ii, inb
+#else
+      write(nfecra,6020) 'Subsonic outlet  ', ii, inb
+#endif
 
       ii = isspcf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Sortie supersoniq', ii, inb
+#else
+      write(nfecra,6020) 'Supersonic outlet', ii, inb
+#endif
 
       ii = iparoi
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Paroi lisse      ', ii, inb
+#else
+      write(nfecra,6020) 'Smooth wall      ', ii, inb
+#endif
 
       ii = iparug
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
+#else
+      write(nfecra,6020) 'Rough wall       ', ii, inb
+#endif
 
       ii = isymet
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Symetrie         ', ii, inb
+#else
+      write(nfecra,6020) 'Symmetry         ', ii, inb
+#endif
 
       ii = iindef
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Indefini         ', ii, inb
+#else
+      write(nfecra,6020) 'Undefined        ', ii, inb
+#endif
 
       do ii = 1, ntypmx
         if (ii.ne.iesicf .and. &
@@ -497,7 +565,11 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
           inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
           if (irangp.ge.0) call parcpt (inb)
           if(inb.gt.0) then
+#if defined(_CS_LANG_FR)
             write(nfecra,6020) 'Type utilisateur ',ii, inb
+#else
+            write(nfecra,6020) 'User type        ',ii, inb
+#endif
           endif
         endif
       enddo
@@ -1335,28 +1407,44 @@ do iphas = 1, nphas
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Entree           ',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Inlet            ',ii,inb,flumty(ii)
+#endif
       ii = iparoi
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Paroi lisse      ',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Smooth wall      ',ii,inb,flumty(ii)
+#endif
       ii = iparug
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Paroi rugueuse   ',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Rough wall       ',ii,inb,flumty(ii)
+#endif
       ii = isymet
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Symetrie         ',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Symmetry         ',ii,inb,flumty(ii)
+#endif
 
       ii = isolib
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
@@ -1364,7 +1452,11 @@ do iphas = 1, nphas
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Sortie libre     ',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Free outlet      ',ii,inb,flumty(ii)
+#endif
 
       if (nbrcpl.ge.1) then
         ii = icscpl
@@ -1373,7 +1465,11 @@ do iphas = 1, nphas
           call parcpt (inb)
           call parsom (flumty(ii))
         endif
+#if defined(_CS_LANG_FR)
         write(nfecra,7020) 'Couplage sat/sat ',ii,inb,flumty(ii)
+#else
+        write(nfecra,7020) 'Sat/Sat coupling ',ii,inb,flumty(ii)
+#endif
       endif
 
       ii = iindef
@@ -1382,7 +1478,11 @@ do iphas = 1, nphas
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Indefini         ',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Undefined        ',ii,inb,flumty(ii)
+#endif
 
       do ii = 1, ntypmx
         if( ii.ne.ientre .and.                                    &
@@ -1398,7 +1498,11 @@ do iphas = 1, nphas
             call parsom (flumty(ii))
           endif
           if(inb.gt.0) then
+#if defined(_CS_LANG_FR)
             write(nfecra,7020) 'Type utilisateur ',ii,inb,flumty(ii)
+#else
+            write(nfecra,7020) 'User type        ',ii,inb,flumty(ii)
+#endif
           endif
         endif
       enddo
@@ -1411,7 +1515,11 @@ do iphas = 1, nphas
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Entree sub. enth.',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Sub. enth. inlet ',ii,inb,flumty(ii)
+#endif
 
       ii = ierucf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
@@ -1419,7 +1527,11 @@ do iphas = 1, nphas
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Entree subsonique',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Subsonic inlet   ',ii,inb,flumty(ii)
+#endif
 
       ii = iesicf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
@@ -1427,7 +1539,11 @@ do iphas = 1, nphas
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Entree/Sortie imp',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Imp inlet/outlet ',ii,inb,flumty(ii)
+#endif
 
       ii = isopcf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
@@ -1435,7 +1551,11 @@ do iphas = 1, nphas
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Sortie subsonique',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Subsonic outlet  ',ii,inb,flumty(ii)
+#endif
 
       ii = isspcf
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
@@ -1443,7 +1563,11 @@ do iphas = 1, nphas
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Sortie supersoniq',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Supersonic outlet',ii,inb,flumty(ii)
+#endif
 
       ii = iparoi
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
@@ -1451,7 +1575,11 @@ do iphas = 1, nphas
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Paroi            ',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Wall             ',ii,inb,flumty(ii)
+#endif
 
       ii = isymet
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
@@ -1459,7 +1587,11 @@ do iphas = 1, nphas
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Symetrie         ',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Symmetry         ',ii,inb,flumty(ii)
+#endif
 
       ii = iindef
       inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
@@ -1467,7 +1599,11 @@ do iphas = 1, nphas
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
+#if defined(_CS_LANG_FR)
       write(nfecra,7020) 'Indefini         ',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Undefined        ',ii,inb,flumty(ii)
+#endif
 
       do ii = 1, ntypmx
         if (ii.ne.iesicf .and. &
@@ -1484,7 +1620,11 @@ do iphas = 1, nphas
             call parsom (flumty(ii))
           endif
           if(inb.gt.0) then
+#if defined(_CS_LANG_FR)
             write(nfecra,7020) 'Type utilisateur ',ii,inb,flumty(ii)
+#else
+            write(nfecra,7020) 'User type        ',ii,inb,flumty(ii)
+#endif
           endif
         endif
       enddo
