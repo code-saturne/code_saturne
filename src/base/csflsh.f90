@@ -25,31 +25,31 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine csflsh
+subroutine csflsh
 !================
-!===============================================================================
-!  FONCTION  :
-!  ---------
 
-! VIDAGE DU TAMPON DU FICHIER D'IMPRESSION
+!===============================================================================
+! Purpose:
+! -------
+
+!    Flush output buffer
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -57,7 +57,15 @@ include "entsor.h"
 
 !===============================================================================
 
-call flush (nfecra)
+#if defined(_CS_FC_HAVE_FLUSH)
+
+flush (nfecra)        ! Fortran 2003 statement
+
+#else
+
+call flush (nfecra)   ! Common intrinsic but not guaranteed to be portable
+
+#endif
 
 return
 

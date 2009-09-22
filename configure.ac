@@ -266,6 +266,8 @@ AC_CHECK_SIZEOF([long], [cs])
 AC_CHECK_SIZEOF([float], [cs])
 AC_CHECK_SIZEOF([double], [cs])
 
+CS_AC_TEST_FC_FLUSH
+
 #------------------------------------------------------------------------------
 # Determine OpenMP support
 #------------------------------------------------------------------------------

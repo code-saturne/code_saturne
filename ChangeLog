@@ -1,4 +1,12 @@
 * 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a flush statement test (Fortran 2003) in autoconf pass.
+  modified scripts:
+    config/cs_fortran.m4
+    configure.ac
+  modified routine:
+    src/base/csflsh.f90
+
+* 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add an optional argument for the partitioner.
   modified script:
     bin/cs_case_domain.py
