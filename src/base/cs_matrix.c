@@ -82,6 +82,10 @@
 #include <mpi.h>
 #endif
 
+#if defined (HAVE_MKL)
+#include <mkl_spblas.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * BFT library headers
  *----------------------------------------------------------------------------*/
@@ -317,7 +321,11 @@ const char  *cs_matrix_type_name[] = {N_("native"),
 const char  *cs_matrix_type_fullname[] = {N_("diagonal + faces"),
                                           N_("Compressed Sparse Row")};
 
+#if !defined (HAVE_MKL)
 static int _cs_glob_matrix_prefetch_rows = 2048;
+#else
+static int _cs_glob_matrix_prefetch_rows = 0;
+#endif
 
 static char _cs_glob_perio_ignore_error_str[]
   = N_("Matrix product with CS_PERIO_IGNORE rotation mode not yet\n"
@@ -2119,6 +2127,8 @@ _get_diagonal_csr(const cs_matrix_t  *matrix,
  *   y      --> Resulting vector
  *----------------------------------------------------------------------------*/
 
+#if !defined (HAVE_MKL)
+
 static void
 _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
                  const cs_real_t    *restrict x,
@@ -2158,6 +2168,32 @@ _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
   }
 
 }
+
+#else /* if defined (HAVE_MKL) */
+
+static void
+_mat_vec_p_l_csr(const cs_matrix_t  *matrix,
+                 const cs_real_t    *restrict x,
+                 cs_real_t          *restrict y)
+{
+  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+
+  int n_rows = ms->n_rows;
+  const char transa[] = "n";
+
+  assert(ms->symmetric == false);
+
+  mkl_cspblas_dcsrgemv(transa,
+                       &n_rows,
+                       mc->val,
+                       ms->row_index,
+                       ms->col_id,
+                       x,
+                       y);
+}
+
+#endif /* defined (HAVE_MKL) */
 
 /*----------------------------------------------------------------------------
  * Local matrix.vector product y = A.x with symmetric CSR matrix.

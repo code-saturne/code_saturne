@@ -1,4 +1,9 @@
 * 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add an optimized matrix.vector product in CSR format based on MKL.
+  modified routine:
+    src/base/cs_matrix.c
+
+* 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Fix a wrong number of inflowing outlet in parallel runs.
   modified routine:
