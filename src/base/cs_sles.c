@@ -1335,9 +1335,12 @@ _bi_cgstab(const char             *var_name,
        group dot products for new iteration's beta
        and previous iteration's residue to reduce total latency */
 
-    if (n_iter == 0)
-      beta = _dot_product(n_rows, res0, rk);
+    if (n_iter == 0) {
 
+      beta = _dot_product(n_rows, res0, rk);
+      residue = sqrt(beta);
+
+    }
     else {
 
       _dot_products_2(n_rows, res0, rk, rk, rk, &beta, &residue);
@@ -1348,6 +1351,7 @@ _bi_cgstab(const char             *var_name,
                               n_iter, residue, convergence);
       if (cvg != 0)
         break;
+
     }
 
     n_iter += 1;
