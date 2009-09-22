@@ -1,3 +1,10 @@
+* 22/09/2009 - David Monfort <david.monfort@edf.fr>
+  Avoid a warning on a potential truncature of a header related to particles
+  tracking restart file (no impact on current code as variable names are
+  shorter than the new maximum length).
+  modified routine:
+    include/lagr/lagran.h
+
 * 22/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Add warning and error messages when reading restart files.
   modified routine:

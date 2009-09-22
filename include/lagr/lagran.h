@@ -392,7 +392,7 @@ common / rlasta /  tstat , seuil
 !     Taille limitee par le fait qu on utilise NOMBRD dans
 !       l ecriture des fichiers suites (lagout)
 
-character*50      nomlag(nvplmx) , nomlav(nvplmx)
+character*32      nomlag(nvplmx) , nomlav(nvplmx)
 common / alasts / nomlag         , nomlav
 
 !     OPTION POUR LES HISTORIQUES SUR LES STATS
