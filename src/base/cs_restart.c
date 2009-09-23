@@ -885,23 +885,19 @@ void CS_PROCF (opnsui, OPNSUI)
   if (*ierror == CS_RESTART_SUCCES) {
 
     id = _new_restart_id();
-
     _restart_pointer[id] = cs_restart_create(bufname, restart_mode);
+
+    /* Return the position of the handle in the array
+     * (id + 1 to have a 1 to n numbering, more conventional in Fortran) */
+
+    *numsui = id + 1;
   }
+  else
+    *numsui = -1;
 
   /* Free memory if necessary */
 
   cs_base_string_f_to_c_free(&bufname);
-
-  /*
-   * Return the position of the handle in the array
-   * (id + 1 to have a 1 to n numbering, more conventional in F77)
-  */
-
-  if (*ierror == CS_RESTART_SUCCES)
-    *numsui = id + 1;
-  else
-    *numsui = -1;
 }
 
 /*----------------------------------------------------------------------------
