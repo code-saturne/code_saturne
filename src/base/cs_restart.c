@@ -1623,11 +1623,16 @@ cs_restart_read_section(cs_restart_t  *restart,
 
   /* If the number of values per location does not match */
 
-  if (   (   header.location_id > 0
-          && header.n_location_vals != (size_t)n_location_vals)
-      || (   header.location_id == 0 && header.n_vals != n_ents)) {
+  if (   header.location_id > 0
+      && header.n_location_vals != (size_t)n_location_vals) {
     bft_printf(_("  %s: section \"%s\" has %d values per location and "
                  " not %d.\n"),
+               restart->name, sec_name,
+               (int)header.n_location_vals, (int)n_location_vals);
+    return CS_RESTART_ERR_N_VALS;
+  }
+  else if (header.location_id == 0 && header.n_vals != n_ents) {
+    bft_printf(_("  %s: section \"%s\" has %d values and not %d.\n"),
                restart->name, sec_name, (int)header.n_vals, (int)n_ents);
     return CS_RESTART_ERR_N_VALS;
   }
