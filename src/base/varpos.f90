@@ -1836,7 +1836,7 @@ if(ipass.eq.4) then
         idtmom(imom) = idtmom(imomr)
 !          Si non : on a besoin d'un nouveau tableau ou reel
       else
-        if(idtvar.eq.2) then
+        if(idtvar.eq.2.or.idtvar.eq.-1) then
           iiplus = iiplus + 1
           idtmom(imom) = iiplus
         else
@@ -1871,7 +1871,7 @@ if(ipass.eq.4) then
 !           Si DT non uniforme dans le present calcul ou que
 !              DT cumule etait non uniforme dans l'ancien, on a un
 !              DT cumule non uniforme (sinon, il est uniforme)
-          if(idtvar.eq.2.or.idto.gt.0) then
+          if(idtvar.eq.2.or.idtvar.eq.-1.or.idto.gt.0) then
             iiplus = iiplus + 1
             idtmom(imom) = iiplus
           else

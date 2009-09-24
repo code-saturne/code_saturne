@@ -1,3 +1,8 @@
+* 24/09/2009 - David Monfort <david.monfort@edf.fr>
+  Fix an issue when averaging variables with the steady algorithm.
+  modified routine:
+    src/base/varpos.f90
+
 * 24/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Update related to French translation.
