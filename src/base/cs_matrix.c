@@ -329,7 +329,7 @@ static int _cs_glob_matrix_prefetch_rows = 0;
 
 static char _cs_glob_perio_ignore_error_str[]
   = N_("Matrix product with CS_PERIO_IGNORE rotation mode not yet\n"
-       "implemented in this case; use cs_matrix_vector_multiply_nosync\n"
+       "implemented: in this case, use cs_matrix_vector_multiply_nosync\n"
        "with an external halo synchronization, preceded by a backup and\n"
        "followed by a restoration of the rotation halo.");
 

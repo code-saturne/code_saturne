@@ -1,3 +1,13 @@
+* 24/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Update related to French translation.
+  modified routines:
+    src/ctwr/cs_ctwr.c
+    src/base/cs_matrix.c
+    src/base/cs_mesh.c
+  modified file:
+    po/fr.po
+
 * 24/09/2009 - Marc Sakiz <marc.sakiz@edf.fr>
   Improve restart files writing information in the listing.
   modified routines:

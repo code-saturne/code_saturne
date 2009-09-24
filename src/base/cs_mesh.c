@@ -569,7 +569,7 @@ _print_mesh_info(cs_mesh_t  *mesh)
 
   else
     bft_printf
-      (_(" Number of interior faces                              %d\n"),
+      (_(" Number of interior faces:                             %d\n"),
        mesh->n_i_faces);
 
 
@@ -593,7 +593,7 @@ _print_mesh_info(cs_mesh_t  *mesh)
 
   else
     bft_printf
-      (_(" Number of boundary faces                              %d\n"),
+      (_(" Number of boundary faces:                             %d\n"),
        mesh->n_b_faces);
 
 

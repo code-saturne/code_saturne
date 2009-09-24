@@ -859,7 +859,7 @@ void CS_PROCF (lecctw, LECCTW)
       if (ierror < CS_RESTART_SUCCES)
         bft_error(__FILE__, __LINE__, 0,
                   _("Problem while reading section in the restart file\n"
-                    "for thethe cooling tower module:\n"
+                    "for the cooling tower module:\n"
                     "<%s>\n"
                     "The calculation will not be run.\n"), nomrub);
 
@@ -889,7 +889,7 @@ void CS_PROCF (lecctw, LECCTW)
       if (ierror < CS_RESTART_SUCCES)
         bft_error(__FILE__, __LINE__, 0,
                   _("Problem while reading section in the restart file\n"
-                    "for thethe cooling tower module:\n"
+                    "for the cooling tower module:\n"
                     "<%s>\n"
                     "The calculation will not be run.\n"), nomrub);
 
@@ -919,7 +919,7 @@ void CS_PROCF (lecctw, LECCTW)
       if (ierror < CS_RESTART_SUCCES)
         bft_error(__FILE__, __LINE__, 0,
                   _("Problem while reading section in the restart file\n"
-                    "for thethe cooling tower module:\n"
+                    "for the cooling tower module:\n"
                     "<%s>\n"
                     "The calculation will not be run.\n"), nomrub);
 
