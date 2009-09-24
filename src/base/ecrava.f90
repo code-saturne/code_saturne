@@ -2326,12 +2326,12 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(3X,'** ECRITURE DU FICHIER SUITE PRINCIPAL',/,       &
+ 1000 format(3X,'** Ecriture du fichier suite principal',/,       &
        3X,'   ----------------------------------- ',/)
  1100 format(' Debut de l''ecriture                                   ')
  1110 format('  ',A54                                                  )
  1200 format(' Fin de l''ecriture                                     ')
- 2000 format(/,3X,'** ECRITURE DU FICHIER SUITE AUXILIAIRE',/,    &
+ 2000 format(/,3X,'** Ecriture du fichier suite auxiliaire',/,    &
          3X,'   ------------------------------------ ',/)
 
  7000 format(                                                           &
@@ -2546,14 +2546,14 @@ return
 
 #else
 
- 1000 format(3X,'** WRITING THE MAIN RESTART FILE',/,             &
+ 1000 format(3X,'** Writing the main restart file',/,             &
        3X,'   -----------------------------',/)
  1010 format(3X,'   Opening a binary file',/)
  1020 format(3X,'   Opening an ASCII file',/)
  1100 format(' Start writing'                                          )
  1110 format('  ',A54                                                  )
  1200 format(' End writing'                                            )
- 2000 format(/,3X,'** WRITING THE AUXILLIARY RESTART FILE',/,     &
+ 2000 format(/,3X,'** Writing the auxilliary restart file',/,     &
          3X,'   -----------------------------------',/)
 
  7000 format(                                                           &

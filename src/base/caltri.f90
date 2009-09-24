@@ -1330,11 +1330,10 @@ if(ntcabs.lt.ntmabs) then
     endif
   endif
   if (itrale.eq.0) iisuit = 0
+  if (iwarn0.gt.0 .and. iisuit.eq.1) write(nfecra,3020)ntcabs,ttcabs
 else if(ntcabs.eq.ntmabs) then
   iisuit = 1
-  if(iwarn0.gt.0) then
-    write(nfecra,4000)
-  endif
+  if(iwarn0.gt.0) write(nfecra,3021)ntcabs,ttcabs
 endif
 
 if (iisuit.eq.1) then
@@ -1414,9 +1413,7 @@ if (iisuit.eq.1) then
   call dmtmps(tecrf2)
   !==========
 
-  if(iwarn0.gt.0) then
-    write(nfecra,3020)ntcabs,ttcabs, tecrf2-tecrf1
-  endif
+  if(iwarn0.gt.0) write(nfecra,3022) tecrf2-tecrf1
 
 endif ! iisuit = 1
 
@@ -1629,6 +1626,10 @@ ifinra = iditra
 ! 25. FINALISATION HISTORIQUES
 !===============================================================================
 
+if(iwarn0.gt.0) then
+  write(nfecra,4000)
+endif
+
 call dmtmps(tecrf1)
 !==========
 
@@ -1752,8 +1753,12 @@ write(nfecra,7000)
  /)
  3020 format(/,/,                                                 &
  ' Sortie intermediaire de fichiers suite',/,                     &
- '   Sauvegarde a l''iteration ', I10, ', Temps physique ',E14.5,/,&
- '   Temps CPU pour les fichiers suite : ',E14.5,/,/)
+ '   Sauvegarde a l''iteration ', I10, ', Temps physique ',E14.5,/,/)
+ 3021 format(/,/,                                                 &
+ ' Sortie finale de fichiers suite',/,                     &
+ '   Sauvegarde a l''iteration ', I10, ', Temps physique ',E14.5,/,/)
+ 3022 format(/,/,                                                 &
+ ' Temps CPU pour les fichiers suite : ',E14.5,/,/)
 
  4000 format(/,/,                                                 &
 '===============================================================',&
@@ -1822,8 +1827,12 @@ write(nfecra,7000)
  /)
  3020 format(/,/,                                                 &
  ' Write intermediate restart files',/,                           &
- '   checkpoint at iteration ',    I10,  ', Physical time ',E14.5,/, &
- '   CPU time for restart files: ',E14.5,/,/)
+ '   checkpoint at iteration ',    I10,  ', Physical time ',E14.5,/,/)
+ 3021 format(/,/,                                                 &
+ ' Write final restart files',/,                           &
+ '   checkpoint at iteration ',    I10,  ', Physical time ',E14.5,/,/)
+ 3022 format(/,/,                                                 &
+ ' CPU time for restart files: ',E14.5,/,/)
 
  4000 format(/,/,                                                 &
 '===============================================================',&

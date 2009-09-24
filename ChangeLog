@@ -1,3 +1,9 @@
+* 24/09/2009 - Marc Sakiz <marc.sakiz@edf.fr>
+  Improve restart files writing information in the listing.
+  modified routines:
+    src/base/caltri.f90
+    src/base/ecrava.f90
+
 * 23/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Merge two tests for a more clearer code.
