@@ -636,6 +636,9 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
       echo ' can not be accessed. '
       exit 1
     fi
+    if [ ! -f JANAF ] ; then
+      cp ${pkgdatadir}/data/thch/JANAF JANAF
+    fi
   fi
   #
   if [ "$METEO_DATA" != "" ] ; then
@@ -654,13 +657,6 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
       exit 1
     fi
   fi
-  #
-  for f in uscpcl.f90 usd3pc.f90 usebuc.f90 uslwcc.f90 usfucl.f90
-  do
-    if [ -f "${SRC}/${f}" -a ! -f JANAF ] ; then
-      cp ${pkgdatadir}/data/thch/JANAF JANAF
-    fi
-  done
   #
   if [ $SYRTHES_COUPLING = yes ] ; then
     #

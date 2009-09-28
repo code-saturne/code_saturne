@@ -1,3 +1,9 @@
+* 28/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Make the copy of JANAF depend on the presence of a thermochemistry file.
+  modified scripts:
+    bin/runcase.in
+    bin/runcase.py.in
+
 * 28/09/2009 - Marc Sakiz <marc.sakiz@edf.fr>
   Abort calculation if SST model is used in conjonction with Lagrangian
   two-way coupling modelling.

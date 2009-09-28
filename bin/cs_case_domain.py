@@ -747,6 +747,11 @@ class domain(base_domain):
             self.copy_data_file(self.thermochemistry_data,
                                 'dp_thch',
                                 'thermochemistry')
+            self.copy_data_file(os.path.join(cs_config.dirs.pkgdatadir,
+                                             'data',
+                                             'thch',
+                                             'JANAF'),
+                                'JANAF')
 
         if self.meteo_data != None:
             self.copy_data_file(self.meteo_data,
@@ -755,20 +760,6 @@ class domain(base_domain):
             # Second copy so as to have correct name upon backup
             if self.meteo_data != 'meteo':
                 self.copy_data_file(self.meteo_data)
-
-        # Presence of some user source files gives some indications
-
-        l = os.listdir(self.src_dir)
-
-        for f in ['uscpcl.f90', 'usd3pc.f90', 'usebuc.f90',
-                  'uslwcc.f90', 'usfucl.f90']:
-            if os.path.isfile(os.path.join(self.src_dir, f)):
-                self.copy_data_file(os.path.join(cs_config.dirs.pkgdatadir,
-                                                 'data',
-                                                 'thch',
-                                                 'JANAF'),
-                                    'JANAF')
-                break
 
         # Presence of user input files
 
