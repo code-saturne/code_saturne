@@ -129,9 +129,7 @@ do iphas = 1, nphas
     endif
   enddo
 enddo
-ipp = ippdt
-if (idtvar.lt.0) ichrvr(ipp) = 0
-if(idtvar.eq.2.and.ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
+if(idtvar.eq.2.and.ichrvr(ippdt).eq.-999) ichrvr(ippdt) = 1
 if(ipucou.ne.1) then
   ichrvr(ipptx) = 0
   ichrvr(ippty) = 0
@@ -183,8 +181,7 @@ do ii = 2, nvppmx
     ihisvr(ii,1) = -1
   endif
 enddo
-if (idtvar.lt.0) ihisvr(ippdt ,1) = 0
-if(idtvar.eq.2.and.ihisvr(ippdt ,1).eq.-999) ihisvr(ippdt ,1) = -1
+if(ihisvr(ippdt ,1).eq.-999) ihisvr(ippdt ,1) = -1
 if(ipucou.ne.1) then
   ihisvr(ipptx,1) = 0
   ihisvr(ippty,1) = 0
@@ -463,9 +460,7 @@ if(nbmomt.gt.0) then
   enddo
 endif
 
-ipp = ippdt
-if (idtvar.lt.0) ilisvr(ipp) = 0
-if(ilisvr(ipp).eq.-999) ilisvr(ipp)  = 1
+if(ilisvr(ippdt).eq.-999) ilisvr(ippdt)  = 1
 if(ipucou.ne.1 .or. idtvar.lt.0) then
   ilisvr(ipptx) = 0
   ilisvr(ippty) = 0

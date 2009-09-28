@@ -1,3 +1,10 @@
+* 28/09/2009 - Marc Sakiz <marc.sakiz@edf.fr>
+  Correctly handle non-uniform/variable time-step post-processing.
+  modified routine:
+    src/base/modini.f90
+    src/base/memtri.f90
+    src/base/varpos.f90
+
 * 28/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Make the copy of JANAF depend on the presence of a thermochemistry file.
   modified scripts:

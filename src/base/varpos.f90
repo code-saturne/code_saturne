@@ -2013,7 +2013,7 @@ if(ipass.eq.4) then
 !      Le rang de la derniere propriete pour le post est IPPPST.
 
 
-  if(idtvar.ne.0) then
+  if(idtvar.gt.0) then
     ipppst = ipppst + 1
     ippdt  = ipppst
   endif

@@ -464,7 +464,11 @@ do iis = 1 , nscal
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
 enddo
 
-ipp2ra(ippdt ) = idt
+if (idtvar.le.0) then
+  ipp2ra(ippdt ) = 1
+else
+  ipp2ra(ippdt ) = idt
+endif
 
 !     Couplage instationnaire vitesse/pression
 if (ipucou.eq.0) then
