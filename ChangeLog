@@ -1,3 +1,9 @@
+* 28/09/2009 - Marc Sakiz <marc.sakiz@edf.fr>
+  Abort calculation if SST model is used in conjonction with Lagrangian
+  two-way coupling modelling.
+  modified routine:
+    src/base/verini.f90
+
 * 24/09/2009 - David Monfort <david.monfort@edf.fr>
   Fix an issue when averaging variables with the steady algorithm.
   modified routine:

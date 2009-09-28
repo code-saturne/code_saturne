@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -928,6 +928,14 @@ do iphas = 1, nphas
     WRITE(NFECRA,2600) IPHAS,'ITURB  ',ITRBPH
     iok = iok + 1
   endif
+
+  ! In lagrangian with two-way coupling, k-omega SST is forbidden (not
+  ! properly implemented)
+  if (itrbph.eq.60 .and. iilagr.eq.2) then
+     write(nfecra,2601) iilagr
+     iok = iok + 1
+  endif
+
 enddo
 
 !     Methode des vortex pour la LES
@@ -3191,6 +3199,21 @@ endif
 '@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0, 10, 20, 21, 30, 31,',/,&
 '@    40, 41, 42, 50, OU 60'                                   ,/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2601 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    LE MODELE DE TURBULENCE K-OMEGA SST N''EST PAS          ',/,&
+'@     COMPATIBLE AVEC LE LAGRANGIEN EN COUPLAGE INVERSE      ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
@@ -5689,6 +5712,21 @@ endif
 '@    ',A6,' MUST BE AN INTEGER EGAL A 0, 10, 20, 21, 30, 31,',/, &
 '@    40, 41, 42, 50, or 60'                                   ,/,&
 '@   IT HAS VALUE ',I10                                        ,/,&
+'@                                                            ',/,&
+'@   The calculation could NOT run.                           ',/,&
+'@                                                            ',/,&
+'@ Check the input data given via User Interface or in usini1.',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2601 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@    THE K-OMEGA SST TURBULENCE MODEL IS NOT COMPATIBLE WITH ',/,&
+'@    TWO-WAY COUPLING IN LAGRANGIAN MODELLING                ',/,&
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
