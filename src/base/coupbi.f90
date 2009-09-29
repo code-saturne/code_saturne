@@ -222,11 +222,12 @@ do inbcou = 1, nbccou
 
       enddo
 
-!           Conversion eventuelle temperature -> enthalpie
+      ! Conversion eventuelle temperature -> enthalpie
 
-      if(iscsth(ll).eq.2) then
+      if(iscsth(iscal).eq.2) then
 
         do iloc = 1, nbfcou
+
           ifac = ia(ipfcou+iloc-1)
 
           temper = rcodcl(ifac,ll,1)

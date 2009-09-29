@@ -1,3 +1,10 @@
+* 29/09/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a wrong indirection for temperature/enthalpy conversion
+  in case of coupling with SYRTHES or the 1D-wall thermal module.
+  modified routines:
+    src/base/cou1di.f90
+    src/base/coupbi.f90
+
 * 29/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix an issue for scalar profiles (label not found in XML files).
   modified routine:

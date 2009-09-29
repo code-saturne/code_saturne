@@ -154,20 +154,24 @@ do ii = 1, nfpt1d
    rcodcl(ifac,ivar,1) = ra(itppt1+ii-1)
    rcodcl(ifac,ivar,2) = rinfin
    rcodcl(ifac,ivar,3) = 0.d0
+
 enddo
 
+! Conversion eventuelle temperature -> enthalpie
 
-if(iscsth(ii).eq.2) then
-   do ii = 1, nfpt1d
-      ifac = ia(iifpt1+ii-1)
+if (iscsth(isvtb).eq.2) then
 
-      temper = rcodcl(ifac,ivar,1)
-      mode   = -1
-      call usthht(mode,enthal,temper)
-      !==========
-      rcodcl(ifac,ivar,1) = enthal
+  do ii = 1, nfpt1d
 
-   enddo
+    ifac = ia(iifpt1+ii-1)
+
+    temper = rcodcl(ifac,ivar,1)
+    mode   = -1
+    call usthht(mode,enthal,temper)
+    !==========
+    rcodcl(ifac,ivar,1) = enthal
+
+  enddo
 
 endif
 
