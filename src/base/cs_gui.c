@@ -2222,29 +2222,28 @@ static void cs_gui_time_average_post (const char *const property_name,
 }
 
 /*-----------------------------------------------------------------------------
- * Return the label attribute of scalars.
+ * Return the label or the name from a scalar.
  *
  * parameters:
- *   markup               -->  parent markup of the scalar
+ *   kw                   -->  keyword: 'label' or 'name'
  *   scalar_num          <--   number of the searching scalar
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_scalar_label(const char *const markup,
-                                 const int         scalar_num)
+static char *_scalar_name_label(const char *kw, const int scalar_num)
 {
   char *path = NULL;
-  char *strvalue = NULL;
+  char *str  = NULL;
 
   path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, markup);
+  cs_xpath_add_element(&path, "additional_scalars");
   cs_xpath_add_element_num(&path, "scalar", scalar_num);
-  cs_xpath_add_attribute(&path, "label");
+  cs_xpath_add_attribute(&path, kw);
 
-  strvalue = cs_gui_get_attribute_value(path);
+  str = cs_gui_get_attribute_value(path);
 
   BFT_FREE(path);
 
-  return strvalue;
+  return str;
 }
 
 /*==========================
@@ -2475,24 +2474,21 @@ static char *_get_profile_label_name(const int id, const int nm)
   char *path = NULL;
   char *name = NULL;
   char *label = NULL;
-  int j, ll;
+  int j, shift;
 
   cs_var_t  *vars = cs_glob_var;
-
   name = _get_profile_name(id, nm);
+  shift = vars->nvar - vars->nscapp - vars->nscaus;
 
-  for (j=0 ; j < (vars->nvar - vars->nscapp - vars->nscaus) ; j++) {
+  for (j=0 ; j < shift ; j++) {
     if (cs_gui_strcmp(name,  vars->name[j]))
       label = cs_gui_variable_label(name);
   }
 
-  if (vars->nscaus > 0 || vars->nscapp > 0) {
-    for (j=0 ; j < vars->nscaus + vars->nscapp; j++) {
-      if (cs_gui_strcmp(name,  vars->label[j])) {
-        ll = strlen(vars->label[j])+1;
-        BFT_REALLOC(label, ll, char);
-        strcpy(label, vars->label[j]);
-      }
+  for (j=0 ; j < vars->nscaus + vars->nscapp; j++) {
+    if (cs_gui_strcmp(name, vars->name[j+shift])) {
+      BFT_MALLOC(label, strlen(vars->label[j])+1, char);
+      strcpy(label, vars->label[j]);
     }
   }
 
@@ -2709,7 +2705,7 @@ void CS_PROCF (cscpva, CSCPVA) (int *const icp)
 
 void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
 {
-  int   i   = 0;
+  int   i     = 0;
   char *label = NULL;
 
   cs_var_t *vars = cs_glob_var;
@@ -2720,8 +2716,8 @@ void CS_PROCF (csnsca, CSNSCA) (int *const nscaus)
 
   BFT_MALLOC(vars->label, *nscaus, char*);
 
-  for (i=0; i<vars->nscaus; i++) {
-    label = cs_gui_scalar_label("additional_scalars", i+1);
+  for (i=0; i < vars->nscaus; i++) {
+    label = _scalar_name_label("label", i+1);
     BFT_MALLOC(cs_glob_var->label[i], strlen(label)+1, char);
     strcpy(cs_glob_var->label[i], label);
     BFT_FREE(label);
@@ -2946,15 +2942,15 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
   int iphas = 0;
   int n = 0;
   int i, j, k;
+  char *name = NULL;
 
   BFT_MALLOC(cs_glob_var->rtp,  *nvar, int);
   BFT_MALLOC(cs_glob_var->head, *nvar, char*);
   BFT_MALLOC(cs_glob_var->type, *nvar, char*);
   BFT_MALLOC(cs_glob_var->name, *nvar, char*);
 
-  /* Warning!!  vars->nscaus is already fill in CSNSCA */
-  /*            vars->label  is already fill in CSNSCA */
-  /*            vars->nscapp is already fill in UIPPMO */
+  /* Warning!!  for scalars: vars->nscaus is already fill in CSNSCA */
+  /*                         vars->nscapp is already fill in UIPPMO */
 
   cs_glob_var->nvar   = *nvar;
 
@@ -3096,8 +3092,10 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
   for (i=0; i < cs_glob_var->nscaus; i++) {
     cs_glob_var->rtp[n++] = isca[i] -1;
 
-    BFT_MALLOC(cs_glob_var->name[k+i], strlen(cs_glob_var->label[i]) +1, char);
-    strcpy(cs_glob_var->name[k+i], cs_glob_var->label[i]);
+    name = _scalar_name_label("name", i+1);
+    BFT_MALLOC(cs_glob_var->name[k+i], strlen(name) +1, char);
+    strcpy(cs_glob_var->name[k+i], name);
+    BFT_FREE(name);
 
     BFT_MALLOC(cs_glob_var->type[k+i], strlen("scalar")+1, char);
     strcpy(cs_glob_var->type[k+i], "scalar");
@@ -3133,7 +3131,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
 
 #if _XML_DEBUG_
   bft_printf("==>CSVNUM\n");
-  bft_printf("--variables and scalars name: \n");
+  bft_printf("--variables and scalars name: %i\n", cs_glob_var->nvar);
   for (i=0; i < cs_glob_var->nvar; i++)
     bft_printf("---name: %s\n", cs_glob_var->name[i]);
   /* for (i=0; i < vars->nscapp+vars->nscaus; i++)

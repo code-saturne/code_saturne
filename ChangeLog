@@ -1,4 +1,9 @@
 * 29/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix an issue for scalar profiles (label not found in XML files).
+  modified routine:
+    src/base/cs_gui.c
+
+* 29/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Improve the behaviour of the profiles management in GUI (add a title
   box and automatically set the extension to .dat).
   modified routines:
