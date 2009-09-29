@@ -5,15 +5,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>743</width>
-    <height>473</height>
+    <width>755</width>
+    <height>486</height>
    </rect>
   </property>
   <property name="windowTitle" >
    <string>Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2" >
-   <item row="0" column="0" >
+   <item rowspan="5" row="0" column="0" >
     <spacer name="horizontalSpacer_8" >
      <property name="orientation" >
       <enum>Qt::Horizontal</enum>
@@ -27,392 +27,120 @@
     </spacer>
    </item>
    <item row="0" column="1" >
-    <layout class="QVBoxLayout" name="verticalLayout" >
-     <item>
-      <layout class="QGridLayout" name="gridLayout" >
-       <item row="0" column="0" >
-        <widget class="QLabel" name="label" >
-         <property name="text" >
-          <string>Prefix of temporary execution
+    <layout class="QGridLayout" name="gridLayout" >
+     <item row="0" column="0" >
+      <widget class="QLabel" name="label" >
+       <property name="text" >
+        <string>Prefix of temporary execution
 directory (CS_TMP_PREFIX)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1" >
-        <spacer name="horizontalSpacer" >
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>13</width>
-           <height>34</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="0" column="2" >
-        <widget class="QLineEdit" name="lineEdit" />
-       </item>
-       <item row="0" column="3" colspan="2" >
-        <widget class="QToolButton" name="toolButton" >
-         <property name="text" >
-          <string>...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0" >
-        <widget class="QLabel" name="label_2" >
-         <property name="text" >
-          <string>Pre-processing (EXEC_PREPROCESS)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1" >
-        <spacer name="horizontalSpacer_2" >
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>13</width>
-           <height>21</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="1" column="2" colspan="3" >
-        <widget class="QComboBox" name="comboBox" />
-       </item>
-       <item row="2" column="0" >
-        <widget class="QLabel" name="label_3" >
-         <property name="text" >
-          <string>Partitioning (EXEC_PARTITION)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1" >
-        <spacer name="horizontalSpacer_3" >
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>13</width>
-           <height>37</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="2" column="2" colspan="3" >
-        <widget class="QComboBox" name="comboBox_2" >
-         <property name="sizePolicy" >
-          <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize" >
-          <size>
-           <width>490</width>
-           <height>40</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" >
-        <widget class="QLabel" name="label_4" >
-         <property name="text" >
-          <string>Calculation (EXEC_KERNEL)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1" >
-        <spacer name="horizontalSpacer_4" >
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>13</width>
-           <height>21</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="3" column="2" colspan="3" >
-        <widget class="QComboBox" name="comboBox_3" />
-       </item>
-       <item row="4" column="0" >
-        <widget class="QLabel" name="label_5" >
-         <property name="text" >
-          <string>List of partitionings for use by later
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1" >
+      <widget class="QComboBox" name="comboBoxCSTMPPREFIX" />
+     </item>
+     <item row="0" column="2" >
+      <widget class="QLineEdit" name="lineEdit" />
+     </item>
+     <item row="0" column="3" >
+      <widget class="QToolButton" name="toolButton" >
+       <property name="text" >
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0" >
+      <widget class="QLabel" name="label_2" >
+       <property name="text" >
+        <string>Pre-processing (EXEC_PREPROCESS)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1" colspan="3" >
+      <widget class="QComboBox" name="comboBox" />
+     </item>
+     <item row="2" column="0" >
+      <widget class="QLabel" name="label_3" >
+       <property name="text" >
+        <string>Partitioning (EXEC_PARTITION)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1" colspan="3" >
+      <widget class="QComboBox" name="comboBox_2" >
+       <property name="sizePolicy" >
+        <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize" >
+        <size>
+         <width>490</width>
+         <height>40</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0" >
+      <widget class="QLabel" name="label_4" >
+       <property name="text" >
+        <string>Calculation (EXEC_KERNEL)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1" colspan="3" >
+      <widget class="QComboBox" name="comboBox_3" />
+     </item>
+     <item row="4" column="0" >
+      <widget class="QLabel" name="label_5" >
+       <property name="text" >
+        <string>List of partitionings for use by later
  calculation (PARTITION_LIST)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1" >
-        <spacer>
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>13</width>
-           <height>34</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="4" column="2" colspan="3" >
-        <widget class="QLineEdit" name="lineEdit_2" />
-       </item>
-       <item row="5" column="0" >
-        <widget class="QLabel" name="label_7" >
-         <property name="text" >
-          <string>valgrind (VALGRIND)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1" >
-        <spacer name="horizontalSpacer_7" >
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>13</width>
-           <height>25</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="5" column="2" colspan="2" >
-        <widget class="QLineEdit" name="lineEdit_3" />
-       </item>
-       <item row="5" column="4" >
-        <widget class="QToolButton" name="toolButton_2" >
-         <property name="text" >
-          <string>...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0" >
-        <widget class="QLabel" name="label_8" >
-         <property name="text" >
-          <string>List of external libraries
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1" colspan="3" >
+      <widget class="QLineEdit" name="lineEdit_2" />
+     </item>
+     <item row="5" column="0" >
+      <widget class="QLabel" name="label_7" >
+       <property name="text" >
+        <string>valgrind (VALGRIND)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1" colspan="2" >
+      <widget class="QLineEdit" name="lineEdit_3" />
+     </item>
+     <item row="5" column="3" >
+      <widget class="QToolButton" name="toolButton_2" >
+       <property name="text" >
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="0" >
+      <widget class="QLabel" name="label_8" >
+       <property name="text" >
+        <string>List of external libraries
  for link (CS_LIB_ADD)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1" >
-        <spacer name="horizontalSpacer_6" >
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>13</width>
-           <height>34</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="6" column="2" colspan="3" >
-        <widget class="QLineEdit" name="lineEdit_4" />
-       </item>
-       <item row="7" column="0" >
-        <widget class="QLabel" name="label_9" >
-         <property name="text" >
-          <string>Elementary test of the mesh 
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1" colspan="3" >
+      <widget class="QLineEdit" name="lineEdit_4" />
+     </item>
+     <item row="7" column="0" >
+      <widget class="QLabel" name="label_9" >
+       <property name="text" >
+        <string>Elementary test of the mesh 
  (ARG_CS_VERIF)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1" >
-        <spacer name="horizontalSpacer_5" >
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>13</width>
-           <height>34</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="7" column="2" colspan="3" >
-        <widget class="QComboBox" name="comboBox_5" />
-       </item>
-      </layout>
+       </property>
+      </widget>
      </item>
-     <item>
-      <layout class="QHBoxLayout" >
-       <item>
-        <spacer>
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>20</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="groupBox" >
-         <property name="title" >
-          <string>Output redirection management (ARG_CS_OUTPUT)</string>
-         </property>
-         <layout class="QGridLayout" >
-          <item row="0" column="0" >
-           <layout class="QHBoxLayout" >
-            <item>
-             <spacer>
-              <property name="orientation" >
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0" >
-               <size>
-                <width>20</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <layout class="QGridLayout" >
-              <item row="0" column="0" >
-               <widget class="QLabel" name="label_10" >
-                <property name="text" >
-                 <string>Redirection for single processor job or for 
- processor rank 0 of multi-processors job (--log)</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1" >
-               <spacer>
-                <property name="orientation" >
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0" >
-                 <size>
-                  <width>20</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="0" column="2" >
-               <widget class="QComboBox" name="comboBox_6" />
-              </item>
-              <item row="1" column="0" >
-               <widget class="QLabel" name="label_11" >
-                <property name="text" >
-                 <string>Redirection for processors from rank 1 to N-&amp; 
- of multi-processors job (--logp)</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1" >
-               <spacer>
-                <property name="orientation" >
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0" >
-                 <size>
-                  <width>20</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="1" column="2" >
-               <widget class="QComboBox" name="comboBox_7" />
-              </item>
-             </layout>
-            </item>
-            <item>
-             <spacer>
-              <property name="orientation" >
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0" >
-               <size>
-                <width>16</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <spacer>
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>16</width>
-           <height>16</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" >
-       <item>
-        <spacer>
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>20</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QDialogButtonBox" name="buttonBox" >
-         <property name="layoutDirection" >
-          <enum>Qt::LeftToRight</enum>
-         </property>
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="standardButtons" >
-          <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-         </property>
-         <property name="centerButtons" >
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer>
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0" >
-          <size>
-           <width>16</width>
-           <height>16</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
+     <item row="7" column="1" colspan="3" >
+      <widget class="QComboBox" name="comboBox_5" />
      </item>
     </layout>
    </item>
@@ -429,7 +157,174 @@ directory (CS_TMP_PREFIX)</string>
      </property>
     </spacer>
    </item>
-   <item row="1" column="1" >
+   <item row="1" column="1" colspan="2" >
+    <layout class="QHBoxLayout" >
+     <item>
+      <spacer>
+       <property name="orientation" >
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0" >
+        <size>
+         <width>20</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox" >
+       <property name="title" >
+        <string>Output redirection management (ARG_CS_OUTPUT)</string>
+       </property>
+       <layout class="QGridLayout" >
+        <item row="0" column="0" >
+         <layout class="QHBoxLayout" >
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QGridLayout" >
+            <item row="0" column="0" >
+             <widget class="QLabel" name="label_10" >
+              <property name="text" >
+               <string>Redirection for single processor job or for 
+ processor rank 0 of multi-processors job (--log)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1" >
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>20</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="0" column="2" >
+             <widget class="QComboBox" name="comboBox_6" />
+            </item>
+            <item row="1" column="0" >
+             <widget class="QLabel" name="label_11" >
+              <property name="text" >
+               <string>Redirection for processors from rank 1 to N-&amp; 
+ of multi-processors job (--logp)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1" >
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>20</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="2" >
+             <widget class="QComboBox" name="comboBox_7" />
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>16</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <spacer>
+       <property name="orientation" >
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0" >
+        <size>
+         <width>16</width>
+         <height>16</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item row="3" column="1" colspan="2" >
+    <layout class="QHBoxLayout" >
+     <item>
+      <spacer>
+       <property name="orientation" >
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0" >
+        <size>
+         <width>20</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="buttonBox" >
+       <property name="layoutDirection" >
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="orientation" >
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="standardButtons" >
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       </property>
+       <property name="centerButtons" >
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer>
+       <property name="orientation" >
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0" >
+        <size>
+         <width>16</width>
+         <height>16</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item row="5" column="1" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>

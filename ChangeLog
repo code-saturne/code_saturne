@@ -1,4 +1,10 @@
 * 29/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Add a box for the automatic/prescribed choice of CS_TMP_PREFIX.
+  modified routines:
+    gui/Pages/BatchRunningAdvancedOptionsDialogForm.ui
+    gui/Pages/BatchRunningView.py
+
+* 29/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix a problem related to monitoring points numbering (when the number
   of probes is greater than 10).
   modified routines:
