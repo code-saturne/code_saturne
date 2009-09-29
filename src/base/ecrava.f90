@@ -2029,7 +2029,7 @@ nberro=nberro+ierror
     enddo
 
 
-!     Charbon PuLVerise : type de zones de bord, ientat, ientcp, timpat
+!     Charbon PuLVerise : type de zones de bord, ientat, inmoxy, ientcp, timpat
 !       x20, pour le calcul de rho au bord en entree
 
 !       Numero des zones
@@ -2051,7 +2051,7 @@ nberro=nberro+ierror
                 ientat, ierror)
     nberro=nberro+ierror
 
-!       ientat et x20 ne servent pas pour le CP couple Lagrangien (cplphy)
+!       ientat, inmoxy et x20 ne servent pas pour le CP couple Lagrangien (cplphy)
     if ( ippmod(icp3pl).ge.0 ) then
 
       itysup = 0
@@ -2062,6 +2062,13 @@ nberro=nberro+ierror
                   ientcp, ierror)
       nberro=nberro+ierror
 
+      itysup = 0
+      nbval  = nozppm
+      irtyp  = 1
+      RUBRIQ = 'inmoxy_zone_bord_charbon_pulverise'
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  inmoxy, ierror)
+      nberro=nberro+ierror
 
       itysup = 0
       nbval  = nozppm
@@ -2124,7 +2131,7 @@ nberro=nberro+ierror
     nberro=0
 
 
-!     Charbon PuLVerise : type de zones de bord, ientat, ientfl, timpat
+!     Fioul : type de zones de bord, ientat, ientfl, timpat
 !       qimpat et qimpfl  pour le calcul de rho au bord en entree
 
 !       Numero des zones

@@ -1,3 +1,11 @@
+* 29/09/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix an issue with restart calculations in pulverized coal.
+  Improve the initialization of boundary conditions for some variables.
+  modified routines:
+    src/base/ecrava.f90
+    src/base/lecamo.f90
+    src/cplv/cpptcl.f90
+
 * 28/09/2009 - Marc Sakiz <marc.sakiz@edf.fr>
   Correctly handle non-uniform/variable time-step post-processing.
   modified routine:

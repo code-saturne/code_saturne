@@ -2323,6 +2323,14 @@ if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
       ierrch=ierrch+ierror
       nberro=nberro+ierror
 
+      itysup = 0
+      nbval  = nozppm
+      irtyp  = 1
+      RUBRIQ = 'inmoxy_zone_bord_charbon_pulverise'
+      call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                  inmoxy, ierror)
+      ierrch=ierrch+ierror
+      nberro=nberro+ierror
 
       itysup = 0
       nbval  = nozppm

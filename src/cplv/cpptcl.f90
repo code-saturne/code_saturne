@@ -277,6 +277,8 @@ if(irangp.ge.0) then
   !==========
   call parimx(nozapm,ientcp)
   !==========
+  call parimx(nozapm,inmoxy)
+  !==========
   call parrmx(nozapm,qimpat)
   !==========
   call parrmx(nozapm,timpat)
@@ -743,6 +745,14 @@ do ifac = 1, nfabor
               +oxyh2o(ioxy)*wmh2o+oxyco2(ioxy)*wmco2 )
       xco2 = oxyco2(ioxy)*wmco2/dmas
       rcodcl(ifac,isca(iyco2),1)   = xco2*(1.d0-x20t(izone))
+    endif
+
+! ------ CL pour X1.HCN et X1.NO
+    if ( ieqnox .eq. 1 ) then
+      rcodcl(ifac,isca(iyhcn),1)   = zero
+      rcodcl(ifac,isca(iyno ),1)   = zero
+! ------ CL pour Tair
+      rcodcl(ifac,isca(itaire ),1)   = timpat(izone)
     endif
 
   endif
