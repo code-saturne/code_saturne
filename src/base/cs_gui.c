@@ -1294,20 +1294,13 @@ static double cs_gui_probe_coordinate(const int         num_probe,
                                       const char *const probe_coord)
 {
   char  *path = NULL;
-  char  *str_num_probe = NULL;
   double result = 0.0;
 
   assert(num_probe>0);
 
-  BFT_MALLOC(str_num_probe,
-             cs_gui_characters_number(num_probe)+1,
-             char);
-  sprintf(str_num_probe, "%i", num_probe);
-
-
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "analysis_control", "output", "probe");
-  cs_xpath_add_test_attribute(&path, "name", str_num_probe);
+  cs_xpath_add_elements(&path, 2, "analysis_control", "output");
+  cs_xpath_add_element_num(&path, "probe", num_probe);
   cs_xpath_add_element(&path, probe_coord);
   cs_xpath_add_function_text(&path);
 
@@ -1316,7 +1309,6 @@ static double cs_gui_probe_coordinate(const int         num_probe,
               _("Coordinate %s of the monitoring probe number %i "
                 "not found.\nXpath: %s\n"), probe_coord, num_probe, path);
 
-  BFT_FREE(str_num_probe);
   BFT_FREE(path);
 
   return result;

@@ -1,3 +1,11 @@
+* 29/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix a problem related to monitoring points numbering (when the number
+  of probes is greater than 10).
+  modified routines:
+    gui/Pages/OutputControlModel.py
+    gui/Pages/OutputControlView.py
+    src/base/cs_gui.c
+
 * 29/09/2009 - David Monfort <david.monfort@edf.fr>
   Fix a wrong indirection for temperature/enthalpy conversion
   in case of coupling with SYRTHES or the 1D-wall thermal module.

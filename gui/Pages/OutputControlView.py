@@ -226,10 +226,10 @@ class MonitoringPointDelegate(QItemDelegate):
             for index in selectionModel.selectedRows(index.column()):
                 model.setData(index, QVariant(item), Qt.DisplayRole)
                 dico = model.dataMonitoring[index.row()]
-                self.mdl.replaceMonitoringPointCoordinates(dico['n'],
-                                                           dico['X'],
-                                                           dico['Y'],
-                                                           dico['Z'])
+                self.mdl.replaceMonitoringPointCoordinates(str(dico['n']),
+                                                           float(dico['X']),
+                                                           float(dico['Y']),
+                                                           float(dico['Z']))
 
 #-------------------------------------------------------------------------------
 # Main class
@@ -432,8 +432,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # Monitoring points initialisation
 
-        for name in self.mdl.getProbeNameList():
-            X, Y, Z = self.mdl.getMonitoringPointInfo(name)
+        for n in range(self.mdl.getNumberOfMonitoringPoints()):
+            name = str(n+1)
+            X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
             self.__insertMonitoringPoint(name, X, Y, Z)
 
 
@@ -692,7 +693,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Add a new 'item' into the Hlist.
         """
-        probe_num = self.mdl.dicoName[str(num)]
         self.modelMonitoring.insertData(num, X, Y, Z)
 
 
@@ -702,9 +702,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Add one monitoring point with these coordinates in the list in the Hlist
         The number of the monitoring point is added at the precedent one
         """
-        self.mdl.addMonitoringPoint(x=0, y=0, z=0)
-        nameList = self.mdl.getProbeNameList()
-        self.__insertMonitoringPoint(len(nameList), QString('0'), QString('0'), QString('0'))
+        self.mdl.addMonitoringPoint(x=0.0, y=0.0, z=0.0)
+        self.__insertMonitoringPoint(self.mdl.getNumberOfMonitoringPoints(),
+                                     QString('0'),
+                                     QString('0'),
+                                     QString('0'))
 
 
     @pyqtSignature("")
@@ -713,18 +715,18 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Just delete the current selected entries from the Hlist and
         of course from the XML file.
         """
-        rowList = []
+        list = []
         selectionModel = self.tableViewPoints.selectionModel()
         for index in selectionModel.selectedRows():
-            row = index.row()
-            rowList.append(str(index.row() + 1))
+            name = index.row() + 1
+            list.append(name)
 
-        self.mdl.deleteMonitoringPointsList(rowList)
+        self.mdl.deleteMonitoringPoints(list)
 
         self.modelMonitoring.deleteAllData()
-        nameList = self.mdl.getProbeNameList()
-        for name in nameList:
-            X, Y, Z = self.mdl.getMonitoringPointInfo(name)
+        for n in range(self.mdl.getNumberOfMonitoringPoints()):
+            name = str(n+1)
+            X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
             self.__insertMonitoringPoint(name, X, Y, Z)
 
 

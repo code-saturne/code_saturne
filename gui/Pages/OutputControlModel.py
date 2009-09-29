@@ -66,7 +66,6 @@ class OutputControlModel(Model):
         self.case = case
         node_control  = self.case.xmlGetNode('analysis_control')
         self.node_out = node_control.xmlInitNode('output')
-        self.dicoName = {}
 
 
     def defaultInitialValues(self):
@@ -88,48 +87,22 @@ class OutputControlModel(Model):
         return default
 
 
-    def _getCoordPoint(self, name, coord):
+    def __getCoordinates(self, name, coord):
         """
         Private method: return coordinate 'coord' for probe named 'name'
         """
-        for probe in self.node_out.xmlGetNodeList('probe'):
-            if probe['name'] == name:
-                val = probe.xmlGetDouble(coord)
-                if val == None:
-                    val = self.defaultInitialValues()['coordinate']
-                    self._setCoordPoint(name, coord, val)
+        val = self.node_out.xmlGetNode('probe', name = name).xmlGetDouble(coord)
+        if val == None:
+            val = self.defaultInitialValues()['coordinate']
+            self.__setCoordinates(name, coord, val)
         return val
 
 
-    def _setCoordPoint(self, name, coord, val):
+    def __setCoordinates(self, name, coord, val):
         """
         Private method: put value of coordinate 'coord' for probe named 'name'
         """
-        node = self.node_out.xmlGetNode('probe', name=name)
-        node.xmlSetData(coord, val)
-
-
-    def __deleteMonitoringPoint(self, n):
-        """ Private method : remove monitoring point """
-        node = self.node_out.xmlGetNode('probe', name=n)
-        if node:
-            node.xmlRemoveNode()
-            self.case.xmlRemoveChild('probe_recording', name=n)
-            del self.dicoName[n]
-
-
-    def __deleteProbesNodes(self):
-        """ Private method : remove balise when choice = '0' is existed """
-        from OutputVolumicVariablesModel import OutputVolumicVariablesModel
-        listNodeVolum = OutputVolumicVariablesModel(self.case).listNodeVolum
-        del OutputVolumicVariablesModel
-        for nodeList in listNodeVolum:
-            for node in nodeList:
-                n = node.xmlGetChildNode('probes')
-                if n:
-                    nlist = n.xmlGetChildNodeList('probe_recording')
-                    if not nlist:
-                        n.xmlRemoveNode()
+        self.node_out.xmlGetNode('probe', name=name).xmlSetData(coord, val)
 
 
     def getListingFrequency(self):
@@ -318,94 +291,131 @@ class OutputControlModel(Model):
 
     def addMonitoringPoint(self, x=0.0, y=0.0, z=0.0):
         """
-        Input a new monitoring point definition.
+        Public method.
+        Add a new monitoring point.
+        @type x: C{Float}
+        @param x: first coordinate
+        @type y: C{Float}
+        @param y: second coordinate
+        @type z: C{Float}
+        @param z: third coordinate
         """
+        self.isFloat(x)
+        self.isFloat(y)
+        self.isFloat(z)
+        num = str(self.getNumberOfMonitoringPoints() + 1)
         status="on"
-        num = 1
-        while (str(num)) in self.dicoName.keys(): num = num+1
-        num = str(num)
-        probe_num = 'item' + num
-        self.dicoName[num] = probe_num
-        
         node = self.node_out.xmlInitNode('probe', name=num, status=status)
         for coord, val in [('probe_x', x), ('probe_y', y), ('probe_z', z)]:
-            self._setCoordPoint(num, coord, val)
+            self.__setCoordinates(num, coord, val)
 
 
-    def replaceMonitoringPointCoordinates(self, name=None, x=0.0, y=0.0, z=0.0):
+    def replaceMonitoringPointCoordinates(self, name, x=0.0, y=0.0, z=0.0):
         """
-        Change the localization of a probe
+        Public method.
+        Change the coordinates of a monitoring point.
+        @type name: C{String}
+        @param name: identifier of the monitoring point
+        @type x: C{Float}
+        @param x: first new coordinate
+        @type y: C{Float}
+        @param y: second new coordinate
+        @type z: C{Float}
+        @param z: third new coordinate
         """
-        if not name:
-            raise ValueError, "replaceMonitoringPointCoordinates : pas de nom au point de monitoring"
+        self.isFloat(x)
+        self.isFloat(y)
+        self.isFloat(z)
+        self.isStr(name)
+        self.isGreater(float(name), 0.0)
+        self.isLowerOrEqual(float(name), self.getNumberOfMonitoringPoints())
 
         for coord, val in [('probe_x', x), ('probe_y', y), ('probe_z', z)]:
-            self._setCoordPoint(name, coord, val)
+            self.__setCoordinates(name, coord, val)
 
 
-    def deleteMonitoringPointsList(self, nameList):
+    def deleteMonitoringPoints(self, list):
         """
-        Destroy the definition of a monitoring points list
+        Public method.
+        Conveniant method for the view. Delete a list of monitoring points.
+        @type list: C{List} of C{Int}
+        @param list: list of identifier of monitoring points to delete
         """
-        if not nameList: return
-        for n in nameList:
-            self.__deleteMonitoringPoint(n)
-            
-        self.__deleteProbesNodes()
-
-        # compactage du numero des points de monitorings
-        listprob, dicocoord = [], {}
-        for node in self.node_out.xmlGetNodeList('probe'):
-            listprob.append(node['name'])
-            dicocoord[node['name']] = (node.xmlGetDouble('probe_x'),
-                                       node.xmlGetDouble('probe_y'),
-                                       node.xmlGetDouble('probe_z'))
-        listprob.sort()
-        for n in range(len(listprob)):
-            # si l'indice de rangement ne correspond pas a un point de monitoring ...
-            if str(n+1) not in listprob:
-                # alors on fait un decalage sur tous les points de monitoring suivants
-                for num in range(n, len(listprob)):
-                    for node in self.node_out.xmlGetNodeList('probe'):
-                        if node['name'] == listprob[n]:
-                            node['name'] = str(n+1)
-                            prob = listprob[n]
-                            node.xmlSetData('probe_x',dicocoord[prob][0])
-                            node.xmlSetData('probe_y',dicocoord[prob][1])
-                            node.xmlSetData('probe_z',dicocoord[prob][2])
-                     
-                    for node in self.case.xmlGetNodeList('probe_recording'):
-                        if node['name'] == listprob[n]:
-                            node['name'] = str(n+1)
-                    listprob[n] = n+1
-
-        #on rÃ©initialise le dico pour le remplir avec les valeurs compactees
-        self.dicoName = {}
-        for n in range(len(listprob)):
-            self.dicoName[str(n+1)] = 'item'+str(listprob[n])
+        list.sort()
+        r = len(list)
+        for n in range(r):
+            name = str(list[n])
+            self.deleteMonitoringPoint(name)
+            for i in range(n, r):
+                list[i] = list[i] - 1
 
 
-    def getProbeNameList(self):
+    def deleteMonitoringPoint(self, num):
         """
-        Return list of names of used probes
+        Public method.
+        Delete a single monitoring point.
+        @type num: C{String}
+        @param num: identifier of the monitoring point
         """
-        nameList = []
-        for probe in self.node_out.xmlGetNodeList('probe'):
-            nameList.append(probe['name'])
-            probe_num = 'item' + probe['name']
-            self.dicoName[probe['name']] = probe_num
-        return nameList
+        self.isStr(num)
+        self.isGreater(float(num), 0.0)
+        self.isLowerOrEqual(float(num), self.getNumberOfMonitoringPoints())
+
+        # delete the node of the monitoring point
+
+        node = self.node_out.xmlGetNode('probe', name=num)
+        if node:
+            node.xmlRemoveNode()
+            self.case.xmlRemoveChild('probe_recording', name=num)
+
+            # renumerotation of all monitoring points
+
+            for p in range(int(num)+1, self.getNumberOfMonitoringPoints()+2):
+                probe = self.node_out.xmlGetNode('probe', name=p)
+                probe['name'] = p - 1
+                for probe_recording in self.case.xmlGetNodeList('probe_recording', name=p):
+                    probe_recording['name'] = p - 1
+
+            # update the attribute "choice" of the probes markup for variables
+
+            from OutputVolumicVariablesModel import OutputVolumicVariablesModel
+            listNodeVolum = OutputVolumicVariablesModel(self.case).listNodeVolum
+            del OutputVolumicVariablesModel
+            for nodeList in listNodeVolum:
+                for node in nodeList:
+                    n = node.xmlGetChildNode('probes')
+                    if n:
+                        nlist = n.xmlGetChildNodeList('probe_recording')
+                        if not nlist:
+                            n.xmlRemoveNode()
+                        else:
+                            n['choice']= str(len(nlist))
 
 
-    def getMonitoringPointInfo(self, name):
+    def getMonitoringPointCoordinates(self, name):
         """
-        Return coordinates X, Y, Z for probe named 'name'
+        Public method.
+        @type name: C{String}
+        @param name: identifier of the monitoring point
+        @return: coordinates X, Y, Z for the monitoring point I{name}
+        @rtype: C{List} of C{Float}
         """
-        self.isInList(name, self.dicoName.keys())
-        X = self._getCoordPoint(name, 'probe_x')
-        Y = self._getCoordPoint(name, 'probe_y')
-        Z = self._getCoordPoint(name, 'probe_z')
+        self.isStr(name)
+        self.isGreater(float(name), 0.0)
+        self.isLowerOrEqual(float(name), self.getNumberOfMonitoringPoints())
+        X = self.__getCoordinates(name, 'probe_x')
+        Y = self.__getCoordinates(name, 'probe_y')
+        Z = self.__getCoordinates(name, 'probe_z')
         return X, Y, Z
+
+
+    def getNumberOfMonitoringPoints(self):
+        """
+        Public method.
+        @return: number of monitoring points already defined.
+        @rtype: C{Int}
+        """
+        return len(self.node_out.xmlGetNodeList('probe'))
 
 
 #-------------------------------------------------------------------------------
@@ -563,7 +573,7 @@ class OutputControlModelTestCase(ModelTest):
                  </output>'''
         assert model.node_out== self.xmlNodeFromString(doc),\
         'Could not add monitoring point in output control model'
-        assert model.getMonitoringPointInfo("1") == (11.1, 22.2, 33.3),\
+        assert model.getMonitoringPointCoordinates("1") == (11.1, 22.2, 33.3),\
         'Could not get monitoring point in output control model'
 
     def checkReplaceMonitoringPoint(self):
@@ -599,7 +609,7 @@ class OutputControlModelTestCase(ModelTest):
         model.addMonitoringPoint(11.1, 22.2, 33.3)
         model.addMonitoringPoint(5, 5.1, 5.21)
         model.addMonitoringPoint(9.,8.,7.)
-        model.deleteMonitoringPointsList("2")
+        model.deleteMonitoringPoint("2")
         doc = '''<output>
                     <postprocessing_mesh_options choice="0"/>
                     <probe name="1" status="on">
@@ -626,7 +636,6 @@ def runTest():
     runner = unittest.TextTestRunner()
     runner.run(suite())
 
-        
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------
