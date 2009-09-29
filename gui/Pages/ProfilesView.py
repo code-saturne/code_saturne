@@ -100,7 +100,7 @@ class StandardItemModelProfile(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return QVariant(self.tr("Profile name"))
+                return QVariant(self.tr("Filename"))
             elif section == 1:
                 return QVariant(self.tr("Variables"))
         elif role == Qt.TextAlignmentRole:
@@ -325,17 +325,27 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         validatorFreq.setExclusiveMin(True)
         self.lineEditFreq.setValidator(validatorFreq)
 
-        validatorFloat = DoubleValidator(self.lineEditX1)
-        self.lineEditX1.setValidator(validatorFloat)
-        self.lineEditY1.setValidator(validatorFloat)
-        self.lineEditZ1.setValidator(validatorFloat)
-        self.lineEditX2.setValidator(validatorFloat)
-        self.lineEditY2.setValidator(validatorFloat)
-        self.lineEditZ2.setValidator(validatorFloat)
+        validatorFloatX1 = DoubleValidator(self.lineEditX1)
+        validatorFloatY1 = DoubleValidator(self.lineEditY1)
+        validatorFloatZ1 = DoubleValidator(self.lineEditZ1)
+        validatorFloatX2 = DoubleValidator(self.lineEditX2)
+        validatorFloatY2 = DoubleValidator(self.lineEditY2)
+        validatorFloatZ2 = DoubleValidator(self.lineEditZ2)
+
+        self.lineEditX1.setValidator(validatorFloatX1)
+        self.lineEditY1.setValidator(validatorFloatY1)
+        self.lineEditZ1.setValidator(validatorFloatZ1)
+        self.lineEditX2.setValidator(validatorFloatX2)
+        self.lineEditY2.setValidator(validatorFloatY2)
+        self.lineEditZ2.setValidator(validatorFloatZ2)
+
+        rx = "[\- _A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
+        validatorTitle =  RegExpValidator(self.lineEditTitle, QRegExp(rx))
+        self.lineEditTitle.setValidator(validatorTitle)
 
         rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
-        validatorLabel =  RegExpValidator(self.lineEditProfileName, QRegExp(rx))
-        self.lineEditProfileName.setValidator(validatorLabel)
+        validatorBaseName =  RegExpValidator(self.lineEditBaseName, QRegExp(rx))
+        self.lineEditBaseName.setValidator(validatorBaseName)
 
         #update list of variables, properties, scalars ...
         liste_label = QStringList()
@@ -346,7 +356,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         #update list of profiles for view from xml file
         for lab in self.mdl.getProfilesLabelsList():
             self.entriesNumber = self.entriesNumber + 1
-            label, list, freq, x1, y1, z1, x2, y2, z2 = self.mdl.getProfileData(lab)
+            label, title, list, freq, x1, y1, z1, x2, y2, z2 = self.mdl.getProfileData(lab)
             self.__insertProfile(label, list)
 
         self.__eraseEntries()
@@ -356,7 +366,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         """
         Verif label.
         """
-        label = str(self.lineEditProfileName.text())
+        label = str(self.lineEditBaseName.text())
         if label in self.mdl.getProfilesLabelsList():
             default = {}
             default['label'] = label
@@ -379,45 +389,21 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         Input choice for frequency for profile.
         """
         choice = self.modelFreq.dicoV2M[str(text)]
-        self.freq = choice
 
         if choice == "end":
             nfreq = -1
             self.lineEditFreq.setText(QString(str(nfreq)))
             self.lineEditFreq.setDisabled(True)
+            self.labelBaseName.setText(QString("Filename"))
 
         if choice == "frequency":
+            nfreq, ok = self.lineEditFreq.text().toInt()
+            if nfreq == -1: nfreq = 1
             self.lineEditFreq.setEnabled(True)
-            nfreq = self.__getFrequency()
             self.lineEditFreq.setText(QString(str(nfreq)))
+            self.labelBaseName.setText(QString("Filename"))
 
         return choice, nfreq
-
-
-    def __getFrequency(self):
-        """
-        Input the frequency of the listing output
-        """
-        nfreq = 1
-
-        if self.freq == "frequency":
-            nfreq = int(self.lineEditFreq.text())
-            if nfreq > 0: self.nfreq = nfreq
-
-        return nfreq
-
-
-    #def setFrequency(self, nfreq):
-        #"""
-        #Put frequency' choice and values on view
-        #"""
-        #if nfreq == -1 or nfreq == None:
-            #self.modelFreq.setItem(str_model='end')
-            #self.lineEditFreq.setDisabled(True)
-        #else:
-            #self.modelFreq.setItem(str_model='frequency')
-            #self.lineEditFreq.setEnabled(True)
-        #self.lineEditFreq.setText(QString(str(nfreq)))
 
 
     def __infoProfile(self, row):
@@ -425,8 +411,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         Return info from the argument entry.
         """
         label = self.modelProfile.getLabel(row)
-        lab, liste, freq, x1, y1, z1, x2, y2, z2 = self.mdl.getProfileData(label)
-        return label, liste, freq, x1, y1, z1, x2, y2, z2
+        lab, title, list, freq, x1, y1, z1, x2, y2, z2 = self.mdl.getProfileData(label)
+        return label, title, list, freq, x1, y1, z1, x2, y2, z2
 
 
     def __insertProfile(self, label, list):
@@ -473,6 +459,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             self.__insertProfile(label, var_prof)
 
             choice, freq = self.slotFrequencyType(self.comboBoxFreq.currentText())
+            title = str(self.lineEditTitle.text())
             X1, ok = self.lineEditX1.text().toDouble()
             Y1, ok = self.lineEditY1.text().toDouble()
             Z1, ok = self.lineEditZ1.text().toDouble()
@@ -480,7 +467,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             Y2, ok = self.lineEditY2.text().toDouble()
             Z2, ok = self.lineEditZ2.text().toDouble()
 
-            self.mdl.setProfile(label, var_prof, freq, X1, Y1, Z1, X2, Y2, Z2)
+            self.mdl.setProfile(label, title, var_prof, freq, X1, Y1, Z1, X2, Y2, Z2)
             self.__eraseEntries()
 
 
@@ -496,7 +483,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             msg   = self.tr("You must select an existing profile")
             QMessageBox.information(self, title, msg)
         else:
-            label, vlist, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
+            label, title, list, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
             self.modelProfile.deleteRow(row)
             self.mdl.deleteProfile(label)
             self.__eraseEntries()
@@ -514,7 +501,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             msg   = self.tr("You must select an existing profile")
             QMessageBox.information(self, title, msg)
         else:
-            old_label, vlist, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
+            old_label, title, vlist, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
 
             var_prof = [str(s) for s in self.modelDrop.stringList()]
             log.debug("slotEditProfile -> %s" % (var_prof,))
@@ -524,7 +511,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
                 QMessageBox.information(self, title, msg)
 
             else:
-                new_label = str(self.lineEditProfileName.text())
+                new_label = str(self.lineEditBaseName.text())
 
                 if new_label == '':
                     new_label = 'profile' + repr(self.entriesNumber)
@@ -541,6 +528,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
                 self.treeViewProfile.dataChanged(idx, idx)
 
                 choice, freq = self.slotFrequencyType(self.comboBoxFreq.currentText())
+                title = str(self.lineEditTitle.text())
                 X1, ok = self.lineEditX1.text().toDouble()
                 Y1, ok = self.lineEditY1.text().toDouble()
                 Z1, ok = self.lineEditZ1.text().toDouble()
@@ -548,7 +536,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
                 Y2, ok = self.lineEditY2.text().toDouble()
                 Z2, ok = self.lineEditZ2.text().toDouble()
 
-                self.mdl.replaceProfile(old_label, new_label, var_prof, freq, X1, Y1, Z1, X2, Y2, Z2)
+                self.mdl.replaceProfile(old_label, new_label, title, var_prof, freq, X1, Y1, Z1, X2, Y2, Z2)
                 self.__eraseEntries()
 
 
@@ -560,18 +548,21 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         row = index.row()
         log.debug("slotSelectProfile -> %s" % (row,))
 
-        label, liste, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
+        label, title, liste, freq, x1, y1, z1, x2, y2, z2 = self.__infoProfile(row)
 
-        self.lineEditProfileName.setText(QString(str(label)))
+        self.lineEditTitle.setText(QString(str(title)))
+        self.lineEditBaseName.setText(QString(str(label)))
 
         if freq >= 1:
             self.modelFreq.setItem(str_model='frequency')
             self.lineEditFreq.setEnabled(True)
             self.lineEditFreq.setText(QString(str(freq)))
+            self.labelBaseName.setText(QString("Filename"))
         else:
             self.modelFreq.setItem(str_model='end')
             self.lineEditFreq.setText(QString(str("-1")))
             self.lineEditFreq.setDisabled(True)
+            self.labelBaseName.setText(QString("Filename"))
 
         self.lineEditX1.setText(QString(str(x1)))
         self.lineEditY1.setText(QString(str(y1)))
@@ -589,7 +580,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         """
         Delete all caracters in the entries.
         """
-        self.lineEditProfileName.setText(QString(str("")))
+        self.lineEditTitle.setText(QString(str("")))
+        self.lineEditBaseName.setText(QString(str("")))
         self.lineEditX1.setText(QString(str("")))
         self.lineEditY1.setText(QString(str("")))
         self.lineEditZ1.setText(QString(str("")))
@@ -600,6 +592,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.modelFreq.setItem(str_model='end')
         self.lineEditFreq.setText(QString(str("-1")))
         self.lineEditFreq.setDisabled(True)
+        self.labelBaseName.setText(QString("Filename"))
         self.modelDrop.setStringList(QStringList())
         self.treeViewProfile.clearSelection()
 

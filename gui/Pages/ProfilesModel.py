@@ -71,7 +71,7 @@ class ProfilesModel(Model):
         self.node_var_vp    = self.node_model_vp.xmlGetNodeList('variable')
         self.node_pro_vp    = self.node_model_vp.xmlGetNodeList('property')
 
-        self.suffixe = self.__defaultValues()['suffixe']
+        self.suffix = self.__defaultValues()['suffix']
         self.__var_prop_list = self.getVariablesAndVolumeProperties()
 
 
@@ -81,19 +81,37 @@ class ProfilesModel(Model):
         Returns a dictionnary with default values.
         """
         value = {}
-        value['nfreq'] = -1
-        value['X1']    =  0.
-        value['Y1']    =  0.
-        value['Z1']    =  0.
-        value['X2']    =  1.
-        value['Y2']    =  1.
-        value['Z2']    =  1.
-        value['suffixe'] =  ""
+        value['nfreq']  = -1
+        value['X1']     =  0.
+        value['Y1']     =  0.
+        value['Z1']     =  0.
+        value['X2']     =  1.
+        value['Y2']     =  1.
+        value['Z2']     =  1.
+        value['suffix'] = ""
+        value['title']  = ""
 
         return value
 
 
-    def __updateBatchScriptFile(self, param, profile):
+    def updateOutputFiles(self, vlist):
+        """
+        Update the list of the USER_OUTPUT_FILES variable with the profiles.
+        """
+        for file in self.getProfilesLabelsList():
+            [lab, t, l, f, x1, y1, z1, x2, y2, z2] = self.getProfileData(file)
+            files = file + "_*" + ".dat"
+            file += ".dat"
+            if int(f) == -1:
+                if files in vlist: vlist.remove(files)
+                if file not in vlist: vlist.append(file)
+            elif int(f) != -1:
+                if file in vlist: vlist.remove(file)
+                if files not in vlist: vlist.append(files)
+        return vlist
+
+
+    def __updateBatchScriptFile(self):
         """
         Update the backup file if it's ready to run.
         """
@@ -107,16 +125,11 @@ class ProfilesModel(Model):
             batch.initializeBatchScriptFile()
 
             if batch.dicoValues['USER_OUTPUT_FILES']:
-                vlist = string.split(batch.dicoValues['USER_OUTPUT_FILES'])
+                v = string.split(batch.dicoValues['USER_OUTPUT_FILES'])
             else:
-                vlist = []
+                v = []
 
-            if param == "delete":
-                if profile in vlist:
-                    vlist.remove(profile)
-            elif param == "add":
-                if profile not in vlist:
-                    vlist.append(profile)
+            vlist = self.updateOutputFiles(v)
 
             batch.dicoValues['USER_OUTPUT_FILES'] = string.join(vlist, " ")
             batch.updateBatchScriptFile('USER_OUTPUT_FILES')
@@ -166,7 +179,7 @@ class ProfilesModel(Model):
         for coord in (x1, y1, z1, x2, y2, z2):
             self.isFloat(coord)
 
-        label_xml = label + self.suffixe
+        label_xml = label + self.suffix
         node = self.node_prof.xmlGetNode('profile', label=label_xml)
         node.xmlSetData('x1', x1)
         node.xmlSetData('y1', y1)
@@ -182,7 +195,7 @@ class ProfilesModel(Model):
         Gets coordinates for profile named I{label}.
         """
         self.isInList(label, self.getProfilesLabelsList())
-        label_xml = label + self.suffixe
+        label_xml = label + self.suffix
         node = self.node_prof.xmlGetNode('profile', label=label_xml)
 
         x1 = node.xmlGetDouble('x1')
@@ -231,7 +244,7 @@ class ProfilesModel(Model):
         return list
 
 
-    def setProfile(self, label, list, freq, x1, y1, z1, x2, y2, z2):
+    def setProfile(self, label, title, list, freq, x1, y1, z1, x2, y2, z2):
         """
         Public method.
         Sets data to create one profile named I{label}.
@@ -241,17 +254,18 @@ class ProfilesModel(Model):
         for coord in (x1, y1, z1, x2, y2, z2):
             self.isFloat(coord)
 
-        label_xml = label + self.suffixe
+        label_xml = label + self.suffix
         node = self.node_prof.xmlInitNode('profile', label=label_xml)
         for var in list:
             self.isInList(var, self.__var_prop_list)
             node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
         node.xmlSetData('output_frequency', freq)
+        node['title'] = title
         self.__setCoordinates(label, x1, y1, z1, x2, y2, z2)
-        self.__updateBatchScriptFile('add', label_xml)
+        self.__updateBatchScriptFile()
 
 
-    def replaceProfile(self, old_label, label, list, freq, x1, y1, z1, x2, y2, z2):
+    def replaceProfile(self, old_label, label, title, list, freq, x1, y1, z1, x2, y2, z2):
         """
         Public method.
         Replaces data from I{old_label} profile
@@ -264,24 +278,23 @@ class ProfilesModel(Model):
         for coord in (x1, y1, z1, x2, y2, z2):
             self.isFloat(coord)
 
-        old_label_xml = old_label + self.suffixe
-        label_xml = label + self.suffixe
+        old_label_xml = old_label + self.suffix
+        label_xml = label + self.suffix
         node = self.node_prof.xmlGetNode('profile', label=old_label_xml)
         if node:
-            node.xmlRemoveChild('var_prop')
-            node.xmlRemoveChild('output_frequency')
-            for tag in ('x1', 'y1', 'z1', 'x2', 'y2', 'z2'):
+            node['title'] = ""
+            for tag in ('var_prop', 'output_frequency', 'x1', 'y1', 'z1', 'x2', 'y2', 'z2'):
                 node.xmlRemoveChild(tag)
-        for var in list:
-            self.isInList(var, self.__var_prop_list)
-            node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
-        node['label'] = label_xml
-        node.xmlSetData('output_frequency', freq)
-        self.__setCoordinates(label, x1, y1, z1, x2, y2, z2)
+            for var in list:
+                self.isInList(var, self.__var_prop_list)
+                node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
+            node['label'] = label_xml
+            node.xmlSetData('output_frequency', freq)
+            node['title'] = title
+            self.__setCoordinates(label, x1, y1, z1, x2, y2, z2)
 
-        if old_label != label:
-            self.__updateBatchScriptFile('delete', old_label_xml)
-            self.__updateBatchScriptFile('add', label_xml)
+            if old_label != label:
+                self.__updateBatchScriptFile()
 
 
     def deleteProfile(self, label):
@@ -290,11 +303,11 @@ class ProfilesModel(Model):
         Deletes profile named I{label}.
         """
         self.isInList(label, self.getProfilesLabelsList())
-        label_xml = label + self.suffixe
+        label_xml = label + self.suffix
         node = self.node_prof.xmlGetNode('profile', label=label_xml)
         if node:
             node.xmlRemoveNode()
-            self.__updateBatchScriptFile('delete', label_xml)
+            self.__updateBatchScriptFile()
 
 
     def getProfileData(self, label):
@@ -305,9 +318,10 @@ class ProfilesModel(Model):
         """
         self.isInList(label, self.getProfilesLabelsList())
         list = []
-        label_xml = label + self.suffixe
+        label_xml = label + self.suffix
         node = self.node_prof.xmlGetNode('profile', label=label_xml)
         freq = node.xmlGetInt('output_frequency')
+        title = node['title']
         x1, y1, z1, x2, y2, z2 = self.__getCoordinates(label)
         for var in node.xmlGetChildNodeList('var_prop'):
             for name in self.__var_prop_list:
@@ -317,7 +331,7 @@ class ProfilesModel(Model):
         #label = label_xml[:-4]
         label = label_xml
 
-        return label, list, freq, x1, y1, z1, x2, y2, z2
+        return label, title, list, freq, x1, y1, z1, x2, y2, z2
 
 
 #-------------------------------------------------------------------------------
@@ -339,9 +353,9 @@ class ProfilesTestCase(ModelTest):
     def checkSetProfile(self):
         """Check whether the ProfilesModel class could set one profile"""
         mdl = ProfilesModel(self.case)
-        mdl.setProfile('prof1', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
+        mdl.setProfile('prof1.dat', 'title', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
         doc = '''<profiles>
-                    <profile label="prof1">
+                    <profile label="prof1.dat" title="title">
                             <var_prop name="velocity_U"/>
                             <var_prop name="velocity_V"/>
                             <var_prop name="velocity_W"/>
@@ -362,10 +376,10 @@ class ProfilesTestCase(ModelTest):
     def checkReplaceProfile(self):
         """Check whether the ProfilesModel class could replace profiles"""
         mdl = ProfilesModel(self.case)
-        mdl.setProfile('prof1', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
-        mdl.replaceProfile('prof1', 'premier', ['VelocitU'], 30, 0.1, 0.2, 0.3, 2.0, 2.0, 2.0)
+        mdl.setProfile('prof1', 'title', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
+        mdl.replaceProfile('prof1', 'premier', 'title_bis', ['VelocitU'], 30, 0.1, 0.2, 0.3, 2.0, 2.0, 2.0)
         doc = '''<profiles>
-                    <profile label="premier">
+                    <profile label="premier" title="title_bis">
                             <var_prop name="velocity_U"/>
                             <output_frequency>30</output_frequency>
                             <x1>0.1</x1>
@@ -385,11 +399,11 @@ class ProfilesTestCase(ModelTest):
         """Check whether the ProfilesModel class could delete profiles"""
         mdl = ProfilesModel(self.case)
 
-        mdl.setProfile('prof1', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
-        mdl.setProfile('prof2', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
+        mdl.setProfile('prof1.dat', 'title1', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
+        mdl.setProfile('prof2.dat', 'title2', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
         mdl.deleteProfile('prof1')
         doc = '''<profiles>
-                    <profile label="prof2">
+                    <profile label="prof2.dat" title="title2">
                             <var_prop name="velocity_U"/>
                             <output_frequency>20</output_frequency>
                             <x1>0.9</x1>
@@ -407,9 +421,9 @@ class ProfilesTestCase(ModelTest):
     def checkGetVarProfile(self):
         """Check whether the ProfilesModel class could get one profile"""
         mdl = ProfilesModel(self.case)
-        mdl.setProfile('prof1', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
-        mdl.setProfile('prof2', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
-        prof = ('prof2', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
+        mdl.setProfile('prof1.dat', 'title1', ['VelocitU', 'VelocitV', 'VelocitW'], 20, 0.1, 0.2, 0.3, 2.1, 2.2, 2.3)
+        mdl.setProfile('prof2.dat', 'title2', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
+        prof = ('prof2.dat', 'title2', ['VelocitU'], 20, 0.9, 0.8, 0.7, 9.1, 9.2, 9.3)
 
         assert mdl.getProfileData('prof2') == prof,\
             'Could not get values for profile named label in ProfilesModel'

@@ -2394,7 +2394,7 @@ static int _user_array(const char *const keyword1,
  *   id           -->  number of order in list of 1D profile
  *----------------------------------------------------------------------------*/
 
-static char *_get_profile_label(const int id)
+static char *_get_profile(const char *kw, const int id)
 {
   char *path = NULL;
   char *label = NULL;
@@ -2402,7 +2402,7 @@ static char *_get_profile_label(const int id)
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
   cs_xpath_add_element_num(&path, "profile", id+1);
-  cs_xpath_add_attribute(&path, "label");
+  cs_xpath_add_attribute(&path, kw);
 
   label = cs_gui_get_attribute_value(path);
 
@@ -4822,6 +4822,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
 {
   FILE *file = NULL;
   char *filename = NULL;
+  char *title = NULL;
   char *buffer = NULL;
   char *name = NULL;
   char *buf1 = NULL;
@@ -4868,7 +4869,8 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
 
       if (cs_glob_rank_id <= 0) {
 
-        filename = _get_profile_label(i);
+        filename = _get_profile("label", i);
+        title    = _get_profile("title", i);
 
         if (output_frequency > 0) {
 
@@ -4895,6 +4897,8 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
           BFT_FREE(buffer);
         }
 
+        BFT_REALLOC(filename, 4, char);
+        strcat(filename, ".dat");
         file = fopen(filename, "w");
 
         if (file ==  NULL) {
@@ -4910,7 +4914,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
                 x1, y1, z1);
         fprintf(file, "# End point:   x = %12.5e y = %12.5e z = %12.5e\n#\n",
                 x2, y2, z2);
-        fprintf(file, "#TITLE: %s\n", filename);
+        fprintf(file, "#TITLE: %s\n", title);
         fprintf(file, "#COLUMN_TITLES: Distance | X | Y | Z");
         for (ii = 0 ; ii < nvar_prop ; ii++) {
           buffer = _get_profile_label_name(i, ii);
@@ -4919,6 +4923,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
         }
         fprintf(file, "\n");
         BFT_FREE(filename);
+        BFT_FREE(title);
       }
 
       npoint = 200;

@@ -1,3 +1,13 @@
+* 29/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Improve the behaviour of the profiles management in GUI (add a title
+  box and automatically set the extension to .dat).
+  modified routines:
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/ProfilesForm.ui
+    gui/Pages/ProfilesModel.py
+    gui/Pages/ProfilesView.py
+    src/base/cs_gui.c
+
 * 29/09/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix an issue with restart calculations in pulverized coal.
   Improve the initialization of boundary conditions for some variables.

@@ -315,15 +315,12 @@ class BatchRunningModel(Model):
 
         # User 1D profiles are loaded as user result files
 
-        list = prm.getProfilesLabelsList()
-        if list:
+        if prm.getProfilesLabelsList():
             if self.dicoValues['USER_OUTPUT_FILES']:
-                vlist = string.split(self.dicoValues['USER_OUTPUT_FILES'])
+                v = string.split(self.dicoValues['USER_OUTPUT_FILES'])
             else:
-                vlist = []
-            for file in list:
-                if file not in vlist:
-                    vlist.append(file)
+                v = []
+            vlist = prm.updateOutputFiles(v)
             self.dicoValues['USER_OUTPUT_FILES'] = string.join(vlist, " ")
 
         # Specific data file for specific physics
