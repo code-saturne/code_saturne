@@ -215,6 +215,7 @@ if ( lamvbr .eq. 1 ) then
   ifinra = itebru + nbpmax
 else
   ibrgau = 1
+  itebru = 1
 endif
 
 if (nordre.eq.2) then

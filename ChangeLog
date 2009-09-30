@@ -1,3 +1,9 @@
+* 30/09/2009 - Matthieu Guillaud <matthieu-externe.guillaud@edf.fr>
+  Add a missing memory-pointer initialization and a missing indirection.
+  modified routines:
+    src/lagr/lagout.f90
+    src/lagr/memla2.f90
+
 * 30/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Read the checkpoint frequency parameter in the XML file.
   modified routines:

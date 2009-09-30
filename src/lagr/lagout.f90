@@ -695,6 +695,8 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
       enddo
 
       do jj = 1,nvlsta-1
+
+        ii = ipas*nvlsta +jj
         if (ipas.gt.0) then
           WRITE(CAR4,'(I4.4)') IPAS
           RUBRIQ = 'var_stat_vol_groupe_'//CAR4//'_'//NOMLAV(II)
