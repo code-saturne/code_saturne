@@ -1,3 +1,11 @@
+* 30/09/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Change all Code_Saturne keywords in lowercase.
+  modified files:
+    doc/style/csindex.sty
+    doc/style/csmacros.sty
+    doc/user/saturne1.tex
+    doc/user/saturne2.tex
+
 * 30/09/2009 - David Monfort <david.monfort@edf.fr>
   Split two tests that could end in a SIGSEGV when checking array bounds.
   modified routine:
