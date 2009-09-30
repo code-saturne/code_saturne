@@ -1,7 +1,14 @@
+* 30/09/2009 - Maya Milliez <maya.milliez@edf.fr>
+  Disable humid atmosphere modelling and enable steady/unsteady choice for
+  specific physics in GUI (coherent with input verification as well).
+  modified routine:
+    gui/Pages/AnalysisFeaturesView.py
+    
+
 * 30/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Correctly handle the blending factor with SOLU convective scheme in GUI.
   modified routine:
-    gui/NumericalParamEquationModel.py
+    gui/Pages/NumericalParamEquationModel.py
 
 * 30/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix a crash when specifying an inlet with oxydant and coal through the GUI.

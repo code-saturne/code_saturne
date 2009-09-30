@@ -171,6 +171,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         val = self.atmo.getAtmosphericFlowsModel()
         self.modelAtmospheric.setItem(str_model=val)
+        self.modelAtmospheric.disableItem(str_model='humid')
 
         self.modelGasCombustionModel.setItem(str_model='off') # to delete
         self.modelGasCombustionModel.disableItem(str_model='ebu') # to delete
@@ -290,7 +291,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         Private Method.
         Change to DISABLED the state of the reactive flow OptionMenu buttons.
         """
-        self.comboBoxSteadyFlow.setEnabled(False)
+        #self.comboBoxSteadyFlow.setEnabled(False)
         #self.comboBoxLagrangian.setEnabled(False)
         self.comboBoxGasCombustionModel.setEnabled(False)
         self.comboBoxPulverizedCoal.setEnabled(False)
