@@ -1,4 +1,9 @@
 * 29/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix a crash when specifying an inlet with oxydant and coal through the GUI.
+  modified routines:
+    src/base/cs_gui_boundary_conditions.c
+
+* 29/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Add a box for the automatic/prescribed choice of CS_TMP_PREFIX.
   modified routines:
     gui/Pages/BatchRunningAdvancedOptionsDialogForm.ui

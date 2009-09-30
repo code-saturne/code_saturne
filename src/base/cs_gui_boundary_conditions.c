@@ -436,9 +436,10 @@ _inlet_coal(const int         izone,
             const int  *const nclpch)
 {
     int    icoal;
-    int    iratio;
+    int    iclass;
     int    size = 0;
     double value;
+    char  *path0 = NULL;
     char  *path1 = NULL;
     char  *path2 = NULL;
     char  *path3 = NULL;
@@ -447,12 +448,16 @@ _inlet_coal(const int         izone,
     char  **list_of_coals = NULL;
     char  **list_of_classes = NULL;
 
-    path1 = cs_xpath_init_path();
-    cs_xpath_add_elements(&path1, 2, "boundary_conditions", "inlet");
-    cs_xpath_add_test_attribute(&path1, "label", boundaries->label[izone]);
-    cs_xpath_add_elements(&path1, 2, "velocity_pressure", "coal");
+    path0 = cs_xpath_init_path();
+    cs_xpath_add_elements(&path0, 2, "boundary_conditions", "inlet");
+    cs_xpath_add_test_attribute(&path0, "label", boundaries->label[izone]);
+    cs_xpath_add_elements(&path0, 2, "velocity_pressure", "coal");
 
+    BFT_MALLOC(path1, strlen(path0) + 1, char);
+    strcpy(path1, path0);
+    cs_xpath_add_attribute(&path1, "name");
     list_of_coals = cs_gui_get_attribute_values(path1, &size);
+    BFT_FREE(path1);
 
     /* if there is no coal, it is an inlet only for oxydant */
     if (size == 0)
@@ -473,9 +478,9 @@ _inlet_coal(const int         izone,
 
         for (icoal = 0; icoal < *ncharb; icoal++)
         {
-            BFT_MALLOC(path2, strlen(path1) + 1, char);
-            strcpy(path2, path1);
-            /* sprintf(coalname, "%.4s%2.2i", "coal", icharb+1); */
+            BFT_MALLOC(path2, strlen(path0) + 1, char);
+            strcpy(path2, path0);
+            /* sprintf(coalname, "%.4s%2.2i", "coal", icoal+1); */
             cs_xpath_add_test_attribute(&path2, "name", list_of_coals[icoal]);
 
             BFT_MALLOC(path3, strlen(path2) + 1, char);
@@ -498,27 +503,31 @@ _inlet_coal(const int         izone,
             if (cs_gui_get_double(path4, &value))
                 boundaries->timpcp[izone][icoal] = value;
 
-            /* loop on number of class by coal for ratio */
+            /* loop on number of class by coal for ratio (%) stored in distch */
 
             cs_xpath_add_element(&path2, "ratio");
-            list_of_classes = cs_gui_get_attribute_values(path2, &size);
+            BFT_MALLOC(path1, strlen(path2) + 1, char);
+            strcpy(path1, path2);
+            cs_xpath_add_attribute(&path1, "name");
+            list_of_classes = cs_gui_get_attribute_values(path1, &size);
+            BFT_FREE(path1);
 
-            for (iratio=0; iratio < nclpch[icoal]; iratio++)
+            for (iclass=0; iclass < nclpch[icoal]; iclass++)
             {
                 BFT_MALLOC(path5, strlen(path2) + 1, char);
                 strcpy(path5, path2);
 
-                /* sprintf(classname, "%.5s%2.2i", "class", iratio+1); */
-                cs_xpath_add_test_attribute(&path5, "name", list_of_classes[iratio]);
+                /* sprintf(classname, "%.5s%2.2i", "class", iclass+1); */
+                cs_xpath_add_test_attribute(&path5, "name", list_of_classes[iclass]);
                 cs_xpath_add_function_text(&path5);
 
                 if (cs_gui_get_double(path5, &value))
-                    boundaries->distch[izone][icoal][icoal] = value;
+                    boundaries->distch[izone][icoal][iclass] = value;
 
                 BFT_FREE(path5);
             }
 
-            for (iratio=0; iratio < nclpch[icoal]; iratio++)
+            for (iclass=0; iclass < nclpch[icoal]; iclass++)
                 BFT_FREE(list_of_classes[icoal]);
             BFT_FREE(list_of_classes);
 
@@ -531,7 +540,7 @@ _inlet_coal(const int         izone,
             BFT_FREE(list_of_coals[icoal]);
         BFT_FREE(list_of_coals);
 
-        BFT_FREE(path1);
+        BFT_FREE(path0);
     }
 }
 
@@ -599,7 +608,7 @@ _init_boundaries(const int *const nfabor,
     int zones = 0;
     int ifac, izone, ith_zone, zone_nbr;
     int ifbr, i;
-    int ivar, isca, icharb;
+    int ivar, isca, icharb, iclass;
     char *choice = NULL;
     char *choice_v = NULL;
     char *choice_d = NULL;
@@ -707,8 +716,8 @@ _init_boundaries(const int *const nfabor,
                 boundaries->qimpcp[izone][icharb] = 0;
                 boundaries->timpcp[izone][icharb] = 0;
 
-                for (ivar = 0; ivar < nclpch[icharb]; ivar++)
-                    boundaries->distch[izone][icharb][ivar] = 0;
+                for (iclass = 0; iclass < nclpch[icharb]; iclass++)
+                    boundaries->distch[izone][icharb][iclass] = 0;
             }
         }
         else if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
@@ -1178,7 +1187,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
     int zones = 0;
     int izone, ith_zone, zone_nbr;
     int ifac, ifbr;
-    int i, k, ivar, icharb, iwall;
+    int i, k, ivar, icharb, iclass, iwall;
     double norm = 0.;
     double X[3];
     int *faces_list = NULL;
@@ -1237,9 +1246,9 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                     qimpcp[icharb *(*nozppm)+zone_nbr-1] = boundaries->qimpcp[izone][icharb];
                     timpcp[icharb *(*nozppm)+zone_nbr-1] = boundaries->timpcp[izone][icharb];
 
-                    for (k = 0; k < nclpch[icharb]; k++)
-                        distch[k * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]
-                            = boundaries->distch[izone][icharb][k];
+                    for (iclass = 0; iclass < nclpch[icharb]; iclass++)
+                        distch[iclass * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]
+                            = boundaries->distch[izone][icharb][iclass];
                 }
             }
             else
@@ -1701,13 +1710,13 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 for (icharb = 0; icharb < *ncharb; icharb++)
                 {
                     bft_printf("-----coal=%i, qimpcp=%12.5e, timpcp=%12.5e \n",
-                                  icharb, qimpcp[icharb *(*nozppm)+zone_nbr-1],
+                                  icharb+1, qimpcp[icharb *(*nozppm)+zone_nbr-1],
                                   timpcp[icharb *(*nozppm)+zone_nbr-1]);
 
-                    for (k = 0; k < nclpch[icharb]; k++)
+                    for (iclass = 0; iclass < nclpch[icharb]; k++)
                         bft_printf("-----coal=%i, class=%i, distch=%f \n",
-                                      icharb, k,
-                                      distch[k * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]);
+                                      icharb+1, iclass=1,
+                                      distch[iclass * (*nozppm) * (*ncharm) +icharb * (*nozppm) +zone_nbr-1]);
                 }
             }
             else
