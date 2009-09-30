@@ -137,7 +137,7 @@ class NumericalParamEquatModel(Model):
         """ Private method: return list of pulverized coal scalar's nodes """
         nodList = []
         node = self.node_models.xmlGetNode('atmospheric_flows', 'model')
-	if not node: return []
+        if not node: return []
         model = node['model']
         if model != 'off':
             nodList = node.xmlGetNodeList('scalar')
@@ -265,10 +265,6 @@ class NumericalParamEquatModel(Model):
     def getScheme(self, label):
         """ Return value of order scheme for variable labelled label """
         node = self._getSchemeLabelNode(label)
-##        if self._isPressure(node): 
-### FIXME: return nothing ?
-##            return
-##        else:
         value = self._defaultValues(label)['order_scheme']
         n = node.xmlGetNode('order_scheme')
         if n: 
@@ -279,9 +275,6 @@ class NumericalParamEquatModel(Model):
     def getBlendingFactor(self, label):
         """ Return value of blending factor for variable labelled label """
         node = self._getSchemeLabelNode(label)
-##        if self._isPressure(node): 
-##            return
-##        else:
         value = node.xmlGetDouble('blending_factor')
         if value == None:
             value = self._defaultValues(label)['blending_factor']
@@ -291,9 +284,6 @@ class NumericalParamEquatModel(Model):
     def getSlopeTest(self, label):
         """ Return value of slope test for variable labelled label """
         node = self._getSchemeLabelNode(label)
-##        if self._isPressure(node): 
-##            return
-##        else:
         value = self._defaultValues(label)['slope_test']
         n = node.xmlGetNode('slope_test')
         if n: 
@@ -304,9 +294,6 @@ class NumericalParamEquatModel(Model):
     def getFluxReconstruction(self, label):
         """ Return value of flux reconstruction for variable labelled label """
         node = self._getSchemeLabelNode(label) 
-##        if self._isPressure(node): 
-##            return
-##        else:
         value = self._defaultValues()['flux_reconstruction']
         if node.xmlGetNode('flux_reconstruction'):
             value = node.xmlGetNode('flux_reconstruction')['status']
@@ -322,19 +309,17 @@ class NumericalParamEquatModel(Model):
         self.isLowerOrEqual(value, 1.)
         node = self._getSchemeLabelNode(label)
         scheme = self.getScheme(label)
-##        if scheme == 'upwind': 
-##                node.xmlSetData('blending_factor', 0.)
-##        else:
-##            if value != self._defaultValues(label)['blending_factor']:
-##                node.xmlSetData('blending_factor', value)
         if scheme == self._defaultValues(label)['order_scheme']:
             if scheme == 'upwind':
                 node.xmlRemoveChild('blending_factor')
             else:
                 node.xmlSetData('blending_factor', value)
         else:
-            if value != self._defaultValues(label)['blending_factor']:
-                node.xmlSetData('blending_factor', value)
+            node.xmlSetData('blending_factor', value)
+#            if value != self._defaultValues(label)['blending_factor']:
+#                node.xmlSetData('blending_factor', value)
+#            else:
+#                node.xmlRemoveChild('blending_factor')
 
 
     def setScheme(self, label, value):

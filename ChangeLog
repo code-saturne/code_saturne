@@ -1,6 +1,11 @@
-* 29/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+* 30/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Correctly handle the blending factor with SOLU convective scheme in GUI.
+  modified routine:
+    gui/NumericalParamEquationModel.py
+
+* 30/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix a crash when specifying an inlet with oxydant and coal through the GUI.
-  modified routines:
+  modified routine:
     src/base/cs_gui_boundary_conditions.c
 
 * 29/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
