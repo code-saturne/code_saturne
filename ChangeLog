@@ -1,3 +1,8 @@
+* 30/09/2009 - David Monfort <david.monfort@edf.fr>
+  Split two tests that could end in a SIGSEGV when checking array bounds.
+  modified routine:
+    src/lagr/laghis.f90
+
 * 30/09/2009 - Matthieu Guillaud <matthieu-externe.guillaud@edf.fr>
   Increase the size of work array to the maximum number of particles.
   modified routines:

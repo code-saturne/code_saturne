@@ -108,6 +108,7 @@ integer          idmoyd, idebia, idebra, ifinia ,ifinra
 integer          iel   , ivarl
 integer          nbcap(nvppmx)
 integer          ipas  , ilpd1 , il , ilfv1 , icla , ilts1
+integer          iokhis, iok2
 
 double precision xtcabs,xyztmp(3)
 double precision varcap(ncaptm)
@@ -335,10 +336,14 @@ if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
       icla  = ipas -1
     endif
 
-    if ( (ipp .le. nvlsta .and. ihslag(ipp).ge. 1 )               &
-        .or.                                                      &
-         (ipp .gt. nvlsta .and. (ipp-nvlsta).ne.ilpd              &
-                     .and. ihslag(ipp-nvlsta).eq. 2 ) )then
+    iokhis = 0
+    if (ipp.le.nvlsta) then
+      if (ihslag(ipp).ge.1) iokhis = 1
+    else
+      if ((ipp-nvlsta).ne.ilpd .and. ihslag(ipp-nvlsta).eq.2) iokhis = 1
+    endif
+
+    if (iokhis.eq.1) then
 
       if(irangp.le.0) then
 !           --> nom du fichier
@@ -428,20 +433,25 @@ if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
         rewind(impli1)
         do ii = 1, nbpdte
           do ipp2 = 1, 2*nvlsta
-            if ( (ipp2 .le.nvlsta                                 &
-                   .and. ihslag(ipp2) .ge. 1 )                    &
-                .or.                                              &
-                 (ipp2 .gt.nvlsta                                 &
-                   .and. ihslag(ipp2-nvlsta) .eq. 2 ) ) then
 
-            read(impli1)                                          &
-            jtcabs, xtcabs, (varcap(icap),icap=1,nbcap(ipp2))
+            iok2 = 0
+            if (ipp2.le.nvlsta) then
+              if (ihslag(ipp2).ge.1) iok2 = 1
+            else
+              if (ihslag(ipp2-nvlsta).eq.2) iok2 = 1
+            endif
 
-            if(ipp2.eq.ipp)                                       &
-              write(impli2,1000)                                  &
-               jtcabs, xtcabs, (varcap(icap),icap=1,nbcap(ipp))
+            if (iok2.eq.1) then
+
+              read(impli1) jtcabs, xtcabs, (varcap(icap),icap=1,nbcap(ipp2))
+
+              if (ipp2.eq.ipp) then
+                write(impli2,1000) &
+                     jtcabs, xtcabs, (varcap(icap),icap=1,nbcap(ipp))
+              endif
 
             endif
+
           enddo
         enddo
 
