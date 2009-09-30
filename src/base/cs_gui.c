@@ -503,18 +503,25 @@ cs_gui_time_parameters(const char   *const param,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_restart_parameters_status(const char *const param,
-                                       int *const keyword)
+cs_gui_restart_parameters_status(const char *param, int *const keyword)
 {
   int   result;
   char *path = NULL;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "calcul_management", "start_restart", param);
-  cs_xpath_add_attribute(&path, "status");
 
-  if(cs_gui_get_status(path, &result))
-    *keyword = result;
+  if (cs_gui_strcmp(param, "restart_rescue")) {
+    cs_xpath_add_function_text(&path);
+    if (cs_gui_get_int(path, &result))
+      *keyword = result;
+
+  } else {
+    cs_xpath_add_attribute(&path, "status");
+
+    if (cs_gui_get_status(path, &result))
+      *keyword = result;
+  }
 
   BFT_FREE(path);
 }
@@ -3141,21 +3148,25 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
  * *****************
  *
  * INTEGER          ISUITE  <--   restart
+ * INTEGER          NTSUIT  <--   checkpoint frequency
  * INTEGER          ILEAUX  <--   restart with auxiliary
  * INTEGER          ICCFVG  <--   restart with frozen field
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csisui, CSISUI) (int *const isuite,
+                                int *const ntsuit,
                                 int *const ileaux,
                                 int *const iccvfg)
 {
   cs_gui_restart_parameters_status("restart",                isuite);
+  cs_gui_restart_parameters_status("restart_rescue",         ntsuit);
   cs_gui_restart_parameters_status("restart_with_auxiliary", ileaux);
   cs_gui_restart_parameters_status("frozen_field",           iccvfg);
 
 #if _XML_DEBUG_
   bft_printf("==>CSISUI\n");
   bft_printf("--isuite = %i\n", *isuite);
+  bft_printf("--ntsuit = %i\n", *ntsuit);
   bft_printf("--ileaux = %i\n", *ileaux);
   bft_printf("--iccvfg = %i\n", *iccvfg);
 #endif

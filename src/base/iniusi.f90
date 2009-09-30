@@ -424,7 +424,7 @@ if(iihmpr.eq.1) then
              isca, iscapp)
 
 !     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
-  call csisui(isuite, ileaux, iccvfg)
+  call csisui(isuite, ntsuit, ileaux, iccvfg)
   !==========
 
 !     Pas de temps (seulement NTMABS, DTREF, INPDT0)

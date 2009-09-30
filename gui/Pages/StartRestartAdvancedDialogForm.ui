@@ -90,7 +90,7 @@ at the begin of the calculation</string>
            </size>
           </property>
           <property name="toolTip" >
-           <string>Code_Saturne key word: NSUIT</string>
+           <string>Code_Saturne key word: NTSUIT</string>
           </property>
          </widget>
         </item>

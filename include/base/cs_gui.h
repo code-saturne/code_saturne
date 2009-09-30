@@ -205,12 +205,14 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
  * *****************
  *
  * INTEGER          ISUITE  <--   restart
+ * INTEGER          NTSUIT  <--   checkpoint frequency
  * INTEGER          ILEAUX  <--   restart with auxiliary
  * INTEGER          ICCFVG  <--   restart with frozen field
  *----------------------------------------------------------------------------*/
 
 
 void CS_PROCF (csisui, CSISUI) (int *const isuite,
+                                int *const ntsuit,
                                 int *const ileaux,
                                 int *const iccvfg);
 

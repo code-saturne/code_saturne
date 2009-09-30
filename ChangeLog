@@ -1,3 +1,11 @@
+* 30/09/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Read the checkpoint frequency parameter in the XML file.
+  modified routines:
+    gui/Pages/StartRestartAdvancedDialogForm.ui
+    include/base/cs_gui.h
+    src/base/cs_gui.c
+    src/base/iniusi.f90
+
 * 30/09/2009 - Maya Milliez <maya.milliez@edf.fr>
   Disable humid atmosphere modelling and enable steady/unsteady choice for
   specific physics in GUI (coherent with input verification as well).
