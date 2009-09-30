@@ -1,4 +1,13 @@
 * 30/09/2009 - Matthieu Guillaud <matthieu-externe.guillaud@edf.fr>
+  Increase the size of work array to the maximum number of particles.
+  modified routines:
+    src/lagr/lagent.f90
+    src/lagr/lagnew.f90
+    src/lagr/lagnpr.f90
+    src/lagr/lagnwc.f90
+    users/lagr/uslain.f90
+
+* 30/09/2009 - Matthieu Guillaud <matthieu-externe.guillaud@edf.fr>
   Add a missing memory-pointer initialization and a missing indirection.
   modified routines:
     src/lagr/lagout.f90

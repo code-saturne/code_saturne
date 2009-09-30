@@ -111,7 +111,7 @@ subroutine lagnwc &
 ! isorti           ! te ! <-- ! pour chaque particule :                        !
 !   (nbpmax)       !    !     !    * numero de sa cellule                      !
 !                  !    !     !    * 0 si sortie du domaine                    !
-! iworkp(nptnew    ! te ! <-- ! numero de la face d'injection                  !
+! iworkp(npbmax    ! te ! <-- ! numero de la face d'injection                  !
 ! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
 ! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
@@ -175,7 +175,7 @@ integer          ipnfac(nfac+1) , nodfac(lndfac)
 integer          ipnfbr(nfabor+1) , nodfbr(lndfbr)
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          isorti(nbpmax)
-integer          ifrlag(nfabor) , iworkp(nptnew)
+integer          ifrlag(nfabor) , iworkp(nbpmax)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 

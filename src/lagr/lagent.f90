@@ -800,7 +800,7 @@ npt = nbpart
 !       on garde IIWORK jusqu'a lagnwc
 
 iiwork = idebia
-ifinia = iiwork + nbpnew
+ifinia = iiwork + nbpmax
 ifinra = idebra
 CALL IASIZE('LAGENT',IFINIA)
 !==========

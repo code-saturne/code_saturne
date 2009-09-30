@@ -127,7 +127,7 @@ subroutine uslain &
 ! ifrlag(nfabor    ! te ! --> ! type des faces de bord lagrangien              !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! injfac(nptnew    ! te ! <-- ! numero de la face de bord d'injection          !
+! injfac(nbpmax    ! te ! <-- ! numero de la face de bord d'injection          !
 ! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
 ! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
@@ -214,7 +214,7 @@ integer          ipnfac(nfac+1) , nodfac(lndfac)
 integer          ipnfbr(nfabor+1) , nodfbr(lndfbr)
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
-integer          injfac(nbpnew)
+integer          injfac(nbpmax)
 integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 
