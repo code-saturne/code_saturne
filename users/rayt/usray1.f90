@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -136,15 +136,15 @@ if(1.eq.1) return
 
 ipass = ipass + 1
 
-if (ipass.eq.1 .or. ipass.eq.2) then
-
 !===============================================================================
 ! 1. UTILISATION DU MODULE DE TRANSFERTS RADIATIFS
 !===============================================================================
 
-!-->  IIRAYO = 0 : PAS DE TRANSFERTS RADIATIFS (PAR DEFAUT)
-!            = 1 : TRANSFERTS RADIATIFS, METHODE DES ORDONNEES DISCRETES
-!            = 2 : TRANSFERTS RADIATIFS, APPROXIMATION P-1
+if (ipass.eq.1 .or. ipass.eq.2) then
+
+  !-->  IIRAYO = 0 : PAS DE TRANSFERTS RADIATIFS (PAR DEFAUT)
+  !            = 1 : TRANSFERTS RADIATIFS, METHODE DES ORDONNEES DISCRETES
+  !            = 2 : TRANSFERTS RADIATIFS, APPROXIMATION P-1
 
   iirayo = 1
 
@@ -156,43 +156,43 @@ endif
 
 if (ipass.eq.2) then
 
-!-->  INDICATEUR SUITE DE CALCUL (LECTURE DU FICHIER SUITE DE RAYONNEMENT)
-!     (0      : PAS DE LECTURE D'UN FICHIER SUITE DE RAYONNEMENT
-!      1      : RELECTURE D'UN FICHIER SUITE DE RAYONNEMENT
-!      ISUITE : RELECTURE D'UN FICHIER SUITE DE RAYONNEMENT SI LE CALCUL FLUIDE EST
-!               AUSSI UNE SUITE )
+  !-->  INDICATEUR SUITE DE CALCUL (LECTURE DU FICHIER SUITE DE RAYONNEMENT)
+  !     (0      : PAS DE LECTURE D'UN FICHIER SUITE DE RAYONNEMENT
+  !      1      : RELECTURE D'UN FICHIER SUITE DE RAYONNEMENT
+  !      ISUITE : RELECTURE D'UN FICHIER SUITE DE RAYONNEMENT SI LE CALCUL FLUIDE EST
+  !               AUSSI UNE SUITE )
 
   isuird = isuite
 
-!-->  FREQUENCE DE PASSAGE DANS LE MODULE DE RAYONNEMENT
+  !-->  FREQUENCE DE PASSAGE DANS LE MODULE DE RAYONNEMENT
 
   nfreqr = 1
 
-!-->  NOMBRE DE DIRECTIONS : 32 OU 128 (UTILE UNIQUEMENT SI IIRAYO=1)
+  !-->  NOMBRE DE DIRECTIONS : 32 OU 128 (UTILE UNIQUEMENT SI IIRAYO=1)
 
   ndirec = 32
 
-!-->  INITIALISATION DU MODE DE CALCUL DU TERME SOURCE RADIATIF EXPLICITE
-!     IDIVER = 0 => CALCUL SEMI-ANALYTIQUE
-!     IDIVER = 1 => CALCUL CONSERVATIF
-!     IDIVER = 2 => CALCUL SEMI-ANALYTIQUE CORRIGE POUR ETRE CONSERVATIF
-!     (EN RAYONNEMENT TRANSPARENT, LE CHOIX EST SANS INFLUENCE)
+  !-->  INITIALISATION DU MODE DE CALCUL DU TERME SOURCE RADIATIF EXPLICITE
+  !     IDIVER = 0 => CALCUL SEMI-ANALYTIQUE
+  !     IDIVER = 1 => CALCUL CONSERVATIF
+  !     IDIVER = 2 => CALCUL SEMI-ANALYTIQUE CORRIGE POUR ETRE CONSERVATIF
+  !     (EN RAYONNEMENT TRANSPARENT, LE CHOIX EST SANS INFLUENCE)
 
   idiver = 2
 
-!--> NIVEAU D'AFFICHAGE (0,1,2) DES RENSEIGNEMENTS TEMPERATURE DE PAROI
+  !--> NIVEAU D'AFFICHAGE (0,1,2) DES RENSEIGNEMENTS TEMPERATURE DE PAROI
 
   iimpar = 1
 
-!--> NIVEAU D'AFFICHAGE (0,1,2) DES RENSEIGNEMENTS SOLVEUR
+  !--> NIVEAU D'AFFICHAGE (0,1,2) DES RENSEIGNEMENTS SOLVEUR
 
   iimlum = 0
 
-!--> SI COMBUSTION GAZ OU CHARBON : CALCUL AUTOMATIQUE
-!    DU COEFFICIENT D'ABSORPTION
+  !--> SI COMBUSTION GAZ OU CHARBON : CALCUL AUTOMATIQUE
+  !    DU COEFFICIENT D'ABSORPTION
 
-!    IMODAK = 0 : PAS DE CALCUL AUTOMATIQUE (DEFAUT)
-!           = 1 : CALCUL AUTOMATIQUE (MODELE DE MODAK)
+  !    IMODAK = 0 : PAS DE CALCUL AUTOMATIQUE (DEFAUT)
+  !           = 1 : CALCUL AUTOMATIQUE (MODELE DE MODAK)
 
   imodak = 0
 
@@ -209,13 +209,13 @@ if (ipass.eq.3) then
 !===============================================================================
 
 
-!    ICHRVR( ) = sortie chono (oui 1/non 0)
-!    ILISVR( ) = suivi listing (oui 1/non 0)
-!    IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!    si IHISVR(    .,1)  = -1 sortie sur toutes les sondes definies
-!                            dans usini1
+  !    ichrvr( ) = sortie chono (oui 1/non 0)
+  !    ilisvr( ) = suivi listing (oui 1/non 0)
+  !    ihisvr( ) = sortie historique (nombre de sondes et numeros)
+  !    si ihisvr(    .,1)  = -1 sortie sur toutes les sondes definies
+  !                            dans usini1
 
-!--> LUMINENCE
+  !--> LUMINENCE
 
   ipp = ipppro(ipproc(ilumin))
   nomvar(IPP)   = 'Lumin'
@@ -223,23 +223,23 @@ if (ipass.eq.3) then
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
-!--> VECTEUR DENSITE DE FLUX RADIATIF
+  !--> VECTEUR DENSITE DE FLUX RADIATIF
 
-!       composante x
+  !       composante x
   ipp = ipppro(ipproc(iqx))
   nomvar(IPP)   = 'Qxrad'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
-!       composante y
+  !       composante y
   ipp = ipppro(ipproc(iqy))
   nomvar(IPP)   = 'Qyrad'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
-!       composante z
+  !       composante z
   ipp = ipppro(ipproc(iqz))
   nomvar(IPP)   = 'Qzrad'
   ichrvr(ipp)   = 0
@@ -251,31 +251,31 @@ if (ipass.eq.3) then
 
     write(num,'(I1)') iphas
 
-!--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
+    !--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
 
     ipp = ipppro(ipproc(itsre(iphas)))
-    nomvar(IPP)   = 'Srad'//num
+    nomvar(ipp)   = 'Srad'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = -1
 
-!--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
+    !--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
 
     ipp = ipppro(ipproc(iabs(iphas)))
-    nomvar(IPP)   = 'Absorp'//num
+    nomvar(ipp)   = 'Absorp'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = -1
 
-!--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
+    !--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
 
     ipp = ipppro(ipproc(iemi(iphas)))
-    nomvar(IPP)   = 'Emiss'//num
+    nomvar(ipp)   = 'Emiss'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = -1
 
-!--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
+    !--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
 
     ipp = ipppro(ipproc(icak(iphas)))
     nomvar(IPP)   = 'CoefAb_'//num
@@ -293,44 +293,44 @@ if (ipass.eq.3) then
 !    * IL FAUT METTRE LA VALEUR DE IRAYVF A 1 POUR LA VISUALISATION *
 !=======================================================================
 
-!--> TEMPERATURE DES FACES FRONTIERES DE PAROI
+  !--> TEMPERATURE DES FACES FRONTIERES DE PAROI
 
-  nbrvaf(itparp) = 'Temp_paroi'
+  nbrvaf(itparp) = 'Wall_temp'
   irayvf(itparp) = 0
 
-!--> FLUX INCIDENT RADIATIF RECU PAR LES FACES FRONTIERES DE PAROI
+  !--> FLUX INCIDENT RADIATIF RECU PAR LES FACES FRONTIERES DE PAROI
 
-  nbrvaf(iqincp) = 'Flux_incident'
+  nbrvaf(iqincp) = 'Incident_flux'
   irayvf(iqincp) = 0
 
-!--> CONDUCTIVITE THERMIQUES DES FACES FRONTIERES DE PAROIS
+  !--> CONDUCTIVITE THERMIQUES DES FACES FRONTIERES DE PAROIS
 
-  nbrvaf(ixlamp) = 'Conductivite_th'
+  nbrvaf(ixlamp) = 'Th_conductivity'
   irayvf(ixlamp) = 0
 
-!--> EPAISSEUR DES FACES FRONTIERES DE PAROIS
+  !--> EPAISSEUR DES FACES FRONTIERES DE PAROIS
 
-  nbrvaf(iepap) = 'Epaisseur'
+  nbrvaf(iepap) = 'Thickness'
   irayvf(iepap) = 0
 
-!--> EMISSIVITE DES FACES FRONTIERES DE PAROIS
+  !--> EMISSIVITE DES FACES FRONTIERES DE PAROIS
 
-  nbrvaf(iepsp) = 'Emissivite'
+  nbrvaf(iepsp) = 'Emissivity'
   irayvf(iepsp) = 0
 
-!--> FLUX NET RADIATIF AUX FACES FRONTIERES DE PAROIS
+  !--> FLUX NET RADIATIF AUX FACES FRONTIERES DE PAROIS
 
-  nbrvaf(ifnetp) = 'Flux_net'
+  nbrvaf(ifnetp) = 'Net_flux'
   irayvf(ifnetp) = 0
 
-!--> FLUX CONVECTIF AUX FACES FRONTIERES DE PAROIS
+  !--> FLUX CONVECTIF AUX FACES FRONTIERES DE PAROIS
 
   nbrvaf(ifconp) = 'Flux_convectif'
   irayvf(ifconp) = 0
 
-!--> COEFFICIENT D'ECHANGE CONVECTIF AUX FACES FRONTIERES DE PAROIS
+  !--> COEFFICIENT D'ECHANGE CONVECTIF AUX FACES FRONTIERES DE PAROIS
 
-  nbrvaf(ihconp) = 'Coef_ech_convectif'
+  nbrvaf(ihconp) = 'Convective_exch_coef'
   irayvf(ihconp) = 0
 
 !===============================================================================
@@ -339,4 +339,4 @@ endif
 
 return
 
-end
+end subroutine

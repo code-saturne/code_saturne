@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,7 +25,7 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine cplecd
+subroutine cplecd
 !================
 !===============================================================================
 !  FONCTION  :
@@ -1470,10 +1470,10 @@ call csexit (1)
 '@                                                            ',/)
 
 
-end
+end subroutine
 
 
-                      function matdet                             &
+function matdet &
 !==============
 
  ( a11 , a12 , a13 , a21 , a22 , a23 , a31 , a32 , a33 )
@@ -1520,4 +1520,4 @@ double precision matdet
 matdet = a11*a22*a33 + a21*a32*a13 + a31*a12*a23                  &
        - a11*a32*a23 - a21*a12*a33 - a31*a22*a13
 
-end
+end function

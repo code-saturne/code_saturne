@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,7 +25,7 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine ppray4                               &
+subroutine ppray4 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
@@ -479,4 +479,4 @@ endif
 !----
 
 return
-end
+end subroutine

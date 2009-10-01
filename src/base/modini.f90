@@ -25,7 +25,7 @@
 
 !-------------------------------------------------------------------------------
 
-                  subroutine modini
+subroutine modini
 !================
 
 
@@ -1621,4 +1621,4 @@ endif
 #endif
 
 return
-end
+end subroutine

@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -77,4 +77,4 @@ ii1  = iprbla ( chaine, n1 )
 ii2  = idrbla ( chaine, n1 )
 lpos = ii2 - ii1 + 1
 
-end
+end subroutine

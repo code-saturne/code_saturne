@@ -33,61 +33,52 @@ subroutine usppmo
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR
-! UTILISATION OU NON D'UNE PHYSIQUE PARTICULIERE
+!    User subroutine.
 
+!    Define the use of a specific physics amongst the following:
+!      - combustion with gaz / coal / heavy fioul oil
+!      - compressible flows
+!      - atmospheric modelling
+!      - cooling towers modelling
 
-!       UNE SEULE PHYSIQUE PARTICULIERE A LA FOIS.
+!    Only one specific physics module can be activated at once.
 
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
-include "numvar.h"
-include "optcal.h"
-include "cstphy.h"
-include "cstnum.h"
 include "entsor.h"
-include "pointe.h"
-include "parall.h"
-include "period.h"
+include "cstphy.h"
 include "ppppar.h"
 include "ppthch.h"
-include "coincl.h"
-include "cpincl.h"
-include "fuincl.h"
 include "ppincl.h"
 include "ppcpfu.h"
-include "atincl.h"
 
 !===============================================================================
-
-
-
-!===============================================================================
-
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
 !===============================================================================
 
 if(1.eq.1) then
@@ -98,160 +89,176 @@ endif
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1.  DECLENCHEMENT DE L UTILISATION D'UNE PHYSIQUE PARTICULIERE
+! 1.  Choice for a specific physics
 !===============================================================================
 
+! --- cod3p: Diffusion flame in the framework of "3 points" rapid complete
+! ========== chemistry
 
-! ---- COD3P Flamme de diffusion en chimie complete rapide (3 points)
-!        si = -1   modele non utilise
-!        si =  0   modele utilise dans les conditions adiabatiques
-!        si =  1   modele utilise dans les conditions permeatiques
+!     if = -1   module not activated
+!     if =  0   adiabatic conditions
+!     if =  1   permeatic conditions
 
 ippmod(icod3p) = -1
 
 
-!----- CODEQ Flamme de diffusion en chimie rapide vers l'equilibre
-!      ATTENTION : la version CODEQ n'EST PAS OPERATIONNELLE
-!      ==========
-!        si = -1   modele non utilise
-ippmod(icodeq) = -1
+! --- coebu: Eddy-Break Up pre-mixed flame
+! ==========
 
-
-!----- COEBU Flamme premelangee en Eddy Break Up
-!        si = -1   modele non utilise
-!        si =  0   modele utilise dans les conditions adiabatiques
-!        si =  1   modele utilise dans les conditions permeatiques (H)
-!        si =  2   conditions adiabatiques    avec transport de f
-!        si =  3   conditions permeatique (H) avec transport de f
+!     if = -1   module not activated
+!     if =  0   adiabatic conditions at constant richness
+!     if =  1   permeatic conditions at constant richness
+!     if =  2   adiabatic conditions at variable richness
+!     if =  3   permeatic conditions at variable richness
 
 ippmod(icoebu) = -1
 
+! --- colwc: Libby-Williams pre-mixed flame
+! ==========
 
-!----- COBML premelange avec le modele Bray - Moss - Libby
-!      ATTENTION : la version COBML n'EST PAS OPERATIONNELLE
-!      ==========
-!        si = -1   modele non utilise
-ippmod(icobml) = -1
-
-
-!----- COLWC non parfaitement premelange Libby Williams
-!        si = -1   modele non utilise
-!        si =  0   modele a 2 pics dans les conditions adiabatiques
-!        si =  1   modele a 2 pics dans les conditions permeatiques
-!                    (suppose rayonnement)
-!        si =  2   modele a 3 pics dans les conditions adiabatiques
-!        si =  3   modele a 3 pics dans les conditions permeatiques
-!                    (suppose rayonnement)
-!        si =  4   modele a 4 pics dans les conditions adiabatiques
-!        si =  5   modele a 4 pics dans les conditions permeatiques
-!                    (suppose rayonnement)
+!        if = -1   module not activated
+!        if =  0   two-peak model with adiabatic condition
+!        if =  1   two-peak model with permeatic condition
+!        if =  2   three-peak model with adiabatic condition
+!        if =  3   three-peak model with permeatic condition
+!        if =  4   four-peak model with adiabatic condition
+!        if =  5   four-peak model with permeatic condition
 
 ippmod(icolwc) = -1
 
+! --- cp3pl: Pulverized coal, with three gaseous fuels and granulometry
+! ========== CP3PL Combustible moyen local
 
-!----- Charbon pulverise avec trois combustibles gazeux et
-!        granulometrie.
-!        CP3PL Combustible moyen local
-!        IPPMOD(ICP...) = 0 : Transport d'H2
-!        IPPMOD(ICP...) = 1 : Transport d'H2 + sechage
+!        if = -1   module not activated
+!        if = 0    Transport d'H2
+!        if = 1    Transport d'H2 + sechage
+
 ippmod(icp3pl) = -1
 
-! Prise en compte de la comb. Heterog par le CO2 : attention il
-! faut activer l'option "Equation sur le CO2"
+! --- cpl3c: Pulverized coal with Lagrangian coupling, with three gaseous fuels
+! ========== and granulometry
 
-ihtco2 = 0
-
-
-!----- Charbon pulverise couple lagrangien avec trois combustibles
-!      gazeux et granulometrie.
-!        IPPMOD(ICPL3C) =-1 : Modele non utilise
-!        IPPMOD(ICPL3C) = 0 : Transport d'H2
-!        IPPMOD(ICPL3C) = 1 : Transport d'H2 + sechage (non operationnel)
+!        if = -1   module not activated
+!        if = 0    Transport d'H2
+!        if = 1    Transport d'H2 + sechage (non operationnel)
 
 ippmod(icpl3c) = -1
 
+! --- cfuel: Heavy fuel oil combustion
+! ==========
 
-!----- Combustion Fuel
-!        IPPMOD(ICFUEL) =-1 : modele non utilise
-!        IPPMOD(ICFUEL) = 0 : modele active
+!        if = -1   module not activated
+!        if = 0    module activated
 
 ippmod(icfuel) = -1
 
-!----- MODEL NOx : pour l'instant on le met ici mais il
-!                          faudrait le deplacer, mais ou?
-!      Valable uniquement pour le Fuel
+! --- compf: Compressible flows
+! ==========
 
-!        IEQNOX = 1 ----> Model NOx
+!        if = -1   module not activated
+!        if = 0    module activated
 
-ieqnox = 0
-
-!----- Equation sur YCO2 : pour l'instant on le met ici mais il
-!                          faudrait le deplacer, mais ou?
-!      Valable pour le charbon et pour le Fuel
-
-!         IEQCO2 = 1 ----> Transport de CO2
-
-ieqco2 = 0
-
-!----- COMPF compressible sans choc
-!      ==========
-!        si = -1   modele non utilise
-!        si = 0    modele active
 ippmod(icompf) = -1
 
-!----- VERSIONS ELECTRIQUES
-!        Equation de l'energie obligatoire --> |IPPMOD(IEL...)| >= 1
-!        + Possibilite de constituants
+! --- eljou: Joule effect
+! ==========
 
-!       ELJOU : Effet Joule
-!        IPPMOD(IELJOU) = 1 : Potentiel reel
-!        IPPMOD(IELJOU) = 2 : Potentiel complexe
-!        IPPMOD(IELJOU) = 3 : Potentiel reel     + CDL Transfo
-!        IPPMOD(IELJOU) = 4 : Potentiel complexe + CDL Transfo
+!        if = -1   module not activated
+!        if = 1    Potentiel reel
+!        if = 2    Potentiel complexe
+!        if = 3    Potentiel reel     + CDL Transfo
+!        if = 4    Potentiel complexe + CDL Transfo
 
 ippmod(ieljou) = -1
 
-!       ELARC : Arc electrique
-!        IPPMOD(IELARC) = 1 : Potentiel electrique
-!        IPPMOD(IELARC) = 2 : Potentiel electrique +
-!                             Potentiel vecteur (=>3D)
+! --- elarc: Electric arcs
+! ==========
+
+!        if = -1   module not activated
+!        if = 0    electric potential
+!        if = 1    electric potential and vector potential (hence 3D modelling)
 
 ippmod(ielarc) = -1
 
-!       ELION : Mobilite ionique
-!        IPPMOD(IELION) = 1 : Potentiel electrique
+! --- atmos: Atmospheric flows
+! ==========
 
-!       ATTENTION : la version ELION n'EST PAS OPERATIONNELLE
-!       ==========
+!        if = -1   module not activated
+!        if = 0    standard modelling
+!        if = 1    dry atmosphere
+!        if = 2    humid atmosphere (NOT functional)
 
-ippmod(ielion) = -1
-
-!----- ATMOS ecoulements atmospheriques
-!        si = -1   modele non utilise
-!        si = 0    modele active
-!        si = 1    atmosphere seche
-!        si = 2    atmosphere humide (non operationnelle)
 ippmod(iatmos) = -1
 
-!----- Aerorefrigerants (cooling tower)
-!        si = -1   non utilise
-!        si = 0    active sans modele
-!        si = 1    active avec modele de Poppe
-!        si = 2    active avec modele de Merkel
+! --- aeros: Cooling towers
+! ==========
+
+!        if = -1   module not activated
+!        if = 0    no model (NOT functional)
+!        if = 1    Poppe's model
+!        if = 2    Merkel's model
+
 ippmod(iaeros) = -1
 
+
 !===============================================================================
-! 2.  CHOIX DU FICHIER THERMOCHIMIE DANS LE CAS DE LA COMBUSTION GAZ
+! 2.  Specific physics module not available at the moment
 !===============================================================================
 
+! WARNING: The following modules ARE NOT functional!
+! =======
 
-!-----Si INDJON=1 on utilise une tabulation ENTH-TEMP calculee par JANAF
-!     sinon, l'utilisateur doit lui même fournir sa propre tabulation
+! --- cobml: premelange avec le modele Bray - Moss - Libby
+! ==========
+!        if = -1   module not activated
+ippmod(icobml) = -1
+
+! --- codeq: Diffusion flame  en chimie rapide vers l'equilibre
+! ==========
+!        if = -1   module not activated
+ippmod(icodeq) = -1
+
+! --- elion: Ionic mobility
+! ==========
+!        if = -1   module not activated
+!        if = 1    eletric potential
+ippmod(ielion) = -1
+
+
+!===============================================================================
+! 3.  Specific options related to herebefore modules
+!===============================================================================
+
+! These options are defined here at the moment, this might change in the future
+
+! --- Enthalpy-Temperature conversion law (for gas combustion modelling)
+!       indjon = 0   user-specified
+!       indjon = 1   tabulated by JANAF (default)
 
 indjon = 1
 
+! --- NOx modelling (ieqnox = 1)
+!       Only compatible with heavy fuel oil combustion
+
+ieqnox = 0
+
+! --- CO2 transport equation (ieqco2 = 1)
+!       Compatible with coal and heavy fuel oil combustion
+
+ieqco2 = 0
+
+! --- Heteregoneous combustion by CO2 (ihtco2 = 1)
+!       Needs the activation of the CO2 transport equation
+
+ihtco2 = 0
+
 !----
-! FORMATS
+! Formats
 !----
+
+!----
+! End
+!----
+
 return
-end
+end subroutine

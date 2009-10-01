@@ -82,4 +82,4 @@ write(nfecra, '(a)', advance='no') chloc(1:taille)
 
 return
 
-end
+end subroutine

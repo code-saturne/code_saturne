@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2007 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -143,7 +143,7 @@ var2 = alphaz*profv(iz1,it2) + (1.d0-alphaz)*profv(iz2,it2)
 
 var = alphat*var1 + (1.d0-alphat)*var2
 
-end
+end subroutine
 
 
 

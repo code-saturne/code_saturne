@@ -530,4 +530,4 @@ call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
 !----
 
 return
-end
+end subroutine

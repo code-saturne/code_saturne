@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -258,7 +258,7 @@ alpha= 1.d-8
 '@                                                            ',/)
 
 return
-end
+end subroutine
 
 !==============================================================================
 
@@ -338,7 +338,7 @@ do ict = 2, norpol
 enddo
 
 return
-end
+end subroutine
 
 !==============================================================================
 
@@ -403,7 +403,7 @@ zzv = zi3 * (                                                     &
             )
 
 return
-end
+end subroutine
 
 !==============================================================================
 
@@ -473,7 +473,7 @@ return
  1    taus = 1.d0
 
 return
-end
+end subroutine
 
 !==============================================================================
 
@@ -573,11 +573,11 @@ call asympt                                                       &
 valfpe = zzv+zs
 
 return
-end
+end subroutine
 
 !==============================================================================
 
-                 function fdleck                                  &
+function fdleck &
 !==============
 
  ( val    , pl     , te     )
@@ -648,11 +648,11 @@ return
  1    fdleck= 0.d0
 
 return
-end
+end function
 
 !==============================================================================
 
-                 function emigas                                  &
+function emigas &
 !==============
 !      -------------------------------------------------------------
  ( pathl  , pc     , pw     , te     )
@@ -753,7 +753,7 @@ return
 emigas = ec
 
 return
-end
+end function
 
 !==============================================================================
 
@@ -961,4 +961,4 @@ enddo
 val = exp(val)
 
 return
-end
+end subroutine

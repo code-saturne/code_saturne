@@ -1,4 +1,7 @@
 * 01/10/2009 - David Monfort <david.monfort@edf.fr>
+  Update Copyrights, clean subroutine and function keywords.
+
+* 01/10/2009 - David Monfort <david.monfort@edf.fr>
   Change remaining keywords in lowercase.
   modified files:
     doc/user/saturne1.tex
