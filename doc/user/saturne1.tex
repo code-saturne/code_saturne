@@ -5890,7 +5890,7 @@ $kg.m^{-1}.s^{-1}$ may be written in \CS:
 $\overline{\Delta}$ is the width of the implicit filter, defined at the
 cell $\Omega_i$ by \\
 $\overline{\Delta}=XLESFL(IPHAS)*(ALES(IPHAS)*|\Omega_i|)^{BLES(IPHAS)}$
-\index{XLESFL}\index{ALES}\index{BLES}.
+\index{xlesfl}\index{ales}\index{bles}.
 
 In the case of the Smagorinsky model (\texttt{iturb(iphas)=40}), $C$ is a
 constant which is worth $C_s^2$. $C_s^2$ is the so-called Smagorinsky
@@ -6623,7 +6623,7 @@ The user must not forget to place in the directory DATA the
 thermo-chemical file \texttt{dp\_FCP}, \texttt{dp\_C3P}, \texttt{dp\_C3PSJ} or
 \texttt{dp\_ELE} (depending on the specific physics module he activated)
 and to specify the name of this file in the variable
-THERMOCHEMISTRY\_DATA\index{THERMOCHEMISTRY\_DATA} in the launch script
+THERMOCHEMISTRY\_DATA in the launch script
 (for instance: THERMOCHEMISTRY\_DATA''dp\_C3P''). Some example files
 are placed in the directory \texttt{DATA/THCH} at the creation of the
 study case. Their content is described below.
@@ -6640,36 +6640,36 @@ study case. Their content is described below.
 \small{
 \begin{tabular}{|c|c|c|c|} \hline
  Lines  &Examples of values &        Variables             & Observations                                     \\ \hline
-  1     &         5         &          NGAZE\index{NGAZE}  & Number of current species                        \\ \hline
-  2     &        10         &           NPO\index{NPO}     & Number of points for the                         \\
+  1     &         5         &  \texttt{ngaze\index{ngaze}} & Number of current species                        \\ \hline
+  2     &        10         &   \texttt{npo\index{npo}}    & Number of points for the                         \\
         &                   &                              & enthalpy-temperature tabulation                  \\ \hline
-  3     &       300.        &          TMIN\index{TMIN}    & Temperature inferior limit                       \\
+  3     &       300.        &  \texttt{tmin\index{tmin}}   & Temperature inferior limit                       \\
         &                   &                              & for the tabulation                               \\ \hline
-  4     &      3000.        &          TMAX\index{TMAX}    & Temperature superior limit                       \\
+  4     &      3000.        &  \texttt{tmax\index{tmax}}   & Temperature superior limit                       \\
         &                   &                              & for the tabulation                               \\ \hline
   5     &                   &                              & Empty line                                       \\ \hline
-  6     & CH4 O2 CO2 H2O N2 &  NOMCOE\index{NOMCOE}(NGAZE) & List of the current species                      \\ \hline
-  7     &.35 .35 .35 .35 .35&  KABSE\index{KABSE}(NGAZE)   & Absorption coefficient                           \\
+  6     & CH4 O2 CO2 H2O N2 &  \texttt{nomcoe\index{nomcoe}}(\texttt{ngaze}) & List of the current species                      \\ \hline
+  7     &.35 .35 .35 .35 .35&  \texttt{kabse\index{kabse}}(\texttt{ngaze})   & Absorption coefficient                           \\
         &                   &                              & of  the current species                          \\ \hline
-  8     &         4         &          NATO\index{NATO}    & Number of elemental species                      \\ \hline
-  9     &.012  1  0  1  0  0& WMOLAT\index{WMOLAT}(NATO),  & Molar mass of the elemental                      \\
+  8     &         4         &  \texttt{nato\index{nato}}   & Number of elemental species                      \\ \hline
+  9     &.012  1  0  1  0  0& \texttt{wmolat\index{wmolat}}(\texttt{nato}),  & Molar mass of the elemental                      \\
  10     &.001  4  0  0  2  0&                              & species (first column)                           \\
- 11     &.016  0  2  2  1  0&ATGAZE\index{ATGAZE}(NGAZE,NATO)& Composition of the current species             \\
+ 11     &.016  0  2  2  1  0&\texttt{atgaze\index{atgaze}}(\texttt{ngaze},\texttt{nato})& Composition of the current species             \\
  12     &.014  0  0  0  0  2&                              & as a function of the elemental species           \\
-        &                   &                              & (NGAZE following columns)                        \\ \hline
- 13     &         3         &          NGAZG\index{NGAZG}  & Number of global species                         \\
-        &                   &                              & Here, NGAZG = 3 (Fuel, Oxidiser and Products)    \\ \hline
+        &                   &                              & (\texttt{ngaze} following columns)                        \\ \hline
+ 13     &         3         &  \texttt{ngazg\index{ngazg}} & Number of global species                         \\
+        &                   &                              & Here, \texttt{ngazg} = 3 (Fuel, Oxidiser and Products)    \\ \hline
  14     &  1. 0. 0. 0. 0.   &                              & Composition of the global species as a           \\
- 15     &  0. 1. 0. 0. 3.76 &COMPOG\index{COMPOG}(NGAZE,NGAZG)& fonction of the current species of the line 6 \\
+ 15     &  0. 1. 0. 0. 3.76 &\texttt{compog\index{compog}}(\texttt{ngaze},\texttt{ngazg})& fonction of the current species of the line 6 \\
  16     &  0. 0. 1. 2. 7.52 &                              & In the order: Fuel (line 15),                    \\
         &                   &                              & Oxidiser (line 16) and Product (line 17)         \\ \hline
- 17     &         1         &          NRGAZ\index{NRGAZ}  & Number of global reactions                       \\
-        &                   &                              & Here NRGAZ = 1 (always equal to 1                \\
+ 17     &         1         &  \texttt{nrgaz\index{nrgaz}} & Number of global reactions                       \\
+        &                   &                              & Here \texttt{nrgaz} = 1 (always equal to 1                \\
         &                   &                              & in this version)                                 \\ \hline
- 18     &                   & IGFUEL\index{IGFUEL}(NRGAZ), & Numbers of the global species concerned by       \\
-        & 1 2 -1 -9.52 10.52&  IGOXY\index{IGOXY}(NRGAZ),  & the stoichiometric ratio                         \\
+ 18     &                   & \texttt{igfuel\index{igfuel}}(\texttt{nrgaz}), & Numbers of the global species concerned by       \\
+        & 1 2 -1 -9.52 10.52&  \texttt{igoxy\index{igoxy}}(\texttt{nrgaz}),  & the stoichiometric ratio                         \\
         &                   &                              & (first 2 integers)                               \\
-        &                   &STOEG\index{STOEG}(NGAZG,NRGAZ)& Stoichiometry in reaction global species.       \\
+        &                   &\texttt{stoeg\index{stoeg}}(\texttt{ngazg},\texttt{nrgaz})& Stoichiometry in reaction global species.       \\
         &                   &                               & Negative for the reactants (here                \\
         &                   &                               & ``Fuel'' and ``Oxidiser'') and positive for      \\
         &                   &                               & the products (here ``Products'')                \\ \hline
@@ -6689,22 +6689,22 @@ study case. Their content is described below.
 \small{
 \begin{tabular}{|c|c|c|c|} \hline
  Lines  &            Examples of values     &        Variables            & Observations                                \\ \hline
-   1    &                    6              &           NPO               & Number of tabulation points                 \\ \hline
+   1    &                    6              &   \texttt{npo}              & Number of tabulation points                 \\ \hline
    2    &  50. -0.32E+07 -0.22E+06 -0.13E+08&                             &                                             \\
-   3    & 250. -0.68E+06 -0.44E+05 -0.13E+08&TH\index{TH}(NPO),           & Temperature(first column),                  \\
-   4    & 450.  0.21E+07  0.14E+06 -0.13E+08& EHGAZG\index{EHGAZG}(1,NPO),& mass enthalpy of fuel, oxidiser             \\
-   5    & 650.  0.50E+07  0.33E+06 -0.12E+08& EHGAZG(2,NPO),              & and products (columns 2,3 and 4)            \\
-   6    & 850.  0.80E+07  0.54E+06 -0.12E+08& EHGAZG(3,NPO)               & from line 2 to line NPO+1                   \\
+   3    & 250. -0.68E+06 -0.44E+05 -0.13E+08&\texttt{th\index{th}}(\texttt{npo}),           & Temperature(first column),                  \\
+   4    & 450.  0.21E+07  0.14E+06 -0.13E+08& \texttt{ehgazg\index{ehgazg}}(1,\texttt{npo}),& mass enthalpy of fuel, oxidiser             \\
+   5    & 650.  0.50E+07  0.33E+06 -0.12E+08& \texttt{ehgazg}(2,\texttt{npo}),              & and products (columns 2,3 and 4)            \\
+   6    & 850.  0.80E+07  0.54E+06 -0.12E+08& \texttt{ehgazg}(3,\texttt{npo})               & from line 2 to line \texttt{npo}+1                   \\
    7    &1050.  0.11E+08  0.76E+06 -0.11E+08&                             &                                             \\ \hline
-   8    & .00219       .1387        .159    &WMOLG(1)\index{WMOLG},       & Molar mass of fuel,                         \\
-        &                                   &                    WMOLG(2),& oxidiser                                    \\
-        &                                   &                    WMOLG(3) & and products                                \\ \hline
-   9    &                .11111             &          FS(1)\index{FS(1)} & Mixing rate at the stoichiometry            \\
+   8    & .00219       .1387        .159    &\texttt{wmolg(1)\index{wmolg}},       & Molar mass of fuel,                         \\
+        &                                   &                    \texttt{wmolg(2)},& oxidiser                                    \\
+        &                                   &                    \texttt{wmolg(3)} & and products                                \\ \hline
+   9    &                .11111             &          \texttt{fs(1)\index{fs(1)}} & Mixing rate at the stoichiometry            \\
         &                                   &                             & (relating to Fuel and Oxidiser)             \\ \hline
-  10    &    0.4      0.5       0.87        &CKABSG\index{CKABSG}(1),     & Absorption coefficient of fuel,             \\
-        &                                   &                  CKABSG(2), & oxidiser                                    \\
-        &                                   &                  CKABSG(3)  & and products                                \\ \hline
-  11    &    1.       2.                    & XCO2\index{XCO2},   XH2O\index{XH2O}& Molar coefficents of $CO_2$         \\
+  10    &    0.4      0.5       0.87        &\texttt{ckabsg\index{ckabsg}(1)},     & Absorption coefficient of fuel,             \\
+        &                                   &                  \texttt{ckabsg(2)}, & oxidiser                                    \\
+        &                                   &                  \texttt{ckabsg(3)}  & and products                                \\ \hline
+  11    &    1.       2.                    & \texttt{xco2\index{xco2}},   \texttt{xh2o\index{xh2o}}& Molar coefficents of $CO_2$         \\
         &                                   &                             & and $H_2O$ in the products                  \\
         &                                   &                             & (radiation using Modak)                     \\ \hline
 \end{tabular}
@@ -6727,92 +6727,92 @@ study case. Their content is described below.
 \begin{tabular}{|c|c|c|c|} \hline
  Lines  &      Examples of values        &        Variables              & Observations                                         \\ \hline
    1    &          THERMOCHIMIE          &                               & Comment line                                         \\ \hline
-   2    &               8                &          NCOEL\index{NCOEL}   & Number of current species                            \\ \hline
-   3    &               8                &          NPO\index{NPO}       & Number of points for the                             \\
+   2    &               8                & \texttt{ncoel\index{ncoel}}   & Number of current species                            \\ \hline
+   3    &               8                &  \texttt{npo\index{npo}}      & Number of points for the                             \\
         &                                &                               & enthalpy-temperature tabulation                      \\ \hline
    4    &      ESPECES COURANTES         &                               & Comment line                                         \\ \hline
-   5    & CH4 C2H4 CO O2 CO2 H2O N2 C(S) & NOMCOEL\index{NOMCOEL}(NCOEL) & List of the                                          \\
+   5    & CH4 C2H4 CO O2 CO2 H2O N2 C(S) & \texttt{nomcoel\index{nomcoel}}(\texttt{ncoel}) & List of the                                          \\
         &                                &                               & current species                                      \\ \hline
-   6    &               300.             &          TMIN\index{TMIN}     & Temperature inferior limit (Kelvin)                  \\
+   6    &               300.             &  \texttt{tmin\index{tmin}}    & Temperature inferior limit (Kelvin)                  \\
         &                                &                               & for the enthalpy-temperature tabulation              \\ \hline
-   7    &              2400.             &          TMAX\index{TMAX}     & Temperature superior limit (Kelvin)                  \\
+   7    &              2400.             &  \texttt{tmax\index{tmax}}    & Temperature superior limit (Kelvin)                  \\
         &                                &                               & for the enthalpy-temperature tabulation              \\ \hline
-   8    &               4                &          NATO\index{NATO}     & Number of elemental species                          \\ \hline
+   8    &               4                &  \texttt{nato\index{nato}}    & Number of elemental species                          \\ \hline
    9    &  .012  1  2  1  0  1  0  0  1  &                               & Molar mass of the elemental species                  \\
-  10    &  .001  4  4  0  0  0  2  0  0  &WMOLAT\index{WMOLAT}(NATO),    & (first column)                                       \\
-  11    &  .016  0  0  1  2  2  1  0  0  &ATCOEL\index{ATCOEL}(NCOEL,NATO)& and composition of the current species              \\
+  10    &  .001  4  4  0  0  0  2  0  0  &\texttt{wmolat\index{wmolat}}(\texttt{nato}),    & (first column)                                       \\
+  11    &  .016  0  0  1  2  2  1  0  0  &\texttt{atcoel\index{atcoel}}(\texttt{ncoel,nato})& and composition of the current species              \\
   12    &  .014  0  0  0  0  0  0  2  0  &                               & as a function of the elemental species               \\ \hline
   13    &          RAYONNEMENT           &                               & Comment line                                         \\ \hline
-  14    &               0.1              &         CKABS1\index{CKABS1}  & Constant absorption coefficient                      \\
+  14    &               0.1              & \texttt{ckabs1\index{ckabs1}}  & Constant absorption coefficient                      \\
         &                                &                               & for the gas mixture                                  \\ \hline
   15    &   CARACTERISTIQUES CHARBONS    &                               & Comment line                                         \\ \hline
-  16    &               2                &         NCHARB\index{NCHARB}  & Number of coal types                                 \\ \hline
-  17    &         1            1         &  NCLPCH\index{NCLPCH}(NCHARB) & Number of classes for each coal                      \\
+  16    &               2                & \texttt{ncharb\index{ncharb}} & Number of coal types                                 \\ \hline
+  17    &         1            1         & \texttt{nclpch\index{nclpch}}(\texttt{ncharb}) & Number of classes for each coal                      \\
         &                                &                               & (each column corresponding to                        \\
         &                                &                               & one coal type )                                      \\ \hline
-  18    &    50.E-6        50.E-6        & DIAM20\index{DIAM20}(NCLACP)  & Initial diameter of each class (m)                   \\
-        &                                &                               & NCLACP\index{NCLACP} is the total number of classes. \\
+  18    &    50.E-6        50.E-6        & \texttt{diam20\index{diam20}}(\texttt{nclacp})  & Initial diameter of each class (m)                   \\
+        &                                &                               & \texttt{nclacp\index{nclacp}} is the total number of classes. \\
         &                                &                               & All the diameters are written on the same line       \\
         &                                &                               & (sucessively for each coal, we give the              \\
         &                                &                               & diameter corresponding to each class)                \\ \hline
-  19    &    74.8          60.5          &         CCH\index{CCH}(NCHARB)& Composition in C (mass.-\%, dry) of each coal        \\ \hline
-  20    &     5.1           4.14         &         HCH\index{HCH}(NCHARB)& Composition in H (mass.-\%, dry) of each coal        \\ \hline
-  21    &    12.01          5.55         &         OCH\index{OCH}(NCHARB)& Composition in O (mass.-\%, dry) of each coal        \\ \hline
-  22    & 0  31524000.    0  31524000.   &IPCI\index{IPCI}(NCHARB),      & Value of the PCI ($Jkg^{-1}$) for each coal,         \\
-        &                                & PCICH\index{PCICH}(NCHARB)    & the first integer indicating if this value refers    \\
+  19    &    74.8          60.5          & \texttt{cch\index{cch}}(\texttt{ncharb})& Composition in C (mass.-\%, dry) of each coal        \\ \hline
+  20    &     5.1           4.14         & \texttt{hch\index{hch}}(\texttt{ncharb})& Composition in H (mass.-\%, dry) of each coal        \\ \hline
+  21    &    12.01          5.55         & \texttt{och\index{och}}(\texttt{ncharb})& Composition in O (mass.-\%, dry) of each coal        \\ \hline
+  22    & 0  31524000.    0  31524000.   & \texttt{ipci\index{ipci}}(\texttt{ncharb})      & Value of the PCI ($Jkg^{-1}$) for each coal,         \\
+        &                                & \texttt{pcich\index{pcich}}(\texttt{ncharb})    & the first integer indicating if this value refers    \\
         &                                &                               & to pure (0) or dry coal (1)                          \\ \hline
-  23    &   1800.      1800.             &        CP2CH\index{CP2CH}(NCHARB)& Heat-storage capacity at constant pressure        \\
+  23    &   1800.      1800.             & \texttt{cp2ch\index{cp2ch}}(\texttt{ncharb})& Heat-storage capacity at constant pressure        \\
         &                                &                               & ($Jkg^{-1}K^{-1}$) for each coal                     \\ \hline
-  24    &   1200.      1200.             &RHO0CH\index{RHO0CH}(NCHARB)   & Initial density ($kgm^{-3}$) of each                 \\ \hline
+  24    &   1200.      1200.             & \texttt{rho0ch\index{rho0ch}}(\texttt{ncharb})   & Initial density ($kgm^{-3}$) of each                 \\ \hline
   25    &          Coke                  &                               & Comment line                                         \\ \hline
-  26    &      0.         0.             &        CCK\index{CCK}(NCHARB) & Composition in C (mass.-\%, dry) of the coke         \\
+  26    &      0.         0.             & \texttt{cck\index{cck}}(\texttt{ncharb}) & Composition in C (mass.-\%, dry) of the coke         \\
         &                                &                               & for each coal                                        \\ \hline
-  27    &      0.         0.             &        HCK\index{HCK}(NCHARB) & Composition in H (mass.-\%, dry) of the coke         \\
+  27    &      0.         0.             & \texttt{hck\index{hck}}(\texttt{ncharb}) & Composition in H (mass.-\%, dry) of the coke         \\
         &                                &                               & for each coal                                        \\ \hline
-  28    &      0.         0.             &        OCK\index{OCK}(NCHARB) & Composition in O (mass.\%, dry) of the coke          \\
+  28    &      0.         0.             & \texttt{ock\index{ock}}(\texttt{ncharb}) & Composition in O (mass.\%, dry) of the coke          \\
         &                                &                               & for each coal                                        \\ \hline
-  29    &      0.         0.             &     PCICK\index{PCICK}(NCHARB)& PCI of the dry coke ($Jkg^{-1}$) for each coal       \\ \hline
+  29    &      0.         0.             & \texttt{pcick\index{pcick}}(\texttt{ncharb})& PCI of the dry coke ($Jkg^{-1}$) for each coal       \\ \hline
   30    &          Cendres               &                               & Comment line                                         \\ \hline
-  31    &      6.3        6.3            &   XASHCH\index{XASHCH}(NCHARB)& Ash mass fraction (mass.-\%, dry) in each coal       \\ \hline
-  32    &      0.         0.             & H0ASHC\index{H0ASHC}(NCHARB)  & Ash formation enthalpy ($Jkg^{-1}$)                  \\
+  31    &      6.3        6.3            & \texttt{xashch\index{xashch}}(\texttt{ncharb})& Ash mass fraction (mass.-\%, dry) in each coal       \\ \hline
+  32    &      0.         0.             & \texttt{h0ashc\index{h0ashc}}(\texttt{ncharb})  & Ash formation enthalpy ($Jkg^{-1}$)                  \\
         &                                &                               & for each coal                                        \\ \hline
-  33    &      0.         0.             &CPASHC\index{CPASHC}(NCHARB)   & CP of the ashes ($Jkg^{-1}K^{-1}$) for each coal     \\ \hline
+  33    &      0.         0.             & \texttt{cpashc\index{cpashc}}(\texttt{ncharb})   & CP of the ashes ($Jkg^{-1}K^{-1}$) for each coal     \\ \hline
   34    &  D\'evolatilisation (Kobayashi)  &                             & Comment line                                         \\ \hline
-  35    &  1  0.37      0  0.37          & IY1CH\index{IY1CH}(NCHARB),   & For each coal, pairs (IY1CH, Y1CH).                  \\
-        &                                &  Y1CH\index{Y1CH}(NCHARB)     & The real Y1CH is the adimensional stoich. coefficient\\
-        &                                &                               & If the integer IY1CH is worth 1,                     \\
-        &                                &                               & the provided value of Y1CH is adopted and            \\
+  35    &  1  0.37      0  0.37          & \texttt{iy1ch\index{iy1ch}}(\texttt{ncharb}),   & For each coal, pairs (\texttt{iy1ch}, \texttt{y1ch}).                  \\
+        &                                & \texttt{y1ch\index{y1ch}}(\texttt{ncharb})     & The real \texttt{y1ch} is the adimensional stoich. coefficient\\
+        &                                &                               & If the integer \texttt{iy1ch} is worth 1,                     \\
+        &                                &                               & the provided value of \texttt{y1ch} is adopted and            \\
         &                                &                               & the composition of the light volatile matters        \\
         &                                &                               & is calculated automatically.                         \\
-        &                                &                               & If the integer IY1CH is worth 0,                     \\
-        &                                &                               & the provided value of Y1CH is ignored:               \\
-        &                                &                               & Y1CH is calculated automatically (the light          \\
+        &                                &                               & If the integer \texttt{iy1ch} is worth 0,                     \\
+        &                                &                               & the provided value of \texttt{y1ch} is ignored:               \\
+        &                                &                               & \texttt{y1ch} is calculated automatically (the light          \\
         &                                &                               & volatiles are then composed of {$CH_{4}$}, {$CO$}).  \\ \hline
-  36    &  1  0.74      1  0.74          & IY2CH\index{IY2CH}(NCHARB),   & For each coal, pairs (IY2CH, Y2CH).                  \\
-        &                                &  Y2CH\index{Y2CH}(NCHARB)     & The real Y2CH is the adimensional stoich. coefficient\\
-        &                                &                               & If the integer IY2CH is worth 1,                     \\
-        &                                &                               & the provided value of Y2CH is adopted and            \\
+  36    &  1  0.74      1  0.74          & \texttt{iy2ch\index{iy2ch}}(\texttt{ncharb}),   & For each coal, pairs (\texttt{iy2ch}, \texttt{y2ch}).                  \\
+        &                                & \texttt{y2ch\index{y2ch}}(\texttt{ncharb})     & The real \texttt{y2ch} is the adimensional stoich. coefficient\\
+        &                                &                               & If the integer \texttt{iy2ch} is worth 1,                     \\
+        &                                &                               & the provided value of \texttt{y2ch} is adopted and            \\
         &                                &                               & the composition of the heavy volatile matters        \\
         &                                &                               & is calculated automatically.                         \\
-        &                                &                               & If the integer IY2CH is worth 0,                     \\
-        &                                &                               & the provided value of Y2CH is ignored:               \\
-        &                                &                               & Y2CH is calculated automatically (the heavy          \\
+        &                                &                               & If the integer \texttt{iy2ch} is worth 0,                     \\
+        &                                &                               & the provided value of \texttt{y2ch} is ignored:               \\
+        &                                &                               & \texttt{y2ch} is calculated automatically (the heavy          \\
         &                                &                               & volatiles are then composed of {$C_{2}H_{4}$}, {$CO$}).\\ \hline
-  37    &  370000.      410000.          &       A1CH\index{A1CH}(NCHARB)& Devolatilisation pre-exponential factor A1 ($s^{-1}$)\\
+  37    &  370000.      410000.          & \texttt{a1ch\index{a1ch}}(\texttt{ncharb})& Devolatilisation pre-exponential factor A1 ($s^{-1}$)\\
         &                                &                               & for each coal (light volatile matters)               \\ \hline
-  38    &  1.3E13       1.52E13          &       A2CH\index{A2CH}(NCHARB)& Devolatilisation pre-exponential factor A2 ($s^{-1}$)\\
+  38    &  1.3E13       1.52E13          & \texttt{a2ch\index{a2ch}}(\texttt{ncharb})& Devolatilisation pre-exponential factor A2 ($s^{-1}$)\\
         &                                &                               & for each coal (heavy volatile matters)               \\ \hline
-  39    &   74000.       80000.          &       E1CH\index{E1CH}(NCHARB)& Devolatilisation activation energy E1 ($Jmol^{-1}$)  \\
+  39    &   74000.       80000.          & \texttt{e1ch\index{e1ch}}(\texttt{ncharb})& Devolatilisation activation energy E1 ($Jmol^{-1}$)  \\
         &                                &                               & for each coal (light volatile matters)               \\ \hline
-  40    &  250000.      310000.          &       E2CH\index{E2CH}(NCHARB)& Energie d'activation E2 ($Jmol^{-1}$) de d\'evolatilisation\\
+  40    &  250000.      310000.          & \texttt{e2ch\index{e2ch}}(\texttt{ncharb})& Energie d'activation E2 ($Jmol^{-1}$) de d\'evolatilisation\\
         &                                &                               & for each coal (heavy volatile matters)               \\ \hline
   41    &  Combustion h\'et\'erog\`ene   &                               & Ligne de commentaire                                 \\ \hline
-  42    &      17.88        17.88        &AHETCH\index{AHETCH}(NCHARB)   & Char burnout pre-exponential constant                \\
+  42    &      17.88        17.88        & \texttt{ahetch\index{ahetch}}(\texttt{ncharb})   & Char burnout pre-exponential constant                \\
         &                                &                               & ($kgm^{-2}s^{-1}atm^{-1}$) for each coal             \\ \hline
-  43    &      16.55        16.55        &EHETCH\index{EHETCH}(NCHARB)   & Char burnout activation energy ($kcalmol{-1}$)       \\
+  43    &      16.55        16.55        & \texttt{ehetch\index{ehetch}}(\texttt{ncharb})   & Char burnout activation energy ($kcalmol{-1}$)       \\
         &                                &                               & for each coal                                        \\ \hline
-  44    &       1            1           &IOCHET\index{IOCHET}(NCHARB)   & Char burnout reaction order for each coal            \\
-        &                                &                               & 0.5 if IOCHET = 0 and 1 if IOCHET = 1                \\ \hline
+  44    &       1            1           & \texttt{iochet\index{iochet}}(\texttt{ncharb})   & Char burnout reaction order for each coal            \\
+        &                                &                               & 0.5 if \texttt{iochet} = 0 and 1 if \texttt{iochet} = 1                \\ \hline
 \end{tabular}
 }
 \caption{Example of file for the pulverised coal combustion:
@@ -6836,11 +6836,11 @@ study case. Their content is described below.
   5     &\#                            ... &           & Free comment                                       \\ \hline
   6     &\# Nb d'especes NGAZG et Nb   ... &           & Free comment                                       \\ \hline
   7     &\# NGAZG NPO                  ... &           & Free comment                                       \\ \hline
-  8     &    1   238         &    NGAZG\index{NGAZG}   & Number of species                                  \\
-        &                    &    NPO\index{NPO}       & Number of given temperature points for             \\
+  8     &    1   238         &    \texttt{ngazg\index{ngazg}}   & Number of species                         \\
+        &                    &    \texttt{npo\index{npo}}       & Number of given temperature points for    \\
         &                    &                         & the tabulated physical properties                  \\
-        &                    &                         & (NPO $\leqslant$ NPOT set in ppthch.h)             \\
-        &                    &                         & So there will be NGAZG blocks of NPO lines each    \\ \hline
+        &                    &                         & (\texttt{npo} $\leqslant$ \texttt{npot} set in \texttt{ppthch.h})             \\
+        &                    &                         & So there will be \texttt{ngazg} blocks of \texttt{npo} lines each    \\ \hline
   9     &\#                            ... &           & Free comment                                       \\ \hline
  10     &\#  Proprietes                ... &           & Free comment                                       \\ \hline
  11     &\#  ~~~~T~~~~~~~~~~~H         ... &           & Free comment                                       \\ \hline
@@ -6850,14 +6850,14 @@ study case. Their content is described below.
  15     &\#                            ... &           & Free comment                                       \\ \hline
  16     &    ~~~300.~~~~~~14000.       ... &           & Tabulation in line of the physical properties      \\
         &                                  &           & as a function of the temperature in Kelvin         \\
-        &                                  &           & for each of the NGAZG species                      \\
-        &                    &    H                    & Enthalpy in J/kg                                   \\
-        &                    &    ROEL                 & Density in kg/m3                                   \\
-        &                    &    CPEL                 & Specific heat in J/(kg K)                          \\
-        &                    &    SIGEL                & Electric conductivity in Ohm/m                     \\
-        &                    &    VISEL                & Dynamic viscosity in kg/(m s)                      \\
-        &                    &    XLABEL               & Thermal conductivity in W/(m K)                    \\
-        &                    &    XKABEL\index{XKABEL} & Absorption coefficient (radiation)                 \\   \hline
+        &                                  &           & for each of the \texttt{ngazg} species             \\
+        &                    &    \texttt{h}                    & Enthalpy in J/kg                                   \\
+        &                    &    \texttt{roel}                 & Density in kg/m3                                   \\
+        &                    &    \texttt{cpel}                 & Specific heat in J/(kg K)                          \\
+        &                    &    \texttt{sigel}                & Electric conductivity in Ohm/m                     \\
+        &                    &    \texttt{visel}                & Dynamic viscosity in kg/(m s)                      \\
+        &                    &    \texttt{xlabel}               & Thermal conductivity in W/(m K)                    \\
+        &                    &    \texttt{xkabel\index{xkabel}} & Absorption coefficient (radiation)                 \\   \hline
 \end{tabular}
 }
 \caption{Example of file for the electric arc module:
