@@ -1163,31 +1163,24 @@ static void cs_gui_surfacic_variable_post(const char *const name,
  *=================================*/
 
 /*----------------------------------------------------------------------------
- * Get list of variables or properties or scalar's names for calculation mean
+ * Return the number of variables and properties inside a given time average.
  *
  * parameters:
- *   id           -->  number of mean (imom)
- *   list         <--  output control parameter
+ *   id           -->  time average number (imom)
  *----------------------------------------------------------------------------*/
 
-static int cs_gui_get_mean_names_number( int   const id)
+static int
+_get_time_average_n_variables(const int id)
 {
   char *path = NULL;
-  char *str_id = NULL;
   int   number = 0;
 
-  BFT_MALLOC(str_id,
-             cs_gui_characters_number(id)+1,
-             char);
-  sprintf(str_id, "%i", id);
-
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "analysis_control", "time_averages", "time_average");
-  cs_xpath_add_test_attribute(&path, "id", str_id);
+  cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
+  cs_xpath_add_element_num(&path, "time_average", id);
   cs_xpath_add_element(&path, "var_prop");
   number = cs_gui_get_nb_element(path);
 
-  BFT_FREE(str_id);
   BFT_FREE(path);
 
   return number;
@@ -1195,91 +1188,76 @@ static int cs_gui_get_mean_names_number( int   const id)
 }
 
 /*----------------------------------------------------------------------------
- * Get mean value parameters.
+ * Get value of a parameter for a given time avegare.
  *
  * parameters:
- *   id              -->  number of mean (imom)
+ *   id              -->  time average number (imom)
  *   param           -->  name of the parameter
- *   keyword         <--   output control parameter
+ *   data           <--   value of the parameter
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_get_mean_value(      int   const id,
-                                  const char *const param,
-                                        int  *const keyword)
+static void _get_time_average_data(const int         id,
+                                   const char *const param,
+                                         int  *const data)
 {
   char *path = NULL;
-  char *str_id = NULL;
   int   result = 0;
 
-  BFT_MALLOC(str_id,
-             cs_gui_characters_number(id)+1,
-             char);
-  sprintf(str_id, "%i", id);
-
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "analysis_control", "time_averages", "time_average");
-  cs_xpath_add_test_attribute(&path,"id",str_id);
+  cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
+  cs_xpath_add_element_num(&path, "time_average", id);
   cs_xpath_add_element(&path, param);
 
   cs_xpath_add_function_text(&path);
-  if (cs_gui_get_int(path, &result)) *keyword = result;
+  if (cs_gui_get_int(path, &result))
+    *data = result;
 
   BFT_FREE(path);
-  BFT_FREE(str_id);
 }
 
 /*----------------------------------------------------------------------------
- * Get variable or properties or scalar's name for one mean
+ * Return the name of a variable or a property for a given time average.
  *
  * parameters:
- *   id           -->  number of mean (imom)
- *   nb           -->  number of order in list of var_prop of the mean
+ *   id           -->  time average number (imom)
+ *   nb           -->  variable or property number
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_get_mean_prop(const int id, const int nb)
+static char *_get_time_average_variable_name(const int id, const int nb)
 {
   char *path = NULL;
   char *name = NULL;
-  char *str_id = NULL;
-
-  BFT_MALLOC(str_id,
-             cs_gui_characters_number(id)+1,
-             char);
-  sprintf(str_id, "%i", id);
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "analysis_control", "time_averages", "time_average");
-  cs_xpath_add_test_attribute(&path,"id",str_id);
+  cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
+  cs_xpath_add_element_num(&path, "time_average", id);
   cs_xpath_add_element_num(&path, "var_prop", nb);
   cs_xpath_add_attribute(&path, "name");
 
   name = cs_gui_get_attribute_value(path);
-
   BFT_FREE(path);
-  BFT_FREE(str_id);
 
   return name;
 }
 
 /*----------------------------------------------------------------------------
- * Get label of mean
+ * Return the label of a time average.
  *
  * parameters:
- *   nb           -->  number of order in list of mean
+ *   id              -->  time average number (imom)
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_get_mean_label(const int nb)
+static char *_get_time_average_label(const int id)
 {
   char *path = NULL;
   char *label = NULL;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "analysis_control", "time_averages");
-  cs_xpath_add_element_num(&path, "time_average", nb);
+  cs_xpath_add_element_num(&path, "time_average", id);
   cs_xpath_add_attribute(&path,"label");
 
   label = cs_gui_get_attribute_value(path);
-
   BFT_FREE(path);
 
   return label;
@@ -3828,7 +3806,7 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
     for (i=0; i < cs_glob_var->ntimaver; i++) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ icmome[i]-1 ]-1 ];
       cs_glob_var->propce[n] = icmome[i];
-      name = cs_gui_get_mean_label(i+1);
+      name = _get_time_average_label(i+1);
       BFT_MALLOC(cs_glob_var->properties_name[n], strlen(name)+1, char);
       strcpy(cs_glob_var->properties_name[n++], name);
       BFT_FREE(name);
@@ -3862,10 +3840,9 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
                                       int *const imoold,
                                       int *const idfmom)
 {
-  int nmean = 0;
   int imom = 0;
   int isuite = 0;
-  int i, j, n, nb;
+  int i, j, n;
   char *name = NULL;
 
   cs_glob_var->ntimaver
@@ -3875,28 +3852,27 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
   for (i=0; i < cs_glob_var->ntimaver; i++) {
 
     imom = i + 1;
-    cs_gui_get_mean_value(imom, "time_step_start", &ntdmom[i]);
+
+    _get_time_average_data(imom, "time_step_start", &ntdmom[i]);
 
     /* test on isuite */
     cs_gui_restart_parameters_status("restart", &isuite);
 
     if (isuite != 0) {
-      cs_gui_get_mean_value(imom, "restart_from_time_average", &imoold[i]);
+      _get_time_average_data(imom, "restart_from_time_average", &imoold[i]);
       if (imoold[i] == imom) imoold[i] = -2;
     }
 
-    nmean = cs_gui_get_mean_names_number(imom);
+    for (n=0; n < _get_time_average_n_variables(imom); n++) {
 
-    for (n=0; n<nmean; n++) {
+      name = _get_time_average_variable_name(imom, n + 1);
 
-      nb = n + 1;
-      name = cs_gui_get_mean_prop(imom, nb);
-
-      for (j=0; j < cs_glob_var->nvar; j++){
+      for (j=0; j < cs_glob_var->nvar; j++) {
         if (cs_gui_strcmp(name,  cs_glob_var->name[j])) {
           idfmom[(imom-1)*(*ndgmox) + n] = cs_glob_var->rtp[j] +1;
         }
       }
+
       for (j=0 ; j < cs_glob_var->nprop; j++) {
         if (cs_gui_strcmp(name, cs_glob_var->properties_name[j]))
           idfmom[(imom-1)*(*ndgmox) + n] = -(cs_glob_var->propce[j]);
@@ -3904,7 +3880,6 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 
       BFT_FREE(name);
     }
-
   }
 #if _XML_DEBUG_
   bft_printf("==>UIMOYT\n");

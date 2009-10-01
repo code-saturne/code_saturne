@@ -79,7 +79,7 @@ class OutputVolumicVariablesModel(Model):
                               self.getMeteoScalProper(),
                               self.getPuCoalScalProper(),
                               self._getWeightMatrixProperty(),
-                              self.getListOfTimeMeans(),
+                              self.getListOfTimeAverage(),
                               self._getListOfAleMethod(),
                               self._getThermalRadiativeProperties())
 
@@ -280,7 +280,7 @@ class OutputVolumicVariablesModel(Model):
         return nodeList
 
 
-    def getListOfTimeMeans(self):
+    def getListOfTimeAverage(self):
         """
         Return list of time averages variables
         Also called by ProfilesModel

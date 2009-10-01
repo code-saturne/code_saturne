@@ -65,26 +65,30 @@ class TimeAveragesModel(Model):
         Simple constructor.
         """
         self.case = case
-        self.node_anal      = self.case.xmlInitNode('analysis_control')
-        self.node_mean      = self.node_anal.xmlInitNode('time_averages')
-        self.node_model     = self.case.xmlInitNode('thermophysical_models')
-        self.node_model_vp  = self.node_model.xmlInitNode('velocity_pressure')
-        self.node_var_vp    = self.node_model_vp.xmlGetNodeList('variable')
-        self.node_pro_vp    = self.node_model_vp.xmlGetNodeList('property')
+        self.node_anal     = self.case.xmlInitNode('analysis_control')
+        self.node_mean     = self.node_anal.xmlInitNode('time_averages')
+        self.node_model    = self.case.xmlInitNode('thermophysical_models')
+        self.node_model_vp = self.node_model.xmlInitNode('velocity_pressure')
+        self.node_var_vp   = self.node_model_vp.xmlGetNodeList('variable')
+        self.node_pro_vp   = self.node_model_vp.xmlGetNodeList('property')
 
         self.__updateDicoLabel2Name()
 
 
-    def __defaultValues(self):
+    def defaultValues(self):
         """
-        Private method.
-        Return a dictionnary with default values
+        Public method.
+        @return: dictionary with default values.
+        @rtype: C{Dict}
         """
         value = {}
-        if StartRestartModel(self.case).getRestart() == 'off':
-            value['restart']    = 0
-        else:
-            value['restart']    = -1
+        value['start']   = 1
+        value['restart'] = -2
+
+#        if StartRestartModel(self.case).getRestart() == 'off':
+#            value['restart']    = 0
+#        else:
+#            value['restart']    = -1
 
         return value
 
@@ -105,7 +109,6 @@ class TimeAveragesModel(Model):
                          output.getFluidProperty(),
                          output.getAdditionalScalarProperty(),
                          output.getTimeProperty(),
-                         output.getListOfTimeMeans(),
                          output.getPuCoalScalProper(),
                          output.getMeteoScalProper(),
                          output.getThermalScalar(),
@@ -124,114 +127,118 @@ class TimeAveragesModel(Model):
         return self.dicoLabel2Name.keys()
 
 
-    def ___updateAverageNumbers(self, imom):
+    def __updateTimeAverage(self, nb, label, start, restart, list):
         """
         Private method.
-        Update order of average.
+        Update data for average I{label}.
+        @type nb: C{Int}
+        @param nb: time average I{label} number.
+        @type start: C{Int}
+        @param start: start iteration for the time average I{label}.
+        @type restart: C{Int}
+        @param restart: restart parameter value for the new time average I{label}.
+        @type list: C{List}
+        @param list: list of variables and properties for the new time average I{label}.
+        @type label: C{String}
+        @param label: label for the time average I{label}.
+        @type start: C{Int}
+        @param start: start iteration for time average I{label}.
+        @type restart: C{Int}
+        @param restart: restart parameter value for the time average I{label}.
+        @type list: C{List}
+        @param list: list of variables and properties for the time average I{label}.
         """
-        for index in self.getAverageList():
-            lab, start, restart, list = self.getAverageInformations(index)
-            if index >= imom:
-                nb = str(index - 1)
-                if lab == 'Moy' + str(index):
-                    lab = 'Moy' + nb
-                node = self.node_mean.xmlGetNode('time_average', id=index)
-                node['id'] = nb
-                node['label'] = lab
+        node = self.node_mean.xmlInitNode('time_average', label=label)
+        node['id'] = str(nb)
 
-
-    def __updateAverage(self, nb, label, start, restart, list):
-        """
-        Private method.
-        Update data for average I{llabel}.
-        """
-        node = self.node_mean.xmlInitNode('time_average', id=nb)
-        node['label'] = label
         for var in list:
             self.isInList(var, self.dicoLabel2Name.keys())
             node.xmlAddChild('var_prop', name=self.dicoLabel2Name[var])
+
         node.xmlSetData('time_step_start', start)
-        if StartRestartModel(self.case).getRestart() != 'off' and restart != -1:
-            node.xmlSetData('restart_from_time_average', restart)
+
+        if StartRestartModel(self.case).getRestart() == 'on':
+            if restart != -2:
+                node.xmlSetData('restart_from_time_average', restart)
         else:
-            if node.xmlGetInt('restart_from_time_average'):
-                node.xmlRemoveChild('restart_from_time_average')
+            node.xmlRemoveChild('restart_from_time_average')
 
 
-    def setAverage(self, nb, label, start, restart, list):
+    def setTimeAverage(self, label, start, restart, list):
         """
         Public method.
-        Sets list of variables or properties used for calculation of average
-        for average number nb, and time's start and restart values.
+        Add a new time average I{label}.
+        @type label: C{String}
+        @param label: label for the new time average I{label}.
+        @type start: C{Int}
+        @param start: start iteration for the time average I{label}.
+        @type restart: C{Int}
+        @param restart: restart parameter value for the new time average I{label}.
+        @type list: C{List}
+        @param list: list of variables and properties for the new time average I{label}.
         """
-        self.isNotInList(nb, self.getAverageList())
-        for i in (nb, start):
-            self.isInt(i)
-        if StartRestartModel(self.case).getRestart() != 'off':
-            self.isInt(restart)
-        self.isNotInList(label, self.getAverageLabelsList())
+        self.isGreater(start, 0)
+        self.isNotInList(restart, [0])
+        self.isNotInList(label, self.getTimeAverageLabels())
 
-        self.__updateAverage(nb, label, start, restart, list)
+        nb = self.getNumberOfTimeAverage()
+        self.__updateTimeAverage(nb+1, label, start, restart, list)
 
 
-    def replaceAverage(self, nb, label, start, restart, list):
+    def replaceTimeAverage(self, old_label, new_label, start, restart, list):
         """
         Public method.
-        Replaces list of variables or properties used for calculation of mean
-        for average number nb, or label, or time's start or restart values.
+        Replaces data for time average I{old_label}.
+        @type old_label: C{String}
+        @param old_label: label of the time average to change.
+        @type new_label: C{String}
+        @param new_label: new label for the time average I{old_label}.
+        @type start: C{Int}
+        @param start: new start iteration for the time average I{old_label}.
+        @type restart: C{Int}
+        @param restart: new restart parameter value for the time average I{old_label}.
+        @type list: C{List}
+        @param list: new list of variables and properties for the time average I{old_label}.
         """
-        self.isInList(nb, self.getAverageList())
-        for i in (nb, start):
-            self.isInt(i)
-        if StartRestartModel(self.case).getRestart() != 'off':
-            self.isInt(restart)
+        self.isGreater(start, 0)
+        self.isNotInList(restart, [0])
 
-        node = self.node_mean.xmlGetNode('time_average', id=nb)
+        node = self.node_mean.xmlGetNode('time_average', label=old_label)
         if node:
+            node['label'] = new_label
             node.xmlRemoveChild('var_prop')
             node.xmlRemoveChild('time_step_start')
             node.xmlRemoveChild('restart_from_time_average')
-        self.__updateAverage(nb, label, start, restart, list)
+        self.__updateTimeAverage(node['id'], new_label, start, restart, list)
 
 
-    def deleteAverage(self, nb):
+    def deleteTimeAverage(self, label):
         """
         Public method.
-        Sets list of variables or properties used for calculation of mean
-        for average number nb, and time's start and restart values.
+        @type label: C{String}
+        @param label: label of the time average to delete.
         """
-        self.isInt(nb)
-        node = self.node_mean.xmlGetNode('time_average', id=nb)
+        node = self.node_mean.xmlGetNode('time_average', label=label)
         if node:
+            nb = node['id']
             node.xmlRemoveNode()
-##            node.xmlRemoveChild('var_prop')
-##            node.xmlRemoveChild('time_step_start')
-##            if node.xmlGetInt('restart_from_time_average'):
-##                node.xmlRemoveChild('restart_from_time_average')
-        self.___updateAverageNumbers(nb)
+
+            # renumerotation of all time average
+
+            for p in range(int(nb)+1, self.getNumberOfTimeAverage()+2):
+                t = self.node_mean.xmlGetNode('time_average', id=p)
+                t['id'] = p - 1
 
 
-    def getAverageList(self):
+    def getTimeAverageData(self, imom):
         """
         Public method.
-        Gets list of averages and return list of imom number.
-        """
-        list = []
-        for node in self.node_mean.xmlGetNodeList('time_average'):
-            list.append(int(node['id']))
-
-        return list
-
-
-    def getAverageInformations(self, imom):
-        """
-        Public method.
-        Gets average with imom and return time_step_start, restart_from_time_average,
-        and list of variables or properties ....
+        @return: data for time average number I{imom}.
+        @rtype: C{Tuple}
         """
         self.isInt(imom)
         list = []
-        restart = self.__defaultValues()['restart']
+        restart = self.defaultValues()['restart']
         node = self.node_mean.xmlGetNode('time_average', id=imom)
         start = node.xmlGetInt('time_step_start')
         if StartRestartModel(self.case).getRestart() != 'off':
@@ -244,10 +251,11 @@ class TimeAveragesModel(Model):
         return node['label'], start, restart, list
 
 
-    def getAverageLabelsList(self):
+    def getTimeAverageLabels(self):
         """
         Public method.
-        Gets list of averages's labels.
+        @return: list of time averages labels.
+        @rtype: C{List} of C{String}
         """
         list = []
         for node in self.node_mean.xmlGetNodeList('time_average'):
@@ -256,17 +264,13 @@ class TimeAveragesModel(Model):
         return list
 
 
-    def getAverageRestart(self, nb):
+    def getNumberOfTimeAverage(self):
         """
-        Public method. Only for GUI (StartRestartModel class).
-        Get restart to know if balise exists.
+        Public method.
+        @return: number of time averages already defined.
+        @rtype: C{Int}
         """
-        self.isInt(nb)
-        restart = ''
-        node = self.node_mean.xmlGetNode('time_average', id=nb)
-        if node:
-            restart = node.xmlGetInt('restart_from_time_average')
-        return restart
+        return len(self.node_mean.xmlGetNodeList('time_average'))
 
 #-------------------------------------------------------------------------------
 # TimeAveragesModel test case
@@ -283,11 +287,11 @@ class TimeAveragesTestCase(ModelTest):
         assert model != None, 'Could not instantiate TimeAveragesModel'
 
 
-    def checkSetAverage(self):
+    def checksetTimeAverage(self):
         """Check whether the TimeAveragesModel class could be set a average"""
         mdl = TimeAveragesModel(self.case)
-        mdl.setAverage(1, 'moyenne', 10, 1, ['VelocitU', 'VelocitV'])
-        mdl.setAverage(2, 'deux', 20, 1, ['Pressure'])
+        mdl.setTimeAverage(1, 'moyenne', 10, 1, ['VelocitU', 'VelocitV'])
+        mdl.setTimeAverage(2, 'deux', 20, 1, ['Pressure'])
 
         doc = '''<time_averages>
                     <time_average id="1" label="moyenne">
@@ -305,14 +309,14 @@ class TimeAveragesTestCase(ModelTest):
             'Could not set some averages in TimeAveragesModel'
 
 
-    def checkReplaceAverage(self):
+    def checkreplaceTimeAverage(self):
         """Check whether the TimeAveragesModel class could be replaced one average"""
         mdl = TimeAveragesModel(self.case)
-        mdl.setAverage(1, 'moyenne', 10, 1, ['VelocitU', 'VelocitV'])
-        mdl.setAverage(2, 'deux', 20, 1, ['Pressure'])
-        mdl.setAverage(3, 'trois', 33, 1, ['Pressure', 'VelocitU'])
-        mdl.replaceAverage(2, 'SECOND', 12, 1, ['VelocitW', 'VelocitV'])
-        mdl.replaceAverage(3, 'trois', 33, 1, ['Pressure', 'VelocitW'])
+        mdl.setTimeAverage(1, 'moyenne', 10, 1, ['VelocitU', 'VelocitV'])
+        mdl.setTimeAverage(2, 'deux', 20, 1, ['Pressure'])
+        mdl.setTimeAverage(3, 'trois', 33, 1, ['Pressure', 'VelocitU'])
+        mdl.replaceTimeAverage(2, 'SECOND', 12, 1, ['VelocitW', 'VelocitV'])
+        mdl.replaceTimeAverage(3, 'trois', 33, 1, ['Pressure', 'VelocitW'])
         doc = '''<time_averages>
                     <time_average id="1" label="moyenne">
                             <var_prop name="velocity_U"/>
@@ -334,13 +338,13 @@ class TimeAveragesTestCase(ModelTest):
             'Could not replace one average in TimeAveragesModel'
 
 
-    def checkDeleteAverage(self):
+    def checkdeleteTimeAverage(self):
         """Check whether the TimeAveragesModel class could be deleted one average"""
         mdl = TimeAveragesModel(self.case)
-        mdl.setAverage(1, 'moyenne', 10, 1, ['VelocitU', 'VelocitV'])
-        mdl.setAverage(2, 'deux', 20, 1, ['VelocitU'])
-        mdl.setAverage(3, 'trois', 33, 1, ['VelocitW', 'VelocitU'])
-        mdl.deleteAverage(2)
+        mdl.setTimeAverage(1, 'moyenne', 10, 1, ['VelocitU', 'VelocitV'])
+        mdl.setTimeAverage(2, 'deux', 20, 1, ['VelocitU'])
+        mdl.setTimeAverage(3, 'trois', 33, 1, ['VelocitW', 'VelocitU'])
+        mdl.deleteTimeAverage(2)
         doc = '''<time_averages>
                     <time_average id="1" label="moyenne">
                             <var_prop name="velocity_U"/>
@@ -356,24 +360,6 @@ class TimeAveragesTestCase(ModelTest):
 
         assert mdl.node_mean == self.xmlNodeFromString(doc),\
             'Could not delete one average in TimeAveragesModel'
-
-
-    def checkDeleteAverage(self):
-        """Check whether the TimeAveragesModel class could be get restart average"""
-        mdl = TimeAveragesModel(self.case)
-        mdl.setAverage(1, 'moyenne', 10, 1, ['VelocitU', 'VelocitV'])
-        mdl.setAverage(2, 'deux', 20, 1, ['VelocitU'])
-        mdl.setAverage(3, 'trois', 33, 1, ['VelocitW', 'VelocitU'])
-
-        assert mdl.getAverageRestart(1) == None,\
-            'Could not get restart average in TimeAveragesModel'
-
-        from Pages.StartRestartModel import StartRestartModel
-        StartRestartModel(self.case).setRestart('on')
-        mdl.replaceAverage(2, 'deux', 20, 3, ['VelocitU'])
-
-        assert mdl.getAverageRestart(2) == 3,\
-            'Could not get restart average in TimeAveragesModel'
 
 
 def suite():

@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>450</width>
-    <height>448</height>
+    <width>397</width>
+    <height>455</height>
    </rect>
   </property>
   <property name="acceptDrops" >
@@ -15,13 +15,13 @@
   <property name="windowTitle" >
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" >
-   <item>
+  <layout class="QGridLayout" name="gridLayout_2" >
+   <item row="0" column="0" >
     <widget class="QGroupBox" name="groupBox" >
      <property name="title" >
       <string>Time averages</string>
      </property>
-     <layout class="QVBoxLayout" >
+     <layout class="QVBoxLayout" name="verticalLayout" >
       <item>
        <widget class="QTreeView" name="treeViewAverage" >
         <property name="alternatingRowColors" >
@@ -60,37 +60,11 @@
            </widget>
           </item>
           <item>
-           <spacer>
-            <property name="orientation" >
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0" >
-             <size>
-              <width>16</width>
-              <height>16</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
            <widget class="QPushButton" name="pushButtonEdit" >
             <property name="text" >
              <string>Edit</string>
             </property>
            </widget>
-          </item>
-          <item>
-           <spacer>
-            <property name="orientation" >
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0" >
-             <size>
-              <width>16</width>
-              <height>16</height>
-             </size>
-            </property>
-           </spacer>
           </item>
           <item>
            <widget class="QPushButton" name="pushButtonDelete" >
@@ -124,7 +98,7 @@
        </widget>
       </item>
       <item>
-       <layout class="QHBoxLayout" >
+       <layout class="QHBoxLayout" name="horizontalLayout" >
         <item>
          <spacer>
           <property name="orientation" >
@@ -132,14 +106,14 @@
           </property>
           <property name="sizeHint" stdset="0" >
            <size>
-            <width>20</width>
-            <height>20</height>
+            <width>17</width>
+            <height>17</height>
            </size>
           </property>
          </spacer>
         </item>
         <item>
-         <layout class="QGridLayout" >
+         <layout class="QGridLayout" name="gridLayout" >
           <item row="0" column="0" >
            <widget class="QLabel" name="labelAverage" >
             <property name="text" >
@@ -172,7 +146,7 @@ for time average calculation</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="0" >
+          <item rowspan="2" row="2" column="0" >
            <widget class="QLabel" name="labelRestart" >
             <property name="toolTip" >
              <string>Code_Saturne key word: IMOOLD(IMOM)</string>
@@ -180,12 +154,15 @@ for time average calculation</string>
             <property name="text" >
              <string>If restart, number in preceding calculation
 of the time average to use to initalize 
-the selected time average.
+the current selected time average.
 </string>
             </property>
            </widget>
           </item>
           <item row="2" column="1" >
+           <widget class="QComboBox" name="comboBoxIMOOLD" />
+          </item>
+          <item row="3" column="1" >
            <widget class="QLineEdit" name="lineEditRestart" >
             <property name="toolTip" >
              <string>Code_Saturne key word: IMOOLD(IMOM)</string>
@@ -201,8 +178,8 @@ the selected time average.
           </property>
           <property name="sizeHint" stdset="0" >
            <size>
-            <width>16</width>
-            <height>16</height>
+            <width>17</width>
+            <height>17</height>
            </size>
           </property>
          </spacer>
@@ -273,7 +250,7 @@ the selected time average.
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="1" column="0" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>

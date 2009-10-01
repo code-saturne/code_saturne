@@ -151,7 +151,7 @@ class ProfilesModel(Model):
                          output.getFluidProperty(),
                          output.getAdditionalScalarProperty(),
                          output.getTimeProperty(),
-                         output.getListOfTimeMeans(),
+                         output.getListOfTimeAverage(),
                          output.getPuCoalScalProper(),
                          output.getMeteoScalProper(),
                          output.getThermalScalar(),

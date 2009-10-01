@@ -54,7 +54,7 @@ from PyQt4.QtGui  import *
 from Base.Common import LABEL_LENGTH_MAX
 from Base.Toolbox import GuiParam
 from TimeAveragesForm import Ui_TimeAveragesForm
-from Base.QtPage import IntValidator, RegExpValidator
+from Base.QtPage import IntValidator, RegExpValidator, ComboModel
 from Pages.StartRestartModel import StartRestartModel
 from Pages.TimeAveragesModel import TimeAveragesModel
 
@@ -113,13 +113,14 @@ class StandardItemModelAverage(QStandardItemModel):
         return True
 
 
-    def addItem(self, imom, label, ntdmom, imoold, list):
+    def addItem(self, label, ntdmom, imoold, list):
         """
         Add a row in the table.
         """
+        row = self.rowCount()
+        imom = row + 1
         item = [imom, label, ntdmom, imoold, list]
         self.dataAverage.append(item)
-        row = self.rowCount()
         if row +1 > 50:
             title = self.tr("Information")
             msg = self.tr("The maximal number of time averages cannot exceed 50. ")
@@ -128,10 +129,11 @@ class StandardItemModelAverage(QStandardItemModel):
             self.setRowCount(row+1)
 
 
-    def replaceItem(self, row, imom, label, ntdmom, imoold, list):
+    def replaceItem(self, row, label, ntdmom, imoold, list):
         """
         Replace a row in the table.
         """
+        imom = row + 1
         self.dataAverage[row] = [imom, label, ntdmom, imoold, list]
 
 
@@ -149,6 +151,15 @@ class StandardItemModelAverage(QStandardItemModel):
         Returns the name of the mesh file.
         """
         return self.dataAverage[row]
+
+
+    def deleteAllData(self):
+        """
+        Destroy the contents of the list.
+        """
+        self.dataAverage = []
+        self.setRowCount(0)
+
 
 #-------------------------------------------------------------------------------
 # Main class
@@ -200,12 +211,18 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.listViewDrop.setDragEnabled(True)
         self.listViewDrop.setDragDropOverwriteMode(False)
 
+        self.modelIMOOLD  = ComboModel(self.comboBoxIMOOLD, 3, 1)
+        self.modelIMOOLD.addItem(self.tr('automatic'), 'automatic')
+        self.modelIMOOLD.addItem(self.tr('reset'), 'reset')
+        self.modelIMOOLD.addItem(self.tr('specified'), 'specified')
+
         # Connections
         self.connect(self.pushButtonAdd,    SIGNAL("clicked()"), self.slotAddAverage)
         self.connect(self.pushButtonEdit,   SIGNAL("clicked()"), self.slotEditAverage)
-        self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.slotDeleteAverage)
+        self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.slotdeleteTimeAverage)
         self.connect(self.treeViewAverage,  SIGNAL("pressed(const QModelIndex &)"), self.slotSelectAverage)
         self.connect(self.lineEditStart, SIGNAL("textChanged(const QString &)"), self.slotStart)
+        self.connect(self.comboBoxIMOOLD, SIGNAL("activated(const QString&)"), self.slotRestartChoice)
         self.connect(self.lineEditRestart, SIGNAL("textChanged(const QString &)"), self.slotRestart)
 
         # Validators
@@ -213,6 +230,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.lineEditStart.setValidator(validatorStart)
 
         validatorRestart = IntValidator(self.lineEditRestart, min=-2, max=50)
+        validatorRestart.setExclusiveValues([0])
         self.lineEditRestart.setValidator(validatorRestart)
 
         rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
@@ -233,17 +251,18 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
 
         if StartRestartModel(self.case).getRestart() == 'off':
             self.labelRestart.setDisabled(True)
+            self.comboBoxIMOOLD.setDisabled(True)
             self.lineEditRestart.setDisabled(True)
             self.treeViewAverage.hideColumn(3)
+        else:
+            self.slotRestartChoice(QString("automatic"))
 
         # Update list of averages for view from xml file
 
-        for nb in self.mdl.getAverageList():
+        for nb in range(self.mdl.getNumberOfTimeAverage()):
             self.entriesNumber = self.entriesNumber + 1
-            label, start, restart, list = self.mdl.getAverageInformations(nb)
-            if restart == 0:
-                restart = ''
-            self.insertAverage(str(nb), label, start, restart, list)
+            label, start, restart, list = self.mdl.getTimeAverageData(nb+1)
+            self.insertAverage(label, start, restart, list)
 
 
     def getLabel(self):
@@ -251,10 +270,10 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         Return label of average.
         """
         label = str(self.lineEditAverage.text())
-        if label in self.mdl.getAverageLabelsList():
+        if label in self.mdl.getTimeAverageLabels():
             default = {}
             default['label'] = label
-            default['list'] = self.mdl.getAverageLabelsList()
+            default['list'] = self.mdl.getTimeAverageLabels()
             rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
             default['regexp'] = QRegExp(rx)
             from VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
@@ -275,6 +294,25 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         start, ok = text.toInt()
         if self.sender().validator().state == QValidator.Acceptable:
             self.start = start
+        else:
+            self.start = self.mdl.defaultValues()['start']
+
+
+    @pyqtSignature("const QString&")
+    def slotRestartChoice(self, text):
+        choice = self.modelIMOOLD.dicoV2M[str(text)]
+        if choice == "automatic":
+            self.restart = -2
+            self.lineEditRestart.setDisabled(True)
+            self.lineEditRestart.setText(QString(str(self.restart)))
+        elif choice == "reset":
+            self.restart = -1
+            self.lineEditRestart.setDisabled(True)
+            self.lineEditRestart.setText(QString(str(self.restart)))
+        elif choice == "specified":
+            self.restart = self.mdl.defaultValues()['restart']
+            self.lineEditRestart.setDisabled(False)
+            self.lineEditRestart.setText(QString(""))
 
 
     @pyqtSignature("const QString&")
@@ -284,12 +322,9 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         restart, ok = text.toInt()
         if self.sender().validator().state == QValidator.Acceptable:
-            if restart != 0:
-                self.restart = restart
-                return
-
-        self.restart = self.treeViewAverage.currentIndex().row()
-        self.sender().setText(QString(self.restart))
+            self.restart = restart
+        else:
+            self.restart = self.mdl.defaultValues()['restart']
 
 
     def averageInfo(self):
@@ -300,19 +335,19 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         return self.modelAverage.getItem(row)
 
 
-    def insertAverage(self, imom, label, ntdmom, imoold, list):
+    def insertAverage(self, label, ntdmom, imoold, list):
         """
         Insert values in Hlist.
         """
         idfmom = string.join(list,'*')
         idfmom_view = "<" + idfmom +">"
 
-        if imoold == None:
-            imoold = -1
-        self.modelAverage.addItem(imom, label, ntdmom, imoold, idfmom_view)
+        if imoold == self.mdl.defaultValues()['restart']:
+            imoold = ""
+        self.modelAverage.addItem(label, ntdmom, imoold, idfmom_view)
 
 
-    def replaceAverage(self, row, imom, label, ntdmom, imoold, list):
+    def replaceTimeAverage(self, row, label, ntdmom, imoold, list):
         """
         Insert values in Hlist.
         """
@@ -321,7 +356,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
 
         if imoold == None:
             imoold = -1
-        self.modelAverage.replaceItem(row, imom, label, ntdmom, imoold, idfmom_view)
+        self.modelAverage.replaceItem(row, label, ntdmom, imoold, idfmom_view)
 
 
     @pyqtSignature("")
@@ -341,11 +376,11 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         else:
             label = self.getLabel()
 
-            self.entriesNumber = self.entriesNumber+1
+            self.entriesNumber = self.entriesNumber + 1
             if label == '':
-                label = 'Average' + repr(self.entriesNumber)
+                label = 'TimeAverage' + repr(self.entriesNumber)
 
-            if label in self.mdl.getAverageLabelsList():
+            if label in self.mdl.getTimeAverageLabels():
                 title = self.tr("Warning")
                 msg = self.tr("This label already exists")
                 QMessageBox.information(self, title, msg)
@@ -357,30 +392,35 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             if StartRestartModel(self.case).getRestart() != 'off':
                 imoold = self.restart
             else:
-                imoold = 0
+                imoold = self.mdl.defaultValues()['restart']
 
-            self.insertAverage(self.entriesNumber, label, ntdmom, imoold, var_prop)
+            self.insertAverage(label, ntdmom, imoold, var_prop)
             average = string.split(idfmom, '*')
-            self.mdl.setAverage(self.entriesNumber, label, ntdmom, imoold, average)
+            self.mdl.setTimeAverage(label, ntdmom, imoold, average)
         self.__eraseEntries()
 
 
     @pyqtSignature("")
-    def slotDeleteAverage(self):
+    def slotdeleteTimeAverage(self):
         """
         Delete the selected average from the list (one by one).
         """
         row = self.treeViewAverage.currentIndex().row()
-        log.debug("slotDeleteAverage -> %s" % (row,))
+        log.debug("slotdeleteTimeAverage -> %s" % (row,))
         if row == -1:
             title = self.tr("Warning")
             msg   = self.tr("You must select an existing time average")
             QMessageBox.information(self, title, msg)
         else:
             [imom, label, ntdmom, imoold, idfmom] = self.averageInfo()
-            self.modelAverage.deleteRow(row)
-            self.mdl.deleteAverage(int(imom))
-            self.__eraseEntries()
+            #self.modelAverage.deleteRow(row)
+            self.mdl.deleteTimeAverage(label)
+            self.modelAverage.deleteAllData()
+            for n in range(self.mdl.getNumberOfTimeAverage()):
+                label, ntdmom, imoold, var_prop = self.mdl.getTimeAverageData(n+1)
+                self.insertAverage(label, ntdmom, imoold, var_prop)
+
+        self.__eraseEntries()
 
 
     @pyqtSignature("")
@@ -410,7 +450,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
                 if new_label == '':
                     new_label = old_label
 
-                if new_label != old_label and new_label in self.mdl.getAverageLabelsList():
+                if new_label != old_label and new_label in self.mdl.getTimeAverageLabels():
                     title = self.tr("Warning")
                     msg = self.tr("This label already exists: the old label is kept")
                     QMessageBox.information(self, title, msg)
@@ -422,10 +462,10 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
                 if StartRestartModel(self.case).getRestart() != 'off':
                     new_restart = self.restart
                 else:
-                    new_restart = 0
+                    new_restart = self.mdl.defaultValues()['restart']
 
-                self.replaceAverage(row, imom, new_label, new_start, new_restart, var_prof)
-                self.mdl.replaceAverage(int(imom), new_label, new_start, new_restart, var_prof)
+                self.replaceTimeAverage(row, new_label, new_start, new_restart, var_prof)
+                self.mdl.replaceTimeAverage(old_label, new_label, new_start, new_restart, var_prof)
                 idx = self.treeViewAverage.currentIndex()
                 self.treeViewAverage.dataChanged(idx, idx)
 
@@ -446,9 +486,17 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.lineEditStart.setText(QString(str(ntdmom)))
 
         if StartRestartModel(self.case).getRestart() != 'off':
-            if imoold == '':
-                imoold = -1
+            if not imoold or imoold == -2:
+                imoold = -2
+                choice = "automatic"
+            elif imoold == -1:
+                choice = "reset"
+            else:
+                choice = "specified"
+            self.slotRestartChoice(QString(choice))
+            self.modelIMOOLD.setItem(str_model=choice)
             self.lineEditRestart.setText(QString(str(imoold)))
+
         liste = [QString(s) for s in idfmom.replace('>','').replace('<','').split('*')]
         self.modelDrop.setStringList(liste)
 
@@ -465,25 +513,11 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.treeViewAverage.clearSelection()
 
 
-    def insertListVarP(self, name):
-        """
-        Insert name of variable or property into the list (one by one).
-        """
-        log.debug("insertListVarP")
-
-
     def tr(self, text):
         """
         Translation
         """
         return text
-
-#-------------------------------------------------------------------------------
-# Testing part
-#-------------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    pass
 
 #-------------------------------------------------------------------------------
 # End

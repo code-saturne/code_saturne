@@ -290,6 +290,7 @@ class IntValidator(QtGui.QIntValidator):
 
         self.exclusiveMin = False
         self.exclusiveMax = False
+        self.exclusiveValues = []
 
         self.default = 0
         self.fix = False
@@ -337,6 +338,19 @@ class IntValidator(QtGui.QIntValidator):
         self.parent.setStatusTip(QtCore.QString(msg))
 
 
+    def setExclusiveValues(self, l):
+        if type(l) != list and type(l) != tuple:
+            raise ValueError, "The given parameter is not a list or a tuple."
+        self.exclusiveValues = l
+
+        msg = ""
+        for v in l:
+            if self.__min > vmin or self.__max < vmax:
+                msg = self.tr("All integers value must be greater than %i and lower than %i" % (self.__min, self.__max))
+
+        self.parent.setStatusTip(QtCore.QString(msg))
+
+
     def setFixup(self, v):
         if type(v) != int:
             raise ValueError, "The given parameter is not an integer."
@@ -366,7 +380,9 @@ class IntValidator(QtGui.QIntValidator):
         if state == QtGui.QValidator.Acceptable:
             if self.exclusiveMin and x == self.bottom():
                 state = QtGui.QValidator.Intermediate
-            if self.exclusiveMax and x == self.top():
+            elif self.exclusiveMax and x == self.top():
+                state = QtGui.QValidator.Intermediate
+            elif x in self.exclusiveValues:
                 state = QtGui.QValidator.Intermediate
 
         palette = self.parent.palette()
@@ -488,7 +504,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
         if state == QtGui.QValidator.Acceptable:
             if self.exclusiveMin and x == self.bottom():
                 state = QtGui.QValidator.Intermediate
-            if self.exclusiveMax and x == self.top():
+            elif self.exclusiveMax and x == self.top():
                 state = QtGui.QValidator.Intermediate
 
         palette = self.parent.palette()

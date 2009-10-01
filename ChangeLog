@@ -1,3 +1,16 @@
+* 01/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix a numbering issue for time averages in GUI.
+  Add the choice for a different average number in case of restart.
+  modified routines:
+    gui/Base/QtPage.py
+    gui/Pages/OutputVolumicVariablesModel.py
+    gui/Pages/ProfilesModel.py
+    gui/Pages/StartRestartModel.py
+    gui/Pages/TimeAveragesForm.ui
+    gui/Pages/TimeAveragesModel.py
+    gui/Pages/TimeAveragesView.py
+    src/base/cs_gui.c
+
 * 01/10/2009 - David Monfort <david.monfort@edf.fr>
   Update Copyrights, clean subroutine and function keywords.
 

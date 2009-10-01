@@ -76,26 +76,9 @@ class StartRestartModel(Model):
         default['restart']                = "off"
         default['frozen_field']           = "off"
         default['restart_with_auxiliary'] = "on"
-##        default['main_restart']           = "binary"
-##        default['auxiliary_restart']      = "binary"
         default['restart_rescue']         = 0
         default['period_rescue']          = "4 output"
         return default
-
-
-    def _updateStartRestart(self):
-        """
-        If we don't continue calculation, TimeAveragesModel must to know
-        """
-        from TimeAveragesModel import TimeAveragesModel
-        ta_mdl = TimeAveragesModel(self.case)
-        for id in ta_mdl.getAverageList():
-            if ta_mdl.getAverageRestart(id) != '':
-                node_anal = self.case.xmlInitNode('analysis_control')
-                node_mean = node_anal.xmlInitNode('time_averages')
-                n = node_mean.xmlGetNode('time_average', id=id)
-                n.xmlRemoveChild('restart_from_time_average')
-        del TimeAveragesModel
 
 
     def getRestart(self):
@@ -118,8 +101,10 @@ class StartRestartModel(Model):
         node = self.node_start.xmlInitNode('restart', 'status')
         node['status'] = v
         if v == 'off':
-            self._updateStartRestart()
             self.node_start.xmlRemoveChild('current_restart')
+            for n in self.case.xmlGetNodeList('time_average'):
+                n.xmlRemoveChild('restart_from_time_average')
+
 
 
     def getFrozenField(self):
@@ -154,30 +139,6 @@ class StartRestartModel(Model):
         return status
 
 
-##    def getMainRestartFormat(self):
-##        """
-##        Return format of main restart file from advanced options.
-##        """
-##        node = self.node_start.xmlInitNode('main_restart', 'format')
-##        format= node['format']
-##        if not format:
-##            format = self._defaultStartRestartValues()['main_restart']
-##            self.setMainRestartFormat(format)
-##        return format
-
-##
-##    def getAuxiliaryRestartFormat(self):
-##        """
-##        Return format of auxiliary restart file from advanced options.
-##        """
-##        node = self.node_start.xmlInitNode('auxiliary_restart', 'format')
-##        format= node['format']
-##        if not format:
-##            format = self._defaultStartRestartValues()['auxiliary_restart']
-##            self.setAuxiliaryRestartFormat(format)
-##        return format
-
-
     def getRestartRescue(self):
         """
         Return frequency for restart checkpoints from advanced options.
@@ -202,25 +163,6 @@ class StartRestartModel(Model):
         self.isOnOff(status)
         node = self.node_start.xmlInitNode('restart_with_auxiliary', 'status')
         node['status'] = status
-
-
-##    def setMainRestartFormat(self, fmt):
-##        """
-##        Input format of main restart file for advanced options.
-##        """
-##        print "format ===", fmt
-##        self.isInList(fmt, ('ascii', 'binary'))
-##        node = self.node_start.xmlInitNode('main_restart', 'format')
-##        node['format'] = fmt
-##
-##
-##    def setAuxiliaryRestartFormat(self, fmt):
-##        """
-##        Input format of auxiliary restart file for advanced options.
-##        """
-##        self.isInList(fmt, ('ascii', 'binary'))
-##        node = self.node_start.xmlInitNode('auxiliary_restart', 'format')
-##        node['format'] = fmt
 
 
     def setRestartRescue(self, freq):
