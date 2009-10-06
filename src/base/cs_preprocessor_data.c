@@ -289,21 +289,26 @@ _set_block_ranges(cs_mesh_t       *mesh,
   mr->cell_bi = fvm_block_to_part_compute_sizes(rank_id,
                                                 n_ranks,
                                                 0,
+                                                0,
                                                 mesh->n_g_cells);
 
   mr->face_bi = fvm_block_to_part_compute_sizes(rank_id,
                                                 n_ranks,
+                                                0,
                                                 0,
                                                 mr->n_g_faces);
 
   mr->vertex_bi = fvm_block_to_part_compute_sizes(rank_id,
                                                   n_ranks,
                                                   0,
+                                                  0,
                                                   mesh->n_g_vertices);
+
   for (i = 0; i < mr->n_perio; i++)
     mr->per_face_bi[i]
       = fvm_block_to_part_compute_sizes(rank_id,
                                         n_ranks,
+                                        0,
                                         0,
                                         mr->n_g_per_face_couples[i]);
 }

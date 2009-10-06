@@ -1,3 +1,12 @@
+* 06/10/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Upgrade to FVM 0.15.0
+  modified script:
+    configure.ac
+  modified routines:
+    src/base/cs_io.c
+    src/base/cs_preprocessor_data.c
+    src/base/cs_restart.c
+
 * 01/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix a numbering issue for time averages in GUI.
   Add the choice for a different average number in case of restart.

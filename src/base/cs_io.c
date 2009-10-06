@@ -3150,6 +3150,8 @@ cs_io_set_defaults(int  mpi_io_mode)
     cs_glob_io_hints = FVM_FILE_INDIVIDUAL_POINTERS;
 
 #endif
+
+  fvm_file_set_default_semantics(cs_glob_io_hints);
 }
 
 /*----------------------------------------------------------------------------

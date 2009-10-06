@@ -338,7 +338,7 @@ fi
 #------------------------------------------------------------------------------
 
 CS_AC_TEST_BFT(["1.1.0"])
-CS_AC_TEST_FVM(["0.14.0"])
+CS_AC_TEST_FVM(["0.15.0"])
 CS_AC_TEST_MEI
 CS_AC_TEST_LIBXML2
 CS_AC_TEST_BLAS([$cs_have_openmp])

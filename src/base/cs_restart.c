@@ -433,6 +433,7 @@ _read_ent_values(cs_restart_t        *r,
 
   bi = fvm_block_to_part_compute_sizes(cs_glob_rank_id,
                                        cs_glob_n_ranks,
+                                       0,
                                        cs_restart_def_buf_size / nbr_byte_ent,
                                        n_glob_ents);
 
@@ -523,6 +524,7 @@ _write_ent_values(const cs_restart_t  *r,
 
   bi = fvm_part_to_block_compute_sizes(cs_glob_rank_id,
                                        cs_glob_n_ranks,
+                                       0,
                                        cs_restart_def_buf_size / nbr_byte_ent,
                                        n_glob_ents);
 
