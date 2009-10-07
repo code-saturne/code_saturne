@@ -1,3 +1,8 @@
+* 07/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Improvement in the profiles management in GUI.
+  modified routine:
+    gui/Pages/ProfilesView.py
+
 * 06/10/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Upgrade to FVM 0.15.0
   modified script:

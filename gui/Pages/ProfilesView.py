@@ -460,6 +460,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
 
             choice, freq = self.slotFrequencyType(self.comboBoxFreq.currentText())
             title = str(self.lineEditTitle.text())
+            if not title: title = label
             X1, ok = self.lineEditX1.text().toDouble()
             Y1, ok = self.lineEditY1.text().toDouble()
             Z1, ok = self.lineEditZ1.text().toDouble()
@@ -514,7 +515,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
                 new_label = str(self.lineEditBaseName.text())
 
                 if new_label == '':
-                    new_label = 'profile' + repr(self.entriesNumber)
+                    new_label = old_label
 
                 if new_label != old_label and new_label in self.mdl.getProfilesLabelsList():
                     title = self.tr("Warning")
@@ -529,6 +530,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
 
                 choice, freq = self.slotFrequencyType(self.comboBoxFreq.currentText())
                 title = str(self.lineEditTitle.text())
+                if not title: title = new_label
                 X1, ok = self.lineEditX1.text().toDouble()
                 Y1, ok = self.lineEditY1.text().toDouble()
                 Z1, ok = self.lineEditZ1.text().toDouble()
