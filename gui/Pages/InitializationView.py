@@ -159,8 +159,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
                     self.zone = name
                 if not self.zone:
                     self.zone = name
-            else:
-                raise ValueError, "there is no initialization zone defined."
+        #    else:
+        #        raise ValueError, "there is no initialization zone defined."
 
         self.modelZone.setItem(str_model = self.zone)
 

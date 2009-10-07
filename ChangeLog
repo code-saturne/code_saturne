@@ -1,4 +1,14 @@
 * 07/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix a bug in the scalar initialization if the user adds a new
+  scalar during a restarting calculation.
+  modified routines:
+    gui/Pages/InitializationView.py
+    gui/Pages/LocalizationView.py
+    include/base/cs_gui.h
+    src/base/cs_gui.c
+    src/base/inivar.f90
+
+* 07/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Improvement in the profiles management in GUI.
   modified routine:
     gui/Pages/ProfilesView.py

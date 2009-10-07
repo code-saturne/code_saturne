@@ -4240,33 +4240,81 @@ void CS_PROCF(nvamem, NVAMEM) (void)
     cs_glob_label->_cs_gui_last_var = 0;
 }
 
+/*-----------------------------------------------------------------------------
+ * Return the list of cells describing a given zone.
+ *
+ * parameters:
+ *   label     -->  volume label
+ *   ncelet    -->  number of cells with halo
+ *   faces     <--  number of selected cells
+ *----------------------------------------------------------------------------*/
+
+static int*
+cs_gui_get_cells_list(const char *label,
+                      const int   ncelet,
+                            int  *cells )
+{
+    int  c_id         = 0;
+    int  *cells_list  = NULL;
+    char *description = NULL;
+
+    description = cs_gui_volumic_zone_localization(label);
+
+    /* build list of cells */
+    BFT_MALLOC(cells_list, ncelet, int);
+
+    c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
+                                 description,
+                                 cells,
+                                 cells_list);
+
+    if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0)
+    {
+        const char *missing
+            = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
+        cs_base_warn(__FILE__, __LINE__);
+        bft_printf(_("The group or attribute \"%s\" in the selection\n"
+                     "criteria:\n"
+                     "\"%s\"\n"
+                     " does not correspond to any cell.\n"),
+                   missing, description);
+    }
+    BFT_FREE(description);
+    return cells_list;
+}
+
 /*----------------------------------------------------------------------------
- * Variables and user scalars initialization
+ * Variables and user scalars initialization.
  *
  * Fortran Interface:
  *
- * SUBROUTINE UIINIV (NCELET, ISCA, RTP)
+ * subroutine uiiniv (ncelet, isuite, isca, iscold, rtp)
  * *****************
  *
- * INTEGER          NCELET   -->  number of cells with halo
- * INTEGER          ISCA     -->  indirection array for scalar number
- * DOUBLE PRECISION RTP     <--   variables and scalars array
+ * integer          ncelet   -->  number of cells with halo
+ * integer          isuite   -->  restart indicator
+ * integer          isca     -->  indirection array for scalar number
+ * integer          iscold   -->  scalar number for restart
+ * double precision rtp     <--   variables and scalars array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
-                              const int    *const isca,
-                                    double *const rtp)
+void CS_PROCF(uiiniv, UIINIV)(const int    * ncelet,
+                              const int    *isuite,
+                              const int    *isca,
+                              const int    *iscold,
+                                    double  rtp[])
 {
   /* Coal combustion: the initialization of the model scalar are not given */
 
-  int i, j, icel, iel, c_id;
+  int i, j, icel, iel;
   int zones = 0;
   int cells = 0;
   int *cells_list = NULL;
   double initial_value = 0;
   char *choice = NULL;
-  char *name = NULL;
-  char *description = NULL;
+  char *path = NULL;
+  char *status = NULL;
+  char *label = NULL;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -4277,97 +4325,97 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *const ncelet,
 
 #if _XML_DEBUG_
   bft_printf("==>UIINIV\n");
-  bft_printf("--initialization zones number: %i\n", zones);
 #endif
 
   for (i=1; i < zones+1; i++) {
 
-    /* name and description (color or group) of the ith initialization zone */
-    name = cs_gui_volumic_zone_name(i);
-    description = cs_gui_volumic_zone_localization(name);
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+    cs_xpath_add_element_num(&path, "zone", i);
+    cs_xpath_add_attribute(&path, "initialization");
+    status = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
 
-    /* build list of cells */
-    BFT_MALLOC(cells_list, *ncelet, int);
+    if (cs_gui_strcmp(status, "on"))  {
 
-    c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
-                                 description,
-                                 &cells,
-                                 cells_list);
+      label = cs_gui_volumic_zone_name(i);
+      cells_list = cs_gui_get_cells_list(label, *ncelet, &cells);
 
-    if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0) {
-      const char *missing
-        = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
-      cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                   "criteria:\n"
-                   "\"%s\"\n"
-                   " does not correspond to any cell.\n"),
-                 missing, description);
-    }
+      if (*isuite == 0) {
 
+        /* Velocity variables initialization */
+        for (j=1; j < 4; j++) {
 
-    /* Velocity variables initialization */
-    for (j=1; j < 4; j++) {
+          cs_gui_variable_initial_value(vars->name[j], label, &initial_value);
 
-      cs_gui_variable_initial_value(vars->name[j], name, &initial_value);
+          for (icel = 0; icel < cells; icel++) {
+            iel = cells_list[icel]-1;
+            rtp[vars->rtp[j]*(*ncelet) + iel] = initial_value;
+          }
+        }
 
-      for (icel = 0; icel < cells; icel++) {
-        iel = cells_list[icel]-1;
-        rtp[vars->rtp[j]*(*ncelet) + iel] = initial_value;
+        /* Turbulence variables initialization */
+        choice = cs_gui_turbulence_initialization_choice();
+
+        if (cs_gui_strcmp(choice, "values")) {
+          for (j=4; j < vars->nvar - vars->nscaus - vars->nscapp; j++) {
+
+            cs_gui_variable_initial_value(vars->name[j], label, &initial_value);
+
+            for (icel = 0; icel < cells; icel++) {
+              iel = cells_list[icel]-1;
+              rtp[vars->rtp[j]*(*ncelet) + iel] = initial_value;
+            }
+          }
+        }
+
+        BFT_FREE(choice);
       }
-    }
 
-    /* Turbulence variables initialization */
-    choice = cs_gui_turbulence_initialization_choice();
+      /* User Scalars initialization */
+      for (j=0; j < vars->nscaus; j++) {
 
-    if (cs_gui_strcmp(choice, "values")) {
-      for (j=4; j < vars->nvar - vars->nscaus - vars->nscapp; j++) {
+        cs_gui_scalar_initial_value("additional_scalars",
+                                    vars->label[j],
+                                    label,
+                                    &initial_value);
 
-        cs_gui_variable_initial_value(vars->name[j], name, &initial_value);
-
-        for (icel = 0; icel < cells; icel++) {
-          iel = cells_list[icel]-1;
-          rtp[vars->rtp[j]*(*ncelet) + iel] = initial_value;
+        if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+          for (icel = 0; icel < cells; icel++) {
+            iel = cells_list[icel]-1;
+            rtp[(isca[j]-1)*(*ncelet) + iel] = initial_value;
+          }
         }
       }
-    }
-    BFT_FREE(choice);
 
-    /* User Scalars initialization */
-    for (j=0; j < vars->nscaus; j++) {
-
-      cs_gui_scalar_initial_value("additional_scalars",
-                                  vars->label[j],
-                                  name,
-                                  &initial_value);
-
-      for (icel = 0; icel < cells; icel++) {
-        iel = cells_list[icel]-1;
-        rtp[(isca[j]-1)*(*ncelet) + iel] = initial_value;
-      }
-    }
-    BFT_FREE(cells_list);
+      BFT_FREE(cells_list);
 
 #if _XML_DEBUG_
-    bft_printf("--zone name and description: %s, %s\n", name, description);
-    bft_printf("--zone's element number: %i\n", cells);
+      bft_printf("--zone label: %s, %s\n", label);
+      bft_printf("--zone's element number: %i\n", cells);
 
-    for (j=1; j < vars->nvar - vars->nscaus - vars->nscapp; j++){
-      cs_gui_variable_initial_value(vars->name[j], name, &initial_value);
-      bft_printf("--initial value for %s: %f\n",
-        vars->name[j], initial_value);
-    }
+      if (*isuite == 0) {
+        for (j=1; j < vars->nvar - vars->nscaus - vars->nscapp; j++) {
+          cs_gui_variable_initial_value(vars->name[j], label, &initial_value);
+          bft_printf("--initial value for %s: %f\n",
+            vars->name[j], initial_value);
+        }
+      }
 
-    for (j=0; j < vars->nscaus; j++) {
-      cs_gui_scalar_initial_value("additional_scalars",
-                                  vars->label[j],
-                                  name,
-                                  &initial_value);
-      bft_printf("--initial value for %s: %f\n", vars->label[j], initial_value);
-    }
+      for (j=0; j < vars->nscaus; j++) {
+        cs_gui_scalar_initial_value("additional_scalars",
+                                    vars->label[j],
+                                    label,
+                                    &initial_value);
+        if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+          bft_printf("--initial value for %s: %f\n", vars->label[j], initial_value);
+        }
+      }
 #endif
-    BFT_FREE(name);
-    BFT_FREE(description);
+      BFT_FREE(cells_list);
+      BFT_FREE(label);
+    }
+    BFT_FREE(status);
   } /* zones+1 */
 }
 

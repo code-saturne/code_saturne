@@ -222,9 +222,9 @@ iusini = 1
 !   - Interface Code_Saturne
 !     ======================
 
-if (isuite.eq.0 .and. iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
-  call uiiniv (ncelet, isca, rtp)
+  call uiiniv (ncelet, isuite, isca, iscold, rtp)
   !==========
 
 endif

@@ -454,21 +454,25 @@ void CS_PROCF(nvamem, NVAMEM) (void);
 void CS_PROCF (uiusar, UIUSAR) (int *const icoftu);
 
 /*----------------------------------------------------------------------------
- * Variables and user scalars initialization
+ * Variables and user scalars initialization.
  *
  * Fortran Interface:
  *
- * SUBROUTINE UIINIV (NCELET, ISCA, RTP)
+ * subroutine uiiniv (ncelet, isuite, isca, iscold, rtp)
  * *****************
  *
- * INTEGER          NCELET   -->  number of cells with halo
- * INTEGER          ISCA     -->  indirection array for scalar number
- * DOUBLE PRECISION RTP     <--   variables and scalars array
+ * integer          ncelet   -->  number of cells with halo
+ * integer          isuite   -->  restart indicator
+ * integer          isca     -->  indirection array for scalar number
+ * integer          iscold   -->  scalar number for restart
+ * double precision rtp     <--   variables and scalars array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiiniv, UIINIV) (const int    *const ncelet,
-                               const int    *const isca,
-                                     double *const rtp);
+void CS_PROCF(uiiniv, UIINIV) (const int    *ncelet,
+                               const int    *isuite,
+                               const int     isca[],
+                               const int     iscold[],
+                                     double  rtp[]);
 
 /*----------------------------------------------------------------------------
  * User law for material Properties

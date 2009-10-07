@@ -241,13 +241,14 @@ class StandardItemVolumeNature(QStandardItemModel):
         #self.keys = self.natureList.keys() # ordered tuple
         self.keys = Zone('VolumicZone').getNatureList()
 
-        self.setRowCount(len(self.dicoM2V.keys()))
         self.setColumnCount(1)
 
         row = 0
         for key in self.keys:
-            self.setItem(row, QStandardItem(QString(str(self.dicoM2V[key]))))
-            row += 1
+	    if key in ('initialization', 'head_losses'):
+                self.setItem(row, QStandardItem(QString(str(self.dicoM2V[key]))))
+                row += 1
+        self.setRowCount(row)
 
 
     def data(self, index, role):
@@ -285,7 +286,7 @@ class StandardItemVolumeNature(QStandardItemModel):
                 cpt += 1
 
 	#FIXME : delete the following line
-	return Qt.ItemIsSelectable
+	#return Qt.ItemIsSelectable
         if cpt == 1 and index.row() == disable_row:
             return Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
         else:
@@ -352,8 +353,8 @@ class FlagBox(QComboBox):
         self.setItemData(index, QVariant(s), Qt.CheckStateRole)
 
 
-    def hidePopup(self):
-        pass
+#    def hidePopup(self):
+#        pass
 
 #-------------------------------------------------------------------------------
 # Delegate for the volume nature
