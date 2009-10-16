@@ -2446,7 +2446,7 @@ _get_faces_to_send(cs_int_t           n_faces,
                    cs_int_t          *p_send_rank_index[],
                    cs_int_t          *p_send_faces[])
 {
-  cs_int_t  i, rank, shift;
+  cs_int_t  i, rank, shift, reduce_rank;
   fvm_gnum_t  start_gnum, end_gnum;
   cs_join_block_info_t  block_info;
 
@@ -2506,11 +2506,11 @@ _get_faces_to_send(cs_int_t           n_faces,
 
       /* The current face is a "main" face for the local rank */
 
-      int  reduce_rank = cs_search_gindex_binary(reduce_size,
-                                                 face_gnum[i],
-                                                 reduce_index);
+      reduce_rank = cs_search_gindex_binary(reduce_size,
+                                            face_gnum[i],
+                                            reduce_index);
 
-      assert(reduce_rank != -1);
+      assert(reduce_rank > -1);
       assert(reduce_rank < reduce_size);
 
       rank = reduce_ids[reduce_rank];
@@ -2524,9 +2524,9 @@ _get_faces_to_send(cs_int_t           n_faces,
     send_rank_index[i+1] += send_rank_index[i];
 
   BFT_MALLOC(send_faces, send_rank_index[n_ranks], cs_int_t);
-  BFT_MALLOC(count, n_faces, cs_int_t);
+  BFT_MALLOC(count, n_ranks, cs_int_t);
 
-  for (i = 0; i < n_faces; i++)
+  for (i = 0; i < n_ranks; i++)
     count[i] = 0;
 
   /* Fill the list of ranks */
@@ -2537,9 +2537,12 @@ _get_faces_to_send(cs_int_t           n_faces,
 
       /* The current face is a "main" face for the local rank */
 
-      int  reduce_rank = cs_search_gindex_binary(reduce_size,
-                                                 face_gnum[i],
-                                                 reduce_index);
+      reduce_rank = cs_search_gindex_binary(reduce_size,
+                                            face_gnum[i],
+                                            reduce_index);
+
+      assert(reduce_rank > -1);
+      assert(reduce_rank < reduce_size);
 
       rank = reduce_ids[reduce_rank];
       shift = send_rank_index[rank] + count[rank];
@@ -2552,10 +2555,6 @@ _get_faces_to_send(cs_int_t           n_faces,
 
   /* Free memory */
 
-  BFT_FREE(count);
-  BFT_FREE(reduce_ids);
-  BFT_FREE(reduce_index);
-
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   for (rank = 0; rank < n_ranks; rank++) {
     bft_printf(" rank %d: ", rank);
@@ -2565,6 +2564,10 @@ _get_faces_to_send(cs_int_t           n_faces,
     bft_printf_flush();
   }
 #endif
+
+  BFT_FREE(count);
+  BFT_FREE(reduce_ids);
+  BFT_FREE(reduce_index);
 
   /* Set return pointers */
 
