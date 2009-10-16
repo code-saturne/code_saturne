@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <float.h>
 
 /*----------------------------------------------------------------------------
  * BFT and FVM library headers
@@ -118,15 +119,15 @@ _compute_local_minmax(cs_int_t         n_vals,
                       cs_real_t       *max)
 {
   cs_int_t  i;
-  cs_real_t  _min = var[0], _max = var[0];
+  cs_real_t  _min = DBL_MAX, _max = -DBL_MAX;
 
-  for (i = 1; i < n_vals; i++) {
+  for (i = 0; i < n_vals; i++) {
     _min = CS_MIN(_min, var[i]);
     _max = CS_MAX(_max, var[i]);
   }
 
-  if (min != NULL)  *min = _min;
-  if (max != NULL)  *max = _max;
+  *min = _min;
+  *max = _max;
 }
 
 /*----------------------------------------------------------------------------
