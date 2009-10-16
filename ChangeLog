@@ -1,4 +1,9 @@
 * 16/10/2009 - David Monfort <david.monfort@edf.fr>
+  Replace fake variable by a fake array for consistency.
+  modified routine:
+    src/atmo/mematm.f90
+
+* 16/10/2009 - David Monfort <david.monfort@edf.fr>
   Disable multigrid algorithm for P1 model (radiative transfer).
   modified routine:
     src/rayt/raypun.f90

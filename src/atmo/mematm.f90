@@ -75,7 +75,7 @@ double precision ra(*)
 ! VARIABLES LOCALES
 
 integer          idebia, idebra, imode
-double precision w1
+double precision rvoid(1)
 
 !===============================================================================
 !  1. INITIALISATION
@@ -96,15 +96,15 @@ if (imeteo.gt.0) then
   imode = 0
 
 !     Nb les arguments ne sont pas utilises quand IMODE=0
-  call atlecm                                                     &
+  call atlecm &
   !==========
- ( imode      ,                                                   &
-   w1 , w1 , w1 ,                                                 &
-   w1 , w1 , w1 ,                                                 &
-   w1 , w1 ,                                                      &
-   w1 , w1 ,                                                      &
-   w1 , w1 ,                                                      &
-   w1 , w1 , w1 )
+ ( imode      ,             &
+   rvoid , rvoid , rvoid ,  &
+   rvoid , rvoid , rvoid ,  &
+   rvoid , rvoid ,          &
+   rvoid , rvoid ,          &
+   rvoid , rvoid ,          &
+   rvoid , rvoid , rvoid )
 
   endif
 
