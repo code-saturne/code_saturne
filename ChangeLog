@@ -1,3 +1,8 @@
+* 16/10/2009 - David Monfort <david.monfort@edf.fr>
+  Disable multigrid algorithm for P1 model (radiative transfer).
+  modified routine:
+    src/rayt/raypun.f90
+
 * 08/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Improve GUI behaviour for a RESTART directory is already present.
   modified routine:
