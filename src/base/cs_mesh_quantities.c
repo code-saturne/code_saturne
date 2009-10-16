@@ -53,6 +53,12 @@
 #include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
+ * FVM library headers
+ *----------------------------------------------------------------------------*/
+
+#include <fvm_parall.h>
+
+/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -1190,6 +1196,46 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
 
   *p_b_face_cog = b_face_cog;
   *p_b_face_normal = b_face_normal;
+}
+
+/*----------------------------------------------------------------------------
+ * Check that no negative volumes are present, and exit on error otherwise.
+ *
+ * parameters:
+ *   mesh            <-- pointer to mesh structure
+ *   mesh_quantities <-- pointer to mesh quantities structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
+                             const cs_mesh_quantities_t  *mesh_quantities)
+{
+  cs_int_t  cell_id;
+
+  fvm_gnum_t  error_count = 0;
+
+  for (cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
+    if (mesh_quantities->cell_vol[cell_id] < 0.0)
+      error_count += 1;
+  }
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    fvm_gnum_t tot_error_count = 0;
+    MPI_Allreduce(&error_count, &tot_error_count, 1, FVM_MPI_GNUM, MPI_SUM,
+                  cs_glob_mpi_comm);
+    error_count = tot_error_count;
+  }
+#endif
+
+  /* Exit with error */
+
+  if (error_count > 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("  %lu cells have a Negative volume.\n"
+                " Run mesh quality check for post-processing output.\n"
+                " In case of mesh joining, this may be due to overly "
+                " agressive joining parameters."), (unsigned long)error_count);
 }
 
 /*----------------------------------------------------------------------------

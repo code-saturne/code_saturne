@@ -388,6 +388,11 @@ cs_run(void)
 
   if (opts.benchmark <= 0) {
 
+    /* Check that mesh seems valid */
+
+    cs_mesh_quantities_check_vol(cs_glob_mesh,
+                                 cs_glob_mesh_quantities);
+
     /* Allocate Fortran working arrays */
 
     CS_PROCF(memini, MEMINI)(&iasize, &rasize,

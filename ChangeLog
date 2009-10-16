@@ -1,4 +1,11 @@
 * 16/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Add a verification for negative volume.
+  modified routines:
+    src/apps/cs_solver.c
+    src/base/cs_mesh_quantities.c
+
+* 16/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix a wrong initialization in mesh quality display when the array
   is empty.
   modified routine:
