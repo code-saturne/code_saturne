@@ -1,3 +1,8 @@
+* 19/10/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Disable FPE handling also on BlueGene systems.
+  modified routine:
+    src/apps/cs_solver.c
+
 * 19/10/2009 - David Monfort <david.monfort@edf.fr>
   Add Code_Saturne installer in the extras directory.
   added files:
