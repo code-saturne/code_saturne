@@ -81,13 +81,12 @@ typedef struct {
   /* Octree - Quadtree search algorithm */
   /* ---------------------------------- */
 
-  int   tree_max_level;     /* Deepest level reachable during tree building */
-  int   tree_n_max_boxes;   /* Max. number of boxes which can be related to a
-                               a leaf of the tree if level != tree_max_level */
+  int    tree_max_level;     /* Deepest level reachable during tree building */
+  int    tree_n_max_boxes;   /* Max. number of boxes which can be related to a
+                                a leaf of the tree if level != tree_max_level */
 
-  int   tree_max_box_ratio; /* Stop tree building if:
-                               n_linked_boxes > tree_max_box_ratio*n_init_boxes
-                            */
+  float  tree_max_box_ratio; /* Stop tree building if:
+                                n_linked_boxes > tree_max_box_ratio*n_init_boxes */
 
   /* Geometric parameters */
   /* -------------------- */
@@ -95,17 +94,17 @@ typedef struct {
   /* parameter used to compute the tolerance associated to each vertex.
      Also used for finding equivalent vertices during edge intersections */
 
-  double  fraction;
+  float  fraction;
 
   /* maximum angle between normals of two faces considered to
      be in the same plane (for face split) */
 
-  double  plane;
+  float  plane;
 
   /* Coef. used to reduce the tolerance: new tol. = tol * coef
      Values between [0.0, 1.0[ */
 
-  double  reduce_tol_factor;
+  float  reduce_tol_factor;
 
   /* Coef. used to modify the tolerance associated to each vertex before the
      merge operation.
@@ -114,7 +113,7 @@ typedef struct {
      If coef = 1.0 => no change
      If coef > 1.0 => increase vertex merge */
 
-  double  merge_tol_coef;
+  float  merge_tol_coef;
 
   /* Coef. used to modify locally the tolerance associated to each vertex
      BEFORE adding equivalences between vertices after edge intersections.
@@ -125,7 +124,7 @@ typedef struct {
      If coef > 1.0 => increase the number of equivalences between vertices
                       sharing the same edge. NOT ADVISED. */
 
-  double  edge_equiv_tol_coef;
+  float  edge_equiv_tol_coef;
 
   /* Parameter to switch on/off the influence of adjacent faces in the
      computation of tolerance */
@@ -267,7 +266,7 @@ cs_join_get_block_info(fvm_gnum_t  n_g_elts,
  *   fraction      <-- value of the fraction parameter
  *   plane         <-- value of the plane parameter
  *   rtf           <-- value of the "reduction tolerance factor" parameter
- *   ftf           <-- value of the "merge tolerance factor" parameter
+ *   mtf           <-- value of the "merge tolerance factor" parameter
  *   etf           <-- value of the "edge equiv. tolerance factor" parameter
  *   max_sub_faces <-- maximum number of sub-faces allowed during splitting
  *   tml           <-- value of the "tree max level" parameter
@@ -280,17 +279,17 @@ cs_join_get_block_info(fvm_gnum_t  n_g_elts,
  *---------------------------------------------------------------------------*/
 
 cs_join_param_t
-cs_join_param_define(int     join_id,
-                     double  fraction,
-                     double  plane,
-                     double  rtf,
-                     double  ftf,
-                     double  etf,
-                     int     max_sub_faces,
-                     int     tml,
-                     int     tmb,
-                     double  tmr,
-                     int     verbosity);
+cs_join_param_define(int    join_id,
+                     float  fraction,
+                     float  plane,
+                     float  rtf,
+                     float  mtf,
+                     float  etf,
+                     int    max_sub_faces,
+                     int    tml,
+                     int    tmb,
+                     float  tmr,
+                     int    verbosity);
 
 /*----------------------------------------------------------------------------
  * Create and initialize a cs_join_select_t structure.
