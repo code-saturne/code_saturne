@@ -2,6 +2,7 @@
                Yvan Fournier <yvan.fournier@edf.fr>
   Add a verification for negative volume.
   modified routines:
+    include/base/cs_mesh_quantities.h
     src/apps/cs_solver.c
     src/base/cs_mesh_quantities.c
 

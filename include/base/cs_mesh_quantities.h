@@ -187,6 +187,18 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
                            cs_real_t         *p_b_face_normal[]);
 
 /*----------------------------------------------------------------------------
+ * Check that no negative volumes are present, and exit on error otherwise.
+ *
+ * parameters:
+ *   mesh            <-- pointer to mesh structure
+ *   mesh_quantities <-- pointer to mesh quantities structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
+                             const cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
  * Dump a cs_mesh_quantities_t structure
  *
  * parameters:
