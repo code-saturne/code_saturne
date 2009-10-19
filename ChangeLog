@@ -1,3 +1,12 @@
+* 19/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Move explicit source correction in raysca for a correct post-processing.
+  This is allowed since combustion modelling always uses enthalpy.
+  Correction in the GUI part in addition.
+  modified routines:
+    gui/Pages/ThermalRadiationModel.py
+    src/rayt/raydom.f90
+    src/rayt/raysca.f90
+
 * 19/10/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor modification on a test when not enough data are available.
   modified routine:

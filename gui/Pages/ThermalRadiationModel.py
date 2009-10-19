@@ -266,6 +266,10 @@ class ThermalRadiationModel(Model):
         elif model == 'p-1':
             self.node_ray.xmlRemoveChild('directions_number')
         self.getAbsorCoeff()
+        self.getFrequency()
+        self.getTrs()
+    	self.getTemperatureListing()
+        self.getIntensityResolution()
 
 
     def isCoalCombustion(self):

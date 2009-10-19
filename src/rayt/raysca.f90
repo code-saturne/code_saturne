@@ -72,6 +72,7 @@ implicit none
 include "paramx.h"
 include "cstnum.h"
 include "cstphy.h"
+include "optcal.h"
 include "ppppar.h"
 include "ppthch.h"
 include "cpincl.h"
@@ -98,35 +99,46 @@ integer          iel
 !===============================================================================
 
 !===============================================================================
-! 1. PRISE EN COMPTE DES TERMES SOURCES RADIATIFS
+! Radiative source terms (thermal scalar only)
 !===============================================================================
-
 
 if (abs(iscsth(iisca)).eq.1 .or. iscsth(iisca).eq.2) then
 
+  ! Implicit part
+
   do iel = 1,ncel
     propce(iel,ipproc(itsri(1))) = max(-propce(iel,ipproc(itsri(1))),zero)
+    rovsdt(iel) = rovsdt(iel) + propce(iel,ipproc(itsri(1)))*volume(iel)
   enddo
 
-  do iel = 1,ncel
+  ! Explicit part
 
-!--> PARTIE EXPLICITE
+  if (abs(iscsth(iisca)).eq.1) then
 
-    smbrs(iel) = smbrs(iel)  + propce(iel,ipproc(itsre(1)))*volume(iel)
+    ! Source term correction if the thermal scalar is the temperature
+    if (icp(irapha).gt.0) then
+      do iel = 1,ncel
+        smbrs(iel) = smbrs(iel) +                                         &
+           propce(iel,ipproc(itsre(1))) / propce(iel,ipproc(icp(irapha))) &
+         * volume(iel)
+      enddo
+    else
+      do iel = 1,ncel
+        smbrs(iel) = smbrs(iel) +  propce(iel,ipproc(itsre(1))) / cp0(irapha) &
+         * volume(iel)
+      enddo
+    endif
 
-!--> PARTIE IMPLICITE
+  else
 
-    rovsdt(iel)= rovsdt(iel) + propce(iel,ipproc(itsri(1)))*volume(iel)
+    ! No correction if the thermal scalar is the enthalpy
+    do iel = 1,ncel
+      smbrs(iel) = smbrs(iel) + propce(iel,ipproc(itsre(1)))*volume(iel)
+    enddo
 
-  enddo
+  endif
 
 endif
-!
-
-!----
-! FIN
-!----
 
 return
-
 end subroutine

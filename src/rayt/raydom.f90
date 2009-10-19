@@ -1494,16 +1494,11 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     write(nfecra,5050)
     write(nfecra,5000)
 
-!--> Correction du terme source explicite si
-!    la variable transportee est la temperature
-!    (il faudra multiplier ce terme par VOLUME(IEL) dans COVOFI->RAYSCA)
-
-    if (abs(iscsth(iscalt(irapha))).eq.1) then
-      do iel = 1,ncel
-        propce(iel,ipproc(itsre(1))) =                       &
-          propce(iel,ipproc(itsre(1))) * w9(iel)
-      enddo
-    endif
+!--> Correction du terme source explicite dans raysca pour permettre un
+!    post-processing correct du terme source explicite
+!    lorsque la variable transportee est la temperature
+!    (pour les calculs en combustion la variable transportee est toujours
+!    l'enthalpie)
 
   else
     write(nfecra,5000)
