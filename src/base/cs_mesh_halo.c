@@ -3162,6 +3162,30 @@ _update_gcells_connect(cs_mesh_t       *mesh,
   cell_checker = _delete_table_int(cell_checker);
   cell_list = _delete_table_int(cell_list);
 
+  /* Sanity check */
+
+  for (i = 0; i < mesh->n_i_faces; i++) {
+    if (mesh->i_face_cells[2*i] < 1)
+      bft_error(__FILE__, __LINE__, 0,
+                " Error detected in interior face -> cells connectivity.\n"
+                " Face %d (%u) has an incomplete connectivity.\n"
+                " Cell1: %d - Cell2: %d (%u)",
+                i+1, mesh->global_i_face_num[i],
+                mesh->i_face_cells[2*i],
+                mesh->i_face_cells[2*i+1],
+                mesh->global_cell_num[mesh->i_face_cells[2*i+1]-1]);
+
+    if (mesh->i_face_cells[2*i+1] < 1)
+      bft_error(__FILE__, __LINE__, 0,
+                " Error detected in interior face -> cells connectivity.\n"
+                " Face %d (%u) has an incomplete connectivity.\n"
+                " Cell1: %d (%u) - Cell2: %d",
+                i+1, mesh->global_i_face_num[i],
+                mesh->i_face_cells[2*i],
+                mesh->global_cell_num[mesh->i_face_cells[2*i]-1],
+                mesh->i_face_cells[2*i+1]);
+
+  }
 }
 
 #if 0 /* TODO: check algorithm (deadlock on BG/L on one test case) */

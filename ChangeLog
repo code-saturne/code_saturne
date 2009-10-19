@@ -1,4 +1,9 @@
 * 19/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Add a coherency check for interior faces -> cells connectivity.
+  modified routine:
+    src/base/cs_mesh_halo.c
+
+* 19/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix a freeze that could happen in the joining algorithm when
   no face is present after the slice redistribution.
   modified routines:
