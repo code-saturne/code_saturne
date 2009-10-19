@@ -492,9 +492,11 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
 
       n_modified_faces += 1;
 
-      if (verbosity > 2) { /* Display the degenerate face */
+      /* Display the degenerate face */
 
-        bft_printf("\n  Degenerate connectivity for face: %d [%u]:",
+      if (n_face_vertices < 3 || verbosity > 2) {
+
+        bft_printf("\n  Remove edge for face: %d [%u]:",
                    i+1, mesh->face_gnum[i]);
 
         bft_printf("\n    Initial def: ");
@@ -511,6 +513,12 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
 
         bft_printf("\n");
         bft_printf_flush();
+
+        if (n_face_vertices < 3)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("  The simplified face has less than 3 vertices.\n"
+                      "  Check your joining parameters.\n"
+                      "  Face %d (%u)\n"), i+1, mesh->face_gnum[i]);
       }
 
     } /* End if n_face_vertices != n_init_vertices */
@@ -524,7 +532,7 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
   n_g_modified_faces = n_modified_faces;
   fvm_parall_counter(&n_g_modified_faces, 1);
 
-  bft_printf("  Degenerate connectivity for %lu faces.\n"
+  bft_printf("  Edge removed for %lu faces (global).\n"
              "  Mesh cleaning done.\n",
              (unsigned long)n_g_modified_faces);
 
@@ -1941,9 +1949,6 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
 
   n_init_edges = mesh->face_vtx_idx[mesh->n_faces] - 1;
 
-  if (n_init_edges == 0)
-    return edges;
-
   BFT_MALLOC(edges->def, 2*n_init_edges, cs_int_t);
   BFT_MALLOC(edges->vtx_idx, mesh->n_vertices + 1, cs_int_t);
 
@@ -1959,6 +1964,8 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
 
     cs_int_t  start = mesh->face_vtx_idx[i] - 1;
     cs_int_t  end =  mesh->face_vtx_idx[i+1] - 1;
+
+    assert(end-start > 0);
 
     for (j = start; j < end - 1; j++) {
 
@@ -2020,35 +2027,39 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
 
   fvm_order_local_allocated_s(NULL, adjacency, 2, order, n_init_edges);
 
-  /* Fill cs_join_edges_t structure */
+  if (n_init_edges > 0) {
 
-  o_id1 = order[0];
-  edges->def[0] = vtx_lst[2*o_id1];
-  edges->def[1] = vtx_lst[2*o_id1+1];
-  edges->vtx_idx[vtx_lst[2*o_id1]] += 1;
-  edges->vtx_idx[vtx_lst[2*o_id1+1]] += 1;
-  edge_shift = 1;
+    /* Fill cs_join_edges_t structure */
 
-  for (i = 1; i < n_init_edges; i++) {
+    o_id1 = order[0];
+    edges->def[0] = vtx_lst[2*o_id1];
+    edges->def[1] = vtx_lst[2*o_id1+1];
+    edges->vtx_idx[vtx_lst[2*o_id1]] += 1;
+    edges->vtx_idx[vtx_lst[2*o_id1+1]] += 1;
+    edge_shift = 1;
 
-    o_id1 = order[i-1];
-    o_id2 = order[i];
+    for (i = 1; i < n_init_edges; i++) {
 
-    if (   vtx_lst[2*o_id1]   != vtx_lst[2*o_id2]
-        || vtx_lst[2*o_id1+1] != vtx_lst[2*o_id2+1]) {
+      o_id1 = order[i-1];
+      o_id2 = order[i];
 
-      edges->vtx_idx[vtx_lst[2*o_id2]] += 1;
-      edges->vtx_idx[vtx_lst[2*o_id2+1]] += 1;
-      edges->def[2*edge_shift] = vtx_lst[2*o_id2];
-      edges->def[2*edge_shift+1] = vtx_lst[2*o_id2+1];
-      edge_shift++;
+      if (   vtx_lst[2*o_id1]   != vtx_lst[2*o_id2]
+          || vtx_lst[2*o_id1+1] != vtx_lst[2*o_id2+1]) {
 
-    }
+        edges->vtx_idx[vtx_lst[2*o_id2]] += 1;
+        edges->vtx_idx[vtx_lst[2*o_id2+1]] += 1;
+        edges->def[2*edge_shift] = vtx_lst[2*o_id2];
+        edges->def[2*edge_shift+1] = vtx_lst[2*o_id2+1];
+        edge_shift++;
 
-  } /* End of loop on edges */
+      }
 
-  edges->n_edges = edge_shift;
-  BFT_REALLOC(edges->def, 2*edges->n_edges, cs_int_t);
+    } /* End of loop on edges */
+
+    edges->n_edges = edge_shift;
+    BFT_REALLOC(edges->def, 2*edges->n_edges, cs_int_t);
+
+  } /* If n_init_edges > 0 */
 
   /* Build adj_vtx_lst and edge_lst */
 
@@ -2062,7 +2073,8 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
   BFT_MALLOC(edges->adj_vtx_lst, edges->vtx_idx[mesh->n_vertices], cs_int_t);
   BFT_MALLOC(edges->edge_lst, edges->vtx_idx[mesh->n_vertices], cs_int_t);
 
-  {
+  if (n_init_edges > 0) {
+
     cs_int_t  vtx_id_a, vtx_id_b, shift_a, shift_b;
     fvm_gnum_t  vtx_gnum_a, vtx_gnum_b;
 
@@ -2138,7 +2150,7 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
 
     assert(cur_edge_num - 1 == edges->n_edges);
 
-  } /* End of adj_vtx_lst and edge_lst building */
+  } /* End of adj_vtx_lst and edge_lst building if n_init_edges > 0 */
 
   /* Partial clean-up */
 
@@ -2428,6 +2440,7 @@ cs_join_mesh_update(cs_join_mesh_t         *mesh,
 
     mesh->face_vtx_idx = new_face_vtx_idx;
     mesh->face_vtx_lst = new_face_vtx_lst;
+
   }
 
   /* Define the new_vertices structure */

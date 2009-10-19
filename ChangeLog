@@ -1,4 +1,14 @@
 * 19/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix a freeze that could happen in the joining algorithm when
+  no face is present after the slice redistribution.
+  modified routines:
+    src/base/cs_join_intersect.c
+    src/base/cs_join_merge.c
+    src/base/cs_join_mesh.c
+    src/base/cs_join_split.c
+    src/base/cs_join_update.c
+
+* 19/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix an issue with the joining algorithm where not all the single
   vertices are detected during the selection step.
   modified routines:

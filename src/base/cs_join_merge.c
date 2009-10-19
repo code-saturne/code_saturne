@@ -2924,11 +2924,11 @@ cs_join_merge_vertices(cs_join_param_t        param,
     /* Build a merge list in parallel */
 
     _build_parall_merge_structures(work,
-                                    vtx_tags,
-                                    send_count, send_shift,
-                                    recv_count, recv_shift,
-                                    &vtx_merge_data,
-                                    &merge_set);
+                                   vtx_tags,
+                                   send_count, send_shift,
+                                   recv_count, recv_shift,
+                                   &vtx_merge_data,
+                                   &merge_set);
 
     /* Merge of equivalent vertices for the current block */
 

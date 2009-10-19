@@ -1395,6 +1395,8 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
   if (cs_glob_n_ranks == 1)
     bft_printf(_("      CPU time:                   %10.3g   %10.3g\n"),
                build_cpu_time + box_cpu_time, query_cpu_time);
+  bft_printf_flush();
+
 }
 
 /*============================================================================
@@ -1509,8 +1511,6 @@ cs_join_inter_edges_create(cs_int_t  n_edges)
 
   cs_join_inter_edges_t  *inter_edges = NULL;
 
-  if (n_edges == 0)
-    return NULL;
 
   /* Allocate and initialize structure */
 
@@ -2529,7 +2529,7 @@ cs_join_intersect_update_struct(const cs_join_edges_t   *edges,
 
   /* Pre-allocate a buffer to store data on possible new vertices */
 
-  max_size = 25;
+  max_size = 100;
   BFT_MALLOC(new_vertices, max_size, cs_join_vertex_t);
 
   /* Fill vtx_lst array of the cs_join_inter_edges_t structure */
@@ -2645,8 +2645,8 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
   _n_inter_tolerance_warnings = 0;
 
-  _inter_set = cs_join_inter_set_create(25);
-  _vtx_eset = cs_join_eset_create(15);
+  _inter_set = cs_join_inter_set_create(50);
+  _vtx_eset = cs_join_eset_create(30);
 
   /* Loop on edges */
 
@@ -2839,6 +2839,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
     _face_bbox_search_stats(face_neighborhood,
                             extents_wtime,
                             extents_cpu_time);
+  bft_printf_flush();
 
   /* Retrieve face -> face visibility */
 

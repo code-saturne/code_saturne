@@ -56,8 +56,8 @@
  * FVM library headers
  *---------------------------------------------------------------------------*/
 
-#include <fvm_io_num.h>
 #include <fvm_order.h>
+#include <fvm_io_num.h>
 #include <fvm_parall.h>
 
 /*----------------------------------------------------------------------------
@@ -233,9 +233,6 @@ _renumber_local_ordered_i(cs_int_t          n_elts,
 
   cs_int_t  *_new_index = NULL;
   fvm_gnum_t  *_new_glist = NULL;
-
-  if (n_elts < 1)
-    return;
 
   assert(index[0] == 0); /* case index[0] = 1 coulb be coded in the future */
 
@@ -511,9 +508,6 @@ _create_face_builder(cs_int_t  n_faces)
   cs_int_t  i;
 
   face_builder_t  *builder = NULL;
-
-  if (n_faces == 0)
-    return NULL;
 
   BFT_MALLOC(builder, 1, face_builder_t);
 
@@ -1276,7 +1270,6 @@ _get_subface_gnum(face_builder_t  *builder)
   const fvm_gnum_t  *global_num = NULL;
 
   assert(index != NULL);
-  assert(gconnect != NULL);
 
   /* Allocate the buffer we want to define */
 
@@ -1458,6 +1451,7 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
   /* Sanity checks */
 
   assert(init_mesh != NULL);
+  assert(builder != NULL);
 
   /* Create a new cs_join_mesh_t structure */
 
@@ -1468,19 +1462,6 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
   new_mesh = cs_join_mesh_create(new_mesh_name);
 
   BFT_FREE(new_mesh_name);
-
-  if (builder == NULL) { /* No face to treat for the current rank */
-
-    assert(block_info.local_size == 0);
-
-    cs_join_mesh_destroy(&init_mesh);
-
-    /* Return pointers */
-
-    *mesh = new_mesh;
-
-    return;
-  }
 
   assert((int)block_info.local_size == builder->n_faces);
 
@@ -1960,8 +1941,7 @@ cs_join_split_faces(cs_join_param_t          param,
         (_("  Warning: (%lu) problem(s) found during the face splitting\n"
            "     %12lu  open cycles,\n"
            "     %12lu  edges traversed twice,\n"
-           "     %12lu  faces split into more than "
-           "max_subfaces (= %d)\n\n"
+           "     %12lu  faces split into more than max_subfaces (= %d)\n\n"
            "  => Eventually modify joining parameters\n\n"),
          (unsigned long)n_g_face_problems,
          (unsigned long)n_g_open_cycles,
@@ -2003,9 +1983,7 @@ cs_join_split_faces(cs_join_param_t          param,
   BFT_FREE(edge_face_idx);
   BFT_FREE(edge_face_lst);
 
-  /* Define a global number for each new sub-faces */
-
-  if (loc_builder != NULL) {
+  { /* Define a global number for each new sub-faces */
 
     cs_int_t  n_subfaces = loc_builder->face_index[loc_builder->n_faces];
     cs_int_t  sub_connect_size = loc_builder->subface_index->array[n_subfaces];
@@ -2023,8 +2001,7 @@ cs_join_split_faces(cs_join_param_t          param,
 
     }
 
-    if (sub_connect_size > 0)
-      _get_subface_gnum(loc_builder);
+    _get_subface_gnum(loc_builder);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     bft_printf("\nFINAL BUILDER STATE\n");

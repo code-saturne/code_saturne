@@ -3284,20 +3284,23 @@ cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
 #endif
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump the structure */
-  if (join_param.verbosity > 2) {
+  {
     int k;
 
     bft_printf("\n  Dump edge_builder_t structure (%p)\n", edge_builder);
 
     if (edge_builder != NULL) {
-      bft_printf("  n_vertices: %10d\n"
-                 "  n_edges   : %10d\n",
-                 edge_builder->n_vertices, edge_builder->n_edges);
+      bft_printf("  n_vertices: %9d\n"
+                 "  n_edges   : %9d\n"
+                 "  idx_size  : %9d\n",
+                 edge_builder->n_vertices, edge_builder->n_edges,
+                 edge_builder->v2v_idx[edge_builder->n_vertices]);
 
-      for (i = 0; i < mesh->n_vertices; i++) {
+      for (i = 0; i < edge_builder->n_vertices; i++) {
 
-        bft_printf("%9d - [%10.4f %10.4f %10.4f]: (%d, %d) v-v:",
-                   i+1, mesh->vtx_coord[3*i], mesh->vtx_coord[3*i+1],
+        bft_printf("%7d - %9u- [%10.4f %10.4f %10.4f]: (%d, %d) v-v:",
+                   i+1, mesh->global_vtx_num[i],
+                   mesh->vtx_coord[3*i], mesh->vtx_coord[3*i+1],
                    mesh->vtx_coord[3*i+2], edge_builder->v2v_idx[i],
                    edge_builder->v2v_idx[i+1]);
 
@@ -3430,6 +3433,47 @@ cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
   if (join_param.verbosity > 2)
     cs_join_post_after_merge(join_param, join_select);
 
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  /* Check face -> vertex connectivity */
+
+  for (i = 0; i < mesh->n_i_faces; i++) {
+
+    for (j = mesh->i_face_vtx_idx[i] - 1;
+         j < mesh->i_face_vtx_idx[i+1] - 1; i++) {
+
+       if (mesh->i_face_vtx_lst[j] < 1 ||
+           mesh->i_face_vtx_lst[j] > mesh->n_vertices)
+         bft_error(__FILE__, __LINE__, 0,
+                   "  Incoherency found in face -> vertex connect.\n"
+                   "  for interior face %d (%u)\n"
+                   "  vtx: %d and n_vertices = %d\n",
+                   i+1, mesh->global_i_face_num[i],
+                   mesh->i_face_vtx_lst[j], mesh->n_vertices);
+
+    }
+
+  }
+
+  for (i = 0; i < mesh->n_b_faces; i++) {
+
+    for (j = mesh->b_face_vtx_idx[i] - 1;
+         j < mesh->b_face_vtx_idx[i+1] - 1; i++) {
+
+       if (mesh->b_face_vtx_lst[j] < 1 ||
+           mesh->b_face_vtx_lst[j] > mesh->n_vertices)
+         bft_error(__FILE__, __LINE__, 0,
+                   "  Incoherency found in face -> vertex connect.\n"
+                   "  for border face %d (%u)\n"
+                   "  vtx: %d and n_vertices = %d\n",
+                   i+1, mesh->global_b_face_num[i],
+                   mesh->b_face_vtx_lst[j], mesh->n_vertices);
+
+    }
+
+  }
+
+#endif
+
   /* Free memory */
 
   BFT_FREE(join2mesh_vtx_id);
@@ -3454,7 +3498,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                                 const cs_join_mesh_t    *join_mesh,
                                 cs_mesh_t               *mesh)
 {
-  int  i, n_matches, default_family;
+  int  i, j, n_matches, default_family;
 
   fvm_gnum_t  n_g_new_b_faces = 0;
   cs_int_t  n_new_i_faces = 0, n_new_b_faces = 0;
@@ -3471,6 +3515,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
   const int  n_ranks = cs_glob_n_ranks;
 
   assert(mesh != NULL);
+  assert(join_mesh != NULL);
 
   /* Invert face historic */
 
@@ -3580,7 +3625,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 
   /* Define join2mesh_vtx_id and add new vertices (only in parallel mode)
      These vertices already exist but only on other ranks. During the face
-     cutting op., these vertices are used to define the new face connect. */
+     splitting op., these vertices are used to define the new face connect. */
 
   _update_vertices_after_split(join_mesh, mesh, &join2mesh_vtx_id);
 
@@ -3672,6 +3717,48 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                            join_select->n_faces,
                            mesh,
                            join_param);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  /* Check face -> vertex connectivity */
+
+  for (i = 0; i < mesh->n_i_faces; i++) {
+
+    for (j = mesh->i_face_vtx_idx[i] - 1;
+         j < mesh->i_face_vtx_idx[i+1] - 1; i++) {
+
+       if (mesh->i_face_vtx_lst[j] < 1 ||
+           mesh->i_face_vtx_lst[j] > mesh->n_vertices)
+         bft_error(__FILE__, __LINE__, 0,
+                   "  Incoherency found in face -> vertex connect.\n"
+                   "  for interior face %d (%u)\n"
+                   "  vtx: %d and n_vertices = %d\n",
+                   i+1, mesh->global_i_face_num[i],
+                   mesh->i_face_vtx_lst[j], mesh->n_vertices);
+
+    }
+
+  }
+
+  for (i = 0; i < mesh->n_b_faces; i++) {
+
+    for (j = mesh->b_face_vtx_idx[i] - 1;
+         j < mesh->b_face_vtx_idx[i+1] - 1; i++) {
+
+       if (mesh->b_face_vtx_lst[j] < 1 ||
+           mesh->b_face_vtx_lst[j] > mesh->n_vertices)
+         bft_error(__FILE__, __LINE__, 0,
+                   "  Incoherency found in face -> vertex connect.\n"
+                   "  for border face %d (%u)\n"
+                   "  vtx: %d and n_vertices = %d\n",
+                   i+1, mesh->global_b_face_num[i],
+                   mesh->b_face_vtx_lst[j], mesh->n_vertices);
+
+    }
+
+  }
+
+#endif
+
 }
 
 /*----------------------------------------------------------------------------
@@ -3760,9 +3847,10 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
 
   } /* End of loop on border faces */
 
-  if (param.verbosity > 0)
-    bft_printf(_("\n  Degenerate connectivity for %d final border faces.\n"),
-               n_b_clean_faces);
+  if (param.verbosity > 1)
+    bft_printf
+      (_("\n  Degenerate connectivity for %d final local boundary faces.\n"),
+       n_b_clean_faces);
 
   for (i = mesh->n_b_faces; i > 0; i--)
     mesh->b_face_vtx_idx[i] = mesh->b_face_vtx_idx[i-1] + 1;
@@ -3820,9 +3908,10 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
 
   } /* End of loop on interior faces */
 
-  if (param.verbosity > 0)
-    bft_printf(_("  Degenerate connectivity for %d final interior faces.\n"
-                 "  Mesh cleaning done.\n"), n_i_clean_faces);
+  if (param.verbosity > 1)
+    bft_printf
+      (_("  Degenerate connectivity for %d final local interior faces.\n"),
+       n_i_clean_faces);
 
   for (i = mesh->n_i_faces; i > 0; i--)
     mesh->i_face_vtx_idx[i] = mesh->i_face_vtx_idx[i-1] + 1;
@@ -3831,25 +3920,53 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
   BFT_REALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_idx[mesh->n_i_faces],
               cs_int_t);
 
-  if (param.verbosity > 1) { /* Post-treat clean faces */
+  if (param.verbosity > 0) { /* Post-treat clean faces */
 
-    if (n_i_clean_faces > 0 || n_b_clean_faces > 0) {
+    fvm_gnum_t  gbuf[2], buf[2];
+    fvm_gnum_t  n_g_i_clean_faces = 0, n_g_b_clean_faces = 0;
 
-      BFT_REALLOC(i_clean_faces, n_i_clean_faces, cs_int_t);
-      BFT_REALLOC(b_clean_faces, n_b_clean_faces, cs_int_t);
+    buf[0] = n_i_clean_faces;
+    buf[1] = n_b_clean_faces;
 
-      cs_join_post_cleaned_faces(n_i_clean_faces,
-                                 i_clean_faces,
-                                 n_b_clean_faces,
-                                 b_clean_faces,
-                                 param);
+ #if defined(HAVE_MPI)
+    if (cs_glob_n_ranks > 1) {
+      MPI_Allreduce(buf, gbuf, 2, FVM_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
 
+      buf[0] = gbuf[0];
+      buf[1] = gbuf[1];
     }
+#endif
 
-    BFT_FREE(b_clean_faces);
-    BFT_FREE(i_clean_faces);
+    n_g_i_clean_faces = buf[0];
+    n_g_b_clean_faces = buf[1];
 
-  }
+    if (param.verbosity > 1) { /* Post-treat clean faces */
+
+      if (n_g_i_clean_faces > 0 || n_g_b_clean_faces > 0) {
+
+        BFT_REALLOC(i_clean_faces, n_i_clean_faces, cs_int_t);
+        BFT_REALLOC(b_clean_faces, n_b_clean_faces, cs_int_t);
+
+        cs_join_post_cleaned_faces(n_i_clean_faces,
+                                   i_clean_faces,
+                                   n_b_clean_faces,
+                                   b_clean_faces,
+                                   param);
+
+      }
+
+      BFT_FREE(b_clean_faces);
+      BFT_FREE(i_clean_faces);
+
+    } /* verbosity > 1 */
+
+    bft_printf(_("  Mesh cleaning done for degenerated faces.\n"
+                 "    Global number of cleaned interior faces: %8u\n"
+                 "    Global number of cleaned border faces:   %8u\n"),
+               n_g_i_clean_faces, n_g_b_clean_faces);
+    bft_printf_flush();
+
+  } /* verbosity > 0 */
 
   /* Free memory */
 
