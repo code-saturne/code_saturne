@@ -1,3 +1,8 @@
+* 19/10/2009 - Namane Méchitoua <namane.mechitoua@edf.fr>
+  Set the agglomeration limit to 3 instead of 8.
+  modified routine:
+    src/base/iniini.f90
+
 * 19/10/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Disable FPE handling also on BlueGene systems.
   modified routine:

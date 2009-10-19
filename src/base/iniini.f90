@@ -936,7 +936,7 @@ enddo
 do ii = 1, nvarmx
   ncymax(ii) = 100
   nitmgf(ii) = 10
-  nagmx0(ii)= 8
+  nagmx0(ii)= 3
   iagmx0(ii)= 1
   ncpmgr(ii)= 0
 enddo
