@@ -728,11 +728,7 @@ if (idtvar.ge.0) then
     call parmin (vdtmin)
     !==========
   endif
-#if defined(_CS_LANG_FR)
-  write(nfecra,2010)'PasDeTmp',vdtmin,vdtmax
-#else
-  write(nfecra,2010)'TimeStep',vdtmin,vdtmax
-#endif
+  write(nfecra,2010) nomvar(ippdt), vdtmin, vdtmax
   write(nfecra,2020)
 
   if (vdtmin.le.zero) then

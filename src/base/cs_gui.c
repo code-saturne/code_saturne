@@ -3643,6 +3643,8 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
                                 const int *const ipptz,
                                 const int *const ippdt,
                                 const int *const ivisma,
+                                const int *const idtvar,
+                                const int *const ipucou,
                                 const int *const iappel)
 {
   int iphas = 0;
@@ -3778,30 +3780,39 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
 
     /* Second step : before the fourth call of VARPOS in INIUSI */
 
-    cs_glob_var->nprop = cs_glob_var->nprop + 4 + cs_glob_var->ntimaver;
+    if (*idtvar == 1 || *idtvar == 2)
+        cs_glob_var->nprop += 1;
+    if (*ipucou == 1)
+        cs_glob_var->nprop += 3;
+    cs_glob_var->nprop += cs_glob_var->ntimaver;
+
     BFT_REALLOC(cs_glob_var->properties_ipp,  cs_glob_var->nprop, int);
     BFT_REALLOC(cs_glob_var->propce,  cs_glob_var->nprop, int);
     BFT_REALLOC(cs_glob_var->properties_name, cs_glob_var->nprop, char*);
 
-    cs_glob_var->properties_ipp[n] = *ippdt;
-    cs_glob_var->propce[n] = -1;
-    BFT_MALLOC(cs_glob_var->properties_name[n], strlen("local_time_step")+1, char);
-    strcpy(cs_glob_var->properties_name[n++], "local_time_step");
+    if (*idtvar == 1 || *idtvar == 2) {
+        cs_glob_var->properties_ipp[n] = *ippdt;
+        cs_glob_var->propce[n] = -1;
+        BFT_MALLOC(cs_glob_var->properties_name[n], strlen("local_time_step")+1, char);
+        strcpy(cs_glob_var->properties_name[n++], "local_time_step");
+    }
 
-    cs_glob_var->properties_ipp[n] = *ipptx;
-    cs_glob_var->propce[n] = -1;
-    BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_X")+1, char);
-    strcpy(cs_glob_var->properties_name[n++], "weight_matrix_X");
+    if (*ipucou == 1) {
+        cs_glob_var->properties_ipp[n] = *ipptx;
+        cs_glob_var->propce[n] = -1;
+        BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_X")+1, char);
+        strcpy(cs_glob_var->properties_name[n++], "weight_matrix_X");
 
-    cs_glob_var->properties_ipp[n] = *ippty;
-    cs_glob_var->propce[n] = -1;
-    BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_Y")+1, char);
-    strcpy(cs_glob_var->properties_name[n++], "weight_matrix_Y");
+        cs_glob_var->properties_ipp[n] = *ippty;
+        cs_glob_var->propce[n] = -1;
+        BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_Y")+1, char);
+        strcpy(cs_glob_var->properties_name[n++], "weight_matrix_Y");
 
-    cs_glob_var->properties_ipp[n] = *ipptz;
-    cs_glob_var->propce[n] = -1;
-    BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_Z")+1, char);
-    strcpy(cs_glob_var->properties_name[n++], "weight_matrix_Z");
+        cs_glob_var->properties_ipp[n] = *ipptz;
+        cs_glob_var->propce[n] = -1;
+        BFT_MALLOC(cs_glob_var->properties_name[n], strlen("weight_matrix_Z")+1, char);
+        strcpy(cs_glob_var->properties_name[n++], "weight_matrix_Z");
+    }
 
     for (i=0; i < cs_glob_var->ntimaver; i++) {
       cs_glob_var->properties_ipp[n] = ipppro[ ipproc[ icmome[i]-1 ]-1 ];
@@ -4391,7 +4402,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    * ncelet,
       BFT_FREE(cells_list);
 
 #if _XML_DEBUG_
-      bft_printf("--zone label: %s, %s\n", label);
+      bft_printf("--zone label: %s\n", label);
       bft_printf("--zone's element number: %i\n", cells);
 
       if (*isuite == 0) {

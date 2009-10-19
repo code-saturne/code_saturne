@@ -369,6 +369,8 @@ void CS_PROCF (uiprop, UIPROP) (const int *const irom,
                                 const int *const ipptz,
                                 const int *const ippdt,
                                 const int *const ivisma,
+                                const int *const idtvar,
+                                const int *const ipucou,
                                 const int *const iappel);
 
 /*----------------------------------------------------------------------------

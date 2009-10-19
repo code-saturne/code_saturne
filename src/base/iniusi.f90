@@ -490,7 +490,7 @@ if(iihmpr.eq.1) then
              ismago, iale, icp, iscalt, iscavr,                   &
              iprtot, ipppro, ipproc, icmome,                      &
              ipptx, ippty, ipptz, ippdt,                          &
-             ivisma, iappel)
+             ivisma, idtvar, ipucou, iappel)
 
   call uimoyt (ndgmox, ntdmom, imoold, idfmom)
   !==========
@@ -523,7 +523,6 @@ call varpos(nmodpp)
 
 if(iihmpr.eq.1) then
 
-  if(nbmomt.gt.0 .or. ipucou.eq.1) then
     iappel = 1
 
     call uiprop                                                   &
@@ -532,9 +531,7 @@ if(iihmpr.eq.1) then
              ismago, iale, icp, iscalt, iscavr,                   &
              iprtot, ipppro, ipproc, icmome,                      &
              ipptx, ippty, ipptz, ippdt,                          &
-             ivisma, iappel)
-
-  endif
+             ivisma, idtvar, ipucou, iappel)
 
   do ii = 1,nvppmx
     call fcnmva (nomvar(ii), len(nomvar(ii)), ii)

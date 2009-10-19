@@ -51,6 +51,7 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
+from OutputVolumicVariablesModel import OutputVolumicVariablesModel
 
 #-------------------------------------------------------------------------------
 # Time Step Model class
@@ -70,9 +71,6 @@ class TimeStepModel(Model):
         self.node_turb         = self.node_models.xmlGetNode('turbulence')
         self.node_control      = self.case.xmlGetNode('analysis_control')
         self.node_time         = self.node_control.xmlInitNode('time_parameters')
-
-        Variables(self.case).setNewProperty(self.node_time, 'courant_number')
-        Variables(self.case).setNewProperty(self.node_time, 'fourier_number')
 
 
     def defaultValues(self):
@@ -151,13 +149,26 @@ class TimeStepModel(Model):
         """
         self.isIntInList(val, [0, 1, 2])
         self.node_time.xmlSetData('time_passing', val)
+
+        Variables(self.case).setNewProperty(self.node_time, 'courant_number')
+        Variables(self.case).setNewProperty(self.node_time, 'fourier_number')
+
         if val in (1, 2):
-            Variables(self.case).setNewProperty(self.node_time,
-                                                'local_time_step')
+            Variables(self.case).setNewProperty(self.node_time, 'local_time_step')
+            n = self.node_time.xmlInitNode('property', name='local_time_step')
+            if val == 1:
+                n.xmlInitNode('postprocessing_recording')['status']= "off"
+                n.xmlInitNode('probes')['choice']= "0"
+            else:
+                n.xmlRemoveChild('postprocessing_recording')
+                n.xmlRemoveChild('probes')
         else:
             self.node_time.xmlRemoveChild('property', name='local_time_step')
-            for tag in ('max_courant_num', 'max_fourier_num',
-                        'time_step_min', 'time_step_max', 'time_step_var'):
+            for tag in ('max_courant_num',
+                        'max_fourier_num',
+                        'time_step_min',
+                        'time_step_max',
+                        'time_step_var'):
                 self.node_time.xmlRemoveChild(tag)
 
 

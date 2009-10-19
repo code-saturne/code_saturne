@@ -55,6 +55,7 @@ from Base.QtPage import RegExpValidator
 from OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
 from Pages.OutputControlModel import OutputControlModel
 from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from Pages.TimeStepModel import TimeStepModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -247,7 +248,11 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
                 self.disabledItem.append((row, 2))
             else:
                  post = self.mdl.getPostStatus(label)
-                
+
+            if TimeStepModel(self.case).getTimePassing() in (0, 1):
+                if name == 'local_time_step':
+                    self.disabledItem.append((row, 2))
+                    self.disabledItem.append((row, 3))
 
             if not self.mdl.getVariableProbeList():
                 self.disabledItem.append((row, 3))

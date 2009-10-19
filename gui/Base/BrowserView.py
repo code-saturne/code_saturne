@@ -689,14 +689,14 @@ Calculation management
         nodeSteady = nodeanal.xmlGetNode('steady_management')
 
         if nodeSteady['status'] == 'on':
-            self.setRowClose(self.tr('Time averages'))
+            #self.setRowClose(self.tr('Time averages'))
             self.setRowClose(self.tr('Time step'))
             self.setRowOpen(self.tr('Steady flow management'))
         else:
             nodeSteady['status'] = 'off'
             self.setRowClose(self.tr('Steady flow management'))
-            self.setRowOpen(self.tr('Time averages'))
-            self.setRowOpen(self.tr('Time step'))
+            #self.setRowOpen(self.tr('Time step'))
+        self.setRowOpen(self.tr('Time averages'))
 
         # Multi-phase flow
 

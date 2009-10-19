@@ -1,3 +1,16 @@
+* 19/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Have a consistent behaviour of post-processing option depending on
+  the time-step scheme.
+  modified routines:
+    gui/Base/BrowserView.py
+    gui/Pages/OutputVolumicVariablesView.py
+    gui/Pages/SteadyManagementModel.py
+    gui/Pages/TimeStepModel.py
+    include/base/cs_gui.h
+    src/base/cs_gui.c
+    src/base/iniusi.f90
+    src/base/inivar.f90
+
 * 19/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Add a coherency check for interior faces -> cells connectivity.
   modified routine:

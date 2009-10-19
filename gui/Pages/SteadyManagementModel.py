@@ -52,6 +52,7 @@ from Base.XMLmodel import XMLmodel, ModelTest
 from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.GasCombustionModel import GasCombustionModel
 from Pages.ElectricalModelsModel import ElectricalModel
+from Pages.TimeStepModel import TimeStepModel
 
 #-------------------------------------------------------------------------------
 #  SteadyManagement model class
@@ -67,7 +68,7 @@ class SteadyManagementModel(Model):
         """
         self.case = case
         self.node_anal   = self.case.xmlGetNode('analysis_control')
-##        self.node_steady =  node_anal.xmlInitNode('steady_management', 'status')
+
 
     def defaultValues(self):
         """
@@ -90,10 +91,18 @@ class SteadyManagementModel(Model):
         node = self.node_anal.xmlInitNode('steady_management', 'status')
         node['status'] = steady
 
+        mdl_time = TimeStepModel(self.case)
+
         if steady == 'on':
+            mdl_time.node_time.xmlRemoveChild('property', name='courant_number')
+            mdl_time.node_time.xmlRemoveChild('property', name='fourier_number')
+            mdl_time.node_time.xmlRemoveChild('property', name='local_time_step')
+            self.case.xmlRemoveChild('time_average')
             self.getZeroIteration()
             self.getNbIter()
             self.getRelaxCoefficient()
+        else:
+            mdl_time.setTimePassing(0)
 
 
     def getSteadyFlowManagement(self):
