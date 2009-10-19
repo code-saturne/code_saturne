@@ -1,3 +1,11 @@
+* 19/10/2009 - David Monfort <david.monfort@edf.fr>
+  Add Code_Saturne installer in the extras directory.
+  added files:
+    extras/installer
+    extras/installer/install_saturne.py
+    extras/installer/README.txt
+    extras/installer/setup
+
 * 19/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Have a consistent behaviour of post-processing option depending on
   the time-step scheme.
