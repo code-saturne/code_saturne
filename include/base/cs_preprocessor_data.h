@@ -59,10 +59,10 @@ BEGIN_C_DECLS
  *
  * Fortran interface :
  *
- * SUBROUTINE ALGDOM (IOPT)
+ * subroutine algdom (iopt)
  * *****************
  *
- * INTEGER          IOPT        : <-> : Choice of the partitioning base
+ * integer          iopt        : <-> : Choice of the partitioning base
  *                                        0: query
  *                                        1: initial numbering
  *                                        2: space-filling curve (default)
@@ -75,16 +75,16 @@ CS_PROCF (algdom, ALGDOM)(cs_int_t  *iopt);
  * Receive messages from the pre-processor about the dimensions of mesh
  * parameters
  *
- * FORTRAN Interface:
+ * Fortran Interface:
  *
- * SUBROUTINE LEDEVI(NOMRUB, TYPENT, NBRENT, TABENT)
+ * subroutine ledevi(ndim   , nfml  , nprfml, iperio, iperot)
  * *****************
  *
- * INTEGER          NDIM        : <-- : Spacial dimension (3)
- * INTEGER          NFML        : <-- : Number of families (group classes)
- * INTEGER          NPRFML      : <-- : Number of properties per family
- * INTEGER          IPERIO      : <-- : Periodicity indicator
- * INTEGER          IPEROT      : <-- : Number of rotation periodicities
+ * integer          ndim        : <-- : Spacial dimension (3)
+ * integer          nfml        : <-- : Number of families
+ * integer          nprfml      : <-- : Number of properties per family
+ * integer          iperio      : <-- : Periodicity indicator
+ * integer          iperot      : <-- : Number of rotation periodicities
  *----------------------------------------------------------------------------*/
 
 void

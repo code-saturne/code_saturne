@@ -79,6 +79,9 @@ subroutine usclim &
 !  of color 1, belonging to groups 'group2' or 'group3' and with face center
 !  coordinate y less than 1.
 
+!  Operators priority, from highest to lowest:
+!    '( )' > 'not' > 'and' > 'or' > 'xor'
+
 ! Similarly, interior faces and cells can be identified using the 'getfac'
 ! and 'getcel' subroutines (respectively). Their syntax are identical to
 ! 'getfbr' syntax.

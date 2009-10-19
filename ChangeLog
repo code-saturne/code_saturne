@@ -1,3 +1,14 @@
+* 19/10/2009 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Cosmetic modifications.
+  modified routines:
+    include/base/cs_preprocessor_data.h
+    src/base/cs_post.c
+    src/base/ecrhis.f90
+    users/base/usclim.f90
+    users/base/usjoin.f90
+    users/base/usproj.f90
+
 * 19/10/2009 - Namane Méchitoua <namane.mechitoua@edf.fr>
   Set the agglomeration limit to 3 instead of 8.
   modified routine:

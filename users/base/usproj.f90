@@ -1238,9 +1238,6 @@ endif
 
 !===============================================================================
 ! 3. EXEMPLE : CALCUL DES EFFORTS GLOBAUX SUR UN SOUS-ENSEMBLE DE FACES
-
-!           A FAIRE AVEC PRECAUTIONS ...
-!           L'UTILISATEUR PREND SES RESPONSABILITES.
 !===============================================================================
 
 

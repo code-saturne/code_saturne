@@ -151,8 +151,8 @@ if(ipass.eq.1 .and. irangp.le.0) then
   nomfic(ii2+1:ii2+8) = 'hist.tmp'
   ii2 = ii2+8
   open (unit=imphis(1), file=nomfic(ii1:ii2), &
-        status='UNKNOWN', form='UNFORMATTED', &
-        access='SEQUENTIAL')
+        status='unknown', form='unformatted', &
+        access='sequential')
 endif
 
 !===============================================================================

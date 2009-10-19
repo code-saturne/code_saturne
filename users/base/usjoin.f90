@@ -92,7 +92,7 @@ fract = 0.15d0  ! The initial tolerance radius associated to each
 
 plane = 30.0    ! When subdividing faces, 2 faces are considered
                 ! coplanar and may be joined if angle between their
-                ! unit normals (cosine) does not exceed this parameter.
+                ! unit normals (in degree) does not exceed this parameter.
 
 iwarnj = 1      ! associated verbosity level
 

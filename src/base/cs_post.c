@@ -1162,7 +1162,7 @@ void CS_PROCF (pstedg, PSTEDG)
  *
  * Fortran interface:
  *
- * SUBROUTINE PSTCAT (NUMMAI, NUMWRI)
+ * SUBROUTINE PSTCAT (NUMMAI, NUMCAT)
  * *****************
  *
  * INTEGER          NUMMAI      : <-- : Number of the alias to create
