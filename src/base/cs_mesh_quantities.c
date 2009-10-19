@@ -157,10 +157,9 @@ _compute_face_normal(cs_int_t         dim,
   cs_point_t  *face_vtx_coord = NULL;
   cs_point_t  *triangle_normal = NULL;
 
-  /* Return if there is not enough data (SolCom case except radiative
-     module or Pre-processor 1.2.d without "-n" option) */
+  /* Return if there is not enough data (some SolCom meshes) */
 
-  if (face_vtx_idx == NULL && face_vtx_lst == NULL)
+  if (face_vtx_idx == NULL || face_vtx_lst == NULL)
     return;
 
   /* Checking */
@@ -322,10 +321,9 @@ _compute_face_quantities(const cs_int_t   dim,
   cs_point_t  *face_vtx_coord = NULL;
   cs_point_t  *triangle_norm = NULL;
 
-  /* Return if there is not enough data (SolCom case except radiative
-     module or Pre-processor 1.2.d without "-n" option) */
+  /* Return if there is not enough data (some SolCom meshes) */
 
-  if (face_vtx_idx == NULL && face_vtx_lst == NULL)
+  if (face_vtx_idx == NULL || face_vtx_lst == NULL)
     return;
 
   /* Checking */
@@ -584,9 +582,8 @@ _compute_cell_cen_vertex(const cs_mesh_t  *const mesh,
 
   /* Initialization */
 
-  for (j = 0; j < mesh->n_cells_with_ghosts; j++)
-    for (i = 0; i < 3; i++)
-      cell_cen[3*j + i] = 0. ;
+  for (i = 0; i < 3*mesh->n_cells_with_ghosts; i++)
+    cell_cen[i] = 0.0;
 
   /* Extract "cell -> faces" connectivity */
 

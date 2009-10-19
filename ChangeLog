@@ -1,3 +1,8 @@
+* 19/10/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor modification on a test when not enough data are available.
+  modified routine:
+    src/base/cs_mesh_quantities.c
+
 * 19/10/2009 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Cosmetic modifications.
