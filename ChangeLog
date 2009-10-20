@@ -1,3 +1,9 @@
+* 20/10/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix a shift in the definition of post-processing pointer for luminance
+  resulting in having the time-step instead of the luminance.
+  modified routine:
+    src/base/varpos.f90
+
 * 19/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Move explicit source correction in raysca for a correct post-processing.
   This is allowed since combustion modelling always uses enthalpy.

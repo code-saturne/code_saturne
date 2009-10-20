@@ -2016,6 +2016,7 @@ if(ipass.eq.4) then
   if(idtvar.gt.0) then
     ipppst = ipppst + 1
     ippdt  = ipppst
+    nppmax = ipppst
   endif
 
   if(ipucou.eq.1) then
@@ -2025,6 +2026,7 @@ if(ipass.eq.4) then
     ippty  = ipppst
     ipppst = ipppst + 1
     ipptz  = ipppst
+    nppmax = ipppst
   endif
 
 
