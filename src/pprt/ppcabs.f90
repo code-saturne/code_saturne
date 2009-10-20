@@ -424,10 +424,7 @@ endif
     vv = 0.d0
 
     do ifac = 1,nfabor
-       sf = sf + sqrt(                                            &
-               surfbo(1,ifac)**2 +                                &
-               surfbo(2,ifac)**2 +                                &
-               surfbo(3,ifac)**2 )
+       sf = sf + sqrt(surfbo(1,ifac)**2 + surfbo(2,ifac)**2 + surfbo(3,ifac)**2)
     enddo
     if (irangp.ge.0) then
       call parsom(sf)
@@ -448,21 +445,21 @@ endif
 
     xkmin = 1.d0 / xlc
 
-    iok = 0.d0
+    iok = 0
     do iel = 1,ncel
       if (w3(iel).lt.xkmin) then
         iok = iok +1
       endif
     enddo
+    if (irangp.ge.0) then
+      call parcpt(iok)
+    endif
 
 !     Arret en fin de pas de temps si epaisseur optique trop grande
     pp = xnp1mx/100.0d0
-    if (dble(iok).gt.pp*dble(ncel)) then
-       write(nfecra,1000) xkmin, dble(iok)/dble(ncel)*100.d0,     &
-                          xnp1mx
+    if (dble(iok).gt.pp*dble(ncelgb)) then
+       write(nfecra,1000) xkmin, dble(iok)/dble(ncelgb)*100.d0, xnp1mx
        istpp1 = 1
-!             CALL CSEXIT (1)
-       !==========
     endif
 
   endif

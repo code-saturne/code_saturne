@@ -1,4 +1,9 @@
 * 20/10/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix a missing sum over the processor for an error indicator.
+  modified routine:
+    src/pprt/ppcabs.f90
+
+* 20/10/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix a shift in the definition of post-processing pointer for luminance
   resulting in having the time-step instead of the luminance.
   modified routine:
