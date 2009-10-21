@@ -662,7 +662,6 @@ Calculation management
         self.setRowClose(self.tr('Particles boundary conditions'))
         self.setRowClose(self.tr('Steady flow management'))
         self.setRowClose(self.tr('Surface solution control'))
-        self.setRowClose(self.tr('Time averages'))
         self.setRowClose(self.tr('Time step'))
         self.setRowClose(self.tr('Storage system description'))
         self.setRowClose(self.tr('Thermohydraulic parameters'))
@@ -689,14 +688,12 @@ Calculation management
         nodeSteady = nodeanal.xmlGetNode('steady_management')
 
         if nodeSteady['status'] == 'on':
-            #self.setRowClose(self.tr('Time averages'))
             self.setRowClose(self.tr('Time step'))
             self.setRowOpen(self.tr('Steady flow management'))
         else:
             nodeSteady['status'] = 'off'
             self.setRowClose(self.tr('Steady flow management'))
-            #self.setRowOpen(self.tr('Time step'))
-        self.setRowOpen(self.tr('Time averages'))
+            self.setRowOpen(self.tr('Time step'))
 
         # Multi-phase flow
 

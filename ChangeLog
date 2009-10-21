@@ -1,3 +1,8 @@
+* 21/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix a bug introduce previously (time-step page no more available).
+  modified routine:
+    gui/Base/BrowserView.py
+
 * 20/10/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix a missing sum over the processor for an error indicator.
   modified routine:
