@@ -1,3 +1,11 @@
+* 21/10/2009 - Namane Méchitoua <namane.mechitoua@edf.fr>
+  Set the relaxation factor between P0/P1 interpolations to 0.95 in multigrid
+  algorithm in order to stabilize the algorithm in some calculations.
+  Remove a useless line in addition.
+  modified routines:
+    src/base/crstgr.f90
+    src/base/iniini.f90
+
 * 21/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix a bug introduce previously (time-step page no more available).
   modified routine:

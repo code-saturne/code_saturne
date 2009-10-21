@@ -946,7 +946,7 @@ enddo
 ncegrm = 30
 ngrmax = 25
 
-rlxp1 = 1.d0
+rlxp1 = 0.95d0
 
 ! --- Suite de calcul
 !       Calcul non suite par defaut

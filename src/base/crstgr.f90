@@ -259,7 +259,6 @@ enddo
 
 ! Initialization
 
-interp = 0
 interp = 1
 
 ! Initialize non differential fine mesh term saved in w1
