@@ -975,7 +975,7 @@ do ifac = 1, nfabor
           if(iturb(iphas).ne.0.and.icodcl(ifac,ivar).eq.6)then
 
 ! Loi rugueuse, on recalcule le coefficient d'echange fluide - paroi
-            rugt=rcodcl(ifac,ivar,3)
+            rugt=rcodcl(ifac,iviph,3)
             act = xkappa/log((distbf+rugt)/rugt)
             hflui = romc*cpp*uet*act*cfnns
           else

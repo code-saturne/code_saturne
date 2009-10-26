@@ -627,7 +627,7 @@ if(nscal.ge.1) then
       endif
 ! --- verification que la rugosite scalaire est initialisee si icodl=6
       if(icodcl(ifac,ivar).eq.6.and.                              &
-         rcodcl(ifac,ivar,3).lt.epzero)then
+         rcodcl(ifac,iviph,3).lt.epzero)then
         CHAINE='RUGOSITS'
         write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
                           icodcl(ifac,ivar)

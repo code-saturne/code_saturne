@@ -479,8 +479,10 @@ do ilelt = 1, nlelt
   do iphas = 1, nphas
     itypfb(ifac,iphas)   = iparug
 
-!     Rugosite pour la vitesse
+    ! Rugosite pour la vitesse
     rcodcl(ifac,iu(iphas),3) = rugd
+    ! Rugosite pour les scalaires
+    !rcodcl(ifac,iv(iphas),3) = rugt
   enddo
 
   if(nscal.gt.0) then
@@ -490,7 +492,7 @@ do ilelt = 1, nlelt
 !            II = 1
 !            ICODCL(IFAC,ISCA(II))   = 6
 !            RCODCL(IFAC,ISCA(II),1) = 20.D0
-!            RCODCL(IFAC,ISCA(II),3) = 0.001D0
+!            RCODCL(IFAC,IV(II),3) = 0.001D0
 
 ! SI FLUX IMPOSE A 4.D0 (SCALAIRE II=2)
 !            II = 2

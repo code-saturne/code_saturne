@@ -1294,6 +1294,11 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
             if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
             {
                 iprofm[zone_nbr-1] = boundaries->meteo[izone].read_data;
+                if (iprofm[zone_nbr-1] == 1)
+                {
+                  BFT_FREE(choice_v);
+                  BFT_FREE(choice_d);
+                }
                 if (boundaries->meteo[izone].automatic)
                 {
                    for (ifac = 0; ifac < faces; ifac++)
@@ -1515,14 +1520,26 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
         {
             if (boundaries->rough[izone] >= 0.0)
             {
-                /* roughness value is only stored in Velocity_U */
-                /* Remember: rcodcl(ifac, ivar, 1) -> rcodcl[k][j][i] = rcodcl[ k*dim1*dim2 + j*dim1 + i] */
+                /* roughness value is only stored in Velocity_U (z0) */
+                /* Remember: rcodcl(ifac, ivar, 1) -> rcodcl[k][j][i]
+                               = rcodcl[ k*dim1*dim2 + j*dim1 + i] */
                 iwall = *iparug;
                 for (ifac = 0; ifac < faces; ifac++)
                 {
                     ifbr = faces_list[ifac] -1;
                     rcodcl[2 * (*nfabor * (vars->nvar)) + vars->rtp[1] * (*nfabor) + ifbr]
                         = boundaries->rough[izone];
+                }
+                /* if atmospheric flows and "dry" or "humid atmosphere" mode,
+                   roughness value also stored in Velocity_V (z0t)*/
+                if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
+                {
+                    if (   cs_gui_strcmp(vars->model_value, "dry")
+                        || cs_gui_strcmp(vars->model_value, "humid"))
+                    {
+                      rcodcl[3 * (*nfabor * (vars->nvar)) + vars->rtp[2] * (*nfabor) + ifbr]
+                        = boundaries->rough[izone];
+                    }
                 }
             }
             else

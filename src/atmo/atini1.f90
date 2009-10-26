@@ -124,7 +124,7 @@ if ( ippmod(iatmos).eq.1 ) then
 
   iscsth(itempp) = 1
   iscalt(iphas) = itempp
-  scamin(itempp)   = -grand
+  scamin(itempp)   = 0.d0
   scamax(itempp)   = +grand
 
 !  for the dry atmosphere case, non constant density
@@ -194,7 +194,7 @@ endif
 ! 3.1  Dry or humid atmosphere
 ! =============================
 
-if ( ippmod(iatmos).eq.1.or. ippmod(iatmos).eq.2) then
+if (ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2) then
 
   ipp = ipppro(ipproc(itempc))
   nomvar(IPP)   = 'TempC'
@@ -206,7 +206,21 @@ endif
 
 
 !===============================================================================
-! 4. ON DONNE LA MAIN A L'UTLISATEUR
+! 4. One scale turbulent model for k-eps closure for IPPMOD(IATMOS) = 1 or 2
+!===============================================================================
+
+if (ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2) then
+
+  do iphas = 1, nphas
+    if (itytur(iphas).eq.2) then
+      ideuch(iphas) = 0
+    endif
+  enddo
+
+endif
+
+!===============================================================================
+! 5. ON DONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
 !   - Interface Code_Saturne

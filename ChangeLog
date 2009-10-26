@@ -1,3 +1,17 @@
+* 26/10/2009 - Maya Milliez <maya.milliez@edf.fr>
+               Bertrand Carissimo <bertrand.carissimo@edf.fr>
+  Fix some bugs in the atmospheric flows module. Change the setup of the
+  thermal roughness, now defined in rcodcl(ifac,iv(iphas,3).
+  modified routines:
+    src/atmo/atini1.f90
+    src/atmo/atlecm.f90
+    src/atmo/atmcls.f90
+    src/atmo/atprke.f90
+    src/base/clptrg.f90
+    src/base/cs_gui_boundary_conditions.c
+    src/base/vericl.f90
+    users/atmo/usatcl.f90
+
 * 26/10/2009 - David Monfort <david.monfort@edf.fr>
   Fix a minor issue in MED installation parameters.
   modified file:

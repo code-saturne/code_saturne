@@ -35,14 +35,13 @@ subroutine atlecm &
    rprom  , tpprom , phprom   )
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+!  Purpose:
+!  -------
 
 
-!             READING THE METEO PROFILE DATA
-
-!             SPECIFIC PHYSICS ATMOSPHERIC MODULE
-
+!             Reads the meteo profile data
+!             for the atmospheric module
+!
 !             IMODE = 0 : READING OF DIMENSIONS ONLY
 !             IMODE = 1 : READING OF DATA
 
@@ -79,7 +78,9 @@ include "atincl.h"
 !===============================================================================
 
 ! Arguments
+
 integer           imode
+
 double precision  tmprom(nbmetm)
 double precision  ztprom(nbmett) , zdprom(nbmetd)
 double precision  xmet(nbmetm)   , ymet(nbmetm)  , pmer(nbmetm)
@@ -89,35 +90,46 @@ double precision  ekprom(nbmetd,nbmetm) , epprom(nbmetd,nbmetm)
 double precision  rprom(nbmett,nbmetm)  , tpprom(nbmett,nbmetm)
 double precision  phprom(nbmett,nbmetm)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer itp, ii, ios, k, iphas
-double precision annee,quant,heure,minute,second
+integer syear, squant, shour, smin
+integer year, quant,hour,minute
+
+double precision ssec, second
+double precision sjday, jday
 double precision psol,rap,rscp,tmoy
+
 character*80     ccomnt
 character*1      csaute
 
 !===============================================================================
 
 if (imode.eq.0) then
-  WRITE(NFECRA,*) 'reading of dimensions for meteo profiles'
+  write(NFECRA,*) 'reading of dimensions for meteo profiles'
 else
-  WRITE(NFECRA,*) 'reading of meteo profiles data'
+  write(NFECRA,*) 'reading of meteo profiles data'
  endif
 
 !===============================================================================
-! 0. INITIALISATION
+! 0. INITIALIZATION
 !===============================================================================
 
 CSAUTE = '/'
 
-! --> Ouverture du fichier
+! --> Opens the meteo file
 open ( unit=impmet, file=ficmet,                                  &
        STATUS='OLD', FORM='FORMATTED', ACCESS='SEQUENTIAL',       &
                                           iostat=ios, err=99 )
 rewind(unit=impmet,err=99)
 
 itp=0
+
+syear=-999
+squant=-999
+shour=-999
+smin=-999
+ssec=-999.
 
 !===============================================================================
 ! 1. LOOP ON TIME
@@ -138,20 +150,43 @@ backspace(impmet)
 ! 2. READING THE TIME OF THE PROFILE
 !===============================================================================
 
-! --> annee, quantieme, heure, minute, seconde  du profil (TU)
+! --> year, quant-day, hour, minute, second  of the profile (TU)
 
 if (imode.eq.0) then
   read(impmet,*,err=999,end=906)
 else
-  read(impmet,*,err=999,end=906) annee, quant,heure,minute,second
+  read(impmet,*,err=999,end=906) year, quant,hour,minute,second
 
-! --> calcul du temps relatif au debut de la simulation
-!     TTPROM(NBMETM) = instants correspondant aux profils
-! TD!!!! calcul par rapport ANNDEB, QUADEB, HEUDEB, MINDEB, SCDDEB
-! + tests d'incohérence
+! --> the date and time of the first meteo profile are taken as the
+!     starting time of the simulation
+  if (syear.lt.0) then
+    syear=year
+    squant=quant
+    shour=hour
+    smin=minute
+    ssec=second
+  endif
 
-  tmprom(itp)= second
+!--> Compute the relative time to the starting time of the simulation
 
+
+! --> Compute the julian day for the starting day of the simulation
+!     (julian day at 12h)
+  sjday= squant + ((1461 * (syear + 4800 + (1 - 14) / 12)) / 4 +  &
+             (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12 -            &
+             (3 * ((syear + 4900 + (1 - 14) / 12) / 100)) / 4         &
+              + 1 - 32075) - 1
+
+! --> Compute the julian day for the date of the current profile
+!     (julian day at 12h)
+  jday = quant + ((1461 * (year + 4800 + (1 - 14) / 12)) / 4 +   &
+             (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12 -           &
+            (3 * ((year + 4900 + (1 - 14) / 12) / 100)) / 4          &
+              + 1 - 32075) - 1
+
+!
+  tmprom(itp) = (jday - sjday)*86400 + (hour - shour)*3600 + (minute - smin)*60 &
+              + (second - ssec)
 
 ! --> verification de l'ordre chronologique des profils
 
@@ -330,16 +365,15 @@ if (imode.eq.1) then
     write(nfecra,*) 'printing meteo profiles'
   endif
   write(nfecra,*) 'year, quant-day , hour, minute, second'
-  write(nfecra,7995) annee, quant,heure,minute,second
- 7995   format(1x, 5f8.2)
+  write(nfecra,7995) year, quant,hour,minute,second
+ 7995   format(1x, i4, i5, 2i4, f8.2)
   write(nfecra,*) 'tmprom(itp)'
   write(nfecra,7996) tmprom(itp)
  7996   format(1x, f8.2)
   write(nfecra,*) 'zdprom,uprom,vprom,ekprom,epprom'
   do ii=1,nbmetd
     write(nfecra,7997)                                            &
-         zdprom(ii), uprom(ii,itp), vprom(ii,itp),                &
-         ekprom(ii,itp), epprom(ii,itp)
+      zdprom(ii), uprom(ii,itp), vprom(ii,itp), ekprom(ii,itp), epprom(ii,itp)
  7997     format(1x, 3f8.2,2e10.3)
   enddo
   write(nfecra,*) 'ztprom,ttprom,tpprom,rprom,phprom,qvprom'
@@ -392,7 +426,7 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (ATDIMM)      ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (atlecm)      ',/,&
 '@    =========                                               ',/,&
 '@      PHYSIQUE PARTICULIERE ATMOSPHERIQUE               ',/,    &
 '@                                                            ',/,&
@@ -407,7 +441,7 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (ATDIMM)      ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (atlecm)      ',/,&
 '@    =========                                               ',/,&
 '@      PHYSIQUE PARTICULIERE ATMOSPHERIQUE                   ',/,&
 '@                                                            ',/,&
@@ -423,7 +457,7 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (ATDIMM)      ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (atlecm)      ',/,&
 '@    =========                                               ',/,&
 '@      PHYSIQUE PARTICULIERE ATMOSPHERIQUE                   ',/,&
 '@                                                            ',/,&
@@ -439,11 +473,12 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (ATDIMM)      ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (atlecm)      ',/,&
 '@    =========                                               ',/,&
 '@      PHYSIQUE PARTICULIERE ATMOSPHERIQUE                   ',/,&
 '@                                                            ',/,&
 '@  Erreur a l''ouverture du fichier meteo                    ',/,&
+'@  VÃ©rifier le nom du fichier meteo                          ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -453,13 +488,25 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (ATDIMM)      ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (atlecm)      ',/,&
 '@    =========                                               ',/,&
 '@      PHYSIQUE PARTICULIERE ATMOSPHERIQUE                   ',/,&
 '@                                                            ',/,&
 '@  Erreur a la lecture du fichier meteo.                     ',/,&
 '@    Le fichier a ete ouvert mais est peut etre incomplet    ',/,&
 '@    ou son format inadapte.                                 ',/,&
+'@                                                            ',/,&
+'@    year (integer), quantile (integer), hour (integer),     ',/,&
+'@          minute (integer), second (dble prec) of the profile',/,&
+'@    location of the meteo profile (x,y) (dble prec)         ',/,&
+'@    sea level pressure (double precision)                   ',/,&
+'@ temperature profile:                                       ',/,&
+'@   number of altitudes (integer)                            ',/,&
+'@   alt.,temperature  in celcius,humidity in kg/kg (dble prec)',/,&
+'@ wind profile:                                              ',/,&
+'@   number of altitudes (integer)                            ',/,&
+'@   alt.,u,v,k,eps (double precision)                        ',/,&
+'@ NO LINE AT THE END OF THE FILE                             ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -472,12 +519,13 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA (ATDIMM)      ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA (atlecm)      ',/,&
 '@     =======                                                ',/,&
 '@      ATMOSPHERIC SPECIFIC PHYSICS                          ',/,&
 '@                                                            ',/,&
 '@              Error in the meteo profile file:              ',/,&
-'@      non chronological meteo profiles                      ',/,&
+'@      check that the chronogical order of the profiles      ',/,&
+'@      are respected                                         ',/,&
 '@                                                            ',/,&
 '@  The computation will not be run                           ',/,&
 '@                                                            ',/,&
@@ -487,7 +535,7 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA (ATDIMM)      ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA (atlecm)      ',/,&
 '@     =======                                                ',/,&
 '@      ATMOSPHERIC SPECIFIC PHYSICS                          ',/,&
 '@                                                            ',/,&
@@ -503,7 +551,7 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA (ATDIMM)      ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA (atlecm)      ',/,&
 '@     =======                                                ',/,&
 '@      ATMOSPHERIC SPECIFIC PHYSICS                          ',/,&
 '@                                                            ',/,&
@@ -519,11 +567,12 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA (ATDIMM)      ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA (atlecm)      ',/,&
 '@     =======                                                ',/,&
 '@      ATMOSPHERIC SPECIFIC PHYSICS                          ',/,&
 '@                                                            ',/,&
 '@  Error opening the meteo profile file                      ',/,&
+'@  check the name of the meteo file                          ',/,&
 '@                                                            ',/,&
 '@  The computation will not be run                           ',/,&
 '@                                                            ',/,&
@@ -533,13 +582,26 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA (ATDIMM)      ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA (atlecm)      ',/,&
 '@     =======                                                ',/,&
 '@      ATMOSPHERIC SPECIFIC PHYSICS                          ',/,&
 '@                                                            ',/,&
 '@  Error opening the meteo profile file                      ',/,&
 '@    The meteo profile file has been opened but its content  ',/,&
 '@    is incomplete or under a wrong format                   ',/,&
+'@    check the format of the file (see the user guide):      ',/,&
+'@                                                            ',/,&
+'@    year (integer), quantile (integer), hour (integer),     ',/,&
+'@          minute (integer), second (dble prec) of the profile',/,&
+'@    location of the meteo profile (x,y) (dble prec)         ',/,&
+'@    sea level pressure (double precision)                   ',/,&
+'@ temperature profile:                                       ',/,&
+'@   number of altitudes (integer)                            ',/,&
+'@   alt.,temperature  in celcius,humidity in kg/kg (dble prec)',/,&
+'@ wind profile:                                              ',/,&
+'@   number of altitudes (integer)                            ',/,&
+'@   alt.,u,v,k,eps (double precision)                        ',/,&
+'@ NO LINE AT THE END OF THE FILE                             ',/,&
 '@                                                            ',/,&
 '@  The computation will not be run                           ',/,&
 '@                                                            ',/,&
@@ -549,5 +611,3 @@ call csexit (1)
 #endif
 
 end subroutine
-
-

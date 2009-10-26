@@ -273,14 +273,14 @@ if (ippmod(iatmos).eq.1) then
 !     Dans les autres cas, la multiplication est faite plus tard.
   if (iturb(iphas).eq.21) then
     do iel = 1, ncel
-      gravke =   -(w4(iel)*gx + w5(iel)*gy + w6(iel)*gz) &
+      gravke =   (w4(iel)*gx + w5(iel)*gy + w6(iel)*gz) &
                / (rtp(iel,itpp)*prdtur)
       tinste(iel) = tinstk(iel) + propce(iel,ipcvto)*max(gravke,zero)
       tinstk(iel) = tinstk(iel) + propce(iel,ipcvto)*gravke
     enddo
   else
     do iel = 1, ncel
-      gravke =   -(w4(iel)*gx + w5(iel)*gy + w6(iel)*gz) &
+      gravke =   (w4(iel)*gx + w5(iel)*gy + w6(iel)*gz) &
                / (rtp(iel,itpp)*prdtur)
       tinste(iel) = tinstk(iel) + max(gravke,zero)
       tinstk(iel) = tinstk(iel) + gravke

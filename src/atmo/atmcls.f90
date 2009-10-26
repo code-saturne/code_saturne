@@ -254,7 +254,7 @@ e0 = 0.d0
 
 rugd = rcodcl(ifac,iu(iphas),3)
 distbf = yplus*rugd
-rugt = rcodcl(ifac,isca(iscalt(iphas)),3)
+rugt = rcodcl(ifac,iv(iphas),3)
 actu = xkappa/log((distbf+rugd)/rugd)
 actt = xkappa/log((distbf+rugt)/rugt)
 
@@ -285,7 +285,8 @@ actt = xkappa/log((distbf+rugt)/rugt)
 !     3.3 - compute layer average Richardson number
 !     .........    .....................................
 
-if (abs(utau).le.epzero) then
+! NB: rib =0 if thermal flux conditions are imposed and tpot1 not defined
+if (abs(utau).le.epzero.or.icodcl(ifac,isca(iscalt(iphas))).eq.3) then
  rib = 0.d0
 else
  rib = 2.d0*gredu*distbf*(tpotv2-tpotv1)/(tpotv1+tpotv2)/utau/utau
