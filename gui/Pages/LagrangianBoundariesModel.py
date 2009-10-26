@@ -91,22 +91,22 @@ class LagrangianBoundariesModel(Model):
         default = {}
         default['particles'] = "inlet"
         default['nbclas'] = 0
-        default['number'] = 0
-        default['frequency'] = 0
+        default['number'] = 10
+        default['frequency'] = 1
         default['statistical_groups'] = 0.
         default['statistical_weight_choice'] = "prescribed"
-        default['statistical_weight'] = 0
+        default['statistical_weight'] = 1.0
         default['mass_flow_rate'] = 0.
-        default['density'] = 0.
+        default['density'] = 1000.
         default['velocity_choice'] = "fluid"
         default['velocity_norm'] = 0.
         default['velocity_value'] = 0.
         default['temperature_choice'] = "prescribed"
-        default['temperature'] = 0.
-        default['specific_heat'] = 0.
-        default['emissivity'] = 0.
+        default['temperature'] = 20.
+        default['specific_heat'] = 1400.
+        default['emissivity'] = 0.9
         default['diameter_choice'] = "prescribed"
-        default['diameter'] = 0.
+        default['diameter'] = 1.0e-5
         default['diameter_standard_deviation'] = 0.
         default['coal_number'] = 0
         default['coal_temperature'] = 0.
@@ -249,7 +249,6 @@ class LagrangianBoundariesModel(Model):
         Return the number of particles in a class.
         """
         value = self.node_class.xmlGetInt('number')
-        print "getNumberOfParticulesInClassValue value = ", value
         if value == None:
             value = self.defaultParticlesBoundaryValues()['number']
             self.setNumberOfParticulesInZoneValue(label, iclass,value)

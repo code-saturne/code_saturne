@@ -306,7 +306,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.tableViewBoundaries.setItemDelegateForColumn(2,delegateInteraction)
         self.tableViewBoundaries.setItemDelegateForColumn(3,delegateClassNumber)
 
-        self.modelIPOIT = ComboModel(self.comboBoxIPOIT,3,1)                                  
+        self.modelIPOIT = ComboModel(self.comboBoxIPOIT,3,1)
         self.modelIPOIT.addItem(self.tr("Volumic flow rate"), "rate")
         self.modelIPOIT.addItem(self.tr("Statistical weight set by values"), "prescribed")
         self.modelIPOIT.addItem(self.tr("User defined statistical weight"), "subroutine")
@@ -317,16 +317,16 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.modelIJUVW.addItem(self.tr("Velocity given by values"), "components")
         self.modelIJUVW.addItem(self.tr("User defined velocity"), "subroutine")
 
-        self.modelIJRTP = ComboModel(self.comboBoxIJRTP,2,1)                                  
+        self.modelIJRTP = ComboModel(self.comboBoxIJRTP,2,1)
         self.modelIJRTP.addItem(self.tr("Temperature set by values"), "prescribed")
         self.modelIJRTP.addItem(self.tr("User defined temperature"), "subroutine")
 
-        self.modelIJRDP = ComboModel(self.comboBoxIJRDP,2,1)                                  
+        self.modelIJRDP = ComboModel(self.comboBoxIJRDP,2,1)
         self.modelIJRDP.addItem(self.tr("Diameter set by values"), "prescribed")
         self.modelIJRDP.addItem(self.tr("User defined diameter"), "subroutine")
 
         self.connect(self.tableViewBoundaries, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectBoundary)
-        self.connect(self.modelBoundaries, SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.slotEditBoundary)
+#        self.connect(self.modelBoundaries, SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.slotEditBoundary)
         self.connect(self.spinBoxICLAS, SIGNAL("valueChanged(int)"), self.slotICLAS)
 
         self.connect(self.lineEditIJNBP,  SIGNAL("textChanged(const QString &)"), self.slotIJNBP)
@@ -421,11 +421,11 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.groupBoxCoal.hide()
 
 
-    @pyqtSignature("const QModelIndex&, const QModelIndex&")
-    def slotEditBoundary(self, index, index2):
-        """
-        """
-        self.slotSelectBoundary(index)
+#    @pyqtSignature("const QModelIndex&, const QModelIndex&")
+#    def slotEditBoundary(self, index, index2):
+#        """
+#        """
+#        self.slotSelectBoundary(index)
 
 
     @pyqtSignature("const QModelIndex&")
@@ -443,9 +443,6 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             self.spinBoxICLAS.setMinimum(1)
             self.spinBoxICLAS.setMaximum(nclasses) 
             self.spinBoxICLAS.setValue(1)
-            self.slotICLAS(1)
-        else:
-            return
 
 
     @pyqtSignature("int")
@@ -811,16 +808,6 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Translation
         """
         return text 
-
-
-#-------------------------------------------------------------------------------
-# Testing part
-#-------------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-    pass
-
 
 #-------------------------------------------------------------------------------
 # End
