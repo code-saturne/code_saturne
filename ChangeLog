@@ -1,8 +1,12 @@
+* 26/10/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a minor issue in MED installation parameters.
+  modified file:
+     extras/installer/install_saturne.py
 * 26/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix some issues as regards the Lagrangian setup in the GUI.
   modified routines:
-     gui/Pages/LagrangianBoundariesModel.py
-     gui/Pages/LagrangianBoundariesView.py
+    gui/Pages/LagrangianBoundariesModel.py
+    gui/Pages/LagrangianBoundariesView.py
 
 * 21/10/2009 - Namane Méchitoua <namane.mechitoua@edf.fr>
   Set the relaxation factor between P0/P1 interpolations to 0.95 in multigrid

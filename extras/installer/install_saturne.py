@@ -411,7 +411,7 @@ class Setup:
                     url="http://files.opencascade.com/Salome/Salome5.1.2/%s")
 
         p = self.packages['med']
-        p.config_opts = "--with-med-int=int"
+        p.config_opts = "--with-med_int=int"
 
         # CCMIO library
 
