@@ -150,12 +150,11 @@ class AtmosphericFlowsModel(Model):
         """
         Update scalars and properties depending on model
         """
+        model = self.getAtmosphericFlowsModel()
         node = self.__node_atmos
 
         # Update only if getMeteoDataStatus is not off
-        if self.getMeteoDataStatus() != AtmosphericFlowsModel.off:
-
-            model = self.getAtmosphericFlowsModel()
+        if model != AtmosphericFlowsModel.off:
 
             if model == AtmosphericFlowsModel.dry:
                 self.__removeScalar(node, 'liquid_potential_temperature')

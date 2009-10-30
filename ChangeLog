@@ -1,3 +1,11 @@
+* 30/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Improve the support for atmospheric flow modelling in the GUI.
+  modified routines:
+    gui/Pages/AtmosphericFlowsModel.py
+    gui/Pages/ReferenceValuesModel.py
+    gui/Pages/ReferenceValuesView.py
+    gui/Pages/SolutionDomainView.py
+
 * 30/10/2009 - Maya Milliez <maya.milliez@edf.fr>
   Improvement in the atmospheric module initialization.
   modified routines:
@@ -31,7 +39,8 @@
 * 26/10/2009 - David Monfort <david.monfort@edf.fr>
   Fix a minor issue in MED installation parameters.
   modified file:
-     extras/installer/install_saturne.py
+    extras/installer/install_saturne.py
+
 * 26/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix some issues as regards the Lagrangian setup in the GUI.
   modified routines:

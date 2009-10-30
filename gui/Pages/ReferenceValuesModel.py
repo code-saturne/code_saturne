@@ -52,6 +52,7 @@ from Base.XMLmodel import ModelTest
 from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.GasCombustionModel import GasCombustionModel
 from Pages.ElectricalModelsModel import ElectricalModel
+from AtmosphericFlowsModel import AtmosphericFlowsModel
 
 #-------------------------------------------------------------------------------
 # Reference values model class
@@ -72,10 +73,7 @@ class ReferenceValuesModel(Model):
         self.node_coal = self.node_models.xmlGetNode('pulverized_coal', 'model')
         self.node_gas   = self.node_models.xmlGetNode('gas_combustion',  'model')
         self.node_joule = self.node_models.xmlGetNode('joule_effect',  'model')
-
-        self.ppList = ['off', 'ebu', 'd3p', 
-                       'coal_homo', 'coal_homo2', 'coal_lagr', 
-                       'joule', 'arc']
+        self.node_atmo = self.node_models.xmlGetNode('atmospheric_flows',  'model')
 
 
     def defaultValues(self):
@@ -85,9 +83,11 @@ class ReferenceValuesModel(Model):
         default = {}
         default['reference_pressure'] = 1.01325e+5
         default['reference_temperature'] = 1273.15
+	if self.getParticularPhysical()[0] == "atmo":
+            default['reference_temperature'] = 293.15
         # mass molar for dry air
         default['reference_mass_molar'] = 28.966e-3
-        
+
         return default
 
 
@@ -161,26 +161,31 @@ class ReferenceValuesModel(Model):
         """
         model = 'off'
         node = None
+
         coalModel = CoalCombustionModel(self.case).getCoalCombustionModel()
         gasModel = GasCombustionModel(self.case).getGasCombustionModel()
         jouleModel = ElectricalModel(self.case).getElectricalModel()
+        atmoModel = AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel()
+
         if coalModel != 'off': 
-            model = coalModel
+            model = "coal"
             node = self.node_coal
-        if gasModel != 'off': 
-            model = gasModel
+        elif gasModel != 'off': 
+            model = "gas"
             node = self.node_gas
-        if jouleModel != 'off': 
-            model = jouleModel
+        elif jouleModel != 'off': 
+            model = "joule"
             node = self.node_joule
-        self.isInList(model, self.ppList)
+        elif atmoModel != 'off': 
+            model = "atmo"
+            node = self.node_atmo
+
         return model, node
 
 
 #-------------------------------------------------------------------------------
 # ReferenceValuesModel test case
 #-------------------------------------------------------------------------------
-GasCombustionModel
 
 class ReferenceValuesTestCase(ModelTest):
     """

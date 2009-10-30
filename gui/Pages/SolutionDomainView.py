@@ -67,7 +67,8 @@ from Base.QtPage import ComboModel, DoubleValidator
 
 logging.basicConfig()
 log = logging.getLogger("SolutionDomainView")
-log.setLevel(GuiParam.DEBUG)
+#log.setLevel(GuiParam.DEBUG)
+log.setLevel(logging.DEBUG)
 
 #-------------------------------------------------------------------------------
 # Spin box delegate for 'Number' in Meshes table
@@ -404,14 +405,6 @@ class StandardItemModelPeriod(QStandardItemModel):
         self.dataPeriod.append(item)
         self.setRowCount(row+1)
 
-#    def deleteRow(self, row=0):
-#        """
-#        Delete the row in the model.
-#        """
-#        # This deletes only the last row
-#        last = self.rowCount()
-#        del self.dataPeriod[last-1]
-#        self.setRowCount(self.rowCount()-1)
 
     def deleteRow(self, row):
         """
@@ -594,6 +587,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         # Connections
 
         self.connect(self.treeViewPeriod, SIGNAL("clicked(const QModelIndex &)"), self.slotUpdatePeriodicity)
+        self.connect(self.modelPeriod, SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.slotUpdateByModel)
         self.connect(self.pushButtonAddPeriod,    SIGNAL("clicked()"), self.slotAddPeriodicity)
         self.connect(self.pushButtonDeletePeriod, SIGNAL("clicked()"), self.slotDeletePeriodicity)
 
@@ -737,7 +731,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         if "med" in format_list:
             self.tableViewMeshes.setColumnHidden(2, False)
-            self.tableViewMeshes.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
+            self.tableViewMeshes.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
         else:
             self.tableViewMeshes.setColumnHidden(2, True)
 
@@ -750,9 +744,8 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.tableViewMeshes.setColumnHidden(3, True)
             self.tableViewMeshes.setColumnHidden(4, True)
 
-        if "med" not in format_list and "cgns" not in format_list:
-            self.tableViewMeshes.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewMeshes.horizontalHeader().setResizeMode(1, QHeaderView.Stretch)
+        self.tableViewMeshes.horizontalHeader().setResizeMode(0, QHeaderView.Stretch)
+        self.tableViewMeshes.horizontalHeader().setResizeMode(1, QHeaderView.Stretch)
 
 
     def _addMeshInList(self,  m):
@@ -1008,6 +1001,16 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         if mode == "tr+rota2":
             self.__setValuesTranslation(perio)
             self.__setValuesRotation2(perio)
+
+
+    @pyqtSignature("const QModelIndex&, const QModelIndex&")
+    def slotUpdateByModel(self, index1, index2):
+        """
+        This slot update the display for the periodicity modified
+        in the tree view.
+        """
+        log.debug("slotUpdateByModel index.row() = %i " % index1.row())
+        self.slotUpdatePeriodicity(index1)
 
 
     @pyqtSignature("const QModelIndex&")

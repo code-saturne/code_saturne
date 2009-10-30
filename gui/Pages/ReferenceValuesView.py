@@ -20,7 +20,7 @@
 #     GNU General Public License for more details.
 #
 #     You should have received a copy of the GNU General Public License
-#     along with the Code_Saturne Kernel; ReferenceValuesif not, write to the
+#     along with the Code_Saturne Kernel; if not, write to the
 #     Free Software Foundation, Inc.,
 #     51 Franklin St, Fifth Floor,
 #     Boston, MA  02110-1301  USA
@@ -106,7 +106,12 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         # Display
 
         model, node = self.mdl.getParticularPhysical()
-        if model != "off":
+
+        if model == "atmo":
+            self.groupBoxTemperature.show()
+            self.labelInfoT0.hide()
+            self.groupBoxMassMolar.hide()
+        elif model != "off":
             self.groupBoxTemperature.show()
             self.groupBoxMassMolar.show()
         else:
@@ -119,10 +124,12 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         self.lineEditP0.setText(QString(str(p)))
 
         model, node = self.mdl.getParticularPhysical()
-        if model != "off":
+        if model == "atmo":
             t = self.mdl.getTemperature()
             self.lineEditT0.setText(QString(str(t)))
-
+        elif model != "off":
+            t = self.mdl.getTemperature()
+            self.lineEditT0.setText(QString(str(t)))
             m = self.mdl.getMassemol()
             self.lineEditMassMolar.setText(QString(str(m)))
 
