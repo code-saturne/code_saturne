@@ -1,3 +1,10 @@
+* 30/10/2009 - David Monfort <david.monfort@edf.fr>
+  Add return statement so that the user subroutine are not executed.
+  modified routines:
+    users/base/uskpdc.f90
+    users/base/ustsma.f90
+    users/base/usvort.f90
+
 * 30/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Minor correction in the GUI launcher module.
   modified routine:
