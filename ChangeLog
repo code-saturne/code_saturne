@@ -1,4 +1,9 @@
 * 30/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Minor correction in the GUI launcher module.
+  modified routine:
+    gui/cs_gui.py
+
+* 30/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Improve the support for atmospheric flow modelling in the GUI.
   modified routines:
     gui/Pages/AtmosphericFlowsModel.py

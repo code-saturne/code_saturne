@@ -124,6 +124,9 @@ def process_cmd_line(argv):
     if options.new and options.file_name:
         parser.error("Options --new and --file are mutually exclusive")
 
+    if options.new:
+        options.file_name = "new case"
+
     if options.batch_file and not options.file_name:
         parser.error("Option --batch requires --file")
 
