@@ -301,7 +301,7 @@ if (nbstru.gt.0) then
    nnod   , lndfac , lndfbr , ncelbr , nbstru ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , ra(iidfst),                &
+   ipnfac , nodfac , ipnfbr , nodfbr , ia(iidfst),                &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     ,                                                       &

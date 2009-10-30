@@ -1,3 +1,8 @@
+* 30/10/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a wrong array indirection where ra was used instead of ia.
+  modified routine:
+    src/base/strdep.f90
+
 * 26/10/2009 - Maya Milliez <maya.milliez@edf.fr>
                Bertrand Carissimo <bertrand.carissimo@edf.fr>
   Fix some bugs in the atmospheric flows module. Change the setup of the
