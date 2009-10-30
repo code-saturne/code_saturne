@@ -176,6 +176,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.ThermalRadiationView as Page
         thisPage = Page.ThermalRadiationView(root, case, tree)
 
+    elif page_name == tr("Conjugate heat transfer"):
+        import Pages.ConjugateHeatTransferView as Page
+        thisPage = Page.ConjugateHeatTransferView(root, case)
+
     elif page_name == tr("Initialization"):
         import Pages.InitializationView as Page
         thisPage = Page.InitializationView(root, case, stbar)

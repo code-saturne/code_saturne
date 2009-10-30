@@ -53,6 +53,7 @@ from Base.XMLmodel import ModelTest
 from Base.XMLvariables import Variables, Model
 from DefineUserScalarsModel import DefineUserScalarsModel
 from ThermalRadiationModel import ThermalRadiationModel
+from ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
 #-------------------------------------------------------------------------------
 # Thermal scalar model class
@@ -169,6 +170,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
                 self.deleteScalar(node['label'])
             self._removeThermalTimeStep()
             ThermalRadiationModel(self.case).setRadiativeModel('off')
+            ConjugateHeatTransferModel(self.case).setConjugateHeatTransferStatus('off')
             self.node_therm.xmlRemoveChild('property',
                                            name="input_thermal_flux",
                                            support="boundary")

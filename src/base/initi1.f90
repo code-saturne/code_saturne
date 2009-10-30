@@ -60,6 +60,7 @@ include "paramx.h"
 include "optcal.h"
 include "entsor.h"
 include "matiss.h"
+include "ihmpre.h"
 
 !===============================================================================
 
@@ -121,6 +122,11 @@ if (iverif.eq.1) imrgra = 2
 
 ! Le nombre de couplage SYRTHES doit etre connu avant MODINI a des fins
 ! de verification de coherence avec la definition des scalaires
+
+if (iihmpr.eq.1) then
+  call uisyrc
+  !==========
+endif
 
 call ussyrc
 !==========

@@ -426,6 +426,7 @@ Thermophysical models
     Pulverized coal combustion
     Electrical models
     Radiative transfers
+    Conjugate heat transfer
     Atmospheric flows
 Physical properties
     Reference values
@@ -657,6 +658,7 @@ Calculation management
         self.setRowClose(self.tr('Pulverized coal combustion'))
         self.setRowClose(self.tr('Electrical models'))
         self.setRowClose(self.tr('Radiative transfers'))
+        self.setRowClose(self.tr('Conjugate heat transfer'))
         self.setRowClose(self.tr('Atmospheric flows'))
         self.setRowClose(self.tr('Radiative boundary conditions'))
         self.setRowClose(self.tr('Particles boundary conditions'))
@@ -730,6 +732,7 @@ Calculation management
             self.setRowClose(self.tr('Thermal model'))
             self.setRowOpen(self.tr('Gas combustion'))
             self.setRowOpen(self.tr('Radiative transfers'))
+            self.setRowOpen(self.tr('Conjugate heat transfer'))
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
 
@@ -738,6 +741,7 @@ Calculation management
             self.setRowOpen(self.tr('Current species'))
             self.setRowOpen(self.tr('Pulverized coal combustion'))
             self.setRowOpen(self.tr('Radiative transfers'))
+            self.setRowOpen(self.tr('Conjugate heat transfer'))
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
 
@@ -745,6 +749,7 @@ Calculation management
             self.setRowClose(self.tr('Thermal model'))
             self.setRowOpen(self.tr('Electrical models'))
             self.setRowOpen(self.tr('Radiative transfers'))
+            self.setRowOpen(self.tr('Conjugate heat transfer'))
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
 
@@ -752,6 +757,7 @@ Calculation management
             self.setRowClose(self.tr('Thermal model'))
             self.setRowOpen(self.tr('Atmospheric flows'))
             self.setRowOpen(self.tr('Radiative transfers'))
+            self.setRowOpen(self.tr('Conjugate heat transfer'))
             if node5.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative boundary conditions'))
 
@@ -759,6 +765,7 @@ Calculation management
             self.setRowOpen(self.tr('Thermal model'))
             if node4.xmlGetAttribute('model') != 'off':
                 self.setRowOpen(self.tr('Radiative transfers'))
+                self.setRowOpen(self.tr('Conjugate heat transfer'))
                 if node5.xmlGetAttribute('model') != 'off':
                     self.setRowOpen(self.tr('Radiative boundary conditions'))
 

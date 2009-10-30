@@ -74,6 +74,9 @@ CoalCombustionModel.py \
 CoalCombustionView.py \
 CoalThermoChemistry.py \
 CommonCombustion.py \
+ConjugateHeatTransferForm.py \
+ConjugateHeatTransferView.py \
+ConjugateHeatTransferModel.py \
 CurrentSpeciesForm.py \
 CurrentSpeciesModel.py \
 CurrentSpeciesView.py \

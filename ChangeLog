@@ -1,3 +1,21 @@
+* 30/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  First implementation of the SYRTHES coupling with a GUI setup.
+  This functionality is not complete yet, the script has to be adapted
+  and the XML reader corrected.
+  modified routines:
+    gui/Base/BrowserView.py
+    gui/Base/Toolbox.py
+    gui/Pages/CoalCombustionModel.py
+    gui/Pages/ConjugateHeatTransferForm.ui
+    gui/Pages/ConjugateHeatTransferModel.py
+    gui/Pages/ConjugateHeatTransferView.py
+    gui/Pages/Makefile.am
+    gui/Pages/ThermalScalarModel.py
+    include/base/cs_gui_conjugate_heat_transfer.h
+    src/base/cs_gui_conjugate_heat_transfer.c
+    src/base/initi1.f90
+    src/base/Makefile.am
+
 * 30/10/2009 - David Monfort <david.monfort@edf.fr>
   Add return statement so that the user subroutine are not executed.
   modified routines:

@@ -54,6 +54,7 @@ from Base.XMLmodel import ModelTest
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from Pages.NumericalParamEquationModel import NumericalParamEquatModel
 from ThermalRadiationModel import ThermalRadiationModel
+from ConjugateHeatTransferModel import ConjugateHeatTransferModel
 from LocalizationModel import LocalizationModel
 from Boundary import Boundary
 
@@ -544,6 +545,7 @@ class CoalCombustionModel(Variables, Model):
                     Boundary("coal_inlet", zone.getLabel(), self.case).deleteCoals()
 
             ThermalRadiationModel(self.case).setRadiativeModel('off')
+            ConjugateHeatTransferModel(self.case).setConjugateHeatTransferStatus('off')
             self.node_coal['model'] = 'off'
 
         else:
