@@ -1,4 +1,9 @@
 * 30/10/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a bug introduced in a previous commit.
+  modified routine:
+    src/base/cs_gui_boundary_conditions.c
+
+* 30/10/2009 - David Monfort <david.monfort@edf.fr>
   Fix a wrong array indirection where ra was used instead of ia.
   modified routine:
     src/base/strdep.f90

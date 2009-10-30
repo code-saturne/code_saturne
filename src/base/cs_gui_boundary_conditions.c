@@ -1529,17 +1529,18 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                     ifbr = faces_list[ifac] -1;
                     rcodcl[2 * (*nfabor * (vars->nvar)) + vars->rtp[1] * (*nfabor) + ifbr]
                         = boundaries->rough[izone];
-                }
-                /* if atmospheric flows and "dry" or "humid atmosphere" mode,
-                   roughness value also stored in Velocity_V (z0t)*/
-                if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
-                {
-                    if (   cs_gui_strcmp(vars->model_value, "dry")
-                        || cs_gui_strcmp(vars->model_value, "humid"))
+
+                    /* if atmospheric flows and "dry" or "humid atmosphere" mode,
+                       roughness value also stored in Velocity_V (z0t)*/
+                    if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
                     {
-                      rcodcl[3 * (*nfabor * (vars->nvar)) + vars->rtp[2] * (*nfabor) + ifbr]
-                        = boundaries->rough[izone];
-                    }
+                        if (   cs_gui_strcmp(vars->model_value, "dry")
+                            || cs_gui_strcmp(vars->model_value, "humid"))
+                        {
+                            rcodcl[3 * (*nfabor * (vars->nvar)) + vars->rtp[2] * (*nfabor) + ifbr]
+                            = boundaries->rough[izone];
+                        }
+                     }
                 }
             }
             else
