@@ -220,7 +220,19 @@ if (ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2) then
 endif
 
 !===============================================================================
-! 5. ON DONNE LA MAIN A L'UTLISATEUR
+! 5. Turbulent Schmidt number for atmospheric flows
+!===============================================================================
+
+if (nscal.gt.0) then
+  do ii = 1, nscal
+    do iphas = 1, nphas
+        sigmas(ii) = 0.7d0
+    enddo
+  enddo
+endif
+
+!===============================================================================
+! 6. ON DONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
 !   - Interface Code_Saturne

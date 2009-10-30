@@ -1,3 +1,9 @@
+* 30/10/2009 - Maya Milliez <maya.milliez@edf.fr>
+  Improvement in the atmospheric module initialization.
+  modified routines:
+    src/atmo/atini1.f90
+    src/atmo/atiniv.f90
+
 * 30/10/2009 - David Monfort <david.monfort@edf.fr>
   Fix a bug introduced in a previous commit.
   modified routine:

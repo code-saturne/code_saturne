@@ -176,6 +176,7 @@ include "cstnum.h"
 include "entsor.h"
 include "ppppar.h"
 include "ppthch.h"
+include "ppincl.h"
 include "atincl.h"
 
 
@@ -206,7 +207,7 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 ! VARIABLES LOCALES
 
-integer          idebia, idebra, imode
+integer          idebia, idebra, imode, iphas, iel
 
 !===============================================================================
 !===============================================================================
@@ -236,8 +237,21 @@ if (imeteo.gt.0) then
 
 endif
 
+
 !===============================================================================
-! 3. USER  OPTIONS
+! 3. Dry atmosphere: default initialization of potential temperature
+!===============================================================================
+
+if (ippmod(iatmos).eq.1) then
+  ! The thermal scalar is potential temperature
+  iphas = 1
+  do iel = 1, ncel
+    rtp(iel,isca(iscalt(iphas))) = t0(iphas)
+  enddo
+endif
+
+!===============================================================================
+! 4. USER  OPTIONS
 !===============================================================================
 
 call usativ                                                       &
