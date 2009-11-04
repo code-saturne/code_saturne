@@ -1,4 +1,10 @@
 * 03/11/2009 - David Monfort <david.monfort@edf.fr>
+  Force 'bash' shell as 'sh' can be more minimalist one (like on Ubuntu
+  systems where it is 'dash') and we are using bashism.
+  modified script:
+    bin/runcase.in
+
+* 03/11/2009 - David Monfort <david.monfort@edf.fr>
   Finalize the implementation of SYRTHES coupling setup via the GUI.
   modified script:
     bin/runcase.in
