@@ -100,10 +100,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.SolutionDomainView as Page
         thisPage = Page.SolutionDomainView(root, case, stbar)
 
-    elif page_name == tr("Wall thermal coupling"):
-        import Pages.SyrthesView as Page
-        thisPage = Page.SyrthesView(root, case)
-
     elif page_name == tr("Mesh quality criteria"):
         import Pages.SolutionVerifView as Page
         thisPage = Page.SolutionVerifView(root, case)

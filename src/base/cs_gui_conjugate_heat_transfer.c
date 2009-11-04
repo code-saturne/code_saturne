@@ -113,13 +113,13 @@ _get_syrthes_coupling(const char* keyword, const int number)
 {
     char* value = NULL;
     char *path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "thermophysical_models",
+    cs_xpath_add_elements(&path, 3, "thermophysical_models",
                                     "conjugate_heat_transfer",
                                     "external_coupling");
     cs_xpath_add_element_num(&path, "syrthes", number);
     cs_xpath_add_element(&path, keyword);
     cs_xpath_add_function_text(&path);
-    value = cs_gui_get_attribute_value(path);
+    value = cs_gui_get_text_value(path);
     BFT_FREE(path);
     return value;
 }

@@ -216,9 +216,6 @@ class StandardItemModelFaces(QStandardItemModel):
             if self.tag == "faces_periodic":
                 d = self.mdl.getPeriodicFaces(self.perio_name)
 
-            elif self.tag == "faces_syrthes":
-                d = self.mdl.getSyrthesFaces()
-
             elif self.tag == "faces_select":
                 d = self.mdl.getSelectFaces()
 
@@ -309,9 +306,6 @@ class StandardItemModelFaces(QStandardItemModel):
         elif self.tag == "faces_periodic":
             self.mdl.replacePeriodicFaces(self.perio_name, self.dataFaces[row])
 
-        elif self.tag == "faces_syrthes":
-            self.mdl.replaceSyrthesFaces(self.dataFaces[row])
-
         elif self.tag == "faces_select":
             self.mdl.replaceSelectFaces(self.dataFaces[row])
 
@@ -326,13 +320,7 @@ class StandardItemModelFaces(QStandardItemModel):
         """
         title = self.tr("Warning")
 
-        if self.tag == "faces_syrthes":
-            if self.mdl.getSyrthesFaces():
-                msg = self.tr("For Syrthes coupling, only a single faces selection is allowed.")
-                QMessageBox.information(self.parent, title, msg)
-                return
-
-        elif self.tag == "faces_select":
+        if self.tag == "faces_select":
             if self.mdl.getSelectFaces() or self.rowCount() == 1:
                 msg = self.tr("For interior faces selection, only a single criterion is allowed.")
                 QMessageBox.information(self.parent, title, msg)
@@ -349,9 +337,6 @@ class StandardItemModelFaces(QStandardItemModel):
 
         elif self.tag == "faces_periodic":
             self.mdl.addPeriodicFaces(self.perio_name, self.default)
-
-        elif self.tag == "faces_syrthes":
-            self.mdl.addSyrthesFaces(self.default)
 
         elif self.tag == "faces_select":
             self.mdl.addSelectFaces(self.default)
@@ -373,9 +358,6 @@ class StandardItemModelFaces(QStandardItemModel):
 
         elif self.tag == "faces_periodic":
             self.mdl.deletePeriodicFaces(self.perio_name)
-
-        elif self.tag == "faces_syrthes":
-            self.mdl.deleteSyrthesFaces()
 
         elif self.tag == "faces_select":
             self.mdl.deleteSelectFaces()

@@ -196,7 +196,6 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_join       = self.node_ecs.xmlInitNode('join_meshes', "status")
         self.node_cut        = self.node_ecs.xmlInitNode('faces_cutting', "status")
         self.node_orient     = self.node_ecs.xmlInitNode('reorientation', "status")
-        self.node_syrthes    = self.node_ecs.xmlInitNode('syrthes_coupling', "status")
         self.node_perio      = self.node_ecs.xmlInitNode('periodic_boundary')
         self.node_standalone = self.node_ecs.xmlInitNode('standalone')
 ##        self.node_select     = self.node_standalone.xmlInitNode('faces_select', "status")
@@ -243,18 +242,16 @@ class SolutionDomainModel(MeshModel, Model):
                                'COMMAND_JOIN',
                                'COMMAND_CWF',
                                'COMMAND_PERIO',
-                               'COMMAND_SYRTHES',
                                'CWF_OFF',
                                'JOIN_OFF',
-                               'PERIO_OFF',
-                               'SYRTHES_OFF'))
+                               'PERIO_OFF'))
         key = self.case['computer']
         if key:
             if not self.case['batchScript'][key]: return
 
             from BatchRunningModel import BatchRunningModel
             batch = BatchRunningModel(self.case)
-            if keyword in ('CWF_OFF', 'JOIN_OFF', 'PERIO_OFF', 'SYRTHES_OFF'):
+            if keyword in ('CWF_OFF', 'JOIN_OFF', 'PERIO_OFF'):
                 cmd = string.split(keyword,'_')[:1][0]
                 keyword = 'COMMAND_' + str(cmd)
                 batch.dicoValues[keyword] = ''
@@ -270,12 +267,9 @@ class SolutionDomainModel(MeshModel, Model):
         """
         Private method: Return node corresponding at item "tag"
         """
-        self.isInList(tagName, ('faces_join', 'faces_syrthes', 
-                                'faces_select', 'faces_periodic'))
+        self.isInList(tagName, ('faces_join', 'faces_select', 'faces_periodic'))
         if tagName == 'faces_join':
             node = self.node_join
-        elif tagName == 'faces_syrthes':
-            node = self.node_syrthes
         elif tagName == 'faces_select':
             node = self.node_standalone
         elif tagName == 'faces_periodic':
@@ -307,7 +301,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def _addFacesSelect(self, node, select):
         """
-        Private method: Add faces to node (join, periodic or syrthes) with dictionary select.
+        Private method: Add faces to node (join, periodic) with dictionary select.
         """
         for sel, txt in [ (select['color'],    'faces_color'),
                           (select['group'],    'faces_group'),
@@ -690,55 +684,6 @@ class SolutionDomainModel(MeshModel, Model):
         self.isOnOff(status)
         self.node_orient['status'] = status
         self._updateBatchScriptFile('COMMAND_REORIENT')
-
-
-    def getSyrthesCouplingStatus(self):
-        """
-        Get status on balise "syrthes_coupling" in xml file
-        """
-        status = self.node_syrthes['status']
-        if not status:
-            status = self.defaultValues()['syrth_status']
-            self.setSyrthesCouplingStatus(status)
-        return status
-
-
-    def setSyrthesCouplingStatus(self, status):
-        """
-        Put status on balise "syrthes_coupling" in xml file
-        """
-        self.isOnOff(status)
-        self.node_syrthes['status'] = status
-        if status == 'off':
-            self._updateBatchScriptFile('SYRTHES_OFF')
-        else:
-            self._updateBatchScriptFile('COMMAND_SYRTHES')
-
-
-    def getSyrthes2dMeshStatus(self):
-        """
-        Return status of balise "'syrthes_mesh_2d'" from xml file
-        """
-        node = self.node_syrthes.xmlInitNode('syrthes_mesh_2d', 'status')
-        status = node['status']
-        if not status : 
-            status = self.defaultValues()['syrth_mesh_2d']
-            self.setSyrthes2dMeshStatus(status)
-        return status
-
-
-    def setSyrthes2dMeshStatus(self, status):
-        """
-        Put status of balise 'syrthes_mesh_2d' into xml file
-        """
-        self.isOnOff(status)
-        node = self.node_syrthes.xmlInitNode('syrthes_mesh_2d', 'status')
-        if status != self.defaultValues()['syrth_mesh_2d']:
-            node['status'] = status
-        else:
-            if node:
-                node.xmlRemoveNode()
-        self._updateBatchScriptFile('COMMAND_SYRTHES')
 
 
     def getSimCommStatus(self):
@@ -1267,70 +1212,6 @@ class SolutionDomainModel(MeshModel, Model):
             raise ValueError, "wrong periodicity"
 
 
-    def addSyrthesFaces(self, select):
-        """
-        Add faces selection for syrthes coupling. 
-        Select is a dictionary with 'color', 'group', 'fraction', 'plan' ...
-        """
-        node = self.node_syrthes.xmlAddChild('faces_syrthes', status="on")
-        select['fraction'] =""
-        select['plan'] = ""
-        self._addFacesSelect(node, select)
-        self._updateBatchScriptFile('COMMAND_SYRTHES')
-        
-        
-    def getSyrthesFaces(self):
-        """
-        Return faces selection for syrthes coupling (only one authorized selection)
-        """
-        result = {}
-        node  = self.node_syrthes.xmlGetChildNode('faces_syrthes', status="on")
-        if node:
-            result = self._getFaces(node)
-        
-        return result
-
-
-    def replaceSyrthesFaces(self, select):
-        """
-        Replace values of faces selection for syrthes coupling (only one authorized selection)
-        by select
-        """
-        node  = self.node_syrthes.xmlGetChildNode('faces_syrthes', status="on")
-        self._removeChildren(node)
-        self._addFacesSelect(node, select)
-        self._updateBatchScriptFile('COMMAND_SYRTHES')
-
-
-    def deleteSyrthesFaces(self):
-        """
-        Delete faces selection for syrthes coupling (only one authorized selection)
-        """
-        node = self.node_syrthes.xmlGetChildNode('faces_syrthes', status="on")
-        node.xmlRemoveNode()
-        self._updateBatchScriptFile('COMMAND_SYRTHES')
-
-
-    def setSyrthesStatus(self, status):
-        """
-        Set status of faces selection for syrthes coupling (only one authorized selection)
-        """
-        self.isOnOff(status)
-        node = self.node_syrthes.xmlGetChildNode('faces_syrthes', 'status')
-        if node:
-            node['status'] = status
-
-
-    def getSyrthesStatus(self):
-        """
-        Get status of faces selection for syrthes coupling (only one authorized selection)
-        """
-        node = self.node_syrthes.xmlGetChildNode('faces_syrthes', 'status')
-        if node:
-            status = node['status']
-        return status
-
-
     def addSelectFaces(self, select):
         """
         Add faces selection for standalone selection. 
@@ -1524,26 +1405,6 @@ class SolutionDomainModel(MeshModel, Model):
         return line
 
 
-    def getSyrthesCommand(self):
-        """
-        Get syrthes command line for preprocessor execution
-        """
-        lines = ''
-        if self.node_syrthes and self.node_syrthes['status'] == 'on':
-            linesyr = ' --syrthes '
-            node_list = self.node_syrthes.xmlGetNodeList('faces_syrthes')
-            for node in node_list:
-                if node['status'] == 'on':
-                    line = self._getLineCommand(node)
-                    linesyr = linesyr + line
-            node_syrth_2d = self.node_syrthes.xmlGetNode('syrthes_mesh_2d', 'status')
-            if node_syrth_2d and node_syrth_2d['status'] == 'on':
-                linesyr += " --2d "
-            lines += linesyr 
-
-        return lines
-
-
     def getSimCommCommand(self):
         """
         Get " --sim-comm " command line for preprocessor execution
@@ -1688,30 +1549,6 @@ class SolutionDomainTestCase(ModelTest):
             'Could not set angle for faces_cutting'
         assert mdl.getCutAngle() == 90, \
             'Could not get angle for faces_cutting'
-
-    def checkSetandGetSyrthesCouplingStatusAndMesh2d(self):
-        """ Check whether the status of node syrthes_coupling and mesh 2D could be set and get"""
-        mdl = SolutionDomainModel(self.case)       
-        mdl.setSyrthesCouplingStatus('on')
-        doc1 = '''<syrthes_coupling status="on"/>'''
-        assert mdl.node_syrthes == self.xmlNodeFromString(doc1), \
-            'Could not set status for syrthes_coupling balise'
-        assert mdl.getSyrthesCouplingStatus() == 'on',\
-            'Could not get status for syrthes_coupling balise'
-            
-        mdl.setSyrthes2dMeshStatus('on')
-        doc2 = '''<syrthes_coupling status="on">
-                    <syrthes_mesh_2d status="on"/>
-                  </syrthes_coupling>'''
-        assert mdl.node_syrthes == self.xmlNodeFromString(doc2), \
-            'Could not set status on syrthes_2dMesh balise'
-        assert mdl.getSyrthes2dMeshStatus() == 'on',\
-            'Could not get status of syrthes_mesh_2d balise'
-            
-        mdl.setSyrthes2dMeshStatus('off')
-        doc3 = '''<syrthes_coupling status="on"/>'''
-        assert mdl.node_syrthes == self.xmlNodeFromString(doc3), \
-            'Could not set status OFF on syrthes_2dMesh balise'
 
     def checkSetandGetSimCommStatus(self):
         """ Check whether the status of node simulation_communication could be set and get"""
@@ -2213,76 +2050,6 @@ class SolutionDomainTestCase(ModelTest):
         assert mdl.getPeriodicStatus('1') == 'off',\
             'Could not get status for activate or not selection of faces for periodicities'
 
-    def checkAddandGetSyrthesFaces(self):
-        """ Check whether faces of syrthes coupling could be added and get """
-        select = {}
-        select['color'] = '85 2'
-        select['group'] = 'SYRT'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'off'
-        mdl = SolutionDomainModel(self.case)
-        mdl.setSyrthesCouplingStatus('on')
-        mdl.addSyrthesFaces(select)
-        doc = '''<syrthes_coupling status="on">
-                    <faces_syrthes status="on">
-                            <faces_color>85 2</faces_color>
-                            <faces_group>SYRT</faces_group>
-                    </faces_syrthes>
-                 </syrthes_coupling>'''
-        
-        assert mdl.node_syrthes == self.xmlNodeFromString(doc),\
-            'Could not add values of faces for syrthes coupling'
-        assert mdl.getSyrthesFaces() == {'group': 'SYRT', 'reverse': 'off', 'color': '85 2',
-                                        'plan': '', 'fraction': '', 'semiconf': 'off'},\
-            'Could not get values of faces for syrthes coupling'
-
-    def checkReplaceandDeleteandSetandGetStatusForSyrthesFaces(self):
-        """ 
-        Check whether faces of syrthes coupling could be replaced and deleted 
-        and status could be set and get
-        """
-        select = {}
-        select['color'] = '85 2'
-        select['group'] = 'SYRT'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'off'
-        mdl = SolutionDomainModel(self.case)
-        mdl.setSyrthesCouplingStatus('on')
-        mdl.addSyrthesFaces(select)
-        select['color'] = '6 3'
-        select['group'] = 'COUPLING'
-        mdl.replaceSyrthesFaces(select)
-        doc = '''<syrthes_coupling status="on">
-                    <faces_syrthes status="on">
-                            <faces_color>6 3</faces_color>
-                            <faces_group>COUPLING</faces_group>
-                    </faces_syrthes>
-                 </syrthes_coupling>'''
-                 
-        assert mdl.node_syrthes == self.xmlNodeFromString(doc),\
-            'Could not replace values of faces for syrthes coupling'
-            
-        mdl.deleteSyrthesFaces()
-        doc = '''<syrthes_coupling status="on"/>'''
-        
-        assert mdl.node_syrthes == self.xmlNodeFromString(doc),\
-            'Could not delete values of faces for syrthes coupling'
-        
-        select['group'] = 'NOUVEAU'
-        mdl.addSyrthesFaces(select)
-        mdl.setSyrthesStatus('off')
-        doc = '''<syrthes_coupling status="on">
-                    <faces_syrthes status="off">
-                            <faces_color>6 3</faces_color>
-                            <faces_group>NOUVEAU</faces_group>
-                    </faces_syrthes>
-                 </syrthes_coupling>'''
-        
-        assert mdl.node_syrthes == self.xmlNodeFromString(doc),\
-            'Could not set status for activate selection of faces for syrthes coupling'
-        assert mdl.getSyrthesStatus() == 'off',\
-            'Could not get status for activate selection of faces for syrthes coupling'
-
     def checkAddandGetSelectFaces(self):
         """ Check whether faces of standalone could be added and get """
         select = {}
@@ -2420,23 +2187,6 @@ class SolutionDomainTestCase(ModelTest):
 
         assert mdl.getPerioCommand() == cmd_perio,\
             'Perio command is not verified in SolutionDomain Model'
-
-    def checkSyrthesCommand(self):
-        """ Check whether syrthes command line could be get """
-        mdl = SolutionDomainModel(self.case)
-        mdl.setSyrthesCouplingStatus('on')
-        mdl.setSyrthes2dMeshStatus('on')
-        select = {}
-        select['color'] = '1 2 3'
-        select['group'] = 'toto'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'on'
-        mdl = SolutionDomainModel(self.case)
-        mdl.addSyrthesFaces(select)
-        cmd_syr = ''' --syrthes  --color 1 2 3 --group toto --2d '''
-
-        assert mdl.getSyrthesCommand() == cmd_syr,\
-            'Syrthes command is not verified in SolutionDomain Model'
 
     def checkSimCommAndVerifMaillCommand(self):
         """ Check whether simulation_communication command line could be get """

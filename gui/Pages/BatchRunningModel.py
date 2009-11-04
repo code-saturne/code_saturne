@@ -126,7 +126,6 @@ class BatchRunningModel(Model):
         self.dicoValues['COMMAND_JOIN'] = ""
         self.dicoValues['COMMAND_CWF'] = ""
         self.dicoValues['COMMAND_PERIO'] = ""
-        self.dicoValues['COMMAND_SYRTHES'] = ""
         self.dicoValues['PBS_JOB_NAME'] = ""
         self.dicoValues['PBS_nodes'] = '1'
         self.dicoValues['PBS_ppn'] = '2'
@@ -310,7 +309,6 @@ class BatchRunningModel(Model):
         self.dicoValues['COMMAND_JOIN'] = sdm.getJoinCommand()
         self.dicoValues['COMMAND_CWF'] = sdm.getCutCommand()
         self.dicoValues['COMMAND_PERIO'] = sdm.getPerioCommand()
-        self.dicoValues['COMMAND_SYRTHES'] = sdm.getSyrthesCommand()
         self.dicoValues['PARAM'] = os.path.basename(self.case['xmlfile'])
 
         # User 1D profiles are loaded as user result files
@@ -443,7 +441,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'COMMAND_JOIN=" --j  --color 98 99  --fraction 0.1  --plane 0.8"\n'\
         'COMMAND_CWF="--cwf 0.001"\n'\
         'COMMAND_PERIO=\n'\
-        'COMMAND_SYRTHES=\n'\
         'EXEC_PREPROCESS=yes\n'\
         'EXEC_PARTITION=yes\n'\
         'EXEC_KERNEL=yes\n'\
@@ -573,7 +570,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         #   MESH
         #   COMMAND_JOIN
         #   COMMAND_CWF
-        #   COMMAND_SYRTHES
         #   COMMAND_PERIO
         #   COMMAND_REORIENT
         #
@@ -592,7 +588,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'COMMAND_JOIN': '',
         'COMMAND_REORIENT': ' --reorient ',
         'CS_TMP_PREFIX': '/home/toto',
-        'COMMAND_SYRTHES': '',
         'PBS_ppn': '2',
         'PBS_walltime': '1:00:00',
         'PBS_mem': '320',
@@ -626,7 +621,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         #   MESH
         #   COMMAND_JOIN
         #   COMMAND_CWF
-        #   COMMAND_SYRTHES
         #   COMMAND_PERIO
         #
         #
@@ -642,7 +636,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'COMMAND_JOIN': '',
         'COMMAND_REORIENT': ' --reorient ',
         'CS_TMP_PREFIX': '',
-        'COMMAND_SYRTHES': '',
         'PBS_ppn': '1',
         'PBS_walltime': '34:77:22',
         'PBS_mem': '832',

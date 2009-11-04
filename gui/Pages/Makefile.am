@@ -185,8 +185,6 @@ StartRestartView.py \
 SteadyManagementForm.py \
 SteadyManagementModel.py \
 SteadyManagementView.py \
-SyrthesForm.py \
-SyrthesView.py \
 ThermalRadiationAdvancedDialogForm.py \
 ThermalRadiationForm.py \
 ThermalRadiationModel.py \

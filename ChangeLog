@@ -1,3 +1,19 @@
+* 03/11/2009 - David Monfort <david.monfort@edf.fr>
+  Finalize the implementation of SYRTHES coupling setup via the GUI.
+  modified script:
+    bin/runcase.in
+  modified routines:
+    gui/Base/Toolbox.py
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/FacesSelectionView.py
+    gui/Pages/Makefile.am
+    gui/Pages/OutputControlView.py
+    gui/Pages/SolutionDomainModel.py
+    src/base/cs_gui_conjugate_heat_transfer.c
+  removed routines:
+    gui/Pages/SyrthesForm.ui
+    gui/Pages/SyrthesView.py
+
 * 30/10/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   First implementation of the SYRTHES coupling with a GUI setup.
   This functionality is not complete yet, the script has to be adapted

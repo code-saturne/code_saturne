@@ -401,16 +401,16 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         else:
             self.checkBoxICHRBO.setChecked(False)
 
-        syrthes = SolutionDomainModel(self.case).getSyrthesCouplingStatus()
-        if syrthes != 'on':
-            self.labelICHRSY.hide()
-            self.checkBoxICHRSY.hide()
+        #syrthes = SolutionDomainModel(self.case).getSyrthesCouplingStatus()
+        #if syrthes != 'on':
+        #    self.labelICHRSY.hide()
+        #    self.checkBoxICHRSY.hide()
 
-        self.checkBoxICHRSY.setChecked(False)
-        if syrthes == "on":
-            self.checkBoxICHRSY.setChecked(True)
-            if self.mdl.getDomainBoundaryPostProStatus() == "off":
-                self.checkBoxICHRSY.setChecked(False)
+        #self.checkBoxICHRSY.setChecked(False)
+        #if syrthes == "on":
+        #    self.checkBoxICHRSY.setChecked(True)
+        #    if self.mdl.getDomainBoundaryPostProStatus() == "off":
+        #        self.checkBoxICHRSY.setChecked(False)
 
         # values of type of mesh's post processing
 
