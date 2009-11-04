@@ -245,7 +245,7 @@ class StandardItemVolumeNature(QStandardItemModel):
 
         row = 0
         for key in self.keys:
-	    if key in ('initialization', 'head_losses'):
+            if key in ('initialization', 'head_losses'):
                 self.setItem(row, QStandardItem(QString(str(self.dicoM2V[key]))))
                 row += 1
         self.setRowCount(row)
@@ -285,8 +285,6 @@ class StandardItemVolumeNature(QStandardItemModel):
                 disable_row = row
                 cpt += 1
 
-	#FIXME : delete the following line
-	#return Qt.ItemIsSelectable
         if cpt == 1 and index.row() == disable_row:
             return Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
         else:

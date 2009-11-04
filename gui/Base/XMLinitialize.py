@@ -91,6 +91,7 @@ class XMLinit(Variables):
         # Create the missing heading.
 
         self.initHeading()
+        self.backwardCompatibility()
 
         # Initialization (order is important, see turbulenceModelsList method)
 
@@ -191,6 +192,14 @@ class XMLinit(Variables):
                       "\n\nThe application will finish. Sorry."
                 self._errorExit(msg)
 
+
+    def backwardCompatibility(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        for node in self.case.xmlGetNodeList('initial_value', 'zone'):
+            n = self.case.xmlGetNode('zone', name = node['zone'])
+            node['label'] = n['label']
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

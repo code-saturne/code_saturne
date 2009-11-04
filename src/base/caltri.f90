@@ -725,6 +725,13 @@ do iphas = 1, nphas
 
   else
 
+    if (iihmpr.eq.1) then
+      call uikpdc &
+      !==========
+    ( iappel, iphas, ncelet, ncepdc,     &
+      ia(idbia1), ra(idbra1) , ra(irtpa) )
+    endif
+
     ils    = idbia1
     idbia2 = ils + maxelt
     call iasize('caltri',idbia2)
@@ -790,6 +797,13 @@ do iphas = 1, nphas
    rdevel , rtuser , ra     )
 
     else
+
+      if (iihmpr.eq.1) then
+        call uikpdc &
+        !==========
+      ( iappel, iphas, ncelet, ncepdc,                  &
+        ia(iicepd(iphas)), ra(ickupd(iphas)), ra(irtpa) )
+      endif
 
       ils    = ifinia
       ifnia2 = ils + maxelt

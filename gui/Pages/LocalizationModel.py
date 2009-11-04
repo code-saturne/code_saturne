@@ -449,22 +449,21 @@ class LocalizationModel(object):
         """
         Replace a zone by another in the XML file
         """
-        #
         newLabel = new_zone.getLabel()
         if newLabel == new_zone.defaultValues()['label']:
             newLabel = old_zone.getLabel()
         self.renameLabel(old_zone.getLabel(), newLabel)
-        
+
         newCodeNumber = new_zone.getCodeNumber()
         if newCodeNumber == new_zone.defaultValues()['codeNumber']:
             newCodeNumber = old_zone.getCodeNumber()
         self.renameName(old_zone.getCodeNumber(), newCodeNumber)
-        
+
         newLocal = new_zone.getLocalization()
         if newLocal == new_zone.defaultValues()['localization']:
             newLocal = old_zone.getLocalization()
         self.replaceLocalization(old_zone.getLocalization(), newLocal)
-        
+
         return newLabel, newCodeNumber, newLocal
 
 
@@ -616,16 +615,23 @@ class VolumicLocalizationModel(LocalizationModel):
         # if codeNumber is modified, we must modify zone in initialization of variables
         if old_zone.getCodeNumber() != newCodeNumber:
             node['name'] = newCodeNumber
-            list = self.__natureOptions
-            list.append('initial_value')
-            for tag in self.__natureOptions:
-                for n in self._case.xmlGetNodeList(tag, zone=old_zone.getCodeNumber()):
-                    n['zone'] = newCodeNumber
-        
+
         node['label'] = newLabel
         node.xmlSetTextNode(newLocal)
         for k, v in new_zone.getNature().items():
             node[k] = v
+
+        # update data in the entire case
+        list = self.__natureOptions
+        list.append('initial_value')
+        list.append('head_loss')
+        for tag in list:
+            for n in self._case.xmlGetNodeList(tag, zone=old_zone.getCodeNumber()):
+                n['zone'] = newCodeNumber
+            for n in self._case.xmlGetNodeList(tag, name=old_zone.getCodeNumber()):
+                n['name'] = newCodeNumber
+            for n in self._case.xmlGetNodeList(tag, label=old_zone.getLabel()):
+                n['label'] = newLabel
 
 
     def deleteZone(self, label):

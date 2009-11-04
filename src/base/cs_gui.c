@@ -2234,7 +2234,7 @@ static char *_scalar_name_label(const char *kw, const int scalar_num)
  *   ith_zone        -->  id of volumic zone
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_volumic_zone_name(const int ith_zone)
+static char *cs_gui_volumic_zone_label(const int ith_zone)
 {
   char *path = NULL;
   char *name = NULL;
@@ -2243,7 +2243,7 @@ static char *cs_gui_volumic_zone_name(const int ith_zone)
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
   cs_xpath_add_element_num(&path, "zone", ith_zone);
-  cs_xpath_add_attribute(&path, "name");
+  cs_xpath_add_attribute(&path, "label");
 
   name = cs_gui_get_attribute_value(path);
 
@@ -2253,23 +2253,22 @@ static char *cs_gui_volumic_zone_name(const int ith_zone)
 }
 
 /*-----------------------------------------------------------------------------
- * Return the localisation for the volumic zone named name
+ * Return the localisation for the volumic zone named label
  *
  * parameters:
- *   name        -->  name of volumic zone
+ *   label        -->  label of volumic zone
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_volumic_zone_localization(const char *const name)
+static char *cs_gui_volumic_zone_localization(const char *const label)
 {
   char *path = NULL;
   char *description = NULL;
 
-  /* 2) get the description (color and groups) of the ith initialization zone */
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3, "solution_domain",
                                   "volumic_conditions",
                                   "zone");
-  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_test_attribute(&path, "label", label);
   cs_xpath_add_function_text(&path);
 
   description = cs_gui_get_text_value(path);
@@ -2284,12 +2283,12 @@ static char *cs_gui_volumic_zone_localization(const char *const name)
  *
  * parameters:
  *   variable_name    -->  name of variable
- *   zone_name        -->  name of volumic zone
+ *   zone_label       -->  label of volumic zone
  *   initial_value    <--  initial value
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_variable_initial_value(const char   *const variable_name,
-                                          const char   *const zone_name,
+                                          const char   *const zone_label,
                                                 double *const initial_value)
 {
   char *path = NULL;
@@ -2299,7 +2298,7 @@ static void cs_gui_variable_initial_value(const char   *const variable_name,
   cs_xpath_add_element(&path, "variable");
   cs_xpath_add_test_attribute(&path, "name", variable_name);
   cs_xpath_add_element(&path, "initial_value");
-  cs_xpath_add_test_attribute(&path, "zone", zone_name);
+  cs_xpath_add_test_attribute(&path, "label", zone_label);
   cs_xpath_add_function_text(&path);
 
   if (cs_gui_get_double(path, &result))
@@ -2316,24 +2315,23 @@ static void cs_gui_variable_initial_value(const char   *const variable_name,
  * parameters:
  *   parent           -->  name of balise parent for the scalar
  *   label            -->  label of scalar
- *   zone_name        -->  name of volumic zone
+ *   zone_label       -->  label of volumic zone
  *   initial_value    <--  initial value
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_scalar_initial_value(const char   *const parent,
-                                 const char   *const label,
-                                 const char   *const zone_name,
-                                       double *const initial_value)
+                                        const char   *const label,
+                                        const char   *const zone_label,
+                                              double *const initial_value)
 {
   char *path = NULL;
-  char *scalar_name = NULL;
   double result;
 
   path = cs_xpath_short_path();
   cs_xpath_add_elements(&path, 2, parent, "scalar");
   cs_xpath_add_test_attribute(&path, "label", label);
   cs_xpath_add_element(&path, "initial_value");
-  cs_xpath_add_test_attribute(&path, "zone", zone_name);
+  cs_xpath_add_test_attribute(&path, "label", zone_label);
   cs_xpath_add_function_text(&path);
 
   if (cs_gui_get_double(path, &result))
@@ -2341,7 +2339,6 @@ static void cs_gui_scalar_initial_value(const char   *const parent,
   else
     *initial_value = 0.0;
 
-  BFT_FREE(scalar_name);
   BFT_FREE(path);
 }
 
@@ -4309,7 +4306,7 @@ cs_gui_get_cells_list(const char *label,
  * double precision rtp     <--   variables and scalars array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiiniv, UIINIV)(const int    * ncelet,
+void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
                               const int    *isuite,
                               const int    *isca,
                               const int    *iscold,
@@ -4349,7 +4346,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    * ncelet,
 
     if (cs_gui_strcmp(status, "on"))  {
 
-      label = cs_gui_volumic_zone_name(i);
+      label = cs_gui_volumic_zone_label(i);
       cells_list = cs_gui_get_cells_list(label, *ncelet, &cells);
 
       if (*isuite == 0) {
@@ -4428,6 +4425,282 @@ void CS_PROCF(uiiniv, UIINIV)(const int    * ncelet,
     }
     BFT_FREE(status);
   } /* zones+1 */
+}
+
+/*-----------------------------------------------------------------------------
+ * Change the head losses matrix from the local frame to the global frame.
+ *
+ * parameters:
+ *   a_ij     -->  change matrix from the local frame to the global frame
+ *   in_ij    -->  head losses matrix in the local frame
+ *   out_ij   -->  head losses matrix in the global frame
+ *----------------------------------------------------------------------------*/
+
+static void
+_matrix_base_conversion(double  a11,   double  a12,   double  a13,
+                        double  a21,   double  a22,   double  a23,
+                        double  a31,   double  a32,   double  a33,
+                        double  in11,  double  in12,  double  in13,
+                        double  in21,  double  in22,  double  in23,
+                        double  in31,  double  in32,  double  in33,
+                        double *out11, double *out12, double *out13,
+                        double *out21, double *out22, double *out23,
+                        double *out31, double *out32, double *out33)
+{
+    int     i, j, k;
+    double  tensorP[3][3], tensorA[3][3], tensorB[3][3], tensorC[3][3], tensorD[3][3];
+
+    tensorA[0][0] = in11;
+    tensorA[0][1] = in12;
+    tensorA[0][2] = in13;
+    tensorA[1][0] = in21;
+    tensorA[1][1] = in22;
+    tensorA[1][2] = in23;
+    tensorA[2][0] = in31;
+    tensorA[2][1] = in32;
+    tensorA[2][2] = in33;
+
+    tensorP[0][0] = a11;
+    tensorP[0][1] = a12;
+    tensorP[0][2] = a13;
+    tensorP[1][0] = a21;
+    tensorP[1][1] = a22;
+    tensorP[1][2] = a23;
+    tensorP[2][0] = a31;
+    tensorP[2][1] = a32;
+    tensorP[2][2] = a33;
+
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < 3; j++)
+        {
+            tensorB[i][j] = 0.;
+            for (k = 0; k < 3; k++)
+                tensorB[i][j] += tensorP[i][k] * tensorA[k][j];
+        }
+    }
+
+    /* Inversion of a 3x3 matrix */
+
+    tensorC[0][0] = a11;
+    tensorC[0][1] = a21;
+    tensorC[0][2] = a31;
+    tensorC[1][0] = a12;
+    tensorC[1][1] = a22;
+    tensorC[1][2] = a32;
+    tensorC[2][0] = a13;
+    tensorC[2][1] = a23;
+    tensorC[2][2] = a33;
+
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < 3; j++)
+        {
+            tensorD[i][j] = 0.;
+            for (k = 0; k < 3; k++)
+                tensorD[i][j] += tensorB[i][k] * tensorC[k][j];
+        }
+    }
+
+    *out11 = tensorD[0][0];
+    *out22 = tensorD[1][1];
+    *out33 = tensorD[2][2];
+    *out12 = tensorD[0][1];
+    *out13 = tensorD[0][2];
+    *out21 = tensorD[1][0];
+    *out23 = tensorD[1][2];
+    *out31 = tensorD[2][0];
+    *out32 = tensorD[2][1];
+}
+
+/*-----------------------------------------------------------------------------
+ * Return value of coefficient associated to the head losses definition.
+ *
+ * parameters:
+ *   label     -->  label of the volume zone
+ *   c         -->  name of the coefficient
+ *----------------------------------------------------------------------------*/
+
+static double
+_c_heads_losses(const char* label, const char* c)
+{
+    char* path;
+    double result = 0.0;
+    double value  = 0.0;
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 3, "thermophysical_models", "heads_losses", "head_loss");
+    cs_xpath_add_test_attribute(&path, "label", label);
+    cs_xpath_add_element(&path, c);
+    cs_xpath_add_function_text(&path);
+    if (cs_gui_get_double(path, &result))
+        value = result;
+    else
+        value= 0.0;
+    BFT_FREE(path);
+    return value;
+}
+
+/*----------------------------------------------------------------------------
+ * Head losses definition
+ *
+ * Fortran Interface:
+ *
+ * subroutine uikpdc
+ * *****************
+ *
+ * integer          iappel   -->  number of calls during a time step
+ * integer          iphas    -->  number of phase (only 1 allowed)
+ * integer          ncelet   -->  number of cells with halo
+ * integer          ncepdp  <--   number of cells with head losses
+ * integer          icepdc  <--   ncepdp cells number with head losses
+ * double precision ckupdc  <--   head losses matrix
+ * double precision rtpa     -->  variables array at previous time step
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
+                              const int*   iphas,
+                              const int*   ncelet,
+                                    int    ncepdp[],
+                                    int    icepdc[],
+                                    double ckupdc[],
+                              const double rtpa[] )
+{
+  int i, j, iel, ielpdc, ikpdc;
+  int zones = 0;
+  int cells = 0;
+  int *cells_list = NULL;
+  double vit;
+  double a11, a12, a13, a21, a22, a23, a31, a32, a33;
+  double c11, c12, c13, c21, c22, c23, c31, c32, c33;
+  double k11, k22, k33;
+  char *label = NULL;
+  char *status = NULL;
+  char *path = NULL;
+
+  assert(*iphas == 1);
+
+  cs_var_t  *vars = cs_glob_var;
+
+  /* number of volumic zone */
+
+  zones
+    = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone", 1);
+
+
+    if (*iappel == 1 || *iappel == 2)
+    {
+        ielpdc = 0;
+
+        for (i=1; i < zones+1; i++)
+        {
+            path = cs_xpath_init_path();
+            cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+            cs_xpath_add_element_num(&path, "zone", i);
+            cs_xpath_add_attribute(&path, "head_losses");
+            status = cs_gui_get_attribute_value(path);
+            BFT_FREE(path);
+
+            if (cs_gui_strcmp(status, "on"))
+            {
+                label = cs_gui_volumic_zone_label(i);
+                cells_list = cs_gui_get_cells_list(label, *ncelet, &cells);
+
+                for (j=0; j < cells; j++)
+                {
+                    if (*iappel == 2)
+                        icepdc[ielpdc] = cells_list[j];
+                    ielpdc++;
+                }
+                BFT_FREE(cells_list);
+                BFT_FREE(label);
+            }
+            BFT_FREE(status);
+        } /* zones+1 */
+        if (*iappel == 1)
+            ncepdp[*iphas-1] = ielpdc;
+    }
+
+    if (*iappel == 3)
+    {
+        for (ikpdc = 0; ikpdc < 6; ikpdc++)
+            for (ielpdc = 0; ielpdc < ncepdp[*iphas-1]; ielpdc++)
+                ckupdc[ikpdc * ncepdp[*iphas-1] + ielpdc] = 0.0;
+
+        ielpdc = 0;
+
+        for (i=1; i < zones+1; i++)
+        {
+            path = cs_xpath_init_path();
+            cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+            cs_xpath_add_element_num(&path, "zone", i);
+            cs_xpath_add_attribute(&path, "head_losses");
+            status = cs_gui_get_attribute_value(path);
+            BFT_FREE(path);
+
+            if (cs_gui_strcmp(status, "on"))
+            {
+                label = cs_gui_volumic_zone_label(i);
+                cells_list = cs_gui_get_cells_list(label, *ncelet, &cells);
+
+                k11 = _c_heads_losses(label, "kxx");
+                k22 = _c_heads_losses(label, "kyy");
+                k33 = _c_heads_losses(label, "kzz");
+
+                a11 = _c_heads_losses(label, "a11");
+                a12 = _c_heads_losses(label, "a12");
+                a13 = _c_heads_losses(label, "a13");
+                a21 = _c_heads_losses(label, "a21");
+                a22 = _c_heads_losses(label, "a22");
+                a23 = _c_heads_losses(label, "a23");
+                a31 = _c_heads_losses(label, "a31");
+                a32 = _c_heads_losses(label, "a32");
+                a33 = _c_heads_losses(label, "a33");
+
+                if (a12 == 0.0 && a13 == 0.0 && a23 == 0.0)
+                {
+                    c11 = k11;
+                    c22 = k22;
+                    c33 = k33;
+                    c12 = 0.0;
+                    c13 = 0.0;
+                    c23 = 0.0;
+                }
+                else
+                {
+                    _matrix_base_conversion(a11, a12, a13, a21, a22, a23, a31, a32, a33,
+                                            k11, 0.0, 0.0, 0.0, k22, 0.0, 0.0, 0.0, k33,
+                                            &c11, &c12, &c13, &c21, &c22, &c23, &c31, &c32, &c33);
+                }
+
+                for (j = 0; j < cells; j++)
+                {
+                    iel = cells_list[j];
+                    vit = rtpa[vars->rtp[1]*(*ncelet) + iel] * rtpa[vars->rtp[1]*(*ncelet) + iel] \
+                        + rtpa[vars->rtp[2]*(*ncelet) + iel] * rtpa[vars->rtp[2]*(*ncelet) + iel] \
+                        + rtpa[vars->rtp[3]*(*ncelet) + iel] * rtpa[vars->rtp[3]*(*ncelet) + iel] ;
+                    vit = sqrt(vit);
+                    ckupdc[0 * ncepdp[*iphas-1] + ielpdc] = 0.5 * c11 * vit;
+                    ckupdc[1 * ncepdp[*iphas-1] + ielpdc] = 0.5 * c22 * vit;
+                    ckupdc[2 * ncepdp[*iphas-1] + ielpdc] = 0.5 * c33 * vit;
+                    ckupdc[3 * ncepdp[*iphas-1] + ielpdc] = 0.5 * c12 * vit;
+                    ckupdc[4 * ncepdp[*iphas-1] + ielpdc] = 0.5 * c13 * vit;
+                    ckupdc[5 * ncepdp[*iphas-1] + ielpdc] = 0.5 * c23 * vit;
+                    ielpdc++;
+                }
+                BFT_FREE(cells_list);
+                BFT_FREE(label);
+            }
+            BFT_FREE(status);
+        } /* zones+1 */
+    }
+#if _XML_DEBUG_
+    bft_printf("==>uikpdc\n");
+    if (*iappel == 1)
+        bft_printf("--%i number of head losses cells: %i\n", *iappel, ncepdp[*iphas-1]);
+    if (*iappel == 3)
+        bft_printf("--%i number of head losses cells: %i\n", *iappel, ielpdc);
+#endif
 }
 
 /*----------------------------------------------------------------------------

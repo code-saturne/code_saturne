@@ -36,7 +36,7 @@ This module contains the following classes and function:
 """
 
 #-------------------------------------------------------------------------------
-# Library modules import StandardItemModelMeshes(
+# Library modules
 #-------------------------------------------------------------------------------
 
 import sys, unittest
@@ -70,13 +70,14 @@ class HeadLossesModel(Variables, Model):
         self.node_volzone = self.node_domain.xmlGetNode('volumic_conditions')
         self.node_hloss   = self.node_models.xmlInitNode('heads_losses')
 
-        self.tenseurModel = ('3', '6')
         self.coeffNames = ('kxx', 'kyy', 'kzz')
         self.matrix = ('a11', 'a12', 'a13', 
                        'a21', 'a22', 'a23', 
                        'a31', 'a32', 'a33')
+        self.choicevalue = ('choice')
                        
         self.getNameAndLocalizationZone()
+       
 
 
     def __defaultValues(self):
@@ -84,20 +85,19 @@ class HeadLossesModel(Variables, Model):
         Return in a dictionnary which contains default values
         """
         default = {}
-        default['tenseur'] = '6'
         default['kxx']     = 0.0
         default['kyy']     = 0.0
         default['kzz']     = 0.0
-        default['a11']     = 0.0
+        default['a11']     = 1.0
         default['a12']     = 0.0
         default['a13']     = 0.0
         default['a21']     = 0.0
-        default['a22']     = 0.0
+        default['a22']     = 1.0
         default['a23']     = 0.0
         default['a31']     = 0.0
         default['a32']     = 0.0
-        default['a33']     = 0.0
-
+        default['a33']     = 1.0
+        default['choice'] = 'off'
         return default
 
 
@@ -125,7 +125,30 @@ class HeadLossesModel(Variables, Model):
         self.node_hloss.xmlInitChildNode('head_loss', name=name, label=label)
         self.getKCoefficients(name)
         self.getMatrix(name)
+        self.getMatrixChoice(name,'choice')
 
+    def getMatrixChoice(self,name,choice):
+        """
+        Get the Transfo Matrix choice
+        """
+        self.isInList(choice, self.choicevalue)
+        node = self.node_hloss.xmlGetNode('head_loss', name=name)
+        value = node.xmlGetString(choice)
+        if value == None: 
+            value = self.__defaultValues()[choice]
+            self.setMatrixChoice(name, choice, value)
+        return value
+        
+ 
+    def setMatrixChoice(self, name, choice, value):
+        """
+        Set the Transfo Matrix Choice 
+        """
+        self.isInt(int(name))
+        self.isInList(choice, self.choicevalue)
+
+        node = self.node_hloss.xmlGetNode('head_loss', name=name)
+        node.xmlSetData(choice, value)
 
     def getCoefficient(self, name, k):
         """
@@ -133,13 +156,13 @@ class HeadLossesModel(Variables, Model):
         """
         self.isInt(int(name))
         self.isInList(k, self.coeffNames)
-        
+
         node = self.node_hloss.xmlGetNode('head_loss', name=name)
         value = node.xmlGetDouble(k)
-        if value == None: 
+        if value == None:
             value = self.__defaultValues()[k]
             self.setCoefficient(name, k, value)
-        
+
         return value
 
   

@@ -182,7 +182,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
 
     elif page_name == tr("Head losses"):
         import Pages.HeadLossesView as Page
-        thisPage = Page.HeadLossesView(root, case, stbar)
+        thisPage = Page.HeadLossesView(root, case)
 
     elif page_name == tr("Reference values"):
         import Pages.ReferenceValuesView as Page

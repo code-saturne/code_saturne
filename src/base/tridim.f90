@@ -722,6 +722,13 @@ do iphas = 1, nphas
 
     else
 
+      if (iihmpr.eq.1) then
+        call uikpdc &
+        !==========
+      ( iappel, iphas, ncelet, ncepdc,             &
+        ia(iicepd(iphas)), ra(ickupd(iphas)), rtpa )
+      endif
+
       ils    = idebia
       idbia1 = ils + maxelt
       CALL IASIZE('TRIDIM',IDBIA1)

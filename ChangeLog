@@ -1,3 +1,19 @@
+* 03/11/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Add head loss setup in the graphical user interface.
+  modified routines:
+    gui/Base/BrowserView.py
+    gui/Base/Toolbox.py
+    gui/Base/XMLinitialize.py
+    gui/Pages/HeadLossesForm.ui
+    gui/Pages/HeadLossesModel.py
+    gui/Pages/HeadLossesView.py
+    gui/Pages/LocalizationModel.py
+    gui/Pages/LocalizationView.py
+    include/base/cs_gui.h
+    src/base/caltri.f90
+    src/base/cs_gui.c
+    src/base/tridim.f90
+
 * 03/11/2009 - David Monfort <david.monfort@edf.fr>
   Force 'bash' shell as 'sh' can be more minimalist one (like on Ubuntu
   systems where it is 'dash') and we are using bashism.

@@ -54,8 +54,9 @@ from PyQt4.QtGui  import *
 
 from Base.Toolbox import GuiParam
 from HeadLossesForm import Ui_HeadLossesForm
-from HeadLossesAdvancedOptionsDialogForm import Ui_HeadLossesAdvancedOptionsDialogForm
+from Pages.LocalizationModel import LocalizationModel, Zone
 import Base.QtPage as QtPage
+from Base.QtPage import DoubleValidator, ComboModel
 from Pages.HeadLossesModel import HeadLossesModel
 
 #-------------------------------------------------------------------------------
@@ -67,14 +68,86 @@ log = logging.getLogger("HeadLossesView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
+# Line edit delegate with a Double validator (positive value)
+#-------------------------------------------------------------------------------
+
+class ValueDelegate(QItemDelegate):
+    def __init__(self, parent=None):
+        super(ValueDelegate, self).__init__(parent)
+        self.parent = parent
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        validator = DoubleValidator(editor, min=0.)
+        editor.setValidator(validator)
+        #editor.installEventFilter(self)
+        return editor
+
+    def setEditorData(self, editor, index):
+        value = index.model().data(index, Qt.DisplayRole).toString()
+        editor.setText(value)
+
+    def setModelData(self, editor, model, index):
+        value, ok = editor.text().toDouble()
+        if editor.validator().state == QValidator.Acceptable:
+            model.setData(index, QVariant(value), Qt.DisplayRole)
+
+#-------------------------------------------------------------------------------
+# StandarItemModel class to display Head Losses Zones in a QTreeView
+#-------------------------------------------------------------------------------
+
+
+class StandardItemModelHeadLosses(QStandardItemModel):
+    def __init__(self):
+        QStandardItemModel.__init__(self)
+        self.headers = [self.tr("Label"), self.tr("Zone"),
+                        self.tr("Selection criteria")]
+        self.setColumnCount(len(self.headers))
+        self.dataHeadLossesZones = []
+
+
+    def data(self, index, role):
+        if not index.isValid():
+            return QVariant()
+        if role == Qt.DisplayRole:
+            return QVariant(self.dataHeadLossesZones[index.row()][index.column()])
+        return QVariant()
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return QVariant(self.headers[section])
+        return QVariant()
+
+
+    def setData(self, index, value, role):
+        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        return True
+
+
+    def insertItem(self, label, name, local):
+        line = [label, name, local]
+        self.dataHeadLossesZones.append(line)
+        row = self.rowCount()
+        self.setRowCount(row+1)
+
+
+    def getItem(self, row):
+        return self.dataHeadLossesZones[row]
+
+
+#-------------------------------------------------------------------------------
 # Main view class
 #-------------------------------------------------------------------------------
 
 class HeadLossesView(QWidget, Ui_HeadLossesForm):
-    """
-    Class to open HeadLosses Page.
-    """
-    def __init__(self, parent=None, case=None):
+
+    def __init__(self, parent, case):
         """
         Constructor
         """
@@ -84,130 +157,274 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.setupUi(self)
 
         self.case = case
-        self.model = HeadLossesModel(self.case)
 
-        # Combo model
+        # Create the Page layout.
 
-        self.modelTurbModel = QtPage.ComboModel(self.comboBoxTurbModel,10,1)
-
-        self.modelTurbModel.addItem(self.tr("No model (i.e. laminar flow)"), "off")
-        self.modelTurbModel.addItem(self.tr("Mixing length"), "mixing_length")
-        self.modelTurbModel.addItem(self.tr("k-epsilon"), "k-epsilon")
-        self.modelTurbModel.addItem(self.tr("k-epsilon Linear Production"), "k-epsilon-PL")
-        self.modelTurbModel.addItem(self.tr("Rij-epsilon LLR"), "Rij-epsilon")
-        self.modelTurbModel.addItem(self.tr("Rij-epsilon SSG"), "Rij-SSG")
-        self.modelTurbModel.addItem(self.tr("v2f (phi model)"), "v2f-phi")
-        self.modelTurbModel.addItem(self.tr("k-omega SST"), "k-omega-SST")
-        self.modelTurbModel.addItem(self.tr("LES (Smagorinsky)"), "LES_Smagorinsky")
-        self.modelTurbModel.addItem(self.tr("LES (classical dynamic model)"), "LES_dynamique")
+        # Model and QTreeView for Head Losses
+        self.modelHeadLosses = StandardItemModelHeadLosses()
+        self.treeView.setModel(self.modelHeadLosses)
+    
 
         # Connections
+        self.connect(self.treeView, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectHeadLossesZones)
+        self.connect(self.groupBox_3, SIGNAL("clicked(bool)"), self.slotTransfoMatrix)
+       
+        self.connect(self.lineEdit, SIGNAL("textChanged(const QString &)"), self.slotKxx)
+        self.connect(self.lineEdit_2, SIGNAL("textChanged(const QString &)"), self.slotKyy)
+        self.connect(self.lineEdit_3, SIGNAL("textChanged(const QString &)"), self.slotKzz)
+        
+        self.connect(self.lineEdit_4, SIGNAL("textChanged(const QString &)"), self.slotA11)
+        self.connect(self.lineEdit_5, SIGNAL("textChanged(const QString &)"), self.slotA12)
+        self.connect(self.lineEdit_6, SIGNAL("textChanged(const QString &)"), self.slotA13)
+        self.connect(self.lineEdit_8, SIGNAL("textChanged(const QString &)"), self.slotA21)
+        self.connect(self.lineEdit_9, SIGNAL("textChanged(const QString &)"), self.slotA22)
+        self.connect(self.lineEdit_7, SIGNAL("textChanged(const QString &)"), self.slotA23)
+        self.connect(self.lineEdit_11, SIGNAL("textChanged(const QString &)"), self.slotA31)
+        self.connect(self.lineEdit_12, SIGNAL("textChanged(const QString &)"), self.slotA32)
+        self.connect(self.lineEdit_10, SIGNAL("textChanged(const QString &)"), self.slotA33)
 
-        self.connect(self.comboBoxTurbModel, SIGNAL("activated(const QString&)"), self.slotHeadLossesModel)
-        self.connect(self.pushButtonAdvanced, SIGNAL("clicked()"), self.slotAdvancedOptions)
-        self.connect(self.lineEditLength, SIGNAL("textChanged(const QString &)"), self.slotLengthScale)
+        # Validators
 
-        # Frames display
+        validator = DoubleValidator(self.lineEdit, min=0.0)
+        validator_2 = DoubleValidator(self.lineEdit_2, min=0.0)
+        validator_3= DoubleValidator(self.lineEdit_3, min=0.0)
+        
+        validator_4 = DoubleValidator(self.lineEdit_4)
+        validator_5= DoubleValidator(self.lineEdit_5)
+        validator_6= DoubleValidator(self.lineEdit_6)
+        validator_8 = DoubleValidator(self.lineEdit_8)
+        validator_9 = DoubleValidator(self.lineEdit_9)
+        validator_7 = DoubleValidator(self.lineEdit_7)
+        validator_11 = DoubleValidator(self.lineEdit_11)
+        validator_12 = DoubleValidator(self.lineEdit_12)
+        validator_10 = DoubleValidator(self.lineEdit_10)
 
-        self.frameAdvanced.hide()
-        self.frameLength.hide()
+        # Apply validators
 
-        # Validator
+        self.lineEdit.setValidator(validator)
+        self.lineEdit_2.setValidator(validator_2)
+        self.lineEdit_3.setValidator(validator_3)
+        
+        self.lineEdit_4.setValidator(validator_4)
+        self.lineEdit_5.setValidator(validator_5)
+        self.lineEdit_6.setValidator(validator_6)
+        self.lineEdit_8.setValidator(validator_8)
+        self.lineEdit_9.setValidator(validator_9)
+        self.lineEdit_7.setValidator(validator_7)
+        self.lineEdit_11.setValidator(validator_11)
+        self.lineEdit_12.setValidator(validator_12)
+        self.lineEdit_10.setValidator(validator_10)
 
-        validator = QtPage.DoubleValidator(self.lineEditLength, min=0.0)
-        validator.setExclusiveMin(True)
-        #validator.setFixup(self.model.defaultHeadLossesValues()['length_scale'])
-        self.lineEditLength.setValidator(validator)
+        # Initialize Widgets
 
-
-        # Update the HeadLosses models list with the calculation features
-
-        for turb in self.model.turbModel:
-            if turb not in self.model.HeadLossesModelsList():
-                self.modelTurbModel.disableItem(str_model=turb)
-
-        # Select the HeadLosses model
-
-        model = self.model.getHeadLossesModel()
-        self.modelTurbModel.setItem(str_model=model)
-        self.slotHeadLossesModel(self.comboBoxTurbModel.currentText())
-
-        # Length scale
-
-        l_scale = self.model.getLengthScale()
-        self.lineEditLength.setText(QString(str(l_scale)))
-
-
-    @pyqtSignature("const QString&")
-    def slotLengthScale(self, text):
-        """
-        Private slot.
-        Input XLOMLG.
-        """
-        l_scale, ok = text.toDouble()
-        if self.sender().validator().state == QValidator.Acceptable:
-            self.model.setLengthScale(l_scale)
+        self.entriesNumber = 0
+        d = HeadLossesModel(self.case).getNameAndLocalizationZone()
+        liste=[]
+        liste=d.items()
+        t=[]
+        for t in liste :
+            NamLoc=t[1]
+            Lab=t[0 ]
+            self.modelHeadLosses.insertItem(Lab, NamLoc[0],NamLoc[1])
+        self.forgetStandardWindows()
 
 
-    @pyqtSignature("const QString&")
-    def slotHeadLossesModel(self, text):
-        """
-        Private slot.
-        Input ITURB.
-        """
-        model = self.modelTurbModel.dicoV2M[str(text)]
-        self.model.setHeadLossesModel(model)
-
-        self.frameAdvanced.hide()
-        self.frameLength.hide()
-
-        if model == 'mixing_length':
-            self.frameLength.show()
-            self.frameAdvanced.hide()
-            self.model.getLengthScale()
-        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique'):
-            self.frameLength.hide()
-            self.frameAdvanced.show()
-
-        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique'):
-            self.line.hide()
+    @pyqtSignature("const QModelIndex&")
+    def slotSelectHeadLossesZones(self, index):
+        model = HeadLossesModel(self.case)
+        label, name, local = self.modelHeadLosses.getItem(index.row())
+        
+        if hasattr(self, "modelScalars"): del self.modelScalars
+        log.debug("slotSelectHeadLossesZones label %s " % label )
+        self.groupBoxDef.show()
+        self.groupBox_3.show()
+        kxx,kyy,kzz = model.getKCoefficients(name)
+        self.lineEdit.setText(QString(str(kxx)))
+        self.lineEdit_2.setText(QString(str(kyy)))
+        self.lineEdit_3.setText(QString(str(kzz)))
+        
+        if model.getMatrixChoice(name,'choice') == 'on':
+            self.groupBox_3.setChecked(True)
+            checked = True
         else:
-            self.line.show()
+            self.groupBox_3.setChecked(False)
+            checked = False
+    
+        self.slotTransfoMatrix(checked)
+        
 
-##         if model in ('LES_Smagorinsky', 'LES_dynamique'):
-##             title = self.tr("HeadLosses model")
-##             msg   = self.tr("Please report to the informations \n" \
-##                             "contain in the user subroutine: 'ussmag'")
-##             QMessageBox.warning(self, title, msg)
-
-
-    @pyqtSignature("")
-    def slotAdvancedOptions(self):
+    def forgetStandardWindows(self):
         """
-        Private slot.
-        Ask one popup for advanced specifications
+        For forget standard windows
         """
-        default = {}
-        default['model']         = self.model.getHeadLossesModel()
-        default['scale_model']   = self.model.getScaleModel()
-        default['gravity_terms'] = self.model.getGravity()
-        log.debug("slotAdvancedOptions -> %s" % str(default))
-
-        dialog = HeadLossesAdvancedOptionsDialogView(self, default)
-        if dialog.exec_():
-            result = dialog.get_result()
-            log.debug("slotAdvancedOptions -> %s" % str(result))
-            self.model.setHeadLossesModel(result['model'])
-            self.model.setScaleModel(result['scale_model'])
-            self.model.setGravity(result['gravity_terms'])
+        self.groupBoxDef.hide()
+        self.groupBox_3.hide()
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
+    
+    @pyqtSignature("const QString&")
+    def slotKxx(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setCoefficient(name,'kxx',value )
 
+    @pyqtSignature("const QString&")
+    def slotKyy(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setCoefficient(name,'kyy',value )   
+    
+    @pyqtSignature("const QString&")
+    def slotKzz(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setCoefficient(name,'kzz',value )
+    
+    @pyqtSignature("bool")           
+    def slotTransfoMatrix(self,  checked):
+        self.groupBox_3.setFlat(not checked)
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+             
+            if checked:
+                model.setMatrixChoice(name,'choice','on')
+                self.groupBox_3.setChecked(True)
+                self.frameTransfo.show()
+                a11, a12, a13, a21, a22, a23, a31, a32, a33 = model.getMatrix(name)
+            else:
+                model.setMatrixChoice(name,'choice','off')
+                self.frameTransfo.hide()
+                a11, a12, a13, a21, a22, a23, a31, a32, a33 = 1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0
+                self.groupBox_3.setChecked(False)
+                
+            self.lineEdit_4.setText(QString(str(a11)))
+            self.lineEdit_5.setText(QString(str(a12)))
+            self.lineEdit_6.setText(QString(str(a13)))
+            self.lineEdit_8.setText(QString(str(a21)))
+            self.lineEdit_9.setText(QString(str(a22)))
+            self.lineEdit_7.setText(QString(str(a23)))
+            self.lineEdit_11.setText(QString(str(a31)))
+            self.lineEdit_12.setText(QString(str(a32)))
+            self.lineEdit_10.setText(QString(str(a33)))  
+              
+                
+    @pyqtSignature("const QString&")
+    def slotA11(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setMatrixComposant(name,'a11',value )              
+                
+    @pyqtSignature("const QString&")
+    def slotA12(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setMatrixComposant(name,'a12',value )            
+              
+    @pyqtSignature("const QString&")
+    def slotA13(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setMatrixComposant(name,'a13',value )   
+    
+    @pyqtSignature("const QString&")           
+    def slotA21(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setMatrixComposant(name,'a21',value )      
+     
+    @pyqtSignature("const QString&")
+    def slotA22(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setMatrixComposant(name,'a22',value )   
+    
+    @pyqtSignature("const QString&")
+    def slotA23(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setMatrixComposant(name,'a23',value )    
+     
+    @pyqtSignature("const QString&")
+    def slotA31(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setMatrixComposant(name,'a31',value )    
+    
+    @pyqtSignature("const QString&")
+    def slotA32(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setMatrixComposant(name,'a32',value )    
+     
+    @pyqtSignature("const QString&")
+    def slotA33(self, text):
+        cindex = self.treeView.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            label, name, local = self.modelHeadLosses.getItem(row)
+            model = HeadLossesModel(self.case)
+            value, ok = text.toDouble()
+            if self.sender().validator().state == QValidator.Acceptable:
+                model.setMatrixComposant(name,'a33',value )    
+                
 
 #-------------------------------------------------------------------------------
 # Testing part

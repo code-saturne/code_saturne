@@ -522,6 +522,31 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                                     cs_real_t        propce[]);
 
 /*----------------------------------------------------------------------------
+ * Head losses definition
+ *
+ * Fortran Interface:
+ *
+ * subroutine uikpdc
+ * *****************
+ *
+ * integer          iappel   -->  number of calls during a time step
+ * integer          iphas    -->  number of phase (only 1 allowed)
+ * integer          ncelet   -->  number of cells with halo
+ * integer          ncepdp  <--   number of cells with head losses
+ * integer          icepdc  <--   ncepdp cells number with head losses
+ * double precision ckupdc  <--   head losses matrix
+ * double precision rtpa     -->  variables array at previous time step
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
+                              const int*   iphas,
+                              const int*   ncelet,
+                                    int*   ncepdp,
+                                    int    icepdc[],
+                                    double ckupdc[],
+                              const double rtpa[] );
+
+/*----------------------------------------------------------------------------
  * 1D profile postprocessing
  *
  * Fortran Interface:
