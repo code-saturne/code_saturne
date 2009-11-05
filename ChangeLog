@@ -1,3 +1,17 @@
+* 04/11/2009 - David Monfort <david.monfort@edf.fr>
+  Merge the user scripts manpages into a single one for the cs script.
+  added file:
+    doc/manpages/cs.1
+  removed files:
+    doc/manpages/cs_check_consistency.1
+    doc/manpages/cs_check_mesh.1
+    doc/manpages/cs_compile.1
+    doc/manpages/cs_create.1
+    doc/manpages/cs_info.1
+    doc/manpages/cs_plot_probes.1
+  modified script:
+    Makefile.am
+
 * 04/11/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Small fixes related to user scripts (lib64 rpath detection and
   distutils module not present).

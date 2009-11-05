@@ -168,12 +168,7 @@ data/thch/JANAF
 # Install man pages
 
 dist_man_MANS = \
-doc/manpages/cs_check_consistency.1 \
-doc/manpages/cs_check_mesh.1 \
-doc/manpages/cs_compile.1 \
-doc/manpages/cs_create.1 \
-doc/manpages/cs_info.1 \
-doc/manpages/cs_plot_probes.1 \
+doc/manpages/cs.1 \
 doc/manpages/cs_solver.1
 
 # Install bash completion script

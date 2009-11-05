@@ -1,0 +1,103 @@
+.\"
+.\"  This file is part of the Code_Saturne Kernel, element of the
+.\"  Code_Saturne CFD tool.
+.\"
+.\"  Copyright (C) 2009 EDF S.A., France
+.\"
+.\"  contact: saturne-support@edf.fr
+.\"
+.\"  The Code_Saturne Kernel is free software; you can redistribute it
+.\"  and/or modify it under the terms of the GNU General Public License
+.\"  as published by the Free Software Foundation; either version 2 of
+.\"  the License, or (at your option) any later version.
+.\"
+.\"  The Code_Saturne Kernel is distributed in the hope that it will be
+.\"  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+.\"  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"  GNU General Public License for more details.
+.\"
+.\"  You should have received a copy of the GNU General Public License
+.\"  along with the Code_Saturne Preprocessor; if not, write to the
+.\"  Free Software Foundation, Inc.,
+.\"  51 Franklin St, Fifth Floor,
+.\"  Boston, MA  02110-1301  USA
+.\"
+.TH CS 1 2009-10-27 "" "Code_Saturne commands"
+.SH NAME
+cs \- Main user script of Code_Saturne.
+.SH SYNOPSIS
+.B cs
+.RI [-h|--help]
+.RI <command>
+.br
+.SH DESCRIPTION
+The
+.B cs
+script is the main user script of Code_Saturne.
+.\"
+.\" Options description
+.SH OPTIONS
+.B
+.IP "-h, --help"
+Help message.
+.\"
+.\" Commands description
+.SH COMMANDS
+Further information will be obtain with
+.B "cs <command> --help"
+.B
+.IP "check_consistency"
+The
+.B "cs check_consistency"
+command checks the consistency between the user files and the Xml file
+(from the Graphical User Interface) provided by the user and, if
+needed, that the chosen options are compatible with parallel
+calculations. Lastly, it prints the chosen specific physics.
+
+.B
+.IP "check_mesh"
+The
+.B "cs check_mesh"
+command verify the quality of a given mesh. The following options will
+be passed to Code_Saturne preprocessor.
+
+.B
+.IP "compile"
+The
+.B "cs compile"
+command can be used to generate the
+.B cs_solver
+executable needed for running a Code_Saturne study.
+
+.B
+.IP "create"
+The
+.B "cs create"
+command sets up a directory structure for a Code_Saturne study or
+case. The different directories created are MESH for meshes, POST for
+user post-processing and a case directory (or several) containing a
+DATA, SRC (to store user files), RESU (to store results) and SCRIPTS
+directory.
+
+.B
+.IP "info"
+The
+.B "cs info"
+command is a wrapper for an easier look at Code_Saturne documentation.
+
+.B
+.IP "plot_probes"
+The
+.B "cs plot_probes"
+command runs
+.B xmgrace -nxy
+command on a Code_Saturne time monitoring file (chronological records)
+after removing the first column (in order to have physical time on the
+X axis).
+.\"
+.\" References
+.SH SEE ALSO
+.BR cs_io_dump (1),
+.BR cs_partition (1),
+.BR cs_preprocess (1),
+.BR cs_solver (1)
