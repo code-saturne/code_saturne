@@ -1,3 +1,8 @@
+* 04/11/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Different fixes for PGI compilers support.
+  modified script:
+    config/cs_auto_flags.sh
+
 * 03/11/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Add head loss setup in the graphical user interface.
   modified routines:

@@ -272,12 +272,12 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     echo "compiler '$CC' is Portland Group pgcc"
 
     # Version strings for logging purposes and known compiler flag
-    $CC -V conftest.c > $outfile 2>&1
+    $CC -V > $outfile 2>&1
     cs_ac_cc_version=`grep -i pgcc $outfile`
     cs_cc_compiler_known=yes
 
     # Default compiler flags
-    cflags_default="-Xa"
+    cflags_default="-c99"
     cflags_default_dbg="-g -Mbounds"
     cflags_default_opt="-fast -fastsse"
     cflags_default_prf="-Mprof=func,lines"
@@ -632,6 +632,32 @@ fi
 
 if test "x$cs_fc_compiler_known" != "xyes" ; then
 
+  # Are we using pgf95 ?
+  #---------------------
+
+  $FC -V 2>&1 | grep 'The Portland Group' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$FC' is Portland Group Fortran compiler"
+
+    # Version strings for logging purposes and known compiler flag
+    $FC -V > $outfile 2>&1
+    cs_ac_cc_version=`grep -i pgf $outfile`
+    cs_fc_compiler_known=yes
+
+    # Default compiler flags
+    fcflags_default="-Mpreprocess"
+    fcflags_default_dbg="-g -Mbounds"
+    fcflags_default_opt="-fast -fastsse"
+    fcflags_default_prf="-Mprof=func,lines"
+    fcflags_default_omp="-mp"
+
+  fi
+
+fi
+
+if test "x$cs_fc_compiler_known" != "xyes" ; then
+
   # Are we using xlf ?
   #-------------------
 
@@ -771,7 +797,7 @@ if test "x$cs_linker_set" != "xyes" ; then
   case "$host_os" in
 
     linux*)
-      ldflags_default="-rdynamic"
+      ldflags_default="-Wl,-export-dynamic"
       ldflags_default_opt="-O"
       ldflags_default_dbg="-g"
       ldflags_default_prf="-pg"
