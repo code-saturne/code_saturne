@@ -1,3 +1,8 @@
+* 04/11/2009 - David Monfort <david.monfort@edf.fr>
+  Fix some issues in BLAS detection (Intel MKL especially).
+  modified script:
+    config/cs_blas.m4
+
 * 04/11/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Different fixes for PGI compilers support.
   modified script:

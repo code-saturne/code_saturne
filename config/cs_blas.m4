@@ -76,50 +76,6 @@ if test "x$blas" = "xtrue" ; then
     fi
   fi
 
-  # Test for ATLAS BLAS
-
-  if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xATLAS" ; then
-
-    if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
-
-      BLAS_LIBS="-lptcblas -latlas -lpthread"
-
-      CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
-      LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
-
-      AC_MSG_CHECKING([for threaded ATLAS BLAS])
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],
-                     [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
-                     [ AC_DEFINE([HAVE_CBLAS], 1, [C BLAS support])
-                       cs_have_blas=yes; with_blas_type=ATLAS ],
-                     [cs_have_blas=no])
-      AC_MSG_RESULT($cs_have_blas)
-    fi
-
-    if test "$cs_have_blas" = "no" ; then # Test for non-threaded version
-                                          # or explicitely specified libs second
-      if test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xATLAS"; then
-        BLAS_LIBS="$with_blas_libs"
-      else
-        BLAS_LIBS="-lcblas -latlas"
-      fi
-
-      CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
-      LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
-
-      AC_MSG_CHECKING([for ATLAS BLAS])
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],
-                     [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
-                     [ AC_DEFINE([HAVE_CBLAS], 1, [C BLAS support])
-                       cs_have_blas=yes; with_blas_type=ATLAS ],
-                     [cs_have_blas=no])
-      AC_MSG_RESULT($cs_have_blas)
-    fi
-
-  fi
-
   # Test for IBM ESSL BLAS
 
   if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xESSL" ; then
@@ -217,8 +173,8 @@ if test "x$blas" = "xtrue" ; then
       if test `uname -m` = ia64 ; then
         mkl_sub_lib="/64"
       elif test `uname -m` = x86_64 ; then
-        mkl_sub_lib="/64"
-      elif test `uname -m` = x86 ; then
+        mkl_sub_lib="/em64t"
+      else
         mkl_sub_lib="/32"
       fi
     fi
@@ -226,6 +182,8 @@ if test "x$blas" = "xtrue" ; then
     if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
 
       if test "`uname -m`" = "ia64" ; then
+        BLAS_LIBS="-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lguide -lpthread"
+      elif test `uname -m` = x86_64 ; then
         BLAS_LIBS="-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lguide -lpthread"
       else
         BLAS_LIBS="-lmkl_intel -lmkl_intel_thread -lmkl_core -lguide -lpthread"
@@ -252,6 +210,8 @@ if test "x$blas" = "xtrue" ; then
       else
         if test "`uname -m`" = "ia64" ; then
           BLAS_LIBS="-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
+        elif test `uname -m` = x86_64 ; then
+          BLAS_LIBS="-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
         else
           BLAS_LIBS="-lmkl_intel -lmkl_sequential -lmkl_core"
         fi
@@ -274,6 +234,50 @@ if test "x$blas" = "xtrue" ; then
       BLAS_LDFLAGS="${BLAS_LDFLAGS}${mkl_sub_lib}"
     fi
     unset mkl_sub_lib
+
+  fi
+
+  # Test for ATLAS BLAS
+
+  if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xATLAS" ; then
+
+    if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
+
+      BLAS_LIBS="-lptcblas -latlas -lpthread"
+
+      CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
+      LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
+      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
+
+      AC_MSG_CHECKING([for threaded ATLAS BLAS])
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],
+                     [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
+                     [ AC_DEFINE([HAVE_CBLAS], 1, [C BLAS support])
+                       cs_have_blas=yes; with_blas_type=ATLAS ],
+                     [cs_have_blas=no])
+      AC_MSG_RESULT($cs_have_blas)
+    fi
+
+    if test "$cs_have_blas" = "no" ; then # Test for non-threaded version
+                                          # or explicitely specified libs second
+      if test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xATLAS"; then
+        BLAS_LIBS="$with_blas_libs"
+      else
+        BLAS_LIBS="-lcblas -latlas"
+      fi
+
+      CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
+      LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
+      LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
+
+      AC_MSG_CHECKING([for ATLAS BLAS])
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],
+                     [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
+                     [ AC_DEFINE([HAVE_CBLAS], 1, [C BLAS support])
+                       cs_have_blas=yes; with_blas_type=ATLAS ],
+                     [cs_have_blas=no])
+      AC_MSG_RESULT($cs_have_blas)
+    fi
 
   fi
 
