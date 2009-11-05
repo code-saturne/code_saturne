@@ -113,7 +113,7 @@ def so_dirs_path(flags):
     args = flags.split(" ")
 
     for arg in args:
-        if arg[0:2] == '-L' and arg[0:6] != '-L/usr' and arg[0:6] != '-L/lib':
+        if arg[0:2] == '-L' and arg[0:10] != '-L/usr/lib' and arg[0:6] != '-L/lib':
             if first == True:
                 retval = " " + build.rpath + ":" + arg[2:]
                 first = False

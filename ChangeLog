@@ -1,3 +1,10 @@
+* 04/11/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Small fixes related to user scripts (lib64 rpath detection and
+  distutils module not present).
+  modified scripts:
+    bin/cs_compile.py
+    bin/cs.in
+
 * 04/11/2009 - David Monfort <david.monfort@edf.fr>
   Fix some issues in BLAS detection (Intel MKL especially).
   modified script:

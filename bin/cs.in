@@ -29,9 +29,12 @@ cspath = '@pkgpythondir@'
 
 # Similar trick for the MEI library
 # (consistent with autoconf/automake behavior for MEI)
-from distutils import sysconfig
-meipath = os.path.join(sysconfig.get_python_lib(0, 0, prefix='@mei_prefix@'),
-                       'mei')
+try:
+   from distutils import sysconfig
+   meipath = os.path.join(sysconfig.get_python_lib(0, 0, prefix='@mei_prefix@'),
+                          'mei')
+except Exception:
+   meipath = ''
 
 for p in [meipath, cspath]:
    if os.path.isdir(p) and not p in sys.path:
