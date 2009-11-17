@@ -49,6 +49,7 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
+from OutputControlModel import OutputControlModel
 
 #-------------------------------------------------------------------------------
 # Conjugate Heat Transfer model class
@@ -96,6 +97,7 @@ class ConjugateHeatTransferModel(Variables, Model):
 
         if status == "off":
             self.__node_syr.xmlRemoveChild('syrthes')
+        OutputControlModel(self.__case).setSyrthesBoundaryPostProStatus(status)
 
 
     def getSyrthesCouplingList(self):

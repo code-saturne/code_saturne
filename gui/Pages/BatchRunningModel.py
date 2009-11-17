@@ -115,7 +115,7 @@ class BatchRunningModel(Model):
         self.dicoValues = {}
         self.dicoValues['SOLCOM'] = '0'
         self.dicoValues['PARAM'] = ""
-        self.dicoValues['NUMBER_OF_PROCESSORS'] = '1'
+        self.dicoValues['NUMBER_OF_PROCESSORS'] = ""
         self.dicoValues['PROCESSOR_LIST'] = ""
         self.dicoValues['PARTITION_LIST'] = ""
         self.dicoValues['USER_INPUT_FILES'] = ""
@@ -142,7 +142,7 @@ class BatchRunningModel(Model):
         self.dicoValues['METEO_DATA'] = ""
 
         if self.case['salome']:
-            self.mdl.dicoValues['ARG_CS_OUTPUT'] = "--log 0"
+            self.dicoValues['ARG_CS_OUTPUT'] = "--log 0"
 
 
     def _getRegex(self, word):
@@ -152,7 +152,7 @@ class BatchRunningModel(Model):
 ##  fonctionne mais incomplet:      regex = re.compile(r"""(^\s*""" + word + r""".*$)""")
 ##  fonctionne en tenant compte des lignes commencant par # :
 ##      regex = re.compile(r"""(^(?#)^\s*""" + word + r""".*$)""")
-        #tient compte aÂ  la fois des commentaires et des "$word":
+        #tient compte a la fois des commentaires et des "$word":
         regex = re.compile(r"""(^(?#)^\s*(?<!$)""" + word + r""".*$)""")
 
         return regex
@@ -347,7 +347,8 @@ class BatchRunningModel(Model):
         self.isInList(keyword, l)
         lines = self.lines
 
-        if self.case['computer'] == "pbs":
+        if self.case['computer'] == "pbs" \
+          or str(self.dicoValues['NUMBER_OF_PROCESSORS']) == "1":
             self.dicoValues['NUMBER_OF_PROCESSORS'] = ""
 
         for k in self.dicoValues.keys():
@@ -631,7 +632,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'COMMAND_CWF': ' --cwf 0.0321',
         'SOLCOM': '0',
         'PARAM': 'NEW.xml',
-        'NUMBER_OF_PROCESSORS': '1',
+        'NUMBER_OF_PROCESSORS': '',
         'USER_INPUT_FILES': '',
         'COMMAND_JOIN': '',
         'COMMAND_REORIENT': ' --reorient ',

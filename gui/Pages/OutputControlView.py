@@ -61,7 +61,7 @@ from Base.Toolbox import GuiParam
 from OutputControlForm import Ui_OutputControlForm
 import Base.QtPage as QtPage
 from OutputControlModel import OutputControlModel
-from SolutionDomainModel import SolutionDomainModel
+from ConjugateHeatTransferModel import ConjugateHeatTransferModel
 from MobileMeshModel import MobileMeshModel
 
 #-------------------------------------------------------------------------------
@@ -401,16 +401,14 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         else:
             self.checkBoxICHRBO.setChecked(False)
 
-        #syrthes = SolutionDomainModel(self.case).getSyrthesCouplingStatus()
-        #if syrthes != 'on':
-        #    self.labelICHRSY.hide()
-        #    self.checkBoxICHRSY.hide()
-
-        #self.checkBoxICHRSY.setChecked(False)
-        #if syrthes == "on":
-        #    self.checkBoxICHRSY.setChecked(True)
-        #    if self.mdl.getDomainBoundaryPostProStatus() == "off":
-        #        self.checkBoxICHRSY.setChecked(False)
+        if ConjugateHeatTransferModel(self.case).getSyrthesCouplingList():
+            if self.mdl.getSyrthesBoundaryPostProStatus() == 'on':
+                self.checkBoxICHRSY.setChecked(True)
+            else:
+                self.checkBoxICHRSY.setChecked(False)
+        else:
+            self.labelICHRSY.hide()
+            self.checkBoxICHRSY.hide()
 
         # values of type of mesh's post processing
 
