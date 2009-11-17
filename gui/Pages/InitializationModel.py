@@ -59,12 +59,6 @@ from DefineUserScalarsModel import DefineUserScalarsModel
 from LocalizationModel import LocalizationModel
 
 #-------------------------------------------------------------------------------
-# Multi-selection string
-#-------------------------------------------------------------------------------
-
-MULTISEL = "*****"
-
-#-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class
 #-------------------------------------------------------------------------------
 

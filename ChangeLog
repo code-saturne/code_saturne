@@ -1,4 +1,10 @@
 * 09/17/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Minor modifications.
+  modified routines:
+    gui/Pages/FluidStructureInteractionModel.py
+    gui/Pages/InitializationModel.py
+
+* 09/17/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Don't automatically set the number of processors to 1 in runcase anymore.
   Enable again the post-processing of SYRTHES coupling faces.
   modified routines:
