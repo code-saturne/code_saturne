@@ -91,8 +91,6 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
         self.cs = os.path.join(cs_config.dirs.bindir, "cs_solver")
         self.ecs = os.path.join(cs_config.dirs.ecs_bindir, "cs_preprocess")
-        print self.cs
-        print self.ecs
 
         self.case = case
         self.case2 = case2
