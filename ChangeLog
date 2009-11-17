@@ -1,7 +1,10 @@
 * 09/17/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Don't automatically set the number of processors to 1 in runcase anymore.
+  Enable again the post-processing of SYRTHES coupling faces.
   modified routines:
     gui/Pages/BatchRunningModel.py
+    gui/Pages/ConjugateHeatTransferModel.py
+    gui/Pages/OutputControlView.py
 
 * 09/17/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix some potential issues in the check_mesh feature and SALOME porting.
