@@ -1,3 +1,8 @@
+* 09/11/2009 - David Monfort <david.monfort@edf.fr>
+  Change the order of some libraries to link with on BG/P systems.
+  modified script:
+    config/cs_auto_flags.sh
+
 * 04/11/2009 - David Monfort <david.monfort@edf.fr>
   Merge the user scripts manpages into a single one for the cs script.
   added file:

@@ -869,7 +869,7 @@ if test "$cs_ibm_bg_type" = "L" ; then #  For Blue Gene/L
 elif test "$cs_ibm_bg_type" = "P" ; then #  For Blue Gene/P
 
   bg_sys_ldflags="-L/bgsys/drivers/ppcfloor/comm/lib -L/bgsys/drivers/ppcfloor/runtime/SPI"
-  bg_sys_libs="-lmpich.cnk -ldcmfcoll.cnk -ldcmf.cnk -lSPI.cna -lrt -lpthread"
+  bg_sys_libs="-lmpich.cnk -ldcmf.cnk -ldcmfcoll.cnk -lSPI.cna -lrt -lpthread"
   bg_trace="/bgsys/local/tools_ibm/lib/libmpitrace.a"
   if test ! -f "$bg_trace" ; then
     bg_trace=""
