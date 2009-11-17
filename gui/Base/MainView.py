@@ -99,7 +99,7 @@ class MainView(QMainWindow, Ui_MainForm):
                  cmd_batch_file   = 'runcase',
                  cmd_tree_window  = True,
                  cmd_read_only    = False,
-                 cmd_salome       = False):
+                 cmd_salome       = None):
         """
         Initializes a Main Window for a new document:
           1. finish the Main Window layout

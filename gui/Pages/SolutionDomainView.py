@@ -67,8 +67,8 @@ from Base.QtPage import ComboModel, DoubleValidator
 
 logging.basicConfig()
 log = logging.getLogger("SolutionDomainView")
-#log.setLevel(GuiParam.DEBUG)
-log.setLevel(logging.DEBUG)
+log.setLevel(GuiParam.DEBUG)
+#log.setLevel(logging.DEBUG)
 
 #-------------------------------------------------------------------------------
 # Spin box delegate for 'Number' in Meshes table

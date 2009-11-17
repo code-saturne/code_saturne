@@ -46,6 +46,8 @@ import string, shutil, cStringIO
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
+import cs_config
+
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
@@ -87,6 +89,11 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         self.setWindowTitle(self.tr("Run mesh quality criteria"))
         self.pushButton.setEnabled(False)
 
+        self.cs = os.path.join(cs_config.dirs.bindir, "cs_solver")
+        self.ecs = os.path.join(cs_config.dirs.ecs_bindir, "cs_preprocess")
+        print self.cs
+        print self.ecs
+
         self.case = case
         self.case2 = case2
         self.mdl = SolutionDomainModel(self.case)
@@ -121,9 +128,8 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         f.writelines(lines)
         f.close()
 
-        ecs = "cs_preprocess "
         args = ' --in ' + f1
-        self.proc.start(ecs + args)
+        self.proc.start(self.ecs + args)
 
         self.connect(self.proc, SIGNAL('finished(int, QProcess::ExitStatus)'), self.__ecsPostTreatment)
 
@@ -131,7 +137,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
     def __ecsPostTreatment(self):
         if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
             if self.fmt == "--ensight":
-                os.chdir(self.case['resu_path'] + '/check_mesh.ensight')
+                os.chdir(os.path.join(self.case['resu_path'], 'check_mesh.ensight'))
                 os.rename('CHR.case', 'PREPROCESSOR.case')
                 os.rename('chr.geo', 'preprocessor.geo')
 
@@ -152,10 +158,10 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
             elif self.fmt == "--cgns":
                 os.rename('check_mesh.cgns', 'PREPROCESSOR.cgns')
 
-	    if os.path.isfile(self.case['resu_path'] + '/preprocessor_output'):
+            if os.path.isfile(os.path.join(self.case['resu_path'], 'preprocessor_output')):
                 self.__csProcess()
             else:
-	        self.__finished()
+                self.__finished()
 
         else:
             self.__finished()
@@ -167,9 +173,8 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         self.disconnect(self.proc, SIGNAL('finished(int, QProcess::ExitStatus)'), self.__ecsPostTreatment)
 
         self.case2.xmlSaveDocument()
-        cs = "cs_solver --quality --log 0 "
-        args = ' --param ' + self.case2['xmlfile']
-        self.proc.start(cs + args)
+        args = ' --quality --log 0 --param ' + self.case2['xmlfile']
+        self.proc.start(self.cs + args)
 
         self.connect(self.proc, SIGNAL('finished(int, QProcess::ExitStatus)'), self.__csPostTreatment)
 
@@ -177,13 +182,13 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
     def __csPostTreatment(self):
         if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
             if self.fmt == "--ensight":
-                for src in os.listdir(self.case['resu_path'] + '/chr.ensight'):
-                    shutil.copy(self.case['resu_path'] + '/chr.ensight/' + src,
-                                self.case['resu_path'] + '/check_mesh.ensight')
-                os.chdir(self.case['resu_path'] + '/check_mesh.ensight')
+                for src in os.listdir(os.path.join(self.case['resu_path'], 'chr.ensight')):
+                    shutil.copy(os.path.join(self.case['resu_path'], 'chr.ensight', src),
+                                os.path.join(self.case['resu_path'], 'check_mesh.ensight'))
+                os.chdir(os.path.join(self.case['resu_path'], 'check_mesh.ensight'))
                 os.rename('CHR.case', 'QUALITY.case')
 
-                for src in os.listdir(self.case['resu_path'] + '/check_mesh.ensight'):
+                for src in os.listdir(os.path.join(self.case['resu_path'], 'check_mesh.ensight')):
                     if src[:4] == "chr.":
                         dst = src.replace("chr.", "quality.")
                         os.rename(src, dst)
@@ -197,7 +202,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                 out2.write(out.getvalue())
                 out2.close() 
 
-                shutil.rmtree(self.case['resu_path'] + '/chr.ensight')
+                shutil.rmtree(os.path.join(self.case['resu_path'], 'chr.ensight'))
                 os.chdir(self.case['resu_path'])
 
             elif self.fmt == "--med":
@@ -531,13 +536,6 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         Translation
         """
         return text 
-
-#-------------------------------------------------------------------------------
-# Testing part
-#-------------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    pass
 
 #-------------------------------------------------------------------------------
 # End

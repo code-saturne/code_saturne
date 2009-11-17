@@ -1009,8 +1009,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         key = self.case['computer']
 
-        script = self.case['scripts_path'] + "/" + self.case['batchScript'][key]
-        batch1 = self.case['scripts_path'] + "/" + "batch"
+        script = os.path.join(self.case['scripts_path'], self.case['batchScript'][key])
+        batch1 = os.path.join(self.case['scripts_path'], "batch")
         batch2 = batch1 + '~'
 
         if key == 'station':
@@ -1032,9 +1032,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             pass
 
         if self.case['salome']:
-            from SalomeHandler import runSolver
-            cmd = ['nice', 'nohup', script]
-            runSolver(self.case, cmd, self.mdl, batch1)
+            import  SalomeHandler
+            SalomeHandler.runSolver(self.case, script)
         else:
             os.system(cmd)
 

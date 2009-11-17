@@ -1,4 +1,14 @@
-* 09/11/2009 - David Monfort <david.monfort@edf.fr>
+* 09/17/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix some potential issues in the check_mesh feature and SALOME porting.
+  modified routines:
+    gui/Base/BrowserView.py
+    gui/Base/MainView.py
+    gui/Pages/BatchRunningView.py
+    gui/Pages/SalomeHandler.py
+    gui/Pages/SolutionDomainView.py
+    gui/Pages/SolutionVerifView.py
+
+* 09/17/2009 - David Monfort <david.monfort@edf.fr>
   Add LTLIBINTL to cs_solver dependency for linking with libintl library
   needed for gettext support on systems with a libc different from the glibc.
   modified script:

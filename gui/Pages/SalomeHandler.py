@@ -80,6 +80,7 @@ builder = aStudy.NewBuilder()
 if aSMESH_SO != None:
     aSMESHEngine = lcc.FindOrLoadComponent("FactoryServer", "SMESH")
     builder.LoadWith(aSMESH_SO, aSMESHEngine)
+
 if aGEOM_SO != None:
     aGEOMEngine = lcc.FindOrLoadComponent("FactoryServer", "GEOM")
     builder.LoadWith(aGEOM_SO, aGEOMEngine)
@@ -242,35 +243,23 @@ def VolumeGroup():
 #    return local
 
 
-def runSolver(case, cmd, mdl, log_file):
-    #_CommandMgr = CFDSTUDYGUI_CommandMgr.CFDSTUDYGUI_CommandMgr()
-    #_CommandMgr.runCommand( cmd, os.path.abspath(os.path.curdir), "", log_file)
+def runSolver(case, cmd):
+    """
+    Executing the Code_Saturne script runcase in background mode.
+    All output information catched by LogWindow.
+    """
+    import CFDSTUDYGUI_CommandMgr, CFDSTUDYGUI_DataModel
 
-    tmp_path = ''
-    if mdl.dicoValues['CS_TMP_PREFIX']:
-        tmp_path = mdl.dicoValues['CS_TMP_PREFIX']
-    elif os.environ["NOM_ARCH"] == "OSF1":
-        tmp_path = os.environ["TMPDIR"]
-    elif os.environ["NOM_ARCH"] == "Linux_CCRT":
-        tmp_path = os.environ["SCRATCHDIR"]
-    elif os.environ["NOM_ARCH"] == "Linux_IA64":
-        tmp_path = os.environ["SCRATCHDIR"]
-    elif os.environ["NOM_ARCH"] == "Linux_SCALI":
-        tmp_path = os.environ["HOME"]
-    elif "TMPDIR" in os.environ and os.environ["TMPDIR"] != '' and os.environ["TMPDIR"] != '/tmp':
-        tmp_path = os.environ["TMPDIR"]
+    _CommandMgr = CFDSTUDYGUI_CommandMgr.CFDSTUDYGUI_CommandMgr()
+    aCase = case['salome']
+    aChList = CFDSTUDYGUI_DataModel.ScanChildren(aCase, "RESU")
+
+    if len(aChList) == 1:
+        _CommandMgr.runCommandDlg(aChList[0],
+                                  _CommandMgr.tr("STMSG_RUN_SCRIPT"),
+                                  cmd,
+                                  case['scripts_path'])
     else:
-        tmp_path = os.environ["HOME"]
-
-    study_dir, case_name = os.path.split(case['case_path'])
-    study_name = os.path.split(study_dir)[-1]
-    tmp_path = os.path.join(tmp_path, "tmp_Saturne")
-    tmp_path = os.path.join(tmp_path, study_name) + "." + case_name
-
-    CFDSTUDYGUI.processMgr().addProcess(cmd, \
-                                        case['case_path'], \
-                                        case['xmlfile'], \
-                                        tmp_path, \
-                                        mdl.dicoValues['ARG_CS_OUTPUT'])
+        raise ValueError,  "More than one RESU directory found!"
 
 #-------------------------------------------------------------------------------
