@@ -1,4 +1,10 @@
 * 09/11/2009 - David Monfort <david.monfort@edf.fr>
+  Add LTLIBINTL to cs_solver dependency for linking with libintl library
+  needed for gettext support on systems with a libc different from the glibc.
+  modified script:
+    src/apps/Makefile.am
+
+* 09/11/2009 - David Monfort <david.monfort@edf.fr>
   Change the order of some libraries to link with on BG/P systems.
   modified script:
     config/cs_auto_flags.sh
