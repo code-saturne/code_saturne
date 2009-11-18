@@ -342,9 +342,9 @@ class LagrangianBoundariesModel(Model):
         Update the statistical weight value.
         """
         self.isFloat(value)
-        self.isGreaterOrEqual(value, 0)
+        self.isGreater(value, 0)
         self.node_class.xmlSetData('statistical_weight', value)
-        
+
 
     def getStatisticalWeightValue(self, label, iclass):
         """

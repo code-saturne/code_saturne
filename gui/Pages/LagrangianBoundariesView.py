@@ -443,6 +443,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             self.spinBoxICLAS.setMinimum(1)
             self.spinBoxICLAS.setMaximum(nclasses) 
             self.spinBoxICLAS.setValue(1)
+            self.slotICLAS(1)
 
 
     @pyqtSignature("int")
@@ -589,7 +590,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             self.frameVolumicRate.show()
             rate = self.model.getMassFlowRateValue(self.label, self.iclass)
             self.lineEditIDEBT.setText(QString(str(rate)))
-            self.model.setStatisticalWeightValue(self.label, self.iclass, 1) # ???
+            self.model.setStatisticalWeightValue(self.label, self.iclass, 1)
         elif choice == "prescribed":
             self.frameStatisticalWeight.show()
             weight = self.model.getStatisticalWeightValue(self.label, self.iclass)
@@ -604,7 +605,7 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         Input IPOIT.
         """
         if self.sender().validator().state == QValidator.Acceptable:
-            value, ok = text.toInt()
+            value, ok = text.toDouble()
             self.model.setStatisticalWeightValue(self.label, self.iclass, value)
 
 

@@ -1,4 +1,10 @@
 * 09/18/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix the statistical weight parameter issue in GUI for Lagrangian setup.
+  modified routines:
+    gui/Pages/LagrangianBoundariesModel.py
+    gui/Pages/LagrangianBoundariesView.py
+
+* 09/18/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix a bug when reading/writing dp_FCP thermochemistry file in GUI.
   modified routine:
    gui/Pages/CoalThermoChemistry.py
