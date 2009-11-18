@@ -1,3 +1,9 @@
+* 09/18/2009 - David Monfort <david.monfort@edf.fr>
+  Fix issues in the check_mesh tool (GUI) with CGNS and MED format.
+  modified routines:
+    gui/Pages/SolutionVerifView.py
+    users/base/usini1.f90
+
 * 09/18/2009 - Clarisse Delalondre <clarisse.delalondre@edf.fr>
   Update the dp_ELE file (Argon properties) to account for radiative transfer.
   modified file:

@@ -1586,6 +1586,10 @@ if (iverif.eq.0) then
     write(nfecra,9000)
     call csexit (1)
   endif
+else
+  if(iihmpr.eq.1) then
+    return
+  endif
 endif
 
  9000 format(                                                     &
@@ -1711,8 +1715,8 @@ ichrsy = 0
 
 ichrmd = 0
 
-FMTCHR = 'EnSight Gold'
-OPTCHR = 'binary'
+fmtchr = 'EnSight Gold'
+optchr = 'binary'
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 

@@ -153,8 +153,8 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
             elif self.fmt == "--med":
                 os.rename('check_mesh.med', 'PREPROCESSOR.med')
 
-            elif self.fmt == "--cgns":
-                os.rename('check_mesh.cgns', 'PREPROCESSOR.cgns')
+            #elif self.fmt == "--cgns":
+            #    os.rename('check_mesh.cgns', 'PREPROCESSOR.cgns')
 
             if os.path.isfile(os.path.join(self.case['resu_path'], 'preprocessor_output')):
                 self.__csProcess()
