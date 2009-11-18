@@ -1391,9 +1391,12 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                     for (ifac = 0; ifac < faces; ifac++)
                     {
                         ifbr = faces_list[ifac] -1;
-                        rcodcl[vars->rtp[1] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + vars->rtp[1] -1];
-                        rcodcl[vars->rtp[2] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + vars->rtp[2] -1];
-                        rcodcl[vars->rtp[3] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + vars->rtp[3] -1];
+                        norm = sqrt(  surfbo[3 * ifbr + 0] * surfbo[3 * ifbr + 0]
+                                    + surfbo[3 * ifbr + 1] * surfbo[3 * ifbr + 1]
+                                    + surfbo[3 * ifbr + 2] * surfbo[3 * ifbr + 2]);
+                        rcodcl[vars->rtp[1] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + vars->rtp[1] -1]/norm;
+                        rcodcl[vars->rtp[2] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + vars->rtp[2] -1]/norm;
+                        rcodcl[vars->rtp[3] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + vars->rtp[3] -1]/norm;
                     }
                 }
 #ifdef HAVE_MEI
