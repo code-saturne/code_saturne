@@ -71,7 +71,7 @@ class MeshModel:
         self.ext['neu']   = "gambit"
         self.ext['ccm']   = "ccm"
         self.ext['ngeom'] = "ngeom"
-        self.ext['unv']   = "unv"
+        self.ext['unv']   = "ideas"
         self.ext['mesh']  = "meta"
 
 
@@ -170,7 +170,7 @@ class MeshModel:
                 ("GAMBIT Neutral files",      "*.neu"  ),
                 ("STAR-CCM+",                 "*.ccm"  ),
                 ("pro-STAR/STAR4 files",      "*.ngeom"),
-                ("I-DEAS universal files",    "*.unv"  ),
+                ("I-deas universal files",    "*.unv"  ),
                 ("Meta-mesh files",           "*.mesh" ) ]
 
         return list

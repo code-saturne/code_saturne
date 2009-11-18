@@ -1,4 +1,9 @@
 * 09/18/2009 - David Monfort <david.monfort@edf.fr>
+  Small correction when displaying I-deas file format.
+  modified routine:
+    gui/Pages/SolutionDomainModel.py
+
+* 09/18/2009 - David Monfort <david.monfort@edf.fr>
   Fix issues in the check_mesh tool (GUI) with CGNS and MED format.
   modified routines:
     gui/Pages/SolutionVerifView.py
