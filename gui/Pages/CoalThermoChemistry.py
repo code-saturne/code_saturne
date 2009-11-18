@@ -563,7 +563,7 @@ class Coals(Model):
         coal.setIOCHET_O2(self.IOCHET_O2List[nb])
         coal.setAHETCH_CO2(self.AHETCH_CO2List[nb])
         coal.setEHETCH_CO2(self.EHETCH_CO2List[nb])
-        coal.setIOCHET_O2(self.IOCHET_CO2List[nb])
+        coal.setIOCHET_CO2(self.IOCHET_CO2List[nb])
         return coal
         
         

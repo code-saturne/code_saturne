@@ -1,3 +1,8 @@
+* 09/18/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix a bug when reading/writing dp_FCP thermochemistry file in GUI.
+  modified routine:
+   gui/Pages/CoalThermoChemistry.py
+
 * 09/18/2009 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix the velocity computation when setting up a mass flow rate.
   modified routine:
