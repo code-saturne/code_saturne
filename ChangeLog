@@ -1,3 +1,8 @@
+* 09/18/2009 - Clarisse Delalondre <clarisse.delalondre@edf.fr>
+  Update the dp_ELE file (Argon properties) to account for radiative transfer.
+  modified file:
+    data/thch/dp_ELE
+
 * 09/18/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix the statistical weight parameter issue in GUI for Lagrangian setup.
   modified routines:
