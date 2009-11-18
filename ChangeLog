@@ -1,4 +1,10 @@
 * 09/18/2009 - David Monfort <david.monfort@edf.fr>
+  Fix several issues with the WALE model.
+  modified routines:
+    include/base/cstphy.h
+    src/base/viswal.f90
+
+* 09/18/2009 - David Monfort <david.monfort@edf.fr>
   Small correction when displaying I-deas file format.
   modified routine:
     gui/Pages/SolutionDomainModel.py

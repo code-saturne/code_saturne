@@ -219,7 +219,7 @@ integer          i, j, k
 double precision coef, deux, delta, tiers
 double precision sij, sijd, s, sd, sinv
 double precision xfil, xa  , xb  , radeux, con
-double precision duidxj(ndim,ndim), kdelta(ndim,ndim)
+double precision dudx(ndim,ndim), kdelta(ndim,ndim)
 
 !===============================================================================
 
@@ -343,15 +343,15 @@ coef = cwale(iphas)**2 * radeux
 
 do iel = 1, ncel
 
-  duidxj(1,1) = w1(iel)
-  duidxj(1,2) = w2(iel)
-  duidxj(1,3) = w3(iel)
-  duidxj(2,1) = w4(iel)
-  duidxj(2,2) = w5(iel)
-  duidxj(2,3) = w6(iel)
-  duidxj(3,1) = w7(iel)
-  duidxj(3,2) = w8(iel)
-  duidxj(3,3) = w9(iel)
+  dudx(1,1) = w1(iel)
+  dudx(1,2) = w2(iel)
+  dudx(1,3) = w3(iel)
+  dudx(2,1) = w4(iel)
+  dudx(2,2) = w5(iel)
+  dudx(2,3) = w6(iel)
+  dudx(3,1) = w7(iel)
+  dudx(3,2) = w8(iel)
+  dudx(3,3) = w9(iel)
 
   s  = 0.d0
   sd = 0.d0
@@ -359,19 +359,19 @@ do iel = 1, ncel
   do i = 1, ndim
     do j = 1, ndim
 
-!     Sij = 0.5 * (dUi/dXj + dUj/dXi)
+      ! Sij = 0.5 * (dUi/dXj + dUj/dXi)
 
-      sij = 0.5d0*(duidxj(i,j)+duidxj(j,i))
+      sij = 0.5d0*(dudx(i,j)+dudx(j,i))
 
-      s = s + 2.d0*sij**2
+      s = s + sij**2
 
       do k = 1, ndim
 
 !  traceless symmetric part of the square of the velocity gradient tensor
 !    Sijd = 0.5 * ( dUi/dXk dUk/dXj + dUj/dXk dUk/dXi) - 1/3 Dij dUk/dXk dUk/dXk
 
-        sijd = 0.5d0*(duidxj(i,k)*duidxj(k,j)+ duidxj(j,k)*duidxj(k,i)) &
-              -tiers*kdelta(i,j)*duidxj(k,k)**2
+        sijd = 0.5d0*(dudx(i,k)*dudx(k,j)+ dudx(j,k)*dudx(k,i)) &
+              -tiers*kdelta(i,j)*dudx(k,k)**2
 
         sd = sd + sijd**2
 
@@ -379,17 +379,12 @@ do iel = 1, ncel
     enddo
   enddo
 
-! S = SQRT ( 2 Sij Sij )
-
-  s = sqrt(s)
-
-
 !===============================================================================
 ! 3.  CALCUL DE LA VISCOSITE TURBULENTE
 !===============================================================================
 
-! Turbulent inverse time scale =
-!   (Sijd Sijd)^3/2 / [ (Sij Sij)^5/2 + (Sijd Sijd)^5/4 ]
+  ! Turbulent inverse time scale =
+  !   (Sijd Sijd)^3/2 / [ (Sij Sij)^5/2 + (Sijd Sijd)^5/4 ]
 
   sinv = (s**2.5d0 + sd**1.25d0)
   if (sinv.gt.0.d0) then

@@ -156,7 +156,8 @@ common / rturbu / xkappa , cstlog , ypluli ,                      &
                   xlomlg          ,                               &
                   xlesfl          , ales            , bles      , &
                   csmago          , cdries          ,             &
-                  xlesfd          , smagmx
+                  xlesfd          , smagmx          ,             &
+                  cwale
 
 ! CONSTANTES POUR LES SCALAIRES
 
