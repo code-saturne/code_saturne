@@ -1,3 +1,9 @@
+* 09/24/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a bug in BLAS detection when both C and Fortran symbols are present
+  in the legacy BLAS library.
+  modified script:
+    config/cs_blas.m4
+
 * 09/18/2009 - David Monfort <david.monfort@edf.fr>
   Fix several issues with the WALE model.
   modified routines:

@@ -281,9 +281,9 @@ if test "x$blas" = "xtrue" ; then
 
   fi
 
-  # Test for generic C BLAS
+  # Test for generic C or Fortran BLAS
 
-  if test "x$with_blas_type" = "x" ; then
+  if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xBLAS" ; then
 
     if test "x$with_blas_libs" != "x" ; then
       BLAS_LIBS="$with_blas_libs"
@@ -295,39 +295,34 @@ if test "x$blas" = "xtrue" ; then
     LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
     LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
 
+    # Firstly, test for C BLAS
+
     AC_MSG_CHECKING([for legacy C BLAS])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <cblas.h>]],
                    [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
                    [ AC_DEFINE([HAVE_CBLAS], 1, [C BLAS support])
-                     cs_have_blas=yes; with_blas_type=BLAS ],
-                   [cs_have_blas=no])
-    AC_MSG_RESULT($cs_have_blas)
-  fi
+                     cs_tmp_have_cblas=yes; with_blas_type=BLAS ],
+                   [cs_tmp_have_cblas=no])
+    AC_MSG_RESULT($cs_tmp_have_cblas)
 
-  # Test for generic Fortran BLAS
-
-  if test "x$with_blas_type" = "x" ; then
+    # Secondly, test for C BLAS
 
     AC_LANG_PUSH([Fortran])
     
-    if test "x$with_blas_libs" != "x" ; then
-      BLAS_LIBS="$with_blas_libs"
-    else
-      BLAS_LIBS="-lblas"
-    fi
-
-    LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-    LIBS=" ${saved_LIBS} ${BLAS_LIBS}"
-
     AC_MSG_CHECKING([for legacy Fortran BLAS])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([],
                    [[      call ddot(0, 0, 0, 0, 0) ]])],
                    [ AC_DEFINE([HAVE_FBLAS], 1, [Fortran BLAS support])
-                     cs_have_blas=yes; with_blas_type=BLAS ],
-                   [cs_have_blas=no])
-    AC_MSG_RESULT($cs_have_blas)
+                     cs_tmp_have_fblas=yes; with_blas_type=BLAS ],
+                   [cs_tmp_have_fblas=no])
+    AC_MSG_RESULT($cs_tmp_have_fblas)
 
     AC_LANG_POP([Fortran])
+
+    if test "x$cs_tmp_have_cblas" = "xyes" \
+         -o "x$cs_tmp_have_fblas" = "xyes"; then
+      cs_have_blas=yes
+    fi
     
   fi
 
