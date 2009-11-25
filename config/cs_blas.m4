@@ -29,25 +29,13 @@ AC_DEFUN([CS_AC_TEST_BLAS], [
 
 cs_have_blas=no
 
-AC_ARG_ENABLE(blas,
-  [  --disable-blas          do not use BLAS when available],
-  [
-    case "${enableval}" in
-      yes) blas=true ;;
-      no)  blas=false ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-blas]) ;;
-    esac
-  ],
-  [ blas=true ]
-)
-
 AC_ARG_WITH(blas, [AS_HELP_STRING([--with-blas=PATH], [specify prefix directory for BLAS])])
 AC_ARG_WITH(blas-include, [AS_HELP_STRING([--with-blas-include=PATH], [specify directory for BLAS include files])])
 AC_ARG_WITH(blas-lib, [AS_HELP_STRING([--with-blas-lib=PATH], [specify directory for BLAS library])])
 AC_ARG_WITH(blas-type, [AS_HELP_STRING([--with-blas-type=NAME], [force ATLAS, ESSL, MKL, ...])])
 AC_ARG_WITH(blas-libs, [AS_HELP_STRING([--with-blas-libs=LIBS], [specify BLAS libraries])])
 
-if test "x$blas" = "xtrue" ; then
+if test "x$with_blas" != "xno" ; then
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
@@ -60,13 +48,13 @@ if test "x$blas" = "xtrue" ; then
 
   if test "x$with_blas_include" != "x" ; then
     BLAS_CPPFLAGS="-I$with_blas_include" 
-  elif test "x$with_blas" != "x" ; then
+  elif test "x$with_blas" != "x" -a "x$with_blas" != "xyes" ; then
     BLAS_CPPFLAGS="-I$with_blas/include" 
   fi
 
   if test "x$with_blas_lib" != "x" ; then
     BLAS_LDFLAGS="-L$with_blas_lib"
-  elif test "x$with_blas" != "x" ; then
+  elif test "x$with_blas" != "x" -a "x$with_blas" != "xyes" ; then
     BLAS_LDFLAGS="-L$with_blas/lib" 
   fi
 

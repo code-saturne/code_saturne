@@ -1,3 +1,13 @@
+* 09/25/2009 - David Monfort <david.monfort@edf.fr>
+  Improve package detection handling during configure stage.
+  modified scripts:
+    config/cs_bft.m4
+    config/cs_blas.m4
+    config/cs_fvm.m4
+    config/cs_libxml2.m4
+    config/cs_mei.m4
+    config/cs_mpi.m4
+
 * 09/25/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a wrong size allocation in SYRTHES 4 coupling.
   modified routine:

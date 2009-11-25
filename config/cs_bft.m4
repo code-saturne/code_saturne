@@ -34,7 +34,7 @@ AC_ARG_WITH(bft-lib, [AS_HELP_STRING([--with-bft-lib=PATH], [specify directory f
 
 if test "x$with_bft_exec" != "x" ; then
   bft_config="$with_bft_exec/bft-config"
-elif test "x$with_bft" != "x" ; then
+elif test "x$with_bft" != "x" -a "x$with_bft" != "xyes" ; then
   bft_config="$with_bft/bin/bft-config"
 else
   bft_config="bft-config"
@@ -42,7 +42,7 @@ fi
 
 if test "x$with_bft_include" != "x" ; then
   BFT_CPPFLAGS="-I$with_bft_include"
-elif test "x$with_bft" != "x" ; then
+elif test "x$with_bft" != "x" -a "x$with_bft" != "xyes" ; then
   BFT_CPPFLAGS="-I$with_bft/include"
 else
   BFT_CPPFLAGS=""
@@ -50,7 +50,7 @@ fi
 
 if test "x$with_bft_lib" != "x" ; then
   BFT_LDFLAGS="-L$with_bft_lib"
-elif test "x$with_bft" != "x" ; then
+elif test "x$with_bft" != "x" -a "x$with_bft" != "xyes" ; then
   BFT_LDFLAGS="-L$with_bft/lib"
 else
   BFT_LDFLAGS=""

@@ -29,23 +29,11 @@ AC_DEFUN([CS_AC_TEST_LIBXML2], [
 
 have_libxml2=no
 
-AC_ARG_ENABLE(libxml2,
-  [  --disable-libxml2       do not use LIBXML2 when available],
-  [
-    case "${enableval}" in
-      yes) libxml2=true ;;
-      no)  libxml2=false ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-libxml2]) ;;
-    esac
-  ],
-  [ libxml2=true ]
-)
-
 AC_ARG_WITH(libxml2, [AS_HELP_STRING([--with-libxml2=PATH], [specify prefix directory for LIBXML2])])
 AC_ARG_WITH(libxml2-include, [AS_HELP_STRING([--with-libxml2-include=PATH], [specify directory for LIBXML2 include files])])
 AC_ARG_WITH(libxml2-lib, [AS_HELP_STRING([--with-libxml2-lib=PATH], [specify directory for LIBXML2 library])])
 
-if test "x$libxml2" = "xtrue" ; then
+if test "x$with_libxml2" != "xno" ; then
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
@@ -53,7 +41,7 @@ if test "x$libxml2" = "xtrue" ; then
 
   if test "x$with_libxml2_include" != "x" ; then
     LIBXML2_CPPFLAGS="-I$with_libxml2_include"
-  elif test "x$with_libxml2" != "x" ; then
+  elif test "x$with_libxml2" != "x" -a "x$with_libxml2" != "xyes" ; then
     LIBXML2_CPPFLAGS="-I$with_libxml2/include/libxml2"
   else
     LIBXML2_CPPFLAGS="-I/usr/include/libxml2"
@@ -61,7 +49,7 @@ if test "x$libxml2" = "xtrue" ; then
 
   if test "x$with_libxml2_lib" != "x" ; then
     LIBXML2_LDFLAGS="-L$with_libxml2_lib"
-  elif test "x$with_libxml2" != "x" ; then
+  elif test "x$with_libxml2" != "x" -a "x$with_libxml2" != "xyes" ; then
     LIBXML2_LDFLAGS="-L$with_libxml2/lib"
   fi
 

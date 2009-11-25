@@ -34,38 +34,26 @@ saved_LIBS="$LIBS"
 
 cs_have_mpi=no
 
-AC_ARG_ENABLE(mpi,
-  [  --disable-mpi           do not use MPI when available],
-  [
-    case "${enableval}" in
-      yes) mpi=true ;;
-      no)  mpi=false ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-mpi]) ;;
-    esac
-  ],
-  [ mpi=true ]
-)
-
 AC_ARG_WITH(mpi, [AS_HELP_STRING([--with-mpi=PATH], [specify prefix directory for MPI])])
 AC_ARG_WITH(mpi-exec, [AS_HELP_STRING([--with-mpi-exec=PATH], [specify prefix directory for MPI executables])])
 AC_ARG_WITH(mpi-include, [AS_HELP_STRING([--with-mpi-include=PATH], [specify directory for MPI include files])])
 AC_ARG_WITH(mpi-lib, [AS_HELP_STRING([--with-mpi-lib=PATH], [specify directory for MPI library])])
 
-if test "x$mpi" = "xtrue" ; then
+if test "x$with_mpi" != "xno" ; then
   if test "x$with_mpi_exec" != "x" ; then
     mpi_bindir="$with_mpi_exec"
-  elif test "x$with_mpi" != "x" ; then
+  elif test "x$with_mpi" != "x" -a "x$with_mpi" != "xyes" ; then
     mpi_bindir="$with_mpi/bin"
   fi
   if test "x$with_mpi_include" != "x" ; then
     MPI_CPPFLAGS="$MPI_CPPFLAGS -I$with_mpi_include"
-  elif test "x$with_mpi" != "x" ; then
+  elif test "x$with_mpi" != "x" -a "x$with_mpi" != "xyes" ; then
     MPI_CPPFLAGS="$MPI_CPPFLAGS -I$with_mpi/include"
   fi
   if test "x$with_mpi_lib" != "x" ; then
     MPI_LDFLAGS="$MPI_LDFLAGS -L$with_mpi_lib"
     mpi_libdir="$with_mpi_lib"
-  elif test "x$with_mpi" != "x" ; then
+  elif test "x$with_mpi" != "x" -a "x$with_mpi" != "xyes" ; then
     MPI_LDFLAGS="$MPI_LDFLAGS -L$with_mpi/lib"
     mpi_libdir="$with_mpi/lib"
   fi
@@ -86,7 +74,7 @@ fi
 # If we do not use an MPI compiler wrapper, we must add compilation
 # and link flags; we try to detect the correct flags to add.
 
-if test "x$mpi" = "xtrue" -a "x$cs_have_mpi" = "xno" ; then
+if test "x$with_mpi" != "xno" -a "x$cs_have_mpi" = "xno" ; then
 
   # try several tests for MPI
 
