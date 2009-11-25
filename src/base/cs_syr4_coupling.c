@@ -1132,7 +1132,7 @@ cs_syr4_coupling_send_tf_hwall(cs_syr4_coupling_t  *syr_coupling,
 
   /* Prepare and send data */
 
-  BFT_MALLOC(send_var, coupling_ent->n_elts*2, double);
+  BFT_MALLOC(send_var, n_dist*2, double);
 
   for (ii = 0; ii < n_dist; ii++) {
     send_var[ii*2]     = tf[dist_loc[ii] - 1];

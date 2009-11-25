@@ -1,3 +1,8 @@
+* 09/25/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a wrong size allocation in SYRTHES 4 coupling.
+  modified routine:
+    src/base/cs_syr4_coupling.c
+
 * 09/24/2009 - David Monfort <david.monfort@edf.fr>
   Fix a bug in BLAS detection when both C and Fortran symbols are present
   in the legacy BLAS library.
