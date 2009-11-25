@@ -1,4 +1,9 @@
 * 09/25/2009 - David Monfort <david.monfort@edf.fr>
+  Update Code_Saturne installer according to the previous commit.
+  modified scripts:
+    extras/installer/install_saturne.py
+
+* 09/25/2009 - David Monfort <david.monfort@edf.fr>
   Improve package detection handling during configure stage.
   modified scripts:
     config/cs_bft.m4

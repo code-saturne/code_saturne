@@ -795,7 +795,7 @@ Check the setup file and some utilities presence.
 
         for p in [fvm, ecs]:
             if cgns.use == 'no':
-                p.config_opts = p.config_opts + " --disable-cgns"
+                p.config_opts = p.config_opts + " --without-cgns"
             else:
                 if cgns.install_dir is not None:
                     p.config_opts = p.config_opts + \
@@ -808,7 +808,7 @@ Check the setup file and some utilities presence.
 
         for p in [fvm, ecs]:
             if hdf5.use == 'no':
-                p.config_opts = p.config_opts + " --disable-hdf5"
+                p.config_opts = p.config_opts + " --without-hdf5"
             else:
                 if hdf5.install_dir is not None:
                     p.config_opts = p.config_opts + \
@@ -818,7 +818,7 @@ Check the setup file and some utilities presence.
 
         for p in [fvm, ecs]:
             if med.use == 'no':
-                p.config_opts = p.config_opts + " --disable-med"
+                p.config_opts = p.config_opts + " --without-med"
             else:
                 if med.install_dir is not None:
                     p.config_opts = p.config_opts + \
@@ -828,7 +828,7 @@ Check the setup file and some utilities presence.
 
         for p in [fvm, ncs]:
             if mpi.use == 'no' and self.mpicc is None:
-                p.config_opts = p.config_opts + " --disable-mpi"
+                p.config_opts = p.config_opts + " --without-mpi"
             else:
                 if mpi.install_dir is not None:
                     p.config_opts = p.config_opts + \
@@ -840,7 +840,7 @@ Check the setup file and some utilities presence.
         # Metis
 
         if metis.use == 'no':
-            ecs.config_opts = ecs.config_opts + " --disable-metis"
+            ecs.config_opts = ecs.config_opts + " --without-metis"
         else:
             if metis.install_dir is not None:
                 ecs.config_opts = ecs.config_opts + \
@@ -849,7 +849,7 @@ Check the setup file and some utilities presence.
         # Libxml2
 
         if libxml2.use == 'no':
-            ncs.config_opts = ncs.config_opts + " --disable-libxml2"
+            ncs.config_opts = ncs.config_opts + " --without-libxml2"
         else:
             if libxml2.install_dir is not None:
                 ncs.config_opts = ncs.config_opts + \
