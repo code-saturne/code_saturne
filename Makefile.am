@@ -163,7 +163,8 @@ data/thch/dp_ELE \
 data/thch/dp_FCP \
 data/thch/dp_FUE \
 data/thch/dp_transfo \
-data/thch/JANAF
+data/thch/JANAF \
+data/thch/meteo
 
 # Install man pages
 

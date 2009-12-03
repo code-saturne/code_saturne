@@ -1,3 +1,11 @@
+* 12/03/2009 - David Monfort <david.monfort@edf.fr>
+  Add a meteo data file example.
+  added file:
+    data/thch/meteo
+  modified scripts:
+    bin/runcase.in
+    Makefile.am
+
 * 09/25/2009 - David Monfort <david.monfort@edf.fr>
   Update Code_Saturne installer according to the previous commit.
   modified scripts:

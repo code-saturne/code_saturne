@@ -278,7 +278,7 @@ class Study:
                 thch_distpath = os.path.join(data_distpath, 'thch')
                 thch          = os.path.join(data, 'THCH')
                 os.mkdir(thch)
-                for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE']:
+                for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE', 'meteo']:
                     shutil.copy(os.path.join(thch_distpath, f), thch)
 
             if self.use_gui:
