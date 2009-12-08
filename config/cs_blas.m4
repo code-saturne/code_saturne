@@ -29,11 +29,46 @@ AC_DEFUN([CS_AC_TEST_BLAS], [
 
 cs_have_blas=no
 
-AC_ARG_WITH(blas, [AS_HELP_STRING([--with-blas=PATH], [specify prefix directory for BLAS])])
-AC_ARG_WITH(blas-include, [AS_HELP_STRING([--with-blas-include=PATH], [specify directory for BLAS include files])])
-AC_ARG_WITH(blas-lib, [AS_HELP_STRING([--with-blas-lib=PATH], [specify directory for BLAS library])])
-AC_ARG_WITH(blas-type, [AS_HELP_STRING([--with-blas-type=NAME], [force ATLAS, ESSL, MKL, ...])])
-AC_ARG_WITH(blas-libs, [AS_HELP_STRING([--with-blas-libs=LIBS], [specify BLAS libraries])])
+AC_ARG_WITH(blas,
+            [AS_HELP_STRING([--with-blas=PATH],
+                            [specify prefix directory for BLAS])],
+            [if test "x$withval" = "x"; then
+               with_blas=yes
+             fi],
+            [with_blas=check])
+
+AC_ARG_WITH(blas-include,
+            [AS_HELP_STRING([--with-blas-include=PATH],
+                            [specify directory for BLAS include files])],
+            [if test "x$with_blas" = "xcheck"; then
+               with_blas=yes
+             fi
+             BLAS_CPPFLAGS="-I$with_blas_include"],
+            [if test "x$with_blas" != "xno" -a "x$with_blas" != "xyes" \
+	          -a "x$with_blas" != "xcheck"; then
+               BLAS_CPPFLAGS="-I$with_blas/include"
+             fi])
+
+AC_ARG_WITH(blas-lib,
+            [AS_HELP_STRING([--with-blas-lib=PATH],
+                            [specify directory for BLAS library])],
+            [if test "x$with_blas" = "xcheck"; then
+               with_blas=yes
+             fi
+             BLAS_LDFLAGS="-L$with_blas_lib"],
+            [if test "x$with_blas" != "xno" -a "x$with_blas" != "xyes" \
+	          -a "x$with_blas" != "xcheck"; then
+               BLAS_LDFLAGS="-L$with_blas/lib"
+             fi])
+
+AC_ARG_WITH(blas-type,
+            [AS_HELP_STRING([--with-blas-type=NAME],
+                            [force ATLAS, ESSL, MKL, ...])])
+
+AC_ARG_WITH(blas-libs,
+            [AS_HELP_STRING([--with-blas-libs=LIBS],
+                            [specify BLAS libraries])])
+
 
 if test "x$with_blas" != "xno" ; then
 
@@ -44,19 +79,7 @@ if test "x$with_blas" != "xno" ; then
   BLAS_CPPFLAGS=""
   BLAS_LDFLAGS=""
 
-  # Also add known paths and libraries for Blue Gene/L or P if not given
-
-  if test "x$with_blas_include" != "x" ; then
-    BLAS_CPPFLAGS="-I$with_blas_include" 
-  elif test "x$with_blas" != "x" -a "x$with_blas" != "xyes" ; then
-    BLAS_CPPFLAGS="-I$with_blas/include" 
-  fi
-
-  if test "x$with_blas_lib" != "x" ; then
-    BLAS_LDFLAGS="-L$with_blas_lib"
-  elif test "x$with_blas" != "x" -a "x$with_blas" != "xyes" ; then
-    BLAS_LDFLAGS="-L$with_blas/lib" 
-  fi
+  # Add known paths and libraries for Blue Gene/L or P if not given
 
   if test "x$with_blas_type" = "x" ; then
     if test "x$cs_ibm_bg_type" != "x" ; then
@@ -317,8 +340,11 @@ if test "x$with_blas" != "xno" ; then
   # Cleanup if no BLAS found
 
   if test "x$cs_have_blas" != "xyes"; then
-    BLAS_CPPFLAGS=""
-    BLAS_LDFLAGS=""
+    if test "x$with_blas" != "xcheck" ; then
+      AC_MSG_WARN([no BLAS support])
+    else
+      AC_MSG_FAILURE([BLAS support is requested, but test for BLAS failed!])
+    fi
     BLAS_LIBS=""
   fi
 

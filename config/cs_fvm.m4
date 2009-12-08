@@ -27,34 +27,41 @@ dnl-----------------------------------------------------------------------------
 
 AC_DEFUN([CS_AC_TEST_FVM], [
 
-AC_ARG_WITH(fvm, [AS_HELP_STRING([--with-fvm=PATH], [specify prefix directory for FVM])])
-AC_ARG_WITH(fvm-exec, [AS_HELP_STRING([--with-fvm-exec=PATH], [specify directory for FVM executables])])
-AC_ARG_WITH(fvm-include, [AS_HELP_STRING([--with-fvm-include=PATH], [specify directory for FVM include files])])
-AC_ARG_WITH(fvm-lib, [AS_HELP_STRING([--with-fvm-lib=PATH], [specify directory for FVM library])])
+AC_ARG_WITH(fvm,
+            [AS_HELP_STRING([--with-fvm=PATH],
+                            [specify prefix directory for FVM])],
+            [if test "x$withval" = "x"; then
+               with_fvm=yes
+             fi],
+            [with_fvm=yes])
 
-if test "x$with_fvm_exec" != "x" ; then
-  fvm_config="$with_fvm_exec/fvm-config"
-elif test "x$with_fvm" != "x" -a "x$with_fvm" != "xyes" ; then
-  fvm_config="$with_fvm/bin/fvm-config"
-else
-  fvm_config="fvm-config"
-fi
+AC_ARG_WITH(fvm-exec,
+            [AS_HELP_STRING([--with-fvm-exec=PATH],
+                            [specify directory for FVM executables])],
+            [fvm_config="$with_fvm_exec/fvm-config"],
+            [if test "x$with_fvm" != "xyes"; then
+               fvm_config="$with_fvm/bin/fvm-config"
+             else
+               fvm_config="fvm-config"
+             fi])
 
-if test "x$with_fvm_include" != "x" ; then
-  FVM_CPPFLAGS="-I$with_fvm_include"
-elif test "x$with_fvm" != "x" -a "x$with_fvm" != "xyes" ; then
-  FVM_CPPFLAGS="-I$with_fvm/include"
-else
-  FVM_CPPFLAGS=""
-fi
+AC_ARG_WITH(fvm-include,
+            [AS_HELP_STRING([--with-fvm-include=PATH],
+                            [specify directory for FVM include files])],
+            [FVM_CPPFLAGS="-I$with_fvm_include"],
+            [if test "x$with_fvm" != "xno" -a "x$with_fvm" != "xyes"; then
+               FVM_CPPFLAGS="-I$with_fvm/include"
+             fi])
 
-if test "x$with_fvm_lib" != "x" ; then
-  FVM_LDFLAGS="-L$with_fvm_lib"
-elif test "x$with_fvm" != "x" -a "x$with_fvm" != "xyes" ; then
-  FVM_LDFLAGS="-L$with_fvm/lib"
-else
-  FVM_LDFLAGS=""
-fi
+AC_ARG_WITH(fvm-lib,
+            [AS_HELP_STRING([--with-fvm-lib=PATH],
+                            [specify directory for FVM library])],
+            [FVM_LDFLAGS="-L$with_fvm_lib"],
+            [if test "x$with_fvm" != "xno" -a "x$with_fvm" != "xyes"; then
+               FVM_LDFLAGS="-L$with_fvm/lib"
+             fi])
+
+
 FVM_LIBS="-lfvm"
 
 FVM_COUPL_LDFLAGS="$FVM_LDFLAGS"

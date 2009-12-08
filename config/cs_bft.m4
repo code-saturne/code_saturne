@@ -27,34 +27,41 @@ dnl-----------------------------------------------------------------------------
 
 AC_DEFUN([CS_AC_TEST_BFT], [
 
-AC_ARG_WITH(bft, [AS_HELP_STRING([--with-bft=PATH], [specify prefix directory for BFT])])
-AC_ARG_WITH(bft-exec, [AS_HELP_STRING([--with-bft-exec=PATH], [specify directory for BFT executables])])
-AC_ARG_WITH(bft-include, [AS_HELP_STRING([--with-bft-include=PATH], [specify directory for BFT include files])])
-AC_ARG_WITH(bft-lib, [AS_HELP_STRING([--with-bft-lib=PATH], [specify directory for BFT library])])
+AC_ARG_WITH(bft,
+            [AS_HELP_STRING([--with-bft=PATH],
+                            [specify prefix directory for BFT])],
+            [if test "x$withval" = "x"; then
+               with_bft=yes
+             fi],
+            [with_bft=yes])
 
-if test "x$with_bft_exec" != "x" ; then
-  bft_config="$with_bft_exec/bft-config"
-elif test "x$with_bft" != "x" -a "x$with_bft" != "xyes" ; then
-  bft_config="$with_bft/bin/bft-config"
-else
-  bft_config="bft-config"
-fi
+AC_ARG_WITH(bft-exec,
+            [AS_HELP_STRING([--with-bft-exec=PATH],
+                            [specify directory for BFT executables])],
+            [bft_config="$with_bft_exec/bft-config"],
+            [if test "x$with_bft" != "xyes"; then
+               bft_config="$with_bft/bin/bft-config"
+             else
+               bft_config="bft-config"
+             fi])
 
-if test "x$with_bft_include" != "x" ; then
-  BFT_CPPFLAGS="-I$with_bft_include"
-elif test "x$with_bft" != "x" -a "x$with_bft" != "xyes" ; then
-  BFT_CPPFLAGS="-I$with_bft/include"
-else
-  BFT_CPPFLAGS=""
-fi
+AC_ARG_WITH(bft-include,
+            [AS_HELP_STRING([--with-bft-include=PATH],
+                            [specify directory for BFT include files])],
+            [BFT_CPPFLAGS="-I$with_bft_include"],
+            [if test "x$with_bft" != "xno" -a "x$with_bft" != "xyes"; then
+               BFT_CPPFLAGS="-I$with_bft/include"
+             fi])
 
-if test "x$with_bft_lib" != "x" ; then
-  BFT_LDFLAGS="-L$with_bft_lib"
-elif test "x$with_bft" != "x" -a "x$with_bft" != "xyes" ; then
-  BFT_LDFLAGS="-L$with_bft/lib"
-else
-  BFT_LDFLAGS=""
-fi
+AC_ARG_WITH(bft-lib,
+            [AS_HELP_STRING([--with-bft-lib=PATH],
+                            [specify directory for BFT library])],
+            [BFT_LDFLAGS="-L$with_bft_lib"],
+            [if test "x$with_bft" != "xno" -a "x$with_bft" != "xyes"; then
+               BFT_LDFLAGS="-L$with_bft/lib"
+             fi])
+
+
 BFT_LIBS="-lbft"
 
 type "$bft_config" > /dev/null 2>&1

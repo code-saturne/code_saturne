@@ -29,9 +29,38 @@ AC_DEFUN([CS_AC_TEST_MEI], [
 
 have_mei=no
 
-AC_ARG_WITH(mei, [AS_HELP_STRING([--with-mei=PATH], [specify prefix directory for MEI])])
-AC_ARG_WITH(mei-include, [AS_HELP_STRING([--with-mei-include=PATH], [specify directory for MEI include files])])
-AC_ARG_WITH(mei-lib, [AS_HELP_STRING([--with-mei-lib=PATH], [specify directory for MEI library])])
+AC_ARG_WITH(mei,
+            [AS_HELP_STRING([--with-mei=PATH],
+                            [specify prefix directory for MEI])],
+            [if test "x$withval" = "x"; then
+               with_mei=yes
+             fi],
+            [with_mei=check])
+
+AC_ARG_WITH(mei-include,
+            [AS_HELP_STRING([--with-mei-include=PATH],
+                            [specify directory for MEI include files])],
+            [if test "x$with_mei" = "xcheck"; then
+               with_mei=yes
+             fi
+             MEI_CPPFLAGS="-I$with_mei_include"],
+            [if test "x$with_mei" != "xno" -a "x$with_mei" != "xyes" \
+	          -a "x$with_mei" != "xcheck"; then
+               MEI_CPPFLAGS="-I$with_mei/include"
+             fi])
+
+AC_ARG_WITH(mei-lib,
+            [AS_HELP_STRING([--with-mei-lib=PATH],
+                            [specify directory for MEI library])],
+            [if test "x$with_mei" = "xcheck"; then
+               with_mei=yes
+             fi
+             MEI_LDFLAGS="-L$with_mei_lib"],
+            [if test "x$with_mei" != "xno" -a "x$with_mei" != "xyes" \
+	          -a "x$with_mei" != "xcheck"; then
+               MEI_LDFLAGS="-L$with_mei/lib"
+             fi])
+
 
 if test "x$with_mei" != "xno" ; then
 
@@ -39,20 +68,8 @@ if test "x$with_mei" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  if test "x$with_mei" != "x" -a "x$with_mei" != "xyes" ; then
+  if test "x$with_mei" != "xyes" -a "x$with_mei" != "xcheck" ; then
     mei_prefix=$with_mei
-  fi
-
-  if test "x$with_mei_include" != "x" ; then
-    MEI_CPPFLAGS="-I$with_mei_include"
-  elif test "x$with_mei" != "x" -a "x$with_mei" != "xyes" ; then
-    MEI_CPPFLAGS="-I$with_mei/include"
-  fi
-
-  if test "x$with_mei_lib" != "x" ; then
-    MEI_LDFLAGS="-L$with_mei_lib"
-  elif test "x$with_mei" != "x" -a "x$with_mei" != "xyes" ; then
-    MEI_LDFLAGS="-L$with_mei/lib"
   fi
 
   MEI_LIBS="-lmei"
@@ -67,13 +84,15 @@ if test "x$with_mei" != "xno" ; then
                [ AC_DEFINE([HAVE_MEI], 1, [MEI support])
                  have_mei=yes
                ], 
-               [ AC_MSG_WARN([no MEI support])
+               [if test "x$with_mei" != "xcheck" ; then
+                  AC_MSG_FAILURE([MEI support is requested, but test for MEI failed!])
+                else
+                  AC_MSG_WARN([no MEI support])
+                fi
                ],
-              )
+               )
 
   if test "x$have_mei" != "xyes"; then
-    MEI_CPPFLAGS=""
-    MEI_LDFLAGS=""
     MEI_LIBS=""
   fi
 

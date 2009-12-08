@@ -34,30 +34,52 @@ saved_LIBS="$LIBS"
 
 cs_have_mpi=no
 
-AC_ARG_WITH(mpi, [AS_HELP_STRING([--with-mpi=PATH], [specify prefix directory for MPI])])
-AC_ARG_WITH(mpi-exec, [AS_HELP_STRING([--with-mpi-exec=PATH], [specify prefix directory for MPI executables])])
-AC_ARG_WITH(mpi-include, [AS_HELP_STRING([--with-mpi-include=PATH], [specify directory for MPI include files])])
-AC_ARG_WITH(mpi-lib, [AS_HELP_STRING([--with-mpi-lib=PATH], [specify directory for MPI library])])
+AC_ARG_WITH(mpi,
+            [AS_HELP_STRING([--with-mpi=PATH],
+                            [specify prefix directory for MPI])],
+            [if test "x$withval" = "x"; then
+               with_mpi=yes
+             fi],
+            [with_mpi=check])
 
-if test "x$with_mpi" != "xno" ; then
-  if test "x$with_mpi_exec" != "x" ; then
-    mpi_bindir="$with_mpi_exec"
-  elif test "x$with_mpi" != "x" -a "x$with_mpi" != "xyes" ; then
-    mpi_bindir="$with_mpi/bin"
-  fi
-  if test "x$with_mpi_include" != "x" ; then
-    MPI_CPPFLAGS="$MPI_CPPFLAGS -I$with_mpi_include"
-  elif test "x$with_mpi" != "x" -a "x$with_mpi" != "xyes" ; then
-    MPI_CPPFLAGS="$MPI_CPPFLAGS -I$with_mpi/include"
-  fi
-  if test "x$with_mpi_lib" != "x" ; then
-    MPI_LDFLAGS="$MPI_LDFLAGS -L$with_mpi_lib"
-    mpi_libdir="$with_mpi_lib"
-  elif test "x$with_mpi" != "x" -a "x$with_mpi" != "xyes" ; then
-    MPI_LDFLAGS="$MPI_LDFLAGS -L$with_mpi/lib"
-    mpi_libdir="$with_mpi/lib"
-  fi
-fi
+AC_ARG_WITH(mpi-exec,
+            [AS_HELP_STRING([--with-mpi-exec=PATH],
+                            [specify prefix directory for MPI executables])],
+            [if test "x$with_mpi" = "xcheck"; then
+               with_mpi=yes
+             fi
+             mpi_bindir="$with_mpi_exec"],
+            [if test "x$with_mpi" != "xno" -a "x$with_mpi" != "xyes" \
+	          -a "x$with_mpi" != "xcheck"; then
+               mpi_bindir="$with_mpi/bin"
+             fi])
+
+AC_ARG_WITH(mpi-include,
+            [AS_HELP_STRING([--with-mpi-include=PATH],
+                            [specify directory for MPI include files])],
+            [if test "x$with_mpi" = "xcheck"; then
+               with_mpi=yes
+             fi
+             MPI_CPPFLAGS="-I$with_mpi_include"],
+            [if test "x$with_mpi" != "xno" -a "x$with_mpi" != "xyes" \
+	          -a "x$with_mpi" != "xcheck"; then
+               MPI_CPPFLAGS="-I$with_mpi/include"
+             fi])
+
+AC_ARG_WITH(mpi-lib,
+            [AS_HELP_STRING([--with-mpi-lib=PATH],
+                            [specify directory for MPI library])],
+            [if test "x$with_mpi" = "xcheck"; then
+               with_mpi=yes
+             fi
+             MPI_LDFLAGS="-L$with_mpi_lib"
+             mpi_libdir="$with_mpi_lib"],
+            [if test "x$with_mpi" != "xno" -a "x$with_mpi" != "xyes" \
+	          -a "x$with_mpi" != "xcheck"; then
+               MPI_LDFLAGS="-L$with_mpi/lib"
+               mpi_libdir="$with_mpi/lib"
+             fi])
+
 
 # Just in case, remove excess whitespace from existing flag and libs variables.
 
@@ -167,8 +189,11 @@ if test "x$with_mpi" != "xno" -a "x$cs_have_mpi" = "xno" ; then
   fi
 
   if test "x$cs_have_mpi" = "xno"; then
-    MPI_CPPFLAGS=""
-    MPI_LDFLAGS=""
+    if test "x$with_mpi" != "xcheck" ; then
+      AC_MSG_FAILURE([MPI support is requested, but test for MPI failed!])
+    else
+      AC_MSG_WARN([no MPI support])
+    fi
     MPI_LIBS=""
   else
     # Try to detect MPI variants as this may be useful for the run scripts to

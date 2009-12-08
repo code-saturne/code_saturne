@@ -1,4 +1,16 @@
-* 12/03/2009 - David Monfort <david.monfort@edf.fr>
+* 08/12/2009 - David Monfort <david.monfort@edf.fr>
+  Change the behaviour of the pre-requisites detection by adding
+  a check option. When a package is requested, exit with an error
+  if the package is not found.
+  modified scripts:
+    config/cs_bft.m4
+    config/cs_blas.m4
+    config/cs_fvm.m4
+    config/cs_libxml2.m4
+    config/cs_mei.m4
+    config/cs_mpi.m4
+
+* 03/12/2009 - David Monfort <david.monfort@edf.fr>
   Add a meteo data file example.
   added file:
     data/thch/meteo
