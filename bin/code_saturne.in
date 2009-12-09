@@ -1,5 +1,5 @@
 #!@cs_python@
-# Main scrip of Code_Saturne, generated from cs.in by make.
+# @configure_input@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #

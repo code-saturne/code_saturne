@@ -99,7 +99,7 @@ edit = sed \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g'
 
-edit_scripts = bin/cs bin/cs_config.py bin/runcase.py 
+edit_scripts = bin/code_saturne bin/cs_config.py bin/runcase.py 
 
 $(edit_scripts): Makefile
 	rm -f $@ $@.tmp
@@ -108,14 +108,14 @@ $(edit_scripts): Makefile
 	$(edit) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
 
-bin/cs: $(srcdir)/bin/cs.in 
+bin/code_saturne: $(srcdir)/bin/code_saturne.in 
 bin/cs_config.py: bin/cs_config.py.in 
 bin/runcase.py: $(srcdir)/bin/runcase.py.in 
 
 # Install binary scripts
 
 nodist_bin_SCRIPTS = \
-bin/cs
+bin/code_saturne
 
 # Install Python library
 

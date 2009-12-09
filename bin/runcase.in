@@ -487,9 +487,9 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
     # Detect presence and test for compatibility of modules.
     if [ ! -z "$PARAM" ] ; then
-      ${bindir}/cs check_consistency --source=$src_dir --param=$PARAM --nproc=$nproc_kernel
+      ${bindir}/code_saturne check_consistency --source=$src_dir --param=$PARAM --nproc=$nproc_kernel
     else
-      ${bindir}/cs check_consistency --nproc=$nproc_kernel
+      ${bindir}/code_saturne check_consistency --nproc=$nproc_kernel
     fi
     if [ $? = 1 ] ; then
       exit 1
@@ -499,7 +499,7 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
     if [ ! -z "${CS_LIB_ADD}" ] ; then
       OPTLIBS="--opt-libs=${CS_LIB_ADD}"
     fi
-    ${bindir}/cs compile \
+    ${bindir}/code_saturne compile \
       --source=$src_dir ${OPTLIBS} 2>>$cur_dir/compil.log 1>&2
     if [ $? -ne 0 ]
     then
@@ -515,9 +515,9 @@ if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
     # Detect presence and test for compatibility of modules.
     if [ ! -z "$PARAM" ] ; then
-      ${bindir}/cs check_consistency --param=$PARAM --nproc=$nproc_kernel
+      ${bindir}/code_saturne check_consistency --param=$PARAM --nproc=$nproc_kernel
     else
-      ${bindir}/cs check_consistency --nproc=$nproc_kernel
+      ${bindir}/code_saturne check_consistency --nproc=$nproc_kernel
     fi
     if [ $? = 1 ] ; then
       exit 1

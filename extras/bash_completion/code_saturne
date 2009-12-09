@@ -21,10 +21,10 @@
 #-------------------------------------------------------------------------------
 
 # Batch completion script for:
-# - "cs"        user Python script
+# - "code_saturne" user Python script
 # - "cs_solver" binary executable
 
-_cs() {
+_code_saturne() {
 
     local cur prev opt cmds cmdOpts opt i
 
@@ -33,7 +33,7 @@ _cs() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    # Possible commands except "help", as given by "cs help"
+    # Possible commands except "help", as given by "code_saturne help"
     cmds="check_consistency check_mesh plot_probes"
     cmds="${cmds} compile config create gui info"
 
@@ -199,7 +199,7 @@ _cs() {
 
     done
 
-    # Add case options (may appear several times in command line of cs create)
+    # Add case options (may appear several times in command line)
     [[ $isOptCase -eq 1 ]] && cmdOpts="${caseOpts} ${cmdOpts}"
 
     # Add help options for every command but "help"
@@ -209,7 +209,7 @@ _cs() {
     COMPREPLY=( ${COMPREPLY[@]} $(compgen -W "${cmdOpts}" -- ${cur}) )
 
 }
-complete -F _cs cs
+complete -F _code_saturne code_saturne
 
 # -------------------------------------------------
 

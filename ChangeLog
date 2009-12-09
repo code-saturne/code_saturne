@@ -1,3 +1,17 @@
+* 09/12/2009 - David Monfort <david.monfort@edf.fr>
+  Rename the main script in code_saturne to avoid a conflict
+  with the cs executable of csound package.
+  modified files:
+    doc/refcard/refcard.tex
+  modified scripts:
+    extras/bash_completion/code_saturne
+    bin/code_saturne.in
+    bin/runcase_syrthes
+    bin/SaturneGUI.in
+    bin/runcase.in
+    bin/cs.in
+    Makefile.am
+
 * 08/12/2009 - David Monfort <david.monfort@edf.fr>
   Change the behaviour of the pre-requisites detection by adding
   a check option. When a package is requested, exit with an error

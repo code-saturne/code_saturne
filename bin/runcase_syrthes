@@ -144,7 +144,7 @@ if [ "$1" = "-compile" ] ; then
     done
   fi
 
-  ${CS_BINDIR}/cs compile --syrthes > ./compil.log 2>&1
+  ${CS_BINDIR}/code_saturne compile --syrthes > ./compil.log 2>&1
   make_ret=$?
 
   if [ "${LOG_COPY}" != "" ] ; then

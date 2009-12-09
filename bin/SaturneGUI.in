@@ -32,7 +32,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@
 #
-${bindir}/cs gui $*
+${bindir}/code_saturne gui $*
 
 exit
 
