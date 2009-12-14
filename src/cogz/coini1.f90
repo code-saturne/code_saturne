@@ -443,7 +443,7 @@ endif
 
 if ( ippmod(icolwc).ge. 0 ) then
   ipp = ipppro(ipproc(itsc))
-  NOMVAR(IPP)   = 'T.SOURCE'
+  NOMVAR(IPP)   = 'Source Term'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1

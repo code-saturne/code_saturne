@@ -229,7 +229,7 @@ if ( ippmod(icompf).ge.0 ) then
 !-->  chaleur specifique a volume constant
   if(icv   (iphas).gt.0) then
     ipp = ipppro(ipproc(icv   (iphas)))
-    NOMVAR(IPP)   = 'ch. sp volume constant'
+    NOMVAR(IPP)   = 'Specific Heat Cst Vol'
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = 0
@@ -238,7 +238,7 @@ if ( ippmod(icompf).ge.0 ) then
 !-->  viscosite laminaire
   if(iviscv(iphas).gt.0) then
     ipp = ipppro(ipproc(iviscv(iphas)))
-    NOMVAR(IPP)   = 'visc. volume'
+    NOMVAR(IPP)   = 'Volume Viscosity'
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
     ihisvr(ipp,1) = 0

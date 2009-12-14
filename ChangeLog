@@ -1,3 +1,12 @@
+* 14/12/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Translation of most of the variables names.
+  modified routines:
+    src/cfbl/cfprop.f90
+    src/cogz/coini1.f90
+    users/base/usini1.f90
+    users/cogz/uslwc1.f90
+
 * 14/12/2009 - Benoit de Laage de Meux <benoit.de-laage-de-meux@edf.fr>
   Fix a wrong list of arguments for the cfiltr subroutine.
   modified routine:

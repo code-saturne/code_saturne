@@ -1792,28 +1792,28 @@ iphas = 1
 
 ! pressure variable
 ipp = ipprtp(ipr   (iphas))
-nomvar(ipp)   = 'Pression'
+nomvar(ipp)   = 'Pressure'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ! variable v1x
 ipp = ipprtp(iu    (iphas))
-nomvar(ipp)   = 'VitesseX'
+nomvar(ipp)   = 'VelocityX'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ! v1y variable
 ipp = ipprtp(iv    (iphas))
-nomvar(ipp)   = 'VitesseY'
+nomvar(ipp)   = 'VelocityY'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ! v1z variable
 ipp = ipprtp(iw    (iphas))
-nomvar(ipp)   = 'VitesseZ'
+nomvar(ipp)   = 'VelocityZ'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
@@ -1822,14 +1822,14 @@ if(itytur(iphas).eq.2) then
 
   ! turbulent kinetic energy
   ipp = ipprtp(ik    (iphas))
-  nomvar(ipp)   = 'EnerTurb'
+  nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
   ipp = ipprtp(iep   (iphas))
-  nomvar(ipp)   = 'Dissip'
+  nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -1838,49 +1838,49 @@ elseif(itytur(iphas).eq.3) then
 
   ! Reynolds stresses
   ipp = ipprtp(ir11  (iphas))
-  nomvar(ipp)   = 'Tens.R11'
+  nomvar(ipp)   = 'R11'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
   ipp = ipprtp(ir22  (iphas))
-  nomvar(ipp)   = 'Tens.R22'
+  nomvar(ipp)   = 'R22'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
   ipp = ipprtp(ir33  (iphas))
-  nomvar(ipp)   = 'Tens.R33'
+  nomvar(ipp)   = 'R33'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
   ipp = ipprtp(ir12  (iphas))
-  nomvar(ipp)   = 'Tens.R12'
+  nomvar(ipp)   = 'R12'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
   ipp = ipprtp(ir13  (iphas))
-  nomvar(ipp)   = 'Tens.R13'
+  nomvar(ipp)   = 'R13'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
   ipp = ipprtp(ir23  (iphas))
-  nomvar(ipp)   = 'Tens.R23'
+  nomvar(ipp)   = 'R23'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
   ipp = ipprtp(iep   (iphas))
-  nomvar(ipp)   = 'Dissip'
+  nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -1889,14 +1889,14 @@ elseif(iturb(iphas).eq.50) then
 
   ! turbulent kinetic energy
   ipp = ipprtp(ik    (iphas))
-  nomvar(ipp)   = 'EnerTurb'
+  nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
   ipp = ipprtp(iep   (iphas))
-  nomvar(ipp)   = 'Dissip'
+  nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -1910,7 +1910,7 @@ elseif(iturb(iphas).eq.50) then
 
   ! f_bar
   ipp = ipprtp(ifb   (iphas))
-  nomvar(ipp)   = 'f_barre'
+  nomvar(ipp)   = 'f_bar'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -1919,7 +1919,7 @@ elseif(iturb(iphas).eq.60) then
 
   ! turbulent kinetic energy
   ipp = ipprtp(ik    (iphas))
-  nomvar(ipp)   = 'EnerTurb'
+  nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -1948,7 +1948,7 @@ endif
 
 if(isca(1).gt.0.and.nscaus.ge.1) then
   ipp = ipprtp(isca  (1))
-  nomvar(ipp)  = 'scal 1'
+  nomvar(ipp)  = 'Scalar 1'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
@@ -1956,7 +1956,7 @@ endif
 
 if(isca(2).gt.0.and.nscaus.ge.2) then
   ipp = ipprtp(isca  (2))
-  nomvar(ipp)  = 'scal 2'
+  nomvar(ipp)  = 'Scalar 2'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
@@ -1974,7 +1974,7 @@ iphas = 1
 ! Density variable (output for post-processing only if variable or
 !                   in the case of specific physics)
 ipp = ipppro(ipproc(irom  (iphas)))
-nomvar(ipp)   = 'masse vol'
+nomvar(ipp)   = 'Density'
 ichrvr(ipp)   = max(irovar(iphas),nmodpp)
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
@@ -1982,7 +1982,7 @@ ihisvr(ipp,1) = -1
 ! specific heat
 if(icp   (iphas).gt.0) then
   ipp = ipppro(ipproc(icp   (iphas)))
-  nomvar(ipp)   = 'chal. spec.'
+  nomvar(ipp)   = 'Specific Heat'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = 0
@@ -1990,28 +1990,28 @@ endif
 
 ! laminar viscosity
 ipp = ipppro(ipproc(iviscl(iphas)))
-nomvar(ipp)   = 'visc. laminaire'
+nomvar(ipp)   = 'Laminar Viscosity'
 ichrvr(ipp)   = 0
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = 0
 
 ! turbulent viscosity
 ipp = ipppro(ipproc(ivisct(iphas)))
-nomvar(ipp)   = 'visc. turb1'
+nomvar(ipp)   = 'Turb Viscosity'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ! Courant number
 ipp = ipppro(ipproc(icour(iphas)))
-nomvar(ipp)   = 'Nb Courant'
+nomvar(ipp)   = 'CFL'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 
 ! Fourier number
 ipp = ipppro(ipproc(ifour(iphas)))
-nomvar(ipp)   = 'Nb Fourier'
+nomvar(ipp)   = 'Fourier Number'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
@@ -2030,7 +2030,7 @@ endif
 if(nbmomt.gt.0) then
   imom = 1
   ipp = ipppro(ipproc(icmome(imom)))
-  nomvar(ipp) = 'MoyTps01'
+  nomvar(ipp) = 'Time Average 01'
   ichrvr(ipp) = 1
   ilisvr(ipp) = 1
   ihisvr(ipp,1) = -1
@@ -2039,7 +2039,7 @@ endif
 ! total pressure (not defined in compressible case)
 if (ippmod(icompf).lt.0) then
   ipp = ipppro(ipproc(iprtot(iphas)))
-  nomvar(ipp)   = 'Pression totale'
+  nomvar(ipp)   = 'Total Pressure'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
@@ -2047,7 +2047,7 @@ endif
 
 ! local time step
 ipp = ippdt
-nomvar(ipp)   = 'pdt local'
+nomvar(ipp)   = 'Local Time Step'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
