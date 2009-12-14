@@ -359,14 +359,13 @@ _sync_single_vertices(const cs_join_select_t  *selection,
   MPI_Status   *status = NULL;
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  const int  n_ranks = cs_glob_n_ranks;
   const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
 
   bft_printf("\n  Synchronization of the \"single\" elements after the fusion"
              " step.\n");
   bft_printf_flush();
 
-  assert(n_ranks > 1);
+  assert(cs_glob_n_ranks > 1);
 
   /* Allocate MPI buffers used for exchanging data */
 
@@ -508,12 +507,11 @@ _sync_single_edges(const cs_join_select_t   *selection,
   MPI_Status   *status = NULL;
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  const int  n_ranks = cs_glob_n_ranks;
   const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
   const cs_join_sync_t  *s_edges = selection->s_edges;
   const cs_join_sync_t  *c_edges = selection->c_edges;
 
-  assert(n_ranks > 1);
+  assert(cs_glob_n_ranks > 1);
 
   /* Allocate MPI buffers used for exchanging data */
 
@@ -2524,6 +2522,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
   if (n_new_b_faces > 0) {
     for (i = 0; i < join_mesh->n_faces; i++) {
+
       if (new_face_type[i] == CS_JOIN_FACE_BORDER) {
 
         shift = n2o_face_hist->index[i];
@@ -2535,11 +2534,11 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
         fid = join_select->faces[compact_old_fgnum - rank_start] - 1;
 
-        if (n_ranks > 1)
-          new_fgnum[n_fb_faces] = join_mesh->face_gnum[i] + n_g_ib_faces;
-
         new_face_cells[n_fb_faces] = mesh->b_face_cells[fid];
         new_face_family[n_fb_faces] = mesh->b_face_family[fid];
+
+        if (n_ranks > 1)
+          new_fgnum[n_fb_faces] = join_mesh->face_gnum[i] + n_g_ib_faces;
 
         n_fb_faces++;
         n_face_vertices =
@@ -2547,7 +2546,38 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
         new_f2v_idx[n_fb_faces] = n_face_vertices;
 
       } /* If new border face */
-    }
+
+      else if (new_face_type[i] == CS_JOIN_FACE_MULTIPLE_BORDER) {
+
+        for (j = n2o_face_hist->index[i]; j < n2o_face_hist->index[i+1]; j++) {
+
+          compact_old_fgnum = n2o_face_hist->g_list[j];
+
+          if (    rank_start <= compact_old_fgnum
+              &&  compact_old_fgnum < rank_end) {
+
+            /* Initial selected border face must be in the selection */
+
+            fid = join_select->faces[compact_old_fgnum - rank_start] - 1;
+            new_face_cells[n_fb_faces] = mesh->b_face_cells[fid];
+            new_face_family[n_fb_faces] = mesh->b_face_family[fid];
+
+          }
+
+        }
+
+        if (n_ranks > 1)
+          new_fgnum[n_fb_faces] = join_mesh->face_gnum[i] + n_g_ib_faces;
+
+        n_fb_faces++;
+        n_face_vertices =
+          join_mesh->face_vtx_idx[i+1] - join_mesh->face_vtx_idx[i];
+        new_f2v_idx[n_fb_faces] = n_face_vertices;
+
+      }
+
+    } /* Loop on faces */
+
   } /* If n_new_b_faces > 0 */
 
   assert(mesh->n_b_faces == n_fb_faces);
@@ -2589,7 +2619,8 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
   if (n_new_b_faces > 0) {
     for (i = 0; i < join_mesh->n_faces; i++) {
-      if (new_face_type[i] == CS_JOIN_FACE_BORDER) {
+      if (   new_face_type[i] == CS_JOIN_FACE_BORDER
+          || new_face_type[i] == CS_JOIN_FACE_MULTIPLE_BORDER) {
 
         shift = new_f2v_idx[n_fb_faces] - 1;
 
@@ -3433,47 +3464,6 @@ cs_join_update_mesh_after_merge(cs_join_param_t          join_param,
   if (join_param.verbosity > 2)
     cs_join_post_after_merge(join_param, join_select);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  /* Check face -> vertex connectivity */
-
-  for (i = 0; i < mesh->n_i_faces; i++) {
-
-    for (j = mesh->i_face_vtx_idx[i] - 1;
-         j < mesh->i_face_vtx_idx[i+1] - 1; i++) {
-
-       if (mesh->i_face_vtx_lst[j] < 1 ||
-           mesh->i_face_vtx_lst[j] > mesh->n_vertices)
-         bft_error(__FILE__, __LINE__, 0,
-                   "  Incoherency found in face -> vertex connect.\n"
-                   "  for interior face %d (%u)\n"
-                   "  vtx: %d and n_vertices = %d\n",
-                   i+1, mesh->global_i_face_num[i],
-                   mesh->i_face_vtx_lst[j], mesh->n_vertices);
-
-    }
-
-  }
-
-  for (i = 0; i < mesh->n_b_faces; i++) {
-
-    for (j = mesh->b_face_vtx_idx[i] - 1;
-         j < mesh->b_face_vtx_idx[i+1] - 1; i++) {
-
-       if (mesh->b_face_vtx_lst[j] < 1 ||
-           mesh->b_face_vtx_lst[j] > mesh->n_vertices)
-         bft_error(__FILE__, __LINE__, 0,
-                   "  Incoherency found in face -> vertex connect.\n"
-                   "  for border face %d (%u)\n"
-                   "  vtx: %d and n_vertices = %d\n",
-                   i+1, mesh->global_b_face_num[i],
-                   mesh->b_face_vtx_lst[j], mesh->n_vertices);
-
-    }
-
-  }
-
-#endif
-
   /* Free memory */
 
   BFT_FREE(join2mesh_vtx_id);
@@ -3542,8 +3532,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 #endif
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (join_param.verbosity > 3) { /* Full dump of structures */
-
+  {
     int  len;
     FILE  *dbg_file = NULL;
     char  *filename = NULL;
@@ -3559,7 +3548,6 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
     fflush(dbg_file);
     BFT_FREE(filename);
     fclose(dbg_file);
-
   }
 #endif
 
@@ -3582,13 +3570,24 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
       n_new_i_faces += 1;
       new_face_type[i] = CS_JOIN_FACE_INTERIOR;
     }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("  Incompatible new face type found.\n"
-                  "  n_matches is not to 1 or 2: n_matches = %d\n"),
-                n_matches);
+    else {
 
-  }
+      if (join_param.verbosity > 1) {
+        bft_printf(_("  Warning: Face %d (%u) has more than two ancestors.\n"
+                     "  Old faces implied:"),
+                   i+1, join_mesh->face_gnum[i]);
+        for (j = n2o_face_hist->index[i]; j < n2o_face_hist->index[i+1]; j++)
+          bft_printf(" %u", n2o_face_hist->g_list[j]);
+        bft_printf("\n");
+      }
+
+      /* Border face by default */
+      n_new_b_faces += 1;
+      new_face_type[i] = CS_JOIN_FACE_MULTIPLE_BORDER;
+
+    }
+
+  } /* End of loop on faces */
 
   if (join_param.verbosity > 0)
     bft_printf(_("\n  Local configuration after the joining operation:\n"
@@ -3718,13 +3717,12 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                            mesh,
                            join_param);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
   /* Check face -> vertex connectivity */
 
   for (i = 0; i < mesh->n_i_faces; i++) {
 
     for (j = mesh->i_face_vtx_idx[i] - 1;
-         j < mesh->i_face_vtx_idx[i+1] - 1; i++) {
+         j < mesh->i_face_vtx_idx[i+1] - 1; j++) {
 
        if (mesh->i_face_vtx_lst[j] < 1 ||
            mesh->i_face_vtx_lst[j] > mesh->n_vertices)
@@ -3742,7 +3740,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
   for (i = 0; i < mesh->n_b_faces; i++) {
 
     for (j = mesh->b_face_vtx_idx[i] - 1;
-         j < mesh->b_face_vtx_idx[i+1] - 1; i++) {
+         j < mesh->b_face_vtx_idx[i+1] - 1; j++) {
 
        if (mesh->b_face_vtx_lst[j] < 1 ||
            mesh->b_face_vtx_lst[j] > mesh->n_vertices)
@@ -3756,8 +3754,6 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
     }
 
   }
-
-#endif
 
 }
 
@@ -3960,7 +3956,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
 
     } /* verbosity > 1 */
 
-    bft_printf(_("  Mesh cleaning done for degenerated faces.\n"
+    bft_printf(_("\n  Mesh cleaning done for degenerated faces.\n"
                  "    Global number of cleaned interior faces: %8u\n"
                  "    Global number of cleaned border faces:   %8u\n"),
                n_g_i_clean_faces, n_g_b_clean_faces);

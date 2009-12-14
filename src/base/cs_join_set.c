@@ -1796,15 +1796,27 @@ cs_join_dump_array(const char   *type,
     const int *i_array = array;
 
     for (i = 0; i < n_elts; i++)
-      bft_printf(" %d ", i_array[i]);
+      bft_printf(" %8d", i_array[i]);
 
+  }
+  else if (!strncmp(type, "bool", strlen("bool"))) { /* "boolean" array  */
+
+    const cs_bool_t *b_array = array;
+
+    for (i = 0; i < n_elts; i++)
+      if (b_array[i] == true)
+        bft_printf(" T");
+      else {
+        assert(b_array[i] == false);
+        bft_printf(" F");
+      }
   }
   else if (!strncmp(type, "double", strlen("double"))) { /* "double" array */
 
     const double  *d_array = array;
 
     for (i = 0; i < n_elts; i++)
-      bft_printf(" %e ", d_array[i]);
+      bft_printf(" %10.8e", d_array[i]);
 
   }
   else if (!strncmp(type, "gnum", strlen("gnum"))) { /* "gnum" array */
@@ -1812,7 +1824,7 @@ cs_join_dump_array(const char   *type,
     const fvm_gnum_t  *u_array = array;
 
     for (i = 0; i < n_elts; i++)
-      bft_printf(" %u ", u_array[i]);
+      bft_printf(" %9u", u_array[i]);
 
   }
   else

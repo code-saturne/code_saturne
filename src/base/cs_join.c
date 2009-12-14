@@ -87,27 +87,111 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *===========================================================================*/
 
-typedef struct {
-
-  cs_join_param_t   param;      /* Set of parameters used to control
-                                   the joining operations */
-
-  char             *criteria;   /* Criteria used to select border faces
-                                   implied in the joining operation */
-
-} cs_join_t;
-
 /*============================================================================
  * Static global variables
  *===========================================================================*/
 
-static int  cs_glob_n_joinings = 0;
+int  cs_glob_n_joinings = 0;
 
-static cs_join_t  **cs_glob_join_array = NULL;
+cs_join_t  **cs_glob_join_array = NULL;
 
 /*============================================================================
  * Private function definitions
  *===========================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Compute the cross product of two vectors.
+ *
+ * parameters:
+ *  v1     <--  first vector
+ *  v2     <--  second vector
+ *  result -->  cross product v1xv2
+ *
+ * returns:
+ *  the resulting cross product (v1 x v2)
+ *---------------------------------------------------------------------------*/
+
+inline static void
+_cross_product(double   v1[],
+               double   v2[],
+               double   result[])
+{
+  result[0] = v1[1] * v2[2] - v2[1] * v1[2];
+  result[1] = v2[0] * v1[2] - v1[0] * v2[2];
+  result[2] = v1[0] * v2[1] - v2[0] * v1[1];
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the dot product of two vectors.
+ *
+ * parameters:
+ *  v1     <--  first vector
+ *  v2     <--  second vector
+ *
+ * returns:
+ *  the resulting dot product (v1.v2)
+ *---------------------------------------------------------------------------*/
+
+inline static double
+_dot_product(double   v1[],
+             double   v2[])
+{
+  int  i;
+  double  result = 0.0;
+
+  for (i = 0; i < 3; i++)
+    result += v1[i] * v2[i];
+
+  return result;
+}
+
+/*----------------------------------------------------------------------------
+ * Get the norm of a vector.
+ *
+ * parameters:
+ *  v      <->  vector to work with.
+ *---------------------------------------------------------------------------*/
+
+inline static double
+_norm(double   v[])
+{
+  return  sqrt(_dot_product(v, v));
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the distance between two vertices.
+ *
+ * parameters:
+ *   id         <-- local id of the vertex to deal with
+ *   quantities <-- array keeping edge vector and its length
+ *
+ * returns:
+ *   sinus in radian between edges sharing vertex id
+ *---------------------------------------------------------------------------*/
+
+inline static double
+_compute_sinus(int           id,
+               const double  quantities[])
+{
+  int  i;
+
+  double  sinus;
+  double  norm_a, norm_b, a[3], b[3], c[3];
+
+  for (i = 0; i < 3; i++) {
+    a[i] = -quantities[4*id+i];
+    b[i] = quantities[4*(id+1)+i];
+  }
+
+  norm_a = quantities[4*id+3];
+  norm_b = quantities[4*(id+1)+3];
+
+  _cross_product(a, b, c);
+
+  sinus = _norm(c) / (norm_a * norm_b);
+
+  return sinus;
+}
 
 /*----------------------------------------------------------------------------
  * Compute the distance between two vertices.
@@ -121,8 +205,8 @@ static cs_join_t  **cs_glob_join_array = NULL;
  *---------------------------------------------------------------------------*/
 
 inline static double
-_compute_length(const cs_real_t  a[3],
-                const cs_real_t  b[3])
+_compute_length(const double  a[3],
+                const double  b[3])
 {
   double  length;
 
@@ -134,9 +218,102 @@ _compute_length(const cs_real_t  a[3],
 }
 
 /*----------------------------------------------------------------------------
- * Define for each vertex a tolerance which is the radius of the
- * sphere in which the vertex can be fused with another vertex.
- * This tolerance is computed from the given list of faces (interior or border)
+ * Compute tolerance (mode 2)
+ * tolerance = min[ edge length * sinus(v1v2) * fraction]
+ *
+ * parameters:
+ *   vertex_coords    <--  coordinates of vertices.
+ *   vertex_tolerance <->  local tolerance affected to each vertex and
+ *                         to be updated
+ *   n_faces          <--  number of selected faces
+ *   face_lst         <--  list of faces selected to compute the tolerance
+ *   f2v_idx          <--  "face -> vertex" connect. index
+ *   f2v_lst          <--  "face -> vertex" connect. list
+ *   fraction         <--  parameter used to compute the tolerance
+ *---------------------------------------------------------------------------*/
+
+static void
+_compute_tolerance2(const cs_real_t   vtx_coords[],
+                    double            vtx_tolerance[],
+                    const cs_int_t    n_faces,
+                    const cs_int_t    face_lst[],
+                    const cs_int_t    f2v_idx[],
+                    const cs_int_t    f2v_lst[],
+                    double            fraction)
+{
+  int  i, j, k, coord;
+  double  tolerance, sinus;
+  double  a[3], b[3];
+
+  int   n_max_face_vertices = 0;
+  int  *face_connect = NULL;
+  double  *edge_quantities = NULL;
+
+  for (i = 0; i < n_faces; i++) {
+    int  fid = face_lst[i] - 1;
+    n_max_face_vertices = CS_MAX(n_max_face_vertices,
+                                 f2v_idx[fid+1] - f2v_idx[fid]);
+  }
+
+  BFT_MALLOC(face_connect, n_max_face_vertices + 1, int);
+  BFT_MALLOC(edge_quantities, 4 * (n_max_face_vertices + 1), double);
+
+  for (i = 0; i < n_faces; i++) {
+
+    int  face_id = face_lst[i] - 1;
+    int  start = f2v_idx[face_id] - 1;
+    int  end = f2v_idx[face_id + 1] - 1;
+    int  n_face_vertices = end - start;
+
+    /* Keep face connect */
+
+    for (k = 0, j = start; j < end; j++, k++)
+      face_connect[k] = f2v_lst[j] - 1;
+    face_connect[k] = f2v_lst[start] - 1;
+
+    /* Keep edge lengths and edge vectors:
+        - edge_quantities[4*k+0..2] = edge vector
+        - edge_quantities[4*k+3] = edge length */
+
+    for (k = 0; k < n_face_vertices; k++) {
+
+      for (coord = 0; coord < 3; coord++) {
+        a[coord] = vtx_coords[3*face_connect[k] + coord];
+        b[coord] = vtx_coords[3*face_connect[k+1] + coord];
+        edge_quantities[4*(k+1)+coord] = b[coord] - a[coord];
+      }
+      edge_quantities[4*(k+1)+3] = _compute_length(a, b);
+
+    }
+
+    for (coord = 0; coord < 4; coord++)
+      edge_quantities[coord] = edge_quantities[4*k+coord];
+
+    /* Loop on the vertices of the face to update tolerance on
+       each vertex */
+
+    for (k = 0; k < n_face_vertices; k++) {
+
+      int  vid = face_connect[k];
+
+      tolerance = fraction * CS_MIN(edge_quantities[4*k+3],
+                                    edge_quantities[4*(k+1)+3]);
+      sinus = _compute_sinus(k, edge_quantities);
+
+      vtx_tolerance[vid] = FVM_MIN(vtx_tolerance[vid], sinus*tolerance);
+
+    }
+
+  } /* End of loop on faces */
+
+  BFT_FREE(face_connect);
+  BFT_FREE(edge_quantities);
+
+}
+
+/*----------------------------------------------------------------------------
+ * Compute tolerance (mode 1)
+ * tolerance = shortest edge length * fraction
  *
  * parameters:
  *   vertex_coords    <--  coordinates of vertices.
@@ -150,17 +327,17 @@ _compute_length(const cs_real_t  a[3],
  *---------------------------------------------------------------------------*/
 
 static void
-_get_local_tolerance(const cs_real_t  vtx_coords[],
-                     double           vtx_tolerance[],
-                     const cs_int_t   n_faces,
-                     const cs_int_t   face_lst[],
-                     const cs_int_t   face_vtx_idx[],
-                     const cs_int_t   face_vtx_lst[],
-                     double           fraction)
+_compute_tolerance1(const cs_real_t   vtx_coords[],
+                    double            vtx_tolerance[],
+                    const cs_int_t    n_faces,
+                    const cs_int_t    face_lst[],
+                    const cs_int_t    face_vtx_idx[],
+                    const cs_int_t    face_vtx_lst[],
+                    double            fraction)
 {
   cs_int_t  i, j, k, start, end, face_id, vtx_id1, vtx_id2;
   double  length, tolerance;
-  cs_real_t  a[3], b[3];
+  double  a[3], b[3];
 
   for (i = 0; i < n_faces; i++) {
 
@@ -203,6 +380,64 @@ _get_local_tolerance(const cs_real_t  vtx_coords[],
     vtx_tolerance[vtx_id2] = FVM_MIN(vtx_tolerance[vtx_id2], tolerance);
 
   } /* End of loop on faces */
+
+}
+
+/*----------------------------------------------------------------------------
+ * Define for each vertex a tolerance which is the radius of the
+ * sphere in which the vertex can be fused with another vertex.
+ * This tolerance is computed from the given list of faces (interior or border)
+ *
+ * parameters:
+ *   param            <--  set of user-defined parameters for the joining
+ *   vertex_coords    <--  coordinates of vertices.
+ *   vertex_tolerance <->  local tolerance affected to each vertex and
+ *                         to be updated
+ *   n_faces          <--  number of selected faces
+ *   face_lst         <--  list of faces selected to compute the tolerance
+ *   face_vtx_idx     <--  "face -> vertex" connect. index
+ *   face_vtx_lst     <--  "face -> vertex" connect. list
+ *---------------------------------------------------------------------------*/
+
+static void
+_get_local_tolerance(cs_join_param_t  param,
+                     const cs_real_t  vtx_coords[],
+                     double           vtx_tolerance[],
+                     const cs_int_t   n_faces,
+                     const cs_int_t   face_lst[],
+                     const cs_int_t   face_vtx_idx[],
+                     const cs_int_t   face_vtx_lst[])
+{
+
+  if (param.tcm % 10 == 1) {
+
+    /* tol = min(edge length * fraction) */
+
+    _compute_tolerance1(vtx_coords,
+                        vtx_tolerance,
+                        n_faces,
+                        face_lst,
+                        face_vtx_idx,
+                        face_vtx_lst,
+                        param.fraction);
+
+  }
+  else if (param.tcm % 10 == 2) {
+
+    /* tol = min(edge length * sin(v1v2) * fraction) */
+
+    _compute_tolerance2(vtx_coords,
+                        vtx_tolerance,
+                        n_faces,
+                        face_lst,
+                        face_vtx_idx,
+                        face_vtx_lst,
+                        param.fraction);
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("  Tolerance computation mode (%d) is not defined\n"));
 
 }
 
@@ -425,35 +660,35 @@ _extract_mesh(const char              *name,
 
       /* Define local tolerance */
 
-      _get_local_tolerance(vtx_coord,
+      _get_local_tolerance(param,
+                           vtx_coord,
                            vtx_tolerance,
                            selection->n_faces,
                            selection->faces,
                            b_f2v_idx,
-                           b_f2v_lst,
-                           param.fraction);
+                           b_f2v_lst);
 
-      if (param.include_adj_faces == true) {
+      if (param.tcm / 10 == 0) {
 
         /* Update local tolerance with adjacent border faces */
 
-        _get_local_tolerance(vtx_coord,
+        _get_local_tolerance(param,
+                             vtx_coord,
                              vtx_tolerance,
                              selection->n_b_adj_faces,
                              selection->b_adj_faces,
                              b_f2v_idx,
-                             b_f2v_lst,
-                             param.fraction);
+                             b_f2v_lst);
 
         /* Update local tolerance with adjacent interior faces */
 
-        _get_local_tolerance(vtx_coord,
+        _get_local_tolerance(param,
+                             vtx_coord,
                              vtx_tolerance,
                              selection->n_i_adj_faces,
                              selection->i_adj_faces,
                              i_f2v_idx,
-                             i_f2v_lst,
-                             param.fraction);
+                             i_f2v_lst);
 
       } /* Include adjacent faces in the computation of the vertex tolerance */
 
@@ -489,7 +724,7 @@ _extract_mesh(const char              *name,
 
   } /* End if selection->n_vertices > 0 */
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)   /* Sanity check */
+#if 1 && defined(DEBUG) && !defined(NDEBUG)   /* Sanity check */
   for (i = 0; i < selection->n_vertices; i++)
     if (vtx_data[i].tolerance > (DBL_MAX - 1.))
       bft_error(__FILE__, __LINE__, 0,
@@ -544,6 +779,9 @@ _extract_mesh(const char              *name,
                                                selection->vertices,
                                                vtx_data);
 
+  if (param.verbosity > 0)
+    cs_join_mesh_minmax_tol(param, join_mesh);
+
   /* Free memory */
 
   BFT_FREE(vtx_data);
@@ -557,7 +795,7 @@ _extract_mesh(const char              *name,
                  "        CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
 
-  if (param.verbosity > 1)
+  if (param.verbosity > 2)
     cs_join_post_dump_mesh("LocalMesh", join_mesh, param);
 
   return  join_mesh;
@@ -761,7 +999,6 @@ _build_join_structures(cs_join_param_t           join_param,
   BFT_FREE(mesh_name);
 
   /*
-
     Define a cs_join_mesh_t structure on only faces which will be
     potentially modified by the joining operation.
 
@@ -776,7 +1013,6 @@ _build_join_structures(cs_join_param_t           join_param,
 
     Get the associated edges and the list of potential intersections
     between these edges through an edge-edge visibility.
-
   */
 
   _get_work_struct(join_param,
@@ -790,11 +1026,12 @@ _build_join_structures(cs_join_param_t           join_param,
   clock_end = bft_timer_wtime();
   cpu_end = bft_timer_cpu_time();
 
-  if (join_param.verbosity > 0)
+  if (join_param.verbosity > 1)
     bft_printf(_("\n  Definition of structures for the joining algorithm:\n"
                  "      wall clock time:            %10.3g\n"
                  "      CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
+  bft_printf_flush();
 
   /* Return pointers */
 
@@ -944,11 +1181,15 @@ _intersect_edges(cs_join_param_t          param,
                                         sync_block,
                                         inter_edges);
 
+      /* Add new vertices to edge description if necessary */
+
       cs_join_intersect_update_struct(work_join_edges,
                                       work_join_mesh,
                                       &inter_edges);
 
       sync_block = cs_join_inter_edges_destroy(sync_block);
+
+      cs_join_mesh_sync_vertices(work_join_mesh);
 
     }
 #endif
@@ -1093,14 +1334,11 @@ _merge_vertices(cs_join_param_t           param,
 
   /* Post if required and level of verbosity is reached */
 
-  if (param.verbosity > 1)
+  if (param.verbosity > 2)
     cs_join_post_dump_mesh("MergeWorkMesh", work_join_mesh, param);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (param.verbosity > 2) { /* Dump distributed face connectivity */
-    bft_printf("\n\n cs_join_edges_t structure after vertex merge\n");
     cs_join_mesh_dump_edges(work_join_edges, work_join_mesh);
-  }
 #endif
 
   /* Update cs_mesh_t structure after the vertex merge */
@@ -1120,6 +1358,7 @@ _merge_vertices(cs_join_param_t           param,
                  "    wall clock time:            %10.3g\n"
                  "    CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
+  bft_printf_flush();
 
   /* Set return pointers */
 
@@ -1194,10 +1433,11 @@ _split_faces(cs_join_param_t      param,
                  "    wall clock time:            %10.3g\n"
                  "    CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
+  bft_printf_flush();
 
   /* Post if required and level of verbosity is reached */
 
-  if (param.verbosity > 1)
+  if (param.verbosity > 2)
     cs_join_post_dump_mesh("SplitWorkMesh", *p_work_join_mesh, param);
 
   /* Free memory */
@@ -1232,7 +1472,7 @@ _destroy_all_joinings(void)
 
 /*============================================================================
  *  Public function prototypes for Fortran API
- *============================================================================*/
+ *===========================================================================*/
 
 /*----------------------------------------------------------------------------
  * Define new boundary faces joining.
@@ -1245,29 +1485,21 @@ _destroy_all_joinings(void)
  * CHARACTER*     joining_criteria : <-- : boundary face selection criteria,
  * REAL           fraction         : <-- : parameter for merging vertices
  * REAL           plane            : <-- : parameter for splitting faces
- * REAL           rtf              : <-- : reduction of tolerance factor
- * REAL           mtf              : <-- : merge tolerance coefficient
- * REAL           etf              : <-- : equivalence tolerance coefficient
  * INTEGER        verbosity        : <-- : verbosity level
  * INTEGER        joining_c_len    : <-- : length of joining_criteria
- *----------------------------------------------------------------------------*/
+ *---------------------------------------------------------------------------*/
 
 void CS_PROCF(defjo1, DEFJO1)
 (
  const char  *joining_criteria,
  cs_real_t   *fraction,
  cs_real_t   *plane,
- cs_real_t   *rtf,
- cs_real_t   *mtf,
- cs_real_t   *etf,
  cs_int_t    *verbosity,
  cs_int_t    *joining_c_len
  CS_ARGF_SUPP_CHAINE
 )
 {
   char *_joining_criteria = NULL;
-  int tml, tmb, max_sub_faces;
-  double tmr;
 
   if (joining_criteria != NULL && *joining_c_len > 0)
     _joining_criteria = cs_base_string_f_to_c_create(joining_criteria,
@@ -1275,42 +1507,157 @@ void CS_PROCF(defjo1, DEFJO1)
   if (_joining_criteria != NULL && strlen(_joining_criteria) == 0)
     cs_base_string_f_to_c_free(&_joining_criteria);
 
-  /* Maximum allowable number of sub-faces for a given face */
-
-  max_sub_faces = 100;
-
-  /* Default values for tree-base algorithm control parameters.
-   * These parameters are not available on the user side and must be
-   * modified here if needed. */
-
-  /* Tree Max. Level: deepest level reachable during the tree building */
-
-  tml = 30;
-
-  /* Tree Max. Boxes: max. number of boxes which can be related to a leaf of
-   *                  the tree if level != tree_max_level */
-
-  tmb = 30;
-
-  /* Tree Max. Ratio: stop tree building if n_linked_boxes in the whole tree
-   *                  is greater than tree_max_box_ratio*n_init_boxes */
-
-  tmr = 10.0;
-
   cs_join_add(_joining_criteria,
               *fraction,
               *plane,
-              *rtf,
-              *mtf,
-              *etf,
-              max_sub_faces,
-              tml,
-              tmb,
-              tmr,
               *verbosity);
 
   if (_joining_criteria != NULL)
     cs_base_string_f_to_c_free(&_joining_criteria);
+}
+
+/*----------------------------------------------------------------------------
+ * Set advanced parameters for the joining algorithm.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE SETAJP
+ * *****************
+ *
+ * INTEGER      join_num          : <-- : join number
+ * REAL         mtf               : <-- : merge tolerance coefficient
+ * REAL         pmf               : <-- : pre-merge factor
+ * INTEGER      tcm               : <-- : tolerance computation mode
+ * INTEGER      icm               : <-- : intersection computation mode
+ * INTEGER      maxbrk            : <-- : max number of tolerance reduction
+ * INTEGER      max_sub_faces     : <-- : max. possible number of sub-faces
+ *                                        by splitting a selected face
+ * INTEGER      tml               : <-- : tree max level
+ * INTEGER      tmb               : <-- : tree max boxes
+ * REAL         tmr               : <-- : tree max ratio
+ *---------------------------------------------------------------------------*/
+
+void CS_PROCF(setajp, SETAJP)
+(
+ cs_int_t    *join_num,
+ cs_real_t   *mtf,
+ cs_real_t   *pmf,
+ cs_int_t    *tcm,
+ cs_int_t    *icm,
+ cs_int_t    *maxbrk,
+ cs_int_t    *max_sub_faces,
+ cs_int_t    *tml,
+ cs_int_t    *tmb,
+ cs_real_t   *tmr
+ CS_ARGF_SUPP_CHAINE
+)
+{
+  cs_int_t  join_id = *join_num - 1;
+  cs_join_t  *join = NULL;
+
+  if (join_id < 0 || *join_num > cs_glob_n_joinings)
+    bft_error(__FILE__, __LINE__, 0,
+              _("  Join number %d is not defined.\n"), *join_num);
+
+  join = cs_glob_join_array[join_id];
+
+  /* Deepest level reachable during tree building */
+
+  if (*tml < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tml parameter.\n"
+                "  It must be between > 0 and is here: %d\n"), *tml);
+
+  join->param.tree_max_level = *tml;
+
+  /* Max. number of boxes which can be related to a leaf of the tree
+     if level != tree_max_level */
+
+  if (*tmb < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tmb parameter.\n"
+                "  It must be between > 0 and is here: %d\n"), *tmb);
+
+  join->param.tree_n_max_boxes = *tmb;
+
+  /* Stop tree building if:
+     n_linked_boxes > tree_max_box_ratio*n_init_boxes */
+
+  if (*tmr <= 0.0 )
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tmr parameter.\n"
+                "  It must be between > 0.0 and is here: %f\n"), *tmr);
+
+  join->param.tree_max_box_ratio = *tmr;
+
+  /* Coef. used to modify the tolerance associated to each vertex BEFORE the
+     merge operation.
+     If coef = 0.0 => no vertex merge
+     If coef < 1.0 => reduce vertex merge
+     If coef = 1.0 => no change
+     If coef > 1.0 => increase vertex merge */
+
+  if (*mtf < 0.0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the merge tolerance factor.\n"
+                "  It must be positive or nul and not: %f\n"),
+              *mtf);
+
+  join->param.merge_tol_coef = *mtf;
+
+   /* Maximum number of equivalence breaks */
+
+  if (*maxbrk < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the max. number of tolerance breaks.\n"
+                "  It must be between >= 0 and not: %d\n"), *maxbrk);
+
+  join->param.n_max_equiv_breaks = *maxbrk;
+
+  /* Pre-merge factor. This parameter is used to define a limit
+     under which two vertices are merged before the merge step.
+     Tolerance limit for the pre-merge = pmf * fraction
+     Default value: 0.10 */
+
+  join->param.pre_merge_factor = *pmf;
+
+  /* Tolerance computation mode */
+
+  if ( (*tcm)%10 < 1 || (*tcm)%10 > 2)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tcm parameter.\n"
+                "  It must be between 1, 2 or 11, 12 and here is: %d\n"),
+              *tcm);
+
+  join->param.tcm = *tcm;
+
+  /* Intersection computation mode */
+
+  if (*icm != 1 && *icm != 2)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for icm parameter.\n"
+                "  It must be 1 or 2 and here is: %d\n"), *icm);
+
+  join->param.icm = *icm;
+
+  /* Maximum number of sub-faces */
+
+  if (*max_sub_faces < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the maxsf parameter.\n"
+                "  It must be between > 0 and here is: %d\n"),
+              *max_sub_faces);
+
+  join->param.max_sub_faces = *max_sub_faces;
+
 }
 
 /*============================================================================
@@ -1324,30 +1671,13 @@ void CS_PROCF(defjo1, DEFJO1)
  *   sel_criteria  <-- boundary face selection criteria
  *   fraction      <-- value of the fraction parameter
  *   plane         <-- value of the plane parameter
- *   rtf           <-- value of the "reduction tolerance factor" parameter
- *   mtf           <-- value of the "merge tolerance factor" parameter
- *   etf           <-- value of the "edge equiv. tolerance factor" parameter
- *   max_sub_faces <-- value of the max_sub_faces
- *   tml           <-- value of the "tree max level" parameter
- *   tmb           <-- value of the "tree max boxes" parameter
- *   tmr           <-- value of the "tree max ratio" parameter
  *   verbosity     <-- level of verbosity required
- *
- * returns:
- *   a pointer to a cs_join_t structure.
  *---------------------------------------------------------------------------*/
 
 void
 cs_join_add(char   *sel_criteria,
             float   fraction,
             float   plane,
-            float   rtf,
-            float   mtf,
-            float   etf,
-            int     max_sub_faces,
-            int     tml,
-            int     tmb,
-            float   tmr,
             int     verbosity)
 {
   size_t  l;
@@ -1363,27 +1693,6 @@ cs_join_add(char   *sel_criteria,
                 "  It must be between [0.0, 1.0[ and is here: %f\n"),
               fraction);
 
-  if (rtf < 0.0 || rtf >= 1.0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the tolerance reduction factor.\n"
-                "  It must be between [0.0, 1.0[ and not: %f\n"),
-              rtf);
-
-  if (mtf < 0.0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the merge tolerance factor.\n"
-                "  It must be positive or nul and not: %f\n"),
-              mtf);
-
-  if (etf < 0.0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the equivalence tolerance factor.\n"
-                "  It must be positive or zero and not: %f\n"),
-              etf);
-
   if (plane < 0.0 || plane >= 90.0)
     bft_error(__FILE__, __LINE__, 0,
               _("Mesh joining:"
@@ -1391,7 +1700,7 @@ cs_join_add(char   *sel_criteria,
                 "  It must be between [0, 90] and is here: %f\n"),
               plane);
 
-  /* Allocate and initialize a cs_join_t structure */
+   /* Allocate and initialize a cs_join_t structure */
 
   BFT_REALLOC(cs_glob_join_array, cs_glob_n_joinings + 1, cs_join_t *);
   BFT_MALLOC(join, 1, cs_join_t);
@@ -1399,13 +1708,6 @@ cs_join_add(char   *sel_criteria,
   join->param = cs_join_param_define(cs_glob_n_joinings,
                                      fraction,
                                      plane,
-                                     rtf,
-                                     mtf,
-                                     etf,
-                                     max_sub_faces,
-                                     tml,
-                                     tmb,
-                                     tmr,
                                      verbosity);
 
   /* Copy the selection criteria for future use */
@@ -1422,7 +1724,7 @@ cs_join_add(char   *sel_criteria,
 
 /*----------------------------------------------------------------------------
  * Apply all the defined joining operations.
- *----------------------------------------------------------------------------*/
+ *---------------------------------------------------------------------------*/
 
 void
 cs_join_all(void)
@@ -1468,15 +1770,29 @@ cs_join_all(void)
       bft_printf(_("\n"
                    "  Parameters for the joining operation:\n"
                    "    Shortest incident edge fraction:          %8.5f\n"
-                   "      Main tolerance reduction factor:        %8.5f\n"
-                   "      Vertex matching tolerance reduction:    %8.5f\n"
-                   "      Merge step tolerance multiplier:        %8.5f\n"
                    "    Maximum angle between joined face planes: %8.5f\n\n"),
-                 join_param.fraction,
-                 join_param.reduce_tol_factor,
-                 join_param.edge_equiv_tol_coef,
-                 join_param.merge_tol_coef,
-                 join_param.plane);
+                 join_param.fraction, join_param.plane);
+
+      if (join_param.verbosity > 1)
+         bft_printf(_("  Advanced join parameters:\n"
+                      "    Deepest level reachable in tree building: %8d\n"
+                      "    Max boxes by leaf:                        %8d\n"
+                      "    Max ratio of linked boxes / init. boxes:  %8.5f\n"
+                      "    Merge step tolerance multiplier:          %8.5f\n"
+                      "    Pre-merge factor:                         %8.5f\n"
+                      "    Tolerance computation mode:               %8d\n"
+                      "    Intersection computation mode:            %8d\n"
+                      "    Max. number of equiv. breaks:             %8d\n"
+                      "    Max. number of subfaces by face:          %8d\n\n"),
+                    join_param.tree_max_level,
+                    join_param.tree_n_max_boxes,
+                    join_param.tree_max_box_ratio,
+                    join_param.merge_tol_coef,
+                    join_param.pre_merge_factor,
+                    join_param.tcm, join_param.icm,
+                    join_param.n_max_equiv_breaks,
+                    join_param.max_sub_faces);
+
       cs_mesh_print_info(mesh, _(" Before joining"));
       bft_printf("\n");
     }
@@ -1525,6 +1841,9 @@ cs_join_all(void)
 
     join_select = cs_join_select_create(join_info->criteria,
                                         join_param.verbosity);
+
+    bft_printf(_("\n  Element selection successfully done.\n"));
+    bft_printf_flush();
 
     /* Free arrays and structures needed for selection */
 
@@ -1657,8 +1976,7 @@ cs_join_all(void)
     bft_printf_flush();
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    if (join_param.verbosity > 2) {
-
+    {
       int  len;
       FILE  *dbg_file = NULL;
       char  *filename = NULL;
@@ -1675,12 +1993,6 @@ cs_join_all(void)
       BFT_FREE(filename);
       fclose(dbg_file);
     }
-
-#endif
-
-#if defined(HAVE_MPI)   /* Synchronization */
-    if (cs_glob_n_ranks > 1)
-      MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
     if (join_param.verbosity > 0) {
@@ -1688,6 +2000,11 @@ cs_join_all(void)
       cs_mesh_print_info(mesh, _(" After joining"));
       bft_printf("\n");
     }
+
+#if defined(HAVE_MPI)   /* Synchronization */
+    if (cs_glob_n_ranks > 1)
+      MPI_Barrier(cs_glob_mpi_comm);
+#endif
 
   } /* End of loop on joinings */
 
@@ -1706,8 +2023,8 @@ cs_join_all(void)
                "    CPU time:                   %10.3g\n\n"),
              full_clock_end - full_clock_start,
              full_cpu_end - full_cpu_start);
-
   bft_printf_flush();
+
 }
 
 /*---------------------------------------------------------------------------*/

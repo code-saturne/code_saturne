@@ -203,9 +203,11 @@ _cosine(double   v1[],
   double  dprod = _dot_product(v1, v2);
   double  n1 = _norm(v1);
   double  n2 = _norm(v2);
-  double  result = dprod / (n1 * n2);
 
-  return result;
+  assert(n1 > 0.0);
+  assert(n2 > 0.0);
+
+  return dprod / (n1 * n2);
 }
 
 /*----------------------------------------------------------------------------
@@ -673,9 +675,13 @@ _split_face(cs_int_t                face_id,
 
   const cs_join_vertex_t  *vertices = work->vertices;
   const cs_real_t  min_limit_cos = -1.1, max_limit_cos = 1.1;
+  const cs_real_t  plane2 = plane * plane;
+  const cs_real_t  eps_dot_prod = 1e-8;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_bool_t  tst_dbg = (verbosity > 3 ? true : false);
+  cs_bool_t  face_tst = ( face_id == 20758 || face_id == 30105 ||
+                          face_id == 20759 || face_id == 34385 ? true : false);
+  cs_bool_t  tst_dbg = (verbosity > 2 && face_tst ? true : false);
 #endif
 
   /* To be implemented ... */
@@ -790,7 +796,7 @@ _split_face(cs_int_t                face_id,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
             if (tst_dbg)
-              bft_printf("  (%d) vertex connected to v2: %u\n",
+              bft_printf("  (v2v_id: %d) Next vertex connected to v2 to test: %u\n",
                          i, vertices[connect_vid].gnum);
 #endif
 
@@ -849,7 +855,7 @@ _split_face(cs_int_t                face_id,
                                  face_norm[0], face_norm[1], face_norm[2]);
 #endif
 
-                    if (dprod2 > plane) {
+                    if (dprod2 > plane2) {
 
                       if (face_face_connect == NULL) {
                         found = true;
@@ -922,12 +928,12 @@ _split_face(cs_int_t                face_id,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
                   if (tst_dbg)
-                    bft_printf("\t  dot_prod: %g, cosine: %g\n",
+                    bft_printf("\t dot_prod: %g (DP>0=>min | DP<0=>max), cosine: %g\n",
                                dprod, cosine);
 #endif
 
-                  if (dprod > 0) { /* Left part. We choose the edge
-                                      with the smallest cosine */
+                  if (dprod >= -eps_dot_prod * _norm(cprod) ) {
+                    /* Left part. We choose the edge with the smallest cosine */
 
                     if (cosine < left_min_cos) {
                       left_min_cos = cosine;
@@ -1463,7 +1469,13 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
 
   BFT_FREE(new_mesh_name);
 
-  assert((int)block_info.local_size == builder->n_faces);
+  if ((int)block_info.local_size != builder->n_faces)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Inconsistent values between:\n"
+                "    block_info.local_size  %8d\n"
+                "    builder->n_faces:      %8d\n"
+                " These values should be equal.\n"),
+              block_info.local_size, builder->n_faces);
 
   /* Compute the number of new faces */
 
@@ -1938,11 +1950,12 @@ cs_join_split_faces(cs_join_param_t          param,
     if (n_g_face_problems > 0) {
 
       bft_printf
-        (_("  Warning: (%lu) problem(s) found during the face splitting\n"
+        (_("\n  *** WARNING ***\n"
+           "  Globally, %lu problem(s) found during the face splitting\n"
            "     %12lu  open cycles,\n"
            "     %12lu  edges traversed twice,\n"
            "     %12lu  faces split into more than max_subfaces (= %d)\n\n"
-           "  => Eventually modify joining parameters\n\n"),
+           "    => Eventually modify joining parameters\n\n"),
          (unsigned long)n_g_face_problems,
          (unsigned long)n_g_open_cycles,
          (unsigned long)n_g_edges_twice,

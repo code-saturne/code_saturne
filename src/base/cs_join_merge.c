@@ -89,7 +89,7 @@ BEGIN_C_DECLS
 
 /* Turn on (1) or off (0) the tolerance reduc. */
 #define  CS_JOIN_MERGE_TOL_REDUC  1
-#define  CS_JOIN_MERGE_INV_TOL  0
+#define  CS_JOIN_MERGE_INV_TOL  1
 
 /*============================================================================
  * Global variable definitions
@@ -99,13 +99,10 @@ BEGIN_C_DECLS
 
 enum {
 
-  CS_JOIN_MERGE_MAX_GLOB_ITERS = 5,  /* Max. number of glob. iter. for finding
-                                        equivalent vertices */
-  CS_JOIN_MERGE_MAX_LOC_ITERS = 15,  /* Max. number of loc. iter. for finding
-                                        equivalent vertices */
-  CS_JOIN_MERGE_MAX_REDUCTIONS = 100 /* Max. number of loc. iter. for
-                                        reducing the tolerance */
-
+  CS_JOIN_MERGE_MAX_GLOB_ITERS = 25,  /* Max. number of glob. iter. for finding
+                                         equivalent vertices */
+  CS_JOIN_MERGE_MAX_LOC_ITERS = 50    /* Max. number of loc. iter. for finding
+                                         equivalent vertices */
 };
 
 /* Coefficient to deal with rounding approximations */
@@ -1205,120 +1202,61 @@ _exchange_merged_vertices(const cs_join_mesh_t  *work,
 #endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
- * Check if all vertices in the list include the target_vertex in their
- * tolerance.
- *
- * If check is ok, no need to apply a reduction of the tolerance.
- *
- * parameters:
- *   start      <-- index for the last vertex in id_lst
- *   end        <-- index for the last vertex in id_lst
- *   list       <-- list of id in vertices
- *   vertices   <-- pointer to an array of cs_join_vertex_t structures
- *   ref_vertex <-- vertex resulting of the merge
- *
- * returns:
- *   true if all vertices have ref_vertex in their tolerance, false otherwise
- *---------------------------------------------------------------------------*/
-
-static cs_bool_t
-_is_in_tolerance(cs_int_t                start,
-                 cs_int_t                end,
-                 const fvm_gnum_t        list[],
-                 const cs_join_vertex_t  vertices[],
-                 cs_join_vertex_t        ref_vertex)
-{
-  cs_int_t  i;
-
-  for (i = start; i < end; i++) {
-
-    cs_join_vertex_t  cur_vertex = vertices[list[i]];
-    cs_real_t  d_cur_ref = _compute_length(cur_vertex, ref_vertex);
-    cs_real_t  tolerance =  cur_vertex.tolerance * cs_join_tol_eps_coef2;
-
-    if (d_cur_ref > tolerance)
-      return false;
-
-  } /* End of loop on each vertex of the list */
-
-  return true;
-}
-
-/*----------------------------------------------------------------------------
- * Get the resulting cs_join_vertex_t structure after the merge of a list
+ * Get the resulting cs_join_vertex_t structure after the merge of a set
  * of vertices.
  *
  * parameters:
- *   ref_gnum <-- global number associated to the current list of vertices
- *   start    <-- index for the first vertex in id_list
- *   end      <-- index for the last vertex in id_list
- *   list     <-- list of id in vertices array
- *   vertices <-- array of cs_join_vertex_t structures
+ *   n_elts    <-- size of the set
+ *   set       <-- set of vertices
  *
  * returns:
  *   a cs_join_vertex_t structure for the resulting vertex
  *---------------------------------------------------------------------------*/
 
 static cs_join_vertex_t
-_get_merged_vertex(fvm_gnum_t              ref_gnum,
-                   cs_int_t                start,
-                   cs_int_t                end,
-                   const fvm_gnum_t        list[],
-                   const cs_join_vertex_t  vertices[])
+_compute_merged_vertex(cs_int_t                n_elts,
+                       const cs_join_vertex_t  set[])
 {
   cs_int_t  i, k;
-  cs_join_vertex_t  merged_vertex;
+  cs_real_t  w;
+  cs_join_vertex_t  mvtx;
 
-  cs_int_t  n_elts = end - start;
-
-  /* Initialize cs_join_vertex_t structure */
-
-  merged_vertex.gnum = ref_gnum;
-  merged_vertex.tolerance = vertices[list[start]].tolerance;
-
-  /* Compute the resulting vertex data of the merge */
-
-  for (i = start; i < end; i++)
-    merged_vertex.tolerance = CS_MIN(vertices[list[i]].tolerance,
-                                     merged_vertex.tolerance);
+  cs_real_t  denum = 0.0;
 
   assert(n_elts > 0);
 
-  /* Compute the resulting coordinates of the merged vertices */
+  /* Initialize cs_join_vertex_t structure */
+
+  mvtx.gnum = set[0].gnum;
+  mvtx.tolerance = set[0].tolerance;
 
   for (k = 0; k < 3; k++)
-    merged_vertex.coord[k] = 0.0;
+    mvtx.coord[k] = 0.0;
+
+  /* Compute the resulting vertex */
+
+  for (i = 0; i < n_elts; i++) {
+
+    mvtx.tolerance = CS_MIN(set[i].tolerance, mvtx.tolerance);
+    mvtx.gnum = CS_MIN(set[i].gnum, mvtx.gnum);
+
+  /* Compute the resulting coordinates of the merged vertices */
 
 #if CS_JOIN_MERGE_INV_TOL
-  {
-    cs_real_t  denum = 0.0;
-
-    for (i = start; i < end; i++)
-      denum += 1.0/vertices[list[i]].tolerance;
-
-    for (k = 0; k < 3; k++) {
-
-      for (i = start; i < end; i++)
-        merged_vertex.coord[k] +=
-          1.0/vertices[list[i]].tolerance * vertices[list[i]].coord[k];
-
-      merged_vertex.coord[k] /= denum;
-
-    } /* End of loop on coordinates */
-
-  }
+    w = 1.0/set[i].tolerance;
 #else
-
-  for (k = 0; k < 3; k++) {
-
-    for (i = start; i < end; i++)
-      merged_vertex.coord[k] += vertices[list[i]].coord[k];
-    merged_vertex.coord[k] /= n_elts;
-
-  }
+    w = 1.0;
 #endif
+    denum += w;
 
-  return merged_vertex;
+    for (k = 0; k < 3; k++)
+      mvtx.coord[k] += w * set[i].coord[k];
+  }
+
+  for (k = 0; k < 3; k++)
+    mvtx.coord[k] /= denum;
+
+  return mvtx;
 }
 
 /*----------------------------------------------------------------------------
@@ -1338,23 +1276,27 @@ _get_merged_vertex(fvm_gnum_t              ref_gnum,
  *---------------------------------------------------------------------------*/
 
 static void
-_trivial_merge(cs_join_param_t     param,
-               cs_join_gset_t     *merge_set,
-               cs_join_vertex_t    vertices[],
-               cs_join_gset_t    **p_equiv_gnum)
+_pre_merge(cs_join_param_t     param,
+           cs_join_gset_t     *merge_set,
+           cs_join_vertex_t    vertices[],
+           cs_join_gset_t    **p_equiv_gnum)
 {
   cs_int_t  i, j, j1, j2, k, k1, k2, n_sub_elts;
-  cs_real_t  delta;
+  cs_real_t  deltad, deltat, limit, min_tol;
+  cs_join_vertex_t  mvtx, coupled_vertices[2];
 
-  cs_int_t  max_n_sub_elts = 0;
+  cs_int_t  max_n_sub_elts = 0, n_local_pre_merge = 0;
   cs_int_t  *merge_index = merge_set->index;
   fvm_gnum_t  *merge_list = merge_set->g_list;
   fvm_gnum_t  *sub_list = NULL, *init_list = NULL;
   cs_join_gset_t  *equiv_gnum = NULL;
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (param.verbosity > 2) {
+  const cs_real_t  pmf = param.pre_merge_factor;
 
+  cs_join_gset_sort_sublist(merge_set);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  {
     int  len;
     FILE  *dbg_file = NULL;
     char  *filename = NULL;
@@ -1370,7 +1312,6 @@ _trivial_merge(cs_join_param_t     param,
     fflush(dbg_file);
     BFT_FREE(filename);
     fclose(dbg_file);
-
   }
 #endif
 
@@ -1425,13 +1366,17 @@ _trivial_merge(cs_join_param_t     param,
         }
         else {
 
-          if (fabs(v1.tolerance - v2.tolerance) < 1e-30) {
+          min_tol = CS_MIN(v1.tolerance, v2.tolerance);
+          limit = min_tol * pmf;
+          deltat = CS_ABS(v1.tolerance - v2.tolerance);
 
-            delta = 0.0;
-            for (k = 0; k < 3; k++)
-              delta += v1.coord[k] - v2.coord[k];
+          if (deltat < limit) {
 
-            if (fabs(delta) < 1e-30) { /* Identical vertices */
+            deltad = _compute_length(v1, v2);
+
+            if (deltad < limit) { /* Do a pre-merge */
+
+              n_local_pre_merge++;
 
               if (v1.gnum < v2.gnum)
                 k1 = j1, k2 = j2;
@@ -1442,9 +1387,14 @@ _trivial_merge(cs_join_param_t     param,
                 if (sub_list[k] == sub_list[k2])
                   sub_list[k] = sub_list[k1];
 
-            } /* End if delta == 0.0 */
+              coupled_vertices[0] = v1, coupled_vertices[1] = v2;
+              mvtx = _compute_merged_vertex(2, coupled_vertices);
+              vertices[v1_id] = mvtx;
+              vertices[v2_id] = mvtx;
 
-          } /* End if v1.tol != v2.tol */
+            } /* deltad < limit */
+
+          } /* deltat < limit */
 
         } /* v1.gnum != v2.gnum */
 
@@ -1471,6 +1421,22 @@ _trivial_merge(cs_join_param_t     param,
 
   cs_join_gset_clean(merge_set);
 
+  /* Display information about the joining */
+
+  if (param.verbosity > 0) {
+
+    fvm_gnum_t n_g_counter = n_local_pre_merge;
+    fvm_parall_counter(&n_g_counter, 1);
+
+    bft_printf(_("\n  Pre-merge for %lu global couple of elements.\n"),
+               (unsigned long)n_g_counter);
+
+    if (param.verbosity > 1) {
+      bft_printf(_("\n  Local number of pre-merge: %d\n"),
+                 n_local_pre_merge);
+    }
+  }
+
   /* Free memory */
 
   BFT_FREE(sub_list);
@@ -1482,315 +1448,507 @@ _trivial_merge(cs_join_param_t     param,
 }
 
 /*----------------------------------------------------------------------------
- * Apply the tolerance reduction until each vertex of the list has
- * a resulting vertex under its tolerance.
+ * Check if all vertices in the set include the ref_vertex in their tolerance.
  *
  * parameters:
- *   param        <-- set of user-defined parameters
- *   start        <-- index for the last vertex in sub_list
- *   end          <-- index for the last vertex in sub_list
- *   list         <-- list of id in vertices
- *   vertices     <-> pointer to a cs_join_vertex_t structure
- *   distances    <-- list of distance between couples of vertices
- *   ref_tags     <-> list of reference tags for each vertex of sub_list
- *   work_tags    <-> list of working tags for each vertex of sub_list
- *   bool_lst     <-> list of booleans
- *   n_reductions <-> number of tolerance reduction done
+ *   set_size   <-- size of set of vertices
+ *   vertices   <-- set of vertices to check
+ *   ref_vertex <-- ref. vertex
+ *
+ * returns:
+ *   true if all vertices have ref_vertex in their tolerance, false otherwise
  *---------------------------------------------------------------------------*/
 
-static void
-_reduce_tolerance(cs_join_param_t     param,
-                  cs_int_t            start,
-                  cs_int_t            end,
-                  const fvm_gnum_t    list[],
-                  cs_join_vertex_t    vertices[],
-                  const cs_real_t     distances[],
-                  fvm_gnum_t          ref_tags[],
-                  fvm_gnum_t          work_tags[],
-                  cs_bool_t           bool_lst[],
-                  int                *n_reductions)
+static cs_bool_t
+_is_in_tolerance(cs_int_t                set_size,
+                 const cs_join_vertex_t  set[],
+                 cs_join_vertex_t        ref_vertex)
 {
   cs_int_t  i;
 
-  cs_bool_t reduc_tol = true;
+  for (i = 0; i < set_size; i++) {
 
-  while (reduc_tol == true) {
+    cs_real_t  d2ref = _compute_length(set[i], ref_vertex);
+    cs_real_t  tolerance =  set[i].tolerance * cs_join_tol_eps_coef2;
 
-    cs_int_t  i1, i2, shift;
+    if (d2ref > tolerance)
+      return false;
 
-    *n_reductions += 1;
+  }
 
-    if (*n_reductions > CS_JOIN_MERGE_MAX_REDUCTIONS)
-      bft_error(__FILE__, __LINE__, 0,
-                _("  Max number of tolerance reductions has been reached.\n"
-                  "  Check your joining parameters.\n"));
+  return true;
+}
 
-    /* Reduce tolerance by the constant "reduce_tol_factor" */
+/*----------------------------------------------------------------------------
+ * Test if we have to continue to the subset building
+ *
+ * parameters:
+ *   set_size  <-- size of set
+ *   prev_num  <-> array used to store previous subset_num
+ *   new_num   <-> number associated to each vertices of the set
+ *
+ * returns:
+ *   true or false
+ *---------------------------------------------------------------------------*/
 
-    for (i = start; i < end; i++)
-      vertices[list[i]].tolerance *= param.reduce_tol_factor;
+static cs_bool_t
+_continue_subset_building(int              set_size,
+                          const cs_int_t   prev_num[],
+                          const cs_int_t   new_num[])
+{
+  int  i;
 
-    /* Define a boolean list on couples of vertices which are under
-       tolerance each other */
+  for (i = 0; i < set_size; i++)
+    if (new_num[i] != prev_num[i])
+      return true;
 
-    for (shift = 0, i1 = start; i1 < end - 1; i1++) {
+  return false;
+}
 
-      cs_join_vertex_t  v1 = vertices[list[i1]];
+/*----------------------------------------------------------------------------
+ * Define subsets of vertices.
+ *
+ * parameters:
+ *   set_size    <-- size of set
+ *   state       <-- array keeping the state of the link
+ *   subset_num  <-> number associated to each vertices of the set
+ *---------------------------------------------------------------------------*/
 
-      for (i2 = i1 + 1; i2 < end; i2++) {
+static void
+_iter_subset_building(cs_int_t                set_size,
+                      const cs_int_t          state[],
+                      cs_int_t                subset_num[])
+{
+  cs_int_t  i1, i2, k;
 
-        cs_join_vertex_t  v2 = vertices[list[i2]];
+  for (k = 0, i1 = 0; i1 < set_size-1; i1++) {
+    for (i2 = i1 + 1; i2 < set_size; i2++, k++) {
 
-        if (v2.tolerance < distances[shift] || v1.tolerance < distances[shift])
-          bool_lst[shift++] = false;
-        else
-          bool_lst[shift++] = true;
+      if (state[k] == 1) { /* v1 - v2 are in tolerance each other */
+
+        int _min = CS_MIN(subset_num[i1], subset_num[i2]);
+
+        subset_num[i1] = _min;
+        subset_num[i2] = _min;
 
       }
 
     }
-
-    /* Update tag list according to the values of bool_lst */
-
-    for (i = start; i < end; i++)
-      work_tags[i] = ref_tags[i];
-
-    for (shift = 0, i1 = start; i1 < end - 1; i1++) {
-      for (i2 = i1 + 1; i2 < end; i2++) {
-
-        if (bool_lst[shift] == true) {
-
-          fvm_gnum_t  _min = CS_MIN(work_tags[i1], work_tags[i2]);
-
-          work_tags[i1] = _min;
-          work_tags[i2] = _min;
-
-        }
-        shift++;
-
-      } /* End of loop on i2 */
-    } /* End of loop on i1 */
-
-    /* Check if the reduction of the tolerance is sufficient */
-
-    reduc_tol = false;
-
-    for (shift = 0, i1 = start; i1 < end - 1; i1++) {
-      for (i2 = i1 + 1; i2 < end; i2++) {
-
-        if (bool_lst[shift] == true) {
-          if (work_tags[i1] != work_tags[i2])
-            reduc_tol = true;
-        }
-        else  {/* bool_lst = false */
-          if (work_tags[i1] == work_tags[i2])
-            reduc_tol = true;
-        }
-        shift++;
-
-      } /* End of loop on i2 */
-    } /* End of loop on i1 */
-
-  } /* End of while reduc_tol = true */
-
-  /* Store new equivalences between vertices in ref_tags */
-
-  for (i = start; i < end; i++) {
-    ref_tags[i] = work_tags[i];
-    work_tags[i] = i;
   }
-
-  { /* Order ref_tags and keep the original position in work_tags */
-
-    int  h, j;
-    cs_int_t  n_sub_elts = end - start;
-
-    /* Compute stride */
-    for (h = 1; h <= n_sub_elts/9; h = 3*h+1) ;
-
-    /* Sort array */
-    for ( ; h > 0; h /= 3) {
-
-      for (i = start + h; i < end; i++) {
-
-        fvm_gnum_t vr = ref_tags[i];
-        fvm_gnum_t vw = work_tags[i];
-
-        j = i;
-        while ( (j >= start+h) && (vr < ref_tags[j-h]) ) {
-          ref_tags[j] = ref_tags[j-h];
-          work_tags[j] = work_tags[j-h];
-          j -= h;
-        }
-        ref_tags[j] = vr;
-        work_tags[j] = vw;
-
-      } /* Loop on array elements */
-
-    } /* End of loop on stride */
-
-  } /* End of sort */
-
-  for (i = start; i < end; i++)
-    work_tags[i] = list[work_tags[i]];
 
 }
 
 /*----------------------------------------------------------------------------
- * Apply a reduction of the tolerance until each vertex of the list has
+ * Define subsets of vertices.
+ *
+ * parameters:
+ *   set_size    <-- size of set
+ *   state       <-- array keeping the state of the link
+ *   prev_num    <-> array used to store previous subset_num
+ *   subset_num  <-> number associated to each vertices of the set
+ *---------------------------------------------------------------------------*/
+
+static void
+_build_subsets(cs_int_t          set_size,
+               const cs_int_t    state[],
+               cs_int_t          prev_num[],
+               cs_int_t          subset_num[])
+{
+  int  i;
+  cs_int_t  n_loops = 0;
+
+  /* Initialize */
+
+  for (i = 0; i < set_size; i++) {
+    subset_num[i] = i+1;
+    prev_num[i] = subset_num[i];
+  }
+
+  _iter_subset_building(set_size, state, subset_num);
+
+  while (   _continue_subset_building(set_size, prev_num, subset_num)
+         && n_loops < CS_JOIN_MERGE_MAX_LOC_ITERS ) {
+
+    n_loops++;
+
+    for (i = 0; i < set_size; i++)
+      prev_num[i] = subset_num[i];
+
+    _iter_subset_building(set_size, state, subset_num);
+
+  }
+
+#if 1 && defined(DEBUG) && !defined(NDEBUG)
+  if (n_loops >= CS_JOIN_MERGE_MAX_LOC_ITERS)
+    bft_printf("WARNING max sub_loops to build subset reached\n");
+#endif
+
+}
+
+/*----------------------------------------------------------------------------
+ * Check if each subset is consistent with tolerance of vertices
+ * If a transitivity is found, modify the state of the link
+ * state = 1 (each other in their tolerance)
+ *       = 0 (not each other in their tolerance)
+ *
+ * parameters:
+ *   set_size    <-- size of set
+ *   set         <-- pointer to a set of vertices
+ *   state       <-> array keeping the state of the link
+ *   subset_num  <-> number associated to each vertices of the set
+ *   issues      <-> numbering of inconsistent subsets
+ *   verbosity   <-- level of verbosity
+ *
+ * returns:
+ *  number of subsets not consistent
+ *---------------------------------------------------------------------------*/
+
+static cs_int_t
+_check_tol_consistency(cs_int_t                set_size,
+                       const cs_join_vertex_t  set[],
+                       cs_int_t                state[],
+                       cs_int_t                subset_num[],
+                       cs_int_t                issues[],
+                       cs_int_t                verbosity)
+{
+  cs_int_t  i1, i2, j, k;
+
+  cs_int_t  n_issues = 0;
+
+  for (k = 0, i1 = 0; i1 < set_size-1; i1++) {
+    for (i2 = i1 + 1; i2 < set_size; i2++, k++) {
+
+      if (state[k] == 0) {
+
+        if (subset_num[i1] == subset_num[i2]) {
+
+          if (verbosity > 3)
+            bft_printf(" Transitivity detected between (%u, %u)\n",
+                       set[i1].gnum, set[i2].gnum);
+
+          for (j = 0; j < n_issues; j++)
+            if (issues[j] == subset_num[i1])
+              break;
+          if (j == n_issues)
+            issues[n_issues++] = subset_num[i1];
+
+        }
+      }
+
+    } /* End of loop on i2 */
+  } /* ENd of loop on i1 */
+
+  return  n_issues; /* Not a subset number */
+}
+
+/*----------------------------------------------------------------------------
+ * Check if the merged vertex related to a subset is consistent with tolerance
+ * of each vertex of the subset.
+ *
+ * parameters:
+ *   set_size    <-- size of set
+ *   subset_num  <-- number associated to each vertices of the set
+ *   set         <-- pointer to a set of vertices
+ *   merge_set   <-> merged vertex related to each subset
+ *   work_set    <-> work array of vertices
+ *
+ * returns:
+ *  true if all subsets are consistent otherwise false
+ *---------------------------------------------------------------------------*/
+
+static cs_bool_t
+_check_subset_consistency(cs_int_t                set_size,
+                          const cs_int_t          subset_num[],
+                          const cs_join_vertex_t  set[],
+                          cs_join_vertex_t        merge_set[],
+                          cs_join_vertex_t        work_set[])
+{
+  cs_int_t  i, set_id, subset_size;
+
+  cs_bool_t  is_consistent = true;
+
+  /* Apply merged to each subset */
+
+  for (set_id = 0; set_id < set_size; set_id++) {
+
+    subset_size = 0;
+    for (i = 0; i < set_size; i++)
+      if (subset_num[i] == set_id+1)
+        work_set[subset_size++] = set[i];
+
+    if (subset_size > 0) {
+
+      merge_set[set_id] = _compute_merged_vertex(subset_size, work_set);
+
+      if (!_is_in_tolerance(subset_size, work_set, merge_set[set_id]))
+        is_consistent = false;
+
+    }
+
+  } /* End of loop on subsets */
+
+  return is_consistent;
+}
+
+/*----------------------------------------------------------------------------
+ * Get position of the link between vertices i1 and i2.
+ *
+ * parameters:
+ *   i1     <-- id in set for vertex 1
+ *   i2     <-- id in set for vertex 2
+ *   idx    <-- array of positions
+ *
+ * returns:
+ *   position in an array like distances or state
+ *---------------------------------------------------------------------------*/
+
+inline static cs_int_t
+_get_pos(cs_int_t        i1,
+         cs_int_t        i2,
+         const cs_int_t  idx[])
+{
+  cs_int_t  pos = -1;
+
+  if (i1 < i2)
+    pos = idx[i1] + i2-i1-1;
+  else {
+    assert(i1 != i2);
+    pos = idx[i2] + i1-i2-1;
+  }
+
+  return pos;
+}
+
+/*----------------------------------------------------------------------------
+ * Break equivalences for vertices implied in transitivity issue
+ *
+ * parameters:
+ *   param       <-- parameters used to manage the joining algorithm
+ *   set_size    <-- size of set
+ *   set         <-- pointer to a set of vertices
+ *   state       <-> array keeping the state of the link
+ *   n_issues    <-- number of detected transitivity issues
+ *   issues      <-- subset numbers of subset with a transitivity issue
+ *   idx         <-- position of vertices couple in array like distances
+ *   subset_num  <-- array of subset numbers
+ *   distances   <-- array keeping the distances between vertices
+ *---------------------------------------------------------------------------*/
+
+static void
+_break_equivalence(cs_join_param_t         param,
+                   cs_int_t                set_size,
+                   const cs_join_vertex_t  set[],
+                   int                     state[],
+                   cs_int_t                n_issues,
+                   const int               issues[],
+                   const int               idx[],
+                   const int               subset_num[],
+                   const double            distances[])
+{
+  cs_int_t  i, i1, i2, k;
+
+  for (i = 0; i < n_issues; i++) {
+
+    /* Find the weakest equivalence and break it.
+       Purpose: Have the minimal number of equivalences to break
+       for each subset where an inconsistency has been detected */
+
+    int  i_save = 0;
+    double rtf = -1.0, dist_save = 0.0;
+
+    for (k = 0, i1 = 0; i1 < set_size-1; i1++) {
+      for (i2 = i1 + 1; i2 < set_size; i2++, k++) {
+
+        if (state[k] == 1) { /* v1, v2 are equivalent */
+
+          if (   subset_num[i1] == issues[i]
+              && subset_num[i2] == issues[i]) {
+
+            /* Vertices belongs to a subset where an inconsistency
+               has been found */
+
+            double  rtf12 = distances[k]/set[i1].tolerance;
+            double  rtf21 = distances[k]/set[i2].tolerance;
+
+            assert(rtf12 < 1.0); /* Because they are equivalent */
+            assert(rtf21 < 1.0);
+
+            if (rtf12 >= rtf21) {
+              if (rtf12 > rtf) {
+                rtf = rtf12;
+                i_save = i1;
+                dist_save = distances[k];
+              }
+            }
+            else {
+              if (rtf21 > rtf) {
+                rtf = rtf21;
+                i_save = i2;
+                dist_save = distances[k];
+              }
+            }
+
+          }
+        }
+
+      } /* End of loop on i1 */
+    } /* End of loop on i2 */
+
+    if (rtf > 0.0) {
+
+      /* Break equivalence between i_save and all vertices linked to
+         i_save with a distance to i_save >= dist_save */
+
+      for (i2 = 0; i2 < set_size; i2++) {
+
+        if (i2 != i_save) {
+
+          k = _get_pos(i_save, i2, idx);
+          if (distances[k] >= dist_save && state[k] == 1) {
+
+            state[k] = 0; /* Break equivalence */
+
+            if (param.verbosity > 2)
+              bft_printf(" %2d - Break equivalence between [%u, %u]"
+                         " (dist_ref: %6.4e)\n",
+                         issues[i], set[i_save].gnum, set[i2].gnum, dist_save);
+
+          }
+        }
+
+      } /* End of loop on vertices */
+
+    } /* rtf > 0.0 */
+
+  } /* End of loop on issues */
+
+}
+
+/*----------------------------------------------------------------------------
+ * Break equivalences between vertices until each vertex of the list has
  * the resulting vertex of the merge under its tolerance.
  *
  * parameters:
  *   param         <-- set of user-defined parameters
- *   start         <-- index for the last vertex in sub_list
- *   end           <-- index for the last vertex in sub_list
- *   sub_list      <-> list of id in vertices for each vertex of the sub list
- *   vertices      <-> pointer to a cs_join_vertex_t structure
- *   distances     <-> list of distance between couples of vertices
- *   ref_tag_list  <-> list of reference tags for each vertex of sub_list
- *   work_tag_list <-> list of working tags for each vertex of sub_list
- *   bool_lst      <-> list of booleans
- *   n_reductions  <-> number of tolerance reduction done
+ *   set_size      <-- size of the set of vertices
+ *   set           <-> set of vertices
+ *   vbuf          <-> tmp buffer
+ *   rbuf          <-> tmp buffer
+ *   ibuf          <-> tmp buffer
+ *
+ * returns:
+ *   number of loop necessary to build consistent subsets
  *---------------------------------------------------------------------------*/
 
-static void
-_merge_with_tol_reduction(cs_join_param_t    param,
-                          cs_int_t           start,
-                          cs_int_t           end,
-                          fvm_gnum_t         sub_list[],
-                          cs_join_vertex_t   vertices[],
-                          cs_real_t          distances[],
-                          fvm_gnum_t         ref_tags[],
-                          fvm_gnum_t         work_tags[],
-                          cs_bool_t          bool_list[],
-                          int               *n_reductions)
+static cs_int_t
+_solve_transitivity(cs_join_param_t    param,
+                    cs_int_t           set_size,
+                    cs_join_vertex_t   set[],
+                    cs_join_vertex_t   vbuf[],
+                    cs_real_t          rbuf[],
+                    cs_int_t           ibuf[])
 {
-  cs_int_t  i1, i2, i, j;
+  cs_int_t  i1, i2, k, n_issues;
 
-  cs_int_t  shift = 0;
-  cs_int_t  n_sub_equiv = 1;
-  cs_int_t  n_sub_elts = end - start;
-  cs_int_t  *sub_index = NULL;
+  cs_int_t  n_loops = 0;
+  cs_bool_t  is_end = false;
+  cs_int_t  *subset_num = NULL, *state = NULL, *prev_num = NULL;
+  cs_int_t  *subset_issues = NULL, *idx = NULL;
+  cs_real_t  *distances = NULL;
+  cs_join_vertex_t  *merge_set = NULL, *work_set = NULL;
 
   /* Sanity checks */
 
-  assert(param.reduce_tol_factor >= 0.0);
-  assert(param.reduce_tol_factor < 1.0);
+  assert(set_size > 0);
 
-  if (param.verbosity > 2) { /* Display information */
+  /* Define temporary buffers */
 
-    bft_printf(_("\n"
-                 "  Merge: Local tolerance reduction for the"
-                 " following vertices (global numbering):\n"
-                 "        "));
-    for (j = start; j < end; j++)
-      bft_printf("%u  ", vertices[sub_list[j]].gnum);
-    bft_printf("\n");
+  subset_num = &(ibuf[0]);
+  prev_num = &(ibuf[set_size]);
+  subset_issues = &(ibuf[2*set_size]);
+  idx = &(ibuf[3*set_size]);
+  state = &(ibuf[4*set_size]);
+  distances = &(rbuf[0]);
+  merge_set = &(vbuf[0]);
+  work_set = &(vbuf[set_size]);
+
+  /* Compute distances between each couple of vertices among the set */
+
+  for (k = 0, i1 = 0; i1 < set_size-1; i1++)
+    for (i2 = i1 + 1; i2 < set_size; i2++, k++)
+      distances[k] = _compute_length(set[i1], set[i2]);
+
+  /* Compute initial state of equivalences between vertices */
+
+  for (k = 0, i1 = 0; i1 < set_size-1; i1++) {
+    for (i2 = i1 + 1; i2 < set_size; i2++, k++) {
+      if (   set[i1].tolerance < distances[k]
+          || set[i2].tolerance < distances[k])
+        state[k] = 0;
+      else
+        state[k] = 1;
+    }
   }
 
-  /* Initialize temporary buffers */
-
-  for (i = start; i < end; i++)
-    ref_tags[i] = vertices[sub_list[i]].gnum;
-
-  for (i1 = start; i1 < end - 1; i1++)
-    for (i2 = i1 + 1; i2 < end; i2++)
-      distances[shift++] = _compute_length(vertices[sub_list[i1]],
-                                           vertices[sub_list[i2]]);
+  idx[0] = 0;
+  for (k = 1; k < set_size - 1; k++)
+    idx[k] = set_size - k + idx[k-1];
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\t\t\t  (BEGIN) Reduce tolerance\n");
-  cs_join_dump_array("gnum", "sub_list", n_sub_elts, &(sub_list[start]));
-  cs_join_dump_array("gnum", "ref_tags", n_sub_elts, &(ref_tags[start]));
-  shift = 0;
-  bft_printf("\n  distances:\n");
-  for (i1 = start; i1 < end - 1; i1++) {
-    bft_printf(" %10u : ", ref_tags[i1]);
-    for (i2 = i1+1; i2 < end; i2++)
-      bft_printf(" (%10u, %le)", ref_tags[i2], distances[shift++]);
-    bft_printf("\n");
-  }
-  bft_printf("\n");
-  bft_printf_flush();
+  cs_join_dump_array("double", "\nDist", set_size*(set_size-1)/2, distances);
+  cs_join_dump_array("int", "\nInit. State", set_size*(set_size-1)/2, state);
 #endif
 
-  /* Reduce tolerance until coherent sub-equivalences appear.
-     Local operation. */
+  _build_subsets(set_size, state, prev_num, subset_num);
 
-  _reduce_tolerance(param,
-                    start,
-                    end,
-                    sub_list,
-                    vertices,
-                    distances,
-                    ref_tags,
-                    work_tags,
-                    bool_list,
-                    n_reductions);
+  while (is_end == false && n_loops < param.n_max_equiv_breaks) {
 
-  /* Define an index on new sub equivalences */
+    n_loops++;
 
-  BFT_MALLOC(sub_index, n_sub_elts+1, cs_int_t);
+    n_issues = _check_tol_consistency(set_size,
+                                      set,
+                                      state,
+                                      subset_num,
+                                      subset_issues,
+                                      param.verbosity);
 
-  sub_index[0] = start;
-  sub_index[n_sub_equiv] = start + 1;
+    if (n_issues > 0)
+      _break_equivalence(param,
+                         set_size,
+                         set,
+                         state,
+                         n_issues,
+                         subset_issues,
+                         idx,
+                         subset_num,
+                         distances);
 
-  for (i = start + 1; i < end; i++) {
+    _build_subsets(set_size, state, prev_num, subset_num);
 
-    if (ref_tags[i] != ref_tags[i-1]) {
-      sub_index[n_sub_equiv + 1] = sub_index[n_sub_equiv] + 1;
-      n_sub_equiv++;
-    }
-    else
-      sub_index[n_sub_equiv] += 1;
+    is_end = _check_subset_consistency(set_size,
+                                       subset_num,
+                                       set,
+                                       merge_set,
+                                       work_set);
+
+  } /* End of while */
+
+  if (param.verbosity > 2) {
+
+    bft_printf(_(" Number of tolerance reductions:  %4d\n"), n_loops);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+    cs_join_dump_array("int", "\nFinal Subset", set_size, subset_num);
+#endif
 
   }
 
-  assert(n_sub_equiv > 1);
+  /* Apply merged to each subset */
 
-  /* Loop on sub-equivalences */
+  for (k = 0; k < set_size; k++)
+    set[k] = merge_set[subset_num[k]-1];
 
-  for (i = 0; i < n_sub_equiv; i++) {
-
-    cs_bool_t  ok;
-    cs_join_vertex_t  merged_vertex;
-
-    cs_int_t  sub_start = sub_index[i];
-    cs_int_t  sub_end = sub_index[i+1];
-
-    /* Define a sub_list */
-
-    for (j = sub_start; j < sub_end; j++)
-      sub_list[j] = work_tags[j];
-
-    if (sub_end - sub_start > 1) {
-
-      merged_vertex = _get_merged_vertex(ref_tags[sub_start],
-                                         sub_start,
-                                         sub_end,
-                                         sub_list,
-                                         vertices);
-
-      /* Check if the vertex resulting of the merge is in the tolerance
-         for each vertex of the list. Previous op. should assume this. */
-
-      ok = _is_in_tolerance(sub_start,
-                            sub_end,
-                            sub_list,
-                            vertices,
-                            merged_vertex);
-
-      assert(ok == true); /* One call to _reduce_tolerance should be enough */
-
-      for (j = sub_start; j < sub_end; j++)
-        vertices[sub_list[j]] = merged_vertex;
-
-    } /* n_sub_sub_list > 1 */
-
-  } /* End of loop on sub-equivalences */
-
-  BFT_FREE(sub_index);
-
+  return n_loops;
 }
 
 /*----------------------------------------------------------------------------
@@ -1811,20 +1969,19 @@ _merge_vertices(cs_join_param_t    param,
                 cs_int_t           n_vertices,
                 cs_join_vertex_t   vertices[])
 {
-  cs_int_t  i, j, k, tmp_size, n_sub_elts;
+  cs_int_t  i, j, k, list_size;
   cs_join_vertex_t  merged_vertex;
   cs_bool_t  ok;
 
-  int  n_reduction_counter = 0, n_max_tol_reductions = 0;
-  cs_int_t  max_n_sub_elts = 0;
+  cs_int_t  max_list_size = 0, vv_max_list_size = 0;
+  cs_int_t  n_loops = 0, n_max_loops = 0, n_transitivity = 0;
 
   cs_join_gset_t  *equiv_gnum = NULL;
-  cs_bool_t  *bool_list = NULL;
-  cs_int_t  *merge_index = NULL;
+  cs_real_t  *rbuf = NULL;
+  cs_int_t  *merge_index = NULL, *ibuf = NULL;
   fvm_gnum_t  *merge_list = NULL, *merge_ref_elts = NULL;
-  fvm_gnum_t  *sub_list = NULL, *tmp_buffer = NULL;
-  fvm_gnum_t  *ref_tags = NULL, *work_tags = NULL;
-  cs_real_t  *distances = NULL;
+  fvm_gnum_t  *list = NULL;
+  cs_join_vertex_t  *set = NULL, *vbuf = NULL;
 
   const int  verbosity = param.verbosity;
 
@@ -1834,16 +1991,10 @@ _merge_vertices(cs_join_param_t    param,
 
   /* Pre-merge of identical vertices */
 
-  _trivial_merge(param, merge_set, vertices, &equiv_gnum);
-
-  merge_index = merge_set->index;
-  merge_list = merge_set->g_list;
-  merge_ref_elts = merge_set->g_elts;
+  _pre_merge(param, merge_set, vertices, &equiv_gnum);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-
-  if (verbosity > 2) {
-
+  {
     int  len;
     FILE  *dbg_file = NULL;
     char  *filename = NULL;
@@ -1859,17 +2010,8 @@ _merge_vertices(cs_join_param_t    param,
     fflush(dbg_file);
     BFT_FREE(filename);
     fclose(dbg_file);
-
   }
-
 #endif /* defined(DEBUG) && !defined(NDEBUG) */
-
-  /* Compute the max. size of a sub list */
-
-  for (i = 0; i < merge_set->n_elts; i++) {
-    n_sub_elts = merge_index[i+1] - merge_index[i];
-    max_n_sub_elts = CS_MAX(max_n_sub_elts, n_sub_elts);
-  }
 
   /* Modify the tolerance for the merge operation if needed */
 
@@ -1880,120 +2022,114 @@ _merge_vertices(cs_join_param_t    param,
 
   /* Compute the max. size of a sub list */
 
+  merge_index = merge_set->index;
+  merge_list = merge_set->g_list;
+  merge_ref_elts = merge_set->g_elts;
+
   for (i = 0; i < merge_set->n_elts; i++) {
-    n_sub_elts = merge_index[i+1] - merge_index[i];
-    max_n_sub_elts = CS_MAX(max_n_sub_elts, n_sub_elts);
+    list_size = merge_index[i+1] - merge_index[i];
+    max_list_size = CS_MAX(max_list_size, list_size);
   }
+  vv_max_list_size = ((max_list_size-1)*max_list_size)/2;
 
   if (verbosity > 0) {   /* Display information */
 
-    fvm_lnum_t g_max_n_sub_elts = max_n_sub_elts;
-    fvm_parall_counter_max(&g_max_n_sub_elts, 1);
+    fvm_lnum_t g_max_list_size = max_list_size;
+    fvm_parall_counter_max(&g_max_list_size, 1);
 
-    if (g_max_n_sub_elts < 2) {
+    if (g_max_list_size < 2) {
       bft_printf(_("\n  No need to merge vertices.\n"));
       return;
     }
     else
-      bft_printf(_("\n  Max size of a merge list: %lu\n"),
-                 (unsigned long)g_max_n_sub_elts);
+      bft_printf(_("\n  Max size of a merge set of vertices: %lu\n"),
+                 (unsigned long)g_max_list_size);
   }
 
-  /* Temporary buffers */
+  /* Temporary buffers allocation */
 
-  BFT_MALLOC(tmp_buffer, 3*max_n_sub_elts, fvm_gnum_t);
+  BFT_MALLOC(ibuf, 4*max_list_size + vv_max_list_size, cs_int_t);
+  BFT_MALLOC(rbuf, vv_max_list_size, cs_real_t);
+  BFT_MALLOC(vbuf, 2*max_list_size, cs_join_vertex_t);
+  BFT_MALLOC(list, max_list_size, fvm_gnum_t);
+  BFT_MALLOC(set, max_list_size, cs_join_vertex_t);
 
-  sub_list = tmp_buffer;
-  ref_tags = &(tmp_buffer[max_n_sub_elts]);
-  work_tags = &(tmp_buffer[2*max_n_sub_elts]);
-
-  tmp_size = ((max_n_sub_elts-1)*max_n_sub_elts)/2;
-  BFT_MALLOC(distances, tmp_size, cs_real_t);
-  BFT_MALLOC(bool_list, tmp_size, cs_bool_t);
-
-  /* Apply merge */
+  /* Merge set of vertices */
 
   for (i = 0; i < merge_set->n_elts; i++) {
 
-    n_sub_elts = merge_index[i+1] - merge_index[i];
+    list_size = merge_index[i+1] - merge_index[i];
 
-    if (n_sub_elts > 1) {
+    if (list_size > 1) {
 
-      for (k = merge_index[i], j = 0; k < merge_index[i+1]; k++, j++)
-        sub_list[j] = merge_list[k];
-
-      if (verbosity > 2) { /* Display information */
-
-        bft_printf("\n Begin merge for ref. elt: %u - n_sub_elts: %d\n",
-                   merge_ref_elts[i], merge_index[i+1] - merge_index[i]);
-        for (j = 0; j < n_sub_elts; j++) {
-          bft_printf("%9u -", sub_list[j]);
-          cs_join_mesh_dump_vertex(vertices[sub_list[j]]);
-        }
-        bft_printf("\n");
-
+      for (j = 0, k = merge_index[i]; k < merge_index[i+1]; k++, j++) {
+        list[j] = merge_list[k];
+        set[j] = vertices[list[j]];
       }
 
       /* Define the resulting cs_join_vertex_t structure of the merge */
 
-      merged_vertex = _get_merged_vertex(merge_ref_elts[i],
-                                         0, n_sub_elts,
-                                         sub_list,
-                                         vertices);
+      merged_vertex = _compute_merged_vertex(list_size, set);
 
       /* Check if the vertex resulting of the merge is in the tolerance
          for each vertex of the list */
 
-      ok = _is_in_tolerance(0, n_sub_elts, sub_list, vertices, merged_vertex);
+      ok = _is_in_tolerance(list_size, set, merged_vertex);
 
 #if CS_JOIN_MERGE_TOL_REDUC
+      if (ok == false) { /*
+                            The merged vertex is not in the tolerance of
+                            each vertex. This is a transitivity problem.
+                            We have to split the initial set into several
+                            subsets.
+                         */
 
-      if (ok == false) { /* Reduction of the tolerance is necessary */
+        n_transitivity++;
 
-        int  n_tol_reductions = 0;
+        if (verbosity > 2) { /* Display information on vertices to merge */
+          bft_printf("\n Begin merge for ref. elt: %u - list_size: %d\n",
+                     merge_ref_elts[i], merge_index[i+1] - merge_index[i]);
+          for (j = 0; j < list_size; j++) {
+            bft_printf("%9u -", list[j]);
+            cs_join_mesh_dump_vertex(set[j]);
+          }
+          bft_printf("\nMerged vertex rejected:\n");
+          cs_join_mesh_dump_vertex(merged_vertex);
+        }
 
-        n_reduction_counter += 1;
+        n_loops = _solve_transitivity(param,
+                                      list_size,
+                                      set,
+                                      vbuf,
+                                      rbuf,
+                                      ibuf);
 
-        _merge_with_tol_reduction(param,
-                                  0,
-                                  n_sub_elts,
-                                  sub_list,
-                                  vertices,
-                                  distances,
-                                  ref_tags,
-                                  work_tags,
-                                  bool_list,
-                                  &n_tol_reductions);
+        for (j = 0; j < list_size; j++)
+          vertices[list[j]] = set[j];
 
-        if (verbosity > 1) /* Display information */
-          bft_printf(_("\n  Number of tolerance reductions: %4d\n"),
-                     n_tol_reductions);
+        n_max_loops = CS_MAX(n_max_loops, n_loops);
 
-        n_max_tol_reductions = CS_MAX(n_max_tol_reductions,
-                                      n_tol_reductions);
+        if (verbosity > 2) { /* Display information */
+          bft_printf(_("\n  %3d loop(s) to get consistent subsets\n"),
+                     n_loops);
+          bft_printf("\n End merge for ref. elt: %u - list_size: %d\n",
+                     merge_ref_elts[i], merge_index[i+1] - merge_index[i]);
+          for (j = 0; j < list_size; j++) {
+            bft_printf("%7u -", list[j]);
+            cs_join_mesh_dump_vertex(vertices[list[j]]);
+          }
+          bft_printf("\n");
+        }
 
       }
-
       else /* New vertex data for the sub-elements */
 
 #endif /* CS_JOIN_MERGE_TOL_REDUC */
 
-        for (j = 0; j < n_sub_elts; j++)
-          vertices[sub_list[j]] = merged_vertex;
+        for (j = 0; j < list_size; j++)
+          vertices[list[j]] = merged_vertex;
 
-      if (verbosity > 2) { /* Display information */
-
-        bft_printf("\n End merge for ref. elt: %u - n_sub_elts: %d\n",
-                   merge_ref_elts[i], merge_index[i+1] - merge_index[i]);
-        for (j = 0; j < n_sub_elts; j++) {
-          bft_printf("%7u -", sub_list[j]);
-          cs_join_mesh_dump_vertex(vertices[sub_list[j]]);
-        }
-        bft_printf("\n");
-
-      }
-
-    } /* sub_list_size > 1 */
+    } /* list_size > 1 */
 
   } /* End of loop on potential merges */
 
@@ -2002,9 +2138,7 @@ _merge_vertices(cs_join_param_t    param,
   if (equiv_gnum != NULL) {
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-
-    if (verbosity > 2) {
-
+    {
       int  len;
       FILE  *dbg_file = NULL;
       char  *filename = NULL;
@@ -2020,9 +2154,7 @@ _merge_vertices(cs_join_param_t    param,
       fflush(dbg_file);
       BFT_FREE(filename);
       fclose(dbg_file);
-
     }
-
 #endif /* defined(DEBUG) && !defined(NDEBUG) */
 
     for (i = 0; i < equiv_gnum->n_elts; i++) {
@@ -2039,25 +2171,27 @@ _merge_vertices(cs_join_param_t    param,
 
   if (verbosity > 0) {
 
-    fvm_gnum_t n_g_reduction_counter = n_reduction_counter;
-    fvm_parall_counter(&n_g_reduction_counter, 1);
+    fvm_gnum_t n_g_counter = n_transitivity;
+    fvm_parall_counter(&n_g_counter, 1);
 
-    bft_printf(_("\n  Tolerance reduction for %lu elements.\n"),
-               (unsigned long)n_g_reduction_counter);
+    bft_printf(_("\n  Excessive transitivity for %lu set(s) of vertices.\n"),
+               (unsigned long)n_g_counter);
 
     if (verbosity > 1) {
-      fvm_lnum_t g_n_max_tol_reductions = n_max_tol_reductions;
-      fvm_parall_counter_max(&g_n_max_tol_reductions, 1);
-      bft_printf(_("\n  Max. number of tolerance reductions: %lu\n"),
-                 (unsigned long)g_n_max_tol_reductions);
+      fvm_lnum_t g_n_max_loops = n_max_loops;
+      fvm_parall_counter_max(&g_n_max_loops, 1);
+      bft_printf(_("\n  Max. number of iterations to solve transitivity"
+                   " excess: %lu\n"), (unsigned long)g_n_max_loops);
     }
   }
 
   /* Free memory */
 
-  BFT_FREE(tmp_buffer);
-  BFT_FREE(distances);
-  BFT_FREE(bool_list);
+  BFT_FREE(ibuf);
+  BFT_FREE(vbuf);
+  BFT_FREE(rbuf);
+  BFT_FREE(set);
+  BFT_FREE(list);
 
   cs_join_gset_destroy(&equiv_gnum);
 }
@@ -2226,20 +2360,20 @@ _keep_global_vtx_evolution(cs_int_t                n_iwm_vertices,
  * parameters:
  *   n_vertices      <-- number of vertices before merge/after intersection
  *   vertices        <-- array of cs_join_vertex_t structures
- *   p_n_af_vertices --> number of vertices after the merge step
+ *   p_n_am_vertices --> number of vertices after the merge step
  *   p_o2n_vtx_id    --> array keeping the evolution of the vertex ids
  *---------------------------------------------------------------------------*/
 
 static void
 _keep_local_vtx_evolution(cs_int_t                 n_vertices,
                           const cs_join_vertex_t   vertices[],
-                          cs_int_t                *p_n_af_vertices,
+                          cs_int_t                *p_n_am_vertices,
                           cs_int_t                *p_o2n_vtx_id[])
 {
   cs_int_t  i;
   fvm_gnum_t  prev;
 
-  cs_int_t  n_af_vertices = 0;
+  cs_int_t  n_am_vertices = 0;
   cs_int_t  *o2n_vtx_id = NULL;
   fvm_lnum_t  *order = NULL;
   fvm_gnum_t  *vtx_gnum = NULL;
@@ -2263,7 +2397,7 @@ _keep_local_vtx_evolution(cs_int_t                 n_vertices,
   BFT_MALLOC(o2n_vtx_id, n_vertices, cs_int_t);
 
   prev = vtx_gnum[order[0]];
-  o2n_vtx_id[order[0]] = n_af_vertices;
+  o2n_vtx_id[order[0]] = n_am_vertices;
 
   for (i = 1; i < n_vertices; i++) {
 
@@ -2272,18 +2406,18 @@ _keep_local_vtx_evolution(cs_int_t                 n_vertices,
 
     if (cur != prev) {
       prev = cur;
-      n_af_vertices++;
-      o2n_vtx_id[o_id] = n_af_vertices;
+      n_am_vertices++;
+      o2n_vtx_id[o_id] = n_am_vertices;
     }
     else
-      o2n_vtx_id[o_id] = n_af_vertices;
+      o2n_vtx_id[o_id] = n_am_vertices;
 
   } /* End of loop on vertices */
 
-  /* n_af_vertices is an id */
-  n_af_vertices += 1;
+  /* n_am_vertices is an id */
+  n_am_vertices += 1;
 
-  assert(n_af_vertices <= n_vertices); /* after merge <= after inter. */
+  assert(n_am_vertices <= n_vertices); /* after merge <= after inter. */
 
   /* Free memory */
 
@@ -2292,8 +2426,80 @@ _keep_local_vtx_evolution(cs_int_t                 n_vertices,
 
   /* Set return pointers */
 
-  *p_n_af_vertices = n_af_vertices;
+  *p_n_am_vertices = n_am_vertices;
   *p_o2n_vtx_id = o2n_vtx_id;
+}
+
+/*----------------------------------------------------------------------------
+ * Search for new elements to add to the definition of the current edge
+ * These new sub-elements come from initial edges which are now (after the
+ * merge step) sub-edge of the current edge
+ * Count step
+ *
+ * parameters:
+ *   edge_id        <-- id of the edge to deal with
+ *   inter_edges    <-- structure keeping data on edge intersections
+ *   edges          <-- edges definition
+ *   n_iwm_vertices <-- initial number of vertices in work_mesh
+ *   n_new_sub_elts --> number of new elements to add in the edge definition
+ *
+ * returns:
+ *  number of new sub-elements related to this edge
+ *---------------------------------------------------------------------------*/
+
+static cs_int_t
+_count_new_sub_edge_elts(cs_int_t                      edge_id,
+                         const cs_join_inter_edges_t  *inter_edges,
+                         const cs_join_edges_t        *edges,
+                         cs_int_t                      n_iwm_vertices)
+{
+  cs_int_t  j, k, j1, j2, sub_edge_id;
+  cs_int_t  start, end, _start, _end, v1_num, v2_num;
+  cs_bool_t  found;
+
+  cs_int_t  n_new_sub_elts = 0;
+
+  start = inter_edges->index[edge_id];
+  end = inter_edges->index[edge_id+1];
+
+  for (j1 = start; j1 < end-1; j1++) {
+
+    v1_num = inter_edges->vtx_lst[j1];
+
+    if (v1_num <= n_iwm_vertices) { /* v1 is an initial vertex */
+      for (j2 = j1+1; j2 < end; j2++) {
+
+        v2_num = inter_edges->vtx_lst[j2];
+
+        if (v2_num <= n_iwm_vertices) { /* (v1,v2) is an initial edge */
+
+          sub_edge_id = CS_ABS(cs_join_mesh_get_edge(v1_num,
+                                                     v2_num,
+                                                     edges))-1;
+          assert(sub_edge_id != -1);
+          _start = inter_edges->index[sub_edge_id];
+          _end = inter_edges->index[sub_edge_id+1];
+
+          for (j = _start; j < _end; j++) {
+
+            found = false;
+            for (k = j1+1; k < j2; k++)
+              if (inter_edges->vtx_glst[k] == inter_edges->vtx_glst[j])
+                found = true;
+
+            if (found == false)
+              n_new_sub_elts += 1;
+
+          } /* End of loop on sub_edge_id definition */
+
+        }
+
+      } /* End of loop on j2 */
+    }
+
+  } /* End of loop on j1 */
+
+  return n_new_sub_elts;
 }
 
 /*----------------------------------------------------------------------------
@@ -2301,32 +2507,234 @@ _keep_local_vtx_evolution(cs_int_t                 n_vertices,
  * cs_join_inter_edges_t structure should be not NULL.
  *
  * parameters:
- *   o2n_vtx_id    <-- array keeping the evolution of the vertex ids
- *   p_inter_edges <-> pointer to the structure keeping data on
- *                     edge intersections
+ *   param          <-- user-defined parameters for the joining algorithm
+ *   n_iwm_vertices <-- initial number of vertices in work_mesh
+ *   o2n_vtx_id     <-- array keeping the evolution of the vertex ids
+ *   edges          <-- edges definition
+ *   p_inter_edges  <-> pointer to the structure keeping data on
+ *                      edge intersections
  *---------------------------------------------------------------------------*/
 
 static void
-_update_inter_edges_after_merge(const cs_int_t           o2n_vtx_id[],
+_update_inter_edges_after_merge(cs_join_param_t          param,
+                                cs_int_t                 n_iwm_vertices,
+                                const cs_int_t           o2n_vtx_id[],
+                                const cs_join_edges_t   *edges,
+                                const cs_join_mesh_t    *mesh,
                                 cs_join_inter_edges_t  **p_inter_edges)
 {
-  cs_int_t  i, j, prev_num, new_num;
+  cs_int_t  i, j,k, j1, j2,  start_shift, idx_shift;
+  cs_int_t  save, _start, _end, start, end;
+  cs_int_t  v1_num, v2_num, v1_id, v2_id, sub_edge_id;
+  fvm_gnum_t  v1_gnum, v2_gnum, new_gnum, prev_gnum;
+  cs_bool_t  found;
 
-  cs_int_t  *new_index = NULL;
+  cs_int_t  n_adds = 0;
+
   cs_join_inter_edges_t  *inter_edges = *p_inter_edges;
+  cs_join_inter_edges_t  *new_inter_edges = NULL;
   cs_int_t  n_edges = inter_edges->n_edges;
+  cs_int_t  init_list_size = inter_edges->index[n_edges];
 
-  /* No need to update vtx_glst because it's no more used */
+  assert(n_edges == edges->n_edges);
 
-  if (inter_edges->vtx_glst != NULL)
-    BFT_FREE(inter_edges->vtx_glst);
+  /* Define vtx_glst to compare global vertex numbering */
+
+  if (inter_edges->vtx_glst == NULL)
+    BFT_MALLOC(inter_edges->vtx_glst, inter_edges->index[n_edges], fvm_gnum_t);
+
+  for (i = 0; i < inter_edges->index[n_edges]; i++) {
+    v1_id = inter_edges->vtx_lst[i] - 1;
+    inter_edges->vtx_glst[i] = mesh->vertices[v1_id].gnum;
+  }
+
+  /* Delete redundancies of vertices sharing the same global numbering
+     after the merge step and define a new index */
+
+  idx_shift = 0;
+  save = inter_edges->index[0];
+
+  for (i = 0; i < n_edges; i++) {
+
+    start = save;
+    end = inter_edges->index[i+1];
+
+    if (end - start > 0) {
+
+      start_shift = start;
+      v1_id = edges->def[2*i] - 1;
+      v2_id = edges->def[2*i+1] - 1;
+      v1_gnum = mesh->vertices[v1_id].gnum;
+      v2_gnum = mesh->vertices[v2_id].gnum;
+      prev_gnum = inter_edges->vtx_glst[start_shift];
+
+      /* Don't take into account vertices with the same number as the
+         first edge element */
+
+      while (prev_gnum == v1_gnum && start_shift + 1 < end)
+        prev_gnum = inter_edges->vtx_glst[++start_shift];
+
+      if (prev_gnum != v1_gnum && start_shift < end) {
+
+        inter_edges->vtx_lst[idx_shift] = inter_edges->vtx_lst[start_shift];
+        inter_edges->abs_lst[idx_shift] = inter_edges->abs_lst[start_shift];
+        inter_edges->vtx_glst[idx_shift] = inter_edges->vtx_glst[start_shift];
+        idx_shift += 1;
+
+        for (j = start_shift + 1; j < end; j++) {
+
+          new_gnum = inter_edges->vtx_glst[j];
+
+          /* Don't take into account redundancies and vertices with the same
+             number as the second edge element */
+
+          if (prev_gnum != new_gnum && new_gnum != v2_gnum) {
+            prev_gnum = new_gnum;
+            inter_edges->vtx_lst[idx_shift] = inter_edges->vtx_lst[j];
+            inter_edges->abs_lst[idx_shift] = inter_edges->abs_lst[j];
+            inter_edges->vtx_glst[idx_shift] = inter_edges->vtx_glst[j];
+            idx_shift += 1;
+          }
+
+        }
+
+      } /* If start_shift < end */
+
+    } /* end - start > 0 */
+
+    save = inter_edges->index[i+1];
+    inter_edges->index[i+1] = idx_shift;
+
+  } /* End of loop on edge intersections */
+
+  inter_edges->max_sub_size = 0;
+
+  for (i = 0; i < n_edges; i++)
+    inter_edges->max_sub_size =
+            CS_MAX(inter_edges->max_sub_size,
+                       inter_edges->index[i+1] - inter_edges->index[i]);
+
+  assert(inter_edges->index[n_edges] <= init_list_size);
+
+  BFT_REALLOC(inter_edges->vtx_lst, inter_edges->index[n_edges], cs_int_t);
+  BFT_REALLOC(inter_edges->abs_lst, inter_edges->index[n_edges], float);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
+  bft_printf(" AFTER REDUNDANCIES CLEAN\n");
+  cs_join_inter_edges_dump(inter_edges, edges, mesh);
+#endif
+
+  /* Add new vertices from initial edges which are now sub-edges */
+
+  for (i = 0; i < n_edges; i++)
+    n_adds += _count_new_sub_edge_elts(i, inter_edges, edges, n_iwm_vertices);
+
+  if (param.verbosity > 1)
+    bft_printf(_("  Number of sub-elements to add to edge definition: %8d\n"),
+               n_adds);
+
+  if (n_adds > 0) { /* Define a new inter_edges structure */
+
+    new_inter_edges = cs_join_inter_edges_create(n_edges);
+
+    BFT_MALLOC(new_inter_edges->vtx_lst,
+               inter_edges->index[n_edges] + n_adds, cs_int_t);
+    BFT_MALLOC(new_inter_edges->abs_lst,
+               inter_edges->index[n_edges] + n_adds, float);
+
+    n_adds = 0;
+    idx_shift = 0;
+    new_inter_edges->index[0] = 0;
+
+    for (i = 0; i < n_edges; i++) {
+
+      new_inter_edges->edge_gnum[i] = inter_edges->edge_gnum[i];
+      start = inter_edges->index[i];
+      end = inter_edges->index[i+1];
+
+      if (start - end > 0) {
+
+        for (j1 = start; j1 < end-1; j1++) {
+
+          v1_num = inter_edges->vtx_lst[j1];
+          new_inter_edges->vtx_lst[idx_shift] = v1_num;
+          new_inter_edges->abs_lst[idx_shift] = inter_edges->abs_lst[j1];
+          idx_shift++;
+
+          if (v1_num <= n_iwm_vertices) { /* v1 is an initial vertex */
+            for (j2 = j1+1; j2 < end; j2++) {
+
+              v2_num = inter_edges->vtx_lst[j2];
+
+              if (v2_num <= n_iwm_vertices) { /* (v1,v2) is an initial edge */
+
+                sub_edge_id =
+                  CS_ABS(cs_join_mesh_get_edge(v1_num, v2_num, edges))-1;
+                assert(sub_edge_id != -1);
+
+                _start = inter_edges->index[sub_edge_id];
+                _end = inter_edges->index[sub_edge_id+1];
+
+                for (j = _start; j < _end; j++) {
+
+                  found = false;
+                  for (k = j1+1; k < j2; k++)
+                    if (inter_edges->vtx_glst[k] == inter_edges->vtx_glst[j])
+                      found = true;
+
+                  if (found == false) {
+
+                    new_inter_edges->vtx_lst[idx_shift] =
+                      inter_edges->vtx_lst[j];
+                    new_inter_edges->abs_lst[idx_shift] =
+                      inter_edges->abs_lst[j];
+                    idx_shift++;
+
+                  }
+
+                } /* End of loop on sub_edge_id definition */
+
+              }
+
+            } /* End of loop on j2 */
+          }
+
+        } /* End of loop on j1 */
+
+        /* Add last vertex in the previous edge definition */
+
+        new_inter_edges->vtx_lst[idx_shift] = inter_edges->vtx_lst[end-1];
+        new_inter_edges->abs_lst[idx_shift] = inter_edges->abs_lst[end-1];
+        idx_shift++;
+
+      } /* If end - start > 0 */
+
+      new_inter_edges->index[i+1] = idx_shift;
+
+    } /* End of loop on edges */
+
+    inter_edges = cs_join_inter_edges_destroy(inter_edges);
+    inter_edges = new_inter_edges;
+
+    inter_edges->max_sub_size = 0;
+
+    for (i = 0; i < n_edges; i++)
+      inter_edges->max_sub_size = CS_MAX(inter_edges->max_sub_size,
+                                         inter_edges->index[i+1]);
+
+  } /* End if n_adds > 0 */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
+  bft_printf(" AFTER SUB ELTS ADD\n");
+  cs_join_inter_edges_dump(inter_edges, edges, mesh);
+#endif
 
   /* Update cs_join_inter_edges_t structure */
 
   for (i = 0; i < n_edges; i++) {
 
-    cs_int_t  start = inter_edges->index[i];
-    cs_int_t  end = inter_edges->index[i+1];
+    start = inter_edges->index[i];
+    end = inter_edges->index[i+1];
 
     for (j = start; j < end; j++) {
 
@@ -2337,86 +2745,6 @@ _update_inter_edges_after_merge(const cs_int_t           o2n_vtx_id[],
     }
 
   }
-
-  /* Delete redundancies and define a new index */
-
-  BFT_MALLOC(new_index, n_edges + 1, cs_int_t);
-
-  for (i = 0; i < n_edges + 1; i++)
-    new_index[i] = 0;
-
-  for (i = 0; i < n_edges; i++) {
-
-    cs_int_t  start = inter_edges->index[i];
-    cs_int_t  end = inter_edges->index[i+1];
-
-    if (end - start > 0) {
-
-      prev_num = inter_edges->vtx_lst[start];
-      new_index[i+1] += 1;
-
-      for (j = start + 1; j < end; j++) {
-
-        new_num = inter_edges->vtx_lst[j];
-
-        if (prev_num != new_num) {
-          prev_num = new_num;
-          new_index[i+1] += 1;
-        }
-
-      }
-
-    } /* end - start > 0 */
-
-  } /* End of loop on edge intersections */
-
-  inter_edges->max_sub_size = 0;
-
-  for (i = 0; i < n_edges; i++) {
-
-    inter_edges->max_sub_size = CS_MAX(inter_edges->max_sub_size,
-                                       new_index[i+1]);
-    new_index[i+1] += new_index[i];
-
-  }
-
-  for (i = 0; i < n_edges; i++) {
-
-    cs_int_t  start = inter_edges->index[i];
-    cs_int_t  end = inter_edges->index[i+1];
-
-    if (end - start > 0) {
-
-      cs_int_t  shift = new_index[i];
-
-      inter_edges->vtx_lst[shift] = inter_edges->vtx_lst[start];
-      inter_edges->abs_lst[shift++] = inter_edges->abs_lst[start];
-
-      prev_num = inter_edges->vtx_lst[start];
-
-      for (j = start + 1; j < end; j++) {
-
-        new_num = inter_edges->vtx_lst[j];
-
-        if (prev_num != new_num) {
-          inter_edges->vtx_lst[shift] = new_num;
-          inter_edges->abs_lst[shift++] = inter_edges->abs_lst[j];
-          prev_num = new_num;
-        }
-
-      }
-
-    } /* end - start  > 0 */
-
-  } /* End of loop on edge intersections */
-
-  /* Apply updates to the structure */
-
-  BFT_FREE(inter_edges->index);
-  inter_edges->index = new_index;
-
-  BFT_REALLOC(inter_edges->vtx_lst, inter_edges->index[n_edges], cs_int_t);
-  BFT_REALLOC(inter_edges->abs_lst, inter_edges->index[n_edges], float);
 
   /* Return pointer */
 
@@ -2582,9 +2910,9 @@ _get_faces_to_send(cs_int_t           n_faces,
  * Send back to the original rank the new face and vertex description.
  *
  * parameters:
- *   gnum_rank_index <-- index on ranks for the old global face numbering
- *   send_mesh       <-- distributed mesh on faces to join
- *   p_recv_mesh     <-> mesh on local selected faces to be joined
+ *   gnum_rank_index  <--  index on ranks for the old global face numbering
+ *   send_mesh        <--  distributed mesh on faces to join
+ *   p_recv_mesh      <->  mesh on local selected faces to be joined
  *---------------------------------------------------------------------------*/
 
 static void
@@ -2676,7 +3004,9 @@ cs_join_create_new_vertices(int                     verbosity,
                             fvm_gnum_t             *p_n_g_new_vertices,
                             cs_join_eset_t        **p_vtx_eset)
 {
-  cs_int_t  i;
+  cs_int_t  i, shift;
+  double  tol_min;
+  cs_join_vertex_t  v1, v2;
 
   cs_int_t  n_new_vertices = 0;
   fvm_gnum_t  n_g_new_vertices = 0;
@@ -2719,7 +3049,7 @@ cs_join_create_new_vertices(int                     verbosity,
                            &new_vtx_gnum);
 
   if (verbosity > 0)
-    bft_printf(_("  Number of new vertices to create: %10lu\n"),
+    bft_printf(_("\n  Global number of new vertices to create: %10lu\n"),
                (unsigned long)n_g_new_vertices);
 
   /* Define new vertices */
@@ -2762,28 +3092,42 @@ cs_join_create_new_vertices(int                     verbosity,
 
     /* Create new vertices if needed */
 
-    if (v1_num > n_iwm_vertices) { /* Add a new vertex */
+    if (v1_num > n_iwm_vertices) {
 
-      cs_int_t shift = inter1.vtx_id - n_iwm_vertices;
-      cs_join_vertex_t  new = _get_new_vertex(inter1.curv_abs,
-                                               new_vtx_gnum[shift],
-                                               &(edges->def[2*inter1.edge_id]),
-                                               work);
-
-      work->vertices[inter1.vtx_id] = new;
+      shift = inter1.vtx_id - n_iwm_vertices;
+      v1 = _get_new_vertex(inter1.curv_abs,
+                           new_vtx_gnum[shift],
+                           &(edges->def[2*inter1.edge_id]),
+                           work);
+      tol_min = v1.tolerance;
 
     }
+    else
+      tol_min = work->vertices[v1_num-1].tolerance;
 
-    if (v2_num > n_iwm_vertices) { /* Add a new vertex */
+    if (v2_num > n_iwm_vertices) {
 
-      cs_int_t shift = inter2.vtx_id - n_iwm_vertices;
-      cs_join_vertex_t  new = _get_new_vertex(inter2.curv_abs,
-                                               new_vtx_gnum[shift],
-                                               &(edges->def[2*inter2.edge_id]),
-                                               work);
+      shift = inter2.vtx_id - n_iwm_vertices;
+      v2 = _get_new_vertex(inter2.curv_abs,
+                           new_vtx_gnum[shift],
+                           &(edges->def[2*inter2.edge_id]),
+                           work);
+      tol_min = CS_MIN(tol_min, v2.tolerance);
 
-      work->vertices[inter2.vtx_id] = new;
+    }
+    else
+      tol_min = CS_MIN(tol_min, work->vertices[v2_num-1].tolerance);
 
+    /* A new vertex has a tolerance equal to the minimal tolerance
+       between the two vertices implied in the intersection */
+
+    if (v1_num > n_iwm_vertices) {
+      v1.tolerance = tol_min;
+      work->vertices[inter1.vtx_id] = v1;
+    }
+    if (v2_num > n_iwm_vertices) {
+      v2.tolerance = tol_min;
+      work->vertices[inter2.vtx_id] = v2;
     }
 
     /* Add equivalence between the two current vertices */
@@ -2823,9 +3167,9 @@ cs_join_create_new_vertices(int                     verbosity,
   } /* End of loop on vertices */
 
 #if 0
-  if (verbosity > 3)  /* Dump local structures */
     _dump_vtx_eset(vtx_equiv, work);
 #endif
+
 #endif
 
   /* Set return pointers */
@@ -2867,7 +3211,6 @@ cs_join_merge_vertices(cs_join_param_t        param,
   _initialize_merge_counter();
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
-  if (param.verbosity > 3)
     _dump_vtx_eset(vtx_eset, work);
 #endif
 
@@ -3002,7 +3345,7 @@ cs_join_merge_update_struct(cs_join_param_t          param,
                             cs_join_mesh_t         **p_local_mesh,
                             fvm_gnum_t              *p_o2n_vtx_gnum[])
 {
-  cs_int_t  n_af_vertices = 0; /* new number of vertices after merge */
+  cs_int_t  n_am_vertices = 0; /* new number of vertices after merge */
   cs_int_t  *o2n_vtx_id = NULL;
   fvm_gnum_t  *o2n_vtx_gnum = NULL;
   cs_join_mesh_t  *mesh = *p_mesh;
@@ -3021,7 +3364,7 @@ cs_join_merge_update_struct(cs_join_param_t          param,
 
   _keep_local_vtx_evolution(mesh->n_vertices, /* n_vertices after inter */
                             mesh->vertices,
-                            &n_af_vertices,   /* n_vertices after merge */
+                            &n_am_vertices,   /* n_vertices after merge */
                             &o2n_vtx_id);
 
   /* Update all structures which keeps data about vertices */
@@ -3030,14 +3373,15 @@ cs_join_merge_update_struct(cs_join_param_t          param,
 
     /* Update inter_edges structure */
 
-    _update_inter_edges_after_merge(o2n_vtx_id, &inter_edges);
+    _update_inter_edges_after_merge(param,
+                                    n_iwm_vertices,
+                                    o2n_vtx_id,  /* size of mesh->n_vertices */
+                                    edges,
+                                    mesh,
+                                    &inter_edges);
 
     assert(edges->n_edges == inter_edges->n_edges);  /* Else: problem for
                                                         future synchro. */
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
-    cs_join_inter_edges_dump(inter_edges, edges, mesh);
-#endif
 
     /* Update cs_join_mesh_t structure after the merge of vertices
        numbering of the old vertices + add new vertices */
@@ -3046,7 +3390,7 @@ cs_join_merge_update_struct(cs_join_param_t          param,
                         edges,
                         inter_edges->index,
                         inter_edges->vtx_lst,
-                        n_af_vertices,
+                        n_am_vertices,
                         o2n_vtx_id);
 
   } /* End if inter_edges != NULL */
@@ -3059,7 +3403,7 @@ cs_join_merge_update_struct(cs_join_param_t          param,
                         edges,
                         NULL,
                         NULL,
-                        n_af_vertices,
+                        n_am_vertices,
                         o2n_vtx_id);
 
   BFT_FREE(o2n_vtx_id);

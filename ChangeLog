@@ -1,3 +1,22 @@
+* 14/12/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Improve the parallel joining algorithm.
+  modified routines:
+    include/base/cs_join.h
+    include/base/cs_join_intersect.h
+    include/base/cs_join_mesh.h
+    include/base/cs_join_util.h
+    src/base/cs_join.c
+    src/base/cs_join_f2c.f90
+    src/base/cs_join_intersect.c
+    src/base/cs_join_merge.c
+    src/base/cs_join_mesh.c
+    src/base/cs_join_post.c
+    src/base/cs_join_set.c
+    src/base/cs_join_split.c
+    src/base/cs_join_update.c
+    src/base/cs_join_util.c
+    users/base/usjoin.f90
+
 * 09/12/2009 - David Monfort <david.monfort@edf.fr>
   Rename the main script in code_saturne to avoid a conflict
   with the cs executable of csound package.

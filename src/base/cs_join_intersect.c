@@ -246,7 +246,6 @@ _dot_product(const double  v1[],
  *   face_start    <--  start index in face_vtx_lst
  *   face_end      <--  end index in face_vtx_lst
  *   face_vtx_lst  <--  list of vertices for "face->vertices" connectivity
- *   n_vertices    <--  number of vertices
  *   vertices      <--  array on data associated to each selected vertex
  *   extents       -->  min. and max coordinates of the bounding box
  *---------------------------------------------------------------------------*/
@@ -255,7 +254,6 @@ static void
 _get_face_extents(const cs_int_t           face_start,
                   const cs_int_t           face_end,
                   const cs_int_t           face_vtx_lst[],
-                  const cs_int_t           n_vertices,
                   const cs_join_vertex_t  *vertices,
                   fvm_coord_t              extents[6])
 {
@@ -274,8 +272,6 @@ _get_face_extents(const cs_int_t           face_start,
 
     cs_int_t  vtx_id = face_vtx_lst[i] - 1;
     cs_join_vertex_t  vtx = vertices[vtx_id];
-
-    assert(vtx_id < n_vertices);
 
     for (j = 0; j < 3; j++) {
       extents[j] = CS_MIN(extents[j], vtx.coord[j] - vtx.tolerance);
@@ -455,9 +451,6 @@ _add_trivial_equiv(cs_int_t                e1_id,
 
   cs_join_eset_check_size(equiv_id, &vtx_equiv);
 
-  assert(abs_e1 <= 0.0 || abs_e1 >= 1.0);
-  assert(abs_e2 <= 0.0 || abs_e2 >= 1.0);
-
   /* abs_ei is either 0 or 1, but we avoid exact floating-point comparisons */
 
   if (abs_e1 < 0.5)
@@ -536,6 +529,861 @@ _add_inter(cs_int_t              e1_id,
 }
 
 /*----------------------------------------------------------------------------
+ * Reduce tolerance for the weakest equivalence in order to break this
+ * equivalence
+ *
+ * parameters:
+ *  n_elts      <-- size of vtx_lst (n_inter on edges + the two extremities)
+ *  edge_length <-- length of the edge
+ *  equiv_lst   <-- true if equiv between two elements else false
+ *  abs_lst     <-- curvilinear abscissa of each element
+ *  tol_lst     <-> tolerance of each element
+ *---------------------------------------------------------------------------*/
+
+static void
+_break_equivalence(cs_int_t           n_elts,
+                   double             edge_length,
+                   cs_bool_t          equiv_lst[],
+                   const float        abs_lst[],
+                   const double       tol_lst[])
+{
+  int  i1, i2, i2_save;
+  double  range, _rtf, rtf12, rtf21;
+
+  int  k = 0, i1_save = 0;
+  double rtf = -1.0;
+
+  for (i1 = 0; i1 < n_elts - 1; i1++) {
+
+    i2 = i1 + 1;
+
+    if (i1 == 0)
+      k = 0;
+    else
+      k += n_elts - i1;
+
+    if (equiv_lst[k] == true) {
+
+      range = (abs_lst[i2] - abs_lst[i1]) * edge_length;
+      rtf12 = range/tol_lst[i1];
+      rtf21 = range/tol_lst[i2];
+
+      assert(range >= 0.0);
+      assert(rtf12 < 1.0);
+      assert(rtf21 < 1.0);
+
+      _rtf = CS_MAX(rtf12, rtf21);
+      if (_rtf > rtf) {
+        i1_save = i1;
+        i2_save = i2;
+        rtf = _rtf;
+      }
+
+    }
+
+  } /* End of loop on i1 */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(" Break equivalence between [%d, %d]\n", i1_save, i2_save);
+#endif
+
+  if (rtf > 0.0) { /* We have find an equivalence to break */
+
+    /* Break equivalence between i1_save and i2_save which the weakest
+       equivalence between two consecutive vertices in the set */
+
+    for (i1 = 0; i1 < n_elts - 1; i1++) {
+
+      i2 = i1 + 1;
+
+      if (i1 == 0)
+        k = 0;
+      else
+        k += n_elts - i1;
+
+      if (i1 == i1_save) {
+        for (i2 = i1 + 1; i2 < n_elts; i2++, k++)
+          equiv_lst[k] = false;
+      }
+
+    }
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Fill equiv_lst[] according to the tolerance related to each vertex
+ *
+ * parameters:
+ *  param       <-- set of user-defined parameters
+ *  n_elts      <-- size of vtx_lst (n_inter on edges + the two extremities)
+ *  abs_lst     <-- curvilinear abscissa of each element
+ *  tol_lst     <-> tolerance of each element
+ *  equiv_lst   <-> true if equiv between two elements else false
+ *  tag         <-- array used to mark equivalent vertices by the same tag
+ *  edge_length <-- length of the edge
+ *
+ * returns:
+ *  number of tolerance reductions applied
+ *---------------------------------------------------------------------------*/
+
+static cs_int_t
+_find_edge_equiv(cs_join_param_t  param,
+                 cs_int_t         n_elts,
+                 float            abs_lst[],
+                 double           tol_lst[],
+                 cs_bool_t        equiv_lst[],
+                 int              tag[],
+                 double           edge_length)
+{
+  int  i, i1, i2, k;
+  double  dist;
+
+  cs_int_t  n_loops = 0;
+  cs_bool_t  do_reduction = true;
+
+  /* Find equivalence between vertices sharing the same edge */
+
+  for (i1 = 0, k = 0; i1 < n_elts - 1; i1++) {
+    for (i2 = i1 + 1; i2 < n_elts; i2++, k++) {
+
+      dist = (abs_lst[i2] - abs_lst[i1]) * edge_length;
+      assert(dist >= 0.0);
+
+      /* Tag equivalence if test is true */
+
+      if (tol_lst[i1] < dist || tol_lst[i2] < dist)
+        equiv_lst[k] = false;
+      else
+        equiv_lst[k] = true;
+
+    }
+  }
+
+  while (do_reduction == true && n_loops <= param.n_max_equiv_breaks) {
+
+    /* Reduce tolerance after the first loop if necessary */
+
+    if (do_reduction == true && n_loops > 0)
+      _break_equivalence(n_elts,
+                         edge_length,
+                         equiv_lst,
+                         abs_lst,
+                         tol_lst);
+
+    /* Tag vertices in equivalence with the same even if they are
+       in equivalence thanks to transitivity */
+
+    for (i = 0; i < n_elts; i++)  /* Re-initialize array */
+      tag[i] = i+1;
+
+    for (i1 = 0; i1 < n_elts-1; i1++) {
+
+      if (i1 == 0)
+        k = 0;
+      else
+        k += n_elts - i1;
+
+      if (equiv_lst[k] == true)
+        tag[i1+1] = tag[i1];
+
+    }
+
+    /* Check tolerance consistency: avoid excessive transitivity
+       on an edge */
+
+    do_reduction = false;
+    for (i1 = 0, k = 0; i1 < n_elts - 1; i1++) {
+      for (i2 = i1 + 1; i2 < n_elts; i2++, k++) {
+
+        if (equiv_lst[k] == false)
+          if (tag[i1] == tag[i2])
+            do_reduction = true;
+
+      } /* End of loop on i2 */
+    } /* End of loop on i1 */
+
+    n_loops++;
+
+  } /* End of while reduc_tol == false */
+
+  return n_loops - 1;
+}
+
+/*----------------------------------------------------------------------------
+ * Get 3D intersection location(s) between two edges in curvilinear abscissa.
+ *
+ * We successively try to find vertices-vertices matching,
+ *                             vertex-vertex matching,
+ *                             a "real" intersection.
+ *
+ * Each vertex owns a tolerance which drives to a sphere in which intersection
+ * is possible.
+ * When an intersection is found, we store the related curvilinear abscissa
+ * for each edge.
+ * If curvilinear abscissa : 0 => -0.01 / 1 => 1.01 in order to test an
+ * inequality rather than an equality.
+ *
+ * Let be two edges E1 (P1E1, P2E1) and E2 (P1E2, P2E2) :
+ * a point on edge E1 is defined by :
+ *   P1E1 + s * (P2E1 - P1E1)   with 0 <= s <= 1
+ * a point on edge B is defined by :
+ *   P1E2 + t * (P2E2 - P1E2)   with 0 <= t <= 1
+ *
+ * The squared distance between a point from A and a point from B is :
+ *  len(s, t) = || P1E2 - P1E1 + t * (P2E2 - P1E1) - s * (P2E1 - P1E1) ||^2
+ * equivalent to :
+ *   len(s, t) = a.s^2 + 2b.s.t + c.t^2 + 2d.s + 2e.t + f = d2_e1e2(s,t)
+ *
+ * We try to find (s, t) such as len(s,t) is minimal
+ * with 0 <= s <= 1 and 0 <= t <= 1
+ *
+ *       ->   ->
+ * a =   v0 . v0                  ->
+ *                                v0
+ *       ->   ->     P1E1  x--------------> P2E1
+ * b = - v0 . v1            \
+ *                           \               P2E2
+ *       ->   ->              \             ^
+ * c =   v1 . v1               \           /
+ *                           -> \         /
+ *       ->   ->             v2  \       / ->
+ * d = - v0 . v2                  \     /  v1
+ *                                 \   /
+ *       ->   ->                    \ /
+ * e =   v1 . v2                     x
+ *                                P1E2
+ *
+ *    ->
+ *    v0 = vector (P1E1, P2E1)
+ *    ->
+ *    v1 = vector (P1E2, P2E2)
+ *    ->
+ *    v2 = vector (P1E1, P1E2)
+ *
+ * parameters:
+ *   mesh     <-- pointer to joining mesh
+ *   edges    <-- pointer to edges
+ *   p1e1     <--  pointer to the associated P1E1 cs_join_vertex_t structure
+ *   p2e1     <--  pointer to the associated P2E1 cs_join_vertex_t structure
+ *   p1e2     <--  pointer to the associated P1E2 cs_join_vertex_t structure
+ *   p2e2     <--  pointer to the associated P2E2 cs_join_vertex_t structure
+ *   fraction <--  global tolerance for geometrical intersection.
+ *   abs_e1   <--  intersection location on E1 (curvilinear abscissa)
+ *   abs_e2   <--  intersection location on E2 (curvilinear abscissa)
+ *   n_inter  <->  number of intersections detected.
+ *---------------------------------------------------------------------------*/
+
+static void
+_new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
+                        const cs_join_edges_t  *edges,
+                        double                  fraction,
+                        cs_int_t                e1_id,
+                        double                  abs_e1[2],
+                        cs_int_t                e2_id,
+                        double                  abs_e2[2],
+                        double                  parall_eps2,
+                        int                     verbosity,
+                        int                    *n_inter)
+{
+  int  k;
+  double  a, b, c, d, e, f, s, t;
+  double  d2_limit_e1, d_limit_e1, d2_limit_e2, d_limit_e2, d2_e1e2;
+  double  inv_cross_norm2, cross_norm2;
+  double  int_inter[2], ext_inter[4], v0[3], v1[3], v2[3];
+
+  int  n_int_inter = 0, n_ext_inter = 0;
+  cs_bool_t  int_p1e2 = false, int_p2e2 = false;
+
+  cs_int_t  p1e1_id = edges->def[2*e1_id] - 1;
+  cs_int_t  p2e1_id = edges->def[2*e1_id+1] - 1;
+  cs_int_t  p1e2_id = edges->def[2*e2_id] - 1;
+  cs_int_t  p2e2_id = edges->def[2*e2_id+1] - 1;
+
+  const cs_join_vertex_t  p1e1 = mesh->vertices[p1e1_id];
+  const cs_join_vertex_t  p2e1 = mesh->vertices[p2e1_id];
+  const cs_join_vertex_t  p1e2 = mesh->vertices[p1e2_id];
+  const cs_join_vertex_t  p2e2 = mesh->vertices[p2e2_id];
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  cs_bool_t  tst_dbg = (verbosity > 5 &&
+                       (p1e1.gnum == 716852 || p2e1.gnum == 716852 ||
+                        p1e2.gnum == 716852 || p2e2.gnum == 716852) ?
+                        true : false);
+#endif
+
+  /* Initialize parameters */
+
+  *n_inter = 0 ;
+
+  assert(p1e1.gnum != p2e1.gnum);
+  assert(p1e2.gnum != p2e2.gnum);
+
+  if (p1e1.gnum == p1e2.gnum || p2e1.gnum == p2e2.gnum)
+    return;
+
+  if (p1e1.gnum == p2e2.gnum || p2e1.gnum == p1e2.gnum)
+    return;
+
+  /* Compute local vectors and parameters */
+
+  for (k = 0; k < 3; k++) {
+    v0[k] = p2e1.coord[k] - p1e1.coord[k];
+    v1[k] = p2e2.coord[k] - p1e2.coord[k];
+    v2[k] = p1e2.coord[k] - p1e1.coord[k];
+  }
+
+  a =   _dot_product(v0, v0);
+  b = - _dot_product(v0, v1);
+  c =   _dot_product(v1, v1);
+  d = - _dot_product(v0, v2);
+  e =   _dot_product(v1, v2);
+  f =   _dot_product(v2, v2);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  if (tst_dbg) {
+    bft_printf("\n\np1e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
+               p1e1.gnum, p1e1.coord[0], p1e1.coord[1], p1e1.coord[2], p1e1.tolerance);
+    bft_printf("p2e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
+               p2e1.gnum, p2e1.coord[0], p2e1.coord[1], p2e1.coord[2], p2e1.tolerance);
+    bft_printf("p1e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
+               p1e2.gnum, p1e2.coord[0], p1e2.coord[1], p1e2.coord[2], p1e2.tolerance);
+    bft_printf("p2e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n\n",
+               p2e2.gnum, p2e2.coord[0], p2e2.coord[1], p2e2.coord[2], p2e2.tolerance);
+    bft_printf("v0 : [ %10.8e %10.8e %10.8e]\n", v0[0], v0[1], v0[2]);
+    bft_printf("v1 : [ %10.8e %10.8e %10.8e]\n", v1[0], v1[1], v1[2]);
+    bft_printf("v2 : [ %10.8e %10.8e %10.8e]\n\n", v2[0], v2[1], v2[2]);
+    bft_printf("a : %10.8e, b : %10.8e, c : %10.8e\n", a, b, c);
+    bft_printf("d : %10.8e, e : %10.8e, f : %10.8e\n", d, e, f);
+  }
+#endif
+
+  /* Check size of each edge is not equal to 0 */
+
+  assert(a > 0);
+  assert(c > 0);
+
+  /* Check computation of the tolerance */
+
+  assert(sqrt(a) * fraction * 1.00001 >= p1e1.tolerance);
+  assert(sqrt(a) * fraction * 1.00001 >= p2e1.tolerance);
+  assert(sqrt(c) * fraction * 1.00001 >= p1e2.tolerance);
+  assert(sqrt(c) * fraction * 1.00001 >= p2e2.tolerance);
+
+  /*------------------------------------------------------------------
+   * First part : Search for interior/interior intersection
+   * The only possibility is an intersection with 0 < s < 1 and
+   * 0 < t < 1.
+   *------------------------------------------------------------------*/
+
+  /* Edges are parallel if a.c - b^2 = 0.
+   * However, this term is o(length^4). So, we will prefer work with angle
+   * If two edges are not parallel => a.c - b^2 > 0.
+   *
+   * cos(theta) = v0.v1 / ||v0||.||v1||
+   * cos^2 (theta) = (v0.v1)^2 / ((v0.v0).(v1.v1))^2 = (-b)^2 / (a.c)
+   * sin^2 (theta) = 1 - b^2 / (a.c)
+   *
+   * || v0 ^ v1 ||^2 = ||v0||^2 . ||v1||^2 . sin^2(thetha)
+   *
+   */
+
+  cross_norm2 = CS_ABS(a * c - b * b);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  if (tst_dbg)
+    bft_printf(" [I]: Test inter. E1 - E2: "
+               "\t cross_norm2: %12.8e - parall_limit: %12.8e\n",
+               cross_norm2, parall_eps2*a*c);
+#endif
+
+  if (cross_norm2 > parall_eps2 * a * c) {
+
+    /* <=> 1 - b^2/(a.c) < epsilon^2 <=> sin^2(theta)  < epsilon^2
+
+       Edges are not parallel.
+       Define s and t if there is an intersection on interior points.
+
+       ->     ->     ->
+       v2 + s.v0 = t.v1 and cross_norm2 = a.c - b^2 != 0.0
+
+       => s = (b.e - c.d)/cross_norm2
+       => t = (e.a - b.d)/cross_norm2
+    */
+
+    s = b * e - c * d;
+    t = b * d - a * e;
+    inv_cross_norm2 = 1.0 / cross_norm2;
+    s *= inv_cross_norm2;
+    t *= inv_cross_norm2;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  if (tst_dbg)
+    bft_printf(" [I]-1: Test inter. E1 - E2: "
+               "\t s: %12.8e - t: %12.8e\n", s, t);
+#endif
+
+    if (s >= 0. && s <= 1.0) {
+      if (t >= 0. && t <= 1.0)  {
+
+        /* If tests are OK, we are on an interior point for E1 and E2 */
+
+        d2_e1e2 = CS_ABS(s*(a*s + 2.0*(b*t + d)) + t*(c*t + 2.0*e) + f);
+        d_limit_e1 = (1.0-s) * p1e1.tolerance + s * p2e1.tolerance;
+        d_limit_e2 = (1.0-t) * p1e2.tolerance + t * p2e2.tolerance;
+        d2_limit_e1 = d_limit_e1 * d_limit_e1;
+        d2_limit_e2 = d_limit_e2 * d_limit_e2;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+        if (tst_dbg)
+          bft_printf("\t[I]-2: s = %10.8e, t = %10.8e\n"
+                     "\t  d2_e1e2: %10.8e, d2_limit_e1: %10.8e, "
+                     "d2_limit_e2: %10.8e\n",
+                     s, t, d2_e1e2, d2_limit_e1, d2_limit_e2);
+#endif
+
+        if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
+
+          /* Under tolerance for edges E1 and E2 => intersection is possible */
+
+          assert(0.0 <= s && s <= 1.0);
+          assert(0.0 <= t && t <= 1.0);
+
+          n_int_inter = 1;
+          int_inter[0] = s;
+          int_inter[1] = t;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+          if (tst_dbg)
+            bft_printf("\t[I]-3: Add int. inter. Edge-Edge (%10.8e,%10.8e)\n",
+                       s, t);
+#endif
+
+        } /* If we are under tolerance */
+
+      } /* If it is an interior point for edge E2 */
+    } /* If it is an interior point for edge E1 */
+
+  } /* End of last test : inter. E1 - E2 */
+
+  /*-----------------------------------------------------------------
+   * Second part : we try to find under the current tolerance if
+   * "parallel edges", "extremity-extremity" or "extremity-interior"
+   * are possible.
+   *-----------------------------------------------------------------*/
+
+  /* Distance between P1E1 (s = 0) and a point on E2 */
+  /* ----------------------------------------------- */
+
+  t = -e / c; /* Nearest point on E2 if s = 0 => t = -e/c */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  if (tst_dbg)
+    bft_printf(" [II] Test inter. P1E1 - E2: t = %10.8e\n", t);
+#endif
+
+  if (t > -fraction && t < 1.0 + fraction) { /* filter */
+
+    d2_e1e2 = t*(c*t + 2.0*e) + f;
+    assert(d2_e1e2 >= -1.e-8);
+
+    /* Tolerance for vertex p1e1 (s = 0) */
+
+    d2_limit_e1 = p1e1.tolerance * p1e1.tolerance;
+
+    if (d2_e1e2 <= d2_limit_e1) { /* Under the tolerance for vertex P1E1 */
+
+      /* Tolerance for a vertex on E2 located at "t" */
+
+      d_limit_e2 = (1-t)*p1e2.tolerance + t*p2e2.tolerance;
+      d2_limit_e2 = d_limit_e2 * d_limit_e2;
+
+      if (d2_e1e2 <= d2_limit_e2) {
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+        if (tst_dbg)
+          bft_printf("\t[II]-3: Under tol. for P1E1 and a point of E2\n"
+                     "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+                     d2_e1e2, d2_limit_e1, d2_limit_e2);
+#endif
+
+        /* We are under tolerance for edge E2. We try to find if it is
+           a vertex-vertex intersection */
+
+        if (t < 0.0) { /* Test intersection P1E1-P1E2 */
+
+          d2_e1e2 = f; /* s = t = 0.0 */
+          d2_limit_e2 = p1e2.tolerance * p1e2.tolerance;
+
+          if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
+
+            if (_check_equiv(edges, mesh, e1_id, 0.0, e2_id, 0.0, verbosity)) {
+
+              /* "extremity-extremity" intersection with s = t = 0.0
+                 under the tolerance is possible */
+
+              int_p1e2 = true;
+              n_ext_inter = 1;
+              ext_inter[0] = 0.0;
+              ext_inter[1] = 0.0;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+              if (tst_dbg)
+                bft_printf("\t[II]-4: Add inter. Vtx-Vtx (0.00, 0.00)\n");
+#endif
+            }
+          }
+        }
+        else if (t > 1.0) { /* Test intersection P1E1-P2E2 */
+
+          d2_e1e2 = c + 2.0*e + f; /* s = 0.0 and t = 1.0 */
+          d2_limit_e2 = p2e2.tolerance * p2e2.tolerance;
+
+          if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
+
+            if (_check_equiv(edges, mesh, e1_id, 0.0, e2_id, 1.0, verbosity)) {
+
+              /* "extremity-extremity" intersection with s = 0.0, t = 1.0
+                 under the tolerance is possible */
+
+              int_p2e2 = true;
+              n_ext_inter = 1;
+              ext_inter[0] = 0.0;
+              ext_inter[1] = 1.0;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+              if (tst_dbg)
+                bft_printf("\t[II]-5: Add inter. Vtx-Vtx (0.00, 1.00)\n");
+#endif
+
+            }
+          }
+        }
+        else {
+
+          assert(0.0 <= t && t <= 1.0);
+
+          /* It's an "extremity-interior" intersection */
+
+          n_ext_inter = 1;
+          ext_inter[0] = 0.0;
+          ext_inter[1] = t;
+
+          if (t <= 0.0)
+            int_p1e2 = true;
+          if (t >= 1.0)
+            int_p2e2 = true;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+          if (tst_dbg)
+            bft_printf("\t[II]-6: Add inter. Vtx-Edge (0.00, %10.8e)\n", t);
+#endif
+
+        }
+
+      } /* End if d2_e1e2 <= d2_limit_e2 */
+
+    } /* End if d2_e1e2 <= d2_limit_e1 */
+
+  } /* End if -fraction < t < 1 + fraction */
+
+  /* Distance between P2E1 (s = 1) and a point on edge E2 */
+  /* ---------------------------------------------------- */
+
+  t = -(b + e) / c; /* Minimum for d2_e1e2 is reached for t = -(b+e) / c
+                       when s = 1. */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  if (tst_dbg)
+    bft_printf(" [III] Test inter. P2E1 - E2: t = %10.8e\n", t);
+#endif
+
+  if (t > -fraction && t < 1.0 + fraction) { /* filter */
+
+    d2_e1e2 = CS_ABS((a + 2.0*(b*t + d)) + t*(c*t + 2.0*e) + f);
+
+    assert(d2_e1e2 >= -1.e-8);
+
+    /* Tolerance for vertex p2e1 (s = 1) */
+
+    d2_limit_e1 = p2e1.tolerance * p2e1.tolerance;
+
+    if (d2_e1e2 <= d2_limit_e1) { /* Under the tolerance for vertex P2E1 */
+
+      d_limit_e2 = (1.0-t)*p1e2.tolerance + t*p2e2.tolerance;
+      d2_limit_e2 = d_limit_e2 * d_limit_e2;
+
+      if (d2_e1e2 <= d2_limit_e2) { /* Under tolerance for edge 2 */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+        if (tst_dbg)
+          bft_printf("\t[III]-3: Under tol. for P2E1 and a point of E2\n"
+                     "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+                     d2_e1e2, d2_limit_e1, d2_limit_e2);
+#endif
+
+        /* We are under tolerance for edge E2. We try to find if it is
+           a vertex-vertex intersection */
+
+        if (t < 0.0) { /* Test intersection P2E1-P1E2 */
+
+          d2_e1e2 = CS_ABS(a + 2.0*d + f);
+          d2_limit_e2 = p1e2.tolerance * p1e2.tolerance;
+
+          if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
+
+            if (_check_equiv(edges, mesh, e1_id, 1.0, e2_id, 0.0, verbosity)) {
+
+              /* "extremity-extremity" intersection with s = 1.0, t = 0.0
+                 under the tolerance is possible */
+
+              int_p1e2 = true;
+              ext_inter[2*n_ext_inter] = 1.0;
+              ext_inter[2*n_ext_inter+1] = 0.0;
+              n_ext_inter += 1;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+              if (tst_dbg)
+                bft_printf("\t[III]-4: Add inter. Vtx-Vtx (1.00, 0.00)\n");
+#endif
+
+            }
+          }
+        }
+        else if (t > 1.0) { /* Test intersection P2E1-P2E2 */
+
+          d2_e1e2 = CS_ABS(a + 2.0*(b + d + e) + c + f);
+          d2_limit_e2 = p2e2.tolerance * p2e2.tolerance;
+
+          if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
+
+            if (_check_equiv(edges, mesh, e1_id, 1.0, e2_id, 1.0, verbosity)) {
+
+              /* "extremity-extremity" intersection with s = t = 1.0
+                 under the tolerance is possible */
+
+              int_p2e2 = true;
+              ext_inter[2*n_ext_inter] = 1.0;
+              ext_inter[2*n_ext_inter+1] = 1.0;
+              n_ext_inter += 1;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+              if (tst_dbg)
+                bft_printf("\t[III]-5: Add inter. Vtx-Vtx (1.00, 1.00)\n");
+#endif
+
+            }
+          }
+        }
+        else {
+
+          assert(0.0 <= t && t <= 1.0);
+
+          /* It's an "extremity-interior" intersection */
+
+          ext_inter[2*n_ext_inter] = 1.0;
+          ext_inter[2*n_ext_inter+1] = t;
+          n_ext_inter += 1;
+
+          if (t <= 0.0)
+            int_p1e2 = true;
+          if (t >= 1.0)
+            int_p2e2 = true;
+
+          assert(n_ext_inter <= 2);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+          if (tst_dbg)
+            bft_printf("\t[III]-6: Add inter. Vtx-Edge (1.00, %10.8e)\n", t);
+#endif
+        }
+
+      } /* End if d2_e1e2 <= d2_limit_e2 */
+
+    } /* End if d2_e1e2 <= d2_limit_e1 */
+
+  } /* End if -fraction < t < 1 + fraction */
+
+  /* If vertices from edge E2 are not implied in an intersection
+     we do a test for each vertex */
+
+  if (int_p1e2 == false && n_ext_inter < 2) {
+
+    /* Distance between P1E2 (t = 0.0) on edge E2 and a point on edge E1 */
+    /* ----------------------------------------------------------------- */
+
+    s = -d / a; /* t = 0.0 */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+    if (tst_dbg)
+      bft_printf(" [IV] Test inter. P1E2 - E1: s = %10.8e\n", s);
+#endif
+
+    if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
+
+      d2_e1e2 = CS_ABS(s*(a*s + 2.0*d) + f);
+      d2_limit_e2 = p1e2.tolerance * p1e2.tolerance;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+    if (tst_dbg)
+      bft_printf("\t [IV-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
+                 d2_e1e2, d2_limit_e2);
+#endif
+
+      if (d2_e1e2 <= d2_limit_e2) { /* Under the tolerance for vertex P1E2 */
+
+        d_limit_e1 = (1.0-s)*p1e1.tolerance + s*p2e1.tolerance;
+        d2_limit_e1 = d_limit_e1 * d_limit_e1;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+        if (tst_dbg)
+          bft_printf("\t [IV-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
+                     d2_e1e2, d2_limit_e1);
+#endif
+
+        if (d2_e1e2 <= d2_limit_e1) {
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+          if (tst_dbg)
+            bft_printf("\t[IV]-2: Under tol. for P1E2 and a point of E1\n"
+                       "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+                       d2_e1e2, d2_limit_e1, d2_limit_e2);
+#endif
+
+          /* We are under tolerance for edge E1. There is an intersection
+             between P1E2 and a point on edge E1 */
+
+          ext_inter[2*n_ext_inter] = s;
+          ext_inter[2*n_ext_inter+1] = 0.0;
+          n_ext_inter += 1;
+          assert(n_ext_inter <= 2);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+          if (tst_dbg)
+            bft_printf("\t[IV]-3: Add inter. Edge-Vtx (%10.8e, 0.00)\n", s);
+#endif
+
+        } /* End if d2_e1e2 < d2_limit_e1 */
+
+      } /* End if d2_e1e2 < d2_limit_e2 */
+
+    } /* 0.0 < s < 1.0 */
+
+  } /* If int_p1e2 == false && n_ext_inter < 2 */
+
+  if (int_p2e2 == false && n_ext_inter < 2) {
+
+    /* Distance between P2E2 (t = 1.0) on edge E2 and a point on edge E1 */
+    /* ----------------------------------------------------------------- */
+
+    s = -(b + d) / a; /* t = 1 */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+    if (tst_dbg)
+      bft_printf(" [V] Test inter. P2E2 - E1: s = %10.8e\n", s);
+#endif
+
+    if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
+
+      d2_e1e2 = CS_ABS(s*(a*s + 2.0*(b + d)) + c + 2.0*e + f);
+      d2_limit_e2 = p2e2.tolerance * p2e2.tolerance;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+    if (tst_dbg)
+      bft_printf("\t [V-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
+                 d2_e1e2, d2_limit_e2);
+#endif
+
+      if (d2_e1e2 <= d2_limit_e2) { /* Under the tolerance for vertex P2E2 */
+
+        d_limit_e1 = (1.0-s)*p1e1.tolerance + s*p2e1.tolerance;
+        d2_limit_e1 = d_limit_e1 * d_limit_e1;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+        if (tst_dbg)
+          bft_printf("\t [V-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
+                     d2_e1e2, d2_limit_e1);
+#endif
+
+        if (d2_e1e2 <= d2_limit_e1) {
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+          if (tst_dbg)
+            bft_printf("\t[V]-2: Under tol. for P2E2 and a point of E1\n"
+                       "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+                       d2_e1e2, d2_limit_e1, d2_limit_e2);
+#endif
+
+          /* We are under tolerance for edge E1. There is an intersection
+             between P2E2 and a point on edge E1 */
+
+          ext_inter[2*n_ext_inter] = s;
+          ext_inter[2*n_ext_inter+1] = 1.0;
+          n_ext_inter += 1;
+          assert(n_ext_inter <= 2);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+          if (tst_dbg)
+            bft_printf("\t[V]-3: Add inter (%10.8e, 1.01)\n", s);
+#endif
+
+        } /* End if d2_e1e2 < d2_limit_e1 */
+
+      } /* End if d2_e1e2 < d2_limit_e2 */
+
+    } /* 0.0 < s < 1.0 */
+
+  } /* If int_p2e2 == false && n_ext_inter < 2 */
+
+  /* Define intersection(s) to return */
+
+  if (n_int_inter == 1) {
+
+    if (n_ext_inter < 2) { /* Interior intersection is kept */
+      *n_inter = 1;
+      abs_e1[0] = int_inter[0];
+      abs_e2[0] = int_inter[1];
+    }
+    else { /* A choice between interior or extremity intersection
+              has to be done */
+
+      double  ds = CS_ABS(ext_inter[2] - ext_inter[0]);
+      double  dt = CS_ABS(ext_inter[3] - ext_inter[1]);
+
+      assert(n_ext_inter == 2);
+
+      if (ds > fraction && dt > fraction) { /* Keep extremity inter. */
+        *n_inter = 2;
+        for (k = 0; k < 2; k++) {
+          abs_e1[k] = ext_inter[2*k];
+          abs_e2[k] = ext_inter[2*k+1];
+        }
+      }
+      else { /* Keep interior inter. */
+        *n_inter = 1;
+        abs_e1[0] = int_inter[0];
+        abs_e2[0] = int_inter[1];
+      }
+
+    }
+
+  }
+  else { /* n_int_inter == 0 */
+
+    *n_inter = n_ext_inter;
+
+    for (k = 0; k < n_ext_inter; k++) {
+      abs_e1[k] = ext_inter[2*k];
+      abs_e2[k] = ext_inter[2*k+1];
+    }
+
+  }
+
+
+}
+
+/*----------------------------------------------------------------------------
  * Get 3D intersection location(s) between two edges in curvilinear abscissa.
  *
  * We successively try to find vertices-vertices matching,
@@ -607,6 +1455,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
                     double                  abs_e1[2],
                     cs_int_t                e2_id,
                     double                  abs_e2[2],
+                    double                  parall_eps2,
                     int                     verbosity,
                     int                    *n_inter)
 {
@@ -664,19 +1513,19 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (tst_dbg) {
-    bft_printf("\n\np1e1 : %10u - [%12.6e %12.6e %12.6e] - tol: %12.6g\n",
+    bft_printf("\n\np1e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
                p1e1.gnum, p1e1.coord[0], p1e1.coord[1], p1e1.coord[2], p1e1.tolerance);
-    bft_printf("p2e1 : %10u - [%12.6e %12.6e %12.6e] - tol: %12.6g\n",
+    bft_printf("p2e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
                p2e1.gnum, p2e1.coord[0], p2e1.coord[1], p2e1.coord[2], p2e1.tolerance);
-    bft_printf("p1e2 : %10u - [%12.6e %12.6e %12.6e] - tol: %12.6g\n",
+    bft_printf("p1e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
                p1e2.gnum, p1e2.coord[0], p1e2.coord[1], p1e2.coord[2], p1e2.tolerance);
-    bft_printf("p2e2 : %10u - [%12.6e %12.6e %12.6e] - tol: %12.6g\n\n",
+    bft_printf("p2e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n\n",
                p2e2.gnum, p2e2.coord[0], p2e2.coord[1], p2e2.coord[2], p2e2.tolerance);
-    bft_printf("v0 : [ %12.6e %12.6e %12.6e]\n", v0[0], v0[1], v0[2]);
-    bft_printf("v1 : [ %12.6e %12.6e %12.6e]\n", v1[0], v1[1], v1[2]);
-    bft_printf("v2 : [ %12.6e %12.6e %12.6e]\n\n", v2[0], v2[1], v2[2]);
-    bft_printf("a : %12.6e, b : %12.6e, c : %12.6e\n", a, b, c);
-    bft_printf("d : %12.6e, e : %12.6e, f : %12.6e\n", d, e, f);
+    bft_printf("v0 : [ %10.8e %10.8e %10.8e]\n", v0[0], v0[1], v0[2]);
+    bft_printf("v1 : [ %10.8e %10.8e %10.8e]\n", v1[0], v1[1], v1[2]);
+    bft_printf("v2 : [ %10.8e %10.8e %10.8e]\n\n", v2[0], v2[1], v2[2]);
+    bft_printf("a : %10.8e, b : %10.8e, c : %10.8e\n", a, b, c);
+    bft_printf("d : %10.8e, e : %10.8e, f : %10.8e\n", d, e, f);
   }
 #endif
 
@@ -705,7 +1554,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (tst_dbg)
-    bft_printf(" [I] Test inter. P1E1 - E2: t = %12.6e\n", t);
+    bft_printf(" [I] Test inter. P1E1 - E2: t = %10.8e\n", t);
 #endif
 
   if (t > -fraction && t < 1.0 + fraction) { /* filter */
@@ -729,7 +1578,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
         if (tst_dbg)
           bft_printf("\t[I]-3: Under tol. for P1E1 and a point of E2\n"
-                     "\td2_e1e2 = %12.6e, d2_lim_e1: %12.6e, d2_lim_e2: %12.6e\n",
+                     "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
                      d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
@@ -809,7 +1658,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
           if (tst_dbg)
-            bft_printf("\t[I]-6: Add inter. Vtx-Edge (0.00, %12.6e)\n", t);
+            bft_printf("\t[I]-6: Add inter. Vtx-Edge (0.00, %10.8e)\n", t);
 #endif
 
         }
@@ -828,7 +1677,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (tst_dbg)
-    bft_printf(" [II] Test inter. P2E1 - E2: t = %12.6e\n", t);
+    bft_printf(" [II] Test inter. P2E1 - E2: t = %10.8e\n", t);
 #endif
 
   if (t > -fraction && t < 1.0 + fraction) { /* filter */
@@ -851,7 +1700,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
         if (tst_dbg)
           bft_printf("\t[II]-3: Under tol. for P2E1 and a point of E2\n"
-                     "\td2_e1e2 = %12.6e, d2_lim_e1: %12.6e, d2_lim_e2: %12.6e\n",
+                     "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
                      d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
@@ -929,7 +1778,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
           if (tst_dbg)
-            bft_printf("\t[II]-6: Add inter. Vtx-Edge (1.00, %12.6e)\n", t);
+            bft_printf("\t[II]-6: Add inter. Vtx-Edge (1.00, %10.8e)\n", t);
 #endif
         }
 
@@ -956,7 +1805,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     if (tst_dbg)
-      bft_printf(" [III] Test inter. P1E2 - E1: s = %12.6e\n", s);
+      bft_printf(" [III] Test inter. P1E2 - E1: s = %10.8e\n", s);
 #endif
 
     if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
@@ -966,7 +1815,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     if (tst_dbg)
-      bft_printf("\t [III-1a] d2_e1e2: %12.6e - d2_lim_e2: %12.6e\n",
+      bft_printf("\t [III-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
                  d2_e1e2, d2_limit_e2);
 #endif
 
@@ -977,7 +1826,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
         if (tst_dbg)
-          bft_printf("\t [IV-1b] d2_e1e2: %12.6e - d2_lim_e1: %12.6e\n",
+          bft_printf("\t [IV-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
                      d2_e1e2, d2_limit_e1);
 #endif
 
@@ -986,7 +1835,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
           if (tst_dbg)
             bft_printf("\t[III]-2: Under tol. for P1E2 and a point of E1\n"
-                       "\t d2_e1e2 = %12.6e, d2_lim_e1: %12.6e, d2_lim_e2: %12.6e\n",
+                       "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
                        d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
@@ -1001,7 +1850,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
           if (tst_dbg)
-            bft_printf("\t[III]-3: Add inter. Edge-Vtx (%12.6e, 0.00)\n", s);
+            bft_printf("\t[III]-3: Add inter. Edge-Vtx (%10.8e, 0.00)\n", s);
 #endif
 
           if (*n_inter == 2)
@@ -1024,7 +1873,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     if (tst_dbg)
-      bft_printf(" [IV] Test inter. P2E2 - E1: s = %12.6e\n", s);
+      bft_printf(" [IV] Test inter. P2E2 - E1: s = %10.8e\n", s);
 #endif
 
     if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
@@ -1034,7 +1883,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     if (tst_dbg)
-      bft_printf("\t [IV-1a] d2_e1e2: %12.6e - d2_lim_e2: %12.6e\n",
+      bft_printf("\t [IV-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
                  d2_e1e2, d2_limit_e2);
 #endif
 
@@ -1045,7 +1894,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
         if (tst_dbg)
-          bft_printf("\t [IV-1b] d2_e1e2: %12.6e - d2_lim_e1: %12.6e\n",
+          bft_printf("\t [IV-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
                      d2_e1e2, d2_limit_e1);
 #endif
 
@@ -1054,7 +1903,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
           if (tst_dbg)
             bft_printf("\t[IV]-2: Under tol. for P2E2 and a point of E1\n"
-                       "\t d2_e1e2 = %12.6e, d2_lim_e1: %12.6e, d2_lim_e2: %12.6e\n",
+                       "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
                        d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
@@ -1069,7 +1918,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
           if (tst_dbg)
-            bft_printf("\t[IV]-3: Add inter (%12.6e, 1.01)\n", s);
+            bft_printf("\t[IV]-3: Add inter (%10.8e, 1.01)\n", s);
 #endif
 
           if (*n_inter == 2)
@@ -1110,12 +1959,11 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
     double  inv_cross_norm2;
     double  cross_norm2 = CS_ABS(a * c - b * b);
-    double  parall_eps2 = 1e-6; /* default value : eps * eps */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     if (tst_dbg)
-      bft_printf(" [V]: Test inter. E1 - E2: cross_norm2: %12.6e\n"
-                 "\ta = %12.6e, b = %12.6e, c = %12.6e, a*c = %12.6e\n",
+      bft_printf(" [V]: Test inter. E1 - E2: cross_norm2: %10.8e\n"
+                 "\ta = %10.8e, b = %10.8e, c = %10.8e, a*c = %10.8e\n",
                  cross_norm2, a, b, c, a*c);
 #endif
 
@@ -1152,9 +2000,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
         if (tst_dbg)
-          bft_printf("\t[V]-2: s = %12.6e, t = %12.6e\n"
-                     "\t  d2_e1e2: %12.6e, d2_limit_e1: %12.6e, "
-                     "d2_limit_e2: %12.6e\n",
+          bft_printf("\t[V]-2: s = %10.8e, t = %10.8e\n"
+                     "\t  d2_e1e2: %10.8e, d2_limit_e1: %10.8e, "
+                     "d2_limit_e2: %10.8e\n",
                      s, t, d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
@@ -1170,7 +2018,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
           if (tst_dbg)
-            bft_printf("\t[V]-3: Add inter. Edge-Edge (%12.6e,%12.6e)\n", s, t);
+            bft_printf("\t[V]-3: Add inter. Edge-Edge (%10.8e,%10.8e)\n", s, t);
 #endif
 
           *n_inter += 1;
@@ -1741,112 +2589,177 @@ cs_join_inter_edges_destroy(cs_join_inter_edges_t  *inter_edges)
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_add_equiv_from_edges(const cs_join_param_t         param,
-                             const cs_join_mesh_t         *mesh,
+cs_join_add_equiv_from_edges(cs_join_param_t               param,
+                             cs_join_mesh_t               *mesh,
                              const cs_join_edges_t        *edges,
                              const cs_join_inter_edges_t  *inter_edges,
                              cs_join_eset_t               *vtx_equiv)
 {
-  cs_int_t  i, j, k, i1, i2;
+  cs_int_t  i, j, k, i1, i2, size, esize, n_breaks;
 
-  cs_int_t  *tmp_vtx_lst = NULL;
-  float  *tmp_abs_lst = NULL;
-  double  *tmp_tol_lst = NULL;
+  cs_bool_t  *equiv_lst = NULL;
+  cs_int_t  *vtx_lst = NULL, *tag_lst = NULL;
+  float  *abs_lst = NULL;
+  double  *tol_lst = NULL;
 
-  if (inter_edges == NULL)
-    return;
+  int  n_break_counter = 0, n_max_breaks = 0;
 
-  if (inter_edges->index[inter_edges->n_edges] == 0)
-    return; /* Intersections only on the extremities */
+  if (inter_edges != NULL) {
+    if (inter_edges->index[inter_edges->n_edges] > 0) {
 
-  assert(inter_edges->vtx_lst != NULL);
-  assert(inter_edges->abs_lst != NULL);
+      assert(inter_edges->vtx_lst != NULL);
+      assert(inter_edges->abs_lst != NULL);
 
-  BFT_MALLOC(tmp_vtx_lst, inter_edges->max_sub_size + 2, cs_int_t);
-  BFT_MALLOC(tmp_abs_lst, inter_edges->max_sub_size + 2, float);
-  BFT_MALLOC(tmp_tol_lst, inter_edges->max_sub_size + 2, double);
+      size = inter_edges->max_sub_size + 2;
+      BFT_MALLOC(vtx_lst, size, cs_int_t);
+      BFT_MALLOC(tag_lst, size, cs_int_t);
+      BFT_MALLOC(abs_lst, size, float);
+      BFT_MALLOC(tol_lst, size, double);
+      esize = size*(size-1)/2;
+      BFT_MALLOC(equiv_lst, esize, cs_bool_t);
 
-  /* Main loop */
+      /* Main loop */
 
-  for (i = 0; i < inter_edges->n_edges; i++) {
+      for (i = 0; i < inter_edges->n_edges; i++) {
 
-    cs_int_t  v1_num = edges->def[2*i];
-    cs_int_t  v2_num = edges->def[2*i+1];
-    cs_int_t  v1_id = v1_num - 1;
-    cs_int_t  v2_id = v2_num - 1;
-    cs_int_t  start = inter_edges->index[i];
-    cs_int_t  end = inter_edges->index[i+1];
-    cs_int_t  n_sub_elts = 2 + end - start;
-    cs_real_t  edge_length = _compute_length(mesh->vertices[v1_id],
-                                             mesh->vertices[v2_id]);
+        cs_int_t  v1_num = edges->def[2*i];
+        cs_int_t  v2_num = edges->def[2*i+1];
+        cs_int_t  v1_id = v1_num - 1;
+        cs_int_t  v2_id = v2_num - 1;
+        cs_int_t  start = inter_edges->index[i];
+        cs_int_t  end = inter_edges->index[i+1];
+        cs_int_t  n_sub_elts = 2 + end - start;
+        double  edge_length = _compute_length(mesh->vertices[v1_id],
+                                              mesh->vertices[v2_id]);
 
-    /* Build temporay lists */
-
-    tmp_vtx_lst[0] = v1_num;
-    tmp_abs_lst[0] = 0.0;
-    tmp_tol_lst[0] =  (mesh->vertices[v1_id]).tolerance
-                    * _cs_join_tol_eps_coef * param.edge_equiv_tol_coef;
-
-    for (j = start, k = 1; j < end; j++, k++) {
-      tmp_vtx_lst[k] = inter_edges->vtx_lst[j];
-      tmp_abs_lst[k] = inter_edges->abs_lst[j];
-      tmp_tol_lst[k] =  (mesh->vertices[tmp_vtx_lst[k]-1]).tolerance
-                      * _cs_join_tol_eps_coef * param.edge_equiv_tol_coef;
-    }
-
-    tmp_vtx_lst[k] = v2_num;
-    tmp_abs_lst[k] = 1.0;
-    tmp_tol_lst[k] =  (mesh->vertices[v2_id]).tolerance
-                    * _cs_join_tol_eps_coef * param.edge_equiv_tol_coef;
-
-    /* Loop on couples of vertices to find if two vertices are equivalent */
-
-    for (i1 = 0; i1 < n_sub_elts - 1; i1++) {
-
-      for (i2 = i1 + 1; i2 < n_sub_elts; i2++) {
-
-        if (tmp_vtx_lst[i1] != tmp_vtx_lst[i2]) {
-
-          float  ds = tmp_abs_lst[i2] - tmp_abs_lst[i1];
-          cs_real_t  range = ds * edge_length;
-
-          assert(range >= 0.0);
-
-          /* Add an equivalence if test is true */
-
-          if (tmp_tol_lst[i1] >= range && tmp_tol_lst[i2] >= range) {
-
-            cs_int_t  equiv_id = vtx_equiv->n_equiv;
-
-            cs_join_eset_check_size(equiv_id, &vtx_equiv);
-
-            if (tmp_vtx_lst[i1] < tmp_vtx_lst[i2]) {
-              vtx_equiv->equiv_couple[2*equiv_id] = tmp_vtx_lst[i1];
-              vtx_equiv->equiv_couple[2*equiv_id+1] = tmp_vtx_lst[i2];
-            }
-            else {
-              vtx_equiv->equiv_couple[2*equiv_id] = tmp_vtx_lst[i2];
-              vtx_equiv->equiv_couple[2*equiv_id+1] = tmp_vtx_lst[i1];
-            }
-            vtx_equiv->n_equiv += 1;
-
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+        fvm_gnum_t  v1_gnum = (mesh->vertices[v1_num-1]).gnum;
+        fvm_gnum_t  v2_gnum = (mesh->vertices[v2_num-1]).gnum;
+        bft_printf("\n%6d: [%9u] = (%7d [%9u] - %7d [%9u] - len: %8.6e)\n",
+                   i, edges->gnum[i], v1_num, v1_gnum, v2_num, v2_gnum,
+                   edge_length);
+        if (inter_edges->vtx_glst == NULL) {
+          for (j = start, k = 0; j < end; j++, k++) {
+            int  vid = inter_edges->vtx_lst[j] - 1;
+            double  ds_tol = mesh->vertices[vid].tolerance/edge_length;
+            bft_printf("    %7d (%9u) - (%7d, s = %8.6e, ds_tol = %8.6e)\n",
+                       k+1, vid+1, mesh->vertices[vid].gnum,
+                       inter_edges->abs_lst[j], ds_tol);
           }
-          else
-            break;
+        }
+        else {
+          for (j = start, k = 0; j < end; j++, k++) {
+            int  vid = inter_edges->vtx_lst[j] - 1;
+            double  ds_tol = mesh->vertices[vid].tolerance/edge_length;
+            bft_printf("   %9u - (%7d, s = %8.6e, ds_tol = %8.6e)\n",
+                       k+1, inter_edges->vtx_glst[j],
+                       inter_edges->abs_lst[j], ds_tol);
+          }
+        }
+#endif
 
-        } /* End if vtx_lst[i1/i2] != */
+        /* Build temporary lists */
 
-      } /* End of loop on i2 */
+        vtx_lst[0] = v1_num;
+        abs_lst[0] = 0.0;
+        tol_lst[0] = (mesh->vertices[v1_id]).tolerance * _cs_join_tol_eps_coef;
 
-    } /* End of loop on i1 */
+        for (j = start, k = 1; j < end; j++, k++) {
+          vtx_lst[k] = inter_edges->vtx_lst[j];
+          abs_lst[k] = inter_edges->abs_lst[j];
+          tol_lst[k] =  (mesh->vertices[vtx_lst[k]-1]).tolerance
+                       * _cs_join_tol_eps_coef;
+        }
 
-  } /* End of loop on edge intersections */
+        vtx_lst[k] = v2_num;
+        abs_lst[k] = 1.0;
+        tol_lst[k] =  (mesh->vertices[v2_id]).tolerance
+                    * _cs_join_tol_eps_coef;
 
-  /* Free memory */
+        /* Loop on couples of vertices to find if two vertices are equivalent
+           Apply a tolerance reduction if necessary. */
 
-  BFT_FREE(tmp_vtx_lst);
-  BFT_FREE(tmp_abs_lst);
-  BFT_FREE(tmp_tol_lst);
+        n_breaks = _find_edge_equiv(param,
+                                    n_sub_elts,
+                                    abs_lst,
+                                    tol_lst,
+                                    equiv_lst,
+                                    tag_lst,
+                                    edge_length);
+
+        if (n_breaks > 0) {
+
+          n_break_counter += 1;
+          if (param.verbosity > 2)
+            bft_printf(" Edge %8d: n_equiv. broken: %d\n", i+1, n_breaks);
+
+        }
+
+        n_max_breaks = CS_MAX(n_max_breaks, n_breaks);
+
+        /* Add new equivalences */
+
+        for (i1 = 0; i1 < n_sub_elts - 1; i1++) {
+          for (i2 = i1 + 1; i2 < n_sub_elts; i2++) {
+
+            if (tag_lst[i1] == tag_lst[i2]) {
+              if (vtx_lst[i1] != vtx_lst[i2]) {
+
+                cs_int_t  equiv_id = vtx_equiv->n_equiv;
+                cs_join_eset_check_size(equiv_id, &vtx_equiv);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+                bft_printf("  Add equiv %d between [%u, %u]\n",
+                           equiv_id+1,
+                           mesh->vertices[vtx_lst[i1]-1].gnum,
+                           mesh->vertices[vtx_lst[i2]-1].gnum);
+#endif
+
+                if (vtx_lst[i1] < vtx_lst[i2]) {
+                  vtx_equiv->equiv_couple[2*equiv_id] = vtx_lst[i1];
+                  vtx_equiv->equiv_couple[2*equiv_id+1] = vtx_lst[i2];
+                }
+                else {
+                  vtx_equiv->equiv_couple[2*equiv_id] = vtx_lst[i2];
+                  vtx_equiv->equiv_couple[2*equiv_id+1] = vtx_lst[i1];
+                }
+                vtx_equiv->n_equiv += 1;
+
+              }
+            } /* Equivalence found */
+
+          } /* End of loop on i2 */
+        } /* End of loop on i1 */
+
+      } /* End of loop on edge intersections */
+
+      /* Free memory */
+
+      BFT_FREE(vtx_lst);
+      BFT_FREE(tag_lst);
+      BFT_FREE(abs_lst);
+      BFT_FREE(tol_lst);
+      BFT_FREE(equiv_lst);
+
+    } /* inter_edges->index[inter_edges->n_edges] > 0 */
+  } /* inter_edges != NULL */
+
+  if (param.verbosity > 0) {
+
+    fvm_gnum_t n_g_break_counter = n_break_counter;
+    fvm_parall_counter(&n_g_break_counter, 1);
+
+    bft_printf(_("\n  Equivalences broken for %lu edges.\n"),
+               (unsigned long)n_g_break_counter);
+
+    if (param.verbosity > 1) {
+      fvm_lnum_t g_n_max_breaks = n_max_breaks;
+      fvm_parall_counter_max(&g_n_max_breaks, 1);
+      bft_printf(_("\n  Max. number of equiv. breaks: %lu\n"),
+                 (unsigned long)g_n_max_breaks);
+    }
+  }
+
 }
 
 #if defined(HAVE_MPI)
@@ -2624,14 +3537,18 @@ cs_join_intersect_edges(cs_join_param_t         param,
                         cs_join_eset_t        **vtx_eset,
                         cs_join_inter_set_t   **inter_set)
 {
-  cs_int_t  i, j, k, n_inter;
+  cs_int_t  i, j, k;
   double  clock_start, clock_end, cpu_start, cpu_end;
   double  abs_e1[2], abs_e2[2];
 
   cs_join_type_t  join_type = CS_JOIN_TYPE_CONFORM;
+  cs_int_t  n_inter = 0;
   cs_int_t  n_inter_detected = 0, n_real_inter = 0, n_trivial_inter = 0;
   cs_join_inter_set_t  *_inter_set = NULL;
   cs_join_eset_t  *_vtx_eset = NULL;
+
+  const float  merge_limit = param.fraction * param.pre_merge_factor;
+  const double  parall_eps2 = 1e-6;
 
   /* Sanity checks */
 
@@ -2640,6 +3557,9 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
   clock_start = bft_timer_wtime();
   cpu_start = bft_timer_cpu_time();
+
+  if (param.verbosity > 2)
+    bft_printf("  Parallel intersection criterion: %8.5e\n", parall_eps2);
 
   /* Initialization of structures */
 
@@ -2662,13 +3582,25 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
       /* Get edge-edge intersection */
 
-      _edge_edge_3d_inter(mesh,
-                          edges,
-                          param.fraction,
-                          e1_id, abs_e1,
-                          e2_id, abs_e2,
-                          param.verbosity,
-                          &n_inter);
+      if (param.icm == 1)
+        _edge_edge_3d_inter(mesh,
+                            edges,
+                            param.fraction,
+                            e1_id, abs_e1,
+                            e2_id, abs_e2,
+                            parall_eps2,
+                            param.verbosity,
+                            &n_inter);
+
+      else if (param.icm == 2)
+        _new_edge_edge_3d_inter(mesh,
+                                edges,
+                                param.fraction,
+                                e1_id, abs_e1,
+                                e2_id, abs_e2,
+                                parall_eps2,
+                                param.verbosity,
+                                &n_inter);
 
       n_inter_detected += n_inter;
 
@@ -2696,8 +3628,8 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
         cs_bool_t  trivial = false;
 
-        if (abs_e1[k] <= 0.0 || abs_e1[k] >= 1.0)
-          if (abs_e2[k] <= 0.0 || abs_e2[k] >= 1.0)
+        if (abs_e1[k] <= merge_limit || abs_e1[k] >= 1.0 - merge_limit)
+          if (abs_e2[k] <= merge_limit || abs_e2[k] >= 1.0 - merge_limit)
             trivial = true;
 
         if (trivial) {
@@ -2736,17 +3668,17 @@ cs_join_intersect_edges(cs_join_param_t         param,
   if (param.verbosity > 0) {
 
     bft_printf(_("\n"
-                 "  Number of intersections detected: %12lu\n"
+                 "  Number of local intersections detected: %12lu\n"
                  "    Vertex-Vertex intersections:    %12lu\n"
                  "    Other intersections:            %12lu\n"),
                n_inter_detected, n_trivial_inter, n_real_inter);
 
-    if (param.verbosity > 1)
-      bft_printf(_("\n  Number of edge-edge intersection warnings: %8d\n"),
+    if (param.verbosity > 1) {
+      bft_printf(_("\n  Local number of edge-edge intersection warnings:%9d\n"),
                  _n_inter_tolerance_warnings);
-
-    bft_printf(_("\n  Number of equivalences between existing vertices: %9d\n"),
-               _vtx_eset->n_equiv);
+      bft_printf(_("\n  Local number of equivalences between vertices:%9d\n"),
+                 _vtx_eset->n_equiv);
+    }
 
   }
 
@@ -2820,7 +3752,6 @@ cs_join_intersect_faces(const cs_join_param_t   param,
     _get_face_extents(join_mesh->face_vtx_idx[i],
                       join_mesh->face_vtx_idx[i+1],
                       join_mesh->face_vtx_lst,
-                      join_mesh->n_vertices,
                       join_mesh->vertices,
                       f_extents + i*6);
 
@@ -2839,7 +3770,6 @@ cs_join_intersect_faces(const cs_join_param_t   param,
     _face_bbox_search_stats(face_neighborhood,
                             extents_wtime,
                             extents_cpu_time);
-  bft_printf_flush();
 
   /* Retrieve face -> face visibility */
 
@@ -3033,10 +3963,7 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
 
     for (j = 0; j < n_edges; j++, edge_id++) {
 
-      cs_int_t  e_start = edge_visib->index[edge_id];
-      cs_int_t  e_end = edge_visib->index[edge_id+1];
-
-      assert(_count == e_end - e_start);
+      assert(_count == edge_visib->index[edge_id+1]-edge_visib->index[edge_id]);
 
       shift = edge_visib->index[edge_id];
 
@@ -3105,9 +4032,6 @@ cs_join_inter_edges_dump(const cs_join_inter_edges_t  *inter_edges,
 
     bft_printf("\n%6d: [%9u] = (%7d [%9u] - %7d [%9u])\n",
                i, edges->gnum[i], v1_num, v1_gnum, v2_num, v2_gnum);
-
-    assert(v1_num != v2_num);
-    assert(v1_gnum != v2_gnum);
 
     bft_printf("    n_sub_inter: %4d - index : %7d <-- %7d\n",
                end-start, start, end);

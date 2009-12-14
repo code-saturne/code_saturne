@@ -203,8 +203,8 @@ cs_join_inter_edges_destroy(cs_join_inter_edges_t   *inter_edges);
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_add_equiv_from_edges(const cs_join_param_t         param,
-                             const cs_join_mesh_t         *mesh,
+cs_join_add_equiv_from_edges(cs_join_param_t               param,
+                             cs_join_mesh_t               *mesh,
                              const cs_join_edges_t        *edges,
                              const cs_join_inter_edges_t  *inter_edges,
                              cs_join_eset_t               *vtx_equiv);

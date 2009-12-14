@@ -29,7 +29,7 @@
 #define __CS_JOIN_H__
 
 /*============================================================================
- * Structure and function headers handling with ghost cells
+ * Structure and function headers handling with joining operation
  *===========================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -41,6 +41,7 @@
  *---------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_join_util.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -54,9 +55,22 @@ BEGIN_C_DECLS
  * Type definition
  *===========================================================================*/
 
+typedef struct {
+
+  cs_join_param_t   param;      /* Set of parameters used to control
+                                   the joining operations */
+
+  char             *criteria;   /* Criteria used to select border faces
+                                   implied in the joining operation */
+
+} cs_join_t;
+
 /*=============================================================================
  * Global variables
  *===========================================================================*/
+
+extern cs_int_t  cs_glob_n_joinings;
+extern cs_join_t  **cs_glob_join_array;
 
 /*============================================================================
  *  Public function prototypes for Fortran API
@@ -73,9 +87,6 @@ BEGIN_C_DECLS
  * CHARACTER*     joining_criteria : <-- : boundary face selection criteria,
  * REAL           fraction         : <-- : parameter for merging vertices
  * REAL           plane            : <-- : parameter for splitting faces
- * REAL           rtf              : <-- : reduction of tolerance factor
- * REAL           mtf              : <-- : merge tolerance coefficient
- * REAL           etf              : <-- : equivalence tolerance coefficient
  * INTEGER        verbosity        : <-- : verbosity level
  * INTEGER        joining_c_len    : <-- : length of joining_criteria
  *----------------------------------------------------------------------------*/
@@ -85,13 +96,46 @@ void CS_PROCF(defjo1, DEFJO1)
  const char  *joining_criteria,
  cs_real_t   *fraction,
  cs_real_t   *plane,
- cs_real_t   *rtf,
- cs_real_t   *mtf,
- cs_real_t   *etf,
  cs_int_t    *verbosity,
  cs_int_t    *joining_c_len
  CS_ARGF_SUPP_CHAINE
- );
+);
+
+/*----------------------------------------------------------------------------
+ * Set advanced parameters for the joining algorithm.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE SETAJP
+ * *****************
+ *
+ * INTEGER      join_num          : <-- : join number
+ * REAL         mtf               : <-- : merge tolerance coefficient
+ * REAL         pmf               : <-- : pre-merge factor
+ * INTEGER      tcm               : <-- : tolerance computation mode
+ * INTEGER      icm               : <-- : intersection computation mode
+ * INTEGER      maxbrk            : <-- : max number of tolerance reduction
+ * INTEGER      max_sub_faces     : <-- : max. possible number of sub-faces
+ *                                        by splitting a selected face
+ * INTEGER      tml               : <-- : tree max level
+ * INTEGER      tmb               : <-- : tree max boxes
+ * REAL         tmr               : <-- : tree max ratio
+ *---------------------------------------------------------------------------*/
+
+void CS_PROCF(setajp, SETAJP)
+(
+ cs_int_t    *join_num,
+ cs_real_t   *mtf,
+ cs_real_t   *pmf,
+ cs_int_t    *tcm,
+ cs_int_t    *icm,
+ cs_int_t    *maxbrk,
+ cs_int_t    *max_sub_faces,
+ cs_int_t    *tml,
+ cs_int_t    *tmb,
+ cs_real_t   *tmr
+ CS_ARGF_SUPP_CHAINE
+);
 
 /*=============================================================================
  * Public function prototypes
@@ -104,30 +148,13 @@ void CS_PROCF(defjo1, DEFJO1)
  *   sel_criteria  <-- boundary face selection criteria
  *   fraction      <-- value of the fraction parameter
  *   plane         <-- value of the plane parameter
- *   rtf           <-- value of the "reduction tolerance factor" parameter
- *   mtf           <-- value of the "merge tolerance factor" parameter
- *   etf           <-- value of the "edge equiv. tolerance factor" parameter
- *   max_sub_faces <-- value of the max_sub_faces
- *   tml           <-- value of the "tree max level" parameter
- *   tmb           <-- value of the "tree max boxes" parameter
- *   tmr           <-- value of the "tree max ratio" parameter
  *   verbosity     <-- level of verbosity required
- *
- * returns:
- *   a pointer to a cs_join_t structure.
  *---------------------------------------------------------------------------*/
 
 void
 cs_join_add(char   *sel_criteria,
             float   fraction,
             float   plane,
-            float   rtf,
-            float   mtf,
-            float   etf,
-            int     max_sub_faces,
-            int     tml,
-            int     tmb,
-            float   tmr,
             int     verbosity);
 
 /*----------------------------------------------------------------------------

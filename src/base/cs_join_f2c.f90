@@ -28,7 +28,7 @@
 subroutine defjoi &
 !================
 
- ( critjo, fract, plane, rtf, mtf, etf, iwarni )
+ ( critjo, fract, plane, iwarni )
 
 !===============================================================================
 ! FONCTION :
@@ -41,14 +41,11 @@ subroutine defjoi &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! critjo           ! a  ! <-- ! critere de selection des faces de              !
-!                  !    !     ! bord a recoller                                !
-! fract            ! r  ! <-- ! parametre fraction                             !
-! plane            ! r  ! <-- ! coefficient de coplaneite                      !
-! rtf              ! r  ! <-- ! reduction of tolerance factor                  !
-! mtf              ! r  ! <-- ! merge tolerance coefficient                    !
-! etf              ! r  ! <-- ! equivalence tolerance coefficient              !
-! iwarni           ! e  ! <-- ! niveau d'impression                            !
+! critjo           ! a  ! <-- ! selection criteria for the border faces to     !
+!                  !    !     ! transform                                      !
+! fract            ! r  ! <-- ! fraction parameter                             !
+! plane            ! r  ! <-- ! face coplanarity parameter                     !
+! iwarni           ! e  ! <-- ! level of display                               !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -70,7 +67,7 @@ implicit none
 
 character*(*)    critjo
 integer          iwarni
-double precision fract, plane, rtf, mtf, etf
+double precision fract, plane
 
 ! Variables locales
 
@@ -80,7 +77,7 @@ integer       lcritj
 
 lcritj = len(critjo)
 
-call defjo1(critjo, fract, plane, rtf, mtf, etf, iwarni, lcritj)
+call defjo1(critjo, fract, plane, iwarni, lcritj)
 !==========
 
 return

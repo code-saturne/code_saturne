@@ -82,8 +82,8 @@ typedef struct {
   /* ---------------------------------- */
 
   int    tree_max_level;     /* Deepest level reachable during tree building */
-  int    tree_n_max_boxes;   /* Max. number of boxes which can be related to a
-                                a leaf of the tree if level != tree_max_level */
+  int    tree_n_max_boxes;   /* Max. number of boxes which can be related to
+                               a leaf of the tree if level != tree_max_level */
 
   float  tree_max_box_ratio; /* Stop tree building if:
                                 n_linked_boxes > tree_max_box_ratio*n_init_boxes */
@@ -101,11 +101,6 @@ typedef struct {
 
   float  plane;
 
-  /* Coef. used to reduce the tolerance: new tol. = tol * coef
-     Values between [0.0, 1.0[ */
-
-  float  reduce_tol_factor;
-
   /* Coef. used to modify the tolerance associated to each vertex before the
      merge operation.
      If coef = 0.0 => no vertex merge
@@ -115,45 +110,51 @@ typedef struct {
 
   float  merge_tol_coef;
 
-  /* Coef. used to modify locally the tolerance associated to each vertex
-     BEFORE adding equivalences between vertices after edge intersections.
-     If coef = 0.0 => add no equivalence
-     If coef < 1.0 => reduce the number of equivalences between vertices
-                      sharing the same edge
-     If coef = 1.0 => no change
-     If coef > 1.0 => increase the number of equivalences between vertices
-                      sharing the same edge. NOT ADVISED. */
+  /* Coef. used to compute a limit on staightfoward merge between
+     two vertices before the merge step. It should be a small value. */
 
-  float  edge_equiv_tol_coef;
+  float  pre_merge_factor;
 
-  /* Parameter to switch on/off the influence of adjacent faces in the
-     computation of tolerance */
+  /* Maximum number of equivalence breaks */
 
-  cs_bool_t  include_adj_faces;
+  int  n_max_equiv_breaks;
 
-  /* Parameter used to define if we get vertex equivalence trough the
-     comparison of vertex tolerance or through the difference of curvilinear
-     abscissa of vertices on edges.
-     If include_adj_faces = false => this parameter should not have any
-     effect. (Not a user-defined parameter) */
+   /* Tolerance computation mode: tcm
+      1: (default) tol = min. edge length related to a vertex * fraction
+      2: tolerance is computed like in mode 1 with in addition, the
+         multiplication by a coef. which is equal to the max sin(e1, e2)
+         where e1 and e2 are two edges sharing the same vertex V for which
+         we want to compute the tolerance
+     11: like 1 but only in taking into account only the selected faces
+     12: like 2 but only in taking into account only the selected faces */
 
-  cs_bool_t  edge_equiv_by_tolerance;
+  int  tcm;
 
-  int  max_sub_faces;  /* Maximum number of sub-faces when splitting a face */
+   /* Intersection computation mode: icm
+      1: (default) Original algorithm. Try to clip intersection on extremity
+      2: New intersection algorithm. Avoid to clip intersection on extremity
+   */
 
-  int  verbosity;  /* Level of display:
-                      O : no information printed
-                      1 : general information printed
-                      2 : more information printed
-                      5 and beyond : highest level (DEBUG LEVEL) */
+  int  icm;
 
+  /* Maximum number of sub-faces when splitting a face */
+
+  int  max_sub_faces;
+
+  /* Level of display:
+       O : no information printed
+       1 : general information printed
+       2 : more information printed
+       5 and beyond : highest level (DEBUG LEVEL) */
+
+  int  verbosity;
 
 } cs_join_param_t;
 
 /*----------------------------------------------------------------------------
  * Structure used to store the result of the extraction of entities
  * implied in the joining operation
- *----------------------------------------------------------------------------*/
+ *---------------------------------------------------------------------------*/
 
 typedef struct { /* Structure used to synchronize single elements */
 
@@ -217,7 +218,7 @@ typedef struct {
 
 /*----------------------------------------------------------------------------
  * Structure used to store information about a block distribution
- *----------------------------------------------------------------------------*/
+ *---------------------------------------------------------------------------*/
 
 typedef struct {
 
@@ -251,7 +252,7 @@ typedef struct {
  *
  * returns:
  *   a new defined cs_join_block_info_t structure
- *----------------------------------------------------------------------------*/
+ *---------------------------------------------------------------------------*/
 
 cs_join_block_info_t
 cs_join_get_block_info(fvm_gnum_t  n_g_elts,
@@ -265,13 +266,6 @@ cs_join_get_block_info(fvm_gnum_t  n_g_elts,
  *   join_id       <-- id of the current joining operation
  *   fraction      <-- value of the fraction parameter
  *   plane         <-- value of the plane parameter
- *   rtf           <-- value of the "reduction tolerance factor" parameter
- *   mtf           <-- value of the "merge tolerance factor" parameter
- *   etf           <-- value of the "edge equiv. tolerance factor" parameter
- *   max_sub_faces <-- maximum number of sub-faces allowed during splitting
- *   tml           <-- value of the "tree max level" parameter
- *   tmb           <-- value of the "tree max boxes" parameter
- *   tmr           <-- value of the "tree max ratio" parameter
  *   verbosity     <-- level of verbosity required
  *
  * returns:
@@ -279,17 +273,10 @@ cs_join_get_block_info(fvm_gnum_t  n_g_elts,
  *---------------------------------------------------------------------------*/
 
 cs_join_param_t
-cs_join_param_define(int    join_id,
-                     float  fraction,
-                     float  plane,
-                     float  rtf,
-                     float  mtf,
-                     float  etf,
-                     int    max_sub_faces,
-                     int    tml,
-                     int    tmb,
-                     float  tmr,
-                     int    verbosity);
+cs_join_param_define(int      join_id,
+                     float    fraction,
+                     float    plane,
+                     int      verbosity);
 
 /*----------------------------------------------------------------------------
  * Create and initialize a cs_join_select_t structure.

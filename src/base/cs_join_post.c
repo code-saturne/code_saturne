@@ -666,8 +666,8 @@ cs_join_post_dump_mesh(const char            *basename,
   const  int  n_ranks = cs_glob_n_ranks;
   const  int  rank_id = CS_MAX(cs_glob_rank_id, 0);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump mesh structure */
-  if (param.verbosity > 1) {
+#if 1 && defined(DEBUG) && !defined(NDEBUG) /* Dump mesh structure */
+  if (param.verbosity > 2) {
 
     int  len;
     FILE  *dbg_file = NULL;
@@ -688,7 +688,7 @@ cs_join_post_dump_mesh(const char            *basename,
   }
 #endif
 
-  if (_cs_join_post_initialized == true && param.verbosity > 2) {
+  if (_cs_join_post_initialized == true && param.verbosity > 3) {
 
     if (n_ranks == 1)
       cs_join_post_mesh(basename, mesh);

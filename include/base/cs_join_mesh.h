@@ -53,6 +53,7 @@
  *---------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_join_util.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -66,6 +67,7 @@ typedef enum {
 
   CS_JOIN_FACE_UNDEFINED,
   CS_JOIN_FACE_BORDER,
+  CS_JOIN_FACE_MULTIPLE_BORDER,
   CS_JOIN_FACE_INTERIOR
 
 } cs_join_face_type_t;
@@ -145,6 +147,36 @@ typedef struct {
 
 MPI_Datatype
 cs_join_mesh_create_vtx_datatype(void);
+
+/*----------------------------------------------------------------------------
+ * Create a function to define an operator for MPI reduction operation
+ *
+ * parameters:
+ *   in        <--  input vertices
+ *   inout     <->  in/out vertices (vertex with the min. toelrance)
+ *   len       <--  size of input array
+ *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
+ *---------------------------------------------------------------------------*/
+
+void  cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
+                                  cs_join_vertex_t   *inout,
+                                  int                *len,
+                                  MPI_Datatype       *datatype);
+
+/*----------------------------------------------------------------------------
+ * Create a function to define an operator for MPI reduction operation
+ *
+ * parameters:
+ *   in        <--  input vertices
+ *   inout     <->  in/out vertices (vertex with the max. toelrance)
+ *   len       <--  size of input array
+ *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
+ *---------------------------------------------------------------------------*/
+
+void  cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
+                                  cs_join_vertex_t   *inout,
+                                  int                *len,
+                                  MPI_Datatype       *datatype);
 
 #endif /* HAVE_MPI */
 
@@ -274,6 +306,18 @@ void
 cs_join_mesh_copy(cs_join_mesh_t        **mesh,
                   const cs_join_mesh_t   *ref_mesh);
 
+/*----------------------------------------------------------------------------
+ * Compute the global min/max tolerance defined on vertices and display it
+ *
+ * parameters:
+ *   param <-- user-defined parameters for the joining algorithm
+ *   mesh  <-- pointer to a cs_join_mesh_t structure
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_mesh_minmax_tol(cs_join_param_t    param,
+                        cs_join_mesh_t    *mesh);
+
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
@@ -320,6 +364,17 @@ cs_join_mesh_destroy_edges(cs_join_edges_t  **edges);
 
 void
 cs_join_mesh_face_order(cs_join_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
+ * Synchronize vertices definition over the rank. For a vertex with the same
+ * global number but a not equal tolerance, we keep the minimal tolerance.
+ *
+ * parameters:
+ *  mesh <->  pointer to the cs_join_mesh_t structure to synchronize
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Delete vertices which appear several times (same global number) and

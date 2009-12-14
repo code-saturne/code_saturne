@@ -40,6 +40,7 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
 
 /*----------------------------------------------------------------------------
  * BFT library headers
@@ -532,9 +533,10 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
   n_g_modified_faces = n_modified_faces;
   fvm_parall_counter(&n_g_modified_faces, 1);
 
-  bft_printf("  Edge removed for %lu faces (global).\n"
-             "  Mesh cleaning done.\n",
-             (unsigned long)n_g_modified_faces);
+  if (verbosity > 0)
+    bft_printf("\n  Edge removed for %lu faces (global).\n"
+               "  Join mesh cleaning done.\n",
+               (unsigned long)n_g_modified_faces);
 
   for (i = n_faces; i > 0; i--)
     mesh->face_vtx_idx[i] = mesh->face_vtx_idx[i-1] + 1;
@@ -748,6 +750,93 @@ cs_join_mesh_create_vtx_datatype(void)
   MPI_Type_commit(&new_type);
 
   return new_type;
+}
+
+/*----------------------------------------------------------------------------
+ * Create a function to define an operator for MPI reduction operation
+ *
+ * parameters:
+ *   in        <--  input vertices
+ *   inout     <->  in/out vertices (vertex with the min. toelrance)
+ *   len       <--  size of input array
+ *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
+ *---------------------------------------------------------------------------*/
+
+void  cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
+                                  cs_join_vertex_t   *inout,
+                                  int                *len,
+                                  MPI_Datatype       *datatype)
+{
+  int  i, j;
+
+  for (i = 0; i < *len; i++) {
+
+    if (in->tolerance <= inout->tolerance) {
+
+      if (in->tolerance < inout->tolerance) {
+
+        inout->gnum = in->gnum;
+        for (j = 0; j < 3; j++)
+          inout->coord[j] = in->coord[j];
+        inout->tolerance = in->tolerance;
+
+      }
+      else {
+        if (in->gnum < inout->gnum) {
+          inout->gnum = in->gnum;
+          for (j = 0; j < 3; j++)
+            inout->coord[j] = in->coord[j];
+          inout->tolerance = in->tolerance;
+        }
+
+      }
+
+    } /* in.tol <= inout.tol */
+
+  } /* End of loop on array */
+
+}
+
+/*----------------------------------------------------------------------------
+ * Create a function to define an operator for MPI reduction operation
+ *
+ * parameters:
+ *   in        <--  input vertices
+ *   inout     <->  in/out vertices (vertex with the max. toelrance)
+ *   len       <--  size of input array
+ *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
+ *---------------------------------------------------------------------------*/
+
+void  cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
+                                  cs_join_vertex_t   *inout,
+                                  int                *len,
+                                  MPI_Datatype       *datatype)
+{
+  int  i, j;
+
+  for (i = 0; i < *len; i++) {
+
+    if (in->tolerance >= inout->tolerance) {
+
+      if (in->tolerance > inout->tolerance) {
+        inout->gnum = in->gnum;
+        for (j = 0; j < 3; j++)
+          inout->coord[j] = in->coord[j];
+        inout->tolerance = in->tolerance;
+      }
+      else {
+        if (in->gnum < inout->gnum) {
+          inout->gnum = in->gnum;
+          for (j = 0; j < 3; j++)
+            inout->coord[j] = in->coord[j];
+          inout->tolerance = in->tolerance;
+        }
+      }
+
+    } /* in.tol >= inout.tol */
+
+  } /* End of loop on array */
+
 }
 
 #endif /* HAVE_MPI */
@@ -1260,6 +1349,81 @@ cs_join_mesh_copy(cs_join_mesh_t        **mesh,
   *mesh = _mesh;
 }
 
+/*----------------------------------------------------------------------------
+ * Compute the global min/max tolerance defined on vertices and display it
+ *
+ * parameters:
+ *   param <-- user-defined parameters for the joining algorithm
+ *   mesh  <-- pointer to a cs_join_mesh_t structure
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_mesh_minmax_tol(cs_join_param_t    param,
+                        cs_join_mesh_t    *mesh)
+{
+  int  i;
+  cs_join_vertex_t  _min, _max, g_min, g_max;
+
+  const int  n_ranks = cs_glob_n_ranks;
+
+  _min.tolerance = DBL_MAX;
+  _max.tolerance = -DBL_MAX;
+  g_min.tolerance = DBL_MAX;
+  g_max.tolerance = -DBL_MAX;
+
+  /* Compute local min/max */
+
+  if (mesh->n_vertices > 0) {
+
+    for (i = 0; i < mesh->n_vertices; i++) {
+
+      if (_min.tolerance > mesh->vertices[i].tolerance)
+        _min = mesh->vertices[i];
+      if (_max.tolerance < mesh->vertices[i].tolerance)
+        _max = mesh->vertices[i];
+
+    }
+
+    if (param.verbosity > 2) {
+      bft_printf(_("\n  Local min/max. tolerance:\n\n"
+                   "Glob. Num.  |  Tolerance  |        Coordinates\n"));
+      cs_join_mesh_dump_vertex(_min);
+      cs_join_mesh_dump_vertex(_max);
+    }
+
+  }
+
+#if defined(HAVE_MPI)
+  if (n_ranks > 1) {
+
+    MPI_Datatype  MPI_JOIN_VERTEX = cs_join_mesh_create_vtx_datatype();
+    MPI_Op   MPI_Vertex_min, MPI_Vertex_max;
+
+    MPI_Op_create((MPI_User_function  *)cs_join_mesh_mpi_vertex_min,
+                  true, &MPI_Vertex_min);
+    MPI_Op_create((MPI_User_function  *)cs_join_mesh_mpi_vertex_max,
+                  false, &MPI_Vertex_max);
+
+    MPI_Allreduce(&_min, &g_min, 1, MPI_JOIN_VERTEX, MPI_Vertex_min,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(&_max, &g_max, 1, MPI_JOIN_VERTEX, MPI_Vertex_max,
+                  cs_glob_mpi_comm);
+
+    bft_printf(_("\n  Global min/max. tolerance:\n\n"
+                 "Glob. Num.  |  Tolerance  |        Coordinates\n"));
+    cs_join_mesh_dump_vertex(g_min);
+    cs_join_mesh_dump_vertex(g_max);
+
+    MPI_Op_free(&MPI_Vertex_min);
+    MPI_Op_free(&MPI_Vertex_max);
+    MPI_Type_free(&MPI_JOIN_VERTEX);
+
+  }
+#endif
+
+}
+
+
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
@@ -1754,6 +1918,163 @@ cs_join_mesh_face_order(cs_join_mesh_t  *mesh)
   BFT_REALLOC(mesh->face_vtx_idx, n_new_faces+1, cs_int_t);
   BFT_REALLOC(mesh->face_vtx_lst, mesh->face_vtx_idx[n_new_faces], cs_int_t);
 }
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Synchronize vertices definition over the rank. For a vertex with the same
+ * global number but a not equal tolerance, we keep the minimal tolerance.
+ *
+ * parameters:
+ *  mesh <->  pointer to the cs_join_mesh_t structure to synchronize
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
+{
+  cs_int_t  i, rank, shift, start, end;
+  double  min_tol;
+  fvm_gnum_t  ref_gnum, l_max_gnum, g_max_gnum;
+  cs_join_block_info_t  block_info;
+
+  int  *send_shift = NULL, *recv_shift = NULL;
+  int  *send_count = NULL, *recv_count = NULL;
+  fvm_lnum_t  *order = NULL;
+  fvm_gnum_t  *recv_gnum = NULL;
+  cs_join_vertex_t  *send_vertices = NULL, *recv_vertices = NULL;
+
+  MPI_Datatype  CS_MPI_JOIN_VERTEX = cs_join_mesh_create_vtx_datatype();
+  MPI_Comm  mpi_comm = cs_glob_mpi_comm;
+
+  const int  n_ranks = cs_glob_n_ranks;
+  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
+
+  assert(n_ranks > 1);
+
+  /* Get the max global number */
+
+  l_max_gnum = 0;
+  for (i = 0; i < mesh->n_vertices; i++)
+    l_max_gnum = CS_MAX(l_max_gnum, mesh->vertices[i].gnum);
+
+  MPI_Allreduce(&l_max_gnum, &g_max_gnum, 1, FVM_MPI_GNUM, MPI_MAX, mpi_comm);
+
+  block_info = cs_join_get_block_info(g_max_gnum,
+                                      n_ranks,
+                                      local_rank);
+
+  BFT_MALLOC(send_count, n_ranks, int);
+  BFT_MALLOC(recv_count, n_ranks, int);
+
+  for (i = 0; i < n_ranks; i++)
+    send_count[i] = 0;
+
+  for (i = 0; i < mesh->n_vertices; i++) {
+    rank = (mesh->vertices[i].gnum - 1)/block_info.size;
+    send_count[rank] += 1;
+  }
+
+  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
+
+  BFT_MALLOC(send_shift, n_ranks + 1, int);
+  BFT_MALLOC(recv_shift, n_ranks + 1, int);
+
+  send_shift[0] = 0;
+  recv_shift[0] = 0;
+
+  for (rank = 0; rank < n_ranks; rank++) {
+    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
+    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
+  }
+
+  assert(send_shift[n_ranks] == mesh->n_vertices);
+
+  BFT_MALLOC(send_vertices, send_shift[n_ranks], cs_join_vertex_t);
+  BFT_MALLOC(recv_vertices, recv_shift[n_ranks], cs_join_vertex_t);
+
+  for (i = 0; i < n_ranks; i++)
+    send_count[i] = 0;
+
+  for (i = 0; i < mesh->n_vertices; i++) {
+    rank = (mesh->vertices[i].gnum - 1)/block_info.size;
+    shift = send_shift[rank] + send_count[rank];
+    send_vertices[shift] = mesh->vertices[i];
+    send_count[rank] += 1;
+  }
+
+  /* Send vertices to sync and receive its part of work */
+
+  MPI_Alltoallv(send_vertices, send_count, send_shift, CS_MPI_JOIN_VERTEX,
+                recv_vertices, recv_count, recv_shift, CS_MPI_JOIN_VERTEX,
+                mpi_comm);
+
+  /* Order vertices by increasing global number */
+
+  BFT_MALLOC(recv_gnum, recv_shift[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(order, recv_shift[n_ranks], fvm_lnum_t);
+
+  for (i = 0; i < recv_shift[n_ranks]; i++)
+    recv_gnum[i] = recv_vertices[i].gnum;
+
+  fvm_order_local_allocated(NULL, recv_gnum, order, recv_shift[n_ranks]);
+
+  /* Sync. vertices sharing the same global number */
+
+  start = 0;
+  while (start < recv_shift[n_ranks]) {
+
+    min_tol = recv_vertices[order[start]].tolerance;
+    ref_gnum = recv_vertices[order[start]].gnum;
+    for (i = start;
+         i < recv_shift[n_ranks] && ref_gnum == recv_vertices[order[i]].gnum;
+         i++);
+    end = i;
+
+    /* Get min tolerance */
+    for (i = start; i < end; i++)
+      min_tol = CS_MIN(min_tol, recv_vertices[order[i]].tolerance);
+
+    /* Set min tolerance to all vertices sharing the same global number */
+    for (i = start; i < end; i++)
+      recv_vertices[order[i]].tolerance = min_tol;
+
+    start = end;
+  }
+
+  /* Send back vertices after synchronization */
+
+  MPI_Alltoallv(recv_vertices, recv_count, recv_shift, CS_MPI_JOIN_VERTEX,
+                send_vertices, send_count, send_shift, CS_MPI_JOIN_VERTEX,
+                mpi_comm);
+
+  /* Update mesh->vertices */
+
+  for (i = 0; i < n_ranks; i++)
+    send_count[i] = 0;
+
+  for (i = 0; i < mesh->n_vertices; i++) {
+    rank = (mesh->vertices[i].gnum - 1)/block_info.size;
+    shift = send_shift[rank] + send_count[rank];
+    mesh->vertices[i] = send_vertices[shift];
+    send_count[rank] += 1;
+  }
+
+  /* Free buffers */
+
+  MPI_Type_free(&CS_MPI_JOIN_VERTEX);
+
+  BFT_FREE(recv_gnum);
+  BFT_FREE(order);
+  BFT_FREE(send_count);
+  BFT_FREE(send_shift);
+  BFT_FREE(send_vertices);
+  BFT_FREE(recv_count);
+  BFT_FREE(recv_shift);
+  BFT_FREE(recv_vertices);
+
+}
+
+#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
  * Delete vertices which appear several times (same global number) and
@@ -2799,7 +3120,7 @@ cs_join_mesh_dump_vertex(const cs_join_vertex_t   vertex)
   assert(vertex.gnum > 0);
   assert(vertex.tolerance >= 0.0);
 
-  bft_printf(" %10u | %11.6f |  [ %12.6g %12.6g  %12.6g]\n",
+  bft_printf(" %10u | %11.8f |  [ %12.9e %12.9e  %12.9e]\n",
              vertex.gnum, vertex.tolerance,
              vertex.coord[0], vertex.coord[1], vertex.coord[2]);
 }

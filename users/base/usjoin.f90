@@ -69,9 +69,10 @@ include "parall.h"
 
 ! Variables locales
 
-integer          nbjoin, ii
+integer          iutile, ii
 integer          iwarnj
-double precision fract, plane, rtf, mtf, etf
+integer          tml, tmb, tcm, icm, maxsf, maxbrk
+double precision fract, plane, mtf, pmf, tmr
 
 !===============================================================================
 
@@ -83,70 +84,118 @@ if(1.eq.1) return
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-! Parameters (default values)
-! ---------------------------
+! ---------------
+! Main parameters
+! ---------------
 
-fract = 0.15d0  ! The initial tolerance radius associated to each
-                ! vertex is equal to the lenght of the shortest
-                ! incident edge, multiplied by this fraction.
+! The initial tolerance radius associated to each
+! vertex is equal to the lenght of the shortest
+! incident edge, multiplied by this fraction.
 
-plane = 30.0    ! When subdividing faces, 2 faces are considered
-                ! coplanar and may be joined if angle between their
-                ! unit normals (in degree) does not exceed this parameter.
+fract = 0.10d0
 
-iwarnj = 1      ! associated verbosity level
+! When subdividing faces, 2 faces are considered
+! coplanar and may be joined if angle between their
+! unit normals (in degree) does not exceed this parameter.
 
+plane = 25.0
+
+! associated verbosity level (debug level if >= 3)
+
+iwarnj = 1
+
+
+! Joining definition
+
+call defjoi('98 or 99', fract, plane, iwarnj)
+!==========
+
+
+! -------------------
 ! Advanced parameters
 ! -------------------
 
-etf = 0.50d0    ! Edge equivalence tolerance factor
-                ! Used to locally modify the tolerance associated to each
-                ! vertex BEFORE adding equivalences between vertices, and
-                ! after edge intersections.
-                !   = 0 => add no equivalence (may produce very small faces);
-                !   < 1 => reduce the number of equivalences between
-                !          vertices sharing the same edge (more stable);
-                !   = 1 => no change;
-                !   > 1 => increase the number of equivalences between
-                !          vertices sharing the same edge (more merges).
-                !          Not recommmended.
+! Use advanced parameters in case of problem during the joining step
+! or to get a better mesh quality
 
-rtf = 0.85d0    ! Reduction tolerance factor during vertices merge
-                ! Used when the combination of merges would lead to a
-                ! resulting merged vertex from a set of vertices not lying
-                ! within the initial tolerance radius of at least one of
-                ! its parent vertices.
-                ! new tol. = tol * coef. Values between [0.0, 1.0[
+! Merge tolerance factor
+! Used to locally modify the tolerance associated to each
+! vertex BEFORE the merge step.
+!   = 0 => no vertex merge;
+!   < 1 => vertex merge is more strict. It may increase the number
+!          of tolerance reduction and so define smaller subset of
+!          vertices to merge together but it can drive to loose
+!          intersections;
+!   = 1 => no change;
+!   > 1 => vertex merge is less strict. The subset of vertices able
+!          to be merged together is greater.
 
-mtf = 1.00d0    ! Merge tolerance factor
-                ! Used to locally modify the tolerance associated to each
-                ! vertex AFTER adding equivalences between vertices.
-                !   = 0 => add no equivalence (may produce very small faces);
-                !   < 1 => reduce the number of equivalences between
-                !          vertices sharing the same edge (more stable);
-                !   = 1 => no change;
-                !   > 1 => increase the number of equivalences between
-                !          vertices sharing the same edge (more merges).
-                !          Not recommmended.
+mtf = 1.00d0
 
-! -------------------
-! Joinings definition
-! -------------------
+! Pre-merge factor. This parameter is used to define a limit
+! under which two vertices are merged before the merge step.
+! Tolerance limit for the pre-merge = pmf * fraction
 
-nbjoin = 1 ! Number of joinings
+pmf = 0.10d0
 
-do ii = 1, nbjoin
+! Tolerance computation mode: tcm
+!
+!   1: (default) tol = min. edge length related to a vertex * fraction
+!   2: tolerance is computed like in mode 1 with in addition, the
+!      multiplication by a coef. which is equal to the max sin(e1, e2)
+!      where e1 and e2 are two edges sharing the same vertex V for which
+!      we want to compute the tolerance
+!  11: like 1 but only in taking into account only the selected faces
+!  12: like 2 but only in taking into account only the selected faces
 
-  if (ii .eq. 1) then
+tcm = 1
 
-    call defjoi('98 or 99', fract, plane, rtf, mtf, etf, iwarnj)
-    !==========
+! Intersection computation mode: icm
+!  1: (default) Original algorithm. Try to clip intersection on extremity
+!  2: New intersection algorithm. Avoid to clip intersection on extremity
 
-  endif
+icm = 1
 
-enddo
+! Maximum number of equivalence breaks which is
+! enabled during the merge step
+
+maxbrk = 500
+
+! Maximum number of sub-faces when splitting a selected face
+
+maxsf = 100
+
+! tml, tmb and tmr are parameters of the searching algorithm for
+! face intersections between selected faces (octree structure).
+! Useful if there is a memory limitation.
+
+! Tree Max Level: deepest level reachable during the tree building
+
+tml = 30
+
+! Tree Max. Boxes: max. number of bounding boxes (BB) which can be
+! linked to a leaf of the tree (not necessary true for the deepest level)
+
+tmb = 25
+
+! Tree Max. Ratio: stop to build the tree structure when
+! number of BB linked in the tree > tmr * initial number of BB
+! Efficient parameter to reduce memory consumption.
+
+tmr = 5.0
+
+
+! Advanced parameters setup
+
+! Each ii'th call to the advanced parameters setup routine stands
+! the joining number in their order of definition.
+
+iutile = 0
+if (iutile.eq.1) then
+  ii = 1
+  call setajp(ii, mtf, pmf, tcm, icm, maxbrk, maxsf, tml, tmb, tmr)
+  !==========
+endif
 
 return
-
 end subroutine
-

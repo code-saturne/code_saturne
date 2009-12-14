@@ -434,7 +434,6 @@ _destroy_join_sync(cs_join_sync_t   **sync)
 }
 
 #if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------
  * Define a structure used for synchronizing "single" vertices.
  * Use a fvm_interface_t structure to help the build.
@@ -1372,6 +1371,7 @@ _add_single_edges(fvm_interface_set_t   *ifs,
   /* Free memory */
 
   BFT_FREE(tmp_edges);
+
 }
 
 /*----------------------------------------------------------------------------
@@ -1653,10 +1653,9 @@ _filter_edge_element(cs_join_select_t   *selection,
   MPI_Status   *status = NULL;
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  const int  n_ranks = cs_glob_n_ranks;
   const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
 
-  assert(n_ranks > 1);
+  assert(cs_glob_n_ranks > 1);
 
   /* Allocate MPI buffers used for exchanging data */
 
@@ -1701,6 +1700,7 @@ _filter_edge_element(cs_join_select_t   *selection,
               distant_rank,
               mpi_comm,
               &(request[request_count++]));
+
   }
 
   /* We wait for posting all receives (often recommended) */
@@ -1722,6 +1722,7 @@ _filter_edge_element(cs_join_select_t   *selection,
               loc_rank,
               mpi_comm,
               &(request[request_count++]));
+
   }
 
   /* Wait for all exchanges */
@@ -1780,6 +1781,7 @@ _filter_edge_element(cs_join_select_t   *selection,
   BFT_FREE(s_edge_tag);
   BFT_FREE(request);
   BFT_FREE(status);
+
 }
 
 /*----------------------------------------------------------------------------
@@ -1904,8 +1906,8 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
 
   BFT_FREE(sel_v2v_idx);
   BFT_FREE(sel_v2v_lst);
-}
 
+}
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
@@ -2251,13 +2253,6 @@ cs_join_get_block_info(fvm_gnum_t  n_g_elts,
  *   join_id       <-- id of the current joining operation
  *   fraction      <-- value of the fraction parameter
  *   plane         <-- value of the plane parameter
- *   rtf           <-- value of the "reduction tolerance factor" parameter
- *   mtf           <-- value of the "merge tolerance factor" parameter
- *   etf           <-- value of the "edge equiv. tolerance factor" parameter
- *   max_sub_faces <-- maximum number of sub-faces allowed during splitting
- *   tml           <-- value of the "tree max level" parameter
- *   tmb           <-- value of the "tree max boxes" parameter
- *   tmr           <-- value of the "tree max ratio" parameter
  *   verbosity     <-- level of verbosity required
  *
  * returns:
@@ -2265,17 +2260,10 @@ cs_join_get_block_info(fvm_gnum_t  n_g_elts,
  *---------------------------------------------------------------------------*/
 
 cs_join_param_t
-cs_join_param_define(int    join_id,
-                     float  fraction,
-                     float  plane,
-                     float  rtf,
-                     float  mtf,
-                     float  etf,
-                     int    max_sub_faces,
-                     int    tml,
-                     int    tmb,
-                     float  tmr,
-                     int    verbosity)
+cs_join_param_define(int      join_id,
+                     float    fraction,
+                     float    plane,
+                     int      verbosity)
 {
   cs_join_param_t  param;
 
@@ -2293,12 +2281,6 @@ cs_join_param_define(int    join_id,
 
   param.plane = plane;
 
-  /* Coef. used to reduce the tolerance during merge step:
-     new tol. = tol * coef.
-     Values between [0.0, 1.0[ */
-
-  param.reduce_tol_factor = rtf;
-
   /* Coef. used to modify the tolerance associated to each vertex BEFORE the
      merge operation.
      If coef = 0.0 => no vertex merge
@@ -2306,48 +2288,57 @@ cs_join_param_define(int    join_id,
      If coef = 1.0 => no change
      If coef > 1.0 => increase vertex merge */
 
-  param.merge_tol_coef = mtf;
+  param.merge_tol_coef = 1.0;
 
-  /* Coef. used to modify locally the tolerance associated to each vertex
-     BEFORE adding equivalences between vertices after edge intersections.
-     If coef = 0.0 => add no equivalence
-     If coef < 1.0 => reduce the number of equivalences between vertices
-                      sharing the same edge
-     If coef = 1.0 => no change
-     If coef > 1.0 => increase the number of equivalences between vertices
-                      sharing the same edge. Not advised. */
+  /* Coef. used to compute a limit under which two vertices are merged
+     before the merge step.
+     Default value: 1e-3; Should be small. [1e-4, 1e-2] */
 
-   param.edge_equiv_tol_coef = etf;
+   param.pre_merge_factor = 0.05;
 
-  /* Parameter to switch on/off the influence of adjacent faces in the
-     computation of tolerance */
+  /* Maximum number of equivalence breaks */
 
-   param.include_adj_faces = true;  /* Default value: true */
+   param.n_max_equiv_breaks = 500;
 
-  /* Parameter used to define if we get vertex equivalence trough the
-     comparison of vertex tolerance or through the difference of curvilinear
-     abscissa of vertices on edges.
-     If include_adj_faces = false => this parameter should not have any
-     effect. (Not a user-defined parameter) */
+   /* Tolerance computation mode: tcm
+      1: (default) tol = min. edge length related to a vertex * fraction
+      2: tolerance is computed like in mode 1 with in addition, the
+         multiplication by a coef. which is equal to the max sin(e1, e2)
+         where e1 and e2 are two edges sharing the same vertex V for which
+         we want to compute the tolerance
+     11: like 1 but only in taking into account only the selected faces
+     12: like 2 but only in taking into account only the selected faces
+   */
 
-   param.edge_equiv_by_tolerance = true; /* Default value: true */
+   param.tcm = 1;
 
-   /* Maximum number of sub-faces */
+   /* Intersection computation mode: icm
+      1: (default) Original algorithm. Try to clip intersection on extremity
+      2: New intersection algorithm. Avoid to clip intersection on extremity
+   */
 
-   param.max_sub_faces = max_sub_faces;
+   param.icm = 1;
 
-   /* Deepest level reachable during tree building */
+   /* Maximum number of sub-faces for an initial selected face
+      Default value: 200 */
 
-   param.tree_max_level = tml;
+   param.max_sub_faces = 200;
+
+   /* Deepest level reachable during tree building
+      Default value: 30  */
+
+   param.tree_max_level = 30;
 
    /* Max. number of boxes which can be related to a leaf of the tree
-      if level != tree_max_level */
+      if level != tree_max_level
+      Default value: 25  */
 
-   param.tree_n_max_boxes = tmb;
+   param.tree_n_max_boxes = 25;
 
-   /* Stop tree building if: n_linked_boxes > tree_max_box_ratio*n_init_boxes */
+   /* Stop tree building if: n_linked_boxes > tree_max_box_ratio*n_init_boxes
+      Default value: 5.0 */
 
-   param.tree_max_box_ratio = tmr;
+   param.tree_max_box_ratio = 5.0;
 
    /* Level of display */
 
@@ -2521,7 +2512,6 @@ cs_join_select_create(const char  *selection_criteria,
 #endif
 
 #if defined(HAVE_MPI)
-
   if (n_ranks > 1) { /* Search for missing vertices */
 
     assert(mesh->global_vtx_num != NULL);
@@ -2543,7 +2533,6 @@ cs_join_select_create(const char  *selection_criteria,
                           selection);
 
   }
-
 #endif
 
   /* Extract list of border faces contiguous to the selected vertices  */
@@ -2579,6 +2568,13 @@ cs_join_select_create(const char  *selection_criteria,
                         mesh->i_face_vtx_lst,
                         &(selection->n_i_adj_faces),
                         &(selection->i_adj_faces));
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Contiguous interior faces for the joining operation:\n"));
+  for (i = 0; i < selection->n_i_adj_faces; i++)
+    bft_printf(" %9d | %9d\n", i, selection->i_adj_faces[i]);
+  bft_printf("\n");
+#endif
 
    /* Check if there is no forgotten vertex in the selection.
       Otherwise define structures to enable future synchronization.
