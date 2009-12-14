@@ -258,12 +258,8 @@ do iel = 1, ncel
 enddo
 
 !     On passe dans le filtre local
-call cfiltr                                                       &
+call cfiltr ( w1     , smagor , w2     , w3     )
 !==========
- ( ncelet , ncel   , nfac   , nfabor ,                            &
-   ifacel , ifabor ,                                              &
-   volume ,                                                       &
-   w1     , smagor , w2     , w3     )
 
 
 !----

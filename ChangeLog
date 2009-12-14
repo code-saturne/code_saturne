@@ -1,3 +1,8 @@
+* 14/12/2009 - Benoit de Laage de Meux <benoit.de-laage-de-meux@edf.fr>
+  Fix a wrong list of arguments for the cfiltr subroutine.
+  modified routine:
+    users/base/ussmag.f90
+
 * 14/12/2009 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve the Python runcase script for BG runs.
   modified scripts:
