@@ -1,3 +1,9 @@
+* 14/12/2009 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve the Python runcase script for BG runs.
+  modified scripts:
+    bin/cs_case.py
+    bin/runcase.py.in
+
 * 14/12/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Improve the parallel joining algorithm.
   modified routines:

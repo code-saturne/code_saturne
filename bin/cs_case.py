@@ -1183,11 +1183,10 @@ class case:
             self.suffix = suffix
 
         if self.exec_dir == None:
-            ' Error:\n' \
-                '   The execution directory must be defined to save results.\n'
-            raise RunCaseError, err_str
-        else:
-            os.chdir(self.exec_dir)
+            self.define_exec_dir(self.suffix)
+            self.set_exec_dir(self.exec_dir)
+
+        os.chdir(self.exec_dir)
 
         # Indicate status using temporary file for SALOME.
 
@@ -1263,9 +1262,12 @@ class case:
             self.suffix = suffix
 
         if self.exec_dir == None:
-            ' Error:\n' \
-                '   The execution directory must be defined to save results.\n'
-            raise RunCaseError, err_str
+            self.define_exec_dir(self.suffix)
+            self.set_exec_dir(self.exec_dir)
+
+        self.set_result_dir(self.suffix)
+
+        os.chdir(self.exec_dir)
 
         self.update_scripts_tmp(('failed', 'finished'), 'saving')
 
@@ -1305,26 +1307,42 @@ class case:
             n_procs = None,
             hosts_list = None,
             mpi_environment = None,
-            exec_prefix = None):
+            exec_prefix = None,
+            suffix = None,
+            prepare_data = True,
+            run_solver = True,
+            save_results = True):
 
         """
         Main script.
         """
 
-        self.exec_prefix = exec_prefix
+        if exec_prefix != None:
+            self.exec_prefix = exec_prefix
+
+        if suffix != None:
+            self.suffix = suffix
 
         try:
-            if self.prepare_data(n_procs, hosts_list, mpi_environment) == 0:
+            retcode = 0
+            if prepare_data == True:
+                retcode = self.prepare_data(n_procs,
+                                            hosts_list,
+                                            mpi_environment)
+            if run_solver == True and run_solver == True:
                 self.run_solver()
-            self.save_results()
+
+            if save_results == True:
+                self.save_results()
 
         finally:
-            self.update_scripts_tmp(('preparing',
-                                     'ready',
-                                     'runningstd',
-                                     'runningext',
-                                     'finished',
-                                     'failed'), None)
+            if self.suffix != None:
+                self.update_scripts_tmp(('preparing',
+                                         'ready',
+                                         'runningstd',
+                                         'runningext',
+                                         'finished',
+                                         'failed'), None)
 
         # Standard or error exit
 
@@ -1341,3 +1359,6 @@ class case:
             return 1
         else:
             return 0
+
+    #---------------------------------------------------------------------------
+

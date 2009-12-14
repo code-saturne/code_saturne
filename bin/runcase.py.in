@@ -264,8 +264,22 @@ if __name__ == '__main__':
                 exec_partition = EXEC_PARTITION,
                 exec_solver = EXEC_SOLVER)
 
-    # Run script
+    # Select suffix (define if only running the solver or saving results)
+
+    suffix = None
+
+    # Force MPI environment if mpi_environment != None
+
+    mpi_environment = None
+
+    # Execute script
 
     case.run(n_procs=None,
              hosts_list=HOSTS_LIST,
-             exec_prefix = def_exec_prefix())
+             mpi_environment=mpi_environment,
+             exec_prefix=def_exec_prefix(),
+             suffix=suffix,
+             prepare_data=True,
+             run_solver=True,
+             save_results=True)
+
