@@ -458,7 +458,7 @@ class InitializationTestCase(ModelTest):
         doc = '''<turbulence model="k-epsilon">
                     <variable label="TurbEner" name="turb_k"/>
                     <variable label="Dissip" name="turb_eps"/>
-                    <property label="turb. vi" name="turb_viscosity"/>
+                    <property label="TurbVisc" name="turb_viscosity"/>
                     <initialization choice="reference_velocity">
                             <reference_velocity>1</reference_velocity>
                     </initialization>
@@ -480,7 +480,7 @@ class InitializationTestCase(ModelTest):
         doc = '''<turbulence model="k-epsilon">
                     <variable label="TurbEner" name="turb_k"/>
                     <variable label="Dissip" name="turb_eps"/>
-                    <property label="turb. vi" name="turb_viscosity"/>
+                    <property label="TurbVisc" name="turb_viscosity"/>
                     <initialization choice="reference_velocity">
                             <reference_velocity>5</reference_velocity>
                     </initialization>
@@ -505,7 +505,7 @@ class InitializationTestCase(ModelTest):
         doc = '''<turbulence model="k-epsilon">
                     <variable label="TurbEner" name="turb_k"/>
                     <variable label="Dissip" name="turb_eps"/>
-                    <property label="turb. vi" name="turb_viscosity"/>
+                    <property label="TurbVisc" name="turb_viscosity"/>
                     <initialization choice="reference_velocity_length">
                             <reference_velocity>5</reference_velocity>
                             <reference_length>155.8</reference_length>
@@ -530,7 +530,7 @@ class InitializationTestCase(ModelTest):
         doc = '''<turbulence model="Rij-epsilon">
                     <variable label="TurbEner" name="turb_k"/>
                     <variable label="Dissip" name="turb_eps"/>
-                    <property label="turb. vi" name="turb_viscosity"/>
+                    <property label="TurbVisc" name="turb_viscosity"/>
                     <initialization choice="reference_velocity">
                             <reference_velocity>1</reference_velocity>
                     </initialization>

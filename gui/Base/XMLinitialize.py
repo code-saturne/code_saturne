@@ -251,15 +251,15 @@ class XMLinitTestCase(unittest.TestCase):
         '<thermophysical_models>'\
                 '<velocity_pressure>'\
                         '<variable label="Pressure" name="pressure"/>'\
-                        '<variable label="VelocitU" name="velocity_U"/>'\
-                        '<variable label="VelocitV" name="velocity_V"/>'\
-                        '<variable label="VelocitW" name="velocity_W"/>'\
+                        '<variable label="VelocityX" name="velocity_U"/>'\
+                        '<variable label="VelocityY" name="velocity_V"/>'\
+                        '<variable label="VelocityZ" name="velocity_W"/>'\
                         '<property label="total_pressure" name="total_pressure"/>'\
                 '</velocity_pressure>'\
                 '<turbulence model="k-epsilon">'\
                         '<variable label="TurbEner" name="turb_k"/>'\
                         '<variable label="Dissip" name="turb_eps"/>'\
-                        '<property label="turb. vi" name="turb_viscosity"/>'\
+                        '<property label="TurbVisc" name="turb_viscosity"/>'\
                         '<initialization choice="reference_velocity">'\
                                 '<reference_velocity>1.0</reference_velocity>'\
                         '</initialization>'\
@@ -281,17 +281,17 @@ class XMLinitTestCase(unittest.TestCase):
                                 '<postprocessing_recording status="off"/>'\
                                 '<initial_value>1.17862</initial_value>'\
                         '</property>'\
-                        '<property choice="constant" label="Lam. vis" name="molecular_viscosity">'\
+                        '<property choice="constant" label="LamVisc" name="molecular_viscosity">'\
                                 '<listing_printing status="off"/>'\
                                 '<postprocessing_recording status="off"/>'\
                                 '<initial_value>1.83e-05</initial_value>'\
                         '</property>'\
-                        '<property choice="constant" label="Sp. heat" name="specific_heat">'\
+                        '<property choice="constant" label="SpecHeat" name="specific_heat">'\
                                 '<listing_printing status="off"/>'\
                                 '<postprocessing_recording status="off"/>'\
                                 '<initial_value>1017.24</initial_value>'\
                         '</property>'\
-                        '<property choice="constant" label="Th. cond" name="thermal_conductivity">'\
+                        '<property choice="constant" label="ThermalCond" name="thermal_conductivity">'\
                                 '<listing_printing status="off"/>'\
                                 '<postprocessing_recording status="off"/>'\
                                 '<initial_value>0.02495</initial_value>'\
@@ -303,8 +303,8 @@ class XMLinitTestCase(unittest.TestCase):
         '<analysis_control>'\
                 '<time_parameters>'\
                         '<time_step_ref>0.1</time_step_ref>'\
-                        '<property label="Nb Courant" name="courant_number">'\
-                        '<property label="Nb Fourier" name="fourier_number">'\
+                        '<property label="CourantNb" name="courant_number">'\
+                        '<property label="FourierNb" name="fourier_number">'\
                 '</time_parameters>'\
         '</analysis_control>'\
         '<calcul_management/>'\

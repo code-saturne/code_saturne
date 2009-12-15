@@ -317,7 +317,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
                         <postprocessing_recording status="off"/>
                         <initial_value>123</initial_value>
                     </property>
-                    <property choice="constant" label="Lam. vis" name="molecular_viscosity">
+                    <property choice="constant" label="LamVisc" name="molecular_viscosity">
                         <listing_printing status="off"/>
                         <postprocessing_recording status="off"/>
                         <initial_value>1.5e-05</initial_value>
@@ -356,7 +356,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         """Check whether the initial value for molecular_viscosity could be set and get"""
         mdl = FluidCharacteristicsModel(self.case)
         mdl.setInitialValueViscosity(1.2e-4)
-        doc = '''<property choice="constant" label="Lam. vis" name="molecular_viscosity">
+        doc = '''<property choice="constant" label="LamVisc" name="molecular_viscosity">
                     <listing_printing status="off"/>
                     <postprocessing_recording status="off"/>
                     <initial_value>1.2e-4</initial_value>
@@ -426,7 +426,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
 ##                    <property choice="variable" label="Density" name="density">
 ##                        <initial_value>1.17862</initial_value>
 ##                    </property>
-##                    <property choice="variable" label="Lam. vis" name="molecular_viscosity">
+##                    <property choice="variable" label="LamVisc" name="molecular_viscosity">
 ##                        <initial_value>1.83e-05</initial_value>
 ##                    </property>
 ##                    <property choice="variable" label="Sp. heat" name="specific_heat">

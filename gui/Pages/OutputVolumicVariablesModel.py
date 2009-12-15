@@ -512,10 +512,10 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         del ThermalScalarModel
 
         mdl = OutputVolumicVariablesModel(self.case)
-        mdl.setPrintingStatus('Temp.C', 'off')
+        mdl.setPrintingStatus('TempC', 'off')
         node_out = mdl.case.xmlGetNode('additional_scalars')
         doc = '''<additional_scalars>
-                    <scalar label="Temp.C" name="temperature_celsius" type="thermal">
+                    <scalar label="TempC" name="temperature_celsius" type="thermal">
                         <initial_value zone="1">20.0</initial_value>
                         <min_value>-1e+12</min_value>
                         <max_value>1e+12</max_value>
@@ -525,7 +525,7 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
 
         assert node_out == self.xmlNodeFromString(doc),\
             'Could not set status of listing printing in output volumic variables model'
-        assert mdl.getPrintingStatus('Temp.C') == 'off',\
+        assert mdl.getPrintingStatus('TempC') == 'off',\
             'Could not get status of listing printing in output volumic variables model'
 
     def checkSetAndGetPostStatus(self):
@@ -538,10 +538,10 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         del ThermalScalarModel
 
         mdl = OutputVolumicVariablesModel(self.case)
-        mdl.setPostStatus('Temp.C', 'off')
+        mdl.setPostStatus('TempC', 'off')
         node_out = mdl.case.xmlGetNode('additional_scalars')
         doc = '''<additional_scalars>
-                    <scalar label="Temp.C" name="temperature_celsius" type="thermal">
+                    <scalar label="TempC" name="temperature_celsius" type="thermal">
                         <initial_value zone="1">20.0</initial_value>
                         <min_value>-1e+12</min_value>
                         <max_value>1e+12</max_value>
@@ -551,7 +551,7 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
 
         assert node_out == self.xmlNodeFromString(doc),\
             'Could not set status of post processing in output volumic variables model'
-        assert mdl.getPostStatus('Temp.C') == 'off',\
+        assert mdl.getPostStatus('TempC') == 'off',\
             'Could not get status of post processing in output volumic variables model'
 
     def checkSetAndGetPostStatusForRadiativeProperties(self):

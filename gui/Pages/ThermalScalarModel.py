@@ -220,7 +220,7 @@ class ThermalScalarTestCase(ModelTest):
         mdl = ThermalScalarModel(self.case)
         mdl.setThermalModel('temperature_kelvin')
         doc = '''<additional_scalars>
-                    <scalar label="Temp.K" name="temperature_kelvin" type="thermal">
+                    <scalar label="TempK" name="temperature_kelvin" type="thermal">
                         <initial_value zone="1">293.15</initial_value>
                         <min_value>-1e+12</min_value>
                         <max_value>1e+12</max_value>

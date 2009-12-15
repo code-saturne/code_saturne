@@ -632,7 +632,7 @@ class NumericalParamEquatTestCase(ModelTest):
 ##        self.failUnlessRaises(ValueError, model.setScalarTimeStepFactor('VelocitU', 25.), \
 ##           'Could not set time step factor in NumericalParamEquationModel')
 
-        model.setScalarTimeStepFactor('Temp.C', 52.)
+        model.setScalarTimeStepFactor('TempC', 52.)
         node_sca = self.case.xmlGetNode('additional_scalars')
         vit = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
@@ -645,7 +645,7 @@ class NumericalParamEquatTestCase(ModelTest):
                     <property label="all_variables" name="all_variables" support="boundary"/>
                  </velocity_pressure>"""
         sca = """<additional_scalars>
-                    <scalar label="Temp.C" name="temperature_celsius" type="thermal">
+                    <scalar label="TempC" name="temperature_celsius" type="thermal">
                             <initial_value zone="1">20.0</initial_value>
                             <min_value>-1e+12 </min_value>
                             <max_value>1e+12</max_value>
@@ -661,7 +661,7 @@ class NumericalParamEquatTestCase(ModelTest):
 ##        self.failUnlessRaises(ValueError, model.getScalarTimeStepFactor('VelocitV'), \
 ##           'Could not get time step factor in NumericalParamEquationModel')
 
-        assert model.getScalarTimeStepFactor('Temp.C') == 52.,\
+        assert model.getScalarTimeStepFactor('TempC') == 52.,\
                 'Could not get time step factor for scalar in NumericalParamEquationModel'
 
 def suite():

@@ -394,7 +394,7 @@ class TurbulenceModelTestCase(ModelTest):
         mdl.setTurbulenceModel('mixing_length')
         mdl.setLengthScale(1)
         doc ='''<turbulence model="mixing_length">
-                    <property label="turb. vi" name="turb_viscosity"/>
+                    <property label="TurbVisc" name="turb_viscosity"/>
                     <initialization choice="reference_velocity">
                         <reference_velocity>1</reference_velocity>
                     </initialization>
@@ -411,7 +411,7 @@ class TurbulenceModelTestCase(ModelTest):
         doc ='''<turbulence model="k-epsilon">
                 <variable label="TurbEner" name="turb_k"/>
                 <variable label="Dissip" name="turb_eps"/>
-                <property label="turb. vi" name="turb_viscosity"/>
+                <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1</reference_velocity>
                 </initialization>
@@ -427,7 +427,7 @@ class TurbulenceModelTestCase(ModelTest):
         doc ='''<turbulence model="k-epsilon-PL">
                 <variable label="TurbEner" name="turb_k"/>
                 <variable label="Dissip" name="turb_eps"/>
-                <property label="turb. vi" name="turb_viscosity"/>
+                <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1</reference_velocity>
                 </initialization>
@@ -441,7 +441,7 @@ class TurbulenceModelTestCase(ModelTest):
         mdl.node_turb.xmlRemoveChild('variable')
         mdl.setTurbulenceModel('Rij-epsilon')
         doc ='''<turbulence model="Rij-epsilon">
-                <property label="turb. vi" name="turb_viscosity"/>
+                <property label="TurbVisc" name="turb_viscosity"/>
                 <variable label="R11" name="component_R11"/>
                 <variable label="R22" name="component_R22"/>
                 <variable label="R33" name="component_R33"/>
@@ -463,7 +463,7 @@ class TurbulenceModelTestCase(ModelTest):
         mdl.setTurbulenceModel('Rij-SSG')
         truc = mdl.node_turb
         doc ='''<turbulence model="Rij-SSG">
-                <property label="turb. vi" name="turb_viscosity"/>
+                <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1</reference_velocity>
                 </initialization>
@@ -515,7 +515,7 @@ class TurbulenceModelTestCase(ModelTest):
                 <variable label="Dissip" name="turb_eps"/>
                 <variable label="phi" name="turb_phi"/>
                 <variable label="fb" name="turb_fb"/>
-                <property label="turb. vi" name="turb_viscosity"/>
+                <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1.0</reference_velocity>
                 </initialization>
@@ -530,7 +530,7 @@ class TurbulenceModelTestCase(ModelTest):
         doc = '''<turbulence model="k-omega-SST">
                 <variable label="TurbEner" name="turb_k"/>
                 <variable label="Dissip" name="turb_eps"/>
-                <property label="turb. vi" name="turb_viscosity"/>
+                <property label="TurbVisc" name="turb_viscosity"/>
                 <variable label="omega" name="turb_omega"/>
                 <initialization choice="reference_velocity">
                   <reference_velocity>1.0</reference_velocity>
@@ -570,7 +570,7 @@ class TurbulenceModelTestCase(ModelTest):
         doc = '''<turbulence model="k-epsilon">
                 <variable label="TurbEner" name="turb_k"/>
                 <variable label="Dissip" name="turb_eps"/>
-                <property label="turb. vi" name="turb_viscosity"/>
+                <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                     <reference_velocity>1</reference_velocity>
                 </initialization>
@@ -589,7 +589,7 @@ class TurbulenceModelTestCase(ModelTest):
         doc = '''<turbulence model="k-epsilon">
                 <variable label="TurbEner" name="turb_k"/>
                 <variable label="Dissip" name="turb_eps"/>
-                <property label="turb. vi" name="turb_viscosity"/>
+                <property label="TurbVisc" name="turb_viscosity"/>
                 <initialization choice="reference_velocity">
                     <reference_velocity>1</reference_velocity>
                 </initialization>

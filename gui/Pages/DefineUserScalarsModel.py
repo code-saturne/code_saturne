@@ -702,14 +702,14 @@ class UserScalarTestCase(ModelTest):
                                     <initial_value>1.83e-05</initial_value>
                             </property>
                     </scalar>
-                    <scalar label="Temp.C" name="temperature_celsius" type="thermal">
+                    <scalar label="TempC" name="temperature_celsius" type="thermal">
                             <initial_value zone="1">20.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                     </scalar>
                 </additional_scalars>'''
 
-        model.renameScalarLabel("Temp.C", "Matemperature")
+        model.renameScalarLabel("TempC", "Matemperature")
 
         assert model.getThermalScalarLabel() == "Matemperature",\
            'Could not get label of thermal scalar'
@@ -946,7 +946,7 @@ class UserScalarTestCase(ModelTest):
                                     <initial_value>1.83e-05</initial_value>
                             </property>
                     </scalar>
-                    <scalar label="Temp.C" name="temperature_celsius" type="thermal">
+                    <scalar label="TempC" name="temperature_celsius" type="thermal">
                             <initial_value zone="1">20.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
