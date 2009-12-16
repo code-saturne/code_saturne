@@ -79,7 +79,7 @@ class LineEditDelegateReferences(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        validator =  RegExpValidator(editor, QRegExp("^all[ ]*$|^[0-9\ ]*$"))
+        validator =  RegExpValidator(editor, QRegExp("^[0-9 ]*$"))
         editor.setValidator(validator)
         #editor.installEventFilter(self)
         return editor

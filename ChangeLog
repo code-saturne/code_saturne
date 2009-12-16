@@ -1,3 +1,11 @@
+*16/12/2009 - David Monfort <david.monfort@edf.fr>
+  Change some regular expressions for syntax checking in the
+  interface according to what is done in MEI.
+  modified routines:
+    gui/Pages/DefineUserScalarsView.py
+    gui/Pages/FacesSelectionView.py
+    gui/Pages/OutputVolumicVariablesView.py
+
 * 15/12/2009 - David Monfort <david.monfort@edf.fr>
   Remove hyphens and dots from variable names.
   modified routines:

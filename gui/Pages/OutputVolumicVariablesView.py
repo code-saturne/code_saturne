@@ -77,7 +77,7 @@ class ProbesValidator(QRegExpValidator):
         """
         Initialization for validator
         """
-        regExp = QRegExp("^all[ ]*$|^[0-9\ ]*$")
+        regExp = QRegExp("^[0-9 ]*$")
         super(ProbesValidator, self).__init__(regExp, parent)
         self.parent = parent
         self.mdl = xml_model
