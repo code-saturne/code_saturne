@@ -77,6 +77,22 @@ extern cs_join_t  **cs_glob_join_array;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Get the number of joining operations already defined
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE NUMJOI
+ * *****************
+ *
+ * INTEGER        numjoi       : --> : number of joining op. already defined
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(numjoi, NUMJOI)
+(
+ cs_int_t    *numjoi
+);
+
+/*----------------------------------------------------------------------------
  * Define new boundary faces joining.
  *
  * Fortran Interface:
@@ -84,6 +100,7 @@ extern cs_join_t  **cs_glob_join_array;
  * SUBROUTINE DEFJO1
  * *****************
  *
+ * INTEGER        numjoi           : <-- : number related to the joining op.
  * CHARACTER*     joining_criteria : <-- : boundary face selection criteria,
  * REAL           fraction         : <-- : parameter for merging vertices
  * REAL           plane            : <-- : parameter for splitting faces
@@ -93,6 +110,7 @@ extern cs_join_t  **cs_glob_join_array;
 
 void CS_PROCF(defjo1, DEFJO1)
 (
+ cs_int_t    *numjoi,
  const char  *joining_criteria,
  cs_real_t   *fraction,
  cs_real_t   *plane,
@@ -145,6 +163,7 @@ void CS_PROCF(setajp, SETAJP)
  * Create and initialize a cs_join_t structure.
  *
  * parameters:
+ *   join_number   <-- number related to the joining operation
  *   sel_criteria  <-- boundary face selection criteria
  *   fraction      <-- value of the fraction parameter
  *   plane         <-- value of the plane parameter
@@ -152,10 +171,39 @@ void CS_PROCF(setajp, SETAJP)
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_add(char   *sel_criteria,
+cs_join_add(int     join_number,
+            char   *sel_criteria,
             float   fraction,
             float   plane,
             int     verbosity);
+
+/*----------------------------------------------------------------------------
+ * Set advanced parameters to user-defined values.
+ *
+ * parameters:
+ *   join           <-> pointer a to cs_join_t struct. to update
+ *   mtf            <-- merge tolerance coefficient
+ *   pmf            <-- pre-merge factor
+ *   tcm            <-- tolerance computation mode
+ *   icm            <-- intersection computation mode
+ *   maxbrk         <-- max number of equivalences to break (merge step)
+ *   max_sub_faces  <-- max. possible number of sub-faces by splitting a face
+ *   tml            <-- tree max level
+ *   tmb            <-- tree max boxes
+ *   tmr            <-- tree max ratio
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_set_advanced_param(cs_join_t   *join,
+                           cs_real_t    mtf,
+                           cs_real_t    pmf,
+                           cs_int_t     tcm,
+                           cs_int_t     icm,
+                           cs_int_t     maxbrk,
+                           cs_int_t     max_sub_faces,
+                           cs_int_t     tml,
+                           cs_int_t     tmb,
+                           cs_real_t    tmr);
 
 /*----------------------------------------------------------------------------
  * Apply all the defined joining operations.

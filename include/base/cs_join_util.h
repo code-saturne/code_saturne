@@ -151,11 +151,6 @@ typedef struct {
 
 } cs_join_param_t;
 
-/*----------------------------------------------------------------------------
- * Structure used to store the result of the extraction of entities
- * implied in the joining operation
- *---------------------------------------------------------------------------*/
-
 typedef struct { /* Structure used to synchronize single elements */
 
   int      n_elts;
@@ -165,6 +160,11 @@ typedef struct { /* Structure used to synchronize single elements */
   int     *array;
 
 } cs_join_sync_t;
+
+/*----------------------------------------------------------------------------
+ * Structure used to store the result of the extraction of entities
+ * implied in the joining operation
+ *---------------------------------------------------------------------------*/
 
 typedef struct {
 
@@ -201,9 +201,9 @@ typedef struct {
   cs_int_t     *i_adj_faces;
 
   /*
-     Single elements (Only possible in parallel. It appears
+     Single elements (Only possible in parallel). It appears
      when the domain splitting has a poor quality and elements
-     on the joining interface are prisms or tetraedrals)
+     on the joining interface are prisms or tetraedrals
      s = single / c = coupled
   */
 
@@ -263,7 +263,7 @@ cs_join_get_block_info(fvm_gnum_t  n_g_elts,
  * Initialize a cs_join_param_t structure.
  *
  * parameters:
- *   join_id       <-- id of the current joining operation
+ *   join_num      <-- num of the current joining operation
  *   fraction      <-- value of the fraction parameter
  *   plane         <-- value of the plane parameter
  *   verbosity     <-- level of verbosity required
@@ -273,7 +273,7 @@ cs_join_get_block_info(fvm_gnum_t  n_g_elts,
  *---------------------------------------------------------------------------*/
 
 cs_join_param_t
-cs_join_param_define(int      join_id,
+cs_join_param_define(int      join_num,
                      float    fraction,
                      float    plane,
                      int      verbosity);

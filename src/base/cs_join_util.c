@@ -2250,7 +2250,7 @@ cs_join_get_block_info(fvm_gnum_t  n_g_elts,
  * Initialize a cs_join_param_t structure.
  *
  * parameters:
- *   join_id       <-- id of the current joining operation
+ *   join_num      <-- number of the current joining operation
  *   fraction      <-- value of the fraction parameter
  *   plane         <-- value of the plane parameter
  *   verbosity     <-- level of verbosity required
@@ -2260,14 +2260,14 @@ cs_join_get_block_info(fvm_gnum_t  n_g_elts,
  *---------------------------------------------------------------------------*/
 
 cs_join_param_t
-cs_join_param_define(int      join_id,
+cs_join_param_define(int      join_num,
                      float    fraction,
                      float    plane,
                      int      verbosity)
 {
   cs_join_param_t  param;
 
-  param.num = join_id + 1;
+  param.num = join_num;
 
   /* geometric parameters */
 

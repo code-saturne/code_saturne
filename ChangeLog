@@ -1,4 +1,14 @@
-*16/12/2009 - David Monfort <david.monfort@edf.fr>
+* 16/12/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Add a counter for the numbering of the joinings.
+  modified routines:
+    include/base/cs_join.h
+    include/base/cs_join_util.h
+    src/base/cs_join.c
+    src/base/cs_join_f2c.f90
+    src/base/cs_join_util.c
+    users/base/usjoin.f90
+
+* 16/12/2009 - David Monfort <david.monfort@edf.fr>
   Change some regular expressions for syntax checking in the
   interface according to what is done in MEI.
   modified routines:

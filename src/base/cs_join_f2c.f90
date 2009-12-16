@@ -28,7 +28,7 @@
 subroutine defjoi &
 !================
 
- ( critjo, fract, plane, iwarni )
+ ( numjoi, critjo, fract, plane, iwarnj )
 
 !===============================================================================
 ! FONCTION :
@@ -41,11 +41,12 @@ subroutine defjoi &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
+! numjoi           ! e  ! <-- ! join number                                    !
 ! critjo           ! a  ! <-- ! selection criteria for the border faces to     !
 !                  !    !     ! transform                                      !
 ! fract            ! r  ! <-- ! fraction parameter                             !
 ! plane            ! r  ! <-- ! face coplanarity parameter                     !
-! iwarni           ! e  ! <-- ! level of display                               !
+! iwarnj           ! e  ! <-- ! level of display                               !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -66,7 +67,7 @@ implicit none
 ! Arguments
 
 character*(*)    critjo
-integer          iwarni
+integer          iwarnj, numjoi
 double precision fract, plane
 
 ! Variables locales
@@ -77,7 +78,7 @@ integer       lcritj
 
 lcritj = len(critjo)
 
-call defjo1(critjo, fract, plane, iwarni, lcritj)
+call defjo1(numjoi, critjo, fract, plane, iwarnj, lcritj)
 !==========
 
 return

@@ -1475,6 +1475,25 @@ _destroy_all_joinings(void)
  *===========================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Get the number of joining operations already defined
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE NUMJOI
+ * *****************
+ *
+ * INTEGER        numjoi       : --> : number of joining op. already defined
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(numjoi, NUMJOI)
+(
+ cs_int_t    *numjoi
+)
+{
+  *numjoi = cs_glob_n_joinings;
+}
+
+/*----------------------------------------------------------------------------
  * Define new boundary faces joining.
  *
  * Fortran Interface:
@@ -1482,6 +1501,7 @@ _destroy_all_joinings(void)
  * SUBROUTINE DEFJO1
  * *****************
  *
+ * INTEGER        numjoi           : <-- : number related to the joining op.
  * CHARACTER*     joining_criteria : <-- : boundary face selection criteria,
  * REAL           fraction         : <-- : parameter for merging vertices
  * REAL           plane            : <-- : parameter for splitting faces
@@ -1491,6 +1511,7 @@ _destroy_all_joinings(void)
 
 void CS_PROCF(defjo1, DEFJO1)
 (
+ cs_int_t    *numjoi,
  const char  *joining_criteria,
  cs_real_t   *fraction,
  cs_real_t   *plane,
@@ -1507,7 +1528,8 @@ void CS_PROCF(defjo1, DEFJO1)
   if (_joining_criteria != NULL && strlen(_joining_criteria) == 0)
     cs_base_string_f_to_c_free(&_joining_criteria);
 
-  cs_join_add(_joining_criteria,
+  cs_join_add(*numjoi,
+              _joining_criteria,
               *fraction,
               *plane,
               *verbosity);
@@ -1552,111 +1574,37 @@ void CS_PROCF(setajp, SETAJP)
  CS_ARGF_SUPP_CHAINE
 )
 {
-  cs_int_t  join_id = *join_num - 1;
+  cs_int_t  i, join_id = -1;
   cs_join_t  *join = NULL;
 
-  if (join_id < 0 || *join_num > cs_glob_n_joinings)
+  /* Look for the joining structure related to "join_num" */
+
+  for (i = 0; i < cs_glob_n_joinings; i++) {
+
+    join = cs_glob_join_array[i];
+    if (*join_num == join->param.num) {
+      join_id = i;
+      break;
+    }
+
+  }
+
+  if (join_id < 0)
     bft_error(__FILE__, __LINE__, 0,
               _("  Join number %d is not defined.\n"), *join_num);
 
-  join = cs_glob_join_array[join_id];
+  assert(join != NULL);
 
-  /* Deepest level reachable during tree building */
-
-  if (*tml < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the tml parameter.\n"
-                "  It must be between > 0 and is here: %d\n"), *tml);
-
-  join->param.tree_max_level = *tml;
-
-  /* Max. number of boxes which can be related to a leaf of the tree
-     if level != tree_max_level */
-
-  if (*tmb < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the tmb parameter.\n"
-                "  It must be between > 0 and is here: %d\n"), *tmb);
-
-  join->param.tree_n_max_boxes = *tmb;
-
-  /* Stop tree building if:
-     n_linked_boxes > tree_max_box_ratio*n_init_boxes */
-
-  if (*tmr <= 0.0 )
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the tmr parameter.\n"
-                "  It must be between > 0.0 and is here: %f\n"), *tmr);
-
-  join->param.tree_max_box_ratio = *tmr;
-
-  /* Coef. used to modify the tolerance associated to each vertex BEFORE the
-     merge operation.
-     If coef = 0.0 => no vertex merge
-     If coef < 1.0 => reduce vertex merge
-     If coef = 1.0 => no change
-     If coef > 1.0 => increase vertex merge */
-
-  if (*mtf < 0.0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the merge tolerance factor.\n"
-                "  It must be positive or nul and not: %f\n"),
-              *mtf);
-
-  join->param.merge_tol_coef = *mtf;
-
-   /* Maximum number of equivalence breaks */
-
-  if (*maxbrk < 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the max. number of tolerance breaks.\n"
-                "  It must be between >= 0 and not: %d\n"), *maxbrk);
-
-  join->param.n_max_equiv_breaks = *maxbrk;
-
-  /* Pre-merge factor. This parameter is used to define a limit
-     under which two vertices are merged before the merge step.
-     Tolerance limit for the pre-merge = pmf * fraction
-     Default value: 0.10 */
-
-  join->param.pre_merge_factor = *pmf;
-
-  /* Tolerance computation mode */
-
-  if ( (*tcm)%10 < 1 || (*tcm)%10 > 2)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the tcm parameter.\n"
-                "  It must be between 1, 2 or 11, 12 and here is: %d\n"),
-              *tcm);
-
-  join->param.tcm = *tcm;
-
-  /* Intersection computation mode */
-
-  if (*icm != 1 && *icm != 2)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for icm parameter.\n"
-                "  It must be 1 or 2 and here is: %d\n"), *icm);
-
-  join->param.icm = *icm;
-
-  /* Maximum number of sub-faces */
-
-  if (*max_sub_faces < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the maxsf parameter.\n"
-                "  It must be between > 0 and here is: %d\n"),
-              *max_sub_faces);
-
-  join->param.max_sub_faces = *max_sub_faces;
+  cs_join_set_advanced_param(join,
+                             *mtf,
+                             *pmf,
+                             *tcm,
+                             *icm,
+                             *maxbrk,
+                             *max_sub_faces,
+                             *tml,
+                             *tmb,
+                             *tmr);
 
 }
 
@@ -1668,6 +1616,7 @@ void CS_PROCF(setajp, SETAJP)
  * Create and initialize a cs_join_t structure.
  *
  * parameters:
+ *   join_number   <-- number related to the joining operation
  *   sel_criteria  <-- boundary face selection criteria
  *   fraction      <-- value of the fraction parameter
  *   plane         <-- value of the plane parameter
@@ -1675,7 +1624,8 @@ void CS_PROCF(setajp, SETAJP)
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_add(char   *sel_criteria,
+cs_join_add(int     join_number,
+            char   *sel_criteria,
             float   fraction,
             float   plane,
             int     verbosity)
@@ -1705,7 +1655,7 @@ cs_join_add(char   *sel_criteria,
   BFT_REALLOC(cs_glob_join_array, cs_glob_n_joinings + 1, cs_join_t *);
   BFT_MALLOC(join, 1, cs_join_t);
 
-  join->param = cs_join_param_define(cs_glob_n_joinings,
+  join->param = cs_join_param_define(join_number,
                                      fraction,
                                      plane,
                                      verbosity);
@@ -1720,6 +1670,130 @@ cs_join_add(char   *sel_criteria,
 
   cs_glob_join_array[cs_glob_n_joinings] = join;
   cs_glob_n_joinings++;
+}
+
+/*----------------------------------------------------------------------------
+ * Set advanced parameters to user-defined values.
+ *
+ * parameters:
+ *   join           <-> pointer a to cs_join_t struct. to update
+ *   mtf            <-- merge tolerance coefficient
+ *   pmf            <-- pre-merge factor
+ *   tcm            <-- tolerance computation mode
+ *   icm            <-- intersection computation mode
+ *   maxbrk         <-- max number of equivalences to break (merge step)
+ *   max_sub_faces  <-- max. possible number of sub-faces by splitting a face
+ *   tml            <-- tree max level
+ *   tmb            <-- tree max boxes
+ *   tmr            <-- tree max ratio
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_set_advanced_param(cs_join_t   *join,
+                           cs_real_t    mtf,
+                           cs_real_t    pmf,
+                           cs_int_t     tcm,
+                           cs_int_t     icm,
+                           cs_int_t     maxbrk,
+                           cs_int_t     max_sub_faces,
+                           cs_int_t     tml,
+                           cs_int_t     tmb,
+                           cs_real_t    tmr)
+{
+  /* Deepest level reachable during tree building */
+
+  if (tml < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tml parameter.\n"
+                "  It must be between > 0 and is here: %d\n"), tml);
+
+  join->param.tree_max_level = tml;
+
+  /* Max. number of boxes which can be related to a leaf of the tree
+     if level != tree_max_level */
+
+  if (tmb < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tmb parameter.\n"
+                "  It must be between > 0 and is here: %d\n"), tmb);
+
+  join->param.tree_n_max_boxes = tmb;
+
+  /* Stop tree building if:
+     n_linked_boxes > tree_max_box_ratio*n_init_boxes */
+
+  if (tmr <= 0.0 )
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tmr parameter.\n"
+                "  It must be between > 0.0 and is here: %f\n"), tmr);
+
+  join->param.tree_max_box_ratio = tmr;
+
+  /* Coef. used to modify the tolerance associated to each vertex BEFORE the
+     merge operation.
+     If coef = 0.0 => no vertex merge
+     If coef < 1.0 => reduce vertex merge
+     If coef = 1.0 => no change
+     If coef > 1.0 => increase vertex merge */
+
+  if (mtf < 0.0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the merge tolerance factor.\n"
+                "  It must be positive or nul and not: %f\n"), mtf);
+
+  join->param.merge_tol_coef = mtf;
+
+   /* Maximum number of equivalence breaks */
+
+  if (maxbrk < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the max. number of tolerance breaks.\n"
+                "  It must be between >= 0 and not: %d\n"), maxbrk);
+
+  join->param.n_max_equiv_breaks = maxbrk;
+
+  /* Pre-merge factor. This parameter is used to define a limit
+     under which two vertices are merged before the merge step.
+     Tolerance limit for the pre-merge = pmf * fraction
+     Default value: 0.10 */
+
+  join->param.pre_merge_factor = pmf;
+
+  /* Tolerance computation mode */
+
+  if ( (tcm)%10 < 1 || (tcm)%10 > 2)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tcm parameter.\n"
+                "  It must be between 1, 2 or 11, 12 and here is: %d\n"), tcm);
+
+  join->param.tcm = tcm;
+
+  /* Intersection computation mode */
+
+  if (icm != 1 && icm != 2)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for icm parameter.\n"
+                "  It must be 1 or 2 and here is: %d\n"), icm);
+
+  join->param.icm = icm;
+
+  /* Maximum number of sub-faces */
+
+  if (max_sub_faces < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the maxsf parameter.\n"
+                "  It must be between > 0 and here is: %d\n"), max_sub_faces);
+
+  join->param.max_sub_faces = max_sub_faces;
+
 }
 
 /*----------------------------------------------------------------------------

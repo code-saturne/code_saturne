@@ -69,7 +69,7 @@ include "parall.h"
 
 ! Variables locales
 
-integer          iutile, ii
+integer          iutile, ii, nbjoin
 integer          iwarnj
 integer          tml, tmb, tcm, icm, maxsf, maxbrk
 double precision fract, plane, mtf, pmf, tmr
@@ -83,6 +83,12 @@ if(1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+! Get the number of joining operations already defined
+! (equal to zero at the moment)
+
+call numjoi(nbjoin)
+! ==========
 
 ! ---------------
 ! Main parameters
@@ -107,7 +113,8 @@ iwarnj = 1
 
 ! Joining definition
 
-call defjoi('98 or 99', fract, plane, iwarnj)
+nbjoin = nbjoin + 1
+call defjoi(nbjoin, '98 or 99', fract, plane, iwarnj)
 !==========
 
 
