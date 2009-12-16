@@ -76,9 +76,6 @@ if test "x$with_blas" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  BLAS_CPPFLAGS=""
-  BLAS_LDFLAGS=""
-
   # Add known paths and libraries for Blue Gene/L or P if not given
 
   if test "x$with_blas_type" = "x" ; then

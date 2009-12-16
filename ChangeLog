@@ -1,3 +1,8 @@
+* 16/12/2009 - David Monfort <david.monfort@edf.fr>
+  Fix a bug in BLAS detection, introduced with latest improvement.
+  modified script:
+    config/cs_blas.m4
+
 * 16/12/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Add a counter for the numbering of the joinings.
   modified routines:
