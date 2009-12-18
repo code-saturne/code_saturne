@@ -695,7 +695,7 @@ _set_coeffs_native(cs_matrix_t      *matrix,
       mc->xa = xa;
     else {
       size_t xa_n_bytes = sizeof(cs_real_t) * ms->n_faces;
-      if (symmetric)
+      if (! symmetric)
         xa_n_bytes *= 2;
       memcpy(mc->_xa, xa, xa_n_bytes);
       mc->xa = mc->_xa;

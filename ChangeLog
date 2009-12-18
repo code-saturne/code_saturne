@@ -1,3 +1,9 @@
+* 17/12/2009 - Frank Hulsemann <frank.hulsemann@edf.fr>
+  Fix a bug when copying the matrix coefficient in native format.
+  No impact in current simulations as the code was never used.
+  modified routine:
+    src/base/cs_matrix.c
+
 * 17/12/2009 - David Monfort <david.monfort@edf.fr>
   Update the "remove trailing blanks and tabs" script, so that it
   handles the Python interface files and the different runcase scripts.
