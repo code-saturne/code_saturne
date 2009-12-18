@@ -315,6 +315,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         self.case2 = Case(None)
         XMLinit(self.case2)
         self.case2['xmlfile'] = 'cs_cmd'
+        self.case2['salome'] = self.case['salome']
         self.out2 = OutputControlModel(self.case2)
 
         # combo models

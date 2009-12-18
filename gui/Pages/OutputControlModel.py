@@ -78,6 +78,8 @@ class OutputControlModel(Model):
         default['probe_recording_frequency'] = 1
         default['postprocessing_options'] = "binary"
         default['postprocessing_format'] = "EnSight"
+        if self.case['salome']:
+            default['postprocessing_format'] = "MED_fichier"
         default['fluid_domain'] = "on"
         default['domain_boundary'] = "off"
         default['syrthes_boundary'] = "on"

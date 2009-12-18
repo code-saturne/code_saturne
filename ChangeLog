@@ -1,3 +1,9 @@
+* 17/12/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Minor modifications for GUI integration in the SALOME platform.
+  modified routines:
+    gui/Pages/OutputControlModel.py
+    gui/Pages/SolutionVerifView.py
+
 * 16/12/2009 - David Monfort <david.monfort@edf.fr>
   Fix a bug in BLAS detection, introduced with latest improvement.
   modified script:
