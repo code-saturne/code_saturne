@@ -57,7 +57,7 @@ log.setLevel(GuiParam.DEBUG)
 
 class Boundary(object) :
     """
-    Abstract class 
+    Abstract class
     """
     def __new__(cls, nature , label, case) :
         """
@@ -112,15 +112,15 @@ class Boundary(object) :
         else:
             if nature == "coal_inlet":
                 self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label)
-    
+
             elif nature in ["radiative_wall",
                             "mobile_boundary",
                             "coupling_mobile_boundary"]:
                 self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('wall', label = label)
-    
+
             elif nature == "meteo_inlet":
                 self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('inlet', label = label)
-    
+
             elif nature == "meteo_outlet":
                 self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('outlet', label = label)
 
@@ -143,7 +143,7 @@ class Boundary(object) :
         if self.sca_model.getScalarType(label) == 'thermal':
             Model().isInList(self.sca_model.getScalarName(label), self._thermalLabelsList)
         elif self.sca_model.getScalarType(label) == 'user':
-            Model().isInList(self.sca_model.getScalarName(label)[:6], ('scalar')) 
+            Model().isInList(self.sca_model.getScalarName(label)[:6], ('scalar'))
         scalarNode['name'] = self.sca_model.getScalarName(label)
         scalarNode['type'] = self.sca_model.getScalarType(label)
 
@@ -710,7 +710,7 @@ class CoalInletBoundary(InletBoundary) :
         Return value of flow for coal
         """
         Model().isInt(coal_idx)
-        
+
         n = self.boundNode.xmlGetNode('velocity_pressure')
         num = '%2.2i' % (coal_idx+1)
         n2 = n.xmlInitNode('coal', name = "coal"+num)
@@ -848,13 +848,13 @@ class CoalInletBoundary(InletBoundary) :
 
 
     def deleteCoalFlow(self, coal, nbCoals):
-        """ 
+        """
         Delete coal with name = coal.
         Usefull only for CoalCombustionView.
         """
         Model().isInt(coal)
         Model().isInt(nbCoals)
-        
+
         n = self.boundNode.xmlGetNode('velocity_pressure')
         if n:
             num = '%2.2i' % (coal+1)
@@ -868,23 +868,23 @@ class CoalInletBoundary(InletBoundary) :
 
 
     def __renameCoalFlow(self, coal):
-        """ 
+        """
         coaln become coaln-1.
         Usefull only for CoalCombustionView.
-       """ 
+       """
         Model().isInt(coal)
-        
+
         n = self.boundNode.xmlGetNode('velocity_pressure')
         if n:
             num = '%2.2i' % (coal+1)
             newNum = '%2.2i' % coal
             n2 = n.xmlGetNode('coal', name="coal"+ num)
             if n2:
-                n2['name'] = "coal"+newNum 
+                n2['name'] = "coal"+newNum
 
 
     def updateCoalRatios(self, coal):
-        """ 
+        """
         Delete ratio with name = classe. Usefull only for CoalCombustionView.
         """
         Model().isInt(coal)
@@ -900,9 +900,9 @@ class CoalInletBoundary(InletBoundary) :
 
 
     def deleteCoals(self):
-        """ 
+        """
         Delete all information of coal combustion in boundary conditions.
-        """ 
+        """
         n = self.boundNode.xmlGetNode('velocity_pressure')
         n.xmlRemoveChild('oxydant')
         n.xmlRemoveChild('coal')
@@ -927,22 +927,22 @@ class OutletBoundary(Boundary) :
         Initialize the boundary, add nodes in the boundary node
         """
         self._scalarChoicesList = ['dirichlet', 'neumann']
-        
+
         self.getReferencePressure()
-        
+
         for label in self.sca_model.getScalarLabelsList():
             self.getScalar(label)
 
 
     def __deleteScalarNodes(self, label, tag):
         """
-        Delete nodes of scalars 
+        Delete nodes of scalars
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isInList(tag, self._scalarChoicesList)
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
-        
+
         for tt in self._scalarChoicesList:
             if tt != tag:
                 scalarNode.xmlRemoveChild(tt)
@@ -968,7 +968,7 @@ class OutletBoundary(Boundary) :
         Model().isInList(label, self.sca_model.getScalarLabelsList())
 
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
-        
+
         #update type and name of scalar
         self.updateScalarTypeAndName(scalarNode, label)
 
@@ -976,7 +976,7 @@ class OutletBoundary(Boundary) :
         if not choice:
             choice = self.__defaultValues()['scalarChoice']
             self.setScalarChoice(label, choice)
-            
+
         return choice
 
 
@@ -986,15 +986,15 @@ class OutletBoundary(Boundary) :
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isInList(choice, self._scalarChoicesList)
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         if scalarNode['choice'] == choice:
-            return  
-            
+            return
+
         scalarNode['choice'] = choice
         if choice == 'dirichlet':
             self.getScalar(label)
@@ -1009,12 +1009,12 @@ class OutletBoundary(Boundary) :
         Get variableName variable
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
-        
+
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         choice = self.getScalarChoice(label)
 
         value = scalarNode.xmlGetChildDouble(choice)
@@ -1030,12 +1030,12 @@ class OutletBoundary(Boundary) :
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isFloat(value)
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         choice = self.getScalarChoice(label)
         if choice == 'neumann':
             Model().isInList(value, (0.,))
@@ -1092,9 +1092,9 @@ class OutletBoundary(Boundary) :
         Get reference pressure
         """
         pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
-        if pressure == None: 
+        if pressure == None:
             return 0
-            
+
         return pressure
 
 
@@ -1103,7 +1103,7 @@ class OutletBoundary(Boundary) :
         Set reference pressure
         """
         Model().isPositiveFloat(value)
-        
+
         node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
         if value == 0:
             node.xmlRemoveNode()
@@ -1151,7 +1151,7 @@ class WallBoundary(Boundary) :
         """
         self._fluxChoices=['temperature', 'flux']
         self._scalarChoices = ['dirichlet', 'neumann', 'exchange_coefficient']
-        
+
         # Initialize nodes if necessary
         self.getVelocityChoice()
         self.getRoughnessChoice()
@@ -1163,7 +1163,7 @@ class WallBoundary(Boundary) :
 
     def __deleteVelocities(self, node):
         """
-        Delete nodes of velocity 
+        Delete nodes of velocity
         """
         node.xmlRemoveChild('dirichlet', name='velocity_U')
         node.xmlRemoveChild('dirichlet', name='velocity_V')
@@ -1172,13 +1172,13 @@ class WallBoundary(Boundary) :
 
     def __deleteScalarNodes(self, label, tag):
         """
-        Delete nodes of scalars 
+        Delete nodes of scalars
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isInList(tag, self._scalarChoices)
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
-        
+
         if tag == 'exchange_coefficient':
             scalarNode.xmlRemoveChild('dirichlet')
         else:
@@ -1204,7 +1204,7 @@ class WallBoundary(Boundary) :
 
     def getVelocityChoice(self):
         """
-        Get the velocity choice 
+        Get the velocity choice
         """
         node = self.boundNode.xmlInitNode('velocity_pressure', 'choice')
         choice = node['choice']
@@ -1244,7 +1244,7 @@ class WallBoundary(Boundary) :
         """
         node = self.boundNode.xmlInitNode('velocity_pressure')
         Model().isInList(node['choice'],('on',))
-        
+
         n = node.xmlGetChildNode('dirichlet', name='velocity_U')
         if n:
             u = node.xmlGetChildDouble('dirichlet', name='velocity_U')
@@ -1272,10 +1272,10 @@ class WallBoundary(Boundary) :
         Model().isFloat(u)
         Model().isFloat(v)
         Model().isFloat(w)
-        
+
         node = self.boundNode.xmlInitNode('velocity_pressure')
         Model().isInList(node['choice'],('on',))
-        
+
         node.xmlSetData('dirichlet', u, name='velocity_U')
         node.xmlSetData('dirichlet', v, name='velocity_V')
         node.xmlSetData('dirichlet', w, name='velocity_W')
@@ -1289,7 +1289,7 @@ class WallBoundary(Boundary) :
         Model().isInList(component, ('velocity_U', 'velocity_V', 'velocity_W'))
         node = self.boundNode.xmlInitNode('velocity_pressure')
         Model().isInList(node['choice'], ('on', 'off'))
-        
+
         node.xmlSetData('dirichlet', val, name=component)
 
 
@@ -1336,7 +1336,7 @@ class WallBoundary(Boundary) :
         Put value of roughness height in xmlfile
         """
         Model().isGreaterOrEqual(value, 0.)
-        
+
         node = self.boundNode.xmlInitNode('velocity_pressure', 'choice')
         if value == 0.:
             node.xmlRemoveChild('roughness')
@@ -1349,9 +1349,9 @@ class WallBoundary(Boundary) :
         Get scalar choice
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
-        
+
         #update type and name of scalar
         self.updateScalarTypeAndName(scalarNode, label)
 
@@ -1359,7 +1359,7 @@ class WallBoundary(Boundary) :
         if not choice:
             choice = self.__defaultValues()['scalarChoice']
             self.setScalarChoice(label, choice)
-            
+
         return choice
 
 
@@ -1369,12 +1369,12 @@ class WallBoundary(Boundary) :
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isInList(choice, self._scalarChoices)
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         if scalarNode['choice'] == choice:
             return
 
@@ -1402,7 +1402,7 @@ class WallBoundary(Boundary) :
 
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         choice = self.getScalarChoice(label)
         if choice == 'exchange_coefficient':
             choice = 'neumann'
@@ -1420,12 +1420,12 @@ class WallBoundary(Boundary) :
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isFloat(value)
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         choice = self.getScalarChoice(label)
         if choice == 'exchange_coefficient':
             choice = 'neumann'
@@ -1439,12 +1439,12 @@ class WallBoundary(Boundary) :
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isInList(self.getScalarChoice(label), ('dirichlet',))
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         value = scalarNode.xmlGetChildDouble('dirichlet')
         if not value:
             value = self.__defaultValues()['scalarValue']
@@ -1460,12 +1460,12 @@ class WallBoundary(Boundary) :
         Model().isFloat(value)
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isInList(self.getScalarChoice(label), ('dirichlet',))
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
-            
+
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         scalarNode.xmlSetData('dirichlet', value)
 
 
@@ -1475,12 +1475,12 @@ class WallBoundary(Boundary) :
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isInList(self.getScalarChoice(label), ('neumann', 'exchange_coefficient'))
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
-        
+
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         value = scalarNode.xmlGetChildDouble('neumann')
         if not value:
             value = self.__defaultValues()['scalarValue']
@@ -1496,12 +1496,12 @@ class WallBoundary(Boundary) :
         Model().isFloat(value)
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isInList(self.getScalarChoice(label), ('neumann', 'exchange_coefficient'))
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         scalarNode.xmlSetData('neumann', value)
 
 
@@ -1511,12 +1511,12 @@ class WallBoundary(Boundary) :
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isInList(self.getScalarChoice(label), ('exchange_coefficient',))
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         value = scalarNode.xmlGetChildDouble('exchange_coefficient')
         if not value:
             value = self.__defaultValues()['scalarValue']
@@ -1532,12 +1532,12 @@ class WallBoundary(Boundary) :
         Model().isFloat(value)
         Model().isInList(label, self.sca_model.getScalarLabelsList())
         Model().isInList(self.getScalarChoice(label), ('exchange_coefficient',))
-        
+
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
-            
+
         #update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, label)
-        
+
         scalarNode.xmlSetData('exchange_coefficient', value)
 
 
@@ -1575,7 +1575,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         Model().isInList(choice, self._radiativeChoices)
         list = []
-        if choice == 'itpimp': 
+        if choice == 'itpimp':
             list = ('emissivity', 'internal_temperature_profile', 'output_zone')
         elif choice == 'ipgrno':
             list = ('emissivity', 'thermal_conductivity', 'thickness',
@@ -1609,7 +1609,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         choice = nod_ray_cond['choice']
-        if not choice: 
+        if not choice:
             choice = self.__defaultValues()['choice_condition']
             self.setRadiativeChoice(choice)
         return choice
@@ -1638,7 +1638,7 @@ class RadiativeWallBoundary(Boundary) :
         if not val:
             val = self.__defaultValues()['emissivity']
             self.setEmissivity(val)
-        
+
         return val
 
 
@@ -1648,7 +1648,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         Model().isGreaterOrEqual(val, 0.)
         Model().isLowerOrEqual(val, 1.)
-        
+
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData('emissivity', val)
 
@@ -1662,7 +1662,7 @@ class RadiativeWallBoundary(Boundary) :
         if not val:
             val = self.__defaultValues()['thermal_conductivity']
             self.setThermalConductivity(val)
-            
+
         return val
 
 
@@ -1671,7 +1671,7 @@ class RadiativeWallBoundary(Boundary) :
         Put value of thermal conductivity for the radiative wall
         """
         Model().isGreaterOrEqual(val, 0.)
-        
+
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData('thermal_conductivity', val)
 
@@ -1685,7 +1685,7 @@ class RadiativeWallBoundary(Boundary) :
         if not val:
             val = self.__defaultValues()['thickness']
             self.setThickness(val)
-            
+
         return val
 
 
@@ -1694,7 +1694,7 @@ class RadiativeWallBoundary(Boundary) :
         Put value of thickness for the radiative wall
         """
         Model().isGreaterOrEqual(val, 0.)
-        
+
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData('thickness', val)
 
@@ -1717,7 +1717,7 @@ class RadiativeWallBoundary(Boundary) :
         Put value of external temperature profile for the radiative wall
         """
         Model().isGreaterOrEqual(val, 0.)
-        
+
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData('external_temperature_profile',val)
 
@@ -1740,7 +1740,7 @@ class RadiativeWallBoundary(Boundary) :
         Put value of internal temperature profile for the radiative wall
         """
         Model().isGreaterOrEqual(val, 0.)
-        
+
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData('internal_temperature_profile',val)
 
@@ -1755,7 +1755,7 @@ class RadiativeWallBoundary(Boundary) :
 ##            val = self.__defaultValues()['flux']
 ##            self.setFlux(val)
         val = self.getValRay('flux')
-        
+
         return val
 
 
@@ -1764,7 +1764,7 @@ class RadiativeWallBoundary(Boundary) :
         Put value of flux for the radiative wall
         """
         Model().isGreaterOrEqual(val, 0.)
-        
+
 ##        nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
 ##        nod_ray_cond.xmlSetData('flux', val)
         self.setValRay(val, 'flux')
@@ -1788,7 +1788,7 @@ class RadiativeWallBoundary(Boundary) :
         Put value of output radiative zone for the radiative wall
         """
         Model().isInt(ival)
-        
+
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData('output_zone', ival)
 
@@ -1798,7 +1798,7 @@ class RadiativeWallBoundary(Boundary) :
         Return value of radiative variable named 'var' for the radiative wall
         """
         Model().isInList(rayvar, self.head_list)
-        
+
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         if rayvar == "output_zone":
             val = nod_ray_cond.xmlGetInt(rayvar)
@@ -1842,7 +1842,7 @@ class MobilWallBoundary(Boundary) :
         """
         Initialize the possible choices.
         """
-        self.__ALEChoices = ["fixed_boundary", 
+        self.__ALEChoices = ["fixed_boundary",
                              "sliding_boundary",
                              "internal_coupling",
                              "external_coupling",
@@ -1864,7 +1864,7 @@ class MobilWallBoundary(Boundary) :
         """
         node = self.boundNode.xmlInitNode('ale', 'choice')
         choice = node['choice']
-        
+
         # Create a defaut choice if it does not exist.
         if not node['choice']:
             choice = self._defaultValues['ale_choice']
@@ -1951,7 +1951,7 @@ class CouplingMobilWallBoundary(Boundary) :
         self._defaultValues['equilibrium_displacement_X'] = 0
         self._defaultValues['equilibrium_displacement_Y'] = 0
         self._defaultValues['equilibrium_displacement_Z'] = 0
-        
+
         defaultMatrix = 'm11=0;\nm22=0;\nm33=0;\nm12=0;\nm13=0;\nm23=0;'
         defaultFluidMatrix = "Fx=0;\nFy=0;\nFz=0;"
 
@@ -1979,7 +1979,7 @@ class CouplingMobilWallBoundary(Boundary) :
     def _getDoubleData(self, nodeName, subNodeName, setter ):
         """
         Get value from xml file.
-        """ 
+        """
         aleNode = self.boundNode.xmlGetNode('ale')
         node = aleNode.xmlInitChildNode(nodeName)
         value = node.xmlGetChildDouble(subNodeName)
@@ -1992,7 +1992,7 @@ class CouplingMobilWallBoundary(Boundary) :
     def _getStringData(self, nodeName, subNodeName, setter ):
         """
         Get value from xml file.
-        """ 
+        """
         aleNode = self.boundNode.xmlGetNode('ale')
         node = aleNode.xmlInitChildNode(nodeName)
         value = node.xmlGetChildString(subNodeName)
@@ -2008,42 +2008,42 @@ class CouplingMobilWallBoundary(Boundary) :
     def setInitialDisplacementX(self, value ):
         """
         Set value of initial displacement X into xml file.
-        """ 
+        """
         self._setData('initial_displacement', 'X', value)
 
 
     def getInitialDisplacementX(self ):
         """
         Get value of initial displacement X from xml file.
-        """ 
+        """
         return self._getDoubleData('initial_displacement', 'X', self.setInitialDisplacementX)
 
 
     def setInitialDisplacementY(self, value ):
         """
         Set value of initial displacement Y into xml file.
-        """ 
+        """
         self._setData('initial_displacement', 'Y', value)
 
 
     def getInitialDisplacementY(self ):
         """
         Get value of initial displacement Y from xml file.
-        """ 
+        """
         return self._getDoubleData('initial_displacement', 'Y', self.setInitialDisplacementY)
 
 
     def setInitialDisplacementZ(self, value ):
         """
         Set value of initial displacement Z into xml file.
-        """ 
+        """
         self._setData('initial_displacement', 'Z', value)
 
 
     def getInitialDisplacementZ(self ):
         """
         Get value of initial displacement Z from xml file.
-        """ 
+        """
         return self._getDoubleData('initial_displacement', 'Z', self.setInitialDisplacementZ)
 
 
@@ -2053,42 +2053,42 @@ class CouplingMobilWallBoundary(Boundary) :
     def setEquilibriumDisplacementX(self, value):
         """
         Set value of equilibrium displacement X into xml file.
-        """ 
+        """
         self._setData('equilibrium_displacement', 'X', value)
 
 
     def getEquilibriumDisplacementX(self):
         """
         Get value of equilibrium displacement X from xml file.
-        """ 
+        """
         return self._getDoubleData('equilibrium_displacement', 'X', self.setEquilibriumDisplacementX)
 
 
     def setEquilibriumDisplacementY(self, value):
         """
         Set value of equilibrium displacement Y into xml file.
-        """ 
+        """
         self._setData('equilibrium_displacement', 'Y', value)
 
 
     def getEquilibriumDisplacementY(self):
         """
         Get value of equilibrium displacement Y from xml file.
-        """ 
+        """
         return self._getDoubleData('equilibrium_displacement', 'Y', self.setEquilibriumDisplacementY)
 
 
     def setEquilibriumDisplacementZ(self, value):
         """
         Set value of equilibrium displacement Z into xml file.
-        """ 
+        """
         self._setData('equilibrium_displacement', 'Z', value)
 
 
     def getEquilibriumDisplacementZ(self):
         """
         Get value of equilibrium displacement X from xml file.
-        """ 
+        """
         return self._getDoubleData('equilibrium_displacement', 'Z', self.setEquilibriumDisplacementZ)
 
 
@@ -2098,112 +2098,112 @@ class CouplingMobilWallBoundary(Boundary) :
     def setInitialVelocityX(self, value):
         """
         Set value of initial velocity X into xml file.
-        """ 
+        """
         self._setData('initial_velocity', 'X', value)
 
 
     def getInitialVelocityX(self):
         """
         Get value of initial velocity X from xml file.
-        """ 
+        """
         return self._getDoubleData('initial_velocity', 'X', self.setInitialVelocityX)
 
 
     def setInitialVelocityY(self, value):
         """
         Set value of initial velocity Y into xml file.
-        """ 
+        """
         self._setData('initial_velocity', 'Y', value)
 
 
     def getInitialVelocityY(self):
         """
         Get value of initial velocity Y from xml file.
-        """ 
+        """
         return self._getDoubleData('initial_velocity', 'Y', self.setInitialVelocityY)
 
 
     def setInitialVelocityZ(self, value):
         """
         Set value of initial velocity Z into xml file.
-        """ 
+        """
         self._setData('initial_velocity', 'Z', value)
 
 
     def getInitialVelocityZ(self):
         """
         Get value of initial velocity Z from xml file.
-        """ 
+        """
         return self._getDoubleData('initial_velocity', 'Z', self.setInitialVelocityZ)
 
 
     # Matrix
-    #-------   
+    #-------
 
     def setMassMatrix(self, value):
         """
         Set values of massMatrix into xml file.
-        """ 
+        """
         self._setData('mass_matrix', 'formula', value)
 
 
     def getMassMatrix(self):
         """
         Get values of massMatrix from xml file.
-        """ 
+        """
         return self._getStringData('mass_matrix', 'formula', self.setMassMatrix)
 
 
     def setStiffnessMatrix(self, value):
         """
         Set values of stiffnessMatrix into xml file.
-        """ 
+        """
         self._setData('stiffness_matrix', 'formula', value)
 
 
     def getStiffnessMatrix(self):
         """
         Get values of stiffnessMatrix from xml file.
-        """ 
+        """
         return self._getStringData('stiffness_matrix', 'formula', self.setStiffnessMatrix)
 
 
     def setDampingMatrix(self, value):
         """
         Set values of dampingMatrix into xml file.
-        """ 
+        """
         self._setData('damping_matrix', 'formula', value)
 
 
     def getDampingMatrix(self):
         """
         Get values of dampingMatrix from xml file.
-        """ 
+        """
         return self._getStringData('damping_matrix', 'formula', self.setDampingMatrix)
 
 
     def setFluidForceMatrix(self, value):
         """
         Set values of fluid force matrix into xml file.
-        """ 
+        """
         self._setData('fluid_force_matrix', 'formula', value)
 
 
     def getFluidForceMatrix(self):
         """
         Get values of fluid force matrix from xml file.
-        """ 
+        """
         return self._getStringData('fluid_force_matrix', 'formula', self.setFluidForceMatrix)
 
     # DDL
-    #----  
+    #----
 
     def _setChoice(self, nodeName, value):
         """
         Set the choice
         """
         Model().isInList(value, ['on', 'off'])
-        aleNode = self.boundNode.xmlGetNode('ale')        
+        aleNode = self.boundNode.xmlGetNode('ale')
         node = aleNode.xmlInitNode(nodeName)
         node['choice'] = value
 
@@ -2212,7 +2212,7 @@ class CouplingMobilWallBoundary(Boundary) :
         """
         Get the choice
         """
-        aleNode = self.boundNode.xmlGetNode('ale')        
+        aleNode = self.boundNode.xmlGetNode('ale')
         node = aleNode.xmlInitNode(nodeName, 'choice')
         choice = node['choice']
 
@@ -2277,7 +2277,7 @@ class InletBoundaryTestCase(ModelTest):
     """
     def checkInletBoundaryInstantiation(self):
         """
-        Check whether the InletBoundary class could be instantiated 
+        Check whether the InletBoundary class could be instantiated
         """
         model = None
         model = Boundary("inlet", "entree1", self.case)
@@ -2316,11 +2316,11 @@ class InletBoundaryTestCase(ModelTest):
         model = Boundary("inlet", "entree1", self.case)
         model.setVelocityChoice('flow1+direction')
         node =  model._XMLBoundaryConditionsNode
-        
+
         model.setFlow('flow1', 3.5)
 ##        model.setFlow('flow2', 3.5)
         model.setDirection('direction_z', 2.0)
-        
+
         doc = '''<boundary_conditions>
                     <inlet label="entree1">
                         <velocity_pressure choice="flow1+direction">
@@ -2334,7 +2334,7 @@ class InletBoundaryTestCase(ModelTest):
                         </turbulence>
                     </inlet>
                 </boundary_conditions>'''
-                
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set mass flow or volumic flow and directions for inlet boundary'
 
@@ -2362,7 +2362,7 @@ class InletBoundaryTestCase(ModelTest):
                             </turbulence>
                         </inlet>
                  </boundary_conditions>'''
-                
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set velocity norm for inlet boundary'
 
@@ -2376,7 +2376,7 @@ class InletBoundaryTestCase(ModelTest):
         node =  model._XMLBoundaryConditionsNode
         model.setVelocityChoice('norm')
         model.setTurbulenceChoice('turbulent_intensity')
-        
+
         doc = '''<boundary_conditions>
                     <inlet label="entree1">
                         <velocity_pressure choice="norm">
@@ -2398,7 +2398,7 @@ class InletBoundaryTestCase(ModelTest):
 
     def checkSetAndGetHydraulicDiameterAndTurbulentIntensity(self):
         """
-        Check whether the hydraulic_diameter and turbulent_intensity could be 
+        Check whether the hydraulic_diameter and turbulent_intensity could be
         set and get for inlet boundary.
         """
         model = Boundary("inlet", "entree1", self.case)
@@ -2408,7 +2408,7 @@ class InletBoundaryTestCase(ModelTest):
 
         model.setHydraulicDiameter(120.)
         model.setTurbulentIntensity(0.005)
-        
+
         doc = '''<boundary_conditions>
                     <inlet label="entree1">
                         <velocity_pressure choice="norm">
@@ -2517,7 +2517,7 @@ class CoalInletBoundaryTestCase(ModelTest):
     """
     def checkCoalInletBoundaryInstantiation(self):
         """
-        Check whether the CoalInletBoundary class could be instantiated 
+        Check whether the CoalInletBoundary class could be instantiated
         """
         from CoalCombustionModel import CoalCombustionModel
         CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
@@ -2553,13 +2553,13 @@ class CoalInletBoundaryTestCase(ModelTest):
                         </turbulence>
                     </inlet>
                 </boundary_conditions>'''
-        
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set coalFlow type for coal inlet boundary'
 
         assert coal_model.getInletType() == "coalFlow",\
            'Could not get coalFlow type for coal inlet boundary'
-           
+
         coal_model.setInletType('oxydantFlow')
         doc1 = '''<boundary_conditions>
                     <inlet label="charb1">
@@ -2591,7 +2591,7 @@ class CoalInletBoundaryTestCase(ModelTest):
         coal_model.setInletType('coalFlow')
         coal_model.setOxydantTemperature(500.)
         coal_model.setCoalTemperature(999.99, 0)
-        
+
         doc = '''<boundary_conditions>
                     <inlet label="charb1">
                         <velocity_pressure choice="norm">
@@ -2608,13 +2608,13 @@ class CoalInletBoundaryTestCase(ModelTest):
                         </turbulence>
                     </inlet>
                 </boundary_conditions>'''
-        
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set oxydant temperature for coal inlet boundary'
 
         assert coal_model.getOxydantTemperature() == 500.,\
            'Could not get oxydant temperature for coal inlet boundary'
-        
+
         assert coal_model.getCoalTemperature(0) == 999.99,\
            'Could not get coal temperature for coal inlet boundary'
 
@@ -2657,11 +2657,11 @@ class CoalInletBoundaryTestCase(ModelTest):
 
     def checkSetAndGetCoalRatios(self):
         """Check whether the ratio of classes could be set and get for coal inlet boundary."""
-        os.remove("dp_FCP")        
+        os.remove("dp_FCP")
         from CoalCombustionModel import CoalCombustionModel
         m = CoalCombustionModel(self.case)
         m.setCoalCombustionModel('coal_homo')
-        
+
         # creation du fichier dp_FCP avec 2 charbons et 3 classes
         self.case['data_path'] = "."
         from CoalThermoChemistry import CoalThermoChemistryModel, Coal
@@ -2682,7 +2682,7 @@ class CoalInletBoundaryTestCase(ModelTest):
 
         model = Boundary("inlet", "charb1", self.case)
         coal_model = Boundary("coal_inlet", "charb1", self.case)
-        
+
         model.setVelocityChoice('flow1')
         model.setVelocity(12.5)
         coal_model.setInletType('coalFlow')
@@ -2726,11 +2726,11 @@ class CoalInletBoundaryTestCase(ModelTest):
 
     def checkDeleteCoalAndClassesRatios(self):
         """Check whether coal or classes could be deleted for coal inlet boundary."""
-        os.remove("dp_FCP")        
+        os.remove("dp_FCP")
         from CoalCombustionModel import CoalCombustionModel
         m = CoalCombustionModel(self.case)
         m.setCoalCombustionModel('coal_homo')
-        
+
         # creation du fichier dp_FCP avec 3 charbons et 6 classes
         self.case['data_path'] = "."
         from CoalThermoChemistry import CoalThermoChemistryModel, Coal
@@ -2757,7 +2757,7 @@ class CoalInletBoundaryTestCase(ModelTest):
         # fin de la creation du fichier dp_FCP
         model = Boundary("inlet", "charb1", self.case)
         coal_model = Boundary("coal_inlet", "charb1", self.case)
-        
+
         model.setVelocityChoice('flow1')
         model.setVelocity(12.5)
         coal_model.setInletType('coalFlow')
@@ -2797,7 +2797,7 @@ class CoalInletBoundaryTestCase(ModelTest):
                         </turbulence>
                     </inlet>
                 </boundary_conditions>'''
-                
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set ratios for classes for coal inlet boundary'
 
@@ -2825,7 +2825,7 @@ class CoalInletBoundaryTestCase(ModelTest):
                         </turbulence>
                     </inlet>
                 </boundary_conditions>'''
-                
+
         assert node == self.xmlNodeFromString(doc1),\
            'Could not delete one coal for coal inlet boundary'
         coal_model.updateCoalRatios(1)
@@ -2852,10 +2852,10 @@ class CoalInletBoundaryTestCase(ModelTest):
                         </turbulence>
                     </inlet>
                 </boundary_conditions>'''
-                
+
         assert node == self.xmlNodeFromString(doc2),\
            'Could not delete one class of one coal for coal inlet boundary'
-           
+
 
 def suite2():
     testSuite = unittest.makeSuite(CoalInletBoundaryTestCase, "check")
@@ -2892,7 +2892,7 @@ class WallBoundaryTestCase(ModelTest):
         model = Boundary("wall", "fenetre", self.case)
         model.setVelocityChoice('off')
         node =  model._XMLBoundaryConditionsNode
-        
+
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="on">
@@ -2905,13 +2905,13 @@ class WallBoundaryTestCase(ModelTest):
                         <velocity_pressure choice="off"/>
                     </wall>
                 </boundary_conditions>'''
-        
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set choice of velocity for wall boundary'
 
         assert model.getVelocityChoice() == 'off',\
            'Could not get set choice of velocity for wall boundary'
-           
+
         model = Boundary("wall", "mur", self.case)
         model.setVelocityChoice('off')
 
@@ -2923,7 +2923,7 @@ class WallBoundaryTestCase(ModelTest):
                         <velocity_pressure choice="off"/>
                     </wall>
                 </boundary_conditions>'''
-           
+
         assert node == self.xmlNodeFromString(doc2),\
            'Could not set choice of velocity for wall boundary'
 
@@ -2934,7 +2934,7 @@ class WallBoundaryTestCase(ModelTest):
         model.setVelocityChoice('on')
         model.setVelocities(1., 2., 3.)
         node =  model._XMLBoundaryConditionsNode
-        
+
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="on">
@@ -2944,12 +2944,12 @@ class WallBoundaryTestCase(ModelTest):
                         </velocity_pressure>
                     </wall>
                 </boundary_conditions>'''
-        
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set values of velocity for wall boundary'
 
         assert model.getVelocities() == (1, 2 ,3),\
-           'Could not get set values of velocity for wall boundary'       
+           'Could not get set values of velocity for wall boundary'
 
 
     def checkSetAndGetRoughnessChoiceAndValue(self):
@@ -2957,7 +2957,7 @@ class WallBoundaryTestCase(ModelTest):
         model = Boundary("wall", "mur", self.case)
         model.setRoughnessChoice('on')
         node =  model._XMLBoundaryConditionsNode
-      
+
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off">
@@ -2965,10 +2965,10 @@ class WallBoundaryTestCase(ModelTest):
                         </velocity_pressure>
                     </wall>
                 </boundary_conditions>'''
-        
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not update roughness choice for wall boundary'
-           
+
         model.setRoughness(15.33)
         doc1 = '''<boundary_conditions>
                     <wall label="mur">
@@ -2977,7 +2977,7 @@ class WallBoundaryTestCase(ModelTest):
                         </velocity_pressure>
                     </wall>
                  </boundary_conditions>'''
-                
+
         assert node == self.xmlNodeFromString(doc1),\
            'Could not set roughness value for wall boundary'
 
@@ -3001,7 +3001,7 @@ class WallBoundaryTestCase(ModelTest):
                         </scalar>
                     </wall>
                 </boundary_conditions>'''
-                
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set scalar choice for wall boundary'
 
@@ -3010,7 +3010,7 @@ class WallBoundaryTestCase(ModelTest):
 
         assert model.getScalarChoice('sca1') == 'neumann',\
            'Could not get scalar choice for wall boundary'
-           
+
         model.setScalarChoice('sca1', 'exchange_coefficient')
         doc1 = '''<boundary_conditions>
                     <wall label="mur">
@@ -3024,14 +3024,14 @@ class WallBoundaryTestCase(ModelTest):
                         </scalar>
                     </wall>
                  </boundary_conditions>'''
-                 
+
         assert node == self.xmlNodeFromString(doc1),\
            'Could not set scalar choice for wall boundary'
-           
+
         assert model.getScalarChoice('sca1') == 'exchange_coefficient',\
            'Could not get scalar choice for wall boundary'
-           
-           
+
+
     def checkSetAndGetScalarImposedValueFluxAndExchangeCoefficient(self):
         """Check whether the scalar values could be set and get for wall boundary."""
         model = Boundary("wall", "mur", self.case)
@@ -3056,7 +3056,7 @@ class WallBoundaryTestCase(ModelTest):
                         </scalar>
                     </wall>
                  </boundary_conditions>'''
-                 
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set scalar imposed value, flux and exchange_coefficient for wall boundary'
 
@@ -3065,11 +3065,11 @@ class WallBoundaryTestCase(ModelTest):
 
         assert model.getScalarImposedFlux('sca1') == 130.,\
             'Could not get scalar imposed value for wall boundary'
-            
+
         assert model.getScalarExchangeCoefficient('sca1') == 0.130,\
             'Could not get scalar imposed value for wall boundary'
- 
-      
+
+
 def suite3():
     testSuite = unittest.makeSuite(WallBoundaryTestCase, "check")
     return testSuite
@@ -3096,7 +3096,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
         """
         from ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
-        
+
         model = None
         model = Boundary("radiative_wall", "paroi", self.case)
         assert model != None, 'Could not instantiate '
@@ -3106,13 +3106,13 @@ class RadiativeWallBoundaryTestCase(ModelTest):
         """Check whether the type of condition could be set and get for radiative wall boundary."""
         from ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
-        
+
         model = Boundary("wall", "mur", self.case)
         model.setVelocityChoice('off')
         model = Boundary("radiative_wall", "radiateur", self.case)
         model.setRadiativeChoice('ipgrno')
         node =  model._XMLBoundaryConditionsNode
-        
+
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
@@ -3140,14 +3140,14 @@ class RadiativeWallBoundaryTestCase(ModelTest):
         """Check whether the emissivity could be set and get for radiative wall boundary."""
         from ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
-        
+
         model = Boundary("wall", "mur", self.case)
         model.setVelocityChoice('off')
         model = Boundary("radiative_wall", "radiateur", self.case)
         model.setRadiativeChoice('ipgrno')
         model.setEmissivity(0.22)
         node =  model._XMLBoundaryConditionsNode
-        
+
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
@@ -3175,14 +3175,14 @@ class RadiativeWallBoundaryTestCase(ModelTest):
         """Check whether the thermal conductivity could be set and get for radiative wall boundary."""
         from ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
-        
+
         model = Boundary("wall", "mur", self.case)
         model.setVelocityChoice('off')
         model = Boundary("radiative_wall", "radiateur", self.case)
         model.setRadiativeChoice('ipgrno')
         model.setThermalConductivity(5.6)
         node =  model._XMLBoundaryConditionsNode
-        
+
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
@@ -3204,20 +3204,20 @@ class RadiativeWallBoundaryTestCase(ModelTest):
 
         assert model.getThermalConductivity() == 5.6,\
            'Could not get thermal conductivity for radiative wall boundary'
-    
+
 
     def checkSetAndGetThickness(self):
         """Check whether the thickness could be set and get for radiative wall boundary."""
         from ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
-        
+
         model = Boundary("wall", "mur", self.case)
         model.setVelocityChoice('off')
         model = Boundary("radiative_wall", "radiateur", self.case)
         model.setRadiativeChoice('ipgrno')
         model.setThickness(2.)
         node =  model._XMLBoundaryConditionsNode
-        
+
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
@@ -3239,16 +3239,16 @@ class RadiativeWallBoundaryTestCase(ModelTest):
 
         assert model.getThickness() == 2.0,\
            'Could not get thickness for radiative wall boundary'
-    
-    
+
+
     def checkSetAndGetExternalAndInternalTemperatureProfile(self):
         """
-        Check whether the external and internal temperature profile 
+        Check whether the external and internal temperature profile
         could be set and get for radiative wall boundary.
         """
         from ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
-        
+
         model = Boundary("wall", "mur", self.case)
         model.setVelocityChoice('off')
         model = Boundary("radiative_wall", "radiateur", self.case)
@@ -3256,7 +3256,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
         model.setExternalTemperatureProfile(55.55)
         model.setInternalTemperatureProfile(987.)
         node =  model._XMLBoundaryConditionsNode
-        
+
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
@@ -3278,27 +3278,27 @@ class RadiativeWallBoundaryTestCase(ModelTest):
 
         assert model.getExternalTemperatureProfile() == 55.55,\
            'Could not get external temperature profile for radiative wall boundary'
-           
+
         assert model.getInternalTemperatureProfile() == 987.,\
            'Could not get internal temperature profile for radiative wall boundary'
-           
-        
-    
+
+
+
     def checkSetAndGetOutputRadiativeZone(self):
         """
-        Check whether the output radiative zone could be set and get for 
+        Check whether the output radiative zone could be set and get for
         radiative wall boundary.
         """
         from ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
-        
+
         model = Boundary("wall", "mur", self.case)
         model.setVelocityChoice('off')
         model = Boundary("radiative_wall", "radiateur", self.case)
         model.setRadiativeChoice('ipgrno')
         model.setOutputRadiativeZone(21)
         node =  model._XMLBoundaryConditionsNode
-        
+
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
@@ -3320,20 +3320,20 @@ class RadiativeWallBoundaryTestCase(ModelTest):
 
         assert model.getOutputRadiativeZone() == 21,\
            'Could not get output radiative zone for radiative wall boundary'
-    
-    
+
+
     def checkSetAndGetFlux(self):
         """Check whether the flux could be set and get for radiative wall boundary."""
         from ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
-        
+
         model = Boundary("wall", "mur", self.case)
         model.setVelocityChoice('off')
         model = Boundary("radiative_wall", "radiateur", self.case)
         model.setRadiativeChoice('ifgrno')
         model.setFlux(5.65)
         node =  model._XMLBoundaryConditionsNode
-        
+
         doc = '''<boundary_conditions>
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
@@ -3353,7 +3353,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
 
         assert model.getFlux() == 5.65,\
            'Could not get flux for radiative wall boundary'
-           
+
 def suite4():
     testSuite = unittest.makeSuite(RadiativeWallBoundaryTestCase, "check")
     return testSuite
@@ -3393,7 +3393,7 @@ class OutletBoundaryTestCase(ModelTest):
                         <dirichlet name="pressure">111333</dirichlet>
                     </outlet>
                 </boundary_conditions>'''
-                
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set reference pressure for outlet boundary'
 
@@ -3427,7 +3427,7 @@ class OutletBoundaryTestCase(ModelTest):
 
         assert model.getScalarChoice('sca1') == 'dirichlet',\
            'Could not get choice of scalar for outlet boundary'
-           
+
         assert model.getScalar('sca2') == 0,\
            'Could not get choice of scalar for outlet boundary'
 
@@ -3452,7 +3452,7 @@ class MobilWallBoundaryTestCase(ModelTest):
     """
     def checkMobilWallBoundaryInstantiation(self):
         """
-        Check whether the MobilWallBoundary class could be instantiated 
+        Check whether the MobilWallBoundary class could be instantiated
         """
         model = None
         model = Boundary("mobile_boundary", "wall_1", self.case)
@@ -3522,7 +3522,7 @@ class CouplingMobilWallBoundaryTestCase(ModelTest):
     """
     def checkCouplingMobilWallBoundaryInstantiation(self):
         """
-        Check whether the MobilWallBoundary class could be instantiated 
+        Check whether the MobilWallBoundary class could be instantiated
         """
         model = None
         model = Boundary("coupling_mobile_boundary", "Wall_1", self.case)

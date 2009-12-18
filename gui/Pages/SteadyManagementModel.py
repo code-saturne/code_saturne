@@ -120,7 +120,7 @@ class SteadyManagementModel(Model):
     def setRelaxCoefficient(self, value):
         """
         Set value of coefficient of relaxation into xml file.
-        """ 
+        """
         self.isGreater(value, 0.)
         self.isLowerOrEqual(value, 1.)
         node = self.node_anal.xmlInitNode('steady_management', 'status')
@@ -130,7 +130,7 @@ class SteadyManagementModel(Model):
     def setNbIter(self, value):
         """
         Set value of iterations number into xml file.
-        """ 
+        """
         self.isInt(value)
         self.isGreaterOrEqual(value, 0.)
         node = self.node_anal.xmlInitNode('steady_management', 'status')
@@ -140,7 +140,7 @@ class SteadyManagementModel(Model):
     def setZeroIteration(self, status):
         """
         Set status of option of zero iteration into xml file.
-        """ 
+        """
         self.isOnOff(status)
         node_steady = self.node_anal.xmlInitNode('steady_management', 'status')
         node = node_steady.xmlInitChildNode('zero_iteration', 'status')
@@ -150,7 +150,7 @@ class SteadyManagementModel(Model):
     def getRelaxCoefficient(self):
         """
         Get value of coefficient of relaxation from xml file.
-        """ 
+        """
         node = self.node_anal.xmlInitNode('steady_management', 'status')
         coef = node.xmlGetDouble('relaxation_coefficient')
         if not coef:
@@ -163,7 +163,7 @@ class SteadyManagementModel(Model):
     def getNbIter(self):
         """
         Get value of coefficient of relaxation from xml file.
-        """ 
+        """
         node = self.node_anal.xmlInitNode('steady_management', 'status')
         value = node.xmlGetInt('iterations')
         if not value:
@@ -176,7 +176,7 @@ class SteadyManagementModel(Model):
     def getZeroIteration(self):
         """
         Get status of option of zero iteration from xml file.
-        """ 
+        """
         node_steady = self.node_anal.xmlInitNode('steady_management', 'status')
         node = node_steady.xmlGetChildNode('zero_iteration')
         if not node or not node['status']:
@@ -201,7 +201,7 @@ class SteadyManagementTestCase(ModelTest):
         assert model != None, 'Could not instantiate SteadyManagementModel'
 
     def checkSetandGetRelaxCoefficient(self):
-        """Check whether the SteadyManagementModel class could be set or get relax coefficient """ 
+        """Check whether the SteadyManagementModel class could be set or get relax coefficient """
         mdl = SteadyManagementModel(self.case)
         mdl.setSteadyFlowManagement('on')
         node = mdl.node_anal.xmlInitNode('steady_management', 'status')
@@ -218,9 +218,9 @@ class SteadyManagementTestCase(ModelTest):
 
     def checkSetandGeNbIter(self):
         """
-        Check whether the SteadyManagementModel class could be 
+        Check whether the SteadyManagementModel class could be
         set or get number of iterations
-        """ 
+        """
         mdl = SteadyManagementModel(self.case)
         mdl.setSteadyFlowManagement('on')
         node = mdl.node_anal.xmlInitNode('steady_management', 'status')
@@ -234,12 +234,12 @@ class SteadyManagementTestCase(ModelTest):
                     'Could not set a number of iterations'
         assert mdl.getNbIter() == 33,\
             'Could not get a number of iterations in SteadyManagementModel'
-        
+
     def checkSetandGetZeroIteration(self):
         """
         Check whether the SteadyManagementModel class could be
         set or get zero iteration status
-        """ 
+        """
         mdl = SteadyManagementModel(self.case)
         mdl.setSteadyFlowManagement('on')
         node = mdl.node_anal.xmlInitNode('steady_management', 'status')
@@ -253,7 +253,7 @@ class SteadyManagementTestCase(ModelTest):
                     'Could not set a status for zero iteration'
         stat = mdl.getZeroIteration()
         assert stat == 'on', 'Could not get a status for zero iteration in SteadyManagementModel'
-    
+
 def suite():
     testSuite = unittest.makeSuite(SteadyManagementTestCase, "check")
     return testSuite

@@ -55,7 +55,7 @@ from Base.XMLengine import *
 from Pages.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class Zone(object):
@@ -76,7 +76,7 @@ class Zone(object):
 
     def __init__(self, typeZone , label = None, codeNumber = None, localization = None, nature = None):
         """
-        """           
+        """
         self._initNatureList()
 
         if label:
@@ -157,7 +157,7 @@ class Zone(object):
         return dico
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class BoundaryZone(Zone):
@@ -196,7 +196,7 @@ class BoundaryZone(Zone):
         return text
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class VolumicZone(Zone):
@@ -243,7 +243,7 @@ class VolumicZone(Zone):
         return text
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class LocalizationModel(object):
@@ -277,7 +277,7 @@ class LocalizationModel(object):
         locals = []
         for zone in zones:
             locals.append(zone.getLocalization())
-        
+
         return locals
 
 
@@ -301,7 +301,7 @@ class LocalizationModel(object):
         codes = []
         for zone in zones:
             codes.append(zone.getCodeNumber())
-        
+
         return codes
 
 
@@ -370,7 +370,7 @@ class LocalizationModel(object):
 
     def setNature(self, label, nature):
         """
-        Define a new nature number for the current zone (zone.getLabel == label) 
+        Define a new nature number for the current zone (zone.getLabel == label)
         """
         # Set nature: nothing here, see other setNature reimplementation methods
         pass
@@ -474,7 +474,7 @@ class LocalizationModel(object):
         pass
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class VolumicLocalizationModel(LocalizationModel):
@@ -529,14 +529,14 @@ class VolumicLocalizationModel(LocalizationModel):
         for node in XMLZonesNodes:
             if node['label'] == label:
                 codeNumber = node['name']
-        
+
         return codeNumber
 
 
     def setLocalization(self, label, localization):
         """
         Define a new localization for the current zone (zone.getLabel == label)
-        Update XML file 
+        Update XML file
         """
         node = self.__XMLVolumicConditionsNode.xmlGetChildNode('zone', 'name', label = label)
         node.xmlSetTextNode(localization)
@@ -545,7 +545,7 @@ class VolumicLocalizationModel(LocalizationModel):
     def getCodeNumbersList(self, codeNumber=None):
         """
         Define a new code number for the current zone (zone.getLabel == label)
-        Update XML file 
+        Update XML file
         """
         XMLZonesNodesList = self._case.xmlGetNodeList('zone', 'label', 'name')
         codeList = []
@@ -557,7 +557,7 @@ class VolumicLocalizationModel(LocalizationModel):
     def getNature(self, label):
         """
         Define a new Nature for the current zone (zone.getLabel == label)
-        Update XML file 
+        Update XML file
         """
         node = self.__XMLVolumicConditionsNode.xmlGetChildNode('zone', 'name', label = label)
         nature = {}
@@ -572,7 +572,7 @@ class VolumicLocalizationModel(LocalizationModel):
     def setNature(self, label, nature):
         """
         Define a new Nature for the current zone (zone.getLabel == label)
-        Update XML file 
+        Update XML file
         """
         node = self.__XMLVolumicConditionsNode.xmlGetChildNode('zone', 'name', label = label)
         oldNature = self.getNature(label)
@@ -645,7 +645,7 @@ class VolumicLocalizationModel(LocalizationModel):
         if node:
             name = node['name']
             node.xmlRemoveNode()
-            
+
         # Delete the other nodes for zone initializations
         for tag in self._tagList:
             nodeList = self._case.xmlGetNodeList(tag, zone=name)
@@ -653,7 +653,7 @@ class VolumicLocalizationModel(LocalizationModel):
                 node.xmlRemoveNode()
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class BoundaryLocalizationModel(LocalizationModel):
@@ -688,7 +688,7 @@ class BoundaryLocalizationModel(LocalizationModel):
             nature = str(node['nature'])
             codeNumber = int(node['name'])
             localization = str(node.xmlGetTextNode())
-            zone = Zone('BoundaryZone', label = label, codeNumber = codeNumber, localization = localization, nature = nature) 
+            zone = Zone('BoundaryZone', label = label, codeNumber = codeNumber, localization = localization, nature = nature)
             zones.append(zone)
         return zones
 
@@ -697,7 +697,7 @@ class BoundaryLocalizationModel(LocalizationModel):
         """
         Return maximum of nature number's values to put on name
         """
-        
+
         XMLZonesNodes = self.__XMLBoundaryConditionsNode.xmlGetChildNodeList('boundary', 'label', 'name', 'nature')
         max = 0
         #
@@ -713,7 +713,7 @@ class BoundaryLocalizationModel(LocalizationModel):
     def setLabel(self, label, newLabel):
         """
         Define a new label for the current zone (zone.getLabel == label)
-        Update XML file 
+        Update XML file
         """
         LocalizationModel.renameLabel(self, label, newLabel)
         #
@@ -731,7 +731,7 @@ class BoundaryLocalizationModel(LocalizationModel):
     def setLocalization(self, label, localization):
         """
         Define a new localization for the current zone (zone.getLabel == label)
-        Update XML file 
+        Update XML file
         """
         LocalizationModel.setLocalization(self, label, localization)
         #
@@ -743,7 +743,7 @@ class BoundaryLocalizationModel(LocalizationModel):
     def setCodeNumber(self, label, codeNumber):
         """
         Define a new code number for the current zone (zone.getLabel == label)
-        Update XML file 
+        Update XML file
         """
         LocalizationModel.setCodeNumber(self, label, codeNumber)
         #
@@ -755,7 +755,7 @@ class BoundaryLocalizationModel(LocalizationModel):
     def setNature(self, label, nature):
         """
         Define a new Nature for the current zone (zone.getLabel == label)
-        Update XML file 
+        Update XML file
         """
         LocalizationModel.setNature(self, label, nature)
 
@@ -764,7 +764,7 @@ class BoundaryLocalizationModel(LocalizationModel):
         oldNature = node['nature']
         node['nature'] = str(nature)
 
-        # Delete oldNature boundary 
+        # Delete oldNature boundary
         Boundary(oldNature, label, self._case).delete()
 
         # Create nature boundary
@@ -778,8 +778,8 @@ class BoundaryLocalizationModel(LocalizationModel):
         newZone = LocalizationModel.addZone(self, zone)
 
         # XML file updating
-        node = self.__XMLBoundaryConditionsNode.xmlInitNode('boundary', 
-                                                            label = newZone.getLabel(), 
+        node = self.__XMLBoundaryConditionsNode.xmlInitNode('boundary',
+                                                            label = newZone.getLabel(),
                                                             name = str(newZone.getCodeNumber()),
                                                             nature = newZone.getNature())
         node.xmlSetTextNode(newZone.getLocalization())
@@ -799,8 +799,8 @@ class BoundaryLocalizationModel(LocalizationModel):
 
         newNature = new_zone.getNature()
         Model().isInList(newNature, self.__natureList)
-        
-        node = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 
+
+        node = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary',
                                                             label = old_zone.getLabel())
 
         node['label'] = newLabel
@@ -822,7 +822,7 @@ class BoundaryLocalizationModel(LocalizationModel):
         nature = node['nature']
         node.xmlRemoveNode()
 
-        # Delete nature boundary 
+        # Delete nature boundary
         Boundary(nature, label, self._case).delete()
 
 #-------------------------------------------------------------------------------
@@ -850,7 +850,7 @@ class LocalizationVolumicTestCase(ModelTest):
                             all[]
                     </zone>
                  </volumic_conditions>'''
-                 
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not initialize default volumic zone'
 
@@ -889,7 +889,7 @@ class LocalizationVolumicTestCase(ModelTest):
 
         model.deleteZone(label="toto")
         model.deleteZone(label="Zone_2")
-        
+
         doc = '''<volumic_conditions>
                     <zone head_losses="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
                             all[]
@@ -920,7 +920,7 @@ class LocalizationVolumicTestCase(ModelTest):
 ##        new_zone = Zone("VolumicZone", label='window')
 
         model.replaceZone(zone1, new_zone)
-        
+
         doc = '''<volumic_conditions>
                     <zone head_losses="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
                             all[]
@@ -965,7 +965,7 @@ class LocalizationVolumicTestCase(ModelTest):
                             12 and window or door
                     </zone>
                 </volumic_conditions>'''
-                
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set localization on volumic zone'
 
@@ -996,13 +996,13 @@ class LocalizationVolumicTestCase(ModelTest):
                             12 and window or door
                     </zone>
                 </volumic_conditions>'''
-                
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not set nature on volumic zone'
 
         assert model.getNature('fenetre') == "initialization",\
            'Could not get nature on volumic zone'
-           
+
         assert model.getNature('porte') == "thermal_source_term,head_losses",\
            'Could not get nature on volumic zone'
 
@@ -1027,7 +1027,7 @@ class LocalizationSurfacicTestCase(ModelTest):
     """
     def checkLocalizationSurfacicInstantiation(self):
         """
-        Check whether the LocalizationModel class could be instantiated 
+        Check whether the LocalizationModel class could be instantiated
         for boundary conditions.
         """
         model = None
@@ -1076,7 +1076,7 @@ class LocalizationSurfacicTestCase(ModelTest):
                             <velocity_pressure choice="off"/>
                         </wall>
                   </boundary_conditions>'''
-                  
+
         model.deleteZone("entre2")
 
         doc = '''<boundary_conditions>
@@ -1115,7 +1115,7 @@ class LocalizationSurfacicTestCase(ModelTest):
         model.addZone(zone3)
         zone4 = Zone("BoundaryZone", label='hublot', localization="2 et 3", nature='symmetry')
         model.replaceZone(zone2, zone4)
-        
+
         doc = '''<boundary_conditions>
                         <boundary label="entre1" name="1" nature="inlet">
                                 porte
@@ -1139,7 +1139,7 @@ class LocalizationSurfacicTestCase(ModelTest):
                         </wall>
                         <symmetry label="hublot"/>
                   </boundary_conditions>'''
-        
+
         assert node == self.xmlNodeFromString(doc),\
            'Could not replace zone in localizationModel for boundaries conditions'
 

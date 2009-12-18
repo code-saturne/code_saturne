@@ -197,11 +197,11 @@ class NumericalParamGlobalModel(Model):
         self.isOnOff(status)
         node_ipucou = self.node_np.xmlInitNode('velocity_pressure_coupling', 'status')
         node_ipucou['status'] = status
-        if status == 'on': 
+        if status == 'on':
             node_Tx = node_ipucou.xmlInitNode('property', name='weight_matrix_X')
             node_Ty = node_ipucou.xmlInitNode('property', name='weight_matrix_Y')
             node_Tz = node_ipucou.xmlInitNode('property', name='weight_matrix_Z')
-    
+
             for (node, val) in [(node_Tx, 'weight_matrix_X'),
                                 (node_Ty, 'weight_matrix_Y'),
                                 (node_Tz, 'weight_matrix_Z')]:
@@ -294,7 +294,7 @@ class NumericalParamGlobalTestCase(ModelTest):
 
     def checkSetandGetGradTransp(self):
         """
-        Check whether the NumericalParamEquatModel class 
+        Check whether the NumericalParamEquatModel class
         could be set and get gradient transposed
         """
         model = NumericalParamGlobalModel(self.case)
@@ -302,7 +302,7 @@ class NumericalParamGlobalTestCase(ModelTest):
         doc = """<numerical_parameters>
                     <gradient_transposed status="on"/>
                  </numerical_parameters>"""
-                 
+
         assert model.node_np == self.xmlNodeFromString(doc),\
                 'Could not set gradient transposed in NumericalParamGlobalModel'
         assert model.getTransposedGradient() == 'on',\
@@ -310,7 +310,7 @@ class NumericalParamGlobalTestCase(ModelTest):
 
     def checkSetandGetVelPesCoupl(self):
         """
-        Check whether the NumericalParamEquatModel class 
+        Check whether the NumericalParamEquatModel class
         could be set and get velocity pressure coupling
         """
         model = NumericalParamGlobalModel(self.case)
@@ -338,7 +338,7 @@ class NumericalParamGlobalTestCase(ModelTest):
 
     def checkSetandGetWallPressureExtrapolation(self):
         """
-        Check whether the NumericalParamEquatModel class could be set 
+        Check whether the NumericalParamEquatModel class could be set
         and get wall pressure extrapolation
         """
         model = None
@@ -355,7 +355,7 @@ class NumericalParamGlobalTestCase(ModelTest):
 
     def checkSetandGetPressureRelaxation(self):
         """
-        Check whether the NumericalParamEquatModel class could be set 
+        Check whether the NumericalParamEquatModel class could be set
         and get pressure relaxation
         """
         model = None
@@ -371,7 +371,7 @@ class NumericalParamGlobalTestCase(ModelTest):
 
     def checkSetandGetDensityRelaxation(self):
         """
-        Check whether the NumericalParamEquatModel class could be set 
+        Check whether the NumericalParamEquatModel class could be set
         and get density relaxation
         """
         model = None
@@ -387,7 +387,7 @@ class NumericalParamGlobalTestCase(ModelTest):
 
     def checkSetandGetGradientReconstructionruction(self):
         """
-        Check whether the NumericalParamEquatModel class could be set 
+        Check whether the NumericalParamEquatModel class could be set
         and get gradient_reconstruction
         """
         model = None
@@ -403,7 +403,7 @@ class NumericalParamGlobalTestCase(ModelTest):
 
     def checkSetandGetsetTimeSchemeOrder(self):
         """
-        Check whether the NumericalParamEquatModel class could be set 
+        Check whether the NumericalParamEquatModel class could be set
         and get time scheme order
         """
         model = None

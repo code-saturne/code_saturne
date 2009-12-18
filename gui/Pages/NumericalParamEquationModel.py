@@ -62,7 +62,7 @@ from Pages.TurbulenceModel import TurbulenceModel
 class NumericalParamEquatModel(Model):
     """
     """
-    def __init__(self, case):  
+    def __init__(self, case):
         """
         initialization of nodes lists
         """
@@ -210,9 +210,9 @@ class NumericalParamEquatModel(Model):
 
     def _isPressure(self, node):
         """ Return : 1 if name of node is 'pressure', 0 if not """
-        if node and node['name'] == 'pressure': 
+        if node and node['name'] == 'pressure':
             return 1
-        else: 
+        else:
             return 0
 
 
@@ -249,14 +249,14 @@ class NumericalParamEquatModel(Model):
 
     def isScalar(self, label):
         """
-        Return : 1 if type of node is 'user' or 'thermal' or 'model', 
+        Return : 1 if type of node is 'user' or 'thermal' or 'model',
                  0 if not.  Only used by the view by solveur class
         """
         node = self._getSolveurLabelNode(label)
         if node:
             if node['type'] in ['user', 'thermal', 'model']:
                 return 1
-            else: 
+            else:
                 return 0
 
 
@@ -267,7 +267,7 @@ class NumericalParamEquatModel(Model):
         node = self._getSchemeLabelNode(label)
         value = self._defaultValues(label)['order_scheme']
         n = node.xmlGetNode('order_scheme')
-        if n: 
+        if n:
             value = n['choice']
         return value
 
@@ -286,14 +286,14 @@ class NumericalParamEquatModel(Model):
         node = self._getSchemeLabelNode(label)
         value = self._defaultValues(label)['slope_test']
         n = node.xmlGetNode('slope_test')
-        if n: 
+        if n:
             value = n['status']
         return value
 
 
     def getFluxReconstruction(self, label):
         """ Return value of flux reconstruction for variable labelled label """
-        node = self._getSchemeLabelNode(label) 
+        node = self._getSchemeLabelNode(label)
         value = self._defaultValues()['flux_reconstruction']
         if node.xmlGetNode('flux_reconstruction'):
             value = node.xmlGetNode('flux_reconstruction')['status']
@@ -302,7 +302,7 @@ class NumericalParamEquatModel(Model):
 
     def setBlendingFactor(self, label, value):
         """
-        Put value of blending factor for variable labelled label 
+        Put value of blending factor for variable labelled label
         only if it 's different of default value
         """
         self.isGreaterOrEqual(value, 0.)
@@ -323,8 +323,8 @@ class NumericalParamEquatModel(Model):
 
 
     def setScheme(self, label, value):
-        """ 
-        Put value of order scheme for variable or scalar labelled label 
+        """
+        Put value of order scheme for variable or scalar labelled label
         only if it 's different of default value
         """
         self.isInList(value, ('upwind', 'centered', 'solu'))
@@ -379,7 +379,7 @@ class NumericalParamEquatModel(Model):
         # for pressure default value always equal to 1e-8
         self.isPositiveFloat(value)
         node = self._getSolveurLabelNode(label)
-        if self._isPressure(node): 
+        if self._isPressure(node):
             default = self._defaultValues()['solveur_precision_pressure']
         else:
             default = self._defaultValues()['solveur_precision']
@@ -403,7 +403,7 @@ class NumericalParamEquatModel(Model):
         """ Return value of solveur precision for variable labelled label """
         node = self._getSolveurLabelNode(label)
 
-        if self._isPressure(node): 
+        if self._isPressure(node):
             default = self._defaultValues()['solveur_precision_pressure']
         else:
             default = self._defaultValues()['solveur_precision']
@@ -547,7 +547,7 @@ class NumericalParamEquatTestCase(ModelTest):
                 'Could not set status of flux reconstruction in NumericalParamEquationModel'
         assert model.getFluxReconstruction('VelocitW') == 'on',\
                 'Could not get status of flux reconstruction in NumericalParamEquationModel'
-                
+
         model.setFluxReconstruction('VelocitW', 'off')
         doc2 = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
@@ -594,14 +594,14 @@ class NumericalParamEquatTestCase(ModelTest):
         Check whether the NumericalParamEquatModel class could set and get solveur precision
         """
         model = NumericalParamEquatModel(self.case)
-        
+
         assert model.getSolveurPrecision('Pressure') == 1e-8,\
                 'Could not get solveur precision for pressure in NumericalParamEquationModel'
         from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
         NumericalParamGlobalModel(self.case).setTimeSchemeOrder(2)
         del NumericalParamGlobalModel
         assert model.getSolveurPrecision('VelocitU') == 1e-5
-        
+
         model.setSolveurPrecision('VelocitU', 2e-6)
         doc = """<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>

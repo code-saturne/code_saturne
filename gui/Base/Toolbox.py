@@ -298,11 +298,11 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
 
     elif page_name == tr("Fluid structure interaction"):
         import Pages.FluidStructureInteractionView as Page
-        thisPage = Page.FluidStructureInteractionView(root, case)   
+        thisPage = Page.FluidStructureInteractionView(root, case)
 
     elif page_name == tr("Atmospheric flows"):
         import Pages.AtmosphericFlowsView as Page
-        thisPage = Page.AtmosphericFlowsView(root, case)   
+        thisPage = Page.AtmosphericFlowsView(root, case)
 
 
     else:

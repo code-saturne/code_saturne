@@ -77,7 +77,7 @@ class MatisseTypeView(QWidget, Ui_MatisseTypeForm):
 
         Ui_MatisseTypeForm.__init__(self)
         self.setupUi(self)
-        
+
         self.case = case
 
         self.model = MatisseTypeModel(self.case)
@@ -92,7 +92,7 @@ class MatisseTypeView(QWidget, Ui_MatisseTypeForm):
         self.connect(self.comboBoxType,
                      SIGNAL("activated(const QString&)"),
                      self.getMatisseType)
-   
+
         # initialize
 
         t = self.model.getMatisseType()
@@ -111,8 +111,8 @@ class MatisseTypeView(QWidget, Ui_MatisseTypeForm):
         """
         Translation
         """
-        return text 
-        
+        return text
+
 
 #-------------------------------------------------------------------------------
 # Testing part

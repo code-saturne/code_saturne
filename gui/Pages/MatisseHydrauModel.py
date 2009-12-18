@@ -68,7 +68,7 @@ class MatisseHydrauModel:
 
         self.node_cofor         = self.node_phymodel.xmlInitChildNode('icofor','status')
         self.node_conlg         = self.node_phymodel.xmlInitChildNode('iconlg','status')
-        
+
         self.status = ('on', 'off')
 
 
@@ -102,7 +102,7 @@ class MatisseHydrauModel:
         default['amppdc'] = 1.
         default['dhalve'] = 0.13
         default['dpvent'] = 0.
-        
+
         return default
 
 
@@ -140,7 +140,7 @@ class MatisseHydrauModel:
         Return constrained convection status
         """
         stat = self.node_cofor['status']
-            
+
         if stat not in self.status :
             stat = self.defaultMatisseHydrauValues()['icofor']
             self.setConstrainedConvStatus(stat)
@@ -162,7 +162,7 @@ class MatisseHydrauModel:
         Return containers network in line status
         """
         stat = self.node_conlg['status']
-            
+
         if stat not in self.status :
             stat = self.defaultMatisseHydrauValues()['iconlg']
             self.setInlineContainerNetworkStatus(stat)
@@ -197,9 +197,9 @@ class MatisseHydrauModelTestCase(unittest.TestCase):
         model = None
         model = MatisseHydrauModel(self.case)
         assert model != None, 'Could not instantiate MatisseHydrauModel'
-        
-        
-        
+
+
+
 def suite():
     testSuite = unittest.makeSuite(MatisseHydrauModelTestCase, "check")
     return testSuite

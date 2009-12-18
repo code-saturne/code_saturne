@@ -70,7 +70,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
     """
     Class to open the Body Forces (gravity) Page.
     """
-    
+
     def __init__(self, parent, case):
         """
         Constructor
@@ -164,7 +164,7 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
         """
         Translation
         """
-        return text 
+        return text
 
 
 #-------------------------------------------------------------------------------

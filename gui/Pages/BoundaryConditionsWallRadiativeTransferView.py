@@ -73,7 +73,7 @@ log = logging.getLogger("BoundaryConditionsWallRadiativeTransferView")
 
 class StandardItemModelScalars(QStandardItemModel):
     def __init__(self, bdModel):
-        QStandardItemModel.__init__(self) 
+        QStandardItemModel.__init__(self)
         self.headers = [self.tr("Wall radiative\ncaracteristics"),
                         self.tr("Value"),
                         self.tr("Unit")]
@@ -142,7 +142,7 @@ class StandardItemModelScalars(QStandardItemModel):
 
 
     def insertItem(self):
-        self.dataScalars.append() 
+        self.dataScalars.append()
         row = self.rowCount()
         self.setRowCount(row+1)
 
@@ -158,28 +158,28 @@ class StandardItemModelScalars(QStandardItemModel):
         cond = self.bdModel.getRadiativeChoice()
 
         if cond == 'itpimp':
-            liste = [(0, self.tr("Emissivite"), '',  'EPSP',  'emissivity'), 
+            liste = [(0, self.tr("Emissivite"), '',  'EPSP',  'emissivity'),
                      (1, self.tr("Initial temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
         if cond == 'ipgrno':
-            liste = [(0, self.tr("Emissivity"), '',  'EPSP',  'emissivity'), 
-                     (1, self.tr("Conductivity"), 'W/m/K', 'XLAMP', 'thermal_conductivity'), 
+            liste = [(0, self.tr("Emissivity"), '',  'EPSP',  'emissivity'),
+                     (1, self.tr("Conductivity"), 'W/m/K', 'XLAMP', 'thermal_conductivity'),
                      (2, self.tr("Thickness"), 'm', 'EPAP' , 'thickness'),
                      (3, self.tr("Profile of external temperature"), 'K', 'TEXTP', 'external_temperature_profile'),
                      (4, self.tr("Profile of internal temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
 ##        if cond == 'iprefl':
-##            list = [(0, self.xlamp,t.XLAMP, 'W/m/K', 'XLAMP'), 
-##                    (1, self.epap, t.EPAP,  'm', 'EPAP'), 
-##                    (2, self.textp,t.TEXTP, 'K', 'TEXTP'), 
+##            list = [(0, self.xlamp,t.XLAMP, 'W/m/K', 'XLAMP'),
+##                    (1, self.epap, t.EPAP,  'm', 'EPAP'),
+##                    (2, self.textp,t.TEXTP, 'K', 'TEXTP'),
 ##                    (3, self.tintp,t.TINTP, 'K', 'TINTP')]
 ##            self.f43 = Tix.Frame(self.f4, relief=FLAT)
 ##            self.f43.pack(side=TOP, fill=X, pady=10)
 ##            frad = self.f43
         if cond == 'ifgrno':
-            liste = [(0, self.tr("Emissivity"),'', 'EPSP', 'emissivity'),   
+            liste = [(0, self.tr("Emissivity"),'', 'EPSP', 'emissivity'),
                      (1, self.tr("Flux of conduction"), 'W/m2', 'FLUX',  'flux'),
                      (2, self.tr("Inital temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
 ##        if cond == 'ifrefl':
-##            list = [(0, self.flux, t.FLUX, 'W/m2', 'FLUX'), 
+##            list = [(0, self.flux, t.FLUX, 'W/m2', 'FLUX'),
 ##                    (1, self.tintp, t.TINTP, 'K', 'TINTP')]
 ##            self.f45 = Tix.Frame(self.f4, relief=FLAT)
 ##            self.f45.pack(side=TOP, fill=X, pady=10)
@@ -292,7 +292,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # End

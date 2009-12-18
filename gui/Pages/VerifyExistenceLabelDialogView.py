@@ -49,7 +49,7 @@ class VerifyExistenceLabelDialogView(QDialog, Ui_VerifyExistenceLabelDialogForm)
     """
     Advanced dialog
     """
-    def __init__(self, parent, default): 
+    def __init__(self, parent, default):
         """
         Constructor
         """
@@ -93,14 +93,14 @@ class VerifyExistenceLabelDialogView(QDialog, Ui_VerifyExistenceLabelDialogForm)
         return self.result
 
 
-    def accept(self): 
+    def accept(self):
         """
         Method called when user clicks 'OK'
         """
         QDialog.accept(self)
 
 
-    def reject(self): 
+    def reject(self):
         """
         Method called when user clicks 'Cancel'
         """
@@ -111,7 +111,7 @@ class VerifyExistenceLabelDialogView(QDialog, Ui_VerifyExistenceLabelDialogForm)
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # End

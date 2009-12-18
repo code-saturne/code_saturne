@@ -145,7 +145,7 @@ class DoubleValueDelegate(QItemDelegate):
 class StandardItemModelScalars(QStandardItemModel):
 
     def __init__(self, case, boundary):
-        QStandardItemModel.__init__(self) 
+        QStandardItemModel.__init__(self)
 
         self.headers = [self.tr("Scalar Name"),
                         self.tr("Type"),
@@ -211,7 +211,7 @@ class StandardItemModelScalars(QStandardItemModel):
             elif choice == 'neumann':
                 line[2] = self.boundary.getScalar(s_label)
 
-        self._data.append(line) 
+        self._data.append(line)
 
 
     def data(self, index, role):
@@ -328,7 +328,7 @@ class StandardItemModelScalars(QStandardItemModel):
         Insert an element in the table view.
         """
         line = [label, codeNumber, var_nature, local]
-        self._data.append(line) 
+        self._data.append(line)
         row = self.rowCount()
         self.setRowCount(row+1)
 
@@ -407,7 +407,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # End

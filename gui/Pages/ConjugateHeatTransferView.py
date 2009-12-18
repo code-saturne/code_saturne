@@ -223,7 +223,7 @@ class StandardItemModelSyrthes(QStandardItemModel):
         self.__model.setSyrthesAppNumber(num, self.dataSyrthes[row][1])
         self.__model.setSyrthesProjectionAxis(num, self.dataSyrthes[row][2])
         self.__model.setSelectionCriteria(num, self.dataSyrthes[row][3])
-        
+
         id1 = self.index(0, 0)
         id2 = self.index(self.rowCount(), 0)
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), id1, id2)

@@ -77,11 +77,11 @@ class StandardItemModelHydrau(QStandardItemModel):
         self.case = case
         self.model = MatisseHydrauModel(self.case)
         self.model_mat_type = MatisseType.MatisseTypeModel(self.case)
-        
+
         self.setColumnCount(4)
         self._initData()
 
-        
+
     def _initData(self):
 
         # String Var
@@ -90,7 +90,7 @@ class StandardItemModelHydrau(QStandardItemModel):
 
         #
         # Double Var
-        self.debmas = 0. 
+        self.debmas = 0.
         self.pdccha = 0.
         self.pdcfch = 0.
         self.dhchea = 0.
@@ -155,13 +155,13 @@ class StandardItemModelHydrau(QStandardItemModel):
         self.texts['dhalve'] = (23, self.tr("Double jacketed wells hydraulic diameter"), "m")
         self.texts['dpvent'] = (24, self.tr("Inlet/outlet atmospheric pressure difference"), "Pa")
 
-        self.rows_disabled = [] 
+        self.rows_disabled = []
 
         stat = self.model.getConstrainedConvStatus()
         self.icofor = stat
         if not 2 in self.rows_disabled and stat == "off":
             self.rows_disabled.append(2)
-        
+
         stat = self.model.getInlineContainerNetworkStatus()
         self.iconlg = stat
 
@@ -181,13 +181,13 @@ class StandardItemModelHydrau(QStandardItemModel):
 
 
     def data(self, index, role):
-        
+
         if not index.isValid():
             return QVariant()
 
         if role == Qt.DisplayRole:
             row = index.row()
-            
+
             if index.column() == 0:
                 var = self.variables[row][0]
                 num = self.texts[var][0]
@@ -240,7 +240,7 @@ class StandardItemModelHydrau(QStandardItemModel):
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
-    
+
     def setData(self, index, value, role):
 
         if index.column() == 2:
@@ -264,13 +264,13 @@ class StandardItemModelHydrau(QStandardItemModel):
                 else:
                     self.iconlg = "on"
                 self.model.setInlineContainerNetworkStatus(self.iconlg)
-                
+
             else:
                 tag = self.variables[index.row()][0]
                 num = self.texts[tag][0]
                 var = self.variables[index.row()][1]
                 v, ok = value.toDouble()
-                var = v 
+                var = v
                 self.model.setMatisseHydrauVar(num, v) # ???
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
@@ -284,7 +284,7 @@ class StandardItemModelHydrau(QStandardItemModel):
 class MatisseHydrauView(QWidget, Ui_MatisseHydrauForm):
     """
     """
-    
+
     def __init__(self, parent, case):
         """
         Constructor
@@ -293,9 +293,9 @@ class MatisseHydrauView(QWidget, Ui_MatisseHydrauForm):
 
         Ui_MatisseHydrauForm.__init__(self)
         self.setupUi(self)
-        
+
         self.case = case
-        
+
 
         # Create the Page layout.
 
@@ -304,14 +304,14 @@ class MatisseHydrauView(QWidget, Ui_MatisseHydrauForm):
         self.tableView.setAlternatingRowColors(True)
         self.tableView.resizeColumnsToContents()
         self.tableView.setShowGrid(False)
-    
+
 
     def tr(self, text):
         """
         Translation
         """
-        return text 
-        
+        return text
+
 
 #-------------------------------------------------------------------------------
 # Testing part

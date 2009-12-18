@@ -15,7 +15,7 @@
 #     the License, or (at your option) any later version.
 #
 #     The Code_Saturne User Interface is distributed in the hope that it will be
-#     useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
+#     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 #     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #     GNU General Public License for more details.
 #
@@ -600,7 +600,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'VALGRIND':'',
         'ARG_CS_OUTPUT':'',
         'ARG_CS_VERIF':'',
-        'THERMOCHEMISTRY_DATA':'', 
+        'THERMOCHEMISTRY_DATA':'',
         'METEO_DATA':''}
         for k in mdl.dicoValues.keys():
             if mdl.dicoValues[k] != dico[k]:

@@ -118,7 +118,7 @@ class LabelDelegate(QItemDelegate):
                 default['list']   = model.mdl.getScalarLabelsList()
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
-    
+
                 from VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
@@ -189,7 +189,7 @@ class VarianceDelegate(QItemDelegate):
         sca = index.model().getData(index)[0]
         if index.model().mdl.getVarianceLabelFromScalarLabel(sca):
             return
-        
+
         l1 = index.model().mdl.getScalarLabelsList()
         for s in index.model().mdl.getScalarsVarianceList():
             if s in l1: l1.remove(s)
@@ -210,7 +210,7 @@ class VarianceDelegate(QItemDelegate):
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for minimum value

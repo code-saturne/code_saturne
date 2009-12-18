@@ -28,10 +28,10 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the XML calls for ecs execution                            
+This module defines the XML calls for ecs execution
 This module contains the following classes and function:
 - MeshModel
-- SolutionDomainModel 
+- SolutionDomainModel
 """
 
 #-------------------------------------------------------------------------------
@@ -78,7 +78,7 @@ class MeshModel:
     def getMeshExtension(self, mesh):
         """
         Public method.
-        
+
         @return: Extension of the mesh file if it exists.
         @rtype: C{String}
         """
@@ -120,7 +120,7 @@ class MeshModel:
     def getBuildFormatList(self):
         """
         Public method.
-        
+
         @return: List of number, format and description for view of popup.
         @rtype: C{List} of C{3-tuple}
         """
@@ -237,7 +237,7 @@ class SolutionDomainModel(MeshModel, Model):
         """
         Update, for keyword, the backup file if it's ready to run.
         """
-        self.isInList(keyword,('MESH', 
+        self.isInList(keyword,('MESH',
                                'COMMAND_REORIENT',
                                'COMMAND_JOIN',
                                'COMMAND_CWF',
@@ -292,7 +292,7 @@ class SolutionDomainModel(MeshModel, Model):
     def getJoinSelectionsNumber(self):
         """
         Public method.
-        
+
         @return: number of join faces selections
         @rtype: C{int}
         """
@@ -364,7 +364,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def _removeChildren(self, node):
         """
-        Private method: Remove all child nodes of node for one selection 
+        Private method: Remove all child nodes of node for one selection
         """
         for tag in ('faces_color',
                     'faces_group',
@@ -377,7 +377,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def _getLineCommand(self, node):
         """
-        Private method: Get color group faces and revers satus and fraction 
+        Private method: Get color group faces and revers satus and fraction
         and plan datas for ommand line to preprocessor execution
         """
         line = ""
@@ -418,7 +418,7 @@ class SolutionDomainModel(MeshModel, Model):
         Private method: Put default values of translation for periodic translation
         """
         node = self.node_perio.xmlGetNode('transformation', name=perio_name)
-        if node: 
+        if node:
             nList = node.xmlInitChildNodeList('translation')
             for n in nList:
                 n.xmlSetData('translation_x', self.defaultValues()['transfo_val'])
@@ -482,7 +482,7 @@ class SolutionDomainModel(MeshModel, Model):
         self.isInList(mesh, self.getMeshList())
         nodeList = self.node_meshes.xmlGetNodeList('mesh', 'name')
         for node in nodeList:
-            if node['name'] == mesh: 
+            if node['name'] == mesh:
                 node.xmlRemoveNode()
         self._updateBatchScriptFile('MESH')
 
@@ -592,7 +592,7 @@ class SolutionDomainModel(MeshModel, Model):
             grp = 'off'
         return grp
 
-# Methods to manage status of all main balises : 
+# Methods to manage status of all main balises :
 #=============================================
 
     def getJoinMeshesStatus(self):
@@ -688,7 +688,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def getSimCommStatus(self):
         """
-        Get status of balise ''similation_communication' into xml file             
+        Get status of balise ''similation_communication' into xml file
         """
         node = self.node_standalone.xmlInitNode('simulation_communication', 'status')
         status = node['status']
@@ -700,7 +700,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def setSimCommStatus(self, status):
         """
-        Put status of balise ''similation_communication' into xml file 
+        Put status of balise ''similation_communication' into xml file
         """
         self.isOnOff(status)
         node = self.node_standalone.xmlInitNode('simulation_communication', 'status')
@@ -737,7 +737,7 @@ class SolutionDomainModel(MeshModel, Model):
         if not line:
             line = self.defaultValues()['postprocessing_options']
             self.setPostProOptionsFormat(line)
-        return line 
+        return line
 
 
     def setPostProOptionsFormat(self, line):
@@ -848,7 +848,7 @@ class SolutionDomainModel(MeshModel, Model):
                         self._setTranslationDefault(perio_name)
                     if not node.xmlGetChildNodeList('rotation2'):
                         self._setRotation2Default(perio_name)
-    
+
             self._updateBatchScriptFile('COMMAND_PERIO')
 
 
@@ -984,7 +984,7 @@ class SolutionDomainModel(MeshModel, Model):
         mode = self.getPeriodicityMode(perio_name)
         self.isInList(mode, ('rotation1', 'rotation2', 'tr+rota1', 'tr+rota2'))
 
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name) 
+        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
 
         if mode == "rotation1" or mode == "tr+rota1":
             n = node.xmlGetChildNode('rotation1')
@@ -1063,8 +1063,8 @@ class SolutionDomainModel(MeshModel, Model):
 
     def addJoinFaces(self, select):
         """
-        Add faces selection for join meshes. 
-        Select is a dictionary with 'color', 'group', 'fraction', 'plan' 
+        Add faces selection for join meshes.
+        Select is a dictionary with 'color', 'group', 'fraction', 'plan'
         """
         nb = self.getJoinSelectionsNumber()
         name = str(nb +1)
@@ -1075,7 +1075,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def getJoinFaces(self, number):
         """
-        Return faces selection named 'number' for join meshes . 
+        Return faces selection named 'number' for join meshes .
         """
         self.isLowerOrEqual(int(number), int(self.getJoinSelectionsNumber()))
 
@@ -1130,7 +1130,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def addPeriodicFaces(self, perio_name, select):
         """
-        Add faces selection for periodic transformation. 
+        Add faces selection for periodic transformation.
         Select is a dictionary with 'color', 'group', 'fraction', 'plan' ...
         """
         self.isInList(perio_name, self.getPeriodicityListName())
@@ -1144,7 +1144,7 @@ class SolutionDomainModel(MeshModel, Model):
     def getPeriodicFaces(self, perio_name):
         """
         Public method.
-        
+
         @return: faces selection for periodic transformation named perio_name
         @rtype: C{dictionary}
         """
@@ -1158,7 +1158,7 @@ class SolutionDomainModel(MeshModel, Model):
 
         return result
 
-        
+
     def replacePeriodicFaces(self, perio_name, select):
         """
         Replace values of faces selection for periodic transformation, by select
@@ -1214,7 +1214,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def addSelectFaces(self, select):
         """
-        Add faces selection for standalone selection. 
+        Add faces selection for standalone selection.
         Select is a dictionary with 'color', 'group', 'fraction', 'plan' ...
         """
         node = self.node_standalone.xmlGetChildNode('faces_select', 'status')
@@ -1323,7 +1323,7 @@ class SolutionDomainModel(MeshModel, Model):
         line = ''
         if self.node_orient and self.node_orient['status'] == 'on':
             line += ' --reorient '
-        
+
         return line
 
 
@@ -1336,11 +1336,11 @@ class SolutionDomainModel(MeshModel, Model):
             node_face_join_list = self.node_join.xmlGetNodeList('faces_join')
             if node_face_join_list:
                 for node_face_join in node_face_join_list:
-                    if node_face_join['status'] == 'on': 
+                    if node_face_join['status'] == 'on':
                         linecoul = ' -j '
                         line = self._getLineCommand(node_face_join)
                         lines = lines + linecoul + line
-                        
+
                         fraction = node_face_join.xmlGetString('faces_fraction')
                         lines = lines + " --fraction " + fraction +" "
                         plan = node_face_join.xmlGetString('faces_plan')
@@ -1381,14 +1381,14 @@ class SolutionDomainModel(MeshModel, Model):
                             l = self._getLineCommand(node)
                             line = line + lineperio + l
                             fraction = node.xmlGetString('faces_fraction')
-                            if fraction: 
+                            if fraction:
                                 line = line + " --fraction " + fraction +" "
                             plan = node.xmlGetString('faces_plan')
-                            if plan: 
+                            if plan:
                                 line = line + " --plane " + plan +" "
-            else: 
+            else:
                 line = line + ' --perio '
-            mode = self.getPeriodicityMode(perio_name) 
+            mode = self.getPeriodicityMode(perio_name)
             if mode == 'translation' or mode == 'tr+rota1' or mode == 'tr+rota2':
                 dx, dy, dz = self.getTranslationDirection(perio_name)
                 line = line + " --trans " + dx +" " + dy +" " + dz +" "
@@ -1401,7 +1401,7 @@ class SolutionDomainModel(MeshModel, Model):
                 m11, m12, m13, m21, m22, m23, m31, m32, m33 = self.getRotationMatrix(perio_name)
                 px, py, pz = self.getRotationCenter(perio_name)
                 line = line + " --rota "  + " --matrix " + m11 +" " + m12 +" " + m13 +" " + m21 +" " + m22 +" " + m23 +" " + m31 +" " + m32 +" " + m33 +" " + " --invpt " + px +" " + py +" " + pz +" "
-    
+
         return line
 
 
@@ -1441,12 +1441,12 @@ class SolutionDomainModel(MeshModel, Model):
             line = ' --med '
         if self.getPostProFormat() == "CGNS":
             line = ' --cgns '
-            
+
         options = self.getPostProOptionsFormat()
         options = string.split(options, ',')
 
         for opt in options:
-            if opt in ('binary', 'discard_polygons', 'discard_polyhedra'): 
+            if opt in ('binary', 'discard_polygons', 'discard_polyhedra'):
                 line = line
             if opt in ('divide_polygons', 'divide_polyhedra'):
                 opt = line + ' --divide-poly '
@@ -1534,12 +1534,12 @@ class SolutionDomainTestCase(ModelTest):
         mdl = SolutionDomainModel(self.case)
         mdl.setCutStatus('on')
         doc1 = '''<faces_cutting status="on"/>'''
-        
+
         assert mdl.node_cut == self.xmlNodeFromString(doc1), \
             'Could not set status of faces_cutting'
         assert mdl.getCutStatus() == 'on',\
             'Could not get status of faces_cutting'
-        
+
         mdl.setCutAngle(90.)
         doc2 = '''<faces_cutting status="on">
                     <warp_angle_max>90</warp_angle_max>
@@ -1591,7 +1591,7 @@ class SolutionDomainTestCase(ModelTest):
             'Could not get number for periodicities'
 
     def checkSetandgetPeriodicityMode(self):
-        """ Check whether the mode of transformation could be set and get """         
+        """ Check whether the mode of transformation could be set and get """
         mdl = SolutionDomainModel(self.case)
         mdl.addPeriodicity('1')
         mdl.addPeriodicity('2')
@@ -1622,7 +1622,7 @@ class SolutionDomainTestCase(ModelTest):
                     </transformation>
             </periodic_boundary>'''
 
-                
+
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
             'Could not set mode of transformation for periodicities'
         assert mdl.getPeriodicityMode('2') == "tr+rota1",\
@@ -1721,7 +1721,7 @@ class SolutionDomainTestCase(ModelTest):
                                     <rotation_center_z>0.0</rotation_center_z>
                             </rotation2>
                     </transformation>
-                 </periodic_boundary>'''                                  
+                 </periodic_boundary>'''
 
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
             'Could not set values for matrix of rotation for rotation2 transformation mode'
@@ -1752,14 +1752,14 @@ class SolutionDomainTestCase(ModelTest):
 
         assert mdl.node_join == self.xmlNodeFromString(doc),\
             'Could not set values of faces join for join meshes'
-        assert mdl.getJoinFaces('1') == {'semiconf': 'on', 'reverse': 'off', 
-                                         'color': '1 2 3', 'plan': '0.8', 
+        assert mdl.getJoinFaces('1') == {'semiconf': 'on', 'reverse': 'off',
+                                         'color': '1 2 3', 'plan': '0.8',
                                          'fraction': '0.1', 'group': 'toto'},\
             'Could not get values of faces join for join meshes'
 
     def checkReplaceandDeleteandSetandGetStatusForJoinFaces(self):
-        """ 
-        Check whether faces of join meshes could be replaced and deleted 
+        """
+        Check whether faces of join meshes could be replaced and deleted
         and status could be set and get
         """
         select = {}
@@ -1799,10 +1799,10 @@ class SolutionDomainTestCase(ModelTest):
         assert mdl.node_join == self.xmlNodeFromString(doc),\
             'Could not set values of faces join for join meshes'
         assert mdl.getJoinFaces('1') == {'group': 'toto', 'reverse': 'off', 'color': '1 2 3',
-                                        'plan': '0.8', 'fraction': '0.1', 
+                                        'plan': '0.8', 'fraction': '0.1',
                                         'semiconf': 'on'},\
             'Could not get values of faces join for join meshes'
-        
+
         select['group'] = 'je vais partir'
         mdl.replaceJoinFaces('1', select)
         doc = '''<join_meshes status="on">
@@ -1820,10 +1820,10 @@ class SolutionDomainTestCase(ModelTest):
                             <faces_plan>0.82</faces_plan>
                     </faces_join>
                  </join_meshes>'''
-                 
+
         assert mdl.node_join == self.xmlNodeFromString(doc),\
             'Could not replace values of faces join for join meshes'
-            
+
         mdl.deleteJoinFaces('1')
         doc = '''<join_meshes status="on">
                     <faces_join name="1" status="on">
@@ -1833,10 +1833,10 @@ class SolutionDomainTestCase(ModelTest):
                             <faces_plan>0.82</faces_plan>
                     </faces_join>
                  </join_meshes>'''
-                 
+
         assert mdl.node_join == self.xmlNodeFromString(doc),\
             'Could not delete faces join for join meshes'
-            
+
         mdl.addJoinFaces(select)
         mdl.setJoinStatus('1', 'off')
         doc = '''<join_meshes status="on">
@@ -1854,12 +1854,12 @@ class SolutionDomainTestCase(ModelTest):
                             <faces_semi_conf status="on"/>
                     </faces_join>
                  </join_meshes>'''
-                 
+
         assert mdl.node_join == self.xmlNodeFromString(doc),\
             'Could not set status for active or not faces join for join meshes'
         assert mdl.getJoinStatus('1') == 'off',\
             'Could not get status for active or not faces join for join meshes'
-        
+
     def checkAddandGetPeriodicFaces(self):
         """ Check whether faces of periodicity could be added and get """
         select = {}
@@ -1919,8 +1919,8 @@ class SolutionDomainTestCase(ModelTest):
             'Could not get values of faces for periodicities'
 
     def checkReplaceandDeleteandSetandGetStatusForPeriodicFaces(self):
-        """ 
-        Check whether faces of of periodicity could be replaced and deleted 
+        """
+        Check whether faces of of periodicity could be replaced and deleted
         and status could be set and get
         """
         select = {}
@@ -1968,10 +1968,10 @@ class SolutionDomainTestCase(ModelTest):
                             </rotation1>
                     </transformation>
                  </periodic_boundary>'''
-                 
+
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
             'Could not delete one selection of faces for periodicities'
-            
+
         select['color'] = '147 963'
         select['group'] = 'PERIODIC'
         select['fraction'] = '0.1'
@@ -2065,7 +2065,7 @@ class SolutionDomainTestCase(ModelTest):
                             <faces_group>STAND</faces_group>
                     </faces_select>
                  </standalone>'''
-        
+
         assert mdl.node_standalone == self.xmlNodeFromString(doc),\
             'Could not add values of faces for standalone selection'
         assert mdl.getSelectFaces() == {'group': 'STAND', 'reverse': 'off', 'color': '8 2',
@@ -2073,8 +2073,8 @@ class SolutionDomainTestCase(ModelTest):
             'Could not get values of faces for standalone selection'
 
     def checkReplaceandDeleteandSetandGetStatusForSelectFaces(self):
-        """ 
-        Check whether faces of standalone could be replaced and deleted 
+        """
+        Check whether faces of standalone could be replaced and deleted
         and status could be set and get
         """
         select = {}
@@ -2099,13 +2099,13 @@ class SolutionDomainTestCase(ModelTest):
 
         assert mdl.node_standalone == self.xmlNodeFromString(doc),\
             'Could not replace values of faces for standalone selection'
-        
+
         mdl.deleteSelectFaces()
         doc = '''<standalone/>'''
-        
+
         assert mdl.node_standalone == self.xmlNodeFromString(doc),\
             'Could not delete values of faces for standalone selection'
-            
+
         select['group'] = 'NOUVEAU'
         mdl.addSelectFaces(select)
         mdl.setSelectStatus('off')
@@ -2124,7 +2124,7 @@ class SolutionDomainTestCase(ModelTest):
         mdl.addMesh('pic.des','des')
         mdl.addMesh('truc.ngeom','ngeom')
         line = ''' -m MESH/fdc.des -m MESH/pic.des -m MESH/truc.ngeom '''
-        
+
         assert mdl.getMeshCommand() == line,\
             'Mesh command is not verified in SolutionDomain Model'
 
@@ -2139,7 +2139,7 @@ class SolutionDomainTestCase(ModelTest):
             'Could not set reorient status in SolutionDomain Model'
         assert mdl.getOrientation() == "on",\
             'Could not get reorient status in SolutionDomain Model'
-            
+
         cmd_orient = ' --reorient '
         assert mdl.getReorientCommand() == cmd_orient,\
             'Reorient command is not verified in SolutionDomain Model'
@@ -2161,9 +2161,9 @@ class SolutionDomainTestCase(ModelTest):
 
         assert mdl.getJoinCommand() == cmd_join,\
             'Join command is not verified in SolutionDomain Model'
-        
+
         mdl.setCutStatus('on')
-        mdl.setCutAngle(0.05)        
+        mdl.setCutAngle(0.05)
         cmd_cut = mdl.getCutCommand()
         cut = ' --cwf 0.05'
         assert mdl.getCutCommand() == cmd_cut,\
@@ -2196,7 +2196,7 @@ class SolutionDomainTestCase(ModelTest):
         sim =' -sc '
         assert mdl.getSimCommCommand() == sim,\
             'Simulation_communication command is not verified in SolutionDomain Model'
-            
+
         #A reprendre :
 ####    def checkSelectCommand(self):
 ####        """Check whether standalone selection command line could be get"""
@@ -2213,7 +2213,7 @@ class SolutionDomainTestCase(ModelTest):
 ######        select =' --int-face  --color 1 2 3  --group toto  --semi-conf '
 ####        assert mdl.getSelectCommand().split() == select.split(),\
 ####            'Standalone selection faces command is not verified in SolutionDomain Model'
-####        
+####
     def checkPostCommand(self):
         """Check whether output postprocessing format command line could be get"""
         mdl = SolutionDomainModel(self.case)
@@ -2237,10 +2237,10 @@ class SolutionDomainTestCase(ModelTest):
         mdl.setJoinMeshesStatus('on')
         mdl.addJoinFaces(select)
         node = mdl.node_join.xmlGetChildNode('faces_join')
-        
+
         assert mdl.getStatusNode(node) == 'on',\
             'Could not get status of node in SolutionDomainModel'
-            
+
         deux = {}
         deux['color'] = '4 5 6'
         deux['group'] = 'coucou'
@@ -2250,7 +2250,7 @@ class SolutionDomainTestCase(ModelTest):
         deux['semiconf'] = 'on'
         mdl.addJoinFaces(deux)
         list = {'group': 'coucou', 'reverse': 'off', 'color': '4 5 6', 'plan': '0.8', 'fraction': '0.1', 'semiconf': 'on'}
-        
+
         assert mdl.getFacesSelect('faces_join', 1) == list,\
             'Could not get faces for view in SolutionDomainModel'
 
@@ -2295,7 +2295,7 @@ class MeshModelTestCase(unittest.TestCase):
     def checkGetMeshFormat(self):
         """Check whether mesh extension could be get"""
         mdl = MeshModel()
-        
+
         for f in self.files:
           fmt = mdl.getMeshFormat(f[0])
           if fmt:

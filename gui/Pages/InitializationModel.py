@@ -79,7 +79,7 @@ class InitializationModel(Model):
 
         self.VelocityList = ('velocity_U', 'velocity_V', 'velocity_W')
         self.Turb_var_List = ('turb_k', 'turb_eps',
-                              'component_R11', 'component_R22', 'component_R33', 
+                              'component_R11', 'component_R22', 'component_R33',
                               'component_R12', 'component_R13', 'component_R23',
                               'turb_phi', 'turb_fb', 'turb_omega')
 
@@ -149,13 +149,13 @@ class InitializationModel(Model):
                         'component_R22',
                         'component_R33',
                         'component_R12',
-                        'component_R13', 
-                        'component_R23', 
+                        'component_R13',
+                        'component_R23',
                         'turb_eps'):
                 self.getTurbulenceInitialValue(zone, txt)
 
         elif turb_model == 'v2f-phi':
-            for txt in ('turb_k', 
+            for txt in ('turb_k',
                         'turb_eps',
                         'turb_phi',
                         'turb_fb'):
@@ -218,7 +218,7 @@ class InitializationModel(Model):
                 msg = "There is an error: this node " + str(node) + "should be existed"
                 raise ValueError, msg
             v = node.xmlGetDouble('initial_value', zone=zone)
-            if v == None: 
+            if v == None:
                 v = self.__defaultValues()['velocity']
             velocity_list.append(v)
 
@@ -263,7 +263,7 @@ class InitializationModel(Model):
         self.isFloat(velocity)
 
         node_init = self.node_turb.xmlGetNode('initialization')
-        if not node_init: 
+        if not node_init:
             msg = "There is an error: this node " + str(node_init) + "should be existed"
             raise ValueError, msg
 
@@ -279,9 +279,9 @@ class InitializationModel(Model):
         """
         node_init = self.node_turb.xmlGetNode('initialization',
                                               choice='reference_velocity')
-        if not node_init: 
+        if not node_init:
             msg = "There is an error: this node " + str(node_init) + "should be existed"
-            raise ValueError, msg 
+            raise ValueError, msg
 
         v = node_init.xmlGetDouble('reference_velocity')
         if v == None:
@@ -379,7 +379,7 @@ class InitializationModel(Model):
 
         label = Tool.dicoLabel(var_name)
         node = self.node_turb.xmlGetNode('variable', name=var_name)
-        if node: 
+        if node:
             label = node['label']
 
         return label

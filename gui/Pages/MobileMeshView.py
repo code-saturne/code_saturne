@@ -112,7 +112,7 @@ class MobileMeshView(QWidget, Ui_MobileMeshForm):
         self.connect(self.comboBoxVISCOSITY, SIGNAL("activated(const QString&)"), self.slotViscosityType)
         self.connect(self.comboBoxMEI, SIGNAL("activated(const QString&)"), self.slotMEI)
         self.connect(self.pushButtonFormula, SIGNAL("clicked(bool)"), self.slotFormula)
- 
+
         # Validators
         validatorNALINF = IntValidator(self.lineEditNALINF, min=0)
         self.lineEditNALINF.setValidator(validatorNALINF)
@@ -125,9 +125,9 @@ class MobileMeshView(QWidget, Ui_MobileMeshForm):
             checked = False
 
         self.slotMethod(checked)
-        
-        # Enable / disable formula state 
-        self.slotMEI(self.comboBoxMEI.currentText())  
+
+        # Enable / disable formula state
+        self.slotMEI(self.comboBoxMEI.currentText())
         setGreenColor(self.pushButtonFormula, False)
 
 
@@ -161,7 +161,7 @@ class MobileMeshView(QWidget, Ui_MobileMeshForm):
     def slotNalinf(self, text):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
-        """        
+        """
         nalinf, ok = text.toInt()
         if self.sender().validator().state == QValidator.Acceptable:
             self.mdl.setSubIterations(nalinf)
@@ -181,7 +181,7 @@ class MobileMeshView(QWidget, Ui_MobileMeshForm):
     @pyqtSignature("const QString&")
     def slotMEI(self, text):
         """
-        MEI 
+        MEI
         """
         MEI = self.modelMEI.dicoV2M[str(text)]
         self.MEI = MEI
@@ -237,7 +237,7 @@ class MobileMeshView(QWidget, Ui_MobileMeshForm):
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # End

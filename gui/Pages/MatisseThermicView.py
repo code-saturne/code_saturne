@@ -77,7 +77,7 @@ class StandardItemModelThermic(QStandardItemModel):
         self.setColumnCount(4)
         self.model = MatisseThermicModel(self.case)
         self._initData()
-        
+
 
     def _initData(self):
 
@@ -86,7 +86,7 @@ class StandardItemModelThermic(QStandardItemModel):
 
         # Double Var
         self.puicon = 0.
-        self.tinit  = 0. 
+        self.tinit  = 0.
         self.tcrit  = 0.
         self.emicon = 0.
         self.emimur = 0.
@@ -114,10 +114,10 @@ class StandardItemModelThermic(QStandardItemModel):
         self.texts['dhpcnt'] = (9, self.tr("Natural convection plume heat flowrate"), "W")
 
         self.rows_disabled = []
-        
+
         stat = self.model.getNatConvPanacheStatus()
         self.imdcnt = stat
-        
+
         if stat == "off":
             if not 5 in self.rows_disabled : self.rows_disabled.append(5)
             if not 6 in self.rows_disabled : self.rows_disabled.append(6)
@@ -127,7 +127,7 @@ class StandardItemModelThermic(QStandardItemModel):
             if variable[0] != 'imdcnt':
                 val = self.model.getMatisseThermicDoubleVar(variable[0])
                 self.variables[idx][1] = val
-            idx += 1    
+            idx += 1
 
         self.setRowCount(len(self.variables))
 
@@ -139,7 +139,7 @@ class StandardItemModelThermic(QStandardItemModel):
         if role == Qt.DisplayRole:
             row = index.row()
             var = self.variables[row][0]
-            
+
             if index.column() == 0:
                 num = self.texts[var][0]
                 return QVariant(num)
@@ -198,13 +198,13 @@ class StandardItemModelThermic(QStandardItemModel):
                     if 5 in self.rows_disabled : self.rows_disabled.remove(5)
                     if 6 in self.rows_disabled : self.rows_disabled.remove(6)
                 self.model.setNatConvPanacheStatus(self.imdcnt)
-            
+
             else:
                 tag = self.variables[row][0]
                 num = self.texts[tag][0]
                 var = self.variables[row][1]
                 v, ok = value.toDouble()
-                var = v 
+                var = v
                 self.model.setMatisseThermicVar(tag,var)
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
@@ -219,7 +219,7 @@ class StandardItemModelThermic(QStandardItemModel):
 class MatisseThermicView(QWidget, Ui_MatisseThermicForm):
     """
     """
-    
+
     def __init__(self, parent, case):
         """
         Constructor
@@ -228,7 +228,7 @@ class MatisseThermicView(QWidget, Ui_MatisseThermicForm):
 
         Ui_MatisseThermicForm.__init__(self)
         self.setupUi(self)
-        
+
         self.case = case
 
         # Create the Page layout.
@@ -236,12 +236,12 @@ class MatisseThermicView(QWidget, Ui_MatisseThermicForm):
         self.modelThermic = StandardItemModelThermic(self.case)
         self.tableView.setModel(self.modelThermic)
         self.tableView.resizeColumnsToContents()
-        
+
         self.widgetLine.initWidget(self.case, "thermal_line")
         self.widgetRow.initWidget(self.case, "thermal_row")
         self.widgetHeight.initWidget(self.case, "thermal_height")
 
-        
+
 ##     def _initModel(self):
 ##         """
 ##         Instantiate the matisse type modelling class.
@@ -256,14 +256,14 @@ class MatisseThermicView(QWidget, Ui_MatisseThermicForm):
 ##         self.lineMax = model_geom.getMatisseGeomDoubleVar('nptran')
 ##         self.rowMax = model_geom.getMatisseGeomDoubleVar('nplgrs')
 ##         self.heightMax = model_geom.getMatisseGeomDoubleVar('nchest')
-        
+
 
     def tr(self, text):
         """
         Translation
         """
-        return text 
-        
+        return text
+
 
 #-------------------------------------------------------------------------------
 # Testing part

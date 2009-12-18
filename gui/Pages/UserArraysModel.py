@@ -88,7 +88,7 @@ class UserArraysModel(Model):
     def setIntegerNcelet(self, value):
         """
         Set number of cells with halo into integer user's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_int.xmlSetData('ncelet', value)
 
@@ -96,7 +96,7 @@ class UserArraysModel(Model):
     def setIntegerNfac(self, value):
         """
         Set number of internal faces into integer user's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_int.xmlSetData('nfac', value)
 
@@ -104,7 +104,7 @@ class UserArraysModel(Model):
     def setIntegerNfabor(self, value):
         """
         Set number of boundary faces into integer user's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_int.xmlSetData('nfabor', value)
 
@@ -120,7 +120,7 @@ class UserArraysModel(Model):
     def setRealNcelet(self, value):
         """
         Set number of cells with halo into real user's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_real.xmlSetData('ncelet', value)
 
@@ -128,7 +128,7 @@ class UserArraysModel(Model):
     def setRealNfac(self, value):
         """
         Set number of internal faces into real user's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_real.xmlSetData('nfac', value)
 
@@ -136,7 +136,7 @@ class UserArraysModel(Model):
     def setRealNfabor(self, value):
         """
         Set number of boundary faces into real user's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_real.xmlSetData('nfabor', value)
 
@@ -144,7 +144,7 @@ class UserArraysModel(Model):
     def setRealDimless(self, value):
         """
         Set integer value into real user's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_real.xmlSetData('dimless', value)
 
@@ -152,7 +152,7 @@ class UserArraysModel(Model):
     def getIntegerNcelet(self):
         """
         Return number of cells with halo from integer user's array.
-        """ 
+        """
         value = self.node_int.xmlGetInt('ncelet')
         if value == None:
             value = self.defaultValues()['icel']
@@ -163,7 +163,7 @@ class UserArraysModel(Model):
     def getIntegerNfac(self):
         """
         Return number of cells with halo from integer user's array.
-        """ 
+        """
         value = self.node_int.xmlGetInt('nfac')
         if value == None:
             value = self.defaultValues()['ifac']
@@ -173,7 +173,7 @@ class UserArraysModel(Model):
     def getIntegerNfabor(self):
         """
         Return number of cells with halo from integer user's array.
-        """ 
+        """
         value = self.node_int.xmlGetInt('nfabor')
         if value == None:
             value = self.defaultValues()['ifab']
@@ -183,7 +183,7 @@ class UserArraysModel(Model):
     def getIntegerDimless(self):
         """
         Return number of cells with halo from integer user's array.
-        """ 
+        """
         value = self.node_int.xmlGetInt('dimless')
         if value == None:
             value = self.defaultValues()['idls']
@@ -193,7 +193,7 @@ class UserArraysModel(Model):
     def getRealNcelet(self):
         """
         Return number of cells with halo from real user's array.
-        """ 
+        """
         value = self.node_real.xmlGetInt('ncelet')
         if value == None:
             value = self.defaultValues()['rcel']
@@ -203,7 +203,7 @@ class UserArraysModel(Model):
     def getRealNfac(self):
         """
         Return number of cells with halo from real user's array.
-        """ 
+        """
         value = self.node_real.xmlGetInt('nfac')
         if value == None:
             value = self.defaultValues()['rfac']
@@ -213,7 +213,7 @@ class UserArraysModel(Model):
     def getRealNfabor(self):
         """
         Return number of cells with halo from real user's array.
-        """ 
+        """
         value = self.node_real.xmlGetInt('nfabor')
         if value == None:
             value = self.defaultValues()['rfab']
@@ -223,7 +223,7 @@ class UserArraysModel(Model):
     def getRealDimless(self):
         """
         Return number of cells with halo from real user's array.
-        """ 
+        """
         value = self.node_real.xmlGetInt('dimless')
         if value == None:
             value = self.defaultValues()['rdls']
@@ -325,7 +325,7 @@ class UserArraysTestCase(ModelTest):
                 'Could not set real nfabor user arrays model'
         assert mdl.getRealNfabor() == 977,\
                 'Could not get real nfabor user arrays model'
-    
+
     def checkGetandSetRealDimless(self):
         """Check whether the real dimless user arrays model could be set"""
         mdl = UserArraysModel(self.case)
@@ -337,7 +337,7 @@ class UserArraysTestCase(ModelTest):
                 'Could not set real dimless user arrays model'
         assert mdl.getRealDimless() == 966,\
                 'Could not get real dimless user arrays model'
-            
+
 def suite():
     testSuite = unittest.makeSuite(UserArraysTestCase, "check")
     return testSuite

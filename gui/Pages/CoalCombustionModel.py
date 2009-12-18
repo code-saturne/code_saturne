@@ -142,7 +142,7 @@ class CoalCombustionModel(Variables, Model):
             for classe in range(0,classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
                 list.append(name)
-        
+
         baseNames = [ "Fr_MV1", "Fr_MV2"]
         for baseName in baseNames:
             for coal in range(0,coalsNumber):
@@ -226,7 +226,7 @@ class CoalCombustionModel(Variables, Model):
         if self.getCoalCombustionModel() == 'coal_homo2':
             baseNames.append("Ga_SEC")
 
-        for baseName in baseNames: 
+        for baseName in baseNames:
             for classe in range(0,classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
                 list.append(name)
@@ -257,7 +257,7 @@ class CoalCombustionModel(Variables, Model):
 
 
     def createModel (self) :
-        """ 
+        """
         Private method
         Create scalars and properties when coal combustion is selected
         """
@@ -269,9 +269,9 @@ class CoalCombustionModel(Variables, Model):
     def __deleteWetScalarsAndProperty(self):
         """
         Private method
-        Delete scalars XWT_CP and Fr_H20 and property Ga_SEC 
+        Delete scalars XWT_CP and Fr_H20 and property Ga_SEC
         if model is'nt 'coal_homo2'
-        """  
+        """
         if self.getCoalCombustionModel() != 'coal_homo2':
             nod = self.node_coal.xmlGetNode('scalar', type="model", name="FR_H20")
             if nod:
@@ -287,7 +287,7 @@ class CoalCombustionModel(Variables, Model):
     def __deleteCoalModelProperties(self, classMin, classMax, classesNumber):
         """
         Private method
-        Delete properties for one coal 
+        Delete properties for one coal
         """
         baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
                      "Ga_DV1", "Ga_DV2", "Ga_HET"]
@@ -300,11 +300,11 @@ class CoalCombustionModel(Variables, Model):
         if nodeList != None:
             for node in nodeList :
                 nameNode =node['name']
-                for baseName in baseNames: 
+                for baseName in baseNames:
                     for classe in range(classMin, classMax):
                         name = '%s%2.2i' % (baseName, classe+1)
                         if ( nameNode == name):
-                            node.xmlRemoveNode()              
+                            node.xmlRemoveNode()
         #
         # Rename other classes
         nodeList = self.node_coal.xmlGetNodeList('property')
@@ -328,8 +328,8 @@ class CoalCombustionModel(Variables, Model):
     def __deleteCoalModelScalars(self, classMin, classMax, classesNumber, coalNumber, coalsNumber):
         """
         Private method
-        Delete scalars for one coal 
-        """       
+        Delete scalars for one coal
+        """
         baseNames = ["NP_CP",  "XCH_CP", "XCK_CP", "ENT_CP"]
         if self.getCoalCombustionModel() == 'coal_homo2':
             baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP", "XWT_CP"]
@@ -339,7 +339,7 @@ class CoalCombustionModel(Variables, Model):
         if nodeList != None:
             for node in nodeList :
                 nameNode = node['name']
-                for baseName in baseNames: 
+                for baseName in baseNames:
                     for classe in range(classMin, classMax):
                         name = '%s%2.2i' % (baseName, classe+1)
                         if (nameNode == name):
@@ -368,10 +368,10 @@ class CoalCombustionModel(Variables, Model):
         if nodeList != None:
             for node in nodeList :
                 nameNode = node['name']
-                for baseName in baseNames: 
+                for baseName in baseNames:
                     name = '%s%2.2i' % (baseName, coalNumber+1)
                     if (nameNode == name):
-                        node.xmlRemoveNode()              
+                        node.xmlRemoveNode()
         #
         # Rename other coals
         nodeList = self.node_coal.xmlGetNodeList('scalar')
@@ -379,7 +379,7 @@ class CoalCombustionModel(Variables, Model):
             for node in nodeList:
                 oldName = node['name']
                 if oldName[:-2] in baseNames :
-                    oldNum = int(oldName[-2:])  
+                    oldNum = int(oldName[-2:])
                     if oldNum in range(coalNumber+1, coalsNumber+1):
                         name = '%s%2.2i' % (oldName[:-2], oldNum-1)
                         node['name'] = name
@@ -393,7 +393,7 @@ class CoalCombustionModel(Variables, Model):
         Update the coal combustion model markup from the XML document.
         """
         self.isInList(model, self.__coalCombustionModelsList())
-        
+
         mdl = FluidCharacteristicsModel(self.case)
 
         if model == 'off':
@@ -431,12 +431,12 @@ class CoalCombustionModel(Variables, Model):
             baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP", "XWT_CP"]
         else:
             self.__deleteWetScalarsAndProperty()
-        
+
         for baseName in baseNames:
             for classe in range(classesNumber - coalClassesNumber, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
                 self.setNewModelScalar(self.node_coal, name)
-        
+
         baseNames = [ "Fr_MV1", "Fr_MV2"]
         for baseName in baseNames:
             name = '%s%2.2i' % (baseName, coalsNumber)
@@ -452,7 +452,7 @@ class CoalCombustionModel(Variables, Model):
     def __createCoalModelProperties(self, coalsNumber, coalClassesNumber, classesNumber):
         """
         Private method
-        Create new properties for one coal 
+        Create new properties for one coal
         """
         # create new properties
         baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
@@ -460,7 +460,7 @@ class CoalCombustionModel(Variables, Model):
         if self.getCoalCombustionModel() == 'coal_homo2':
             baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
                          "Ga_DV1", "Ga_DV2", "Ga_HET", "Ga_SEC"]
-        for baseName in baseNames: 
+        for baseName in baseNames:
             for classe in range(classesNumber - coalClassesNumber, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
                 self.setNewProperty(self.node_coal, name)
@@ -491,7 +491,7 @@ class CoalCombustionModel(Variables, Model):
                             node['label'] = name
         #
         # create new properties
-        for i in range(len(baseNames)): 
+        for i in range(len(baseNames)):
             name = '%s%2.2i' % (baseNames[i], classNum)
             self.setNewProperty(self.node_coal, name)
 
@@ -513,7 +513,7 @@ class CoalCombustionModel(Variables, Model):
             for node in nodeList:
                 oldName = node['name']
                 if oldName[:-2] in baseNames :
-                    oldNum = int(oldName[-2:])  
+                    oldNum = int(oldName[-2:])
                     if oldNum in range(classNum, classesNumber + 1):
                         name = '%s%2.2i' % (oldName[:-2], oldNum+1)
                         node['name'] = name
@@ -521,7 +521,7 @@ class CoalCombustionModel(Variables, Model):
                             node['label'] = name
         #
         # create new scalars
-        for i in range(len(baseNames)): 
+        for i in range(len(baseNames)):
             name = '%s%2.2i' % (baseNames[i], classNum)
             self.setNewModelScalar(self.node_coal, name)
 
@@ -585,7 +585,7 @@ class CoalCombustionModel(Variables, Model):
         coalsNumber = thermoChemistryModel.getCoals().getCoalNumber()
         coalClassesNumber = thermoChemistryModel.getCoals().getClassesNumberList()[coalsNumber - 1]
         classesNumber = sum(thermoChemistryModel.getCoals().getClassesNumberList())
-        
+
         # add new scalars and properties
         self.__createCoalModelScalars(coalsNumber, coalClassesNumber, classesNumber)
         self.__createCoalModelProperties(coalsNumber, coalClassesNumber, classesNumber)
@@ -596,8 +596,8 @@ class CoalCombustionModel(Variables, Model):
         Create class of model scalars and properties for one given coal
         """
         self.isInt(coalNumber)
-        
-        classNum = 0 
+
+        classNum = 0
         for coal in range(0, coalNumber):
             classNum += thermoChemistryModel.getCoals().getClassesNumberList()[coal]
 
@@ -610,17 +610,17 @@ class CoalCombustionModel(Variables, Model):
 
     def deleteCoalModelScalarsAndProperties(self, thermoChemistryModel, coalNumber):
         """
-        Delete scalars and properties for one coal 
-        """       
+        Delete scalars and properties for one coal
+        """
         self.isInt(coalNumber)
-        
+
         classMin = 0
         for coal in range(0, coalNumber):
             classMin += thermoChemistryModel.getCoals().getClassesNumberList()[coal]
-        classMax = classMin + thermoChemistryModel.getCoals().getClassesNumberList()[coalNumber]          
+        classMax = classMin + thermoChemistryModel.getCoals().getClassesNumberList()[coalNumber]
         classesNumber = sum(thermoChemistryModel.getCoals().getClassesNumberList())
         coalsNumber = thermoChemistryModel.getCoals().getCoalNumber()
-        
+
         self.__deleteCoalModelScalars(classMin, classMax, classesNumber, coalNumber, coalsNumber)
         self.__deleteCoalModelProperties(classMin, classMax, classesNumber)
 
@@ -628,22 +628,22 @@ class CoalCombustionModel(Variables, Model):
     def deleteClassModelScalars(self, thermoChemistryModel, coalNumber, classeNumber):
         """
         delete class of model scalars
-        """       
+        """
         self.isInt(coalNumber)
         self.isInt(classeNumber)
-        
-        classNum = 0 
+
+        classNum = 0
         if (coalNumber >= 1) :
             for coal in range(0, coalNumber - 1):
                 classNum += thermoChemistryModel.getCoals().getClassesNumberList()[coal]
         classNum += classeNumber
-        
-        
+
+
         classesNumber = sum(thermoChemistryModel.getCoals().getClassesNumberList())
         baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP"]
         if self.getCoalCombustionModel() == 'coal_homo2':
             baseNames = ["NP_CP", "XCH_CP", "XCK_CP", "ENT_CP", "XWT_CP"]
-    
+
         #
         # Remove coal classes
         nodeList = self.node_coal.xmlGetNodeList('scalar')
@@ -661,7 +661,7 @@ class CoalCombustionModel(Variables, Model):
             for node in nodeList:
                 oldName = node['name']
                 if oldName[:-2] in baseNames :
-                    oldNum = int(oldName[-2:])  
+                    oldNum = int(oldName[-2:])
                     if oldNum in range(classNum + 1, classesNumber + 1):
                         name = '%s%2.2i' % (oldName[:-2], oldNum-1)
                         node['name'] = name
@@ -672,15 +672,15 @@ class CoalCombustionModel(Variables, Model):
     def deleteClassModelProperties(self, thermoChemistryModel, coalNumber, classeNumber):
         """
         delete class of model properties
-        """       
+        """
         self.isInt(coalNumber)
         self.isInt(classeNumber)
-        
-        classNum = 0 
+
+        classNum = 0
         for coal in range(0, coalNumber):
             classNum += thermoChemistryModel.getCoals().getClassesNumberList()[coal]
         classNum += classeNumber
-        
+
         classesNumber = sum(thermoChemistryModel.getCoals().getClassesNumberList())
         baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
                      "Ga_DV1", "Ga_DV2", "Ga_HET"]
@@ -696,7 +696,7 @@ class CoalCombustionModel(Variables, Model):
                 for baseName in baseNames:
                     name = '%s%2.2i' % (baseName, classNum+1)
                     if (nodeName == name):
-                        node.xmlRemoveNode()              
+                        node.xmlRemoveNode()
         #
         # Rename other classes
         nodeList = self.node_coal.xmlGetNodeList('property')
@@ -704,7 +704,7 @@ class CoalCombustionModel(Variables, Model):
             for node in nodeList:
                 oldName = node['name']
                 if oldName[:-2] in baseNames :
-                    oldNum = int(oldName[-2:])  
+                    oldNum = int(oldName[-2:])
                     if oldNum in range(classNum + 1, classesNumber + 1):
                         name = '%s%2.2i' % (oldName[:-2], oldNum-1)
                         node['name'] = name
@@ -729,7 +729,7 @@ class CoalCombustionModelTestCase(ModelTest):
         """Check whether the CoalCombustionModel class could be set and get combustion model"""
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
-        
+
         doc = '''<pulverized_coal model="coal_homo">
                     <scalar label="Enthalpy" name="Enthalpy" type="model">
                             <flux_reconstruction status="off"/>
@@ -787,17 +787,17 @@ class CoalCombustionModelTestCase(ModelTest):
 
     def checkCreateCoalModelScalarsAndProperties(self):
         """
-        Check whether the CoalCombustionModel class could be 
+        Check whether the CoalCombustionModel class could be
         created new scalars and properties for one new coal
         """
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
-        
+
         from CoalThermoChemistry import CoalThermoChemistryModel, Coal
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP",self.case)
         coalThermoChModel.getCoals().addCoal(Coal())
         del CoalThermoChemistryModel
-        
+
         model.createCoalModelScalarsAndProperties(coalThermoChModel)
 
         doc = '''<pulverized_coal model="coal_homo">
@@ -856,19 +856,19 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DV202" name="Ga_DV202"/>
                     <property label="Ga_HET02" name="Ga_HET02"/>
             </pulverized_coal>'''
-            
+
         assert model.node_coal == self.xmlNodeFromString(doc),\
             'Could not create newscalars and properties for new coal'
 
 
     def checkCreateClassModelScalarsAndProperties(self):
         """
-        Check whether the CoalCombustionModel class could be 
+        Check whether the CoalCombustionModel class could be
         created a new class of scalars and properties for one coal
         """
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
-        
+
         from CoalThermoChemistry import CoalThermoChemistryModel, Coal
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP",self.case)
         coalThermoChModel.getCoals().addCoal(Coal())
@@ -876,9 +876,9 @@ class CoalCombustionModelTestCase(ModelTest):
         coalThermoChModel.getCoals().addCoal(Coal())
         model.createCoalModelScalarsAndProperties(coalThermoChModel)
         del CoalThermoChemistryModel
-        
+
         model.createClassModelScalarsAndProperties(coalThermoChModel, 2)
-        
+
         doc = '''<pulverized_coal model="coal_homo">
                     <scalar label="Enthalpy" name="Enthalpy" type="model"><flux_reconstruction status="off"/></scalar>
                     <scalar label="NP_CP01" name="NP_CP01" type="model"><flux_reconstruction status="off"/></scalar>
@@ -980,12 +980,12 @@ class CoalCombustionModelTestCase(ModelTest):
 
     def checkDeleteCoalModelScalarsAndProperties(self):
         """
-        Check whether the CoalCombustionModel class could be 
+        Check whether the CoalCombustionModel class could be
         deleted class of scalars and properties for one given coal
         """
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
-        
+
         from CoalThermoChemistry import CoalThermoChemistryModel, Coal
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP",self.case)
         coalThermoChModel.getCoals().addCoal(Coal())
@@ -993,7 +993,7 @@ class CoalCombustionModelTestCase(ModelTest):
         coalThermoChModel.getCoals().addCoal(Coal())
         model.createCoalModelScalarsAndProperties(coalThermoChModel)
         del CoalThermoChemistryModel
-        
+
         model.createClassModelScalarsAndProperties(coalThermoChModel, 2)
         model.deleteCoalModelScalarsAndProperties(coalThermoChModel, 1)
 
@@ -1080,12 +1080,12 @@ class CoalCombustionModelTestCase(ModelTest):
 
     def checkDeleteClassModelScalarsAndProperties(self):
         """
-        Check whether the CoalCombustionModel class could be 
+        Check whether the CoalCombustionModel class could be
         deleted class of scalars and properties for one given coal
         """
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
-        
+
         from CoalThermoChemistry import CoalThermoChemistryModel, Coal
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP",self.case)
         coalThermoChModel.getCoals().addCoal(Coal())
@@ -1093,7 +1093,7 @@ class CoalCombustionModelTestCase(ModelTest):
         coalThermoChModel.getCoals().addCoal(Coal())
         model.createCoalModelScalarsAndProperties(coalThermoChModel)
         del CoalThermoChemistryModel
-        
+
         model.createClassModelScalarsAndProperties(coalThermoChModel, 2)
         model.deleteClassModelScalars(coalThermoChModel, 2, 1)
 
@@ -1188,7 +1188,7 @@ def suite():
     testSuite = unittest.makeSuite(CoalCombustionModelTestCase, "check")
     return testSuite
 
-    
+
 def runTest():
     print "CoalCombustionModelTestCase"
     runner = unittest.TextTestRunner()

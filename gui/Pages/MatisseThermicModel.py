@@ -47,7 +47,7 @@ import sys, unittest
 
 from Base.Common import *
 import Base.Toolbox as Tool
-import Pages.MatisseTypeModel as MatisseType 
+import Pages.MatisseTypeModel as MatisseType
 import Pages.MatisseGeomModel as MatisseGeom
 
 #-------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ class MatisseThermicModel:
         self.node_phymodel      = self.node_compute.xmlInitChildNode('physical_model')
 
         self.node_mdcnt         = self.node_phymodel.xmlInitChildNode('imdcnt','status')
-        
+
         self.status = ('on',
                        'off')
 
@@ -80,17 +80,17 @@ class MatisseThermicModel:
         self.node_row           = self.node_th_cp.xmlInitChildNode('row')
         self.node_height        = self.node_th_cp.xmlInitChildNode('height')
 
-        self.list_line_area     = self.node_line.xmlGetNodeList('area','label') 
+        self.list_line_area     = self.node_line.xmlGetNodeList('area','label')
         self.list_line_min      = self.node_line.xmlGetNodeList('min')
         self.list_line_max      = self.node_line.xmlGetNodeList('max')
         self.list_line_value    = self.node_line.xmlGetNodeList('value')
 
-        self.list_row_area      = self.node_row.xmlGetNodeList('area','label') 
+        self.list_row_area      = self.node_row.xmlGetNodeList('area','label')
         self.list_row_min       = self.node_row.xmlGetNodeList('min')
         self.list_row_max       = self.node_row.xmlGetNodeList('max')
         self.list_row_value     = self.node_row.xmlGetNodeList('value')
 
-        self.list_height_area   = self.node_height.xmlGetNodeList('area','label') 
+        self.list_height_area   = self.node_height.xmlGetNodeList('area','label')
         self.list_height_min    = self.node_height.xmlGetNodeList('min')
         self.list_height_max    = self.node_height.xmlGetNodeList('max')
         self.list_height_value  = self.node_height.xmlGetNodeList('value')
@@ -115,7 +115,7 @@ class MatisseThermicModel:
         default['emimur'] = 0.8
         default['hepcnt'] = 6.
         default['dhpcnt'] = 0.
-        
+
         #
         # Vars Filters
         default['maplabel'] = 'default'
@@ -197,7 +197,7 @@ class MatisseThermicModel:
             nval.xmlSetTextNode(val)
         else:
             nval.xmlSetTextNode(dval)
-            
+
         if areatype == 'line' :
             self.list_line_area.append(node)
         elif areatype == 'row' :
@@ -212,14 +212,14 @@ class MatisseThermicModel:
     def DefaultArea(self,areatype):
         """
         Return default values of a area
-        """ 
+        """
         modelgeom = MatisseGeom.MatisseGeomModel(self.case)
         dlabel = "default"
         dmin = 0
         dval = 1.0
-        
+
         if areatype == 'line' :
-            dmax = modelgeom.getMatisseGeomDoubleVar('nptran') 
+            dmax = modelgeom.getMatisseGeomDoubleVar('nptran')
         elif areatype == 'row' :
             dmax = modelgeom.getMatisseGeomDoubleVar('nplgrs')
         elif areatype == 'height' :
@@ -283,9 +283,9 @@ class MatisseThermicModel:
             lbmax.append(bmax)
             lval.append(val)
 
-        return llabel, lbmin, lbmax, lval 
+        return llabel, lbmin, lbmax, lval
 
-        
+
     def EraseArea(self, areatype, num):
         """
         Remove Area.
@@ -313,7 +313,7 @@ class MatisseThermicModel:
 
         tinit = None
         tcrit = None
-        
+
         if tag == 'tinit':
             tinit = val
         elif tag == 'tcrit':
@@ -322,7 +322,7 @@ class MatisseThermicModel:
         import Pages.MatisseModel as Matisse
         Matisse.MatisseThermUpdate(self.case,tinit,tcrit).compute()
         del Matisse
-        
+
 
     def getMatisseThermicDoubleVar(self,tag):
         """
@@ -352,7 +352,7 @@ class MatisseThermicModel:
         Return natural convection panache status
         """
         stat = self.node_mdcnt['status']
-            
+
         if stat not in self.status :
             stat = self.defaultMatisseThermicValues()['imdcnt']
             self.setNatConvPanacheStatus(stat)
@@ -389,7 +389,7 @@ class MatisseThermicModelTestCase(unittest.TestCase):
         model = MatisseThermicModel(self.case)
         assert model != None, 'Could not instantiate MatisseThermicModel'
 
-        
+
 def suite():
     testSuite = unittest.makeSuite(MatisseThermicModelTestCase, "check")
     return testSuite

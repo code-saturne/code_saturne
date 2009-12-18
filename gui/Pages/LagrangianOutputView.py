@@ -56,7 +56,7 @@ from PyQt4.QtGui  import *
 
 from LagrangianOutputForm import Ui_LagrangianOutputForm
 from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, IntValidator, DoubleValidator 
+from Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from Pages.LagrangianOutputModel import LagrangianOutputModel
 import Pages.CoalThermoChemistry as CoalThermoChemistry
 
@@ -79,7 +79,7 @@ log.setLevel(GuiParam.DEBUG)
 class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
     """
     """
-    
+
     def __init__(self, parent, case):
         """
         Constructor
@@ -125,16 +125,16 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
 
         validatorNTLAL = IntValidator(self.lineEditNTLAL)
         self.lineEditNTLAL.setValidator(validatorNTLAL)
-        
+
         # initialize Widgets
 
-        # post processing info to display        
+        # post processing info to display
         status = self.model.getTrajectoryStatus()
         if status == "on":
             self.checkBoxIENSI1.setChecked(True)
         else:
             self.checkBoxIENSI1.setChecked(False)
-            
+
         status = self.model.getParticlesStatus()
         if status == "on":
             self.checkBoxIENSI2.setChecked(True)
@@ -207,7 +207,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.checkBoxIVISMP.setChecked(False)
 
         # FIXME
-        # check if coal model is activated 
+        # check if coal model is activated
 ##         coalThermoChModel = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
 ##         coals = coalThermoChModel.getCoals()
 ##         CoalsNumber = coals.getNumber()
@@ -244,7 +244,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         else:
             self.checkBoxIVISCK.setChecked(False)
 
-            
+
     @pyqtSignature("")
     def slotIENSI1(self):
         """
@@ -265,7 +265,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setParticlesStatus("on")
         else:
             self.model.setParticlesStatus("off")
-        
+
 
     @pyqtSignature("const QString&")
     def slotNBVIS(self, text):
@@ -311,7 +311,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         """
         listing = self.modelNTLAL.dicoV2M[str(text)]
         log.debug("slotChoiceNTLAL-> listing = %s" % listing)
-        
+
         if listing == "None":
             ntlist = -1
             self.model.setListingFrequency(ntlist)
@@ -331,7 +331,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
                 ntlist = 1
                 self.model.setListingFrequency(ntlist)
                 self.lineEditNTLAL.setText(QString(str(ntlist)))
-    
+
 
     @pyqtSignature("const QString&")
     def slotNTLAL(self, text):
@@ -352,7 +352,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setFluidVelocityStatus("on")
         else:
             self.model.setFluidVelocityStatus("off")
-        
+
 
     @pyqtSignature("")
     def slotIVISV2(self):
@@ -363,7 +363,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setParticlesVelocityStatus("on")
         else:
             self.model.setParticlesVelocityStatus("off")
-        
+
 
     @pyqtSignature("")
     def slotIVISTP(self):
@@ -441,7 +441,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         else:
             self.model.setCoalParticleMassStatus("off")
 
-                  
+
     @pyqtSignature("")
     def slotIVISCK(self):
         """
@@ -452,13 +452,13 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
         else:
             self.model.setCokeParticleMassStatus("off")
 
-                  
+
     def tr(self, text):
         """
         Translation
         """
-        return text 
-        
+        return text
+
 
 #-------------------------------------------------------------------------------
 # Testing part

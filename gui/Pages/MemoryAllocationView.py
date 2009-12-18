@@ -222,7 +222,7 @@ class MemoryAllocationView(QWidget, Ui_MemoryAllocationForm):
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # Testing part

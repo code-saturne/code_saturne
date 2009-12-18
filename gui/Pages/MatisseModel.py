@@ -75,7 +75,7 @@ class MatisseInit :
 
         #
         # save old geom files
-        geomvault = self.case['mesh_path'] +'/vault.geom' 
+        geomvault = self.case['mesh_path'] +'/vault.geom'
         geomemm = self.case['mesh_path'] +'/emm.geom'
         try:
             shutil.copyfile(geomvault,geomvault+'~')
@@ -84,13 +84,13 @@ class MatisseInit :
                 shutil.copyfile(geomemm,geomemm+'~')
             except:
                 pass
-        
+
         #
         # turbulence
         import Pages.TurbulenceModel as Turbulence
         Turbulence.TurbulenceModel(self.case).setTurbulenceModel("off")
         del Turbulence
-        
+
         #
         # gravity
         model_bodyForce = BodyForcesModel.BodyForcesModel(self.case)
@@ -136,9 +136,9 @@ class MatisseInit :
 
         temp.node_user_sca.xmlRemoveChild('initial_value')
         temp.node_user_sca.xmlRemoveChild('variance')
-        
+
         del DefineUserScalars
-        
+
         #
         # properties density , thermal_conductivity, molecular_viscosity
         import Pages.FluidCharacteristicsModel as FluidCharacteristics
@@ -215,14 +215,14 @@ class MatisseMeshRunning :
         self.case = case
         self.ok = True
         #
-        # update node <solution_domain> in XML file 
+        # update node <solution_domain> in XML file
         node_preprocessor  = self.case.root().xmlGetNode('solution_domain')
         node_meshes_list= node_preprocessor.xmlInitChildNode('meshes_list')
         mesh_nodes      = node_meshes_list.xmlGetNodeList('mesh', 'name')
 
         if len(mesh_nodes) == 1:
             try:
-                desFile = mesh_nodes[0]['name'] 
+                desFile = mesh_nodes[0]['name']
                 geomFile = desFile.split(".")[0]+'.geom'
                 datFile = desFile.split(".")[0]+'.dat'
             except:
@@ -233,7 +233,7 @@ class MatisseMeshRunning :
             # Files
             newGeom = self.case['mesh_path'] + '/' + geomFile
             oldGeom = self.case['mesh_path'] + '/' + geomFile + '~'
-            
+
             oldDes = self.case['mesh_path']  + '/' + desFile
             datFile = self.case['mesh_path'] + '/' + datFile
 
@@ -244,7 +244,7 @@ class MatisseMeshRunning :
                not os.path.isfile(datFile) or \
                not os.path.isfile(oldDes)  :
 
-                import Pages.MatisseGeomModel as MatisseGeom 
+                import Pages.MatisseGeomModel as MatisseGeom
                 MatisseGeom.MatisseGeomModel(self.case).updateMeshAndProbes()
                 del MatisseGeom
                 simail = True
@@ -252,7 +252,7 @@ class MatisseMeshRunning :
             else :
                 if not os.path.isfile(oldGeom) :
                     simail = True
-                else:    
+                else:
                     if not filecmp.cmp(oldGeom, newGeom):
                         simail = True
 
@@ -269,7 +269,7 @@ class MatisseMeshRunning :
                 os.chdir(self.case['case_path'])
                 if not os.path.isfile(newDes)  :
                     self.ok = False
-            
+
         else :
             print "MatisseMeshRunning: see meshes_list"
             sys.exit(1)
@@ -288,7 +288,7 @@ class PageText:
         else:
             self.NO_VARIANCE = "no"
 
-            
+
 #-------------------------------------------------------------------------------
 # Matisse Init test class
 #-------------------------------------------------------------------------------
@@ -368,7 +368,6 @@ def runTest():
     runner.run(suite1())
 
     print "MatisseThermUpdateTestCase: - A FAIRE************"
-    runner.run(suite2())        
-        
+    runner.run(suite2())
 
-        
+

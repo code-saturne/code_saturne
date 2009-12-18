@@ -78,14 +78,14 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         Ui_AtmosphericFlowsForm.__init__(self)
         self.setupUi(self)
 
-        # create model 
+        # create model
         model = AtmosphericFlowsModel(case)
         self.__model = model
         self.__case = case
 
         # Define connection
         self.connect(self.checkBoxMeteoData,
-                     SIGNAL("clicked(bool)"), 
+                     SIGNAL("clicked(bool)"),
                      self.__slotCheckBoxMeteoData)
         self.connect(self.pushButtonMeteoData,
                      SIGNAL("pressed()"),

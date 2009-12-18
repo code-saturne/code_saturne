@@ -87,7 +87,7 @@ class BodyForcesModel(Model):
         """
         self.isInList(var, self.nodes)
         gravity = self.node_gravity.xmlGetDouble(var)
-        if gravity == None: 
+        if gravity == None:
             gravity = self.defaultBodyForcesValues()['gravity']
             self.setGravity(var, gravity)
 

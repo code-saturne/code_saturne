@@ -35,7 +35,7 @@ import string
 #-------------------------------------------------------------------------------
 
 class Species:
-    
+
     def __init__(self):
         """ constructor """
 
@@ -73,7 +73,7 @@ class Species:
     def getCurrentSpeciesNb(self) :
         return self.currentSpeciesNb
 
-        
+
     def getEnthalpyTempTabNb(self) :
         return self.enthalpyTempTabNb
 
@@ -101,7 +101,7 @@ class Species:
     def getMaxTempTab(self):
         return self.maxTempTab
 
-        
+
     def getElementarySpeciesNb(self):
         return self.elementarySpeciesNb
 
@@ -113,7 +113,7 @@ class Species:
     def getCurrentSpeciesCompositionList(self):
         return self.currentSpeciesCompositionList
 
-    
+
     def setCurrentSpeciesList(self, value):
         self.currentSpeciesList = value
 
@@ -129,7 +129,7 @@ class Species:
     def setMaxTempTab(self, value):
         self.maxTempTab = value
 
-        
+
     def setElementarySpeciesNb(self, value):
         self.elementarySpeciesNb = value
 

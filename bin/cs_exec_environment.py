@@ -438,11 +438,11 @@ class mpi_environment:
                 break
 
         # Note that the self.mpiboot and self.mpihalt commands may be
-	# too simplistic in certain cases. For example, it would be
-	# interesting to run mpdringtest first, and depending on its
-	# exit code (0 if ring is up, 255 if not up), run mpdboot.
-	# The same, mpdlistjobs could be run before mpdallexit to ensure
-	# that we do not kill an mpdring if another job is running.
+        # too simplistic in certain cases. For example, it would be
+        # interesting to run mpdringtest first, and depending on its
+        # exit code (0 if ring is up, 255 if not up), run mpdboot.
+        # The same, mpdlistjobs could be run before mpdallexit to ensure
+        # that we do not kill an mpdring if another job is running.
 
         # Determine processor count and MPMD handling
 

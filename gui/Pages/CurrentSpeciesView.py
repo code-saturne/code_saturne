@@ -75,14 +75,14 @@ class StandardItemModelEnthalpyTemp(QStandardItemModel):
         self.setColumnCount(2)
         self.setRowCount(3)
         self.modelSpecies = mdl
-        self.species = self.modelSpecies.getSpecies() 
+        self.species = self.modelSpecies.getSpecies()
 
 
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable 
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
 
     def data(self, index, role):
@@ -133,7 +133,7 @@ class StandardItemModelComposition(QStandardItemModel):
         """
         QStandardItemModel.__init__(self)
         self.modelSpecies = mdl
-        self.species = self.modelSpecies.getSpecies() 
+        self.species = self.modelSpecies.getSpecies()
         nbspecies = self.species.getCurrentSpeciesNb()
         self.setColumnCount(nbspecies)
         nbelem = self.species.getElementarySpeciesList()
@@ -144,7 +144,7 @@ class StandardItemModelComposition(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable 
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
 
     def data(self, index, role):
@@ -196,7 +196,7 @@ class StandardItemModelMolarMass(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable 
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
 
     def data(self, index, role):

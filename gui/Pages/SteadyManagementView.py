@@ -98,7 +98,7 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
         self.lineEditRELXST.setValidator(validatorRELXST)
 
         validatorNTMABS = QtPage.IntValidator(self.lineEditNTMABS, min=0)
-        self.lineEditNTMABS.setValidator(validatorNTMABS) 
+        self.lineEditNTMABS.setValidator(validatorNTMABS)
 
         # Initialization
 
@@ -107,7 +107,7 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
 
         nb_iter = self.mdl.getNbIter()
         self.lineEditNTMABS.setText(QString(str(nb_iter)))
-        
+
         if self.mdl.getZeroIteration() == 'on':
             self.checkBoxINPDT0.setChecked(True)
         else:

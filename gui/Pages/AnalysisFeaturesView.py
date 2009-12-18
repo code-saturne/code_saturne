@@ -105,7 +105,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.scal  = DefineUserScalarsModel(self.case)
         self.std   = SteadyManagementModel(self.case)
         self.atmo  = AtmosphericFlowsModel(self.case)
- 
+
         # Set models and number of elements for combo boxes
 
         self.modelSteadyFlow         = QtPage.ComboModel(self.comboBoxSteadyFlow,2,1)

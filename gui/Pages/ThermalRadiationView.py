@@ -220,7 +220,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
                      SIGNAL("textChanged(const QString &)"),
                      self.slotAbsorptionCoefficient)
         self.connect(self.toolButtonAdvanced,
-                     SIGNAL("clicked()"), 
+                     SIGNAL("clicked()"),
                      self.slotAdvancedOptions)
 
         # Validator

@@ -66,7 +66,7 @@ log = logging.getLogger("OutputVolumicVariablesView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class ProbesValidator(QRegExpValidator):
@@ -117,7 +117,7 @@ class ProbesValidator(QRegExpValidator):
         return (state, pos)
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class ProbesDelegate(QItemDelegate):
@@ -153,7 +153,7 @@ class ProbesDelegate(QItemDelegate):
                     model.setData(idx, QVariant(value))
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class LabelDelegate(QItemDelegate):
@@ -193,7 +193,7 @@ class LabelDelegate(QItemDelegate):
                 default['list']   = self.mdl.getLabelsList()
                 default['regexp'] = self.regExp
                 log.debug("setModelData-> default = %s" % default)
-    
+
                 from VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
@@ -263,7 +263,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
             else:
                 probes = ""
 
-            # StandardItemModel data 
+            # StandardItemModel data
             self.dataLabel.append(label)
             self.dataPrinting.append(printing)
             self.dataPost.append(post)
@@ -391,7 +391,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
                 self.dataPost[row] = "off"
 
             self.mdl.setPostStatus(self.dataLabel[row], self.dataPost[row])
-            
+
         elif index.column() == 3:
             probes = str(value.toString())
             self.dataProbe[row] = probes
@@ -453,7 +453,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         """
         Translation
         """
-        return text 
+        return text
 
 
 #-------------------------------------------------------------------------------

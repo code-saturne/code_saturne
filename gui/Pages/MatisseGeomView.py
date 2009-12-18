@@ -64,7 +64,7 @@ log = logging.getLogger("MatisseGeomView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Line edit delegates 
+# Line edit delegates
 #-------------------------------------------------------------------------------
 
 class LineEditDelegateInt(QItemDelegate):
@@ -80,7 +80,7 @@ class LineEditDelegateInt(QItemDelegate):
         editor.setValidator(validator)
         #editor.installEventFilter(self)
         return editor
-    
+
     def setEditorData(self, lineEdit, index):
         value = index.model().data(index, Qt.DisplayRole).toString()
         lineEdit.setText(value)
@@ -103,7 +103,7 @@ class LineEditDelegateFloat(QItemDelegate):
         editor.setValidator(validator)
         #editor.installEventFilter(self)
         return editor
-    
+
     def setEditorData(self, lineEdit, index):
         value = index.model().data(index, Qt.DisplayRole).toString()
         lineEdit.setText(value)
@@ -127,14 +127,14 @@ class StandardItemModelGeom(QStandardItemModel):
         self.case = case
         self.model = MatisseGeomModel(self.case)
         self.model_mat_type = MatisseType.MatisseTypeModel(self.case)
-        
+
         self.setColumnCount(4)
         self._initData()
 
-        
+
     def _initData(self):
 
-        # Int 
+        # Int
         self.nechrg = 0
         self.nergrs = 0
         self.neclrg = 0
@@ -164,7 +164,7 @@ class StandardItemModelGeom(QStandardItemModel):
         self.plgres = 0.
         self.epchel = 0.
         self.dmcont = 0.
-        
+
         self.texts = {}
         self.texts['jeuchr'] = (6 , self.tr("Upstream space between chimney/register"), "m")
         self.texts['nechrg'] = (7 , self.tr("Number of cells between chimney/upstream register"))
@@ -199,9 +199,9 @@ class StandardItemModelGeom(QStandardItemModel):
             ['epregi', self.epregi, 'double'],
             ['epchem', self.epchem, 'double'],
             ['jeuchr', self.jeuchr, 'double'],
-            ['nechrg', self.nechrg, 'int'],                             
+            ['nechrg', self.nechrg, 'int'],
             ['jeurcl', self.jeurcl, 'double'],
-            ['nergrs', self.nergrs, 'int'],                             
+            ['nergrs', self.nergrs, 'int'],
             ['jeuclr', self.jeuclr, 'double'],
             ['neclrg', self.neclrg, 'int'],
             ['jeurch', self.jeurch, 'double'],
@@ -225,14 +225,14 @@ class StandardItemModelGeom(QStandardItemModel):
             ['dmcont', self.dmcont, 'double']
             ]
 
-        
-        self.rows_disabled = [] 
+
+        self.rows_disabled = []
 
         i = 0
         for variable in self.variables:
             if variable[2] == 'double':
                 val = self.model.getMatisseGeomDoubleVar(variable[0])
-            elif variable[2] == 'int':    
+            elif variable[2] == 'int':
                 val = self.model.getMatisseGeomIntVar(variable[0])
             else :
                 print variable[2]+": unknown type"
@@ -241,7 +241,7 @@ class StandardItemModelGeom(QStandardItemModel):
             var = val
             self.variables[i][1] = var
 
-            t = self.model_mat_type.getMatisseType()               
+            t = self.model_mat_type.getMatisseType()
             if variable[0] in ('hfttoi', 'hbdtoi', 'neciel') :
                 if (t == 'vault') or (t == 'djw'):
                     if not i in self.rows_disabled:
@@ -256,7 +256,7 @@ class StandardItemModelGeom(QStandardItemModel):
 
         self.setRowCount(len(self.variables))
 
-        
+
     def data(self, index, role):
         if not index.isValid():
             return QVariant()
@@ -264,7 +264,7 @@ class StandardItemModelGeom(QStandardItemModel):
         if role == Qt.DisplayRole:
             row = index.row()
             var = self.variables[row][0]
-            
+
             if index.column() == 0:
                 num = self.texts[var][0]
                 return QVariant(num)
@@ -297,7 +297,7 @@ class StandardItemModelGeom(QStandardItemModel):
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
-    
+
     #def setData(self, index, value, role):
     def setData(self, index, value):
         row = index.row()
@@ -327,7 +327,7 @@ class StandardItemModelGeom(QStandardItemModel):
 class MatisseGeomView(QWidget, Ui_MatisseGeomForm):
     """
     """
-    
+
     def __init__(self, parent, case):
         """
         Constructor
@@ -336,9 +336,9 @@ class MatisseGeomView(QWidget, Ui_MatisseGeomForm):
 
         Ui_MatisseGeomForm.__init__(self)
         self.setupUi(self)
-        
+
         self.case = case
-        
+
         # Create the Page layout.
 
         self.modelGeom = StandardItemModelGeom(self.case)
@@ -354,7 +354,7 @@ class MatisseGeomView(QWidget, Ui_MatisseGeomForm):
         delegateFloat = LineEditDelegateFloat(self.tableView)
         self.tableView.setItemDelegateForColumn(2,delegateFloat)
 
-        # ... then define an int delegate for certain rows! 
+        # ... then define an int delegate for certain rows!
         delegateInt = LineEditDelegateInt(self.tableView)
         self.tableView.setItemDelegateForRow(3,delegateInt)
         self.tableView.setItemDelegateForRow(5,delegateInt)
@@ -366,14 +366,14 @@ class MatisseGeomView(QWidget, Ui_MatisseGeomForm):
         self.tableView.setItemDelegateForRow(22,delegateInt)
         self.tableView.setItemDelegateForRow(23,delegateInt)
         self.tableView.setItemDelegateForRow(25,delegateInt)
-        
-        
+
+
     def tr(self, text):
         """
         Translation
         """
-        return text 
-        
+        return text
+
 
 #-------------------------------------------------------------------------------
 # Testing part

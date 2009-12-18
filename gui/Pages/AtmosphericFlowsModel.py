@@ -230,7 +230,7 @@ class AtmosphericFlowsModel(Model):
         parentNode.xmlRemoveChild('property', name = nameStr)
 
 #-------------------------------------------------------------------------------
-# AtmosphericFlowsModel test case 
+# AtmosphericFlowsModel test case
 #-------------------------------------------------------------------------------
 
 class AtmosphericFlowsTestCase(ModelTest):
@@ -239,7 +239,7 @@ class AtmosphericFlowsTestCase(ModelTest):
     """
     def checkAtmosphericFlowsInstantiation(self):
         """
-        Check whether the AtmosphericFlowsModel class could be instantiated 
+        Check whether the AtmosphericFlowsModel class could be instantiated
         """
         model = None
         model = AtmosphericFlowsModel(self.case)
@@ -250,10 +250,10 @@ class AtmosphericFlowsTestCase(ModelTest):
         """Check whether the AtmosphericFlowsModel class could be set and get the model"""
         mdl = AtmosphericFlowsModel(self.case)
         mdl.setAtmosphericFlowsModel(AtmosphericFlowsModel.dry)
-        
+
         doc = """<atmospheric_flows model="dry">
                     <read_meteo_data status="off"/>
-                 </atmospheric_flows>"""       
+                 </atmospheric_flows>"""
         assert mdl.atmosphericFlowsNode() == self.xmlNodeFromString(doc), \
             'Could not set atmospheric flows model'
         assert mdl.getAtmosphericFlowsModel() == AtmosphericFlowsModel.dry, \
@@ -265,10 +265,10 @@ class AtmosphericFlowsTestCase(ModelTest):
         mdl = AtmosphericFlowsModel(self.case)
         mdl.setAtmosphericFlowsModel(AtmosphericFlowsModel.constant)
         mdl.setMeteoDataStatus('on')
-        
+
         doc = """<atmospheric_flows model="constant">
                     <read_meteo_data status="on"/>
-                 </atmospheric_flows>"""       
+                 </atmospheric_flows>"""
 
         assert mdl.atmosphericFlowsNode() == self.xmlNodeFromString(doc), \
             'Could not set meteo data status'
@@ -278,13 +278,13 @@ class AtmosphericFlowsTestCase(ModelTest):
 
     def checkDryModel(self):
         """
-        Check whether the AtmosphericFlowsModel class could set the correct 
+        Check whether the AtmosphericFlowsModel class could set the correct
         properties and scalar for dry model
         """
         mdl = AtmosphericFlowsModel(self.case)
         mdl.setAtmosphericFlowsModel(AtmosphericFlowsModel.dry)
         mdl.setMeteoDataStatus('on')
-        
+
         doc = """<atmospheric_flows model="dry">
                     <read_meteo_data status="on">
                         <scalar label="Potential temp" name="potential_temperature" type="model"/>
@@ -299,13 +299,13 @@ class AtmosphericFlowsTestCase(ModelTest):
 
     def checkHumidModel(self):
         """
-        Check whether the AtmosphericFlowsModel class could set the correct 
+        Check whether the AtmosphericFlowsModel class could set the correct
         properties and scalar for humid model
         """
         mdl = AtmosphericFlowsModel(self.case)
         mdl.setAtmosphericFlowsModel(AtmosphericFlowsModel.humid)
         mdl.setMeteoDataStatus('on')
-        
+
         doc = """<atmospheric_flows model="humid">
                     <read_meteo_data status="on">
                         <scalar label="Liq potential temp" name="liquid_potential_temperature" type="model"/>
@@ -314,7 +314,7 @@ class AtmosphericFlowsTestCase(ModelTest):
                         <property label="Real temp" name="real_temperature"/>
                         <property label="Liquid water" name="liquid_water"/>
                     </read_meteo_data>
-                </atmospheric_flows>"""       
+                </atmospheric_flows>"""
 
         assert mdl.atmosphericFlowsNode() == self.xmlNodeFromString(doc), \
             'Could not set scalars and properties for humid model'
@@ -329,7 +329,7 @@ def suite():
 
 
 def runTest():
-    """ 
+    """
     run test
     """
     print "AtmosphericFlowsTestCase"

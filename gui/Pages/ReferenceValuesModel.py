@@ -83,7 +83,7 @@ class ReferenceValuesModel(Model):
         default = {}
         default['reference_pressure'] = 1.01325e+5
         default['reference_temperature'] = 1273.15
-	if self.getParticularPhysical()[0] == "atmo":
+        if self.getParticularPhysical()[0] == "atmo":
             default['reference_temperature'] = 293.15
         # mass molar for dry air
         default['reference_mass_molar'] = 28.966e-3
@@ -94,7 +94,7 @@ class ReferenceValuesModel(Model):
     def setPressure(self, value):
         """
         Set value of reference pressure into xml file.
-        """ 
+        """
         self.isGreaterOrEqual(value, 0.0)
         node = self.node_veloce.xmlGetNode('variable', name ='pressure')
         node.xmlSetData('reference_pressure', value)
@@ -103,10 +103,10 @@ class ReferenceValuesModel(Model):
     def getPressure(self):
         """
         Return the value of reference pressure.
-        """ 
+        """
         node = self.node_veloce.xmlGetNode('variable', name ='pressure')
         value = node.xmlGetDouble('reference_pressure')
-        if value == None: 
+        if value == None:
             value = self.defaultValues()['reference_pressure']
             self.setPressure(value)
 
@@ -167,16 +167,16 @@ class ReferenceValuesModel(Model):
         jouleModel = ElectricalModel(self.case).getElectricalModel()
         atmoModel = AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel()
 
-        if coalModel != 'off': 
+        if coalModel != 'off':
             model = "coal"
             node = self.node_coal
-        elif gasModel != 'off': 
+        elif gasModel != 'off':
             model = "gas"
             node = self.node_gas
-        elif jouleModel != 'off': 
+        elif jouleModel != 'off':
             model = "joule"
             node = self.node_joule
-        elif atmoModel != 'off': 
+        elif atmoModel != 'off':
             model = "atmo"
             node = self.node_atmo
 

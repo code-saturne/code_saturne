@@ -77,7 +77,7 @@ class OutputSurfacicVariablesModel(Model):
         """
         default = {}
         default['status']    = "on"
-        
+
         return default
 
 
@@ -126,7 +126,7 @@ class OutputSurfacicVariablesModel(Model):
         for nodeList in self.listNodeSurface:
             for node in nodeList:
                 name = node['name']
-                if not name: 
+                if not name:
                     name = node['label']
                 if not node['label']:
                     msg = "xml node named "+ name +" has no label"
@@ -183,7 +183,7 @@ class OutputSurfacicVariablesModel(Model):
                     if status == 'off':
                         node.xmlInitChildNode('postprocessing_recording')['status'] = status
                     else:
-                        if node.xmlGetChildNode('postprocessing_recording'): 
+                        if node.xmlGetChildNode('postprocessing_recording'):
                             node.xmlRemoveChild('postprocessing_recording')
 
 #-------------------------------------------------------------------------------
@@ -245,7 +245,7 @@ def suite():
     testSuite = unittest.makeSuite(OutputSurfacicVariablesTestCase, "check")
     return testSuite
 
-    
+
 def runTest():
     print "OutputSurfacicVariablesTestCase"
     runner = unittest.TextTestRunner()

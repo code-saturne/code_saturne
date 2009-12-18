@@ -71,7 +71,7 @@ log = logging.getLogger("SolutionVerifView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogForm):
@@ -194,11 +194,11 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                 out = cStringIO.StringIO()
                 f = open('QUALITY.case')
                 for line in f:
-                    print >> out, line.replace('chr', 'quality'), 
+                    print >> out, line.replace('chr', 'quality'),
                 f.close()
                 out2 = open('QUALITY.case', 'w')
                 out2.write(out.getvalue())
-                out2.close() 
+                out2.close()
 
                 shutil.rmtree(os.path.join(self.case['resu_path'], 'chr.ensight'))
                 os.chdir(self.case['resu_path'])
@@ -338,9 +338,9 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         self.modelPolyhedra.addItem(self.tr("display"), 'display')
         self.modelPolyhedra.addItem(self.tr("discard"), 'discard_polyhedra')
         self.modelPolyhedra.addItem(self.tr("subdivide"), 'divide_polyhedra')
-        
+
         # connections
-        
+
         self.connect(self.groupBoxFaces, SIGNAL("clicked(bool)"), self.slotInterneFacesPostPro)
         self.connect(self.comboBoxFMTCHR, SIGNAL("activated(const QString&)"), self.slotOutputFormat)
         self.connect(self.comboBoxFormat, SIGNAL("activated(const QString&)"), self.slotOutputOptions)
@@ -456,7 +456,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
 
             if opt == 'discard_polygons' or opt == 'divide_polygons':
                 self.modelPolygon.setItem(str_model=opt)
-                
+
             if opt == 'discard_polyhedra' or opt == 'divide_polyhedra':
                 self.modelPolyhedra.setItem(str_model=opt)
 
@@ -534,7 +534,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # End

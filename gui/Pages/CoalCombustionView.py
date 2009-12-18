@@ -301,7 +301,7 @@ class StandardItemModelOxydant(QStandardItemModel):
         """
         QStandardItemModel.__init__(self)
         self.headers = [self.tr("Oxydant\nnumber"),
-                        self.tr("     O2      "), 
+                        self.tr("     O2      "),
                         self.tr("     N2      "),
                         self.tr("     H2O     "),
                         self.tr("     CO2     ")]

@@ -80,7 +80,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         Ui_BoundaryConditionsTurbulenceInletForm.__init__(self)
         self.setupUi(self)
 
-    
+
     def setup(self, case):
         """
         Setup the widget
@@ -93,7 +93,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.__modelTurbulence = ComboModel(self.comboBoxTurbulence, 2, 1)
         self.__modelTurbulence.addItem(self.tr("Calculation by hydraulic diameter"), 'hydraulic_diameter')
         self.__modelTurbulence.addItem(self.tr("Calculation by turbulent intensity"), 'turbulent_intensity')
-        
+
         self.connect(self.lineEditDiameter, SIGNAL("textChanged(const QString &)"), self.__slotDiam)
         self.connect(self.lineEditIntensity, SIGNAL("textChanged(const QString &)"), self.__slotIntensity)
         self.connect(self.lineEditDiameterIntens, SIGNAL("textChanged(const QString &)"), self.__slotDiam)

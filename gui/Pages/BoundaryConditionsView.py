@@ -156,7 +156,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             if nature in list:
                 self.__modelBoundaries.insertItem(label, codeNumber, nature, local)
 
-        self.connect(self.treeViewBoundaries, 
+        self.connect(self.treeViewBoundaries,
                      SIGNAL("clicked(const QModelIndex &)"),
                      self.__slotSelectBoundary)
 

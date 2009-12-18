@@ -69,7 +69,7 @@ meshes_dir = "MESH"
 unknown_dir = "????????"
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
@@ -167,10 +167,10 @@ class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
         """
         self.case_path = str(self.lineEditCasePath.text())
         self.lineEditCasePath.setText(self.case_path)
-        case_dir = os.path.abspath(self.case_path) 
+        case_dir = os.path.abspath(self.case_path)
         self.case_path = case_dir
 
-        line_name = ['Data', 'Results', 'UserSrc', 'Scripts']    
+        line_name = ['Data', 'Results', 'UserSrc', 'Scripts']
 
         if os.path.isdir(case_dir) :
             self.mdl.setCasePath(case_dir)
@@ -186,14 +186,14 @@ class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
             for i in range(0,4) :
                 if sub_dir[i] in os.listdir(case_dir):
                     self.mdl.setPath(self.path[i], os.path.abspath(case_dir + '/' + sub_dir[i]))
-                    line = getattr(self, "lineEdit"+line_name[i])  # line is self.lineEditXXX 
-                    line.setText(QtCore.QString(sub_dir[i])) 
+                    line = getattr(self, "lineEdit"+line_name[i])  # line is self.lineEditXXX
+                    line.setText(QtCore.QString(sub_dir[i]))
                     line.setStatusTip("")
                     self.mdl.setRelevantSubdir("yes", sub_dir[i])
                 else:
                     self.mdl.setPath(self.path[i], "")
-                    line = getattr(self, "lineEdit"+line_name[i])  # line is self.lineEditXXX 
-                    line.setText(msgError) 
+                    line = getattr(self, "lineEdit"+line_name[i])  # line is self.lineEditXXX
+                    line.setText(msgError)
                     line.setStatusTip(msg[i])
                     self.mdl.setRelevantSubdir("no", sub_dir[i])
 
@@ -212,8 +212,8 @@ class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
 
         else:
             for i in range(0,4) :
-                line = getattr(self, "lineEdit"+line_name[i])  # line is self.lineEditXXX 
-                line.setText(unknown_dir) 
+                line = getattr(self, "lineEdit"+line_name[i])  # line is self.lineEditXXX
+                line.setText(unknown_dir)
             self.lineEditMeshPath.setText(unknown_dir)
 
             msg = self.tr("Warning: the given directory does not exist.")
@@ -237,5 +237,5 @@ if __name__ == "__main__":
 
 
 #-------------------------------------------------------------------------------
-# End 
+# End
 #-------------------------------------------------------------------------------

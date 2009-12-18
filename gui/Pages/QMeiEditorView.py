@@ -65,7 +65,7 @@ log = logging.getLogger("QMeiEditorView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class QMeiHighlighter(QSyntaxHighlighter):
@@ -125,7 +125,7 @@ class QMeiHighlighter(QSyntaxHighlighter):
                 index = text.indexOf(expr, index + length + b)
 
 #-------------------------------------------------------------------------------
-# 
+#
 #-------------------------------------------------------------------------------
 
 class QMeiEditorView(QDialog, Ui_QMeiDialog):

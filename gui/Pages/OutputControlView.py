@@ -109,7 +109,7 @@ class StandardItemModelMonitoring(QStandardItemModel):
         elif role == Qt.TextAlignmentRole:
             return QVariant(Qt.AlignCenter)
 
-        return QVariant() 
+        return QVariant()
 
 
     def flags(self, index):
@@ -265,7 +265,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelOutput.addItem(self.tr("No output"), 'None')
         self.modelOutput.addItem(self.tr("Output listing at each time step"), 'At each step')
         self.modelOutput.addItem(self.tr("Output every 'n' time steps"), 'Frequency_l')
-        
+
         self.modelPostProcessing.addItem(self.tr("Only at the end of calculation"), 'At the end')
         self.modelPostProcessing.addItem(self.tr("At each time step"), 'At each step')
         self.modelPostProcessing.addItem(self.tr("Post-processing every 'n' time steps"), 'Frequency_c')
@@ -283,7 +283,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.modelMeshes.disableItem(str_model='11')
             self.modelMeshes.disableItem(str_model='12')
 
-        self.modelFMTCHR.addItem(self.tr("EnSight Gold"), 'EnSight') 
+        self.modelFMTCHR.addItem(self.tr("EnSight Gold"), 'EnSight')
         self.modelFMTCHR.addItem(self.tr("MED"), 'MED_fichier')
         self.modelFMTCHR.addItem(self.tr("CGNS"), 'CGNS')
 
@@ -419,7 +419,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.modelMeshes.setItem(str_model='0')
         else:
             self.modelMeshes.setItem(str_model=self.mdl.getTypePostMeshes())
-        
+
 
         # values of post processing's format
 
@@ -641,13 +641,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         # update widgets from the options list
 
         for opt in list:
-            
+
             if opt == 'binary' or opt == 'text' :
                 self.modelFormat.setItem(str_model=opt)
-                
+
             if opt == 'discard_polygons' or opt == 'divide_polygons':
                 self.modelPolygon.setItem(str_model=opt)
-                
+
             if opt == 'discard_polyhedra' or opt == 'divide_polyhedra':
                 self.modelPolyhedra.setItem(str_model=opt)
 
@@ -732,7 +732,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # Testing part

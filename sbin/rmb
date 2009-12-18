@@ -3,26 +3,17 @@
 PREFIX=`dirname $0`
 PREFIX="$PREFIX/.."
 
-RMBDIR=tmp_rmb
+RMBDIR=/tmp/tmp_rmb
 
-mkdir $RMBDIR || exit 1
+mkdir -p $RMBDIR || exit 1
 
-for file in $PREFIX/src/*/*.c $PREFIX/src/*/*.f90 $PREFIX/users/*/*.f90 $PREFIX/include/*/*.h
+cd $PREFIX
+
+for file in src/*/*.c src/*/*.f90 users/*/*.f90 include/*/*.h \
+            gui/*/*.py bin/*.py bin/*.in bin/runcase*
 do
   tmpfile=`basename $file`
   sed -e 's/ *$//' -e 's/	/        /g' $file > $RMBDIR/$tmpfile
-  diff $file $RMBDIR/$tmpfile > /dev/null 2>&1
-  if [ $? = 1 ]
-  then
-    echo $file
-    mv $RMBDIR/$tmpfile $file
-  fi
-done
-
-for file in $PREFIX/bin/*.py $PREFIX/bin/*.in
-do
-  tmpfile=`basename $file`
-  sed -e 's/ *$//' $file > $RMBDIR/$tmpfile
   diff $file $RMBDIR/$tmpfile > /dev/null 2>&1
   if [ $? = 1 ]
   then

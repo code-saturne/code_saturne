@@ -122,8 +122,8 @@ class ThermalScalarView(QWidget, Ui_ThermalScalarForm):
         """
         Translation
         """
-        return text 
-        
+        return text
+
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

@@ -80,7 +80,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         self.case = case
         self.mdl = TimeStepModel(self.case)
-       
+
        # Combo model
 
         self.modelTimeOptions = QtPage.ComboModel(self.comboBoxOptions,3,1)
@@ -88,7 +88,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.modelTimeOptions.addItem(self.tr("Uniform and constant"), '0')
         self.modelTimeOptions.addItem(self.tr("Variable in time and uniform in space"), '1')
         self.modelTimeOptions.addItem(self.tr("Variable in time and in space"), '2')
-        
+
         # Connections
         self.connect(self.comboBoxOptions, SIGNAL("activated(const QString&)"), self.slotTimePassing)
         self.connect(self.lineEditDTREF, SIGNAL("textChanged(const QString &)"), self.slotTimeStep)
@@ -128,7 +128,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         idtvar = self.mdl.getTimePassing()
         self.modelTimeOptions.setItem(str_model=str(idtvar))
-        
+
         from TurbulenceModel import TurbulenceModel
         model = TurbulenceModel(self.case).getTurbulenceModel()
         del TurbulenceModel
@@ -172,7 +172,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         Input IDTVAR.
         """
         idtvar = int(self.modelTimeOptions.dicoV2M[str(text)])
-        
+
         self.mdl.setTimePassing(idtvar)
 
         if idtvar in (1, 2):

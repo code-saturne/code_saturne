@@ -218,7 +218,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         validatorKomega_omega = DoubleValidator(self.lineEditKomega_omega, min=0.)
         validatorRefVelocity  = DoubleValidator(self.lineEditRefVelocity, min=0.)
         validatorRefLength    = DoubleValidator(self.lineEditRefLength, min=0.)
-	validatorRefLength.setExclusiveMin()
+        validatorRefLength.setExclusiveMin()
 
         self.lineEditU.setValidator(validatorU)
         self.lineEditV.setValidator(validatorV)
@@ -294,7 +294,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.framev2f.hide()
         self.frameKomega.hide()
         self.frameReference.hide()
-       
+
         choice = self.modelTurbulence.dicoV2M[str(text)]
         log.debug("slotChoice choice =  %s "%str(choice))
         self.init.setInitialTurbulenceChoice(self.zone, choice)
@@ -305,7 +305,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
                 self.frameKeps.show()
 
-                k   = self.init.getTurbulenceInitialValue(self.zone, 'turb_k') 
+                k   = self.init.getTurbulenceInitialValue(self.zone, 'turb_k')
                 eps = self.init.getTurbulenceInitialValue(self.zone, 'turb_eps')
                 self.lineEditKeps_k.setText(QString(str(k)))
                 self.lineEditKeps_eps.setText(QString(str(eps)))
@@ -334,7 +334,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
                 self.framev2f.show()
 
-                k   = self.init.getTurbulenceInitialValue(self.zone, 'turb_k') 
+                k   = self.init.getTurbulenceInitialValue(self.zone, 'turb_k')
                 eps = self.init.getTurbulenceInitialValue(self.zone, 'turb_eps')
                 phi = self.init.getTurbulenceInitialValue(self.zone, 'turb_phi')
                 fb  = self.init.getTurbulenceInitialValue(self.zone, 'turb_fb')
@@ -360,12 +360,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.labelRefLength.hide()
             self.lineEditRefLength.hide()
             self.labelUnitRefLength.hide()
-            
+
             v = self.init.getReferenceVelocity()
             self.lineEditRefVelocity.setText(QString(str(v)))
 
         elif choice == 'reference_velocity_length':
-            
+
             self.frameReference.show()
             self.labelRefLength.show()
             self.lineEditRefLength.show()
@@ -405,7 +405,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if self.sender().validator().state == QValidator.Acceptable:
             self.init.setTurbulenceInitialValue(self.zone, 'component_R11', val)
 
-        
+
     @pyqtSignature("const QString&")
     def slotR12(self, var):
         """
@@ -415,7 +415,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if self.sender().validator().state == QValidator.Acceptable:
             self.init.setTurbulenceInitialValue(self.zone, 'component_R12', val)
 
-        
+
     @pyqtSignature("const QString&")
     def slotR13(self, var):
         """
@@ -464,7 +464,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         val, ok = var.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
             self.init.setTurbulenceInitialValue(self.zone, 'turb_eps', val)
-            
+
 
     @pyqtSignature("const QString&")
     def slotv2f_k(self, var):
@@ -551,7 +551,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
 #                if long != -1e+12:
 #                    msg = self.tr("THE ONLY AUTHORIZED NEGATIVE VALUE IS: -1e+12")
 #                    self.stbar.showMessage(msg, 2000)
-#                    self.lineEditRefLength.setText(QString("")) 
+#                    self.lineEditRefLength.setText(QString(""))
 #                else:
 #                    self.init.setReferenceLength(long)
 #            else:
@@ -592,7 +592,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             min = self.th_sca.getScalarMinValue(self.th_sca_label)
             max = self.th_sca.getScalarMaxValue(self.th_sca_label)
             from DefineUserScalarsView import StandardItemModelScalars
-            if StandardItemModelScalars(self.parent, self.th_sca, 
+            if StandardItemModelScalars(self.parent, self.th_sca,
                 self.zone).checkInitMinMax(self.th_sca_label, v, min, max):
                 self.th_sca.setScalarInitialValue(self.zone, self.th_sca_label, v)
 
@@ -642,7 +642,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
                 if turb_model in ('k-epsilon', 'k-epsilon-PL'):
 
-                    k   = self.init.getTurbulenceInitialValue(self.zone, 'turb_k') 
+                    k   = self.init.getTurbulenceInitialValue(self.zone, 'turb_k')
                     eps = self.init.getTurbulenceInitialValue(self.zone, 'turb_eps')
                     self.lineEditKeps_k.setText(QString(str(k)))
                     self.lineEditKeps_eps.setText(QString(str(eps)))
@@ -667,7 +667,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
                 elif turb_model == 'v2f-phi':
 
-                    k   = self.init.getTurbulenceInitialValue(self.zone, 'turb_k') 
+                    k   = self.init.getTurbulenceInitialValue(self.zone, 'turb_k')
                     eps = self.init.getTurbulenceInitialValue(self.zone, 'turb_eps')
                     phi = self.init.getTurbulenceInitialValue(self.zone, 'turb_phi')
                     fb  = self.init.getTurbulenceInitialValue(self.zone, 'turb_fb')

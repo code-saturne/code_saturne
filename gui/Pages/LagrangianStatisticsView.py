@@ -58,7 +58,7 @@ from PyQt4.QtGui  import *
 
 from LagrangianStatisticsForm import Ui_LagrangianStatisticsForm
 from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, IntValidator, DoubleValidator 
+from Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from Pages.LagrangianStatisticsModel import LagrangianStatisticsModel
 from Pages.LagrangianModel import LagrangianModel
 
@@ -94,7 +94,7 @@ class StandardItemModelVolumicNames(QStandardItemModel):
 
 
     def initData(self):
-        
+
         self.dataVolumicNames = []
         vnames = self.model.getVariablesNamesVolume()
 
@@ -113,14 +113,14 @@ class StandardItemModelVolumicNames(QStandardItemModel):
             row = self.rowCount()
             self.setRowCount(row+1)
             self.dataVolumicNames.append(line)
-        
+
 
     def data(self, index, role):
-        
+
         self.kwords = [ "", "NOMLAG", "NOMLAV", "IHSLAG"]
         if not index.isValid():
             return QVariant()
-        
+
         # ToolTips
         if role == Qt.ToolTipRole:
             if index.column() == 0:
@@ -132,7 +132,7 @@ class StandardItemModelVolumicNames(QStandardItemModel):
         if role == Qt.DisplayRole:
             if index.column() in [0,1,2]:
                 return QVariant(self.dataVolumicNames[index.row()][index.column()])
-                
+
         # CheckState
         elif role == Qt.CheckStateRole:
             if index.column() == 3:
@@ -140,7 +140,7 @@ class StandardItemModelVolumicNames(QStandardItemModel):
                     return QVariant(Qt.Checked)
                 else:
                     return QVariant(Qt.Unchecked)
-        
+
         return QVariant()
 
 
@@ -175,7 +175,7 @@ class StandardItemModelVolumicNames(QStandardItemModel):
             labelv = str(value.toString())
             self.dataVolumicNames[index.row()][index.column()] = labelv
             name = self.dataVolumicNames[index.row()][0]
-            vname = "variance_" + name  
+            vname = "variance_" + name
             self.model.setPropertyLabelFromNameVolume(vname, labelv)
 
         elif index.column() == 3:
@@ -186,11 +186,11 @@ class StandardItemModelVolumicNames(QStandardItemModel):
             else:
                 status = "on"
                 self.dataVolumicNames[index.row()][index.column()] = "on"
-                
+
             vname = self.dataVolumicNames[index.row()][0]
             if index.row() != 0: vname = "mean_" + vname
             self.model.setMonitoringStatusFromName(vname, status)
-            
+
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
 
@@ -216,7 +216,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
 
 
     def initData(self):
-        
+
         self.dataBoundariesNames = []
         vnames = self.model.getVariablesNamesBoundary()
         for vname in vnames:
@@ -235,7 +235,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
         self.kwords = [ "INBRBD", "IFLMBD", "IANGBD", "IVITBD", "IENCBD"]
         if not index.isValid():
             return QVariant()
-        
+
         # ToolTips
         if role == Qt.ToolTipRole:
             if index.column() == 1:
@@ -247,7 +247,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
         if role == Qt.DisplayRole:
             if index.column() in [0, 1]:
                 return QVariant(self.dataBoundariesNames[index.row()][index.column()])
-        
+
         # CheckState
         elif role == Qt.CheckStateRole:
             if index.column() in [2, 3]:
@@ -255,7 +255,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
                     return QVariant(Qt.Checked)
                 else:
                     return QVariant(Qt.Unchecked)
-        
+
         return QVariant()
 
 
@@ -293,7 +293,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
             else:
                 status = "on"
                 self.dataBoundariesNames[index.row()][index.column()] = "on"
-                
+
             vname = self.dataBoundariesNames[index.row()][0]
             self.model.setListingPrintingStatusFromName(vname, status)
 
@@ -305,11 +305,11 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
             else:
                 status = "on"
                 self.dataBoundariesNames[index.row()][index.column()] = "on"
-                
+
             vname = self.dataBoundariesNames[index.row()][0]
             self.model.setPostprocessingStatusFromName(vname, status)
-            
-        
+
+
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
 
@@ -322,7 +322,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
 class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
     """
     """
-    
+
     def __init__(self, parent, case):
         """
         Constructor
@@ -334,21 +334,21 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
 
         self.case = case
         self.model = LagrangianStatisticsModel(self.case)
-        
+
         self.connect(self.checkBoxISUIST, SIGNAL("clicked()"), self.slotISUIST)
         self.connect(self.lineEditNBCLST, SIGNAL("textChanged(const QString &)"), self.slotNBCLST)
-        
+
         self.connect(self.groupBoxISTALA, SIGNAL("clicked()"), self.slotISTALA)
         self.connect(self.lineEditIDSTNT, SIGNAL("textChanged(const QString &)"), self.slotIDSTNT)
         self.connect(self.lineEditSEUIL,  SIGNAL("textChanged(const QString &)"), self.slotSEUIL)
-        
+
         self.connect(self.groupBoxIENSI3, SIGNAL("clicked()"), self.slotIENSI3)
         self.connect(self.lineEditNSTBOR, SIGNAL("textChanged(const QString &)"), self.slotNSTBOR)
         self.connect(self.lineEditSEUILF, SIGNAL("textChanged(const QString &)"), self.slotSEUILF)
 
-        validatorNBCLST = IntValidator(self.lineEditNBCLST, min=0) # max=100 
+        validatorNBCLST = IntValidator(self.lineEditNBCLST, min=0) # max=100
         #validatorNBCLST.setExclusiveMin(True)
-        
+
         validatorIDSTNT = IntValidator(self.lineEditIDSTNT, min=0)
         validatorIDSTNT.setExclusiveMin(True)
         validatorSEUIL = DoubleValidator(self.lineEditSEUIL, min=0.)
@@ -375,10 +375,10 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             self.checkBoxISUIST.setChecked(True)
         else:
             self.checkBoxISUIST.setChecked(False)
-        
+
         nclust = self.model.getGroupOfParticlesValue()
         self.lineEditNBCLST.setText(QString(str(nclust)))
-        
+
         # volume
         status = self.model.getVolumeStatisticsStatus()
         if status == "on":
@@ -394,14 +394,14 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         else:
             self.groupBoxIENSI3.setChecked(False)
         self.slotIENSI3()
-        
+
 
     def _initVolumicNames(self):
         """
         Initialize names for volumic statistics.
         """
         self.modelVolumicNames = StandardItemModelVolumicNames(self.model)
-        
+
         self.tableViewVolumicNames.setModel(self.modelVolumicNames)
         self.tableViewVolumicNames.setAlternatingRowColors(True)
         self.tableViewVolumicNames.setSelectionBehavior(QAbstractItemView.SelectItems)
@@ -415,14 +415,14 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         Initialize names for volumic statistics.
         """
         self.modelBoundariesNames = StandardItemModelBoundariesNames(self.model)
-        
+
         self.tableViewBoundariesNames.setModel(self.modelBoundariesNames)
         self.tableViewBoundariesNames.setAlternatingRowColors(True)
         self.tableViewBoundariesNames.setSelectionBehavior(QAbstractItemView.SelectItems)
         self.tableViewBoundariesNames.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewBoundariesNames.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.tableViewBoundariesNames.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        
+
 
     @pyqtSignature("")
     def slotISUIST(self):
@@ -452,7 +452,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         Input ISTALA.
         """
         if self.groupBoxISTALA.isChecked():
-            
+
             self.model.setVolumeStatisticsStatus("on")
             self._initVolumicNames()
 
@@ -461,9 +461,9 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
 
             seuil = self.model.getThresholdValueVolume()
             self.lineEditSEUIL.setText(QString(str(seuil)))
-            
+
         else:
-            
+
             self.model.setVolumeStatisticsStatus("off")
             if hasattr(self, "modelVolumicNames"):
                 del self.modelVolumicNames
@@ -477,7 +477,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         if self.sender().validator().state == QValidator.Acceptable:
             value, ok = text.toInt()
             self.model.setIterationStartVolume(value)
-        
+
 
     @pyqtSignature("const QString&")
     def slotSEUIL(self, text):
@@ -487,7 +487,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         if self.sender().validator().state == QValidator.Acceptable:
             value, ok = text.toDouble()
             self.model.setThresholdValueVolume(value)
-        
+
 
     @pyqtSignature("")
     def slotIENSI3(self):
@@ -495,7 +495,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         Input IENSI3.
         """
         if self.groupBoxIENSI3.isChecked():
-            
+
             self.model.setBoundaryStatisticsStatus("on")
             self._initBoundariesNames()
 
@@ -504,9 +504,9 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
 
             seuil = self.model.getThresholdValueBoundary()
             self.lineEditSEUILF.setText(QString(str(seuil)))
-            
+
         else:
-            
+
             self.model.setBoundaryStatisticsStatus("off")
             if hasattr(self, "modelBoundariesNames"):
                 del self.modelBoundariesNames
@@ -520,7 +520,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         if self.sender().validator().state == QValidator.Acceptable:
             value, ok = text.toInt()
             self.model.setIterationStartBoundary(value)
-        
+
 
     @pyqtSignature("const QString&")
     def slotSEUILF(self, text):
@@ -536,8 +536,8 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         Translation
         """
-        return text 
-        
+        return text
+
 
 #-------------------------------------------------------------------------------
 # Testing part

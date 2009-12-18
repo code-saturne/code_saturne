@@ -88,7 +88,7 @@ class MemoryAllocationModel(Model):
     def setIntegerNcelet(self, value):
         """
         Set number of cells with halo into integer work's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_int.xmlSetData('ncelet', value)
 
@@ -96,7 +96,7 @@ class MemoryAllocationModel(Model):
     def setIntegerNfac(self, value):
         """
         Set number of internal faces into integer work's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_int.xmlSetData('nfac', value)
 
@@ -104,7 +104,7 @@ class MemoryAllocationModel(Model):
     def setIntegerNfabor(self, value):
         """
         Set number of boundary faces into integer work's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_int.xmlSetData('nfabor', value)
 
@@ -120,7 +120,7 @@ class MemoryAllocationModel(Model):
     def setRealNcelet(self, value):
         """
         Set number of cells with halo into real work's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_real.xmlSetData('ncelet', value)
 
@@ -128,7 +128,7 @@ class MemoryAllocationModel(Model):
     def setRealNfac(self, value):
         """
         Set number of internal faces into real work's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_real.xmlSetData('nfac', value)
 
@@ -136,7 +136,7 @@ class MemoryAllocationModel(Model):
     def setRealNfabor(self, value):
         """
         Set number of boundary faces into real work's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_real.xmlSetData('nfabor', value)
 
@@ -144,7 +144,7 @@ class MemoryAllocationModel(Model):
     def setRealDimless(self, value):
         """
         Set integer value into real work's array.
-        """ 
+        """
         self.isPositiveInt(value)
         self.node_real.xmlSetData('dimless', value)
 
@@ -152,7 +152,7 @@ class MemoryAllocationModel(Model):
     def getIntegerNcelet(self):
         """
         Return number of cells with halo from integer work's array.
-        """ 
+        """
         value = self.node_int.xmlGetInt('ncelet')
         if value == None:
             value = self.defaultValues()['icel']
@@ -163,7 +163,7 @@ class MemoryAllocationModel(Model):
     def getIntegerNfac(self):
         """
         Return number of cells with halo from integer work's array.
-        """ 
+        """
         value = self.node_int.xmlGetInt('nfac')
         if value == None:
             value = self.defaultValues()['ifac']
@@ -173,7 +173,7 @@ class MemoryAllocationModel(Model):
     def getIntegerNfabor(self):
         """
         Return number of cells with halo from integer work's array.
-        """ 
+        """
         value = self.node_int.xmlGetInt('nfabor')
         if value == None:
             value = self.defaultValues()['ifab']
@@ -183,7 +183,7 @@ class MemoryAllocationModel(Model):
     def getIntegerDimless(self):
         """
         Return number of cells with halo from integer work's array.
-        """ 
+        """
         value = self.node_int.xmlGetInt('dimless')
         if value == None:
             value = self.defaultValues()['idls']
@@ -193,7 +193,7 @@ class MemoryAllocationModel(Model):
     def getRealNcelet(self):
         """
         Return number of cells with halo from real work's array.
-        """ 
+        """
         value = self.node_real.xmlGetInt('ncelet')
         if value == None:
             value = self.defaultValues()['rcel']
@@ -203,7 +203,7 @@ class MemoryAllocationModel(Model):
     def getRealNfac(self):
         """
         Return number of cells with halo from real work's array.
-        """ 
+        """
         value = self.node_real.xmlGetInt('nfac')
         if value == None:
             value = self.defaultValues()['rfac']
@@ -213,7 +213,7 @@ class MemoryAllocationModel(Model):
     def getRealNfabor(self):
         """
         Return number of cells with halo from real work's array.
-        """ 
+        """
         value = self.node_real.xmlGetInt('nfabor')
         if value == None:
             value = self.defaultValues()['rfab']
@@ -223,7 +223,7 @@ class MemoryAllocationModel(Model):
     def getRealDimless(self):
         """
         Return number of cells with halo from real work's array.
-        """ 
+        """
         value = self.node_real.xmlGetInt('dimless')
         if value == None:
             value = self.defaultValues()['rdls']
@@ -326,7 +326,7 @@ class MemoryAllocationTestCase(ModelTest):
                 'Could not set real nfabor memory allocation model'
         assert mdl.getRealNfabor() == 977,\
                 'Could not get real nfabor memory allocation model'
-    
+
     def checkGetandSetRealDimless(self):
         """Check whether the real dimless memory allocation model could be set"""
         mdl = MemoryAllocationModel(self.case)
@@ -338,11 +338,11 @@ class MemoryAllocationTestCase(ModelTest):
                 'Could not set real dimless memory allocation model'
         assert mdl.getRealDimless() == 966,\
                 'Could not get real dimless memory allocation model'
-            
 
 
 
-        
+
+
 def suite():
     testSuite = unittest.makeSuite(MemoryAllocationTestCase, "check")
     return testSuite

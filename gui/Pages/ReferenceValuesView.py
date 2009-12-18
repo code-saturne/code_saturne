@@ -168,7 +168,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # Testing part

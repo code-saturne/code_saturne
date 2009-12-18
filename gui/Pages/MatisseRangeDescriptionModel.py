@@ -67,7 +67,7 @@ class MatisseRangeDescriptionModel :
         self.case               = case
         self.node_matisse       = self.case.root().xmlInitChildNode('matisse')
         self.node_compute       = self.node_matisse.xmlInitChildNode('compute')
-        
+
         #
         # Vars Filters
         self.node_map           = self.node_compute.xmlInitChildNode('map')
@@ -76,8 +76,8 @@ class MatisseRangeDescriptionModel :
         self.node_line          = self.node_range.xmlInitChildNode('line')
         self.node_height        = self.node_range.xmlInitChildNode('height')
 
-        self.list_line_area     = self.node_line.xmlGetNodeList('area','label') 
-        self.list_height_area   = self.node_height.xmlGetNodeList('area','label') 
+        self.list_line_area     = self.node_line.xmlGetNodeList('area','label')
+        self.list_height_area   = self.node_height.xmlGetNodeList('area','label')
 
 
     def SetArea(self, areatype, num, label, bmin, bmax):
@@ -109,7 +109,7 @@ class MatisseRangeDescriptionModel :
         else :
             print areatype + " : Unknown area type"
             sys.exit(1)
-            
+
         node.xmlAddChild('min').xmlSetTextNode(bmin)
         node.xmlAddChild('max').xmlSetTextNode(bmax)
 
@@ -165,7 +165,7 @@ class MatisseRangeDescriptionModel :
 
         return llabel, lbmin, lbmax
 
-        
+
     def EraseArea(self, areatype, num):
         """
         Remove Area.
@@ -213,7 +213,7 @@ class MatisseRangeDescriptionModelTestCase(unittest.TestCase):
         model = MatisseRangeDescriptionModel(self.case, 'inlet_range')
         assert model != None, 'Could not instantiate MatisseRangeDescriptionModel'
 
-        
+
 def suite():
     testSuite = unittest.makeSuite(MatisseRangeDescriptionModelTestCase, "check")
     return testSuite

@@ -226,7 +226,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         """
         Translation
         """
-        return text 
+        return text
 
 
 #-------------------------------------------------------------------------------

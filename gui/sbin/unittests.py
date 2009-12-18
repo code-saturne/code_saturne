@@ -107,7 +107,7 @@ def starttest17():
 def starttest18():
     from Pages.DefineUserScalarsModel import runTest
     runTest()
-    
+
 def starttest19():
     from Pages.Boundary import runTest, runTest2, runTest3, runTest4, runTest5
     from Pages.Boundary import runTest6, runTest7

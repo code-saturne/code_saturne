@@ -71,7 +71,7 @@ log.setLevel(GuiParam.DEBUG)
 class MatisseNetworkView(QWidget, Ui_MatisseNetworkForm):
     """
     """
-    
+
     def __init__(self, parent, case):
         """
         Constructor
@@ -80,7 +80,7 @@ class MatisseNetworkView(QWidget, Ui_MatisseNetworkForm):
 
         Ui_MatisseNetworkForm.__init__(self)
         self.setupUi(self)
-        
+
         self.case = case
 
         self.model = MatisseNetworkModel(self.case)
@@ -94,7 +94,7 @@ class MatisseNetworkView(QWidget, Ui_MatisseNetworkForm):
 ##         self.heightMax = model_geom.getMatisseGeomDoubleVar('nchest')
 
         model_mat_type = MatisseType.MatisseTypeModel(self.case)
-        self.alveoStat = model_mat_type.node_alveo['status']               
+        self.alveoStat = model_mat_type.node_alveo['status']
 
 
         # Create the Page layout.
@@ -134,14 +134,14 @@ class MatisseNetworkView(QWidget, Ui_MatisseNetworkForm):
             invStat = 'off'
 
         self.nbcellreso1 = self.model.getMatisseNetworkDoubleVar('nbcellreso1')
-        self.nbcellreso2 = self.model.getMatisseNetworkDoubleVar('nbcellreso2')       
+        self.nbcellreso2 = self.model.getMatisseNetworkDoubleVar('nbcellreso2')
         self.nbcellplen  = self.model.getMatisseNetworkDoubleVar('nbcellplen')
 
         self.lineEdit_hreso1.setText(QString(str(self.nbcellreso1)))
         self.lineEdit_hreso2.setText(QString(str(self.nbcellreso2)))
         self.lineEdit_hplen.setText(QString(str(self.nbcellplen)))
 
-        self.hreso1 = self.heightStep * self.nbcellreso1 
+        self.hreso1 = self.heightStep * self.nbcellreso1
         self.hreso2 = self.heightStep * self.nbcellreso2
         self.hplen  = self.heightStep * self.nbcellplen
 
@@ -160,12 +160,12 @@ class MatisseNetworkView(QWidget, Ui_MatisseNetworkForm):
         if self.alveoStat == "off":
             self.lineEdit_hreso2.setDisabled(True)
             self.lineEdit_hplen.setDisabled(True)
-            
+
 
         self.lineEdit2_1.setDisabled(True)
         self.lineEdit2_2.setDisabled(True)
         self.lineEdit2_3.setDisabled(True)
-    
+
 
     def getMatisseNetworkVar_hreso1(self):
         """
@@ -201,8 +201,8 @@ class MatisseNetworkView(QWidget, Ui_MatisseNetworkForm):
         """
         Translation
         """
-        return text 
-        
+        return text
+
 
 #-------------------------------------------------------------------------------
 # Testing part

@@ -115,7 +115,7 @@ class LagrangianBoundariesModel(Model):
         return default
 
 
-    def setBoundaryChoice(self, nature, labelbc, value): 
+    def setBoundaryChoice(self, nature, labelbc, value):
         """
         Update value for the boundary condition. Here we defined the xml nodes
         'self.node_boundary' and 'self.node_particles' used in many functions.
@@ -136,7 +136,7 @@ class LagrangianBoundariesModel(Model):
         self.setCurrentBoundaryNode(nature, labelbc)
 
 
-    def getBoundaryChoice(self, nature, labelbc): 
+    def getBoundaryChoice(self, nature, labelbc):
         """
         Return value for the boundary condition.
         """
@@ -157,11 +157,11 @@ class LagrangianBoundariesModel(Model):
         """
         self.node_boundary = self.node_boundaries.xmlInitChildNode(nature, label=labelbc)
         self.node_particles = self.node_boundary.xmlInitChildNode('particles', 'choice')
-        
+
 
     def newClassNode(self):
         """
-        Add a new 'class' node with child nodes. 
+        Add a new 'class' node with child nodes.
         """
         node_class = self.node_particles.xmlAddChild('class')
         node_class.xmlSetData('number', self.default['number'])
@@ -202,12 +202,12 @@ class LagrangianBoundariesModel(Model):
             for i in range(value-nnodes):
                 self.newClassNode()
         else:
-            for i in range(nnodes-value): 
+            for i in range(nnodes-value):
                 node_list[-1].xmlRemoveNode()
             # redefine self.node_class
             self.setCurrentClassNode(labelbc, value)
-            
-        
+
+
     def getNumberOfClassesValue(self, labelbc):
         """
         Return the number of classes.
@@ -262,7 +262,7 @@ class LagrangianBoundariesModel(Model):
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('frequency', value)
-        
+
 
     def getInjectionFrequencyValue(self, label, iclass):
         """
@@ -282,7 +282,7 @@ class LagrangianBoundariesModel(Model):
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('statistical_groups', value)
-        
+
 
     def getParticleGroupNumberValue(self, label, iclass):
         """
@@ -302,7 +302,7 @@ class LagrangianBoundariesModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('mass_flow_rate', value)
-        
+
 
     def getMassFlowRateValue(self, label, iclass):
         """
@@ -364,7 +364,7 @@ class LagrangianBoundariesModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('density', value)
-        
+
 
     def getDensityValue(self, label, iclass):
         """
@@ -415,7 +415,7 @@ class LagrangianBoundariesModel(Model):
         choice = node_velocity['choice']
         self.isInList(choice, ["norm"])
         node_velocity.xmlSetData('norm', value)
-        
+
 
     def getVelocityNormValue(self, label, iclass):
         """
@@ -439,7 +439,7 @@ class LagrangianBoundariesModel(Model):
         choice = node_velocity['choice']
         self.isInList(choice, ["components"])
         node_velocity.xmlSetData('velocity_' + idir, value)
-        
+
 
     def getVelocityDirectionValue(self, label, iclass, idir):
         """
@@ -482,7 +482,7 @@ class LagrangianBoundariesModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('temperature', value)
-        
+
 
     def getTemperatureValue(self, label, iclass):
         """
@@ -502,7 +502,7 @@ class LagrangianBoundariesModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('specific_heat', value)
-        
+
 
     def getSpecificHeatValue(self, label, iclass):
         """
@@ -522,7 +522,7 @@ class LagrangianBoundariesModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('emissivity', value)
-        
+
 
     def getEmissivityValue(self, label, iclass):
         """
@@ -564,7 +564,7 @@ class LagrangianBoundariesModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('diameter', value)
-        
+
 
     def getDiameterValue(self, label, iclass):
         """
@@ -584,7 +584,7 @@ class LagrangianBoundariesModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('diameter_standard_deviation', value)
-        
+
 
     def getDiameterVarianceValue(self, label, iclass):
         """
@@ -604,7 +604,7 @@ class LagrangianBoundariesModel(Model):
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('coal_number', value)
-        
+
 
     def getCoalNumberValue(self, label, iclass):
         """
@@ -624,7 +624,7 @@ class LagrangianBoundariesModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('coal_temperature', value)
-        
+
 
     def getCoalTemperatureValue(self, label, iclass):
         """
@@ -644,7 +644,7 @@ class LagrangianBoundariesModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('raw_coal_mass_fraction', value)
-        
+
 
     def getCoalMassValue(self, label, iclass):
         """
@@ -664,7 +664,7 @@ class LagrangianBoundariesModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_class.xmlSetData('char_mass_fraction', value)
-        
+
 
     def getCokeMassValue(self, label, iclass):
         """
@@ -708,7 +708,7 @@ class LagrangianBoundariesTestCase(unittest.TestCase):
         """
         model = None
         model = LagrangianBoundariesModel(self.case)
-        
+
         assert model != None, 'Could not instantiate LagrangianBoundariesModel'
 
 
@@ -727,7 +727,7 @@ def suite():
     testSuite = unittest.makeSuite(LagrangianBoundariesTestCase, "check")
     return testSuite
 
-    
+
 def runTest():
     print "LagrangianBoundariesTestCase A COMPLETER *********."
     runner = unittest.TextTestRunner()

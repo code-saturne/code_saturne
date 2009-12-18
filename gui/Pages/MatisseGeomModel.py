@@ -133,7 +133,7 @@ class MatisseGeomModel:
             print tag + ": unknown parameter"
             sys.exit(1)
         self.updateMeshAndProbes()
-                
+
 
     def getMatisseGeomIntVar(self,tag):
         """
@@ -151,7 +151,7 @@ class MatisseGeomModel:
                 self.node_geom_mesh.xmlInitChildNode(tag)
             elif tag in self.compute_geom_vars :
                 self.node_geom_compute.xmlInitChildNode(tag)
-                
+
             val = self.defaultMatisseGeomValues()[tag]
             self.setMatisseGeomVar(tag, val)
 
@@ -174,7 +174,7 @@ class MatisseGeomModel:
                 self.node_geom_mesh.xmlInitChildNode(tag)
             elif tag in self.compute_geom_vars :
                 self.node_geom_compute.xmlInitChildNode(tag)
-                
+
             val = self.defaultMatisseGeomValues()[tag]
             self.setMatisseGeomVar(tag, val)
 
@@ -259,7 +259,7 @@ class MatisseGeomModel:
                 geomFile.write(newLine)
             else:
                 break
-            
+
         #
         # update node <solution_domain> in XML file
         node_preprocessor  = self.case.root().xmlGetNode('solution_domain')

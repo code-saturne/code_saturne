@@ -55,7 +55,7 @@ class Constantes:
     Define class that manage constantes
 
     This class is especially useful when we need constante string identifier.
-    Indeed, if the constante value must be changed, the changes is done at 
+    Indeed, if the constante value must be changed, the changes is done at
     one place
 
     ### example
@@ -65,7 +65,7 @@ class Constantes:
     const.a = 10
 
     # raise Exception, "Cannot reassign constant a"
-    const.a = 20 
+    const.a = 20
     """
     def __getattr__(self, attr):
         """
@@ -73,14 +73,14 @@ class Constantes:
         """
         try:
             return self.__dict__[attr]
-        except(KeyError): 
-            raise AttributeError, 'A instance has no attribute %s' % attr   
+        except(KeyError):
+            raise AttributeError, 'A instance has no attribute %s' % attr
 
 
     def __setattr__(self, attr, value):
         """
         Set an attributs
-        """        
+        """
         if attr in self.__dict__.keys():
             raise Exception, "Cannot reassign constant %s" % attr
         else:
@@ -118,7 +118,7 @@ class FluidStructureInteractionModel(Model):
 
         self.__node_models = case.xmlGetNode('thermophysical_models')
         self.__node_ale    = self.__node_models.xmlInitChildNode('ale_method', 'status')
-        
+
         self.__defaults = {}
         self.__defaults[const.max_iterations_implicitation]  = 1
         self.__defaults[const.implicitation_precision]  = 1e-05
@@ -135,7 +135,7 @@ class FluidStructureInteractionModel(Model):
     def setMaxIterations(self, value):
         """
         Set value of maximum of iteration if implicitation into xml file.
-        """ 
+        """
         self.isInt(value)
         self.isGreaterOrEqual(value, 1)
         self.__node_ale.xmlSetData(const.max_iterations_implicitation, value)
@@ -144,9 +144,9 @@ class FluidStructureInteractionModel(Model):
     def getMaxIterations(self):
         """
         Get value of maximum of iteration if implicitation from xml file.
-        """ 
-        return self.__getIntData(const.max_iterations_implicitation, 
-                                 self.setMaxIterations ) 
+        """
+        return self.__getIntData(const.max_iterations_implicitation,
+                                 self.setMaxIterations )
 
 
     #------------------------------------------------------------------
@@ -155,7 +155,7 @@ class FluidStructureInteractionModel(Model):
     def setPrecision(self, value):
         """
         Set value of precision of implicitation into xml file.
-        """ 
+        """
         self.isGreater(value, 0.0)
         self.__node_ale.xmlSetData(const.implicitation_precision, value)
 
@@ -163,9 +163,9 @@ class FluidStructureInteractionModel(Model):
     def getPrecision(self):
         """
         Get value of precision of implicitation from xml file.
-        """ 
-        return self.__getDoubleData(const.implicitation_precision, 
-                                    self.setPrecision ) 
+        """
+        return self.__getDoubleData(const.implicitation_precision,
+                                    self.setPrecision )
 
     #------------------------------------------------------------------
     # ExternalCouplingPostSynchronization
@@ -173,15 +173,15 @@ class FluidStructureInteractionModel(Model):
     def setExternalCouplingPostSynchronization(self, value):
         """
         Set value of stress prediction alpha into xml file.
-        """ 
+        """
         self.__setOnOffXML(const.external_coupling_post_synchronization, value)
 
 
     def getExternalCouplingPostSynchronization(self):
         """
         Get value of external coupling post syncrhonization from xml file.
-        """ 
-        return self.__getOnOffXML(const.external_coupling_post_synchronization, 
+        """
+        return self.__getOnOffXML(const.external_coupling_post_synchronization,
                                   self.setExternalCouplingPostSynchronization)
 
 
@@ -191,16 +191,16 @@ class FluidStructureInteractionModel(Model):
     def setDisplacementPredictionAlpha(self, value):
         """
         Set value of isplacement prediction alpha into xml file.
-        """ 
+        """
         self.__node_ale.xmlSetData(const.displacement_prediction_alpha, value)
 
 
     def getDisplacementPredictionAlpha(self):
         """
         Get value of displacement prediction alpha from xml file.
-        """ 
-        return self.__getDoubleData(const.displacement_prediction_alpha, 
-                                     self.setDisplacementPredictionAlpha ) 
+        """
+        return self.__getDoubleData(const.displacement_prediction_alpha,
+                                     self.setDisplacementPredictionAlpha )
 
 
     #------------------------------------------------------------------
@@ -209,33 +209,33 @@ class FluidStructureInteractionModel(Model):
     def setDisplacementPredictionBeta(self, value):
         """
         Set value of isplacement prediction beta into xml file.
-        """ 
+        """
         self.__node_ale.xmlSetData(const.displacement_prediction_beta, value)
 
 
     def getDisplacementPredictionBeta(self):
         """
         Get value of displacement prediction beta from xml file.
-        """ 
-        return self.__getDoubleData(const.displacement_prediction_beta, 
+        """
+        return self.__getDoubleData(const.displacement_prediction_beta,
                                      self.setDisplacementPredictionBeta )
 
-       
+
     #------------------------------------------------------------------
     # StressPredictionAlpha
     #------------------------------------------------------------------
     def setStressPredictionAlpha(self, value):
         """
         Set value of stress prediction alpha into xml file.
-        """ 
+        """
         self.__node_ale.xmlSetData(const.stress_prediction_alpha, value)
 
 
     def getStressPredictionAlpha(self):
         """
         Get value of stress prediction alpha from xml file.
-        """ 
-        return self.__getDoubleData(const.stress_prediction_alpha, 
+        """
+        return self.__getDoubleData(const.stress_prediction_alpha,
                                     self.setStressPredictionAlpha )
 
 
@@ -245,15 +245,15 @@ class FluidStructureInteractionModel(Model):
     def setMonitorPointSynchronisation(self, value):
         """
         Set value of monitor point synchronisation into xml file.
-        """ 
+        """
         self.__setOnOffXML(const.monitor_point_synchronisation, value)
 
 
     def getMonitorPointSynchronisation(self):
         """
         Get value of monitor point synchronisation from xml file.
-        """ 
-        return self.__getOnOffXML(const.monitor_point_synchronisation, 
+        """
+        return self.__getOnOffXML(const.monitor_point_synchronisation,
                                   self.setMonitorPointSynchronisation)
 
 
@@ -263,7 +263,7 @@ class FluidStructureInteractionModel(Model):
     def __getStringData(self, name, setFunction):
         """
         Get string value from xml file.
-        """ 
+        """
         value = self.__node_ale.xmlGetString(name)
         return self.__getDefaultDataIfNone(value, name, setFunction)
 
@@ -271,7 +271,7 @@ class FluidStructureInteractionModel(Model):
     def __getDoubleData(self, name, setFunction):
         """
         Get double value from xml file.
-        """ 
+        """
         value = self.__node_ale.xmlGetDouble(name)
         return self.__getDefaultDataIfNone(value, name, setFunction)
 
@@ -279,7 +279,7 @@ class FluidStructureInteractionModel(Model):
     def __getIntData(self, name, setFunction):
         """
         Get int value from xml file.
-        """ 
+        """
         value = self.__node_ale.xmlGetInt(name)
         return self.__getDefaultDataIfNone(value, name, setFunction)
 
@@ -287,7 +287,7 @@ class FluidStructureInteractionModel(Model):
     def __getDefaultDataIfNone(self, value, name, setFunction):
         """
         Get default value if value is none.
-        """ 
+        """
         if value == None or value == "":
             value = self.__defaults[name]
             setFunction(value)
@@ -297,7 +297,7 @@ class FluidStructureInteractionModel(Model):
     def __setOnOffXML(self, name, value):
         """
         Set value of 'on'/'off' xml attribute
-        """ 
+        """
         Model().isInList(value, [ 'on', 'off'])
         xmlNode = self.__node_ale.xmlInitNode(name)
         xmlNode['status'] = value
@@ -306,7 +306,7 @@ class FluidStructureInteractionModel(Model):
     def __getOnOffXML(self, name, setFunction):
         """
         Get value of 'on'/'off' xml attribut
-        """ 
+        """
         node = self.__node_ale.xmlInitNode(name, 'status')
         value = node['status']
 
@@ -322,7 +322,7 @@ class FluidStructureInteractionModel(Model):
 
 
 #-------------------------------------------------------------------------------
-# FluidStructureInteraction test case 
+# FluidStructureInteraction test case
 #-------------------------------------------------------------------------------
 
 class FluidStructureInteractionTestCase(ModelTest):
@@ -332,7 +332,7 @@ class FluidStructureInteractionTestCase(ModelTest):
 
     def checkFluidStructureInteractionInstantiation(self):
         """
-        Check whether the FluidStructureInteraction class could be instantiated 
+        Check whether the FluidStructureInteraction class could be instantiated
         """
         model = None
         model = FluidStructureInteractionModel(self.case)
@@ -343,7 +343,7 @@ class FluidStructureInteractionTestCase(ModelTest):
         """Check whether the FluidStructureInteraction class could be set and get precision"""
         mdl = FluidStructureInteractionModel(self.case)
         mdl.setPrecision(0.001)
-        
+
         doc = """<ale_method status="off">
                     <implicitation_precision>
                         0.001
@@ -431,7 +431,7 @@ def suite():
 
 
 def runTest():
-    """ 
+    """
     run test
     """
     print "FluidStructureInteractionTestCase"

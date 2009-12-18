@@ -214,7 +214,7 @@ The EXEC_PREPROCESS, EXEC_PARTITION, and EXEC_KERNEL variables allow running
   so the PARTITION_LIST variable must be used to indicate which partitionings
   are required. For example, PARTITION_LIST="128 256" will generate
   2 partitionings, with files domain_number_128 and domain_number_256
-  in RESU/PARTITION_OUTPUT. The option "-no-perio" may also be added to 
+  in RESU/PARTITION_OUTPUT. The option "-no-perio" may also be added to
   PARTITION_LIST if we do not want periodicity to be accounted for in the
   connectivity graph.
   If EXEC_PREPROCESS is set to no, a preprocessor_output file must be found in

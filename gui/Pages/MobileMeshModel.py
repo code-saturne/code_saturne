@@ -67,7 +67,7 @@ class MobileMeshModel(Model):
 
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_ale    = self.node_models.xmlInitChildNode('ale_method', 'status')
-        
+
         self.out = OutputControlModel(self.case)
 
 
@@ -82,7 +82,7 @@ class MobileMeshModel(Model):
         default['formula_isotrop']  = 'mesh_vi1=0;'
         default['formula_orthotrop'] = 'mesh_vi1=0;\nmesh_vi2=0;\nmesh_vi3=0;'
         default['ale_method']  = 'off'
-    
+
         return default
 
 
@@ -101,8 +101,8 @@ class MobileMeshModel(Model):
             node['choice'] = self.__defaultInitialValues()['mei']
 
         self.__updateNodeViscosity()
-        
-        
+
+
     def __updateNodeViscosity(self):
         """
         Update properties beyond mesh visosity is isotrope or not.
@@ -124,7 +124,7 @@ class MobileMeshModel(Model):
 
         else:
             node1 = self.node_ale.xmlGetChildNode('property', name='mesh_viscosity_2')
-            node2 = self.node_ale.xmlGetChildNode('property', name='mesh_viscosity_3') 
+            node2 = self.node_ale.xmlGetChildNode('property', name='mesh_viscosity_3')
 
             if node1:
                 node1.xmlRemoveNode()
@@ -154,7 +154,7 @@ class MobileMeshModel(Model):
 ##        else:
 ##            if typ not in ('0', '1', '2'):
 ##                typ = '0'
-##        self.out.setTypePostMeshes(typ) 
+##        self.out.setTypePostMeshes(typ)
 ##
 ##
 ##    def getMethod(self):
@@ -186,7 +186,7 @@ class MobileMeshModel(Model):
         self.isOnOff(status)
         typ = ''
         typ = self.out.getTypePostMeshes()
-        self.node_ale['status'] = status    
+        self.node_ale['status'] = status
         if status == 'on':
             if typ not in ('10', '11', '12'):
                 typ = '10'
@@ -201,7 +201,7 @@ class MobileMeshModel(Model):
     def setSubIterations(self, value):
         """
         Set value of fluid initialization sub iterations into xml file.
-        """ 
+        """
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
         self.node_ale.xmlSetData('fluid_initialization_sub_iterations', value)
@@ -210,7 +210,7 @@ class MobileMeshModel(Model):
     def getSubIterations(self):
         """
         Get value of fluid initialization sub iterations from xml file.
-        """ 
+        """
         nalinf = self.node_ale.xmlGetInt('fluid_initialization_sub_iterations')
         if not nalinf:
             nalinf = self.__defaultInitialValues()['nalinf']
@@ -221,7 +221,7 @@ class MobileMeshModel(Model):
     def setViscosity(self, value):
         """
         Set value of mesh viscosity into xml file.
-        """ 
+        """
         self.isInList(value, ['isotrop', 'orthotrop'])
         node = self.node_ale.xmlInitChildNode('mesh_viscosity')
         node['type'] = value
@@ -249,7 +249,7 @@ class MobileMeshModel(Model):
     def setMEI(self, value):
         """
         Set value of spatial distribution of the viscosity of the mesh.
-        """ 
+        """
         self.isInList(value, ['user_subroutine', 'user_function'] )
 
         # do something only if mei has changed
@@ -266,7 +266,7 @@ class MobileMeshModel(Model):
         """
         Get value of spatial distribution of the viscosity of the mesh.
         """
-        # Get the first node 
+        # Get the first node
         mei  = self.getMEIWithoutDefaultValue()
 
         if not mei:
@@ -280,7 +280,7 @@ class MobileMeshModel(Model):
         Get value of spatial distribution of the viscosity of the mesh.
         Return null if no value is set
         """
-        # Get the first node 
+        # Get the first node
         node = self.node_ale.xmlGetNode('property', label='mesh_vi1')
         mei  = None
 
@@ -292,7 +292,7 @@ class MobileMeshModel(Model):
     def setFormula(self, value):
         """
         Set the formula for the viscosity of mesh
-        """ 
+        """
         self.node_ale.xmlSetData('formula', value)
 
 
@@ -313,8 +313,8 @@ class MobileMeshModel(Model):
         """
         viscosity = self.getViscosity()
         return self.__defaultInitialValues()['formula_'+ viscosity ]
-    
-        
+
+
 #-------------------------------------------------------------------------------
 # MobileMesh Model test case
 #-------------------------------------------------------------------------------
@@ -328,7 +328,7 @@ class MobileMeshTestCase(ModelTest):
         model = None
         model = MobileMeshModel(self.case)
         assert model != None, 'Could not instantiate MobileMeshModel'
-        
+
     def checkGetandSetMethod(self):
         """Check whether the MobileMeshModel class could be set and get method"""
         mdl = MobileMeshModel(self.case)
@@ -350,7 +350,7 @@ class MobileMeshTestCase(ModelTest):
         mdl = MobileMeshModel(self.case)
         mdl.setMethod('on')
         mdl.setSubIterations(12)
-##        
+##
         doc = """<ale_method status="on">
                     <variable label="mesh_u" name="mesh_velocity_U"/>
                     <variable label="mesh_v" name="mesh_velocity_V"/>

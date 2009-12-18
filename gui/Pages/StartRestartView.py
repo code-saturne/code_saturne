@@ -264,7 +264,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         if dir_path:
             dir_path = os.path.abspath(str(dir_path))
             dir_name = os.path.basename(dir_path)
-	    if os.path.dirname(dir_path) == self.case['data_path'] and dir_name == 'RESTART':
+            if os.path.dirname(dir_path) == self.case['data_path'] and dir_name == 'RESTART':
                 setGreenColor(self.toolButton, False)
                 self.slotStartRestart()
                 return

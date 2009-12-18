@@ -139,15 +139,15 @@ class ThermalRadiationModel(Model):
         rayName = ['srad',     'qrad',     'absorp',  'emiss',    'coefAb',
                     'wall_temp', 'flux_incident', 'thermal_conductivity', 'thickness',
                     'emissivity', 'flux_net',      'flux_convectif',  'coeff_ech_conv']
-    
+
         raylabF = ['Srad',       'Qrad',          'Absorp',     'Emiss',    'CoefAb',
                     'Temp_paroi', 'Flux_incident', 'Conductivite_th', 'Epaisseur',
                 'Emissivite', 'Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
-    
+
         raylabE = ['Srad',      'Qrad',      'Absorp',          'Emiss',    'CoefAb',
                     'Wall_temp', 'Flux_incident', 'Th_conductivity', 'Thickness',
                 'Emissivity','Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
-    
+
         dico['name'] = rayName
         dico['labF'] = raylabF
         dico['labE'] = raylabE
@@ -155,7 +155,7 @@ class ThermalRadiationModel(Model):
             label = dico['labF']
         else:
             label = dico['labE']
-    
+
         return dico['name'], label
 
 
@@ -190,12 +190,12 @@ class ThermalRadiationModel(Model):
 #            if model2 == "p-1":
 #                ind = 2
 #            coalCoeff = 'constant'
-#            if node_coeff: 
+#            if node_coeff:
 #                coalCoeff = node_coeff['type']
 #            if coalCoeff == 'constant':
 #                ind += 1
 #            elif coalCoeff == 'modak':
-#                ind += 2          
+#                ind += 2
 #        model.radiativTransfer.setRadiativTransfer(ind)
 #        model.save()
 
@@ -218,7 +218,7 @@ class ThermalRadiationModel(Model):
 
 #    def _setTypeCoalCoeff(self, val):
 #        """
-#        Private method : put indice relatively to type of 
+#        Private method : put indice relatively to type of
 #        coefficient absorption for coal
 #        """
 #        self.isInList(val, ('constant', 'variable', 'modak'))
@@ -229,7 +229,7 @@ class ThermalRadiationModel(Model):
 #            ind = 1
 #        else :
 #            ind = 2
-#            
+#
 #        radModel = self.node_ray['model']
 #        if radModel == 'p-1':
 #            ind += 2
@@ -241,7 +241,7 @@ class ThermalRadiationModel(Model):
 
     def _setBoundCond(self):
         """
-        Private method : put by default boundary conditions for radiative 
+        Private method : put by default boundary conditions for radiative
         variables as soon as a radiative model is set
         """
         from Pages.LocalizationModel import LocalizationModel, Zone
@@ -257,7 +257,7 @@ class ThermalRadiationModel(Model):
 
     def _updateModelParameters(self, model):
         """
-        Private method : put by default all parameters for radiative 
+        Private method : put by default all parameters for radiative
         variables as soon a radiative model is set
         """
         self.getRestart()
@@ -268,13 +268,13 @@ class ThermalRadiationModel(Model):
         self.getAbsorCoeff()
         self.getFrequency()
         self.getTrs()
-    	self.getTemperatureListing()
+        self.getTemperatureListing()
         self.getIntensityResolution()
 
 
     def isCoalCombustion(self):
         """
-        Return 0 if pulverized_coal's attribute model is 'off', 
+        Return 0 if pulverized_coal's attribute model is 'off',
         return 1 if it's different
         """
         value = 0
@@ -297,11 +297,11 @@ class ThermalRadiationModel(Model):
 #            for nb in range(len(dico[0])):
 #                if not self.node_ray.xmlGetNode('property', name =dico[0][nb]):
 #                    if dico[0][nb] in ("srad", "qrad", "absorp", "emiss", "coefAb"):
-#                        self.node_ray.xmlInitNode('property', 
+#                        self.node_ray.xmlInitNode('property',
 #                                                   label=dico[1][nb],
 #                                                   name =dico[0][nb])
 #                    else:
-#                        self.node_ray.xmlInitNode('property', 
+#                        self.node_ray.xmlInitNode('property',
 #                                                   label=dico[1][nb],
 #                                                   name =dico[0][nb],
 #                                                   support='boundary')
@@ -438,8 +438,8 @@ class ThermalRadiationModel(Model):
         self.isPositiveFloat(val)
         if self.isCoalCombustion():
             import Pages.CoalThermoChemistry as CoalThermoChemistry
-            model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case) 
-            model.load() 
+            model = CoalThermoChemistry.CoalThermoChemistryModel("dp_FCP", self.case)
+            model.load()
             model.radiativTransfer.setAbsorptionCoeff(val)
             model.save()
 
@@ -522,7 +522,7 @@ class ThermalRadiationModel(Model):
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # ThermalRadiation test case
@@ -581,7 +581,7 @@ class ThermalRadiationTestCase(ModelTest):
 
     def checkSetandgetNbDir(self):
         """
-        Check whether the ThermalRadiationModel class could be set and get 
+        Check whether the ThermalRadiationModel class could be set and get
         number of directions
         """
         mdl = ThermalRadiationModel(self.case)
@@ -639,11 +639,11 @@ class ThermalRadiationTestCase(ModelTest):
             'Could not set restart in ThermalRadiationModel'
         assert mdl.getRestart() == 'on', \
             'Could not get restart in ThermalRadiationModel'
-            
+
     def checkSetandGetTypeCoeff(self):
         """
-        Check whether the ThermalRadiationModel class could be set and 
-        get type of absorption coefficient 
+        Check whether the ThermalRadiationModel class could be set and
+        get type of absorption coefficient
         """
         mdl = ThermalRadiationModel(self.case)
         mdl.setRadiativeModel('dom')
@@ -673,8 +673,8 @@ class ThermalRadiationTestCase(ModelTest):
 
     def checkSetandGetAbsorCoeff(self):
         """
-        Check whether the ThermalRadiationModel class could be set and 
-        get value of absorption coefficient 
+        Check whether the ThermalRadiationModel class could be set and
+        get value of absorption coefficient
         """
         mdl = ThermalRadiationModel(self.case)
         mdl.setRadiativeModel('dom')
@@ -704,7 +704,7 @@ class ThermalRadiationTestCase(ModelTest):
 
     def checkSetandGetFrequency(self):
         """
-        Check whether the ThermalRadiationModel class could be set and get 
+        Check whether the ThermalRadiationModel class could be set and get
         frequency for advanced options
         """
         mdl = ThermalRadiationModel(self.case)
@@ -736,7 +736,7 @@ class ThermalRadiationTestCase(ModelTest):
 
     def checkSetandGetIntensityResolution(self):
         """
-        Check whether the ThermalRadiationModel class could be set and get 
+        Check whether the ThermalRadiationModel class could be set and get
         IIMLUM for advanced options
         """
         mdl = ThermalRadiationModel(self.case)
@@ -768,7 +768,7 @@ class ThermalRadiationTestCase(ModelTest):
 
     def checkSetandGetTemperatureListing(self):
         """
-        Check whether the ThermalRadiationModel class could be set and get 
+        Check whether the ThermalRadiationModel class could be set and get
         IIMPAR for advanced options
         """
         mdl = ThermalRadiationModel(self.case)
@@ -800,7 +800,7 @@ class ThermalRadiationTestCase(ModelTest):
 
     def checkSetandGetTrs(self):
         """
-        Check whether the ThermalRadiationModel class could be set and get 
+        Check whether the ThermalRadiationModel class could be set and get
         IDIVER for advanced options
         """
         mdl = ThermalRadiationModel(self.case)
@@ -829,7 +829,7 @@ class ThermalRadiationTestCase(ModelTest):
             'Could not set IDIVER for advanced options in ThermalRadiationModel'
         assert mdl.getTrs() == 2,\
             'Could not get IDIVER for advanced options in ThermalRadiationModel'
-  
+
     def checkGetThermalRadiativeModel(self):
         """
         Check whether a thermal radiative model could be get
@@ -837,7 +837,7 @@ class ThermalRadiationTestCase(ModelTest):
         mdl = ThermalRadiationModel(self.case)
         assert mdl.getThermalRadiativeModel() == 1,\
             'Could not get thermal radiative model'
-            
+
 
 
 def suite():

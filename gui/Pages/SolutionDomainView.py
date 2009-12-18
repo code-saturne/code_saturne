@@ -160,10 +160,10 @@ class StandardItemModelMeshes(QStandardItemModel):
                         self.tr("Add groups of faces"),
                         self.tr("Add groups of cells")]
 
-        self.tooltip = [self.tr("Code_Saturne Preprocessor option: --mesh"), 
-                        self.tr("Code_Saturne Preprocessor sub-option: --format"), 
-                        self.tr("Code_Saturne Preprocessor sub-option: --num"), 
-                        self.tr("Code_Saturne Preprocessor sub-option: --grp-fac"), 
+        self.tooltip = [self.tr("Code_Saturne Preprocessor option: --mesh"),
+                        self.tr("Code_Saturne Preprocessor sub-option: --format"),
+                        self.tr("Code_Saturne Preprocessor sub-option: --num"),
+                        self.tr("Code_Saturne Preprocessor sub-option: --grp-fac"),
                         self.tr("Code_Saturne Preprocessor sub-option: --grp-cel")]
 
         self.setColumnCount(len(self.headers))
@@ -226,7 +226,7 @@ class StandardItemModelMeshes(QStandardItemModel):
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
-            
+
         self.__disableData(index.row())
 
         # disable item
@@ -275,7 +275,7 @@ class StandardItemModelMeshes(QStandardItemModel):
 
     def addRow(self, name, format):
         """
-        Add a row in the table. 
+        Add a row in the table.
         """
         txt_format = MeshModel().getMeshFormatDescription(format)
 
@@ -372,7 +372,7 @@ class StandardItemModelPeriod(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
         elif index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable 
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         elif index.column() == 1:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
@@ -423,7 +423,7 @@ class SolutionDomainMeshFormatDialogView(QDialog, Ui_SolutionDomainMeshFormatDia
     """
     Advanced dialog
     """
-    def __init__(self, parent, default): 
+    def __init__(self, parent, default):
         """
         Constructor
         """
@@ -450,12 +450,12 @@ class SolutionDomainMeshFormatDialogView(QDialog, Ui_SolutionDomainMeshFormatDia
 
     def get_result(self):
         """
-        Method to get the result 
+        Method to get the result
         """
         return self.result
 
 
-    def accept(self): 
+    def accept(self):
         """
         Method called when user clicks 'OK'
         """
@@ -464,7 +464,7 @@ class SolutionDomainMeshFormatDialogView(QDialog, Ui_SolutionDomainMeshFormatDia
         QDialog.accept(self)
 
 
-    def reject(self): 
+    def reject(self):
         """
         Method called when user clicks 'Cancel'
         """
@@ -475,7 +475,7 @@ class SolutionDomainMeshFormatDialogView(QDialog, Ui_SolutionDomainMeshFormatDia
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # Main class
@@ -521,7 +521,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.connect(self.groupBoxWarp, SIGNAL("clicked(bool)"), self.slotFacesCutting)
         self.connect(self.lineEditWarp, SIGNAL("textChanged(const QString &)"), self.slotWarpParam)
         self.connect(self.groupBoxOrient, SIGNAL("clicked(bool)"), self.slotOrientation)
-        
+
         # 1.3) Set up validators
         validatorWarp = DoubleValidator(self.lineEditWarp, min=0.0)
         self.lineEditWarp.setValidator(validatorWarp)
@@ -560,7 +560,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         # Set up validators
 
-        # 2) 
+        # 2)
         self.lineEditTX.setValidator(DoubleValidator(self.lineEditTX))
         self.lineEditTY.setValidator(DoubleValidator(self.lineEditTY))
         self.lineEditTZ.setValidator(DoubleValidator(self.lineEditTZ))
@@ -639,8 +639,8 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
                 title = self.tr("WARNING")
                 msg2  = self.tr("The following meshes are not in the meshes "  \
                                 "directory given in the 'Identity and paths' " \
-                                "section:\n\n" + 
-                                msg +  
+                                "section:\n\n" +
+                                msg +
                                 "Verify existence and location of the mesh " \
                                 "files, and the 'Identity and Paths' section." )
                 QMessageBox.warning(self, title, msg2)
@@ -660,7 +660,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self._tableViewLayout()
 
 
-        # 3.2) Join parameters 
+        # 3.2) Join parameters
 
         if self.mdl.getJoinMeshesStatus() == 'on':
             self.groupBoxJoin.setChecked(True)
@@ -681,7 +681,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         v = self.mdl.getCutAngle()
         self.warp = v
         self.lineEditWarp.setText(str(self.warp))
-        
+
         # 3.4) Reorientation
 
         if self.mdl.getOrientation() == 'on':
@@ -710,7 +710,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         # If the format is not found ask to the user
         if not format:
-            default = "" 
+            default = ""
             dialog = SolutionDomainMeshFormatDialogView(self, default)
             if dialog.exec_():
                 format = dialog.get_result()
@@ -807,7 +807,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             filetypes += "%s (%s);;"%(Format[0], Format[1])
 
         filt = "All files (*)"
-        file_name = QFileDialog.getOpenFileName(self, title, path, filetypes, filt) 
+        file_name = QFileDialog.getOpenFileName(self, title, path, filetypes, filt)
         file_name = str(file_name)
 
         if file_name:
@@ -821,7 +821,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
 
     @pyqtSignature("")
-    def slotDeleteMesh(self): 
+    def slotDeleteMesh(self):
         """
         Delete the selected mesh from the list
         """
@@ -835,7 +835,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             # 2) Delete mesh from view and from model
 
             self.modelMeshes.deleteRow(row)
-            self.mdl.delMesh(mesh) 
+            self.mdl.delMesh(mesh)
 
         self._tableViewLayout()
 
@@ -921,7 +921,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     @pyqtSignature("")
     def slotDeletePeriodicity(self):
         """
-        Delete a periodicity from the list. 
+        Delete a periodicity from the list.
         """
         self.groupBoxMode.hide()
         self.groupBoxFaces.hide()
@@ -1127,7 +1127,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     @pyqtSignature("const QString&")
     def slotTranslationZ(self, text):
         """
-        Periodicity translation for Z 
+        Periodicity translation for Z
         """
         if self.perio_mode != "rotation1" or self.perio_mode != "rotation2":
             val, ok = text.toDouble()
@@ -1182,7 +1182,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     @pyqtSignature("const QString&")
     def slotCenterRotationX1(self, text):
         """
-        Periodicity : center of rotation 
+        Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
@@ -1193,7 +1193,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     @pyqtSignature("const QString&")
     def slotCenterRotationY1(self, text):
         """
-        Periodicity : center of rotation 
+        Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
@@ -1204,7 +1204,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     @pyqtSignature("const QString&")
     def slotCenterRotationZ1(self, text):
         """
-        Periodicity : center of rotation 
+        Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
@@ -1271,7 +1271,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     @pyqtSignature("const QString&")
     def slotCenterRotationX2(self, text):
         """
-        Periodicity : center of rotation 
+        Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
@@ -1282,7 +1282,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     @pyqtSignature("const QString&")
     def slotCenterRotationY2(self, text):
         """
-        Periodicity : center of rotation 
+        Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
@@ -1293,7 +1293,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     @pyqtSignature("const QString&")
     def slotCenterRotationZ2(self, text):
         """
-        Periodicity : center of rotation 
+        Periodicity : center of rotation
         """
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
@@ -1305,7 +1305,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         """
         Translation
         """
-        return text 
+        return text
 
 
 #-------------------------------------------------------------------------------

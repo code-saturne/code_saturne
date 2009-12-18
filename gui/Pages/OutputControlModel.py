@@ -151,7 +151,7 @@ class OutputControlModel(Model):
         """
         nod = self.node_out.xmlInitNode('fluid_domain', 'status')
         status = nod['status']
-        if not status: 
+        if not status:
             status = self.defaultInitialValues()['fluid_domain']
             self.setFluidDomainPostProStatus(status)
         return status
@@ -193,7 +193,7 @@ class OutputControlModel(Model):
         """
         nod = self.node_out.xmlInitNode('syrthes_boundary', 'status')
         status = nod['status']
-        if not status: 
+        if not status:
             status = self.defaultInitialValues()['syrthes_boundary']
             self.setSyrthesBoundaryPostProStatus(status)
         return status
@@ -259,7 +259,7 @@ class OutputControlModel(Model):
         if not line:
             line = self.defaultInitialValues()['postprocessing_options']
             self.setPostProOptionsFormat(line)
-        return line 
+        return line
 
 
     def setPostProOptionsFormat(self, line):
@@ -474,7 +474,7 @@ class OutputControlModelTestCase(ModelTest):
 
     def checkSetandGetDomainBoundaryPostProStatus(self):
         """
-        Check whether the status of post processing for domain 
+        Check whether the status of post processing for domain
         boundary could be set and get
         """
         model = OutputControlModel(self.case)
@@ -490,7 +490,7 @@ class OutputControlModelTestCase(ModelTest):
 
     def checkSetandGetSyrthesBoundaryPostProStatus(self):
         """
-        Check whether the status of post processing for boundary 
+        Check whether the status of post processing for boundary
         syrthes post processing could be set and get
         """
         model = OutputControlModel(self.case)

@@ -54,7 +54,7 @@ from PyQt4.QtGui  import *
 from LagrangianForm import Ui_LagrangianForm
 from LagrangianAdvancedOptionsDialogForm import Ui_LagrangianAdvancedOptionsDialogForm
 from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, IntValidator, DoubleValidator 
+from Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from Pages.LagrangianModel import LagrangianModel
 from Pages.StartRestartModel import StartRestartModel
 
@@ -74,7 +74,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
     """
     Advanced dialog
     """
-    def __init__(self, parent, default): 
+    def __init__(self, parent, default):
         """
         Constructor
         """
@@ -197,19 +197,19 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
 
     def get_result(self):
         """
-        Method to get the result 
+        Method to get the result
         """
         return self.result
 
 
-    def accept(self): 
+    def accept(self):
         """
         Method called when user clicks 'OK'
         """
         QDialog.accept(self)
 
 
-    def reject(self): 
+    def reject(self):
         """
         Method called when user clicks 'Cancel'
         """
@@ -221,7 +221,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for values in self.tableViewCoals
@@ -468,7 +468,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
     @pyqtSignature("const QString&")
     def slotIILAGR(self, text):
         """
-        Input IILAGR. 
+        Input IILAGR.
         """
         model = self.modelIILAGR.dicoV2M[str(text)]
         self.model.setCouplingMode(model)
@@ -564,7 +564,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.frameModel1.hide()
         self.frameModel2.hide()
 
-        # No model 
+        # No model
         if value == "off":
             pass
 
@@ -767,7 +767,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # Testing part

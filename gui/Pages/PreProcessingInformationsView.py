@@ -73,7 +73,7 @@ def preprocessorFile(parent, initdir):
     title = tr("Select a Code_Saturne Preprocessor listing")
     filetypes = "Preprocessor listing (listpre.*);;All Files (*)"
     filt = "All files (*)"
-    file_name = QFileDialog.getOpenFileName(parent, title, initdir, filetypes, filt) 
+    file_name = QFileDialog.getOpenFileName(parent, title, initdir, filetypes, filt)
     file_name = str(file_name)
 
     if file_name:
@@ -84,7 +84,7 @@ def preprocessorFile(parent, initdir):
         j=0
         for i in range(len(lines)):
             index = string.rfind(lines[i], "ECS   version")
-            if index != -1: 
+            if index != -1:
                 j = i
                 break
 
@@ -115,23 +115,23 @@ class Informations:
         self.chain = chain
         if self.chain not in ('faces', 'cells'):
             raise ValueError, "Informations class is called with a wrong parameter 'chain'"
-    
+
         lines = self.readFile(file)
         if not lines:
             raise ValueError, "Code_Saturne Preprocessor listing language unknown."
 
         refList, groupList = self.getListes(lines)
-        
+
         self.refList = refList
         self.groupList = groupList
-        
+
         self.updateListes()
 
 
     def readFile(self, file):
-        if not file: 
+        if not file:
             return []
-        else: 
+        else:
             f = open(file, 'r')
             lines = f.readlines()
             f.close()
@@ -172,7 +172,7 @@ class Informations:
         refList = []
         groupList = []
         for i in range(len(lines)):
-            index = re.search(self.str1, lines[i]) 
+            index = re.search(self.str1, lines[i])
             if index != None:
                 j = i
                 break
@@ -188,13 +188,13 @@ class Informations:
                     if re.search(self.str2, lines[m]) != None:
                         p = m
                         for p in range(p-1,p-m,-1):
-                            if re.search(self.str4, lines[p]) != None: 
+                            if re.search(self.str4, lines[p]) != None:
                                 coul = re.split(self.str4 + ' ', lines[p])
                                 for cl in coul[1:]:
                                     ref = re.split('\n', cl)[0]
                                     if ref:
                                         if ref not in refList: refList.append(ref)
-                            if re.search(self.str5, lines[p]) != None: 
+                            if re.search(self.str5, lines[p]) != None:
                                 gr = re.split(self.str5 + ' ', lines[p])
                                 for g in gr[1:]:
                                     group = re.split('\n', g)[0]

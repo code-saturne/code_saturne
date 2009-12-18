@@ -52,8 +52,8 @@ import logging
 #-------------------------------------------------------------------------------
 
 from PyQt4.QtCore import Qt, QVariant, QString, SIGNAL, pyqtSignature
-from PyQt4.QtGui  import QDialog, QHeaderView, QStandardItemModel, QWidget 
-from PyQt4.QtGui  import QAbstractItemView, QItemSelectionModel, QValidator 
+from PyQt4.QtGui  import QDialog, QHeaderView, QStandardItemModel, QWidget
+from PyQt4.QtGui  import QAbstractItemView, QItemSelectionModel, QValidator
 
 try:
     import mei
@@ -115,7 +115,7 @@ class FluidStructureInteractionAdvancedOptionsView(QDialog,
         self.setWindowTitle(title)
 
         self.__default = default
-        self.__result  = default.copy()   
+        self.__result  = default.copy()
         self.__setValidator()
         self.__setInitialValues()
 
@@ -128,7 +128,7 @@ class FluidStructureInteractionAdvancedOptionsView(QDialog,
                                            min=0.0)
         self.lineEditDisplacementAlpha.setValidator(validator)
 
-        validator = QtPage.DoubleValidator(self.lineEditDisplacementBeta, 
+        validator = QtPage.DoubleValidator(self.lineEditDisplacementBeta,
                                            min=0.0)
         self.lineEditDisplacementBeta.setValidator(validator)
 
@@ -211,9 +211,9 @@ class StandardItemModel(QStandardItemModel):
         """
         StandarItemModel for fluid structure interaction tableView
         """
-        QStandardItemModel.__init__(self) 
+        QStandardItemModel.__init__(self)
 
-        # Define header 
+        # Define header
         self.headers = [self.tr("Structure number"),
                         self.tr("Label"),
                         self.tr("Location")]
@@ -231,7 +231,7 @@ class StandardItemModel(QStandardItemModel):
         if index.isValid() and role == Qt.DisplayRole:
             row = index.row()
             col = index.column()
-            return QVariant(self.__data[row][col])            
+            return QVariant(self.__data[row][col])
 
         return QVariant()
 
@@ -240,7 +240,7 @@ class StandardItemModel(QStandardItemModel):
         """
         Define which column is editable/selectable/enable.
         """
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable       
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
@@ -254,7 +254,7 @@ class StandardItemModel(QStandardItemModel):
 
     def setData(self, index, value, role):
         """
-        Set a the data when table changed 
+        Set a the data when table changed
         """
         raise Exception('Cannot edit column')
 
@@ -262,7 +262,7 @@ class StandardItemModel(QStandardItemModel):
     def addItem(self, zone):
         """
         Add an element in the table view.
-        """       
+        """
         index = len(self.__data)
         line = [index + 1, zone.getLabel(), zone.getLocalization()]
 
@@ -287,18 +287,18 @@ class StandardItemModel(QStandardItemModel):
 
 class Coupling:
     """
-    Coupling is the base class to manage all widgets which value depend on the 
+    Coupling is the base class to manage all widgets which value depend on the
     boundary.
-    
-    It provides getBoundaryDefinedValue/setBoundaryDefinedValue methods which 
+
+    It provides getBoundaryDefinedValue/setBoundaryDefinedValue methods which
     get/set the value of a boundary attribute. Getter and setter are specified
     int the constructor
 
-    It also automatically enable/disable the widget when boundary is present 
+    It also automatically enable/disable the widget when boundary is present
     or not
 
-    Derived class can override onBoundarySet method to specify the initial 
-    value of the widget base on the boundary 
+    Derived class can override onBoundarySet method to specify the initial
+    value of the widget base on the boundary
     """
 
     def __init__(self, widget, getterStr, setterStr ):
@@ -312,7 +312,7 @@ class Coupling:
 
         # As no boundary is selected disable the widget
         widget.setEnabled(False)
-               
+
 
     def getWidget(self):
         """
@@ -326,7 +326,7 @@ class Coupling:
         Set the current boundary
         """
         self.__boundary = boundary
-        
+
         #Enable widget
         self.__widget.setEnabled(True)
 
@@ -371,12 +371,12 @@ class LineEditCoupling(Coupling):
         """
         Coupling.__init__(self, lineEdit, getter, setter)
 
-        # Add validator.     
+        # Add validator.
         validator = QtPage.DoubleValidator(lineEdit, min=0.0)
         lineEdit.setValidator(validator)
-        lineEdit.connect(lineEdit, SIGNAL("textChanged(const QString &)"), 
+        lineEdit.connect(lineEdit, SIGNAL("textChanged(const QString &)"),
                          self.__slotTextChanged)
-        
+
 
     def onBoundarySet(self):
         """
@@ -384,15 +384,15 @@ class LineEditCoupling(Coupling):
         """
         value  = self.getBoundaryDefinedValue()
         self.getWidget().setText(str(value))
-           
-            
+
+
     @pyqtSignature("const QString&")
     def __slotTextChanged(self, text):
-        """ 
+        """
         Update the model
         """
         self.setBoundaryDefinedValue(text)
-        
+
 
 #-------------------------------------------------------------------------------
 # Formula Coupling class
@@ -418,11 +418,11 @@ class FormulaCoupling(Coupling):
 
     def onBoundarySet(self):
         """
-        Called when boundary is set. 
+        Called when boundary is set.
         """
         # call getter to create default value if needed
         self.getBoundaryDefinedValue()
-        
+
         # Disable button if _have_mei is false
         if not _have_mei:
             self.getWidget().setEnabled(False)
@@ -438,8 +438,8 @@ class FormulaCoupling(Coupling):
 
         if not exp:
             exp = self.__default
-        
-        # run the editor           
+
+        # run the editor
         dialog = QMeiEditorView(self.getWidget(),
                                 expression = exp,
                                 required   = self.__required,
@@ -465,7 +465,7 @@ class CheckBoxCoupling(Coupling):
         Constructor
         """
         Coupling.__init__(self, checkBox, getter, setter)
-        checkBox.connect(checkBox, SIGNAL("stateChanged(int)"), 
+        checkBox.connect(checkBox, SIGNAL("stateChanged(int)"),
                          self.__slotStateChanged)
 
 
@@ -489,7 +489,7 @@ class CheckBoxCoupling(Coupling):
         """
         value = "off"
         if state == Qt.Checked:
-            value = "on"           
+            value = "on"
         self.setBoundaryDefinedValue(value)
 
 
@@ -523,32 +523,32 @@ class CouplingManager:
         """
         coupings = []
         coupings.append( LineEditCoupling( mainView.lineEditInitialDisplacementX
-                       , "getInitialDisplacementX", "setInitialDisplacementX"))        
+                       , "getInitialDisplacementX", "setInitialDisplacementX"))
         coupings.append( LineEditCoupling( mainView.lineEditInitialDisplacementY
-                       , "getInitialDisplacementY", "setInitialDisplacementY"))        
+                       , "getInitialDisplacementY", "setInitialDisplacementY"))
         coupings.append( LineEditCoupling( mainView.lineEditInitialDisplacementZ
                        , "getInitialDisplacementZ", "setInitialDisplacementZ"))
-                                                
-        coupings.append( 
+
+        coupings.append(
             LineEditCoupling( mainView.lineEditEquilibriumDisplacementX,
                               "getEquilibriumDisplacementX",
-                              "setEquilibriumDisplacementX"))        
+                              "setEquilibriumDisplacementX"))
 
-        coupings.append( 
+        coupings.append(
             LineEditCoupling( mainView.lineEditEquilibriumDisplacementY,
                               "getEquilibriumDisplacementY",
-                              "setEquilibriumDisplacementY"))        
-        coupings.append( 
+                              "setEquilibriumDisplacementY"))
+        coupings.append(
             LineEditCoupling( mainView.lineEditEquilibriumDisplacementZ,
                               "getEquilibriumDisplacementZ",
-                              "setEquilibriumDisplacementZ"))        
+                              "setEquilibriumDisplacementZ"))
 
         coupings.append( LineEditCoupling( mainView.lineEditInitialVelocityX
                        , "getInitialVelocityX", "setInitialVelocityX"))
         coupings.append( LineEditCoupling( mainView.lineEditInitialVelocityY
-                       , "getInitialVelocityY", "setInitialVelocityY"))        
+                       , "getInitialVelocityY", "setInitialVelocityY"))
         coupings.append( LineEditCoupling( mainView.lineEditInitialVelocityZ
-                       , "getInitialVelocityZ", "setInitialVelocityZ"))                
+                       , "getInitialVelocityZ", "setInitialVelocityZ"))
         self.__internalCouplings.extend(coupings)
 
 
@@ -559,9 +559,9 @@ class CouplingManager:
         couplings = []
         couplings.append(CheckBoxCoupling( mainView.checkBoxDDLX, "getDDLX",
                                            "setDDLX"))
-        couplings.append(CheckBoxCoupling( mainView.checkBoxDDLY, "getDDLY", 
+        couplings.append(CheckBoxCoupling( mainView.checkBoxDDLY, "getDDLY",
                                            "setDDLY"))
-        couplings.append(CheckBoxCoupling( mainView.checkBoxDDLZ, "getDDLZ", 
+        couplings.append(CheckBoxCoupling( mainView.checkBoxDDLZ, "getDDLZ",
                                            "setDDLZ"))
         self.__externalCouplings.extend(couplings)
 
@@ -594,17 +594,17 @@ class CouplingManager:
 
         couplings = []
         couplings.append( FormulaCoupling( mainView.pushButtonMassMatrix,
-                                           "getMassMatrix", "setMassMatrix", 
-                                           default, massRequired, symbols, 
+                                           "getMassMatrix", "setMassMatrix",
+                                           default, massRequired, symbols,
                                            examples))
-        couplings.append( FormulaCoupling( mainView.pushButtonStiffnessMatrix, 
-                                           "getStiffnessMatrix", 
-                                           "setStiffnessMatrix", default, 
+        couplings.append( FormulaCoupling( mainView.pushButtonStiffnessMatrix,
+                                           "getStiffnessMatrix",
+                                           "setStiffnessMatrix", default,
                                            stiffnessRequired, symbols, examples))
 
-        couplings.append( FormulaCoupling( mainView.pushButtonDampingMatrix, 
-                                          "getDampingMatrix", 
-                                          "setDampingMatrix", default, 
+        couplings.append( FormulaCoupling( mainView.pushButtonDampingMatrix,
+                                          "getDampingMatrix",
+                                          "setDampingMatrix", default,
                                           dampingRequired, symbols, examples))
 
         defaultFluidForce  = "fx = "
@@ -617,11 +617,11 @@ class CouplingManager:
         symbolsFluidForce.append( ('fluid_fz', 'Force of flow along Z'))
 
         examplesFluidForce = "fx = fluid_fx;\nfy = fluid_fy;\nfz = fluid_fz;"
-        couplings.append( FormulaCoupling( mainView.pushButtonFluidForce, 
+        couplings.append( FormulaCoupling( mainView.pushButtonFluidForce,
                                            "getFluidForceMatrix",
-                                           "setFluidForceMatrix", 
+                                           "setFluidForceMatrix",
                                            defaultFluidForce,
-                                           requiredFluidForce, 
+                                           requiredFluidForce,
                                            symbolsFluidForce,
                                            examplesFluidForce))
         self.__internalCouplings.extend(couplings)
@@ -633,7 +633,7 @@ class CouplingManager:
         """
         Called when internal tableView selection changed
         """
-        self.__selectionChanged(self.__internalTableModel, 
+        self.__selectionChanged(self.__internalTableModel,
                                self.__internalCouplings, selected)
 
 
@@ -642,7 +642,7 @@ class CouplingManager:
         """
         Called when external tableView selection changed
         """
-        self.__selectionChanged(self.__externalTableModel, 
+        self.__selectionChanged(self.__externalTableModel,
                                self.__externalCouplings, selected)
 
 
@@ -674,7 +674,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         """
         # Init base classes
         QWidget.__init__(self, parent)
-        
+
         Ui_FluidStructureInteractionForm.__init__(self)
         self.setupUi(self)
 
@@ -685,47 +685,47 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         self.__addValidators()
         self.__setInitialValues()
 
-        # Use localization model for column 0, 1, 3        
+        # Use localization model for column 0, 1, 3
         modelLocalization  = LocalizationModel("BoundaryZone", case)
 
         # Store modelLocalization as attribut to avoid garbage collector to clean it
         self.__modelLocalization = modelLocalization
 
-        # Initialize the internal and external TableViewItemModel           
-        self.__internalTableModel = self.__createTableViewItemModel(modelLocalization, 
+        # Initialize the internal and external TableViewItemModel
+        self.__internalTableModel = self.__createTableViewItemModel(modelLocalization,
                                                                     'internal_coupling')
         self.__externalTableModel = self.__createTableViewItemModel(modelLocalization,
                                                                     'external_coupling')
-        
+
         # Coupling Manager
         couplingManager = CouplingManager(self, case, self.__internalTableModel
                                          , self.__externalTableModel)
-        # Avoid garbage collector to delete couplingManager        
+        # Avoid garbage collector to delete couplingManager
         self.__couplingManager = couplingManager
-        
+
         # Initialize internal / external table view
         self.__initTableView(self.tableInternalCoupling,
                             self.__internalTableModel,
                             couplingManager.slotInternalSelectionChanged)
 
-        self.__initTableView(self.tableExternalCoupling, 
+        self.__initTableView(self.tableExternalCoupling,
                             self.__externalTableModel,
                             couplingManager.slotExternalSelectionChanged)
-       
+
 
     def __defineConnection(self):
         """
         Define coonection for widget that do not depend on the boundary
         """
-        self.connect(self.lineEditNALIMX, 
+        self.connect(self.lineEditNALIMX,
                      SIGNAL("textChanged(const QString &)"), self.__slotNalimx)
 
-        self.connect(self.lineEditEPALIM, 
+        self.connect(self.lineEditEPALIM,
                      SIGNAL("textChanged(const QString &)"), self.__slotEpalim)
-        self.connect(self.pushButtonAdvanced, 
+        self.connect(self.pushButtonAdvanced,
                      SIGNAL("clicked(bool)"), self.__slotAdvanced)
-        self.connect(self.checkBoxPostSynchronization, 
-                     SIGNAL("stateChanged (int)"), 
+        self.connect(self.checkBoxPostSynchronization,
+                     SIGNAL("stateChanged (int)"),
                      self.__slotPostSynchronization)
 
 
@@ -751,7 +751,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         self.lineEditEPALIM.setText(QString(str(epalim)))
         postSynchronization      = self.__model.getExternalCouplingPostSynchronization()
         self.checkBoxPostSynchronization.setChecked(postSynchronization == 'on')
-    
+
 
     def __createTableViewItemModel(self, modelLocalization, filterALE):
         """
@@ -773,18 +773,18 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         """
         # Set the model
         tableView.setModel(tableViewItemModel)
-         
+
         # set the column size
         tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
         tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
         tableView.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
-        
+
         # Connect slot when selection changed
         tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
         selectionModel = QItemSelectionModel(tableViewItemModel, tableView)
         tableView.setSelectionModel(selectionModel)
 
-        self.connect(selectionModel, 
+        self.connect(selectionModel,
                      SIGNAL( "currentChanged(const QModelIndex &, const QModelIndex &)"),
                      slotSelectionChanged)
 
@@ -797,8 +797,8 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         nalimx, ok = text.toInt()
         if self.sender().validator().state == QValidator.Acceptable:
             self.__model.setMaxIterations(nalimx)
- 
- 
+
+
     @pyqtSignature("const QString&")
     def __slotEpalim(self, text):
         """
@@ -852,7 +852,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # End

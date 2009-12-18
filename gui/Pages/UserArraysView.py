@@ -222,7 +222,7 @@ class UserArraysView(QWidget, Ui_UserArraysForm):
         """
         Translation
         """
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # Testing part

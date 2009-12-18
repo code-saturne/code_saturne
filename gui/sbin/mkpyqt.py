@@ -215,7 +215,7 @@ def translate(path):
             process.start(command2, args2)
             if not process.waitForFinished(2 * 60 * 1000):
                 report_failure(command2, args2, process)
-            
+
 
 def apply(recurse, function, path):
     if not recurse:

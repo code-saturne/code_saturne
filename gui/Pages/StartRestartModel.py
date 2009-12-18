@@ -234,7 +234,7 @@ class StartRestartTestCase(ModelTest):
 
     def checkSetAuxiliaryRestartStatus(self):
         """
-        Check whether the  Auxiliary Restart Status method 
+        Check whether the  Auxiliary Restart Status method
         could be set and get
         """
         model = StartRestartModel(self.case)
@@ -251,7 +251,7 @@ class StartRestartTestCase(ModelTest):
 
 ##    def checkSetandGetMainandAxiliaryRestartFormat(self):
 ##        """
-##        Check whether the Main and Auxiliary Restart format method 
+##        Check whether the Main and Auxiliary Restart format method
 ##        could be set and get
 ##        """
 ##        model = StartRestartModel(self.case)
@@ -290,7 +290,7 @@ class StartRestartTestCase(ModelTest):
                 'Could not get restart rescue value in StartRestart model'
         assert period == "Frequency",\
                 'Could not get restart rescue period in StartRestart model'
-                
+
         model.setRestartRescue(-1)
         freq, period = model.getRestartRescue()
         assert freq == -1,\

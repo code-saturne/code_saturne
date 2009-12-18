@@ -79,7 +79,7 @@ class MatisseRangeDescriptionView(QWidget, Ui_MatisseRangeDescriptionForm):
 
         Ui_MatisseRangeDescriptionForm.__init__(self)
         self.setupUi(self)
-        
+
         self.rangeType = rangeType
         self.case = case
 
@@ -90,14 +90,14 @@ class MatisseRangeDescriptionView(QWidget, Ui_MatisseRangeDescriptionForm):
         if self.rangeType == "outlet_range":
             self.widgetLine.initWidget(self.case, "outlet_range_line")
             self.widgetHeight.initWidget(self.case, "outlet_range_height")
-    
+
 
     def tr(self, text):
         """
         Translation
         """
-        return text 
-        
+        return text
+
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

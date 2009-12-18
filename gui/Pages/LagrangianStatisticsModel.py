@@ -92,7 +92,7 @@ class LagrangianStatisticsModel(Model):
         default['boundary_statistics'] = "off"
         default['iteration_start_boundary'] = 1
         default['threshold_boundary'] = 0.
-        
+
         for v in self.getVariablesNamesBoundary():
             default[v] = v
 
@@ -121,7 +121,7 @@ class LagrangianStatisticsModel(Model):
         names = ["statistical_weight",
                  "velocity_U", "velocity_V", "velocity_W",
                  "mass_fraction", "resident_time", "temperature",
-                 "diameter", "shrinking_core_diameter", 
+                 "diameter", "shrinking_core_diameter",
                  "raw_coal_mass_fraction", "char_mass_fraction" ]
         return names
 
@@ -161,7 +161,7 @@ class LagrangianStatisticsModel(Model):
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
         self.node_stat.xmlSetData('statistics_groups_of_particles', value)
-        
+
 
     def getGroupOfParticlesValue(self):
         """
@@ -181,7 +181,7 @@ class LagrangianStatisticsModel(Model):
         """
         self.isOnOff(status)
         self.node_volume['status'] = status
-        
+
 
     def getVolumeStatisticsStatus(self):
         """
@@ -192,8 +192,8 @@ class LagrangianStatisticsModel(Model):
             status = self._defaultLagrangianStatisticsValues()['volume_statistics']
             self.setVolumeStatisticsStatus(status)
         return status
-        
-    
+
+
     def setIterationStartVolume(self, value):
         """
         Update the iteration value for start of volume statistics calculation.
@@ -201,7 +201,7 @@ class LagrangianStatisticsModel(Model):
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
         self.node_volume.xmlSetData('iteration_start_volume', value)
-        
+
 
     def getIterationStartVolume(self):
         """
@@ -221,7 +221,7 @@ class LagrangianStatisticsModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_volume.xmlSetData('threshold_volume', value)
-        
+
 
     def getThresholdValueVolume(self):
         """
@@ -241,13 +241,13 @@ class LagrangianStatisticsModel(Model):
             label = self._defaultLagrangianStatisticsValues()[name]
             self.setPropertyLabelFromNameVolume(label, label)
         return label
-            
-        
+
+
     def setPropertyLabelFromNameVolume(self, name, label):
         node = self.node_volume.xmlInitChildNode('property', name=name)
         node['label'] = label
 
-    
+
     def getMonitoringStatusFromName(self, name):
         node = self.node_volume.xmlInitChildNode('property', name=name)
         node2 = node.xmlGetChildNode('monitoring_point', 'status')
@@ -255,8 +255,8 @@ class LagrangianStatisticsModel(Model):
             return "on"
         else:
             return "off" # node2['status']
-        
-        
+
+
     def setMonitoringStatusFromName(self, name, status):
         self.isOnOff(status)
         node = self.node_volume.xmlInitChildNode('property', name=name)
@@ -265,7 +265,7 @@ class LagrangianStatisticsModel(Model):
             node.xmlRemoveChild('monitoring_point')
         elif status == "off":
             node2['status'] = status
-            
+
 
     # Boundary functions
     # ------------------
@@ -286,7 +286,7 @@ class LagrangianStatisticsModel(Model):
             self.setBoundaryStatisticsStatus(status)
         return status
 
-    
+
     def setIterationStartBoundary(self, value):
         """
         Update iteration value for start of boundary statistics calculation.
@@ -294,7 +294,7 @@ class LagrangianStatisticsModel(Model):
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
         self.node_boundary.xmlSetData('iteration_start_boundary', value)
-        
+
 
     def getIterationStartBoundary(self):
         """
@@ -314,7 +314,7 @@ class LagrangianStatisticsModel(Model):
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
         self.node_boundary.xmlSetData('threshold_boundary', value)
-        
+
 
     def getThresholdValueBoundary(self):
         """
@@ -334,13 +334,13 @@ class LagrangianStatisticsModel(Model):
             label = self._defaultLagrangianStatisticsValues()[name]
             self.setPropertyLabelFromNameBoundary(label, label)
         return label
-            
-        
+
+
     def setPropertyLabelFromNameBoundary(self, name, label):
         node = self.node_boundary.xmlInitChildNode('property', name=name) #, support="boundary")
         node['label'] = label
 
-    
+
     def getListingPrintingStatusFromName(self, name):
         node = self.node_boundary.xmlInitChildNode('property', name=name) #, support="boundary")
         node2 = node.xmlGetChildNode('listing_printing', 'status')
@@ -349,7 +349,7 @@ class LagrangianStatisticsModel(Model):
         else:
             return "off" # node2['status']
 
-        
+
     def setListingPrintingStatusFromName(self, name, status):
         self.isOnOff(status)
         node = self.node_boundary.xmlInitChildNode('property', name=name) #, support="boundary")
@@ -359,7 +359,7 @@ class LagrangianStatisticsModel(Model):
         elif status == "off":
             node2['status'] = status
 
-    
+
     def getPostprocessingStatusFromName(self, name):
         node = self.node_boundary.xmlInitChildNode('property', name=name) #, support="boundary")
         node2 = node.xmlGetChildNode('postprocessing_recording', 'status')
@@ -408,7 +408,7 @@ class LagrangianStatisticsTestCase(unittest.TestCase):
         """
         model = None
         model = LagrangianStatisticsModel(self.case)
-        
+
         assert model != None, 'Could not instantiate LagrangianStatisticsModel'
 
 
@@ -442,7 +442,7 @@ class LagrangianStatisticsTestCase(unittest.TestCase):
         Check whether the restart method could be set and get
         """
         mdl = LagrangianStatisticsModel(self.case)
-        # default 
+        # default
         status = mdl.getRestart()
         assert status == 'off' ,\
         'Could not get default values for restart status'

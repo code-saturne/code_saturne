@@ -72,7 +72,7 @@ class Model:
 
     def isList(self, liste):
         """This method verifies that list is not empty"""
-        if type(liste) != list: 
+        if type(liste) != list:
             msg = "There is an error: " + string.join(liste) + " is not a list\n"
             raise ValueError, msg
         return True
@@ -80,7 +80,7 @@ class Model:
 
     def isInt(self, ival):
         """This method verifies that ival is a int value"""
-        if type(ival) != int: 
+        if type(ival) != int:
             msg = "There is an error: this value " + str(ival) + " is not an integer\n"
             raise ValueError, msg
         return True
@@ -89,7 +89,7 @@ class Model:
     def isPositiveInt(self, ival):
         """This method verifies that ival is a int value > or = 0"""
         if self.isInt(ival):
-            if ival < 0: 
+            if ival < 0:
                 msg = "There is an error: this value " + str(ival) + " must not be negative\n"
                 raise ValueError, msg
         return True
@@ -98,7 +98,7 @@ class Model:
 #    def isStrictPositiveInt(self, ival):
 #        """This method verifies that ival is a int value > 0"""
 #        if self.isInt(ival):
-#            if ival <= 0: 
+#            if ival <= 0:
 #                msg = "There is an error: this value " + str(ival) + "\n"\
 #                      "must not be neither negative neither 0\n"
 #                raise ValueError, msg
@@ -108,7 +108,7 @@ class Model:
     def isIntEqual(self, ival1,  ival2):
         """This method verifies that val1 = val2"""
         if self.isInt(ival1) and self.isInt(ival2):
-            if ival1 != ival2: 
+            if ival1 != ival2:
                 msg = "There is an error: this value " + str(ival1) + "\n"\
                       "must be equal to " + str(ival2) + "\n"
                 raise ValueError, msg
@@ -117,7 +117,7 @@ class Model:
 ##    def isStrictBetweenInt(self, ival,  imin, imax):
 ##        """This method verifies that ival is in imin and imax"""
 ##        if self.isInt(ival):
-##            if ival <= imin or ival >= imax: 
+##            if ival <= imin or ival >= imax:
 ##                msg = "There is an error: this value " + str(ival) + "\n"\
 ##                      "must be strictly between " + str(imin) + "and" + str(imax) + "\n"
 ##                raise ValueError, msg
@@ -127,7 +127,7 @@ class Model:
 ##    def isBetweenInt(self, ival,  imin, imax):
 ##        """This method verifies that ival is in imin and imax"""
 ##        if self.isInt(ival):
-##            if ival < imin or ival > imax: 
+##            if ival < imin or ival > imax:
 ##                msg = "There is an error: this value " + str(ival) + "\n"\
 ##                      "must be between " + str(imin) + "and" + str(imax) + "\n"
 ##                raise ValueError, msg
@@ -146,7 +146,7 @@ class Model:
 
     def isFloat(self, val):
         """This method verifies that val is a float value > 0"""
-        if type(val) != float and type(val) != int: 
+        if type(val) != float and type(val) != int:
             msg = "There is an error: this value " + str(val) + " is not a float value\n"
             raise ValueError, msg
         return True
@@ -155,7 +155,7 @@ class Model:
     def isPositiveFloat(self, val):
         """This method verifies that val is a float value > or = 0"""
         if self.isFloat(val):
-            if val < 0: 
+            if val < 0:
                 msg = "There is an error: this value " + str(val) + " must not be negative\n"
                 raise ValueError, msg
         return True
@@ -164,7 +164,7 @@ class Model:
     def isStrictPositiveFloat(self, val):
         """This method verifies that val is a float value > 0"""
         if self.isFloat(val):
-            if val <= 0: 
+            if val <= 0:
                 msg = "There is an error: this value " + str(val) + "\n"\
                       "must not be neither negative neither 0\n"
                 raise ValueError, msg
@@ -174,7 +174,7 @@ class Model:
     def isFloatEqual(self, val1, val2):
         """This method verifies that val1 = val2"""
         if self.isFloat(val1) and self.isFloat(val2):
-            if val1 > (val2 + 1e-6) or val1 < (val2 - 1e-6): 
+            if val1 > (val2 + 1e-6) or val1 < (val2 - 1e-6):
                 msg = "There is an error: this value " + str(val1) + "\n"\
                       "must be equal to " + str(val2) + "\n"
                 raise ValueError, msg
@@ -184,7 +184,7 @@ class Model:
     def isGreater(self, val,  min):
         """This method verifies that val > min"""
         if self.isFloat(val):
-            if val <= min: 
+            if val <= min:
                 msg = "There is an error: this value " + str(val) + "\n"\
                       "must be greater than " + str(min) + "\n"
                 raise ValueError, msg
@@ -194,7 +194,7 @@ class Model:
     def isGreaterOrEqual(self, val,  min):
         """This method verifies that val >= min"""
         if self.isFloat(val):
-            if val < min: 
+            if val < min:
                 msg = "There is an error: this value " + str(val) + "\n"\
                       "must be greater or equal than " + str(min) + "\n"
                 raise ValueError, msg
@@ -204,7 +204,7 @@ class Model:
     def isLower(self, val,  max):
         """This method verifies that val < max"""
         if self.isFloat(val):
-            if val >= max: 
+            if val >= max:
                 msg = "There is an error: this value " + str(val) + "\n"\
                       "must be lower than " + str(max) + "\n"
                 raise ValueError, msg
@@ -214,7 +214,7 @@ class Model:
     def isLowerOrEqual(self, val,  max):
         """This method verifies that val <= max"""
         if self.isFloat(val):
-            if val > max: 
+            if val > max:
                 msg = "There is an error: this value " + str(val) + "\n"\
                       "must be lower or equal than " + str(max) + "\n"
                 raise ValueError, msg
@@ -267,7 +267,7 @@ class Variables:
     """
     This class creates <variable>, <scalar> and <property> markups.
     Each new markup has a 'name' and a 'label' attribute.
-    Each new markup has <listing_printing status='on'>, 
+    Each new markup has <listing_printing status='on'>,
     <postprocessing_recording status='on'> and several
     <probe_recording name="XX"> (if any <probe> exists) as child markups.
     """
@@ -287,7 +287,7 @@ class Variables:
 ##        default['temperature_celsius'] = 20.0
 ##        default['temperature_kelvin'] = 293.15
 ##        default['enthalpy'] = 297413.
-##    
+##
 ##        #Initial values for properties: 20 degC air at atmospheric pressure.
 ##        default['density'] = 1.17862
 ##        default['molecular_viscosity'] = 1.83e-05
@@ -425,7 +425,7 @@ class Variables:
 ##        if nodeList != None:
 ##            for node in nodeList :
 ##                node.xmlRemoveNode()
-    
+
 
     def setNewProperty(self, node, tag):
         """
@@ -577,7 +577,7 @@ def runTest():
     runner = unittest.TextTestRunner()
     runner.run(suite1())
 ##    runner.run(suite2())
-        
+
 #-------------------------------------------------------------------------------
 # Variables test case
 #-------------------------------------------------------------------------------

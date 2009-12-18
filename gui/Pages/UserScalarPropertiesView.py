@@ -111,7 +111,7 @@ class LabelDelegate(QItemDelegate):
                 default['list']   = model.mdl.getScalarLabelsList()
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
-    
+
                 from VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
@@ -124,14 +124,14 @@ class LabelDelegate(QItemDelegate):
             model.setData(index, QVariant(QString(new_plabel)), Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
-# Combo box delegate for the type of coefficient 
+# Combo box delegate for the type of coefficient
 #-------------------------------------------------------------------------------
 
 class TypeDelegate(QItemDelegate):
     """
     Use of a combo box in the table.
     """
-    def __init__(self, parent, stbar): 
+    def __init__(self, parent, stbar):
         super(TypeDelegate, self).__init__(parent)
         self.parent   = parent
         self.stbar    = stbar
@@ -168,7 +168,7 @@ class TypeDelegate(QItemDelegate):
 
 
     def tr(self, text):
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for the value
@@ -213,14 +213,14 @@ class StandardItemModelScalars(QStandardItemModel):
         """
         """
         QStandardItemModel.__init__(self)
-        
+
         self.headers = [self.tr("Name"),
                         self.tr("Associated\nScalar"),
                         self.tr("Type of\ncoefficient"),    # constant/variable
                         self.tr("Type of\nvalue"),          # initial/reference value
                         self.tr("Value\n(m2/s)")]
         self.setColumnCount(len(self.headers))
-        
+
         self._data = []
         self.mdl = mdl
         self.parent = parent
@@ -237,7 +237,7 @@ class StandardItemModelScalars(QStandardItemModel):
             val = self._data[row][col]
             return QVariant(val)
         return QVariant()
-    
+
 
     def flags(self, index):
         if not index.isValid():
@@ -281,7 +281,7 @@ class StandardItemModelScalars(QStandardItemModel):
 
         # Value
         elif col == 4:
-            coeff, ok  = value.toDouble() 
+            coeff, ok  = value.toDouble()
             self._data[row][col] = coeff
             self.mdl.setScalarDiffusivityInitialValue(scalar_label, coeff)
 
@@ -306,7 +306,7 @@ class StandardItemModelScalars(QStandardItemModel):
 
         row = self.rowCount()
         self.setRowCount(row+1)
-        
+
         self._subroutineMessage()
 
 
@@ -375,7 +375,7 @@ class UserScalarPropertiesView(QWidget, Ui_UserScalarPropertiesForm):
 
 
     def tr(self, text):
-        return text 
+        return text
 
 #-------------------------------------------------------------------------------
 # End

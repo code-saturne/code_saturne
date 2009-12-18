@@ -188,7 +188,7 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
 
         mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal = self.mdl.getThermoPhysicalModel()
 
-        # no 'thermal_conductivity' if not Joule and not Thermal scalar and not 
+        # no 'thermal_conductivity' if not Joule and not Thermal scalar and not
         if mdl_joule == 'off' and mdl_thermal == 'off' and mdl_atmo == 'off':
             self.groupBoxAl.hide()
 

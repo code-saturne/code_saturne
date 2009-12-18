@@ -361,7 +361,7 @@ class StandardItemModelScheme(QStandardItemModel):
 
 class StandardItemModelSolver(QStandardItemModel):
     """
-    Model associated with a QTableView. 
+    Model associated with a QTableView.
     """
     def __init__(self, NPE, SM):
         """
@@ -427,8 +427,8 @@ class StandardItemModelSolver(QStandardItemModel):
             return QVariant(Qt.AlignCenter)
 
         return QVariant()
- 
- 
+
+
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
@@ -461,7 +461,7 @@ class StandardItemModelSolver(QStandardItemModel):
     def setData(self, index, value, role=None):
         row = index.row()
         label = self.dataSolver[row]['label']
-        
+
         if index.column() == 1:
             self.dataSolver[row]['nitmax'], ok = value.toInt()
             self.NPE.setMaxIterNumber(label, self.dataSolver[row]['nitmax'])

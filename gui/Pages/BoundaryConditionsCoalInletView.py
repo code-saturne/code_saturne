@@ -222,7 +222,7 @@ class StandardItemModelCoalMass(QStandardItemModel):
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
-    
+
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return QVariant("Coal" + " " + str(section+1))
@@ -230,7 +230,7 @@ class StandardItemModelCoalMass(QStandardItemModel):
             return QVariant("Class" + " " + str(section+1))
         return QVariant()
 
-    
+
     def setData(self, index, value, role):
         if not hasattr(self, "modelBoundary"):
             log.debug("ERROR in setData (StandardItemModelCoalMass): no Boundary model defined")
@@ -492,7 +492,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         # fill the flow and temperature of the coal
         for coal in range(0, self.__coalNumber):
             self.__modelCoal.insertItem(self.tr("Coal ") + " " + str(coal+1),
-                                        self.__boundary.getCoalFlow(coal), 
+                                        self.__boundary.getCoalFlow(coal),
                                         self.__boundary.getCoalTemperature(coal))
 
         # fill the ratio of mass for each class for each coal
@@ -666,7 +666,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         exp = self.__boundary.getDirection('direction_formula')
 
         req = [('dir_x', 'Direction of the flow along X'),
-               ('dir_y', 'Direction of the flow along Y'), 
+               ('dir_y', 'Direction of the flow along Y'),
                ('dir_z', 'Direction of the flow along Z')]
 
         exa = "dir_x = 3.0;\ndir_y = 1.0;\ndir_z = 0.0;\n"
@@ -680,7 +680,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,
-                                     symbols    = sym, 
+                                     symbols    = sym,
                                      examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()

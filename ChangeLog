@@ -1,3 +1,10 @@
+* 17/12/2009 - David Monfort <david.monfort@edf.fr>
+  Update the "remove trailing blanks and tabs" script, so that it
+  handles the Python interface files and the different runcase scripts.
+  Run it once for every file.
+  modified script:
+    sbin/rmb
+
 * 17/12/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Minor modifications for GUI integration in the SALOME platform.
   modified routines:

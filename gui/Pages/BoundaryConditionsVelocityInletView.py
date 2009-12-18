@@ -125,7 +125,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         validatorX = DoubleValidator(self.lineEditDirectionX)
         validatorY = DoubleValidator(self.lineEditDirectionY)
         validatorZ = DoubleValidator(self.lineEditDirectionZ)
-        
+
         # Apply validators
         self.lineEditVelocity.setValidator(validatorVelocity)
         self.lineEditDirectionX.setValidator(validatorX)
@@ -357,7 +357,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         exp = self.__boundary.getDirection('direction_formula')
 
         req = [('dir_x', 'Direction of the flow along X'),
-               ('dir_y', 'Direction of the flow along Y'), 
+               ('dir_y', 'Direction of the flow along Y'),
                ('dir_z', 'Direction of the flow along Z')]
 
         exa = "dir_x = 3.0;\ndir_y = 1.0;\ndir_z = 0.0;\n"
@@ -371,7 +371,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,
-                                     symbols    = sym, 
+                                     symbols    = sym,
                                      examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()

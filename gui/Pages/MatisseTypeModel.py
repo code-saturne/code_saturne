@@ -59,7 +59,7 @@ class MatisseTypeModel:
         self.node_compute= self.node_matisse.xmlInitChildNode('compute')
         self.node_geom   = self.node_compute.xmlInitChildNode('geometry')
         self.node_phys   = self.node_compute.xmlInitChildNode('physical_model')
-        
+
         self.node_type   = self.node_geom.xmlInitChildNode('typent', 'label')
         self.node_alveo  = self.node_phys.xmlInitChildNode('ialveo', 'status')
 
@@ -102,7 +102,7 @@ class MatisseTypeModel:
             matisse_type = 'djw'
         else :
             matisse_type = self.node_type['label']
-            
+
         if matisse_type not in self.matisseTypes :
             matisse_type = self.defaultMatisseTypeValues()['typent']
             self.setMatisseType(matisse_type)

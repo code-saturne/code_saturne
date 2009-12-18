@@ -71,7 +71,7 @@ class FluidCharacteristicsModel(Variables, Model):
         self.node_heat      = self.setNewFluidProperty(self.node_fluid, 'specific_heat')
         self.node_cond      = self.setNewFluidProperty(self.node_fluid, 'thermal_conductivity')
 
-        self.nodeList = (self.node_density, self.node_viscosity, 
+        self.nodeList = (self.node_density, self.node_viscosity,
                          self.node_heat, self.node_cond )
 
 
@@ -86,7 +86,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
     def defaultFluidCharacteristicsValues(self):
         """
-        Return in a dictionnary which contains default values. 
+        Return in a dictionnary which contains default values.
         (also called by CoalCombustionModel)
         """
         default = {}
@@ -154,10 +154,10 @@ class FluidCharacteristicsModel(Variables, Model):
 
     def getInitialValue(self, tag):
         """
-        Return initial value of the markup tag : 'density', or  
+        Return initial value of the markup tag : 'density', or
         'molecular_viscosity', or 'specific_heat'or 'thermal_conductivity'
         """
-        self.isInList(tag, ('density', 'molecular_viscosity', 
+        self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
         pp = node.xmlGetDouble('initial_value')
@@ -169,10 +169,10 @@ class FluidCharacteristicsModel(Variables, Model):
 
     def setInitialValue(self, tag, val):
         """
-        Put initial value for the markup tag : 'density', or  
+        Put initial value for the markup tag : 'density', or
         'molecular_viscosity', or 'specific_heat'or 'thermal_conductivity'
         """
-        self.isInList(tag, ('density', 'molecular_viscosity', 
+        self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity'))
         self.isGreater(val, 0.)
         node = self.node_fluid.xmlGetNode('property', name=tag)
@@ -221,10 +221,10 @@ class FluidCharacteristicsModel(Variables, Model):
 
     def getFormula(self, tag):
         """
-        Return a formula for I{tag} 'density', 'molecular_viscosity', 
+        Return a formula for I{tag} 'density', 'molecular_viscosity',
         'specific_heat' or 'thermal_conductivity'
         """
-        self.isInList(tag, ('density', 'molecular_viscosity', 
+        self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
         return node.xmlGetString('formula')
@@ -235,7 +235,7 @@ class FluidCharacteristicsModel(Variables, Model):
         Gives a formula for 'density', 'molecular_viscosity',
         'specific_heat'or 'thermal_conductivity'
         """
-        self.isInList(tag, ('density', 'molecular_viscosity', 
+        self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
         node.xmlSetData('formula', str)
@@ -243,7 +243,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
     def getPropertyMode(self, tag):
         """Return choice of node I{tag}. Choice is constant or variable"""
-        self.isInList(tag, ('density', 'molecular_viscosity', 
+        self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity'))
         node = self.__nodeFromTag(tag)
         c = node['choice']
@@ -253,7 +253,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
     def setPropertyMode(self, tag, choice):
         """Put choice in xml file's node I{tag}"""
-        self.isInList(tag, ('density', 'molecular_viscosity', 
+        self.isInList(tag, ('density', 'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity'))
         self.isInList(choice, ('constant', 'user_law', 'variable'))
 
@@ -365,7 +365,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         'Could not set initial value of molecular_viscosity'
         assert mdl.getInitialValueViscosity() == 1.2e-4,\
         'Could not get initial value of molecular_viscosity'
-        
+
     def checkSetandGetInitialValueHeat(self):
         """Check whether the initial value for specific_heat could be set and get"""
         mdl = FluidCharacteristicsModel(self.case)
@@ -379,7 +379,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         'Could not set initial value of specific_heat'
         assert mdl.getInitialValueHeat() == 456.9,\
         'Could not get initial value of specific_heat'
-        
+
     def checkSetandGetInitialValueCond(self):
         """Check whether the initial value for thermal_conductivity could be set and get"""
         mdl = FluidCharacteristicsModel(self.case)
@@ -393,7 +393,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         'Could not set initial value of thermal_conductivity'
         assert mdl.getInitialValueCond() == 456.9,\
         'Could not get initial value of thermal_conductivity'
-        
+
     def checkSetandGetPropertyMode(self):
         """Check whether choice constant or variable could be set and get"""
         mdl = FluidCharacteristicsModel(self.case)
@@ -405,7 +405,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         'Could not set choice constant or variable for property'
         assert mdl.getPropertyMode('density') == 'variable',\
         'Could not get choice constant or variable for property'
-        
+
         mdl.setPropertyMode('density', 'constant')
         doc2 = '''<property choice="constant" label="Density" name="density">
                     <initial_value>1.17862</initial_value>

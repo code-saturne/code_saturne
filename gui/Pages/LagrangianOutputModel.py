@@ -117,7 +117,7 @@ class LagrangianOutputModel(Model):
 ##         default = self._defaultLagrangianOutputValues()['listing_printing_frequency']
 ##         node = self.node_output.xmlInitChildNode('listing_printing_frequency')
 ##         node.xmlSetTextNode(str(default))
-        
+
 ##         default = self._defaultLagrangianOutputValues()['postprocessing_frequency']
 ##         node = self.node_output.xmlInitChildNode('postprocessing_frequency')
 ##         node.xmlSetTextNode(str(default))
@@ -127,38 +127,38 @@ class LagrangianOutputModel(Model):
 
 ##         default = self._defaultLagrangianOutputValues()['postprocessing_options']
 ##         self.node_output.xmlInitChildNode('postprocessing_options', choice=default)
-        
+
 ##         default = self._defaultLagrangianOutputValues()['particles']
 ##         self.node_output.xmlInitChildNode('particles', status=default)
-        
+
 ##         default = self._defaultLagrangianOutputValues()['trajectory']
 ##         self.node_output.xmlInitChildNode('trajectory', status=default)
-        
+
 ##         default = self._defaultLagrangianOutputValues()['number_of_particles']
 ##         node = self.node_output.xmlInitChildNode('number_of_particles')
 ##         node.xmlSetTextNode(str(default))
-        
+
 ##         default = self._defaultLagrangianOutputValues()['resident_time']
 ##         self.node_output.xmlInitChildNode('resident_time', status=default)
-        
+
 ##         default = self._defaultLagrangianOutputValues()['diameter']
 ##         self.node_output.xmlInitChildNode('diameter', status=default)
-        
+
 ##         default = self._defaultLagrangianOutputValues()['velocity_particles']
 ##         self.node_output.xmlInitChildNode('velocity_particles', status=default)
-        
+
 ##         default = self._defaultLagrangianOutputValues()['velocity_fluid_seen']
 ##         self.node_output.xmlInitChildNode('velocity_fluid_seen', status=default)
-        
+
 ##         default = self._defaultLagrangianOutputValues()['mass']
 ##         self.node_output.xmlInitChildNode('mass', status=default)
-        
+
 ##         default = self._defaultLagrangianOutputValues()['shrinking_core_diameter']
 ##         self.node_output.xmlInitChildNode('shrinking_core_diameter', status=default)
-        
+
 ##         default = self._defaultLagrangianOutputValues()['raw_coal_mass_fraction']
 ##         self.node_output.xmlInitChildNode('raw_coal_mass_fraction', status=default)
-        
+
 ##         default = self._defaultLagrangianOutputValues()['char_mass_fraction']
 ##         self.node_output.xmlInitChildNode('char_mass_fraction', status=default)
 
@@ -213,7 +213,7 @@ class LagrangianOutputModel(Model):
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
         self.node_output.xmlSetData('number_of_particles', value)
-        
+
 
     def getDisplayParticlesValue(self):
         """
@@ -288,7 +288,7 @@ class LagrangianOutputModel(Model):
             format = self._defaultLagrangianOutputValues()['postprocessing_options']
             #self.setPostProcessingOption(format)
         return format
-        
+
 
     def setFluidVelocityStatus(self, status):
         """
@@ -403,7 +403,7 @@ class LagrangianOutputModel(Model):
             status = self._defaultLagrangianOutputValues()['temperature']
             self.setParticleTemperatureStatus(status)
         return status
-    
+
 
     def setParticleMassStatus(self, status):
         """
@@ -427,7 +427,7 @@ class LagrangianOutputModel(Model):
             self.setParticleMassStatus(status)
         return status
 
-        
+
     def setCoalParticleTemperatureStatus(self, status):
         """
         Update the status markup from the XML document to associate the variable
@@ -453,7 +453,7 @@ class LagrangianOutputModel(Model):
             status = self._defaultLagrangianOutputValues()['mass']
             self.setParticleMassStatus(status)
         return status
-    
+
 
     def setCoalParticleDiameterStatus(self, status):
         """
@@ -556,7 +556,7 @@ class LagrangianOutputTestCase(unittest.TestCase):
         """
         model = None
         model = LagrangianOutputModel(self.case)
-        
+
         assert model != None, 'Could not instantiate LagrangianOutputModel'
 
 
@@ -659,7 +659,7 @@ class LagrangianOutputTestCase(unittest.TestCase):
         'Could not get default values for particles status'
         mdl.setParticlesStatus('on')
         doc = """
-        <particles status="on"/>        
+        <particles status="on"/>
         """
 
         assert mdl.node_output.xmlInitChildNode('particles') == self.xmlNodeFromString(doc) ,\
@@ -864,7 +864,7 @@ def suite():
     testSuite = unittest.makeSuite(LagrangianOutputTestCase, "check")
     return testSuite
 
-    
+
 def runTest():
     print "LagrangianOutputTestCase A COMPLETER *********."
     runner = unittest.TextTestRunner()

@@ -72,8 +72,8 @@ class MatisseNetworkModel:
         self.node_line          = self.node_network.xmlInitChildNode('line')
         self.node_row           = self.node_network.xmlInitChildNode('row')
 
-        self.list_line_area     = self.node_line.xmlGetNodeList('area','label') 
-        self.list_row_area      = self.node_row.xmlGetNodeList('area','label') 
+        self.list_line_area     = self.node_line.xmlGetNodeList('area','label')
+        self.list_row_area      = self.node_row.xmlGetNodeList('area','label')
 
 
     def defaultMatisseNetworkValues(self):
@@ -87,7 +87,7 @@ class MatisseNetworkModel:
         modelgeom = MatisseGeom.MatisseGeomModel(self.case)
         hreso = modelgeom.getMatisseGeomDoubleVar('nchest')
         step = modelgeom.getMatisseGeomDoubleVar('epchel')
-        
+
         default['nbcellreso'] = hreso
         default['nbcellplen'] = 0.
         default['hreso'] = hreso*step
@@ -125,7 +125,7 @@ class MatisseNetworkModel:
         else :
             print areatype + ": Unknown area type"
             sys.exit(1)
-            
+
         node.xmlAddChild('min').xmlSetTextNode(bmin)
         node.xmlAddChild('max').xmlSetTextNode(bmax)
 
@@ -185,7 +185,7 @@ class MatisseNetworkModel:
 
         return llabel, lbmin, lbmax
 
-        
+
     def EraseArea(self, areatype, num):
         """
         Remove Area.
@@ -220,7 +220,7 @@ class MatisseNetworkModel:
             tagtmp = tag
         val = self.node_phymodel.xmlGetDouble(tagtmp)
 
-        if val == "" or val == None: 
+        if val == "" or val == None:
             self.node_phymodel.xmlInitChildNode(tagtmp)
             val = self.defaultMatisseNetworkValues()[tagtmp]
             self.setMatisseNetworkVar(tag, val)
@@ -257,7 +257,7 @@ class MatisseNetworkModelTestCase(unittest.TestCase):
         model = None
         model = MatisseNetworkModel(self.case)
         assert model != None, 'Could not instantiate MatisseNetworkModel'
-        
+
 def suite():
     testSuite = unittest.makeSuite(MatisseNetworkModelTestCase, "check")
     return testSuite

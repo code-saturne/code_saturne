@@ -683,7 +683,7 @@ class LagrangianModel(Model):
 
     def getSchemeOrder(self):
         """
-        Return value for scheme order. 
+        Return value for scheme order.
         """
         node_order = self.node_lagr.xmlInitChildNode('scheme_order', 'choice')
         if node_order:
@@ -861,7 +861,7 @@ class LagrangianTestCase(ModelTest):
 
 
     def checkCarrierFlowStationary(self):
-        """Check whether the stationary behavior of the carrier flow 
+        """Check whether the stationary behavior of the carrier flow
         could be set and get."""
         mdl = LagrangianModel(self.case)
 

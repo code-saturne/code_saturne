@@ -443,7 +443,7 @@ Particles and droplets tracking
     Global settings
     Statistics
     Output
-Boundary conditions 
+Boundary conditions
     Definition of boundary regions
     Boundary conditions
     Particles boundary conditions

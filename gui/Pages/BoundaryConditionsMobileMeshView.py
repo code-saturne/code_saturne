@@ -123,7 +123,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         """
         exp = self.__boundary.getFormula()
         aleChoice = self.__boundary.getALEChoice();
-        
+
         if aleChoice == "fixed_velocity":
             if not exp:
                 exp = 'mesh_u ='
@@ -143,7 +143,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
                  ('t', 'current time'),
                  ('iter', 'number of iteration')]
 
-        dialog = QMeiEditorView(self, 
+        dialog = QMeiEditorView(self,
                                 expression = exp,
                                 required   = req,
                                 symbols    = symbs,
@@ -158,7 +158,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
     @pyqtSignature("const QString&")
     def __slotCombo(self, text):
         """
-        Called when the combobox changed. 
+        Called when the combobox changed.
         """
         modelData = self.__comboModel.dicoV2M[str(text)]
         # Enable/disable formula button.

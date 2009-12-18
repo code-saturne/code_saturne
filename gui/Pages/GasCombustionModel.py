@@ -180,7 +180,7 @@ def suite():
     testSuite = unittest.makeSuite(GasCombustionTestCase, "check")
     return testSuite
 
-    
+
 def runTest():
     print "GasCombustionTestCase - A FAIRE**************"
     runner = unittest.TextTestRunner()

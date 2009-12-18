@@ -135,7 +135,7 @@ class TimeStepModel(Model):
         from TurbulenceModel import TurbulenceModel
         model = TurbulenceModel(self.case).getTurbulenceModel()
         del TurbulenceModel
-        if model in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'): 
+        if model in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
             v = 0
             self.setTimePassing(v)
 
@@ -329,13 +329,13 @@ class TimeStepModel(Model):
         """
         if not self.thermalCase():
             raise ValueError, "TimeStepModel: no thermal model in this case"
-        
+
         node = self.node_time.xmlInitChildNode('thermal_time_step', 'status')
         s = node['status']
         if not s:
             s = self.defaultValues()['thermal_time_step']
             self.setThermalTimeStep(s)
-        return s 
+        return s
 
 
     def setThermalTimeStep(self, status):
@@ -345,7 +345,7 @@ class TimeStepModel(Model):
 
         if not self.thermalCase():
             raise ValueError, "TimeStepModel: no thermal model in this case"
-        
+
         self.isOnOff(status)
         node = self.node_time.xmlInitChildNode('thermal_time_step', 'status')
         node['status'] = status
@@ -360,7 +360,7 @@ class TimeStepModel(Model):
         if not s:
             s = self.defaultValues()['zero_time_step']
             self.setZeroTimeStep(s)
-        return s 
+        return s
 
 
     def setZeroTimeStep(self, status):
@@ -439,7 +439,7 @@ class TimeStepModelTestCase(ModelTest):
         mdl = None
         mdl = TimeStepModel(self.case)
         assert mdl != None, 'Could not instantiate TimeStepModel'
-        
+
     def checkSetandGetTimePassing(self):
         """Check whether the TimeStepModel class could be set and get time passing"""
         mdl = TimeStepModel(self.case)
@@ -498,9 +498,9 @@ class TimeStepModelTestCase(ModelTest):
             'Could not set number of iterations in TimeStepModel'
         assert mdl.getIterationsNumber() == 50,\
             'Could not get number of iterations in TimeStepModel'
-        
+
     def checkSetandGetMaxCourant(self):
-        """Check whether the TimeStepModel class could be 
+        """Check whether the TimeStepModel class could be
         set and get max courant number : option(s) only for idtvar = 1 or 2"""
         mdl = TimeStepModel(self.case)
         mdl.setTimePassing(1)
@@ -518,7 +518,7 @@ class TimeStepModelTestCase(ModelTest):
             'Could not set max courant number in TimeStepModel'
         assert mdl.getMaxCourant() == 10,\
             'Could not get max courant number in TimeStepModel'
-        
+
     def checkSetandGetMaxFourier(self):
         """Check whether the TimeStepModel class could be set and get
          max fourier number (if idtvar = 0 : no options max fourier)"""
@@ -538,7 +538,7 @@ class TimeStepModelTestCase(ModelTest):
             'Could not set max fourier number in TimeStepModel'
         assert mdl.getMaxFourier() == 100.,\
             'Could not get max fourier number in TimeStepModel'
-        
+
     def checkSetandGetTimeStepMinMaxandVariation(self):
         """Check whether the TimeStepModel class could be set and get
          options :min max and variation for time step"""
@@ -633,7 +633,7 @@ class TimeStepModelTestCase(ModelTest):
                  </time_parameters>'''
         assert mdl.node_time == self.xmlNodeFromString(doc),\
             'Could not remove thermal time step node in TimeStepModel'
-            
+
 def suite():
     testSuite = unittest.makeSuite(TimeStepModelTestCase, "check")
     return testSuite
@@ -655,7 +655,7 @@ class TimeStepMatisseModelTestCase(ModelTest):
         model = None
         model = TimeStepMatisseModel(self.case)
         assert model != None, 'Could not instantiate TimeStepMatisseModel'
-        
+
     def checkSetandGetDtdtmx(self):
         """Check whether the TimeStepMatisseModel class could be set and get Dtdtmx"""
         model = TimeStepMatisseModel(self.case)
@@ -667,7 +667,7 @@ class TimeStepMatisseModelTestCase(ModelTest):
             'Could not set Dtdtmx in TimeStepMatisseModel'
         assert model.getDtdtmx() == 10.5,\
             'Could not get Dtdtmx in TimeStepMatisseModel'
-            
+
 def suite2():
     testSuite = unittest.makeSuite(TimeStepMatisseModelTestCase, "check")
     return testSuite

@@ -81,7 +81,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
     Behavior depends on the value of attribute tagName (self.tagName).
     """
 
-    def __init__(self, parent, case, tagName, dico): 
+    def __init__(self, parent, case, tagName, dico):
         """
         """
         QStandardItemModel.__init__(self)
@@ -108,9 +108,9 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
             self.column_step_min = 3
             self.column_step_max = 4
 
-            # XML Model 
+            # XML Model
             if self.tagName in ["network_line", "network_row"]:
-                
+
                 self.model = MatisseNetworkModel(self.case)
 
                 model_geom = MatisseGeom.MatisseGeomModel(self.case)
@@ -122,40 +122,40 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
                 self.heightMax = model_geom.getMatisseGeomDoubleVar('nchest')
 
                 model_mat_type = MatisseType.MatisseTypeModel(self.case)
-                self.alveoStat = model_mat_type.node_alveo['status']               
-                
+                self.alveoStat = model_mat_type.node_alveo['status']
+
             elif self.tagName in ["inlet_range_line", "inlet_range_height"]:
-                
+
                 self.model = MatisseRangeDescriptionModel(self.case, 'inlet_range')
-                
+
                 model_geom = MatisseGeom.MatisseGeomModel(self.case)
                 self.lineStep = model_geom.getMatisseGeomDoubleVar('ptrres')
                 self.heightStep = model_geom.getMatisseGeomDoubleVar('epchel')
                 self.lineMax = model_geom.getMatisseGeomDoubleVar('nptran')
                 self.heightMax = model_geom.getMatisseGeomDoubleVar('nchest')
-        
+
             elif self.tagName in ["outlet_range_line", "outlet_range_height"]:
-                
+
                 self.model = MatisseRangeDescriptionModel(self.case, 'outlet_range')
-                
+
                 model_geom = MatisseGeom.MatisseGeomModel(self.case)
                 self.lineStep = model_geom.getMatisseGeomDoubleVar('ptrres')
                 self.heightStep = model_geom.getMatisseGeomDoubleVar('epchel')
                 self.lineMax = model_geom.getMatisseGeomDoubleVar('nptran')
                 self.heightMax = model_geom.getMatisseGeomDoubleVar('nchest')
-                                
+
         else:
         #elif self.tagName in ["thermal_line", "thermal_row", "thermal_height"]:
 
             # Thermic load
             self.areatype = self.dico['areatype']
-            
+
             self.default_row = ["default", 0., 0., 0., 0., 0.]
             self.columns_editable = [0, 1, 2, 3]
             self.column_step_min = 4
             self.column_step_max = 5
-            
-            # XML Model 
+
+            # XML Model
             self.model = MatisseThermicModel(self.case)
 
             self.model_mat_type = MatisseType.MatisseTypeModel(self.case)
@@ -171,16 +171,16 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
         #
         self.areatype = self.dico['areatype']
         if self.areatype == 'line' :
-            self.step = self.lineStep 
+            self.step = self.lineStep
         elif self.areatype == 'height' :
             self.step = self.heightStep
         elif self.areatype == 'row' :
             self.step = self.rowStep
 
-            
+
     def __initData(self):
         """
-        Load previous values 
+        Load previous values
         """
         if self.tagName in ["inlet_range_line", "inlet_range_height",
                             "outlet_range_line", "outlet_range_height",
@@ -213,7 +213,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
                 print "XML format error : bad definition of <area> "
                 sys.exit(1)
 
-            # Default values 
+            # Default values
             if len(llabel) == 0 :
                 dlabel, dmin, dmax, dval = self.model.DefaultArea(self.areatype)
                 self.model.NewArea(self.areatype, dlabel, dmin, dmax, dval)
@@ -233,7 +233,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
                 self.dataMatisse.append(row)
                 nrows = self.rowCount()
                 self.setRowCount(nrows+1)
-        
+
 
     def data(self, index, role):
         if not index.isValid():
@@ -249,8 +249,8 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable 
-    
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -272,14 +272,14 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
         if self.tagName in ["inlet_range_line", "inlet_range_height",
                             "outlet_range_line", "outlet_range_height",
                             "network_line", "network_row"]:
-            
+
             bool_create = self.__addRowRangeDescriptionNetwork(label, sbmin, sbmax, self.areatype, self.step)
 
         if self.tagName in ["thermal_line", "thermal_row", "thermal_height"]:
-            
+
             bool_create = self.__addRowThermal(label, sbmin, sbmax, svalue, self.areatype, self.step)
 
-            
+
         if bool_create:
             row = self.default_row
             row[0] = label
@@ -310,8 +310,8 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
             bool_modify = self.__editRangeThermal(new_label, new_bmin, new_bmax, new_value,
                                                   label, sbmin, sbmax, svalue,
                                                   self.areatype, self.step)
-            
-            
+
+
         if bool_modify:
             pass # TODO
 
@@ -324,25 +324,25 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
         if self.tagName in ["inlet_range_line", "inlet_range_height",
                             "outlet_range_line", "outlet_range_height",
                             "network_line", "network_row"]:
-            
+
             [label, sbmin, sbmax, sbmin2, sbmax2] = self.dataMatisse[row]
             bool_cancel = self.__deleteRowRangeDescription(label, sbmin, sbmax, self.areatype)
 
         if self.tagName in ["thermal_line", "thermal_row", "thermal_height"]:
             [label, sbmin, sbmax, svalue, sbmin2, sbmax2] = self.dataMatisse[row]
             bool_cancel = self.__deleteRowThermal(label, sbmin, sbmax, svalue, self.areatype)
-            
 
 
-        if bool_cancel: 
+
+        if bool_cancel:
             del self.dataMatisse[row]
             nrows = self.rowCount()
             self.setRowCount(nrows-1)
-        
+
 
     # RangeDescription & Network
     # --------------------------
-    
+
     def __addRowRangeDescriptionNetwork(self, label, sbmin, sbmax, areatype, step):
         """
         Add a row : test for RangeDescription & Network
@@ -360,7 +360,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
             msg   = self.tr("'%1' bad definition: see the bounds definition").arg(label)
             QMessageBox.warning(self.parent, title, msg)
             return
-        
+
         llabel, lbmin, lbmax  = self.model.GetAreas(areatype)
         create = True
         #
@@ -392,7 +392,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
 
         if create :
             #name = self.insertHlist(h, label, sbmin, sbmax, step)
-            self.model.NewArea(areatype, label, bmin, bmax)            
+            self.model.NewArea(areatype, label, bmin, bmax)
         else :
             title = self.tr("Warning")
             msg   = self.tr("'%1' bad definition: see the bounds definition").arg(label)
@@ -410,7 +410,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
             new_label = "Default"
 
         if areatype == 'line' :
-            step = self.lineStep 
+            step = self.lineStep
         elif areatype == 'height' :
             step = self.heightStep
         elif areatype == 'row' :
@@ -436,7 +436,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
 
             #
             # Type check
-            try : 
+            try :
                 fnew_bmin=float(new_bmin)
                 fnew_bmax=float(new_bmax)
             except :
@@ -445,7 +445,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
                 msg   = self.tr("'%1' bad definition: see the bounds definition").arg(label)
                 QMessageBox.warning(self.parent, title, msg)
                 return
-            
+
             if (fnew_bmin > fnew_bmax) or (fnew_bmin < 0):
                 modify = False
             if (areatype == 'line'):
@@ -465,12 +465,12 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
                     if ((label == llabel[area]) and
                         (abs(bmin - float(lbmin[area])) <= _EPSILON) and
                         (abs(bmax - float(lbmax[area])) <= _EPSILON)):
-                        
+
 
                         if ((label != new_label) or
                             (abs(bmax - fnew_bmax) >= _EPSILON) or
                             (abs(bmin - fnew_bmin) >= _EPSILON)) :
-                            
+
                             for area1 in range(0,len(llabel)) :
                                 if area1 != area :
                                     if (((fnew_bmin > float(lbmin[area1])) and (fnew_bmin < float(lbmax[area1]))) or
@@ -515,10 +515,10 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
 
     def __deleteRowRangeDescriptionNetwork(self, label, sbmin, sbmax, areatype):
         """
-        Delete row : test for RangeDescription & Network 
+        Delete row : test for RangeDescription & Network
         """
         log.debug("__deleteRowRangeDescriptionNetwork")
-                                    
+
         bmin = float(sbmin)
         bmax = float(sbmax)
 
@@ -577,7 +577,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
             return
 
         llabel, lbmin, lbmax, lval  = self.model.GetAreas(areatype)
-        
+
         create = True
         #
         # Bounds check
@@ -601,7 +601,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
                 (abs(bmax - float(lbmax[area])) < _EPSILON) and
                 (abs(value - float(lval[area])) < _EPSILON)) :
                 create = False
-                
+
             if (((bmin > float(lbmin[area])) and (bmin < float(lbmax[area]))) or
                 ((bmax > float(lbmin[area])) and (bmax < float(lbmax[area])))) :
                 create = False
@@ -629,7 +629,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
             new_label = "Default"
 
         if areatype == 'line' :
-            step = self.lineStep 
+            step = self.lineStep
         elif areatype == 'row' :
             step = self.rowStep
         elif areatype == 'height' :
@@ -641,7 +641,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
             bmin = float(sbmin)
             bmax = float(sbmax)
             value = float(svalue)
-                
+
             llabel, lbmin, lbmax, lval  = self.model.GetAreas(areatype)
 
             #
@@ -650,7 +650,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
 
             #
             # Type check
-            try : 
+            try :
                 fnew_bmin=float(new_bmin)
                 fnew_bmax=float(new_bmax)
                 fnew_value=float(new_value)
@@ -714,7 +714,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
 
                 #
                 # Type check
-                try : 
+                try :
                     fnew_value=float(new_value)
                 except :
                     if new_value != _MULTISEL :
@@ -733,7 +733,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
                         if ((label != new_label) or new_value == _MULTISEL or
                             (abs(value - fnew_value) >= _EPSILON)) :
 
-                            if (new_label == _MULTISEL) and (new_value != _MULTISEL): 
+                            if (new_label == _MULTISEL) and (new_value != _MULTISEL):
                                 self.model.SetArea(areatype, area, None, None , None , new_value)
                                 #self.replaceHlist( h, entry, label, bmin, bmax, new_value, step)
 
@@ -751,10 +751,10 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
 
     def __deleteRowThermal(self, label, sbmin, sbmax, svalue, areatype):
         """
-        Delete row : test for Thermal 
+        Delete row : test for Thermal
         """
         log.debug("__deleteRowThermal")
-        
+
         llabel, lbmin, lbmax, lval  = self.model.GetAreas(areatype)
         cancel = False
         for area in range(0,len(llabel)) :
@@ -766,7 +766,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
                 cancel = True
 
         return cancel
-                
+
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
@@ -774,8 +774,8 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
 class MatisseCustomView(QWidget, Ui_MatisseCustomForm):
     """
     """
-    
-    def __init__(self, *args): 
+
+    def __init__(self, *args):
         """
         Constructor
         """
@@ -784,7 +784,7 @@ class MatisseCustomView(QWidget, Ui_MatisseCustomForm):
         self.setupUi(self)
 
 
-    def initWidget(self, case, tagName): 
+    def initWidget(self, case, tagName):
         """
         Method to initialize the widget.
         Must be explicitly called.
@@ -792,7 +792,7 @@ class MatisseCustomView(QWidget, Ui_MatisseCustomForm):
         self.case = case
         self.tagName = tagName
         self._createWidgets()
-        
+
 
     def getLabel(self):
         """
@@ -842,11 +842,11 @@ class MatisseCustomView(QWidget, Ui_MatisseCustomForm):
         selectionModel = self.tableView.selectionModel()
         for index in selectionModel.selectedRows():
             tab_rows.append(index.row())
-            nrows = nrows + 1 
+            nrows = nrows + 1
         log.debug("modifyItem nrows = %i tab_rows = %s "%(nrows, str(tab_rows)))
         for row in tab_rows:
             self.modelMatisseCustom.editRow(row, new_label, new_bmin, new_bmax, new_value)
-        
+
 
     def cancelItem(self):
         nrows = 0
@@ -854,7 +854,7 @@ class MatisseCustomView(QWidget, Ui_MatisseCustomForm):
         selectionModel = self.tableView.selectionModel()
         for index in selectionModel.selectedRows():
             tab_rows.append(index.row())
-            nrows = nrows + 1 
+            nrows = nrows + 1
         log.debug("cancelItem nrows = %i tab_rows = %s "%(nrows, str(tab_rows)))
         for row in tab_rows:
             self.modelMatisseCustom.deleteRow(row)
@@ -878,26 +878,26 @@ class MatisseCustomView(QWidget, Ui_MatisseCustomForm):
         self.labelMax.setText(QString(dico['max']))
         self.labelValue.hide()
         self.lineEditValue.hide()
-       
+
         if 'value' in dico.keys():
             self.labelValue.setText(QString(dico['value']))
             self.labelValue.show()
             self.lineEditValue.show()
-            
+
         # Set model for tableView
-        self.modelMatisseCustom = StandardItemModelMatisseCustom(self, self.case, self.tagName, dico) 
+        self.modelMatisseCustom = StandardItemModelMatisseCustom(self, self.case, self.tagName, dico)
         self.tableView.setModel(self.modelMatisseCustom)
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableView.setSelectionMode(QAbstractItemView.ExtendedSelection)
-    
+
         # Connections
         self.connect(self.pushButtonNew,    SIGNAL("clicked()"), self.createItem)
         self.connect(self.pushButtonModify, SIGNAL("clicked()"), self.modifyItem)
         self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.cancelItem)
 
-        # validators 
+        # validators
         regExp = QRegExp("[_A-Za-z0-9]*") # QRegExp("^all[ ]*$|^[0-9\ ]*$")
-        validatorLabel = QRegExpValidator(regExp, self.lineEditLabel) 
+        validatorLabel = QRegExpValidator(regExp, self.lineEditLabel)
         self.lineEditLabel.setValidator(validatorLabel)
 
         validatorFloat = QtPage.DoubleValidator(self.lineEditMin)
@@ -910,8 +910,8 @@ class MatisseCustomView(QWidget, Ui_MatisseCustomForm):
         """
         Translation
         """
-        return text 
-        
+        return text
+
 
     def __initDico(self):
         """
@@ -964,9 +964,9 @@ class MatisseCustomView(QWidget, Ui_MatisseCustomForm):
         dico_custom['thermal_line']        = line
         dico_custom['thermal_height']      = height
         dico_custom['thermal_row']         = row
-        
+
         self.dico_custom = dico_custom
-        
+
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

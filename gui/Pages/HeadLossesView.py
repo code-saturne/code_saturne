@@ -118,7 +118,7 @@ class StandardItemModelHeadLosses(QStandardItemModel):
             return Qt.ItemIsEnabled
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-            
+
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return QVariant(self.headers[section])
@@ -163,16 +163,16 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         # Model and QTreeView for Head Losses
         self.modelHeadLosses = StandardItemModelHeadLosses()
         self.treeView.setModel(self.modelHeadLosses)
-    
+
 
         # Connections
         self.connect(self.treeView, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectHeadLossesZones)
         self.connect(self.groupBox_3, SIGNAL("clicked(bool)"), self.slotTransfoMatrix)
-       
+
         self.connect(self.lineEdit, SIGNAL("textChanged(const QString &)"), self.slotKxx)
         self.connect(self.lineEdit_2, SIGNAL("textChanged(const QString &)"), self.slotKyy)
         self.connect(self.lineEdit_3, SIGNAL("textChanged(const QString &)"), self.slotKzz)
-        
+
         self.connect(self.lineEdit_4, SIGNAL("textChanged(const QString &)"), self.slotA11)
         self.connect(self.lineEdit_5, SIGNAL("textChanged(const QString &)"), self.slotA12)
         self.connect(self.lineEdit_6, SIGNAL("textChanged(const QString &)"), self.slotA13)
@@ -188,7 +188,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         validator = DoubleValidator(self.lineEdit, min=0.0)
         validator_2 = DoubleValidator(self.lineEdit_2, min=0.0)
         validator_3= DoubleValidator(self.lineEdit_3, min=0.0)
-        
+
         validator_4 = DoubleValidator(self.lineEdit_4)
         validator_5= DoubleValidator(self.lineEdit_5)
         validator_6= DoubleValidator(self.lineEdit_6)
@@ -204,7 +204,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.lineEdit.setValidator(validator)
         self.lineEdit_2.setValidator(validator_2)
         self.lineEdit_3.setValidator(validator_3)
-        
+
         self.lineEdit_4.setValidator(validator_4)
         self.lineEdit_5.setValidator(validator_5)
         self.lineEdit_6.setValidator(validator_6)
@@ -233,7 +233,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
     def slotSelectHeadLossesZones(self, index):
         model = HeadLossesModel(self.case)
         label, name, local = self.modelHeadLosses.getItem(index.row())
-        
+
         if hasattr(self, "modelScalars"): del self.modelScalars
         log.debug("slotSelectHeadLossesZones label %s " % label )
         self.groupBoxDef.show()
@@ -242,16 +242,16 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.lineEdit.setText(QString(str(kxx)))
         self.lineEdit_2.setText(QString(str(kyy)))
         self.lineEdit_3.setText(QString(str(kzz)))
-        
+
         if model.getMatrixChoice(name,'choice') == 'on':
             self.groupBox_3.setChecked(True)
             checked = True
         else:
             self.groupBox_3.setChecked(False)
             checked = False
-    
+
         self.slotTransfoMatrix(checked)
-        
+
 
     def forgetStandardWindows(self):
         """
@@ -261,7 +261,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
         self.groupBox_3.hide()
 
 
-    
+
     @pyqtSignature("const QString&")
     def slotKxx(self, text):
         cindex = self.treeView.currentIndex()
@@ -282,8 +282,8 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             model = HeadLossesModel(self.case)
             value, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                model.setCoefficient(name,'kyy',value )   
-    
+                model.setCoefficient(name,'kyy',value )
+
     @pyqtSignature("const QString&")
     def slotKzz(self, text):
         cindex = self.treeView.currentIndex()
@@ -294,8 +294,8 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             value, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
                 model.setCoefficient(name,'kzz',value )
-    
-    @pyqtSignature("bool")           
+
+    @pyqtSignature("bool")
     def slotTransfoMatrix(self,  checked):
         self.groupBox_3.setFlat(not checked)
         cindex = self.treeView.currentIndex()
@@ -303,7 +303,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             row = cindex.row()
             label, name, local = self.modelHeadLosses.getItem(row)
             model = HeadLossesModel(self.case)
-             
+
             if checked:
                 model.setMatrixChoice(name,'choice','on')
                 self.groupBox_3.setChecked(True)
@@ -314,7 +314,7 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
                 self.frameTransfo.hide()
                 a11, a12, a13, a21, a22, a23, a31, a32, a33 = 1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0
                 self.groupBox_3.setChecked(False)
-                
+
             self.lineEdit_4.setText(QString(str(a11)))
             self.lineEdit_5.setText(QString(str(a12)))
             self.lineEdit_6.setText(QString(str(a13)))
@@ -323,9 +323,9 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             self.lineEdit_7.setText(QString(str(a23)))
             self.lineEdit_11.setText(QString(str(a31)))
             self.lineEdit_12.setText(QString(str(a32)))
-            self.lineEdit_10.setText(QString(str(a33)))  
-              
-                
+            self.lineEdit_10.setText(QString(str(a33)))
+
+
     @pyqtSignature("const QString&")
     def slotA11(self, text):
         cindex = self.treeView.currentIndex()
@@ -335,8 +335,8 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             model = HeadLossesModel(self.case)
             value, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                model.setMatrixComposant(name,'a11',value )              
-                
+                model.setMatrixComposant(name,'a11',value )
+
     @pyqtSignature("const QString&")
     def slotA12(self, text):
         cindex = self.treeView.currentIndex()
@@ -346,8 +346,8 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             model = HeadLossesModel(self.case)
             value, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                model.setMatrixComposant(name,'a12',value )            
-              
+                model.setMatrixComposant(name,'a12',value )
+
     @pyqtSignature("const QString&")
     def slotA13(self, text):
         cindex = self.treeView.currentIndex()
@@ -357,9 +357,9 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             model = HeadLossesModel(self.case)
             value, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                model.setMatrixComposant(name,'a13',value )   
-    
-    @pyqtSignature("const QString&")           
+                model.setMatrixComposant(name,'a13',value )
+
+    @pyqtSignature("const QString&")
     def slotA21(self, text):
         cindex = self.treeView.currentIndex()
         if cindex != (-1,-1):
@@ -368,8 +368,8 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             model = HeadLossesModel(self.case)
             value, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                model.setMatrixComposant(name,'a21',value )      
-     
+                model.setMatrixComposant(name,'a21',value )
+
     @pyqtSignature("const QString&")
     def slotA22(self, text):
         cindex = self.treeView.currentIndex()
@@ -379,8 +379,8 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             model = HeadLossesModel(self.case)
             value, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                model.setMatrixComposant(name,'a22',value )   
-    
+                model.setMatrixComposant(name,'a22',value )
+
     @pyqtSignature("const QString&")
     def slotA23(self, text):
         cindex = self.treeView.currentIndex()
@@ -390,8 +390,8 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             model = HeadLossesModel(self.case)
             value, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                model.setMatrixComposant(name,'a23',value )    
-     
+                model.setMatrixComposant(name,'a23',value )
+
     @pyqtSignature("const QString&")
     def slotA31(self, text):
         cindex = self.treeView.currentIndex()
@@ -401,8 +401,8 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             model = HeadLossesModel(self.case)
             value, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                model.setMatrixComposant(name,'a31',value )    
-    
+                model.setMatrixComposant(name,'a31',value )
+
     @pyqtSignature("const QString&")
     def slotA32(self, text):
         cindex = self.treeView.currentIndex()
@@ -412,8 +412,8 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             model = HeadLossesModel(self.case)
             value, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                model.setMatrixComposant(name,'a32',value )    
-     
+                model.setMatrixComposant(name,'a32',value )
+
     @pyqtSignature("const QString&")
     def slotA33(self, text):
         cindex = self.treeView.currentIndex()
@@ -423,8 +423,8 @@ class HeadLossesView(QWidget, Ui_HeadLossesForm):
             model = HeadLossesModel(self.case)
             value, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                model.setMatrixComposant(name,'a33',value )    
-                
+                model.setMatrixComposant(name,'a33',value )
+
 
 #-------------------------------------------------------------------------------
 # Testing part

@@ -71,13 +71,13 @@ class HeadLossesModel(Variables, Model):
         self.node_hloss   = self.node_models.xmlInitNode('heads_losses')
 
         self.coeffNames = ('kxx', 'kyy', 'kzz')
-        self.matrix = ('a11', 'a12', 'a13', 
-                       'a21', 'a22', 'a23', 
+        self.matrix = ('a11', 'a12', 'a13',
+                       'a21', 'a22', 'a23',
                        'a31', 'a32', 'a33')
         self.choicevalue = ('choice')
-                       
+
         self.getNameAndLocalizationZone()
-       
+
 
 
     def __defaultValues(self):
@@ -114,7 +114,7 @@ class HeadLossesModel(Variables, Model):
                 localization = zone.getLocalization()
                 zoneDico[label] = (name, localization)
                 self.setNameAndLabelZone(name, label)
-        
+
         return zoneDico
 
 
@@ -134,15 +134,15 @@ class HeadLossesModel(Variables, Model):
         self.isInList(choice, self.choicevalue)
         node = self.node_hloss.xmlGetNode('head_loss', name=name)
         value = node.xmlGetString(choice)
-        if value == None: 
+        if value == None:
             value = self.__defaultValues()[choice]
             self.setMatrixChoice(name, choice, value)
         return value
-        
- 
+
+
     def setMatrixChoice(self, name, choice, value):
         """
-        Set the Transfo Matrix Choice 
+        Set the Transfo Matrix Choice
         """
         self.isInt(int(name))
         self.isInList(choice, self.choicevalue)
@@ -165,17 +165,17 @@ class HeadLossesModel(Variables, Model):
 
         return value
 
-  
+
     def getKCoefficients(self, name):
         """
         Get value of kxx, kyy and kzz from xml file, for the head loss with zone's name.
         """
         self.isInt(int(name))
-        
+
         kxx = self.getCoefficient(name, 'kxx')
         kyy = self.getCoefficient(name, 'kyy')
         kzz = self.getCoefficient(name, 'kzz')
-        
+
         return kxx, kyy, kzz
 
 
@@ -186,7 +186,7 @@ class HeadLossesModel(Variables, Model):
         self.isInt(int(name))
         self.isInList(k, self.coeffNames)
         self.isFloat(value)
-        
+
         node = self.node_hloss.xmlGetNode('head_loss', name=name)
         node.xmlSetData(k, value)
 
@@ -199,7 +199,7 @@ class HeadLossesModel(Variables, Model):
         self.isFloat(kxx)
         self.isFloat(kyy)
         self.isFloat(kzz)
-        
+
         self.setCoefficient(name, 'kxx', kxx)
         self.setCoefficient(name, 'kyy', kyy)
         self.setCoefficient(name, 'kzz', kzz)
@@ -212,13 +212,13 @@ class HeadLossesModel(Variables, Model):
         """
         self.isInt(int(name))
         self.isInList(a, self.matrix)
-        
+
         node = self.node_hloss.xmlGetNode('head_loss', name=name)
         value = node.xmlGetDouble(a)
-        if value == None: 
+        if value == None:
             value = self.__defaultValues()[a]
             self.setMatrixComposant(name, a, value)
-        
+
         return value
 
 
@@ -228,17 +228,17 @@ class HeadLossesModel(Variables, Model):
         for the head loss with zone's name.
         """
         self.isInt(int(name))
-        
+
         a11 = self.getMatrixComposant(name, 'a11')
         a12 = self.getMatrixComposant(name, 'a12')
-        a13 = self.getMatrixComposant(name, 'a13') 
+        a13 = self.getMatrixComposant(name, 'a13')
         a21 = self.getMatrixComposant(name, 'a21')
         a22 = self.getMatrixComposant(name, 'a22')
         a23 = self.getMatrixComposant(name, 'a23')
         a31 = self.getMatrixComposant(name, 'a31')
         a32 = self.getMatrixComposant(name, 'a32')
         a33 = self.getMatrixComposant(name, 'a33')
-        
+
         return a11, a12, a13, a21, a22, a23, a31, a32, a33
 
 
@@ -250,7 +250,7 @@ class HeadLossesModel(Variables, Model):
         self.isInt(int(name))
         self.isInList(a, self.matrix)
         self.isFloat(value)
-        
+
         node = self.node_hloss.xmlGetNode('head_loss', name=name)
         node.xmlSetData(a, value)
 
@@ -263,7 +263,7 @@ class HeadLossesModel(Variables, Model):
         self.isInt(int(name))
         for a in (a11, a12, a13, a21, a22, a23, a31, a32, a33):
             self.isFloat(a)
-        
+
         self.setMatrixComposant(name, 'a11', a11)
         self.setMatrixComposant(name, 'a12', a12)
         self.setMatrixComposant(name, 'a13', a13)
@@ -296,7 +296,7 @@ class HeadLossesModelTestCase(ModelTest):
         loc = LocalizationModel("VolumicZone", self.case)
         zone = Zone("VolumicZone", label='toto', localization="1 or door", nature="head_losses")
         loc.addZone(zone)
-        
+
         #we can test
         mdl = HeadLossesModel(self.case)
         mdl.getNameAndLocalizationZone()
@@ -327,7 +327,7 @@ class HeadLossesModelTestCase(ModelTest):
         loc = LocalizationModel("VolumicZone", self.case)
         zone = Zone("VolumicZone", label='toto', localization="1 or door", nature="head_losses")
         loc.addZone(zone)
-        
+
         mdl = HeadLossesModel(self.case)
         mdl.setKCoefficients('2', 10., 100., 1000.)
         doc = '''<heads_losses>
@@ -346,12 +346,12 @@ class HeadLossesModelTestCase(ModelTest):
                         <a33>0</a33>
                     </head_loss>
                 </heads_losses>'''
-                
+
         assert mdl.node_hloss == self.xmlNodeFromString(doc),\
             'Could not set kxx, kyy, kzz coefficients for head losses'
         assert mdl.getKCoefficients('2') == (10., 100., 1000.),\
             'Could not get kxx, kyy, kzz coefficients for head losses'
-            
+
         mdl.setCoefficient('2', 'kyy', 555.)
         doc2 = '''<heads_losses>
                     <head_loss label="toto" name="2">
@@ -369,7 +369,7 @@ class HeadLossesModelTestCase(ModelTest):
                         <a33>0</a33>
                     </head_loss>
                 </heads_losses>'''
-        
+
         assert mdl.node_hloss == self.xmlNodeFromString(doc2),\
             'Could not set one coefficient for head losses'
         assert mdl.getCoefficient('2', 'kyy') == 555.,\
@@ -381,7 +381,7 @@ class HeadLossesModelTestCase(ModelTest):
         loc = LocalizationModel("VolumicZone", self.case)
         zone = Zone("VolumicZone", label='toto', localization="1 or door", nature="head_losses")
         loc.addZone(zone)
-        
+
         mdl = HeadLossesModel(self.case)
         mdl.setMatrix('2', 1., 1.2, 1.5, 2., 2.2, 2.5, 3., 3.2, 3.5)
         doc = '''<heads_losses>
@@ -400,12 +400,12 @@ class HeadLossesModelTestCase(ModelTest):
                         <a33>3.5</a33>
                     </head_loss>
                 </heads_losses>'''
-        
+
         assert mdl.node_hloss == self.xmlNodeFromString(doc),\
             'Could not set matrix for head losses'
         assert mdl.getMatrix('2') == (1., 1.2, 1.5, 2., 2.2, 2.5, 3., 3.2, 3.5),\
             'Could not get matrix for head losses'
-            
+
         mdl.setMatrixComposant('2', 'a23', 2300.55)
         doc2='''<heads_losses>
                     <head_loss label="toto" name="2">
