@@ -3553,7 +3553,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const iscalt,
     for (i=0 ; i < vars->nscaus; i++) {
       if (iscavr[i] <= 0 && i != iscalt[iphas]-1) {
 
-        if (vars->model != NULL) {
+        if (cs_gui_strcmp(vars->model, "pulverized_coal")) {
           /* Air molar mass */
           result = 0.028966;
           cs_gui_reference_mass_molar(vars->model, &result);
