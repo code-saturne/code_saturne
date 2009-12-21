@@ -82,6 +82,63 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
     """
     Class to open Molecular Properties Page.
     """
+    density = """# Density of air
+
+rho = 1.293 * (273.15 / Temp_K);
+
+# density for mixtures of gases
+#
+# Y1 -> mass fraction of component 1
+# Y2 -> mass fraction of component 2
+
+rho1 = 1.25051;
+rho2 = 1.7832;
+A = (Y1 / rho1) + (Y2 /rho2);
+rho = 1.0 / A;
+
+"""
+    molecular_viscosity="""# Sutherland's Formula
+# Gas             Cst    T0      mu0
+# air             120    291.15  18.27e-6
+# nitrogen        111    300.55  17.81e-6
+# oxygen          127    292.25  20.18e-6
+# carbon dioxide  240    293.15  14.8e-6
+# carbon monoxide 118    288.15  17.2e-6
+# hydrogen        72     293.85  8.76e-6
+# ammonia         370    293.15  9.82e-6
+# sulfur dioxide  416    293.65  12.54e-6
+# helium          79.4   273     19e-6
+
+CST = 120;
+T0 = 291.15;
+mu0 = 18.27e-6;
+
+if ( Temp_K > 0 && Temp_K < 555) {
+mu = mu0 * (T0+CST / Temp_K+CST) * (Temp_K/T0)^(3./2.);
+} else {
+mu = -999.0;
+}
+
+"""
+    specific_heat="""# specific heat for mixtures of gases
+#
+# Y1 -> mass fraction of component 1
+# Y2 -> mass fraction of component 2
+
+Cp1 = 520.3;
+Cp2 = 1040.0;
+cp = Y1 * Cp1 + Y2 *Cp2;
+"""
+    thermal_conductivity="""# oxygen
+lambda = 6.2e-5 * Temp_K + 8.1e-3;
+
+# nitrogen
+lambda = 6.784141e-5 * Temp_K + 5.564317e-3;
+
+# hydrogen
+lambda = 4.431e-4 * Temp_K + 5.334e-2;
+
+"""
     def __init__(self, parent, case):
         """
         Constructor
@@ -329,7 +386,7 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
         if not exp:
             exp = "rho ="
         req = [('rho', 'Density')]
-        exa = "rho = 3*2"
+        exa = FluidCharacteristicsView.density
         setGreenColor(self.sender(), False)
 
         dialog = QMeiEditorView(self,expression = exp,
@@ -352,7 +409,7 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
         if not exp:
             exp = "mu ="
         req = [('mu', 'Molecular Viscosity')]
-        exa = "mu = 3*2"
+        exa = FluidCharacteristicsView.molecular_viscosity
 
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,
@@ -374,7 +431,7 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
         if not exp:
             exp = "cp ="
         req = [('cp', 'Specific heat')]
-        exa = "cp = 3*2"
+        exa = FluidCharacteristicsView.specific_heat
 
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,
@@ -396,7 +453,7 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
         if not exp:
             exp = "lambda ="
         req = [('lambda', 'Thermal conductivity')]
-        exa = "lambda = 3*2"
+        exa = FluidCharacteristicsView.thermal_conductivity
 
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,

@@ -1,4 +1,9 @@
 * 21/12/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Add real-life examples for fluid properties variation laws.
+  modidied routine:
+    gui/Pages/FluidCharacteristicsView.py
+
+* 21/12/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Add syntax highlighting for mathematical expression in the interface.
   modified routine:
     gui/Pages/QMeiEditorView.py
