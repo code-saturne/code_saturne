@@ -1,3 +1,8 @@
+* 21/12/2009 - Alexandre Douce <alexandre.douce@edf.fr>
+  Add syntax highlighting for mathematical expression in the interface.
+  modified routine:
+    gui/Pages/QMeiEditorView.py
+
 * 21/12/2009 - Maya Milliez <maya.milliez@edf.fr>
   Fix an issue in the inlet boundary conditions setup for
   the atmospheric modelling via the graphical interface.

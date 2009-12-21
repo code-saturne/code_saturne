@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2010 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -31,6 +31,8 @@
 This module defines the Dialog window of the mathematical expression interpretor.
 
 This module contains the following classes and function:
+- format
+- QMeiHighlighter
 - QMeiEditorView
 """
 
@@ -62,70 +64,91 @@ import mei
 
 logging.basicConfig()
 log = logging.getLogger("QMeiEditorView")
-log.setLevel(GuiParam.DEBUG)
+#log.setLevel(GuiParam.DEBUG)
+log.setLevel(logging.DEBUG)
 
 #-------------------------------------------------------------------------------
-#
+# Syntax highlighter for the mathematical expressions editor.
 #-------------------------------------------------------------------------------
+
+def format(color, style=''):
+    """Return a QTextCharFormat with the given attributes."""
+    _color = QColor()
+    _color.setNamedColor(color)
+
+    _format = QTextCharFormat()
+    _format.setForeground(_color)
+    if 'bold' in style:
+        _format.setFontWeight(QFont.Bold)
+    if 'italic' in style:
+        _format.setFontItalic(True)
+
+    return _format
+
+
+   # Syntax styles that can be shared by all expressions
+STYLES = {
+    'keyword': format('blue', 'bold'),
+    'operator': format('red'),
+    'brace': format('darkGray'),
+    'required': format('magenta', 'bold'),
+    'symbols': format('darkMagenta', 'bold'),
+    'comment': format('darkGreen', 'italic'),
+    }
+
 
 class QMeiHighlighter(QSyntaxHighlighter):
+    """
+    Syntax highlighter for the mathematical expressions editor.
+    """
+    keywords = [
+         'cos', 'sin', 'tan', 'exp', 'sqrt', 'log',
+         'acos', 'asin', 'atan', 'atan2', 'cosh', 'sinh',
+         'tanh', 'abs', 'mod', 'int', 'min', 'max',
+         'pi', 'e', 'while', 'if', 'else', 'print',
+         'raise', 'return', 'try', 'while', 'yield',
+         'None', 'True', 'False',
+    ]
+
+    operators = [
+        # logical
+        '!', '==', '!=', '<', '<=', '>', '>=', '&&', '\|\|',
+        # Arithmetic
+        '=', '\+', '-', '\*', '/', '\^',
+    ]
+
+    braces = ['\{', '\}', '\(', '\)', '\[', '\]',]
+
 
     def __init__(self, document, required, symbols):
         QSyntaxHighlighter.__init__(self, document)
 
-        list = []
-        for p,q in required:
-            list.append(p)
-        rx = string.join(list, r"|")
-        self.req_re  = QRegExp(rx)
-        self.req_fmt = QTextCharFormat()
-        self.req_fmt.setFontWeight(QFont.Bold)
+        rules = []
+        rules += [(r'\b%s\b' % w, STYLES['keyword']) for w in QMeiHighlighter.keywords]
+        rules += [(r'%s' % o, STYLES['operator']) for o in QMeiHighlighter.operators]
+        rules += [(r'%s' % b, STYLES['brace']) for b in QMeiHighlighter.braces]
+        rules += [(r'\b%s\b' % r, STYLES['required']) for r,l in required]
+        rules += [(r'\b%s\b' % s, STYLES['symbols']) for s,l in symbols]
+        rules += [(r'#[^\n]*', STYLES['comment'])]
 
-        list = []
-        for p,q in symbols:
-            list.append(p)
-        rx = string.join(list, r"|")
-        self.sym_re  = QRegExp(rx)
-        self.sym_fmt = QTextCharFormat()
-        self.sym_fmt.setFontWeight(QFont.Bold)
-
-        self.const_re  = QRegExp(r"e|pi")
-        self.const_fmt = QTextCharFormat()
-        self.const_fmt.setForeground(Qt.darkCyan)
-
-        self.func_re  = QRegExp(r"exp|log|sqrt|sin|cos|tan|asin|acos|atan|atan2|sinh|cosh|tanh|abs|min|max")
-        self.func_fmt = QTextCharFormat()
-        self.func_fmt.setFontWeight(QFont.Bold)
-        self.func_fmt.setForeground(Qt.blue)
-
-        self.kword_re  = QRegExp(r"while|if|else|print")
-        self.kword_fmt = QTextCharFormat()
-        self.kword_fmt.setForeground(Qt.darkRed)
-
-        #self.special_re = QRegExp(r"[^\\][(),]")
-        #self.special_fmt = QTextCharFormat()
-        #self.special_fmt.setForeground(Qt.blue)
-
-        self.rules = [
-            (self.req_re,   self.req_fmt, 0, 0),
-            (self.sym_re,   self.sym_fmt, 0, 0),
-            (self.const_re, self.const_fmt, 0, 0),
-            (self.func_re,  self.func_fmt, 0, 0),
-            (self.kword_re, self.kword_fmt, 0, 0),
-            #(self.special_re, self.special_fmt, 1, -1),
-        ]
+        # Build a QRegExp for each pattern
+        self.rules = [(QRegExp(pat), fmt) for (pat, fmt) in rules]
 
 
     def highlightBlock(self, text):
-        for expr, fmt, a, b in self.rules:
-            index = text.indexOf(expr)
-            while index >= 0:
-                length = expr.matchedLength()
-                self.setFormat(index + a, length + b, fmt)
-                index = text.indexOf(expr, index + length + b)
+        """
+        Apply syntax highlighting to the given block of text.
+        """
+        for rx, fmt in self.rules:
+            pos = rx.indexIn(text, 0)
+            while pos != -1:
+                pos = rx.pos(0)
+                s = rx.cap(0)
+                self.setFormat(pos, s.length(), fmt)
+                pos = rx.indexIn( text, pos+rx.matchedLength() )
 
 #-------------------------------------------------------------------------------
-#
+# Dialog for mathematical expression interpretor
 #-------------------------------------------------------------------------------
 
 class QMeiEditorView(QDialog, Ui_QMeiDialog):
@@ -143,14 +166,15 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
         self.required = required
         self.symbols  = symbols
 
-        #h1 = QMeiHighlighter(self.textEditExpression, required, symbols)
-        #h2 = QMeiHighlighter(self.textEditExamples, required, symbols)
+        # Syntax highlighting
+        self.h1 = QMeiHighlighter(self.textEditExpression, required, symbols)
+        self.h2 = QMeiHighlighter(self.textEditExamples, required, symbols)
 
         # Required symbols of the mathematical expression
 
         if not expression:
             expression = ""
-            for p,q in required:
+            for p, q in required:
                 expression += p + " = \n"
         else:
             while expression[0] in (" ", "\n", "\t"):
@@ -240,6 +264,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
 
         intr = mei.mei_tree_new(str(self.textEditExpression.toPlainText()))
         log.debug("intr.string: %s" % intr.string)
+        log.debug("intr.errors: %s" % intr.errors)
 
         for p,q in self.symbols:
             mei.mei_tree_insert(intr, p, 0.0)
@@ -267,6 +292,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                        "    column: " + str(c) + " \n\n"
 
             QMessageBox.critical(self, self.tr('Expression Editor'), QString(msg))
+            intr.errors = 0
             intr = mei.mei_tree_destroy(intr)
             QObject.connect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
             return
@@ -283,11 +309,12 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                 block_text = doc.findBlockByNumber(i)
                 cursor = QTextCursor(block_text)
                 block_format = QTextBlockFormat()
-                block_format.setBackground(QBrush(QColor(Qt.magenta)))
+                block_format.setBackground(QBrush(QColor(Qt.yellow)))
                 cursor.setBlockFormat(block_format)
                 #self.textEditExpression.setFocus()
             for i in range(0, intr.errors): msg += intr.labels[i] + " \n"
             QMessageBox.critical(self, self.tr('Expression Editor'), QString(msg))
+            intr.errors = 0
             intr = mei.mei_tree_destroy(intr)
             QObject.connect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
             return
