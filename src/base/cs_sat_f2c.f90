@@ -1,12 +1,9 @@
 !-------------------------------------------------------------------------------
 
-!VERS
-
-
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2008 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -28,51 +25,39 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ussatc &
+subroutine defsat &
 !================
 
-( )
+ ( numsat, nomsat, ccesup, cfbsup, ccecpl, cfbcpl, iwarni )
 
 !===============================================================================
 ! FONCTION :
-! --------
+! ----------
 
-! DEFINITION DES COUPLAGES CODE_SATURNE / CODE_SATURNE
-
-! L'identification des faces de bord concernees se fait grace
-! a la commande GETFBR.
-
-!  GETFBR(CHAINE,NLELT,LSTELT) :
-!  - CHAINE est une chaine de caractere fournie par l'utilisateur
-!    qui donne les criteres de selection
-!  - NLTELT est renvoye par la commande. C'est un entier qui
-!    correspond au nombre de faces de bord trouveees repondant au
-!    critere
-!  - LSTELT est renvoye par la commande. C'est un tableau d'entiers
-!    de taille NLTELT donnant la liste des faces de bord trouvees
-!    repondant au critere.
-
-!  CHAINE peut etre constitue de :
-!  - references de couleurs (ex. : 1, 8, 26, ...
-!  - references de groupes (ex. : entrees, groupe1, ...)
-!  - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
-!  Ces criteres peuvent etre combines par des operateurs logiques
-!  (AND et OR) et des parentheses
-!  ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
-!  les faces de bord de couleur 1, appartenant aux groupes 'groupe2'
-!  ou 'groupe3' et de coordonnee Y inferieure a 1.
+!     DEFINITION DE COUPLAGE(S) AVEC CODE_SATURNE
 
 !-------------------------------------------------------------------------------
-! Arguments
+!ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
+! numsat           ! a  ! <-- ! numero du cas saturne associe                  !
+! nomsat           ! a  ! <-- ! nom du cas satthes associe                     !
+! ccesup           ! a  ! <-- ! critere de selection des cellules              !
+!                  !    !     ! support (ou vide)                              !
+! cfbsup           ! a  ! <-- ! critere de selection des faces de              !
+!                  !    !     ! bord suppport (ou vide)                        !
+! ccecpl           ! a  ! <-- ! critere de selection des cellulces             !
+!                  !    !     ! couplees (ou vide)                             !
+! cfbcpl           ! a  ! <-- ! critere de selection des faces de              !
+!                  !    !     ! bord couplees (ou vide)                        !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
 !            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
 !     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
 !            --- tableau de travail
+
 !===============================================================================
 
 implicit none
@@ -81,39 +66,28 @@ implicit none
 !     DONNEES EN COMMON
 !===============================================================================
 
-include "paramx.h"
-include "entsor.h"
-include "parall.h"
-
 !===============================================================================
 
 ! Arguments
 
-! VARIABLES LOCALES
+character*(*) nomsat, ccesup, cfbsup, ccecpl, cfbcpl
+integer       numsat, iwarni
 
-integer          numsat
-integer          iwarnj
+! Variables locales
 
-!===============================================================================
-
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if(1.eq.1) return
+integer       lnomsa, lccesu, lcfbsu, lccecp, lcfbcp
 
 !===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-iwarnj = 0
+lnomsa = len(nomsat)
+lcfbcp = len(cfbcpl)
+lccecp = len(ccecpl)
+lcfbsu = len(cfbsup)
+lccesu = len(ccesup)
 
-! --- On definit une zone de couplage pour les faces de couleur 99
-!     pour le couplage numero 1
-
-numsat = -1
-
-call defsat(numsat, 'SATURNE_01', 'all[]', ' ', ' ', '3 or 4', iwarnj)
+call defsa1(numsat, nomsat, ccesup, cfbsup, ccecpl, cfbcpl, &
 !==========
+            lnomsa, lccesu, lcfbsu, lccecp, lcfbcp, iwarni)
 
 
 return

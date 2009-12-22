@@ -222,6 +222,10 @@ cs_run(void)
 
   cs_syr_coupling_all_init(opts.syr_socket);
 
+  /* Initialize Code_Saturne couplings and communication if necessary */
+
+  cs_sat_coupling_all_init();
+
   if (opts.ifoenv == 0) {
 
     /* Read file in obsolete "SolCom" format */

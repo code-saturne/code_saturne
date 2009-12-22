@@ -66,9 +66,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_coupling.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_connect.h"
+#include "cs_selector.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -84,13 +86,38 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *============================================================================*/
 
+/* Structure associated with Code_Saturne coupling */
+
+typedef struct {
+
+  int      match_id;        /* Id of matched application, -1 initially */
+  int      app_num;         /* Application number, or -1 */
+  char    *app_name;        /* Application name, or -1 */
+  char    *face_cpl_sel_c;  /* Face selection criteria */
+  char    *cell_cpl_sel_c;  /* Cell selection criteria */
+  char    *face_sup_sel_c;  /* Face selection criteria */
+  char    *cell_sup_sel_c;  /* Cell selection criteria */
+  int      verbosity;       /* Verbosity level */
+
+} _cs_sat_coupling_builder_t;
+
+
 struct _cs_sat_coupling_t {
+
+  int                      sat_num;  /* Application number, or -1 */
+  char                    *sat_name; /* Application name, or -1 */
+
+  char                    *face_cpl_sel; /* Face selection criteria */
+  char                    *cell_cpl_sel; /* Face selection criteria */
+  char                    *face_sup_sel; /* Face selection criteria */
+  char                    *cell_sup_sel; /* Face selection criteria */
 
   fvm_locator_t   *localis_cel;  /* Locator associated with cells */
   fvm_locator_t   *localis_fbr;  /* Locator associated with boundary faces */
 
   cs_int_t         nbr_cel_sup;  /* Number of associated cell locations */
   cs_int_t         nbr_fbr_sup;  /* Number of associated face locations */
+
   fvm_nodal_t     *cells_sup;    /* Local cells at which distant values are
                                     interpolated*/
   fvm_nodal_t     *faces_sup;    /* Local faces at which distant values are
@@ -102,12 +129,16 @@ struct _cs_sat_coupling_t {
   cs_real_t       *distant_pond_fbr; /* Distant weighting coefficient */
   cs_real_t       *local_pond_fbr;   /* Local weighting coefficient */
 
+  int              verbosity; /* Verbosity level */
+
+  /* Communication-related members */
+
 #if defined(HAVE_MPI)
 
-  MPI_Comm         comm;         /* Associated MPI communicator */
+  MPI_Comm         comm;           /* Associated MPI communicator */
 
-  cs_int_t         n_dist_ranks;    /* Number of associated distant ranks */
-  cs_int_t         dist_root_rank;  /* First associated distant rank */
+  int              n_sat_ranks;    /* Number of associated Code_Saturne ranks */
+  int              sat_root_rank;  /* First associated Code_Saturne rank */
 
 #endif
 
@@ -119,149 +150,385 @@ struct _cs_sat_coupling_t {
 
 /* Array of couplings */
 
-static int                  cs_glob_nbr_couplages = 0;
-static int                  cs_glob_nbr_couplages_max = 0;
-static cs_sat_coupling_t  **cs_glob_couplages = NULL;
+static int _cs_glob_n_sat_cp = -1;
+
+static int                         _sat_coupling_builder_size = 0;
+static _cs_sat_coupling_builder_t *_sat_coupling_builder = NULL;
+
+static int                  cs_glob_sat_n_couplings = 0;
+static cs_sat_coupling_t  **cs_glob_sat_couplings = NULL;
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Create a coupling.
- *
- * Couplings are allowed either with process totally distinct from the
- * application communicator (cs_glob_mpi_comm), or within this same
- * communicator.
- *
- * parameters:
- *   root_rank <-- root rank of distant process leader in MPI_COMM_WORLD
- *
- * returns:
- *   pointer to new coupling structure
+ * Remove matched builder entries from the coupling builder.
  *----------------------------------------------------------------------------*/
 
-static cs_sat_coupling_t *
-_sat_coupling_create(cs_int_t  root_rank)
+static void
+_remove_matched_builder_entries(void)
 {
-  int  mpi_flag = 0;
-  int  n_dist_ranks = 0;
-  int  dist_root_rank = 0;
-  cs_sat_coupling_t  *couplage = NULL;
+  int i;
+  int n_unmatched_entries = 0;
 
-  const double  tolerance = 0.1;
+  /* First, free arrays associated with marked entries */
 
-  /* Create associated structure and MPI communicator */
+  for (i = 0; i < _sat_coupling_builder_size; i++) {
 
-  BFT_MALLOC(couplage, 1, cs_sat_coupling_t);
+    _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
 
+    if (scb->match_id > -1) {
+      if (scb->face_cpl_sel_c != NULL) BFT_FREE(scb->face_cpl_sel_c);
+      if (scb->cell_cpl_sel_c != NULL) BFT_FREE(scb->cell_cpl_sel_c);
+      if (scb->face_sup_sel_c != NULL) BFT_FREE(scb->face_sup_sel_c);
+      if (scb->cell_sup_sel_c != NULL) BFT_FREE(scb->cell_sup_sel_c);
+      if (scb->app_name != NULL) BFT_FREE(scb->app_name);
+    }
+  }
+
+  /* Now, remove marked entries and resize */
+
+  for (i = 0; i < _sat_coupling_builder_size; i++) {
+    _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
+    if (scb->match_id < 0) {
+      *(_sat_coupling_builder + n_unmatched_entries) = *scb;
+      n_unmatched_entries += 1;
+    }
+  }
+
+  _sat_coupling_builder_size = n_unmatched_entries;
+
+  BFT_REALLOC(_sat_coupling_builder,
+              _sat_coupling_builder_size,
+              _cs_sat_coupling_builder_t);
+}
+
+/*----------------------------------------------------------------------------
+ * Print information on yet unmatched Code_Saturne couplings.
+ *----------------------------------------------------------------------------*/
+
+static void
+_print_all_unmatched_sat(void)
+{
+  int i;
+
+  const char empty_string[] = "";
+
+  /* Loop on defined Code_Saturne instances */
+
+  for (i = 0; i < _sat_coupling_builder_size; i++) {
+
+    _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
+
+    if (scb->match_id < 0) {
+
+      const char *local_name = empty_string;
+
+      if (scb->app_name != NULL)
+        local_name = scb->app_name;
+
+      bft_printf(_(" Code_Saturne coupling:\n"
+                   "   coupling id:              %d\n"
+                   "   local name:               \"%s\"\n"
+                   "   local number:             %d\n\n"),
+                 i, local_name, scb->app_num);
+    }
+  }
+
+  bft_printf_flush();
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize communicator for Code_Saturne coupling
+ *
+ * parameters:
+ *   sat_coupling  <-> Code_Saturne coupling structure
+ *   coupling_id   <-- id of this coupling (for log file message)
+ *----------------------------------------------------------------------------*/
+
+static void
+_init_comm(cs_sat_coupling_t *sat_coupling,
+           int                coupling_id)
+
+{
 #if defined(HAVE_MPI)
+
+  int  mpi_flag = 0;
+  int local_range[2] = {-1, -1};
+  int distant_range[2] = {-1, -1};
 
   MPI_Initialized(&mpi_flag);
 
   if (mpi_flag == 0)
-    couplage->comm = MPI_COMM_NULL;
+    return;
+
+  bft_printf(_(" Code_Saturne coupling %d: initializing MPI communication ... "),
+             coupling_id);
+  bft_printf_flush();
+
+  fvm_coupling_mpi_intracomm_create(cs_glob_mpi_comm,
+                                    sat_coupling->sat_root_rank,
+                                    &(sat_coupling->comm),
+                                    local_range,
+                                    distant_range);
+
+  bft_printf(_("[ok]\n"));
+  bft_printf(_("  Local ranks = [%d..%d], distant ranks = [%d..%d].\n\n"),
+             local_range[0], local_range[1] - 1,
+             distant_range[0], distant_range[1] - 1);
+  bft_printf_flush();
+
+  sat_coupling->n_sat_ranks = distant_range[1] - distant_range[0];
+  sat_coupling->sat_root_rank = distant_range[0];
+
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Add a Code_Saturne coupling using MPI.
+ *
+ * parameters:
+ *   builder_id    <-- Code_Saturne application id in coupling builder
+ *   sat_root_rank <-- root rank associated with Code_Saturne
+ *   n_sat_ranks   <-- number of ranks associated with Code_Saturne
+ *----------------------------------------------------------------------------*/
+
+static void
+_sat_add_mpi(int builder_id,
+             int sat_root_rank,
+             int n_sat_ranks)
+{
+  cs_sat_coupling_t *sat_coupling = NULL;
+  _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + builder_id;
+
+  /* Similarly to SYRTHES 4, we might be able to add
+     Code_Saturne couplings directly (without resorting
+     to a temporary builder), then match communications */
+
+  cs_sat_coupling_add(scb->face_cpl_sel_c,
+                      scb->cell_cpl_sel_c,
+                      scb->face_sup_sel_c,
+                      scb->cell_sup_sel_c,
+                      scb->app_num,
+                      scb->app_name,
+                      scb->verbosity);
+
+  sat_coupling = cs_sat_coupling_by_id(cs_sat_coupling_n_couplings() - 1);
+
+  sat_coupling->sat_root_rank = sat_root_rank;
+  sat_coupling->n_sat_ranks = n_sat_ranks;
+
+  _init_comm(sat_coupling,
+             builder_id);
+}
+
+/*----------------------------------------------------------------------------
+ * Print information on identified Code_Saturne couplings using MPI.
+ *
+ * This function requires coupling_builder information, and must thus
+ * be called before removing matched builder entries.
+ *----------------------------------------------------------------------------*/
+
+static void
+_print_all_mpi_sat(void)
+{
+  int i;
+
+  const fvm_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
+  const char empty_string[] = "";
+
+  /* Loop on defined Code_Saturne instances */
+
+  for (i = 0; i < _sat_coupling_builder_size; i++) {
+
+    _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
+
+    if (scb->match_id > -1) {
+
+      const char *local_name = empty_string;
+      const char *distant_name = empty_string;
+
+      const fvm_coupling_mpi_world_info_t
+        ai = fvm_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
+
+      if (scb->app_name != NULL)
+        local_name = scb->app_name;
+      if (ai.app_name != NULL)
+        distant_name = ai.app_name;
+
+      bft_printf(_(" Code_Saturne coupling:\n"
+                   "   coupling id:              %d\n"
+                   "   local name:               \"%s\"\n"
+                   "   distant application name: \"%s\"\n"
+                   "   local number:             %d\n"
+                   "   MPI application number:   %d\n"
+                   "   MPI root rank:            %d\n"
+                   "   number of MPI ranks:      %d\n\n"),
+                 i, local_name, distant_name,
+                 scb->app_num, ai.app_num, ai.root_rank, ai.n_ranks);
+    }
+  }
+
+  bft_printf_flush();
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize MPI Code_Saturne couplings using MPI.
+ *
+ * This function may be called once all couplings have been defined,
+ * and it will match defined couplings with available applications.
+ *----------------------------------------------------------------------------*/
+
+static void
+_init_all_mpi_sat(void)
+{
+  int i;
+
+  int n_apps = 0;
+  int n_matched_apps = 0;
+  int n_sat_apps = 0;
+  int sat_app_id = -1;
+
+  const fvm_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
+
+  if (mpi_apps == NULL)
+    return;
+
+  n_apps = fvm_coupling_mpi_world_n_apps(mpi_apps);
+
+  /* First pass to count available Code_Saturne couplings */
+
+  for (i = 0; i < n_apps; i++) {
+    const fvm_coupling_mpi_world_info_t
+      ai = fvm_coupling_mpi_world_get_info(mpi_apps, i);
+    if (strncmp(ai.app_type, "Code_Saturne", 12) == 0) {
+      n_sat_apps += 1;
+      sat_app_id = i;
+    }
+  }
+
+  /* In single-coupling mode, no identification necessary */
+
+  if (n_sat_apps == 2 && _sat_coupling_builder_size == 1) {
+
+    const int local_app_id = fvm_coupling_mpi_world_get_app_id(mpi_apps);
+
+    for (i = 0; i < n_apps; i++) {
+      const fvm_coupling_mpi_world_info_t
+        ai = fvm_coupling_mpi_world_get_info(mpi_apps, i);
+      if (   strncmp(ai.app_type, "Code_Saturne", 12) == 0
+          && ai.app_num != local_app_id) {
+        _sat_coupling_builder->match_id = i;
+      }
+    }
+
+    n_matched_apps += 1;
+
+  }
+
+  /* In multiple-coupling mode, identification is necessary */
 
   else {
 
-    int  n_loc_ranks, n_glob_ranks, r_glob, r_loc_min, r_loc_max;
+    int j;
+    fvm_coupling_mpi_world_info_t ai;
 
-    /* Check that coupled processes overlap exactly or not at all */
+    int *sat_appinfo = NULL;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &r_glob);
-    MPI_Comm_size(MPI_COMM_WORLD, &n_glob_ranks);
-    MPI_Comm_size(cs_glob_mpi_comm, &n_loc_ranks);
+    /* First, build an array of matched/unmatched Code_Saturne applications, with
+       2 entries per instance: matched indicator, app_id */
 
-    MPI_Allreduce(&r_glob, &r_loc_min, 1, MPI_INT, MPI_MIN,
-                  cs_glob_mpi_comm);
-    MPI_Allreduce(&r_glob, &r_loc_max, 1, MPI_INT, MPI_MAX,
-                  cs_glob_mpi_comm);
+    BFT_MALLOC(sat_appinfo, n_sat_apps*2, int);
 
-    if (root_rank > r_loc_min && root_rank <= r_loc_max)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Coupling definition is impossible: a distant root rank equal to\n"
-                  "%d is required, whereas the local group corresponds to\n"
-                  "rank %d to %d\n"),
-                (int)root_rank, r_loc_min, r_loc_max);
+    n_sat_apps = 0;
 
-    else if (root_rank < 0 || root_rank >= n_glob_ranks)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Coupling definition is impossible: a distant root rank equal to\n"
-                  "%d is required, whereas the global ranks (MPI_COMM_WORLD)\n"
-                  "range from to 0 to %d\n"),
-                (int)root_rank, n_glob_ranks - 1);
-
-    /* Case for a coupling internal to the process group */
-
-    if (root_rank == r_loc_min) {
-      if (n_loc_ranks == 1)
-        couplage->comm = MPI_COMM_NULL;
-      else
-        couplage->comm = cs_glob_mpi_comm;
-      n_dist_ranks = n_loc_ranks;
+    for (i = 0; i < n_apps; i++) {
+      ai = fvm_coupling_mpi_world_get_info(mpi_apps, i);
+      if (strncmp(ai.app_type, "Code_Saturne", 12) == 0) {
+        sat_appinfo[n_sat_apps*2] = 0;
+        sat_appinfo[n_sat_apps*2 + 1] = i;
+        n_sat_apps += 1;
+      }
     }
 
-    /* Case for a coupling external to the process group */
+    /* Loop on defined Code_Saturne instances */
 
-    else {
+    for (i = 0; i < _sat_coupling_builder_size; i++) {
 
-      int local_range[2] = {-1, -1};
-      int distant_range[2] = {-1, -1};
+      _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
 
-      fvm_coupling_mpi_intracomm_create(cs_glob_mpi_comm,
-                                        root_rank,
-                                        &(couplage->comm),
-                                        local_range,
-                                        distant_range);
+      /* First loop on available Code_Saturne instances to match app_names */
 
-      bft_printf(_("coupling: local_ranks = [%d..%d], distant ranks = [%d..%d]\n"),
-                 local_range[0], local_range[1] - 1,
-                 distant_range[0], distant_range[1] - 1);
+      if (scb->app_name != NULL) {
 
-      n_dist_ranks = distant_range[1] - distant_range[0];
-      dist_root_rank = distant_range[0];
+        for (j = 0; j < n_sat_apps; j++) {
+
+          if (sat_appinfo[j*2] != 0) /* Consider only unmatched applications */
+            continue;
+
+          ai = fvm_coupling_mpi_world_get_info(mpi_apps, sat_appinfo[j*2 + 1]);
+          if (ai.app_name != NULL) {
+            if (strcmp(ai.app_name, scb->app_name) == 0) {
+              scb->match_id = sat_appinfo[j*2 + 1];
+              sat_appinfo[j*2] = i;
+              n_matched_apps += 1;
+              break;
+            }
+          }
+        }
+
+      }
+
+      /* Second loop on available Code_Saturne instances to match app_nums */
+
+      if (scb->match_id < 0 && scb->app_num > -1) {
+
+        for (j = 0; j < n_sat_apps; j++) {
+
+          if (sat_appinfo[j*2] != 0) /* Consider only unmatched applications */
+            continue;
+
+          ai = fvm_coupling_mpi_world_get_info(mpi_apps, sat_appinfo[j*2 + 1]);
+          if (ai.app_num == scb->app_num) {
+            scb->match_id = sat_appinfo[j*2 + 1];
+            sat_appinfo[j*2] = i;
+            n_matched_apps += 1;
+            break;
+          }
+        }
+      }
+
+    } /* End of loop on defined Code_Saturne instances */
+
+    BFT_FREE(sat_appinfo);
+
+  } /* End of test on single or multiple Code_Saturne matching algorithm */
+
+  /* Print matching info */
+
+  _print_all_mpi_sat();
+
+  /* Now initialize matched couplings */
+  /*----------------------------------*/
+
+  for (i = 0; i < _sat_coupling_builder_size; i++) {
+
+    _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
+
+    if (scb->match_id > -1) {
+      const fvm_coupling_mpi_world_info_t
+        ai = fvm_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
+
+      if (strncmp(ai.app_type, "Code_Saturne", 12) == 0)
+        _sat_add_mpi(i, ai.root_rank, ai.n_ranks);
     }
 
   }
 
-  couplage->n_dist_ranks = n_dist_ranks;
-  couplage->dist_root_rank = dist_root_rank;
+  /* Cleanup */
 
-#endif
-
-  /* Creation of the localization structures */
-
-#if defined(FVM_HAVE_MPI)
-
-  couplage->localis_cel = fvm_locator_create(tolerance,
-                                             couplage->comm,
-                                             n_dist_ranks,
-                                             dist_root_rank);
-
-  couplage->localis_fbr = fvm_locator_create(tolerance,
-                                             couplage->comm,
-                                             n_dist_ranks,
-                                             dist_root_rank);
-
-#else
-
-  couplage->localis_cel = fvm_locator_create(tolerance);
-  couplage->localis_fbr = fvm_locator_create(tolerance);
-
-#endif
-
-  couplage->nbr_cel_sup = 0;
-  couplage->nbr_fbr_sup = 0;
-  couplage->cells_sup = NULL;
-  couplage->faces_sup = NULL;
-
-  couplage->distant_dist_fbr = NULL;
-  couplage->distant_of       = NULL;
-  couplage->local_of         = NULL;
-  couplage->distant_pond_fbr = NULL;
-  couplage->local_pond_fbr   = NULL;
-
-  return couplage;
+  _remove_matched_builder_entries();
 }
 
 /*----------------------------------------------------------------------------
@@ -581,6 +848,95 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Define new Code_Saturne coupling.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE DEFSA1
+ * *****************
+ *
+ * INTEGER        saturne_app_num   : <-- : application number of coupled
+ *                                  :     : Code_Saturne instance, or -1
+ * CHARACTER*     saturne_name      : <-- : name of coupled Code_Saturne instance
+ * CHARACTER*     boundary_criteria : <-- : boundary face selection criteria,
+ *                                  :     : empty if no boundary coupling
+ * CHARACTER*     volume_criteria   : <-- : volume cell selection criteria,
+ *                                  :     : empty if no volume coupling
+ * INTEGER        verbosity         : <-- : verbosity level
+ * INTEGER        saturne_n_len     : <-- : length of saturne_name
+ * INTEGER        boundary_c_len    : <-- : length of boundary_criteria
+ * INTEGER        volume_c_len      : <-- : length of volume_criteria
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(defsa1, DEFSA1)
+(
+ cs_int_t    *saturne_app_num,
+ const char  *saturne_name,
+ const char  *volume_sup_criteria,
+ const char  *boundary_sup_criteria,
+ const char  *volume_cpl_criteria,
+ const char  *boundary_cpl_criteria,
+ cs_int_t    *saturne_n_len,
+ cs_int_t    *volume_sup_c_len,
+ cs_int_t    *boundary_sup_c_len,
+ cs_int_t    *volume_cpl_c_len,
+ cs_int_t    *boundary_cpl_c_len,
+ cs_int_t    *verbosity
+ CS_ARGF_SUPP_CHAINE
+)
+{
+  char *_saturne_name = NULL;
+  char *_boundary_cpl_criteria = NULL, *_volume_cpl_criteria = NULL;
+  char *_boundary_sup_criteria = NULL, *_volume_sup_criteria = NULL;
+
+  if (saturne_name != NULL && *saturne_n_len > 0)
+    _saturne_name = cs_base_string_f_to_c_create(saturne_name, *saturne_n_len);
+
+  if (boundary_cpl_criteria != NULL && *boundary_cpl_c_len > 0)
+    _boundary_cpl_criteria = cs_base_string_f_to_c_create(boundary_cpl_criteria,
+                                                          *boundary_cpl_c_len);
+  if (_boundary_cpl_criteria != NULL && strlen(_boundary_cpl_criteria) == 0)
+    cs_base_string_f_to_c_free(&_boundary_cpl_criteria);
+
+  if (volume_cpl_criteria != NULL && *volume_cpl_c_len > 0)
+    _volume_cpl_criteria = cs_base_string_f_to_c_create(volume_cpl_criteria,
+                                                        *volume_cpl_c_len);
+  if (_volume_cpl_criteria != NULL && strlen(_volume_cpl_criteria) == 0)
+    cs_base_string_f_to_c_free(&_volume_cpl_criteria);
+
+  if (boundary_sup_criteria != NULL && *boundary_sup_c_len > 0)
+    _boundary_sup_criteria = cs_base_string_f_to_c_create(boundary_sup_criteria,
+                                                          *boundary_sup_c_len);
+  if (_boundary_sup_criteria != NULL && strlen(_boundary_sup_criteria) == 0)
+    cs_base_string_f_to_c_free(&_boundary_sup_criteria);
+
+  if (volume_sup_criteria != NULL && *volume_sup_c_len > 0)
+    _volume_sup_criteria = cs_base_string_f_to_c_create(volume_sup_criteria,
+                                                        *volume_sup_c_len);
+  if (_volume_sup_criteria != NULL && strlen(_volume_sup_criteria) == 0)
+    cs_base_string_f_to_c_free(&_volume_sup_criteria);
+
+  cs_sat_coupling_define(*saturne_app_num,
+                         _saturne_name,
+                         _boundary_cpl_criteria,
+                         _volume_cpl_criteria,
+                         _boundary_sup_criteria,
+                         _volume_sup_criteria,
+                         *verbosity);
+
+  if (_saturne_name != NULL)
+    cs_base_string_f_to_c_free(&_saturne_name);
+  if (_boundary_cpl_criteria != NULL)
+    cs_base_string_f_to_c_free(&_boundary_cpl_criteria);
+  if (_volume_cpl_criteria != NULL)
+    cs_base_string_f_to_c_free(&_volume_cpl_criteria);
+  if (_boundary_sup_criteria != NULL)
+    cs_base_string_f_to_c_free(&_boundary_sup_criteria);
+  if (_volume_sup_criteria != NULL)
+    cs_base_string_f_to_c_free(&_volume_sup_criteria);
+}
+
+/*----------------------------------------------------------------------------
  * Get number of code coupling
  *
  * Fortran interface:
@@ -593,12 +949,13 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
 void CS_PROCF (nbccpl, NBCCPL)
 (
- cs_int_t  *nbrcpl
+ fvm_lnum_t  *n_couplings
 )
 {
-  *nbrcpl = cs_glob_nbr_couplages;
-}
+  *n_couplings = cs_sat_coupling_n_couplings();
 
+  *n_couplings = _cs_glob_n_sat_cp;
+}
 
 /*----------------------------------------------------------------------------
  * Set the list of cells and boundary faces associated to a coupling
@@ -619,70 +976,90 @@ void CS_PROCF (nbccpl, NBCCPL)
  *
  * Fortran interface:
  *
- * SUBROUTINE DEFCPL
+ * SUBROUTINE DEFLOC
  * *****************
  *
  * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NCESUP         : --> : number of "support" cells
- * INTEGER          NFBSUP         : --> : number of "support" boundary faces
- * INTEGER          NCECPL         : --> : number of coupled cells
- * INTEGER          NFBCPL         : --> : number of coupled boundary faces
- * INTEGER          LCESUP(NCESUP) : <-> : list of "support" cells
- * INTEGER          LFBSUP(NFBSUP) : <-> : list of "support" boundary faces
- * INTEGER          LCECPL(NCECPL) : --> : list of coupled cells
- * INTEGER          LFBCPL(NFBCPL) : --> : list of coupled boundary faces
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (defcpl, DEFCPL)
+void CS_PROCF (defloc, DEFLOC)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *ncesup,
- const cs_int_t  *nfbsup,
- const cs_int_t  *ncecpl,
- const cs_int_t  *nfbcpl,
-       cs_int_t   lcesup[],
-       cs_int_t   lfbsup[],
- const cs_int_t   lcecpl[],
- const cs_int_t   lfbcpl[]
+ const cs_int_t  *numcpl
 )
 {
   cs_int_t  ind;
+  cs_int_t  nbr_fbr_cpl, nbr_cel_cpl;
 
   int  indic_glob[2] = {0, 0};
   int  indic_loc[2] = {0, 0};
 
+  char coupled_mesh_name[64];
+  fvm_lnum_t *elt_list = NULL;
   cs_sat_coupling_t  *coupl = NULL;
   fvm_nodal_t  *support_fbr = NULL;
   cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
 
+  const double tolerance = 0.1;
+
   /* Initializations and verifications */
 
-  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_nbr_couplages);
+              *numcpl, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_couplages[*numcpl - 1];
+    coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   /* Removing the connectivity and localization informations in case of
      coupling update */
 
-  if (coupl->cells_sup != NULL)
-    fvm_nodal_destroy(coupl->cells_sup);
-  if (coupl->faces_sup != NULL)
-    fvm_nodal_destroy(coupl->faces_sup);
+  if (coupl->cells_sup != NULL) fvm_nodal_destroy(coupl->cells_sup);
+  if (coupl->faces_sup != NULL) fvm_nodal_destroy(coupl->faces_sup);
 
   /* Create the local lists */
 
-  coupl->nbr_cel_sup = *ncesup;
-  coupl->nbr_fbr_sup = *nfbsup;
+  if (coupl->cell_sup_sel != NULL) {
 
-  /* Create the corresponding FVM structures */
+    sprintf(coupled_mesh_name, _("coupled_cells_%d"), numcpl);
 
-  if (*ncesup > 0)
-    indic_loc[0] = 1;
-  if (*nfbsup > 0)
-    indic_loc[1] = 1;
+    BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, fvm_lnum_t);
+
+    cs_selector_get_cell_list(coupl->cell_sup_sel,
+                              &(coupl->nbr_cel_sup),
+                              elt_list);
+
+    coupl->cells_sup = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
+                                                      coupled_mesh_name,
+                                                      coupl->nbr_cel_sup,
+                                                      elt_list);
+
+    BFT_FREE(elt_list);
+
+  }
+
+  if (coupl->face_sup_sel != NULL) {
+
+    sprintf(coupled_mesh_name, _("coupled_faces_%d"), numcpl);
+
+    BFT_MALLOC(elt_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
+
+    cs_selector_get_b_face_list(coupl->face_sup_sel,
+                                &(coupl->nbr_fbr_sup),
+                                elt_list);
+
+    coupl->faces_sup = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                      coupled_mesh_name,
+                                                      0,
+                                                      coupl->nbr_fbr_sup,
+                                                      NULL,
+                                                      elt_list);
+
+    BFT_FREE(elt_list);
+
+  }
+
+  if (coupl->nbr_cel_sup > 0) indic_loc[0] = 1;
+  if (coupl->nbr_fbr_sup > 0) indic_loc[1] = 1;
 
   for (ind = 0 ; ind < 2 ; ind++)
     indic_glob[ind] = indic_loc[ind];
@@ -693,42 +1070,74 @@ void CS_PROCF (defcpl, DEFCPL)
                    cs_glob_mpi_comm);
 #endif
 
-  if (indic_glob[0] > 0)
-    coupl->cells_sup = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
-                                                      "coupled_cells",
-                                                      *ncesup,
-                                                      lcesup);
-  if (indic_glob[1] > 0)
-    coupl->faces_sup = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                                      "coupled_boundary_faces",
-                                                      0,
-                                                      *nfbsup,
-                                                      NULL,
-                                                      lfbsup);
+  /* Build and initialize associated locator */
+
+#if defined(FVM_HAVE_MPI)
+
+  coupl->localis_cel = fvm_locator_create(tolerance,
+                                          coupl->comm,
+                                          coupl->n_sat_ranks,
+                                          coupl->sat_root_rank);
+
+  coupl->localis_fbr = fvm_locator_create(tolerance,
+                                          coupl->comm,
+                                          coupl->n_sat_ranks,
+                                          coupl->sat_root_rank);
+
+#else
+
+  coupl->localis_cel = fvm_locator_create(tolerance);
+  coupl->localis_fbr = fvm_locator_create(tolerance);
+
+#endif
 
   /* Initialization of the distant point localization */
 
-  fvm_locator_set_nodal(coupl->localis_cel,
-                        coupl->cells_sup,
-                        1,
-                        3,
-                        *ncecpl,
-                        lcecpl,
-                        mesh_quantities->cell_cen);
+  if (coupl->cell_cpl_sel != NULL) {
 
-  if (indic_glob[1] > 0)
-    support_fbr = coupl->faces_sup;
-  else
-    support_fbr = coupl->cells_sup;
+    BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, fvm_lnum_t);
 
-  fvm_locator_set_nodal(coupl->localis_fbr,
-                        support_fbr,
-                        1,
-                        3,
-                        *nfbcpl,
-                        lfbcpl,
-                        mesh_quantities->b_face_cog);
+    cs_selector_get_cell_list(coupl->cell_cpl_sel,
+                              &nbr_cel_cpl,
+                              elt_list);
 
+    fvm_locator_set_nodal(coupl->localis_cel,
+                          coupl->cells_sup,
+                          1,
+                          3,
+                          nbr_cel_cpl,
+                          elt_list,
+                          mesh_quantities->cell_cen);
+
+    BFT_FREE(elt_list);
+
+  }
+
+
+  if (coupl->face_cpl_sel != NULL) {
+
+    if (indic_glob[1] > 0)
+      support_fbr = coupl->faces_sup;
+    else
+      support_fbr = coupl->cells_sup;
+
+    BFT_MALLOC(elt_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
+
+    cs_selector_get_b_face_list(coupl->face_cpl_sel,
+                                &nbr_fbr_cpl,
+                                elt_list);
+
+    fvm_locator_set_nodal(coupl->localis_fbr,
+                          support_fbr,
+                          1,
+                          3,
+                          nbr_fbr_cpl,
+                          elt_list,
+                          mesh_quantities->b_face_cog);
+
+    BFT_FREE(elt_list);
+
+  }
 
   /* Computed some quantities needed for a centred-like interpolation */
 
@@ -764,7 +1173,6 @@ void CS_PROCF (defcpl, DEFCPL)
   fvm_locator_dump(coupl->localis_cel);
   fvm_locator_dump(coupl->localis_fbr);
 #endif
-
 }
 
 /*----------------------------------------------------------------------------
@@ -802,12 +1210,12 @@ void CS_PROCF (nbecpl, NBECPL)
 
   /* Initializations and verifications */
 
-  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_nbr_couplages);
+              *numcpl, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_couplages[*numcpl - 1];
+    coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   *ncesup = coupl->nbr_cel_sup;
   *nfbsup = coupl->nbr_fbr_sup;
@@ -869,12 +1277,12 @@ void CS_PROCF (lelcpl, LELCPL)
 
   /* Initializations and verifications */
 
-  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_nbr_couplages);
+              *numcpl, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_couplages[*numcpl - 1];
+    coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   if (coupl->localis_cel != NULL)
     _ncecpl = fvm_locator_get_n_interior(coupl->localis_cel);
@@ -944,12 +1352,12 @@ void CS_PROCF (lencpl, LENCPL)
 
   /* Initializations and verifications */
 
-  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_nbr_couplages);
+              *numcpl, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_couplages[*numcpl - 1];
+    coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   if (coupl->localis_cel != NULL)
     _ncencp = fvm_locator_get_n_exterior(coupl->localis_cel);
@@ -1005,12 +1413,12 @@ void CS_PROCF (npdcpl, NPDCPL)
 
   /* Verifications */
 
-  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_nbr_couplages);
+              *numcpl, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_couplages[*numcpl - 1];
+    coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   /* Get the number of points */
 
@@ -1075,12 +1483,12 @@ void CS_PROCF (coocpl, COOCPL)
 
   /* Initializations and verifications */
 
-  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_nbr_couplages);
+              *numcpl, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_couplages[*numcpl - 1];
+    coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   *ityloc = 0;
 
@@ -1173,12 +1581,12 @@ void CS_PROCF (pndcpl, PNDCPL)
 
   /* Initializations and verifications */
 
-  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_nbr_couplages);
+              *numcpl, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_couplages[*numcpl - 1];
+    coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   if (*ityloc == 1)
     bft_error(__FILE__, __LINE__, 0,
@@ -1252,12 +1660,12 @@ void CS_PROCF (varcpl, VARCPL)
 
   /* Initializations and verifications */
 
-  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_nbr_couplages);
+              *numcpl, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_couplages[*numcpl - 1];
+    coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   if (*ityvar == 1)
     localis = coupl->localis_cel;
@@ -1343,12 +1751,12 @@ void CS_PROCF (tbicpl, TBICPL)
 
   /* Initializations and verifications */
 
-  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_nbr_couplages);
+              *numcpl, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_couplages[*numcpl - 1];
+    coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   if (coupl->comm != MPI_COMM_NULL) {
 
@@ -1357,8 +1765,8 @@ void CS_PROCF (tbicpl, TBICPL)
     /* Exchange between the groups master node */
 
     if (cs_glob_rank_id < 1)
-      MPI_Sendrecv(vardis, *nbrdis, CS_MPI_INT, coupl->dist_root_rank, 0,
-                   varloc, *nbrloc, CS_MPI_INT, coupl->dist_root_rank, 0,
+      MPI_Sendrecv(vardis, *nbrdis, CS_MPI_INT, coupl->sat_root_rank, 0,
+                   varloc, *nbrloc, CS_MPI_INT, coupl->sat_root_rank, 0,
                    coupl->comm, &status);
 
     /* Synchronization inside a group */
@@ -1419,12 +1827,12 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
   /* Initializations and verifications */
 
-  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_nbr_couplages);
+              *numcpl, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_couplages[*numcpl - 1];
+    coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   if (coupl->comm != MPI_COMM_NULL) {
 
@@ -1433,8 +1841,8 @@ void CS_PROCF (tbrcpl, TBRCPL)
     /* Exchange between the groups master node */
 
     if (cs_glob_rank_id < 1)
-      MPI_Sendrecv(vardis, *nbrdis, CS_MPI_REAL, coupl->dist_root_rank, 0,
-                   varloc, *nbrloc, CS_MPI_REAL, coupl->dist_root_rank, 0,
+      MPI_Sendrecv(vardis, *nbrdis, CS_MPI_REAL, coupl->sat_root_rank, 0,
+                   varloc, *nbrloc, CS_MPI_REAL, coupl->sat_root_rank, 0,
                    coupl->comm, &status);
 
     /* Synchronization inside a group */
@@ -1487,12 +1895,12 @@ void CS_PROCF (mxicpl, MXICPL)
 
   /* Initializations and verifications */
 
-  if (*numcpl < 1 || *numcpl > cs_glob_nbr_couplages)
+  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
               _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_nbr_couplages);
+              *numcpl, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_couplages[*numcpl - 1];
+    coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   if (coupl->comm != MPI_COMM_NULL) {
 
@@ -1516,48 +1924,254 @@ void CS_PROCF (mxicpl, MXICPL)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Add a coupling.
+ * Define new Code_Saturne coupling.
  *
- * Couplings are allowed either with process totally distinct from the
- * application communicator (cs_glob_mpi_comm), or within this same
- * communicator.
- *
- * parameters:
- *   rang_deb <-- root rank of distant process leader in MPI_COMM_WORLD
+ * arguments:
+ *   saturne_app_num   <-- number of Code_Saturne application, or -1
+ *   saturne_name      <-- name of Code_Saturne instance, or NULL
+ *   boundary_criteria <-- boundary face selection criteria, or NULL
+ *   volume_criteria   <-- volume cell selection criteria, or NULL
+ *   projection_axis   <-- 'x', 'y', or 'y' for 2D projection axis (case
+ *                         independent), or ' ' for standard 3D coupling
+ *   verbosity         <-- verbosity level
  *----------------------------------------------------------------------------*/
 
 void
-cs_sat_coupling_add(cs_int_t   rang_deb)
+cs_sat_coupling_define(int          saturne_app_num,
+                       const char  *saturne_name,
+                       const char  *boundary_cpl_criteria,
+                       const char  *volume_cpl_criteria,
+                       const char  *boundary_sup_criteria,
+                       const char  *volume_sup_criteria,
+                       int          verbosity)
 {
-  cs_sat_coupling_t  *couplage = NULL;
+  _cs_sat_coupling_builder_t *scb = NULL;
 
-  /* Create the associated structure */
+  /* Add corresponding coupling to temporary Code_Saturne couplings array */
 
-  couplage = _sat_coupling_create(rang_deb);
+  BFT_REALLOC(_sat_coupling_builder,
+              _sat_coupling_builder_size + 1,
+              _cs_sat_coupling_builder_t);
 
-  /* Increase the couplings global array if necessary */
+  scb = &(_sat_coupling_builder[_sat_coupling_builder_size]);
 
-  if (cs_glob_nbr_couplages == cs_glob_nbr_couplages_max) {
+  scb->match_id = -1;
 
-    if (cs_glob_nbr_couplages_max == 0)
-      cs_glob_nbr_couplages_max = 2;
-    else
-      cs_glob_nbr_couplages_max *= 2;
+  scb->app_num = saturne_app_num;
 
-    BFT_REALLOC(cs_glob_couplages,
-                cs_glob_nbr_couplages_max,
-                cs_sat_coupling_t *);
-
+  scb->app_name = NULL;
+  if (saturne_name != NULL) {
+    BFT_MALLOC(scb->app_name, strlen(saturne_name) + 1, char);
+    strcpy(scb->app_name, saturne_name);
   }
 
-  /* Associate the new coupling to the structure */
+  scb->face_cpl_sel_c = NULL;
+  if (boundary_cpl_criteria != NULL) {
+    BFT_MALLOC(scb->face_cpl_sel_c, strlen(boundary_cpl_criteria) + 1, char);
+    strcpy(scb->face_cpl_sel_c, boundary_cpl_criteria);
+  }
 
-  cs_glob_couplages[cs_glob_nbr_couplages] = couplage;
+  scb->cell_cpl_sel_c = NULL;
+  if (volume_cpl_criteria != NULL) {
+    BFT_MALLOC(scb->cell_cpl_sel_c, strlen(volume_cpl_criteria) + 1, char);
+    strcpy(scb->cell_cpl_sel_c, volume_cpl_criteria);
+  }
 
-  cs_glob_nbr_couplages += 1;
+  scb->face_sup_sel_c = NULL;
+  if (boundary_sup_criteria != NULL) {
+    BFT_MALLOC(scb->face_sup_sel_c, strlen(boundary_sup_criteria) + 1, char);
+    strcpy(scb->face_sup_sel_c, boundary_sup_criteria);
+  }
 
-  return;
+  scb->cell_sup_sel_c = NULL;
+  if (volume_sup_criteria != NULL) {
+    BFT_MALLOC(scb->cell_sup_sel_c, strlen(volume_sup_criteria) + 1, char);
+    strcpy(scb->cell_sup_sel_c, volume_sup_criteria);
+  }
 
+  scb->verbosity = verbosity;
+
+  _sat_coupling_builder_size += 1;
+}
+
+/*----------------------------------------------------------------------------
+ * Get number of Code_Saturne couplings.
+ *
+ * returns:
+ *   number of Code_Saturne couplings
+ *----------------------------------------------------------------------------*/
+
+fvm_lnum_t
+cs_sat_coupling_n_couplings(void)
+{
+  if (_cs_glob_n_sat_cp < 0) {
+    if (_sat_coupling_builder_size > 0)
+      _cs_glob_n_sat_cp = _sat_coupling_builder_size;
+    else
+      _cs_glob_n_sat_cp = cs_sat_coupling_n_couplings();
+  }
+
+  return cs_glob_sat_n_couplings;
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointer to Code_Saturne coupling.
+ *
+ * parameters:
+ *   coupling_id <-- Id (0 to n-1) of Code_Saturne coupling
+ *
+ * returns:
+ *   pointer to Code_Saturne coupling structure
+ *----------------------------------------------------------------------------*/
+
+cs_sat_coupling_t *
+cs_sat_coupling_by_id(fvm_lnum_t coupling_id)
+{
+  cs_sat_coupling_t  *retval = NULL;
+
+  if (   coupling_id > -1
+      && coupling_id < cs_glob_sat_n_couplings)
+    retval = cs_glob_sat_couplings[coupling_id];
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize Code_Saturne couplings.
+ *
+ * This function may be called once all couplings have been defined,
+ * and it will match defined couplings with available applications.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_all_init(void)
+{
+  int i;
+
+  int n_apps = 0;
+  int n_matched_apps = 0;
+  int n_sat_apps = 0;
+  int sat_app_id = -1;
+
+  /* First try using MPI */
+
+#if defined(HAVE_MPI)
+
+  if (_sat_coupling_builder_size > 0)
+    _init_all_mpi_sat();
+
+#endif
+
+  /* Print unmatched instances */
+
+  if (_sat_coupling_builder_size > 0) {
+
+    bft_printf("Unmatched Code_Saturne couplings:\n"
+               "---------------------------------\n\n");
+
+    _print_all_unmatched_sat();
+
+    bft_error(__FILE__, __LINE__, 0,
+              _("At least 1 Code_Saturne coupling was defined for which\n"
+                "no communication with a Code_Saturne instance is possible."));
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Create a sat_coupling_t structure.
+ *
+ * parameters:
+ *   ref_axis           <-- reference axis
+ *   face_sel_criterion <-- criterion for selection of boundary faces
+ *   cell_sel_criterion <-- criterion for selection of cells
+ *   sat_num            <-- Code_Saturne application number, or -1
+ *   sat_name           <-- Code_Saturne application name, or NULL
+ *   verbosity          <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_add(const char  *face_cpl_sel_c,
+                    const char  *cell_cpl_sel_c,
+                    const char  *face_sup_sel_c,
+                    const char  *cell_sup_sel_c,
+                    int          sat_num,
+                    const char  *sat_name,
+                    int          verbosity)
+{
+  cs_sat_coupling_t *sat_coupling = NULL;
+
+  /* Allocate _cs_sat_coupling_t structure */
+
+  BFT_REALLOC(cs_glob_sat_couplings,
+              cs_glob_sat_n_couplings + 1, cs_sat_coupling_t*);
+  BFT_MALLOC(sat_coupling, 1, cs_sat_coupling_t);
+
+  sat_coupling->sat_num = sat_num;
+  sat_coupling->sat_name = NULL;
+
+  if (sat_name != NULL) {
+    BFT_MALLOC(sat_coupling->sat_name, strlen(sat_name) + 1, char);
+    strcpy(sat_coupling->sat_name, sat_name);
+  }
+
+  /* Selection criteria  */
+
+  sat_coupling->face_cpl_sel = NULL;
+  sat_coupling->cell_cpl_sel = NULL;
+  sat_coupling->face_sup_sel = NULL;
+  sat_coupling->cell_sup_sel = NULL;
+
+  if (face_cpl_sel_c != NULL) {
+    BFT_MALLOC(sat_coupling->face_cpl_sel, strlen(face_cpl_sel_c) + 1, char);
+    strcpy(sat_coupling->face_cpl_sel, face_cpl_sel_c);
+  }
+  if (cell_cpl_sel_c != NULL) {
+    BFT_MALLOC(sat_coupling->cell_cpl_sel, strlen(cell_cpl_sel_c) + 1, char);
+    strcpy(sat_coupling->cell_cpl_sel, cell_cpl_sel_c);
+  }
+
+  if (face_sup_sel_c != NULL) {
+    BFT_MALLOC(sat_coupling->face_sup_sel, strlen(face_sup_sel_c) + 1, char);
+    strcpy(sat_coupling->face_sup_sel, face_sup_sel_c);
+  }
+  if (cell_sup_sel_c != NULL) {
+    BFT_MALLOC(sat_coupling->cell_sup_sel, strlen(cell_sup_sel_c) + 1, char);
+    strcpy(sat_coupling->cell_sup_sel, cell_sup_sel_c);
+  }
+
+  sat_coupling->faces_sup = NULL;
+  sat_coupling->cells_sup = NULL;
+
+  sat_coupling->localis_fbr = NULL;
+  sat_coupling->localis_cel = NULL;
+
+  sat_coupling->nbr_fbr_sup = 0;
+  sat_coupling->nbr_cel_sup = 0;
+
+  sat_coupling->verbosity = verbosity;
+
+  /* Geometric quantities arrays for interpolation */
+
+  sat_coupling->distant_dist_fbr = NULL;
+  sat_coupling->distant_of = NULL;
+  sat_coupling->local_of = NULL;
+  sat_coupling->distant_pond_fbr = NULL;
+  sat_coupling->local_pond_fbr = NULL;
+
+  /* Initialize communicators */
+
+#if defined(HAVE_MPI)
+
+  sat_coupling->comm = MPI_COMM_NULL;
+  sat_coupling->n_sat_ranks = 0;
+  sat_coupling->sat_root_rank = -1;
+
+#endif
+
+  /* Update coupling array and return */
+
+  cs_glob_sat_couplings[cs_glob_sat_n_couplings] = sat_coupling;
+  cs_glob_sat_n_couplings++;
 }
 
 /*----------------------------------------------------------------------------
@@ -1569,13 +2183,12 @@ cs_sat_coupling_all_finalize(void)
 {
   int  i;
 
-  for (i = 0 ; i < cs_glob_nbr_couplages ; i++)
-    _sat_coupling_destroy(cs_glob_couplages[i]);
+  for (i = 0 ; i < cs_glob_sat_n_couplings ; i++)
+    _sat_coupling_destroy(cs_glob_sat_couplings[i]);
 
-  BFT_FREE(cs_glob_couplages);
+  BFT_FREE(cs_glob_sat_couplings);
 
-  cs_glob_nbr_couplages = 0;
-  cs_glob_nbr_couplages_max = 0;
+  cs_glob_sat_n_couplings = 0;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1,3 +1,19 @@
+* 21/12/2009 - David Monfort <david.monfort@edf.fr>
+  Make code/code coupling compliant with the new discovering
+  mechanism for coupling applications.
+  modified script:
+    src/base/Makefile.am
+  added routine:
+    src/base/cs_sat_f2c.f90
+  modified routines:
+    include/base/cs_sat_coupling.h
+    src/apps/cs_solver.c
+    src/base/cscloc.f90
+    src/base/cs_sat_coupling.c
+    src/base/initi1.f90
+    src/base/tridim.f90
+    users/base/ussatc.f90
+
 * 21/12/2009 - Alexandre Douce <alexandre.douce@edf.fr>
   Add real-life examples for fluid properties variation laws.
   modidied routine:

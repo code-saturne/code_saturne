@@ -267,6 +267,7 @@ cs_proxy_comm.c \
 cs_renumber.c \
 cs_restart.c \
 cs_sat_coupling.c \
+cs_sat_f2c.f90 \
 cs_search.c \
 cs_selector.c \
 cs_selector_f2c.f90 \

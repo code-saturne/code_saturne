@@ -617,21 +617,8 @@ endif
 !   - soit a la methode ALE (en fin de pas de temps precedent)
 !   - soit a un deplacement impose (cf ci-dessus)
 
-if (nbrcpl.gt.0) then
-
-   call cscloc                                                    &
-   !==========
- ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod ,          &
-   rdevel , rtuser , ra     )
-
-endif
+if (nbrcpl.gt.0) call cscloc
+                 !==========
 
 !===============================================================================
 ! 7.  CALCUL DES PROPRIETES PHYSIQUES VARIABLES

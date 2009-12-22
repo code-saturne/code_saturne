@@ -57,6 +57,46 @@ typedef struct _cs_sat_coupling_t cs_sat_coupling_t;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Define new Code_Saturne coupling.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE DEFSA1
+ * *****************
+ *
+ * INTEGER        saturne_app_num   : <-- : application number of coupled
+ *                                  :     : Code_Saturne instance, or -1
+ * CHARACTER*     saturne_name      : <-- : name of coupled Code_Saturne instance
+ * CHARACTER      projection_axis   : <-- : ' ' for 3D, 'x', 'y', or 'z'
+ *                                  :     : for 2D projection
+ * CHARACTER*     boundary_criteria : <-- : boundary face selection criteria,
+ *                                  :     : empty if no boundary coupling
+ * CHARACTER*     volume_criteria   : <-- : volume cell selection criteria,
+ *                                  :     : empty if no volume coupling
+ * INTEGER        verbosity         : <-- : verbosity level
+ * INTEGER        saturne_n_len     : <-- : length of saturne_name
+ * INTEGER        boundary_c_len    : <-- : length of boundary_criteria
+ * INTEGER        volume_c_len      : <-- : length of volume_criteria
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(defsa1, DEFSA1)
+(
+ cs_int_t    *saturne_app_num,
+ const char  *saturne_name,
+ const char  *boundary_cpl_criteria,
+ const char  *volume_cpl_criteria,
+ const char  *boundary_sup_criteria,
+ const char  *volume_sup_criteria,
+ cs_int_t    *verbosity,
+ cs_int_t    *saturne_n_len,
+ cs_int_t    *boundary_cpl_c_len,
+ cs_int_t    *volume_cpl_c_len,
+ cs_int_t    *boundary_sup_c_len,
+ cs_int_t    *volume_sup_c_len
+ CS_ARGF_SUPP_CHAINE
+);
+
+/*----------------------------------------------------------------------------
  * Get number of code coupling
  *
  * Fortran interface:
@@ -95,27 +135,11 @@ void CS_PROCF (nbccpl, NBCCPL)
  * *****************
  *
  * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NCESUP         : --> : number of "support" cells
- * INTEGER          NFBSUP         : --> : number of "support" boundary faces
- * INTEGER          NCECPL         : --> : number of coupled cells
- * INTEGER          NFBCPL         : --> : number of coupled boundary faces
- * INTEGER          LCESUP(NCESUP) : <-> : list of "support" cells
- * INTEGER          LFBSUP(NFBSUP) : <-> : list of "support" boundary faces
- * INTEGER          LCECPL(NCECPL) : --> : list of coupled cells
- * INTEGER          LFBCPL(NFBCPL) : --> : list of coupled boundary faces
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (defcpl, DEFCPL)
+void CS_PROCF (defloc, DEFLOC)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *ncesup,
- const cs_int_t  *nfbsup,
- const cs_int_t  *ncecpl,
- const cs_int_t  *nfbcpl,
-       cs_int_t         lcesup[],
-       cs_int_t         lfbsup[],
- const cs_int_t         lcecpl[],
- const cs_int_t         lfbcpl[]
+ const cs_int_t  *numcpl
 );
 
 /*----------------------------------------------------------------------------
@@ -401,18 +425,78 @@ void CS_PROCF (mxicpl, MXICPL)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Add a coupling.
+ * Define new Code_Saturne coupling.
  *
- * Couplings are allowed either with process totally distinct from the
- * application communicator (cs_glob_mpi_comm), or within this same
- * communicator.
- *
- * parameters:
- *   rang_deb <-- root rank of distant process leader in MPI_COMM_WORLD
+ * arguments:
+ *   saturne_app_num   <-- number of Code_Saturne application, or -1
+ *   saturne_name      <-- name of Code_Saturne instance, or NULL
+ *   boundary_criteria <-- boundary face selection criteria, or NULL
+ *   volume_criteria   <-- volume cell selection criteria, or NULL
+ *   verbosity         <-- verbosity level
  *----------------------------------------------------------------------------*/
 
 void
-cs_sat_coupling_add(const int  root_rank);
+cs_sat_coupling_define(int          saturne_app_num,
+                       const char  *saturne_name,
+                       const char  *boundary_cpl_criteria,
+                       const char  *volume_cpl_criteria,
+                       const char  *boundary_sup_criteria,
+                       const char  *volume_sup_criteria,
+                       int          verbosity);
+
+/*----------------------------------------------------------------------------
+ * Get number of Code_Saturne couplings.
+ *
+ * returns:
+ *   number of Code_Saturne couplings
+ *----------------------------------------------------------------------------*/
+
+fvm_lnum_t
+cs_sat_coupling_n_couplings(void);
+
+/*----------------------------------------------------------------------------
+ * Get pointer to Code_Saturne coupling.
+ *
+ * parameters:
+ *   coupling_id <-- Id (0 to n-1) of Code_Saturne coupling
+ *
+ * returns:
+ *   pointer to Code_Saturne coupling structure
+ *----------------------------------------------------------------------------*/
+
+cs_sat_coupling_t *
+cs_sat_coupling_by_id(fvm_lnum_t coupling_id);
+
+/*----------------------------------------------------------------------------
+ * Create a sat_coupling_t structure.
+ *
+ * parameters:
+ *   ref_axis           <-- reference axis
+ *   face_sel_criterion <-- criterion for selection of boundary faces
+ *   cell_sel_criterion <-- criterion for selection of cells
+ *   syr_num            <-- SYRTHES application number, or -1
+ *   sat_name           <-- SYRTHES application name, or NULL
+ *   verbosity          <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_add(const char  *face_cpl_sel_c,
+                    const char  *cell_cpl_sel_c,
+                    const char  *face_sup_sel_c,
+                    const char  *cell_sup_sel_c,
+                    int          sat_num,
+                    const char  *sat_name,
+                    int          verbosity);
+
+/*----------------------------------------------------------------------------
+ * Initialize Code_Saturne couplings.
+ *
+ * This function may be called once all couplings have been defined,
+ * and it will match defined couplings with available applications.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_all_init(void);
 
 /*----------------------------------------------------------------------------
  * Destroy all couplings
