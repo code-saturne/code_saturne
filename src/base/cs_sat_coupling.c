@@ -285,6 +285,8 @@ _init_comm(cs_sat_coupling_t *sat_coupling,
 #endif
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Add a Code_Saturne coupling using MPI.
  *
@@ -530,6 +532,8 @@ _init_all_mpi_sat(void)
 
   _remove_matched_builder_entries();
 }
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Destroy a coupling structure
