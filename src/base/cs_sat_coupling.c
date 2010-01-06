@@ -794,8 +794,6 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
   for (ind = 0 ; ind < n_fbr_loc ; ind++) {
 
-    cs_real_t pond = couplage->local_pond_fbr[ind];
-
     ifac = lstfbr[ind] - 1;
     iel  = mesh->b_face_cells[ifac] - 1;
 
@@ -956,7 +954,12 @@ void CS_PROCF (nbccpl, NBCCPL)
  fvm_lnum_t  *n_couplings
 )
 {
-  *n_couplings = cs_sat_coupling_n_couplings();
+  if (_cs_glob_n_sat_cp < 0) {
+    if (_sat_coupling_builder_size > 0)
+      _cs_glob_n_sat_cp = _sat_coupling_builder_size;
+    else
+      _cs_glob_n_sat_cp = cs_sat_coupling_n_couplings();
+  }
 
   *n_couplings = _cs_glob_n_sat_cp;
 }
@@ -1024,7 +1027,7 @@ void CS_PROCF (defloc, DEFLOC)
 
   if (coupl->cell_sup_sel != NULL) {
 
-    sprintf(coupled_mesh_name, _("coupled_cells_%d"), numcpl);
+    sprintf(coupled_mesh_name, _("coupled_cells_%d"), *numcpl);
 
     BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, fvm_lnum_t);
 
@@ -1043,7 +1046,7 @@ void CS_PROCF (defloc, DEFLOC)
 
   if (coupl->face_sup_sel != NULL) {
 
-    sprintf(coupled_mesh_name, _("coupled_faces_%d"), numcpl);
+    sprintf(coupled_mesh_name, _("coupled_faces_%d"), *numcpl);
 
     BFT_MALLOC(elt_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
 
@@ -2008,13 +2011,6 @@ cs_sat_coupling_define(int          saturne_app_num,
 fvm_lnum_t
 cs_sat_coupling_n_couplings(void)
 {
-  if (_cs_glob_n_sat_cp < 0) {
-    if (_sat_coupling_builder_size > 0)
-      _cs_glob_n_sat_cp = _sat_coupling_builder_size;
-    else
-      _cs_glob_n_sat_cp = cs_sat_coupling_n_couplings();
-  }
-
   return cs_glob_sat_n_couplings;
 }
 
@@ -2050,13 +2046,6 @@ cs_sat_coupling_by_id(fvm_lnum_t coupling_id)
 void
 cs_sat_coupling_all_init(void)
 {
-  int i;
-
-  int n_apps = 0;
-  int n_matched_apps = 0;
-  int n_sat_apps = 0;
-  int sat_app_id = -1;
-
   /* First try using MPI */
 
 #if defined(HAVE_MPI)

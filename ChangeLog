@@ -1,3 +1,9 @@
+* 06/01/2010 - David Monfort <david.monfort@edf.fr>
+  Fix a an issue when returning the number of code/code couplings.
+  Code cleaning to remove some compiler warnings.
+  modified routine:
+    src/base/cs_sat_coupling.c
+
 * 21/12/2009 - David Monfort <david.monfort@edf.fr>
   Make code/code coupling compliant with the new discovering
   mechanism for coupling applications.
