@@ -288,6 +288,7 @@ actt = xkappa/log((distbf+rugt)/rugt)
 ! NB: rib =0 if thermal flux conditions are imposed and tpot1 not defined
 if (abs(utau).le.epzero.or.icodcl(ifac,isca(iscalt(iphas))).eq.3) then
  rib = 0.d0
+ if (abs(utau).le.epzero) utau = epzero
 else
  rib = 2.d0*gredu*distbf*(tpotv2-tpotv1)/(tpotv1+tpotv2)/utau/utau
 endif
@@ -297,7 +298,7 @@ endif
 !         Louis (1982)
 !     ...............................................................
 
-  if (rib.ge.0.d0) then
+  if (rib.ge.epzero) then
      fm = 1./(1.+2.*b*rib/sqrt(1.+d*rib))
      fh = 1/(1.+3.*b*rib*sqrt(1.+d*rib))
   else
@@ -308,10 +309,18 @@ endif
      fh = 1.d0-(3.d0*b*rib)/(1.d0+fhden*sqrt(abs(rib)))
   endif
 
+  if (fm.le.epzero) fm = epzero
+  if (abs(fh).le.epzero) fh = epzero
+
   cfnnu = 1.d0/sqrt(fm)
   cfnns = sqrt(fm)/fh
-  cfnnk = sqrt(1.d0-rib)  ! +correction with turbulent Prandtl
-  cfnne = (1.d0-rib)/sqrt(fm)
+  if ((1.d0-rib).gt.epzero)then
+    cfnnk = sqrt(1.d0-rib)  ! +correction with turbulent Prandtl
+    cfnne = (1.d0-rib)/sqrt(fm)
+  else
+    cfnnk = 1.d0
+    cfnne = 1.d0
+  endif
 
 !     ------------------------------------
 !     4 - compute friction velocity  uet

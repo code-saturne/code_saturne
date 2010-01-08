@@ -1,3 +1,8 @@
+* 08/01/2010 - Maya Milliez <maya.milliez@edf.fr>
+  Improve robustness for wall boundary conditions for atmospheric modelling.
+  modified routine:
+    src/atmo/atmcls.f90
+
 * 06/01/2010 - David Monfort <david.monfort@edf.fr>
   Fix a an issue when returning the number of code/code couplings.
   Code cleaning to remove some compiler warnings.
