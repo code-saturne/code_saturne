@@ -106,7 +106,9 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 integer          idebia , idebra , ifinia , ifinra
 integer          iphas
 integer          numcpl
-integer          imobmx , ialemx , nvcpmx
+integer          imobmx , ialemx , nvcpmx, ifcpmx
+
+double precision omgnrm
 
 !===============================================================================
 
@@ -118,7 +120,39 @@ idebra = idbra0
 call nbccpl(nbrcpl)
 !==========
 
+if (nbrcpl.ge.1) then
+
+  ! Si on est en couplage rotor/stator avec resolution en repere absolu
+
+  omgnrm = omegax**2 + omegay**2 + omegaz**2
+  if (omgnrm.ge.epzero**2 .and. icorio.eq.0) then
+
+    ! Couplage avec interpolation aux faces
+    ifaccp = 1
+
+    ! Maillage mobile
+    imobil = 1
+
+  endif
+
+endif
+
+
 do numcpl = 1, nbrcpl
+
+!       L'interpolation face/face doit être définie pour tous les couplages
+!       de manière identique.
+
+  call mxicpl(numcpl, ifaccp, ifcpmx)
+  !==========
+
+  ifaccp = ifcpmx
+
+!       Si l'un des maillages est mobiles,
+!       on doit mettre à jour la localisation.
+
+  call mxicpl(numcpl, imobil, imobmx)
+  !==========
 
 !       De la même manière, si l'on a une approche ALE sur l'un des
 !       maillages, on doit mettre à jour la localisation.
@@ -126,7 +160,7 @@ do numcpl = 1, nbrcpl
   call mxicpl(numcpl, iale  , ialemx)
   !==========
 
-  if (ialemx.eq.1) then
+  if (ialemx.eq.1.or.imobmx.eq.1) then
     imajcp(numcpl) = 1
   else
     imajcp(numcpl) = 0

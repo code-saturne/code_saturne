@@ -76,6 +76,8 @@ integer          ii, jj, ivar, iphas, iok, iest, imom, ikw
 integer          icompt, ipp, nbccou, nn
 integer          nscacp, iscal
 double precision relxsp
+double precision omgnrm, ctheta, stheta
+double precision ux, uy, uz
 
 !===============================================================================
 
@@ -1239,6 +1241,83 @@ do iphas = 1, nphas
     endif
   enddo
 enddo
+
+! Vecteur rotation et matrice(s) associees
+
+omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
+
+if (omgnrm.ge.epzero) then
+
+  ! Vecteur rotation normé
+
+  ux = omegax / omgnrm
+  uy = omegay / omgnrm
+  uz = omegaz / omgnrm
+
+  ! Matrice de projection sur l'axe de rotation
+
+  prot(1,1) = ux**2
+  prot(2,2) = uy**2
+  prot(3,3) = uz**2
+
+  prot(1,2) = ux*uy
+  prot(2,1) = prot(1,2)
+
+  prot(1,3) = ux*uz
+  prot(3,1) = prot(1,3)
+
+  prot(2,3) = uy*uz
+  prot(3,2) = prot(2,3)
+
+  ! Représentation antisymétrique de Omega
+
+  qrot(1,1) = 0.d0
+  qrot(2,2) = 0.d0
+  qrot(3,3) = 0.d0
+
+  qrot(1,2) = -uz
+  qrot(2,1) = -qrot(1,2)
+
+  qrot(1,3) = -uy
+  qrot(3,1) = -qrot(1,3)
+
+  qrot(2,3) = -ux
+  qrot(3,2) = -qrot(2,3)
+
+  ! Matrice de rotation
+
+  ctheta = cos(omgnrm)
+  stheta = sin(omgnrm)
+
+  do ii = 1, 3
+    do jj = 1, 3
+      irot(ii,jj) = 0.d0
+    enddo
+    irot(ii,ii) = 1.d0
+  enddo
+  
+  do ii = 1, 3
+    do jj = 1, 3
+      rrot(ii,jj) = prot(ii,jj) + ctheta*(irot(ii,jj)-prot(ii,jj)) &
+                                + stheta*qrot(ii,jj)
+    enddo
+  enddo  
+
+else
+
+  do ii = 1, 3
+    do jj = 1, 3
+      irot(ii,jj) = 0.d0
+      prot(ii,jj) = 0.d0
+      qrot(ii,jj) = 0.d0
+      rrot(ii,jj) = 0.d0
+    enddo
+    irot(ii,ii) = 1.d0
+    rrot(ii,ii) = 1.d0
+  enddo
+
+endif
+
 
 !===============================================================================
 ! 5. ELEMENTS DE albase.h

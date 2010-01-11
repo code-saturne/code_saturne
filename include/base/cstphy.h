@@ -59,7 +59,9 @@ integer            icorio
 common / irotat /  icorio
 
 double precision   omegax, omegay, omegaz
-common / rrotat /  omegax, omegay, omegaz
+double precision   irot(3,3), prot(3,3), qrot(3,3), rrot(3,3)
+common / rrotat /  omegax, omegay, omegaz, &
+                   irot, prot  , qrot  , rrot
 
 ! CONSTANTES PHYSIQUES DU FLUIDE
 !   IXYZP0 : INDICATEUR DE REMPLISSAGE DE XYZP0
