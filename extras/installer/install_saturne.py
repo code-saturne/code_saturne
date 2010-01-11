@@ -406,8 +406,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="2.3.5",
-                    archive="med-fichier_2.3.5.tar.gz",
+                    version="2.3.6",
+                    archive="med-fichier_2.3.6.tar.gz",
                     url="http://files.opencascade.com/Salome/Salome5.1.3/%s")
 
         p = self.packages['med']
