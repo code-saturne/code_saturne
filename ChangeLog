@@ -15,7 +15,7 @@
    doc/manpages/cs.1
   modified script:
    extras/installer/install_saturne.py
-    
+   Makefile.am
 
 * 11/01/2010 - David Monfort <david.monfort@edf.fr>
   Update Code_Saturne prerequisites in the installer script.

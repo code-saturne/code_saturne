@@ -169,7 +169,7 @@ data/thch/meteo
 # Install man pages
 
 dist_man_MANS = \
-doc/manpages/cs.1 \
+doc/manpages/code_saturne.1 \
 doc/manpages/cs_solver.1
 
 # Install bash completion script
