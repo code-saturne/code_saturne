@@ -197,6 +197,7 @@ include "parall.h"
 include "mltgrd.h"
 include "lagpar.h"
 include "lagran.h"
+include "cplsat.h"
 
 !===============================================================================
 
