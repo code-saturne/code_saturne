@@ -378,9 +378,9 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgnslib",
-                    version="2.5.3",
-                    archive="cgnslib_2.5-3.tar.gz",
-                    url="http://sourceforge.net/projects/cgns/files/cgnslib_2.5/Release%%203/%s/download")
+                    version="2.5.4",
+                    archive="cgnslib_2.5-4.tar.gz",
+                    url="http://sourceforge.net/projects/cgns/files/cgnslib_2.5/Release%%204/%s/download")
 
         p = self.packages['cgns']
         p.config_opts = "--enable-64bit --enable-lfs"
@@ -393,8 +393,8 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.6.9",
-                    archive="hdf5-1.6.9.tar.gz",
+                    version="1.6.10",
+                    archive="hdf5-1.6.10.tar.gz",
                     url="http://www.hdfgroup.org/ftp/HDF5/current16/src/%s")
 
         p = self.packages['hdf5']
@@ -408,7 +408,7 @@ class Setup:
                     package="med",
                     version="2.3.5",
                     archive="med-fichier_2.3.5.tar.gz",
-                    url="http://files.opencascade.com/Salome/Salome5.1.2/%s")
+                    url="http://files.opencascade.com/Salome/Salome5.1.3/%s")
 
         p = self.packages['med']
         p.config_opts = "--with-med_int=int"
@@ -439,9 +439,9 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.3.3",
-                    archive="openmpi-1.3.3.tar.gz",
-                    url="http://www.open-mpi.org/software/ompi/v1.3/downloads/%s")
+                    version="1.4",
+                    archive="openmpi-1.4.tar.gz",
+                    url="http://www.open-mpi.org/software/ompi/v1.4/downloads/%s")
 
         # Libxml2 library (official url "ftp://xmlsoft.org/libxml2/%s")
 

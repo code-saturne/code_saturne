@@ -1,3 +1,8 @@
+* 11/01/2010 - David Monfort <david.monfort@edf.fr>
+  Update Code_Saturne prerequisites in the installer script.
+  modified script:
+   extras/installer/install_saturne.py
+
 * 08/01/2010 - Maya Milliez <maya.milliez@edf.fr>
   Improve robustness for wall boundary conditions for atmospheric modelling.
   modified routine:
