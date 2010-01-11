@@ -31,10 +31,11 @@
 !  COUPLAGE CODE / CODE - GESTION DES PARAMETRES PRINCIPAUX
 
 ! NBRCPL : NOMBRE DE COUPLAGE CODE_SATURNE / CODE_SATURNE
+! IFACCP : INDICATEUR DE COUPLAGE FACE/FACE UNIQUEMENT
 
-integer           nbrcpl
+integer           nbrcpl, ifaccp
 
-common / icplcs / nbrcpl
+common / icplcs / nbrcpl, ifaccp
 
 ! NBCPMX : NOMBRE DE COUPLAGE MAX ADMISSIBLE
 

@@ -200,6 +200,7 @@ include "vector.h"
 include "entsor.h"
 include "period.h"
 include "parall.h"
+include "cplsat.h"
 
 !===============================================================================
 
@@ -1258,8 +1259,14 @@ if (idtvar.lt.0) then
     diipby = ra(iii+2)
     diipbz = ra(iii+3)
 
-    flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-    fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
+    ! On enleve le decentrement pour les faces couplees (test sur iphas=1)
+    if (ifaccp.eq.1.and.ia(iitypf-1+ifac).eq.icscpl) then
+      flui = 0.0d0
+      fluj = flumab(ifac)
+    else
+      flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
+      fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
+    endif
 
     pir  = pvar(ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(ii)
     pipr = pir                                                    &
@@ -1286,8 +1293,14 @@ else
     diipby = ra(iii+2)
     diipbz = ra(iii+3)
 
-    flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-    fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
+    ! On enleve le decentrement pour les faces couplees (test sur iphas=1)
+    if (ifaccp.eq.1.and.ia(iitypf-1+ifac).eq.icscpl) then
+      flui = 0.0d0
+      fluj = flumab(ifac)
+    else
+      flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
+      fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
+    endif
 
     pip = pvar(ii)                                                &
        +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)

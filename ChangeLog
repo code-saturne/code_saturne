@@ -1,3 +1,14 @@
+* 11/01/2010 - Bruno Audebert <bruno.audebert@edf.fr>
+  Add new interpolation schemes to code/code coupling for
+  rotor/stator interaction modelling.
+  modified routines:
+    include/base/cplsat.h
+    src/base/bilsc2.f90
+    src/base/csc2cl.f90
+    src/base/cscpfb.f90
+    src/base/iniini.f90
+    src/base/resolp.f90
+
 * 11/01/2010 - David Monfort <david.monfort@edf.fr>
   Minor fixes to account for the cs to code_saturne renaming.
   renamed file:

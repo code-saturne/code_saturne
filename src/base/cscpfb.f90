@@ -250,25 +250,51 @@ do iphas = 1, nphas
     w4     , w5     , w6     ,                                    &
     rdevel , rtuser , ra     )
 
+    ! For a specific face to face coupling, geometric assumptions are made
 
-    do ipt = 1, nptdis
+    if (ifaccp.eq.1) then
 
-      iel = locpts(ipt)
+      do ipt = 1, nptdis
 
-      xjpf = coopts(1,ipt) - xyzcen(1,iel)- djppts(1,ipt)
-      yjpf = coopts(2,ipt) - xyzcen(2,iel)- djppts(2,ipt)
-      zjpf = coopts(3,ipt) - xyzcen(3,iel)- djppts(3,ipt)
+        iel = locpts(ipt)
 
-      if(pndpts(ipt).ge.0.d0.and.pndpts(ipt).le.1.d0) then
-        jpf = -1.d0*sqrt(xjpf**2+yjpf**2+zjpf**2)
-      else
-        jpf =       sqrt(xjpf**2+yjpf**2+zjpf**2)
-      endif
+! --- Pour la pression on veut imposer un dirichlet tel que le gradient
+!     de pression se conserve entre les deux domaines couplés Pour cela
+!     on impose une interpolation centrée
 
-      rvdis(ipt,ipos) = (xjpf*w1(iel)+yjpf*w2(iel)+zjpf*w3(iel))  &
-                     /jpf
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
 
-    enddo
+        rvdis(ipt,ipos) = rtp(iel,ipriph) &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjpf = coopts(1,ipt) - xyzcen(1,iel)- djppts(1,ipt)
+        yjpf = coopts(2,ipt) - xyzcen(2,iel)- djppts(2,ipt)
+        zjpf = coopts(3,ipt) - xyzcen(3,iel)- djppts(3,ipt)
+
+        if(pndpts(ipt).ge.0.d0.and.pndpts(ipt).le.1.d0) then
+          jpf = -1.d0*sqrt(xjpf**2+yjpf**2+zjpf**2)
+        else
+          jpf =       sqrt(xjpf**2+yjpf**2+zjpf**2)
+        endif
+
+        rvdis(ipt,ipos) = (xjpf*w1(iel)+yjpf*w2(iel)+zjpf*w3(iel))  &
+                       /jpf
+
+      enddo
+
+    endif
 
   endif
 !       FIn pour la pression de la phase 1
@@ -345,19 +371,67 @@ do iphas = 1, nphas
     rdevel , rtuser , ra     )
 
 
-    do ipt = 1, nptdis
+    ! For a specific face to face coupling, geometric assumptions are made
 
-      iel = locpts(ipt)
+    if (ifaccp.eq.1) then
 
-      xjjp = dofpts(1,ipt) + djppts(1,ipt)
-      yjjp = dofpts(2,ipt) + djppts(2,ipt)
-      zjjp = dofpts(3,ipt) + djppts(3,ipt)
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+! --- Pour la vitesse on veut imposer un dirichlet de vitesse qui "imite"
+!     ce qui se passe pour une face interne. On se donne le choix entre
+!     UPWIND, SOLU et CENTRE (parties commentées selon le choix retenu).
+!     Pour l'instant seul le CENTRE respecte ce qui se passerait pour la
+!     diffusion si on avait un seul domaine
+
+! -- UPWIND
+
+!        xjpf = coopts(1,ipt) - xyzcen(1,iel)- djppts(1,ipt)
+!        yjpf = coopts(2,ipt) - xyzcen(2,iel)- djppts(2,ipt)
+!        zjpf = coopts(3,ipt) - xyzcen(3,iel)- djppts(3,ipt)
+
+!        rvdis(ipt,ipos) = rtp(iel,ivar)
+
+! -- SOLU
+
+!        xjf = coopts(1,ipt) - xyzcen(1,iel)
+!        yjf = coopts(2,ipt) - xyzcen(2,iel)
+!        zjf = coopts(3,ipt) - xyzcen(3,iel)
+
+!        rvdis(ipt,ipos) = rtp(iel,ivar) &
+!          + xjf*w1(iel) + yjf*w2(iel) + zjf*W3(iel)
+
+! -- CENTRE
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        rvdis(ipt,ipos) = rtp(iel,ivar) &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = dofpts(1,ipt) + djppts(1,ipt)
+        yjjp = dofpts(2,ipt) + djppts(2,ipt)
+        zjjp = dofpts(3,ipt) + djppts(3,ipt)
 
 
-      rvdis(ipt,ipos) = rtp(iel,ivar)                             &
-        + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+        rvdis(ipt,ipos) = rtp(iel,ivar)                             &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-    enddo
+      enddo
+
+    endif
 
   enddo
 !       Fin de la boucle sur les composantes de la vitesse
@@ -431,18 +505,41 @@ do iphas = 1, nphas
     rdevel , rtuser , ra     )
 
 
-    do ipt = 1, nptdis
+    ! For a specific face to face coupling, geometric assumptions are made
 
-      iel = locpts(ipt)
+    if (ifaccp.eq.1) then
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+      do ipt = 1, nptdis
 
-      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
-        + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+        iel = locpts(ipt)
 
-    enddo
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    endif
 
 !         Préparation des données: interpolation de epsilon en J'
 
@@ -496,18 +593,40 @@ do iphas = 1, nphas
     rdevel , rtuser , ra     )
 
 
-    do ipt = 1, nptdis
+    ! For a specific face to face coupling, geometric assumptions are made
 
-      iel = locpts(ipt)
+    if (ifaccp.eq.1) then
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+      do ipt = 1, nptdis
 
-      ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
-        + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+        iel = locpts(ipt)
 
-    enddo
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav2 + ipt-1) = rtp(iel,iepiph)
+
+      enddo
+
+    ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    endif
 
 
 !=======================================================================
@@ -1648,18 +1767,60 @@ if (nscal.gt.0) then
     w4     , w5     , w6     ,                                    &
     rdevel , rtuser , ra     )
 
-    do ipt = 1, nptdis
+    ! For a specific face to face coupling, geometric assumptions are made
 
-      iel = locpts(ipt)
+    if (ifaccp.eq.1) then
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+      do ipt = 1, nptdis
 
-      rvdis(ipt,ipos) = rtp(iel,ivar)                             &
-        + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+        iel = locpts(ipt)
 
-    enddo
+! --- Pour les scalaires on veut imposer un dirichlet. On se laisse
+!     le choix entre UPWIND, SOLU ou CENTRE. Seul le centré respecte
+!     la diffusion si il n'y avait qu'un seul domaine
+
+! -- UPWIND
+
+        rvdis(ipt,ipos) = rtp(iel,ivar)
+
+! -- SOLU
+
+!        xjf = coopts(1,ipt) - xyzcen(1,iel)
+!        yjf = coopts(2,ipt) - xyzcen(2,iel)
+!        zjf = coopts(3,ipt) - xyzcen(3,iel)
+
+!        rvdis(ipt,ipos) = rtp(iel,ivar) &
+!          + xjf*w1(iel) + yjf*w2(iel) + zjf*w3(iel)
+
+! -- CENTRE
+
+!        xjjp = djppts(1,ipt)
+!        yjjp = djppts(2,ipt)
+!        zjjp = djppts(3,ipt)
+
+!        rvdis(ipt,ipos) = rtp(iel,ivar) &
+!          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        rvdis(ipt,ipos) = rtp(iel,ivar)                             &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    endif
 
   enddo
 

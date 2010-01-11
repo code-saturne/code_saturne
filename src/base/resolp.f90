@@ -641,6 +641,15 @@ call matrix                                                       &
 
 ! --- Flux de masse predit et premiere composante Rhie et Chow
 
+! On annule la viscosite facette pour les faces couplees pour ne pas modifier
+! le flux de masse au bord dans le cas d'un dirichlet de pression: la correction
+! de pression et le filtre sont annules.
+do ifac = 1, nfabor
+  if (ifaccp.eq.1.and.ia(iitypf-1+ifac+nfabor*(iphas-1)).eq.icscpl) then
+    viscb(ifac) = 0.d0
+  endif
+enddo
+
 iccocg = 1
 inc    = 1
 nswrgp = nswrgr(ipriph)

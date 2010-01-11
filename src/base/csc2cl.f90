@@ -238,7 +238,7 @@ double precision xjp
 double precision xipf, yipf, zipf, ipf
 
 double precision xif, yif, zif, xopf, yopf, zopf
-double precision gradi
+double precision gradi, pondj, flumab
 
 !===============================================================================
 
@@ -293,66 +293,209 @@ do ivar = 1, nvcp
    w4     , w5     , w6     ,                                     &
    rdevel , rtuser , ra     )
 
+
+  ! For a specific face to face coupling, geometric assumptions are made
+
+  if (ifaccp.eq.1) then
+
+
+    do ipt = 1, nfbcpl
+
+      ifac = lfbcpl(ipt)
+      iel  = ifabor(ifac)
+
+!         Information de l'instance en cours interpolée en I'
+      iii = idiipb-1+3*(ifac-1)
+      xiip = ra(iii+1)
+      yiip = ra(iii+2)
+      ziip = ra(iii+3)
+
+      xif = cdgfbo(1,ifac) -xyzcen(1,iel)
+      yif = cdgfbo(2,ifac) -xyzcen(2,iel)
+      zif = cdgfbo(3,ifac) -xyzcen(3,iel)
+
+      xipf = cdgfbo(1,ifac)-xiip - xyzcen(1,iel)
+      yipf = cdgfbo(2,ifac)-yiip - xyzcen(2,iel)
+      zipf = cdgfbo(3,ifac)-ziip - xyzcen(3,iel)
+
+      ipf = sqrt(xipf**2+yipf**2+zipf**2)
+
+
+      iii = idiipb-1+3*(ifac-1)
+      xiip = ra(iii+1)
+      yiip = ra(iii+2)
+      ziip = ra(iii+3)
+
+      xopf = dofcpl(1,ipt)
+      yopf = dofcpl(2,ipt)
+      zopf = dofcpl(3,ipt)
+
+      if (ivar.eq.ipr(1)) then
+
+! --- On veut imposer un dirichlet de pression de manière à conserver
+!     le gradient de pression à la traversée du couplage et être consistant
+!     avec la résolution du gradient de pression sur maillage orthogonal
+
+        xip = rtp(iel,ivar) + (w1(iel)*xiip + w2(iel)*yiip + w3(iel)*ziip)
+
+      else if (ivar.eq.iu(1).or.ivar.eq.iv(1).or.ivar.eq.iw(1)) then
+
+! --- Pour toutes les autres variables, on veut imposer un dirichlet
+!     en accord avec les flux convectifs au centre. On se laisse le choix
+!     entre UPWIND, SOLU et CENTRE. Seul le centré respecte la diffusion
+!     des faces internes du somaine. Pour l'UPWIND et le SOLU, le décentrement
+!     est réalisé ici et plus dans bilsc2.F pour les faces couplées.
+
+! -- UPWIND
+
+!        xip =  rtp(iel,ivar)
+
+! -- SOLU
+
+!        xip =  rtp(iel,ivar) + (w1(iel)*xif + w2(iel)*yif + w3(iel)*zif)
+
+! -- CENTRE
+
+        xip =  rtp(iel,ivar) + w1(iel)*xiip + w2(iel)*yiip + w3(iel)*ziip
+
+      else
+
+! -- UPWIND
+
+!        xip =  rtp(iel,ivar)
+
+! -- SOLU
+
+!        xip =  rtp(iel,ivar) + (w1(iel)*xif + w2(iel)*yif + w3(iel)*zif)
+
+! -- CENTRE
+
+        xip =  rtp(iel,ivar) + (w1(iel)*xiip + w2(iel)*yiip + w3(iel)*ziip)
+
+      endif
+
+! -- on a besoin de alpha_ij pour interpolation centrée et du flumab
+!    pour le décentrement
+
+      pondj = pndcpl(ipt)
+      flumab = propfb(ifac,ipprob(ifluma(iu(1))))
+
+!         Informations recues de l'instance distante en J'/O'
+      xjp = rvcpfb(ipt,ivar)
+
+
+      do iphas = 1, nphas
+        itypfb(ifac,iphas)  = icscpl
+      enddo
+
+      if (ivar.eq.ipr(1)) then
+
+        icodcl(ifac,ivar  ) = 1
+        rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip + p0(1)
+
+      else if (ivar.eq.iu(1).or.ivar.eq.iv(1).or.ivar.eq.iw(1)) then
+
+        icodcl(ifac,ivar  ) = 1
+
+! -- DECENTRE (SOLU ou UPWIND)
+
+!        if (flumab.ge.0.d0) then
+!          rcodcl(ifac,ivar,1) = xip
+!        else
+!          rcodcl(ifac,ivar,1) = xjp
+!        endif
+
+! -- CENTRE
+
+        rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip
+
+      else
+
+        icodcl(ifac,ivar  ) = 1
+
+! -- DECENTRE (SOLU ou UPWIND)
+
+        if(flumab.ge.0.d0) then
+          rcodcl(ifac,ivar,1) = xip
+        else
+          rcodcl(ifac,ivar,1) = xjp
+        endif
+
+! -- CENTRE
+
+!        rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip
+
+      endif
+
+    enddo
+
+  ! For a generic coupling, no assumption can be made
+
+  else
+
+
 !   --- Traduction en termes de condition limite pour les faces de bord localisées
 !         --> CL type Dirichlet
 
-  do ipt = 1, nfbcpl
+    do ipt = 1, nfbcpl
 
-    ifac = lfbcpl(ipt)
-    iel  = ifabor(ifac)
+      ifac = lfbcpl(ipt)
+      iel  = ifabor(ifac)
 
 !         Information de l'instance en cours interpolée en I'
-    iii = idiipb-1+3*(ifac-1)
-    xiip = ra(iii+1)
-    yiip = ra(iii+2)
-    ziip = ra(iii+3)
+      iii = idiipb-1+3*(ifac-1)
+      xiip = ra(iii+1)
+      yiip = ra(iii+2)
+      ziip = ra(iii+3)
 
-    xif = cdgfbo(1,ifac) -xyzcen(1,iel)
-    yif = cdgfbo(2,ifac) -xyzcen(2,iel)
-    zif = cdgfbo(3,ifac) -xyzcen(3,iel)
+      xif = cdgfbo(1,ifac) -xyzcen(1,iel)
+      yif = cdgfbo(2,ifac) -xyzcen(2,iel)
+      zif = cdgfbo(3,ifac) -xyzcen(3,iel)
 
-    xipf = cdgfbo(1,ifac)-xiip - xyzcen(1,iel)
-    yipf = cdgfbo(2,ifac)-yiip - xyzcen(2,iel)
-    zipf = cdgfbo(3,ifac)-ziip - xyzcen(3,iel)
+      xipf = cdgfbo(1,ifac)-xiip - xyzcen(1,iel)
+      yipf = cdgfbo(2,ifac)-yiip - xyzcen(2,iel)
+      zipf = cdgfbo(3,ifac)-ziip - xyzcen(3,iel)
 
-    ipf = sqrt(xipf**2+yipf**2+zipf**2)
+      ipf = sqrt(xipf**2+yipf**2+zipf**2)
 
 
-    iii = idiipb-1+3*(ifac-1)
-    xiip = ra(iii+1)
-    yiip = ra(iii+2)
-    ziip = ra(iii+3)
+      iii = idiipb-1+3*(ifac-1)
+      xiip = ra(iii+1)
+      yiip = ra(iii+2)
+      ziip = ra(iii+3)
 
-    xopf = dofcpl(1,ipt)
-    yopf = dofcpl(2,ipt)
-    zopf = dofcpl(3,ipt)
+      xopf = dofcpl(1,ipt)
+      yopf = dofcpl(2,ipt)
+      zopf = dofcpl(3,ipt)
 
 !         Informations locales interpolees en I'/O'
 
-    xip =  rtp(iel,ivar)                                          &
-      + (w1(iel)*(xiip+xopf) + w2(iel)*(yiip+yopf) +              &
-         w3(iel)*(ziip+zopf))
+      xip =  rtp(iel,ivar)                                          &
+        + (w1(iel)*(xiip+xopf) + w2(iel)*(yiip+yopf) +              &
+           w3(iel)*(ziip+zopf))
 
 !         Informations recues de l'instance distante en J'/O'
-    xjp = rvcpfb(ipt,ivar)
+      xjp = rvcpfb(ipt,ivar)
 
 
-    gradi = (w1(iel)*xipf+w2(iel)*yipf+w3(iel)*zipf)/ipf
+      gradi = (w1(iel)*xipf+w2(iel)*yipf+w3(iel)*zipf)/ipf
 
-    do iphas = 1, nphas
-      itypfb(ifac,iphas)  = icscpl
+      do iphas = 1, nphas
+        itypfb(ifac,iphas)  = icscpl
+      enddo
+
+      if(ivar.ne.ipr(1)) then
+        icodcl(ifac,ivar  ) = 1
+        rcodcl(ifac,ivar,1) = 0.5d0*(xip+xjp)
+      else
+        icodcl(ifac,ivar  ) = 3
+        rcodcl(ifac,ivar,3) = -0.5d0*dt(iel)*(gradi+xjp)
+      endif
+
+
     enddo
 
-    if(ivar.ne.ipr(1)) then
-      icodcl(ifac,ivar  ) = 1
-      rcodcl(ifac,ivar,1) = 0.5d0*(xip+xjp)
-    else
-      icodcl(ifac,ivar  ) = 3
-      rcodcl(ifac,ivar,3) = -0.5d0*dt(iel)*(gradi+xjp)
-    endif
-
-
-  enddo
+  endif
 
 ! --- Faces de bord non localisées
 !       --> CL type Neumann homogène
