@@ -22,17 +22,17 @@
 .\"  51 Franklin St, Fifth Floor,
 .\"  Boston, MA  02110-1301  USA
 .\"
-.TH CS 1 2009-10-27 "" "Code_Saturne commands"
+.TH CODE_SATURNE 1 2009-10-27 "" "Code_Saturne commands"
 .SH NAME
-cs \- Main user script of Code_Saturne.
+code_saturne \- Main user script of Code_Saturne.
 .SH SYNOPSIS
-.B cs
+.B code_saturne
 .RI [-h|--help]
 .RI <command>
 .br
 .SH DESCRIPTION
 The
-.B cs
+.B code_saturne
 script is the main user script of Code_Saturne.
 .\"
 .\" Options description
@@ -44,11 +44,11 @@ Help message.
 .\" Commands description
 .SH COMMANDS
 Further information will be obtain with
-.B "cs <command> --help"
+.B "code_saturne <command> --help"
 .B
 .IP "check_consistency"
 The
-.B "cs check_consistency"
+.B "code_saturne check_consistency"
 command checks the consistency between the user files and the Xml file
 (from the Graphical User Interface) provided by the user and, if
 needed, that the chosen options are compatible with parallel
@@ -57,14 +57,14 @@ calculations. Lastly, it prints the chosen specific physics.
 .B
 .IP "check_mesh"
 The
-.B "cs check_mesh"
+.B "code_saturne check_mesh"
 command verify the quality of a given mesh. The following options will
 be passed to Code_Saturne preprocessor.
 
 .B
 .IP "compile"
 The
-.B "cs compile"
+.B "code_saturne compile"
 command can be used to generate the
 .B cs_solver
 executable needed for running a Code_Saturne study.
@@ -72,7 +72,7 @@ executable needed for running a Code_Saturne study.
 .B
 .IP "create"
 The
-.B "cs create"
+.B "code_saturne create"
 command sets up a directory structure for a Code_Saturne study or
 case. The different directories created are MESH for meshes, POST for
 user post-processing and a case directory (or several) containing a
@@ -82,13 +82,13 @@ directory.
 .B
 .IP "info"
 The
-.B "cs info"
+.B "code_saturne info"
 command is a wrapper for an easier look at Code_Saturne documentation.
 
 .B
 .IP "plot_probes"
 The
-.B "cs plot_probes"
+.B "code_saturne plot_probes"
 command runs
 .B xmgrace -nxy
 command on a Code_Saturne time monitoring file (chronological records)

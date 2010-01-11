@@ -1128,8 +1128,8 @@ Before using Code_Saturne, please update your path with:
   export PATH=$cspath:$PATH
 
 The documentation should then be available through the commands:
-  cs info -g refcard
-  cs info -g user
+  code_saturne info -g refcard
+  code_saturne info -g user
 
 """
 

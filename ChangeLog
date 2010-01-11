@@ -1,4 +1,12 @@
 * 11/01/2010 - David Monfort <david.monfort@edf.fr>
+  Minor fixes to account for the cs to code_saturne renaming.
+  renamed file:
+   doc/manpages/cs.1
+  modified script:
+   extras/installer/install_saturne.py
+    
+
+* 11/01/2010 - David Monfort <david.monfort@edf.fr>
   Update Code_Saturne prerequisites in the installer script.
   modified script:
    extras/installer/install_saturne.py
