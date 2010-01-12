@@ -338,9 +338,9 @@ if test "x$with_blas" != "xno" ; then
 
   if test "x$cs_have_blas" != "xyes"; then
     if test "x$with_blas" != "xcheck" ; then
-      AC_MSG_WARN([no BLAS support])
-    else
       AC_MSG_FAILURE([BLAS support is requested, but test for BLAS failed!])
+    else
+      AC_MSG_WARN([no BLAS support])
     fi
     BLAS_LIBS=""
   fi

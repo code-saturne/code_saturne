@@ -1,4 +1,9 @@
 * 12/01/2010 - David Monfort <david.monfort@edf.fr>
+  Fix a bug in BLAS detection (warn instead of fail).
+  modified script:
+    config/cs_blas.m4
+
+* 12/01/2010 - David Monfort <david.monfort@edf.fr>
   Upgrade version number to 2.0.0-rc1
   modified script:
     configure.ac
