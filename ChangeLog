@@ -1,3 +1,8 @@
+* 13/01/2010 - David Monfort <david.monfort@edf.fr>
+  Fix a bug in libxml2 detection (small annoying typo...).
+  modified script:
+    config/cs_libxml2.m4
+
 * 12/01/2010 - David Monfort <david.monfort@edf.fr>
   Fix a bug in BLAS detection (warn instead of fail).
   modified script:
