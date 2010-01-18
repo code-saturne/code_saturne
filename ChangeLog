@@ -2,6 +2,7 @@
   Fix a wrong array (propce instead of rtpa) in the calculation
   of source term for radiative transfer i heavy fuel oil combustion.
   modified routine:
+    src/base/covofi.f90
     src/fuel/furays.f90
 
 * 13/01/2010 - David Monfort <david.monfort@edf.fr>

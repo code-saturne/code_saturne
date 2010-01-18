@@ -29,7 +29,7 @@ subroutine furays &
 !================
 
   ( ivar   , ncelet , ncel   ,                                    &
-    volume , propce , smbrs  , rovsdt )
+    volume , rtpa   , propce , smbrs  , rovsdt )
 
 
 !===============================================================================
@@ -52,6 +52,8 @@ subroutine furays &
 ! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
 ! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
 ! volume(ncelet    ! tr ! <-- ! volume des cellules                            !
+! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
+! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce           ! tr ! <-- ! proprietes physiques au centre des             !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! smbrs(ncelet     ! tr ! <-- ! second membre du systeme                       !
@@ -89,6 +91,7 @@ integer          ivar , ncelet, ncel
 double precision volume(ncelet)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
+double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
 
 ! VARIABLES LOCALES

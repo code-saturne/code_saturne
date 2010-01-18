@@ -492,7 +492,7 @@ if ( iirayo.ge.1 .and. iphas.eq.irapha) then
       call furays                  &
       !==========
     ( ivar  ,ncelet, ncel  ,       &
-      volume,propce,smbrs,rovsdt)
+      volume,rtpa  , propce,smbrs,rovsdt)
 
     endif
   endif
