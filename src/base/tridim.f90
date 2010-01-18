@@ -210,7 +210,7 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 integer          idebia, idebra
 integer          idbia1, idbra1
 integer          ifinia, ifinra, ifnia1, ifnra1
-integer          iel   , ifac  , ivar  , iscal , iappel
+integer          iel   , ifac  , inod  , ivar  , iscal , iappel
 integer          ncp   , ncv   , iok
 integer          iicodc, ircodc
 integer          icoefu, irijip, ihbord, itbord
@@ -231,7 +231,7 @@ integer          icofbr
 integer          ntrela
 
 integer          isvhb , isvtb
-integer          iphas , kphas , ii    , ippcp , ientha, ippcv
+integer          iphas , kphas , ii    , jj    , ippcp , ientha, ippcv
 integer          ikiph , ieiph , iomiph
 integer          iuiph , iviph , iwiph , ipriph, iphiph, iphass
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
@@ -255,6 +255,7 @@ integer          maxelt, ils, iilzfb, nbzfmx, nozfmx, iqcalc
 double precision cpcst , tditot, tdist2, tdist1, cvcst
 double precision ro0iph, p0iph, pr0iph, xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw
+double precision ctheta, stheta, omgnrm, rrotgb(3,3)
 
 integer          ipass
 data             ipass /0/
@@ -603,6 +604,57 @@ if (itrale.gt.0) then
    coefa  , coefb  ,                                              &
    rdevel , rtuser ,                                              &
    ra     )
+endif
+
+
+!===============================================================================
+! 6.  MISE A JOUR DU MAILLAGE POUR UN COUPLAGE ROTOR/STATOR
+!===============================================================================
+
+if (imobil.eq.1) then
+
+  ! --- En turbomachine on connaît la valeur exacte de la vitesse de maillage
+
+  omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
+
+  ctheta = cos(ttcabs*omgnrm)
+  stheta = sin(ttcabs*omgnrm)
+
+  do ii = 1, 3
+    do jj = 1, 3
+      rrotgb(ii,jj) = ctheta*irot(ii,jj) + (1.d0 - ctheta)*prot(ii,jj) &
+                                         +         stheta *qrot(ii,jj)
+    enddo
+  enddo
+
+  ! On modifie la géométrie en fonction de la géométrie initiale
+
+  do inod = 1, nnod
+    do ii = 1, 3
+      xyznod(ii,inod) = 0.d0
+      do jj = 1, 3
+        xyznod(ii,inod) = xyznod(ii,inod) &
+                        + rrotgb(ii,jj)*ra(ixyzn0+(inod-1)*ndim+jj-1)
+
+      enddo
+    enddo
+  enddo
+
+  call algrma
+  !==========
+  call calgeo &
+  !==========
+ ( idebia , idebra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr ,                                     &
+   nideve , nrdeve , nituse , nrtuse ,                            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   volmin , volmax , voltot ,                                     &
+   rdevel , rtuser , ra     )
+
 endif
 
 

@@ -422,7 +422,7 @@ if(irnpnw.ne.1) then
   inc    = 1
   iccocg = 1
   iflmb0 = 1
-  if (iale.eq.1) iflmb0 = 0
+  if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
   nswrp  = 1
   imligp = imligr(iuiph )
   iwarnp = iwarni(ipriph)
@@ -734,7 +734,7 @@ init   = 1
 inc    = 1
 iccocg = 1
 iflmb0 = 1
-if (iale.eq.1) iflmb0 = 0
+if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
 nswrgp = nswrgr(iuiph )
 imligp = imligr(iuiph )
 iwarnp = iwarni(ipriph)

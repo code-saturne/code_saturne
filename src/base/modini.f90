@@ -64,6 +64,7 @@ include "cstphy.h"
 include "entsor.h"
 include "albase.h"
 include "alstru.h"
+include "cplsat.h"
 
 !===============================================================================
 
@@ -1278,7 +1279,7 @@ if (omgnrm.ge.epzero) then
   qrot(1,2) = -uz
   qrot(2,1) = -qrot(1,2)
 
-  qrot(1,3) = -uy
+  qrot(1,3) =  uy
   qrot(3,1) = -qrot(1,3)
 
   qrot(2,3) = -ux
@@ -1286,8 +1287,8 @@ if (omgnrm.ge.epzero) then
 
   ! Matrice de rotation
 
-  ctheta = cos(omgnrm)
-  stheta = sin(omgnrm)
+  ctheta = cos(dtref*omgnrm)
+  stheta = sin(dtref*omgnrm)
 
   do ii = 1, 3
     do jj = 1, 3
@@ -1295,13 +1296,13 @@ if (omgnrm.ge.epzero) then
     enddo
     irot(ii,ii) = 1.d0
   enddo
-  
+
   do ii = 1, 3
     do jj = 1, 3
-      rrot(ii,jj) = prot(ii,jj) + ctheta*(irot(ii,jj)-prot(ii,jj)) &
-                                + stheta*qrot(ii,jj)
+      rrot(ii,jj) = ctheta*irot(ii,jj) + (1.d0 - ctheta)*prot(ii,jj) &
+                                       +         stheta *qrot(ii,jj)
     enddo
-  enddo  
+  enddo
 
 else
 
@@ -1342,7 +1343,30 @@ if (bexxst.lt.-0.5d0*grand) bexxst = 0.0d0
 if (cfopre.lt.-0.5d0*grand) cfopre = 2.0d0
 
 !===============================================================================
-! 6. STOP SI PB
+! 7. PARAMETRES DE cplsat.h
+!===============================================================================
+
+! Récupération du nombre de couplage
+
+call nbccpl(nbrcpl)
+!==========
+
+if (nbrcpl.ge.1) then
+  ! Si on est en couplage rotor/stator avec resolution en repere absolu
+  omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
+  if (omgnrm.ge.epzero) then
+    ! Couplage avec interpolation aux faces
+    ifaccp = 1
+    ! Maillage mobile
+    if (icorio.eq.0) then
+      imobil = 1
+      ichrmd = 1
+    endif
+  endif
+endif
+
+!===============================================================================
+! 8. STOP SI PB
 !===============================================================================
 
 if(iok.ne.0) then

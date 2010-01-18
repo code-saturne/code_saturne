@@ -340,6 +340,7 @@ memv2f.f90 \
 memvor.f90 \
 modini.f90 \
 modpar.f90 \
+mmtycl.f90 \
 navsto.f90 \
 newmrk.f90 \
 numvec.f90 \

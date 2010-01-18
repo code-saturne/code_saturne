@@ -263,6 +263,7 @@ double precision thetap, xdu, xdv, xdw
 double precision ro0iph, p0iph, pr0iph, xxp0 , xyp0 , xzp0
 double precision rhofac, dtfac, ddepx , ddepy, ddepz
 double precision xnrdis
+double precision vitbox, vitboy, vitboz
 
 !===============================================================================
 
@@ -598,6 +599,42 @@ if( iprco.le.0 ) then
 
 endif
 
+! Ajout de la vitesse du solide dans le flux convectif,
+! si le maillage est mobile (solide rigide)
+! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
+if (imobil.eq.1) then
+
+  do iphas = 1, nphas
+
+    iflmas = ipprof(ifluma(iu(iphas)))
+    iflmab = ipprob(ifluma(iu(iphas)))
+    ipcrom = ipproc(irom  (iphas))
+    ipbrom = ipprob(irom  (iphas))
+
+    do ifac = 1, nfac
+      iel1 = ifacel(1,ifac)
+      iel2 = ifacel(2,ifac)
+      dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
+      rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+      vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
+      vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
+      vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
+      propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(        &
+        vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboy*surfac(3,ifac) )
+    enddo
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      dtfac  = dt(iel)
+      rhofac = propfb(ifac,ipbrom)
+      vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
+      vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
+      vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
+      propfb(ifac,iflmab) = propfb(ifac,iflmab) - rhofac*(        &
+        vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboy*surfbo(3,ifac) )
+    enddo
+  enddo
+
+endif
 
 !===============================================================================
 ! 3.  ETAPE DE PRESSION/CONTINUITE ( VITESSE/PRESSION )
@@ -1109,6 +1146,44 @@ if (iale.eq.1) then
   enddo
 
 endif
+
+! Ajout de la vitesse du solide dans le flux convectif,
+! si le maillage est mobile (solide rigide)
+! En turbomachine, on connaît exactement la vitesse de maillage à ajouter
+if (imobil.eq.1) then
+
+  do iphas = 1, nphas
+
+    iflmas = ipprof(ifluma(iu(iphas)))
+    iflmab = ipprob(ifluma(iu(iphas)))
+    ipcrom = ipproc(irom  (iphas))
+    ipbrom = ipprob(irom  (iphas))
+
+    do ifac = 1, nfac
+      iel1 = ifacel(1,ifac)
+      iel2 = ifacel(2,ifac)
+      dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
+      rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
+      vitbox = omegay*cdgfac(3,ifac) - omegaz*cdgfac(2,ifac)
+      vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
+      vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
+      propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(        &
+        vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboy*surfac(3,ifac) )
+    enddo
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      dtfac  = dt(iel)
+      rhofac = propfb(ifac,ipbrom)
+      vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
+      vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
+      vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
+      propfb(ifac,iflmab) = propfb(ifac,iflmab) - rhofac*(        &
+        vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboy*surfbo(3,ifac) )
+    enddo
+  enddo
+
+endif
+
 
 !===============================================================================
 ! 5.  CALCUL D'UN ESTIMATEUR D'ERREUR DE L'ETAPE DE CORRECTION ET TOTAL

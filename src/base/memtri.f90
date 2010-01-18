@@ -117,6 +117,7 @@ include "lagpar.h"
 include "lagdim.h"
 include "lagran.h"
 include "ihmpre.h"
+include "cplsat.h"
 
 !===============================================================================
 
@@ -333,20 +334,27 @@ do iphas = 1, nphas
   endif
 enddo
 
-!     En ALE, on reserve des tableaux supplementaires de position initiale
-!       et de deplacement et le type de faces de bord
+! En ALE ou maillage mobile, on reserve des tableaux supplementaires
+! de position initiale
+if (iale.eq.1.or.imobil.eq.1) then
+  ixyzn0 = ifinra
+  ifinra = ixyzn0 + ndim*nnod
+else
+  ixyzn0 = 0
+endif
+
+! En ALE, on reserve des tableaux supplementaires
+! de deplacement et de type de faces de bord
 if (iale.eq.1) then
   iimpal = ifinia
   iialty = iimpal + nnod
   ifinia = iialty + nfabor
 
-  ixyzn0 = ifinra
-  idepal = ixyzn0 + ndim*nnod
+  idepal = ifinra
   ifinra = idepal + ndim*nnod
 else
   iimpal = 0
   iialty = 0
-  ixyzn0 = 0
   idepal = 0
 endif
 

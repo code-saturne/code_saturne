@@ -32,10 +32,11 @@
 
 ! NBRCPL : NOMBRE DE COUPLAGE CODE_SATURNE / CODE_SATURNE
 ! IFACCP : INDICATEUR DE COUPLAGE FACE/FACE UNIQUEMENT
+! IMOBIL : INDICATEUR DE MAILLAGE MOBILE POUR LES TURBOMACHINES
 
-integer           nbrcpl, ifaccp
+integer           nbrcpl, ifaccp, imobil
 
-common / icplcs / nbrcpl, ifaccp
+common / icplcs / nbrcpl, ifaccp, imobil
 
 ! NBCPMX : NOMBRE DE COUPLAGE MAX ADMISSIBLE
 

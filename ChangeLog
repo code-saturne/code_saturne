@@ -1,3 +1,26 @@
+* 18/01/2010 - David Monfort <david.monfort@edf.fr>
+               Bruno Audebert <bruno.audebert@edf.fr>
+  Add first implementation for rotating machinery modelling.
+  This is basically rotating mesh handling.
+  Rotor/stator interaction (specific interpolation) is still missing.
+  added routine:
+    src/base/mmtycl.f90
+  modified script:
+    src/base/Makefile.am
+  modified routines:
+    include/base/cplsat.h
+    include/base/optcal.h
+    src/base/clptur.f90
+    src/base/condli.f90
+    src/base/cscini.f90
+    src/base/gradrc.f90
+    src/base/iniva0.f90
+    src/base/memtri.f90
+    src/base/modini.f90
+    src/base/navsto.f90
+    src/base/resolp.f90
+    src/base/tridim.f90
+
 * 18/01/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix a wrong array (propce instead of rtpa) in the calculation
   of source term for radiative transfer i heavy fuel oil combustion.

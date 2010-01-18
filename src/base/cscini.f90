@@ -108,35 +108,10 @@ integer          iphas
 integer          numcpl
 integer          imobmx , ialemx , nvcpmx, ifcpmx
 
-double precision omgnrm
-
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
-
-!     Récupération du nombre de couplage
-
-call nbccpl(nbrcpl)
-!==========
-
-if (nbrcpl.ge.1) then
-
-  ! Si on est en couplage rotor/stator avec resolution en repere absolu
-
-  omgnrm = omegax**2 + omegay**2 + omegaz**2
-  if (omgnrm.ge.epzero**2 .and. icorio.eq.0) then
-
-    ! Couplage avec interpolation aux faces
-    ifaccp = 1
-
-    ! Maillage mobile
-    imobil = 1
-
-  endif
-
-endif
-
 
 do numcpl = 1, nbrcpl
 

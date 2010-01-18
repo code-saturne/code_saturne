@@ -216,6 +216,7 @@ include "ppincl.h"
 include "parall.h"
 include "matiss.h"
 include "radiat.h"
+include "cplsat.h"
 
 !===============================================================================
 
@@ -285,6 +286,7 @@ double precision epsrgp, climgp, extrap
 double precision ro0iph, p0iph , pr0iph, xxp0, xyp0, xzp0
 double precision srfbnf, rnx   , rny   , rnz
 double precision upx   , upy   , upz   , vistot
+double precision vitbox, vitboy, vitboz
 
 !===============================================================================
 
@@ -376,6 +378,27 @@ if (iale.eq.1) then
    rcodcl , ra(ixyzn0)      , ra(idepal)      ,                   &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    rdevel , rtuser , ra     )
+endif
+
+if (imobil.eq.1) then
+
+  call mmtycl &
+  !==========
+ ( idebia , idebra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nvar   , nscal  , nphas  ,                                     &
+   nideve , nrdeve , nituse , nrtuse ,                            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   ia(iitypf)      , icodcl ,                                     &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   rcodcl ,                                                       &
+   w1     , w2     , w3     , w4     , w5     , w6     ,          &
+   rdevel , rtuser , ra     )
+
 endif
 
 call typecl                                                       &

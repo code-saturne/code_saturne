@@ -149,6 +149,7 @@ include "cstphy.h"
 include "cstnum.h"
 include "vector.h"
 include "albase.h"
+include "cplsat.h"
 include "period.h"
 include "parall.h"
 
@@ -432,7 +433,7 @@ ipass = ipass + 1
 !     RESOLUTION SEMI-IMPLICITE SUR TOUT LE MAILLAGE
 !     DPDX,DY,DZ = GRADIENT
 
-if(ipass.eq.1 .or. iale.eq.1) then
+if(ipass.eq.1 .or. iale.eq.1 .or. imobil.eq.1) then
 
 ! ---> CALCUL DE COCG
 
@@ -646,7 +647,7 @@ endif
 ! ---> SI ON DOIT RECALCULER COCG ENSUITE, ON NE LE FAIT PLUS
 !      QUE POUR LES CELLULES DE BORD, AVEC LE COCGB STOCKE
 
-if(iccocg.eq.1 .and. ipass.gt.1 .and. iale.eq.0) then
+if(iccocg.eq.1 .and. ipass.gt.1 .and. iale.eq.0 .and. imobil.eq.0) then
 
   do ll =1,3
     do mm =1,3

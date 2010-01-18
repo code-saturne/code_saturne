@@ -450,11 +450,6 @@ common / coupup / ipucou
 integer           iccvfg
 common / icfige / iccvfg
 
-! INDICATEUR DE MAILLAGE MOBILE
-
-integer           imobil
-common / imaill / imobil
-
 ! CALCUL DE LA VISCOSITE
 
 integer           imvisf

@@ -154,6 +154,7 @@ include "parall.h"
 include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
+include "cplsat.h"
 
 !===============================================================================
 
@@ -702,7 +703,7 @@ if(iphydr.eq.1) then
 endif
 
 !===============================================================================
-! 12.  INITIALISATIONS EN ALE
+! 13.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
 !===============================================================================
 
 if (iale.eq.1) then
@@ -710,6 +711,13 @@ if (iale.eq.1) then
     ia(iimpal+ii-1) = 0
     do idim = 1, 3
       ra(idepal+(idim-1)*nnod+ii-1) = 0.d0
+    enddo
+  enddo
+endif
+
+if (iale.eq.1.or.imobil.eq.1) then
+  do ii = 1, nnod
+    do idim = 1, 3
       ra(ixyzn0+(ii-1)*ndim+idim-1) = xyznod(idim,ii)
     enddo
   enddo
