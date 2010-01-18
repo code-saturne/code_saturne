@@ -119,8 +119,8 @@ do iel = 1,ncel
 
 !--> PARTIE EXPLICITE
 
-    smbrs(iel)  = smbrs(iel) +  propce(iel,ipproc(itsre(ipcl)))*volume(iel)        &
-                               *propce(iel,ipproc(iyfol(numcla)))
+    smbrs(iel)  = smbrs(iel) +  propce(iel,ipproc(itsre(ipcl)))*volume(iel)  &
+                               *rtpa(iel,isca(iyfol(numcla)))
 
 !--> PARTIE IMPLICITE
 
