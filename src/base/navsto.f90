@@ -620,7 +620,7 @@ if (imobil.eq.1) then
       vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
       vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
       propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(        &
-        vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboy*surfac(3,ifac) )
+        vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
     enddo
     do ifac = 1, nfabor
       iel = ifabor(ifac)
@@ -630,7 +630,7 @@ if (imobil.eq.1) then
       vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
       vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
       propfb(ifac,iflmab) = propfb(ifac,iflmab) - rhofac*(        &
-        vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboy*surfbo(3,ifac) )
+        vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboz*surfbo(3,ifac) )
     enddo
   enddo
 
@@ -1168,7 +1168,7 @@ if (imobil.eq.1) then
       vitboy = omegaz*cdgfac(1,ifac) - omegax*cdgfac(3,ifac)
       vitboz = omegax*cdgfac(2,ifac) - omegay*cdgfac(1,ifac)
       propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(        &
-        vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboy*surfac(3,ifac) )
+        vitbox*surfac(1,ifac) + vitboy*surfac(2,ifac) + vitboz*surfac(3,ifac) )
     enddo
     do ifac = 1, nfabor
       iel = ifabor(ifac)
@@ -1178,7 +1178,7 @@ if (imobil.eq.1) then
       vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
       vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
       propfb(ifac,iflmab) = propfb(ifac,iflmab) - rhofac*(        &
-        vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboy*surfbo(3,ifac) )
+        vitbox*surfbo(1,ifac) + vitboy*surfbo(2,ifac) + vitboz*surfbo(3,ifac) )
     enddo
   enddo
 

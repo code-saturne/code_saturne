@@ -286,7 +286,6 @@ double precision epsrgp, climgp, extrap
 double precision ro0iph, p0iph , pr0iph, xxp0, xyp0, xzp0
 double precision srfbnf, rnx   , rny   , rnz
 double precision upx   , upy   , upz   , vistot
-double precision vitbox, vitboy, vitboz
 
 !===============================================================================
 
