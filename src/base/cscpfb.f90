@@ -131,7 +131,7 @@ integer          itrav1 , itrav2 , itrav3 , itrav4 , itrav5
 integer          itrav6 , itrav7 , itrav8 , itrav
 
 integer          ipt    , ifac   , iel    , isou
-integer          ivar   , iscal  , iphas
+integer          ivar   , iscal  , iphas  , ipcrom
 integer          ipriph , iuiph  , iviph  , iwiph
 integer          ikiph  , iepiph , ifbiph , iomiph , iphiph
 integer          itravx , itravy , itravz
@@ -140,11 +140,13 @@ integer          inc    , iccocg , iphydp , iclvar, nswrgp
 integer          iwarnp , imligp , idimte , itenso
 integer          ipos
 integer          itytu0
+integer          icormx
 
 double precision epsrgp , climgp , extrap
 double precision xjjp   , yjjp   , zjjp
 double precision d2s3
 double precision xjpf,yjpf,zjpf,jpf
+double precision omegal(3), omegad(3), omgnrl, omgnrd, vitent
 
 !===============================================================================
 
@@ -170,6 +172,19 @@ CALL RASIZE('CSCPFB',IFINRA)
 
 d2s3 = 2.d0/3.d0
 
+ipcrom = ipproc(irom(iphas))
+
+! On vérifie si l'une des instances est en résolution en repère relatif
+call mxicpl(numcpl,icorio,icormx)
+
+! On récupère dans tous les cas le vecteur rotation de l'autre instance
+omegal(1) = omegax
+omegal(2) = omegay
+omegal(3) = omegaz
+call tbrcpl(numcpl,3,3,omegal,omegad)
+
+omgnrl = sqrt(omegal(1)**2 + omegal(2)**2 + omegal(3)**2)
+omgnrd = sqrt(omegad(1)**2 + omegad(2)**2 + omegad(3)**2)
 
 ! On part du principe que l'on envoie les bonnes variables à
 ! l'instance distante et uniquement celles-là.
@@ -268,6 +283,17 @@ do iphas = 1, nphas
 
         rvdis(ipt,ipos) = rtp(iel,ipriph) &
           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+        ! On prend en compte le potentiel centrifuge en repère relatif
+        if (icormx.eq.1) then
+
+          rvdis(ipt,ipos) = rvdis(ipt,ipos)                         &
+            + 0.5d0*propce(iel,ipcrom)*(omgnrl**2 - omgnrd**2)      &
+                                      *( (xyzcen(1,iel) + xjjp)**2  &
+                                       + (xyzcen(2,iel) + yjjp)**2  &
+                                       + (xyzcen(3,iel) + zjjp)**2)
+
+        endif
 
       enddo
 
@@ -410,6 +436,24 @@ do iphas = 1, nphas
 
         rvdis(ipt,ipos) = rtp(iel,ivar) &
           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+        ! On prend en compte la vitesse d'entrainement en repère relatif
+        if (icormx.eq.1) then
+
+          if (isou.eq.1) then
+            vitent =   (omegal(2)-omegad(2))*(xyzcen(3,ifac)-zjjp) &
+                     - (omegal(3)-omegad(3))*(xyzcen(2,ifac)-yjjp)
+          elseif (isou.eq.2) then
+            vitent =   (omegal(3)-omegad(3))*(xyzcen(1,ifac)-xjjp) &
+                     - (omegal(1)-omegad(1))*(xyzcen(3,ifac)-zjjp)
+          elseif (isou.eq.3) then
+            vitent =   (omegal(1)-omegad(1))*(xyzcen(2,ifac)-yjjp) &
+                     - (omegal(2)-omegad(2))*(xyzcen(1,ifac)-xjjp)
+          endif
+
+          rvdis(ipt,ipos) = rvdis(ipt,ipos) + vitent
+
+        endif
 
       enddo
 

@@ -1,4 +1,11 @@
 * 19/01/2010 - David Monfort <david.monfort@edf.fr>
+               Bruno Audebert <bruno.audebert@edf.fr>
+  Add rotor/stator interaction (specific interpolation) for relative frame
+  calculation.
+  modified routine:
+    src/base/cscpfb.f90
+
+* 19/01/2010 - David Monfort <david.monfort@edf.fr>
   Fix a mispelling-word bug in mass-flux update stage (vitboy instead of
   vitboz).
   modified routines:
