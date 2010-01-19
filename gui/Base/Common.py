@@ -46,7 +46,7 @@ import os
 #-------------------------------------------------------------------------------
 
 # xml_doc_version modifie le 10/12/07
-XML_DOC_VERSION = "1.0"
+XML_DOC_VERSION = "2.0"
 
 LABEL_LENGTH_MAX = 32
 

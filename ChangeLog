@@ -11,6 +11,7 @@
 * 19/01/2010 - David Monfort <david.monfort@edf.fr>
   Increase the xml file version number because of non compatible xml headers.
   modified routines:
+    gui/Base/Common.py
     gui/Base/XMLengine.py
     gui/Base/XMLvariables.py
     src/base/cs_gui_util.c
