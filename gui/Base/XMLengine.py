@@ -44,7 +44,7 @@ This module defines the following classes:
 # String for the root node of the xml document from the case
 #-------------------------------------------------------------------------------
 
-rootNode = '<Code_Saturne_GUI study="" case="" version="1.0"/>'
+rootNode = '<Code_Saturne_GUI study="" case="" version="2.0"/>'
 #rootNode = '<NeptuneCFD study="" case=""/>'
 
 #-------------------------------------------------------------------------------
@@ -924,7 +924,7 @@ class XMLElement:
 ##    def writexml(self, writer, indent="", addindent="", newl=""):
 ##        """
 ##        """
-##        writer.write('<?xml version="1.0" encoding="%s" ?>\n' % enc)
+##        writer.write('<?xml version="2.0" encoding="%s" ?>\n' % enc)
 ##        for node in self.childNodes:
 ##            node.writexml(writer, indent, addindent, newl)
 
@@ -948,7 +948,7 @@ class XMLDocument(XMLElement):
     def root(self):
         """
         This function return the only one root element of the document
-        (higher level of ELEMENT_NODE after the <?xml version="1.0" ?> markup).
+        (higher level of ELEMENT_NODE after the <?xml version="2.0" ?> markup).
         """
         return self._inst(self.doc.documentElement)
 
@@ -1458,12 +1458,12 @@ class XMLengineTestCase(unittest.TestCase):
         d = XMLDocument()
         d.parseString(u'<français a="àùè">tâché</français>')
 
-        t = u'<?xml version="1.0" encoding="utf-8"?>\n' \
+        t = u'<?xml version="2.0" encoding="utf-8"?>\n' \
             u'<français a="àùè">tâché</français>'
         t = t.encode(enc)
         assert d.toString() == t, 'Could not use the parseString method with utf-8 encoding'
 
-        t = u'<?xml version="1.0" encoding="utf-8"?>\n' \
+        t = u'<?xml version="2.0" encoding="utf-8"?>\n' \
             u'<français a="àùè">\n\ttâché\n</français>\n'
         t = t.encode(enc)
         assert d.toPrettyString() == t, 'Could not use the parseString method with utf-8 encoding'
@@ -1703,7 +1703,7 @@ class XMLchek:
 ##class _Document(Document):
 ##
 ##    def writexml(self, writer, indent="", addindent="", newl=""):
-##        writer.write('<?xml version="1.0" encoding="%s" ?>\n' % enc)
+##        writer.write('<?xml version="2.0" encoding="%s" ?>\n' % enc)
 ##        for node in self.childNodes:
 ##            node.writexml(writer, indent, addindent, newl)
 ##
@@ -1843,7 +1843,7 @@ if __name__ == "__main__":
                       "- Type:", field.xmlGetAttribute("type")
 
 
-    ndoc.parseString('<?xml version="1.0" encoding="utf-8" ?><foo><baré/></foo>')
+    ndoc.parseString('<?xml version="2.0" encoding="utf-8" ?><foo><baré/></foo>')
     print "1 XML DOC:\n", ndoc
 
     ndoc.parse("../misc/foo.txt")

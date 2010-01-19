@@ -88,7 +88,7 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-#define XML_READER_VERSION 1.0
+#define XML_READER_VERSION 2.0
 
 /*=============================================================================
  * Global variables

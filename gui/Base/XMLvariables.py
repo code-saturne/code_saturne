@@ -590,7 +590,7 @@ def runTest():
 ##        """This method is executed before all "check" methods."""
 ##        import XMLengine
 ##        self.doc = XMLengine.XMLDocument("")
-##        self.case = self.doc.parseString('<?xml version="1.0" ?>'\
+##        self.case = self.doc.parseString('<?xml version="2.0" ?>'\
 ##                                         '<Code_Saturne_GUI/>')
 ##        self.case.root().xmlAddChild('analysis_control')
 ##
