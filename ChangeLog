@@ -1,3 +1,8 @@
+* 19/01/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Use Fortran 90 pointers to avoid access to unallocated arrays.
+  modified routine:
+    src/base/turrij.f90
+
 * 19/01/2010 - David Monfort <david.monfort@edf.fr>
   Update the french dictionnary file.
   modified file:

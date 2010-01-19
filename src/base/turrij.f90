@@ -243,6 +243,9 @@ integer          ipcrom, ipbrom, ipcroo, ipbroo, iivar
 integer          iitsla
 double precision epsrgp, climgp, extrap
 
+integer,          pointer, dimension(:) :: itpsmp => null()
+double precision, pointer, dimension(:) :: smcelp => null(), gammap => null()
+double precision, pointer, dimension(:) :: tslage => null(), tslagi => null()
 
 !===============================================================================
 
@@ -637,10 +640,17 @@ do isou = 1, 6
 
   if (iilagr.eq.2 .and. iphas.eq.1) then
     iitsla = itsr11 + (isou-1)
+    tslage = tslagr(1, iitsla)
+    tslagi = tslagr(1, itsli)
   endif
 
+  if (ncesmp.gt.0) then
+    itpsmp = itypsm(1,ivar)
+    smcelp = smacel(1,ivar)
+    gammap = smacel(1,ipriph)
+  endif
 
-!     Rij-epsilon standard (LRR)
+  !     Rij-epsilon standard (LRR)
   if (iturb(iphas).eq.30) then
     call resrij                                                   &
     !==========
@@ -652,21 +662,21 @@ do isou = 1, 6
    iphas  , ivar   , isou   , ipp    ,                            &
    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   icepdc , icetsm , itypsm(1,ivar)  ,                            &
+   icepdc , icetsm , itpsmp ,                                     &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , produc , grarox , graroy , graroz ,          &
-   ckupdc , smacel(1,ivar)  , smacel(1,ipriph),                   &
+   ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  , coefax ,                                     &
-   tslagr(1,iitsla) , tslagr(1,itsli) ,                           &
+   tslage , tslagi ,                                              &
    dam    , xam    , drtp   , smbr   , rovsdt ,                   &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     ,                   &
    rdevel , rtuser , ra     )
 
   else
-!     Rij-epsilon SSG
+    !     Rij-epsilon SSG
     call resssg                                                   &
     !==========
  ( idebia , idebra ,                                              &
@@ -677,14 +687,14 @@ do isou = 1, 6
    iphas  , ivar   , isou   , ipp    ,                            &
    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   icepdc , icetsm , itypsm(1,ivar)  ,                            &
+   icepdc , icetsm , itpsmp ,                                     &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , grdvit , grarox , graroy , graroz ,          &
-   ckupdc , smacel(1,ivar)  , smacel(1,ipriph),                   &
+   ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  , coefax ,                                     &
-   tslagr(1,iitsla) , tslagr(1,itsli) ,                           &
+   tslage , tslagi ,                                              &
    dam    , xam    , drtp   , smbr   , rovsdt ,                   &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     ,                   &
@@ -697,12 +707,18 @@ enddo
 ! 5.  RESOLUTION DE EPSILON
 !===============================================================================
 
-   ivar   = ieiph
-   ipp    = ipprtp(ivar)
-   isou   = 7
+ivar   = ieiph
+ipp    = ipprtp(ivar)
+isou   = 7
 
-   call reseps                                                    &
-   !==========
+if (ncesmp.gt.0) then
+  itpsmp = itypsm(1,ivar)
+  smcelp = smacel(1,ivar)
+  gammap = smacel(1,ipriph)
+endif
+
+call reseps                                                       &
+!==========
  ( idebia , idebra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
@@ -711,12 +727,12 @@ enddo
    iphas  , ivar   , isou   , ipp    ,                            &
    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   icepdc , icetsm , itypsm(1,ivar)  ,                            &
+   icepdc , icetsm , itpsmp ,                                     &
    idevel , ituser , ia     ,                                     &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , grdvit , produc ,grarox , graroy , graroz ,  &
-   ckupdc , smacel(1,ivar)  , smacel(1,ipriph),                   &
+   ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
    tslagr ,                                                       &
    dam    , xam    , drtp   , smbr   , rovsdt ,                   &
@@ -728,9 +744,9 @@ enddo
 ! 6. CLIPPING
 !===============================================================================
 
-   iclip  = 2
-   call clprij                                                    &
-   !==========
+iclip  = 2
+call clprij                                                       &
+!==========
  ( ncelet , ncel   , nvar   , nphas  ,                            &
    iphas  , iclip  ,                                              &
    propce , rtpa   , rtp    )
