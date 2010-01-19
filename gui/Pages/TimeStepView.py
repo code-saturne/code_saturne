@@ -95,8 +95,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.connect(self.lineEditNTMABS, SIGNAL("textChanged(const QString &)"), self.slotIter)
         self.connect(self.lineEditCOUMAX, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionCOUMAX)
         self.connect(self.lineEditFOUMAX, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionFOUMAX)
-        self.connect(self.lineEditDTMIN, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionDTMIN)
-        self.connect(self.lineEditDTMAX, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionDTMAX)
+        self.connect(self.lineEditCDTMIN, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionCDTMIN)
+        self.connect(self.lineEditCDTMAX, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionCDTMAX)
         self.connect(self.lineEditVARRDT, SIGNAL("textChanged(const QString &)"), self.slotTimeOptionVARRDT)
         self.connect(self.checkBoxIPTLRO, SIGNAL("clicked()"), self.slotThermalTimeStep)
         self.connect(self.checkBoxINPDT0, SIGNAL("clicked()"), self.slotZeroTimeStep)
@@ -110,9 +110,9 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         validatorCOUMAX.setExclusiveMin(True)
         validatorFOUMAX = QtPage.DoubleValidator(self.lineEditFOUMAX, min=0.0)
         validatorFOUMAX.setExclusiveMin(True)
-        validatorDTMIN = QtPage.DoubleValidator(self.lineEditDTMIN, min=0.0, max=1.0)
-        validatorDTMIN.setExclusiveMin(True)
-        validatorDTMAX = QtPage.DoubleValidator(self.lineEditDTMAX, min=1.0)
+        validatorCDTMIN = QtPage.DoubleValidator(self.lineEditCDTMIN, min=0.0, max=1.0)
+        validatorCDTMIN.setExclusiveMin(True)
+        validatorCDTMAX = QtPage.DoubleValidator(self.lineEditCDTMAX, min=1.0)
         validatorVARRDT = QtPage.DoubleValidator(self.lineEditVARRDT, min=0.0, max=1.0)
         validatorVARRDT.setExclusiveMin(True)
 
@@ -120,8 +120,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.lineEditNTMABS.setValidator(validatorNTMABS)
         self.lineEditCOUMAX.setValidator(validatorCOUMAX)
         self.lineEditFOUMAX.setValidator(validatorFOUMAX)
-        self.lineEditDTMIN.setValidator(validatorDTMIN)
-        self.lineEditDTMAX.setValidator(validatorDTMAX)
+        self.lineEditCDTMIN.setValidator(validatorCDTMIN)
+        self.lineEditCDTMAX.setValidator(validatorCDTMAX)
         self.lineEditVARRDT.setValidator(validatorVARRDT)
 
         # Initialization
@@ -178,14 +178,14 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         if idtvar in (1, 2):
             courant_max   = self.mdl.getOptions('max_courant_num')
             fourier_max   = self.mdl.getOptions('max_fourier_num')
-            time_step_min = self.mdl.getOptions('time_step_min') / self.mdl.getTimeStep()
-            time_step_max = self.mdl.getOptions('time_step_max') / self.mdl.getTimeStep()
+            time_step_min_factor = self.mdl.getOptions('time_step_min_factor')
+            time_step_max_factor = self.mdl.getOptions('time_step_max_factor')
             time_step_var = self.mdl.getOptions('time_step_var')
 
             self.lineEditCOUMAX.setText(QString(str(courant_max)))
             self.lineEditFOUMAX.setText(QString(str(fourier_max)))
-            self.lineEditDTMIN.setText(QString(str(time_step_min)))
-            self.lineEditDTMAX.setText(QString(str(time_step_max)))
+            self.lineEditCDTMIN.setText(QString(str(time_step_min_factor)))
+            self.lineEditCDTMAX.setText(QString(str(time_step_max_factor)))
             self.lineEditVARRDT.setText(QString(str(time_step_var)))
 
             self.groupBoxLabels.show()
@@ -234,25 +234,23 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
 
     @pyqtSignature("const QString &")
-    def slotTimeOptionDTMIN(self, text):
+    def slotTimeOptionCDTMIN(self, text):
         """
-        Input DTMIN.
+        Input CDTMIN.
         """
-        time_step_min, ok = text.toDouble()
+        time_step_min_factor, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
-            time_step_min = time_step_min * self.mdl.getTimeStep()
-            self.mdl.setOptions('time_step_min', time_step_min)
+            self.mdl.setOptions('time_step_min_factor', time_step_min_factor)
 
 
     @pyqtSignature("const QString &")
-    def slotTimeOptionDTMAX(self, text):
+    def slotTimeOptionCDTMAX(self, text):
         """
-        Input DTMAX.
+        Input CDTMAX.
         """
-        time_step_max, ok = text.toDouble()
+        time_step_max_factor, ok = text.toDouble()
         if self.sender().validator().state == QValidator.Acceptable:
-            time_step_max = time_step_max * self.mdl.getTimeStep()
-            self.mdl.setOptions('time_step_max', time_step_max)
+            self.mdl.setOptions('time_step_max_factor', time_step_max_factor)
 
 
     @pyqtSignature("const QString &")

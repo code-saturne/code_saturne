@@ -3181,6 +3181,8 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
                                 double *const relxst)
 {
   double value;
+  /* Default values for time step factor */
+  double cdtmin = 0.1, cdtmax = 1000.;
 
   if (*idtvar == -1){
     cs_gui_steady_parameters("relaxation_coefficient", relxst);
@@ -3195,11 +3197,18 @@ void CS_PROCF (cstime, CSTIME) (int    *const inpdt0,
   }
   else{
     cs_gui_time_parameters("time_step_ref", dtref);
-    cs_gui_time_parameters("time_step_min", dtmin);
-    cs_gui_time_parameters("time_step_max", dtmax);
+    cs_gui_time_parameters("time_step_min_factor", &cdtmin);
+    cs_gui_time_parameters("time_step_max_factor", &cdtmax);
     cs_gui_time_parameters("max_courant_num", coumax);
     cs_gui_time_parameters("max_fourier_num", foumax);
     cs_gui_time_parameters("time_step_var", varrdt);
+
+    *dtmin = cdtmin*(*dtref);
+    *dtmax = cdtmax*(*dtref);
+
+    /* We keep these two lines in case we read an old XML file... */
+    cs_gui_time_parameters("time_step_min", dtmin);
+    cs_gui_time_parameters("time_step_max", dtmax);
 
     value =(double) *ntmabs;
     cs_gui_time_parameters("iterations", &value);

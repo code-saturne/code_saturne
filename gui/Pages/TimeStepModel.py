@@ -84,8 +84,8 @@ class TimeStepModel(Model):
         default['time_step_ref']     = 0.1
         default['max_courant_num']   = 1.0
         default['max_fourier_num']   = 10.0
-        default['time_step_min']     = 0.1*default['time_step_ref']
-        default['time_step_max']     = 1000.0*default['time_step_ref']
+        default['time_step_min_factor'] = 0.1
+        default['time_step_max_factor'] = 1000.0
         default['time_step_var']     = 0.1
         default['thermal_time_step'] = 'off'
         default['zero_time_step']    = 'off'
@@ -166,8 +166,8 @@ class TimeStepModel(Model):
             self.node_time.xmlRemoveChild('property', name='local_time_step')
             for tag in ('max_courant_num',
                         'max_fourier_num',
-                        'time_step_min',
-                        'time_step_max',
+                        'time_step_min_factor',
+                        'time_step_max_factor',
                         'time_step_var'):
                 self.node_time.xmlRemoveChild(tag)
 
@@ -245,36 +245,36 @@ class TimeStepModel(Model):
         self.setOptions('max_fourier_num', val)
 
 
-    def getTimeStepMin(self):
+    def getTimeStepMinFactor(self):
         """
-        Return the minimal time step
+        Return the minimal time step factor
         """
-        tag = 'time_step_min'
+        tag = 'time_step_min_factor'
         return self.getOptions(tag)
 
 
-    def setTimeStepMin(self, val):
+    def setTimeStepMinFactor(self, val):
         """
-        Input the minimal time step
+        Input the minimal time step factor
         """
         self.isPositiveFloat(val)
-        self.setOptions('time_step_min', val)
+        self.setOptions('time_step_min_factor', val)
 
 
-    def getTimeStepMax(self):
+    def getTimeStepMaxFactor(self):
         """
-        Return the maximal time step
+        Return the maximal time step factor
         """
-        tag = 'time_step_max'
+        tag = 'time_step_max_factor'
         return self.getOptions(tag)
 
 
-    def setTimeStepMax(self, val):
+    def setTimeStepMaxFactor(self, val):
         """
-        Input the maximal time step
+        Input the maximal time step factor
         """
         self.isStrictPositiveFloat(val)
-        self.setOptions('time_step_max', val)
+        self.setOptions('time_step_max_factor', val)
 
 
     def getTimeStepVariation(self):
@@ -316,7 +316,7 @@ class TimeStepModel(Model):
             msg = "No option : " + tag + " in this case"
             raise ValueError, msg
 
-        if tag == 'time_step_min':
+        if tag == 'time_step_min_factor':
             self.isPositiveFloat(val)
         else:
             self.isStrictPositiveFloat(val)
@@ -554,8 +554,8 @@ class TimeStepModelTestCase(ModelTest):
                     <iterations>10</iterations>
                     <time_passing>2</time_passing>
                     <property label="loc.time" name="local_time_step"/>
-                    <time_step_min>0.05</time_step_min>
-                    <time_step_max>500</time_step_max>
+                    <time_step_min_factor>0.05</time_step_min_factor>
+                    <time_step_max_factor>500</time_step_max_factor>
                     <time_step_var>0.25</time_step_var>
                  </time_parameters>'''
         assert mdl.node_time == self.xmlNodeFromString(doc),\

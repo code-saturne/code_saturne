@@ -1,4 +1,13 @@
 * 19/01/2010 - David Monfort <david.monfort@edf.fr>
+  Change the behaviour of the xml file relatively to the time step min/max
+  factor so that it corrresponds to what is given by the user in the gui.
+  modified routines:
+    gui/Pages/TimeStepForm.ui
+    gui/Pages/TimeStepModel.py
+    gui/Pages/TimeStepView.py
+    src/base/cs_gui.c
+
+* 19/01/2010 - David Monfort <david.monfort@edf.fr>
                Bruno Audebert <bruno.audebert@edf.fr>
   Add rotor/stator interaction (specific interpolation) for relative frame
   calculation.
