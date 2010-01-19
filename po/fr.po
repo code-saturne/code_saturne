@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-01-11 12:31+0100\n"
+"POT-Creation-Date: 2010-01-19 15:36+0100\n"
 "PO-Revision-Date: 2010-01-11 12:50+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1012,16 +1012,16 @@ msgstr ""
 msgid "Invalid number of coal-> dp_FCP: %i xml: %i\n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:577 src/base/cs_gui.c:4800
-#: src/base/cs_gui.c:4848 src/base/cs_gui.c:4896 src/base/cs_gui.c:4944
-#: src/base/cs_gui.c:5018 src/base/cs_gui_mobile_mesh.c:281
+#: src/base/cs_gui_boundary_conditions.c:577 src/base/cs_gui.c:4809
+#: src/base/cs_gui.c:4857 src/base/cs_gui.c:4905 src/base/cs_gui.c:4953
+#: src/base/cs_gui.c:5027 src/base/cs_gui_mobile_mesh.c:281
 #, c-format
 msgid "Error: can not interprete expression: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:583 src/base/cs_gui.c:4804
-#: src/base/cs_gui.c:4852 src/base/cs_gui.c:4900 src/base/cs_gui.c:4948
-#: src/base/cs_gui.c:5022 src/base/cs_gui_mobile_mesh.c:291
+#: src/base/cs_gui_boundary_conditions.c:583 src/base/cs_gui.c:4813
+#: src/base/cs_gui.c:4861 src/base/cs_gui.c:4909 src/base/cs_gui.c:4957
+#: src/base/cs_gui.c:5031 src/base/cs_gui_mobile_mesh.c:291
 #, c-format
 msgid "Error: can not find the required symbol: %s\n"
 msgstr ""
@@ -1182,32 +1182,32 @@ msgid ""
 "the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3541
+#: src/base/cs_gui.c:3550
 msgid "Specific heat value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3562
+#: src/base/cs_gui.c:3571
 msgid "mass molar value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3570
+#: src/base/cs_gui.c:3579
 msgid "Density value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3826 src/base/cs_gui_radiative_transfer.c:744
+#: src/base/cs_gui.c:3835 src/base/cs_gui_radiative_transfer.c:744
 #: src/base/cs_gui_specific_physics.c:532
 #, c-format
 msgid "number of properties is not correct: %i instead of: %i\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4203 src/base/cs_gui_particles.c:782
+#: src/base/cs_gui.c:4212 src/base/cs_gui_particles.c:782
 #: src/base/cs_gui_particles.c:788 src/base/cs_gui_particles.c:794
 #: src/base/cs_gui_radiative_transfer.c:845
 #, c-format
 msgid "Name of variable %i was never set.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4284 src/base/cs_selector.c:315
+#: src/base/cs_gui.c:4293 src/base/cs_selector.c:315
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -1220,7 +1220,7 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune cellule.\n"
 
-#: src/base/cs_gui.c:5214 src/base/cs_gui_util.c:159
+#: src/base/cs_gui.c:5223 src/base/cs_gui_util.c:159
 #, c-format
 msgid "Unable to open the file: %s\n"
 msgstr ""
@@ -2138,14 +2138,18 @@ msgstr ""
 msgid ""
 "\n"
 "  Equivalences broken for %lu edges.\n"
-msgstr "\n  Equivalences cassées pour %lu éléments.\n"
+msgstr ""
+"\n"
+"  Equivalences cassées pour %lu éléments.\n"
 
 #: src/base/cs_join_intersect.c:2758
 #, c-format
 msgid ""
 "\n"
 "  Max. number of equiv. breaks: %lu\n"
-msgstr "\n  Nombre max d'équivalences cassées : %lu\n"
+msgstr ""
+"\n"
+"  Nombre max d'équivalences cassées : %lu\n"
 
 #: src/base/cs_join_intersect.c:3377
 #, c-format
@@ -2185,7 +2189,9 @@ msgstr ""
 msgid ""
 "\n"
 "  Local number of equivalences between vertices:%9d\n"
-msgstr "\n  Nombre local d'équivalences entre sommets : %9d\n"
+msgstr ""
+"\n"
+"  Nombre local d'équivalences entre sommets : %9d\n"
 
 #: src/base/cs_join_intersect.c:3689
 #, c-format
