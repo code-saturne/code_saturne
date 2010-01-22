@@ -569,6 +569,7 @@ CS_AC_CONFIG_INFO_INIT([cs_config_comments_include])
 
 CS_AC_CONFIG_INFO_EXTRA([
 # use debugging code:                              "$debug"
+# use graphical user interface:                    "$have_gui""
 # MPI (Message Passing Interface) support:         "$cs_have_mpi"
 # OpenMP support:                                  "$cs_have_openmp"
 # BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas"
