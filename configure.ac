@@ -419,7 +419,7 @@ sys.exit(0)]"
 
   if test $retval -ne 0 ; then
     AC_MSG_RESULT([no])
-    AC_MSG_WARN([cannot find PyQt4 support (>= 4.3), GUI will not be installed])
+    AC_MSG_FAILURE([cannot find PyQt4 support (>= 4.3), Graphical User Interface cannot be installed])
     have_gui=no
   else
     AC_MSG_RESULT([yes])
@@ -449,7 +449,7 @@ sys.stdout.write(path)]"
   AC_PATH_PROG([PYRCC4], [pyrcc4], ["no"], [${PYPATH}])
 
   if test "x$PYUIC4" == "xno" -o "x$PYRCC4" == "xno" ; then
-    AC_MSG_WARN([cannot find PyQt4 dev tools, GUI will not be installed])
+    AC_MSG_FAILURE([cannot find PyQt4 dev tools, Graphical User Interface cannot be installed])
     have_gui=no
   fi
 
@@ -569,7 +569,7 @@ CS_AC_CONFIG_INFO_INIT([cs_config_comments_include])
 
 CS_AC_CONFIG_INFO_EXTRA([
 # use debugging code:                              "$debug"
-# use graphical user interface:                    "$have_gui""
+# use graphical user interface:                    "$have_gui"
 # MPI (Message Passing Interface) support:         "$cs_have_mpi"
 # OpenMP support:                                  "$cs_have_openmp"
 # BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas"

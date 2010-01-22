@@ -1,4 +1,10 @@
 * 22/01/2010 - David Monfort <david.monfort@edf.fr>
+  Trigger an error instead of a warning when configure cannot find PyQt
+  support.
+  modified script:
+    configure.ac
+
+* 22/01/2010 - David Monfort <david.monfort@edf.fr>
   Replace the mkpyqt.py script by our own build process (through autotools)
   for building PyQt files (user interface and resource files).
   Add configury checks for PyQt support (and version checking) as well as PyQt
