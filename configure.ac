@@ -370,7 +370,6 @@ AC_ARG_ENABLE(gui, [AS_HELP_STRING([--disable-gui],
   ],
   [ have_gui=yes ]
 )
-AM_CONDITIONAL(HAVE_GUI, [test "x$have_gui" = "xyes"])
 
 #------------------------------------------------------------------------------
 # Checks for Python support.
@@ -392,6 +391,71 @@ AC_SUBST(cs_python)
 
 PYTHON=${PYEXE}
 AM_PATH_PYTHON([2.3])
+
+#------------------------------------------------------------------------------
+# Checks for PyQt support.
+#------------------------------------------------------------------------------
+
+AC_ARG_WITH(pyqt4-exec, [AS_HELP_STRING([--with-pyqt4-exec=PATH],
+                                        [specify prefix directory for PyQt4 developper tools (pyuic4 and pyrcc4)])],
+                        [PYQT4_EXE=${withval}],
+                        [PYQT4_EXE=none])dnl
+
+# Test for PyQt4
+if test "x$have_gui" == "xyes" ; then
+
+  AC_MSG_CHECKING([for PyQt4 version >= 4.3])
+
+  prog="[import sys, string
+try: import PyQt4
+except ImportError: sys.exit(1)
+from PyQt4.QtCore import *
+if map(int, string.split(QT_VERSION_STR, '.')) < [4,3,0]: sys.exit(1)
+if map(int, string.split(PYQT_VERSION_STR, '.')) < [4,3,0]: sys.exit(1)
+sys.exit(0)]"
+
+  ${PYTHON} -c "${prog}"
+  retval=$?
+
+  if test $retval -ne 0 ; then
+    AC_MSG_RESULT([no])
+    AC_MSG_WARN([cannot find PyQt4 support (>= 4.3), GUI will not be installed])
+    have_gui=no
+  else
+    AC_MSG_RESULT([yes])
+  fi
+
+fi
+
+# Test for PyQt4 developper tools
+if test "x$have_gui" == "xyes" ; then
+
+  if test "x${PYQT4_EXE}" == "xnone" ; then
+
+    # Try to find PyQt4 tools through Python interpreter
+    prog="[import os, sys
+from PyQt4.QtCore import QCoreApplication
+app = QCoreApplication([])
+path = app.applicationDirPath()
+sys.stdout.write(path)]"
+
+    PYPATH=`${PYTHON} -c "${prog}"`
+
+  else
+    PYPATH=${PYQT4_EXE}
+  fi
+
+  AC_PATH_PROG([PYUIC4], [pyuic4], ["no"], [${PYPATH}])
+  AC_PATH_PROG([PYRCC4], [pyrcc4], ["no"], [${PYPATH}])
+
+  if test "x$PYUIC4" == "xno" -o "x$PYRCC4" == "xno" ; then
+    AC_MSG_WARN([cannot find PyQt4 dev tools, GUI will not be installed])
+    have_gui=no
+  fi
+
+fi
+
+AM_CONDITIONAL(HAVE_GUI, [test "x$have_gui" = "xyes"])
 
 #------------------------------------------------------------------------------
 # Checks for header files.
@@ -568,6 +632,7 @@ rm -f cs_config_comments_include
 echo
 echo "Configuration options:"
 echo " use debugging code: "$debug""
+echo " use graphical user interface: "$have_gui""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 echo " OpenMP support: "$cs_have_openmp""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""

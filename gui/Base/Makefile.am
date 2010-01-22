@@ -20,24 +20,12 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-all-local:
-	@$(PYTHON) $(top_srcdir)/gui/sbin/mkpyqt.py --build $(srcdir)
+# Python files
 
-clean-local:
-	@$(PYTHON) $(top_srcdir)/gui/sbin/mkpyqt.py --clean $(srcdir)
-
-# Install Python library
-
-basedir = $(pkgpythondir)/Base
-base_PYTHON = \
-__init__.py \
-resource_base_rc.py \
-BrowserForm.py \
+PYFILES = \
 BrowserView.py \
 Common.py \
-IdForm.py \
 IdView.py \
-MainForm.py \
 MainView.py \
 QtPage.py \
 Toolbox.py \
@@ -45,3 +33,44 @@ XMLengine.py \
 XMLinitialize.py \
 XMLmodel.py \
 XMLvariables.py
+
+# PyQt User Interface files
+
+UIFILES = \
+BrowserForm.ui \
+IdForm.ui \
+MainForm.ui
+
+# PyQt Resources files
+
+QRCFILES = \
+resource_base.qrc
+
+# Generated files
+
+FORMS = $(UIFILES:.ui=.py)
+RESOURCES = $(QRCFILES:.qrc=_rc.py)
+
+# Specific rules
+
+SUFFIXES = .ui .qrc _rc.py
+
+.ui.py:
+	$(PYUIC4) -o $@ $<
+
+.qrc_rc.py:
+	$(PYRCC4) -o $@ $<
+
+all-local: $(FORMS) $(RESOURCES)
+
+clean-local:
+	-rm -f $(FORMS) $(RESOURCES)
+
+# Install Python library
+
+basedir = $(pkgpythondir)/Base
+base_PYTHON = \
+__init__.py \
+$(FORMS) \
+$(RESOURCES) \
+$(PYFILES)
