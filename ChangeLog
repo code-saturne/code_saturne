@@ -1,3 +1,9 @@
+* 25/01/2010 - David Monfort <david.monfort@edf.fr>
+  Increase the maximum number of structures to 200 for both internal and
+  external coupling.
+  modified routine:
+    include/base/paramx.h
+
 * 25/01/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a minor bug in the printing of an error message.
   modified script:
