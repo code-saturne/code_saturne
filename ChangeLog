@@ -1,3 +1,8 @@
+* 25/01/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a minor bug in the printing of an error message.
+  modified script:
+    bin/cs_case_domain.py
+
 * 25/01/2010 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix a missing initialization for a pointer only defined in some ALE
   configurations.

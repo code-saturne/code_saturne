@@ -169,12 +169,12 @@ parameter(ibfixe=1, igliss=2, ivimpo=3 )
 ! NOMBRE DE STRUCTURES MAX EN ALE
 
 integer nstrmx
-parameter (nstrmx=20)
+parameter (nstrmx=200)
 
 ! NOMBRE DE STRUCTURES MAX EN ALE ET COUPLAGE CODE_ASTER
 
 integer nastmx
-parameter (nastmx=20)
+parameter (nastmx=200)
 
 ! DIMENSIONS MAXIMALES DES TABLEAUX CONTENANT LES BORNES PAR THREAD
 

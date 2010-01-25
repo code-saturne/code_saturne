@@ -703,7 +703,7 @@ class domain(base_domain):
             else:
                 w_str = \
                     'Warning: no partitioning file is available\n' \
-                    '         (no ', partition, ').\n' \
+                    '         (no ' + partition + ').\n' \
                     '\n' \
                     '         Geometry-based partitioning will be used.\n'
                 sys.stderr.write(w_str)
