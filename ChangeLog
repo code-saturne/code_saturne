@@ -1,3 +1,9 @@
+* 25/01/2010 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix a missing initialization for a pointer only defined in some ALE
+  configurations.
+  modified routine:
+    src/base/tridim.f90
+
 * 25/01/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix the test to exit a "do-while" loop in the aborting process where we wait
   a couple of seconds before aborting.

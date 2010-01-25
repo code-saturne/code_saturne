@@ -956,6 +956,7 @@ idbia1 = idebia
 idbra1 = idebra
 iflalf = 1
 iflalb = 1
+icoale = 1
 iprale = 1
 ineefl = 0
 if (iale.eq.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
