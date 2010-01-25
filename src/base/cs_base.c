@@ -305,7 +305,7 @@ _cs_base_err_vprintf(const char  *format,
         sleep(wait_time);
         etime = bft_timer_wtime();
       }
-      while (etime > -0.5 && etime - stime > wait_time); /* etime = -1 only if
+      while (etime > -0.5 && etime - stime < wait_time); /* etime = -1 only if
                                                             bft_timer_wtime()
                                                             is unusable. */
 #endif
