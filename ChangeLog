@@ -1,4 +1,13 @@
 * 25/01/2010 - David Monfort <david.monfort@edf.fr>
+  Fix a potential incoherency between the definition of the mesh viscosity in
+  the graphical interface compared to its definition with usvima.
+  Consequently, from now we only define the mesh viscosity at the first
+  timestep (as it is usually done on the initial geometry).
+  modified routines:
+    src/base/phyvar.f90
+    users/base/usvima.f90
+
+* 25/01/2010 - David Monfort <david.monfort@edf.fr>
   Increase the maximum number of structures to 200 for both internal and
   external coupling.
   modified routine:

@@ -717,7 +717,7 @@ enddo
 ! 6.  MODIFICATION UTILISATEUR DE LA VISCOSITE DE MAILLAGE EN ALE
 !===============================================================================
 
-if (iale.eq.1) then
+if (iale.eq.1.and.ntcabs.eq.0) then
 
   ! - Interface Code_Saturne
   !   ======================
@@ -953,7 +953,7 @@ endif
 
 ! ---> Calcul des bornes de viscosite de maillage en ALE
 
-if(iale.eq.1) then
+if (iale.eq.1.and.ntcabs.eq.0) then
 
   iok1 = 0
   nn = 1
@@ -991,7 +991,7 @@ if(iale.eq.1) then
 ! Viscosite de maillage definie
     chaine = nomvar(ipppro(ipcvma))
     if (varmn(1).le.0.d0) then
-      write(nfecra,9011)chaine(1:8),varmn(1)
+      write(nfecra,9211) varmn(1)
       iok = iok + 1
     endif
 
@@ -1188,6 +1188,23 @@ enddo
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 9211  format(                                                          &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
+'@    =========                                               ',/,&
+'@    LA VISCOSITE DE MAILLAGE N A PAS ETE                    ',/,&
+'@                                       CORRECTEMENT DEFINIE.',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Le minimum atteint est ',E12.4                             ,/,&
+'@  Verifier le cas echeant la modification de la viscosite   ',/,&
+'@    dans usvima ou dans l interface graphique.              ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  9999 format(                                                           &
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1347,6 +1364,22 @@ enddo
 '@  The physical property identified is variable and the      ',/,&
 '@    minimum reached is ',E12.4                               ,/,&
 '@  Verify that this property has been defined in usphyv and  ',/,&
+'@    that the chosen law leads to correct values.            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 9211  format(                                                          &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
+'@    ========                                                ',/,&
+'@    THE MESH VISCOSITY HAS NOT BEEN CORRECTLY DEFINED.      ',/,&
+'@                                                            ',/,&
+'@  The calculation will not be run.                          ',/,&
+'@                                                            ',/,&
+'@  The  minimum reached is ',E12.4                            ,/,&
+'@  Verify that this property has been defined in usvima and  ',/,&
 '@    that the chosen law leads to correct values.            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

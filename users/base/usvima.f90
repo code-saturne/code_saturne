@@ -54,7 +54,10 @@ subroutine usvima &
 ! ROUTINE UTILISATEUR POUR LA METHODE ALE :
 !                  MODIFICATION DE LA VISCOSITE DE MAILLAGE
 
-! Cette routine est appelee au debut de chaque pas de temps
+! Cette routine n'est appelee qu'au PREMIER pas de temps
+
+! En effet, on specifie en general les zones de viscosite de maille
+! sur la geometrie initiale, c'est plus facile.
 
 ! On peut modifier la viscosite de maillage pour limiter
 !   la deformation de maillage dans les zones sensibles (couche
@@ -65,7 +68,7 @@ subroutine usvima &
 ! Si IORTVM = 1, la viscosite de maillage est orthotrope, on
 !   remplit VISCMX, VISCMY et VISCMZ
 
-! Les tableaux sont initialises a 1 au premier pas de temps.
+! Les tableaux sont initialises a 1.
 
 
 ! Cells identification
@@ -226,37 +229,34 @@ idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
+
 ! 1.  Exemple :
-!       On met une valeur tres forte de viscosite pour les points situes
-!         a moins de R d'un centre (par exemple pour limiter les
-!         deformations en proche paroi d'un cylindre mobile)
 
+! On met une valeur tres forte de viscosite pour les points situes
+! a moins de R d'un centre (par exemple pour limiter les
+! deformations en proche paroi d'un cylindre mobile)
 
-!     En general on specifie les zones de viscosite de maille
-!       sur la geometrie initiale, c'est plus facile.
+xray2 = (1.d-3)**2
+xcen  = 1.d0
+ycen  = 0.d0
+zcen  = 0.d0
 
-if (ntcabs.eq.0) then
-  xray2 = (1.d-3)**2
-  xcen  = 1.d0
-  ycen  = 0.d0
-  zcen  = 0.d0
-
-  do iel = 1, ncel
-    xr2 = (xyzcen(1,iel)-xcen)**2 + (xyzcen(2,iel)-ycen)**2       &
-         + (xyzcen(3,iel)-zcen)**2
-    if (xr2.lt.xray2) viscmx(iel) = 1.d10
-  enddo
+do iel = 1, ncel
+  xr2 = (xyzcen(1,iel)-xcen)**2 + (xyzcen(2,iel)-ycen)**2 &
+      + (xyzcen(3,iel)-zcen)**2
+  if (xr2.lt.xray2) viscmx(iel) = 1.d10
+enddo
 
 ! 2. Si on a une viscosite orthotrope, on peut choisir de moins
 !    contraindre le mouvement des noeuds selon z
-  if (iortvm.eq.1) then
-    do iel = 1, ncel
-      viscmy(iel) = viscmx(iel)
-      viscmz(iel) = 1.d0
-    enddo
-  endif
 
+if (iortvm.eq.1) then
+  do iel = 1, ncel
+    viscmy(iel) = viscmx(iel)
+    viscmz(iel) = 1.d0
+  enddo
 endif
+
 !----
 ! FORMAT
 !----
