@@ -50,6 +50,8 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
+from Base.Toolbox import GuiParam
+
 from MatisseCustomForm import Ui_MatisseCustomForm
 import Base.QtPage as QtPage
 
@@ -66,7 +68,7 @@ from Pages.MatisseThermicModel import MatisseThermicModel
 
 logging.basicConfig()
 log = logging.getLogger("MatisseCustomView")
-log.setLevel(logging.DEBUG)
+log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class

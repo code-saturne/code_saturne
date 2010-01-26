@@ -53,6 +53,8 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
+from Base.Toolbox import GuiParam
+
 import CFDSTUDYGUI
 import CFDSTUDYGUI_ProcessMgr
 from CFDSTUDYGUI_DataModel import _getStudy, _getEngine
@@ -67,7 +69,7 @@ import GEOM
 
 logging.basicConfig()
 log = logging.getLogger("SalomeHandler")
-log.setLevel(logging.DEBUG)
+log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 

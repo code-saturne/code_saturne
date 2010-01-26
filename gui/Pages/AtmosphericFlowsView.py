@@ -49,6 +49,7 @@ from PyQt4.QtGui  import QWidget, QFileDialog, QMessageBox
 # Application modules import
 #-------------------------------------------------------------------------------
 
+from Base.Toolbox import GuiParam
 from Pages.AtmosphericFlowsForm   import Ui_AtmosphericFlowsForm
 from Pages.AtmosphericFlowsModel  import AtmosphericFlowsModel
 from Base.QtPage                  import setGreenColor
@@ -59,7 +60,7 @@ from Base.QtPage                  import setGreenColor
 
 logging.basicConfig()
 log = logging.getLogger("AtmosphericFlowsView")
-log.setLevel(logging.DEBUG)
+log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 # Main class

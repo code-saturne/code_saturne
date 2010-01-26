@@ -64,8 +64,7 @@ import mei
 
 logging.basicConfig()
 log = logging.getLogger("QMeiEditorView")
-#log.setLevel(GuiParam.DEBUG)
-log.setLevel(logging.DEBUG)
+log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 # Syntax highlighter for the mathematical expressions editor.

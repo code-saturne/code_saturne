@@ -59,6 +59,7 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
+from Base.Toolbox import GuiParam
 from LocalizationForm import Ui_LocalizationForm
 from Base.Common import LABEL_LENGTH_MAX
 from Base.QtPage import IntValidator, RegExpValidator
@@ -71,7 +72,7 @@ from Pages.LocalizationModel import LocalizationModel, Zone
 
 logging.basicConfig()
 log = logging.getLogger("LocalizationView")
-log.setLevel(logging.DEBUG)
+log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for the label
