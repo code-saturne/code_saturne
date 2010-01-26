@@ -570,42 +570,54 @@ class CouplingManager:
         """
         Initialize the creation of the formula button
         """
-        default = "m11 = ;"
-        examples = "m11 = 100;\nm22 = 100;\nm33 = 100;"
-        examples += "\nm12 = 0;\nm13 = 0;\nm23 = 0;\nm21 = 0;\nm31 = 0;\nm32 = 0;"
-        massRequired = [('m11', 'mass matrix of the structure (1,1)'),
-                        ('m22', 'mass matrix of the structure (2,2)'),
-                        ('m33', 'mass matrix of the structure (3,3)'),
-                        ('m12', 'mass matrix of the structure (1,2)'),
-                        ('m13', 'mass matrix of the structure (1,3)'),
-                        ('m23', 'mass matrix of the structure (2,3)'),
-                        ('m21', 'mass matrix of the structure (2,1)'),
-                        ('m31', 'mass matrix of the structure (3,1)'),
-                        ('m32', 'mass matrix of the structure (3,2)')]
+        default = "%(t)s11 = ;"
+        examples = "%(t)s11 = 100;\n%(t)s22 = 100;\n%(t)s33 = 100;"
+        examples += "\n%(t)s12 = 0;\n%(t)s13 = 0;\n%(t)s23 = 0;"
+        examples += "\n%(t)s21 = 0;\n%(t)s31 = 0;\n%(t)s32 = 0;"
+        defaultRequired = [('%(t)s11', '%(n)s matrix of the structure (1,1)'),
+                           ('%(t)s22', '%(n)s matrix of the structure (2,2)'),
+                           ('%(t)s33', '%(n)s matrix of the structure (3,3)'),
+                           ('%(t)s12', '%(n)s matrix of the structure (1,2)'),
+                           ('%(t)s13', '%(n)s matrix of the structure (1,3)'),
+                           ('%(t)s23', '%(n)s matrix of the structure (2,3)'),
+                           ('%(t)s21', '%(n)s matrix of the structure (2,1)'),
+                           ('%(t)s31', '%(n)s matrix of the structure (3,1)'),
+                           ('%(t)s32', '%(n)s matrix of the structure (3,2)')]
         symbols = [('dt', 'time step'),
                    ('t', 'current time'),
                    ('nbIter', 'number of iteration')]
 
-        stiffnessRequired = []
-        dampingRequired = []
-        for var, str in massRequired:
-            stiffnessRequired.append( (var, str.replace('mass', 'stiffness') ) )
-            dampingRequired.append( (var, str.replace('mass', 'damping') ) )
+        m_default = default % {'t':'m'}
+        c_default = default % {'t':'c'}
+        k_default = default % {'t':'k'}
+
+        m_default_required = []
+        c_default_required = []
+        k_default_required = []
+        for v, s in defaultRequired:
+            m_default_required.append((v % {'t':'m'}, s % {'n':'mass'}))
+            c_default_required.append((v % {'t':'c'}, s % {'n':'damping'}))
+            k_default_required.append((v % {'t':'k'}, s % {'n':'stiffness'}))
+
+        m_examples = examples % {'t':'m'}
+        c_examples = examples % {'t':'c'}
+        k_examples = examples % {'t':'k'}
 
         couplings = []
         couplings.append( FormulaCoupling( mainView.pushButtonMassMatrix,
                                            "getMassMatrix", "setMassMatrix",
-                                           default, massRequired, symbols,
-                                           examples))
-        couplings.append( FormulaCoupling( mainView.pushButtonStiffnessMatrix,
-                                           "getStiffnessMatrix",
-                                           "setStiffnessMatrix", default,
-                                           stiffnessRequired, symbols, examples))
+                                           m_default, m_default_required,
+                                           symbols, m_examples))
 
         couplings.append( FormulaCoupling( mainView.pushButtonDampingMatrix,
-                                          "getDampingMatrix",
-                                          "setDampingMatrix", default,
-                                          dampingRequired, symbols, examples))
+                                           "getDampingMatrix", "setDampingMatrix",
+                                           c_default, c_default_required,
+                                           symbols, c_examples))
+
+        couplings.append( FormulaCoupling( mainView.pushButtonStiffnessMatrix,
+                                           "getStiffnessMatrix", "setStiffnessMatrix",
+                                           k_default, k_default_required,
+                                           symbols, k_examples))
 
         defaultFluidForce  = "fx = "
         requiredFluidForce = [('fx', 'Force applied to the structure along X'),

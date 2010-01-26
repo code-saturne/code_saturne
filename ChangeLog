@@ -1,3 +1,13 @@
+* 26/01/2010 - David Monfort <david.monfort@edf.fr>
+  Change the name of the mass/damping/stiffness matrix coefficients in case of
+  fluid structure interaction with internal coupling (changed to resp. mij,
+  cij and kij), for more consistency with the usual naming convention.
+  modified routines:
+    gui/Pages/Boundary.py
+    gui/Pages/FluidStructureInteractionForm.ui
+    gui/Pages/FluidStructureInteractionView.py
+    src/base/cs_gui_mobile_mesh.c
+
 * 26/01/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix a bug when printing Lagrangian statistics.
   modified routine:

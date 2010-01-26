@@ -1952,12 +1952,14 @@ class CouplingMobilWallBoundary(Boundary) :
         self._defaultValues['equilibrium_displacement_Y'] = 0
         self._defaultValues['equilibrium_displacement_Z'] = 0
 
-        defaultMatrix = 'm11=0;\nm22=0;\nm33=0;\nm12=0;\nm13=0;\nm23=0;'
+        defaultMatrix = '%(t)s11=0;\n%(t)s22=0;\n%(t)s33=0;\n'
+        defaultMatrix += '%(t)s12=0;\n%(t)s13=0;\n%(t)s23=0;\n'
+        defaultMatrix += '%(t)s21=0;\n%(t)s31=0;\n%(t)s32=0;'
         defaultFluidMatrix = "Fx=0;\nFy=0;\nFz=0;"
 
-        self._defaultValues['mass_matrix_formula'       ] = defaultMatrix
-        self._defaultValues['damping_matrix_formula'    ] = defaultMatrix
-        self._defaultValues['stiffness_matrix_formula'  ] = defaultMatrix
+        self._defaultValues['mass_matrix_formula'       ] = defaultMatrix % {'t':'m'}
+        self._defaultValues['damping_matrix_formula'    ] = defaultMatrix % {'t':'c'}
+        self._defaultValues['stiffness_matrix_formula'  ] = defaultMatrix % {'t':'k'}
         self._defaultValues['fluid_force_matrix_formula'] = defaultFluidMatrix
         self._defaultValues['DDLX_choice'               ] = 'off'
         self._defaultValues['DDLY_choice'               ] = 'off'

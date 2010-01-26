@@ -819,8 +819,17 @@ get_uistr2_data(const char    *label,
                 const double  ttcabs,
                 const int     ntcabs)
 {
-    const char   *symbols[] = {"m11", "m12", "m13", "m21", "m22", "m23", "m31", "m32", "m33"};
-    unsigned int symbol_nbr = sizeof(symbols) / sizeof(symbols[0]);
+    const char  *m_symbols[] = {"m11", "m12", "m13",
+                                "m21", "m22", "m23",
+                                "m31", "m32", "m33"};
+    const char  *c_symbols[] = {"c11", "c12", "c13",
+                                "c21", "c22", "c23",
+                                "c31", "c32", "c33"};
+    const char  *k_symbols[] = {"k11", "k12", "k13",
+                                "k21", "k22", "k23",
+                                "k31", "k32", "k33"};
+
+    unsigned int symbol_nbr = sizeof(m_symbols) / sizeof(m_symbols[0]);
 
     const char   *force_symbols[] = {"fx", "fy", "fz"};
     unsigned int force_symbol_nbr = sizeof(force_symbols) / sizeof(force_symbols[0]);
@@ -830,15 +839,18 @@ get_uistr2_data(const char    *label,
     double variable_values[3];
 
     /* Get mass matrix, damping matrix and stiffness matrix */
-    get_internal_coupling_matrix(label, "mass_matrix", symbols,
+
+    get_internal_coupling_matrix(label, "mass_matrix", m_symbols,
                                  symbol_nbr, 0, 0, 0,
                                  &xmstru[istruc * symbol_nbr],
                                  dtref, ttcabs, ntcabs);
-    get_internal_coupling_matrix(label, "damping_matrix", symbols,
+
+    get_internal_coupling_matrix(label, "damping_matrix", c_symbols,
                                  symbol_nbr, 0, 0, 0,
                                  &xcstru[istruc * symbol_nbr],
                                  dtref, ttcabs, ntcabs);
-    get_internal_coupling_matrix(label, "stiffness_matrix", symbols,
+
+    get_internal_coupling_matrix(label, "stiffness_matrix", k_symbols,
                                  symbol_nbr, 0, 0, 0,
                                  &xkstru[istruc * symbol_nbr],
                                  dtref, ttcabs, ntcabs);

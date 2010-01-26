@@ -702,7 +702,7 @@ with internal structures</string>
                          </spacer>
                         </item>
                         <item>
-                         <widget class="QLabel" name="label_21" >
+                         <widget class="QLabel" name="label_22" >
                           <property name="minimumSize" >
                            <size>
                             <width>110</width>
@@ -710,17 +710,17 @@ with internal structures</string>
                            </size>
                           </property>
                           <property name="toolTip" >
-                           <string>Code_Saturne key word: XKSTRU</string>
+                           <string>Code_Saturne key word: XCSTRU</string>
                           </property>
                           <property name="text" >
-                           <string>Stiffness matrix</string>
+                           <string>Damping matrix</string>
                           </property>
                          </widget>
                         </item>
                         <item>
-                         <widget class="QPushButton" name="pushButtonStiffnessMatrix" >
+                         <widget class="QPushButton" name="pushButtonDampingMatrix" >
                           <property name="toolTip" >
-                           <string>Code_Saturne key word: XKSTRU</string>
+                           <string>Code_Saturne key word: XCSTRU</string>
                           </property>
                           <property name="text" >
                            <string/>
@@ -768,7 +768,7 @@ with internal structures</string>
                          </spacer>
                         </item>
                         <item>
-                         <widget class="QLabel" name="label_22" >
+                         <widget class="QLabel" name="label_21" >
                           <property name="minimumSize" >
                            <size>
                             <width>110</width>
@@ -776,17 +776,17 @@ with internal structures</string>
                            </size>
                           </property>
                           <property name="toolTip" >
-                           <string>Code_Saturne key word: XCSTRU</string>
+                           <string>Code_Saturne key word: XKSTRU</string>
                           </property>
                           <property name="text" >
-                           <string>Damping matrix</string>
+                           <string>Stiffness matrix</string>
                           </property>
                          </widget>
                         </item>
                         <item>
-                         <widget class="QPushButton" name="pushButtonDampingMatrix" >
+                         <widget class="QPushButton" name="pushButtonStiffnessMatrix" >
                           <property name="toolTip" >
-                           <string>Code_Saturne key word: XCSTRU</string>
+                           <string>Code_Saturne key word: XKSTRU</string>
                           </property>
                           <property name="text" >
                            <string/>
