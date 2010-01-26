@@ -1,3 +1,8 @@
+* 26/01/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix a bug when printing Lagrangian statistics.
+  modified routine:
+    src/lagr/laglis.f90
+
 * 26/01/2010 - David Monfort <david.monfort@edf.fr>
   Set the verbosity level to the global one for GUI debugging.
   modified routines:

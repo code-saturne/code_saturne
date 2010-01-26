@@ -357,7 +357,7 @@ if (istala.eq.1) then
 
         do iel = 1,ncel
           bb = ra(itabvr+iel-1)
-          if (bb.gt.seuil) then
+          if (statis(iel,ilpd).gt.seuil) then
             nbrcel = nbrcel + 1
             gmax = max (gmax, bb)
             gmin = min (gmin, bb)
