@@ -645,11 +645,13 @@ call matrix                                                       &
 ! On annule la viscosite facette pour les faces couplees pour ne pas modifier
 ! le flux de masse au bord dans le cas d'un dirichlet de pression: la correction
 ! de pression et le filtre sont annules.
-do ifac = 1, nfabor
-  if (ifaccp.eq.1.and.ia(iitypf-1+ifac+nfabor*(iphas-1)).eq.icscpl) then
-    viscb(ifac) = 0.d0
-  endif
-enddo
+if (nbrcpl.ge.1) then
+  do ifac = 1, nfabor
+    if (ifaccp.eq.1.and.ia(iitypf-1+ifac).eq.icscpl) then
+      viscb(ifac) = 0.d0
+    endif
+  enddo
+endif
 
 iccocg = 1
 inc    = 1

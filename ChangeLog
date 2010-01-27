@@ -1,4 +1,9 @@
 * 26/01/2010 - David Monfort <david.monfort@edf.fr>
+  Add a test on the number of couplings to avoid a possible unnecessary loop.
+  modified routine:
+    src/base/resolp.f90
+
+* 26/01/2010 - David Monfort <david.monfort@edf.fr>
   Fix two issues in the fluid interaction setup in the GUI (the mesh viscosity
   initialization and the definition of fluid forces for an internal coupling).
   modified routines:
