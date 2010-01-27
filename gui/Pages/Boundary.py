@@ -1955,7 +1955,7 @@ class CouplingMobilWallBoundary(Boundary) :
         defaultMatrix = '%(t)s11=0;\n%(t)s22=0;\n%(t)s33=0;\n'
         defaultMatrix += '%(t)s12=0;\n%(t)s13=0;\n%(t)s23=0;\n'
         defaultMatrix += '%(t)s21=0;\n%(t)s31=0;\n%(t)s32=0;'
-        defaultFluidMatrix = "Fx=0;\nFy=0;\nFz=0;"
+        defaultFluidMatrix = "fx = fluid_fx;\nfy = fluid_fy;\nfz = fluid_fz;"
 
         self._defaultValues['mass_matrix_formula'       ] = defaultMatrix % {'t':'m'}
         self._defaultValues['damping_matrix_formula'    ] = defaultMatrix % {'t':'c'}
