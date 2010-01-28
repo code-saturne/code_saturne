@@ -3080,7 +3080,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
 
   /* 6) model scalars */
 
-  k = cs_glob_var->nvar - cs_glob_var->nscapp;
+  k = cs_glob_var->nvar -cs_glob_var->nscaus - cs_glob_var->nscapp;
   for (i=0; i < cs_glob_var->nscapp; i++) {
     j = iscapp[i] -1;
     cs_glob_var->rtp[n++] = isca[j] -1;

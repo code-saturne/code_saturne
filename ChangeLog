@@ -1,3 +1,9 @@
+* 28/01/2010 - Maya Milliez <maya.milliez@edf.fr>
+  Fix a wrong index when adding a user scalar in addition to specific physics
+  scalars with the GUI.
+  modified routine:
+    src/base/cs_gui.c
+
 * 26/01/2010 - David Monfort <david.monfort@edf.fr>
   Add a test on the number of couplings to avoid a possible unnecessary loop.
   modified routine:
