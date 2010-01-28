@@ -1,4 +1,9 @@
 * 28/01/2010 - David Monfort <david.monfort@edf.fr>
+  Fix unfortunate errors in code/code coupling in relative reference frame.
+  modified routine:
+    src/base/cscpfb.f90
+
+* 28/01/2010 - David Monfort <david.monfort@edf.fr>
   Fix a spurious _CS_HAVE_MPI used instead of the standard HAVE_MPI.
   modified routine:
     src/base/cs_sat_coupling.c

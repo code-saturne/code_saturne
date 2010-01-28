@@ -172,6 +172,7 @@ CALL RASIZE('CSCPFB',IFINRA)
 
 d2s3 = 2.d0/3.d0
 
+iphas = 1
 ipcrom = ipproc(irom(iphas))
 
 ! On vérifie si l'une des instances est en résolution en repère relatif
@@ -441,14 +442,14 @@ do iphas = 1, nphas
         if (icormx.eq.1) then
 
           if (isou.eq.1) then
-            vitent =   (omegal(2)-omegad(2))*(xyzcen(3,ifac)-zjjp) &
-                     - (omegal(3)-omegad(3))*(xyzcen(2,ifac)-yjjp)
+            vitent =   (omegal(2)-omegad(2))*(xyzcen(3,iel)-zjjp) &
+                     - (omegal(3)-omegad(3))*(xyzcen(2,iel)-yjjp)
           elseif (isou.eq.2) then
-            vitent =   (omegal(3)-omegad(3))*(xyzcen(1,ifac)-xjjp) &
-                     - (omegal(1)-omegad(1))*(xyzcen(3,ifac)-zjjp)
+            vitent =   (omegal(3)-omegad(3))*(xyzcen(1,iel)-xjjp) &
+                     - (omegal(1)-omegad(1))*(xyzcen(3,iel)-zjjp)
           elseif (isou.eq.3) then
-            vitent =   (omegal(1)-omegad(1))*(xyzcen(2,ifac)-yjjp) &
-                     - (omegal(2)-omegad(2))*(xyzcen(1,ifac)-xjjp)
+            vitent =   (omegal(1)-omegad(1))*(xyzcen(2,iel)-yjjp) &
+                     - (omegal(2)-omegad(2))*(xyzcen(1,iel)-xjjp)
           endif
 
           rvdis(ipt,ipos) = rvdis(ipt,ipos) + vitent
