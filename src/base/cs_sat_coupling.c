@@ -1896,7 +1896,7 @@ void CS_PROCF (mxicpl, MXICPL)
 {
   cs_bool_t  distant = false;
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   cs_sat_coupling_t  *coupl = NULL;
 
@@ -1917,7 +1917,7 @@ void CS_PROCF (mxicpl, MXICPL)
 
   }
 
-#endif /* defined(_CS_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   if (distant == false) {
 
