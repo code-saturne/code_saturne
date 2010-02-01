@@ -1,3 +1,9 @@
+* 01/02/2010 - Alexandre Douce <alexandre.douce@edf.fr>
+  Move upwards the definition of additional scalars in the GUI because the
+  physical properties can depend on them.
+  modified routine:
+    gui/Base/BrowserView.py
+
 * 28/01/2010 - David Monfort <david.monfort@edf.fr>
   Fix unfortunate errors in code/code coupling in relative reference frame.
   modified routine:

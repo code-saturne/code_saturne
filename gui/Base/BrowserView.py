@@ -428,6 +428,9 @@ Thermophysical models
     Radiative transfers
     Conjugate heat transfer
     Atmospheric flows
+Additional scalars
+    Definition and initialization
+    Physicals properties
 Physical properties
     Reference values
     Fluid properties
@@ -436,9 +439,6 @@ Volume conditions
     Volume regions definition
     Initialization
     Head losses
-Additional scalars
-    Definition and initialization
-    Physicals properties
 Particles and droplets tracking
     Global settings
     Statistics
