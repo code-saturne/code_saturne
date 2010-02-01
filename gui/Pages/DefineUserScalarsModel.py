@@ -330,8 +330,10 @@ class DefineUserScalarsModel(Variables, Model):
         self.isFloat(initial_value)
         self.isInList(scalar_label, self.getScalarLabelsList())
 
+        label = self.case.xmlGetNode('zone', name = zone)['label']
+
         n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
-        nz = n.xmlInitChildNode('initial_value', zone=zone)
+        nz = n.xmlInitChildNode('initial_value', zone=zone, label=label)
         nz.xmlSetTextNode(initial_value)
 
 

@@ -1,4 +1,10 @@
 * 01/02/2010 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix a missing header in the Xml file produced by the GUI and concerning the
+  scalars initialization.
+  modified routine:
+    gui/Pages/DefineUserScalarsModel.py
+
+* 01/02/2010 - Alexandre Douce <alexandre.douce@edf.fr>
   Move upwards the definition of additional scalars in the GUI because the
   physical properties can depend on them.
   modified routine:
