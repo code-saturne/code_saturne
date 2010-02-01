@@ -1,4 +1,11 @@
 * 01/02/2010 - Alexandre Douce <alexandre.douce@edf.fr>
+  Add/improve the formula examples for fluid/structure interaction.
+  modified routines:
+    gui/Pages/FluidStructureInteractionView.py
+    gui/Pages/MobileMeshModel.py
+    gui/Pages/MobileMeshView.py
+
+* 01/02/2010 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix a missing header in the Xml file produced by the GUI and concerning the
   scalars initialization.
   modified routine:

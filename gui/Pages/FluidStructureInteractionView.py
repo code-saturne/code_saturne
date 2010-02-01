@@ -64,6 +64,7 @@ except ImportError:
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
+
 from Pages.FluidStructureInteractionForm  import Ui_FluidStructureInteractionForm
 from Base                                 import QtPage
 from Pages.FluidStructureInteractionModel import FluidStructureInteractionModel
@@ -393,7 +394,6 @@ class LineEditCoupling(Coupling):
         """
         self.setBoundaryDefinedValue(text)
 
-
 #-------------------------------------------------------------------------------
 # Formula Coupling class
 #-------------------------------------------------------------------------------
@@ -450,11 +450,10 @@ class FormulaCoupling(Coupling):
             log.debug("FormulaCoupling -> %s" % str(result))
             self.setBoundaryDefinedValue(result)
 
-
-
 #-------------------------------------------------------------------------------
 # CheckBoxCouplings Coupling class
 #-------------------------------------------------------------------------------
+
 class CheckBoxCoupling(Coupling):
     """
     CheckBox that depend on a boundary
@@ -492,10 +491,10 @@ class CheckBoxCoupling(Coupling):
             value = "on"
         self.setBoundaryDefinedValue(value)
 
-
 #-------------------------------------------------------------------------------
 # CouplingManager class
 #-------------------------------------------------------------------------------
+
 class CouplingManager:
     """
     Manage and initialize coupling derived objects
@@ -571,9 +570,6 @@ class CouplingManager:
         Initialize the creation of the formula button
         """
         default = "%(t)s11 = ;"
-        examples = "%(t)s11 = 100;\n%(t)s22 = 100;\n%(t)s33 = 100;"
-        examples += "\n%(t)s12 = 0;\n%(t)s13 = 0;\n%(t)s23 = 0;"
-        examples += "\n%(t)s21 = 0;\n%(t)s31 = 0;\n%(t)s32 = 0;"
         defaultRequired = [('%(t)s11', '%(n)s matrix of the structure (1,1)'),
                            ('%(t)s22', '%(n)s matrix of the structure (2,2)'),
                            ('%(t)s33', '%(n)s matrix of the structure (3,3)'),
@@ -599,9 +595,18 @@ class CouplingManager:
             c_default_required.append((v % {'t':'c'}, s % {'n':'damping'}))
             k_default_required.append((v % {'t':'k'}, s % {'n':'stiffness'}))
 
-        m_examples = examples % {'t':'m'}
-        c_examples = examples % {'t':'c'}
-        k_examples = examples % {'t':'k'}
+        m_examples = """# Mass of the structure: 5 kg
+#
+m11 = 5;\nm22 = 5;\nm33 = 5;\nm12 = 0;\nm13 = 0;\nm23 = 0;\nm21 = 0;\nm31 = 0;\nm32 = 0;
+"""
+        c_examples = """# Damping of the structure: 3 kg.s
+#
+c11 = 3;\nc22 = 3;\nc33 = 3;\nc12 = 0;\nc13 = 0;\nc23 = 0;\nc21 = 0;\nc31 = 0;\nc32 = 0;
+"""
+        k_examples = """# Stiffness of the structure: 2 N/m
+#
+k11 = 2;\nk22 = 2;\nk33 = 2;\nk12 = 0;\nk13 = 0;\nk23 = 0;\nk21 = 0;\nk31 = 0;\nk32 = 0;
+"""
 
         couplings = []
         couplings.append( FormulaCoupling( mainView.pushButtonMassMatrix,
@@ -620,15 +625,17 @@ class CouplingManager:
                                            symbols, k_examples))
 
         defaultFluidForce  = "fx = "
-        requiredFluidForce = [('fx', 'Force applied to the structure along X'),
-                              ('fy', 'Force applied to the structure along Y'),
-                              ('fz', 'Force applied to the structure along Z')]
+        requiredFluidForce = [('fx', 'force applied to the structure along X'),
+                              ('fy', 'force applied to the structure along Y'),
+                              ('fz', 'force applied to the structure along Z')]
         symbolsFluidForce = symbols[:];
-        symbolsFluidForce.append( ('fluid_fx', 'Force of flow along X'))
-        symbolsFluidForce.append( ('fluid_fy', 'Force of flow along Y'))
-        symbolsFluidForce.append( ('fluid_fz', 'Force of flow along Z'))
+        symbolsFluidForce.append( ('fluid_fx', 'force of flow along X'))
+        symbolsFluidForce.append( ('fluid_fy', 'force of flow along Y'))
+        symbolsFluidForce.append( ('fluid_fz', 'force of flow along Z'))
 
-        examplesFluidForce = "fx = fluid_fx;\nfy = fluid_fy;\nfz = fluid_fz;"
+        examplesFluidForce = """# The fluid force is zero in the Y direction.
+#
+fx = fluid_fx;\nfy = 0;\nfz = fluid_fz;"""
         couplings.append( FormulaCoupling( mainView.pushButtonFluidForce,
                                            "getFluidForceMatrix",
                                            "setFluidForceMatrix",
@@ -671,15 +678,14 @@ class CouplingManager:
         for coupling in couplings:
             coupling.setBoundary(boundary)
 
-
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
+
 class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
     """
     Main class.
     """
-
     def __init__(self, parent, case):
         """
         Constructor

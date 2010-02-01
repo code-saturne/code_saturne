@@ -79,8 +79,8 @@ class MobileMeshModel(Model):
         default['nalinf' ]  = 0
         default['iortvm' ]  = 'isotrop'
         default['mei'    ]  = 'user_subroutine'
-        default['formula_isotrop']  = 'mesh_vi1=1;'
-        default['formula_orthotrop'] = 'mesh_vi1=1;\nmesh_vi2=1;\nmesh_vi3=1;'
+        default['formula_isotrop']  = 'mesh_vi1 = 1;'
+        default['formula_orthotrop'] = 'mesh_vi1 = 1;\nmesh_vi2 = 1;\nmesh_vi3 = 1;'
         default['ale_method']  = 'off'
 
         return default

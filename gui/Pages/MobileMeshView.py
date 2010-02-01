@@ -81,6 +81,50 @@ class MobileMeshView(QWidget, Ui_MobileMeshForm):
     """
     Class to open Page.
     """
+    viscosity_iso = """# Viscosity of the mesh allows to control the deformation
+# of the mesh. Viscosity must be greater than zero.
+# It could be isotropic (the same for all directions) or
+# orthotropic.
+#
+# In the following example, a hight value of viscosity
+# is imposed around a mobile cylinder.
+# The viscosity is specfied for all cells
+# on the initial mesh before any deformation.
+#
+xr2 = 1.5^2;
+xcen = 5.0;
+ycen = 0.;
+zcen = 6.0;
+xray2 = (x-xcen)^2 + (y-ycen)^2 + (z-zcen)^2;
+mesh_vi1 = 1;
+if (xray2 < xr2) mesh_vi1 = 1e10;
+"""
+
+    viscosity_ortho = """# Viscosity of the mesh allows to control the deformation
+# of the mesh. Viscosity must be greater than zero.
+# It could be isotropic (the same for all directions) or
+# orthotropic.
+#
+# In the following example, a hight value of viscosity
+# is imposed around a mobile cylinder.
+# The viscosity is specfied for all cells
+# on the initial mesh before any deformation.
+#
+xr2 = 1.5^2;
+xcen = 5.0;
+ycen = 0.;
+zcen = 6.0;
+xray2 = (x-xcen)^2 + (y-ycen)^2 + (z-zcen)^2;
+mesh_vi1 = 1;
+mesh_vi2 = 1;
+mesh_vi3 = 1;
+if (xray2 < xr2) {
+    mesh_vi1 = 1e10;
+    mesh_vi2 = 1e10;
+    mesh_vi3 = 1e10;
+}
+"""
+
     def __init__(self, parent, case, browser):
         """
         Constructor
@@ -204,16 +248,16 @@ class MobileMeshView(QWidget, Ui_MobileMeshForm):
 
         if self.mdl.getViscosity() == 'isotrop':
             if not exp:
-                exp = "mesh_vi1 ="
+                exp = "mesh_vi1 = 1;"
             req = [('mesh_vi1', 'mesh viscosity')]
-            exa = "mesh_vi1 = 1000;"
+            exa = MobileMeshView.viscosity_iso
         else:
             if not exp:
-                exp = "mesh_vi11 ="
+                exp = "mesh_vi1 = 1;\nmesh_vi2 = 1;\nmesh_vi3 = 1;"
             req = [('mesh_vi1', 'mesh viscosity X'),
                    ('mesh_vi2', 'mesh viscosity Y'),
                    ('mesh_vi3', 'mesh viscosity Z')]
-            exa = "mesh_vi1 = 1000;\nmesh_vi2 = 1;\nmesh_vi3 = mesh_vi2;"
+            exa = MobileMeshView.viscosity_ortho
 
         symb = [('x', "X cell's gravity center"),
                 ('y', "Y cell's gravity center"),
