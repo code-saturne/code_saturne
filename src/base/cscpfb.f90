@@ -146,7 +146,9 @@ double precision epsrgp , climgp , extrap
 double precision xjjp   , yjjp   , zjjp
 double precision d2s3
 double precision xjpf,yjpf,zjpf,jpf
-double precision omegal(3), omegad(3), omgnrl, omgnrd, vitent
+double precision xx, yy, zz
+double precision omegal(3), omegad(3), omegar(3), omgnrl, omgnrd, omgnrr
+double precision vitent, daxis2
 
 !===============================================================================
 
@@ -184,8 +186,14 @@ omegal(2) = omegay
 omegal(3) = omegaz
 call tbrcpl(numcpl,3,3,omegal,omegad)
 
+! Vecteur vitesse relatif d'une instance a l'autre
+omegar(1) = omegal(1) - omegad(1)
+omegar(2) = omegal(2) - omegad(2)
+omegar(3) = omegal(3) - omegad(3)
+
 omgnrl = sqrt(omegal(1)**2 + omegal(2)**2 + omegal(3)**2)
 omgnrd = sqrt(omegad(1)**2 + omegad(2)**2 + omegad(3)**2)
+omgnrr = sqrt(omegar(1)**2 + omegar(2)**2 + omegar(3)**2)
 
 ! On part du principe que l'on envoie les bonnes variables à
 ! l'instance distante et uniquement celles-là.
@@ -288,11 +296,21 @@ do iphas = 1, nphas
         ! On prend en compte le potentiel centrifuge en repère relatif
         if (icormx.eq.1) then
 
+          ! Calcul de la distance a l'axe de rotation
+          ! On suppose que les axes sont confondus...
+
+          xx = xyzcen(1,iel) + xjjp
+          yy = xyzcen(2,iel) + yjjp
+          zz = xyzcen(3,iel) + zjjp
+
+          daxis2 =   (omegar(2)*zz - omegar(3)*yy)**2 &
+                   + (omegar(3)*xx - omegar(1)*zz)**2 &
+                   + (omegar(1)*yy - omegar(2)*xx)**2
+
+          daxis2 = daxis2 / omgnrr**2
+
           rvdis(ipt,ipos) = rvdis(ipt,ipos)                         &
-            + 0.5d0*propce(iel,ipcrom)*(omgnrl**2 - omgnrd**2)      &
-                                      *( (xyzcen(1,iel) + xjjp)**2  &
-                                       + (xyzcen(2,iel) + yjjp)**2  &
-                                       + (xyzcen(3,iel) + zjjp)**2)
+            + 0.5d0*propce(iel,ipcrom)*(omgnrl**2 - omgnrd**2)*daxis2
 
         endif
 
