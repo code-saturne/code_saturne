@@ -84,11 +84,7 @@ if test "x$with_mei" != "xno" ; then
                [ AC_DEFINE([HAVE_MEI], 1, [MEI support])
                  have_mei=yes
                ], 
-               [if test "x$with_mei" != "xcheck" ; then
-                  AC_MSG_FAILURE([MEI support is requested, but test for MEI failed!])
-                else
-                  AC_MSG_WARN([no MEI support])
-                fi
+               [AC_MSG_FAILURE([MEI support is requested, but test for MEI failed!])
                ],
                )
 
