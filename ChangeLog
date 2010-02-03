@@ -1,3 +1,8 @@
+* 03/02/2010 - David Monfort <david.monfort@edf.fr>
+  Change the default label of boundary zones in the GUI from Wall to BC.
+  modified routine:
+    gui/Pages/LocalizationModel.py
+
 * 02/02/2010 - David Monfort <david.monfort@edf.fr>
   Always request the MEI library to be available (but keep the availability of
   disabling it).

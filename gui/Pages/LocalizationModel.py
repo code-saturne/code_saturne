@@ -184,7 +184,7 @@ class BoundaryZone(Zone):
         """
         """
         dico = Zone.defaultValues(self)
-        dico['label'] = 'Wall_'
+        dico['label'] = 'BC_'
         dico['nature'] = self._natureList[0]
         return dico
 
