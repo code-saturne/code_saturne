@@ -1,3 +1,9 @@
+* 03/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a rare error that could arise with time-independant writers (in
+  post-processing).
+  modified routine:
+    src/base/cs_post.c
+
 * 03/02/2010 - David Monfort <david.monfort@edf.fr>
   Change the default label of boundary zones in the GUI from Wall to BC.
   modified routine:

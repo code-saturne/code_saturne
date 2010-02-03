@@ -97,7 +97,7 @@ typedef enum {
 /*------------------*/
 
 /* This object is based on a choice of a case, directory, and format,
-   as well as a flag for associated meshe's time dependency, and the default
+   as well as a flag for associated mesh's time dependency, and the default
    output frequency for associated variables. */
 
 typedef struct {
@@ -799,7 +799,7 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
 {
   int  j;
   cs_bool_t  write_mesh;
-  fvm_writer_time_dep_t  dep_temps;
+  fvm_writer_time_dep_t  time_dep;
 
   cs_post_writer_t *writer = NULL;
 
@@ -809,11 +809,11 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
 
     writer = _cs_post_writers + post_mesh->writer_id[j];
 
-    dep_temps = fvm_writer_get_time_dep(writer->writer);
+    time_dep = fvm_writer_get_time_dep(writer->writer);
 
     write_mesh = false;
 
-    if (dep_temps == FVM_WRITER_FIXED_MESH) {
+    if (time_dep == FVM_WRITER_FIXED_MESH) {
       if (post_mesh->nt_last < 0)
         write_mesh = true;
     }
@@ -822,7 +822,10 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
         write_mesh = true;
     }
 
-    if (write_mesh == true) {
+    /* Mesh has already been output when associated with writers
+       allowing only fixed meshes; for other writers, output it */
+
+    if (write_mesh == true && time_dep != FVM_WRITER_FIXED_MESH) {
       fvm_writer_set_mesh_time(writer->writer, nt_cur_abs, t_cur_abs);
       fvm_writer_export_nodal(writer->writer, post_mesh->exp_mesh);
     }
@@ -974,7 +977,7 @@ _cs_post_write_displacements(int     nt_cur_abs,
 /*----------------------------------------------------------------------------
  * Create a writer based on Fortran data; this object is based on a choice
  * of a case, directory, and format, as well as indicator for associated
- * meshe's time dependency, and the default output frequency for associated
+ * mesh's time dependency, and the default output frequency for associated
  * variables.
  *
  * Fortran Interface: use PSTCWR (see cs_post_util.F)
@@ -1156,7 +1159,7 @@ void CS_PROCF (pstedg, PSTEDG)
  * The automatic variables output associated with the main volume and
  * boundary meshes will also be applied to meshes of the same categories
  * (i.e. -1 and -2 respectively, whether meshes -1 and -2 are actually
- * defined or not), so setting a user meshe's category to one of these
+ * defined or not), so setting a user mesh's category to one of these
  * values will automatically provide the same automatic variable output to
  * the user mesh.
  *
@@ -1921,7 +1924,7 @@ void CS_PROCF (pstev1, PSTEV1)
 
 /*----------------------------------------------------------------------------
  * Create a writer; this objects manages a case's name, directory, and format,
- * as well as associated meshe's time dependency, and the default output
+ * as well as associated mesh's time dependency, and the default output
  * frequency for associated variables.
  *
  * parameters:
@@ -1949,7 +1952,7 @@ cs_post_add_writer(int          writer_id,
   int    i;
 
   cs_post_writer_t  *writer = NULL;
-  fvm_writer_time_dep_t  dep_temps = FVM_WRITER_FIXED_MESH;
+  fvm_writer_time_dep_t  time_dep = FVM_WRITER_FIXED_MESH;
 
   /* Check that the required mesh is available */
 
@@ -2000,15 +2003,15 @@ cs_post_add_writer(int          writer_id,
   }
 
   if (mod_flag == 1)
-    dep_temps = FVM_WRITER_TRANSIENT_COORDS;
+    time_dep = FVM_WRITER_TRANSIENT_COORDS;
   else if (mod_flag >= 2)
-    dep_temps = FVM_WRITER_TRANSIENT_CONNECT;
+    time_dep = FVM_WRITER_TRANSIENT_CONNECT;
 
   writer->writer = fvm_writer_init(case_name,
                                    dir_name,
                                    fmt_name,
                                    fmt_opts,
-                                   dep_temps);
+                                   time_dep);
 }
 
 /*----------------------------------------------------------------------------
@@ -2188,13 +2191,63 @@ cs_post_add_existing_mesh(int           mesh_id,
 }
 
 /*----------------------------------------------------------------------------
+ * Create a mesh based upon the extraction of edges from an existing mesh.
+ *
+ * The newly created edges have no link to their parent elements, so
+ * no variable referencing parent elements may be output to this mesh,
+ * whose main use is to visualize "true" face edges when polygonal faces
+ * are subdivided by the writer. In this way, even highly non-convex
+ * faces may be visualized correctly if their edges are overlaid on
+ * the surface mesh with subdivided polygons.
+ *
+ * parameters:
+ *   edges_id <-- id of edges mesh to create (< 0 reserved, > 0 for user)
+ *   base_id  <-- id of existing mesh (< 0 reserved, > 0 for user)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_mesh_edges(int  edges_id,
+                       int  base_id)
+{
+  /* local variables */
+
+  char *edges_name = NULL;
+  cs_post_mesh_t *post_edges = NULL;
+  fvm_nodal_t *exp_edges = NULL;
+
+  const cs_post_mesh_t *post_base = _cs_post_meshes +_cs_post_mesh_id(base_id);
+  const fvm_nodal_t *exp_mesh = post_base->exp_mesh;
+  const char *exp_name = fvm_nodal_get_name(exp_mesh);
+
+  /* Add and initialize base structure */
+
+  post_edges = _cs_post_add_mesh(edges_id);
+
+  /* Copy mesh edges to new mesh structure */
+
+  BFT_MALLOC(edges_name, strlen(exp_name) + strlen(_(" edges")) + 1, char);
+
+  strcpy(edges_name, exp_name);
+  strcat(edges_name, _(" edges"));
+
+  exp_edges = fvm_nodal_copy_edges(edges_name, exp_mesh);
+
+  BFT_FREE(edges_name);
+
+  /* Create mesh and assign to structure */
+
+  post_edges->exp_mesh = exp_edges;
+  post_edges->_exp_mesh = exp_edges;
+}
+
+/*----------------------------------------------------------------------------
  * Assign a category to a post-processing mesh.
  *
  * By default, each mesh is assigned a category id identical to its id.
  * The automatic variables output associated with the main volume and
  * boundary meshes will also be applied to meshes of the same categories
  * (i.e. -1 and -2 respectively, whether meshes -1 and -2 are actually
- * defined or not), so setting a user meshe's category to one of these
+ * defined or not), so setting a user mesh's category to one of these
  * values will automatically provide the same automatic variable output to
  * the user mesh.
  *
@@ -2292,56 +2345,6 @@ cs_post_alias_mesh(int  alias_id,
 
   post_mesh->n_i_faces = ref_mesh->n_i_faces;
   post_mesh->n_b_faces = ref_mesh->n_b_faces;
-}
-
-/*----------------------------------------------------------------------------
- * Create a mesh based upon the extraction of edges from an existing mesh.
- *
- * The newly created edges have no link to their parent elements, so
- * no variable referencing parent elements may be output to this mesh,
- * whose main use is to visualize "true" face edges when polygonal faces
- * are subdivided by the writer. In this way, even highly non-convex
- * faces may be visualized correctly if their edges are overlaid on
- * the surface mesh with subdivided polygons.
- *
- * parameters:
- *   edges_id <-- id of edges mesh to create (< 0 reserved, > 0 for user)
- *   base_id  <-- id of existing mesh (< 0 reserved, > 0 for user)
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_add_mesh_edges(int  edges_id,
-                       int  base_id)
-{
-  /* local variables */
-
-  char *edges_name = NULL;
-  cs_post_mesh_t *post_edges = NULL;
-  fvm_nodal_t *exp_edges = NULL;
-
-  const cs_post_mesh_t *post_base = _cs_post_meshes +_cs_post_mesh_id(base_id);
-  const fvm_nodal_t *exp_mesh = post_base->exp_mesh;
-  const char *exp_name = fvm_nodal_get_name(exp_mesh);
-
-  /* Add and initialize base structure */
-
-  post_edges = _cs_post_add_mesh(edges_id);
-
-  /* Copy mesh edges to new mesh structure */
-
-  BFT_MALLOC(edges_name, strlen(exp_name) + strlen(_(" edges")) + 1, char);
-
-  strcpy(edges_name, exp_name);
-  strcat(edges_name, _(" edges"));
-
-  exp_edges = fvm_nodal_copy_edges(edges_name, exp_mesh);
-
-  BFT_FREE(edges_name);
-
-  /* Create mesh and assign to structure */
-
-  post_edges->exp_mesh = exp_edges;
-  post_edges->_exp_mesh = exp_edges;
 }
 
 /*----------------------------------------------------------------------------
@@ -2511,6 +2514,10 @@ cs_post_get_free_mesh_id(void)
 /*----------------------------------------------------------------------------
  * Associate a writer with a post-processing mesh.
  *
+ * If the writer only allows fixed (i.e. time-independent) meshes, the
+ * mesh is exported immediately. Otherwise, output is delayed until
+ * cs_post_write_meshes() is called for an active time step.
+ *
  * parameters:
  *   mesh_id   <-- id of associated mesh
  *   writer_id <-- id of associated writer
@@ -2590,6 +2597,14 @@ cs_post_associate(int  mesh_id,
     /* Divide polygons or polyhedra into simple elements */
 
     _cs_post_divide_poly(post_mesh, writer);
+
+    /* If the writer only allows fixed (i.e. time-independent) meshes,
+       output mesh immediately */
+
+    if (mod_flag == FVM_WRITER_FIXED_MESH) {
+      fvm_writer_set_mesh_time(writer->writer, 0, 0.0);
+      fvm_writer_export_nodal(writer->writer, post_mesh->exp_mesh);
+    }
   }
 
 }
