@@ -1,3 +1,9 @@
+* 03/02/2010 - David Monfort <david.monfort@edf.fr>
+  Add specific post-processing variables for rotor/stator interaction.
+  modified routines:
+    src/base/dvvpst.f90
+    users/base/usini1.f90
+
 * 03/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove a spurious assert from the SYRTHES 4 coupling.
   modified routine:

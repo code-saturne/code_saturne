@@ -174,6 +174,7 @@ include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
 include "radiat.h"
+include "cplsat.h"
 
 !===============================================================================
 
@@ -231,10 +232,12 @@ integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          iscal , ipcvsl, ipcvst, iflmab
 integer          idimte, itenso, ientla, ivarpr
 integer          iyplbp
-integer          ipccp
+integer          ipccp , ipcrom
+
 double precision cp0iph, xcp   , xvsl  , surfbn, distbr
 double precision visct , flumab, diipbx, diipby, diipbz
 double precision epsrgp, climgp, extrap
+double precision omgnrm, daxis2
 double precision rbid(1)
 
 
@@ -371,6 +374,123 @@ if (numtyp .eq. -1) then
                   ntcabs, ttcabs, ra(iyppar), rbid, rbid)
 
     endif
+
+  endif
+
+  ! Vitesse et pression absolues en cas de calcul en repère relatif
+
+  if (icorio.eq.1) then
+
+    iphas = 1
+    ipcrom = ipproc(irom(iphas))
+    omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
+
+    NAMEVR = 'Pressure'
+    idimt = 1
+    ientla = 0
+    ivarpr = 0
+
+    do iloc = 1, ncelps
+
+      iel = lstcel(iloc)
+
+      daxis2 =   (omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))**2 &
+               + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))**2 &
+               + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))**2
+
+      daxis2 = daxis2 / omgnrm**2
+
+      tracel(iloc) = rtp(iel,ipr(iphas))                          &
+          + 0.5d0*propce(iel,ipcrom)*omgnrm**2*daxis2
+
+    enddo
+
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
+    !==========
+                ntcabs, ttcabs, tracel, rbid, rbid)
+
+
+    NAMEVR = 'Velocity'
+    idimt = 3
+    ientla = 1
+    ivarpr = 0
+
+    do iloc = 1, ncelps
+
+      iel = lstcel(iloc)
+
+      tracel(1 + (iloc-1)*idimt) = rtp(iel,iu(iphas)) &
+          + (omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))
+
+      tracel(2 + (iloc-1)*idimt) = rtp(iel,iv(iphas)) &
+          + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))
+
+      tracel(3 + (iloc-1)*idimt) = rtp(iel,iw(iphas)) &
+          + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))
+
+    enddo
+
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
+    !==========
+                ntcabs, ttcabs, tracel, rbid, rbid)
+  endif
+
+  ! Vitesse et pression relatives en cas de calcul en repère mobile
+
+  if (imobil.eq.1) then
+
+    iphas = 1
+    ipcrom = ipproc(irom(iphas))
+    omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
+
+    NAMEVR = 'Rel Pressure'
+    idimt = 1
+    ientla = 0
+    ivarpr = 0
+
+    do iloc = 1, ncelps
+
+      iel = lstcel(iloc)
+
+      daxis2 =   (omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))**2 &
+               + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))**2 &
+               + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))**2
+
+      daxis2 = daxis2 / omgnrm**2
+
+      tracel(iloc) = rtp(iel,ipr(iphas))                          &
+          - 0.5d0*propce(iel,ipcrom)*omgnrm**2*daxis2
+
+    enddo
+
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
+    !==========
+                ntcabs, ttcabs, tracel, rbid, rbid)
+
+
+    NAMEVR = 'Rel Velocity'
+    idimt = 3
+    ientla = 1
+    ivarpr = 0
+
+    do iloc = 1, ncelps
+
+      iel = lstcel(iloc)
+
+      tracel(1 + (iloc-1)*idimt) = rtp(iel,iu(iphas)) &
+          - (omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))
+
+      tracel(2 + (iloc-1)*idimt) = rtp(iel,iv(iphas)) &
+          - (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))
+
+      tracel(3 + (iloc-1)*idimt) = rtp(iel,iw(iphas)) &
+          - (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))
+
+    enddo
+
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
+    !==========
+                ntcabs, ttcabs, tracel, rbid, rbid)
 
   endif
 

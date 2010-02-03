@@ -1796,6 +1796,9 @@ nomvar(ipp)   = 'Pressure'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
+if (icorio.eq.1) then
+  nomvar(ipp)   = 'Rel Pressure'
+endif
 
 ! variable v1x
 ipp = ipprtp(iu    (iphas))
@@ -1803,6 +1806,9 @@ nomvar(ipp)   = 'VelocityX'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
+if (icorio.eq.1) then
+  nomvar(ipp)   = 'Rel VelocityX'
+endif
 
 ! v1y variable
 ipp = ipprtp(iv    (iphas))
@@ -1810,6 +1816,9 @@ nomvar(ipp)   = 'VelocityY'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
+if (icorio.eq.1) then
+  nomvar(ipp)   = 'Rel VelocityY'
+endif
 
 ! v1z variable
 ipp = ipprtp(iw    (iphas))
@@ -1817,6 +1826,9 @@ nomvar(ipp)   = 'VelocityZ'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
+if (icorio.eq.1) then
+  nomvar(ipp)   = 'Rel VelocityZ'
+endif
 
 if(itytur(iphas).eq.2) then
 
