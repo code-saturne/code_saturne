@@ -1,4 +1,9 @@
 * 03/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove a spurious assert from the SYRTHES 4 coupling.
+  modified routine:
+    src/base/cs_syr4_coupling.c
+
+* 03/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a rare error that could arise with time-independant writers (in
   post-processing).
   modified routine:

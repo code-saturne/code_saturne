@@ -329,7 +329,6 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   cs_syr4_coupling_ent_t *coupling_ent = NULL;
 
   assert(syr_coupling != NULL);
-  assert(coupling_number > 0);
 
   /* Initialization */
 
