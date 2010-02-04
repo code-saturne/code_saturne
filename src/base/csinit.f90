@@ -115,12 +115,16 @@ nfecra = 6
 if (irangp.le.0) then
   if (ilisr0.eq.1) then
     nfecra = 9
-    NAME = 'listing'
+    name = 'listing'
   endif
 else
   if (ilisrp.eq.1) then
     nfecra = 9
-    WRITE (NAME,'(A9,I4.4)') 'listing_n', IRANGP + 1
+    if (nrangp.ge.10000) then
+      write (name,'(A9,I7.4)') 'listing_n', irangp + 1
+    else
+      write (name,'(A9,I4.4)') 'listing_n', irangp + 1
+    endif
   else if (ilisrp.eq.2) then
     nfecra = 9
     NAME = '/dev/null'
@@ -129,7 +133,7 @@ endif
 
 if (nfecra.eq.9) then
    open (file=name, unit=nfecra,                                  &
-         FORM='FORMATTED', STATUS='UNKNOWN', ERR=900)
+         form='FORMATTED', status='UNKNOWN', err=900)
 endif
 
 goto 950
