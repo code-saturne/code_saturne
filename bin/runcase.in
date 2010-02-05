@@ -769,7 +769,7 @@ fi
 #
 # Partitioner start
 #
-if [ ! -f ${ecs_bindir}/cs_partition ] ; then
+if [ ! -f ${ecs_bindir}/cs_partition -a $nproc_kernel -gt 1 ] ; then
   echo "Warning: ${ecs_bindir}/cs_partition not found."
   echo
   echo "The partitioner may not have been installed"

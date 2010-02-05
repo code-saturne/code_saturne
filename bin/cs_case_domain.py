@@ -833,14 +833,15 @@ class domain(base_domain):
 
         partitioner = os.path.join(cs_config.dirs.ecs_bindir, 'cs_partition')
         if not os.path.isfile(partitioner):
-            w_str = \
-                'Warning: ' + partitioner + ' not found.\n\n' \
-                'The partitioner may not have been installed' \
-                '  (this is the case if neither METIS nor SCOTCH ' \
-                ' are avaialable).\n\n' \
-                'Unoptimized partitioning will be used, so ' \
-                'parallel performance may be degraded.\n\n'
-            sys.stderr.write(w_str)
+            if self.n_procs > 1:
+                w_str = \
+                    'Warning: ' + partitioner + ' not found.\n\n' \
+                    'The partitioner may not have been installed' \
+                    '  (this is the case if neither METIS nor SCOTCH ' \
+                    ' are avaialable).\n\n' \
+                    'Unoptimized partitioning will be used, so ' \
+                    'parallel performance may be degraded.\n\n'
+                sys.stderr.write(w_str)
             self.exec_partition = False
 
         if self.exec_partition == False:
