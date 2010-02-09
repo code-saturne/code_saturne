@@ -235,10 +235,7 @@ pkgdatadir=${datadir}/@PACKAGE@
 #
 # Preprocessor installation parameters
 #
-ecs_prefix=@ecs_prefix@
-#
-ecs_exec_prefix=${ecs_prefix}
-ecs_bindir=${ecs_exec_prefix}/bin
+ecs_bindir=@ecs_bindir@
 #
 # HOMARD installation parameters (to be completed if needed)
 #
@@ -437,7 +434,7 @@ echo '    ' $RUN
 #
 echo
 echo ' Kernel version:          ' $prefix
-echo ' Preprocessor version:    ' $ecs_prefix
+echo ' Preprocessor:            ' $ecs_bindir
 
 if [ "${EXEC_KERNEL}" = "yes" ] ; then
 
@@ -696,7 +693,7 @@ echo '========================================================'>>$summary
 echo '   Start time       : ' $CURDATE                         >>$summary
 echo '  ----------------------------------------------------'  >>$summary
 echo '    Kernel          : ' $prefix                          >>$summary
-echo '    Preprocessor    : ' $ecs_prefix                      >>$summary
+echo '    Preprocessor    : ' $ecs_bindir                      >>$summary
 echo '    ------------------------------------------------  '  >>$summary
 echo '    HOMARD          : ' $homard_prefix                   >>$summary
 echo '    ------------------------------------------------  '  >>$summary

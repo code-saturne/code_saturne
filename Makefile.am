@@ -90,7 +90,7 @@ edit = sed \
 	-e 's|@pythondir[@]|$(pythondir)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
 	-e 's|@mei_prefix[@]|$(mei_prefix)|g' \
-	-e 's|@ecs_prefix[@]|$(ecs_prefix)|g' \
+	-e 's|@ecs_bindir[@]|$(ecs_bindir)|g' \
 	-e 's|@syrthes_prefix[@]|$(syrthes_prefix)|g' \
 	-e 's|@mpi_type[@]|$(mpi_type)|g' \
 	-e 's|@mpi_bindir[@]|$(mpi_bindir)|g' \

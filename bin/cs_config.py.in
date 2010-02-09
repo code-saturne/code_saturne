@@ -51,9 +51,7 @@ class dirs:
     pkgdatadir = "@pkgdatadir@"
     docdir = "@docdir@"
     pdfdir = "@pdfdir@"
-    ecs_prefix = "@ecs_prefix@"
-    ecs_exec_prefix = ecs_prefix
-    ecs_bindir = os.path.join(ecs_exec_prefix, "bin")
+    ecs_bindir = "@ecs_bindir@"
     syrthes_prefix = "@syrthes_prefix@"
 
 # Optional MPI library info
@@ -84,7 +82,7 @@ Directories:
   dirs.pdfdir = %(pdf)s
 
 Auxiliary information:
-  dirs.ecs_prefix = %(ecs)s
+  dirs.ecs_bindir = %(ecs)s
   dirs.syrthes_prefix = %(syrthes)s
 
 MPI library information:
@@ -98,7 +96,7 @@ MPI library information:
             'bin':dirs.bindir, 'include': dirs.includedir, 'lib':dirs.libdir,
             'dataroot':dirs.datarootdir, 'data':dirs.datadir,
             'pkgdata':dirs.pkgdatadir, 'doc':dirs.docdir, 'pdf':dirs.pdfdir,
-            'ecs':dirs.ecs_prefix, 'syrthes':dirs.syrthes_prefix,
+            'ecs':dirs.ecs_bindir, 'syrthes':dirs.syrthes_prefix,
             'mpi_type':mpi_lib.type, 'mpi_bindir':mpi_lib.bindir,
             'mpi_libdir':mpi_lib.libdir }
 

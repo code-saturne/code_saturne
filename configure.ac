@@ -352,8 +352,16 @@ CS_AC_TEST_SYRTHES
 AC_ARG_WITH(prepro, [AS_HELP_STRING([--with-prepro=PATH],
                                     [specify prefix directory for the Preprocessor])])
 
-AC_CHECK_PROG(ecs_prefix, cs_preprocess, $with_prepro, , $with_prepro/bin, )
-AC_SUBST(ecs_prefix)
+AC_PATH_PROG([ecs], [cs_preprocess],
+             [no],
+             [$with_prepro/bin$PATH_SEPARATOR$PATH])
+
+if test "x${ecs}" = "xno"; then
+  AC_MSG_FAILURE([cannot find Code_Saturne preprocessor])
+else
+  ecs_bindir=`dirname ${ecs}`
+  AC_SUBST(ecs_bindir)
+fi
 
 #------------------------------------------------------------------------------
 # Enables Code_Saturne graphical user interface

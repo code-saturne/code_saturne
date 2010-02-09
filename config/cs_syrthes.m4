@@ -30,11 +30,19 @@ AC_DEFUN([CS_AC_TEST_SYRTHES], [
 
 AC_ARG_WITH(syrthes, [AS_HELP_STRING([--with-syrthes=PATH], [specify prefix directory for SYRTHES])])
 
+# First try with syrthes.profile, second try for Debian-like packaging
+# of SYRTHES where there is no syrthes.profile
+
+AC_MSG_CHECKING([for SYRTHES support])
 if test -f $with_syrthes/bin/syrthes.profile ; then
   have_syrthes=yes
   syrthes_prefix=$with_syrthes
-  AC_MSG_NOTICE([sourcing $syrthes_prefix/bin/syrthes.profile])
+  AC_MSG_RESULT([sourcing $syrthes_prefix/bin/syrthes.profile])
   . "$syrthes_prefix/bin/syrthes.profile"
+elif test -f $with_syrthes/bin/syrthes_create_case ; then
+  have_syrthes=yes
+  syrthes_prefix=$with_syrthes
+  AC_MSG_RESULT([found $syrthes_prefix/bin/syrthes_create_case])
 else
   have_syrthes=no
   AC_MSG_WARN([cannot find syrthes.profile])
@@ -50,6 +58,7 @@ cp $with_syrthes/bin/Makefile $outfile
 cat >> $outfile <<\_______EOF
 
 syr_info:
+	@echo $(NOM_ARCH) > syr-nomarch-tmp
 	@echo $(VERSION) > syr-version-tmp
 	@echo $(CC) > syr-cc-tmp
 	@echo $(FC) > syr-fc-tmp
@@ -59,14 +68,14 @@ _______EOF
 
 make -f $outfile syr_info > /dev/null
 
-SYRTHES_NOM_ARCH=${NOM_ARCH}
+SYRTHES_NOM_ARCH=`cat syr-nomarch-tmp`
 SYRTHES_VERSION=`cat syr-version-tmp`
 SYRTHES_CC=`cat syr-cc-tmp`
 SYRTHES_FC=`cat syr-fc-tmp`
 SYRTHES_CFLAGS=`cat syr-cflags-tmp`
 SYRTHES_FCFLAGS=`cat syr-fcflags-tmp`
 
-rm -f $outfile syr-version-tmp syr-cc-tmp syr-fc-tmp syr-cflags-tmp syr-fcflags-tmp
+rm -f $outfile syr-nomarch-tmp syr-version-tmp syr-cc-tmp syr-fc-tmp syr-cflags-tmp syr-fcflags-tmp
 
 # Get mandatory Fortran libs for linking stage
 # We assume that only SYRTHES user subroutines written in Fortran 77
