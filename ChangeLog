@@ -1,4 +1,9 @@
 * 09/02/2010 - David Monfort <david.monfort@edf.fr>
+  Rewrite the AUTHORS file with a firstname/lastname ordering.
+  modified file:
+    AUTHORS
+
+* 09/02/2010 - David Monfort <david.monfort@edf.fr>
   Improve the preprocessor and SYRTHES detection (especially, exit with
   failure if the preprocessor is not found, and handle Debian packaging
   system).
