@@ -315,6 +315,7 @@ class Setup:
         self.packages = {}
 
         url_cs = "http://research.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/%s"
+        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/918391265/724961558/%s"
 
         # BFT library
 
