@@ -314,7 +314,7 @@ class Setup:
         # Packages definition
         self.packages = {}
 
-        url_cs = "http://research.edf.com/fichiers/fckeditor/File/EDF%%20RD/Code_Saturne/Fichiers/%s"
+        url_cs = "http://research.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/%s"
 
         # BFT library
 
@@ -322,8 +322,8 @@ class Setup:
             Package(name="BFT",
                     description="Basic Functions and Tools",
                     package="bft",
-                    version="1.1.1",
-                    archive="bft-111.tgz",
+                    version="1.1.2",
+                    archive="bft-112.tgz",
                     url=url_cs)
 
         # FVM library
@@ -332,8 +332,8 @@ class Setup:
             Package(name="FVM",
                     description="Finite Volume Mesh",
                     package="fvm",
-                    version="0.14.0",
-                    archive="fvm-0140.tgz",
+                    version="0.15.0",
+                    archive="fvm-0150.tgz",
                     url=url_cs)
 
         p = self.packages['fvm']
@@ -345,8 +345,8 @@ class Setup:
             Package(name="MEI",
                     description="Mathematical Expressions Interpreter",
                     package="mei",
-                    version="1.0.0",
-                    archive="mei-100.tgz",
+                    version="1.0.1",
+                    archive="mei-101.tgz",
                     url=url_cs)
 
         # Code_Saturne Preprocessor
@@ -355,8 +355,8 @@ class Setup:
             Package(name="ECS",
                     description="Code_Saturne Preprocessor",
                     package="ecs",
-                    version="2.0-beta2",
-                    archive="ecs-200-beta2.tgz",
+                    version="2.0-rc1",
+                    archive="ecs-200rc1.tgz",
                     url=url_cs)
 
         # Code_Saturne Kernel
@@ -365,8 +365,8 @@ class Setup:
             Package(name="NCS",
                     description="Code_Saturne Kernel",
                     package="ncs",
-                    version="2.0-beta2",
-                    archive="ncs-200-beta2.tgz",
+                    version="2.0-rc1",
+                    archive="ncs-200rc1.tgz",
                     url=url_cs)
 
         p = self.packages['ncs']
@@ -429,7 +429,7 @@ class Setup:
             MetisPackage(name="Metis",
                          description="Graph partitioner",
                          package="metis",
-                         version="4.0",
+                         version="4.0.1",
                          archive="metis-4.0.tar.gz",
                          url="http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/%s")
 
@@ -439,8 +439,8 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.4",
-                    archive="openmpi-1.4.tar.gz",
+                    version="1.4.1",
+                    archive="openmpi-1.4.1.tar.gz",
                     url="http://www.open-mpi.org/software/ompi/v1.4/downloads/%s")
 
         # Libxml2 library (official url "ftp://xmlsoft.org/libxml2/%s")
@@ -451,7 +451,7 @@ class Setup:
                     package="libxml2",
                     version="2.6.32",
                     archive="libxml2-2.6.32.tar.gz",
-                    url="ftp://gd.tuwien.ac.at/pub/libxml/%s")
+                    url="ftp://fr.rpmfind.net/pub/libxml/%s")
 
 
         p = self.packages['libxml2']
@@ -461,7 +461,7 @@ class Setup:
 
         self.packages['swig'] = \
             Package(name="Swig",
-                    description="WrapperXML",
+                    description="Wrapper Python",
                     package="swig",
                     version="1.3.40",
                     archive="swig-1.3.40.tar.gz",

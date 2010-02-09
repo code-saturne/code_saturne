@@ -1,4 +1,11 @@
 * 09/02/2010 - David Monfort <david.monfort@edf.fr>
+  Update the Python installer for the 2.0-rc1 release.
+  modified files:
+    extras/installer/install_saturne.py
+    extras/installer/README.txt
+    extras/installer/setup
+
+* 09/02/2010 - David Monfort <david.monfort@edf.fr>
   Rewrite the AUTHORS file with a firstname/lastname ordering.
   modified file:
     AUTHORS

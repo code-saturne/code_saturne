@@ -130,6 +130,11 @@ for the directory where you want to install Code_Saturne.
 
       ../bft-x.y.z/configure --prefix=$prefix/cs-$version
 
+    Depending on the elements wanted, additional options can be added
+    to the configure:
+      --with-zlib=... for Zlib support
+      CC=...          to specify the compiler if necessary
+
   - run the "make" commands:
       make
       make install
@@ -176,8 +181,8 @@ for the directory where you want to install Code_Saturne.
 
     Depending on the elements wanted, additional options can be added
     to the configure:
-      --with-swig=...         for SWIG (Python bindings)
       --with-python-exec=...  for specific Python executable
+      --with-swig-exec=...    for SWIG (Python bindings)
 
   - run the "make" commands:
       make
@@ -198,12 +203,16 @@ for the directory where you want to install Code_Saturne.
 
     Depending on the elements wanted, additional options can be added
     to the configure:
-      --with-cgns=...  for CGNS support
-      --with-hdf5=...  for HDF5 (compulsory for MED)
-      --with-med=...   for MED
-      --with-metis=... for Metis optimised domain partitioning
-                           (strongly advised for parallel computing)
-      CC=...           to specify the compiler if necessary
+      --with-adf=...    for ADF support (compulsory for CCM if no CGNS)
+      --with-ccm=...    for CCM support
+      --with-cgns=...   for CGNS support
+      --with-hdf5=...   for HDF5 (compulsory for MED)
+      --with-med=...    for MED
+      --with-metis=...  for Metis optimised domain partitioning
+                            (strongly advised for parallel computing)
+      --with-scotch=... for Scotch optimised domain partitioning
+                           (alternative for Metis)
+      CC=...            to specify the compiler if necessary
 
   - run the "make" commands:
       make
@@ -221,9 +230,9 @@ for the directory where you want to install Code_Saturne.
   - from within the build directory, run the configure command:
 
       ../ncs-x.y.z/configure --prefix=$prefix/cs-$version \
-         --with-bft=$prefix/cs-$version
-         --with-fvm=$prefix/cs-$version
-         --with-mei=$prefix/cs-$version
+         --with-bft=$prefix/cs-$version \
+         --with-fvm=$prefix/cs-$version \
+         --with-mei=$prefix/cs-$version \
          --with-prepro=$prefix/cs-$version
 
     Depending on the elements wanted, additional options can be added
@@ -233,6 +242,7 @@ for the directory where you want to install Code_Saturne.
       --with-mpi=...          for MPI
       --with-syrthes=...      for SYRTHES coupling
       --with-python-exec=...  for specific Python executable
+      --with-pyqt4-exec=...   for PyQt4 developper tools
       CC=...           to specify the compiler if necessary
                          (especially if mpicc should be used, to get
                           the proper links to MPI libraries)
@@ -269,6 +279,7 @@ After changing the user ".profile", it is advised to logout and login,
 so that there is no mix-up in the PATH variable.
 
 For more information refer to the Code_Saturne documentation, available
-through the "cs info -g refcard" and "cs info -g user" commands.
+through the "code_saturne info -g refcard" and "code_saturnes info -g user"
+commands.
 
 Code_Saturne support: saturne-support@edf.fr

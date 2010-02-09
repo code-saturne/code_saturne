@@ -17,7 +17,7 @@ language  en
 #--------------------------------------------------------
 # Install Code_Saturne with debugging symbols
 #--------------------------------------------------------
-debug     yes
+debug     no
 #
 #--------------------------------------------------------
 # Installation directory
