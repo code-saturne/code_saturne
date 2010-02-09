@@ -1,3 +1,9 @@
+* 08/02/2010 - David Monfort <david.monfort@edf.fr>
+  Add a framework for an installation guide under the documentation directory.
+  modified scripts:
+    doc/Makefile.am
+    configure.ac
+
 * 05/02/2010 - David Monfort <david.monfort@edf.fr>
   Only emit a warning for missing partitioner when the number of processor is
   strictly greater than 1.
