@@ -1,3 +1,10 @@
+* 10/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve MPI launcher management in the Python runcase scripts.
+  modified scripts:
+    bin/cs_case.py
+    bin/cs_exec_environment.py
+    bin/runcase.py.in
+
 * 09/02/2010 - David Monfort <david.monfort@edf.fr>
   Temporarily by-pass the official web-site for Code_Saturne packages
   download (waiting for being granted access to www.code-saturne.org).

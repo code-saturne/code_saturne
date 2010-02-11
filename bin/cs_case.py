@@ -3,7 +3,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009  EDF
+#   Copyright (C) 2009-2010  EDF
 #
 #   Code_Saturne is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -28,6 +28,7 @@ import sys
 import stat
 
 import cs_config
+import cs_config_build
 import cs_exec_environment
 
 from cs_case_domain import *
@@ -776,7 +777,7 @@ class case:
 
         e.close()
 
-        cmd = cs_config.build.cc + ' -o ' + o_path + ' -g ' + e_path
+        cmd = cs_config_build.build.cc + ' -o ' + o_path + ' -g ' + e_path
 
         sys.stdout.write('\n'
                          'Generating MPMD launcher:\n\n')
@@ -807,6 +808,29 @@ class case:
             for d in self.syr_domains:
                 if d.coupling_mode == 'MPI':
                     n_procs += d.n_procs
+
+        n_mpi_syr = 0
+        for d in self.syr_domains:
+            if d.coupling_mode == 'MPI':
+                n_mpi_syr += 1
+
+        # Determine if an MPMD syntax (mpiexec variant) will be used
+
+        mpiexec_mpmd = False
+        if len(self.domains) > 1:
+            if mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
+                mpiexec_mpmd = True
+            elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_configfile:
+                mpiexec_mpmd = True
+
+        # Avoid mpiexec variant with SYRTHES as stdout must be redirected;
+
+        if n_mpi_syr > 0:
+            mpiexec_mpmd = False
+            mpi_env.unset_mpmd_mode(cs_exec_environment.MPI_MPMD_mpiexec)
+            mpi_env.unset_mpmd_mode(cs_exec_environment.MPI_MPMD_configfile)
+
+        # Initialize simple solver command script
 
         s_path = self.solver_script_path()
         s = open(s_path, 'w')
@@ -840,18 +864,16 @@ class case:
         mpi_cmd_args = ''
         if n_procs > 1 and mpi_env.mpiexec != None:
             mpi_cmd = mpi_env.mpiexec
-            if mpi_env.mpiexec_n != None:
-                mpi_cmd += mpi_env.mpiexec_n + str(n_procs)
-            mpi_cmd += ' '
-            if mpi_env.mpiexec_exe != None:
-                mpi_cmd += mpi_env.mpiexec_exe + ' '
-            if mpi_env.mpiexec_args != None:
-                mpi_cmd_args = mpi_env.mpiexec_args + ' '
-
-        n_mpi_syr = 0
-        for d in self.syr_domains:
-            if d.coupling_mode == 'MPI':
-                n_mpi_syr += 1
+            if mpiexec_mpmd == False:
+                if mpi_env.mpiexec_n != None:
+                    mpi_cmd += mpi_env.mpiexec_n + str(n_procs)
+                mpi_cmd += ' '
+                if mpi_env.mpiexec_exe != None:
+                    mpi_cmd += mpi_env.mpiexec_exe + ' '
+                if mpi_env.mpiexec_args != None:
+                    mpi_cmd_args = mpi_env.mpiexec_args + ' '
+            else:
+                mpi_cmd += ' '
 
         # Case with only one cs_solver instance possibly under MPI
 
@@ -895,21 +917,26 @@ class case:
         # General case
 
         else:
-            if mpi_env.mpmd == cs_exec_environment.MPI_MPMD_mpiexec:
 
-                # Avoid mpiexec with SYRTHES as stdout must be redirected
-                if len(self.syr_domains) == 0:
-                    e_path = self.generate_solver_mpmd_configfile(n_procs,
-                                                                  mpi_env)
-                    e_path = '-configfile ' + e_path
-                else:
-                    e_path = self.generate_solver_mpmd_script(n_procs,
+            if mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
+
+                e_path = self.generate_solver_mpmd_mpiexec(n_procs,
+                                                           mpi_env)
+
+            elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_configfile:
+
+                e_path = self.generate_solver_mpmd_configfile(n_procs,
                                                               mpi_env)
-            elif mpi_env.mpmd == cs_exec_environment.MPI_MPMD_script:
+                e_path = '-configfile ' + e_path
+
+            elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_script:
                 e_path = self.generate_solver_mpmd_script(n_procs, mpi_env)
 
-            elif mpi_env.mpmd == cs_exec_environment.MPI_MPMD_execve:
+            elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_execve:
                 e_path = self.generate_solver_execve_launcher(n_procs, mpi_env)
+
+            else:
+                raise RunCaseError, ' No allowed MPI MPMD mode defined.\n'
 
             s.write(mpi_cmd + e_path + '\n')
 

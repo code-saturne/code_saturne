@@ -3,7 +3,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009  EDF
+#   Copyright (C) 2009-2010  EDF
 #
 #   Code_Saturne is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -350,9 +350,11 @@ class resource_info(batch_info):
 # MPI environments and associated commands
 #-------------------------------------------------------------------------------
 
-MPI_MPMD_mpiexec = (1<<0)
-MPI_MPMD_script =  (1<<1)
-MPI_MPMD_execve =  (1<<2)
+MPI_MPMD_none       = 0
+MPI_MPMD_mpiexec    = (1<<0) # mpiexec colon-separated syntax
+MPI_MPMD_configfile = (1<<1) # mpiexec -configfile syntax
+MPI_MPMD_script     = (1<<2)
+MPI_MPMD_execve     = (1<<3)
 
 class mpi_environment:
 
@@ -377,7 +379,7 @@ class mpi_environment:
         self.mpiexec_n = None
         self.mpiexec_exe = None
         self.mpiexec_args = None
-        self.mpmd = MPI_MPMD_mpiexec
+        self.mpmd = MPI_MPMD_none
 
         self.info_cmds = None
 
@@ -449,7 +451,7 @@ class mpi_environment:
         launcher_base = os.path.basename(self.mpiexec)
 
         if launcher_base[:7] == 'mpiexec':
-            self.mpmd = MPI_MPMD_mpiexec
+            self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_configfile | MPI_MPMD_script
             self.mpiexec_n = ' -n '
         elif launcher_base[:7] == 'mpirun':
             self.mpiexec_n = ' -np '
@@ -566,7 +568,7 @@ class mpi_environment:
 
         self.mpiexec_n = ' -n '
         if launcher_base[:7] == 'mpiexec':
-            self.mpmd = MPI_MPMD_mpiexec
+            self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_script
         elif launcher_base[:7] == 'mpirun':
             self.mpmd = MPI_MPMD_script
 
@@ -625,7 +627,7 @@ class mpi_environment:
 
         if launcher_base[:7] == 'mpiexec':
             self.mpiexec_n = ' -n '
-            self.mpmd = MPI_MPMD_mpiexec
+            self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_script
         elif launcher_base[:7] == 'mpirun':
             self.mpiexec_n = ' -np '
             self.mpmd = MPI_MPMD_script
@@ -689,7 +691,7 @@ class mpi_environment:
         launcher_base = os.path.basename(self.mpiexec)
 
         self.mpiexec_n = None
-        self.mpmd = MPI_MPMD_mpiexec
+        self.mpmd = MPI_MPMD_configfile
 
         # Other options to add
 
@@ -791,6 +793,8 @@ class mpi_environment:
                 self.mpiexec = 'poe'
                 self.mpiexec_n = None
 
+        self.mpmd = MPI_MPMD_script
+
     #---------------------------------------------------------------------------
 
     def info(self):
@@ -804,6 +808,16 @@ class mpi_environment:
                 output += get_command_output(cmd) + '\n'
 
         return output
+
+    #---------------------------------------------------------------------------
+
+    def unset_mpmd_mode(self, mpi_mpmd_mode):
+        """
+        Unset mask allowing a given mpmd mode.
+        """
+
+        if self.mpmd & mpi_mpmd_mode:
+            self.mpmd = self.mpmd ^ mpi_mpmd_mode
 
 #-------------------------------------------------------------------------------
 # Execution environment (including MPI, OpenMP, ...)
