@@ -5140,10 +5140,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
   FILE *file = NULL;
   char *filename = NULL;
   char *title = NULL;
-  char *buffer = NULL;
   char *name = NULL;
-  char *buf1 = NULL;
-  char *buf2 = NULL;
 
   int fic_nbr = 0;
   int i, ii, iii, j;
@@ -5191,30 +5188,21 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
 
         if (output_frequency > 0) {
 
+          char buf1[5];
+          const char buffer[5] = "%.4i";
+
           /* Extension creation : format stored in 'buffer' */
-          j = cs_gui_characters_number(*ntmabs);
 
-          BFT_MALLOC(buffer, 3, char);
-          BFT_MALLOC(buf2, j+1, char);
-          strcpy(buffer, "%.");
-          sprintf(buf2, "%i", j);
-          BFT_REALLOC(buffer, j+1, char);
-          strcat(buffer, buf2);
-          strcat(buffer, "i");
-
-          BFT_MALLOC(buf1, j+1, char);
           sprintf(buf1, buffer, *ntcabs);
 
-          BFT_REALLOC(filename, j, char);
+          BFT_REALLOC(filename, strlen(filename) + 1 + 4 + 1, char);
+
           strcat(filename, "_");
           strcat(filename, buf1);
 
-          BFT_FREE(buf1);
-          BFT_FREE(buf2);
-          BFT_FREE(buffer);
         }
 
-        BFT_REALLOC(filename, 4, char);
+        BFT_REALLOC(filename, strlen(filename) + 4 + 1, char);
         strcat(filename, ".dat");
         file = fopen(filename, "w");
 
@@ -5234,7 +5222,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
         fprintf(file, "#TITLE: %s\n", title);
         fprintf(file, "#COLUMN_TITLES: Distance | X | Y | Z");
         for (ii = 0 ; ii < nvar_prop ; ii++) {
-          buffer = _get_profile_label_name(i, ii);
+          char *buffer = _get_profile_label_name(i, ii);
           fprintf(file, " | %s", buffer);
           BFT_FREE(buffer);
         }
