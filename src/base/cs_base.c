@@ -309,7 +309,10 @@ _cs_base_err_vprintf(const char  *format,
                                                             bft_timer_wtime()
                                                             is unusable. */
 #endif
-      sprintf(nom_fic_err, "error_n%04d", cs_glob_rank_id + 1);
+      if (cs_glob_n_ranks > 9999)
+        sprintf(nom_fic_err, "error_n%07d", cs_glob_rank_id + 1);
+      else
+        sprintf(nom_fic_err, "error_n%04d", cs_glob_rank_id + 1);
     }
 
     stderr = freopen(nom_fic_err, "w", stderr);
