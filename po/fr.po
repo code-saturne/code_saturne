@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-01-19 15:36+0100\n"
+"POT-Creation-Date: 2010-02-12 19:18+0100\n"
 "PO-Revision-Date: 2010-01-11 12:50+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -116,7 +116,7 @@ msgstr ""
 "Erreur fatale: bft_printf() appellé sur message de taille %d\n"
 "alors que le tampon d'impression est de taille %d."
 
-#: src/base/cs_base.c:395
+#: src/base/cs_base.c:398
 #, c-format
 msgid ""
 "\n"
@@ -125,7 +125,7 @@ msgstr ""
 "\n"
 "Erreur système : %s\n"
 
-#: src/base/cs_base.c:397
+#: src/base/cs_base.c:400
 #, c-format
 msgid ""
 "\n"
@@ -136,7 +136,7 @@ msgstr ""
 "%s:%d: Erreur fatale.\n"
 "\n"
 
-#: src/base/cs_base.c:417
+#: src/base/cs_base.c:420
 msgid ""
 "\n"
 "\n"
@@ -150,27 +150,27 @@ msgstr ""
 "------------------------------\n"
 "\n"
 
-#: src/base/cs_base.c:424
+#: src/base/cs_base.c:427
 #, c-format
 msgid "Theoretical current allocated memory:   %lu kB\n"
 msgstr "Mémoire dynamique instrumentée théorique : %lu ko\n"
 
-#: src/base/cs_base.c:428
+#: src/base/cs_base.c:431
 #, c-format
 msgid "Theoretical maximum allocated memory:   %lu kB\n"
 msgstr "Mémoire dynamique instrumentée théorique : %lu ko\n"
 
-#: src/base/cs_base.c:438
+#: src/base/cs_base.c:441
 #, c-format
 msgid "Maximum program memory measure:         %lu kB\n"
 msgstr "Mémoire programme mesurée maximale:        %lu ko\n"
 
-#: src/base/cs_base.c:446
+#: src/base/cs_base.c:449
 #, c-format
 msgid "Current program memory measure:         %lu kB\n"
 msgstr "Mémoire programme mesurée courante:        %lu ko\n"
 
-#: src/base/cs_base.c:508
+#: src/base/cs_base.c:511
 msgid ""
 "\n"
 "Call stack:\n"
@@ -178,7 +178,7 @@ msgstr ""
 "\n"
 "Pile d'appels :\n"
 
-#: src/base/cs_base.c:536
+#: src/base/cs_base.c:539
 msgid ""
 "End of stack\n"
 "\n"
@@ -186,7 +186,7 @@ msgstr ""
 "Fin de la pile\n"
 "\n"
 
-#: src/base/cs_base.c:554
+#: src/base/cs_base.c:557
 msgid ""
 "SIGHUP signal (hang-up) intercepted.\n"
 "--> computation interrupted.\n"
@@ -194,7 +194,7 @@ msgstr ""
 "Signal SIGHUP (déconnexion) intercepté.\n"
 "--> calcul interrompu.\n"
 
-#: src/base/cs_base.c:560
+#: src/base/cs_base.c:563
 msgid ""
 "SIGINT signal (Control+C or equivalent) received.\n"
 "--> computation interrupted by user.\n"
@@ -202,7 +202,7 @@ msgstr ""
 "Signal SIGINT (Control+C ou équivalent) reçu.\n"
 "--> calcul interrompu par l'utilisateur.\n"
 
-#: src/base/cs_base.c:565
+#: src/base/cs_base.c:568
 msgid ""
 "SIGTERM signal (termination) received.\n"
 "--> computation interrupted by environment.\n"
@@ -210,24 +210,24 @@ msgstr ""
 "Signal SIGTERM (terminaison) reçu.\n"
 "--> calcul interrompu par l'environnement.\n"
 
-#: src/base/cs_base.c:570
+#: src/base/cs_base.c:573
 msgid "SIGFPE signal (floating point exception) intercepted!\n"
 msgstr "Signal SIGFPE (exception en virgule flottante) intercepté !\n"
 
-#: src/base/cs_base.c:575
+#: src/base/cs_base.c:578
 msgid "SIGSEGV signal (forbidden memory area access) intercepted!\n"
 msgstr "Signal SIGSEGV (accès à une zone mémoire interdite) intercepté !\n"
 
-#: src/base/cs_base.c:581
+#: src/base/cs_base.c:584
 msgid "SIGXCPU signal (CPU time limit reached) intercepted.\n"
 msgstr "Signal SIGXCPU (temps CPU limite atteint) intercepté.\n"
 
-#: src/base/cs_base.c:587
+#: src/base/cs_base.c:590
 #, c-format
 msgid "Signal %d intercepted!\n"
 msgstr "Signal %d intercepté !\n"
 
-#: src/base/cs_base.c:645
+#: src/base/cs_base.c:648
 #, c-format
 msgid ""
 "\n"
@@ -238,7 +238,7 @@ msgstr ""
 "Erreur MPI (communicateur %s):\n"
 "%s\n"
 
-#: src/base/cs_base.c:648
+#: src/base/cs_base.c:651
 #, c-format
 msgid ""
 "\n"
@@ -249,7 +249,7 @@ msgstr ""
 "Erreur MPI :\n"
 "%s\n"
 
-#: src/base/cs_base.c:763
+#: src/base/cs_base.c:766
 #, c-format
 msgid ""
 " Sub-routine calling iasize:                %s\n"
@@ -264,7 +264,7 @@ msgstr ""
 "\n"
 " ----> Définir iasize au moins égale à %d entiers)."
 
-#: src/base/cs_base.c:807
+#: src/base/cs_base.c:810
 #, c-format
 msgid ""
 " Sub-routine calling rasize:             %s\n"
@@ -279,15 +279,15 @@ msgstr ""
 "\n"
 " ----> Définir rasize au moins égale à %d réels)."
 
-#: src/base/cs_base.c:1088
+#: src/base/cs_base.c:1091
 msgid "Total memory used:                       "
 msgstr "Consommation mémoire totale mesurée :     "
 
-#: src/base/cs_base.c:1089
+#: src/base/cs_base.c:1092
 msgid "Theoretical instrumented dynamic memory: "
 msgstr "Mémoire dynamique instrumentée théorique :"
 
-#: src/base/cs_base.c:1093
+#: src/base/cs_base.c:1096
 msgid ""
 "\n"
 "Memory use summary:\n"
@@ -297,22 +297,22 @@ msgstr ""
 "Bilan de l'occupation mémoire :\n"
 "\n"
 
-#: src/base/cs_base.c:1156
+#: src/base/cs_base.c:1159
 #, c-format
 msgid "  %s %12.3f %cb\n"
 msgstr "  %s %12.3f %co\n"
 
-#: src/base/cs_base.c:1161
+#: src/base/cs_base.c:1164
 #, c-format
 msgid "                             local minimum: %12.3f %cb  (rank %d)\n"
 msgstr "                             minimum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1164
+#: src/base/cs_base.c:1167
 #, c-format
 msgid "                             local maximum: %12.3f %cb  (rank %d)\n"
 msgstr "                             maximum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1204
+#: src/base/cs_base.c:1207
 #, c-format
 msgid ""
 "\n"
@@ -331,7 +331,7 @@ msgstr ""
 "   Mémoire de travail maximale locale demandée %12.3f %co\n"
 "                                      utilisée %12.3f %co\n"
 
-#: src/base/cs_base.c:1241
+#: src/base/cs_base.c:1244
 msgid ""
 "\n"
 "Calculation time summary:\n"
@@ -339,7 +339,7 @@ msgstr ""
 "\n"
 "Bilan des temps de calcul :\n"
 
-#: src/base/cs_base.c:1255
+#: src/base/cs_base.c:1258
 #, c-format
 msgid ""
 "\n"
@@ -348,12 +348,12 @@ msgstr ""
 "\n"
 "  Temps CPU utilisateur : %12.3f s\n"
 
-#: src/base/cs_base.c:1257
+#: src/base/cs_base.c:1260
 #, c-format
 msgid "  System CPU time:     %12.3f s\n"
 msgstr "  Temps CPU système :     %12.3f s\n"
 
-#: src/base/cs_base.c:1262
+#: src/base/cs_base.c:1265
 #, c-format
 msgid ""
 "\n"
@@ -362,12 +362,12 @@ msgstr ""
 "\n"
 "  Temps CPU :             %12.3f s\n"
 
-#: src/base/cs_base.c:1271
+#: src/base/cs_base.c:1274
 #, c-format
 msgid "  Total CPU time:      %12.3f s\n"
 msgstr "  Temps CPU cumulé :      %12.3f s\n"
 
-#: src/base/cs_base.c:1282
+#: src/base/cs_base.c:1285
 #, c-format
 msgid ""
 "\n"
@@ -376,52 +376,52 @@ msgstr ""
 "\n"
 "  Temps écoulé :          %12.3f s\n"
 
-#: src/base/cs_base.c:1285
+#: src/base/cs_base.c:1288
 #, c-format
 msgid "  CPU / elapsed time   %12.3f\n"
 msgstr "  Temps CPU / écoulé      %12.3f\n"
 
-#: src/base/cs_base.c:1377
+#: src/base/cs_base.c:1380
 msgid "Local case configuration:\n"
 msgstr "Configuration locale du cas :\n"
 
-#: src/base/cs_base.c:1379
+#: src/base/cs_base.c:1382
 msgid "Date:              "
 msgstr "Date :             "
 
-#: src/base/cs_base.c:1387
+#: src/base/cs_base.c:1390
 msgid "System:            "
 msgstr "Système :          "
 
-#: src/base/cs_base.c:1389
+#: src/base/cs_base.c:1392
 msgid "Machine:           "
 msgstr "Machine :          "
 
-#: src/base/cs_base.c:1393
+#: src/base/cs_base.c:1396
 msgid "Processor:         "
 msgstr "Processeur :       "
 
-#: src/base/cs_base.c:1396
+#: src/base/cs_base.c:1399
 msgid "Memory:            "
 msgstr "Mémoire :          "
 
-#: src/base/cs_base.c:1399
+#: src/base/cs_base.c:1402
 msgid "User:              "
 msgstr "Utilisateur :      "
 
-#: src/base/cs_base.c:1403
+#: src/base/cs_base.c:1406
 msgid "Directory:         "
 msgstr "Répertoire :       "
 
-#: src/base/cs_base.c:1406
+#: src/base/cs_base.c:1409
 msgid "MPI ranks:         "
 msgstr "Rangs MPI :        "
 
-#: src/base/cs_base.c:1409
+#: src/base/cs_base.c:1412
 msgid "OpenMP threads:    "
 msgstr "Threads OpenMP:    "
 
-#: src/base/cs_base.c:1439
+#: src/base/cs_base.c:1442
 #, c-format
 msgid ""
 "\n"
@@ -1220,7 +1220,7 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune cellule.\n"
 
-#: src/base/cs_gui.c:5223 src/base/cs_gui_util.c:159
+#: src/base/cs_gui.c:5211 src/base/cs_gui_util.c:159
 #, c-format
 msgid "Unable to open the file: %s\n"
 msgstr ""
@@ -1260,7 +1260,7 @@ msgstr ""
 msgid "Formula is null for %s %s"
 msgstr ""
 
-#: src/base/cs_gui_mobile_mesh.c:973
+#: src/base/cs_gui_mobile_mesh.c:985
 msgid "Formula is null for ale.\n"
 msgstr ""
 
@@ -3325,7 +3325,7 @@ msgid ""
 "parameters."
 msgstr ""
 
-#: src/base/cs_mesh_solcom.c:382 src/base/cs_post.c:3379
+#: src/base/cs_mesh_solcom.c:382 src/base/cs_post.c:3394
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
@@ -3915,11 +3915,11 @@ msgstr ""
 msgid "parallel domain"
 msgstr ""
 
-#: src/base/cs_post.c:948
+#: src/base/cs_post.c:951
 msgid "displacement"
 msgstr ""
 
-#: src/base/cs_post.c:1882
+#: src/base/cs_post.c:1885
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IVARPR must be\n"
@@ -3928,7 +3928,7 @@ msgstr ""
 "L'argument IVARPR du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1891
+#: src/base/cs_post.c:1894
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IENTLA must be\n"
@@ -3937,7 +3937,7 @@ msgstr ""
 "L'argument IENTLA du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1958
+#: src/base/cs_post.c:1961
 msgid ""
 "The requested post-processing writer number\n"
 "must be < 0 (reserved) or > 0 (user).\n"
@@ -3945,7 +3945,7 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-#: src/base/cs_post.c:1964
+#: src/base/cs_post.c:1967
 #, c-format
 msgid ""
 "The requested post-processing writer number\n"
@@ -3954,7 +3954,11 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "(%d) a déjà été affecté.\n"
 
-#: src/base/cs_post.c:2267
+#: src/base/cs_post.c:2228 src/base/cs_post.c:2231
+msgid " edges"
+msgstr ""
+
+#: src/base/cs_post.c:2320
 #, c-format
 msgid ""
 "The mesh %d cannot be an alias of mesh %d,\n"
@@ -3963,11 +3967,7 @@ msgstr ""
 "Le maillage %d ne peut être un alias du maillage %d,\n"
 "qui est lui-même déjà un alias du maillage %d.\n"
 
-#: src/base/cs_post.c:2332 src/base/cs_post.c:2335
-msgid " edges"
-msgstr ""
-
-#: src/base/cs_post.c:3224
+#: src/base/cs_post.c:3239
 #, c-format
 msgid ""
 "\n"
@@ -3988,11 +3988,11 @@ msgstr ""
 "  Temps écoulé pour les maillages : %12.3f\n"
 "  Temps écoulé pour les champs :    %12.3f\n"
 
-#: src/base/cs_post.c:3396
+#: src/base/cs_post.c:3411
 msgid "Boundary"
 msgstr "Bord"
 
-#: src/base/cs_post.c:3520
+#: src/base/cs_post.c:3535
 msgid "Calculation domain"
 msgstr "Domaine de calcul"
 
@@ -4813,11 +4813,11 @@ msgstr ""
 "\n"
 " *** Renumerotation de la liste des faces de bord    ..."
 
-#: src/base/cs_syr3_coupling.c:827 src/base/cs_syr4_coupling.c:624
+#: src/base/cs_syr3_coupling.c:827 src/base/cs_syr4_coupling.c:623
 msgid "Wall T"
 msgstr "T Paroi"
 
-#: src/base/cs_syr3_coupling.c:837 src/base/cs_syr4_coupling.c:624
+#: src/base/cs_syr3_coupling.c:837 src/base/cs_syr4_coupling.c:623
 msgid "Flux"
 msgstr "Flux"
 
@@ -4837,7 +4837,7 @@ msgstr ""
 "\n"
 "Libération des structures associées au couplage avec SYRTHES 3.\n"
 
-#: src/base/cs_syr3_coupling.c:1253 src/base/cs_syr4_coupling.c:977
+#: src/base/cs_syr3_coupling.c:1253 src/base/cs_syr4_coupling.c:976
 #, c-format
 msgid ""
 "\n"
@@ -4901,7 +4901,7 @@ msgstr "\tInterpolation des sommets vers les éléments           ..."
 msgid "\tInterpolation from elements to vertices            ..."
 msgstr "\tInterpolation des éléments sur les sommets            ..."
 
-#: src/base/cs_syr3_messages.c:157 src/base/cs_syr4_coupling.c:934
+#: src/base/cs_syr3_messages.c:157 src/base/cs_syr4_coupling.c:933
 #, c-format
 msgid ""
 "========================================================\n"
@@ -4956,7 +4956,7 @@ msgstr ""
 msgid " SYRTHES coupling %d: initializing MPI communication ... "
 msgstr " Couplage SYRTHES %d : initialisation de la communication MPI ..."
 
-#: src/base/cs_syr4_coupling.c:350
+#: src/base/cs_syr4_coupling.c:349
 msgid ""
 "\n"
 "Extracting coupled mesh             ..."
@@ -4964,17 +4964,17 @@ msgstr ""
 "\n"
 "Extraction du maillage couplé           ..."
 
-#: src/base/cs_syr4_coupling.c:358
+#: src/base/cs_syr4_coupling.c:357
 #, c-format
 msgid "SYRTHES_cells_%d"
 msgstr "Cellules_SYRTHES_%d"
 
-#: src/base/cs_syr4_coupling.c:379
+#: src/base/cs_syr4_coupling.c:378
 #, c-format
 msgid "SYRTHES_faces_%d"
 msgstr "Faces_SYRTHES_%d"
 
-#: src/base/cs_syr4_coupling.c:406
+#: src/base/cs_syr4_coupling.c:405
 #, c-format
 msgid ""
 " Selection criteria:\n"
@@ -4985,15 +4985,15 @@ msgstr ""
 " \"%s\"\n"
 " produit un maillage vide pour le couplage SYRTHES.\n"
 
-#: src/base/cs_syr4_coupling.c:421
+#: src/base/cs_syr4_coupling.c:420
 msgid "Projecting the extracted mesh to 2D ..."
 msgstr "Projection 2D du maillage extrait  ..."
 
-#: src/base/cs_syr4_coupling.c:429
+#: src/base/cs_syr4_coupling.c:428
 msgid "Error projecting the extracted mesh."
 msgstr "Erreur lors de la projection du maillage extrait."
 
-#: src/base/cs_syr4_coupling.c:456
+#: src/base/cs_syr4_coupling.c:455
 #, c-format
 msgid ""
 "\n"
@@ -5002,7 +5002,7 @@ msgstr ""
 "\n"
 "Maillage extrait composé de %lu éléments.\n"
 
-#: src/base/cs_syr4_coupling.c:507
+#: src/base/cs_syr4_coupling.c:506
 #, c-format
 msgid ""
 "Coupling with SYRTHES impossible:\n"
@@ -5013,7 +5013,7 @@ msgstr ""
 "%lu centres d'éléments du maillage \"%s\"\n"
 "non localisés sur le maillage SYRTHES."
 
-#: src/base/cs_syr4_coupling.c:763
+#: src/base/cs_syr4_coupling.c:762
 msgid ""
 "Coupling with SYRTHES impossible.\n"
 "No selection criteria for faces or cells to couple."
@@ -5021,7 +5021,7 @@ msgstr ""
 "Couplage avec SYRTHES impossible.\n"
 "Aucun critère de sélection pour les faces ou les cellules à coupler."
 
-#: src/base/cs_syr4_coupling.c:831
+#: src/base/cs_syr4_coupling.c:830
 msgid ""
 "\n"
 "Structures associated with SYRTHES 4 coupling freed.\n"
@@ -5029,7 +5029,7 @@ msgstr ""
 "\n"
 "Libération des structures associées au couplage avec SYRTHES 4.\n"
 
-#: src/base/cs_syr4_coupling.c:878
+#: src/base/cs_syr4_coupling.c:877
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5046,7 +5046,7 @@ msgstr ""
 "      Options SYRTHES      : \"%s\"\n"
 "========================================================\n"
 
-#: src/base/cs_syr4_coupling.c:949
+#: src/base/cs_syr4_coupling.c:948
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5063,7 +5063,7 @@ msgstr ""
 "      message attendu : cmd:iter:start\n"
 "========================================================\n"
 
-#: src/base/cs_syr4_coupling.c:1008
+#: src/base/cs_syr4_coupling.c:1007
 #, c-format
 msgid ""
 " Message received from SYRTHES: \"%s\"\n"
@@ -5072,7 +5072,7 @@ msgstr ""
 " Le message reçu de SYRTHES: \"%s\"\n"
 " indique une erreur ou est inattendu."
 
-#: src/base/cs_syr4_coupling.c:1013
+#: src/base/cs_syr4_coupling.c:1012
 #, c-format
 msgid ""
 "\n"
