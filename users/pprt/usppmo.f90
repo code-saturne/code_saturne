@@ -130,8 +130,8 @@ ippmod(icolwc) = -1
 ! ========== CP3PL Combustible moyen local
 
 !        if = -1   module not activated
-!        if = 0    Transport d'H2
-!        if = 1    Transport d'H2 + sechage
+!        if = 0    H2 transport
+!        if = 1    H2 transport + drying
 
 ippmod(icp3pl) = -1
 
@@ -139,8 +139,8 @@ ippmod(icp3pl) = -1
 ! ========== and granulometry
 
 !        if = -1   module not activated
-!        if = 0    Transport d'H2
-!        if = 1    Transport d'H2 + sechage (non operationnel)
+!        if = 0    H2 transport
+!        if = 1    H2 transport + drying (NOT functional)
 
 ippmod(icpl3c) = -1
 
