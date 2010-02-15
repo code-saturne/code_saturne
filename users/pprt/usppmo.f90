@@ -164,10 +164,10 @@ ippmod(icompf) = -1
 ! ==========
 
 !        if = -1   module not activated
-!        if = 1    Potentiel reel
-!        if = 2    Potentiel complexe
-!        if = 3    Potentiel reel     + CDL Transfo
-!        if = 4    Potentiel complexe + CDL Transfo
+!        if = 1    real potential
+!        if = 2    complex potential
+!        if = 3    real potential    + transfo CDL
+!        if = 4    complex potential + transfo CDL
 
 ippmod(ieljou) = -1
 
