@@ -128,7 +128,6 @@ integer          idebia , idebra , ifinia , ifinra
 integer          ipt    , iel
 integer          inc    , iccocg , iphydp , iclvar, nswrgp
 integer          iwarnp , imligp , idimte , itenso
-integer          iuiph  , iviph  , iwiph
 
 double precision epsrgp , climgp , extrap
 double precision dx     , dy     , dz
@@ -139,24 +138,20 @@ idebia = idbia0
 idebra = idbra0
 
 
-iuiph = iu(iphas)
-iviph = iv(iphas)
-iwiph = iw(iphas)
-
 if(irangp.ge.0) then
   call parcom(rtpa(1,ivar))
   !==========
 endif
 
 if(iperio.eq.1) then
-  idimte = 1
+  idimte = 0
   itenso = 0
-  call percom                                                     &
+  call percom                                                  &
   !==========
- ( idimte, itenso ,                                               &
-   rtpa(1,iuiph), rtpa(1,iuiph), rtpa(1,iuiph) ,                  &
-   rtpa(1,iviph), rtpa(1,iviph), rtpa(1,iviph) ,                  &
-   rtpa(1,iwiph), rtpa(1,iwiph), rtpa(1,iwiph) )
+ ( idimte, itenso ,                                            &
+   rtpa(1,ivar), rtpa(1,ivar), rtpa(1,ivar) ,                  &
+   rtpa(1,ivar), rtpa(1,ivar), rtpa(1,ivar) ,                  &
+   rtpa(1,ivar), rtpa(1,ivar), rtpa(1,ivar) )
 endif
 
 inc    = 1

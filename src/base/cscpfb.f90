@@ -134,6 +134,7 @@ integer          ipt    , ifac   , iel    , isou
 integer          ivar   , iscal  , iphas  , ipcrom
 integer          ipriph , iuiph  , iviph  , iwiph
 integer          ikiph  , iepiph , ifbiph , iomiph , iphiph
+integer          ir11ip , ir22ip , ir33ip , ir12ip , ir13ip , ir23ip
 integer          itravx , itravy , itravz
 integer          igradx , igrady , igradz
 integer          inc    , iccocg , iphydp , iclvar, nswrgp
@@ -886,6 +887,37 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation des Rij en J'
 
+    if (irangp.ge.0) then
+      do isou = 1, 6
+        if (isou.eq.1) ivar = ir11(iphas)
+        if (isou.eq.2) ivar = ir22(iphas)
+        if (isou.eq.3) ivar = ir33(iphas)
+        if (isou.eq.4) ivar = ir12(iphas)
+        if (isou.eq.5) ivar = ir13(iphas)
+        if (isou.eq.6) ivar = ir23(iphas)
+        call parcom ( rtp(1,ivar) )
+        !==========
+      enddo
+    endif
+
+    if (iperio.eq.1) then
+      idimte = 2
+      itenso = 0
+      ir11ip = ir11(iphas)
+      ir22ip = ir22(iphas)
+      ir33ip = ir33(iphas)
+      ir12ip = ir12(iphas)
+      ir13ip = ir13(iphas)
+      ir23ip = ir23(iphas)
+      call percom                                               &
+      !==========
+    ( idimte , itenso ,                                         &
+      rtp(1,ir11ip), rtp(1,ir12ip), rtp(1,ir13ip),              &
+      rtp(1,ir12ip), rtp(1,ir22ip), rtp(1,ir23ip),              &
+      rtp(1,ir13ip), rtp(1,ir23ip), rtp(1,ir33ip) )
+    endif
+
+
     do isou = 1, 6
 
       if (isou.eq.1) ivar = ir11(iphas)
@@ -894,22 +926,6 @@ do iphas = 1, nphas
       if (isou.eq.4) ivar = ir12(iphas)
       if (isou.eq.5) ivar = ir13(iphas)
       if (isou.eq.6) ivar = ir23(iphas)
-
-      if (irangp.ge.0) then
-        call parcom ( rtp(1,ivar) )
-        !==========
-      endif
-
-      if (iperio.eq.1) then
-        idimte = 0
-        itenso = 0
-        call percom                                               &
-        !==========
-      ( idimte , itenso ,                                         &
-        rtp(1,ivar) , rtp(1,ivar) , rtp(1,ivar) ,                 &
-        rtp(1,ivar) , rtp(1,ivar) , rtp(1,ivar) ,                 &
-        rtp(1,ivar) , rtp(1,ivar) , rtp(1,ivar) )
-      endif
 
       inc    = 1
       iccocg = 1

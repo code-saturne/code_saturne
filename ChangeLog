@@ -1,3 +1,9 @@
+* 15/02/2010 - David Monfort <david.monfort@edf.fr>
+  Minor fixes for the treatment of periodicity with code/code coupling.
+  modified routines:
+    src/base/cscpce.f90
+    src/base/cscpfb.f90
+
 * 12/02/2010 - David Monfort <david.monfort@edf.fr>
   Fix issues in the filename handling for profiles generation with the GUI.
   modified routine:
