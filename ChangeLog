@@ -505,6 +505,7 @@
   Change the behaviour of the pre-requisites detection by adding
   a check option. When a package is requested, exit with an error
   if the package is not found.
+  Thanks for Sylvestre Ledru for advice.
   modified scripts:
     config/cs_bft.m4
     config/cs_blas.m4
