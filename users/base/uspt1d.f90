@@ -82,38 +82,36 @@ subroutine uspt1d &
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nfml             ! e  ! <-- ! nombre de familles d entites                   !
-! nprfml           ! e  ! <-- ! nombre de proprietese des familles             !
-! nvar             ! e  ! <-- ! nombre total de variables                      !
-! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! nphas            ! e  ! <-- ! nombre de phases                               !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! nfml             ! i  ! <-- ! number of families (group classes)             !
+! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
+! nvar             ! i  ! <-- ! total number of variables                      !
+! nscal            ! i  ! <-- ! total number of scalars                        !
+! nphas            ! i  ! <-- ! number of phases                               !
 ! nfpt1d           ! e  ! <-- ! nombre de faces avec module therm 1d           !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
-! ifmfbr           ! te ! <-- ! numero de famille d'une face de bord           !
-! (nfabor)         !    !     !                                                !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
-! nfml  ,nprfml    !    !     !                                                !
-! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
-! lstelt(maxelt) te ! --- ! tableau de travail                             !
+! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
+! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
+! iprfml           ! ia ! <-- ! property numbers per family                    !
+!  (nfml, nprfml)  !    !     !                                                !
+! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
+! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ifpt1d           ! te ! <-- ! numero de la face en traitement                !
 !                  !    !     ! thermique en paroi                             !
 ! nppt1d           ! te ! <-- ! nombre de points de discretisation             !
 !                  !    !     ! dans la paroi                                  !
 ! iclt1d           ! te ! <-- ! type de condition limite                       !
-! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
-! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! eppt1d           ! tr ! <-- ! epaisseur de la paroi                          !
 ! rgpt1d           ! tr ! <-- ! raison du maillage                             !
 ! tppt1d           ! tr ! <-- ! temperature de paroi                           !
@@ -123,23 +121,21 @@ subroutine uspt1d &
 ! xlmt1d           ! tr ! <-- ! conductivite thermique de la paroi             !
 ! rcpt1d           ! tr ! <-- ! rocp de la paroi                               !
 ! dtpt1d           ! tr ! <-- ! pas de temps de la paroi                       !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
-! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
-! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! ia(*)            ! ia ! --- ! main integer work array                        !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
+! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"

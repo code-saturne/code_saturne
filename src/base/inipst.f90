@@ -41,7 +41,7 @@ subroutine inipst &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ipstvl           ! e  ! --> ! indicateur pour le maillage volumique          !
 ! ipstbo           ! e  ! --> ! indicateur pour le maillage de peau            !
@@ -75,7 +75,7 @@ implicit none
 !===============================================================================
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -91,7 +91,7 @@ integer          ipstmd , ntpst
 character        fmtpst(32)
 character        optpst(96)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ii
 

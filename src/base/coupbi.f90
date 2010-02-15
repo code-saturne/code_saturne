@@ -46,16 +46,16 @@ subroutine coupbi &
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nvar             ! e  ! <-- ! nombre total de variables                      !
-! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! nphas            ! e  ! <-- ! nombre de phases                               !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! nvar             ! i  ! <-- ! total number of variables                      !
+! nscal            ! i  ! <-- ! total number of scalars                        !
+! nphas            ! i  ! <-- ! number of phases                               !
+! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -65,9 +65,9 @@ subroutine coupbi &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
-! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -80,9 +80,9 @@ subroutine coupbi &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
-! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
+! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -94,7 +94,7 @@ subroutine coupbi &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -120,7 +120,7 @@ integer          idevel(nideve), ituser(nituse), ia(*)
 double precision rcodcl(nfabor,nvar,3)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ll, nbccou, inbcou, inbcoo, nbfcou
 integer          ifac, iloc, iscal , iphas

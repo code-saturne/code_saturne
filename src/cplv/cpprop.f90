@@ -41,7 +41,7 @@ subroutine cpprop &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ipropp           ! e  ! <-- ! numero de la derniere propriete                !
 !                  !    !     !  (les proprietes sont dans propce,             !
@@ -61,7 +61,7 @@ subroutine cpprop &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -85,7 +85,7 @@ include "ihmpre.h"
 
 integer       ipropp, ipppst
 
-! VARIABLES LOCALES
+! Local variables
 
 integer       iprop, ige , icla, iprop2
 

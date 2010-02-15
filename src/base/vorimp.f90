@@ -39,7 +39,7 @@ subroutine vorimp &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ient             ! e  ! <-- ! numero de l'entree                             !
 ! nnent            ! e  ! <-- ! nombre d'entrees utilisant des vortex          !
@@ -55,7 +55,7 @@ subroutine vorimp &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -69,7 +69,7 @@ include "vortex.h"
 
 integer          ient
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ipass
 data             ipass /0/

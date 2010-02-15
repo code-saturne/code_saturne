@@ -45,18 +45,18 @@ subroutine letgeo &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ndim             ! e  ! <-- ! dimension de l'espace                          !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nfml             ! e  ! <-- ! nombre de familles d entites                   !
-! nprfml           ! e  ! <-- ! nombre de proprietese des familles             !
-! nnod             ! e  ! <-- ! nombre de sommets                              !
-! lndfac           ! e  ! <-- ! longueur du tableau nodfac (optionnel          !
-! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr (optionnel          !
+! ndim             ! i  ! <-- ! spatial dimension                              !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! nfml             ! i  ! <-- ! number of families (group classes)             !
+! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
+! nnod             ! i  ! <-- ! number of vertices                             !
+! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
+! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ntetra           ! e  ! <-- ! nombre de tetraedres du maillage               !
 ! npyram           ! e  ! <-- ! nombre de pyramides  du maillage               !
 ! nprism           ! e  ! <-- ! nombre de prismes    du maillage               !
@@ -65,7 +65,6 @@ subroutine letgeo &
 !                  !    !     !  connectivite nodale pour le                   !
 !                  !    !     !  post traitement                               !
 ! ifacel           ! te ! --> ! elements voisins d'une face interne            !
-! (2, nfac)        !    !     !                                                !
 ! ifabor           ! te ! --> ! element  voisin  d'une face de bord            !
 ! (nfabor)         !    !     !                                                !
 ! ifmfbr           ! te ! --> ! numero de famille d'une face de bord           !
@@ -109,7 +108,7 @@ subroutine letgeo &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -139,7 +138,7 @@ double precision cdgfac(ndim,nfac)
 double precision cdgfbo(ndim,nfabor)
 double precision xyznod(ndim,nnod)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          kel, iel, idim, kface, iface, kfafbr, kprffb
 integer          iok, iok1, iok2, ind

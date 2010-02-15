@@ -44,41 +44,39 @@ subroutine vandri &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ndim             ! e  ! <-- ! dimension de l'espace                          !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nphas            ! e  ! <-- ! nombre de phases                               !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! ndim             ! i  ! <-- ! spatial dimension                              !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! nphas            ! i  ! <-- ! number of phases                               !
+! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! e  ! <-- ! numero de la phase traitee                     !
 ! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
 !  nphas)          !    !     !                                                !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
+! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifapat           ! te ! <-- ! no de face de brd code 5 la + proche           !
 ! (ncelet)         !    !     !    (rij et echo de paroi      )                !
-! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
-! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
-! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
-! (ndim,ncelet     !    !     !                                                !
-! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
-! (ndim,nfabor)    !    !     !                                                !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! ia(*)            ! ia ! --- ! main integer work array                        !
+! xyzcen           ! ra ! <-- ! cell centers                                   !
+!  (ndim, ncelet)  !    !     !                                                !
+! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
+!  (ndim, nfabor)  !    !     !                                                !
 ! uetbor           ! tr ! <-- ! vitesse de frottement au bord                  !
 ! (nfabor,nphas    !    !     !  pour van driest en les                        !
 ! visvdr(nphas)    ! tr ! <-- ! viscosite dynamique ds les cellules            !
 ! (ncelet,nphas    !    !     !  de bord apres amortisst de v driest           !
 ! yplusc           ! tr ! <-- ! valeur de yplus aux cellules                   !
 ! (ncelet  )       !    !     !    dans le cas abs(icdpar).eq.1                !
-! propce           ! tr ! <-- ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
-! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
-! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
+! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -91,7 +89,7 @@ subroutine vandri &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -119,7 +117,7 @@ double precision yplusc(ncelet)
 double precision propce(ncelet,*)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel   , ifac  , ipcvis, ipcvst, ipcrom
 double precision yplus , yminpa, viscos

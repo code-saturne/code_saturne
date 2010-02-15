@@ -41,7 +41,7 @@ subroutine majgeo &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ncel2            ! e  ! <-- ! nombre de cellules                             !
 ! ncele2           ! e  ! <-- ! nombre d'elements halo compris                 !
@@ -71,7 +71,7 @@ subroutine majgeo &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "dimens.h"
@@ -89,7 +89,7 @@ integer          nthdi2, nthdb2
 integer          ngrpi2, ngrpb2
 integer          idxfi(*), idxfb(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ii, jj
 

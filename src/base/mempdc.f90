@@ -40,13 +40,13 @@ subroutine mempdc &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! idbia0/idbra0    ! e  ! <-- ! pointeur de la premiere cas libre des          !
 !                  !    !     !  tableaux ia/ra                                !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nphas            ! e  ! <-- ! nombre de phases                               !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nphas            ! i  ! <-- ! number of phases                               !
 ! ndim             ! e  ! <-- ! dimension de l'espace (3)                      !
 ! ifinia           ! e  ! --> ! pointeur de la premiere cas libre              !
 !                  !    !     !  dans ia en sortie                             !
@@ -63,7 +63,7 @@ subroutine mempdc &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"

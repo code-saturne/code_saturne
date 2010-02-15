@@ -43,10 +43,10 @@ subroutine pergra &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nphjmx           ! e  ! <-- ! nombre de phases max                           !
-! nphas            ! e  ! <-- ! nombre de phases                               !
+! nphas            ! i  ! <-- ! number of phases                               !
 ! ju, jv, jw       ! te ! --> ! numero de variable pour u, v, w                !
 ! jtytur           ! te ! --> ! indicateur modele de turbulence                !
 ! jr11...jr23      ! te ! --> ! numero de variable pour rij                    !
@@ -61,7 +61,7 @@ subroutine pergra &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -78,7 +78,7 @@ integer          jtytur(nphjmx)
 integer          jr11(nphjmx),jr22(nphjmx),jr33(nphjmx)
 integer          jr12(nphjmx),jr13(nphjmx),jr23(nphjmx)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iphas
 

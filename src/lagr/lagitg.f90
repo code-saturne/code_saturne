@@ -54,7 +54,7 @@ subroutine lagitg &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
@@ -89,7 +89,7 @@ subroutine lagitg &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -113,7 +113,7 @@ double precision ettp(nbpmax,nvp) ,  ettpa(nbpmax,nvp)
 double precision tcarac(nbpmax) , pip(nbpmax)
 double precision tsvar(nbpmax,nvp1)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          npt
 double precision aux1 , aux2 , ter1 , ter2 , ter3

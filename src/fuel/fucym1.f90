@@ -46,10 +46,10 @@ subroutine fucym1 &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant)                  !
 ! fvap             ! tr ! <-- ! moyenne du traceur 1 mvl [fovm+co]             !
@@ -80,7 +80,7 @@ subroutine fucym1 &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 include "paramx.h"
@@ -119,7 +119,7 @@ double precision xiner(ncelet)
 double precision xh2s(ncelet) , xso2(ncelet)
 double precision f4s3no(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel, icla
 

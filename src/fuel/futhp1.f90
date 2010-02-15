@@ -42,7 +42,7 @@ subroutine futhp1 &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! eh               ! tr ! <-- ! enthalpie du gaz                               !
 !                  !    !     ! (j/kg de melange gazeux)                       !
@@ -59,7 +59,7 @@ subroutine futhp1 &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 include "paramx.h"
@@ -83,7 +83,7 @@ integer          mode
 double precision eh,tp
 double precision xesp(ngazem)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ii
 

@@ -55,29 +55,28 @@ subroutine cou1do &
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncp              ! e  ! <-- ! dimension de cp (ncelet ou 1)                  !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nvar             ! e  ! <-- ! nombre total de variables                      !
-! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! nphas            ! e  ! <-- ! nombre de phases                               !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! nvar             ! i  ! <-- ! total number of variables                      !
+! nscal            ! i  ! <-- ! total number of scalars                        !
+! nphas            ! i  ! <-- ! number of phases                               !
 ! nfpt1d           ! e  ! <-- ! nombre de faces avec module therm 1d           !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ientha           ! e  ! <-- ! 1 si tparoi est une enthalpie                  !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
+! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifpt1d           ! te ! <-- ! numero de la face en traitement                !
 !                  !    !     ! thermique en paroi                             !
 ! iclt1d           ! te ! <-- ! type de condition limite                       !
-! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
-! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! ia(*)            ! ia ! --- ! main integer work array                        !
 ! cpcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! cp(ncp)          ! tr ! <-- ! chaleur specifique si variable                 !
 ! hbord            ! tr ! <-- ! coefficients d'echange aux bords               !
@@ -91,9 +90,9 @@ subroutine cou1do &
 ! xlmbt1           ! tr ! <-- ! diffusivite thermique                          !
 ! rcpt1d           ! tr ! <-- ! rocp                                           !
 ! dtpt1d           ! tr ! <-- ! pas de temps                                   !
-! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
-! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
+! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -105,7 +104,7 @@ subroutine cou1do &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"

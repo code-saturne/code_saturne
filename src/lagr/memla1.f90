@@ -56,17 +56,17 @@ subroutine memla1 &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! e  ! <-- ! pointeur de la premiere cas libre              !
 !                  !    !     !  dans ia en entree                             !
 ! idbra0           ! e  ! <-- ! pointeur de la premiere cas libre              !
 !                  !    !     !  dans ra en entree                             !
 ! ndim             ! e  ! <-- ! dimension (3)                                  !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
@@ -100,7 +100,7 @@ subroutine memla1 &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -122,7 +122,7 @@ integer          iettp  , iettpa
 integer          iitepa , istatc , istatv , itslag , istatf
 integer          ifinia , ifinra
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia , idebra
 

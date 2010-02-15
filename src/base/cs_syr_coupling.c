@@ -92,7 +92,7 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *============================================================================*/
 
-/* Structure associated with Syrthes coupling */
+/* Structure associated with SYRTHES coupling */
 
 typedef struct {
 
@@ -102,7 +102,7 @@ typedef struct {
   int      app_num;     /* Application number, or -1 */
   char    *app_name;    /* Application name, or -1 */
   char    *face_sel_c;  /* Face selection criteria */
-  char    *cell_sel_c;  /* Face selection criteria */
+  char    *cell_sel_c;  /* Cell selection criteria */
   int      verbosity;   /* Verbosity level */
 
 } _cs_syr_coupling_builder_t;

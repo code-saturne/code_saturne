@@ -40,10 +40,10 @@ subroutine findpt &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! xyzcen(ndim      ! tr !  -->! table des coordonnees du                       !
 !        ncelet    !    !     !           centre des volumes                   !
 ! xx,yy,zz         ! tr !  -->! coordonnees du noeud cherche                   !
@@ -61,7 +61,7 @@ subroutine findpt &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"

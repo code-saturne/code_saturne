@@ -50,7 +50,7 @@ subroutine iniusi(iverif)
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
 !__________________!____!_____!________________________________________________!
@@ -64,7 +64,7 @@ subroutine iniusi(iverif)
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -93,7 +93,7 @@ include "radiat.h"
 
 integer          iverif
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ii, iphas , iscal , nmodpp
 integer          nphmax, nscmax, nesmax, nphusi, nscusi

@@ -44,10 +44,10 @@ subroutine raydak &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! ncel             ! i  ! <-- ! number of cells                                !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ck (ncelet)      ! tr ! --> ! coefficient d'absorption du milieu             !
 !                  !    !     ! (nul si transparent)                           !
 ! pco2(ncelet)     ! tr ! <-- ! pression partielle de co2                      !
@@ -65,7 +65,7 @@ subroutine raydak &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -80,7 +80,7 @@ integer          ncelet, ncel
 double precision ck(ncelet), temp(ncelet), fv(ncelet)
 double precision pco2(ncelet), ph2o(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel
 double precision alpha, path, te, ts, sootk, tmin, tmax

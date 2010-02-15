@@ -41,10 +41,10 @@ subroutine fupdfr &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! fvap             ! tr ! <-- ! moyenne du traceur 1 mvl [fovm+co]             !
 ! fhet             ! tr !  ->           ! moyenne du traceur 3 c héterogène    !
 ! f4p2m            ! tr ! <-- ! variance du traceur 4 (air)                    !
@@ -65,7 +65,7 @@ subroutine fupdfr &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 include "paramx.h"
@@ -94,7 +94,7 @@ double precision fvap(ncelet) , fhtf(ncelet) , f4p2m(ncelet)
 double precision f4m1(ncelet) , f4m2(ncelet) , d4cl(ncelet)
 double precision d4f4(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel
 

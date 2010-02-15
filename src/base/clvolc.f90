@@ -42,10 +42,10 @@ subroutine clvolc &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! volmin           ! r  ! --> ! volume de controle minimal                     !
 ! volmax           ! r  ! --> ! volume de controle maximal                     !
 ! voltot           ! r  ! --> ! volume total du domaine                        !
@@ -62,7 +62,7 @@ subroutine clvolc &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"

@@ -41,12 +41,11 @@ subroutine initi2 &
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! jcelbr           ! e  ! <-- ! nombre d'elements ayant au moins une           !
-!                  !    !     ! face de bord                                   !
 ! ia(*)            ! tr ! --- ! tableau de travail pour les entiers            !
 ! ra(*)            ! tr ! --- ! tableau de travail pour les reels              !
 !__________________!____!_____!________________________________________________!
@@ -61,7 +60,7 @@ subroutine initi2 &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -79,7 +78,7 @@ integer          jcelbr
 integer          ia(*)
 double precision ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia, idebra
 integer          iphas

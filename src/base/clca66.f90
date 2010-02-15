@@ -39,7 +39,7 @@ subroutine clca66 &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! clsyme           !  r ! <-- ! indicateur symetrie = 1., paroi = 0.           !
 ! eloglo           ! tr ! <-- ! matrice de changement de base                  !
@@ -56,7 +56,7 @@ subroutine clca66 &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 ! Arguments
@@ -64,7 +64,7 @@ implicit none
 double precision clsyme
 double precision eloglo(3,3),alpha(6,6)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer ii,jj,kk,pp,jj1,jj2
 

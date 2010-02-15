@@ -44,18 +44,17 @@ subroutine furays &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ivar             ! e  ! <-- ! numero de la variable scalaire                 !
 !                  !    !     !   energie (enthalpie h2) pour le               !
 !                  !    !     !   charbon                                      !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! volume(ncelet    ! tr ! <-- ! volume des cellules                            !
-! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-! propce           ! tr ! <-- ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
+! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet     ! tr ! <-- ! second membre du systeme                       !
 ! rovsdt(ncelet    ! tr ! <-- ! diagonale du systeme                           !
 !__________________!____!_____!________________________________________________!
@@ -69,7 +68,7 @@ subroutine furays &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -94,7 +93,7 @@ double precision rovsdt(ncelet)
 double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel , numcla , ipcl
 

@@ -43,10 +43,10 @@ subroutine d3phst &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! indpdf           ! te ! <-- ! indicateur passage ou non par les pdf          !
 ! dirmin           ! tr ! <-- ! pdf : dirac en fmin                            !
 ! dirmax           ! tr ! <-- ! pdf : dirac en fmax                            !
@@ -69,7 +69,7 @@ subroutine d3phst &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -95,7 +95,7 @@ double precision fdeb(ncelet), ffin(ncelet), hrec(ncelet)
 double precision fm(ncelet), hm(ncelet), hstoe(ncelet)
 
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          icel
 double precision fsir, hhh, hct, f1, f2

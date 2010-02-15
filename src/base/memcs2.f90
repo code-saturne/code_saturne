@@ -43,7 +43,7 @@ subroutine memcs2 &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 !                  !    !     !                                                !
 !__________________.____._______________.________________________________________________!
@@ -57,7 +57,7 @@ subroutine memcs2 &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -74,7 +74,7 @@ integer          irvcpl , irvdis , ilocpt , icoopt
 integer          idjppt , ipndpt , idofcp , idofpt
 integer          ifinia , ifinra
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia , idebra
 

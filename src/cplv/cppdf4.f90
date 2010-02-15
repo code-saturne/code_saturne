@@ -46,10 +46,10 @@ subroutine cppdf4 &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! f1m              ! tr ! <-- ! moyenne du traceur 1 (mv chz +co)              !
 ! f2m              ! tr ! <-- ! moyenne du traceur 2 (mv cxhy +co)             !
 ! f3m              ! tr ! <-- ! moyenne du traceur 3 (co c.het)                !
@@ -95,7 +95,7 @@ double precision f4m(ncelet), f4p2m(ncelet)
 double precision si7(ncelet), si8(ncelet), sp2m(ncelet)
 double precision f4i7(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel
 

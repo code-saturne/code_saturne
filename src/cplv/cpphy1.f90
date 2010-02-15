@@ -90,12 +90,12 @@ subroutine cpphy1 &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! nitbcp           ! e  ! <-- ! taille du macro tableau cp entiers             !
 ! nrtbcp           ! e  ! <-- ! taille du macro tableau cp reels               !
 ! nitbmc           ! e  ! <-- ! taille du macro tableau mc entiers             !
@@ -113,8 +113,7 @@ subroutine cpphy1 &
 !                  !    !     !                    soit du melange             !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant)                  !
-! propce           ! tr ! <-- ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
+! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! itbcp            ! tr ! <-- ! macro tableau entier cp travail                !
 ! rtbcp            ! tr ! <-- ! macro tableau reel   cp travail                !
 ! itbmc            ! tr ! <-- ! macro tableau entier mc travail                !
@@ -132,7 +131,7 @@ subroutine cpphy1 &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -175,7 +174,7 @@ double precision rtbcp(ncelet,nrtbcp)
 double precision rtbmc(ncelet,nrtbmc)
 double precision rtbwo(ncelet,nrtbwo)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia , idebra
 integer          iel    , iphas  , ice

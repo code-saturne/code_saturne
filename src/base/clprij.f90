@@ -42,12 +42,12 @@ subroutine clprij &
 ! Arguments
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
-! nphas            ! e  ! <-- ! nombre de phases                               !
+! nphas            ! i  ! <-- ! number of phases                               !
 ! iphas            ! e  ! <-- ! numero de la phase a traiter                   !
 ! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas rtpa           !
 !                  !    !     !  (inivar)                                      !
@@ -71,7 +71,7 @@ subroutine clprij &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -90,7 +90,7 @@ double precision propce(ncelet,*)
 double precision rtpa(ncelet,nvar)
 double precision rtp(ncelet,nvar)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          icleps, iel, ivar, ivar1, ivar2, isou, ipp
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip

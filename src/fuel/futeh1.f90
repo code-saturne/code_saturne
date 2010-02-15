@@ -43,10 +43,10 @@ subroutine futeh1 &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! eh               ! tr ! <-- ! enthalpie du gaz                               !
 !                  !    !     ! (j/kg de melange gazeux)                       !
 ! fuel1            ! tr ! <-- ! fraction massique chx1                         !
@@ -70,7 +70,7 @@ subroutine futeh1 &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 include "paramx.h"
@@ -100,7 +100,7 @@ double precision xh2s(ncelet) , xso2(ncelet)
 double precision tp(ncelet)
 double precision eh0(ncelet), eh1(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ii, icel
 

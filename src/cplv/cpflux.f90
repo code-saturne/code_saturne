@@ -44,20 +44,18 @@ subroutine cpflux &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant precedent)                !
-! propce           ! tr ! <-- ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet          !    !     !                                                !
+! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! w1, w2, w3       ! tr ! --- ! tableaux de travail                            !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -69,7 +67,7 @@ subroutine cpflux &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -98,7 +96,7 @@ double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision volume(ncelet)
 double precision ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia , idebra
 integer          iel    , iphas  , icha   , icla

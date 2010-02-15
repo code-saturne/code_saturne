@@ -68,7 +68,7 @@ subroutine keendb &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! uref2            ! r  ! <-- ! carre de la vitesse debitante de               !
 !                  !    !     !                            reference           !
@@ -91,7 +91,7 @@ subroutine keendb &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
@@ -102,7 +102,7 @@ implicit none
 double precision uref2, dh, xrho, xmu , ustar2, xk, xeps
 double precision cmu, xkappa
 
-! VARIABLES LOCALES
+! Local variables
 
 double precision re, xlmbda
 
@@ -159,7 +159,7 @@ subroutine keenin &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! uref2            ! r  ! <-- ! carre de la vitesse debitante de               !
 !                  !    !     !                            reference           !
@@ -180,7 +180,7 @@ subroutine keenin &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
@@ -190,7 +190,7 @@ implicit none
 
 double precision uref2, xintur, dh, cmu, xkappa, xk, xeps
 
-! VARIABLES LOCALES
+! Local variables
 
 !===============================================================================
 

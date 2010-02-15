@@ -42,7 +42,7 @@ subroutine elthht &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! mode             ! e  ! <-- !  -1 : t -> h  ;   1 : h -> t                   !
 ! nesp             ! e  ! <-- ! nb de constituants                             !
@@ -60,7 +60,7 @@ subroutine elthht &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -82,7 +82,7 @@ integer          mode , nesp
 double precision enthal , temper , yesp(nesp)
 
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          it , iesp
 

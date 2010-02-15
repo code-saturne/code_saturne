@@ -50,7 +50,7 @@ subroutine enswaf &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
@@ -79,7 +79,7 @@ subroutine enswaf &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 include "paramx.h"
@@ -99,7 +99,7 @@ double precision ettp(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision trav(nbpmax,3)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          npt , ipt
 integer          np , nl

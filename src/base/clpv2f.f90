@@ -42,12 +42,12 @@ subroutine clpv2f &
 ! Arguments
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
-! nphas            ! e  ! <-- ! nombre de phases                               !
+! nphas            ! i  ! <-- ! number of phases                               !
 ! iphas            ! e  ! <-- ! numero de la phase a traiter                   !
 ! iwaphi           ! e  ! <-- ! niveau d'impression                            !
 ! propce           ! tr ! <-- ! tableaux des variables au pdt courant          !
@@ -67,7 +67,7 @@ subroutine clpv2f &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -85,7 +85,7 @@ integer          iphas, iwaphi
 double precision propce(ncelet,*)
 double precision rtp(ncelet,nvar)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel, ipp
 integer          iphiph

@@ -104,7 +104,7 @@ integer nphmax, nphas, iihmpu, nfecra
 integer iturb(nphmax), icp(nphmax)
 integer iverif
 
-! VARIABLES LOCALES
+! Local variables
 
 integer iphas
 

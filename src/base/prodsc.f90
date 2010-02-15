@@ -39,10 +39,10 @@ subroutine prodsc &
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! isqrt            ! e  ! <-- ! indicateur = 1 pour prendre la racine          !
 ! va, vb(ncelet    ! tr ! <-- ! vecteurs a multiplier                          !
 ! vavb             ! r  ! --> ! produit scalaire                               !
@@ -57,7 +57,7 @@ subroutine prodsc &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -71,7 +71,7 @@ integer          ncelet,ncel,isqrt
 double precision vavb
 double precision va(ncelet),vb(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer incx, incy
 double precision ddot

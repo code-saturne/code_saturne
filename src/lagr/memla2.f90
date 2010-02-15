@@ -55,12 +55,12 @@ subroutine memla2 &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! idbia0/idbra0    ! tr ! <-- ! pointeur de la premiere cas libre des          !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! ncelet           ! e  ! <-- ! nombre d'elements                              !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
+! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -107,7 +107,7 @@ subroutine memla2 &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -132,7 +132,7 @@ integer          ibrgau , itebru
 integer          iw1     , iw2    , iw3
 integer          ifinia , ifinra
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia , idebra
 

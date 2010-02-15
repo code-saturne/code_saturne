@@ -42,7 +42,7 @@ subroutine vorvit &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ncevor           ! e  ! <-- ! nombre de face a l'entree ou est               !
 !                  !    !     ! utilise la methode                             !
@@ -79,7 +79,7 @@ subroutine vorvit &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -100,7 +100,7 @@ double precision xu(icvmax )     , xv(icvmax )     , xw(icvmax )
 double precision yzvor(nvomax,2) , signv(nvomax)   , sigma(nvomax)
 double precision gamma(nvomax,2) , temps(nvomax)
 
-! VARIABLES LOCALES
+! Local variables
 
 
 integer          ii, jj, iii

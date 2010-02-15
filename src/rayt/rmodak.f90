@@ -81,7 +81,7 @@ subroutine absorb &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ts               ! r  ! <-- ! temperature du corps noir (k)                  !
 ! te               ! r  ! <-- ! temperature du melange (k)                     !
@@ -104,7 +104,7 @@ subroutine absorb &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -116,7 +116,7 @@ include "entsor.h"
 
 double precision ts, te, path, sootk, pco2, ph2o, alpha
 
-! VARIABLES LOCALES
+! Local variables
 
 double precision tmax, tmin, ptotal, ratio, pathl, pcl, pwl
 double precision as, taus, ag, power, zeta
@@ -276,7 +276,7 @@ subroutine chebyc &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! norpol           ! e  ! <-- ! ordre du polynome de  chebychev                !
 ! argpol           ! r  ! <-- ! argument du polynome de chebychev              !
@@ -292,7 +292,7 @@ subroutine chebyc &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
@@ -303,7 +303,7 @@ implicit none
 integer          norpol
 double precision argpol , valpol
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ict
 double precision f, vm2,vm1
@@ -356,7 +356,7 @@ subroutine asympt &
 !FONCC
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! zz               ! r  ! <-- !                                                !
 ! zzv              ! r  ! --> !                                                !
@@ -371,7 +371,7 @@ subroutine asympt &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
@@ -381,7 +381,7 @@ implicit none
 
 double precision zz, zzv
 
-! VARIABLES LOCALES
+! Local variables
 
 double precision zi1, zi2, zi3, d1s3
 
@@ -422,7 +422,7 @@ subroutine tasoot &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! zkled            ! r  ! <-- !                                                !
 ! pathl            ! r  ! <-- ! penetration du rayonnement dans le             !
@@ -441,7 +441,7 @@ subroutine tasoot &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
@@ -451,7 +451,7 @@ implicit none
 
 double precision zkled, pathl, tblack, taus
 
-! VARIABLES LOCALES
+! Local variables
 
 double precision arg , val
 
@@ -494,7 +494,7 @@ subroutine pentag &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! argfpe           ! r  ! <-- ! argument de la fonction pentagamma             !
 ! valfpe           ! r  ! --> ! valeur de la fonction pentagamma               !
@@ -509,7 +509,7 @@ subroutine pentag &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
@@ -519,7 +519,7 @@ implicit none
 
 double precision argfpe, valfpe
 
-! VARIABLES LOCALES
+! Local variables
 
 double precision zz, zzv, zs
 
@@ -593,7 +593,7 @@ function fdleck &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! val              ! r  ! ->  !                                                !
 ! pl               ! r  ! ->  !                                                !
@@ -609,7 +609,7 @@ function fdleck &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
@@ -619,7 +619,7 @@ implicit none
 
 double precision val, pl, te, fdleck
 
-! VARIABLES LOCALES
+! Local variables
 
 double precision term, term2, term3, tt, tt2, aa, bb, cc
 
@@ -667,7 +667,7 @@ function emigas &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! pathl            ! r  ! ->  ! valeur du path                                 !
 ! pc               ! r  ! ->  ! pression partielle de co2                      !
@@ -684,7 +684,7 @@ function emigas &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
@@ -694,7 +694,7 @@ implicit none
 
 double precision pathl, pc, pw, te, emigas
 
-! VARIABLES LOCALES
+! Local variables
 
 double precision tmin, tmax, pcl, ec
 double precision pwl, pcwl, dels, ew, pcpw, xi, fdleck
@@ -771,7 +771,7 @@ subroutine scrtch &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! pp               ! r  ! ->  !                                                !
 ! pl               ! r  ! ->  !                                                !
@@ -789,7 +789,7 @@ subroutine scrtch &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 
@@ -800,7 +800,7 @@ implicit none
 integer          index
 double precision pp, pl, te, val
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ii, jj, kk, iii, jjj, kkk
 double precision cc(3,4,4), cw(3,4,4), sc(3,4,4)

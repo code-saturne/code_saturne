@@ -53,25 +53,24 @@ subroutine grdcel &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! ndim             ! e  ! <-- ! dimension de l'espace                          !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nfml             ! e  ! <-- ! nombre de familles d entites                   !
-! nprfml           ! e  ! <-- ! nombre de proprietese des familles             !
-! nnod             ! e  ! <-- ! nombre de sommets                              !
-! lndfac           ! e  ! <-- ! longueur du tableau nodfac (optionnel          !
-! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr (optionnel          !
-! ncelbr           ! e  ! <-- ! nombre d'elements ayant au moins une           !
-!                  !    !     ! face de bord                                   !
-! nphas            ! e  ! <-- ! nombre de phases                               !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! ndim             ! i  ! <-- ! spatial dimension                              !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! nfml             ! i  ! <-- ! number of families (group classes)             !
+! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
+! nnod             ! i  ! <-- ! number of vertices                             !
+! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
+! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
+! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
+! nphas            ! i  ! <-- ! number of phases                               !
+! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ivar             ! e  ! <-- ! numero de la variable                          !
 !                  !    !     !   destine a etre utilise pour la               !
 !                  !    !     !   periodicite uniquement (pering)              !
@@ -104,41 +103,32 @@ subroutine grdcel &
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! ifacel           ! te ! <-- ! elements voisins d'une face interne            !
-! (2, nfac)        !    !     !                                                !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
-! ifmfbr           ! te ! <-- ! numero de famille d'une face de bord           !
-! (nfabor)         !    !     !                                                !
-! ifmcel           ! te ! <-- ! numero de famille d'une cellule                !
-! (ncelet)         !    !     !                                                !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
-! nfml  ,nprfml    !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfac)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (nfac+1)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfbr)       !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (nfabor+1)     !    !     !  (optionnel)                                   !
-! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
-! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
-! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! tr ! <-- ! vecteur surface des faces de bord              !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! tr ! <-- ! centre de gravite des faces internes           !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds (optionnel)              !
-! (ndim,nnod)      !    !     !                                                !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet          !    !     !                                                !
+! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
+! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
+! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
+! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
+! iprfml           ! ia ! <-- ! property numbers per family                    !
+!  (nfml, nprfml)  !    !     !                                                !
+! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
+! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
+! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! ia(*)            ! ia ! --- ! main integer work array                        !
+! xyzcen           ! ra ! <-- ! cell centers                                   !
+!  (ndim, ncelet)  !    !     !                                                !
+! surfac           ! ra ! <-- ! interior faces surface vectors                 !
+!  (ndim, nfac)    !    !     !                                                !
+! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
+!  (ndim, nfabor)  !    !     !                                                !
+! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
+!  (ndim, nfac)    !    !     !                                                !
+! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
+!  (ndim, nfabor)  !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
+!  (ndim, nnod)    !    !     !                                                !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! pvar  (ncelet    ! tr ! <-- ! variable (pression)                            !
 ! coefap,coefbp    ! tr ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
@@ -147,9 +137,9 @@ subroutine grdcel &
 ! dpdx,dpdy        ! tr ! --> ! gradient de pvar                               !
 ! dpdz (ncelet     !    !     !                                                !
 ! dpdxa (ncelet    ! tr ! --- ! tableau de travail pour le grad de p           !
-! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
-! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
+! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -162,7 +152,7 @@ subroutine grdcel &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -201,7 +191,7 @@ double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
 double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia, idebra
 integer          idimte , itenso

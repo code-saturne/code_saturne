@@ -47,17 +47,15 @@ subroutine cptsvi &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! numtra           ! e  ! <-- ! numero du traceur concerne (1,2,3,4)           !
 ! rtp         ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant precedent)                !
-! propce           ! tr ! <-- ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet          !    !     !                                                !
+! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 ! xf1m, xf2m       ! tr ! <-- ! somme de f1,f2,f3,f4 sur l'ensemble            !
@@ -76,7 +74,7 @@ subroutine cptsvi &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -103,7 +101,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 double precision xf1m(ncelet)  , xf2m(ncelet)
 double precision w1(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel    , icla   , icha
 integer          iphas  , ipcrom , ixchcl , ixckcl , ixnpcl

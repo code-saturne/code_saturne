@@ -43,7 +43,7 @@ subroutine cpthp1 &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! eh               ! tr ! <-- ! enthalpie du gaz                               !
 !                  !    !     ! (j/kg de melange gazeux)                       !
@@ -62,7 +62,7 @@ subroutine cpthp1 &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 include "paramx.h"
@@ -86,7 +86,7 @@ double precision eh,tp
 double precision xesp(ngazem)
 double precision f1mc(ncharm),f2mc(ncharm)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          i , icha
 

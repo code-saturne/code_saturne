@@ -43,7 +43,7 @@ subroutine cpthp2 &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! mode             ! e  ! <-- !  -1 : t -> h  ;   1 : h -> t                   !
 ! icla             ! e  ! <-- ! numero de la classe                            !
@@ -61,7 +61,7 @@ subroutine cpthp2 &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -85,7 +85,7 @@ integer          mode , icla , icha
 double precision xsolid(nsolim)
 double precision temper , enthal , t1
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          it , isol , ihflt2
 

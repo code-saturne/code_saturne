@@ -42,11 +42,11 @@ subroutine memt1d &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! idbia0/idbra0    ! e  ! <-- ! pointeur de la premiere cas libre des          !
 !                  !    !     !  tableaux ia/ra                                !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! ifnia1           ! e  ! --> ! pointeur de la premiere cas libre              !
 !                  !    !     !  dans ia apres liberation tout sauf            !
 !                  !    !     !                               ifpt1d           !
@@ -73,7 +73,7 @@ subroutine memt1d &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -92,7 +92,7 @@ integer          ifinia, ifinra, ifnia1, ifnra1, ifnia2, ifnra2
 integer          ia(*)
 double precision ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia, idebra
 integer          iok1, ifac

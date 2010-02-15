@@ -52,28 +52,27 @@ subroutine coupbo &
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncp              ! e  ! <-- ! dimension de cp (ncelet ou 1)                  !
 ! ncv              ! e  ! <-- ! dimension de cv (ncelet ou 1)                  !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nvar             ! e  ! <-- ! nombre total de variables                      !
-! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! nphas            ! e  ! <-- ! nombre de phases                               !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! nvar             ! i  ! <-- ! total number of variables                      !
+! nscal            ! i  ! <-- ! total number of scalars                        !
+! nphas            ! i  ! <-- ! number of phases                               !
+! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ientha           ! e  ! <-- ! 1 si tparoi est une enthalpie                  !
 !                  ! e  ! <-- ! 2 si tparoi est une energie                    !
 !                  !    !     !    (compressible)                              !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
-! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
-! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
+! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! ia(*)            ! ia ! --- ! main integer work array                        !
 ! cpcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! cvcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! cp(ncp)          ! tr ! <-- ! chaleur specifique si variable                 !
@@ -82,9 +81,9 @@ subroutine coupbo &
 ! (nfabor)         !    !     !                                                !
 ! tbord            ! tr ! <-- ! temperatures aux bords                         !
 ! (nfabor)         !    !     !                                                !
-! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
-! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
+! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -96,7 +95,7 @@ subroutine coupbo &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -137,7 +136,7 @@ double precision cp(ncp), cv(ncv)
 double precision hbord(nfabor),tbord(nfabor)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          nbccou, inbcou, inbcoo, nbfcou, ifac, iloc, iel
 integer          itflui, ihparo

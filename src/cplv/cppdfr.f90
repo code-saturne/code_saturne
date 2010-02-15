@@ -54,10 +54,10 @@ subroutine cppdfr &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! sp2m             ! tr ! <-- ! variance de s                                  !
 ! sc               ! tr ! <-- ! borne min de s                                 !
 ! sd               ! tr ! <-- ! borne max de s                                 !
@@ -78,7 +78,7 @@ subroutine cppdfr &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 include "paramx.h"
@@ -109,7 +109,7 @@ double precision sdeb(ncelet) , sfin(ncelet)
 double precision hrec(ncelet)
 
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel
 integer          n1     , n2     , n3     , n4     , n5

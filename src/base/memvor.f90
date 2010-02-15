@@ -39,12 +39,12 @@ subroutine memvor &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! ifinia           ! e  ! --> ! pointeur de la premiere cas libre dan          !
 !                  !    !     !  dans ia en sortie                             !
 ! ifinra           ! e  ! --> ! pointeur de la premiere cas libre dan          !
@@ -60,7 +60,7 @@ subroutine memvor &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -74,7 +74,7 @@ include "vortex.h"
 integer          idbia0, idbra0, ifinia, ifinra
 integer          iappel, nfabor
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia, idebra
 

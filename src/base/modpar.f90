@@ -40,7 +40,7 @@ subroutine modpar &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ntcabs           ! e  ! <-- ! numero absolu du pas de temps courant          !
 ! ntmabs           ! e  ! <-- ! numero absolu du pas de temps final            !
@@ -55,7 +55,7 @@ subroutine modpar &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -68,7 +68,7 @@ include "parall.h"
 
 integer          ntcabs , ntmabs
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          irangs, lng, itmp(1)
 logical exstp

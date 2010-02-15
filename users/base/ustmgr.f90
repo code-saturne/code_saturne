@@ -54,7 +54,7 @@ subroutine ustmgr &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iappel           ! e  ! <-- ! 1 : selection/dimensionnement                  !
 !                  !    !     ! 2 : determination de irscel                    !
@@ -87,16 +87,15 @@ subroutine ustmgr &
 ! rw(nrw)          ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -121,7 +120,7 @@ integer          iw(niw)
 double precision rw(nrw)
 
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ncelg
 integer          ifac

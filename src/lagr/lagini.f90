@@ -47,22 +47,20 @@ subroutine lagini &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre d'elements                              !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! lndnod           ! e  ! --> ! dim. connect. cellules->faces                  !
-! ifacel           ! te ! <-- ! elements voisins d'une face interne            !
-! (2, nfac)        !    !     !                                                !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
+! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
+! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! nbrfac(ncel)     ! te ! --- ! tableau de travail entier                      !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! ia(*)            ! ia ! --- ! main integer work array                        !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -75,7 +73,7 @@ subroutine lagini &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -98,7 +96,7 @@ integer          ia(*)
 
 double precision ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 
 integer          idebia , idebra

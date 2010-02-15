@@ -66,14 +66,14 @@ subroutine cldijp &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! idbia0/idbra0    ! e  ! <-- ! pointeur de la premiere cas libre des          !
 !                  !    !     !  tableaux ia/ra                                !
 ! nfac             ! e  ! <-- ! nombre total de faces internes                 !
 ! nfabor           ! e  ! <-- ! nombre total de faces         de bord          !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! ifacel           ! te ! <-- ! ifacel(iel,ifac) num glob de l'elemnt          !
 ! (2,nfac)         !    !     !  vois iel (1 ou 2) de la fac int ifac          !
 ! ifabor           ! te ! <-- ! ifabor(ifac    ) num glob de l'elt             !
@@ -120,7 +120,7 @@ subroutine cldijp &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 !===============================================================================

@@ -53,30 +53,26 @@ subroutine usdpst &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! ndim             ! e  ! <-- ! dimension de l'espace                          !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nfml             ! e  ! <-- ! nombre de familles d entites                   !
-! nprfml           ! e  ! <-- ! nombre de proprietese des familles             !
-! nnod             ! e  ! <-- ! nombre de sommets                              !
-! lndfac           ! e  ! <-- ! longueur du tableau nodfac (optionnel          !
-! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr (optionnel          !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
-! ifacel           ! te ! <-- ! elements voisins d'une face interne            !
-! (2, nfac)        !    !     !                                                !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
-! ifmfbr           ! te ! <-- ! numero de famille d'une face de bord           !
-! (nfabor)         !    !     !                                                !
-! ifmcel           ! te ! <-- ! numero de famille d'une cellule                !
-! (ncelet)         !    !     !                                                !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! ndim             ! i  ! <-- ! spatial dimension                              !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! nfml             ! i  ! <-- ! number of families (group classes)             !
+! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
+! nnod             ! i  ! <-- ! number of vertices                             !
+! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
+! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
+! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
+! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
+! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
+! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
 ! iprfml           ! te ! <-- ! proprietes d'une famille                       !
 ! (nfml,nprfml)    !    !     !                                                !
 ! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
@@ -94,27 +90,25 @@ subroutine usdpst &
 ! lstfbr           ! te ! --- ! tableau de travail (liste des faces            !
 ! (nfabor)         !    !     !  de bord d'un maillage de sortie)              !
 ! ia(*)            ! te ! --- ! macro tableau entier                           !
-! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! tr ! <-- ! vecteur surface des faces de bord              !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! tr ! <-- ! centre de gravite des faces internes           !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds (optionnel)              !
-! (ndim,nnod)      !    !     !                                                !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet          !    !     !                                                !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! xyzcen           ! ra ! <-- ! cell centers                                   !
+!  (ndim, ncelet)  !    !     !                                                !
+! surfac           ! ra ! <-- ! interior faces surface vectors                 !
+!  (ndim, nfac)    !    !     !                                                !
+! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
+!  (ndim, nfabor)  !    !     !                                                !
+! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
+!  (ndim, nfac)    !    !     !                                                !
+! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
+!  (ndim, nfabor)  !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
+!  (ndim, nnod)    !    !     !                                                !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
@@ -122,7 +116,7 @@ implicit none
 !===============================================================================
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -157,7 +151,7 @@ double precision xyznod(ndim,nnod), volume(ncelet)
 double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          indmod, icas, nbcas, ipart, nbpart, ipref
 integer          ntchrl

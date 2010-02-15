@@ -39,7 +39,7 @@ subroutine undscr &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ideb             ! i  ! <-- ! debut de la chaine                             !
 ! ifin             ! i  ! <-- ! fin   de la chaine                             !
@@ -59,7 +59,7 @@ implicit none
 character chaine*(*)
 integer   ideb, ifin
 
-! VARIABLES LOCALES
+! Local variables
 
 integer   nn
 

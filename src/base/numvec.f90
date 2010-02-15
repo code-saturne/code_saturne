@@ -42,16 +42,15 @@ subroutine numvec &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac  /nfabor    ! e  ! <-- ! nombre total de faces internes/de brd          !
 ! lregis           ! e  ! --> ! longueur de registre vectoriel                 !
 ! irveci           ! e  ! --> ! indicateur vectorisation face intern           !
 ! irvecb           ! e  ! --> ! indicateur vectorisation face bord             !
 ! ifacel           ! te ! <-- ! no des elts voisins d'une face intern          !
-! (2, nfac)        !    !     !                                                !
 ! ifabor           ! te ! <-- ! no de l'elt voisin d'une face de bord          !
 ! nfabor  )        !    !     !                                                !
 ! inumfi(nfac)     ! te ! --- ! table de renum des faces internes              !
@@ -69,7 +68,7 @@ subroutine numvec &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -84,7 +83,7 @@ integer          ifacel(2,nfac),ifabor(nfabor)
 integer          inumfi(nfac), inumfb(nfabor)
 integer          iworkf(*), ismbs(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          irelii, nregii, irelib, nregib
 integer          iloop, imodav, iregip, iregic, jregic

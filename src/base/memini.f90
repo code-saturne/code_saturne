@@ -41,11 +41,11 @@ subroutine memini &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! longia longra    ! e  ! <-- ! longueur de ia     ra                          !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -57,7 +57,7 @@ subroutine memini &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -72,7 +72,7 @@ include "ihmpre.h"
 integer longia , longra
 integer nideve , nrdeve , nituse , nrtuse
 
-! VARIABLES LOCALES
+! Local variables
 
 integer ii, iok
 integer icoftu(16)

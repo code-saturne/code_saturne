@@ -52,14 +52,13 @@ subroutine gradmc &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! ncelbr           ! e  ! <-- ! nombre d'elements ayant au  moins              !
-!                  !    !     ! face de bord                                   !
 ! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
 !                  !    !     !              1 sinon                           !
 ! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
@@ -150,7 +149,7 @@ subroutine gradmc &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -182,7 +181,7 @@ double precision cocgb(ncelbr,3,3), cocg(ncelet,3,3)
 double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
 double precision bx(ncelet),by(ncelet),bz(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          lbloc
 parameter       (lbloc = 1024)

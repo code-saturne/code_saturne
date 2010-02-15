@@ -1,4 +1,7 @@
 * 15/02/2010 - David Monfort <david.monfort@edf.fr>
+  First pass for English translation of some Fortran subroutines headers.
+
+* 15/02/2010 - David Monfort <david.monfort@edf.fr>
   Remove some documentation directories for the release (work in progress).
   modified routine:
     doc/Mafile.am

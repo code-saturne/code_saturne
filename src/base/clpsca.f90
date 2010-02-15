@@ -41,17 +41,16 @@ subroutine clpsca &
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nvar             ! e  ! <-- ! nombre total de variables                      !
-! nscal            ! e  ! <-- ! nombre total de scalaires                      !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nvar             ! i  ! <-- ! total number of variables                      !
+! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iscal            ! e  ! <-- ! numero du scalaire                             !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
-! propce           ! tr ! <-- ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
+! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! scandd           ! tr ! <-- ! scalaire auquel est associe la                 !
 ! (ncelet)         !    !     !    variance traitee (si c'en est une)          !
 !__________________!____!_____!________________________________________________!
@@ -66,7 +65,7 @@ subroutine clpsca &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -89,7 +88,7 @@ double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision scandd(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ivar, iel
 integer          iclmax, iclmin, iiscav

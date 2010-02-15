@@ -46,10 +46,10 @@ subroutine lagstf &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! ivar             ! e  ! <-- ! numero de la variable a integrer               !
 ! gmin...gmoy      ! e  ! --> ! variations min max et moyenne                  !
@@ -69,7 +69,7 @@ subroutine lagstf &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 
 include "paramx.h"
 include "numvar.h"

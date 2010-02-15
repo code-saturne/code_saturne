@@ -46,19 +46,15 @@ subroutine caltri &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
-! ifacel           ! te ! <-- ! elements voisins d'une face interne            !
-! (2, nfac)        !    !     !                                                !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
-! ifmfbr           ! te ! <-- ! numero de famille d'une face de bord           !
-! (nfabor)         !    !     !                                                !
-! ifmcel           ! te ! <-- ! numero de famille d'une cellule                !
-! (ncelet)         !    !     !                                                !
+! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
+! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
+! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
+! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
 ! iprfml           ! te ! <-- ! proprietes d'une famille                       !
 ! (nfml,nprfml)    !    !     !                                                !
 ! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
@@ -69,22 +65,21 @@ subroutine caltri &
 !   (nfabor+1)     !    !     !  face de bord dans nodfbr (optionnel)          !
 ! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
 !   (lndfbr)       !    !     !  (optionnel)                                   !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
-! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! tr ! <-- ! vecteur surface des faces de bord              !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! tr ! <-- ! centre de gravite des faces internes           !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
-! (ndim,nfabor)    !    !     !                                                !
+! ia(*)            ! ia ! --- ! main integer work array                        !
+! xyzcen           ! ra ! <-- ! cell centers                                   !
+!  (ndim, ncelet)  !    !     !                                                !
+! surfac           ! ra ! <-- ! interior faces surface vectors                 !
+!  (ndim, nfac)    !    !     !                                                !
+! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
+!  (ndim, nfabor)  !    !     !                                                !
+! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
+!  (ndim, nfac)    !    !     !                                                !
+! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
+!  (ndim, nfabor)  !    !     !                                                !
 ! xyznod           ! tr ! <-- ! coordonnes des noeuds (optionnel)              !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet          !    !     !                                                !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! (ndim,nnod)      !    !     !                                                !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -96,7 +91,7 @@ subroutine caltri &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -143,7 +138,7 @@ double precision xyznod(ndim,nnod), volume(ncelet)
 
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ipropc , ipropf , ipropb
 integer          icoefa , icoefb

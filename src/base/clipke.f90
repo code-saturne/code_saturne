@@ -42,12 +42,12 @@ subroutine clipke &
 ! Arguments
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nvar             ! e  ! <-- ! nombre de variables                            !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nphas            ! e  ! <-- ! nombre de phases                               !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nphas            ! i  ! <-- ! number of phases                               !
 ! iphas            ! e  ! <-- ! numero de la phase a traiter                   !
 ! iclip            ! e  ! <-- ! indicateur = 0 on utilise viscl0               !
 !                  !    !     !            sinon on utilise viscl              !
@@ -69,7 +69,7 @@ subroutine clipke &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -89,7 +89,7 @@ integer          iphas, iclip, iwarnk
 double precision propce(ncelet,*)
 double precision rtp(ncelet,nvar)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iclpke,iel,iclpk2,iclpe2
 integer          ivar,ipp,ii,iikiph,iieiph,iivisc,iiromc

@@ -44,7 +44,7 @@ subroutine raydir &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 !sx,sy,sz          ! r  ! --> ! cosinus directeurs du rayonnement              !
 !  ndirs           ! e  ! ->  ! nombre de directions par 1/8 de                !
@@ -60,7 +60,7 @@ subroutine raydir &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 !===============================================================================
@@ -70,7 +70,7 @@ implicit none
 integer          ndirs
 double precision sx(ndirs),sy(ndirs),sz(ndirs)
 
-! VARIABLES LOCALES
+! Local variables
 
 double precision  teta(6,3)
 double precision  phi1,teta1

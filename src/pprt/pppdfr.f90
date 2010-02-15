@@ -55,10 +55,10 @@ subroutine pppdfr &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! indpdf           ! te ! --> ! indicateur passage ou non par pdf              !
 ! fm               ! tr ! <-- ! moyenne de la fraction de melange              !
 ! fp2m             ! tr ! <-- ! variance de la fraction de melange             !
@@ -84,7 +84,7 @@ subroutine pppdfr &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 include "paramx.h"
@@ -115,7 +115,7 @@ double precision fdeb(ncelet), ffin(ncelet)
 double precision hrec(ncelet)
 
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel, n1, n2, n3, n4, n5 , nfp2 , nbspdf
 double precision t1, t2, t3, t1mod, t2mod , fp2max

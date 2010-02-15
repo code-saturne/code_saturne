@@ -40,7 +40,7 @@ subroutine ledgeo &
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ndim             ! e  ! --> ! dimension de l'espace (=3)                     !
 ! ncelet           ! e  ! --> ! nombre d'elements halo compris                 !
@@ -64,7 +64,7 @@ subroutine ledgeo &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -77,7 +77,7 @@ include "entsor.h"
 integer          ndim   , ncelet , ncel   , nfac   , nfabor
 integer          nprfml , nfml   , nsom   , lndfac , lndfbr
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel , ifac , ifml , nn , n1 , ip
 integer          ntetra , npyram , nprism , nhexae

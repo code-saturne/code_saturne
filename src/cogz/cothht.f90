@@ -43,7 +43,7 @@ subroutine cothht &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! mode             ! e  ! <-- !  -1 : t -> h  ;   1 : h -> t                   !
 ! nespec           ! e  ! <-- ! nb de constituants                             !
@@ -67,7 +67,7 @@ subroutine cothht &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -88,7 +88,7 @@ double precision xespec(nespem)
 double precision th(npot) , eh(nespem,npot)
 double precision temper , enthal
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          it , iesp
 

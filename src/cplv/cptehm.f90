@@ -44,10 +44,10 @@ subroutine cptehm &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! ntbmci           ! e  ! <-- ! taille du macro tableau mc entiers             !
 ! ntbmcr           ! e  ! <-- ! taille du macro tableau mc reels               !
 ! eh               ! tr ! <-- ! enthalpie du gaz                               !
@@ -78,7 +78,7 @@ subroutine cptehm &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 include "paramx.h"
@@ -109,7 +109,7 @@ double precision tp(ncelet)
 double precision tbmcr(ncelet,ntbmcr)
 double precision eh0(ncelet), eh1(ncelet), x1(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          i, icel, icha , icla
 

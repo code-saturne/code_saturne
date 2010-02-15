@@ -40,7 +40,7 @@ subroutine intprf &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! vi               ! r  ! --> ! resultat de l'interpolation                    !
 ! zi               ! r  ! <-- ! altitude a laquelle on interpole               !
@@ -62,7 +62,7 @@ subroutine intprf &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 !===============================================================================
@@ -74,7 +74,7 @@ double precision profz(nprofz), proft(nproft)
 double precision profv(nprofz,nproft)
 double precision xz, temps, var
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          it, it1, it2
 integer          iz, iz1, iz2

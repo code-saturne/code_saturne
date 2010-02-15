@@ -62,7 +62,7 @@ subroutine pptbht &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -86,7 +86,7 @@ character*12     nomcoe(ngazem)
 double precision ehcoel(ngazem,npot) , cpcoel(ngazem)
 double precision wmolce (ngazem)
 
-! VARIABLES LOCALES
+! Local variables
 
 character*40     dummy
 character*12     nomesp

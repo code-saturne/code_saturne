@@ -43,7 +43,7 @@ subroutine vordep &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ncevor           ! e  ! <-- ! nombre de face a l'entree ou est               !
 !                  !    !     ! utilise la methode                             !
@@ -77,7 +77,7 @@ subroutine vordep &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -100,7 +100,7 @@ double precision yzvor(nvomax,2) , yzvora(nvomax,2)
 double precision signv(nvomax)
 double precision temps(nvomax)   , tpslim(nvomax)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ii, jj, kk, iii, iun
 

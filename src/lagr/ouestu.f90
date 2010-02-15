@@ -60,7 +60,7 @@ subroutine ouestu &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nfecra           ! e  ! <-- ! unite du fichier de sortie listing             !
 ! ndim             ! e  ! <-- ! dimension de l'espace (=3)                     !
@@ -88,7 +88,7 @@ subroutine ouestu &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "cstnum.h"
@@ -108,7 +108,7 @@ double precision cdgx , cdgy , cdgz
 double precision celx , cely , celz
 double precision xyznod(ndim,npoint)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          in , is , isign , il , it , ii
 integer          ijklug , ittour , ipturb , isensf , ipos

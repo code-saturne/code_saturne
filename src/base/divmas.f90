@@ -48,12 +48,12 @@ subroutine divmas &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! init             ! e  ! <-- ! indicateur > 0 remise a 0 de diverg            !
 ! ifacel(2,nfac    ! te ! <-- ! no des elts voisins d'une face intern          !
 ! ifabor(nfabor    ! te ! <-- ! no de l'elt voisin d'une face de bord          !
@@ -71,7 +71,7 @@ subroutine divmas &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "vector.h"
@@ -86,7 +86,7 @@ integer          ifacel(2,nfac), ifabor(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 double precision diverg(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel, ifac, ii, jj
 

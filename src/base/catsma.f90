@@ -44,9 +44,9 @@ subroutine catsma &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
 ! ncesmp           ! e  ! <-- ! nombre de cellules a source de masse           !
 ! iterns           ! e  ! <-- ! numero d'iteration sur navsto                  !
@@ -82,7 +82,7 @@ subroutine catsma &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 integer          ncelet, ncel  , ncesmp, iterns, isnexp
@@ -93,7 +93,7 @@ double precision pvara (ncelet)
 double precision smcelp(ncesmp), gamma (ncesmp)
 double precision tsexp (ncelet), tsimp (ncelet), gapinj(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer ii, iel
 

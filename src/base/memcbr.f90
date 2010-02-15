@@ -48,19 +48,17 @@ subroutine memcbr &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iicelb           ! e  ! <-- ! pointeur de la premiere cas libre du           !
 !                  !    !     !  tableau  ia (et pointeur sur icelbr)          !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! ncelbr           ! e  ! --> ! nombre d'elements ayant au moins une           !
-!                  !    !     ! face de bord                                   !
 ! ifinia           ! e  ! --> ! iicelb+ncelbr debut de zone libre              !
 !                  !    !     ! dans ia en sortie                              !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
+! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ia               ! te ! --- ! tableau de travail entier                      !
 !__________________.____._____.________________________________________________.
 
@@ -73,7 +71,7 @@ subroutine memcbr &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 !===============================================================================
@@ -85,7 +83,7 @@ integer          ncelbr , ifinia
 integer          ifabor(nfabor)
 integer          ia(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ifac, ii, iel , iiasse
 

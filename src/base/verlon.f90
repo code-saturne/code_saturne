@@ -39,7 +39,7 @@ subroutine verlon &
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! chaine           ! a  ! <-- ! chaine de caracteres a verifier                !
 ! ii1              ! e  ! --> ! position  premier caractere non blanc          !
@@ -61,7 +61,7 @@ implicit none
 character chaine*(*)
 integer   ii1,ii2,lpos
 
-! VARIABLES LOCALES
+! Local variables
 
 integer   n1,iprbla,idrbla
 

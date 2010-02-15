@@ -41,7 +41,7 @@ subroutine vorini &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ncevor           ! e  ! <-- ! nombre de face a l'entree ou est               !
 !                  !    !     ! utilise la methode                             !
@@ -74,7 +74,7 @@ subroutine vorini &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -97,7 +97,7 @@ double precision yzvor(nvomax,2) , signv(nvomax)
 double precision temps(nvomax)   , tpslim(nvomax)
 
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ii, jj, kk, iii, iun, ivort, iient, iok
 

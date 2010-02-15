@@ -43,7 +43,7 @@ subroutine futhp2 &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! mode             ! e  ! <-- !  -1 : t -> h  ;   1 : h -> t                   !
 ! enthal           ! r  ! <-- ! enthalpie massique j/kg                        !
@@ -60,7 +60,7 @@ subroutine futhp2 &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -85,7 +85,7 @@ integer          mode
 double precision xsolid(2)
 double precision temper , enthal
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          it , isol , ihflt2
 

@@ -42,7 +42,7 @@ integer function iprbla &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! chaine           ! e  ! <-- ! chaine a verifier                              !
 ! lch              ! e  ! <-- ! longueur de la chaine                          !
@@ -61,7 +61,7 @@ implicit none
 character chaine*(*)
 integer   lch
 
-! VARIABLES LOCALES
+! Local variables
 
 integer   ii
 

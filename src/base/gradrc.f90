@@ -53,14 +53,13 @@ subroutine gradrc &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! ncelbr           ! e  ! <-- ! nombre d'elements ayant au  moins              !
-!                  !    !     ! face de bord                                   !
 ! imrgra           ! e  ! <-- ! methode de calcul du gradient                  !
 ! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
 !                  !    !     !              1 sinon                           !
@@ -141,7 +140,7 @@ subroutine gradrc &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -178,7 +177,7 @@ double precision bx   (ncelet),by   (ncelet),bz   (ncelet)
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision dofij(3,nfac)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          lbloc
 parameter       (lbloc = 1024)

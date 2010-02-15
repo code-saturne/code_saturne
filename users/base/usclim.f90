@@ -154,11 +154,12 @@ subroutine usclim &
 !                       rcodcl(ifac, iv, 1)
 !                       rcodcl(ifac, iw, 1)
 !       -> Value of the dynamic roughness height to specify in
-!                       rcodcl(ifac, iu, 3) (values for iv and iw are not used)
+!                       rcodcl(ifac, iu, 3)
+!       -> Value of the scalar roughness height (if required) to specify in
+!                       rcodcl(ifac, iv, 3) (values for iw are not used)
 !       -> Specific code and prescribed temperature value at wall if applicable:
 !         at face ifac, icodcl(ifac, ivar)    = 6
 !                       rcodcl(ifac, ivar, 1) = prescribed temperature
-!                       rcodcl(ifac, ivar, 3) = dynamic roughness height
 !       -> Specific code and prescribed flux value at rough wall, if applicable:
 !         at face ifac, icodcl(ifac, ivar)    = 3
 !                       rcodcl(ifac, ivar, 3) = prescribed flux
@@ -263,9 +264,9 @@ subroutine usclim &
 !      rcodcl(ifac, ivar, 3) if icodcl(ifac, ivar) = 6:
 !        Roughness for the rough wall law
 !         For velocities U, dynamic roughness
-!           rcodcl(ifac, ivar, 3) = roughd
+!           rcodcl(ifac, iu, 3) = roughd
 !         For other scalars, thermal roughness
-!           rcodcl(ifac, ivar, 3) = rought
+!           rcodcl(ifac, iv, 3) = rought
 
 
 !      Note that if the user assigns a value to itypfb equal to ientre, isolib,
@@ -379,12 +380,12 @@ subroutine usclim &
 ! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
 ! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml, nprfml)  !    !     !                                                !
-! maxelt           !  e ! <-- ! max number of cells and faces (int/boundary)   !
+! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfac(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
 ! icodcl           ! ia ! --> ! boundary condition code                        !
 !  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
 !                  !    !     ! = 2  -> flux density                           !
@@ -393,12 +394,12 @@ subroutine usclim &
 !                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
-! itrifb(nfabor    ! ia ! <-- ! indirection for boundary faces ordering)       !
+! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 !  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
-! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
-! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
@@ -415,14 +416,14 @@ subroutine usclim &
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
+!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
-!                  !    !     ! rcodcl(1) = Dirichlet value                    !
+!  (nfabor,nvar,3) !    !     ! rcodcl(1) = Dirichlet value                    !
 !                  !    !     ! rcodcl(2) = exterior exchange coefficient      !
 !                  !    !     !  (infinite if no exchange)                     !
 !                  !    !     ! rcodcl(3) = flux density value                 !
@@ -435,8 +436,8 @@ subroutine usclim &
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! coefu            ! ra ! --- ! work array                                     !
 !  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
-! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
+! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -812,8 +813,12 @@ do ilelt = 1, nlelt
   do iphas = 1, nphas
     itypfb(ifac,iphas)   = iparug
 
-  ! Roughness for velocity: 1cm
+    ! Roughness for velocity: 1cm
     rcodcl(ifac,iu(iphas),3) = 0.01d0
+
+    ! Roughness for scalar (if required): 1cm
+    ! rcodcl(ifac,iv(iphas),3) = 0.01d0
+
   enddo
 
   ! If sliding wall with velocity u(1) = 1:
@@ -822,12 +827,11 @@ do ilelt = 1, nlelt
   ! If sliding wall with velocity u = 0: nothing to do
   if(nscal.gt.0) then
 
-    ! If temperature prescribed to 20 with rough wall law (scalar ii=1)
-    !   with roughness of 1 cm:
+    ! If temperature prescribed to 20 (scalar ii=1)
+    ! (with thermal roughness specified in rcodcl(ifac,iv(iphas),3)) :
     ! ii = 1
-    ! icodcl(ifac, isca(ii))   = 5
+    ! icodcl(ifac, isca(ii))   = 6
     ! rcodcl(ifac, isca(ii), 1) = 20.d0
-    ! rcodcl(ifac, isca(ii), 3) = 0.01.d0
 
     ! If flux prescribed to 4.d0 (scalar ii=3):
     ! ii = 3

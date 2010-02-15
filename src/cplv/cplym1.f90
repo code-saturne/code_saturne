@@ -57,10 +57,10 @@ subroutine cplym1 &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! nitbmc           ! e  ! <-- ! taille du macro tableau mc entiers             !
 ! nrtbmc           ! e  ! <-- ! taille du macro tableau mc reels               !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
@@ -108,7 +108,7 @@ subroutine cplym1 &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 include "paramx.h"
@@ -149,7 +149,7 @@ double precision rtbmc(ncelet,nrtbmc)
 double precision sp(ncelet) , si(ncelet) , sr(ncelet)
 double precision w1(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iel, icha, itbr, itbi, ige
 

@@ -59,7 +59,7 @@ subroutine cscpce &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
@@ -72,7 +72,7 @@ subroutine cscpce &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -122,7 +122,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision coopts(3,nptdis), rvdis(nptdis)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia , idebra , ifinia , ifinra
 integer          ipt    , iel

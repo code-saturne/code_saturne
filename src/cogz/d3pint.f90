@@ -47,10 +47,10 @@ subroutine d3pint &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! indpdf           ! ti ! <-- ! indicteur passage ou non par les pdf           !
 ! dirmin           ! tr ! <-- ! pdf : dirac en fmin                            !
 ! dirmax           ! tr ! <-- ! pdf : dirac en fmax                            !
@@ -76,7 +76,7 @@ subroutine d3pint &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -104,7 +104,7 @@ double precision fm(ncelet), hm(ncelet), p(ncelet)
 double precision propce(ncelet,*), w1(ncelet)
 
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          icel, icg, iphas
 integer          ih, if, jh, jf, ipcrom

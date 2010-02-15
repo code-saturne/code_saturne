@@ -43,7 +43,7 @@ subroutine causta &
 !-------------------------------------------------------------------------------
 !ARGU                         ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iface            ! e  ! <-- ! numero d'entite traitee                        !
 ! imp              ! e  ! <-- ! niveau d'impression                            !
@@ -72,7 +72,7 @@ subroutine causta &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 include "paramx.h"
@@ -86,7 +86,7 @@ integer          iface, imp
 double precision xkappa, cstlog, ypluli, apow, bpow, dpow
 double precision uu, dp, xnu, uet
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ipos, nitm, nit
 double precision eps, rr, yp, uetwer, uetmin, ueta, ysurnu

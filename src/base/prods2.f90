@@ -43,10 +43,10 @@ subroutine prods2 &
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! isqrt            ! e  ! <-- ! indicateur = 1 pour prendre la racine          !
 ! va1(), vb1()     ! tr ! <-- ! premiers vecteurs a multiplier                 !
 ! va2(), vb2()     ! tr ! <-- ! seconds  vecteurs a multiplier                 !
@@ -63,7 +63,7 @@ subroutine prods2 &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -78,7 +78,7 @@ double precision vavb1, vavb2
 double precision va1(ncelet),vb1(ncelet)
 double precision va2(ncelet),vb2(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer nvavb
 double precision vavb(2)

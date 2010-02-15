@@ -55,7 +55,7 @@ subroutine hturbp &
 
 !-------------------------------------------------------------------------------
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! yplus            ! r  ! <-- ! distance a la paroi adimensionnelle            !
 ! ckarm            ! r  ! <-- ! constante de karman                            !
@@ -80,7 +80,7 @@ implicit none
 double precision htur
 double precision prl,ckarm,prt,yplus
 
-! VARIABLES LOCALES
+! Local variables
 
 double precision tplus
 double precision beta2,a2

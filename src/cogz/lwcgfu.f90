@@ -45,7 +45,7 @@ subroutine lwcgfu &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 !                  !    !     !                                                !
 ! gfunc            ! r  ! --> ! valeur de g au point f                         !
@@ -70,7 +70,7 @@ implicit none
 double precision gfunc , f, fm, yfp2m, fp2m
 
 
-! VARIABLES LOCALES
+! Local variables
 
 double precision epsi
 

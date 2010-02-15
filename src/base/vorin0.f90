@@ -40,9 +40,9 @@ subroutine vorin0 &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! irepvo           ! te ! --> ! numero de l'entree associe a chaque            !
 !     (nfabor)     !    !     ! face de bord (=0 si pas de vortex)             !
 !__________________!____!_____!________________________________________________!
@@ -56,7 +56,7 @@ subroutine vorin0 &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "vortex.h"
@@ -67,7 +67,7 @@ include "vortex.h"
 
 integer          nfabor, irepvo(nfabor)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ii, jj, ifac
 

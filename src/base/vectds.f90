@@ -46,16 +46,16 @@ subroutine vectds &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ndim             ! e  ! <-- ! dimension de l'espace                          !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! ndim             ! i  ! <-- ! spatial dimension                              !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! ifacel(2,nfac    ! te ! <-- ! no des elts voisins d'une face intern          !
 ! ifabor(nfabor    ! te ! <-- ! no de l'elt voisin d'une face de bord          !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
+! ia(*)            ! ia ! --- ! main integer work array                        !
 ! surfac(3,nfac    ! tr ! <-- ! surf vectorielle des surfaces interne          !
 ! surfbo(          ! tr ! <-- ! surf vectorielle des surfaces                  !
 !  (3,nfabor       !    !     !                               de bord          !
@@ -65,7 +65,7 @@ subroutine vectds &
 ! vectz (ncelet    ! tr ! <-- ! composante z du vecteur   entre                !
 ! valf (nfac)      ! tr ! --> ! vect*surface      aux faces internes           !
 ! valb (nfabor     ! tr ! --> ! vect*surface      aux faces de bord            !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -79,7 +79,7 @@ subroutine vectds &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 
 include "paramx.h"
 include "pointe.h"
@@ -99,7 +99,7 @@ double precision vectx(ncelet), vecty(ncelet), vectz(ncelet)
 double precision valf(nfac), valb(nfabor)
 double precision ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ifac, iel1, iel2
 integer          idimte, itenso

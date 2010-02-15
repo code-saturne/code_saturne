@@ -50,7 +50,7 @@ subroutine newmrk &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! istr             ! e  ! <-- ! numero de structure                            !
 ! xm(3,3)          ! tr ! <-- ! matrice de masse du systeme                    !
@@ -77,7 +77,7 @@ subroutine newmrk &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -97,7 +97,7 @@ double precision xnm1(3),xpnm1(3),xppnm1(3)
 double precision xfn(3),xfnm1(3)
 double precision dt
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ii, jj
 

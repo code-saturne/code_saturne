@@ -59,7 +59,7 @@ subroutine lwcurl &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ampen1           ! r  ! <-- !  amplitude totale des pics                     !
 ! valmoy           ! r  ! <-- !  valeur moyenne de la variable                 !
@@ -81,7 +81,7 @@ subroutine lwcurl &
 implicit none
 
 !==============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !==============================================================================
 
 
@@ -106,7 +106,7 @@ double precision exit01, exit02
 double precision ampl01, ampl02
 double precision ampen1
 
-! VARIABLES LOCALES
+! Local variables
 
 double precision tvv, c, d
 double precision moyadm, varadm, tvvadm

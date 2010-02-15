@@ -42,13 +42,12 @@ subroutine tstvec &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac  /nfabor    ! e  ! <-- ! nombre total de faces internes/de brd          !
 ! ifacel           ! te ! <-- ! no des elts voisins d'une face intern          !
-! (2, nfac)        !    !     !                                                !
 ! ifabor           ! te ! <-- ! no de l'elt voisin d'une face de bord          !
 ! nfabor  )        !    !     !                                                !
 ! iworkf(*         ! te ! --- ! tab de trav de dim max(nfac,nfabor)            !
@@ -76,7 +75,7 @@ subroutine tstvec &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -91,7 +90,7 @@ integer          ifacel(2,nfac),ifabor(nfabor)
 integer          iworkf(*), ismbs(ncelet), ismbv(ncelet)
 double precision rworkf(*), rsmbs(ncelet), rsmbv(ncelet)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          ii, jj, iok, ifac
 integer          iel, istop

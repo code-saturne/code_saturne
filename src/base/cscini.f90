@@ -49,7 +49,7 @@ subroutine cscini &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
@@ -62,7 +62,7 @@ subroutine cscini &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -101,7 +101,7 @@ double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
 double precision xyznod(ndim,nnod)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia , idebra , ifinia , ifinra
 integer          iphas

@@ -40,9 +40,9 @@ subroutine vorver &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! irepvo           ! te ! <-- ! numero de l'entree associe a chaque            !
 !     (nfabor)     !    !     ! face de bord (=0 si pas de vortex)             !
 ! iappel           ! e  ! <-- ! indique les donnes a verifier                  !
@@ -57,7 +57,7 @@ subroutine vorver &
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -73,7 +73,7 @@ include "vortex.h"
 
 integer          nfabor , irepvo(nfabor)  , iappel
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          iok, nmax , ii, jj
 double precision norm1, norm2, crosp
