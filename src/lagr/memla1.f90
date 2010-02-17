@@ -85,10 +85,8 @@ subroutine memla1 &
 ! istatc           ! e  ! --> ! pointeur sur statis                            !
 ! itslag           ! e  ! --> ! pointeur sur tslagr                            !
 ! istatf           ! e  ! --> ! pointeur sur parbor                            !
-! ifinia           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
-! ifinra           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ra en sortie                             !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

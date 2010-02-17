@@ -74,10 +74,8 @@ subroutine memcli &
 ! itbord           ! e  ! --> ! "pointeur" sur hbord                           !
 ! irijip           ! e  ! --> ! "pointeur" sur rijipb                          !
 ! ivsvdr           ! e  ! --> ! "pointeur" sur visvdr                          !
-! ifinia           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  ! e  !     !  dans ia en sortie                             !
-! ifinra           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  ! e  !     !  dans ia en sortie                             !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

@@ -48,7 +48,7 @@ subroutine clprij &
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! e  ! <-- ! numero de la phase a traiter                   !
+! iphas            ! i  ! <-- ! phase number                                   !
 ! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas rtpa           !
 !                  !    !     !  (inivar)                                      !
 !                  !    !     !            sinon on peut (turrij)              !

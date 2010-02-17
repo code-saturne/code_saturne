@@ -72,10 +72,8 @@ subroutine memdtv &
 ! iw3              ! e  ! --> ! "pointeur" sur w3                              !
 ! igrarx,y,z       ! e  ! --> ! "pointeurs" sur grarox,y,z (iptlro=1)          !
 ! iwcf             ! e  ! --> ! "pointeur" sur wcf                             !
-! ifinia           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  ! e  !     !  dans ia en sortie                             !
-! ifinra           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  ! e  !     !  dans ia en sortie                             !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

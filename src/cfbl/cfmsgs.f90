@@ -77,7 +77,7 @@ subroutine cfmsgs &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iscal            ! e  ! <-- ! numero du scalaire                             !
+! iscal            ! i  ! <-- ! scalar number                                  !
 ! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
 !                  !    !     !  (0 : non , 1 : oui)                           !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !

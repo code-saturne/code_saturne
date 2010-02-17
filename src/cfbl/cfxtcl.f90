@@ -95,8 +95,8 @@ subroutine cfxtcl &
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 !  (nfabor, nphas) !    !     !                                                !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-!  nphas      )    !    !     !                                                !
+! itypfb           ! ia ! <-- ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !

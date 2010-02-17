@@ -160,7 +160,7 @@ subroutine usray2 &
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iphas            ! e  ! <-- ! numero de la phase courante                    !
+! iphas            ! i  ! <-- ! phase number                                   !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
@@ -169,8 +169,8 @@ subroutine usray2 &
 ! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
 ! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml, nprfml)  !    !     !                                                !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-!  nphas      )    !    !     !                                                !
+! itypfb           ! ia ! <-- ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !

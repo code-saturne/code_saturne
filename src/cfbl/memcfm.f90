@@ -79,10 +79,8 @@ subroutine memcfm &
 ! iw1,2,...,12     ! e  ! --> ! "pointeur" sur w1 a w12                        !
 ! iwflms,b         ! e  ! --> ! "pointeur" sur wflmas et wflmab                !
 ! icoefu           ! e  ! --> ! "pointeur" sur coefu                           !
-! ifinia           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
-! ifinra           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

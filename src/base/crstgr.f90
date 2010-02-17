@@ -72,7 +72,7 @@ subroutine crstgr &
 ! ncelge           ! e  ! <-- ! nombre d'elements etendus grossier             !
 ! nfacf            ! e  ! <-- ! nombre de faces internes maill. fin            !
 ! nfacg            ! e  ! <-- ! nombre de faces internes maill. gro.           !
-! iwarnp           ! e  ! <-- ! niveau d'impression                            !
+! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! ifacef           ! te ! <-- ! elements voisins d'une face interne            !
 !  (2, nfacf)      !    !     ! sur maillage fin                               !
 ! ifaceg           ! te ! <-- ! elements voisins d'une face interne            !

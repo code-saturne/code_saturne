@@ -72,11 +72,11 @@ subroutine cfdttv &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! ncepdp           ! e  ! <-- ! nombre de cellules avec pdc                    !
-! ncesmp           ! e  ! <-- ! nombre de cellules avec tsm                    !
+! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
+! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iwarnp           ! e  ! <-- ! niveau d'impression                            !
+! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !

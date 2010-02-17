@@ -79,7 +79,7 @@ subroutine clptur &
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! iphas            ! e  ! <-- ! numero de phase                                !
+! iphas            ! i  ! <-- ! phase number                                   !
 ! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
 !                  !    !     !  coefficients d'echange aux bords              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !

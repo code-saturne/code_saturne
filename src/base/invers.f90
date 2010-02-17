@@ -87,7 +87,7 @@ subroutine invers &
 ! imgrp            ! e  ! <-- ! indicateur = 0 pas de multigrille              !
 ! ncymxp           ! e  ! <-- ! nombre de cycles max pour multigrille          !
 ! nitmfp           ! e  ! <-- ! nombre d iter sur maillage fin                 !
-! iwarnp           ! e  ! <-- ! niveau d'impression                            !
+! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
 ! niterf           ! e  ! --> ! nombre d'iterations effectuees                 !
 !                  !    !     !  (non multigrille)                             !

@@ -95,8 +95,8 @@ subroutine distpr &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-!  nphas      )    !    !     !                                                !
+! itypfb           ! ia ! <-- ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !

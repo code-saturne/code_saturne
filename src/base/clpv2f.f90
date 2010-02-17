@@ -48,7 +48,7 @@ subroutine clpv2f &
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! e  ! <-- ! numero de la phase a traiter                   !
+! iphas            ! i  ! <-- ! phase number                                   !
 ! iwaphi           ! e  ! <-- ! niveau d'impression                            !
 ! propce           ! tr ! <-- ! tableaux des variables au pdt courant          !
 !(ncelet,*         !    !     !                                                !

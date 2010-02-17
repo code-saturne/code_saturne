@@ -87,7 +87,7 @@ subroutine distyp &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! e  ! <-- ! numero de la phase courante                    !
+! iphas            ! i  ! <-- ! phase number                                   !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
@@ -100,8 +100,8 @@ subroutine distyp &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-!  nphas      )    !    !     !                                                !
+! itypfb           ! ia ! <-- ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
 ! isympa           ! te ! <-- ! zero pour annuler le flux de masse             !
 ! (nfabor     )    !    !     ! (transmis mais non utilise)                    !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !

@@ -56,22 +56,18 @@ subroutine usmodg &
 ! nfml             ! i  ! <-- ! number of families (group classes)             !
 ! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
 ! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! e  ! --- ! longueur du tableau nodfac (optionnel          !
-! lndfbr           ! e  ! --- ! longueur du tableau nodfbr (optionnel          !
+! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
+! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
 ! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
 ! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml, nprfml)  !    !     !                                                !
-! ipnfac           ! te ! --- ! position du premier noeud de chaque            !
-!   (lndfac)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! --- ! connectivite faces internes/noeuds             !
-!   (nfac+1)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! --- ! position du premier noeud de chaque            !
-!   (lndfbr)       !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! --- ! connectivite faces de bord/noeuds              !
-!   (nfabor+1)     !    !     !  (optionnel)                                   !
+! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
+! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
+! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
 ! xyznod           ! tr ! --- ! coordonnes des noeuds (optionnel)              !
 ! (ndim,nnod)      !    !     !                                                !
 !__________________!____!_____!________________________________________________!

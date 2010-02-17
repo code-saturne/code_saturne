@@ -55,7 +55,7 @@ subroutine prmoy0 &
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iphas            ! e  ! <-- ! numero de la phase traitee                     !
+! iphas            ! i  ! <-- ! phase number                                   !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !

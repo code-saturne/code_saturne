@@ -100,8 +100,8 @@ subroutine stdtcl &
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 !  (nfabor, nphas) !    !     !                                                !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-!  nphas      )    !    !     !                                                !
+! itypfb           ! ia ! <-- ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
 ! iznfbr           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !                                                !
 ! ilzfbr(nbzfmx    ! te ! <-- ! tableau de travail                             !

@@ -82,10 +82,8 @@ subroutine memdyp &
 ! iflua, iflub     ! e  ! --> ! "pointeur" sur flumas, flumab                  !
 ! icoax,y,z, b     ! e  ! --> ! "pointeur" sur coefax,y,z, coefbx,y,z          !
 ! iw1,2,...,9      ! e  ! --> ! "pointeur" sur w1 a w9                         !
-! ifinia           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
-! ifinra           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

@@ -47,7 +47,7 @@ subroutine clpsca &
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iscal            ! e  ! <-- ! numero du scalaire                             !
+! iscal            ! i  ! <-- ! scalar number                                  !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !

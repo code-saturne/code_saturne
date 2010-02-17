@@ -82,10 +82,9 @@ subroutine altycl &
 ! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
 !   (nfac+1)       !    !     !                                                !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (nfabor+1)     !    !     !                                                !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-!  nphas)          !    !     !                                                !
+! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! itypfb           ! ia ! <-- ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
 ! ialtyb(nfabor    ! te ! <-- ! type des faces de bord pour l'ale              !
 ! icodcl           ! te ! <-- ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !

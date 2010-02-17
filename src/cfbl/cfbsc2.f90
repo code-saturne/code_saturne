@@ -110,7 +110,7 @@ subroutine cfbsc2 &
 !                  !    !     !              0 sinon                           !
 ! iifbru           ! e  ! <-- ! pointeur flux de bord rusanov                  !
 ! ipp              ! e  ! <-- ! numero de variable pour post                   !
-! iwarnp           ! e  ! <-- ! niveau d'impression                            !
+! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! blencp           ! r  ! <-- ! 1 - proportion d'upwind                        !
 ! epsrgp           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !

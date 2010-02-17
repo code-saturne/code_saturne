@@ -82,8 +82,8 @@ subroutine typecl &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-!  nphas)          !    !     !                                                !
+! itypfb           ! ia ! <-- ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
 ! itrifb(nfabor    ! te ! --> ! tab d'indirection pour tri des faces           !
 !  nphas)          !    !     !                                                !
 ! icodcl           ! te ! <-- ! code de condition limites aux faces            !

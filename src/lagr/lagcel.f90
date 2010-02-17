@@ -74,8 +74,8 @@ subroutine lagcel &
 ! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
 ! nnod             ! i  ! <-- ! number of vertices                             !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
-! lndfac           ! e  ! <-- ! longueur du tableau nodfac                     !
-! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr                     !
+! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
+! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -104,8 +104,8 @@ subroutine lagcel &
 !   (lndfbr)       !    !     !  face de bord dans nodfbr                      !
 ! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
 !   (nfabor+1)     !    !     !                                                !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-!  nphas)          !    !     !                                                !
+! itypfb           ! ia ! <-- ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
 ! itrifb(nfabor    ! te ! --> ! tab d'indirection pour tri des faces           !
 !  nphas)          !    !     !                                                !
 ! icocel           ! te ! --> ! connectivite cellules -> faces                 !

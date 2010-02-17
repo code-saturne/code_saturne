@@ -85,10 +85,8 @@ subroutine memra2 &
 ! iflxma,iflxmb    ! e  ! --> ! "pointeur" sur flumas et flumab                !
 ! itek             ! e  ! --> ! "pointeur" sur tempk                           !
 ! iw1,2,...,11     ! e  ! --> ! "pointeur" sur w1 a w10                       !
-! ifinia           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
-! ifinra           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

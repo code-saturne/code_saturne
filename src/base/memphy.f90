@@ -56,10 +56,8 @@ subroutine memphy &
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! iw1,2,3,4,5,6    ! e  ! --> ! "pointeur" sur w1,2,3,4,5,6,7,8,9,10,11,12     !
 ! ixmij            ! e  ! --> ! "pointeur" sur xmij                            !
-! ifinia           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
-! ifinra           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

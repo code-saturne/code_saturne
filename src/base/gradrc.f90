@@ -85,7 +85,7 @@ subroutine gradrc &
 !                  !    !     !     implicite pour la translation              !
 ! ivar             ! e  ! <-- ! indicateur du numero de la variable            !
 !                  !    !     ! (ou 0 si variable non resolue)                 !
-! iwarnp           ! e  ! <-- ! niveau d'impression                            !
+! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! iphydp           ! e  ! <-- ! indicateur de prise en compte de la            !
 !                  !    !     ! pression hydrostatique                         !
 ! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !

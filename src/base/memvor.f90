@@ -45,10 +45,8 @@ subroutine memvor &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! ifinia           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
-! ifinra           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._______________.________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

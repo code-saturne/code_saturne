@@ -70,10 +70,8 @@ subroutine memra3 &
 ! itext            ! e  ! --> ! "pointeur" sur text                            !
 ! itint            ! e  ! --> ! "pointeur" sur tint                            !
 ! itek             ! e  ! --> ! "pointeur" sur tempk                           !
-! ifinia           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
-! ifinra           ! e  ! --> ! pointeur de la premiere cas libre dan          !
-!                  !    !     !  dans ia en sortie                             !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

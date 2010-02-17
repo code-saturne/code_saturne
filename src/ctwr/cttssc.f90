@@ -71,12 +71,12 @@ subroutine cttssc &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! ncepdp           ! e  ! <-- ! nombre de cellules avec pdc                    !
+! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! nckpdp           ! e  ! <-- ! nbr de coef du tenseur de pdc (3 ou 6          !
-! ncesmp           ! e  ! <-- ! nombre de cellules a source de masse           !
+! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iscal            ! e  ! <-- ! numero du scalaire                             !
+! iscal            ! i  ! <-- ! scalar number                                  !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !

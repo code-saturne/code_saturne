@@ -110,7 +110,7 @@ subroutine bilsc2 &
 ! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
 !                  !    !     !              0 sinon                           !
 ! ipp              ! e  ! <-- ! numero de variable pour post                   !
-! iwarnp           ! e  ! <-- ! niveau d'impression                            !
+! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! blencp           ! r  ! <-- ! 1 - proportion d'upwind                        !
 ! epsrgp           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !

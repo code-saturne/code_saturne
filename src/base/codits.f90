@@ -152,7 +152,7 @@ subroutine codits &
 !                  !    !     !            = 1 sinon                           !
 ! nitmap           ! e  ! <-- ! nombre max d'iter pour resol iterativ          !
 ! ipp              ! e  ! <-- ! numero de variable pour post                   !
-! iwarnp           ! e  ! <-- ! niveau d'impression                            !
+! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! nfecrl           ! e  ! <-- ! unite du fichier sortie std                    !
 ! blencp           ! r  ! <-- ! 1 - proportion d'upwind                        !
 ! epsilp           ! r  ! <-- ! precision pour resol iter                      !

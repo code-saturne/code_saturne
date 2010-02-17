@@ -75,7 +75,7 @@ subroutine atmcls &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iphas            ! e  ! <-- ! numero de phase                                !
+! iphas            ! i  ! <-- ! phase number                                   !
 ! ifac             ! e  ! <-- ! face de bord traitee                           !
 ! iel              ! e  ! <-- ! cellule de bord en regard de la face           !
 !                  !    !     !  traitee                                       !

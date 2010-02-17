@@ -54,9 +54,9 @@ subroutine vandri &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iphas            ! e  ! <-- ! numero de la phase traitee                     !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-!  nphas)          !    !     !                                                !
+! iphas            ! i  ! <-- ! phase number                                   !
+! itypfb           ! ia ! <-- ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifapat           ! te ! <-- ! no de face de brd code 5 la + proche           !
 ! (ncelet)         !    !     !    (rij et echo de paroi      )                !

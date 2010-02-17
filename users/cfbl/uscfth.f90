@@ -170,7 +170,7 @@ subroutine uscfth &
 !                  !    !     !   automatise l'init (voir uscfxi)              !
 !                  !    !     ! si calcul aux faces : numero de face           !
 !                  !    !     !   automatise l'init (voir uscfxi)              !
-! iphas            ! e  ! <-- ! numero de la phase courante                    !
+! iphas            ! i  ! <-- ! phase number                                   !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !

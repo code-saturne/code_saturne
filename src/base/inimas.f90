@@ -96,7 +96,7 @@ subroutine inimas &
 ! imaspe           ! e  ! <-- ! suivant l'appel de inimas                      !
 !                  !    !     ! = 1 si appel de navsto resolp                  !
 !                  !    !     ! = 2 si appel de divrij                         !
-! iphas            ! e  ! <-- ! numero de phase courante                       !
+! iphas            ! i  ! <-- ! phase number                                   !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iflmb0           ! e  ! <-- ! =1 : flux de masse annule sym-paroi            !

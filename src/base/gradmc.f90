@@ -89,7 +89,7 @@ subroutine gradmc &
 !                  !    !     !  2 moindre carre support etendu                !
 !                  !    !     !  3 moindre carre support etendu redui          !
 !                  !    !     !  4 reconstr avec init moindres carres          !
-! iwarnp           ! e  ! <-- ! niveau d'impression                            !
+! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
 ! epsrgp           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !

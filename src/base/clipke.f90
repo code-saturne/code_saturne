@@ -48,7 +48,7 @@ subroutine clipke &
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! e  ! <-- ! numero de la phase a traiter                   !
+! iphas            ! i  ! <-- ! phase number                                   !
 ! iclip            ! e  ! <-- ! indicateur = 0 on utilise viscl0               !
 !                  !    !     !            sinon on utilise viscl              !
 ! iwarnk           ! e  ! <-- ! niveau d'impression                            !

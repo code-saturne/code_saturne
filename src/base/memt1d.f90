@@ -58,10 +58,8 @@ subroutine memt1d &
 ! ifnra2         e  ! --> ! pointeur de la premiere cas libre              !
 !                  !    !     !  dans ra apres liberation de rgpt1d            !
 !                  !    !     !  et eppt1d                                     !
-! ifinia           ! e  ! --> ! pointeur de la premiere cas libre              !
-!                  !    !     !  dans ia en sortie                             !
-! ifinra           ! e  ! --> ! pointeur de la premiere cas libre              !
-!                  !    !     !  dans ia en sortie                             !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

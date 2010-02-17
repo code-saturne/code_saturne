@@ -79,12 +79,12 @@ subroutine resssg &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! ncepdp           ! e  ! <-- ! nombre de cellules avec pdc                    !
-! ncesmp           ! e  ! <-- ! nombre de cellules a source de masse           !
+! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
+! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iphas            ! e  ! <-- ! numero de phase                                !
-! ivar             ! e  ! <-- ! numero de variable                             !
+! iphas            ! i  ! <-- ! phase number                                   !
+! ivar             ! i  ! <-- ! variable number                                !
 ! isou             ! e  ! <-- ! numero de passage                              !
 ! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !

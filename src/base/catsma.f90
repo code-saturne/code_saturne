@@ -48,7 +48,7 @@ subroutine catsma &
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
-! ncesmp           ! e  ! <-- ! nombre de cellules a source de masse           !
+! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iterns           ! e  ! <-- ! numero d'iteration sur navsto                  !
 ! isnexp           ! e  ! <-- ! indicateur pour extrapolation des              !
 !                  !    !     !  termes sources de la phase traitee            !

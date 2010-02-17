@@ -70,8 +70,8 @@ subroutine lagnwc &
 ! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
 ! nnod             ! i  ! <-- ! number of vertices                             !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
-! lndfac           ! e  ! <-- ! longueur du tableau nodfac                     !
-! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr                     !
+! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
+! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !

@@ -96,7 +96,7 @@ subroutine itrgrp &
 !                  !    !     !  < 0 pas de limitation                         !
 !                  !    !     !  = 0 a partir des gradients voisins            !
 !                  !    !     !  = 1 a partir du gradient moyen                !
-! iwarnp           ! e  ! <-- ! niveau d'impression                            !
+! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! iphydp           ! e  ! <-- ! indicateur de prise en compte de la            !
 !                  !    !     ! pression hydrostatique                         !
 ! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !

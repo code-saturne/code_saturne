@@ -100,17 +100,17 @@ subroutine cpltss &
 ! nfml             ! i  ! <-- ! number of families (group classes)             !
 ! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
 ! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! e  ! <-- ! longueur du tableau nodfac                     !
-! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr                     !
+! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
+! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! ncepdp           ! e  ! <-- ! nombre de cellules avec pdc                    !
-! ncesmp           ! e  ! <-- ! nombre de cellules a source de masse           !
+! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
+! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iscal            ! e  ! <-- ! numero du scalaire                             !
+! iscal            ! i  ! <-- ! scalar number                                  !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !

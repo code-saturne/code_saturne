@@ -63,10 +63,8 @@ subroutine memcfv &
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iwcel1           ! e  ! --> ! pointeur de w1 (tab travail ncelet)            !
 ! iwceli           ! e  ! --> ! pointeur de wi (tab travail ncelet)            !
-! ifinia           ! e  ! --> ! pointeur de la premiere cas libre              !
-!                  !    !     !  dans ia en sortie                             !
-! ifinra           ! e  ! --> ! pointeur de la premiere cas libre              !
-!                  !    !     !  dans ra en sortie                             !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

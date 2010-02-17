@@ -53,10 +53,8 @@ subroutine vorpre &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ifinia           ! e  ! --> ! numero de la derniere case libre dans          !
-!                  !    !     ! ia apres la reservation memoire                !
-! ifinra           ! e  ! --> ! numero de la derniere case libre dans          !
-!                  !    !     ! ra apres la reservation memoire                !
+! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
+! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !

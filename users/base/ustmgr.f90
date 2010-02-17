@@ -64,7 +64,7 @@ subroutine ustmgr &
 ! ncelf            ! e  ! <-- ! nombre d'elements maillage fin                 !
 ! ncelfe           ! e  ! <-- ! nombre d'elements etendus fin                  !
 ! nfacf            ! e  ! <-- ! nombre de faces internes maill. fin            !
-! iwarnp           ! e  ! <-- ! niveau d'impression                            !
+! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! iusmgr           ! e  ! --> ! 0 : agglomeration automatique                  !
 !                  !    !     ! 1 : on utilise ce sous-programme               !
 ! niw / nrw        ! e  ! --> ! tailles des tableaux iw / rw                   !
