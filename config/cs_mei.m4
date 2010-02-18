@@ -70,6 +70,11 @@ if test "x$with_mei" != "xno" ; then
 
   if test "x$with_mei" != "xyes" -a "x$with_mei" != "xcheck" ; then
     mei_prefix=$with_mei
+  else
+    type "mei-config" > /dev/null 2>&1
+    if test "$?" = "0" ; then
+      mei_prefix=`mei-config --prefix`
+    fi
   fi
 
   MEI_LIBS="-lmei"
