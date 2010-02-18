@@ -49,22 +49,21 @@ subroutine uslafe &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! ----------
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
+!   Subroutine of the Lagrangian particle-tracking module:
 !   -------------------------------------
 
-!    SOUS-PROGRAMME UTILISATEUR (INTERVENTION NON OBLIGATOIRE)
+!    User subroutine (non-mandatory intervention)
 
-!    PRISE EN COMPTE SUR LES PARTICULES D'UN CHAMP DE FORCES
-!      EXTERIEUR
-!    IL DOIT ETRE DONNE EN CHAQUE CELLULE ET ETRE HOMOGENE
-!      A LA GRAVITE (M/S2)
-
-!    PAR DEFAUT LES PARTICULES SONT SOUMISES UNIQUEMENT A LA FORCE
-!      DE TRAINEE ET A LA GRAVITE (DE VALEUR GX GY GZ DONNEES DANS
-!      USINI1)
+!    Management of an external force field acting on the particles
+!    It must be prescribed in every cell and be homogeneous to gravity (m/s^2)
+!
+!    By default gravity and drag force are the only forces acting on the particles
+!    (the gravity components gx gy gz are assigned in usini1)
+!
+!
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -84,75 +83,79 @@ subroutine uslafe &
 ! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
 ! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
+!                  !    !     !                                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ibord            ! te ! --> ! si nordre=2, contient le numero de la          !
-!   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
+! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
+! nvp              ! i  ! <-- ! number of particle variables                   !
+! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
+! nvep             ! i  ! <-- ! number of particle properties (integer)        !
+! nivep            ! i  ! <-- ! number of particle properties (integer)        !
+! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
+! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
+! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
+! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+! itepa            ! ia ! <-- ! particle information (integers)                !
+! (nbpmax,nivep    !    !     !                                                !
+! ibord            ! ia ! --> ! if nordre=2, contains the number of the        !
+!   (nbpmax)       !    !     ! boundary face of particle/wall interaction     !
+! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
+! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
+! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
+! (ndim,ncelet     !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+! (ndim,nfabor)    !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
+! (ndim,nfabor)    !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 ! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! statis           ! tr ! <-- ! cumul pour les moyennes des                    !
-!(ncelet,nvlsta    !    !     !    statistiques volumiques                     !
-! stativ           ! tr ! <-- ! cumul pour les variances des                   !
-!(ncelet,          !    !     !    statistiques volumiques                     !
+! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers for      !
+! (ncelet,*)       !    !     ! the current and the previous time step         !
+! propce           ! ra ! <-- ! physical properties at cell centers            !
+! (ncelet,*)       !    !     !                                                !
+! propfa           ! ra ! <-- ! physical properties at interior face centers   !
+!  (nfac,*)        !    !     !                                                !
+! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
+!  (nfabor,*)      !    !     !                                                !
+! ettp             ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     !                                                !
+! ettpa            ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     !                                                !
+! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
+! (nbpmax,nvep)    !    !     !                                                !
+! statis           ! ra ! <-- ! cumul for the averages of the volume stats.    !
+!(ncelet,nvlsta    !    !     !                                                !
+! stativ           ! ra ! <-- ! cumulation for the variance of the volume      !
+!(ncelet,          !    !     ! statistics                                     !
 !   nvlsta-1)      !    !     !                                                !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
-! piil(nbpmax,3    ! tr ! <-- ! terme dans l'integration des eds up            !
-! tsup(nbpmax,3    ! tr ! <-- ! prediction 1er sous-pas pour                   !
-!                  !    !     !   la vitesse des particules                    !
-! tsuf(nbpmax,3    ! tr ! <-- ! prediction 1er sous-pas pour                   !
-!                  !    !     !   la vitesse du fluide vu                      !
-! bx(nbpmax,3,2    ! tr ! <-- ! caracteristiques de la turbulence              !
-! tsfext(nbpmax    ! tr ! <-- ! infos pour le couplage retour                  !
-! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
+! taup(nbpmax)     ! ra ! <-- ! particle relaxation time                       !
+! tlag(nbpmax)     ! ra ! <-- ! relaxation time for the flow                   !
+! piil(nbpmax,3    ! ra ! <-- ! term in the integration of the sde             !
+! tsup(nbpmax,3    ! ra ! <-- ! prediction 1st substep for                     !
+!                  !    !     ! the velocity of the particles                  !
+! tsuf(nbpmax,3    ! ra ! <-- ! prediction 1st substep for                     !
+!                  !    !     ! the velocity of the flow seen                  !
+! bx(nbpmax,3,2    ! ra ! <-- ! characteristics of the turbulence              !
+! tsfext(nbpmax    ! ra ! <-- ! infos for the return coupling                  !
+! vagaus           ! ra ! <-- ! Gaussian random variables                      !
 !(nbpmax,nvgaus    !    !     !                                                !
-! gradpr(ncel,3    ! tr ! <-- ! gradient de pression                           !
-! gradvf(ncel,3    ! tr ! <-- ! gradient de la vitesse du fluide               !
-! romp             ! tr ! --- ! masse volumique des particules                 !
-! fextla           ! tr ! --> ! champ de forces exterieur                      !
-!(ncelet,3)        !    !     !    utilisateur (m/s2)                          !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
+! gradpr(ncel,3    ! ra ! <-- ! pressure gradient                              !
+! gradvf(ncel,3    ! ra ! <-- ! gradient of the flow velocity                  !
+! romp             ! ra ! --- ! particle density                               !
+! fextla           ! ra ! --> ! user external force field (m/s²)               !
+!(ncelet,3)        !    !     !                                                !
+! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
+! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
+! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -230,20 +233,26 @@ integer          ip
 if(1.eq.1) return
 
 !===============================================================================
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
+!===============================================================================
+!===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 0.  GESTION MEMOIRE
+! 0. Memory management
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 1. EXEMPLE
+! 1. Example
 !===============================================================================
 
-!   Cet exemple est desactive
+!   This example is unactivated
 
 if (1.eq.0) then
 
@@ -262,12 +271,12 @@ endif
 !==============================================================================
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 
 !----
-! FIN
+! End
 !----
 
 end subroutine

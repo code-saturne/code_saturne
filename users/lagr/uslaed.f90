@@ -46,46 +46,42 @@ subroutine uslaed &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose :
 ! ----------
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
+!   Subroutine of the Lagrangian particle-tracking module :
 !   -------------------------------------
 
-!     SOUS-PROGRAMME UTILISATEUR (INTERVENTION NON OBLIGATOIRE)
+!     User subroutine (non-mandatory intervention)
 
-!     INTEGRATION DES EDS POUR LES VARIABLES UTILISATEUR
-!       PAR DEFAUT LES VARIABLES SONT CONSTANTES
+!     Integration of the sde for the user-defined variables.
+!     The variables are constant by default.
 
 
 !                                         d T       T - PIP
-!     LES EDS DOIVENT ETRE DE LA FORME : ----- = - ---------
+!     The sde must be of the form:       ----- = - ---------
 !                                         d t         Tca
 
 
-!     T : IIIIeme VARIABLE UTILISATEUR QUI EST REPEREE POUR LA
-!         PARTICULE IP PAR :
+!     T : IIIIeme user-defined variable, given for the ip particle by
 !            T = ETTP(IP,JVLS(IIII))
 !            T = ETTPA(IP,JVLS(IIII))
 
-!     Tca : TEMPS CARACTERISTIQUE DE L'EDS
-!              A DONNER DANS LE TABLEAU    AUXL1
+!     Tca : Characteristic time for the sde
+!           to be prescribed in the array auxl1
 
-!     PIP : COEFFICIENT DE L'EDS ("PSEUDO SECOND MEMBRE")
-!              A DONNER DANS LE TABLEAU    AUXL2
-
-!              SI LE SCHEMA CHOISI EST D'ORDRE 1 (NORDRE=1)
-!              ALORS AU 1ER ET SEUL PASSAGE PIP S'EXPRIME
-!              EN FONCTION DE DES GRANDEURS DU PAS DE TEMPS
-!              PRECEDENT ETTPA
-
-!              SI LE SCHEMA CHOISI EST D'ORDRE 2 (NORDRE=2)
-!              ALORS AU 1ER PASSAGE (NOR=1) PIP S'EXPRIME
-!              EN FONCTION DE DES GRANDEURS DU PAS DE TEMPS
-!              PRECEDENT ETTPA, ET AU 2E PASSAGE (NOR=2)
-!              PIP S'EXPRIME EN FONCTION DE DES GRANDEURS
-!              DU PAS DE TEMPS COURANT ETTP
-
+!     PIP : Coefficient of the sde (pseudo right member)
+!           to be prescribed in the array auxl2
+!
+!           If the chosen scheme is first order (nordre=1)
+!           then, at the first and only passage pip is expressed
+!           as a function of the quantities of the previous time step contained in ettpa
+!
+!           If the chosen scheme is second order (nordre=2)
+!           then, at the first passage (nor=1) pip is expressed as
+!           a function of the quantities of the previous time step contained in ettpa,
+!           and at the second passage (nor=2) pip is expressed as
+!           a function of the quantities of the current time step contained in ettp
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -104,67 +100,71 @@ subroutine uslaed &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ibord            ! te ! <-- ! contient le numero de la                       !
-!   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
+! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
+! nvp              ! i  ! <-- ! number of particle variables                   !
+! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
+! nvep             ! i  ! <-- ! number of particle properties (integer)        !
+! nivep            ! i  ! <-- ! number of particle properties (integer)        !
+! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
+! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
+! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
+! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+! itepa            ! ia ! <-- ! particle information (integers)                !
+! (nbpmax,nivep    !    !     !                                                !
+! ibord            ! ia ! <-- ! number of the boundary face of part./wall      !
+!   (nbpmax)       !    !     ! interaction                                    !
+! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
+! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
+! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
+! (ndim,ncelet     !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+! (ndim,nfabor)    !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
+! (ndim,nfabor)    !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 ! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
-! tempct           ! tr ! <-- ! temps caracteristique thermique et             !
-!  (nbpmax,2)      !    !     !   ts implicite de couplage retour              !
-! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
-! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
-!                  !    !     !   correction au 2eme sous-pas                  !
-! auxl1(nbpmax)    ! tr ! --- ! tableau de travail                             !
-! auxl2(nbpmax)    ! tr ! --- ! tableau de travail                             !
-! auxl3(nbpmax)    ! tr ! --- ! tableau de travail                             !
-! w1..w3(ncelet    ! tr ! --- ! tableaux de travail                            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
+! rtp              ! ra ! <-- ! transported variables at the current           !
+! (ncelet,*)       !    !     ! and previous time step                         !
+! propce           ! ra ! <-- ! physical properties at cell centers            !
+! (ncelet,*)       !    !     !                                                !
+! propfa           ! ra ! <-- ! physical properties at interior face centers   !
+!  (nfac,*)        !    !     !                                                !
+! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
+!  (nfabor,*)      !    !     !                                                !
+! ettp             ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
+! ettpa            ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the previous time step        !
+! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
+! (nbpmax,nvep)    !    !     !                                                !
+! taup(nbpmax)     ! ra ! <-- ! particle relaxation time                       !
+! tlag(nbpmax)     ! ra ! <-- ! relaxation time for the flow                   !
+! tempct           ! ra ! <-- ! characteristic thermal time and                !
+!  (nbpmax,2)      !    !     ! implicit source term of return coupling        !
+! tsvar            ! ra ! <-- ! prediction 1st substep for the ivar variable,  !
+! (nbpmax,nvp1)    !    !     ! used for the correction at the 2nd substep     !
+!                  !    !     !                                                !
+! auxl1(nbpmax)    ! ra ! ---   work array                                     !
+! auxl2(nbpmax)    ! ra ! --- ! work array                                     !
+! auxl3(nbpmax)    ! ra ! --- ! work array                                     !
+! w1..w3(ncelet    ! ra ! --- ! work arrays                                    !
+! rdevel(nrdeve    ! ra ! <-- ! dev complementary array of reals               !
+! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
+! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
 !     mode: <-- input, --> output, <-> modifies data, --- work array
+
 !===============================================================================
 
 implicit none
@@ -223,14 +223,14 @@ integer          npt , iel , iiii , ipl , iphas
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
-! On ne rentre en effet dans ce sous programme que si on a defini des
-!   variables supplementaires dans uslag1 ; il faut donc necessairement
-!   dire comment on les resout (non?).
+! We enter this subroutine only if additional variables have been defined in
+! uslag1; we must then necessarily define how they are solved.
 
 
 if(1.eq.1) then
@@ -242,28 +242,28 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET DANS LE MODULE LAGRANGIEN             ',/,&
+'@ @@ CAUTION: STOP IN THE LAGRANGIAN MODULE                  ',/,&
 '@    =========                                               ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR uslaed DOIT ETRE COMPLETE',/,&
+'@     THE USER SUBROUTINE uslaed MUST BE FILLED              ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The calculation will not be run                           ',/,&
 '@                                                            ',/,&
-'@  Des variables supplementaires ont ete declarees dans      ',/,&
+'@  Additional variables have been declared in                ',/,&
 '@    uslag1 (NVLS=)                                          ',/,&
-'@  Le sous-programme uslaed doit etre complete pour preciser ',/,&
-'@    l''equation differentielle stochastique a resoudre.     ',/,&
+'@  The subroutine uslaed must be filled to precise           ',/, &
+'@    the stochastic differential equation to be solved       ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
 
-! FIXME : TODO ecrire un exemple utilisateur
+! FIXME : TODO write a user example
 
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1.  Initializations
 !===============================================================================
 
 idebia = idbia0
@@ -272,14 +272,14 @@ idebra = idbra0
 iphas = ilphas
 
 !===============================================================================
-! 2. TEMPS CARACTERISTIQUE DE L'EDS COURANTE
+! 2. Characteristic time of the current sde
 !===============================================================================
 
-! Boucle sur les variables supplementaires
+! Loop on the additional variables
 
 do iiii = 1,nvls
 
-!      Numero dans ETTP de la variable traitee
+!      Number of the treated variable in ettp
 
   ipl = jvls(iiii)
 
@@ -289,20 +289,20 @@ do iiii = 1,nvls
 
       iel = itepa(npt,jisor)
 
-!     Temps caracteristique Tca de l'equation differentielle
-!     Cet exemple doit etre adapte au cas traite
+!     Characteristic time tca of the differential equation
+!     This example must be adapted to the case
 
       auxl1(npt) = 1.d0
 
-!     Prediction au premier sous pas
-!     Cet exemple doit etre adapte au cas traite
+!     Prediction at the first substep
+!     This example must be adapted to the case
 
       if (nor.eq.1) then
         auxl2(npt) = ettpa(npt,ipl)
       else
 
-!     Correction au deuxieme sous pas
-!     Cet exemple doit etre adapte au cas traite
+!     Correction at the second substep
+!     This example must be adapted to the case
 
         auxl2(npt) = ettp(npt,ipl)
       endif
@@ -311,7 +311,7 @@ do iiii = 1,nvls
   enddo
 
 !===============================================================================
-! 3. INTEGRATION DE LA VARIABLE IPL
+! 3. Integration of the variable ipl
 !===============================================================================
 
   call lagitg                                                     &
@@ -326,7 +326,7 @@ enddo
 !===============================================================================
 
 !----
-! FIN
+! End
 !----
 
 end subroutine

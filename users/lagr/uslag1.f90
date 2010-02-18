@@ -31,20 +31,14 @@
 subroutine uslag1
 !================
 
-
-
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
-!   -------------------------------------
+!    User subroutine of the Lagrangian particle-tracking module:
 
-!       SOUS-PROGRAMME UTILISATEUR (INTERVENTION OBLIGATOIRE)
-
-!       ROUTINE UTILISATEUR D'INITIALISATION DE CERTAINS PARAMETRES
-!       DU MODULE LAGRANGIEN. ILS CONCERNENT LES MODELES PHYSIQUES,
-!       NUMERIQUES, ET LES OPTIONS DE POSTPROCESSING.
+!    User subroutine for input of calculation parameters (Fortran commons).
+!    This parameters concern physical, numerical and post-processing options.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -82,9 +76,10 @@ double precision sio2 , al2o3 , fe2o3 , cao
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if (iihmpr.eq.1) then
@@ -97,178 +92,132 @@ endif
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1. ENCLENCHEMENT ET TYPE D'UTILISATION MODULE LAGRANGIEN
+! 1. Particle-tracking mode
 !===============================================================================
 
-!     IILAGR = 0 : PAS DE CALCUL LAGRANGIEN (PAR DEFAUT)
+!     IILAGR = 0 : no particle tracking (default)
 
-!            = 1 : DIPHASIQUE LAGRANGIEN SANS COUPLAGE RETOUR
+!            = 1 : particle-tracking one-way coupling
 
-!            = 2 : DIPHASIQUE LAGRANGIEN AVEC COUPLAGE RETOUR
-!                  ATTENTION, LE COUPLAGE RETOUR N'EST PRIS EN
-!                  COMPTE QUE POUR LA PHASE CONTINUE NUMERO 1
-!                  (on peut choisir de coupler la dynamique,
-!                   la thermique et la masse independamment)
+!            = 2 : particle-tracking two-way coupling
 
-!            = 3 : DIPHASIQUE LAGRANGIEN SUR CHAMPS FIGES
-!                  (cette option necessite une suite de calcul de la
-!                   phase continue ISUITE = 1 ; les champs figes sont
-!                   la totalite des champs euleriens, cette option
-!                   n'est donc pas redondante avec celle du mot-cle
-!                   ICCVFG qui permet un calul sur champs de
-!                   vitesse et turbulents figes ; lorsque IILAGR = 3,
-!                   on impose automatiquement ICCVFG = 1)
+!            = 3 : particle tracking on frozen field
+!                  (this option requires a calculation restart ISUITE=1,
+!                   all Eulerian fields are frozen (pressure, velocities,
+!                   scalars). This option is stronger than ICCVFG)
 
 iilagr = 1
 
 !===============================================================================
-! 2. SUITES LAGRANGIENNES
+! 2. Particle-tracking calculation restart
 !===============================================================================
 
-!     ISUILA = 0 : PAS DE SUITE LAGRANGIENNE (PAR DEFAUT)
-!            = 1 : SUITE LAGRANGIENNE
-!                  (cette option necessite une suite de calcul de la
-!                   phase continue ISUITE = 1)
+!     ISUILA = 0 : no restart (default)
+!            = 1 : restart (this value requires a restart on the continuous
+!                  phase too, i.e. ISUITE = 1)
 
 isuila = 0
 
-!     SUITE DE CALCUL SUR DES STATISTIQUES VOLUMIQUES ET AUX FRONTIERES,
-!     AINSI QUE LES TERMES SOURCES DE COUPLAGE RETOUR
-!     (UTILE SI ISUILA = 1)
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Restart on volume and boundary statistics, and two-way coupling terms
+!     (useful if ISUILA = 1)
+!     (defaul off: 0 ; on: 1)
 
 if (isuila.eq.1) isuist = 0
 
 !===============================================================================
-! 3. MODELES PHYSIQUES LIES AUX PARTICULES
+! 3. Particle tracking: specific models
 !===============================================================================
 
-!     IPHYLA = 0 : PUREMENT DYNAMIQUE (PAR DEFAUT)
-!            = 1 : EQUATIONS SUR Temperature (en degres Celsius),
-!                  Diametre et Masse
-!            = 2 : CHARBON (Les particules  sont des grains de
-!                  charbon pulverise. Cette option n'est disponible que
-!                  si la phase porteuse represente une flamme de charbon
-!                  pulverise.)
+!     IPHYLA = 0 : only transport modeling (default)
+!            = 1 : equation on temperature (in Celsius degrees), diameter or mass
+!            = 2 : pulverized coal combustion (only available if the continuous
+!                   phase is a flame of pulverized coal)
 
 iphyla = 0
 
 
-! 3.1 OPTION POUR EQUATION SUR TP, DP et MP (UNIQUEMENT SI IPHYLA = 1)
-
+! 3.1  equation on temperature, diameter or mass
 
 if (iphyla.eq.1) then
 
-!      EQUATION SUR LE DIAMETRE
-!      (DEFAUT NON : 0 ; OUI : 1)
+!      equation on diameter
+!      (default off: 0 ; on: 1)
 
   idpvar = 0
 
-!      EQUATION SUR LA TEMPERATURE
-!      (DEFAUT NON : 0 ; OUI : 1)
-!      Cette option impose l'existance d'une variable thermique
-!      sur la phase continue (physique paticuliere ou non).
-!      La variable resolue est la temperature en degres Celsius.
+!      equation on temperature (in Celsius degrees)
+!      (default off: 0 ; on: 1)
+!      This option requires a thermal scalar for the continuous phase.
 
   itpvar = 0
 
-!      EQUATION SUR LA MASSE
-!      (DEFAUT NON : 0 ; OUI : 1)
+!      equation on mass
+!      (default off: 0 ; on: 1)
 
   impvar = 0
 
 endif
 
-!     * Dans le cas ou une equation sur la temperature des particules
-!       est enclenchee entre deux suites de calcul (IPHYLA= 1 et ITPVAR= 1)
-!       il faut fournir une temperature (en degres Celsius) et une
-!       chaleur massique (J/kg/K) d'initialisation des particules
-!       deja presentes dans le domaine de calcul.
+! 3.2 coal fouling
 
-if (isuila.eq.1 .and. iphyla.eq.1 .and. itpvar.eq.1) then
-  tpart = 700.d0
-  cppart = 5200.d0
-endif
+!     Reference internal reports EDF/R&D: HI-81/00/030/A and HI-81/01/033/A
 
-! 3.2 OPTIONS POUR l'ENCRASSEMENT (CHARBON UNIQUEMENT i.e. IPHYLA = 2)
-
-
-!     RAPPORTS EDF/R&D DE REFERENCE : HI-81/00/030/A
-!                                     HI-81/01/033/A
-
-!     D'une maniere generale, un calcul d'encrassement est effectue
-!     en deux etapes : 1) on realise un calcul "classique" de chaudiere
-!     a charbon pulverise par une approche homogene ; 2) on fait un
-!     calcul Lagrangien de grains de charbon sur les champs
-!     figes du calcul precedent. L'option d'encrassement est donc
-!     utilise en "post-processing" sur un calcul charbon pulverise
-!     homogene.
-
-
-!     On utilise la probabilite qu'une particule a la temperature Tp
-!     colle sur sa surface d'impact. Cette probabilite est le rapport
-!     d'une viscosite critique sur la viscosite des cendres.
+!     Evaluation of the probability for a particle to stick to a wall.
+!     This probability is the ratio of a critical viscosity on the
+!     viscosity of coal ashes
 
 !              VISREF
-!     P(Tp) = --------   pour VISCEN >= VISREF
+!     P(Tp) = --------   for VISCEN >= VISREF
 !              VISCEN
 
-!           = 1 sinon
+!           = 1 otherwise
 
-!     Pour evaluer la viscosite des cendres VISCEN, on utilise
-!     l'expression de J.D. Watt et T.Fereday (J.Inst.Fuel-Vol42-p99)
+!     The expression of J.D. Watt and T.Fereday (J.Inst.Fuel-Vol42-p99)
+!     is used to evaluate the viscosity of the ashes
 
 !                         ENC1 * 1.0D+7
 !     Log  (10*VISCEN) = --------------- + ENC2
 !        10                            2
-!                        (Tp(°C) - 150)
+!                        (Tp(ï¿½C) - 150)
 
-!     La viscosite critique VISREF est donnée par la litterature et
-!     peut varier entre 8 Pa.set 1.D7 Pa.s           !
-!     En general on prend 1.0D+4 Pa.s...
-
-
+!     In literature, the range of the critical viscosity VISREF is between
+!     8 Pa.s and 1.D7 Pa.s  For general purpose 1.0D+4 Pa.s is chosen
 
 if (iphyla.eq.2) then
 
-!       IENCRA = 0 pas d'encrassement (PAR DEFAUT)
-!              = 1 encrassement
+!       IENCRA = 0 no fouling (default)
+!              = 1 fouling
 
-!       * Il faut preciser les frontieres du domaine sur lesquelles
-!         les grains de charbon peuvent s'encrasser (voir USLAG2).
-!       * Le traitement de l'encrassement se deroule dans USLABO.
-!       * Pour visualiser la cartographie de la masse de particules
-!         encrassees, il faut que IENSI3 = 1 et que IENCBD = 1
-!         (voir la rubrique 10.2 du present sous-programme).
+!       * In uslag2.f90, the boundary on which the fouling can occur must be given
+!       * The fouling is treated in uslabo.f90
+!       * Post-processing:  IENSI3 = 1 and IENCBD = 1 (10.2)
 
   iencra = 0
 
-!     DEFINITION DES CRITERES D'ENCRASSEMENT POUR LES DIFFERENTS CHARBONS
-!     ATTENTION A BIEN LES DEFINIR POUR CHACUN DES NCHARB CHARBONS INJECTES
-!                                       ======
+!     Example of definition of fouling criteria for each coal
 
-!     Premier charbon ICHA = 1
+! first (and single) coal ICHA = 1
 
   icha = 1
 
-!       TPRENC : TEMPERATURE SEUIL EN DESSOUS DE LAQUELLE LES GRAINS
-!                DE CHARBON NE S'ENCRASSENT PAS (en degres Celsius)
+!       TPRENC : threshold temperature below which no fouling occurs
+!                (in Celsius degrees)
 
   tprenc(icha) = 600.d0
 
-!       VISREF : VISCOSITE CRITIQUE (en Pa.s)
+!       VISREF : critical viscosity (Pa.s)
 
   visref(icha) = 10000.d0
 
-!    > Exemple de composition de charbon en matieres minerales :
-!       (avec SiO2 + Al2O3 + Fe2O3 + CaO + MgO = 100% en masse)
+!    > coal composition in mineral matters:
+!       (with  SiO2 + Al2O3 + Fe2O3 + CaO + MgO = 100% in mass)
 
   sio2   =  36.0d0
   al2o3  =  20.8d0
   fe2o3  =   4.9d0
   cao    =  13.3d0
 
-!       ENC1 et ENC2 : COEFFICIENTS DE L'EXPRESSION DE Watt et Fereday
+!       ENC1 and ENC2 : coefficients in Watt and Fereday expression
 
   enc1(icha) = 0.00835d0 * sio2 + 0.00601d0 * al2o3 - 0.109d0
 
@@ -278,185 +227,157 @@ if (iphyla.eq.2) then
 endif
 
 !===============================================================================
-! 4. NOMBRE DE PARTICULES DU DOMAINE
+! 4. Number of particles allowed simultaneously inside the computational domain
 !===============================================================================
 
-!     NOMBRE DE PARTICULES MAXIMAL AUTORISE DANS LE DOMAINE
-!     (PAR DEFAUT : NBPMAX = 1000)
-!     * Attention, la mémoire est réservée en conséquence, et le nombre
-!       max de particules traitees au cours d'une iteration Lagrangienne
-!       est limite a NBPMAX.
-!     * L'ordre de grandeur de NBPMAX doit etre evalue au mieux lors
-!       d'injection a frequence non nulle en tenant compte :
-!       - de la quantite de particules injectees (nombre par classe ou
-!         en fonction du debit massique)
-!       - de nombre de particules clonees ou detruites par la
-!         technique de reduction de variance (IROULE = 1 ou IROULE =2)
+!     default: NBPMAX = 1000
+!     * Warning, memory is allocated with NBPMAX
 
 nbpmax = 1000
 
 !===============================================================================
-! 5. OPTIONS SUR LE TRAITEMENT DE LA PHASE DISPERSEE
+! 5. Calculation features for the dispersed phases
 !===============================================================================
 
 
-! 5.1 VARIABLES SUPPLEMENTAIRES LIEES AUX PARTICULES
-! --------------------------------------------------
+! 5.1 Additional variables
+! ------------------------
 
-!     * ces variables supplementaires sont stokees dans les tableaux
-!       ETTP et ETTPA,
-!     * on renseigne ici le nombre NVLS de variables supplementaires,
-!     * la limite superieure de ce nombre est NUSVAR = 10
-!       (fixee dans lagpar.h),
-!     * on accede aux variables supplementaires dans ETTP et ETTPA
-!       en utilisant le pointeur JVLS de la maniere suivante :
+!     * these additional variables are stored in ETTP and ETTPA arrays
+!     * NVLS is the number of additional variables
+!     * the upper limit is NUSVAR = 10 (fixed in block common lagpar.h)
+!     * one access to additional variables in ETTP ETTPA using the pointer JVLS:
 
-!               etape courante -> ETTP(NBPT,JVLS(NVUS))
-!               etape precedente -> ETTPA(NBPT,JVLS(NVUS))
+!               current step  -> ETTP(NBPT,JVLS(NVUS))
+!               previous step -> ETTPA(NBPT,JVLS(NVUS))
 
-!           NBPT est le numero de la particule traitee
-!             (entier compris entre 1 et NBPART),
-!           NVUS est le numero de la variable supplementaire
-!             (entier compris entre 1 et NVLS),
-!     * l'integration des Equations Differentielles Stochastiques
-!       associees a ces nouvelles variables necessite une intervention
-!       dans le sous-programme utilisateur USLAED.
-
+!           NBPT is the number of the considered particle
+!             (integer between 1 and NBPART),
+!           NVUS is the number of the additional variable
+!             (integer between 1 and NVLS),
+!     * the integration of the associated differential stochastic equation
+!       requires a user intervention in uslaed.f90 subroutine
 
 nvls = 0
 
 
-! 5.2 CARACTERE STATIONNAIRE DE L'ECOULEMENT DE LA PHASE CONTINUE
+! 5.2 Stationary or unsteady continuous phase
 
+!     * if stationary: ISTTIO = 1
+!     * if unsteady: ISTTIO = 0
+!     * if IILAGR = 3 then ISTTIO = 1
 
-!     * si calcul stationnaire   : ISTTIO = 1
-!     * si calcul instationnaire : ISTTIO = 0
-!     * Lorsque les champs de la phase porteuse sont figes (IILAGR = 3)
-!       l'indicateur est force en stationnaire (ISTTIO = 1), sinon
-!       l'utilisateur doit le renseigner en prenant en compte la nature
-!       de l'ecoulement de la phase continue.
-
-!     REMARQUE : si ISTTIO = 0, les moyennes statistiques calculees
-!                sont REMISE A ZERO a chaque iteration Lagrangienne.
+!     Remark: if ISTTIO = 0, then the statistical averages are RESET
+!             at each lagrangian iteration
 
 if (iilagr.ne.3) isttio = 0
 
-
-! 5.3 COUPLAGE RETOUR : INFLUENCE DE LA PHASE DISPERSEE SUR LA PHASE
-!     CONTINUE (UTILE UNIQUEMENT SI IILAGR = 2)
-!     ATTENTION : LE COUPLAGE RETOUR N'EST PRIS EN COMPTE QUE POUR
-!                 LA PHASE CONTINUE NUMERO 1
-
+! 5.3 Two-way coupling: (IILAGR = 2)
 
 if (iilagr.eq.2) then
 
-!     * Nombre d'iterations Lagrangiennes absolues (i.e. suites comprises)
-!       a partir duquel une moyenne en temps des termes sources de
-!       couplage retour est calculee.
-!     * Utile si CALCUL STATIONNAIRE, i.e. si ISTTIO = 1.
-!     * Si le nombre d'iterations Lagrangiennes absolues est strictement
-!       inferieur a NSTITS, les termes sources transmis sont
-!       instationnaires (i.e. ils sont REMIS A ZERO a chaque iteration
-!       Lagrangienne).
-!     * La valeur minimale admissible pour NSTITS est 1.
+!     * number of absolute lagrangian iteration (i.e. with restart)
+!       from which a time average for two-way coupling source terms is
+!       computed (stationary source terms)
+!     * if the Lagrangian iteration is lower than NSTITS, source terms are
+!       unstationary: they are reset at each lagrangian iteration
+!     * useful only if ISTTIO = 1.
+!     * the min value for NSTITS is 1
 
   nstits = 1
 
-!     COUPLAGE RETOUR SUR LA DYNAMIQUE (Vitesse + Turbulence)
-!     (DEFAUT NON : 0 ; OUI : 1)
-!     (UTILE UNIQUEMENT SI ICCVFG = 0)
+!     two-way coupling for dynamic (velocities and turbulent scalars)
+!     (default off: 0 ; on: 1)
+!     (useful if ICCVFG = 0)
 
   ltsdyn = 0
 
-!     COUPLAGE RETOUR SUR LA MASSE (SI IPHYLA = 1 ET IMPVAR = 1)
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     two-way coupling for mass (if IPHYLA = 1 and IMPVAR = 1)
+!     (default off: 0 ; on: 1)
 
   if(iphyla.eq.1 .and. (impvar.eq.1 .or. idpvar.eq.1)) ltsmas = 0
 
-!     COUPLAGE RETOUR SUR LA THERMIQUE (SI IPHYLA = 1 ET ITPVAR = 1) OU
-!     LES VARIABLES CHARBON (SI IPHYLA = 2)
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     two-way coupling for thermal scalar (if IPHYLA = 1 and IMPVAR = 1, or IPHYLA = 2)
+!     or for coal variables (if IPHYLA = 2)
+!     (default off: 0 ; on: 1)
 
   if((iphyla.eq.1 .and. itpvar.eq.1) .or. iphyla.eq.2) ltsthe = 0
 
 endif
 
 
-! 5.4 CALCUL DES STATISTIQUES VOLUMIQUES
-! --------------------------------------
+! 5.4 Volume statistics
+! ---------------------
 
-!   5.4.1 PARAMETRES GENERAUX
+!   5.4.1 Generic parameters
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!     CALCUL DES STATISTIQUES VOLUMIQUES
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Calculation of the volume statistics
+!     (default off: 0 ; on: 1)
 
 istala = 0
 
 
 if (istala.eq.1) then
 
-!     SEUIL POUR LA PRISE EN COMPTE DES STATISTIQUES VOLUMIQUES
-!     * La valeur de SEUIL est un poids statistique.
-!     * Chaque cellule du maillage contient une certaine
-!       quantite de particules en terme de poids statistique
-!       (somme des poids statistiques de toutes les particules
-!       contenues dans la cellule) ;
-!       SEUIL est la valeur minimale a partir de laquelle la
-!       contribution en poids statistique d'une cellule n'est
-!       plus prise en compte dans le modele complet de dispersion
-!       turbulente, dans la resolution de l'equation de poisson
-!       de correction des vitesses moyennes, et dans les sorties
-!       listing et post-processing
-!     (DEFAUT : SEUIL = 0.D0)
+! Threshold for the management of volume statistics
+! -------------------------------------------------
+!  * the value of the seuil variable is a statistical weight.
+!  * each cell of the mesh contains a statistical weight
+!    (sum of the statistical weights of all the particles
+!     located in the cell); seuil is the minimal value from
+!    which the contribution in statistical weight of a particle
+!    is not taken into account anymore in the full model
+!    of turbulent dispersion, in the resolution of the
+!    Poisson equation of correction of the mean velocities, and
+!    in the writing of the listing and post-processing.
+!
 
   seuil = 0.d0
 
-!     CALCUL DES STATISTIQUES VOLUMIQUES A PARTIR DE L'ITERATION
-!     LAGRANGIENNE ABSOLUE
-!     * IDSTNT est un nombre d'iterations Lagrangiennes absolues
-!       (i.e. suites comprises).
-!     (DEFAUT : IDSTNT = 1)
+! Calculation of the volume statistics from the absolute number
+! of Lagrangian iterations
+! * idstnt is a  absolute number of Lagrangian iterations
+!   (i.e. including calculation restarts)
+
 
   idstnt = 1
 
-!     CALCUL STATIONNAIRE DES STATISTIQUES VOLUMIQUES A PARTIR DE
-!     L'ITERATION LAGRANGIENNE ABSOLUE NSTIST
-!     * NSTIST est un nombre d'iterations Lagrangiennes absolues
-!       (i.e. suites comprises) a partir du quel les statistiques sont
-!       moyennees en temps.
-!     * Utile si CALCUL STATIONNAIRE, i.e. si ISTTIO = 1.
-!     * Si le nombre d'iterations Lagrangiennes absolues est strictement
-!       inferieur a NSTIST, les statistiques sont instationnaires
-!       (i.e. elles sont REMISES A ZERO a chaque iteration
-!       Lagrangienne).
-!     (DEFAUT : NSTIST = IDSTNT)
+! Stationary calculation from the absolute Lagrangian iteration nstist
+! *  nstist is a  absolute number of Lagrangian iterations
+!   (i.e. including calculation restarts) from which the statistics
+!    are averaged in time.
+! *  useful if the calculation is stationary (isttio=1)
+! *  if the number of Lagrangian iterations is lower than nstits, the transmitted
+!    source terms are unsteady (i.e. they are reset to zero ar each Lagrangian iteration)
+! *  the minimal value acceptable for nstist is 1.
 
   nstist = idstnt
 
 
-!   5.4.2 NOMBRE DE VARIABLES STATISTIQUES VOLUMIQUES,
-!         NOM DES VARIABLES POUR AFFICHAGE
+!   5.4.2 Number of volume statistical variables,
+!         Name of the variables for display
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!    NOMLAG : nom de la moyenne
-!    NOMLAV : nom de la variance
-!    IHSLAG : sortie des enregistrements sur les capteurs definis
-!             dans USINI1
+!    NOMLAG: name of the mean
+!    NOMLAV: name of the variance
+!    ihslag: Output to the probes defined in usini1
+!
 
-!    * ATTENTION : respecter l'ordre d'apparition des statistiques.
+!    * CAUTION: respect the apparition order of the statistics
 
-!    * Attention ces noms sont utlises pour retrouver les informations
-!      dans le fichier suite de calcul ; donc si un nom est modifie
-!      entre deux calculs, la statistique concernee est perdue.
+!    * Be careful, these names are used to retrieve information
+!      in the calculation-restart file; therefore if a name is modified
+!      between two calculations; the associated statistics is lost.
 
-!    * A priori, l'utilisateur n'intervient que dans les rubriques 4) et 6)
 
-!   1) Par defaut, statistiques TOUJOURS calculees :
-!         Moyenne et variance des composantes de la vitesse
-!         Moyenne et variance du taux de presence
-!            (i    .e. concentration volumique)
-!         Moyenne et variance du temps de séjour
+!    * A priori the user intervenes only in sections 4 and 6
+
+!   1) By default the always-computed statistics are:
+!       - Mean and variance of the velocity components
+!       - Mean and variance of the volume fraction (i. e. volume concentration)
+!       - Mean and variance of the residence time
+
 
   ipv  =  1
   NOMLAG(IPV)  = 'MoVitPtX'
@@ -483,10 +404,10 @@ if (istala.eq.1) then
   NOMLAV(IPV)  = 'VaTpsSej'
   ihslag(ipv)  = 2
 
-!   2) Physiques pariculieres (IPHYLA = 1) suivant les options choisies:
-!         Moyenne et variance de la temperature
-!         Moyenne et variance du diametre
-!         Moyenne et variance de la masse
+!   2) Specific models (iphla = 1) following the chosen options:
+!         Mean and variance of the temperature
+!         Mean and variance of the diameter
+!         Mean and variance of the mass
 
   if (iphyla.eq.1) then
 
@@ -511,11 +432,11 @@ if (istala.eq.1) then
 
   else if (iphyla.eq.2) then
 
-!   3) Charbon pulverise (IPHYLA = 2) :
-!         Moyenne et variance de la temperature
-!         Moyenne et variance de la masse de charbon reactif
-!         Moyenne et variance de la masse de coke
-!         Moyenne et variance du diametre du coeur retrecissant
+!   3) Pulverized coal (iphyla = 2) :
+!         Mean and variance of the temperature
+!         Mean and variance of the mass of reactive coal
+!         Mean and variance of the mass of coke
+!         Mean and variance of the diameter of the shrinking core
 
     ipv  = ipv  + 1
     NOMLAG(IPV) = 'MoTempPt'
@@ -539,16 +460,17 @@ if (istala.eq.1) then
 
   endif
 
-!   4) VARIABLES STATISTIQUES VOLUMIQUES SUPPLEMENTAIRES :
-!       * Si l'utilisateur souhaite des calculs de statistiques
-!         autres que ceux fournis en standard, il doit
-!         1) donner leur nombre NVLSTS,  2) renseigner leur nom,
-!         3) renseigner IHSLAG
-!         et 4) intervenir dans les sous-programmes utilisateur
-!         USLAST.F et USLAEN.F pour programmer ses nouvelles
-!         statistiques (voir les exemples).
-!       * Nombre maximal de statistiques supplementaires : 20
-!         (sinon changer le parametre NUSSTA dans l'include lagpar.h)
+!   4) Additional volume statistical variables
+!      ---------------------------------------
+!     * If the user wishes other statistic calculations
+!       than the standard ones, he must 1) prescribe
+!       their number nvlsts, 2) prescribe their names,
+!       3) prescribe ihslag and 4) intervene in the
+!       user subroutines uslast and uslaen to implement
+!       his new statistics (see the given examples)
+!     * Default maximal number of additional statistics: 20.
+!       (Otherwise, modify the nussta parameter is the
+!       include file lagpar.h)
 
   nvlsts = 0
 
@@ -562,25 +484,25 @@ if (istala.eq.1) then
     ipv = ipv + nvlsts
   endif
 
-!   5) Par defaut, statistique TOUJOURS calculee :
-!         Somme du poids statistiques associé aux particules
-!            (i    .e. nombre de particules par cellules)
+!   5) By default an always-calculated statistic is the
+!      sum of the statistical weights associated to the particles
+!      (i.e. the number of particles per cell)
 
   ipv  = ipv  + 1
   NOMLAG(IPV)  = 'SomPoids'
   ihslag(ipv)  = 1
 
-!   6) STATISTIQUES PAR GROUPE :
-!       * Si l'utilisateur souhaite des calculs de statistiques
-!         par groupe de particule (par defaut aucune statistique par groupe),
-!         il doit :
-!         1) donner NBCLST le nombre de groupe (limite a 100)
-!         2) preciser dans USLAG2 le groupe auquel appartient chaque particule
-!              a l'aide du tableau IUSLAG
-
-!      * ATTENTION : NBCLST ne peut pas etre change lors d'une suite de
-!        calcul (ISUILA=1) meme si le calcul des statistiques n'est pas
-!        encore enclenche (ISTALA=0)
+!   6) Statistics per group:
+!     ----------------------
+!     * if the user wishes to calculate statistics per group of particles
+!       (by default there is no statistics of this kind), he must:
+!      1) prescribe nbclst the number of groups (limited to 100)
+!      2) assign in uslag2 the group to which belongs each particle
+!         through the iuslag array.
+!
+!     * Be careful, nbclst cannot be modified during a calculation restart
+!       (isuila=1); even if the calculation of the statistics is not triggered yet
+!       (istala=0).
 
   nbclst = 0
 
@@ -588,436 +510,400 @@ endif
 
 
 !===============================================================================
-! 6. OPTIONS SUR L'ENTREE DES PARTICULES
+! 6. Option concerning particle inlet
 !===============================================================================
 
-!     INJECTION EN CONTINUE DES PARTICLES PENDANT LE PAS DE TEMPS
-!     (ET PAS UNIQUEMENT AU DEBUT DU PAS DE TEMPS, CETTE OPTION
-!      EVITE LES PAQUETS DE PARTICULES EN FACE LES ZONES D'INJECTION)
-!     (DEFAUT NON : 0 ; OUI : 1)
+!    Continous particle injection during the time step
+!    (and not only at the beginning the time step; this option
+!     makes it possible to avoid bunches of particles in the vicinity
+!     of the inlet zones)
+!     (default off: 0 ; on: 1)
 
 injcon = 0
 
 
 !===============================================================================
-! 7. TECHNIQUE DE REDUCTION DE VARIANCE : CLONAGE/FUSION DES PARTICULES
+! 7. Technic of variance reduction: cloning/fusion of the particles
 !===============================================================================
 
-!     UTILISATION DE LA ROULETTE RUSSE
-!                    DEFAUT NON : 0
-!                           OUI : 1 sans calcul de Y+
-!                                 2 avec calcul de Y+
+!     Use of the Russian roulette
+!                    default off : 0
+!                            on  : 1 without Y+ calculation
+!                                  2 with Y+ calculation
 iroule = 0
 
 
 !===============================================================================
-! 8. OPTIONS SUR LE TRAITEMENT NUMERIQUE DE LA PHASE DISPERSEE
+! 8. Options concerning the numerical treatment of the dispersed phase
 !===============================================================================
 
-!     ORDRE D'INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
-!     PAR DEFAUT 2 (VALEURS ADMISSIBLES : 1 OU 2)
-
-!       NORDRE = 1 : INTEGRATION DES EDS PAR UN SCHEMA D'ORDRE 1
-!       NORDRE = 2 : INTEGRATION DES EDS PAR UN SCHEMA D'ORDRE 2
+! Integration order of the stochastic differential equations
+! (default 2; acceptable values 1 or 2)
+!
 
 nordre = 2
 
 
-!     RESOLUTION DE L'EQUATION DE POISSON POUR LES VITESSE MOYENNES
-!     DES PARTICULES ET CORRECTION DES VITESSES INSTANTANNEES
-!     DES PARTICULES
-!      = 0 : pas de correction des vitesses (VALEUR PAR DEFAUT)
-!      = 1 : correction des vitesses instantanees
+! Resolution of the Poisson equation for the particle mean velocity
+! and correction of the particle instantaneous velocity
+!      = 0: not correction of the velocities (default values)
+!      = 1: correction of the instantaneous velocities
 
-!     ATTENTION : OPTION STRICTEMENT DEVELOPPEUR, LAISSEZ LA VALEUR PAR
-!     =========   DEFAUT           !
+!     CAUTION: OPTION STRICTLY FOR DEVELOPERS; PLEASE LEAVE THE DEFAULT VALUE FOR A
+!     ========= STANDARD USE OF THE CODE.           !
 
 ilapoi = 0
 
 
 !===============================================================================
-! 9. OPTIONS SUR LE TRAITEMENT DE LA DISPERSION TURBULENTE
+! 9. Options concerning the treatment of the dispersed phase
 !===============================================================================
 
-!     ATTENTION : DANS CETTE VERSION, LA DISPERSION TURBULENTE NE
-!     ^^^^^^^^^^  FONCTIONNE QUE SI LA PHASE CONTINUE EST CALCULEE
-!                 AVEC UN MODELE k-eps OU Rij-eps
+!     CAUTION: In this version, the turbulent dispersion works only if
+!     -------  the continuous phase is calculated with a k-eps or a Rij-eps model
 
-
-!-->  PRISE EN COMPTE DE LA DISPERSION TURBULENTE
-!     (DEFAUT OUI : 1 ; NON : 0)
+!-->  Activation of the turbulent dispersion
+!     (default on: 1 ; off: 0)
 
 idistu = 1
 
 
-!-->  DISPERSION TURBULENTE IMPOSEE A CELLE DU FLUIDE
+!-->  Turbulent dispersion imposed to the fluid one.
 
-!     SI ACTIF, ALORS LA DISPERSION TURBULENTE DES PARTICULES EST CELLE
-!     DES PARTICULES FLUIDES. ON SE PLACE DONC DANS UN CAS DE DIFFUSION
-!     TURBULENTE (ON SUPRIME LES EFFETS DE CROISEMENT DE
-!     TRAJECTOIRES). SI LES PARTICULES SIMULEES ONT LA MASSE
-!     VOLUMIQUE DU FLUIDE ALORS, ON SIMULE LE DEPLACEMENT DE
-!     PARTICULES FLUIDES LAGRANGIENNES.
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     If activated, then particle turbulent dispersion is
+!     equal to the fluid-particle one. The crossing-trajectory effects
+!     are suppressed ; it is then a case of turbulent diffusion. If the
+!     simulated particle density is equal to the fluid density, then
+!     we are simulating the displacement of fluid particles.
+!     (default off: 0 ; on: 1)
 
 idiffl = 0
 
-!     MODCPL :
-!          = 0 pour le modele incomplet (VALEUR PAR DEFAUT)
-!          > 0 pour le modele complet, est egal au numero de l'iteration
-!          Lagrangienne absolue (i.e. suites comprises) a partir de
-!          laquelle mise le modele complet est active
-!          MODCPL ne doit pas etre inferieur a IDSTNT
+!     modcpl :
+!          = 0 for the incomplete model (default value)
+!          > 0 for the full model, is equal the absolute number
+!              of Lagrangian iterations from which the full model is activated
+!              modcpl must not be lower than idstnt
+
 
 modcpl = 0
 
-!     IDIRLA  =1 ou 2 ou 3 : 1ere, 2eme ou 3eme direction
-!       du modele complet. Correspond à la direction principale
-!       de l'écoulement. Permet de calculer un echelle de temps
-!       Lagrangienne non isotrope.
-!       (DEFAUT IDIRLA = 1)
+!     idirla (=1 or 2 or 3) : 1st, 2nd or 3rd direction
+!     of the full model. Corresponds to the main direction
+!     of the flow. Allow to calculate a non-isotropic Lagrangian timescale
+!     (default idirla=1)
 
 if (modcpl.gt.0) idirla = 1
 
 
 !===============================================================================
-! 10. OPTIONS SUR LE TRAITEMENT DES FORCES PARTICULIERES
+! 10. Options concerning the treatment of specific forces
 !===============================================================================
 
-!--> ACTIVATION DES FORCES :
+!--> Activation of the following forces:
 
-!      - de Van der Waals
-!      - Electrostatiques
+!      - van der Waals forces
+!      - electrostatic forces
 
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     (default off: 0 ; on: 1)
 
-!     ATTENTION : OPTION DEVELOPPEUR UNIQUEMENT
+!     CAUTION: OPTION FOR DEVELOPERS ONLY
 !     =========
 
 ladlvo = 0
 
-!-->  Constante pour les forces de Van der Waals
-
-!    Constante d'Hamaker Particule/Eau/substrat :
+!-->  Constants for the van der Waals forces
+!     --------------------------------------
+!    Hamaker constant for the particle/fluid/substrate system:
 
 cstham = 6.d-20
 
-!-->  Constante pour les forces Electrostatiques
+!-->  Constants for the elecstrostatic forces
+!    ----------------------------------------
 
-!    Constante de Faradet (C/mol)
+!    Faraday constant (C/mol)
 
 cstfar = 9.648d4
 
-!    Constante dielectrique du vide :
+!    Vacuum permittivity:
 
 epsvid = 8.854d-12
 
-!    Constante dielectrique de l'eau
+!    Dielectric constant of the fluid (example: water at 293 K)
 
 epseau = 80.10d0
 
-!    Potentiel solide 1 (Volt)
+!    Electrokinetic potential of the first solid (Volt)
 
 phi1 = 50.d-3
 
-!    Potentiel solide 2 (Volt)
+!    Electrokinetic potential of the second solid (Volt)
 
 phi2 = -50.d-3
 
-!    FORCE IONIQUE (mol/l)
+!    Ionic force (mol/l)
 
 fion = 1.d-2
 
-!    DISTANCE DE COUPURE
-!      dans la litterature elle est egale à : 1.58D-10
-!                                        ou   1.65D-10
+!    Cut-off distance (in the literature, it is equal to: 1.58D-10
+!                      or 1.65D-10)
 
 dcoup = 1.58d-10
 
-!    DENSITE DE CHARGE
+!    Charge density
 
 sigch = 0.d0
 
-!   Distance minimum entre la particule et la paroi
+!    Minimal distance between particle and wall
 
 dparmn = 1.d-10
 
 
 !===============================================================================
-! 11. ACTIVATION DU MOUVEMENT BROWNIEN
+! 11. Activation of Brownian motion
 !===============================================================================
 
 
-!--> ACTIVATION DU MOUVEMENT BROWNIEN :
+!--> Activation of Brownian motion:
 
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     (default off: 0 ; on: 1)
 
-!     ATTENTION : OPTION DEVELOPPEUR UNIQUEMENT
+!     CAUTION: OPTION FOR DEVELOPERS ONLY
 !     =========
 
 lamvbr = 0
 
 
 !===============================================================================
-! 12. POST-PROCESSING
+! 12. Post-processing
 !===============================================================================
 
-! 12.1 POST-PROCESSING DES TRAJECTOIRES ET DEPLACEMENTS PARTICULAIRES
+! 12.1 Post-processing of the trajectories and particle displacements
 
 
-!     ATTENTION : COUTEUX EN TEMPS DE CALCUL
+!     CAUTION: COMPUTIONALLY EXPENSIVE
 !     ^^^^^^^^^^
 
-!   12.1.1 PARAMETRES GENERAUX
+!   12.1.1 Generic parameters
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!     MODE TRAJECTOIRES
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Trajectory mode
+!     (default off: 0 ; on: 1)
 
 iensi1 = 0
 
-!     MODE DEPLACEMENTS PARTICULAIRES
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Particle-displacement mode
+!     (default off: 0 ; on: 1)
 
 iensi2 = 0
 
 
-!     NOMBRE DE PARTICULES A VISUALISER MAXIMUM=NLISTE
-!     (PAR DEFAUT NBVIS = NLISTE)
-!     ATTENTION : NBVIS NE DOIT NI ETRE SUPERIEUR A NBPMAX
-!                 NI A NLISTE (parametre fixe a 500 dans lagpar.h)
+!     Maximal number of particles to visualize = nliste
+!     (default nbvis=nliste)
+!     Be careful, nbvis must not be greater than nbpmax nor nliste
+!     (parameter equal to 500 in lagpar.h)
 
 nbvis = nliste
 
-!     PERIODE   D'AQUISITION DES DONNEES A VISUALISER
-!     (PAR DEFAUT NVISLA = 1)
+!     Acquisition period of the data to visualize
+!     (default nvisla = 1)
 
 nvisla = 1
 
-!     LISTE contient les numeros des particules que l'on souhaite
-!     visualiser
-!     (PAR DEFAUT LISTE(...) = -1, AUCUNE PARTICULE A VISUALISER)
-!     ATTENTION : si le numero est negatif, il n'y a pas de visualisation.
-
-!   > EXEMPLE 1 :
-!     je veux voir les NBVIS 1eres
+!     The liste array contains the numbers of particles that we want to
+!     visualize (by default liste(...) = -1, no particle to visualize)
+!     Be careful, if the number is negative, there is no visualization)
+!
+!     Example 1: the user wants to track the first nbvis
 
 do ii = 1, nbvis
   liste(ii) = ii
 enddo
 
-!   > EXEMPLE 2 :
-!     je veux voir la 3 5 67 23 1 76 35 36 ...etc..
+!   > Example 2:
+!     I want to track 3 5 67 23 1 76 35 36 ...etc..
 
-!     LISTE(1) = 3
-!     LISTE(2) = 5
-!     LISTE(3) = 67
-!     LISTE(4) = 23
-!     LISTE(5) = 1
-!     LISTE(6) = 76
-!     LISTE(7) = 35
-!     LISTE(8) = 36
+!     liste(1) = 3
+!     liste(2) = 5
+!     liste(3) = 67
+!     liste(4) = 23
+!     liste(5) = 1
+!     liste(6) = 76
+!     liste(7) = 35
+!     liste(8) = 36
 !     ...etc...
 
-!   > REMARQUE : les trous, les repetitions dans le tableau LISTE seront
-!                suprimes, et les numeros seront ranges par ordre
-!                croissant.
+!   > Remark: the holes, the repetitions of the liste array will be deleted,
+!             and the numbers will be sorted in increasing order
+!
+!
 
-!   12.1.2 VARIABLES A VISUALISER SUR LES TRAJECTOIRES OU LES PARTICULES
+!   12.1.2 Variables to visualize on the trajectories or the particles
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!     VARIABLE : VITESSE DU FLUIDE VU
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Variable: velocity of the flow seen
+!     (default off: 0 ; on: 1)
 
 ivisv1  = 0
 
-!     VARIABLE : VITESSE DE LA PARTICULE
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Variable: particle velocity
+!     (default off: 0 ; on: 1)
 
 ivisv2  = 0
 
-!     VARIABLE : TEMPS DE SEJOUR
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Variable: residence time
+!     (default off: 0 ; on: 1)
 
 ivistp  = 0
 
-!     VARIABLE : DIAMETRE
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Variable: diameter
+!     (default off: 0 ; on: 1)
 
 ivisdm  = 0
 
-!     VARIABLE : TEMPERATURE
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Variable: temperature
+!     (default off: 0 ; on: 1)
 if (iphyla.eq.1 .and. itpvar.eq.1) iviste  = 0
 
-!     VARIABLE : MASSE
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Variable: mass
+!     (default off: 0 ; on: 1)
 
 ivismp  = 0
 
 
 if (iphyla.eq.2) then
 
-!       VARIABLE CHARBON : TEMPERATURE EN DEGRES CELSIUS
-!       (DEFAUT NON : 0 ; OUI : 1)
+!       Variable coal: temperature in Celsius degrees
+!       (default off: 0 ; on: 1)
 
   ivishp = 0
 
-!       VARIABLE CHARBON : DIAMETRE DU COEUR RETRECISSANT
-!       (DEFAUT NON : 0 ; OUI : 1)
+!       Variable coal: diameter of the shrinking core
+!       (default off: 0 ; on: 1)
 
   ivisdk  = 0
 
-!       VARIABLE CHARBON : MASSE DE CHARBON REACTIF
-!       (DEFAUT NON : 0 ; OUI : 1)
+!       Variable coal: mass of reactive coal
+!       (default off: 0 ; on: 1)
 
   ivisch  = 0
 
-!       VARIABLE CHARBON : MASSE DE COKE
-!       (DEFAUT NON : 0 ; OUI : 1)
+!       Variable coal: mass of coke
+!       (default off: 0 ; on: 1)
 
   ivisck  = 0
 
 endif
 
 
-! 12.2 STATISTIQUES AUX FRONTIERES : VISUALISATION DES
-!      INTERACTIONS PARTICULES/FRONTIERES
+! 12.2 Boundary statistics: visualization of the particle/boundaries interactions
 ! ------------------------------------------------
 
-!   12.2.1 PARAMETRES GENERAUX
+!   12.2.1 Generic parameters
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!     MODE INTERACTION PARTICULES/FRONTIERES
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Particle/boundary interaction mode
+!     (default off: 0 ; on: 1)
 
 iensi3 = 0
 
-!     CALCUL STATIONNAIRE DES STATISTIQUES AUX FRONTIERES A PARTIR DE
-!     L'ITERATION LAGRANGIENNE ABSOLUE NSTBOR
-!     * NSTBOR est un nombre d'iterations Lagrangiennes absolues
-!       (i.e. suites comprises) a partir duquel les statistiques sont
-!       moyennees (en temps ou par nombre d'interactions).
-!     * Utile si CALCUL STATIONNAIRE, i.e. si ISTTIO = 1.
-!     * Si le nombre d'iterations Lagrangiennes absolues est strictement
-!       inferieur a NSTBOR, les statistiques sont instationnaires
-!       (i.e. elles sont REMISES A ZERO a chaque iteration
-!       Lagrangienne).
-!     * La valeur minimale admissible pour NSTBOR est 1.
-!     (DEFAUT : NSTBOR = 1)
+!    Stationary calculation of the boundary statistics from
+!    the absolute Lagrangian iteration nstbor.
+!     * nstbor is the absolute number of Lagrangian iterations
+!       (i.e. including restarts) from which the statistics are averaged
+!       (in time or by number of interactions)
+!     * useful if the calculation is stationary (isttio=1)
+!     * if the absolute number of Lagrangian iterations is inferior to
+!       nstbor, the statistics are unsteady (i.e. they are reset to zero at each
+!       Lagrangian iteration)
 
 nstbor = 1
 
-!     SEUILF POUR LA PRISE EN COMPTE DES STATISTIQUES AUX FRONTIERES
-!     * La valeur de SEUILF est un poids statistique.
-!     * Chaque face du maillage a subi un certain nombre d'interactions
-!       avec des particules en terme de poids statistique
-!       (somme des poids statistiques de toutes les particules
-!       qui ont interagi avec la face de bord) ;
-!       SEUILF est la valeur minimale a partir de laquelle la
-!       contribution en terme statistique d'une face n'est
-!       plus prise en compte dans les sorties listing
-!       et post-processing.
-!     (DEFAUT : SEUILF = 0.D0)
+!   seuilf for the management of the boundary statistics
+!    * the value of seuilf is a statistical weight
+!    * Each boundary face has undergone a number of particle interactions
+!      in term of statistical weight (sum of the statistical weights of all
+!      the particles that interacted with the boundary face); seuilf is the
+!      minimal value from which the contribution of a face (in statistical terms)
+!      is not taken into account anymore in the writing of the listing and
+!      post-processing.
 
 seuilf = 0.d0
 
 
-!   12.2.2 INFORMATIONS A ENREGISTRER
+!   12.2.2 Information to be recorded
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!
+!   * Some information that may interest the user are already written
+!     in the uslabo subroutine. To activate them, the user has to set below
+!     the corresponding keyword to 1.
+!   * The selection of the interaction modes (irebol, idepo1... see the uslabo subroutine)
+!     that triggers the recording of the information is carried out in uslabo. The default
+!     selection must be validated or modified by the user.
+!   * By default the asked information for all the particle/wall interactions are written
+!     in the same recording. Modifying this behavior can me performed by an intervention
+!     in the uslabo subroutine.
+!   * The boundary statistic 'number of particle/boundary interactions' must be
+!     selected to activate the particle average imoybr(...) = 2
 
-!    * Un certain nombre d'informations succeptibles d'interesser
-!      l'utilisateur sont d'ores et deja ecrites dans le sous-programme
-!      USLABO. Pour les activer il faut mettre le mot-cle correspondant
-!      a 1 ci-dessous.
-!    * La selection des types d'interaction (IREBOL, IDEPO1,... voir
-!      le sous-programme USLAG2) qu'enclenchent l'enregistrement
-!      des informations est faite dans USLABO. La selection par defaut
-!      doit etre validee ou modifiee par l'utilisateur.
-!    * Par defaut, dans un meme enregistrement, on place les informations
-!      demandees pour toutes les interactions particules/frontieres
-!      selectionnees. Modifier ce comportement necessite une
-!      intervention dans le sous-programme utilisateur USLABO.
-!    * La statistique aux frontieres :
-!      "NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES" doit etre
-!      selectionnee obligatoirement pour utiliser la moyenne
-!      particulaire IMOYBR(...) = 2.
-
-
-!     NOMBRE D'INTERACTIONS PARTICULES/FRONTIERES
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Number of particle/boundary interactions
+!     (default off: 0 ; on: 1)
 inbrbd = 1
 
-!     FLUX DE MASSE PARTICULAIRE LIE AUX INTERACTIONS
-!     PARTICULES/FRONTIERES
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Particle mass flux associated to particle/boundary interactions
+!     (default off: 0 ; on: 1)
 iflmbd = 1
 
-!     ANGLE ENTRE LA VITESSE DE LA PARTICULE
-!     ET LE PLAN DE LA FACE FRONTIERE
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Angle between particle velocity and the plan of the boundary face
+!     (default off: 0 ; on: 1)
 iangbd = 0
 
-!     NORME DE LA VITESSE DE LA PARTICULE AU MOMENT
-!     DE SON INTERACTION AVEC LA FACE FRONTIERE
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Norm of particle velocity during the interation with the boundary face
+!     (default off: 0 ; on: 1)
 ivitbd = 0
 
-!     MASSE DE GRAINS DE CHARBON ENCRASSES
-!     (DEFAUT NON : 0 ; OUI : 1)
+!     Mass of fouled coal particles
+!     (default off: 0 ; on: 1)
  if (iphyla.eq.2 .and. iencra.eq.1) iencbd = 0
 
-!     INFORMATIONS UTILISATEUR SUPPLEMENTAIRES A ENREGISTREES
-!     (PAR EXEMPLE TAUX D'EROSION, TEMPERATURE...)
-!     * ces enregistrements supplementaires sont stokees dans
-!       le tableau PARBOR,
-!     * on renseigne ici le nombre NUSBOR d'enregistrements
-!       supplementaires,
-!     * la limite supperieure de ce nombre est NUSBRD = 10
-!       (fixee dans lagpar.h),
-!     * voir un exemple de code d'un enregistrement supplementaire
-!       dans le sous-programme USLABO.
+!     Additional user information to be recorded
+!     ------------------------------------------
+!     (for instance, erosion rate, temperature..)
+!    * these additional recordings are stored in the parbor array
+!    * here we prescribe the nusbor number of additional recordings
+!    * the max value of this number is nusbrd=10 (in lagpar.h)
+!    * see an example of code of an additional recording in the
+!      uslabo subroutine.
 
 nusbor = 0
 
 
-!   12.2.3 NOM DES ENREGISTREMENTS POUR AFFICHAGE,
-!          MOYENNE EN TEMPS OU MOYENNE PARTICULAIRE
-!          DES STATISTIQUES AUX FRONTIERES
+!   12.2.3 Name of the recordings for display,
+!          Average in time of particle average
+!          of the boundary statistics
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!    * A priori l'utilisateur n'intervient que dans les infos
-!      utilisateur supplementaires a enregistrer : il doit
-!      donner le nom de l'enregistrement ainsi que le type
-!      de moyenne que l'on souhaite lui appliquer pour les affichages
-!      listing et en fin de calcul pour le post-processing.
+!    * A priori the user intervenes only in the additional user information
+!      to be recorded: he must prescribe the name of the recording as well as
+!      the type of average that he wishes to apply to it for the writing
+!      of the listing and the post-processing.
 
-!    * ATTENTION ce nom est utilise pour retrouver les informations
-!      dans le fichier suite de calcul, si un nom est modifie
-!      entre deux calculs, le resultat concerne n'est pas relu
-!      (et est donc perdu).
-
-!    * La moyenne appliquee est donnee par l'intermediaire du
-!      tableau IMOYBR :
-!       - si IMOYBR(IUSB(II)) = 0 -> pas de moyenne appliquee
-!       - si IMOYBR(IUSB(II)) = 1 -> on applique une moyenne temporelle,
-!               c'est a dire que la statistique est divisee par le
-!               dernier pas de temps dans le cas d'un enregistrement
-!               instationnaire, ou stationnaire mais avec un nombre
-!               d'iterations inferieur a NSTBOR ; ou que la statistique
-!               est divisee par le temps d'enregistrement
-!               stationnaire dans le cas stationnaire.
-!       - si IMOYBR(IUSB(II)) = 2 -> on applique une moyenne
-!               particulaire, c'est a dire qu'on divise la statistique
-!               par le nombre d'interactions particules/frontieres
-!               enregistrees (en terme de poids statistique)
-!               dans PARBOR(NFABOR,INBR) (cf. USLABO).
-!               Pour utiliser cette moyenne il faut que INBRBD=1.
-!    * Les sauvegardes dans le fichier suite de calcul sont faites
-!      sans application de cette moyenne.
-!    * La moyenne est appliquee si le nombre d'interactions (en poids
-!      statistique) de la face de bord consideree est strictement
-!      superieur a SEUILF, sinon la moyenne est mise a zero.
+!    * Be careful, these names are used to retrieve information
+!      in the calculation-restart file; therefore if a name is modified
+!      between two calculations; the associated statistic is lost.
+!
+!    * The applied average is prescribed through the imoybr array:
+!      - if imoybr(iusb(ii)) = 0 -> no average applied
+!      - if imoybr(iusb(ii)) = 1 -> a time average is applied, i.e. the
+!       statistic is divided by the last time step in the case of an unsteady calculation
+!       of a stationary calculation with a number of iterations lower than nstbor ; or that
+!       the statistic is divided by the recording time in the case of a stationary calculation.
+!      -if imoybr(iusb(ii)) = 2 -> a particle average is applied, i.e. the statistic is divided
+!       by the number of recorded particle/boundary interactions (in terms of statistical weight)
+!       dans parbor(nfabor,inbr) (cf uslabo). To use this average, inbrbd must be set to 1.
+!    * The back-ups in the restart file are performed without applying this average.
+!    * The average is applied if the number of interactions (in statistical weight) of the boundary
+!      face considered is greater than seuilf ; otherwise this average is set to zero.
 
 ipv = 0
 
@@ -1070,9 +956,9 @@ if (iensi3.eq.1) then
 endif
 
 !===============================================================================
-! 13. LISTING LAGRANGIEN
+! 13. Lagrangian listing
 !===============================================================================
-! Periode de sortie du listing lagrangien
+! Lagrangian period for the writing of the Lagrangian listing
 
 ntlal = 1
 

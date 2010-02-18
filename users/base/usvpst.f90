@@ -45,22 +45,27 @@ subroutine usvpst &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statis ,                                     &
    tracel , trafac , trafbr , rdevel , rtuser , ra     )
+
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR POUR LA SORTIE DE VARIABLES SUR UN MAILLAGE
-!   DE POST TRAITEMENT DEJA DEFINI
+!    User subroutine.
 
-! PAR DEFAUT, DEUX MAILLAGES SONT DEFINIS AUTOMATIQUEMENT :
-!      - LE MAILLAGE VOLUMIQUE (IPART=-1) SELON LA VALEUR DE ICHRVL
-!      - LE MAILLAGE DE BORD   (IPART=-2) SELON LA VALEUR DE ICHRBO
-! DES MAILLAGES SUPPLEMENTAIRES (CELLULES OU FACES INTERNES ET
-!   DE BORD) PEUVENT ETRE DEFINIS ET PARAMETRES A TRAVERS
-!   usdpst    .F ET usmpst.F.
+!    Output additional variables on a postprocessing mesh.
 
-!ETTE  CETTE ROUTINE EST APPELEE UNE FOIS PAR MAILLAGE POST
-!   ET PAR PAS DE TEMPS AUQUEL CE MAILLAGE EST ACTIF
+! Several "automatic" postprocessing meshes may be defined:
+! - The volume mesh (ipart=-1) if 'ichrvl' = 1
+! - The boundary mesh (ipart=-2) if 'ichrbo' = 1
+! - SYRTHES coupling surface (ipart < -2) if 'ichrsy' = 1
+! - Cooling tower exchange zone meshes (ipart < -2) if 'ichrze' = 1
+!
+! Additional meshes (cells or faces) may also be defined using the
+! 'usdpst' user subroutine, (and possibly modified using 'usmpst').
+
+! This subroutine is called once for each post-processing mesh
+! (with a different value of 'ipart') for each time step at which output
+! on this mesh is active.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -69,7 +74,7 @@ subroutine usvpst &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ipart            ! e  ! <-- ! numero du maillage post                        !
+! ipart            ! i  ! <-- ! number of the post-processing mesh (< 0 or > 0)!
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
@@ -84,15 +89,15 @@ subroutine usvpst &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nvlsta           ! e  ! <-- ! nombre de variables stat. lagrangien           !
-! ncelps           ! e  ! <-- ! nombre de cellules du maillage post            !
-! nfacps           ! e  ! <-- ! nombre de faces interieur post                 !
-! nfbrps           ! e  ! <-- ! nombre de faces de bord post                   !
+! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
+! ncelps           ! i  ! <-- ! number of cells in post-processing mesh        !
+! nfacps           ! i  ! <-- ! number of interior faces in post-process. mesh !
+! nfbrps           ! i  ! <-- ! number of boundary faces in post-process. mesh !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! itypps(3)        ! te ! <-- ! indicateur de presence (0 ou 1) de             !
-!                  !    !     ! cellules (1), faces (2), ou faces de           !
-!                  !    !     ! de bord (3) dans le maillage post              !
+! itypps(3)        ! ia ! <-- ! global presence flag (0 or 1) for cells (1),   !
+!                  !    !     ! interior faces (2), or boundary faces (3) in   !
+!                  !    !     ! post-processing mesh                           !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
@@ -103,12 +108,12 @@ subroutine usvpst &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! lstcel(ncelps    ! te ! <-- ! liste des cellules du maillage post            !
-! lstfac(nfacps    ! te ! <-- ! liste des faces interieures post               !
-! lstfbr(nfbrps    ! te ! <-- ! liste des faces de bord post                   !
+! lstcel(ncelps)   ! ia ! <-- ! list of cells in post-processing mesh          !
+! lstfac(nfacps)   ! ia ! <-- ! list of interior faces in post-processing mesh !
+! lstfbr(nfbrps)   ! ia ! <-- ! list of boundary faces in post-processing mesh !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! te ! --- ! macro tableau entier                           !
+! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
@@ -121,8 +126,7 @@ subroutine usvpst &
 !  (ndim, nfabor)  !    !     !                                                !
 ! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 !  (ndim, nnod)    !    !     !                                                !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet)         !    !     !                                                !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -131,11 +135,11 @@ subroutine usvpst &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! statis           ! tr ! <-- ! statistiques (lagrangien)                      !
-!ncelet,nvlsta)    !    !     !                                                !
-! tracel(*)        ! tr ! <-- ! tab reel valeurs cellules post                 !
-! trafac(*)        ! tr ! <-- ! tab reel valeurs faces int. post               !
-! trafbr(*)        ! tr ! <-- ! tab reel valeurs faces bord post               !
+! statis           ! ra ! <-- ! statistic values (Lagrangian)                  !
+!  (ncelet, nvlsta)!    !     !                                                !
+! tracel(*)        ! ra ! --- ! work array for post-processed cell values      !
+! trafac(*)        ! ra ! --- ! work array for post-processed face values      !
+! trafbr(*)        ! ra ! --- ! work array for post-processed boundary face v. !
 ! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
 ! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -165,18 +169,18 @@ include "period.h"
 
 ! Arguments
 
-integer          idbia0 , idbra0
+integer          idbia0, idbra0
 integer          ipart
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
-integer          nvar   , nscal  , nphas  , nvlsta
-integer          ncelps , nfacps , nfbrps
-integer          nideve , nrdeve , nituse , nrtuse
+integer          ndim,   ncelet, ncel,   nfac,   nfabor
+integer          nfml,   nprfml
+integer          nnod,   lndfac, lndfbr, ncelbr
+integer          nvar,   nscal , nphas , nvlsta
+integer          ncelps, nfacps, nfbrps
+integer          nideve, nrdeve, nituse, nrtuse
 
 integer          itypps(3)
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
+integer          ifacel(2,nfac), ifabor(nfabor)
+integer          ifmfbr(nfabor), ifmcel(ncelet)
 integer          iprfml(nfml,nprfml)
 integer          ipnfac(nfac+1), nodfac(lndfac)
 integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
@@ -202,20 +206,18 @@ double precision ra(*)
 character*32     namevr
 
 integer          ntindp
-integer          iel   , ifac  , iloc  , iphas, ivar , iclt
-integer          idimt , ii   , jj
+integer          iel, ifac, iloc, iphas, ivar, iclt
+integer          idimt, ii , jj
 integer          idimte, itenso, ientla, ivarpr
 integer          imom1, imom2, ipcmo1, ipcmo2, idtcm
 double precision pond
-double precision rbid(1)
+double precision rvoid(1)
 
 integer          ipass
 data             ipass /0/
 save             ipass
 
-
 !===============================================================================
-
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
@@ -226,388 +228,305 @@ if(1.eq.1) return
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-!     1. TRAITEMENT DES VARIABLES A SORTIR
-!         A RENSEIGNER PAR L'UTILISATEUR aux endroits indiques
+! 1. Handle variables to output
+!    MUST BE FILLED IN by the user at indicated places
 !===============================================================================
 
+! A post-processing id a "part" (using the EnSight vocabulary; the MED and
+! CGNS equivalents are "mesh" and "base" respectively).
+! The user will have defined post-processing meshes in 'usdpst' ('nbpart'
+! post-processing meshes).
 
-!     Un maillage de posttraitement est une "part"
-!       (au sens EnSight ; les équivalents MED et CGNS sont le maillage
-!       et la base respectivement)
-!     L'utilisateur aura defini ses maillages de posttraitement dans
-!       usdpst (NBPART maillages de posttraitement)
+! This subroutine is called once for each post-processing mesh
+! (with a different value of 'ipart') for each time step at which output
+! on this mesh is active. For each mesh and for all variables we wish to
+! post-process here, we must define certain parameters and pass them to
+! the 'psteva' subroutine, which is in charge of the actual output.
+! These parameters are:
 
+! namevr <-- variable name
+! idimt  <-- variable dimension
+!            (1: scalar, 3: vector, 6: symmetric tensor, 9: tensor)
+! ientla <-- when idimt >1, this flag specifies if the array containing the
+!            variable values is interlaced when ientla = 1
+!            (x1, y1, z1, x2, y2, z2, x3, y3, z3...), or non-interlaced
+!            when ientla = 0 (x1,x2,x3,...,y1,y2,y3,...,z1,z2,z3,...).
+! ivarpr <-- specifies if the array containing the variable is defined on
+!            the "parent" mesh or locally.
+!            Even if the 'ipart' post-processing mesh contains all the
+!            elements of its parent mesh, their numbering may be different,
+!            especially when different element types are present.
+!            The 'tracel' array passed as an argument to 'psteva' is built
+!            relative to the numbering of the 'ipart' post-processing mesh.
+!            To post-process a variable contained for example in the 'rtuser'
+!            array, it should first be re-ordered, as shown here:
+!              do iloc = 1, ncelps
+!                iel = lstcel(iloc)
+!                tracel(iloc) = rtuser(iel)
+!              enddo
+!            An alternative option is provided, to avoid unnecessary copies:
+!            an array defined on the parent mesh, such our 'rtuser' example,
+!            may be passed directly to 'psteva', specifying that values
+!            are defined on the parent mesh instead of the post-processing mesh,
+!            by setting the 'ivarpr' argument of 'psteva' to 1.
 
-!     La routine est appelee une fois pour chaque maillage IPART.
-!     Pour chaque maillage et pour chacune des variables que l'on
-!       souhaite posttraiter, on doit definir certains parametres et les
-!       passer a la routine PSTEVA qui se charge de l'ecriture effective.
-!     Ces parametres sont :
-!       NAMEVR : nom de la variable
-!       IDIMT  : dimension de la variable
-!       IENTLA : dans le cas ou IDIMT est >1, IENTLA permet de specifier
-!                si le tableau contenant la variable est range de maniere
-!                entrelacee X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3,... (IENTLA=1)
-!                ou non entrelancee X1,X2,X3,...,Y1,Y2,Y3,...,Z1,Z2,Z3,...
-!                                                               (IENTLA=0)
-!       IVARPR : specifie si le tableau contenant la variable traitee est
-!                defini sur le maillage "parent"/
-!                En effet, meme si le maillage IPART considere contient
-!                le meme nombre d'elements que le maillage complet "parent"
-!                (NCELPS=NCEL), l'ordre de numerotation des elements n'est pas
-!                forcement le meme. Le tableau TRACEL passe en argument de
-!                PSTEVA est construit selon la numerotation du maillage IPART.
-!                Pour posttraiter une variable contenue dans un tableau RTUSER
-!                par exemple, il faut donc d'abord le reordonner dans le
-!                tableau TRACEL :
-!                  DO ILOC = 1, NCELPS
-!                    IEL = LSTCEL(ILOC)
-!                    TRACEL(ILOC) = RTUSER(IEL)
-!                  ENDDO
-!                Une alternative est cependant offerte, pour eviter des copies
-!                inutiles. Si NCELPS=NCEL, on peut directement passer RTUSER
-!                en argument de PSTEVA, en specifiant IVARPR=1, pour avertir
-!                le code que la numerotation est celle du maillage "parent".
-!                L'exemple ci-dessus concerne les cellules, mais la
-!                problematique est la meme avec les faces internes ou faces de
-!                bord.
+! Note: be cautious with variable name lengths.
 
+! We allow up to 32 characters here, but names may be truncted depending on the
+! output format:
 
-!     Remarque : attention aux longueurs des noms de variables.
+! - 19 characters for EnSight
+! - 32 characters for MED
 
-!                On autorise ici jusqu'à 32 caracteres , mais selon le
-!                format utilise, les noms peuvent etre tronques :
+! The nam length is not limited internally, so in case of 2 variables whoses
+! names differ only after the 19th character, the corresponding names will
+! both appear in the ".case" file; simply renaming one of the field descriptors
+! in this text file will correct the output.
 
-!                  - a 19 caracteres pour une sortie EnSight
-!                  - a 32 caracteres pour ue sortie MED 2.2
+! Whitespace at the beginning or the end of a line is truncated automatically.
+! Depending on the format used, prohibited characters (under EnSight, characters
+! (  ) ] [ + - @           ! # * ^ $ / as well as white spaces and tabulations
+! are automatically replaced by the _ character.
 
-!                La longueur du nom n'est pas limitee en interne, et en
-!                cas de deux variables aux noms tronques ne differant
-!                qu'apres le 19ieme caractere, les lignes correspondantes
-!                apparaitront normalement dans le fichier texte ".case"
-!                EnSight, avec un meme champ de description ; il suffit
-!                alors de renommer un de ces champs dans ce fichier
-!                texte pour corriger le probleme.
+! Examples:
 
-!                Les caracteres blancs en debut ou fin de chaine sont
-!                supprimes automatiquement. Selon le format utilise,
-!                les caracteres interdits (sous EnSight, les caracteres
-!                (  ) ] [ + - @           ! # * ^ $ / ainsi que les blancs et les
-!                tabulations seront remplaces par le caractere ___________.
-!                Ceci ne necessite aucune intervention utilisateur
-!                (i.e. inutile d'utiliser ici les anciennes fonctions
-!                Fortran VERLON et UNDSCR).
+! For post-processing mesh 2, we output the velocity, pressure, and prescribed
+! temperature at boundary faces (as well as 0 on possible interior faces)
 
+! For post-processing mesh 1, we output all the variables usually
+! post-processed, using a more compact coding.
 
-!     Exemples :
-!               pour le maillage post 2, on sort
-!                 la vitesse, la pression,
-!                 la temperature imposee aux faces de bord
-!                   (et 0 sur les eventuelles faces interieures)
-
-!               pour le maillage post 1, on sort
-!                 toutes les variables habituellement post-traitables.
-
-!               Le codage de l'exemple pour le maillage post 1 est
-!                 plus compact.
-
-
-!               Les exemples donnes ici correspondent aux maillages
-!                 definis dans en exemple dans usdpst.F et usmpst.F
-
-
-
+! Examples given here correspond to the meshes defined in usdpst.f90 and
+! modified in usmpst.f90.
 
 
 !===============================================================================
-!     1.1. EXEMPLES DE VARIABLES SUPPLEMENTAIRES A POSTTRAITER SUR LE
-!          MAILLAGE VOLUMIQUE COMPLET (IPART=-1)
+! 1.1. Examples of volume variables on the main volume mesh (ipart = -1)
 !===============================================================================
 
-if (ipart.eq.-1) then
+if (ipart .eq. -1) then
 
-!       1.1.1 SORTIE DE k=1/2(R11+R22+R33) EN MODELE Rij
-!       ------------------------------------------------
+  ! 1.1.1 Output of k=1/2(R11+R22+R33) for the Rij-epsilon model
+  !       ------------------------------------------------------
 
-!       Phase
-!         a renseigner par l'utilisateur
-  iphas = 1
+  iphas = 1   ! We only consider phase 1 in this example
 
   if (itytur(iphas) .eq. 3) then
 
-!         Initialisation
-!           pas d'intervention utilisateur requise
+    ! Initialize variable name
     do ii = 1, 32
-      NAMEVR (II:II) = ' '
+      namevr(ii:ii) = ' '
     enddo
 
-!         Nom de la variable
-!           a renseigner par l'utilisateur
-    NAMEVR = 'Energie turb'
+    ! Variable name
+    namevr = 'Turb energy'
 
-!         Dimension de la variable (3 = vecteur, 1=scalaire)
-!           a renseigner par l'utilisateur
+    ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
     idimt = 1
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
-      tracel(iloc) = 0.5d0*( rtp(iel,ir11(iphas)) +               &
-           rtp(iel,ir22(iphas)) +rtp(iel,ir33(iphas)) )
+      tracel(iloc) = 0.5d0*(  rtp(iel,ir11(iphas)) &
+                            + rtp(iel,ir22(iphas)) &
+                            + rtp(iel,ir33(iphas)) )
     enddo
 
-!         Ecriture effective des valeurs calculees
-
-!         Valeurs non entrelacées
+    ! Values are not interlaced (dimension 1 here, so no effect).
     ientla = 0
 
-!         Les variables sont definies sur le tableau de travail ;
-!         on n'utilise pas l'indirection (IVARPR = 0)
+    ! Values are defined on the work array, not on the parent.
     ivarpr = 0
 
-
-!         Le maillage ne contient pas de face interne ni de face
-!         de bord, on peut donc passer un pointeur bidon RBID a la
-!         place de TRAFAC et TRAFBR
-    call psteva(ipart , namevr, idimt, ientla, ivarpr,            &
+    ! Output values; as we have no face values, we can pass a
+    ! trivial array rvoid instead of trafac and trafbr.
+    call psteva(ipart, namevr, idimt, ientla, ivarpr,  &
     !==========
-                ntcabs, ttcabs, tracel, rbid, rbid)
+                ntcabs, ttcabs, tracel, rvoid, rvoid)
 
   endif
 
 
+  ! 1.1.2 Output of a combination of moments
+  !       ----------------------------------
+  ! We assume in this example that we have 2 temporal means (moments):
+  !   <u>  for imom=1
+  !   <uu> for imom=2
+  ! We seek to plot <u'u'>=<uu>-<U>**2
 
-!       1.1.2 SORTIE D'UNE COMBINAISON DE MOMENTS
-!       -----------------------------------------
-!     On suppose dans cet exemple qu'on dispose de 2 moyennes temporelles
-!     (moments) : <u>  pour IMOM=1
-!                 <uu> pour IMOM=2
-!     On souhaite faire une sortie graphique de <u'u'>=<uu>-<U>**2
-
-!       Phase
-!         a renseigner par l'utilisateur
-  iphas = 1
+  iphas = 1   ! We only consider phase 1 in this example
 
   if (nbmomt .ge. 2) then
 
-!         Initialisation
-!           pas d'intervention utilisateur requise
+    ! Initialize variable name
     do ii = 1, 32
-      NAMEVR (II:II) = ' '
+      namevr (ii:ii) = ' '
     enddo
 
-!         Numero des moments :
-      imom1 = 1
-      imom2 = 2
-!         Position dans PROPCE du tableau de cumul temporel des moments
-!           PROPCE(IEL,IPCMOM)
-      ipcmo1 = ipproc(icmome(imom1))
-      ipcmo2 = ipproc(icmome(imom2))
+    ! Moment numbers:
+    imom1 = 1
+    imom2 = 2
 
-!         Nom de la variable
-!           a renseigner par l'utilisateur
-    NAMEVR = '<upup>'
+    ! Position in 'propce' of the array of temporal accumulation for moments,
+    ! propce(iel,ipcmom)
+    ipcmo1 = ipproc(icmome(imom1))
+    ipcmo2 = ipproc(icmome(imom2))
 
-!         Dimension de la variable (3 = vecteur, 1=scalaire)
-!           a renseigner par l'utilisateur
+    ! Variable name
+    namevr = '<upup>'
+
+    ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
     idimt = 1
 
-!         Le cumul temporel des moments doit etre divise par la variable
-!           de cumul du temps qui est un tableau NCEL ou un reel :
-!                 un tableau NCEL   si IDTMOM(IMOM) > 0 : PROPCE(IEL,IDTCM)
-!                 ou un simple reel si IDTMOM(IMOM) < 0 : DTCMOM(IDTCM)
-!         Pour ameliorer la lisibilite de cet exemple, on suppose que les
-!           moments IMOM1 et IMOM2 ont ete calcules sur le meme temps.
+    ! The temporal accumulation for moments must be divided by the accumulated
+    ! time, which id an array of size ncel or a single real number:
+    ! - array of size ncel if idtmom(imom) > 0 : propce(iel, idtcm)
+    ! - or simple real     if idtmom(imom) < 0 : dtcmom(idtcm)
 
-      if(idtmom(imom1).gt.0) then
-        idtcm = ipproc(icdtmo(idtmom(imom1)))
-        do iloc = 1, ncelps
-          iel = lstcel(iloc)
-          tracel(iloc) = propce(iel,ipcmo2)/                      &
-               max(propce(iel,idtcm),epzero)                      &
-               - (propce(iel,ipcmo1)/                             &
-               max(propce(iel,idtcm),epzero))**2
-        enddo
-      elseif(idtmom(imom1).lt.0) then
-        idtcm = -idtmom(imom1)
-        do iloc = 1, ncelps
-          iel = lstcel(iloc)
-          tracel(iloc) =  propce(iel,ipcmo2)/                     &
-               max(dtcmom(idtcm),epzero)                          &
-               - (propce(iel,ipcmo1)/                             &
-               max(dtcmom(idtcm),epzero))**2
-        enddo
-      endif
+    ! To improve this example's readability, we assume moments imom1 and imom2
+    ! have been computed on the same time window.
 
-!         Ecriture effective des valeurs calculees
+    if(idtmom(imom1).gt.0) then
+      idtcm = ipproc(icdtmo(idtmom(imom1)))
+      do iloc = 1, ncelps
+        iel = lstcel(iloc)
+        tracel(iloc) =    propce(iel,ipcmo2)/max(propce(iel,idtcm),epzero)      &
+                       - (propce(iel,ipcmo1)/max(propce(iel,idtcm),epzero))**2
+      enddo
+    elseif(idtmom(imom1).lt.0) then
+      idtcm = -idtmom(imom1)
+      do iloc = 1, ncelps
+        iel = lstcel(iloc)
+        tracel(iloc) =    propce(iel,ipcmo2)/max(dtcmom(idtcm),epzero)      &
+                       - (propce(iel,ipcmo1)/max(dtcmom(idtcm),epzero))**2
+      enddo
+    endif
 
-!         Valeurs non entrelacées
-      ientla = 0
+    ! Values are not interlaced (dimension 1 here, so no effect).
+    ientla = 0
 
-!         Les variables sont definies sur le tableau de travail ;
-!         on n'utilise pas l'indirection (IVARPR = 0)
-      ivarpr = 0
+    ! Values are defined on the work array, not on the parent.
+    ivarpr = 0
 
-
-!         Le maillage ne contient pas de face interne ni de face
-!         de bord, on peut donc passer un pointeur bidon RBID a la
-!         place de TRAFAC et TRAFBR
-      call psteva(ipart , namevr, idimt, ientla, ivarpr,          &
-      !==========
-                ntcabs, ttcabs, tracel, rbid, rbid)
+    ! Output values; as we have no face values, we can pass a
+    ! trivial array rvoid instead of trafac and trafbr.
+    call psteva(ipart, namevr, idimt, ientla, ivarpr,   &
+    !==========
+                ntcabs, ttcabs, tracel, rvoid, rvoid)
 
   endif
 
+!===============================================================================
+! 1.2. Examples of volume variables on the boundary mesh (ipart = -2)
+!===============================================================================
+
+else if  (ipart .eq. -2) then
+
+  ! 1.2.1 Output of the density at the boundary
+  !       -------------------------------------
+
+  iphas = 1   ! We only consider phase 1 in this example
+
+  ! Initialize variable name
+  do ii = 1, 32
+    namevr (ii:ii) = ' '
+  enddo
+
+  ! Variable name
+  namevr = 'Density at boundary'
+
+  ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
+  idimt = 1
+
+  ! Values are not interlaced (dimension 1 here, so no effect).
+  ientla = 0
+
+  ! We directly use the propfb array defined on the parent mesh.
+  ivarpr = 1
+
+  ! Output values; as we have only boundary face values, we can pass a
+  ! trivial array rvoid instead of tracel and trafac.
+  call psteva(ipart, namevr, idimt, ientla, ivarpr,    &
+  !==========
+              ntcabs, ttcabs, rvoid, rvoid,            &
+              propfb(1,ipprob(irom(iphas))))
 
 
-!       1.1.3 SORTIE NUMERO DE DOMAINE EN PARALLELE
-!       -------------------------------------------
+  ! 1.2.2 Output of the domain number in parallel
+  !       ---------------------------------------
 
-!         Cette variable est independante du temps, on ne la sort
-!         donc qu'une fois (voir NTINDP plus bas)
+  ! This variable is independent of time, so we output it once
+  ! only (see 'ntindp' below)
 
   if (ipass.eq.0 .and. irangp.ge.0) then
 
     ipass = ipass + 1
 
-!         Initialisation
-!           pas d'intervention utilisateur requise
+    ! Initialize variable name
     do ii = 1, 32
-      NAMEVR (II:II) = ' '
+      namevr (ii:ii) = ' '
     enddo
 
-!         Nom de la variable
-!           a renseigner par l'utilisateur
-    NAMEVR = 'Num processeur'
+    ! Variable name
+    namevr = 'domain number'
 
-!         Dimension de la variable (3 = vecteur, 1=scalaire)
-!           a renseigner par l'utilisateur
+    ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
     idimt = 1
 
-    do iloc = 1, ncelps
-      iel = lstcel(iloc)
-      tracel(iloc) = irangp + 1
+    do iloc = 1, nfbrps
+      ! ifac = lstfbr(iloc)
+      trafbr(iloc) = irangp + 1
     enddo
 
-!         Ecriture effective des valeurs calculees
-
-!         Valeurs non entrelacées
+    ! Values are not interlaced (dimension 1 here, so no effect).
     ientla = 0
 
-!         Les variables sont definies sur le tableau de travail ;
-!         on n'utilise pas l'indirection (IVARPR = 0)
+    ! Values are defined on the work array, not on the parent.
     ivarpr = 0
 
-!         Cette variable ne depend pas du temps ;
-!         on peut lui affecter un numero de pas de temps negatif
-!         et ne l'ecrire qu'une fois si on veut eviter de
-!         la dupliquer a chaque sortie
+    ! This variable is time-invariant;
+    ! We assign a negative time to it and output it once only to avoid
+    ! duplicating it at each output time.
     ntindp = -1
 
-    call psteva(ipart , namevr, idimt, ientla, ivarpr,            &
+    ! Output values; as we have only boundary face values, we can pass a
+    ! trivial array rvoid instead of trafac and trafbr.
+    call psteva(ipart, namevr, idimt, ientla, ivarpr,  &
     !==========
-                ntindp, ttcabs, tracel, rbid, rbid)
+                ntindp, ttcabs, rvoid, rvoid, trafbr)
 
   endif
-!       Fin du traitement en cas de sortie de la variable
-
-
-
-
-
 
 
 !===============================================================================
-!     1.2. EXEMPLES DE VARIABLES SUPPLEMENTAIRES A POSTTRAITER SUR LE
-!          MAILLAGE DE BORD COMPLET (IPART=-2)
+! 1.3. Examples of volume variables on user meshes 1 or 2
 !===============================================================================
-
-else if  (ipart.eq.-2) then
-
-!       1.2.1 TRAITEMENT DE LA MASSE VOLUMIQUE AU BORD
-!       ----------------------------------------------
-
-!       Phase
-!         a renseigner par l'utilisateur
-  iphas = 1
-
-!       Initialisation
-!         pas d'intervention utilisateur requise
-  do ii = 1, 32
-    NAMEVR (II:II) = ' '
-  enddo
-
-!       Nom de la variable
-!         a renseigner par l'utilisateur
-  NAMEVR = 'Rho bord'
-
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-!         a renseigner par l'utilisateur
-  idimt = 1
-
-
-
-!       Valeurs non entrelacées
-  ientla = 0
-
-!       On utilise directement le tableau propfb defini sur le
-!         maillage parent
-  ivarpr = 1
-
-!       Le maillage ne contient pas de face interne ni de
-!       cellule, on peut donc passer un pointeur bidon RBID a la
-!       place de TRAFAC et TRACEL
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,              &
-  !==========
-              ntcabs, ttcabs, rbid, rbid,                         &
-              propfb(1,ipprob(irom(iphas))))
-
-
-
-
-
-!===============================================================================
-!     1.3. EXEMPLES DE VARIABLES A POSTTRAITER SUR LES MAILLAGE 1 ET 2
-!          (IPART=1 OU IPART=2)
-!===============================================================================
-
 
 else if  (ipart.eq.1 .or. ipart.eq.2) then
 
-!       1.3.1 TRAITEMENT DE LA VITESSE
-!       ------------------------------
+  ! 1.3.1 Output of the velocity
+  !       ----------------------
 
-!       Initialisation
-!         pas d'intervention utilisateur requise
+  ! Initialize variable name
   do ii = 1, 32
-    NAMEVR (II:II) = ' '
+    namevr (ii:ii) = ' '
   enddo
 
-!       Nom de la variable
-!         a renseigner par l'utilisateur
-  NAMEVR = 'Vitesse interpolee'
+  ! Variable name
+  namevr = 'Interpol velocity'
 
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-!         a renseigner par l'utilisateur
+  ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
   idimt = 3
 
-!       Valeurs entrelacées
+  ! Values are interlaced.
   ientla = 1
 
-!       Phase
-!         a renseigner par l'utilisateur
-  iphas = 1
+  iphas = 1   ! We only consider phase 1 in this example
 
-!       Calcul des valeurs de la variable sur les faces internes
-!         Pour simplifier l'exemple, on se contente ici d'une simple
-!           interpolation lineaire.
-!         Dans les calculs paralleles, si l'on utilise les voisins,
-!           il faut faire un echange au prealable, comme d'habitude.
-!         Dans les calculs avec periodicite, il faut egalement le faire
-!         Pour les calculs ou periodicite et parallelisme coexistent,
-!           l'appel a ces routines doit etre fait dans l'ordre
-!           PARCOM puis PERCOM
-
-!         a renseigner par l'utilisateur
+  ! Compute variable values on interior faces.
+  ! In this example, we use a simple linear interpolation.
+  ! For parallel calculations, if neighbors are used, they must be synchronized
+  ! first. This also applies for periodicity. When both are used, parallel
+  ! synchronization must always be done before periodic synchronization.
 
   if(irangp.ge.0) then
     call parcom (rtp(1,iu(iphas)))
@@ -618,12 +537,11 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
   if(iperio.eq.1) then
     idimte = 1
     itenso = 0
-    call percom                                                   &
+    call percom(idimte, itenso,                                        &
     !==========
-         ( idimte , itenso ,                                      &
-           rtp(1,iu(iphas)), rtp(1,iu(iphas)), rtp(1,iu(iphas)),  &
-           rtp(1,iv(iphas)), rtp(1,iv(iphas)), rtp(1,iv(iphas)),  &
-           rtp(1,iw(iphas)), rtp(1,iw(iphas)), rtp(1,iw(iphas)))
+                rtp(1,iu(iphas)), rtp(1,iu(iphas)), rtp(1,iu(iphas)),  &
+                rtp(1,iv(iphas)), rtp(1,iv(iphas)), rtp(1,iv(iphas)),  &
+                rtp(1,iw(iphas)), rtp(1,iw(iphas)), rtp(1,iw(iphas)))
   endif
 
   do iloc = 1, nfacps
@@ -633,84 +551,65 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     jj = ifacel(2, ifac)
     pond = ra(ipond-1+ifac)
 
-    trafac(1 + (iloc-1)*idimt )                                   &
-         =         pond  * rtp(ii, iu(iphas))                     &
-         + (1.d0 - pond) * rtp(jj, iu(iphas))
-    trafac(2 + (iloc-1)*idimt )                                   &
-         =         pond  * rtp(ii, iv(iphas))                     &
-         + (1.d0 - pond) * rtp(jj, iv(iphas))
-    trafac(3 + (iloc-1)*idimt )                                   &
-         =         pond  * rtp(ii, iw(iphas))                     &
-         + (1.d0 - pond) * rtp(jj, iw(iphas))
+    trafac(1 + (iloc-1)*idimt)  =            pond  * rtp(ii,iu(iphas))   &
+                                   + (1.d0 - pond) * rtp(jj,iu(iphas))
+    trafac(2 + (iloc-1)*idimt)  =            pond  * rtp(ii,iv(iphas))   &
+                                   + (1.d0 - pond) * rtp(jj,iv(iphas))
+    trafac(3 + (iloc-1)*idimt)  =            pond  * rtp(ii,iw(iphas))   &
+                                   + (1.d0 - pond) * rtp(jj,iw(iphas))
 
   enddo
 
-
-!       Calcul des valeurs de la variable sur les faces de bord
-!         Pour simplifier l'exemple, on se contente ici d'une simple
-!         recopie de la variable de la cellule adjacente.
-!         a renseigner par l'utilisateur
+  ! Compute variable values on boundary faces.
+  ! In this example, we use a simple copy of the adjacent cell value.
 
   do iloc = 1, nfbrps
 
     ifac = lstfbr(iloc)
     ii = ifabor(ifac)
 
-    trafbr(1 + (iloc-1)*idimt ) = rtp(ii, iu(iphas))
-    trafbr(2 + (iloc-1)*idimt ) = rtp(ii, iv(iphas))
-    trafbr(3 + (iloc-1)*idimt ) = rtp(ii, iw(iphas))
+    trafbr(1 + (iloc-1)*idimt) = rtp(ii, iu(iphas))
+    trafbr(2 + (iloc-1)*idimt) = rtp(ii, iv(iphas))
+    trafbr(3 + (iloc-1)*idimt) = rtp(ii, iw(iphas))
 
   enddo
 
-!       Ecriture effective des valeurs calculees
-
+  ! Values are defined on the work array, not on the parent.
   ivarpr = 0
 
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,              &
+  ! Output values
+  call psteva(ipart, namevr, idimt, ientla, ivarpr,    &
   !==========
               ntcabs, ttcabs, tracel, trafac, trafbr)
 
 
-!       1.3.2 TRAITEMENT DE LA PRESSION
-!       -------------------------------
+  ! 1.3.2 Output of the pressure
+  !       ----------------------
 
-
-!       Initialisation
-!         pas d'intervention utilisateur requise
+  ! Initialize variable name
   do ii = 1, 32
-    NAMEVR (II:II) = ' '
+    namevr (ii:ii) = ' '
   enddo
 
-!       Nom de la variable
-!         a renseigner par l'utilisateur
-  NAMEVR = 'Pression interpolee'
+  ! Variable name
+  namevr = 'Interpol pressure'
 
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-!         a renseigner par l'utilisateur
+  ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
   idimt = 1
 
-!       Valeurs non entrelacées (sans importance pour un scalaire)
+  ! Values are not interlaced (dimension 1 here, so no effect).
   ientla = 0
 
-!       Phase
-!         a renseigner par l'utilisateur
-  iphas = 1
+  iphas = 1   ! We only consider phase 1 in this example
 
-!       Numero de variable
-!         a renseigner par l'utilisateur
+  ! Variable number
   ivar = ipr(iphas)
 
-!       Calcul des valeurs de la variable sur les faces internes
-!         Pour simplifier l'exemple, on se contente ici d'une simple
-!           interpolation lineaire.
-!         Dans les calculs paralleles, si l'on utilise les voisins,
-!           il faut faire un echange au prealable, comme d'habitude.
-!         Dans les calculs avec periodicite, il faut egalement le faire
-!         Pour les calculs ou periodicite et parallelisme coexistent,
-!           l'appel a ces routines doit etre fait dans l'ordre
-!           PARCOM puis PERCOM
-
-!         a renseigner par l'utilisateur
+  ! Compute variable values on interior faces.
+  ! In this example, we use a simple linear interpolation.
+  ! For parallel calculations, if neighbors are used, they must be synchronized
+  ! first. This also applies for periodicity. When both are used, parallel
+  ! synchronization must always be done before periodic synchronization.
 
   if(irangp.ge.0) then
     call parcom (rtp(1,ivar))
@@ -718,12 +617,11 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
   if(iperio.eq.1) then
     idimte = 0
     itenso = 0
-    call percom                                                   &
+    call percom(idimte, itenso,                         &
     !==========
-         ( idimte , itenso ,                                      &
-           rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                 &
-           rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                 &
-           rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
+                rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),  &
+                rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),  &
+                rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
   endif
 
   do iloc = 1, nfacps
@@ -733,16 +631,12 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     jj = ifacel(2, ifac)
     pond = ra(ipond-1+ifac)
 
-    trafac(iloc) =           pond  * rtp(ii, ivar)                &
+    trafac(iloc) =           pond  * rtp(ii, ivar)  &
                    + (1.d0 - pond) * rtp(jj, ivar)
-
   enddo
 
-
-!       Calcul des valeurs de la variable sur les faces de bord
-!         Pour simplifier l'exemple, on se contente ici d'une simple
-!         recopie de la variable de la cellule adjacente.
-!         a renseigner par l'utilisateur
+  ! Compute variable values on boundary faces.
+  ! In this example, we use a simple copy of the adjacent cell value.
 
   do iloc = 1, nfbrps
 
@@ -750,53 +644,45 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     ii = ifabor(ifac)
 
     trafbr(iloc) = rtp(ii, ivar)
-
   enddo
 
-!       Ecriture effective des valeurs calculees
-
+  ! Values are defined on the work array, not on the parent.
   ivarpr = 0
 
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,              &
+  ! Output values
+  call psteva(ipart, namevr, idimt, ientla, ivarpr,    &
   !==========
               ntcabs, ttcabs, tracel, trafac, trafbr)
 
 
-!       1.3.3 TRAITEMENT DE LA TEMPERATURE AU BORD
-!       ------------------------------------------
+  ! 1.3.3 Output of the boundary temperature
+  !       ----------------------------------
 
-!       Phase
-!         a renseigner par l'utilisateur
-  iphas = 1
+  iphas = 1   ! We only consider phase 1 in this example
 
-  if(iscalt(iphas).gt.0) then
+  if (iscalt(iphas) .gt. 0) then
 
-!       Initialisation
-!         pas d'intervention utilisateur requise
+    ! Initialize variable name
     do ii = 1, 32
-      NAMEVR (II:II) = ' '
+      namevr (ii:ii) = ' '
     enddo
 
-!       Nom de la variable
-!         a renseigner par l'utilisateur
-    NAMEVR = 'Temperature de bord'
+    ! Variable name
+    namevr = 'Boundary temperature'
 
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-!         a renseigner par l'utilisateur
+    ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
     idimt = 1
 
-!       Valeurs non entrelacées (sans importance pour un scalaire)
-  ientla = 0
+    ! Values are not interlaced (dimension 1 here, so no effect).
+    ientla = 0
 
-!       Annulation de la variable sur les faces internes
-!         a renseigner par l'utilisateur
+    ! Set value to 0 for interior faces
 
     do iloc = 1, nfacps
       trafac(iloc) = 0.d0
     enddo
 
-!       Calcul des valeurs de la variable sur les faces de bord
-!         a renseigner par l'utilisateur
+    ! Compute variable values on boundary faces.
 
     ivar = isca(iscalt(iphas))
     iclt = iclrtp(ivar,icoef)
@@ -804,45 +690,38 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     do iloc = 1, nfbrps
       ifac = lstfbr(iloc)
       ii = ifabor(ifac)
-      trafbr(iloc) =                                              &
-          coefa(ifac,iclt)+coefb(ifac,iclt)*rtp(ii, ivar)
+      trafbr(iloc) = coefa(ifac,iclt)+coefb(ifac,iclt)*rtp(ii, ivar)
     enddo
 
-!         Ecriture effective des valeurs calculees
-
+    ! Values are defined on the work array, not on the parent.
     ivarpr = 0
 
-    call psteva(ipart , namevr, idimt, ientla, ivarpr,            &
+    ! Output values
+    call psteva(ipart, namevr, idimt, ientla, ivarpr,    &
     !==========
                 ntcabs, ttcabs, tracel, trafac, trafbr)
 
   endif
 
+  ! The examples below illustrate how to output a same variable in different
+  ! ways (interlaced or not, using an indirection or not).
 
 
+  ! 1.3.4 Output of the centers of gravity, interlaced
+  !       --------------------------------
 
-!     Les exemples suivants montrent les differentes facons de
-!       sortir la meme variable (entrelacee ou non, avec indirection
-!       ou pas)
-
-!       1.3.4 TRAITEMENT DES CENTRES DE GRAVITE, sous forme entrelacee
-!       --------------------------------------------------------------
-
-!       Initialisation
-!         pas d'intervention utilisateur requise
+  ! Initialize variable name
   do ii = 1, 32
-    NAMEVR (II:II) = ' '
+    namevr (ii:ii) = ' '
   enddo
 
-!       Nom de la variable
-!         a renseigner par l'utilisateur
-  NAMEVR = 'cdg faces (entrelaces)'
+  ! Variable name
+  namevr = 'face cog (interlaced)'
 
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-!         a renseigner par l'utilisateur
+  ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
   idimt = 3
 
-!       Valeurs entrelacées
+  ! Values are interlaced
   ientla = 1
 
   do iloc = 1, nfacps
@@ -852,10 +731,9 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     trafac(1 + (iloc-1)*idimt ) = cdgfac(1, ifac)
     trafac(2 + (iloc-1)*idimt ) = cdgfac(2, ifac)
     trafac(3 + (iloc-1)*idimt ) = cdgfac(3, ifac)
-
   enddo
 
-!       Calcul des valeurs de la variable sur les faces de bord
+  ! Compute variable values on boundary faces
 
   do iloc = 1, nfbrps
 
@@ -864,36 +742,32 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     trafbr(1 + (iloc-1)*idimt ) = cdgfbo(1, ifac)
     trafbr(2 + (iloc-1)*idimt ) = cdgfbo(2, ifac)
     trafbr(3 + (iloc-1)*idimt ) = cdgfbo(3, ifac)
-
   enddo
 
-!       Ecriture effective des valeurs calculees
-
+  ! Values are defined on the work array, not on the parent.
   ivarpr = 0
 
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,              &
+  ! Output values
+  call psteva(ipart, namevr, idimt, ientla, ivarpr,    &
   !==========
               ntcabs, ttcabs, tracel, trafac, trafbr)
 
 
-!       1.3.5 TRAITEMENT DES CENTRES DE GRAVITE, sous forme non entrelacee
-!       ------------------------------------------------------------------
+  ! 1.3.5 Output of the centers of gravity, non-interlaced
+  !       --------------------------------
 
-!       Initialisation
-!         pas d'intervention utilisateur requise
+  ! Initialize variable name
   do ii = 1, 32
-    NAMEVR (II:II) = ' '
+    namevr (ii:ii) = ' '
   enddo
 
-!       Nom de la variable
-!         a renseigner par l'utilisateur
-  NAMEVR = 'cdg faces (non entrelaces)'
+  ! Variable name
+  namevr = 'face cog (non-interlaced)'
 
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-!         a renseigner par l'utilisateur
+  ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
   idimt = 3
 
-!       Valeurs non entrelacées
+  ! Values are not interlaced
   ientla = 0
 
   do iloc = 1, nfacps
@@ -906,7 +780,7 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
 
   enddo
 
-!       Calcul des valeurs de la variable sur les faces de bord
+  ! Compute variable values on boundary faces
 
   do iloc = 1, nfbrps
 
@@ -915,87 +789,92 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     trafbr(iloc)            = cdgfbo(1, ifac)
     trafbr(iloc + nfbrps)   = cdgfbo(2, ifac)
     trafbr(iloc + 2*nfbrps) = cdgfbo(3, ifac)
-
   enddo
 
-!       Ecriture effective des valeurs calculees
-
+  ! Values are defined on the work array, not on the parent.
   ivarpr = 0
 
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,              &
+  ! Output values
+  call psteva(ipart, namevr, idimt, ientla, ivarpr,    &
   !==========
               ntcabs, ttcabs, tracel, trafac, trafbr)
 
 
-!       1.3.6 TRAITEMENT DES CENTRES DE GRAVITE, avec indirection
-!       ------------------------------------------------------------------
+  ! 1.3.6 Output of the centers of gravity, with indirection (parent-based)
+  !       --------------------------------
 
-!       Initialisation
-!         pas d'intervention utilisateur requise
+  ! Initialize variable name
   do ii = 1, 32
-    NAMEVR (II:II) = ' '
+    namevr (ii:ii) = ' '
   enddo
 
-!       Nom de la variable
-!         a renseigner par l'utilisateur
-  NAMEVR = 'cdg faces (indirection)'
+  ! Variable name
+  namevr = 'face cog (parent)'
 
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-!         a renseigner par l'utilisateur
+  ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
   idimt = 3
 
-!       Valeurs entrelacées
+  ! Values are interlaced
   ientla = 1
 
-!       Ecriture effective des valeurs calculees
-
+  ! Values are defined on the parent.
   ivarpr = 1
 
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,              &
+  ! Output values
+  call psteva(ipart, namevr, idimt, ientla, ivarpr,   &
   !==========
-              ntcabs, ttcabs, rbid, cdgfac, cdgfbo)
-
-
-
+              ntcabs, ttcabs, rvoid, cdgfac, cdgfbo)
 
 
 !===============================================================================
-!     1.4. EXEMPLES DE VARIABLES A POSTTRAITER SUR LES MAILLAGE 3 ET 4
-!          (IPART=3 OU IPART=4)
+! 1.4. Examples of volume variables on user meshes 3 or 4
 !===============================================================================
 
 else if  (ipart.ge.3 .and. ipart.le.4) then
 
+  ! 1.4.1 Output of the velocity
+  !       ----------------------
 
-!       1.4.1 TRAITEMENT DE LA VITESSE
-!       ------------------------------
-
-!       Initialisation
-!         pas d'intervention utilisateur requise
+  ! Initialize variable name
   do ii = 1, 32
-    NAMEVR (II:II) = ' '
+    namevr (ii:ii) = ' '
   enddo
 
-!       Nom de la variable
-!         a renseigner par l'utilisateur
-  NAMEVR = 'Vitesse'
+  ! Variable name
+  namevr = 'Velocity'
 
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-!         a renseigner par l'utilisateur
+  ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
   idimt = 3
 
-!       Valeurs non entrelacées
+  ! Values are not interlaced.
   ientla = 0
 
-!       Phase
-!         a renseigner par l'utilisateur
-  iphas = 1
+  iphas = 1   ! We only consider phase 1 in this example
 
-!       Numero de variable
-!         a renseigner par l'utilisateur
+  ! Variable number
   ivar = iu(iphas)
 
-!       Calcul des valeurs de la variable sur les faces internes
+  ! Compute variable values on interior faces.
+  ! In this example, we use a simple linear interpolation.
+  ! For parallel calculations, if neighbors are used, they must be synchronized
+  ! first. This also applies for periodicity. When both are used, parallel
+  ! synchronization must always be done before periodic synchronization.
+
+  if(irangp.ge.0) then
+    call parcom (rtp(1,iu(iphas)))
+    call parcom (rtp(1,iv(iphas)))
+    call parcom (rtp(1,iw(iphas)))
+  endif
+
+  if(iperio.eq.1) then
+    idimte = 1
+    itenso = 0
+    call percom(idimte, itenso,                                        &
+    !==========
+                rtp(1,iu(iphas)), rtp(1,iu(iphas)), rtp(1,iu(iphas)),  &
+                rtp(1,iv(iphas)), rtp(1,iv(iphas)), rtp(1,iv(iphas)),  &
+                rtp(1,iw(iphas)), rtp(1,iw(iphas)), rtp(1,iw(iphas)))
+  endif
 
   do iloc = 1, nfacps
 
@@ -1004,22 +883,16 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
     jj = ifacel(2, ifac)
     pond = ra(ipond-1+ifac)
 
-    trafac(iloc)                                                  &
-         =         pond  * rtp(ii, iu(iphas))                     &
-         + (1.d0 - pond) * rtp(jj, iu(iphas))
-    trafac(iloc + nfacps)                                         &
-         =         pond  * rtp(ii, iv(iphas))                     &
-         + (1.d0 - pond) * rtp(jj, iv(iphas))
-    trafac(iloc + 2*nfacps)                                       &
-         =         pond  * rtp(ii, iw(iphas))                     &
-         + (1.d0 - pond) * rtp(jj, iw(iphas))
-
+    trafac(iloc) =                       pond  * rtp(ii, iu(iphas))   &
+                               + (1.d0 - pond) * rtp(jj, iu(iphas))
+    trafac(iloc + nfacps)    =           pond  * rtp(ii, iv(iphas))   &
+                               + (1.d0 - pond) * rtp(jj, iv(iphas))
+    trafac(iloc + 2*nfacps)  =           pond  * rtp(ii, iw(iphas))   &
+                               + (1.d0 - pond) * rtp(jj, iw(iphas))
   enddo
 
-!       Calcul des valeurs de la variable sur les faces de bord
-!         Pour simplifier l'exemple, on se contente ici d'une simple
-!         recopie de la variable de la cellule adjacente.
-!         a renseigner par l'utilisateur
+  ! Compute variable values on boundary faces.
+  ! In this example, we use a simple copy of the adjacent cell value.
 
   do iloc = 1, nfbrps
 
@@ -1029,52 +902,44 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
     trafbr(iloc )           = rtp(ii, iu(iphas))
     trafbr(iloc + nfbrps)   = rtp(ii, iv(iphas))
     trafbr(iloc + 2*nfbrps) = rtp(ii, iw(iphas))
-
   enddo
 
-!       Ecriture effective des valeurs calculees
+  ! Values are defined on the work array, not on the parent.
+  ivarpr = 0
 
-  if (ipart.eq.5) then
-    ivarpr = 1
-  else
-    ivarpr = 0
-  endif
-
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,              &
+  ! Output values
+  call psteva(ipart, namevr, idimt, ientla, ivarpr,         &
   !==========
               ntcabs, ttcabs, rtp(1,ivar), trafac, trafbr)
 
 
-!       1.4.2 TRAITEMENT DE LA PRESSION
-!       -------------------------------
+  ! 1.5.2 Output of the pressure
+  !       ----------------------
 
-
-!       Initialisation
-!         pas d'intervention utilisateur requise
+  ! Initialize variable name
   do ii = 1, 32
-    NAMEVR (II:II) = ' '
+    namevr (ii:ii) = ' '
   enddo
 
-!       Nom de la variable
-!         a renseigner par l'utilisateur
-  NAMEVR = 'Pression'
+  ! Variable name
+  namevr = 'Pressure'
 
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-!         a renseigner par l'utilisateur
+  ! Variable dimension (1: scalar, 3: vector, 6/9: symm/non-symm tensor)
   idimt = 1
 
-!       Valeurs non entrelacées (sans importance pour un scalaire)
+  ! Values are not interlaced (dimension 1 here, so no effect).
   ientla = 0
 
-!       Phase
-!         a renseigner par l'utilisateur
-  iphas = 1
+  iphas = 1   ! We only consider phase 1 in this example
 
-!       Numero de variable
-!         a renseigner par l'utilisateur
+  ! Variable number
   ivar = ipr(iphas)
 
-!       Calcul des valeurs de la variable sur les faces internes
+  ! Compute variable values on interior faces.
+  ! In this example, we use a simple linear interpolation.
+  ! For parallel calculations, if neighbors are used, they must be synchronized
+  ! first. This also applies for periodicity. When both are used, parallel
+  ! synchronization must always be done before periodic synchronization.
 
   do iloc = 1, nfacps
 
@@ -1083,16 +948,12 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
     jj = ifacel(2, ifac)
     pond = ra(ipond-1+ifac)
 
-    trafac(iloc)                                                  &
-         =         pond  * rtp(ii, ivar)                          &
-         + (1.d0 - pond) * rtp(jj, ivar)
-
+    trafac(iloc)  =           pond  * rtp(ii, ivar)   &
+                    + (1.d0 - pond) * rtp(jj, ivar)
   enddo
 
-!       Calcul des valeurs de la variable sur les faces de bord
-!         Pour simplifier l'exemple, on se contente ici d'une simple
-!         recopie de la variable de la cellule adjacente.
-!         a renseigner par l'utilisateur
+  ! Compute variable values on boundary faces.
+  ! In this example, we use a simple copy of the adjacent cell value.
 
   do iloc = 1, nfbrps
 
@@ -1100,25 +961,18 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
     ii = ifabor(ifac)
 
     trafbr(iloc) = rtp(ii, ivar)
-
   enddo
 
-!       Ecriture effective des valeurs calculees
+  ! Values are defined on the work array, not on the parent.
+  ivarpr = 0
 
-  if (ipart.eq.5) then
-    ivarpr = 1
-  else
-    ivarpr = 0
-  endif
-
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,              &
+  ! Output values
+  call psteva(ipart, namevr, idimt, ientla, ivarpr,         &
   !==========
               ntcabs, ttcabs, rtp(1,ivar), trafac, trafbr)
 
 
-endif
-!     Fin du test sur le numero de maillage post.
-
+endif ! end of test on post-processing mesh number
 
 return
 

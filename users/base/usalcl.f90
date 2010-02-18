@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -46,22 +46,14 @@ subroutine usalcl &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-!    ROUTINE UTILISATEUR
-!    REMPLISSAGE DU TABLEAU DE CONDITIONS AUX LIMITES
-!      (IALTYB,ICODCL,RCODCL) POUR LA VITESSE DE MAILLAGE
+! --- User subroutine dedicated the use of ALE (Arbitrary Lagrangian Eulerian Method) :
+!                 Fills boundary conditions (ialtyb, icodcl, rcodcl) for mesh velocity.
+!                 This subroutine also enables one to fix displacement on nodes.
 
-!    POSSIBILITE DE FIXER DIRECTEMENT LE DEPLACEMENT DES
-!      NOEUDS
-
-
-
-!    CE SOUS PROGRAMME UTILISATEUR EST OBLIGATOIRE EN ALE
-!    ====================================================
-
-
+!
 ! Introduction
 ! ============
 
@@ -71,247 +63,238 @@ subroutine usalcl &
 ! The syntax of this subroutine is described in 'usclim' subroutine,
 ! but a more thorough description can be found in the user guide.
 
-
-! Boundary condition types
-! ========================
-
 ! Boundary conditions setup for standard variables (pressure, velocity,
 ! turbulence, scalars) is described precisely in 'usclim' subroutine.
 
 ! Detailed explanation will be found in the theory guide.
 
+! Boundary condition types
+! ========================
 
-! TYPE DE CONDITIONS AUX LIMITES
-! ==============================
+! Boundary conditions may be assigned in two ways.
 
-! On peut affecter les conditions aux limites de deux manieres.
+!
+!    For "standard" boundary conditions:
+!    -----------------------------------
 
+!     (fixed boundary, sliding mesh boundary, fixed velocity), one defines a code in the 'ialtyb'
+!     array (of dimensions number of boundary faces, number of phases).
 
-!    Pour les conditions "standards" :
-!    --------------------------------
+! * ialtyb(ifac) = ibfixe : the face IFAC is considered to be motionless. A zero Dirichlet
+!         boundary condition is automatically imposed on mesh velocity. Moreover the displacement
+!         of corresponding nodes will automatically be set to 0 (for further information please
+!         read the paragraph dedicated to the description of IMPALE array in 'usalcl' subroutine),
+!         unless the USER has modified the condition of at least one  component of mesh velocity
+!         (modification of ICOCL array, please read the following paragraph 'For "non-standard"
+!         conditions')
 
-! Trois types de conditions "standards" sont disponibles. On
-!     specifie pour chaque face le type de condition choisi.
-!     Le choix se fait en remplissant le tableau IALTYB.
+! * ialtyb(ifac) = igliss : The mesh slides on corresponding face IFAC. The normal component of mesh
+!          viscosity is automatically set to 0. A homogeneous Neumann condition is automatically
+!          prescribed for the other components, as it's the case for 'Symmetry' fluid condition (Please
+!          note that homogeneous Neumann condition is only partially implicit in case of boudary face
+!          that is not aligned with axis).
 
+! * ialtyb(ifac) = ivimpo : the mesh velocity is imposed on face IFAC. Thus, the users needs to
+!          specify the mesh velocity values filling RCODCL arrays as follows :
+!          rcodcl(ifac,iuma,1) = mesh velocity in 'x' direction
+!          rcodcl(ifac,ivma,1) = mesh velocity in 'y' direction
+!          rcodcl(ifac,iwma,1) = mesh velocity in 'z' direction
+!          Components of rcodcl(.,i.ma,1) arrays that are not specified by user
+!          will automatically be set to 0, meaning that user only needs to specify
+!          non zero mesh velocity components.
 
-! * IALTYB(IFAC) = IBFIXE : la face IFAC correspond a un bord
-!     de maillage fixe. Une condition de Dirichlet nulle sera
-!     affectee automatiquement a la vitesse de maillage. En
-!     outre, le deplacement des noeuds sera automatiquement
-!     impose a 0 (cf. plus base sur IMPALE), sauf si
-!     l'utilisateur a modifie la condition pour au moins une
-!     des conposantes de la vitesse de maillage (ICODCL modifie,
-!     cf. conditions non standards)
+!    For "non-standard" conditions:
+!    ------------------------------
 
+!     Other than (fixed boundary, sliding mesh boundary, fixed velocity), one defines
+!     for each face and each component IVAR = IUMA, IVMA, IWMA :
+!        -> a code             icodcl(ifac, ivar)
+!        -> three real values  rcodcl(ifac, ivar, 1)
+!                              rcodcl(ifac, ivar, 2)
+!                              rcodcl(ifac, ivar, 3)
+!     The value of 'icodcl' is taken from the following:
+!       1: Dirichlet
+!       3: Neumann
+!       4: Symmetry
+!     The values of the 3 'rcodcl' components are:
+!      rcodcl(ifac, ivar, 1):
+!         Dirichlet for the variable if icodcl(ifac, ivar) =  1
+!         The dimension of rcodcl(ifac, ivar, 1) is in m/s
+!      rcodcl(ifac, ivar, 2):
+!         "exterior" exchange coefficient (between the prescribed value
+!                          and the value at the domain boundary)
+!                          rinfin = infinite by default
+!           rcodcl(ifac,ivar,2) =  (VISCMA) / d
+!              (D has the dimension of a distance in m, VISCMA stands for
+!              the mesh viscosity)
+!         NB : the definition of rcodcl(.,.,2) is based on the manner
+!              other standard variables are managed in the same case.
+!              This type of boundary condition appears nonsense
+!              concerning mesh in that context.
 
-! * IALTYB(IFAC) = IGLISS : la face IFAC est une face a maillage
-!     glissant. La composante normale a la face de la vitesse
-!     de maillage sera forcee a 0, les autres composantes seront
-!     traitees en Neumann homogene (pour les faces non alignees
-!     avec les axes, la condition de Neumann homogene est
-!     seulement partiellement implicitee), comme pour les
-!     conditions de symetrie de la vitesse fluide.
+!      rcodcl(ifac,ivar,3) :
+!        Flux density (in kg/m s2) = J if icodcl(ifac, ivar) = 3
+!                     (<0 if gain, n outwards-facing normal)
+!             rcodcl(ifac,ivar,3) = -(VISCMA)* (grad Um).n
+!                  (Um represents mesh velocity)
+!         NB : note that the definition of condition rcodcl(ifac,ivar,3)
+!              is based on the manner other standard variables are
+!              managed in the same case.
+!              rcodcl(.,.,3) = 0.d0 enables one to specify a homogeneous
+!              Neuman condition on mesh velocity. Any other value will be
+!              physically nonsense in that context.
 
+!      Note that if the user assigns a value to ialtyb equal to ibfixe, igliss,
+!      or ivimpo and does not modify icodcl (zero value by
+!       default), ialtyb will define the boundary condition type.
 
-! * IALTYB(IFAC) = IVIMPO : la face IFAC a une vitesse de maillage
-!     imposee. Cette vitesse est specifiee en remplissant le
-!     tableau RCODCL correspondant :
-!     RCODCL(IFAC,IUMA,1) = vitesse de maillage selon X
-!     RCODCL(IFAC,IVMA,1) = vitesse de maillage selon Y
-!     RCODCL(IFAC,IWMA,1) = vitesse de maillage selon Z
-!     Les composantes non specifiees de RCODCL(.,I.MA,1) seront mises
-!     a 0 (seules les composantes non nulles sont donc a specifier)
-
-
-
-!    Pour les conditions "non standards" :
-!    ------------------------------------
-
-!     Autres que fixe, glissement ou vitesse imposee, on donne
-
-!      - pour chaque face et chaque composante IVAR=IUMA, IVMA, IWMA :
-!        -> un code     ICODCL(IFAC,IVAR)
-!        -> trois reels RCODCL(IFAC,IVAR,1)
-!                       RCODCL(IFAC,IVAR,2)
-!                       RCODCL(IFAC,IVAR,3)
-!     La valeur de ICODCL est prise parmi les suivantes :
-!       1 : Dirichlet
-!       3 : Neumann
-!       4 : Symetrie
-!     Les valeurs des 3 reels RCODCL sont les suivantes
-
-!      RCODCL(IFAC,IVAR,1) :
-!         Dirichlet sur la variable si ICODCL(IFAC,IVAR)=  1
-!         La dimension de RCODCL(IFAC,IVAR,1) est en m/s
-
-!      RCODCL(IFAC,IVAR,2) :
-!         coefficient d'echange "exterieur" en kg/(m2 s) (entre la
-!                    valeur imposee et la valeur au bord du domaine)
-!                    RINFIN = infini par defaut
-!           RCODCL(IFAC,IVAR,2) =            (VISCMA) / D
-!              (D a la dimension d'une distance en m, VISCMA est
-!               la viscosite de maillage)
-!         NB : la definition de RCODCL(.,.,2) est calquee sur le cas
-!              des autres variables standards de l'ecoulement. Il n'a pas
-!              grand sens physique dans le cas de la vitesse de maillage.
-
-!      RCODCL(IFAC,IVAR,3) :
-!        Densite de flux en kg/(m s2) = J si ICODCL(IFAC,IVAR)= 3
-!                       (< 0 si gain, n normale orientee vers l'exterieur)
-!           RCODCL(IFAC,IVAR,3) =           -(VISCMA) * (GRAD Um).n
-!            (ou Um represente la vitesse de maillage)
-!         NB : la definition de RCODCL(.,.,3) est calquee sur le cas
-!              des autres variables standards de l'ecoulement.
-!              RCODCL(.,.,3) = 0.D0 permet de specifier un Neumann
-!              homogene sur la vitesse de maillage. Toute autre valeur
-!              aura une signification physique plus discutable.
-
-
-
-!      Noter bien que si l'utilisateur affecte une valeur a IALTYB
-!       parmi IBFIXE, IGLISS, IVIMPO,
-!       et qu'il ne modifie pas ICODCL (valeur nulle par defaut),
-!       c'est ITYPFB qui imposera la condition limite.
-
-!      Par contre, si l'utilisateur impose
-!        ICODCL(IFAC,IVAR) (non nul),
-!        ce sont alors les valeurs de ICODCL et RCODCL qu'il aura
-!        fournies qui sont retenues pour la face et la composante
-!        consideree (s'il ne precise pas RCODCL, ce sont les valeurs
-!        par defaut qui sont retenues pour la face et
-!        la variable consideree soit :
-!                                 RCODCL(IFAC,IVAR,1) = 0.D0
-!                                 RCODCL(IFAC,IVAR,2) = RINFIN
-!                                 RCODCL(IFAC,IVAR,3) = 0.D0)
+!      To the contrary, if the user prescribes icodcl(ifac, ivar) (nonzero),
+!        the values assigned to rcodcl will be used for the considered face
+!        and variable (if rcodcl values are not set, the default values will
+!        be used for the face and variable, so:
+!                                 rcodcl(ifac, ivar, 1) = 0.d0
+!                                 rcodcl(ifac, ivar, 2) = rinfin
+!                                 rcodcl(ifac, ivar, 3) = 0.d0)
 
 
-!      Si l'utilisateur specifie de lui-meme la valeur de ICODCL
-!         et de RCODCL pour TOUTES les composantes de la vitesse
-!         de maillage, il n'est pas necessaire de specifier IALTYB
-!         pour la face concernee (sa valeur ne sera pas utilisee)
+!      If the user decides to prescribe his own non-standard boundary conditions
+!      it will be necessary to assign values to icodcl AND to rcodcl for ALL
+!      mesh viscosity components. Thus, the user does not need to assign values
+!      to IALTYB for each associated face, as it will not be taken into account
+!      in the code.
 
 
-! REGLE DE COHERENCE
-! ==================
 
-!       Si une condition de symetrie (ICODCL=4) a ete imposee sur
-!          une des composantes, elle doit l'etre sur toutes les
-!          composantes.
+! Consistency rules
+! =================
+
+!       A consistency rules between 'icodcl' codes for variables with
+!       non-standard boundary conditions:
+!            If a symmetry code (ICODCL=4) is imposed for one mesh velocity
+!            component, one must have the same condition for all other mesh
+!            velocity components.
 
 
-! DEPLACEMENT FORCE DES NOEUDS
+! Fixed displacement on nodes
 ! ============================
+!  For a better precision concerning mesh displacement, one can also assign values
+!    of displacement to certain internal and/or boundary nodes. Thus, one
+!    need to fill DEPALE and IMPALE arrays :
+!    depale(inod,1) = displacement of node inod in 'x' direction
+!    depale(inod,2) = displacement of node inod in 'y' direction
+!    depale(inod,3) = displacement of node inod in 'z' direction
+!    This array is defined as the total displacement of the node compared
+!    its initial position in initial mesh.
+!    impale(inod) = 1 indicates that the displacement of node inod is imposed
+!    (Note that IMPALE array is initialized to the value of 0; if its value
+!    is not modified, corresponding value in DEPALE array will not be
+!    taken into account)
 
-! Pour plus de precision dans le deplacement du maillage, on peut
-!   aussi forcer directement le deplacement de certains noeuds,
-!   internes ou de bord. Pour cela on remplit les tableaux DEPALE
-!   et IMPALE :
-!   DEPALE(INOD,1) = deplacement du noeud INOD dans la direction X
-!   DEPALE(INOD,2) = deplacement du noeud INOD dans la direction Y
-!   DEPALE(INOD,3) = deplacement du noeud INOD dans la direction Z
-!   Ce deplacement s'entend comme le deplacement absolu du noeud
-!   a partir de sa position dans le maillage d'origine.
-!   IMPALE(INOD) = 1 indique que le noeud INOD est a deplacement
-!   impose (IMPALE est initialise a 0 ; si sa valeur est laissee
-!   nulle, DEPALE ne sera pas pris en compte).
+!  During mesh's geometry re-calculation at each time step, the position of the nodes, which
+!    displacement is fixed ( i.e. IMPALE=1), is not calculated using the value of mesh viscosity
+!    at the center of corresponding cell, but directly filled using the values of DEPALE.
+!  If the displacement is fixed for all nodes of a boundary face it's not necessary to
+!    prescribe boundary conditions at this face on mesh viscosity. ICODCL and RCODCL values will
+!    be overwritten :
+!    -> ICODCL is automatically set to 1 (Dirichlet)
+!    -> RCODCL value will be automatically set to face's mean mesh velocity value, that is
+!       calculated using DEPALE array.
 
-! Lors de la mise a jour du maillage, les noeuds tels que IMPALE=1
-!   (internes ou de bord) ne seront pas deplaces a partir de la
-!   vitesse de maillage mais directement a partir de DEPALE.
-! Dans le cas ou tous les noeuds d'une face sont a deplacement
-!   impose, il n'est pas necessaire de remplir les tableaux de
-!   conditions aux limites de vitesse de maillage pour cette faces,
-!   ils seront ecrases :
-!    -> ICODCL sera mis a 1 (Dirichlet)
-!    -> RCODCL sera mis a la valeur moyenne des vitesses des noeuds
-!       de la face (vitesses calculees a partir de DEPALE)
-
-! Dans le cas de faces specifies a maillage fixes (IALTYB(IFAC)=IBFIXE),
-!   tous les noeuds de la face sont automatiquement mis en
-!   deplacement impose, avec une valeur nulle de DEPALE.
+!  If a fixed boundary condition (ialtyb(ifac)=ibfixe) is imposed to the face ifac,
+!    the displacement of each node inod belonging to ifac is considered to be fixed,
+!    meaning that impale(inod) = 1 and depale(inod,.) = 0.d0.
 
 
-! CARACTERISTIQUES DES NOEUDS
-! ===========================
-! Le nombre total de noeuds est stocke dans la variable NNOD.
-! Les coordonnees des noeuds sont accessibles par le tableau
-!   XYZNOD(3,NNOD).
-! Les coordonnees des noeuds dans le maillage initiale sont
-!   accessibles par le tableau XYZNO0(3,NNOD).
+! Description of nodes
+! ====================
+! NNOD gives the total (internal and boundary) number of nodes.
+! Vertices coordinates are given by XYZNOD(3, NNOD) array. This table is
+! updated at each time step of the calculation.
+! XYZNO0(3,NNOD) gives the coordinates of initial mesh at the beginning
+! of the calculation.
 
-! Le reperage des noeuds est possible a partir des faces internes et
-!   de bord, grace aux tableaux IPNFAC, NODFAC, IPNFBR, NODFBR.
-!   NODFAC (NODFBR) contient sequentiellement la liste des noeuds de
-!     toutes les faces internes (de bord).
-!   IPNFAC (IPNFBR) contient pour chaque face interne (de bord) le
-!     numero de la premiere case de NODFAC (NODFBR) lui correspondant.
+! The faces - nodes connectivity is stored by means of four integer arrays :
+! IPNFAC, NODFAC, IPNFBR, NODFBR.
 
-! Par exemple, pour recuperer sequentiellement tous les noeuds de la
-!   face interne IFAC, il suffit d'ecrire la boucle suivante :
-!   DO II = IPNFAC(IFAC), IPNFAC(IFAC+1)-1 <- indices des elements
-!                                             de NODFAC correspondant
-!                                             a IFAC
-!     INOD = NODFAC(II)                    <- recuperation du numero
-!                                             du IIeme noeud de la face
-!                                             IFAC
+! NODFAC (NODFBR) stores sequentially the index-numbers of the nodes of each
+! internal (boundary) face.
+
+! IPNFAC (IPNFBR) gives the position of the first node of each internal
+! (boundary) face in the array NODFAC (NODFBR).
+
+! For example, in order to get all nodes of internal face IFAC, one can
+! use the following loop :
+!   DO II = IPNFAC(IFAC), IPNFAC(IFAC+1)-1 <- index number of NODFAC array
+!                                             corresponding to IFAC
+!
+!     INOD = NODFAC(II)                    <- index-number IIth node of face IFAC.
+!
+!
 !     ...
 !   ENDDO
 
+! Influence on boundary conditions related to fluid velocity
+! ==========================================================
+! The effect of fluid velocity and ALE modeling on boundary faces that
+! are declared as walls (ITYPFB = IPAROI or IPARUG) really depends on
+! the physical nature of this interface.
+! Indeed when studying an immersed structure the motion of corresponding
+! boundary faces is the one of the structure, meaning that it leads to
+! fluid motion. On the other hand when studying a piston the motion of vertices
+! belonging to lateral boundaries has no physical meaning therefore it has
+! no influence on fluid motion.
+! Whatever the case, mesh velocity component that is normal to the boundary
+! face is always taken into account (Ufluid.n = Wmesh.n). The modeling
+!                                    -      -   -     -
+! of tangential mesh velocity component differs from one case to another.
 
-! INFLUENCE SUR LES CONDITIONS AUX LIMITES DE VITESSE FLUIDE EN PAROI
-! ===================================================================
-! Dans le cas de faces de paroi pour le fluide (ITYPFB=IPAROI ou IPARUG),
-!  l'influence de la vitesse de maillage depend de sa signification
-!  physique.
-!  En effet, dans le cas d'une structure immergee par exemple, le
-!  mouvement des faces de paroi de la structure correspond a un mouvement
-!  physique et doit donc entrainer le fluide.
-!  Dans le cas d'un piston au contraire, les bords lateraux sont des
-!  parois ou le mouvement des noeuds n'a aucune signification physique et
-!  ne doit pas entrainer le fluide.
-!  Dans tous les cas, la vitesse de maillage normale a la face est prise
-!  en compte (u.n=w.n a la face), c'est le traitement de la vitesse
-!  tangentielle qui differe suivant les cas.
+! The influence of mesh velocity on boundary conditions for fluid modeling is
+! managed and modeled in Code_Saturne as follows :
+!  - If ialtyb(ifac) = ibfixe : mesh velocity equals 0. (In case of 'fluid sliding
+!  wall' modeling corresponding condition will be specified in Code_Saturne
+!  Interface or in 'usclim' subroutine.)
+!  - If ialtyb(ifac) = ivimpo : tangential mesh velocity is modeled as a sliding
+!  wall velocity in fluid boundary conditions unless a value for fluid sliding
+!  wall velocity has been specified by USER in Code_Saturne Interface
+!  or in 'usclim' subroutine.
+!  - If ialtyb(ifac) = igliss : tangential mesh velocity is not taken into account
+!  in fluid boundary conditions (In case of 'fluid sliding wall' modeling
+!  corresponding condition will be specified in Code_Saturne Interface
+!  or in 'usclim' subroutine.)
+!  - If impale(inod) = 1 for all vertices of a boundary face : tangential mesh
+!  velocity value that has been derived from nodes displacement is modeled as a
+!  sliding wall velocity in fluid boundary conditions unless a value for fluid
+!  sliding wall velocity has been specified by USER in Code_Saturne Interface or
+!  in 'usclim' subroutine.
 
-! Par defaut, Code_Saturne gere la relation entre vitesse fluide et vitesse
-!  de maillage pour les parois de la maniere suivante :
-!  - Si IALTYB(IFAC) = IBFIXE, la vitesse de maillage est nulle, il n'y a
-!    pas de probleme (et si la paroi est defilante, l'utilisateur le
-!    specifiera dans l'interface ou dans usclim).
-!  - Si IALTYB(IFAC) = IGLISS, la vitesse tangentielle de maillage n'est
-!    pas prise en compte dans les conditions aux limites de paroi pour le
-!    fluide (et si la paroi est defilante, l'utilisateur le specifiera
-!    dans l'interface ou dans usclim).
-!  - Si IALTYB(IFAC) = IVIMPO, la vitesse tangentielle de maillage est
-!    prise en compte comme une vitesse de defilement dans les conditions
-!    aux limites de paroi pour le fluide, sauf si une vitesse de
-!    defilement de paroi a ete specifiee par l'utilisateur dans l'interface
-!    ou dans usclim (auquel cas c'est cette vitesse qui est consideree).
-!  - Si IMPALE(INOD) = 1 pour tous les noeuds d'une face, la vitesse
-!    tangentielle de maillage deduite de ce deplacement sera prise en
-!    compte comme une vitesse de defilement dans les conditions
-!    aux limites de paroi pour le fluide, sauf si une vitesse de
-!    defilement de paroi a ete specifiee par l'utilisateur dans l'interface
-!    ou dans usclim (auquel cas c'est cette vitesse qui est consideree).
+! Note that mesh velocity has no influence on modeling of
+! boundary faces with 'inlet' or 'free outlet' fluid boundary condition.
 
-! Pour les autres types de conditions aux limites pour le fluide (IENTRE et
-!  ISOLIB), la vitesse de maillage n'a pas d'influence.
+! For "non standard" conditions USER has to manage the influence of boundary
+! conditions for ALE method (i.e. mesh velocity) on the ones for Navier Stokes
+! equations(i.e. fluid velocity). (Note that fluid boundary conditions can be
+! specified in this subroutine.)
 
-! Dans le cas de conditions aux limites non standards, c'est a l'utilisateur
-!  de gerer directement la relation entre les conditions sur la vitesse de
-!  maillage et celles sur la vitesse fluide (les conditions aux limites du
-!  fluide pouvant etre modifiees dans cette routine).
+! Cells identification
+! ====================
 
+! Cells may be identified using the 'getcel' subroutine.
+! The syntax of this subroutine is described in the 'usclim' subroutine,
+! but a more thorough description can be found in the user guide.
 
+! Faces identification
+! ====================
+
+! Faces may be identified using the 'getfbr' subroutine.
+! The syntax of this subroutine is described in the 'usclim' subroutine,
+! but a more thorough description can be found in the user guide.
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! itrale           ! e  ! <-- ! numero d'iteration pour l'ale                  !
+! itrale           ! i  ! <-- ! number of iterations for ALE method            !
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
@@ -348,11 +331,10 @@ subroutine usalcl &
 !                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord pour le fluide          !
-!  nphas      )    !    !     !                                                !
-! ialtyb(nfabor    ! te ! --> ! type des faces de bord pour la                 !
-!                  ! te !     !                  vitesse de maillage           !
-! impale(nnod)     ! te ! <-- ! indicateur de delacement impose                !
+! itypfb           ! ia ! --> ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
+! ialtyb (nfabor)  ! ia ! --> ! boundary face types for mesh velocity          !
+! impale(nnod)     ! ia ! <-- ! indicator for fixed node displacement          !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -387,8 +369,9 @@ subroutine usalcl &
 !                  !    !     ! for velocities           ( vistl+visct)*gradu  !
 !                  !    !     ! for pressure                         dt*gradp  !
 !                  !    !     ! for scalars    cp*(viscls+visct/sigmas)*gradt  !
-! depale(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
-! xyzno0(3,nnod    ! tr ! <-- ! coordonnees noeuds maillage initial            !
+! depale(nnod,3)   ! ra ! <-- ! nodes displacement                             !
+! xyzno0           ! ra ! <-- ! vertex coordinates of initial mesh             !
+!  (3, nnod)       !    !     !                                                !
 ! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
 ! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -463,14 +446,11 @@ double precision delta, deltaa
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
-!     SI UN FICHIER ISSU DE L'IHM EST UTILISE, LE SOUS-PROGRAMME N'EST
-!       PAS NECESSAIREMENT INDISPENSABLE (RETURN DANS LA VERSION DE
-!       LA BIBLIOTHEQUE)
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
-
 if(iihmpr.eq.1) then
   return
 else
@@ -482,12 +462,12 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES COND. LIM.      ',/,&
+'@ @@ ATTENTION : stop in definition of boundary conditions   ',/,&
 '@    =========                                               ',/,&
-'@     LA METHODE ALE A ETE ENCLENCHEE                        ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usalcl DOIT ETRE COMPLETE',/,&
+'@     ALE Method has been activated                          ',/,&
+'@     User subroutine ''usalcl'' must be completed           ',/, &
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The calculation will not be run                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -496,7 +476,7 @@ endif
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1.  Initialization
 
 !===============================================================================
 
@@ -505,20 +485,18 @@ idebra = idbra0
 
 
 !===============================================================================
-! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR LES FACES DE BORD
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LA CONDITION LIMITE
+! 2.  Assign boundary conditions to boundary faces here
 
-!          IMPOSER ICI LES CONDITIONS LIMITES SUR LES FACES DE BORD
-
+!     One may use selection criteria to filter boundary case subsets
+!       Loop on faces from a subset
+!         Set the boundary condition for each face
 !===============================================================================
 
-!     Calcul du deplacement au temps courant
+!     Calculation of displacement at current time step
 deltaa = sin(3.141596d0*(ntcabs-1)/50.d0)
 delta  = sin(3.141596d0*ntcabs/50.d0)
 
-! --- On impose en couleur 4 une vitesse de deplacement des faces
+! --- For boundary faces of color 4 assign a fixed velocity
 
 CALL GETFBR('4',NLELT,LSTELT)
 !==========
@@ -537,7 +515,7 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- On impose en couleur 5 un deplacement des noeuds
+! --- For boundary faces of color 5 assign a fixed displacement on nodes
 
 CALL GETFBR('5',NLELT,LSTELT)
 !==========
@@ -558,7 +536,7 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- On impose en couleur 6 un glissement
+! --- For boundary faces of color 6 assign a sliding boundary
 
 CALL GETFBR('6',NLELT,LSTELT)
 !==========
@@ -571,7 +549,7 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- On impose ailleurs une condition de bord fixe
+! --- prescribe elsewhere a fixed boundary
 
 CALL GETFBR( 'not (4 or 5 or 6)',NLELT,LSTELT)
 !==========

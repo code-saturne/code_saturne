@@ -52,25 +52,22 @@ subroutine uslapr &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! ----------
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
+!   Subroutine of the Lagrangian particle-tracking module:
 !   -------------------------------------
 
-!    SOUS-PROGRAMME UTILISATEUR
-
-!    ROUTINE UTILISATEUR POUR LES CONDITIONS AUX LIMITES RELATIVES
-!      AUX PARTICULES (ENTREE ET TRAITEMENT AUX AUTRES BORDS)
-!         PERMET D'IMPOSER LES VALEURS DE
-!           - VITESSE
-!           - DIAMETRE
-!           - TEMPERATURE
-!         POUR LA PARTICULE TRAITER
-!    SI IDVAR = 0 ===> ON RECUPERE LE TAUX DE PRESENCE
-!    SI IDVAR = 1 ===> ON RECUPERE LES 3 COMPOSANTES DE LA VITESSE
-!    SI IDVAR = 2 ===> ON RECUPERE LE DIAMETRE
-!    SI IDVAR = 3 ===> ON RECUPERE LA TEMPERATURE
+!   User subroutine for the boundary conditions associated to
+!   the particles (inlet and treatment of the other boundaries)
+!
+!   It allows to impose the values of the velocity, the diameter
+!   and the temperature for the treated particle.
+!
+!   if idvar = 0 ==> the volume fraction is retrieved
+!   if idvar = 1 ==> the 3 components of the velocity are retrieved
+!   if idvar = 2 ==> the diameter is retrieved
+!   if idvar = 3 ==> the temperature is retrieved
 
 
 !-------------------------------------------------------------------------------
@@ -80,10 +77,10 @@ subroutine uslapr &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! idvar            ! e  ! <-- ! type de la(es) valeur(s) a calculer            !
-! iepart           ! e  ! <-- ! numero de la cellule de la particule           !
-! izone            ! e  ! <-- ! numero de la zone de la particule              !
-! iclass           ! e  ! <-- ! numero de la classe de la particule            !
+! idvar            ! i  ! <-- ! type of the value(s) ta calculate              !
+! iepart           ! i  ! <-- ! number of the particle cell                    !
+! izone            ! i  ! <-- ! number of the particle zone                    !
+! iclass           ! i  ! <-- ! number of the particle class                   !
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
@@ -95,86 +92,96 @@ subroutine uslapr &
 ! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
 ! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
+!                  !    !     !                                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-!                  !    !     ! le module lagrangien                           !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
+! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
+! nvp              ! i  ! <-- ! number of particle variables                   !
+! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
+! nvep             ! i  ! <-- ! number of particle properties (integer)        !
+! nivep            ! i  ! <-- ! number of particle properties (integer)        !
+! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
+! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
+! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
+! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+!                  !    !     !                                                !
+! ifacel           ! ia ! <-- ! interior faces -> cells connectivity           !
+! (2, nfac)        !    !     !                                                !
+! ifabor           ! ia ! <-- ! boundary faces -> cells connectivity           !
+! (nfabor)         !    !     !                                                !
+! ifmfbr           ! ia ! <-- ! boundary face family numbers                   !
+! (nfabor)         !    !     !                                                !
+! ifmcel           ! ia ! <-- ! cell family numbers                            !
+! (ncelet)         !    !     !                                                !
+! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml,nprfml    !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfac)       !    !     !  face interne dans nodfac                      !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
+! ipnfac           ! ia ! <-- ! interior faces -> vertices index (optional)    !
+!   (lndfac)       !    !     !                                                !
+! nodfac           ! ia ! <-- ! interior faces -> vertices list (optional)     !
 !   (nfac+1)       !    !     !                                                !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfbr)       !    !     !  face de bord dans nodfbr                      !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
+! ipnfbr           ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+!   (lndfbr)       !    !     !                                                !
+! nodfbr           ! ia ! <-- ! boundary faces -> vertices list  (optional)    !
 !   (nfabor+1)     !    !     !                                                !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
-! ifrlag(nfabor    ! te ! --> ! type des faces de bord lagrangien              !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! xpart            !  r ! <-- ! coordonnees x de la particule                  !
-! ypart            !  r ! <-- ! coordonnees y de la particule                  !
-! zpart            !  r ! <-- ! coordonnees z de la particule                  !
-! tvpart           !  r !  <- ! valeur du taux de presence                     !
-! upart            !  r !  <- ! coordonnees x de la vitesse particule          !
-! vpart            !  r !  <- ! coordonnees y de la vitesse particule          !
-! zpart            !  r !  <- ! coordonnees z de la vitesse particule          !
-! dpart            !  r !  <- ! diametre de la particule                       !
-! dpart            !  r !  <- ! temperature de la particule                    !
+! itrifb(nfabor    ! ia ! <-- ! indirection for the sorting of the             !
+!  nphas      )    !    !     ! boundary faces                                 !
+! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
+!  nphas      )    !    !     !                                                !
+! ifrlag(nfabor    ! ia ! --> ! type of the Lagrangian boundary faces          !
+! itepa            ! ia ! <-- ! particle information (integers)                !
+! (nbpmax,nivep    !    !     !                                                !
+! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
+! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
+! ia(*)            ! ia ! --- ! macro array of integers                        !
+! xxpart           !  r ! <-- ! x-coordinate of the particle                   !
+! yypart           !  r ! <-- ! y-coordinate of the particle                   !
+! zzpart           !  r ! <-- ! z-coordinate of the particle                   !
+! tvpart           !  r ! <-- ! value of the volume fraction                   !
+! uupart           !  r ! <-- ! x-component of particle velocity               !
+! vvpart           !  r ! <-- ! y-component of particle velocity               !
+! wwpart           !  r ! <-- ! z-component of particle velocity               !
+! ddpart           !  r ! <-- ! particle diameter                              !
+! ttpart           !  r ! <-- ! particle temperature                           !                                         !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
+! (ndim,ncelet     !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+! (ndim,nfabor)    !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
+! (ndim,nfabor)    !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 ! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
+! volume           ! ra ! <-- ! cell volumes                                   !
+! (ncelet          !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant prec)                     !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
+! rtpa             ! ra ! <-- ! transported variables at the previous          !
+! (ncelet,*)       !    !     ! time step                                      !
+! propce           ! ra ! <-- ! physical properties at cell centers            !
+! (ncelet,*)       !    !     !                                                !
+! propfa           ! ra ! <-- ! physical properties at interior face centers   !
+!  (nfac,*)        !    !     !                                                !
+! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
+!  (nfabor,*)      !    !     !                                                !
+! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
+!  (nfabor,*)      !    !     !                                                !
+! ettp             ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
+! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
+! (nbpmax,nvep)    !    !     !                                                !
+! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
+! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
+! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
 !     mode: <-- input, --> output, <-> modifies data, --- work array
+
 !===============================================================================
 
 implicit none
@@ -246,10 +253,12 @@ double precision pis6
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if(1.eq.1) then
@@ -276,20 +285,20 @@ endif
 
 
 !===============================================================================
-! 1.  GESTION MEMOIRE
+! 1. Memory management
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 2. INITIALISATION
+! 2. Initialization
 !===============================================================================
 
 pis6 = pi / 6.d0
 
 !===============================================================================
-! 3. PROFIL POUR LE TAUX DE PRESENCE
+! 3. Profile for the volume fraction
 !===============================================================================
 
 if (idvar .eq. 0) then
@@ -299,7 +308,7 @@ if (idvar .eq. 0) then
 endif
 
 !===============================================================================
-! 4. PROFIL POUR LA VITESSE
+! 4. Velocity profile
 !===============================================================================
 
 if (idvar .eq. 1) then
@@ -311,7 +320,7 @@ if (idvar .eq. 1) then
 endif
 
 !===============================================================================
-! 5. PROFIL POUR LE DIAMETRE
+! 5. Diameter profile
 !===============================================================================
 
 if (idvar .eq. 2) then
@@ -322,7 +331,7 @@ endif
 
 
 !===============================================================================
-! 6. PROFIL POUR LA TEMPERATURE
+! 6. Temperature profile
 !===============================================================================
 
 if (idvar .eq. 3) then
@@ -334,11 +343,11 @@ endif
 !===============================================================================
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !----
-! FIN
+! End
 !----
 
 return

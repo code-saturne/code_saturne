@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2008 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -27,24 +27,25 @@
 !     Boston, MA  02110-1301  USA
 
 !-------------------------------------------------------------------------------
+! Purpose :
+! ---------
+!     User subroutine dedicated to Fluid - Structure internal coupling
 
-! FONCTION :
-! ----------
+! --- Definition and management of internal Fluid Structure coupled calculations,
+!     using a simplified solid modeling (linear "mass, friction and spring" modeling).
 
-! GESTION DES STRUCTURES MOBILES EN ALE AVEC COUPLAGE INTERNE
+!     Here are 2 differents subroutines that need to be filled :
 
-! ON TROUVERA ICI DEUX ROUTINES DIFFERENTES :
+!  -   USSTR1 : Called at the beginning of the calculation. It enables one to define
+!               internal structures and corresponding initial conditions (initial
+!               displacement and velocity).
 
-! - USSTR1 : APPELEE A L'INITIALISATION, POUR DEFINIR LES STRUCTURES
-!               ET LEURS PARAMETRES INITIAUX (VITESSE, DEPLACEMENT)
+!  -   USSTR2 : Called at each time step of the calculation. Here one defines
+!               structural parameters (considered to be potentially time dependent),
+!               i.e. Mass, Friction, Stiffness and Fluid Stresses.
 
-! - USSTR2 : APPELE A CHAQUE PAS DE TEMPS POUR DEFINIR LES
-!               CARACTERISTIQUES (POTENTIELLEMENT VARIABLES) DES
-!               STRUCTURES
-
-
-! Boundary faces identification
-! =============================
+! --- Boundary faces identification
+!     =============================
 
 ! Boundary faces may be identified using the 'getfbr' subroutine.
 ! The syntax of this subroutine is described in the 'usclim' subroutine,
@@ -70,13 +71,11 @@ subroutine usstr1 &
 
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose :
+! ---------
 
-! GESTION DES STRUCTURES MOBILES EN ALE AVEC COUPLAGE INTERNE
-
-!   DEFINITION DES STRUCTURES
-!   DEPLACEMENT ET VITESSE INITIAUX
+! --- Definition of internal structures and corresponding initial conditions
+!     (initial displacement and velocity )
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -96,9 +95,6 @@ subroutine usstr1 &
 ! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
 ! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
@@ -109,20 +105,16 @@ subroutine usstr1 &
 !  (nfml, nprfml)  !    !     !                                                !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfac+1)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (lndfac)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfabor+1)     !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (lndfbr)       !    !     !  (optionnel)                                   !
-! idfstr(nfabor    ! te ! <-- ! definition des structures                      !
+! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
+! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
+! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! idfstr(nfabor)   ! ia ! <-- ! boundary faces -> structure definition         !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! aexxst,bexxst    ! r  ! <-- ! coefficients de prediction du deplact          !
-! cfopre           ! r  ! <-- ! coeff de prediction des efforts                !
+! aexxst,bexxst    ! r  ! <-- ! prediction coefficients of structural data     !
+! cfopre           ! r  ! <-- ! prediction coefficients of fluid forces        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
@@ -136,12 +128,12 @@ subroutine usstr1 &
 ! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-! xstr0(ndim,      ! tr ! <-- ! deplacement initial des structures             !
+! xstr0(ndim,      ! ra ! <-- ! initial displacement of internal structures    !
 !       nbstru)    !    !     !                                                !
-! vstr0(ndim,      ! tr ! <-- ! vitesse initiale des structures                !
+! vstr0(ndim,      ! ra ! <-- ! initial velocity of internal structures        !
 !       nbstru)    !    !     !                                                !
-! xstreq(ndim,     ! tr ! <-- ! deplacement du maillage initial par            !
-!       nbstru)    !    !     ! rapport a l'equilibre                          !
+! xstreq(ndim,     ! ra ! <-- ! displacement of initial mesh compared to       !
+!       nbstru)    !    !     ! the structures position at equilibrium         !
 ! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
 ! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -216,7 +208,7 @@ endif
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1.  Initialization
 
 !===============================================================================
 
@@ -224,19 +216,32 @@ idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 2.  DEFINITION DES STRUCTURES (appel a l'initialisation)
+! 2.  Definition of internal structures
 !===============================================================================
 
-!     On remplit le tableau IDFSTR(NFABOR)
-!     IDFSTR(IFAC) est le numero de la structure a laquelle appartient
-!       la face de bord IFAC (0 si elle n'appartient a aucune structure)
-!     Le nombre de structure est automatiquement determine a partir du
-!       plus grand element de IDFSTR (les numeros des structures doivent
-!       donc etre affectes de maniere sequentielle sans trou en commencant
-!       par 1).
+!    Here one fills array IDFSTR(NFABOR)
+!    For each boundary face IFAC, IDFSTR(IFAC) is the number of the structure
+!    the face belongs to (if IDFSTR(IFAC) = 0, the face IFAC doesn't
+!    belong to any structure.)
+!    When using internal coupling, structure number necessarily
+!    needs to be positive (as shown in following examples).
 
-! Dans l'exemple ci-dessous la structure 1 est bordee par les faces de
-!   couleur 4, la structure 2 par les faces de couleur 6
+!    The number of "internal" structures is automatically defined with the
+!    maximum value of IDFSTR table, meaning that
+!    internal structure numbers must be defined sequentially with positive values,
+!    beginning with integer value '1'.
+
+
+!    In following example, boundary faces with color 4 belong to internal structure '1'.
+!    Boundary faces with color 2 belong to internal structure '2'.
+!    The total number of internal structures equals 2.
+
+!    Boundary faces identification
+!    =============================
+
+!    Boundary faces may be identified using the 'getfbr' subroutine.
+!    The syntax of this subroutine is described in the 'usclim' subroutine,
+!    but a more thorough description can be found in the user guide.
 
 
 CALL GETFBR('4',NLELT,LSTELT)
@@ -261,48 +266,58 @@ do ilelt = 1, nlelt
 
 enddo
 
+! --- For each internal structure one can here define :
+!     - an initial velocity VSTR0
+!     - an initial displacement XSTR0 (i.e. XSTR0 is the value of the displacement XSTR
+!       compared to the initial mesh at time t = 0)
+!     - a displacement compared to equilibrium XSTREQ (i.e. XSTREQ is the initial displacement
+!       of the internal structure compared to its position at equilibrium; at each
+!       time step t and for a displacement XSTR(t) associated internal structure will be
+!       subjected to a force -k*(XSTR(t)+XSTREQ) due to the spring).
 
-! Pour chaque structure, on definit si necessaire
-! - une vitesse initiale VSTR0
-! - un deplacement initial XSTR0 (i.e. la valeur du deplacement XSTR
-!     au temps t=0 par rapport au maillage initial)
-! - un deplacement par rapport a l'equilibre XSTREQ (i.e. le deplacement
-!     du maillage initial par rapport a la position d'equilibre de la
-!     structure ; la force de retour exercee par le ressort a un temps
-!     donne pour un deplacement XSTR sera donc -k*(XSTR+XSTREQ) ).
-! Toutes les composantes de XSTR0, XSTREQ et VSTR0 sont initialisees a 0
+! --- Note that XSTR0, XSTREQ and VSTR0 arrays are initialized at the beginning of the calculations
+!     to the value of 0.
 
-!     Exemple : deplacement initial y=2 pour la structure 1
-!               deplacement par rapport a l'equilibre yeq=1 pour la
-!                  structure 1
-!               vitesse initiale uz=0.5 pour la structure 2
+! --- When starting a calculation using ALE, or re-starting a calculation with ALE basing
+!     on a first calculation without ALE, an initial iteration 0 is automatically calculated
+!     in order to take initial arrays XSTR0, VSTR0 and XSTREQ into account. In another case
+!     add the following expression 'italin=1' in subroutine 'usalin', so that the code can
+!     deal with arrays XSTR0, VSTR0 or XSTREQ.
 
-! Dans le cas d'un calcul initial, ou d'une suite d'un calcul sans ALE,
-!   une iteration 0 est automatiquement realisee pour gerer un eventuel
-!   deplacement initial des structures. Si necessaire, positionner
-!   ITALIN a 1 dans usalin pour activer une iteration 0 dans les autres
-!   cas.
+! --- In the following example :
+!     - internal structure '1' has got an initial displacement XSTR0 = 2 (m) in 'y' direction and
+!     a displacement compared to equilibrium XSTREQ = 1 (m) in 'y' direction, too.
+!     - Initial velocity in 'z' direction of structure '2' equals VSTR0=-0.5 (m/s).
 
 xstr0(2,1)  = 2.d0
 xstreq(2,1) = 1.d0
 vstr0(3,2)  =-0.5d0
 
-! --- Si necessaire on definit les coefficients d'extrapolation utiles
-!       en couplage explicite :
-!       deplacement predit = X(n) + AEXXST.DT.X'(n)
-!                                 + BEXXST.DT.( X'(n)-X'(n-1) )
-!       force envoyee a la structure = CFOPRE.F(n) + (1.D0-CFOPRE).F(n-1)
+! --- Here one can modify the values of the prediction coefficients for
+!     displacements anf fluid forces in internal FSI coupled algorithm.
+!
+!     the use of these coefficients is reminded here :
+!       - predicted displacement = X(n) + aexxst * DT * X'(n)
+!                                       + bexxst * DT * (X'(n)-X'(n-1))
+!             X(n) stands for the displacement at iteration 'n'
+!             X'(n) and X'(n-1) represent internal structure velocity respectively
+!              at iteration 'n' and 'n-1'.
+!       - fluid force sent to structure internal solver = CFOPRE * F(n)
+!                                                        + (1.D0-CFOPRE) * F(n-1)
+!             F(n) and F(n-1) stand for fluid force acting on the structure respectively
+!              at iteration 'n' and 'n-1'.
 
 aexxst =  0.5d0
 bexxst =  0.0d0
 cfopre =  2.d0
 
-! --- Ecriture des fichiers historiques des structures mobiles
-!     (deplacement, vitesse, acceleration, force)
-!     La periodicite de sortie est la meme que pour les historiques
-!     standards (NTHIST)
+! --- Activation of structural history output (i.e. displacement, structural velocity,
+!     structural acceleration anf fluid force)
+!     (ihistr=0, not activated ; ihistr=1, activated)
+!     The value of structural history output step is the same as the one for standard
+!     variables ('NTHIST').
 ihistr = 1
-
+!
 return
 
 end subroutine
@@ -331,13 +346,12 @@ subroutine usstr2 &
 
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose :
+! ---------
 
-! GESTION DES STRUCTURES MOBILES EN ALE AVEC COUPLAGE INTERNE
-
-! SPECIFICATION DES CARACTERISTIQUES DES STRUCTURES
-
+! --- Definition of structural parameters in case of Fluid Structure internal coupling :
+!                 Mass, Friction, Stiffness anf Fluid Stresses.
+!
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -393,22 +407,22 @@ subroutine usstr2 &
 ! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-! dtcel(ncelet)    ! tr ! <-- ! pas de temps dans les cellules                 !
-! xmstru(ndim,     ! tr ! --> ! matrice de masse des structures                !
+! dtcel(ncelet)    ! ra ! <-- ! time step (per cell)                           !
+! xmstru(ndim,     ! ra ! --> ! matrix of structural mass                      !
 !  ndim,nbstru)    !    !     !                                                !
-! xcstru(ndim,     ! tr ! --> ! matrice de friction des structures             !
+! xcstru(ndim,     ! ra ! --> ! matrix of structural friction                   !
 !  ndim,nbstru)    !    !     !                                                !
-! xkstru(ndim,     ! tr ! --> ! matrice de raideur des structures              !
+! xkstru(ndim,     ! ra ! --> ! matrix of structural stiffness                 !
 !  ndim,nbstru)    !    !     !                                                !
-! xstreq(ndim,     ! tr ! <-- ! deplacement du maillage initial par            !
-!       nbstru)    !    !     ! rapport a l'equilibre                          !
-! xstr(ndim,       ! tr ! <-- ! deplacement des structures                     !
+! xstreq(ndim,     ! ra ! <-- ! displacement of initial mesh compared to       !
+!       nbstru)    !    !     ! the structures position at equilibrium         !
+! xstr(ndim,       ! ra ! <-- ! structural displacement                        !
 !       nbstru)    !    !     !                                                !
-! vstr(ndim,       ! tr ! <-- ! vitesse  des structures                        !
+! vstr(ndim,       ! ra ! <-- ! structural velocity                            !
 !       nbstru)    !    !     !                                                !
-! forstr(ndim      ! tr ! <-- ! effort sur les structures (contient            !
-!       nbstru)    !    !     !            les efforts dus au fluide)          !
-! dtstr(nbstru)    ! tr ! --> ! pas de temps des structures                    !
+! forstr(ndim      ! ra ! <-- ! forces acting on structures (take forces       !
+!       nbstru)    !    !     !         due to fluid effects into account   )  !
+! dtstr(nbstru)    ! ra ! --> ! structural time step                           !
 ! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
 ! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -468,7 +482,7 @@ double precision forstr(3,nstrmx)
 double precision dtstr(nstrmx)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-! Local variables
+! VARIABLES LOCALES
 
 integer          idebia, idebra
 integer          ii, jj, istr
@@ -484,7 +498,7 @@ if(1.eq.1) return
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1.  INITIALIZATION
 
 !===============================================================================
 
@@ -492,47 +506,48 @@ idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 2.  COEFFICIENTS DES STRUCTURES (appel a chaque pas de temps)
+! 2.  Structural parameters (subroutine usstr2 is called at each time step
+!                            of the calculation)
 !===============================================================================
 
+! --- For each internal structure one defines here :
+!     - its Mass                  (XMSTRU)
+!     - its Friction coefficient C (XCSTRU)
+!     - its Stiffness K           (XKSTRU)
 
-!     On remplit ici les coefficients de definissant la structure.
-!      - sa masse M                     (XMSTRU)
-!      - son coefficient de friction C  (XCSTRU)
-!      - son coefficient de raideur K   (XKSTRU)
+!     FORSTR array gives fluid stresses acting on each internal structure. Moreover
+!     it's possible to take external forces (gravity for example )into account, too.
 
-!     Le tableau FORSTR contient les efforts exerces par le fluide
-!       sur chacune des structures. Il est possible d'y ajouter une
-!       composante de force exterieure (gravite par exemple)
+!     XSTR array indicates the displacement of the structure compared to its position
+!     in initial mesh.
 
-!     Le tableau XSTR contient le deplacement des structures par rapport
-!       au maillage initial
-!     Le tableau XSTR0 contient le deplacement des structures dans le
-!       maillage initial par rapport a leur position d'equilibre
-!     Le tableau XPSTR contient la vitesse des structures
+!     XSTR0 array gives the displacement of the structures in initial mesh compared to
+!     structural equilibrium.
 
-!     XSTR, XSTR0 et VSTR sont des DONNEES pouvant servir eventuellement
-!     a calculer M, C et K. ILS NE DOIVENT PAS ETRE MODIFIES.
+!     VSTR array stands for structural velocity.
 
-!     L'evolution du systeme est resolue de maniere tridimensionnelle,
-!       ces trois coefficients sont donc en fait des matrices 3x3.
+!     XSTR, XSTR0, and VSTR arrays are DATA tables that can be used to define arrays
+!     Mass, Friction and Stiffness. THOSE ARE NOT TO BE MODIFIED.
 
-!     L'equation resolue est
+!     The 3D structural equation that is solved is the following one :
 
-!       M.X'' + C.X' + K.(X+X0) = F
+!       M.X'' + C.X' + K.(X+X0) = F   (1)
 !       = -     = -    =  - --    -
 
-!       (X est le deplacement par rapport a la position initiale du maillage,
-!        X0 est le deplacement de la position dans le maillage initial par
-!        rapport a l aposition d'equilibre)
+!       X stands for the structural displacement compared to initil mesh postition (XSTR)
+!       -
+!       X0 represents the displacement of the structure in initial mesh compared to equilibrium
+!       --
 
-!     La resolution est effectuee par la methode de Newmark HHT.
-!     Le pas de temps utilise peut etre different du pas de temps
-!       fluide (a definir dans le tableau DTSTR, initialise par defaut
-!       au pas de temps fluide).
+!       Note that M, C and K are 3x3 matrices.
+!                 =  =     =
+!       Equation (1) is solved using a Newmark HHT algorithm.
+!       Note that the time step used to solve this equation (DTSTR) can be different from the one of fluid
+!       calculations. USER is free to define DTSTR array. At the beginning of the calculation DTSTR is
+!       initialized to the value of DTCEL (Fluid time step).
+!
 
-
-!     On met a zero tous les coefficients
+! --- Matrices XMSTRU, XCSTRU and XKSTRU are initialized to the value of 0.
 do istr = 1, nbstru
 
   do ii = 1, 3
@@ -545,8 +560,10 @@ do istr = 1, nbstru
 
 enddo
 
-! Dans l'exemple ci-dessous, la structure 1, de masse 5 kg est retenue par
-!   ressort isotrope de raideur 2 N/m et de coefficient de friction 3 kg.s
+! --- Example 1): In following example structure '1' is defined as an isotropic system (i.e. matrices
+!     M, C and K are diagonal) : mass equals 5 kg, stiffness equals 2 N/m and friction
+!     =  =     =
+!     coefficient equals 3 kg.s .
 
 do ii = 1, 3
   xmstru(ii,ii,1) = 5.d0
@@ -554,34 +571,32 @@ do ii = 1, 3
   xkstru(ii,ii,1) = 3.d0
 enddo
 
+! --- Example 2): In this example structure '2' is subjected to the following movement :
+!               - In plane xOy the movement is locally defined along an axis (OX). Structural parameters
+!                 in X direction are called xm, xc and xk. The angle of inclination between global (Ox) axis
+!                 and local (OX) axis is called THETA. Movement in local (OY) direction is imposed to be rigid.
+!               - In 'z' direction the movement is modeled to be oscillating and harmonic (meaning that
+!                 there is no friction). Mass equals 1. kg and stiffness equals 1. N/m. Fluid stresses in that direction
+!                 are taken into account. Moreover the structure is also subjected to an external oscillating
+!                 force Fz_ext = 3 * cos(4*t).
 
-! Dans l'exemple ci-dessous, la structure 2 est contrainte a un mouvement
-!   decompose en deux :
-!  - dans le plan xOy, le mouvement est force dans une direction X, avec
-!    une masse xm, une friction xc et une raideur xk (et la composante
-!    normale Y est donc forcee a 0). L'axe X est incline d'un angle THETA
-!    par rapport a l'axe x du repere global.
-!  - dans la direction z, le mouvement est un mouvement d'oscillation
-!    harmonique de masse 1 et de raideur 1 (et de friction nulle) avec un
-!    forcage externe en 3.cos(4.t) (en plus des efforts fluides).
+
+!                 This leads to the following local equations :
+!                 xm.X'' + xc.X' + xk.X = FX
+!                                     Y = 0
+!                    Z''         +    Z = FZ + 3.cos(4.t)
 
 theta = pi/6.d0
 cost = cos(theta)
 sint = sin(theta)
 
+!               FX, FY, and FZ stand for the local fluid forces components. They are defined as follows, using gobal
+!               components of fluid forces Fx, Fy and Fz .
+!               FX =  COST*Fx + SINT*Fy
+!               FY = -SINT*Fx + COST*Fy
+!               FZ = Fz
 
-! Dans le repere local on a donc
-!      xm.X'' + xc.X' + xk.X = FX
-!                          Y = 0
-!         Z''         +    Z = FZ + 3.cos(4.t)
-
-!   FX, FY et FZ sont les composantes des efforts fluides dans le repere
-!     local. Soit, a partir des composantes dans le repere global :
-!     FX =  COST*Fx + SINT*Fy
-!     FY = -SINT*Fx + COST*Fy
-!     FZ = Fz
-
-! Apres changement de repere, on obtient donc :
+!               After changing of basis, the problem can be described as follows, using global coordinates:
 
 xm = 1.d0
 xc = 3.d-1

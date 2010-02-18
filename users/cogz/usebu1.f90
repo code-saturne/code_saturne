@@ -1,7 +1,7 @@
 !-------------------------------------------------------------------------------
 
-!VERS
-
+!                      Code_Saturne version 2.0.0-beta2
+!                      --------------------------
 
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
@@ -29,34 +29,23 @@
 !-------------------------------------------------------------------------------
 
 subroutine usebu1
-!================
-
-
 !===============================================================================
-!  FONCTION  :
-!  ---------
-
-!         INIT DES OPTIONS DES VARIABLES POUR
-!                  POUR LA COMBUSTION
-!           FLAMME DE PREMELANGE : MODELE EBU
-!   EN COMPLEMENT DE CE QUI A DEJA ETE FAIT DANS USINI1
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
+!  PURPOSE:
+!  --------
+!  1. Variable Output
+!     a. Transported Variables
+!     b. Variables of State; User definied Variables
+!
+!  2. Additional Calculation Options
+!     a. Density Relaxation
+!
+!  3. Physical Constants
+!     a.Dynamic Diffusion Coefficient
 !===============================================================================
-
 implicit none
 
 !===============================================================================
-! Common blocks
+!     Common Blocks
 !===============================================================================
 
 include "paramx.h"
@@ -80,53 +69,22 @@ include "radiat.h"
 integer          ipp
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 1. Variable Output
 !===============================================================================
-
-if(1.eq.1) then
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     MODULE COMBUSTION GAZ MODELE EBU :                     ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usebu1 DOIT ETRE COMPLETE',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
+!    Function                             |  Key Word |   Indicator
+!    ---------------------------------------------------------------
+!    Variable Output in the result file   | ICHRVR()  | yes= 1  ; no=0
+!    Variable Output in the listing file  | ILISVR()  | yes= 1  ; no=0
+!    Output of the temporal evolution of  | IHISVR()  | yes=-1* ; no=0
+!    the variable at monitoring points    |           |
+!    -----------------------------------------------------------------
+!    *: Output for all monitoring points defined in subroutine usini1.f90
+!
 !===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-
+! a. Transported Variables
 !===============================================================================
-! 1. VARIABLES TRANSPORTEES
-!===============================================================================
-
-!  Sortie chrono, suivi listing, sortie histo
-!     Si l'on n'affecte pas les tableaux suivants,
-!     les valeurs par defaut seront utilisees
-
-!       ICHRVR( ) = sortie chono (oui 1/non 0)
-!       ILISVR( ) = suivi listing (oui 1/non 0)
-!       IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes definies
-!                            dans usini1
-
-
-! ---- Fraction massique de gaz frais
+! ---- Mass fraction of unburned (or fresh)  gas
 if ( ippmod(icoebu).ge.0 ) then
   ipp = ipprtp(isca(iygfm))
   ichrvr(ipp)  = 1
@@ -134,7 +92,7 @@ if ( ippmod(icoebu).ge.0 ) then
   ihisvr(ipp,1)= -1
 endif
 
-! ---- Taux de melange
+! ---- Mean Mixture Fraction
 if ( ippmod(icoebu).ge.2 ) then
   ipp = ipprtp(isca(ifm))
   ichrvr(ipp)  = 1
@@ -143,7 +101,7 @@ if ( ippmod(icoebu).ge.2 ) then
 endif
 
 
-! ---- Enthalpie
+! ---- Enthalpy
 if ( ippmod(icoebu).eq.1 .or.                                     &
      ippmod(icoebu).eq.3      ) then
   ipp = ipprtp(isca(ihm))
@@ -154,7 +112,7 @@ endif
 
 
 !===============================================================================
-! 2. VARIABLES ALGEBRIQUES OU D'ETAT
+! b. Variables of State; User definied Variables
 !===============================================================================
 
 ! ---- Temperature
@@ -163,43 +121,43 @@ ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-! ---- Fraction massique du combustible
+! ---- Mean mass fraction of Fuel:    YM_Fuel
 ipp = ipppro(ipproc(iym(1)))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-! ---- Fraction massique de l'oxydant
+! ---- Mean mass fraction of Oxidizer : YM_Oxy
 ipp = ipppro(ipproc(iym(2)))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-! ---- Fraction massique des produits
+! ---- Mean mass fraction of Product: YM_Prod
 ipp = ipppro(ipproc(iym(3)))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-! ---- Modele EBU AVEC RAYONNEMENT
+! ---- Premixed flame including gas radiation
 
 if ( iirayo.gt.0 ) then
 
-! ---- Coeff d'absorption
+! ---- Absorption Coefficient
   ipp = ipppro(ipproc(ickabs))
   NOMVAR(IPP)   = 'KABS'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-! ---- Terme T^4
+! ---- Term T^4
   ipp = ipppro(ipproc(it4m))
   NOMVAR(IPP)   = 'TEMP4'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-! ---- Terme T^3
+! ---- Term T^3
   ipp = ipppro(ipproc(it3m))
   NOMVAR(IPP)   = 'TEMP3'
   ichrvr(ipp)   = 0
@@ -210,30 +168,29 @@ endif
 
 
 !===============================================================================
-! 3. OPTIONS DE CALCUL
+! 2. Additional Calculation Options
 !===============================================================================
 
-! --> Coefficient de relaxation de la masse volumique
+! -->  Density Relaxation
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
 
 srrom = 0.8d0
 
 
 !===============================================================================
-! 4. CONSTANTES PHYSIQUES
+! 3. Physical Constants
 !===============================================================================
 
-! --> Viscosite laminaire associee au scalaire enthalpie
-!       DIFTL0 (diffusivite dynamique en kg/(m s))
+!       DIFTL0: Dynamic Diffusion Coefficient (kg/(m s))
 diftl0 = 4.25d-5
 
-! --> Constante du modele EBU
+!       cebu: EBU-model constant
 
-cebu   = 2.5d0
+ cebu   = 2.5d0
 
 
 !----
-! FIN
+! END
 !----
 
 return

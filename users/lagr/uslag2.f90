@@ -49,16 +49,16 @@ subroutine uslag2 &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! ----------
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
+!   Subroutine of the Lagrangian particle-tracking module:
 !   -------------------------------------
 
-!    SOUS-PROGRAMME UTILISATEUR (INTERVENTION OBLIGATOIRE)
+!    User subroutine (Mandatory intervention)
 
-!    ROUTINE UTILISATEUR POUR LES CONDITIONS AUX LIMITES RELATIVES
-!      AUX PARTICULES (ENTREE ET TRAITEMENT AUX AUTRES BORDS)
+!    User subroutine for the boundary conditions associated to the particles
+!    (inlet and treatment of the other boundaries)
 
 
 ! Boundary faces identification
@@ -87,74 +87,83 @@ subroutine uslag2 &
 ! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
 ! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
+!                  !    !     !                                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-!                  !    !     ! le module lagrangien                           !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
+! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
+! nvp              ! i  ! <-- ! number of particle variables                   !
+! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
+! nvep             ! i  ! <-- ! number of particle properties (integer)        !
+! nivep            ! i  ! <-- ! number of particle properties (integer)        !
+! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
+! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
+! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
+! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+!                  !    !     !                                                !
+! ifacel           ! ia ! <-- ! interior faces -> cells connectivity           !
+! (2, nfac)        !    !     !                                                !
+! ifabor           ! ia ! <-- ! boundary faces -> cells connectivity           !
+! (nfabor)         !    !     !                                                !
+! ifmfbr           ! ia ! <-- ! boundary face family numbers                   !
+! (nfabor)         !    !     !                                                !
+! ifmcel           ! ia ! <-- ! cell family numbers                            !
+! (ncelet)         !    !     !                                                !
+! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml,nprfml    !    !     !                                                !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
+! maxelt           !  i ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfac)       !    !     !  face interne dans nodfac                      !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
+! ipnfac           ! ia ! <-- ! interior faces -> vertices index (optional)    !
+!   (lndfac)       !    !     !                                                !
+! nodfac           ! ia ! <-- ! interior faces -> vertices list (optional)     !
 !   (nfac+1)       !    !     !                                                !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfbr)       !    !     !  face de bord dans nodfbr                      !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
+! ipnfbr           ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+!   (lndfbr)       !    !     !                                                !
+! nodfbr           ! ia ! <-- ! boundary faces -> vertices list  (optional)    !
 !   (nfabor+1)     !    !     !                                                !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
-! ifrlag(nfabor    ! te ! --> ! type des faces de bord lagrangien              !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
+! itrifb(nfabor    ! ia ! <-- ! indirection for the sorting of the             !
+!  nphas      )    !    !     ! boundary faces                                 !
+! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
+!  nphas      )    !    !     !                                                !
+! ifrlag(nfabor    ! ia ! --> ! type of the Lagrangian boundary faces          !
+! itepa            ! ia ! <-- ! particle information (integers)                !
+! (nbpmax,nivep    !    !     !                                                !
+! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
+! ituser(nituse    ! ia ! --- ! complementary user array of integers           !
+! ia(*)            ! ia ! <-- ! macro array of integers                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
+! (ndim,ncelet     !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+! (ndim,nfabor)    !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
+! (ndim,nfabor)    !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 ! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
+! volume           ! ra ! <-- ! cell volumes                                   !
+! (ncelet          !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant prec)                     !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
+! rtpa             ! ra ! <-- ! transported variables at the previous          !
+! (ncelet,*)       !    !     ! time step                                      !
+! propce           ! ra ! <-- ! physical properties at cell centers            !
+! (ncelet,*)       !    !     !                                                !
+! propfa           ! ra ! <-- ! physical properties at interior face centers   !
+!  (nfac,*)        !    !     !                                                !
+! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
+!  (nfabor,*)      !    !     !                                                !
+! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
+!  (nfabor,*)      !    !     !                                                !
+! ettp             ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
+! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
+! (nbpmax,nvep)    !    !     !                                                !
+! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
+! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
+! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -247,12 +256,12 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES COND. LIM.      ',/,&
-'@    =========                                               ',/,&
-'@     MODULE LAGRANGIEN :                                    ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR uslag2 DOIT ETRE COMPLETE',/,&
+'@ @@ CAUTION: STOP AT THE ENTRANCE OF THE BOUNDARY           ',/,&
+'@    ========                                                ',/,&
+'@     CONDITIONS OF THE LAGRANGIAN MODULE:                   ',/,&
+'@     THE USER SUBROUTINE uslag2 MUST BE FILLED              ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The calculation will not be run                           ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -261,46 +270,44 @@ endif
 
 
 !===============================================================================
-! 1.  GESTION MEMOIRE
+! 1.  Memory management
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 2. INITIALISATION
+! 2. Initialization
 !===============================================================================
 
 pis6 = pi / 6.d0
 
 !===============================================================================
-! 3. CONSTRUCTION DES ZONES FRONTIERE
+! 3. Construction of the boundary zones
 !===============================================================================
 
 
-!     DEFINITION DES ZONES FRONTIERES
+!     Definition of the boundary zones
+!     --------------------------------
 
-!     Pour le module Lagrangien, l'utilisateur definit NFRLAG zones
-!       frontieres a partir de la couleur des faces de bord, plus
-!       generalement de leurs proprietes (couleurs, groupes...),
-!       ou des conditions aux limites fixees dans usclim
-!       ou meme de leur coordonnees. Pour ce faire, on renseigne
-!       le tableau IFRLAG(NFABOR) qui donne pour
-!       chaque face de bord IFAC le numero de la zone a laquelle elle
-!       appartient IFRLAG(IFAC).
-!     Attention : il est indispensable que TOUTES les faces aient ete
-!       affectees a une zone.
-!     Le numero des zones (donc les valeurs de IFRLAG(IFAC)) est
-!       arbitrairement choisi par l'utilisateur, mais doit etre un
-!       entier strictement positif et inferieur ou egal a NFLAGM
-!       (valeur fixee en parametre dans lagpar.h).
-!     On affecte ensuite a chaque zone un type ITYLAG qui sera utilise
-!       pour imposer des conditions aux limites globales.
-
+!     For the Lagrangian module, the user defines nfrlag boundary zones
+!     from the color of the boundary faces, or more generally from their properties
+!     (colors, groups..) or from the boundary conditions prescribed in usclim, or
+!     even from their coordinates. To do that, we fill the ifrlag(nfabor) array
+!     which gives for every boundary face the number of the zone to which it belongs ifrlag(ifac)
+!
+!     Be careful, all the boundary faces must have been affected.
+!
+!     The number of the zones (thus the values of ifrlag(ifac)) is arbitrarily
+!     chosen by the user, but must be a positive integer and inferior or equal to
+!     nflagm (parameter prescribed in lagpar.h).
+!
+!     Afterwards, we assign to every zone a type named itylag that will be used
+!     to impose global boundary conditions.
 
 izone = -1
 
-! ---> Premiere zone, numerotee IZONE = 1 ( = couleur 10)
+! ---> First zone numbered izone=1 ( = color 10)
 CALL GETFBR('10',NLELT,LSTELT)
 !==========
 
@@ -313,7 +320,7 @@ do ilelt = 1, nlelt
 
 enddo
 
-! ---> Deuxieme zone, numerotee IZONE = 2 ( = partie des couleur 4)
+! ---> Second zone numbered izone=2 ( = part of color 4)
 CALL GETFBR('4 and Y < 1.0',NLELT,LSTELT)
 !==========
 
@@ -326,7 +333,7 @@ do ilelt = 1, nlelt
 
 enddo
 
-! ---> Troisieme zone, numerotee IZONE = 4 ( = entree phase 1)
+! ---> Third zone numbered izone=3 ( = inlet phase 1)
 do ifac = 1, nfabor
   if(itypfb(ifac,1).eq.ientre) then
     izone        = 4
@@ -334,7 +341,7 @@ do ifac = 1, nfabor
   endif
 enddo
 
-! ---> Nieme zone, numerotee IZONE = 5 ( = couleur 3)
+! ---> Nth zone numbered izone=5 (= color 3)
 CALL GETFBR('3',NLELT,LSTELT)
 !==========
 
@@ -349,138 +356,138 @@ enddo
 
 
 !===============================================================================
-! 4. INJECTION PAR CLASSES DE PARTICULES DANS LE DOMAINE DE CALCUL
+! 4. Injection per particle class into the calculation domain
 !===============================================================================
 
-!   POUR DONNER LES INFORMATIONS SUR LES CLASSES DE PARTICULES,
-!   ON PROCEDE EN DEUX ETAPES :
+!   TO PROVIDE INFORMATION ABOUT THE PARTICLE CLASSES,
+!   WE FOLLOW A TWO-STEP PROCEDURE:
 
-!   1) TOUT D'ABORD, ON RENSEIGNE LE NOMBRE DE CLASSES DE PARTICULES
-!      PAR ZONE FRONTIERE : IUSNCL (ce nombre est nul par defaut)
+!   1) FIRST, THE NUMBER OF PARTICLE CLASSES IS PRESCRIBED
+!      FOR EACH BOUNDARY ZONE: IUSNCL (by default, this parameter is equal to zero)
 
-!   2) ENSUITE PAR ZONE DE COULEUR ET PAR CLASSE,
-!      ON DONNE LES CARACTERISTIQUES D'ENTREE ET
-!      LES CARACTERISTIQUE PHYSIQUES DES PARTICULES
-
-
+!   2) AFTERWARDS, FOR EACH ZONE AND FOR EACH CLASS, WE PRESCRIBE
+!      THE PHYSICAL PROPERTIES OF THE PARTICLES
+!
 
 
-! --> Nombre de classes de particules entrantes
-!   On renseigne ici le nombre de classes pour toutes les zones
-!     identifiees precedemment.
-!   Par defaut le nombre de classes de particules est nul.
-!   Le nombre max de classes est NCLAGM donne dans lagpar
 
-! ---> Premiere zone, numerotee IZONE = 1 : 1 classe injectee
+
+! --> Number of particle classes entering the domain
+!   We assign here the number of classes for each zone previously identified.
+!
+!   This number is zero by default.
+!   The maximal number of classes is nclagm (defined in lagpar.h)
+
+! ---> First zone numbered izone = 1: 1 class injected
 izone     = 1
 nbclas    = 1
 iusncl(izone) = nbclas
 
-! ---> Deuxieme zone, numerotee IZONE = 2 : 0 classe injectee
+! ---> Second zone numbered izone = 2: 0 class injected
 izone     = 2
 nbclas    = 0
 iusncl(izone) = nbclas
 
-! ---> Troisieme zone, numerotee IZONE = 4 : 0 classe injectee
+! ---> Third zone numbered izone = 4 : 0 class injected
 izone     = 4
 nbclas    = 0
 iusncl(izone) = nbclas
 
-! ---> Nieme zone,     numerotee IZONE = 5 : 0 classe injectee
+! ---> Zone numbered izone = 5 : 0 class injected
 izone     = 5
 nbclas    = 0
 iusncl(izone) = nbclas
 
 
-! --> Pour chaque classe de particules associee a une zone,
-!     il faut fournir des informations.
+! --> For every class associated with a zone,
+!     we give the followong information.
 
 
-!     IUSNCL nbr de classes par zones
-!     IUSCLB conditions au bord pour les particules
-!     = IENTRL -> zone d'injection de particules
-!     = ISORTL -> sortie du domaine
-!     = IREBOL -> rebond des particules
-!     = IDEPO1 -> deposition definitive
-!     = IDEPO2 -> deposition definitive mais la particule reste en
-!                 memoire (utile si IENSI2 = 1 uniquement)
-!     = IDEPO3 -> deposition et remise en suspension possible
-!                 suivant les condition de l'ecoulement
-!     = IDEPFA -> deposition de la particule avec force d'attachement,
-!                 vitesse conservee et re-entrainement possible
-!                 (Possible si LADLVO = 1 )
-!     = IENCRL -> encrassement (Charbon uniquement IPHYLA = 2)
-!     = JBORD1 -> interaction part/frontiere utilisateur (cf. USLABO)
-!     = JBORD2 -> interaction part/frontiere utilisateur (cf. USLABO)
-!     = JBORD3 -> interaction part/frontiere utilisateur (cf. USLABO)
-!     = JBORD4 -> interaction part/frontiere utilisateur (cf. USLABO)
-!     = JBORD5 -> interaction part/frontiere utilisateur (cf. USLABO)
+!     iusncl number of classes per zone
+!     iusclb boundary conditions for the particles
+!     = ientrl -> zone of particle inlet
+!     = isortl -> particle outlet
+!     = irebol -> rebound of the particles
+!     = idepo1 -> definitive deposition
+!     = idepo2 -> definitive deposition, but the particle remains in memory
+!                 (useful only if iensi2 = 1)
+!     = idepo3 -> deposition and resuspension possible
+!                 following the conditions of the flow
+!     = idepfa -> deposition of the particle with attachment force,
+!                 the velocity is conserved, and resuspension is possible
+!                 (Possible if ladlvo = 1 )
+!     = iencrl -> fouling (coal only iphyla = 2)
+!     = jbord1 -> user-defined particle/boundary interaction (cf. uslabo)
+!     = jbord2 -> user-defined particle/boundary interaction (cf. uslabo)
+!     = jbord3 -> user-defined particle/boundary interaction (cf. uslabo)
+!     = jbord4 -> user-defined particle/boundary interaction (cf. uslabo)
+!     = jbord5 -> user-defined particle/boundary interaction (cf. uslabo)
 
 
 
-!     Tableau IUSLAG :
+!     Array iuslag :
 !     ================
-!        IJNBP : nbr de part par classe et zones
-!        IJFRE : frequence d'injection, si la frequence est nulle alors
-!                  il y a injection uniquement a la 1ere iteration absolue
-!        ICLST : numero de groupe auquel appartient la particule
-!                 (uniquement si on souhaite des statistiques par groupe)
-!        IJUVW : type de condition vitesse
-!                  = -1 vitesse fluide imposee
-!                  =  0 vitesse imposee selon la direction normale a la face
-!                        de bord et de norme RUSLAG(ICLAS,IZONE,IUNO)
-!                  =  1 vitesse imposee : on donne RUSLAG(ICLAS,IZONE,IUPT)
-!                                                  RUSLAG(ICLAS,IZONE,IVPT)
-!                                                  RUSLAG(ICLAS,IZONE,IWPT)
-!                  =  2 profil utilisateur
-!        IJPRTP : type de condition temperature
-!                  =  1 temperature imposee : on donne RUSLAG(ICLAS,IZONE,ITPT)
-!                  =  2 profil utilisateur
-!        IJPRDP : type de condition diametre
-!                  =  1 vitesse imposee : on donne RUSLAG(ICLAS,IZONE,IDPT)
-!                                                  RUSLAG(ICLAS,IZONE,IVDPT)
-!                  =  2 profil utilisateur
-!        INUCHL : numero du charbon de la particule (uniquement si IPHYLA=2)
+!        ijnbp : number of particles per class and per zone
+!        ijfre : injection frequency. If ijfre = 0, then the injection
+!                occurs only at the first absolute iteration.
+!        iclst : number of the group to which the particle belongs
+!                (only if one wishes to calculate statistics per group)
+!        ijuvw : type of condition on the velocity
+!                  = -1 imposed flow velocity
+!                  =  0 imposed velocity along the normal direction of the
+!                      boundary face, with norm equal to RUSLAG(ICLAS,IZONE,IUNO)
+!                  =  1 imposed velocity: we prescribe   RUSLAG(ICLAS,IZONE,IUPT)
+!                                                        RUSLAG(ICLAS,IZONE,IVPT)
+!                                                        RUSLAG(ICLAS,IZONE,IWPT)
+!                  =  2 user-defined profile
+!        ijprtp : type of temperature condition
+!                  =  1 imposed temperature: we prescribe RUSLAG(ICLAS,IZONE,ITPT)
+!                  =  2 user-defined profile
+!        ijprdp : type of diameter condition
+!                  =  1 imposed diameter: we prescribe  RUSLAG(ICLAS,IZONE,IDPT)
+!                                                       RUSLAG(ICLAS,IZONE,IVDPT)
+!                  =  2 user-defined profile
+!        inuchl : number of the coal of the particle (only if iphyla = 2)
 
-!     Tableau RUSLAG :
-!     ================
-!        IUNO  : norme de la vitesse (m/s)
-!        IUPT  : U par classe et zones (m/s)
-!        IVPT  : V par classe et zones (m/s)
-!        IWPT  : W par classe et zones (m/s)
-!        IDEBT : debit massique (kg/s)
-!        IPOIT : poids statistique (nombre d'echantillons) associe
-!                  a la particule (il est calcule automatiquement pour
-!                  respecter un debit massique ce dernier est fournis)
+!     Array ruslag :
+!     ===============
+!        iuno  : Norm of the velocity (m/s)
+!        iupt  : Velocity along the X axis, for each class and for each zone (m/s)
+!        ivpt  : Velocity along the Y axis, for each class and for each zone (m/s)
+!        iwpt  : Velocity along the Z axis, for each class and for each zone (m/s)
+!        idebt : Mass flow rate (kg/s)
+!        ipoit : Statistical weight (number of samples) associated
+!                to the particle (automatically computed to respect a mass
+!                flow rate if it is defined)
 
-!        En fonction de la physique
-!          IDPT   : diametre (m)
-!          IVDPT  : ecart-type du diametre (m)
-!          ITPT   : temperature en degres Celsius (Pas d'enthalpie)
-!          ICPT   : chaleur specifique (J/kg/K)
-!          IEPSI  : emissivite (si =0 alors aucun effet radiatif n'est pris en compte)
-!          IROPT  : masse volumique (kg/m3)
+!        Physical characteristics:
+!          idpt   : diameter (m)
+!          ivdpt  : standard deviation of the diameter (m)
+!          itpt   : temperature in Celsius degress (no enthalpy)
+!          icpt   : specific heat (J/kg/K)
+!          iepsi  : emissivity (if =0 then no radiative effect is taken into account)
+!          iropt  : density (kg/m3)
 
-!          Si Charbon (IPHYLA=2)
-!            IHPT  : temperature en degres Celsius (Pas d'enthalpie)
-!            IMCHT : masse de charbon reactif (kg)
-!            IMCKT : masse de coke (kg)
+!         If coal (iphyla=2)
+!            ihpt  : temperature in Celsius degress (no enthalpy)
+!            imcht : mass of reactive coal (kg)
+!            imckt : masse of coke (kg)
 
 
-! ---> Premiere zone, numerotee IZONE = 1 (NBCLAS classes)
-!        IUSCLB : adherence de la particule a une face de paroi
-!        IJNBP  : 10 particules par classe,
-!        IJFRE  : injection tous les 2 pas de temps
-!        IJUVW, IUPT, IVPT, IWPT : vitesse imposee a 1.1D0, 0.0D0, 0.0D0
-!        ICPT   : cp de 10000
-!        ITPT   : temperature de 25 degres Celsius
-!        IDPT   : diametre de 50.E-6 m
-!        IEPSI  : emissivite a 0.7
-!        IVDPT  : diametre constant ==> Ecart-type nul
-!        IROPT  : masse volumique
-!        IPOIT  : poids statistique (nombre de particules physiques
-!                 represente par une particule-echantillon statistique)
-!        IDEBT  : debit massique
+! ---> EXAMPLE : First zone, numbered IZONE = 1 (NBCLAS classes)
+!        IUSCLB : adherence of the particle to a boundary face
+!        IJNBP  : 10 particles for each class,
+!        IJFRE  : injection every other time step
+!        IJUVW, IUPT, IVPT, IWPT : imposed velocity on 1.1D0, 0.0D0, 0.0D0
+!        ICPT   : cp equal to 10000
+!        ITPT   : temperature equal to 25 Celsius degress
+!        IDPT   : diameter equal to 50.E-6 m
+!        IEPSI  : emissivity equal to 0.7
+!        IVDPT  : constant diameter ==> standard deviation null
+!        IROPT  : density
+!        IPOIT  : statistical weight (number of physical particles
+!                 represented by one statistical particle)
+!        IDEBT  : mass flow rate
 
 
 izone     = 1
@@ -499,28 +506,27 @@ do iclas  = 1, nbclas
   ruslag (iclas,izone,iupt)  = 1.1d0
   ruslag (iclas,izone,ivpt)  = 0.0d0
   ruslag (iclas,izone,iwpt)  = 0.0d0
-
   iuslag (iclas,izone,ijprpd)= 1
   ruslag (iclas,izone,ipoit) = 1.d0
   ruslag (iclas,izone,idebt) = 0.d0
 
-!    Si physique simple
+!    if the physics is " simple"
 
   if ( iphyla.eq.0 .or. iphyla.eq.1 ) then
 
-!        Diametre et ecart-type du diametre
+!        Mean value and standard deviation of the diameter
 
     iuslag (iclas,izone,ijprdp)= 1
     ruslag (iclas,izone,idpt)  = 50.d-6
     ruslag (iclas,izone,ivdpt) = 0.d0
 
-!        Masse Volumique
+!        Density
 
     ruslag(iclas,izone,iropt) = 2500.d0
 
     if ( iphyla.eq.1 ) then
 
-!        Temperature et Cp
+!        Temperature and Cp
 
       if ( itpvar.eq.1 ) then
         iuslag (iclas,izone,ijprtp) = 1
@@ -532,52 +538,49 @@ do iclas  = 1, nbclas
 
     endif
 
-!    Charbon
+!    Coal
 
   else if ( iphyla.eq.2 ) then
 
-!    ATTENTION : 1) Pour transporter et bruler des particules de
-!                   charbon en Lagrangien, une physique particuliere
-!                   liee au charbon pulverise doit etre active pour
-!                   la phase porteuse.
-
-!                2) Les proprietes physiques des grains de charbon
-!                   sont connus a partir du fichier de thermochimie :
-!                                      dp_FCP.
-
-!                3) Pour la classe Lagrangienne courante ICLAS, et pour
-!                   la zone frontiere NB courante, on donne aux grains
-!                   de charbon les proprietes du charbon ICHA de classe
-!                   ICLAS lu dans le fichier dp_FCP.
-
-!                4) ICHA : numero du Charbon compris entre 1 et NCHARB
-!                   defini dans le fichier dp_FCP par l'utilisateur.
-!                   (NCHARB = NCHARM = 3 au maximum)
+!    CAUTION :   1) To transport and burn coal particles with the Lagrangian
+!                   module, a specific physics for the dispersed phase must
+!                   be activated for the carrier phase.
+!
+!                2) The physical properties of the coal particles are known
+!                   from the thermo-chemical file: dp_FCP
+!
+!                3) For the current phase ICLAS, and for the current boundary zone
+!                   NB, we assign to the coal particles the properties of the coal ICHA
+!                   of the icha class taken from the file dp_FCP.
+!
+!                4) icha : number of the coal between 1 and ncharb defined by the user
+!                   in the file dp_FCP.
+!
 
 
     icha = ichcor(iclas)
     temp = 800.d0
 
-!        Numero du charbon
+!        Number of the coal
 
     iuslag(iclas,izone,inuchl) = icha
 
-!        Temperature et Cp
+!        Temperature and Cp
 
     ruslag(iclas,izone,ihpt) = temp
     ruslag(iclas,izone,icpt) = cp2ch(icha)
 
-!        Diametre et son ecart-type (nul)
+!        Mean value and standard deviation of the diameter
 
     ruslag (iclas,izone,idpt)  = diam20(iclas)
     ruslag (iclas,izone,ivdpt) = 0.d0
 
-!        Masse Volumique
+!        Density
 
     ruslag(iclas,izone,iropt) =  rho0ch(icha)
 
-!        Masse de charbon actif et
-!        Masse de Coke (nulle si le charbon n'a jamais brule)
+!        Mass of reactive coal and
+!        mass of coke (null if the coal has never burnt)
 
     mp0 = pis6 * ( ruslag(iclas,izone,idpt)**3 )                  &
                * ruslag(iclas,izone,iropt)
@@ -588,27 +591,23 @@ do iclas  = 1, nbclas
 
 enddo
 
-! ---> Deuxieme zone, numerotee IZONE = 2 (NBCLAS classes)
-!        IUSCLB : rebond de la particule
+! ---> Second zone, numbered izone = 2
+!        IUSCLB : rebound of the particle
 
 izone     = 2
 iusclb (izone)         =  irebol
 
 
-izone     = 4
-iusclb (izone)         =  irebol
-
-
-! de meme pour les autres zones ...
+! same procedure for the other zones...
 
 !===============================================================================
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !----
-! FIN
+! End
 !----
 
 return

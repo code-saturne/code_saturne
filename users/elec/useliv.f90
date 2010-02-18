@@ -44,12 +44,11 @@ subroutine useliv &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose :
 ! --------
 
-! INITIALISATION DES VARIABLES DE CALCUL
-!    POUR LA PHYSIQUE PARTICULIERE : COMBUSTION CP
-!    PENDANT DE USINIV.F
+! variables initialization for specific electric module :
+!    the same as USINIV.F for main variables
 
 ! Cette routine est appelee en debut de calcul (suite ou non)
 !     avant le debut de la boucle en temps
@@ -60,11 +59,10 @@ subroutine useliv &
 
 ! On a repris a titre d'exemple dans cette routine utilisateur
 !     l'initialisation choisie par defaut.
+!
 
-
-
-! Les proprietes physiques sont accessibles dans le tableau
-!     PROPCE (prop au centre), PROPFA (aux faces internes),
+! Thermodynamic properties and transport coefficients are in
+!     PROPCE (at the center of the cells), PROPFA (for internal faces),
 !     PROPFB (prop aux faces de bord)
 !     Ainsi,
 !      PROPCE(IEL,IPPROC(IROM  (IPHAS))) designe ROM   (IEL ,IPHAS)
@@ -77,9 +75,9 @@ subroutine useliv &
 !      PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
 !      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
 
-! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
-!     ET PAS ICI
+! Thermodynamic properties and transport coefficients modification
+!  (ROM, VISCL, VISCLS, CP) will be done by default in  PPPHYV
+!     and not here
 
 
 ! Cells identification
@@ -93,76 +91,90 @@ subroutine useliv &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
+!    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml, nprfml)  !    !     !                                                !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
-! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
-! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
-! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-!  (ndim, nnod)    !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
+! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
+! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
+! ndim             ! e  ! <-- ! dimension de l'espace                          !
+! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! nfac             ! e  ! <-- ! nombre de faces internes                       !
+! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! nfml             ! e  ! <-- ! nombre de familles d entites                   !
+! nprfml           ! e  ! <-- ! nombre de proprietese des familles             !
+! nnod             ! e  ! <-- ! nombre de sommets                              !
+! lndfac           ! e  ! <-- ! longueur du tableau nodfac (optionnel          !
+! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr (optionnel          !
+! ncelbr           ! e  ! <-- ! nombre d'elements ayant au moins une           !
+!                  !    !     ! face de bord                                   !
+! nvar             ! e  ! <-- ! nombre total de variables                      !
+! nscal            ! e  ! <-- ! nombre total de scalaires                      !
+! nphas            ! e  ! <-- ! nombre de phases                               !
+! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
+! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! ifacel           ! te ! <-- ! elements voisins d'une face interne            !
+! (2, nfac)        !    !     !                                                !
+! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
+! (nfabor)         !    !     !                                                !
+! ifmfbr           ! te ! <-- ! numero de famille d'une face de bord           !
+! (nfabor)         !    !     !                                                !
+! ifmcel           ! te ! <-- ! numero de famille d'une cellule                !
+! (ncelet)         !    !     !                                                !
+! iprfml           ! te ! <-- ! proprietes d'une famille                       !
+! nfml  ,nprfml    !    !     !                                                !
+! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
+! lstelt(maxelt) te ! --- ! tableau de travail                             !
+! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
+!   (lndfac)       !    !     !  face interne dans nodfac (optionnel)          !
+! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
+!   (nfac+1)       !    !     !  (optionnel)                                   !
+! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
+!   (lndfbr)       !    !     !  face de bord dans nodfbr (optionnel)          !
+! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
+!   (nfabor+1)     !    !     !  (optionnel)                                   !
+! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
+! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
+! ia(*)            ! tr ! --- ! macro tableau entier                           !
+! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
+! (ndim,ncelet     !    !     !                                                !
+! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
+! (ndim,nfac)      !    !     !                                                !
+! surfbo           ! tr ! <-- ! vecteur surface des faces de bord              !
+! (ndim,nfabor)    !    !     !                                                !
+! cdgfac           ! tr ! <-- ! centre de gravite des faces internes           !
+! (ndim,nfac)      !    !     !                                                !
+! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
+! (ndim,nfabor)    !    !     !                                                !
+! xyznod           ! tr ! <-- ! coordonnes des noeuds (optionnel)              !
+! (ndim,nnod)      !    !     !                                                !
+! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
+! (ncelet          !    !     !                                                !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
+! propce           ! tr ! <-- ! proprietes physiques au centre des             !
+! (ncelet,*)       !    !     !    cellules                                    !
+! propfa           ! tr ! <-- ! proprietes physiques au centre des             !
+!  (nfac,*)        !    !     !    faces internes                              !
+! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
+!  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
+! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
+! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
+! ra(*)            ! tr ! --- ! macro tableau reel                             !
 !__________________!____!_____!________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
+!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
+!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
+!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
+!            --- tableau de travail
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-! Common blocks
+!     DONNEES EN COMMON
 !===============================================================================
 
 include "paramx.h"
@@ -218,19 +230,22 @@ double precision tinit, hinit, coefe(ngazem)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
-
-!     En Joule, on s'arrete (il faut etre sur que la loi H T est la bonne)
+!
+! For Joule heating by direct conduction, it stoppes
+!   you have tot be sure that the enthalpy function H(T) is the right one
+!
 if ( ippmod(ieljou).ge.1 ) then
 
   write(nfecra,9010)
   call csexit (1)
 
-!     En Arc on continue car on a des valeurs par defaut admissibles
-!       (en particulier, une enthalpie tiree du fichier de donnees)
+! For electric arc, we continue because the value are given by defauft
+!       (H(T) is given from the data file dp_ELE)
 elseif(ippmod(ielarc).ge.1) then
 
   if(ntcabs.eq.1) then
@@ -245,54 +260,55 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA DEFINITION DES PROP. PHYSIQUES   ',/,&
+'@ @@ CAUTION : Stop in the definition of Thermal properties  ',/,&
 '@    =========                                               ',/,&
-'@                      MODULE ELECTRIQUE                     ',/,&
+'@                      for Electric module                   ',/,&
 '@                                                            ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR uselph DOIT ETRE COMPLETE',/,&
+'@     The user routine uselph has to be completed            ',/,&
 '@                                                            ',/,&
-'@     Ce sous-programme utilisateur permet de definir les    ',/,&
-'@       proprietes physiques. Il est indispensable.          ',/,&
+'@     This user routine is used to define thermal properties ',/,&
+'@     It is unavoidable.                                     ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  9011 format(/,                                                   &
-' Module arc electrique: proprietes physiques lues sur fichier',/)
+' ELECTRIC ARC MODULE : THERMAL PROPERTIES ARE READ IN A FILE',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 0. IMPRESSION DE CONTROLE
+! 0. Control output
 !===============================================================================
 
 write(nfecra,9001)
 
 !===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
+! 1.  Local variables initialization
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 2. INITIALISATION DES INCONNUES : EXEMPLES
-!      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
+! 2. Initialization : examples
+!      only at the beginning of the calculation
 !===============================================================================
 
 if ( isuite.eq.0 ) then
 
   iphas = 1
 
-! --> Enthalpie = H(T0) ou 0
+! --> Enthalpy = H(T0) ou 0
 
-!     En arc electrique, on initialise tout le domaine de calcul
-!       a T0 avec la 1ere espece
-!     En Joule, on initialise l'enthalpie a zero, et il faudra
-!       que l'utilisateur intervienne, avec sa loi T->H ou une tabulation.
-
-!   -- Calculs de HINIT
+!     For electric arc,
+!     for the whole compution domain enthalpy is set to H(T0) of the 1st constituant of the gas
+!
+!     For Joule jeating by direct conduction,
+!     enthalpy is set to zero, and the user will enter his H(T) function tabulation.
+!
+!   --  HINIT calculations
 
   if ( ippmod(ielarc).ge.1 ) then
     mode = -1
@@ -310,14 +326,14 @@ if ( isuite.eq.0 ) then
     call usthht(mode,hinit,tinit)
   endif
 
-!    -- Valeurs de l'enthalpie
+!    -- Entahlpy value
 
   do iel = 1, ncel
     rtp(iel,isca(ihm)) = hinit
   enddo
 
 
-! --> Fractions massiques = 1 ou 0
+! --> Mass fraction  = 1 ou 0
 
   if ( ngazg .gt. 1 ) then
     do iel = 1, ncel
@@ -331,21 +347,21 @@ if ( isuite.eq.0 ) then
   endif
 
 
-! --> Potentiels Electrique = 0
+! --> Electric potentials = 0
 
-!     -- Potentiel Reel
+!     -- Real Component
   do iel = 1, ncel
     rtp(iel,isca(ipotr)) = 0.d0
   enddo
 
-!     -- Potentiel Imaginaire (Joule)
+!     -- Imaginary (for Joule heating by direct conduction)
   if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
     do iel = 1, ncel
       rtp(iel,isca(ipoti)) = 0.d0
     enddo
   endif
 
-!     -- Potentiel vecteur (arc elec. 3D)
+!     -- Vector potential (3D electric arc 3D)
   if ( ippmod(ielarc).ge.2 ) then
     do idimve = 1, ndimve
       do iel = 1, ncel
@@ -361,8 +377,8 @@ endif
 !----
 
  9001 format(/,                                                   &
-'                       MODULE ELECTRIQUE                     ',/,&
-'  useliv : Initialisation des variables par l''utilisateur   ',/,&
+'                       ELECTRIC MODULE                       ',/,&
+'  useliv : variables initialization by user                   ',/,&
 '                                                             '  )
 
 !----

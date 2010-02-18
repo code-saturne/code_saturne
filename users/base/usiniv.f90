@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2008 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -44,48 +44,41 @@ subroutine usiniv &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR : INITIALISATION DES VARIABLES DE CALCUL
+!    User subroutine.
 
-! Cette routine est appelee en debut de calcul (suite ou non)
-!     avant le debut de la boucle en temps
+!    Initialize variables
 
-! Elle permet d'INITIALISER ou de MODIFIER (pour les calculs suite)
-!     les variables de calcul,
-!     les valeurs du pas de temps
+! This subroutine is called at beginning of the computation
+! (restart or not) before the loop time step
 
+! This subroutine enables to initialize or modify (for restart)
+!     unkown variables and time step values
 
-! On dispose ici de ROM et VISCL initialises par RO0 et VISCL0
-!     ou relues d'un fichier suite
-! On ne dispose des variables VISCLS, CP (quand elles sont
-!     definies) que si elles ont pu etre relues dans un fichier
-!     suite de calcul
+! rom and viscl values are equal to ro0 and viscl0 or initialize
+! by reading the restart file
+! viscls and cp variables (when there are defined) have no value
+! excepted if they are read from a restart file
 
-! Les proprietes physiaues sont accessibles dans le tableau
-!     PROPCE (prop au centre), PROPFA (aux faces internes),
-!     PROPFB (prop aux faces de bord)
-!     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  (IPHAS))) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL(IPHAS))) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   (IPHAS))) designe CP    (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
+! Physical quantities are defined in the following arrays:
+!  propce (physical quantities defined at cell center),
+!  propfa (physical quantities defined at interior face center),
+!  propfa (physical quantities defined at border face center).
+!
+! Examples:
+!  propce(iel, ipproc(irom  (iphas))) means rom  (iel, iphas)
+!  propce(iel, ipproc(iviscl(iphas))) means viscl(iel, iphas)
+!  propce(iel, ipproc(icp   (iphas))) means cp   (iel, iphas)
+!  propce(iel, ipproc(ivisls(iscal))) means visls(iel, iscal)
+!  propfa(ifac, ipprof(ifluma(ivar))) means flumas(ifac, ivar)
+!  propfb(ifac, ipprob(irom (iphas))) means romb  (ifac, iphas)
+!  propfb(ifac, ipprob(ifluma(ivar))) means flumab(ifac, ivar)
 
-!      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
-
-!      PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
-!      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
-
-
-
-
-
-! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME USPHYV
-!     ET PAS ICI
-
-
+! Modification of the behaviour law of physical quantities (rom, viscl,
+! viscls, cp) is not done here. It is the purpose of the user subroutine
+! usphyv
 
 ! Cells identification
 ! ====================
@@ -95,6 +88,7 @@ subroutine usiniv &
 ! but a more thorough description can be found in the user guide.
 
 
+!-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
@@ -145,14 +139,14 @@ subroutine usiniv &
 ! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
+! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
+! rtp(ncelet, *)   ! ra ! <-- ! computed variables at cell centers at current  !
+!                  !    !     ! time steps                                     !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
+! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
+!  (nfabor, *)     !    !     !                                                !
 ! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
 ! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -179,6 +173,8 @@ include "parall.h"
 include "period.h"
 
 !===============================================================================
+
+! Arguments
 
 integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor
@@ -214,7 +210,7 @@ integer          iel, iutile
 !===============================================================================
 
 if(1.eq.1) then
-!       Indicateur de non passage dans le sous-programme
+!       Tag to know if a call to this subroutine has already been done
   iusini = 0
   return
 endif
@@ -224,25 +220,21 @@ endif
 
 
 !===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
+! 1.  Initialization of local variables
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 2. INITIALISATION DES INCONNUES :
-!      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
+! 2. Unknown variables initialization:
+!      ONLY done if there is no restart computation
 !===============================================================================
 
-! --- INCONNUES
-!     Exemple : 1 est le numero du scalaire utilisateur 1
-!                 parmi tous les scalaires (utilisateurs + physiques
-!                 particulieres).
-!               ISCA(1) est le numero de la variable de calcul
-!                 associee.
-!               RTP(IEL,ISCA(1)) est la valeur de la variable
-!                 de calcul dans la cellule IEL.
+! --- Example:  isca(1) is the variable number in RTP related to the first
+!               user-defined scalar variable
+!               rtp(iel,isca(1)) is the value of this variable in cell number
+!               iel.
 
 if (isuite.eq.0) then
 
@@ -254,17 +246,17 @@ endif
 
 
 !===============================================================================
-! 3. PAS DE TEMPS : EXEMPLE
-!       SI ON FAIT UNE SUITE EN PAS DE TEMPS NON UNIFORME ET CONSTANT
-!       ET QU'ON DESIRE MODIFIER LE PAS DE TEMPS STOCKE DANS LE SUITE
-!         (POUR S'AFFRANCHIR D'UNE EVOLUTION TROP PROGRESSIVE PAR EX)
+! 3. Time step:
 !===============================================================================
 
-! ----------------------------------------------
+! --- Example: We do a computation restart with a variable in time and constant
+!              in space time step or with a variable in time and space time
+!              step. We want to modify the time step given by the reading of
+!              the restart file (in order to overcome a too slow evolution
+!              for instance)
 
-! Il est assez courant que l'on oublie d'eliminer cet exemple
-!   de ce sous-programme.
-! On a donc prevu le test suivant pour eviter les mauvaises surprises
+! The test below allows checking that the following example compiles
+! while disabling it by default.
 
 iutile = 0
 
@@ -279,12 +271,12 @@ if(isuite.eq.1.and.(idtvar.eq.1.or.idtvar.eq.2)) then
   enddo
 endif
 
-!----
-! FORMATS
-!----
+!--------
+! Formats
+!--------
 
 !----
-! FIN
+! End
 !----
 
 return

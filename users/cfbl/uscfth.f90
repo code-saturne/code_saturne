@@ -47,106 +47,159 @@ subroutine uscfth &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! ---------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR POUR ENTREE DES PARAMETRES THERMODYNAMIQUES
+!    User subroutine.
 
+!    Define thermodynamic laws (especially for the compressible flow scheme). 
 
-!    CE SOUS PROGRAMME UTILISATEUR EST OBLIGATOIRE
-!    =============================================
-
-
-
-! CALCUL DE LA PROPRIETE THERMODYNAMIQUE VOULUE
-! EN FONCTION DES PARAMETRES DONNES ET DE LA THERMO CHOISIE
+!    This user subroutine is mandatory for the compressible flow scheme. 
 
 
-! LOIS THERMODYNAMIQUES IMPLEMENTEES :
-! ====================================
+! Introduction
+! ============
 
-!  1. GAZ PARFAIT (fournir la masse molaire XMASML)
-
-!  2. GAZ PARFAIT A GAMMA VARIABLE (à adapter)
-
-!  3. VAN DER WAALS (pas encore implemente)
+! This user subroutine allows to define all physical properties and 
+! variables, through the implementation of thermodynamic laws. 
 
 
-! CALCULS IMPLEMENTES :
-! =====================
+! Avalable thermodynamic laws
+! ===========================
 
-!  VARIABLE     P   rho   T    e    h    s  epsilon-CvT  C.L.
-!      CODE     1    2    3    4    5    6      7         9
-
-
-!  CODE DU CALCUL : *VARIABLE i : i
-
-!                                      di|
-!                   *DERIVEE PARTIELLE --| : ijk
-!                                      dj|k
-
-!                   *CALCUL DES VARIABLES A PARTIR DE i ET j : ij
-
-!  Et pour un reperage automatique, on utilise les nombres premiers
-!           P   rho   T   e   s
-!           2     3   5   7   13  (* 10000 pour les calculs aux cellules)
+!  1. Perfect gas (the molar mass 'xmasml' must be provided)
+!  2. Perfect gas with non constant Gamma (example to be adapted)
+!  3. Van Der Waals (not yet implemented)
 
 
+! Implemented calculations
+! ========================
 
-!  -> OPTIONS DE CALCUL                           : ICCFTH = -1
-
-!  -> INITIALISATIONS PAR DEFAUT                  : ICCFTH = 0
-
-!  -> CALCUL DE GAMMA                             : ICCFTH = 1
-
-!  -> VERIFICATION DE rho                         : ICCFTH = -2
-
-!  -> VERIFICATION DE E                           : ICCFTH = -4
-
-!  -> CALCUL DE T ET e EN FONCTION DE P ET rho    : ICCFTH = 12 ou  60000
-
-!  -> CALCUL DE rho ET e EN FONCTION DE P ET T    : ICCFTH = 13 ou 100000
-
-!  -> CALCUL DE rho ET T EN FONCTION DE P ET e    : ICCFTH = 14 ou 140000
-
-!  -> CALCUL DE P ET e EN FONCTION DE rho ET T    : ICCFTH = 23 ou 150000
-
-!  -> CALCUL DE P ET T EN FONCTION DE rho ET e    : ICCFTH = 24 ou 210000
-
-!                2    dP |
-!  -> CALCUL DE c  = ----|                        : ICCFTH = 126
-!                    drho|s
-
-!                      dP|
-!  -> CALCUL DE beta = --|                        : ICCFTH = 162
-!                      ds|rho
-
-!                    de|
-!  -> CALCUL DE Cv = --|                          : ICCFTH = 432
-!                    dT|rho
-
-!  -> CALCUL DE L'ENTROPIE                        : ICCFTH = 6
+! This user subroutine implements the computation of several quantities. 
+! Each calculation has to be explicitly implemented in the appropriate 
+! section below (already done for perfect gas). 
 
 
-!  -> CALCUL DE epsilon - Cv.T                    : ICCFTH = 7
+! Selection of the quantity to return
+! ===================================
+
+! When calling the user subroutine, the integer 'iccfth' specifies which 
+! calculation has to be performed (and which quantity has to be returned).
+! The values for 'iccfth' for each case are provided below. 
+! For some configurations, two systems of references are used for 'iccfth'
+! (this is useful to make tests easier to implement in the calling 
+! subroutines): both systems are explained hereafter for information. 
+
+! First system: 
+
+!   the variables are referred to using an index i: 
+!     Variable  P  rho  T   e   h   s  'internal energy - CvT' 
+!        Index  1   2   3   4   5   6              7      
+
+!   iccfth is as follows, depending on which quantity needs to be computed:
+!     - compute all variables at cell centers from variable i 
+!                                              and variable j (i<j): 
+!               => iccfth = 10*i+j 
+!     - compute all variables at boundary faces from variable i 
+!                                                and variable j (i<j): 
+!               => iccfth = 10*i+j+900 
+ 
+! Second system:  
+
+!   the variables are referred to using a different index i: 
+!     Variable  P  rho  T  e  s
+!        Index  2   3   5  7  13
+
+!   iccfth is as follows, depending on which quantity needs to be computed:
+!     - compute all variables at cell centers from variable i 
+!                                              and variable j (i<j): 
+!               => iccfth = i*j*10000 
+!     - compute all variables at boundary faces from variable i 
+!                                                and variable j (i<j): 
+!               => iccfth = i*j*10000+900 
+
+! Other quantities: 
+
+!   the variables are referred to using the index of the first system.
+!   iccfth is defined as follows:
+!     - compute variable i at cell centers (for s and 'internal energy-CvT') 
+!               => iccfth = i
+!                                   \partial(variable i)|
+!     - compute partial derivative  --------------------|           
+!                                   \partial(variable j)|variable k  
+!               => iccfth = 100*i+10*j+k 
+!     - compute boundary conditions, resp. symmetry, wall, inlet, outlet:
+!               => iccfth = 91, 92, 93, 94
 
 
-!  -> CALCUL DES CONDITIONS AUX LIMITES
-!              - SYMETRIE                         : ICCFTH = 90
-!              - PAROI                            : ICCFTH = 91
-!              - ENTREE                           : ICCFTH = 92
-!              - SORTIE                           : ICCFTH = 93
-!              - T ET e EN FONCTION DE P ET rho   : ICCFTH = 912 ou  60900
-!              - rho ET e EN FONCTION DE P ET T   : ICCFTH = 913 ou 100900
-!              - rho ET T EN FONCTION DE P ET e   : ICCFTH = 914 ou 140900
-!              - P ET e EN FONCTION DE rho ET T   : ICCFTH = 923 ou 150900
-!              - P ET T EN FONCTION DE rho ET e   : ICCFTH = 924 ou 210900
+! Values of iccfth 
+! ================
 
+! To summarize, the values for iccfth are as follows: 
+
+!   Values at the cell centers: 
+
+!   -> set calculation options (cst/variable cp)   : iccfth = -1
+!   -> set default initialization                  : iccfth =  0
+!   -> calculate gamma                             : iccfth =  1
+!   -> verification of the density                 : iccfth = -2
+!   -> verification of the energy                  : iccfth = -4
+!   -> calculation of temperature and energy 
+!                     from pressure and density    : iccfth =  12 or  60000
+!   -> calculation of density and energy 
+!                     from pressure and temperature: iccfth =  13 or 100000
+!   -> calculation of density and temperature 
+!                     from pressure and energy     : iccfth =  14 or 140000
+!   -> calculation of pressure and energy 
+!                     from density and temperature : iccfth =  23 or 150000
+!   -> calculation of pressure and temperature 
+!                     from density and energy      : iccfth =  24 or 210000
+!
+!                      2    dP |
+!   -> calculation of c  = ----|                   : iccfth = 126
+!                          drho|s
+!
+!                            dP|
+!   -> calculation of beta = --|                   : iccfth = 162
+!                            ds|rho
+!
+!                          de|
+!   -> calculation of Cv = --|                     : iccfth = 432
+!                          dT|rho
+!
+!   -> calculation of entropie                     : iccfth =   6
+!
+!
+!   Values at the boundary faces
+!
+!   -> calculation of the boundary conditions:  
+!     - symmetry                                   : iccfth =  90
+!     - wall                                       : iccfth =  91
+!     - inlet                                      : iccfth =  92
+!     - outlet                                     : iccfth =  93
+!     - different outlet,not implemented yet       : iccfth =  94
+!
+!   -> calculation of the variables at the faces for boundary conditions:  
+!     - temperature and energy 
+!         from pressure and density                : iccfth = 912 ou  60900
+!     - density and energy 
+!         from pressure and temperature            : iccfth = 913 ou 100900
+!     - density and temperature 
+!         from pressure and energy                 : iccfth = 914 ou 140900
+!     - pressure and energy 
+!         from density and temperature             : iccfth = 923 ou 150900
+!     - pressure and temperature 
+!         from density and energy                  : iccfth = 924 ou 210900
+
+
+!   Values at the cell centers and at the boundary faces
+
+!   -> calculation of 'internal energy - Cv.T'     : iccfth =   7
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
+!    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
@@ -164,13 +217,6 @@ subroutine uscfth &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iccfth           ! e  ! <-- ! numero du type de calcul demande               !
-! imodif           ! e  ! <-- ! si calcul aux cellules : modif de rtp          !
-!                  !    !     !   quand imodif > 0 (en particulier             !
-!                  !    !     !   automatise l'init (voir uscfxi)              !
-!                  !    !     ! si calcul aux faces : numero de face           !
-!                  !    !     !   automatise l'init (voir uscfxi)              !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
@@ -182,16 +228,16 @@ subroutine uscfth &
 ! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! nodfac(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -199,23 +245,22 @@ subroutine uscfth &
 ! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp,rtpa         ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
+! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
+! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
-! sorti1,2(*)      ! tr ! --> ! variables de sortie                            !
-!                  !    !     !   (inutilise si iccfth.lt.0)                   !
-! gamagr(*)        ! tr ! --> ! constante gamma equivalent du gaz              !
-!                  !    !     !   (inutilise si iccfth.lt.0)                   !
-!                  !    !     !   (premiere case utilisee en g.p.)             !
-! xmasmr(*)        ! tr ! --> ! masse molaire des constituants du gaz          !
-!                  !    !     !   (inutilise si iccfth.lt.0)                   !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
+!  (nfabor, *)     !    !     !                                                !
+! sorti1,2(*)      ! ra ! --> ! output variable (unused if iccfth.lt.0)        !
+! gamagr(*)        ! ra ! --> ! equivalent "gamma" constant of the gas         !
+!                  !    !     !   (unused if iccfth.lt.0)                      !
+!                  !    !     !   (first value only used for perfect gas)      !
+! xmasmr(*)        ! ra ! --> ! molar mass of the components of the gas        !
+!                  !    !     !   (unused if iccfth.lt.0)                      !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -295,24 +340,31 @@ double precision cstgr(npmax)
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
+!===============================================================================
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     However, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
+!===============================================================================
+
 if(1.eq.1) return
 
-!===============================================================================
+
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 0. INITIALISATION
-!     Pas d'intervention utilisateur requise.
+! 0. Initialization.
+!    No user input required.
 !===============================================================================
 
-!     Pointeurs mémoire
+! Memory pointers
 idebia = idbia0
 idebra = idbra0
 
-!     Indicateur d'erreur (stop si non nul)
+! Error indicator (stop if non zero)
 ierr   = 0
 
-!     Position des variables
+! Rank of the variables in their associated arrays 
 if(iccfth.ge.0.or.iccfth.le.-2) then
   ipriph = ipr(iphas)
   irhiph = isca(irho  (iphas))
@@ -330,46 +382,43 @@ if(iccfth.ge.0.or.iccfth.le.-2) then
   iclw = iclrtp(iwiph,icoef)
 endif
 
-
-!     Si calcul aux cellules,
-!       indique, si > 0, que RTP doit etre modifié
-!     Si calcul aux faces,
-!       indique le numéro de la face considérée
+! For calculation of values at the cell centers, 
+!   ifac0 > indicates that the array rtp must be modified
+! For calculation of values at the cell faces,
+!   ifac0 is the number of the current face
 ifac0 = imodif
 
 !===============================================================================
-! 1. CHOIX DE LA THERMODYNAMIQUE POUR CHAQUE PHASE
-!     Intervention utilisateur requise.
+! 1. Thermodynamic law choice (for each phase)
+!    User input required.
 !===============================================================================
 
-! --> IEOS = 1 : Gaz Parfait avec Gamma constant
-! --> IEOS = 2 : Gaz Parfait avec Gamma variable
-! --> IEOS = 3 : Equation d'etat de Van Der Waals
+! --> ieos = 1: Perfect gas with constant Gamma
+! --> ieos = 2: Perfect gas with variable Gamma
+! --> ieos = 3: Van Der Waals
 
 do iiph = 1, nphas
   ieos(iiph) = 1
 enddo
 
 
-!            NE PAS OUBLIER DE RENSEIGNER LES PARAMETRES
-!                  DANS LA THERMODYNAMIQUE CHOISIE
-!            ===========================================
+! Warning: once the thermodynamic law has been chosen, 
+! =======  the remainder of the user subroutine must be modified
 
 
 !===============================================================================
-! 2.  GAZ PARFAIT
+! 2. Perfect gas
 !===============================================================================
 
 if(ieos(iphas).eq.1) then
 
 !===============================================================================
-! 2.1. PARAMETRES A RENSEIGNER PAR L'UTILISATEUR
-!     Intervention utilisateur requise.
+! 2.1. Parameters to be completed by the user 
 !===============================================================================
 
-!     Pour chaque phase
+! For each phase
 
-!     Masse molaire du gaz (en kg/mol)
+! --- Molar mass of the gas (kg/mol)
 
   if(iccfth.ge.0) then
 
@@ -382,20 +431,19 @@ if(ieos(iphas).eq.1) then
   endif
 
 !===============================================================================
-! 2.2. LOIS IMPLEMENTEES PAR DEFAUT
-!     Pas d'intervention utilisateur requise.
+! 2.2. Default laws
+!      No user input required.
 !===============================================================================
 
-!     CALCUL DE LA CONSTANTE GAMAGP
-!     =============================
-
-!     On la suppose supérieure ou égale à 1.
-!     On la calcule à chaque appel, même si cela peut paraître cher, dans
-!       par cohérence avec le cas gamma variable, pour lequel, on n'a pas
-!       prévu de la conserver. Avec un save et un test, on pourrait
-!       s'affranchir du calcul si nécessaire.
+! --- Calculation of the constant gamagp
 
   if(iccfth.gt.0) then
+
+    ! Gamagp is supposed to be superior or equal to 1. 
+    ! It is computed at each call, even if this may seem costly, 
+    !   to be coherent with the "constant gamma" case for which this 
+    !   constant is not saved. A ''save'' instruction and a test would  
+    !   be sufficient to avoid computing gamagp at each call if necessary.
 
     gamagp = 1.d0 + rr/(xmasml*cp0(iphas)-rr)
 
@@ -404,7 +452,8 @@ if(ieos(iphas).eq.1) then
       call csexit (1)
     endif
 
-!     On renvoie gamma si demande
+    ! Gamma is returned if required 
+
     if(iccfth.eq.1) then
       gamagr(1) = gamagp
     endif
@@ -412,22 +461,22 @@ if(ieos(iphas).eq.1) then
   endif
 
 
-!     OPTIONS DE CALCUL  : Cp ET Cv CONSTANTS (hypothèse gaz parfait)
-!     =================
-
-!     La valeur de CP0 est à fournir dans usini1. La valeur de CV0
-!       est calculée plus bas (à partir de CP0).
-
+! --- Calculation options: constant Cp and Cv (perfect gas) 
 
   if(iccfth.eq.-1) then
+
+    ! The value for the isobaric specific heat Cp0 must be provided in
+    !   the user subroutine ''usini1''. The value for the isochoric 
+    !   specific heat Cv0 is calculated in a subsequent section (from Cp0)
 
     icp(iphas) = 0
     icv(iphas) = 0
 
 
-!     INITIALISATIONS PAR DEFAUT (avant uscfxi)
-!     ==========================
-!     T0 est forcément positif (vérifié dans verini)
+! --- Default initializations (before uscfxi)
+
+!     T0 is positive (this assumption has been checked in 
+!       the user programme 'verini')
 
   elseif(iccfth.eq.0) then
 
@@ -441,19 +490,15 @@ if(ieos(iphas).eq.1) then
     endif
 
 
-!     VERIFICATION DE rho
-!     ===================
+! --- Verification of the density
 
   elseif(iccfth.eq.-2) then
 
-
-! --- Clipping si rho est exactement nul + write + stop
-!       En effet, si c'est le cas, on va nécessairement se planter
-!       dans la thermo (bon, d'accord, pas dans tous les cas, mais
-!       pour le moment, je présume que les fluides à traiter seront
-!       assez classiques, avec des pbs à rho = 0)
-!       Appelé en fin de resolution de la masse volumique (apres
-!       clipping classique et avant communication parallele).
+    ! If the density is lower or equal to zero: clipping, write and stop.
+    !   Indeed, if this is the case, the thermodynamic computations will
+    !   most probably fail. 
+    ! This call is done at the end of the density calculation (after 
+    !   a classical clipping and before parallel communications).
 
     ierr = 0
     do iel = 1, ncel
@@ -471,17 +516,13 @@ if(ieos(iphas).eq.1) then
     endif
 
 
-!     VERIFICATION DE e
-!     ===================
+! --- Verification of the energy 
 
   elseif(iccfth.eq.-4) then
 
-
-! --- Clipping si e est exactement nul + write + stop
-!       En effet, si c'est le cas, on va nécessairement se planter
-!       dans la thermo (bon, d'accord, pas dans tous les cas, mais
-!       pour le moment, je présume que les fluides à traiter seront
-!       assez classiques, avec des pbs à e = 0)
+    ! If the total energy <= zero: clipping, write and stop
+    !   Indeed, if this is the case, the thermodynamic computations will
+    !   most probably fail. 
 
     ierr = 0
     do iel = 1, ncel
@@ -506,34 +547,34 @@ if(ieos(iphas).eq.1) then
     endif
 
 
-!     CALCUL DE T ET e EN FONCTION DE P ET rho :
-!     ========================================
+! --- Calculation of temperature and energy from pressure and density
 
   elseif(iccfth.eq.12.or.iccfth.eq.60000) then
 
-!     Test des valeurs de rho
+    ! Verification of the values of the density
     ierr = 0
     do iel = 1, ncel
       if(rtp(iel,irhiph).le.0.d0) then
         write(nfecra,3010)rtp(iel,irhiph),iel
       endif
     enddo
-!     Si pb on s'arrete, car rho a été fourni par l'utilisateur
-!       (initialisation erronée sans doute)
+    ! Stop if a negative value is detected (since the density has been 
+    ! provided by the user, one potential cause is a wrong user 
+    ! initialization)
     if(ierr.eq.1) then
       call csexit (1)
     endif
 
     do iel = 1, ncel
-!     Temperature
+      ! Temperature
       sorti1(iel) = xmasml*rtp(iel,ipriph)/(rr*rtp(iel,irhiph))
-!     Energie totale
+      ! Total energy
       sorti2(iel) = cv0(iphas)*sorti1(iel)                        &
            + 0.5d0*( rtp(iel,iuiph)**2 + rtp(iel,iviph)**2        &
                                        + rtp(iel,iwiph)**2 )
     enddo
 
-!     Affectation a RTP
+    ! Transfer to the array rtp 
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,itkiph) = sorti1(iel)
@@ -542,34 +583,34 @@ if(ieos(iphas).eq.1) then
     endif
 
 
-!     CALCUL DE rho ET e EN FONCTION DE P ET T :
-!     ========================================
+! --- Calculation of density and energy from pressure and temperature:
 
   elseif(iccfth.eq.13.or.iccfth.eq.100000) then
 
-!     Test des valeurs de T
+    ! Verification of the values of the temperature
     ierr = 0
     do iel = 1, ncel
       if(rtp(iel,itkiph).le.0.d0) then
         write(nfecra,2010)rtp(iel,itkiph),iel
       endif
     enddo
-!     Si pb on s'arrete, car T a été fourni par l'utilisateur
-!       (initialisation erronée par exemple, non en K ?)
+    ! Stop if a negative value is detected (since the temperature has been 
+    ! provided by the user, one potential cause is a wrong user 
+    ! initialization: a value not provided in Kelvin for example)
     if(ierr.eq.1) then
       call csexit (1)
     endif
 
     do iel = 1, ncel
-!     Masse volumique
+      ! Density
       sorti1(iel) = xmasml*rtp(iel,ipriph)/(rr*rtp(iel,itkiph))
-!     Energie totale
+      ! Total energy
       sorti2(iel) = cv0(iphas)*rtp(iel,itkiph)                    &
            + 0.5d0*( rtp(iel,iuiph)**2 + rtp(iel,iviph)**2        &
                                        + rtp(iel,iwiph)**2 )
     enddo
 
-!     Affectation a RTP
+    ! Transfer to the array rtp 
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,irhiph) = sorti1(iel)
@@ -578,24 +619,24 @@ if(ieos(iphas).eq.1) then
     endif
 
 
-!     CALCUL DE rho ET T EN FONCTION DE P ET e :
-!     ========================================
+! --- Calculation of density and temperature from pressure and energy
 
   elseif(iccfth.eq.14.or.iccfth.eq.140000) then
 
     do iel = 1, ncel
-!     Energie interne (évite de diviser par T)
+      ! Internal energy (to avoid the need to divide by the temperature
+      ! to compute density)
       enint = rtp(iel,ieniph)                                     &
                - 0.5d0*( rtp(iel,iuiph)**2                        &
                        + rtp(iel,iviph)**2                        &
                        + rtp(iel,iwiph)**2 )
-!     Masse volumique
+      ! Density
       sorti1(iel) = rtp(iel,ipriph) / ( (gamagp-1.d0) * enint )
-!     Temperature
+      ! Temperature
       sorti2(iel) = xmasml * (gamagp-1.d0) * enint / rr
     enddo
 
-!     Affectation a RTP
+    ! Transfer to the array rtp 
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,irhiph) = sorti1(iel)
@@ -604,21 +645,20 @@ if(ieos(iphas).eq.1) then
     endif
 
 
-!     CALCUL DE P ET e EN FONCTION DE rho ET T :
-!     ========================================
+! --- Calculation of pressure and energy from density and temperature
 
   elseif(iccfth.eq.23.or.iccfth.eq.150000) then
 
     do iel = 1, ncel
-!     Pression
+      ! Pressure
       sorti1(iel) = rtp(iel,irhiph)*rtp(iel,itkiph)*rr/xmasml
-!     Energie totale
+      ! Total energy
       sorti2(iel) = cv0(iphas)*rtp(iel,itkiph)                    &
            + 0.5d0*( rtp(iel,iuiph)**2 + rtp(iel,iviph)**2        &
                                        + rtp(iel,iwiph)**2 )
     enddo
 
-!     Affectation a RTP
+    ! Transfer to the array rtp 
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,ipriph) = sorti1(iel)
@@ -627,24 +667,24 @@ if(ieos(iphas).eq.1) then
     endif
 
 
-!     CALCUL DE P ET T EN FONCTION DE rho ET e :
-!     ========================================
+! --- Calculation of pressure and temperature from density and energy
 
   elseif(iccfth.eq.24.or.iccfth.eq.210000) then
 
     do iel = 1, ncel
-!     Energie interne (évite de diviser par T)
+      ! Internal energy (to avoid the need to divide by the temperature
+      ! to compute density)
       enint = rtp(iel,ieniph)                                     &
                - 0.5d0*( rtp(iel,iuiph)**2                        &
                        + rtp(iel,iviph)**2                        &
                        + rtp(iel,iwiph)**2 )
-!     Pression
+      ! Pressure
       sorti1(iel) = (gamagp-1.d0) * rtp(iel,irhiph) * enint
-!     Temperature
+      ! Temperature
       sorti2(iel) = xmasml * (gamagp-1.d0) * enint / rr
     enddo
 
-!       Affectation a RTP
+    ! Transfer to the array rtp 
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,ipriph) = sorti1(iel)
@@ -652,13 +692,17 @@ if(ieos(iphas).eq.1) then
       enddo
     endif
 
-!                2                            2          P
-!     CALCUL DE c  EN FONCTION DE P ET rho : c  = gamma*---
-!     ====================================              rho
+
+!                     2                            2         P
+! --- Calculation of c from pressure and density: c = gamma*---
+!                                                           rho
 
   elseif(iccfth.eq.126) then
 
-!     Test des valeurs de rho (on peut éliminer ce test pour optimiser)
+    ! Verification of the values of the density 
+    !   This test can be discarded to reduce the CPU time (if 
+    !     density is <= 0, the calculation will simply fail)
+    !   It is discarded here with iutile = 0
     iutile = 0
     if(iutile.eq.1) then
       ierr = 0
@@ -676,13 +720,16 @@ if(ieos(iphas).eq.1) then
       sorti1(iel) = gamagp * rtp(iel,ipriph) / rtp(iel,irhiph)
     enddo
 
-!                                                    gamma
-! CALCUL DE beta EN FONCTION DE P ET rho : beta = rho
-! ======================================
+
+!                                                              gamma
+! --- Calculation of beta from pressure and density: beta = rho
 
   elseif(iccfth.eq.162) then
 
-!     Test des valeurs de rho (on peut éliminer ce test pour optimiser)
+    ! Verification of the values of the density
+    !   This test can be discarded to reduce the CPU time (if 
+    !     density is <= 0, the calculation will simply fail)
+    !   It is discarded here with iutile = 0
     iutile = 0
     if(iutile.eq.1) then
       ierr = 0
@@ -701,18 +748,21 @@ if(ieos(iphas).eq.1) then
     enddo
 
 
-!     CALCUL DE LA CHALEUR MASSIQUE A VOLUME CONSTANT
-!     ===============================================
+! --- Calculation of the isochoric specific heat 
 
-!     elle est constante           !
+    ! It is a constant: nothing to do
 
-!                                                           P
-!     CALCUL DE L'ENTROPIE EN FONCTION DE P ET rho : s = --------
-!     ============================================          gamma
-!                                                        rho
+
+!                                                                  P
+! --- Calculation of the entropy from pressure and density: s = --------
+!                                                                  gamma
+!                                                               rho
+
   elseif(iccfth.eq.6) then
 
-!     Test des valeurs de rho (on peut éliminer ce test pour optimiser)
+    ! Verification of the values of the density
+    !   This test can be discarded to reduce the CPU time (if 
+    !     density is <= 0, the calculation will simply fail)
     ierr = 0
     do iel = 1, ncel
       if(rtp(iel,irhiph).le.0.d0) then
@@ -728,109 +778,113 @@ if(ieos(iphas).eq.1) then
     enddo
 
 
-!     CALCUL DE epsilon - Cv.T : epsilon - Cv.T = 0
-!     ========================
+! --- Calculation of 'internal energy - Cv.T' 
 
   elseif(iccfth.eq.7) then
 
-! --- A l'interieur du domaine
+    ! It is zero for a perfect gas 
 
+    !   At the cell centers 
     do iel = 1, ncel
       sorti1(iel) = 0.d0
     enddo
 
-! --- Sur les bords
-
+    !   On the boundary faces  
     do ifac = 1, nfabor
       sorti2(ifac) = 0.d0
     enddo
 
 
-!     CALCUL DES CONDITIONS AUX LIMITES : sur la face IFAC = IFAC0
-!     =================================
+! --- Calculation of the boundary conditions on the face ifac = ifac0
 
-!     PAROI
-!     -----
+!  -- Wall
 
   elseif(iccfth.eq.91) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-! --- Calcul du nombre de Mach normal a la frontiere
-
+    ! Calculation of the Mach number at the boundary face, using the 
+    !   cell center velocity projected on the vector normal to the boundary
     xmach =                                                       &
          ( rtp(iel,iuiph)*surfbo(1,ifac)                          &
          + rtp(iel,iviph)*surfbo(2,ifac)                          &
          + rtp(iel,iwiph)*surfbo(3,ifac) ) / ra(isrfbn+ifac-1)    &
          / sqrt( gamagp * rtp(iel,ipriph) / rtp(iel,irhiph) )
 
-! --- Pression
+    ! Pressure 
 
-!     On utilise un Neumann en pression. Bien que cela ne permette
-!       pas d'utiliser Rusanov, on espere que cela stabilise.
-!     On ajoute un test pour eviter de basculer
-!       de detente a choc d'un pas de temps à l'autre
+    !   A Neumann boundary condition is used. This does not allow to use 
+    !     the Rusanov scheme, but some stabilization effect is expected. 
+    !     A test based on the value of coefb at the previous time step 
+    !     is implemented to avoid oscillating between a rarefaction 
+    !     situation and a shock configuration from one time step to the 
+    !     next.
 
-!     Detente
+    !   Rarefaction
     if(xmach.lt.0.d0.and.coefb(ifac,iclp).le.1.d0) then
 
       if(xmach.gt.2.d0/(1.d0-gamagp)) then
         coefb(ifac,iclp) = (1.d0 + (gamagp-1.d0)/2.d0 * xmach)    &
              ** (2.d0*gamagp/(gamagp-1.d0))
-!         Si on detend trop fort : Dirichlet nul en pression
-!           (la valeur de COEFB ici est utilisee comme indicateur
-!            et sera retraitée plus tard dans cfxtcl)
       else
+        ! In case the rarefaction is too strong, a zero Dirichlet value 
+        !   is used for pressure (the value of coefb is used here as an 
+        !   indicator and will be modified later in cfxtcl)
         coefb(ifac,iclp) = rinfin
       endif
 
-!     Choc
+      !  Shock
     elseif(xmach.gt.0.d0.and.coefb(ifac,iclp).ge.1.d0) then
 
       coefb(ifac,iclp) = 1.d0 + gamagp*xmach                      &
             *( (gamagp+1.d0)/4.d0*xmach                           &
                 + sqrt(1.d0 + (gamagp+1.d0)**2/16.d0*xmach**2) )
 
-!     Oscillation ou Mach nul
+      !  Oscillation between rarefaction and shock or zero Mach number
     else
       coefb(ifac,iclp) = 1.d0
     endif
 
 
-!     SYMETRIE
-!     --------
+!  -- Symmetry
 
   elseif(iccfth.eq.90) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-! --- On impose un Neumann Homogene en Pression par defaut
-!         Pas d'intervention requise
+    ! A zero flux condition (homogeneous Neumann condition) is 
+    !   prescribed by default.
+    ! No user input required
 
 
-! --- ENTREE SUBSONIQUE, RHO ET U DONNES (subsonique par hypothèse)
-!     ----------------------------------
+!  -- Subsonic inlet with prescribed density and velocity
 
-!     Contrairement à la conception initiale, on impose un Dirichlet
-!       explicite sur la pression et non pas un flux (on se base cpdt
-!       sur la meme valeur physique).
-!     Ceci a l'avantage de permettre l'utilisation de Rusanov pour
-!       lisser les conditions d'entree.
-!     En outre, ceci permet de ne pas avoir à gérer le remplissage de
-!       coefb ici (c'est secondaire, car il faut le faire pour la paroi).
-!     Si on a des oscillations en temps, on pourra essayer d'eviter
-!       le basculement de détente à choc d'un pas de temps à l'autre.
-!     La pertinence de cette démarche reste à démontrer.
+    ! The subsonic nature of the inlet is postulated. 
+
+    ! Further testing may be required here. Contrary to the initial 
+    !   development, an explicit Dirichlet condition is prescribed for 
+    !   pressure instead of a Neumann condition (however, the same 
+    !   physical value for pressure is used). 
+    ! The advantage of this approach is to allow the use of the Rusanov
+    !   scheme to stabilize the user defined inlet conditions. 
+    ! Moreover, with this approach, coefb does not have to be filled in 
+    !   here (it is not a major point, since coefb has to be filled in 
+    !   for the wall boundary condition anyway)  
+    ! Shall an oscillatory behavior (in time) be observed, it might be 
+    !   worth trying to add a test to avoid switching between  
+    !   rarefaction and shock from one time step to the other (just as 
+    !   for the wall boundary condition).  
+    ! The relevance of this approach remains to be demonstrated. 
 
   elseif(iccfth.eq.92) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-! --- Calcul du nombre de Mach entrant normalement a la frontiere
-
+    ! Calculation of the Mach number at the boundary face, using the 
+    !   cell center velocity projected on the vector normal to the boundary
     xmachi =                                                      &
          ( rtp(iel,iuiph)*surfbo(1,ifac)                          &
          + rtp(iel,iviph)*surfbo(2,ifac)                          &
@@ -843,7 +897,7 @@ if(ieos(iphas).eq.1) then
          / sqrt( gamagp * rtp(iel,ipriph) / rtp(iel,irhiph) )
     dxmach = xmachi - xmache
 
-! --- Pression : Detente
+    ! Pressure: rarefaction wave (Rusanov)
     if(dxmach.le.0.d0) then
 
       if(dxmach.gt.2.d0/(1.d0-gamagp)) then
@@ -854,7 +908,7 @@ if(ieos(iphas).eq.1) then
         coefa(ifac,iclp) = 0.d0
       endif
 
-! --- Pression : Choc
+      ! Pressure: shock (Rusanov)
     else
       coefa(ifac,iclp) = rtp(iel,ipriph)*                         &
            (  1.d0 + gamagp*dxmach                                &
@@ -862,18 +916,29 @@ if(ieos(iphas).eq.1) then
            + sqrt(1.d0 + (gamagp+1.d0)**2/16.d0*dxmach**2) )  )
     endif
 
-! --- Energie totale
+    ! This choice overrides the previous Rusanov choice 
     coefa(ifac,iclp) = rtp(iel,ipriph)
+
+    ! Total energy
     coefa(ifac,icle) =                                            &
          coefa(ifac,iclp)/((gamagp-1.d0)*coefa(ifac,iclr))        &
          + 0.5d0*(coefa(ifac,iclu)**2                             &
                 + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
 
-! --- ENTREE SUBSONIQUE, RHO*U ET RHO*U*H DONNES (subsonique par hypothèse)
-!     ------------------------------------------
+!  -- Subsonic inlet with prescribed mass and enthalpy flow rates 
+    ! The quantities prescribed are rho*u and rho*u*h
 
-!     Ceci reste a completer :
+    ! The subsonic nature of the inlet is postulated. 
+
+    ! This section remains to be implemented: stop for the moment 
+
+    ! One may proceed as follows: 
+    !   Pressure computed with a Newton method 
+    !   Velocity and density computed from pressure
+    !   Total energy computed from enthalpy
+    !   (written on paper, to be implemented: contact the user support)
+
   elseif(iccfth.eq.94) then
 
     ifac = ifac0
@@ -884,28 +949,24 @@ if(ieos(iphas).eq.1) then
     call csexit (1)
     !==========
 
-!     P   : a calculer avec un newton
-!     u et rho en fonction de P
-!     E en fonction de H
-!     (je l'ai ecrit, reste à le coder ...)
 
+!  -- Subsonic outlet 
 
-!     SORTIE SUBSONIQUE (subsonique par hypothèse)
-!     -----------------
+    ! The subsonic nature of the inlet is postulated. 
 
   elseif(iccfth.eq.93) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-! --- Detente :
+    ! Rarefaction case 
     if(coefa(ifac,iclp).le.rtp(iel,ipriph)) then
 
-!       Masse volumique
+      ! Density
       coefa(ifac,iclr) = rtp(iel,irhiph)                          &
            * (coefa(ifac,iclp)/rtp(iel,ipriph))**(1.d0/gamagp)
 
-!       Vitesse
+      ! Velocity
       coefa(ifac,iclu) = rtp(iel,iuiph)                           &
            + 2.d0/(gamagp-1.d0)                                   &
            * sqrt(gamagp*rtp(iel,ipriph)/rtp(iel,irhiph))         &
@@ -927,23 +988,23 @@ if(ieos(iphas).eq.1) then
                         )**((gamagp-1.d0)/(2.d0/gamagp)))         &
            * surfbo(3,ifac)/ra(isrfbn+ifac-1)
 
-!       Energie totale
+      ! Total energy
       coefa(ifac,icle) =                                          &
            coefa(ifac,iclp)/((gamagp-1.d0)*coefa(ifac,iclr))      &
            + 0.5d0*(coefa(ifac,iclu)**2                           &
                   + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
-! --- Choc :
+    ! Shock 
     else
 
-!       Masse volumique
+      ! Density
       coefa(ifac,iclr) = rtp(iel,irhiph)                          &
            * ( (gamagp+1.d0)*coefa(ifac,iclp)                     &
              + (gamagp-1.d0)*rtp(iel,ipriph) )                    &
            / ( (gamagp-1.d0)*coefa(ifac,iclp)                     &
              + (gamagp+1.d0)*rtp(iel,ipriph) )
 
-!       Vitesse
+      ! Velocity
       coefa(ifac,iclu) = rtp(iel,iuiph)                           &
            - (coefa(ifac,iclp)-rtp(iel,ipriph))                   &
            * sqrt(2.d0/                                           &
@@ -968,7 +1029,7 @@ if(ieos(iphas).eq.1) then
                     +(gamagp-1.d0)*rtp(iel,ipriph) )))            &
            * surfbo(3,ifac)/ra(isrfbn+ifac-1)
 
-!       Energie totale
+      ! Total energy
       coefa(ifac,icle) =                                          &
            coefa(ifac,iclp)/((gamagp-1.d0)*coefa(ifac,iclr))      &
            + 0.5d0*(coefa(ifac,iclu)**2                           &
@@ -977,92 +1038,89 @@ if(ieos(iphas).eq.1) then
     endif
 
 
-!     T ET e EN FONCTION DE P ET rho
-!     ------------------------------
-!      on a donné des valeurs positives strictement (hypothèse)
+! --- Calculation of temperature and energy from pressure and density 
+
+    ! It is postulated that the pressure and density values are 
+    !   strictly positive
 
   elseif(iccfth.eq.912.or.iccfth.eq.60900) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-!     Temperature
+    ! Temperature
     coefa(ifac,iclt) =                                            &
          xmasml*coefa(ifac,iclp)/(rr*coefa(ifac,iclr))
 
-!     Energie totale
+    ! Energie totale
     coefa(ifac,icle) =                                            &
          cv0(iphas)*coefa(ifac,iclt)                              &
          + 0.5d0*( coefa(ifac,iclu)**2                            &
                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 )
 
 
-!     rho ET e EN FONCTION DE P ET T
-!     ------------------------------
+! --- Calculation of density and energy from pressure and temperature 
 
   elseif(iccfth.eq.913.or.iccfth.eq.100900) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-!     Masse volumique
+    ! Density
     coefa(ifac,iclr) =                                            &
          xmasml*coefa(ifac,iclp)/(rr*coefa(ifac,iclt))
 
-!     Energie totale
+    ! Total energy
     coefa(ifac,icle) =                                            &
          cv0(iphas)*coefa(ifac,iclt)                              &
          + 0.5d0*( coefa(ifac,iclu)**2                            &
                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 )
 
 
-!     rho ET T EN FONCTION DE P ET e
-!     ------------------------------
+! --- Calculation of density and temperature from pressure and total energy
 
   elseif(iccfth.eq.914.or.iccfth.eq.140900) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
-
-!     Masse volumique
+    
+    ! Density
     coefa(ifac,iclr) = coefa(ifac,iclp)/( (gamagp-1.d0)*          &
          (coefa(ifac,icle)                                        &
          - 0.5d0*( coefa(ifac,iclu)**2                            &
                  + coefa(ifac,iclv)**2                            &
                  + coefa(ifac,iclw)**2 ) ) )
 
-!     Temperature
+    ! Temperature
     coefa(ifac,iclt)=                                             &
          xmasml*coefa(ifac,iclp)/(rr*coefa(ifac,iclr))
 
 
-!     P ET e EN FONCTION DE rho ET T
-!     ------------------------------
+! --- Calculation of pressure and energy from density and temperature
 
   elseif(iccfth.eq.923.or.iccfth.eq.150900) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-!     Pression
+    ! Pressure
     coefa(ifac,iclp) = coefa(ifac,iclr)*rr/xmasml                 &
                                        *coefa(ifac,iclt)
 
-!     Energie totale
+    ! Total energy
     coefa(ifac,icle) = cv0(iphas) * coefa(ifac,iclt)              &
          + 0.5d0*( coefa(ifac,iclu)**2                            &
                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 )
 
 
-!     P ET T EN FONCTION DE rho ET e
-!     ------------------------------
+! --- Calculation of pressure and temperature from density and energy 
 
   elseif(iccfth.eq.924.or.iccfth.eq.210900) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-!     Pression
+    ! Pressure
     coefa(ifac,iclp) = (gamagp-1.d0)*coefa(ifac,iclr)             &
           *( coefa(ifac,icle)                                     &
             - 0.5d0*( coefa(ifac,iclu)**2                         &
@@ -1070,71 +1128,77 @@ if(ieos(iphas).eq.1) then
                     + coefa(ifac,iclw)**2 ) )
 
 
-!     Temperature
+    ! Temperature
     coefa(ifac,iclt)=                                             &
          xmasml*coefa(ifac,iclp)/(rr*coefa(ifac,iclr))
 
 
-! --- Fin de test sur GAZ PARFAIT
+! --- End of the treatment of the perfect gas
   endif
 
 
 !===============================================================================
-! 2.  GAZ PARFAIT AVEC GAMMA VARIABLE
+! 3. Perfect gas with variable gamma 
 !===============================================================================
+
+! This section requires further checking and testing
 
 elseif(ieos(iphas).eq.2) then
 
 !===============================================================================
 
-!     PARAMETRES
-!     ==========
+!===============================================================================
+! 3.1. Parameters to be completed by the user 
+!===============================================================================
+
+
+
+! --- Examples (to be copied and adapted in section ''3.1. Parameters ...''
 
 !-------------------------------------------------------------------------------
+! This test allows the user to ensure that the version of this subroutine
+!   used is that from his case definition, and not that from the library.
 
-!     EXEMPLES  (A recopier et a adapter apres 'PARAMETRES')
   if(0.eq.1) then
-!-------------------------------------------------------------------------------
 
-! --> EXEMPLE 1 : GAZ PARFAIT A 3 CONSTITUANTS
+! --- Ex. 1: Perfect gas containing 3 components
+!     Molar mass, gamma
 
-!     Phase
+    ! Phase
   if(iphas.eq.1) then
 
-!     Masses molaires des constituants (en kg/mol)
+    ! Molar mass of the components (kg/mol)
     cstgr(1)  = 18.d-3
     cstgr(2)  = 32.d-3
     cstgr(3)  = 28.d-3
 
-!     Calcul de la masse molaire du melange au centre des cellules
     if(iccfth.gt.0) then
+
+      ! Calculation of the molar mass of the mixture at cell centers  
       do iel = 1, ncel
         xmasmr(iel) = 1.d0 / ( rtp(iel,isca(1))/cstgr(1)          &
                              + rtp(iel,isca(2))/cstgr(2)          &
                              + rtp(iel,isca(3))/cstgr(3) )
       enddo
 
-
-!     Calcul du GAMMA equivalent au centre des cellules
+      ! Calculation of the equivalent gamma of the mixture at cell centers
       do iel = 1, ncel
         gamagr(iel) = propce(iel,ipproc(icp(iphas)))              &
            / ( propce(iel,ipproc(icp(iphas))) - rr/xmasmr(iel) )
       enddo
+
     endif
 
   endif
 
-!-------------------------------------------------------------------------------
-
-!     FIN DES EXEMPLES
   endif
+
 !-------------------------------------------------------------------------------
 
-!===============================================================================
+! End of the examples
 
 
-! TEST DE VALIDITE DE GAMAGR : GAMAGR >= 1
-! ==========================
+! Verification of the values of gamagr: gamagr >= 1., otherwise stop 
 
   ierr = 0
 
@@ -1150,8 +1214,8 @@ elseif(ieos(iphas).eq.2) then
   endif
 
 
-! OPTIONS DE CALCUL  : Cp ET Cv VARIABLES
-! =================
+! --- Calculation options: variable Cp and Cv  
+!     (isobaric and isochoric specific heat)
 
   if(iccfth.eq.-1) then
 
@@ -1161,8 +1225,7 @@ elseif(ieos(iphas).eq.2) then
     cv0(iphas) = epzero
 
 
-! INITIALISATIONS PAR DEFAUT :
-! ==========================
+! Default initializations 
 
   elseif(iccfth.eq.0) then
 
@@ -1176,27 +1239,25 @@ elseif(ieos(iphas).eq.2) then
     enddo
 
 
-! CALCUL DE T ET e EN FONCTION DE P ET rho :
-! ========================================
+! --- Calculation of temperature and energy from pressure and density
 
   elseif(iccfth.eq.12) then
 
     do iel = 1, ncel
 
-!     Temperature
+      ! Temperature
       sorti1(iel) =                                               &
            xmasmr(iel)/rr*rtp(iel,ipriph)/rtp(iel,irhiph)
 
-!     Energie totale
+      ! Total energy
       sorti2(iel) = propce(iel,ipproc(icv(iphas)))*sorti1(iel)    &
     + 0.5d0*( rtp(iel,iuiph)**2                                   &
            + rtp(iel,iviph)**2 + rtp(iel,iwiph)**2 )
 
     enddo
 
-
+    ! Transfer to the array rtp 
     if(imodif.gt.0) then
-!       Affectation directe a RTP
       do iel = 1, ncel
         rtp(iel,itkiph) = sorti1(iel)
         rtp(iel,ieniph) = sorti2(iel)
@@ -1204,18 +1265,17 @@ elseif(ieos(iphas).eq.2) then
     endif
 
 
-! CALCUL DE rho ET e EN FONCTION DE P ET T :
-! ========================================
+! --- Calculation of density and energy from pressure and temperature:
 
   elseif(iccfth.eq.13) then
 
     do iel = 1, ncel
 
-!     Masse volumique
+      ! Density
       sorti1(iel) =                                               &
            xmasmr(iel)/rr*rtp(iel,ipriph)/rtp(iel,itkiph)
 
-!     Energie totale
+      ! Total energy
       sorti2(iel) =                                               &
            propce(iel,ipproc(icv(iphas)))*rtp(iel,itkiph)         &
     + 0.5d0*( rtp(iel,iuiph)**2                                   &
@@ -1223,9 +1283,8 @@ elseif(ieos(iphas).eq.2) then
 
     enddo
 
-
+    ! Transfer to the array rtp 
     if(imodif.gt.0) then
-!       Affectation directe a RTP
       do iel = 1, ncel
         rtp(iel,irhiph) = sorti1(iel)
         rtp(iel,ieniph) = sorti2(iel)
@@ -1233,27 +1292,25 @@ elseif(ieos(iphas).eq.2) then
     endif
 
 
-! CALCUL DE rho ET T EN FONCTION DE P ET e :
-! ========================================
+! --- Calculation of density and temperature from pressure and energy
 
   elseif(iccfth.eq.14) then
 
     do iel = 1, ncel
 
-!     Masse volumique
+      ! Density
       sorti1(iel) =                                               &
            rtp(iel,ipriph)/(gamagr(iel)-1.d0)/( rtp(iel,ieniph)   &
   - 0.5d0*( rtp(iel,iuiph)**2                                     &
            + rtp(iel,iviph)**2 + rtp(iel,iwiph)**2 ) )
 
-!     Temperature
+      ! Temperature
       sorti2(iel) = xmasmr(iel)/rr*rtp(iel,ipriph)/sorti1(iel)
 
     enddo
 
-
+    ! Transfer to the array rtp 
     if(imodif.gt.0) then
-!       Affectation directe a RTP
       do iel = 1, ncel
         rtp(iel,irhiph) = sorti1(iel)
         rtp(iel,itkiph) = sorti2(iel)
@@ -1261,18 +1318,17 @@ elseif(ieos(iphas).eq.2) then
     endif
 
 
-! CALCUL DE P ET e EN FONCTION DE rho ET T :
-! ========================================
+! --- Calculation of pressure and energy from density and temperature
 
   elseif(iccfth.eq.23) then
 
     do iel = 1, ncel
 
-!     Pression
+      ! Pressure
       sorti1(iel) =                                               &
            rtp(iel,irhiph)*rr/xmasmr(iel)*rtp(iel,itkiph)
 
-!     Energie totale
+      ! Total energy
       sorti2(iel) =                                               &
            propce(iel,ipproc(icv(iphas)))*rtp(iel,itkiph)         &
     + 0.5d0*( rtp(iel,iuiph)**2                                   &
@@ -1280,9 +1336,8 @@ elseif(ieos(iphas).eq.2) then
 
     enddo
 
-
+    ! Transfer to the array rtp 
     if(imodif.gt.0) then
-!       Affectation directe a RTP
       do iel = 1, ncel
         rtp(iel,ipriph) = sorti1(iel)
         rtp(iel,ieniph) = sorti2(iel)
@@ -1290,53 +1345,52 @@ elseif(ieos(iphas).eq.2) then
     endif
 
 
-! CALCUL DE P ET T EN FONCTION DE rho ET e :
-! ========================================
+! --- Calculation of pressure and temperature from density and energy
 
   elseif(iccfth.eq.24) then
 
     do iel = 1, ncel
 
-!     Pression
+      ! Pressure
       sorti1(iel) =                                               &
            (gamagr(iel)-1.d0)*rtp(iel,irhiph)*( rtp(iel,ieniph)   &
   - 0.5d0*( rtp(iel,iuiph)**2                                     &
            + rtp(iel,iviph)**2 + rtp(iel,iwiph)**2 ) )
 
-!     Temperature
+      ! Temperature
       sorti2(iel) = xmasmr(iel)/rr*sorti1(iel)/rtp(iel,irhiph)
 
     enddo
 
+    ! Transfer to the array rtp 
     if(imodif.gt.0) then
-!       Affectation directe a RTP
       do iel = 1, ncel
         rtp(iel,ipriph) = sorti1(iel)
         rtp(iel,itkiph) = sorti2(iel)
       enddo
     endif
 
-!            2                            2          P
-! CALCUL DE c  EN FONCTION DE P ET rho : c  = gamma*---
-! ====================================              rho
+!                     2                            2         P
+! --- Calculation of c from pressure and density: c = gamma*---
+!                                                           rho
 
   elseif(iccfth.eq.126) then
 
     do iel = 1, ncel
 
-! --- Test de positivite de P
+      ! Verification of the positivity of the pressure 
       if(rtp(iel,ipriph).lt.0.d0) then
         write(nfecra,1110) iel , rtp(iel,ipriph)
         ierr = 1
 
-! --- Test de positivite de rho
+      ! Verification of the positivity of the density
       elseif(rtp(iel,irhiph).le.0.d0) then
         write(nfecra,1120) iel , rtp(iel,irhiph)
         ierr = 1
 
       else
 
-! --- Calcul
+        ! Computation
         sorti1(iel) =                                             &
              gamagr(iel) * rtp(iel,ipriph) / rtp(iel,irhiph)
 
@@ -1344,35 +1398,36 @@ elseif(ieos(iphas).eq.2) then
 
     enddo
 
+    ! Stop if error detected
     if(ierr.eq.1) call csexit (1)
 
-!                                                    gamma
-! CALCUL DE beta EN FONCTION DE P ET rho : beta = rho
-! ======================================
+
+!                                                              gamma
+! --- Calculation of beta from pressure and density: beta = rho
 
   elseif(iccfth.eq.162) then
 
     do iel = 1, ncel
 
-! --- Test de positivite de rho
+      ! Verification of the positivity of the density
       if(rtp(iel,irhiph).lt.0.d0) then
         write(nfecra,1220) iel , rtp(iel,irhiph)
         ierr = 1
 
       else
 
-! --- Calcul
+        ! Computation
         sorti1(iel) = rtp(iel,irhiph)**gamagr(iel)
 
       endif
 
     enddo
 
+    ! Stop if error detected
     if(ierr.eq.1) call csexit (1)
 
-!                           R
-! CALCUL DE Cv : Cv = Cp - ---
-! ============              M
+
+! --- Calculation of the isochoric specific heat: Cv = Cp - R/M 
 
   elseif(iccfth.eq.432) then
 
@@ -1382,29 +1437,31 @@ elseif(ieos(iphas).eq.2) then
 
     enddo
 
+    ! Stop if error detected (kept by consistance with other sections)
     if(ierr.eq.1) call csexit (1)
 
-!                                                       P
-! CALCUL DE L'ENTROPIE EN FONCTION DE P ET rho : s = --------
-! ============================================          gamma
-!                                                    rho
+!                                                                  P
+! --- Calculation of the entropy from pressure and density: s = --------
+!                                                                  gamma
+!                                                               rho
+
   elseif(iccfth.eq.6) then
 
     do iel = 1, ncel
 
-! --- Test de positivite de P
+      ! Verification of the positivity of the pressure 
       if(rtp(iel,ipriph).lt.0.d0) then
         write(nfecra,1310) iel , rtp(iel,ipriph)
         ierr = 1
 
-! --- Test de positivite de rho
+      ! Verification of the positivity of the density
       elseif(rtp(iel,irhiph).le.0.d0) then
         write(nfecra,1320) iel , rtp(iel,irhiph)
         ierr = 1
 
       else
 
-! --- Calcul
+        ! Computation
         sorti1(iel) =                                             &
              rtp(iel,ipriph) / (rtp(iel,irhiph)**gamagr(iel))
 
@@ -1412,53 +1469,49 @@ elseif(ieos(iphas).eq.2) then
 
     enddo
 
+    ! Stop if error detected 
     if(ierr.eq.1) call csexit (1)
 
 
-! CALCUL DE epsilon - Cv.T : epsilon - Cv.T = 0
-! ========================
+! --- Calculation of 'internal energy - Cv.T' 
 
   elseif(iccfth.eq.7) then
 
-! --- A l'interieur du domaine
+    ! It is zero for a perfect gas 
 
+    !   At the cell centers 
     do iel = 1, ncel
-
       sorti1(iel) = 0.d0
-
     enddo
 
-! --- Sur les bords
-
+    !   On the boundary faces  
     do ifac = 1, nfabor
-
       sorti2(ifac) = 0.d0
-
     enddo
 
+    ! Stop if error detected (kept by consistance with other sections)
     if(ierr.eq.1) call csexit (1)
 
 
-! CALCUL DES CONDITIONS AUX LIMITES :
-! =================================
+! --- Calculation of the boundary conditions on the face ifac = ifac0
 
-!     PAROI/SYMETRIE
-!     --------------
+!  -- Wall/symmetry 
+
   elseif(iccfth.eq.91) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-! --- Calcul du nombre de Mach normal a la frontiere
-
+    ! Calculation of the Mach number at the boundary face, using the 
+    !   cell center velocity projected on the vector normal to the boundary
     xmach = ( rtp(iel,iuiph)*surfbo(1,ifac)                       &
            + rtp(iel,iviph)*surfbo(2,ifac)                        &
            + rtp(iel,iwiph)*surfbo(3,ifac) ) / ra(isrfbn+ifac-1)  &
          / sqrt( gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph) )
 
-! --- Pression / Entropie : Detente
-
     coefa(ifac,iclp) = 0.d0
+
+    ! Pression and entropy: rarefaction 
 
     if(xmach.le.0.d0 .and. xmach.gt.2.d0/(1.d0-gamagr(iel))) then
       coefb(ifac,iclp) = (1.d0 + (gamagr(iel)-1.d0)/2.d0 * xmach) &
@@ -1469,7 +1522,7 @@ elseif(ieos(iphas).eq.2) then
       coefb(ifac,iclp) = 0.d0
       coefb(ifac,iclt) = 1.d0
 
-! --- Pression / Entropie : Choc
+      ! Pressure and entropy: shock
 
     else
       coefb(ifac,iclp) = 1.d0 + gamagr(iel)*xmach                 &
@@ -1482,21 +1535,23 @@ elseif(ieos(iphas).eq.2) then
               + rtp(iel,ipriph) *(1.d0-coefb(ifac,iclp)) )
     endif
 
-! --- Energie totale : Epsilon sup
+    ! Total energy: 'internal energy - Cv T' 
 
     coefa(ifac,icle) = 0.d0
 
+    ! Stop if error detected
     if(ierr.eq.1) call csexit (1)
 
-!     ENTREE
-!     ------
+
+!  -- Inlet
+
   elseif(iccfth.eq.92) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-! --- Calcul du nombre de Mach entrant normalement a la frontiere
-
+    ! Calculation of the Mach number at the boundary face, using the 
+    !   cell center velocity projected on the vector normal to the boundary
     xmachi = ( rtp(iel,iuiph)*surfbo(1,ifac)                      &
          + rtp(iel,iviph)*surfbo(2,ifac)                          &
          + rtp(iel,iwiph)*surfbo(3,ifac) )/ra(isrfbn+ifac-1)      &
@@ -1507,7 +1562,7 @@ elseif(ieos(iphas).eq.2) then
          / sqrt(gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph))
     dxmach = xmachi - xmache
 
-! --- Pression : Detente
+    ! Pressure: rarefaction wave
     if(dxmach.le.0.d0) then
 
       if(dxmach.gt.2.d0/(1.d0-gamagr(iel))) then
@@ -1518,7 +1573,7 @@ elseif(ieos(iphas).eq.2) then
         coefa(ifac,iclp) = 0.d0
       endif
 
-! --- Pression : Choc
+    ! Pressure: shock
     else
       coefa(ifac,iclp) = rtp(iel,ipriph)*                         &
            (  1.d0 + gamagr(iel)*dxmach                           &
@@ -1527,53 +1582,51 @@ elseif(ieos(iphas).eq.2) then
                                            *dxmach**2) )  )
     endif
 
-! --- Energie totale
-
+    ! This choice overrides the previous Rusanov choice 
     coefa(ifac,iclp) = rtp(iel,ipriph)
 
+    ! Total energy 
     coefa(ifac,icle) =                                            &
          coefa(ifac,iclp)/((gamagr(iel)-1.d0)*coefa(ifac,iclr))   &
          + 0.5d0*(coefa(ifac,iclu)**2                             &
                 + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
-!     SORTIE
-!     ------
+!  -- Outlet
+
   elseif(iccfth.eq.93) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-! --- Calcul du nombre de Mach sortant normalement a la frontiere
-
+    ! Calculation of the Mach number at the boundary face, using the 
+    !   cell center velocity projected on the vector normal to the boundary
     xmach = ( rtp(iel,iuiph)*surfbo(1,ifac)                       &
            + rtp(iel,iviph)*surfbo(2,ifac)                        &
            + rtp(iel,iwiph)*surfbo(3,ifac) ) / ra(isrfbn+ifac-1)  &
          / sqrt(gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph))
 
-! --- Sortie supersonique : Dirichlet sur toutes les variables
-!     -------------------
+    ! Supersonic outlet: Dirichlet for all variables 
     if(xmach.ge.1.d0) then
       do ivar = 1, nvar
         coefa(ifac,iclrtp(ivar,icoef)) = rtp(iel,ivar)
       enddo
 
-!           Entropie
+      ! Entropy
       coefa(ifac,iclt) =                                          &
            rtp(iel,ipriph)/rtp(iel,irhiph)**gamagr(iel)
 
-! --- Sortie subsonique
-!     -----------------
+    ! Subsonic outlet
     elseif(xmach.lt.1.d0 .and. xmach.ge.0.d0) then
 
-! --- Detente :
+      ! Rarefaction:
       if(coefa(ifac,iclp).le.rtp(iel,ipriph)) then
 
-!       Masse volumique
+        ! Density
         coefa(ifac,iclr) = rtp(iel,irhiph)                        &
              * (coefa(ifac,iclp)/rtp(iel,ipriph))                 &
                 **(1.d0/gamagr(iel))
 
-!       Vitesse
+        ! Velocity
         coefa(ifac,iclu) = rtp(iel,iuiph)                         &
              + 2.d0/(gamagr(iel)-1.d0)                            &
  * sqrt( gamagr(iel) * rtp(iel,ipriph) / rtp(iel,irhiph) )        &
@@ -1598,28 +1651,28 @@ elseif(ieos(iphas).eq.2) then
                **((gamagr(iel)-1.d0)/2.d0/gamagr(iel)) )          &
  * surfbo(3,ifac) / ra(isrfbn+ifac-1)
 
-!       Energie totale
+        ! Total energy
         coefa(ifac,icle) = coefa(ifac,iclp)                       &
  /( (gamagr(iel)-1.d0)*coefa(ifac,iclr) )                         &
               + 0.5d0*(coefa(ifac,iclu)**2                        &
                      + coefa(ifac,iclv)**2                        &
                      + coefa(ifac,iclw)**2)
 
-!       Entropie
+        ! Entropy
         coefa(ifac,iclt) = coefa(ifac,iclp)                       &
                              /coefa(ifac,iclr)**gamagr(iel)
 
-! --- Choc :
+      ! Shock:
       else
 
-!       Masse volumique
+        ! Density
         coefa(ifac,iclr) = rtp(iel,irhiph)                        &
  * ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
    + (gamagr(iel)-1.d0)*rtp(iel,ipriph) )                         &
  / ( (gamagr(iel)-1.d0)*coefa(ifac,iclp)                          &
    + (gamagr(iel)+1.d0)*rtp(iel,ipriph) )
 
-!       Vitesse
+        ! Velocity
         coefa(ifac,iclu) = rtp(iel,iuiph)                         &
  - (coefa(ifac,iclp)-rtp(iel,ipriph))*sqrt(2.d0/rtp(iel,irhiph)   &
  / ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
@@ -1638,345 +1691,378 @@ elseif(ieos(iphas).eq.2) then
    + (gamagr(iel)-1.d0)*rtp(iel,ipriph) ))                        &
  * surfbo(3,ifac) / ra(isrfbn+ifac-1)
 
-!       Energie totale
+        ! Total energy
         coefa(ifac,icle) = coefa(ifac,iclp)                       &
  /( (gamagr(iel)-1.d0)*coefa(ifac,iclr) )                         &
      + 0.5d0*(coefa(ifac,iclu)**2                                 &
             + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
-!       Entropie
+        ! Entropy
         coefa(ifac,iclt) = coefa(ifac,iclp)                       &
                              /coefa(ifac,iclr)**gamagr(iel)
 
       endif
 
     else
-      WRITE(NFECRA,*) 'ICCFTH = ',ICCFTH,'  MACH = ',XMACH
+      write(nfecra,*) 'iccfth = ',iccfth,'  Mach = ',xmach
       ierr = 1
     endif
 
     if(ierr.eq.1) call csexit (1)
 
 
-!     T ET e EN FONCTION DE P ET rho
-!     ------------------------------
+! --- Calculation of temperature and energy from pressure and density 
 
   elseif(iccfth.eq.912.or.iccfth.eq.60900) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-!     Temperature
+    ! Temperature
     coefa(ifac,iclt) = xmasmr(iel)/rr*coefa(ifac,iclp)            &
                                         /coefa(ifac,iclr)
 
-!     Energie totale
+    ! Total energy
     coefa(ifac,icle) = propce(iel,ipproc(icv(iphas)))             &
                * coefa(ifac,iclt) + 0.5d0*( coefa(ifac,iclu)**2   &
                     + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
 
-!     rho ET e EN FONCTION DE P ET T
-!     ------------------------------
+! --- Calculation of density and energy from pressure and temperature 
 
   elseif(iccfth.eq.913.or.iccfth.eq.100900) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-!     Masse volumique
+    ! Density
     coefa(ifac,iclr) = xmasmr(iel)/rr*coefa(ifac,iclp)            &
                                        /coefa(ifac,iclt)
 
-!     Energie totale
+    ! Total energy
     coefa(ifac,icle) = propce(iel,ipproc(icv(iphas)))             &
                * coefa(ifac,iclt) + 0.5d0*( coefa(ifac,iclu)**2   &
                     + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
 
-!     rho ET T EN FONCTION DE P ET e
-!     ------------------------------
+! --- Calculation of density and temperature from pressure and total energy 
 
   elseif(iccfth.eq.914.or.iccfth.eq.140900) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-!     Masse volumique
+    ! Density
     coefa(ifac,iclr) = coefa(ifac,iclp)/(gamagr(iel)-1.d0)        &
            / (coefa(ifac,icle) - 0.5d0*( coefa(ifac,iclu)**2      &
                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 ))
 
-!     Temperature
+    ! Temperature
     coefa(ifac,iclt)= xmasmr(iel)/rr*coefa(ifac,iclp)             &
                                        /coefa(ifac,iclr)
 
 
-!     P ET e EN FONCTION DE rho ET T
-!     ------------------------------
+! --- Calculation of pressure and energy from density and temperature
 
   elseif(iccfth.eq.923.or.iccfth.eq.150900) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-!     Pression
+    ! Pressure
     coefa(ifac,iclp) = coefa(ifac,iclr)*rr/xmasmr(iel)            &
                                        *coefa(ifac,iclt)
 
-!     Energie totale
+    ! Total energy
     coefa(ifac,icle) = propce(iel,ipproc(icv(iphas)))             &
                * coefa(ifac,iclt) + 0.5d0*( coefa(ifac,iclu)**2   &
                     + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
 
-!     P ET T EN FONCTION DE rho ET e
-!     ------------------------------
+! --- Calculation of pressure and temperature from density and energy 
 
   elseif(iccfth.eq.924.or.iccfth.eq.210900) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-!     Pression
+    ! Pressure
     coefa(ifac,iclp) = (gamagr(iel)-1.d0)*coefa(ifac,iclr)        &
           *( coefa(ifac,icle) - 0.5d0*( coefa(ifac,iclu)**2       &
                 + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 ) )
 
 
-!     Temperature
+    ! Temperature
     coefa(ifac,iclt)= xmasmr(iel)/rr*coefa(ifac,iclp)             &
                                        /coefa(ifac,iclr)
 
 
-! --- Fin de test sur GAZ PARFAIT A GAMMA VARIABLE
+! --- End of perfect gas with variable gamma 
   endif
 
-! --- Fin de test sur les thermos
+! --- End of test on the thermodynamic laws 
 endif
 
 
 !--------
-! FORMATS
+! Formats
 !--------
 
- 1010 format(                                                           &
-'@                                                            ',/,&
+ 1010 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USCFTH                        ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@    GAMMA DOIT ETRE UN REEL SUPERIEUR OU EGAL A 1           ',/,&
-'@    IL A POUR VALEUR ',E12.4                                 ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with constant gamma.',/,                 &  
+'@',/,                                                            &
+'@     Gamma = ',e12.4   ,/,                                      &  
+'@     Gamma must be a real number greater or equal to 1.',/,     &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1020 format(                                                           &
-'@                                                            ',/,&
+'@',/)
+ 1020 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USCFTH                        ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@    GAMMA DOIT ETRE UN REEL SUPERIEUR OU EGAL A 1           ',/,&
-'@    IL EST NEGATIF OU NUL DANS LA CELLULE ',I10              ,/,&
-'@    IL A POUR VALEUR ',E12.4                                 ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with constant gamma.',/,                 &  
+'@',/,                                                            &
+'@     In cell ',i10   ,', Gamma = ',e12.4   ,/,                  &  
+'@     Gamma must be a real number greater or equal to 1.',/,     &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 2010 format(                                                           &
-'@                                                            ',/,&
+'@',/)
+ 2010 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USCFTH                        ',/,&
-'@    =========   CALCUL DE LA MASSE VOLUMIQUE                ',/,&
-'@                                                            ',/,&
-'@    LA TEMPERATURE DOIT ETRE UN REEL POSITIF STRICTEMENT    ',/,&
-'@    ELLE VAUT ',E12.4   ,' DANS LA CELLULE ',I10             ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with constant gamma.',/,                 &  
+'@',/,                                                            &
+'@     The computation of density failed.',/,                     &
+'@',/,                                                            &
+'@     Temperature = ',e12.4   ,' in cell ',i10  ,/,              &  
+'@     Temperature must be strictly positive.',/,                 &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 3010 format(                                                           &
-'@                                                            ',/,&
+'@',/)
+ 3010 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USCFTH                        ',/,&
-'@    =========   CALCUL DE LA TEMPERATURE                    ',/,&
-'@                                                            ',/,&
-'@    LA MASSE VOLUMIQUE DOIT ETRE UN REEL POSITIF STRICTEMENT',/,&
-'@    ELLE VAUT ',E12.4   ,' DANS LA CELLULE ',I10             ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with constant gamma.',/,                 &  
+'@',/,                                                            &
+'@     The computation of temperature failed.',/,                 &
+'@',/,                                                            &
+'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &  
+'@     Density must be strictly positive.',/,                     &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 4010 format(                                                           &
-'@                                                            ',/,&
+'@',/)
+ 4010 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USCFTH                        ',/,&
-'@    =========   CALCUL DE LA VARIABLE THERMODYNAMIQUE ''C2''',/,&
-'@                                                            ',/,&
-'@    LA MASSE VOLUMIQUE DOIT ETRE UN REEL POSITIF STRICTEMENT',/,&
-'@    ELLE VAUT ',E12.4   ,' DANS LA CELLULE ',I10             ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with constant gamma.',/,                 &  
+'@',/,                                                            &
+'@     The computation of the squared speed of sound failed.',/,  &
+'@',/,                                                            &
+'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &  
+'@     Density must be strictly positive.',/,                     &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 4020 format(                                                           &
-'@                                                            ',/,&
+'@',/)
+ 4020 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USCFTH                        ',/,&
-'@    =========   CALCUL DE LA VARIABLE THERMO        ''BETA''',/,&
-'@                                                            ',/,&
-'@    LA MASSE VOLUMIQUE DOIT ETRE UN REEL POSITIF            ',/,&
-'@    ELLE VAUT ',E12.4   ,' DANS LA CELLULE ',I10             ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with constant gamma.',/,                 &  
+'@',/,                                                            &
+'@     The computation of the variable beta failed.',/,           &
+'@',/,                                                            &
+'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &  
+'@     Density must be strictly positive.',/,                     &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 4030 format(                                                           &
-'@                                                            ',/,&
+'@',/)
+ 4030 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USCFTH                        ',/,&
-'@    =========   CALCUL DE LA VARIABLE THERMODYNAMIQUE ''S'' ',/,&
-'@                                                            ',/,&
-'@    LA MASSE VOLUMIQUE DOIT ETRE UN REEL POSITIF STRICTEMENT',/,&
-'@    ELLE VAUT ',E12.4   ,' DANS LA CELLULE ',I10             ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with constant gamma.',/,                 &  
+'@',/,                                                            &
+'@     The computation of the entropy failed.',/,                 &
+'@',/,                                                            &
+'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &  
+'@     Density must be strictly positive.',/,                     &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 7000 format (                                                          &
-'@                                                            ',/,&
+'@',/)
+ 7000 format (                                                    &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : CONDITION A LA LIMITE NON DISPONIBLE USCFTH ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@    La condition a la limite de type debit et debit         ',/,&
-'@      enthalpique imposes n''est pas disponible dans la     ',/,&
-'@      version courante.                                     ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut pas etre execute.                     ',/,&
-'@                                                            ',/,&
-'@    Modifier uscfcl.                                        ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with constant gamma.',/,                 &  
+'@',/,                                                            &
+'@     The boundary condition of the type ''prescribed mass',/,   &
+'@     and enthalpy flow rates '' is not available in the ',/,    &
+'@     current release.',/,                                       &
+'@',/,                                                            &
+'@     Modify the user subroutine ''uscfth''.',/,                 &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 8000 format (                                                          &
-'@                                                            ',/,&
+'@',/)
+ 8000 format (                                                    &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : MASSE VOLUMIQUE NEGATIVE OU NULLE (USCFTH)  ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@    rho est negatif ou nul en ',I10   ,' cellules           ',/,&
-'@    On le limite a ',E12.4                                   ,/,&
-'@    et on met fin au calcul.                                ',/,&
-'@                                                            ',/,&
-'@    Si on souhaite que le calcul se poursuive, on peut      ',/,&
-'@      forcer un clipping standard par valeur inferieure en  ',/,&
-'@      renseignant la variable SCAMIN associee au scalaire   ',/,&
-'@      representant la masse volumique : ISCA(IRHO(IPHAS))   ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with constant gamma.',/,                 &  
+'@',/,                                                            &
+'@     Negative values of the density were encountered ',/,       &
+'@     in ',i10   ,' cells.',/,                                   &
+'@     The density was clipped at ',e12.4  ,/                     &
+'@     The run was stopped.',/,                                   &
+'@',/,                                                            &
+'@     If it is desired to continue the run in spite of this ',/, &
+'@     behavior, it is possible to force a standard clipping ',/, &
+'@     by setting a minimum value for the density variable in',/, &
+'@     the GUI or in the user subroutine ''usini1'' (set the ',/, &
+'@     scamin value associated to the variable ',/,               &
+'@     isca(irho(iphas)).',/,                                     & 
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
  8100 format (                                                          &
-'@                                                            ',/,&
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ENERGIE INTERNE NEGATIVE OU NULLE (USCFTH)  ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@    e-0.5*u*u est negatif ou nul en ',I10   ,' cellules     ',/,&
-'@    On le limite a ',E12.4                                   ,/,&
-'@    et on met fin au calcul.                                ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with constant gamma.',/,                 &  
+'@',/,                                                            &
+'@     Negative values of the internal energy were encountered',/,&
+'@     in ',i10   ,' cells.',/,                                   &
+'@     The internal energy  was clipped at ',e12.4  ,/            &
+'@     The run was stopped.',/,                                   &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 
-
-! formats a eliminer apres mise au point de gama variable
-
+! The following formats may be discarded if or when the 
+! gamma variable option will have been fixed
 
 
  1110 format(                                                           &
-'@                                                            ',/,&
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USTHMO                        ',/,&
-'@    =========   CALCUL DE LA VARIABLE THERMODYNAMIQUE ''C2''',/,&
-'@                                                            ',/,&
-'@    P DOIT ETRE UN REEL POSITIF                             ',/,&
-'@    IL EST NEGATIF DANS LA CELLULE ',I10                     ,/,&
-'@    IL A POUR VALEUR ',E12.4                                 ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with variable gamma.',/,                 &  
+'@',/,                                                            &
+'@     The computation of the squared speed of sound failed.',/,  &
+'@',/,                                                            &
+'@     In cell ',i10   ,' Pressure = ',e12.4   ,/,                &  
+'@     Pressure must be positive.',/,                             &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
  1120 format(                                                           &
-'@                                                            ',/,&
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USTHMO                        ',/,&
-'@    =========   CALCUL DE LA VARIABLE THERMODYNAMIQUE ''C2''',/,&
-'@                                                            ',/,&
-'@    RHO DOIT ETRE UN REEL POSITIF STRICTEMENT               ',/,&
-'@    IL EST NEGATIF OU NUL DANS LA CELLULE ',I10              ,/,&
-'@    IL A POUR VALEUR ',E12.4                                 ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with variable gamma.',/,                 &  
+'@',/,                                                            &
+'@     The computation of the squared speed of sound failed.',/,  &
+'@',/,                                                            &
+'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &  
+'@     Density must be strictly positive.',/,                     &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
+'@',/)
  1220 format(                                                           &
-'@                                                            ',/,&
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USTHMO                        ',/,&
-'@    =========   CALCUL DE LA VARIABLE THERMO ''BETA''       ',/,&
-'@                                                            ',/,&
-'@    RHO DOIT ETRE UN REEL POSITIF                           ',/,&
-'@    IL EST NEGATIF DANS LA CELLULE ',I10                     ,/,&
-'@    IL A POUR VALEUR ',E12.4                                 ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with variable gamma.',/,                 &  
+'@',/,                                                            &
+'@     The computation of the variable beta failed.',/,           &
+'@',/,                                                            &
+'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &  
+'@     Density must be strictly positive.',/,                     &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
+'@',/)
  1310 format(                                                           &
-'@                                                            ',/,&
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USTHMO                        ',/,&
-'@    =========   CALCUL DE LA VARIABLE THERMODYNAMIQUE ''S'' ',/,&
-'@                                                            ',/,&
-'@    P DOIT ETRE UN REEL POSITIF                             ',/,&
-'@    IL EST NEGATIF DANS LA CELLULE ',I10                     ,/,&
-'@    IL A POUR VALEUR ',E12.4                                 ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with variable gamma.',/,                 &  
+'@',/,                                                            &
+'@     The computation of the entropy failed.',/,                 &
+'@',/,                                                            &
+'@     In cell ',i10   ,' Pressure = ',e12.4   ,/,                &  
+'@     Pressure must be positive.',/,                             &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
+'@',/)
  1320 format(                                                           &
-'@                                                            ',/,&
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS USTHMO                        ',/,&
-'@    =========   CALCUL DE LA VARIABLE THERMODYNAMIQUE ''S'' ',/,&
-'@                                                            ',/,&
-'@    RHO DOIT ETRE UN REEL POSITIF STRICTEMENT               ',/,&
-'@    IL EST NEGATIF OU NUL DANS LA CELLULE ',I10              ,/,&
-'@    IL A POUR VALEUR ',E12.4                                 ,/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in thermodynamics computations',/,         &
+'@    =======',/,                                                 &
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
+'@       for perfect gas with variable gamma.',/,                 &  
+'@',/,                                                            &
+'@     The computation of the entropy failed.',/,                 &
+'@',/,                                                            &
+'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &  
+'@     Density must be striclty positive.',/,                     &  
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 
 !----
-! FIN
+! End
 !----
 
 return
-
-end subroutine
+end subroutine 

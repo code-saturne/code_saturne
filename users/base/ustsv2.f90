@@ -51,68 +51,69 @@ subroutine ustsv2 &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR ON PRECISE LES TERMES SOURCES UTILISATEURS
-!   EN V2F ET POUR LES VARIABLES F_BARRE ET PHI
-!   SUR UN PAS DE TEMPS (PHASE IPHAS)
+!    User subroutine.
 
-! POUR VAR = F_BARRE :
-! ====================
+!    Additional right-hand side source terms for the equations of phi and f_bar
+!    with the v2-f phi-model turbulence model (ITURB=50)
+!
+! Usage
+! -----
+! The routine is called for both phi and f_bar. It is therefore necessary
+! to test the value of the variable ivar to separate the treatments of the
+! ivar=iphi(iphas) or ivar=ifb(iphas).
+!
+! The additional source term is decomposed into an explicit part (crvexp) and
+! an implicit part (crvimp) that must be provided here.
+! The resulting equation solved by the code are as follows:
+!
+! For f_bar (ivar=ifb(iphas)):
+!  volume*div(grad(f_bar))= ( volume*f_bar + ..... + crvimp*f_bar + crvexp )/L^2
+!
+! For phi (ivar=iphi(iphas))
+!  rho*volume*d(phi)/dt + .... = crvimp*phi + crvexp
 
-! ON RESOUT VOLUME*DIV(GRAD VAR) =
-!                 ( VOLUME*F_BARRE + ... + CRVIMP*VAR + CRVEXP ) /L^2
+!
+! Note that crvexp and crvimp are defined after the Finite Volume integration
+! over the cells, so they include the "volume" term. More precisely:
+!   - crvexp is expressed in m3/s for f_bar
+!   - crvexp is expressed in kg/s for phi
+!   - crvimp is expressed in m3 for f_bar
+!   - crvimp is expressed in kg/s for phi
+!
+! The crvexp and crvimp arrays are already initialized to 0 before entering the
+! the routine. It is not needed to do it in the routine (waste of CPU time).
+!
+! For stability reasons, Code_Saturne will not add -crvimp directly to the
+! diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
+! treated implicitely only if it strengthens the diagonal of the matrix.
+! However, when using the second-order in time scheme, this limitation cannot
+! be done anymore and -crvimp is added directly. The user should therefore test
+! the negativity of crvimp by himself.
+!
+! When using the second-order in time scheme, one should supply:
+!   - crvexp at time n
+!   - crvimp at time n+1/2
+!
 
-! ON FOURNIT ICI CRVIMP ET CRVEXP (ILS CONTIENNENT VOLUME)
-!  F_BARRE est en m3/s
-!  CRVEXP est en m3/s
-!  CRVIMP est en m3
+! When entering the routine, two additional work arrays are already set for
+! potential user need:
+!   produc = 2*mu_t*Sij*Sij -2/3*rho*k*div(u) -2/3*mu_t*div(u)**2
+!          + gravity term (when activated)
+!          (produc is the production term in the equation for k)
+!
+!   gphigk = grad(phi).grad(k)
 
-! POUR VAR = PHI :
-! ================
-
-! ON RESOUT RHO*VOLUME*D(VAR)/DT = ... + CRVIMP*VAR + CRVEXP
-
-! ON FOURNIT ICI CRVIMP ET CRVEXP (ILS CONTIENNENT VOLUME)
-!  PHI est sans dimension
-!  CRVEXP est en kg/s
-!  CRVIMP est en kg/s
-
-! POUR PHI, VEILLER A UTILISER UN CRVIMP NEGATIF
-! (ON IMPLICITERA CRVIMP
-!  IE SUR LA DIAGONALE DE LA MATRICE, LE CODE AJOUTERA :
-!   MAX(-CRVIMP,0) EN SCHEMA STANDARD EN TEMPS
-!       -CRVIMP    SI LES TERMES SOURCES SONT A L'ORDRE 2
-! (POUR F_BARRE PAR DE PROBLEME CAR LA MATRICE EST SYMETRIQUE
-! ET ON RESOUT DONC PAR GRADIENT CONJUGUE)
-
-! CES TABLEAUX SONT INITIALISES A ZERO AVANT APPEL A CE SOUS
-!   PROGRAMME ET AJOUTES ENSUITE AUX TABLEAUX PRIS EN COMPTE
-!   POUR LA RESOLUTION
-
-! EN CAS D'ORDRE 2 DEMANDE SUR LES TERMES SOURCES, ON DOIT
-!   FOURNIR CRVEXP A L'INSTANT N     (IL SERA EXTRAPOLE) ET
-!           CRVIMP A L'INSTANT N+1/2 (IL EST  DANS LA MATRICE,
-!                                     ON LE SUPPOSE NEGATIF)
-
-
-
-! PRODUC contient la production de k :
-!    2*mu_t*Sij*Sij -2/3*rho*k*div(u) -2/3*mu_t*div(u)**2 + terme eventuel de gravite
-! GPHIGK contient le produit scalaire grad phi*grad k
-
-
-! Cells identification
-! ====================
-
-! Cells may be identified using the 'getcel' subroutine.
-! The syntax of this subroutine is described in the 'usclim' subroutine,
-! but a more thorough description can be found in the user guide.
-
+!
+! The selection of cells where to apply the source terms is based on a getcel
+! command. For more info on the syntax of the getcel command, refer to the
+! user manual or to the comments on the similar command getfbr in the routine
+! usclim.
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
@@ -132,12 +133,12 @@ subroutine ustsv2 &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
+! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
+! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iphas            ! i  ! <-- ! phase number                                   !
-! ivar             ! i  ! <-- ! variable number                                !
+! iphas            ! i  ! <-- ! index number of the current phase              !
+! ivar             ! i  ! <-- ! index number of the current variable           !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
@@ -150,19 +151,19 @@ subroutine ustsv2 &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
+! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
+! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
+!  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -171,30 +172,26 @@ subroutine ustsv2 &
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant            prec)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! gphigk(ncelet    ! tr ! --- ! tableau de travail contenant le prod           !
-!                  !    !     !    grad phi * grad k                           !
-! produc(ncelet    ! tr ! --- ! tableau de travail contenant la                !
-!                  !    !     ! la production p de l'eq de k                   !
-! crvexp(ncelet    ! tr ! --> ! tableau pour source partie explicite           !
-! crvimp(ncelet    ! tr ! --> ! tableau pour source partie implicite           !
-! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
-! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
-! xam(nfac,2)      ! tr ! --- ! tableau de travail    faces de bord            !
-! w1..11(ncelet    ! tr ! --- ! tableau de travail    cellules                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
+! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
+!  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
+! produc(ncelet)   ! ra ! <-- ! production term for k                          !
+! gphigk(ncelet)   ! ra ! <-- ! grad(phi).grad(k)                              !
+! crvexp           ! ra ! --> ! explicit part of the source term               !
+! crvimp           ! ra ! --> ! implicit part of the source term               !
+! viscf(nfac)      ! ra ! --- ! work array                                     !
+! viscb(nfabor)    ! ra ! --- ! work array                                     !
+! xam(nfac,2)      ! ra ! --- ! work array                                     !
+! w1 to w11(ncelet)! ra ! --- ! work arrays                                    !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -262,7 +259,7 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          iel, ifbiph, iphiph, iphas0, ipcrom
+integer          iel, ifbiph, iphiph, ipcrom
 double precision ff, tau, xx
 
 !===============================================================================
@@ -277,17 +274,17 @@ if(1.eq.1) return
 
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
-! --- Numero des variables k et epsilon de la phase IPHAS courante
+! --- Index numbers of variables f_bar and phi for the current phase iphas
 ifbiph = ifb (iphas)
 iphiph = iphi(iphas)
 
-! --- Numero des grandeurs physiques (voir usclim) : masse volumique
+! --- Index number of the density in the propce array
 ipcrom = ipproc(irom(iphas))
 
 if(iwarni(ifbiph).ge.1) then
@@ -295,75 +292,68 @@ if(iwarni(ifbiph).ge.1) then
 endif
 
 !===============================================================================
-! 2. EXEMPLE FICTIF :
+! 2. Example of arbitrary additional source term for k and epsilon
 
-!    Pour la phase 2
+!      Source term for f_bar :
+!         volume div(grad f_barre) = (... + volume*xx )/L^2
 
-!      Terme source f_barre :
-!            volume div(grad f_barre) = ...
-!                      ... - volume*ff*phi - volume*f_barre/tau
+!      Source term for phi :
+!         rho volume d(phi)/dt       = ...
+!                        ... + rho*volume*ff*f_bar - rho*volume*phi/tau
 
-!      Terme source phi :
-!         rho volume d(phi)/dt = ...
-!                      ... + rho*volume*xx
-
-!      Avec, pour l'exemple,
-!                 xx = 2.d0, ff=3.d0, tau = 4.d0
+!      With xx = 2.d0, ff=3.d0 and tau = 4.d0
 
 !===============================================================================
 
-iphas0 = 2
+! ---  For f_bar
+!      ---------
+
+if(ivar.eq.ifb(1)) then
+
+  xx  = 2.d0
+
+!    -- Explicit source term
+
+  do iel = 1, ncel
+    crvexp(iel) =  volume(iel)*xx
+  enddo
+
+!    -- Implicit source term
+!
+!       crvimp is already initialized to 0, no need to set it here
 
 
-! ---  Pour f_barre Phase 2
-!      ---------------------
+! ---  For phi
+!      -------
 
-if(ivar.eq.ifb(iphas0)) then
+elseif(ivar.eq.iphi(1)) then
 
   ff  = 3.d0
   tau = 4.d0
 
-!   -- Termes sources explicites
+!   -- Explicit source term
 
   do iel = 1, ncel
-    crvexp(iel) = -volume(iel)*ff*rtpa(iel,iphiph)
+    crvexp(iel) = propce(iel,ipcrom)*volume(iel)*ff*rtpa(iel,ifb(iphas))
   enddo
 
-!    -- Termes sources implicites (diagonale)
+!    -- Implicit source term
 
   do iel = 1, ncel
-    crvimp(iel) = -volume(iel)/tau
+    crvimp(iel) = -propce(iel,ipcrom)*volume(iel)/tau
   enddo
 
-
-! ---  Pour phi Phase 2
-!      --------------------
-
-elseif(ivar.eq.iep(iphas)) then
-
-  xx  = 2.d0
-
-!    -- Termes sources explicites
-
-  do iel = 1, ncel
-    crvexp(iel) =  propce(iel,ipcrom)*volume(iel)*xx
-  enddo
-
-!    -- Termes sources implicites (diagonale) : nuls
-
-!          CRVIMP est initialise a zero avant l'entree dans ce
-!            sous-programme : il est donc inutile de le completer
 
 endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
- 1000 format(' TERMES SOURCES UTILISATEURS V2F PHASE ',I4,/)
+ 1000 format(' User source terms for phi and f_bar, phase ',I4,/)
 
 !----
-! FIN
+! End
 !----
 
 return

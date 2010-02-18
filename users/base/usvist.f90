@@ -47,29 +47,26 @@ subroutine usvist &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR : MODIFICATION DE LA VISCOSITE TURBULENTE
+! User subroutine.
 
-! Cette routine est appelee au debut de chaque pas de temps
-!    apres le calcul de la viscosite turbulente
-!   (les grandeurs physiques ont ete calculees dans USPHYV)
+! Modify turbulent viscosity
 
-! On peut modifier la viscosite turbulente VISCT (kg/(m s))
+! This subroutine is called at beginning of each time step
+! after the computation of the turbulent viscosity
+! (physical quantities have already been computed in usphyv)
 
-! La modification de la viscosite turbulente peut conduire a des
-!    ecarts tres importants sur la solution et eventuellement
-!    A DES RESULTATS ERRONES.
+! Turbulent viscosity VISCT (kg/(m s)) can be modified
 
+! A modification of the turbulent viscosity can lead to very
+! significant differences betwwen solutions and even give wrong
+! results
 
+! This subroutine is therefore reserved to expert users
 
-! L'UTILISATION DE CE SOUS PROGRAMME EST DONC RESERVEE A
-
-!            DES UTILISATEURS TRES AVERTIS
-
-
-
+!-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
@@ -90,11 +87,11 @@ subroutine usvist &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
+! ncepdp           ! i  ! <-- ! number of cells with head loss
+! ncesmp           ! i  ! <-- ! number of cells with mass source term
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iphas            ! i  ! <-- ! phase number                                   !
+! iphas            ! i  ! <-- ! phase number
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
@@ -105,19 +102,19 @@ subroutine usvist &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! icepdc(ncelet    ! te ! <-- ! head loss cell numbering                       !
+! icetsm(ncesmp    ! te ! <-- ! numbering of cells with mass source term       !
+! itypsm           ! te ! <-- ! kind of mass source for each variable          !
+! (ncesmp,nvar)    !    !     !  (cf. ustsma)                                  !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -133,14 +130,13 @@ subroutine usvist &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
+! ckupdc           ! ra ! <-- ! work array for head loss terms                 !
 !  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! smacel           ! ra ! <-- ! values of variables related to mass source     !
+! (ncesmp,*   )    !    !     ! term. If ivar=ipr, smacel=mass flux            !
+! w1...8(ncelet    ! ra ! --- ! work arrays                                    !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -221,20 +217,20 @@ if(1.eq.1) return
 
 
 !===============================================================================
-! 1.  Exemple :
-!       Pour la phase 1,
-!                VISCT = MAX(VISCT,ROM *SQRT(DUDX**2+DUDX**2+DUDX**2))
-!                (relation volontairement fantaisiste)
-!                Noter qu'on entre dans ce sous pgm en ayant calcule la
-!                viscosite conformement au modele de turbulence choisi
-!       Pour les autres phases,
-!                on conserve la viscosite standard du modele de
-!                turbulence selectionne
+! 1.  Example :
+!       For phase 1:
+!                visct = max(visct, rom * sqrt(dudx**2 + dudy**2 + dudz**2)
+!                (intentionally fancyful relation)
+!                Remark: incomming viscosity is consistent with the selected
+!                turbulence modelling
+!       For other phases:
+!                We keep the viscosity computed by the selected turbulence
+!                modelling
 
 !===============================================================================
 
 !===============================================================================
-! 1.1 SELECTION DE LA PHASE A TRAITER
+! 1.1 Selection of the phase to deal with
 !===============================================================================
 
 if(iphas.ne.1) then
@@ -242,30 +238,31 @@ if(iphas.ne.1) then
 endif
 
 !===============================================================================
-! 1.2 INITIALISATION
+! 1.2 Initialization
 !===============================================================================
 
-! --- Memoire
+! --- Memory
 idebia = idbia0
 idebra = idbra0
 
-! --- Numero des variables (dans RTP)
+! --- Number associated to variables (in RTP)
 iuiph = iu(iphas)
 iviph = iv(iphas)
 iwiph = iw(iphas)
 
-! --- Rang des variables dans PROPCE (prop. physiques au centre)
+! --- Physical quantity numbers in PROPCE (physical quantities defined
+!     at each cell center)
 ipcvst = ipproc(ivisct(iphas))
 ipcrom = ipproc(irom  (iphas))
 
-! --- Rang des c.l. des variables dans COEFA COEFB
-!        (c.l. std, i.e. non flux)
+! --- Boundary condition number associated to variables in COEFA and COEFB
+!      JB=>?  (c.l. std, i.e. non flux)
 ipcliu = iclrtp(iuiph,icoef)
 ipcliv = iclrtp(iviph,icoef)
 ipcliw = iclrtp(iwiph,icoef)
 
 !===============================================================================
-! 1.3 CALCUL DU GRADIENT DE U
+! 1.3 Compute velocity gradient
 !===============================================================================
 
 iccocg = 1
@@ -296,36 +293,35 @@ call grdcel                                                       &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! 1.4 CALCUL DE LA VISCOSITE DYNAMIQUE
+! 1.4 Computation of the dynamic viscosity
 !===============================================================================
 
 do iel = 1, ncel
 
-! --- Viscosite dynamique et masse volumique en entree de sous pgm
+! --- Current dynamic viscosity and fluid density
   visct = propce(iel,ipcvst)
   rom   = propce(iel,ipcrom)
 
-! --- Calculs divers
+! --- Various computations
   dudx = w1(iel)
   dudy = w2(iel)
   dudz = w3(iel)
   sqdu = sqrt(dudx**2+dudy**2+dudz**2)
 
-! --- Calcul de la nouvelle viscosite dynamique
+! --- Computation of the new dynamic viscosity
   visct = max (visct,rom*sqdu)
 
-! --- Affectation de la nouvelle viscosite dynamique calculee
+! --- Store the new computed dynamic viscosity
   propce(iel,ipcvst) = visct
 
 enddo
 
-!----
-! FORMAT
-!----
+!--------
+! Formats
+!--------
 
-
 !----
-! FIN
+! End
 !----
 
 return

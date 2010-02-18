@@ -49,50 +49,79 @@ subroutine ustssc &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR
-!   ON PRECISE LES TERMES SOURCES UTILISATEURS
-!   POUR UN SCALAIRE SUR UN PAS DE TEMPS
+!    User subroutine.
 
-! ON RESOUT RHO*VOLUME*D(VAR)/DT = CRVIMP*VAR + CRVEXP
+!    Additional right-hand side source terms for scalar equations (user
+!     scalars and specific physics scalars).
 
-! ON FOURNIT ICI CRVIMP ET CRVEXP (ILS CONTIENNENT RHO*VOLUME)
-!    CRVEXP en kg variable/s :
-!     ex : pour les temperatures      kg degres/s
-!          pour les enthalpies        Joules/s
-!    CRVIMP en kg /s :
+!
+! Usage
+! -----
+! The routine is called for each scalar, user or specific physisc. It is
+! therefore necessary to test the value of the scalar number iscal to separate
+! the treatments of the different scalars (if (iscal.eq.p) then ....).
+!
+! The additional source term is decomposed into an explicit part (crvexp) and
+! an implicit part (crvimp) that must be provided here.
+! The resulting equation solved by the code for a scalar f is:
+!
+!  rho*volume*df/dt + .... = crvimp*f + crvexp
+!
+!
+! Note that crvexp and crvimp are defined after the Finite Volume integration
+! over the cells, so they include the "volume" term. More precisely:
+!   - crvexp is expressed in kg.[scal]/s, where [scal] is the unit of the scalar
+!   - crvimp is expressed in kg/s
+!
+!
+! The crvexp and crvimp arrays are already initialized to 0 before entering the
+! the routine. It is not needed to do it in the routine (waste of CPU time).
+!
+! For stability reasons, Code_Saturne will not add -crvimp directly to the
+! diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
+! treated implicitely only if it strengthens the diagonal of the matrix.
+! However, when using the second-order in time scheme, this limitation cannot
+! be done anymore and -crvimp is added directly. The user should therefore test
+! the negativity of crvimp by himself.
+!
+! When using the second-order in time scheme, one should supply:
+!   - crvexp at time n
+!   - crvimp at time n+1/2
+!
+!
+! The selection of cells where to apply the source terms is based on a getcel
+! command. For more info on the syntax of the getcel command, refer to the
+! user manual or to the comments on the similar command getfbr in the routine
+! usclim.
 
-! VEILLER A UTILISER UN CRVIMP NEGATIF
-! (ON IMPLICITERA CRVIMP
-!  IE SUR LA DIAGONALE DE LA MATRICE, LE CODE AJOUTERA :
-!   MAX(-CRVIMP,0) EN SCHEMA STANDARD EN TEMPS
-!       -CRVIMP    SI LES TERMES SOURCES SONT A L'ORDRE 2
-
-! CES TABLEAUX SONT INITIALISES A ZERO AVANT APPEL A CE SOUS
-!   PROGRAMME ET AJOUTES ENSUITE AUX TABLEAUX PRIS EN COMPTE
-!   POUR LA RESOLUTION
-
-! EN CAS D'ORDRE 2 DEMANDE SUR LES TERMES SOURCES, ON DOIT
-!   FOURNIR CRVEXP A L'INSTANT N     (IL SERA EXTRAPOLE) ET
-!           CRVIMP A L'INSTANT N+1/2 (IL EST  DANS LA MATRICE,
-!                                     ON LE SUPPOSE NEGATIF)
-
-! L'identification des faces de bord concernees se fait grace
-! a la commande GETFBR.
-
-
-! Cells identification
-! ====================
-
-! Cells may be identified using the 'getcel' subroutine.
-! The syntax of this subroutine is described in the 'usclim' subroutine,
-! but a more thorough description can be found in the user guide.
-
+!
+! STEEP SOURCE TERMS
+!===================
+! In case of a complex, non-linear source term, say F(f), for scalar f, the
+! easiest method is to implement the source term explicitely.
+!
+!   df/dt = .... + F(f(n))
+!   where f(n) is the value of f at time tn, the befinning of the time step.
+!
+! This yields :
+!   crvexp = volume*F(f(n))
+!   crvimp = 0
+!
+! However, if the source term is potentially steep, this fully explicit
+! method will probably generate instabilities. It is therefore wiser to
+! partially implicit the term by writing:
+!
+!   df/dt = .... + dF/df*f(n+1) - dF/df*f(n) + F(f(n))
+!
+! This yields:
+!   crvexp = volume*( F(f(n)) - dF/df*f(n) )
+!   crvimp = volume*dF/df
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
@@ -112,11 +141,11 @@ subroutine ustssc &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
+! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
+! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iscal            ! i  ! <-- ! scalar number                                  !
+! iscal            ! i  ! <-- ! index number of the current scalar             !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
@@ -129,19 +158,19 @@ subroutine ustssc &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
+! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
+! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
+!  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -150,26 +179,26 @@ subroutine ustssc &
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (preceding time step)                         !
+! rtp              ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (current time step)                           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! crvexp(ncelet    ! tr ! --> ! tableau de travail pour part explicit          !
-! crvimp(ncelet    ! tr ! --> ! tableau de travail pour terme instat           !
-! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
-! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
-! xam(nfac,2)      ! tr ! --- ! tableau de travail    faces de bord            !
-! w1..11(ncelet    ! tr ! --- ! tableau de travail    cellules                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
+! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
+!  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
+! crvexp           ! ra ! --> ! explicit part of the source term               !
+! crvimp           ! ra ! --> ! implicit part of the source term               !
+! viscf(nfac)      ! ra ! --- ! work array                                     !
+!  viscb(nfabor)   ! ra ! --- ! work array                                     !
+! xam(nfac,2)      ! ra ! --- ! work array                                     !
+! w1 to w11(ncelet)! ra ! --- ! work arrays                                    !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -255,44 +284,29 @@ if(1.eq.1) return
 
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
-! --- Numero du scalaire a traiter : ISCAL
-
-!     ISCAL est une donnee d'entree de ce sous programme
-!       qui indique quel scalaire on est en train de traiter
-!       en effet ce sous programme est appele successivement pour
-!       tous les scalaires du calcul.
-!     ISCAL ne doit pas etre modifie par l'utilisateur
-
-!     Si le calcul comporte plusieurs scalaires (de 1 a n par exemple)
-!       et que l'on souhaite imposer des termes sources pour un
-!       scalaire p donne, on doit utiliser ISCAL ici :
-!       CRVIMP et CRVEXP ne seront renseignes que "IF(ISCAL.EQ.p)"
-
-
-! --- Numero de la variable associee au scalaire a traiter ISCAL
+! --- Index number of the variable associated to scalar iscal
 ivar = isca(iscal)
 
-! --- Nom de la variable associee au scalaire a traiter ISCAL
+! --- Name of the the variable associated to scalar iscal
 chaine = nomvar(ipprtp(ivar))
 
-! --- Indicateur de variance
-!         Si ISCAVR = 0 :
-!           le scalaire ISCAL n'est pas une variance
-!         Si ISCAVR > 0 et ISCAVR < NSCAL + 1 :
-!           le scalaire ISCAL est une variance associee
-!           au scalaire ISCAVR
+! --- Indicateur of variance scalars
+!         If iscavr(iscal) = 0:
+!           the scalar iscal is not a variance
+!         If iscavr(iscal) > 0 and iscavr(iscal) < nscal + 1 :
+!           the scalar iscal is the variance of the scalar iscavr(iscal)
 iiscvr = iscavr(iscal)
 
-! --- Numero de phase associee au scalaire ISCAL
+! --- Index number of the phase associated to scalar iscal
 iphas = iphsca(iscal)
 
-! --- Numero des grandeurs physiques (voir usclim)
+! --- Index number of the density in the propce array
 ipcrom = ipproc(irom(iphas))
 
 if(iwarni(ivar).ge.1) then
@@ -301,47 +315,35 @@ endif
 
 
 !===============================================================================
-! 2. EXEMPLE DE TERME SOURCE ARBITRAIRE, POUR LA VARIABLE F :
+! 2. Example of arbitrary source term for the scalar f, 2nd scalar in the
+!    calculation
 
-!                             S = A * F + B
+!                             S = A * f + B
 
-!            APPARAISSANT DANS LES EQUATIONS SOUS LA FORME :
+!            appearing in the equation under the form
 
-!                       RHO VOLUME D(F)/Dt = VOLUME*S
-
-
-!   CE TERME A UNE PARTIE QU'ON VEUT IMPLICITER         : A
-!           ET UNE PARTIE QU'ON VA TRAITER EN EXPLICITE : B
+!                       rho*df/dt = S (+ regular terms in the equation)
 
 
-!   ICI PAR EXEMPLE ARBITRAIREMENT :
-
-!     A = - RHO / TAUF
-!     B =   RHO * PRODF
+!In the following example:
+!     A = - rho / tauf
+!     B =   rho * prodf
 !        AVEC
-!     TAUF   = 10.D0  [secondes  ] (TEMPS DE DISSIPATION DE F)
-!     PRODF  = 100.D0 [variable/s] (PRODUCTION DE F PAR UNITE DE TEMPS)
+!     tauf   = 10.d0  [ s  ] (dissipation time for f)
+!     prodf  = 100.d0 [ [f]/s ] (production of f by unit of time)
 
-!   ON A ALORS
-!     CRVIMP(IEL) = VOLUME(IEL)* A = - VOLUME(IEL) (RHO / TAUF )
-!     CRVEXP(IEL) = VOLUME(IEL)* B =   VOLUME(IEL) (RHO * PRODF)
-
-!   ON REMPLIT CI-DESSOUS CRVIMP ET CRVEXP CORRESPONDANTS.
+!which yields
+!     crvimp(iel) = volume(iel)* A = - volume(iel)*rho/tauf
+!     crvexp(iel) = volume(iel)* B =   volume(iel)*rho*prodf
 
 !===============================================================================
 
 
-
-!     ATTENTION, L'EXEMPLE EST COMPLETEMENT ARBITRAIRE
-!     =========
-!         ET DOIT ETRE REMPLACE PAR LES TERMES UTILISATEURS ADEQUATS
-
-
 ! ----------------------------------------------
 
-! Il est assez courant que l'on oublie d'eliminer cet exemple
-!   de ce sous-programme.
-! On a donc prevu le test suivant pour eviter les mauvaises surprises
+! It is quite frequent to forget to remove this example when it is
+!  not needed. Therefore the following test is designed to prevent
+!  any bad surprise.
 
 iutile = 0
 
@@ -349,59 +351,43 @@ if(iutile.eq.0) return
 
 ! ----------------------------------------------
 
-tauf  = 10.d0
-prodf = 100.d0
+!Source term applied to second scalar
+if (iscal.eq.2) then
 
-do iel = 1, ncel
-  crvimp(iel) = - volume(iel)*propce(iel,ipcrom)/tauf
-enddo
+   tauf  = 10.d0
+   prodf = 100.d0
 
-do iel = 1, ncel
-  crvexp(iel) =   volume(iel)*propce(iel,ipcrom)*prodf
-enddo
+   do iel = 1, ncel
+      crvimp(iel) = - volume(iel)*propce(iel,ipcrom)/tauf
+   enddo
 
-!===============================================================================
-! 3. EXEMPLE DE TERME SOURCE ARBITRAIRE, POUR LA VARIABLE F = ENTHALPIE :
+   do iel = 1, ncel
+      crvexp(iel) =   volume(iel)*propce(iel,ipcrom)*prodf
+   enddo
 
-!     IL S'AGIT D'UNE PARTICULARISATION DE L'EXEMPLE PRECEDENT AVEC
-
-!                             S = B
-
-!            APPARAISSANT DANS LES EQUATIONS SOUS LA FORME :
-
-!                       RHO VOLUME D(F)/Dt = VOLUME*S
-
-
-!   IL N'Y A RIEN A IMPLICITER, ON PEUT DONC IMPOSER
-
-!     CRVIMP(IEL) = 0.D0
-
-
-!   CE TERME A UNE PARTIE QU'ON VA TRAITER EN EXPLICITE : B
-
-!     SI F EST UNE ENTHALPIE (J/kg), ON AURA ALORS B EN Watt/m3
-
-!     SI ON CONNAIT LA PUISSANCE PWATT A INTRODUIRE UNIFORMEMENT DANS UN
-!       VOLUME DONNE VOLF TEL QUE 0<X<1.2, 3.1<Y<4, ON POURRA ALORS
-!       ECRIRE, POUR LES CELLULES DU MAILLAGE CONCERNEES :
-
-!       CRVEXP(IEL) = VOLUME(IEL)* B =   VOLUME(IEL)*(PWATT/VOLF)
-
+endif
 
 !===============================================================================
+! 3. Example of arbitrary volumic heat term in the equation for enthalpy h
 
+! In the considered example, a uniform volumic source of heating is imposed
+! in the cells with coordinate X in [0;1.2] and Y in [3.1;4]
 
+! The global heating power if Pwatt (in W) and the total volume of the concerned
+! cells is volf (in m3)
 
-!     ATTENTION, L'EXEMPLE EST COMPLETEMENT ARBITRAIRE
-!     =========
-!         ET DOIT ETRE REMPLACE PAR LES TERMES UTILISATEURS ADEQUATS
+! This yields
+!     crvimp(iel) = 0
+!     crvexp(iel) = volume(iel)* Pwatt/volf
+
+!===============================================================================
 
 
 ! ----------------------------------------------
 
-! Il est assez courant que l'on oublie d'eliminer cet exemple
-!   de ce sous-programme.
-! On a donc prevu le test suivant pour eviter les mauvaises surprises
+! It is quite frequent to forget to remove this example when it is
+!  not needed. Therefore the following test is designed to prevent
+!  any bad surprise.
 
 iutile = 0
 
@@ -409,14 +395,13 @@ if(iutile.eq.0) return
 
 ! ----------------------------------------------
 
-! PUISSANCE A INTRODUIRE DANS VOLF
-!   ATTENTION on suppose qu'on travaille en enthalpie,
-!             si on travaille en temperature, il ne faut pas oublier de
-!               diviser PWATT par Cp.
+! WARNING :
+! It is assumed here that the thermal scalar in an enthalpy.
+!  If the scalar in a temperature, PWatt must be devided by Cp.
 
 pwatt = 100.d0
 
-! CALCUL DE VOLF
+! calculation of volf
 
 volf  = 0.d0
 CALL GETCEL('X > 0.0 and X < 1.2 and Y > 3.1 and'//               &
@@ -429,20 +414,20 @@ enddo
 
 do ilelt = 1, nlelt
   iel = lstelt(ilelt)
-! PAS DE TERME IMPLICITE
+! No implicit source term
   crvimp(iel) = 0.d0
-! PUISSANCE EN EXPLICITE
+! Explicit source term
   crvexp(iel) = volume(iel)*pwatt/volf
 enddo
 
 !--------
-! FORMATS
+! Formats
 !--------
 
- 1000 format(' TERMES SOURCES UTILISATEURS POUR LA VARIABLE ',A8,/)
+ 1000 format(' User source terms for vaiable ',A8,/)
 
 !----
-! FIN
+! End
 !----
 
 return

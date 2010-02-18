@@ -33,29 +33,33 @@ subroutine useli1
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
-
-!         INIT DES OPTIONS DES VARIABLES POUR
-!              LE MODULE ELECTRIQUE
-!   EN COMPLEMENT DE CE QUI A DEJA ETE FAIT DANS USINI1
-
+!  Purpose  :
+!  -------
+!          User subroutines for input of calculation parameters,
+!       and to initialize variables used for specific electric models,
+!
+!
+!                 by addition of what is done in  USINI1
+!
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
+!                  ! i  ! <-- !                                                !
+!                  ! r  ! --> !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
 !     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
+!
 
 implicit none
 
 !===============================================================================
-! Common blocks
+!    Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -78,67 +82,62 @@ integer          ipp, iesp , idimve
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0. This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if(1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
-
- 9000 format(                                                           &
-'@                                                            ',/,&
+!
+ 9000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES DONNEES         ',/,&
-'@    =========                                               ',/,&
-'@                      MODULE ELECTRIQUE                     ',/,&
-'@                                                            ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR useli1 DOIT ETRE COMPLETE',/,&
-'@                                                            ',/,&
-'@     Ce sous-programme utilisateur permet de definir les    ',/,&
-'@       options generales. Il est indispensable.             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input',/,                          &
+'@    =======',/,                                                 &
+'@     The user subroutine ''useli1'' must be completed',/, &
+'@     for electric module',/,                                    &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 
 !===============================================================================
-! 1. VARIABLES TRANSPORTEES
+! 1. SOLVED VARIABLES
 !===============================================================================
 
-!  Sortie chrono, suivi listing, sortie histo
-!     Si l'on n'affecte pas les tableaux suivants,
-!     les valeurs par defaut seront utilisees
+!  Chronological output, logging in listing, history output
+!       if we do not assign the following array values,
+!       default values will be used!
+!
+!     ichrvr( ) = chonological output (yes 1/no 0)
+!     ilisvr( ) = logging in listing (yes 1/no 0)
+!     ihisvr( ) = history output (number of probes and their numbers)
+!     if ihisvr(.,1)  = -1, output for all probes
+!
+! --> Current variables for electric modules
 
-!       ICHRVR( ) = sortie chono (oui 1/non 0)
-!       ILISVR( ) = suivi listing (oui 1/non 0)
-!       IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes definies
-!                            dans usini1
-
-
-! --> Variables communes aux versions electriques
-
-! ---- Enthalpie
+! ---- Enthalpy
 ipp = ipprtp(isca(ihm))
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
-! ---- Potentiel reel
+! ---- Real component of the electrical potential
 ipp = ipprtp(isca(ipotr))
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
-!---- Fractions massiques des constituants
+!---- Mass fraction of the different constituants of the phase
 if ( ngazg .gt. 1 ) then
   do iesp = 1, ngazg-1
     ipp = ipprtp(isca(iycoel(iesp)))
@@ -148,8 +147,8 @@ if ( ngazg .gt. 1 ) then
   enddo
 endif
 
-! --> Version effet Joule
-
+! --> Specific variables for Joule effect for direct conduction
+!     Imaginary component of electrical potential
 if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
   ipp = ipprtp(isca(ipoti))
   ichrvr(ipp)  = 1
@@ -157,8 +156,8 @@ if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
   ihisvr(ipp,1)= -1
 endif
 
-! --> Version arc electrique 3D
-
+! --> Specific variables for electric arc in 3D
+!     vector potential components
 if ( ippmod(ielarc).ge.2 ) then
   do idimve = 1, ndimve
     ipp = ipprtp(isca(ipotva(idimve)))
@@ -168,11 +167,11 @@ if ( ippmod(ielarc).ge.2 ) then
   enddo
 endif
 
-! --> Version conduction ionique
-!     indisponible dans la version presente
+! --> Ionic conduction module
+!     Not available in the present version of the code
 
 !===============================================================================
-! 2. VARIABLES ALGEBRIQUES OU D'ETAT
+! 2. Algebric or state variables
 !===============================================================================
 
 ! ---- Temperature
@@ -181,19 +180,19 @@ ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
-! ---- Conductivite electrique
+! ---- Electric conductivity
 ipp = ipppro(ipproc(ivisls(ipotr)))
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
-! ---- Puissance volumique dissipee par effet Joule
+! ---- Joule effect Power
 ipp = ipppro(ipproc(iefjou) )
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
-! ---- densite de courant reelle
+! ---- Real component of the current density
 do idimve = 1, ndimve
   ipp = ipppro(ipproc(idjr(idimve)) )
   ichrvr(ipp)  = 1
@@ -201,7 +200,7 @@ do idimve = 1, ndimve
   ihisvr(ipp,1)= -1
 enddo
 
-! ---- densite de courant imaginaire
+! ---- Imaginary component of the current density
 if ( ippmod(ieljou).eq.4 ) then
   do idimve = 1, ndimve
     ipp = ipppro(ipproc(idji(idimve)) )
@@ -213,7 +212,7 @@ endif
 
 if ( ippmod(ielarc).ge.1 ) then
 
-! ---- Forces electromagnetiques de Laplace
+! ---- Electromagnetic Forces (Laplace forces)
   do idimve = 1, ndimve
     ipp = ipppro(ipproc(ilapla(idimve)) )
     ichrvr(ipp)  = 1
@@ -221,7 +220,7 @@ if ( ippmod(ielarc).ge.1 ) then
     ihisvr(ipp,1)= -1
   enddo
 
-! ---- Coefficient d'absorption ou TS radiatif
+! ---- Absorption oefficient  or Radiative sources term
   if ( ixkabe.gt.0 ) then
     ipp = ipppro(ipproc(idrad) )
     ichrvr(ipp)  = 1
@@ -230,7 +229,7 @@ if ( ippmod(ielarc).ge.1 ) then
   endif
 endif
 
-! ---- Charge electrique volumique
+! ---- Electric charge (volumic)
 if ( ippmod(ielion).ge.1 ) then
   ipp = ipppro(ipproc(iqelec) )
   ichrvr(ipp)  = 1
@@ -240,27 +239,26 @@ endif
 
 
 !===============================================================================
-! 3. OPTIONS DE CALCUL
+! 3. Calculation options
 !===============================================================================
 
-! --> Coefficient de relaxation de la masse volumique
+! --> Relaxation coefficient for mass density
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
 srrom = 0.d0
 
-! --> Recalage des variables electriques (joule ou arc electrique)
-!      IELCOR = 0 : pas de correction
-!      IELCOR = 1 : correction
+! --> "Electric variables" scaling (Joule effect or electric arc version)
+!      IELCOR = 0 : NO Correction
+!      IELCOR = 1 : CORRECTION
 ielcor = 0
 
-!     Intensite de courant imposee (arc electrique) en Ampere
-!             et Puissance imposee (effet Joule/verre) en Watt
-!       ces valeurs doivent etre positives
-!       (et en general elles sont strictement positives)
+!     Imposed current intensity (electric arc ) in Amp
+!        and Imposed Power (Joule effect for glass melting applications) in Watt
+!       These values have to be positive
+!
 couimp = 0.d0
 puisim = 0.d0
 
-!     Differentiel de potentiel initiale
-!       la valeur doit etre strictement positive
+!     Initial Potential Difference (positive value)
 dpot = 0.d0
 
 

@@ -50,40 +50,40 @@ subroutine uslast &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
+!
+! User subroutine of the Lagrangian particle-tracking module:
+! -----------------------------------------
+!
+! User subroutine (non-mandatory intervention)
 
-!       SOUS-PROGRAMME DU MODULE LAGRANGIEN :
-!       -----------------------------------
+! User-defined modifications on the variables at the end of the
+! Lagrangian iteration and calculation of user-defined
+! additional statistics on the particles.
+!
+! About the user-defined additional statistics, we recall that:
+!
 
-!    SOUS-PROGRAMME UTILISATEUR (INTERVENTION NON OBLIGATOIRE)
+!   isttio = 0 : unsteady Lagrangian calculation
+!          = 1 : stationary Lagrangian calculation
 
-!    MODIFICATIONS UTILSATEUR SUR LES VARIABLES EN FIN D'ITERATION
-!    LAGRANGIENNES ET CALCUL DES STATISTIQUES UTILISATEUR
-!    SUPPLEMENTAIRES SUR LES PARTICULES
+!   istala : calculation of the statistics if >= 1, else no stats
 
-!   POUR LES STATISTIQUES UTILISATEUR SUPPLEMENTAIRES,
-!   ON RAPPELLE QUE :
+!   isuist : Restart of statistics calculation if >= 1, else no stats
 
-!   ISTTIO = 0 : calcul instationnaire pour le lagrangien
-!          = 1 : calcul stationnaire   pour le lagrangien
+!   idstnt : Number of the time step for the start of the statistics calculation
 
-!   ISTALA : calcul statistiques       si  >= 1 sinon pas de stat
+!   nstist : Number of the Lagrangian iteration of the start of the stationary computation
 
-!   ISUIST : suite calcul statistiques si  >= 1 sinon pas de stat
+!   npst   : Number of iterations of the computation of the stationary statistics
 
-!   IDSTNT : Numero du pas de temps pour debut statistque
+!   npstt  : Total number of iterations of the statistics calculation since the
+!            beginning of the calculation, including the unsteady part
 
-!   NSTIST : iteration Lagrangienne du debut calcul stationnaire
-
-!   NPST   : nombre d'iterations de calcul de stat stationnaires
-
-!   NPSTT  : nombre d'iterations total des stats depuis le debut
-!            du calcul, partie instationnaire comprise
-
-!   TSTAT  : Temps physique d'enregistrement des stats volumiques
-!            stationnaires
-!            (en instationnaire TSTAT=DTP le pas de temps Lagrangien)
+!   tstat  : Physical time of the recording of the stationary volume statistics
+!            (for the unsteady part, tstat = dtp the Lagrangian time step)
+!
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -103,78 +103,86 @@ subroutine uslast &
 ! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
 ! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
+!                  !    !     !                                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
+! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
+! nvp              ! i  ! <-- ! number of particle variables                   !
+! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
+! nvep             ! i  ! <-- ! number of particle properties (integer)        !
+! nivep            ! i  ! <-- ! number of particle properties (integer)        !
+! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
+! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
+! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
+! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+! ifacel           ! ia ! <-- ! interior faces -> cells connectivity           !
+! (2, nfac)        !    !     !                                                !
+! ifabor           ! ia ! <-- ! boundary faces -> cells connectivity           !
+! (nfabor)         !    !     !                                                !
+! ifmfbr           ! ia ! <-- ! boundary face family numbers                   !
+! (nfabor)         !    !     !                                                !
+! ifmcel           ! ia ! <-- ! cell family numbers                            !
+! (ncelet)         !    !     !                                                !
 ! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml, nprfml)  !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfac+1)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (lndfac)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!  (nfabor+1)      !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (lndfbr  )     !    !     !  (optionnel)                                   !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
+! nfml  ,nprfml    !    !     !                                                !
+! ipnfac           ! ia ! <-- ! interior faces -> vertices index (optional)    !
+!   (nfac+1)       !    !     !                                                !
+! nodfac           ! ia ! <-- ! interior faces -> vertices list (optional)     !
+!   (lndfac)       !    !     !                                                !
+! ipnfbr           ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+!  (nfabor+1)      !    !     !                                                !
+! nodfbr           ! ia ! <-- ! boundary faces -> vertices list  (optional)    !
+!   (lndfbr  )     !    !     !                                                !
+! itepa            ! ia ! <-- ! particle information (integers)                !
+! (nbpmax,nivep    !    !     !                                                !
+! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
+! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
+! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
+! (ndim,ncelet     !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+! (ndim,nfabor)    !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
+! (ndim,nfabor)    !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 ! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa(nbpmax,     ! tr ! <-- ! caracteristiques des particules                !
-!       nvep)      !    !     !  aux particules (poids, ...)                   !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
-! tempct           ! tr ! <-- ! temps caracteristique thermique                !
+! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers at       !
+! (ncelet,*)       !    !     ! the current and previous time step             !
+! propce           ! ra ! <-- ! physical properties at cell centers            !
+! (ncelet,*)       !    !     !                                                !
+! propfa           ! ra ! <-- ! physical properties at interior face centers   !
+!  (nfac,*)        !    !     !                                                !
+! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
+!  (nfabor,*)      !    !     !                                                !
+! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
+!  (nfabor,*)      !    !     !                                                !
+! ettp             ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
+! ettpa            ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the previous time step        !
+! tepa(nbpmax,     ! ra ! <-- ! properties of the particles (weight..)         !
+!       nvep)      !    !     !                                                !
+! taup(nbpmax)     ! ra ! <-- ! particle relaxation time                       !
+! tlag(nbpmax)     ! ra ! <-- ! relaxation time for the flow                   !
+! tempct           ! ra ! <-- ! thermal relaxation time                        !
 !  (nbpmax,2)      !    !     !                                                !
-! statis           ! tr ! <-- ! cumul pour les moyennes des                    !
-!(ncelet,nvlsta    !    !     !   statistiques volumiques                      !
-! stativ           ! tr ! <-- ! cumul pour les variances des                   !
-!(ncelet,          !    !     !    statistiques volumiques                     !
+! statis           ! ra ! <-- ! cumul. for the averages of the volume stats.   !
+!(ncelet,nvlsta    !    !     !                                                !
+! stativ           ! ra ! <-- ! cumul. for the variance of the volume stats.   !
+!(ncelet,          !    !     !                                                !
 !   nvlsta-1)      !    !     !                                                !
-! w1..w3(ncelet    ! tr ! --- ! tableaux de travail                            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
+! w1..w3(ncelet    ! ra ! --- ! work arrays                                    !
+! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
+! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
+! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -185,7 +193,7 @@ subroutine uslast &
 implicit none
 
 !===============================================================================
-! Common blocks
+!     Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -247,7 +255,7 @@ integer          npt ,  iel , iphas
 
 integer          ivf , ivff , itabvr , iflu , icla
 
-! Local variables UTILISATEUR
+! User-defined local variables
 
 integer          nxlist
 parameter       (nxlist=100)
@@ -271,8 +279,9 @@ save             debm
 
 if(istala.eq.1 .and. iplas.ge.idstnt .and. nvlsts.gt.0) then
 
-!     Si l'on passe ici, il faut que l'utilisateur complete
-!       l'exemple ci-dessous et l'adapte...
+!
+! if needed, the user must fill and adapt the following example
+!
 
   if(1.eq.1) then
     write(nfecra,9000)nvlsts
@@ -283,25 +292,25 @@ if(istala.eq.1 .and. iplas.ge.idstnt .and. nvlsts.gt.0) then
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET DANS LE MODULE LAGRANGIEN             ',/,&
+'@ @@ CAUTION: STOP IN THE LAGRANGIAN MODULE                  ',/,&
 '@    =========                                               ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR uslast DOIT ETRE COMPLETE',/,&
+'@    THE USER SUBROUTINER uslast MUST BE MODIFIED            ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The calculation will not be run                           ',/,&
 '@                                                            ',/,&
-'@  Des variables statistiques supplementaires ont ete        ',/,&
-'@    demandees dans uslag1 (NVLSTS=',   I10,')               ',/,&
-'@  Le sous-programme uslast doit etre complete pour preciser ',/,&
-'@    le  calcul de leur cumul.                               ',/,&
+'@  Additional statistics variables have been asked           ',/,&
+'@   in uslag1 (nvlsts =',   I10,')                           ',/,&
+'@  The subroutine uslast must be adapted to                  ',/, &
+'@  precise the computation of their cumulation.              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
 else
 
-!     On entre toujours dans ce sous programme en lagrangien,
-!       si on ne souhaite rien y faire, on sort immediatement.
-
+! During a Lagrangian calculation, we always enter this subroutine
+! if we wish to do nothing, we exit immediately
+!
   return
 
 endif
@@ -310,32 +319,29 @@ endif
 
 
 !===============================================================================
-! 0.  GESTION MEMOIRE
+! 0.  Memory management
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 iphas = ilphas
 
 !===============================================================================
-! 2 - CALCUL DES STATISTIQUES PARTICULAIRES UTILISATEURS
+! 2 - Computation of user-defined particle statistics
 !===============================================================================
 
-!   D'une facon generale, dans cette routine on realise les cumuls
-!   de la quantite dont on souhaite faire les statistiques.
-!   La moyenne et la variance sont calculees dans la routine
-!   USLAEN.F. Ce calcul est le plus souvent obtenu par division
-!   des cumuls soit par le temps du cumul stationnaire contenu dans
-!   la variable TSTAT, soit par le nombre de particules en poids
-!   statistiques. Cette division est appliquee pour chaque ecriture
-!   dans le listing et pour les sorties post-processing.
-
-!   Cet exemple est desactive et doit etre adapte au cas traite
+!   From a general point of view, we carry out in this subroutine the cumulations of
+!   the variables about which we wish to perform statistics. The mean and the
+!   variance are calculated in the routine uslaen. This computation is most often
+!   carried out by dividing the cumulations by either the stationary cumulation time
+!   in the variable tstat, either by the number of particles in statistical weight.
+!   This division is applied in each writing in the listing and in
+!   the post-processing files.
 
 if (1.eq.0) then
 
@@ -348,7 +354,7 @@ if (1.eq.0) then
       iel = itepa(npt,jisor)
 
 ! -------------------------------------------------
-! EXEMPLE 1 : Cumul pour la concentration massique
+! EXAMPLE 1: Cumulation for mass concentration
 ! -------------------------------------------------
 
       statis(iel,ilvu(1)) = statis(iel,ilvu(1))                   &
@@ -366,10 +372,10 @@ if (1.eq.0) then
 endif
 
 !===============================================================================
-! 3 - CALCUL UTILISATEUR DU DEBIT MASSIQUE DE PARTICULES SUR 4 PLANS
+! 3 - User-defined computation of the particle mass flow rate on 4 plans
 !===============================================================================
 
-!   Cet exemple est desactive et doit etre adapte au cas traite
+!  This example is unactivated and must be adapted to the case
 
 if (1.eq.0) then
 
@@ -378,9 +384,9 @@ if (1.eq.0) then
   zz(3) = 0.20d0
   zz(4) = 0.25d0
 
-!   Si on est en instationnaire, ou si le debut des stat stationnaires
-!   n'est pas encore atteint, toutes les statistiques sont remises a
-!   zero a chaque pas de temps avant d'entrer dans ce sous-programme.
+! If we are in an unsteady case, or if the beginning of the stationary stats
+! is not reached yet, all statistics are reset to zero at each time step before entering
+! this subroutine.
 
   if(isttio.eq.0 .or. npstt.le.nstist) then
     do iplan = 1,4
@@ -416,10 +422,10 @@ endif
 
 
 !===============================================================================
-! 4 - EXTRACTION DE STATISTIQUES VOLUMIQUES EN FIN DE CALCUL
+! 4 - Extraction of volume statistics at the end of the calculation
 !===============================================================================
 
-!   Cet exemple est desactive et doit etre adapte au cas traite
+!  This example is unactivated and must be adapted to the case
 
 if (1.eq.0) then
 
@@ -458,9 +464,10 @@ if (1.eq.0) then
 
     do iplan = 1,8
 
-!     Pour le fichier ci-dessous :
-!       l'utilisateur verifiera qu'il n'a pas laisse ouverte l'unite
-!       IMPUSR(1), dans un autre sous-programme utilisateur
+!  Concerning the following file:
+!  the user will check if he has not let the unit
+!  impusr(1) opened in another user subroutine.
+!
       OPEN(FILE=NAME(IPLAN),UNIT=IMPUSR(1),FORM='formatted')
 
       xyzpt(1) = zzz(iplan)
@@ -526,7 +533,7 @@ endif
 !===============================================================================
 
 !====
-! FIN
+! End
 !====
 
 return

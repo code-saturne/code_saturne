@@ -48,28 +48,24 @@ subroutine usvima &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR POUR LA METHODE ALE :
-!                  MODIFICATION DE LA VISCOSITE DE MAILLAGE
+!    User subroutine dedicated the use of ALE (Arbitrary Lagrangian Eulerian Method) :
+!                 fills mesh viscosity arrays.
 
-! Cette routine n'est appelee qu'au PREMIER pas de temps
 
-! En effet, on specifie en general les zones de viscosite de maille
-! sur la geometrie initiale, c'est plus facile.
+!    This subroutine is called at the beginning of each time step.
 
-! On peut modifier la viscosite de maillage pour limiter
-!   la deformation de maillage dans les zones sensibles (couche
-!   limite par exemple)
+!    Here one can modify mesh viscosity value to prevent cells and nodes
+!    from huge displacements in awkward areas, such as boundary layer for example.
 
-! Si IORTVM = 0, la viscosite de maillage est isotrope. Il suffit
-!   de remplir VISCMX.
-! Si IORTVM = 1, la viscosite de maillage est orthotrope, on
-!   remplit VISCMX, VISCMY et VISCMZ
+!    IF variable IORTVM = 0, mesh viscosity modeling is isotropic therefore VISCMX
+!    array only needs to be filled.
+!    IF variable IORTVM = 1, mesh viscosity modeling is orthotropic therefore
+!    all arrays VISCMX, VISCMY and VISCMZ need to be filled.
 
-! Les tableaux sont initialises a 1.
-
+!    Note that VISCMX, VISCMY and VISCMZ arrays are initialized at the first time step to the value of 1.
 
 ! Cells identification
 ! ====================
@@ -78,7 +74,7 @@ subroutine usvima &
 ! The syntax of this subroutine is described in the 'usclim' subroutine,
 ! but a more thorough description can be found in the user guide.
 
-
+!-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
@@ -98,6 +94,7 @@ subroutine usvima &
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
+! nphas            ! i  ! <-- ! number of phases                               !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
@@ -110,15 +107,15 @@ subroutine usvima &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -128,16 +125,19 @@ subroutine usvima &
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! viscma(ncelet    ! tr ! <-- ! viscoste de maillage                           !
-! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! viscmx(ncelet)    ! ra ! <-- ! mesh viscosity in X direction                 !
+! viscmy(ncelet)    ! ra ! <-- ! mesh viscosity in Y direction                 !
+! viscmz(ncelet)    ! ra ! <-- ! mesh viscosity in Z direction                 !
+! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
+!  (ncelet)        !    !     !  (computation of pressure gradient)            !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -199,7 +199,7 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 integer          idebia, idebra
 integer          iel
-double precision xray2, xr2, xcen, ycen, zcen
+double precision rad, xr2, xcen, ycen, zcen
 
 !===============================================================================
 
@@ -215,41 +215,42 @@ idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
+!  1. Example :
+!       One gives a huge mesh viscosity value to the cells included in a circle
+!       with a radius 'rad' and a center '(xcen, ycen, zcen)'
 
-! 1.  Exemple :
+!     In general it appears quite much easier to fill mesh viscosity arrays at
+!     the beginning of the calculations basing on the initial geometry.
 
-! On met une valeur tres forte de viscosite pour les points situes
-! a moins de R d'un centre (par exemple pour limiter les
-! deformations en proche paroi d'un cylindre mobile)
+if (ntcabs.eq.0) then
+  rad = (1.d-3)**2
+  xcen  = 1.d0
+  ycen  = 0.d0
+  zcen  = 0.d0
 
-xray2 = (1.d-3)**2
-xcen  = 1.d0
-ycen  = 0.d0
-zcen  = 0.d0
-
-do iel = 1, ncel
-  xr2 = (xyzcen(1,iel)-xcen)**2 + (xyzcen(2,iel)-ycen)**2 &
-      + (xyzcen(3,iel)-zcen)**2
-  if (xr2.lt.xray2) viscmx(iel) = 1.d10
-enddo
-
-! 2. Si on a une viscosite orthotrope, on peut choisir de moins
-!    contraindre le mouvement des noeuds selon z
-
-if (iortvm.eq.1) then
   do iel = 1, ncel
-    viscmy(iel) = viscmx(iel)
-    viscmz(iel) = 1.d0
+    xr2 = (xyzcen(1,iel)-xcen)**2 + (xyzcen(2,iel)-ycen)**2       &
+         + (xyzcen(3,iel)-zcen)**2
+    if (xr2.lt.rad) viscmx(iel) = 1.d10
   enddo
+
+! 2. In case of orthotropic mesh viscosity modeling one can choose
+!    to submit nodes to a lower stress in Z direction
+  if (iortvm.eq.1) then
+    do iel = 1, ncel
+      viscmy(iel) = viscmx(iel)
+      viscmz(iel) = 1.d0
+    enddo
+  endif
+
 endif
 
 !----
-! FORMAT
+! Formats
 !----
 
-
 !----
-! FIN
+! End
 !----
 
 return

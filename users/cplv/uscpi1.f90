@@ -33,12 +33,11 @@ subroutine uscpi1
 
 
 !===============================================================================
-!  FONCTION  :
+!  PURPOSE   :
 !  ---------
 
-!  ROUTINE UTILISATEUR POUR ENTREE DES PARAMETRES DE CALCUL
-!  RELATIFS A LA COMBUSTION DU CHARBON PULVERISE
-!    (COMMONS)
+!  User's routine to control outing of variables for pulverised coal combustion
+!  (these parameters are in COMMON)
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -55,7 +54,7 @@ subroutine uscpi1
 implicit none
 
 !===============================================================================
-! Common blocks
+!     Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -83,9 +82,8 @@ integer          ipp , icla , icha
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  THIS TEST CERTIFY THIS VERY ROUTINE IS USED
+!     IN PLACE OF LIBRARY'S ONE
 !===============================================================================
 
 if (iihmpr.eq.1) then
@@ -99,12 +97,11 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@ @@ BEWARE : STOP during data inlet for pulverised coal     ',/,&
 '@    =========                                               ',/,&
-'@     CHARBON PULVERISE :                                    ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR uscpi1 DOIT ETRE COMPLETE',/,&
+'@     THE USER SUBROUTINE uscpi1 have to be modified         ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The computation will not start                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -114,57 +111,55 @@ endif
 
 
 !===============================================================================
-! 1. VARIABLES TRANSPORTEES
+! 1. TRANSPORTED VARIABLES
 !===============================================================================
 
-!  Sortie chrono, suivi listing, sortie histo
-!     Si l'on n'affecte pas les tableaux suivants,
-!     les valeurs par defaut seront utilisees
+! OUTLET chrono, listing, and histo
+!     if below vector are not allocated, default values will be used
 
-!       ICHRVR( ) = sortie chono (oui 1/non 0)
-!       ILISVR( ) = suivi listing (oui 1/non 0)
-!       IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes definies
-!                            dans usini1
+!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
+!       ILISVR( ) =  listing outlet (Yes 1/No  0)
+!       IHISVR( ) =  histo outlet (number of roiqu and number)
+!       if IHISVR(.,1)  = -1 every probes defined in usini1
 
 
-! --> Variables propres a la suspension gaz - particules
+! --> Variables for the mix (carrying gas and coal particles)
 
-!      - Enthalpie de la suspension
+!      - Enthalpy
 ipp = ipprtp(isca(ihm))
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
-! --> Variables propres a la phase dispersee
+! --> Variables for coal particles
 
 do icla = 1, nclacp
 
-!       - Fraction massique de coke (de la classe ICLA)
+!       - Char mass fraction (in class ICLA)
   ipp = ipprtp(isca(ixck(icla)))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 
-!       - Fraction massique de charbon reactif (de la classe ICLA)
+!       - Coal mass fraction (in class ICLA)
   ipp = ipprtp(isca(ixch(icla)))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 
-!       - Nb de particules par kg de melange (de la classe ICLA)
+!       - Number of particles for 1 kg mix (from class ICLA)
   ipp = ipprtp(isca(inp(icla)))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 
-!       - Enthalpie massique (de la classe ICLA)
+!       - Enthalpy J/kg (for class ICLA)
   ipp = ipprtp(isca(ih2(icla)))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 
-!       - Fraction massique d'eau (de la classe ICLA)
+!       - Water mass fraction (in class ICLA)
   if ( ippmod(icp3pl) .eq. 1 ) then
     ipp = ipprtp(isca(ixwt(icla)))
     ichrvr(ipp)  = 1
@@ -173,19 +168,19 @@ do icla = 1, nclacp
   endif
 enddo
 
-! --> Variables propres a la phase continue
+! --> Variables for the carrier phase
 
 do icha = 1, ncharb
 
-!       - Moyenne du traceur 1
-!         (representatif des MV legeres du charbon ICHA)
+!       - Mean of 1 mixture fraction
+!         (from light volatiles of char ICHA)
   ipp = ipprtp(isca(if1m(icha)))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 
-!       - Moyenne du traceur 2
-!         (representatif des MV lourdes du charbon ICHA)
+!       - Mean of 2 mixture fraction
+!         (from heavy volatiles of char ICHA)
   ipp = ipprtp(isca(if2m(icha)))
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -193,15 +188,15 @@ do icha = 1, ncharb
 
 enddo
 
-!     - Moyenne du traceur 3 (representatif du C libere sous forme de CO
-!       lors de la combustion heterogene avec O2)
+!     - Mean of 3 mixture fraction
+!       (C from heterogeneoux oxidation, of char, by O2)
 ipp = ipprtp(isca(if3m))
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
-!     - Moyenne du traceur 3 (representatif du C libere sous forme de CO
-!       lors de la combustion heterogene avec CO2)
+!     - Meam of (6 ?) mixture fraction
+!       (C from heterogeneous reaction between char and CO2)
 if ( ihtco2 .eq. 1) then
   ipp = ipprtp(isca(if3mc2))
   ichrvr(ipp)  = 1
@@ -209,14 +204,15 @@ if ( ihtco2 .eq. 1) then
   ihisvr(ipp,1)= -1
 endif
 
-!     - Variance associe au traceur 4 (representatif de l'air)
+!     - Variance of 4 mixture fraction
+!       (oxidisers)
 ipp = ipprtp(isca(if4p2m))
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
-!     - Moyenne du traceur 5 (representatif de la vapeur d'eau liberee
-!       lors de la phase de sechage)
+!     - Mean of 5 mixture fraction
+!       (water vapor from drying)
 if ( ippmod(icp3pl) .eq. 1 ) then
   ipp = ipprtp(isca(if5m))
   ichrvr(ipp)  = 1
@@ -224,7 +220,7 @@ if ( ippmod(icp3pl) .eq. 1 ) then
   ihisvr(ipp,1)= -1
 endif
 
-!     - YCO2
+!     - Mass fraction of CO2 or CO (relaxation to equilibrium)
 
 if ( ieqco2 .ge. 1 ) then
   ipp = ipprtp(isca(iyco2))
@@ -234,79 +230,77 @@ if ( ieqco2 .ge. 1 ) then
 endif
 
 !===============================================================================
-! 2. VARIABLES ALGEBRIQUES OU D'ETAT
+! 2. Sate variables
 !===============================================================================
 
-!  Sortie chrono, suivi listing, sortie histo
-!     Si l'on n'affecte pas les tableaux suivants,
-!     les valeurs par defaut seront utilisees
+! OUTLET chrono, listing, and histo
+!     if below vector are not allocated, default values will be used
 
-!       ICHRVR( ) = sortie chono (oui 1/non 0)
-!       ILISVR( ) = suivi listing (oui 1/non 0)
-!       IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes definies
-!                            dans usini1
+!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
+!       ILISVR( ) =  listing outlet (Yes 1/No  0)
+!       IHISVR( ) =  histo outlet (number of roiqu and number)
+!       if IHISVR(.,1)  = -1 every probes defined in usini1
 
-! --> Variables algebriques propres a la suspension gaz - particules
+! --> State varables for the mix
 
-!     - Masse molaire du melange gazeux
+!     - Mean Molar Mass
 ipp = ipppro(ipproc(immel))
 ichrvr(ipp)   = 0
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 
-! --> Variables algebriques propres a la phase dispersee
+! --> State variables for coal particles
 
 do icla = 1, nclacp
 
-!       - Temperature des particules (de la classe ICLA)
+!       - Particles' Temperature K (of class ICLA)
   ipp = ipppro(ipproc(itemp2(icla)))
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!       - Masse volumique des particules (de la classe ICLA)
+!       - Particles' Density kg/m3 (of class ICLA)
   ipp = ipppro(ipproc(irom2(icla)))
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!       - Diametre des particules (de la classe ICLA)
+!       - Particles' Diameter m (of class ICLA)
   ipp = ipppro(ipproc(idiam2(icla)))
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-!       - Taux de disparition du charbon reactif (s-1) < 0
-!         (de la classe ICLA)
+!       - Rate of coal consumption  (s-1) < 0
+!         (for class ICLA)
   ipp = ipppro(ipproc(igmdch(icla)))
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
-!       - Transfert de masse du au degagemnt des MV legeres (s-1) < 0
-!         (de la classe ICLA)
+!       - Rate of light volatiles exhaust (s-1) < 0
+!         (for class ICLA)
   ipp = ipppro(ipproc(igmdv1(icla)))
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
-!       - Transfert de masse du au degagemnt des MV lourdes (s-1) < 0
+!       - Rate of heavy volatile exhaust (s-1) < 0
 !         (de la classe ICLA)
   ipp = ipppro(ipproc(igmdv2(icla)))
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
-!       - Taux de disparition du charbon reactif (s-1) < 0 par O2
-!         (de la classe ICLA)
+!       - Rate of char oxidation by O2 (s-1) < 0
+!         (from class ICLA)
   ipp = ipppro(ipproc(igmhet(icla)))
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
   ihisvr(ipp,1) = -1
 
-!       - Taux de disparition du charbon reactif (s-1) < 0 par le CO2
-!         (de la classe ICLA)
+!       - Rate of char gazeification by CO2 (s-1) < 0
+!         (from class ICLA)
   if ( ihtco2 .eq. 1 ) then
     ipp = ipppro(ipproc(ighco2(icla)))
     ichrvr(ipp)   = 0
@@ -314,8 +308,8 @@ do icla = 1, nclacp
     ihisvr(ipp,1) = -1
   endif
 
-!       - Taux de disparitionde l'humidite < 0
-!         (de la classe ICLA)
+!       - Rate of drying (s-1) < 0
+!         (from class ICLA)
   if ( ippmod(icp3pl) .eq. 1 ) then
     ipp = ipppro(ipproc(igmsec(icla)))
     ichrvr(ipp)   = 0
@@ -323,7 +317,7 @@ do icla = 1, nclacp
     ihisvr(ipp,1) = -1
   endif
 
-!       - Fraction massique de solide (de la classe ICLA)
+!       - Mass fraction (of class ICLA) in mix
   ipp = ipppro(ipproc(ix2(icla)))
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
@@ -331,51 +325,51 @@ do icla = 1, nclacp
 
 enddo
 
-! --> Variables algebriques propres a la phase continue
+! --> State variables for carrier gas phase
 
-!     - Temperature du melange gazeux
+!     - Temperature of gas mixture
 ipp = ipppro(ipproc(itemp1))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du CHx1m
+!     - Mass fraction (among gases) of  CHx1m
 ipp = ipppro(ipproc(iym1(1)))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du CHx2m
+!     - mass fraction (among gases) of CHx2m
 ipp = ipppro(ipproc(iym1(2)))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du CO
+!     - mass fraction (among gases) of CO
 ipp = ipppro(ipproc(iym1(3)))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du O2
+!     - mass fraction (among gases) of O2
 ipp = ipppro(ipproc(iym1(4)))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du CO2
+!     - mass fraction (among gases) of CO2
 ipp = ipppro(ipproc(iym1(5)))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du H2O
+!     - mass fraction (among gases) of H2O
 ipp = ipppro(ipproc(iym1(6)))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du N2
+!     - mass fraction (among gases) of N2
 ipp = ipppro(ipproc(iym1(7)))
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
@@ -383,26 +377,26 @@ ihisvr(ipp,1) = -1
 
 
 !===============================================================================
-! 3. OPTIONS DE CALCUL
+! 3. Computation OPTION
 !===============================================================================
 
-! --- Coefficient de relaxation de la masse volumique
+! --- Relaxation for density (Advisable when starting combustion computation)
+!                            (Forbidden for unstationnary computation)
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
 
 srrom = 0.95d0
 
 
 !===============================================================================
-! 4. CONSTANTES PHYSIQUES
+! 4. Physical constants
 !===============================================================================
 
-! ---> Viscosite laminaire associee au scalaire enthalpie
-!       DIFTL0 (diffusivite dynamique en kg/(m s))
+! ---  Laminar viscosity for enthalpy (dynamical diffusivity) kg/(m.s)
 diftl0 = 4.25d-5
 
 
 !----
-! FIN
+! END
 !----
 
 return

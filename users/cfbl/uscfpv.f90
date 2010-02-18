@@ -46,69 +46,61 @@ subroutine uscfpv &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR : REMPLISSAGE DES VARIABLES PHYSIQUES
-!    POUR LA PHYSIQUE PARTICULIERE : COMPRESSIBLE SANS CHOC
-!    PENDANT DE USPHYV.F
+!    User subroutine.
 
-
-
-! ATTENTION :
-! =========
+!    Set (variable) physical properties for the compressible flow scheme. 
 
 
-! Il est INTERDIT de modifier la viscosite turbulente VISCT ici
-!        ========
-!  (une routine specifique est dediee a cela : usvist)
+! Description
+! ===========
+
+! This subroutine replaces the user subroutine 'usphyv' for the 
+! compressible flow scheme. 
+
+! This subroutine is called at the beginning of each time step. 
+
+! At the very first time step (not at restart), the only variables that 
+! have been initialized are those provided: 
+!   - in the GUI and in the user subroutines 'usini1' and 'uscfx2'; ex.:
+!     . the density             (set to ro0(iphas))
+!     . the molecular viscosity (set to viscl0(iphas)) 
+!     . the volumetric molecular viscosity (set to viscv0(iphas)) 
+!     . the molecular thermal conductivity (set to visls0(itempk(iphas))) 
+!   - in the user subroutines 'usiniv' and 'uscfxi'; ex.:
+!     . the unknown variables (null by default)  
+
+! This subroutine allows the user to set the cell values for: 
+!   - the molecular viscosity                            viscl  kg/(m s)
+!   - the isobaric specific heat (cp=dh/dT|P)            cp     J/(kg degree) 
+!   - the molecular thermal conductivity                 lambda W/(m degree)
+!   - the molecular diffusivity for user-defined scalars viscls kg/(m s)
 
 
-!  Il FAUT AVOIR PRECISE ICP(IPHAS) = 1
-!     ==================
-!     automatiquement fait dans uscfth en fonction de la thermo
-!     choisie
+! Warnings
+! ======== 
 
+! The density ** must not ** be set here: for the compressible scheme, 
+! it is one of the unknowns, and it can be initialized as such in the user
+! subroutine 'uscfxi' (rtp array).
 
-!  Il FAUT AVOIR PRECISE IVISLS(Numero de scalaire) = 1
-!     ==================
-!     dans usini1 si on souhaite une diffusivite VISCLS variable
-!     pour le scalaire considere (sinon: ecrasement memoire).
+! The turbulent viscosity ** must not ** be modified here (to modify this 
+! variable, use the user subroutine 'usvist')
 
+! To set a variable isobaric specific heat, the integer icp(iphas) must 
+! have been set to 1: the value for icp is set automatically in the  
+! subroutine 'uscfth', depending on the thermodynamics laws selected   
+! by the user.  
 
+! To set a variable diffusivity for a given user-defined scalar, the 
+! variable ivisls(scalar_number) must have been set to 1 in the user 
+! subroutine 'usini1' or in the GUI (otherwise, a memory problem is 
+! expected). 
 
-
-! Remarques :
-! ---------
-
-! Cette routine est appelee au debut de chaque pas de temps
-
-!    Ainsi, AU PREMIER PAS DE TEMPS (calcul non suite), les seules
-!    grandeurs initialisees avant appel sont celles donnees
-!      - dans usini1 :
-!             . la masse volumique (initialisee a RO0(IPHAS))
-!             . la viscosite       (initialisee a VISCL0(IPHAS))
-!      - dans usiniv :
-!             . les variables de calcul  (initialisees a 0 par defaut
-!             ou a la valeur donnee dans usiniv)
-
-! On peut donner ici les lois de variation aux cellules
-!     - de la viscosite moleculaire                VISCL  kg/(m s)
-!     - de la chaleur specifique associee          CP     J/(kg degres)
-!     - de la conductivite thermique associee      LAMBDA W/(m degres)
-!     - des "diffusivites" associees aux scalaires VISCLS kg/(m s)
-
-! La masse volumique ne doit pas être renseignée : en compressible,
-!   c'est une variable résolue, que l'on peut initialiser si
-!   nécessaire dans USCFXI (RTP).
-
-! On dispose des types de faces de bord au pas de temps
-!   precedent (sauf au premier pas de temps, ou les tableaux
-!   ITYPFB et ITRIFB n'ont pas ete renseignes)
-
-
-! Il est conseille de ne garder dans ce sous programme que
-!    le strict necessaire.
+! Examples are provided in the present subroutine (but they do not have 
+! any physical signification). 
 
 
 ! Cells identification
@@ -118,10 +110,15 @@ subroutine uscfpv &
 ! The syntax of this subroutine is described in the 'usclim' subroutine,
 ! but a more thorough description can be found in the user guide.
 
+! The type of the boundary faces at the previous time step is available
+! (except at the first time step, since the arrays itypfb and itrifb have 
+! not yet been set);
 
+
+!-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
+!    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
@@ -141,7 +138,7 @@ subroutine uscfpv &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! nphmx            ! e  ! <-- ! nphsmx                                         !
+! nphmx            ! i  ! <-- ! nphsmx                                         !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
@@ -153,16 +150,16 @@ subroutine uscfpv &
 ! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! nodfac(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -172,15 +169,15 @@ subroutine uscfpv &
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
+!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
+! propce(ncelet, *)! ra ! <-> ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! w1...3(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! w1...3(ncelet    ! ra ! --- ! work arrays                                    !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -251,99 +248,91 @@ double precision xrtp
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
+!===============================================================================
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     However, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
+!===============================================================================
 
 if(1.eq.1) then
   iuscfp = 0
   return
 endif
 
-!===============================================================================
+
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 0. INITIALISATIONS A CONSERVER
+! 1. Mandatory initializations 
 !===============================================================================
 
-! --- Initialisation memoire
+! --- Memory initialization
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
 
+! Warning: the examples provided below are physically meaningless.
+! =======
+ 
+! These examples must be adapted by the user. Hence, the default 
+! (library reference) version stops immediately after each example 
+! (the 'call csexit(1)' directive must be discarded to use the 
+! portion of code).   
 
-!   LES EXEMPLES FANTAISISTES SUIVANTS SONT A ADAPTER PAR L'UTILISATEUR
-!   ====================================================================
+! It is adviced to discard all the examples that are not necessary, so
+! as to minimize the risk of error.
 
-!                ILS SONT TOUS SUIVIS DE "CALL CSEXIT (1)" PAR SECURITE
-!                                (stop a enlever a l'utilisation)
+! List of examples
+! ================
 
+! Ex. 1: molecular viscosity varying with temperature
+! Ex. 2: molecular volumetric viscosity varying with temperature
+! Ex. 3: isobaric specific heat varying with temperature
+! Ex. 4: molecular thermal conductivity varying with temperature
+! Ex. 5: molecular diffusivity of user-defined scalars varying with temperature 
 
-!   Il est conseille de ne garder dans ce sous programme que
-!     le strict necessaire.
-
-
-! EXEMPLE 1 : VISCOSITE VARIABLE EN FONCTION DE LA TEMPERATURE
-
-! EXEMPLE 2 : VISCOSITE EN VOLUME VARIABLE EN FONCTION DE LA TEMPERATURE
-
-! EXEMPLE 3 : CHALEUR SPECIFIQUE VARIABLE EN FONCTION DE LA TEMPERATURE
-
-! EXEMPLE 4 : CONDUCTIVITE THERMIQUE VARIABLE
-!                  EN FONCTION DE LA TEMPERATURE
-
-! EXEMPLE 5 : DIFFUSIVITE VARIABLE EN FONCTION DE LA TEMPERATURE
-!                  POUR LES SCALAIRES
 !===============================================================================
-
-
-
-
-
-
 
 
 !===============================================================================
-!  EXEMPLE 1 : VISCOSITE VARIABLE EN FONCTION DE LA TEMPERATURE
-! ===========
-!    Ci dessous on donne pour toutes les phases la meme loi pour
-!       la viscosite
-!    Les valeurs de cette propriete doivent etre fournies au centre des
-!       cellules.
-!  ===================================================================
+! Ex. 1: molecular viscosity varying with temperature
+! =====
+!    The values of the molecular viscosity are provided as a function of  
+!    the temperature. All variables are evaluated at the cell centres. 
+!    The same treatment is applied for all values of iphas. 
+!===============================================================================
 
-! --- Boucle sur les phases : debut
+! --- Loop on iphas
 do iphas = 1, nphas
-
-
-!   Positions des variables, coefficients
-!   -------------------------------------
-
-! --- Numero de variable température pour la phase courante iphas
-!       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
-!          IVART = ISCA(2)
+  
+! --- Rank of the temperature of the current phase iphas in the array 'rtp'
+!     To refer to the user-defined scalar number 2 instead, for example, use 
+!     ivart = isca(2) 
 
   ivart = isca(itempk(iphas))
 
-! --- Rang de la viscosite dynamique moleculaire de la phase IPHAS
-!     dans PROPCE, prop. physiques au centre des elements       : IPCVIS
+! --- Rank 'ipcvis' of the molecular dynamic viscosity of the current phase
+!     iphas in the array 'propce' (physical properties at the cell centers)
 
   ipcvis = ipproc(iviscl(iphas))
 
-! --- Coefficients des lois choisis et imposes par l'utilisateur
-!       Les valeurs donnees ici sont fictives
+! --- User-defined coefficients for the selected law. 
+!     The values hereafter are provided as a mere example. They 
+!     are physically meaningless.
 
   varam = -3.4016d-9
   varbm =  6.2332d-7
   varcm = -4.5577d-5
   vardm =  1.6935d-3
 
-!   Viscosite moleculaire dynamique en kg/(m s) au centre des cellules
-!   ------------------------------------------------------------------
-!       loi              MU        =
-!                              T  *( T  *( AM  * T +  BM  )+ CM  )+ DM
-!       soit    PROPCE(IEL,IPCVIS) =
-!     &                       XRTP*(XRTP*(VARAM*XRTP+VARBM)+VARCM)+VARDM
+! --- Molecular dynamic viscosity mu at the cell centres, kg/(m s)
+!     In this example, mu is provided as a function of the temperature T: 
+!       mu(T)              =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
+!     that is: 
+!       propce(iel,ipcvis) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
 
   do iel = 1, ncel
     xrtp = rtp(iel,ivart)
@@ -353,44 +342,35 @@ do iphas = 1, nphas
 
 
 enddo
-! --- Boucle sur les phases : fin
+! --- End of the loop on iphas 
 
 
-
-! --- A enlever a l'utilisation
+! --- Discard the following test so that the code do not stop
 if(1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
 
 
-
-
-
 !===============================================================================
-!  EXEMPLE 2: VISCOSITE EN VOLUME VARIABLE EN FONCTION DE LA TEMPERATURE
-! ==========
-!    Ci dessous on donne pour toutes les phases la meme loi pour
-!       la viscosite
-!    Les valeurs de cette propriete doivent etre fournies au centre des
-!       cellules.
-!  ===================================================================
+! Ex. 2: molecular volumetric viscosity varying with temperature
+! =====
+!    The values of the molecular volumetric viscosity are provided as a function 
+!    of the temperature. All variables are evaluated at the cell centres. 
+!    The same treatment is applied for all values of iphas. 
+!===============================================================================
 
-! --- Boucle sur les phases : debut
+! --- Loop on iphas
 do iphas = 1, nphas
 
-
-!   Positions des variables, coefficients
-!   -------------------------------------
-
-! --- Numero de variable température pour la phase courante iphas
-!       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
-!          IVART = ISCA(2)
+! --- Rank of the temperature for the current phase iphas in the array 'rtp'  
+!     To refer to the user-defined scalar number 2 instead, for example, use 
+!     ivart = isca(2) 
 
   ivart = isca(itempk(iphas))
 
-! --- Rang de la viscosite dynamique moleculaire en volume de la phase IPHAS
-!     dans PROPCE, prop. physiques au centre des elements       : IPCVSV
+! --- Rank 'ipcvsv' of the molecular dynamic viscosity of the current phase
+!     iphas in the array 'propce' (physical properties at the cell centers)
 
   if(iviscv(iphas).gt.0) then
     ipcvsv = ipproc(iviscv(iphas))
@@ -398,28 +378,27 @@ do iphas = 1, nphas
     ipcvsv = 0
   endif
 
-! --- Stop si non variable
+! --- Stop if the viscosity has not been defined as variable
 
   if(ipcvsv.le.0) then
     write(nfecra,2000) iphas, iphas, iviscv(iphas)
     call csexit (1)
   endif
 
-
-! --- Coefficients des lois choisis et imposes par l'utilisateur
-!       Les valeurs donnees ici sont fictives
+! --- User-defined coefficients for the selected law. 
+!     The values provided hereafter are provided as a mere example. They 
+!     are physically meaningless.
 
   varam = -3.4016d-9
   varbm =  6.2332d-7
   varcm = -4.5577d-5
   vardm =  1.6935d-3
 
-!   Viscosite en volume en kg/(m s) au centre des cellules
-!   ------------------------------------------------------
-!       loi            KAPPA       =
-!                              T  *( T  *( AM  * T +  BM  )+ CM  )+ DM
-!       soit    PROPCE(IEL,IPCVSV) =
-!     &                       XRTP*(XRTP*(VARAM*XRTP+VARBM)+VARCM)+VARDM
+! --- Molecular dynamic volumetric viscosity kappa at the cell centres, kg/(m s)
+!     In this example, kappa is provided as a function of the temperature T: 
+!       kappa(T)           =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
+!     that is: 
+!       propce(iel,ipcvsv) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
 
   do iel = 1, ncel
     xrtp = rtp(iel,ivart)
@@ -428,54 +407,43 @@ do iphas = 1, nphas
   enddo
 
 enddo
-! --- Boucle sur les phases : fin
+! --- End of the loop on iphas 
 
 
-
-! --- A enlever a l'utilisation
+! --- Discard the following test so that the code do not stop
 if(1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
 
 
-
-
-
 !===============================================================================
-!  EXEMPLE 3 : CHALEUR SPECIFIQUE VARIABLE EN FONCTION DE LA TEMPERATURE
-! ===========
-
-!    Ci dessous on donne pour toutes les phases la meme loi pour
-!       la chaleur specifique
-!    Les valeurs de cette propriete doivent etre fournies au centre des
-!       cellules.
-
+! Ex. 3: isobaric specific heat varying with temperature
+! =====
+!    The values of the isobaric specific heat values are provided as a function
+!    of the temperature. All variables are evaluated at the cell centres. 
+!    The same treatment is applied for all values of iphas. 
 !===============================================================================
 
-!                             ATTENTION           !
+! Warning:
+! =======
+! do not discard the call to the subroutine 'usthht' at the end of this 
+! example: its purpose is to calculate the isochoric specific heat. 
+! Indeed, this variable needs to be computed from the isobaric specific heat 
+! using the thermodynamics laws. 
 
-!     NE PAS RETIRER LA MISE A JOUR DE Cv A LA FIN DE L'EXEMPLE
-
-!===============================================================================
-
-!===============================================================================
-
-! --- Boucle sur les phases : debut
+! --- Loop on iphas
 do iphas = 1, nphas
 
-
-!   Positions des variables, coefficients
-!   -------------------------------------
-
-! --- Numero de variable température pour la phase courante iphas
-!       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
-!          IVART = ISCA(2)
+! --- Rank of the temperature for the current phase iphas in the array 'rtp'  
+!     To refer to the user-defined scalar number 2 instead, for example, use 
+!     ivart = isca(2) 
 
   ivart = isca(itempk(iphas))
 
-! --- Rang de la chaleur specifique de la phase courante IPHAS
-!     dans PROPCE, prop. physiques au centre des elements       : IPCCP
+! --- Rank 'ipcpp' of the isobaric specific heat for the current phase  
+!     iphas in the array 'propce' (physical properties at the cell 
+!     centers) 
 
   if(icp(iphas).gt.0) then
     ipccp  = ipproc(icp   (iphas))
@@ -483,7 +451,8 @@ do iphas = 1, nphas
     ipccp  = 0
   endif
 
-! --- Stop si CP ou CV n'est pas variable
+! --- Stop if the iobaric or iochoric specific heat (cp or cv) has not 
+!     been defined as variable
 
   if(ipccp.le.0) then
     write(nfecra,1000) iphas, iphas, icp(iphas)
@@ -494,27 +463,26 @@ do iphas = 1, nphas
     call csexit (1)
   endif
 
-
-! --- Coefficients des lois choisis et imposes par l'utilisateur
-!       Les valeurs donnees ici sont fictives
+! --- User-defined coefficients for the selected law. 
+!     The values provided hereafter are provided as a mere example. They 
+!     are physically meaningless.
 
   varac = 0.00001d0
   varbc = 1000.0d0
 
-
-
-!   Chaleur specifique J/(kg degres) au centre des cellules
-!   --------------------------------------------------------
-!       loi              CP        =  AC  * T   +  BM
-!       soit    PROPCE(IEL,IPCCP ) = VARAC*XRTP + VARBC
+! --- Isobaric specific heat cp at the cell centres, J/(kg degree)
+!     In this example, cp is provided as a function of the temperature T: 
+!       cp(T)              =      ac * T  + ab
+!     that is: 
+!       propce(iel,ipccp ) =    varac*xrtp+varbc
 
   do iel = 1, ncel
     xrtp = rtp(iel,ivart)
     propce(iel,ipccp ) = varac*xrtp + varbc
   enddo
 
-
-! --- Mise a jour de Cv
+! --- The isochoric specific heat is deduced from the isobaric specific 
+!     heat using the subroutine 'uscfth'. 
 
   iccfth = 432
   imodif = 0
@@ -534,47 +502,39 @@ do iphas = 1, nphas
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    propce(1, ipproc(icv(iphas)) )    , w1     , w2     , w3     , &
-!        ---------------------------------
+!  ---------------------------------
    rdevel , rtuser , ra     )
 
 enddo
-! --- Boucle sur les phases : fin
+! --- End of the loop on iphas 
 
-
-
-! --- A enlever a l'utilisation
+! --- Discard the following test so that the code do not stop
 if(1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
 
 
-
-
 !===============================================================================
-!  EXEMPLE 4 : CONDUCTIVITE THERMIQUE VARIABLE EN FONCTION
-! ===========    DE LA TEMPERATURE
+! Ex. 4: molecular thermal conductivity varying with temperature
+! =====
+!    The values of the molecular thermal conductivity are provided as a function 
+!    of the temperature. All variables are evaluated at the cell centres. 
+!    The same treatment is applied for all values of iphas. 
+!===============================================================================
 
-!    Ci dessous on donne pour toutes les phases la meme loi pour lambda
-!    Les valeurs de cette propriete doivent etre fournies au centre des
-!       cellules.
-!  ===================================================================
-
-! --- Boucle sur les phases : debut
+! --- Loop on iphas
 do iphas = 1, nphas
 
-
-!   Positions des variables, coefficients
-!   -------------------------------------
-
-! --- Numero de variable température pour la phase courante iphas
-!       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
-!          IVART = ISCA(2)
+! --- Rank of the temperature for the current phase iphas in the array 'rtp'  
+!     To refer to the user-defined scalar number 2 instead, for example, use 
+!     ivart = isca(2) 
 
   ivart = isca(itempk(iphas))
 
-! --- Rang de Lambda de la temperature de phase courante IPHAS
-!     dans PROPCE, prop. physiques au centre des elements       : IPCVSL
+! --- Rank 'ipcvsl' of the olecular thermal conductivity for the current   
+!     phase iphas in the array 'propce' (physical properties at the cell 
+!     centers) 
 
   if(ivisls(itempk(iphas)).gt.0) then
     ipcvsl = ipproc(ivisls(itempk(iphas)))
@@ -582,7 +542,8 @@ do iphas = 1, nphas
     ipcvsl = 0
   endif
 
-! --- Stop si Lambda n'est pas variable
+! --- Stop if the molecular thermal conductivity has not 
+!     been defined as variable
 
   if(ipcvsl.le.0) then
     write(nfecra,1010)                                            &
@@ -590,22 +551,20 @@ do iphas = 1, nphas
     call csexit (1)
   endif
 
-! --- Coefficients des lois choisis et imposes par l'utilisateur
-!       Les valeurs donnees ici sont fictives
+! --- User-defined coefficients for the selected law. 
+!     The values provided hereafter are provided as a mere example. They 
+!     are physically meaningless.
 
   varal = -3.3283d-7
   varbl =  3.6021d-5
   varcl =  1.2527d-4
   vardl =  0.58923d0
 
-
-
-!   Lambda en W/(m K) au centre des cellules
-!   ----------------------------------------
-!       loi       Lambda        =
-!               {  T  *( T  *( AL  * T +  BL  )+ CL  )+ DL }
-!       soit    PROPCE(IEL,IPCVSL) =
-!     &         (XRTP*(XRTP*(VARAL*XRTP+VARBL)+VARCL)+VARDL)
+! --- Molecular thermal conductivity lambda at the cell centres, W/(m degree)
+!     In this example, lambda is provided as a function of the temperature T: 
+!       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
+!     that is: 
+!       propce(iel,ipcvsl) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
 
   do iel = 1, ncel
     xrtp = rtp(iel,ivart)
@@ -615,68 +574,62 @@ do iphas = 1, nphas
 
 
 enddo
-! --- Boucle sur les phases : fin
+! --- End of the loop on iphas 
 
 
-! --- A enlever a l'utilisation
+! --- Discard the following test so that the code do not stop
 if(1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
 
 
-
-
 !===============================================================================
-!  EXEMPLE 5 : DIFFUSIVITE VARIABLE EN FONCTION DE LA TEMPERATURE
-! ===========      POUR LES SCALAIRES UTILISATEURS
-!     A l'exclusion de
-!        temperature, enthalpie (traites plus haut)
-!        variances de fluctuations (propriete egale a celle du
-!                                                      scalaire associe)
+! Ex. 5: molecular diffusivity of user-defined scalars varying with temperature 
+! ===== 
+!    The molecular diffusivity can be set for all the user-defined scalars
+!    ** except **:
+!      - temperature and enthalpy (already dealt with above: for these 
+!        variables, the 'diffusivity' is the thermal conductivity)
+!      - variances of the fluctuations of another scalar variable (the 
+!        diffusivity is assumed to be equal to that of the associated 
+!        scalar)
+!    The values of the molecular diffusivity are provided as a function
+!    of the temperature. All variables are evaluated at the cell centres. 
+!===============================================================================
 
-!    Ci dessous on donne pour tous les scalaires (aux exclusions
-!      ci-dessus pres) la meme loi pour la diffusivite
-!    Les valeurs de cette propriete doivent etre fournies au centre des
-!       cellules.
-!  ===================================================================
-
-! --- Boucle sur les phases : debut
+! --- Loop on the scalars
 do ii = 1, nscaus
 
-! --- Numero du scalaire utilisateur II dans la liste de tous les scalaires
+! --- Rank of the ii-th scalar in the list of all scalars 
   iscal = ii
 
 
-! --- S'il s'agit de la temperature,
-!                                   son cas a deja ete traite plus haut
+! --- If the scalar is the temperature, it is marked by ith = 1 
+!     so that it will be skipped. 
+
   ith = 0
   do iphas = 1, nphas
     if (iscal.eq.itempk(iphas)) ith = 1
   enddo
 
-! --- Si la variable est une fluctuation, sa diffusivite est
-!       la meme que celle du scalaire auquel elle est rattachee :
-!       il n'y a donc rien a faire ici : on passe directement
-!       a la variable suivante sans renseigner PROPCE(IEL,IPCVSL).
+! --- If the variable represents the variance of the fluctuations of 
+!     another scalar variable (iscavr <= 0), it is simply skipped.
 
   if (ith.eq.0.and.iscavr(iscal).le.0) then
-! --- On ne traite ici que les variables non thermiques
-!                                   et qui ne sont pas des fluctuations
 
+! --- Here, iscal points to any scalar variable except the temperature, 
+!     the enthalpy and the variance of the fluctuations of another 
+!     scalar variable. 
 
-!   Positions des variables, coefficients
-!   -------------------------------------
-
-! --- Numero de variable température pour la phase courante iphas
-!       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
-!          IVART = ISCA(2)
+! --- Rank of the temperature for the current phase iphas in the array 'rtp'  
+!     To refer to the user-defined scalar number 2 instead, for example, use 
+!     ivart = isca(2) 
 
   ivart = isca(itempk(iphas))
 
-
-! --- Rang de Lambda du scalaire
-!     dans PROPCE, prop. physiques au centre des elements       : IPCVSL
+! --- Rank 'ipcvsl' of the molecular diffusivity of the current scalar iscal 
+!     in the array 'propce' (physical properties at the cell centers)
 
     if(ivisls(iscal).gt.0) then
       ipcvsl = ipproc(ivisls(iscal))
@@ -684,29 +637,27 @@ do ii = 1, nscaus
       ipcvsl = 0
     endif
 
-! --- Stop si Lambda n'est pas variable
+! --- Stop if the molecular diffusivity has not been defined as variable
 
     if(ipcvsl.le.0) then
       write(nfecra,1010) iscal, iscal, ivisls(iscal)
       call csexit (1)
     endif
 
-! --- Coefficients des lois choisis et imposes par l'utilisateur
-!       Les valeurs donnees ici sont fictives
+! --- User-defined coefficients for the selected law. 
+!     The values provided hereafter are provided as a mere example. They 
+!     are physically meaningless.
 
     varal = -3.3283d-7
     varbl =  3.6021d-5
     varcl =  1.2527d-4
     vardl =  0.58923d0
 
-
-!   Lambda en kg/(m s) au centre des cellules
-!   ------------------------------------------
-!       loi       Lambda           =
-!                  T  *( T  *( AL  * T +  BL  )+ CL  )+ DL
-!       soit    PROPCE(IEL,IPCVSL) =
-!     &          XRTP*(XRTP*(VARAL*XRTP+VARBL)+VARCL)+VARDL
-
+! --- Molecular diffusivity lambda at the cell centres, kg/(m s)
+!     In this example, lambda is provided as a function of the temperature T: 
+!       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
+!     that is: 
+!       propce(iel,ipcvsl) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
 
     do iel = 1, ncel
       xrtp = rtp(iel,ivart)
@@ -716,127 +667,137 @@ do ii = 1, nscaus
 
 
   endif
-! --- Tests sur ITH et ISCAVR : fin
+! --- End of the tests on ith and iscavr 
 
 enddo
-! --- Boucle sur les scalaires : fin
+! --- End of the loop on the scalars  
 
 
-! --- A enlever a l'utilisation
+! --- Discard the following test so that the code do not stop
 if(1.eq.1) then
   write(nfecra,9000)
   call csexit (1)
 endif
 
 
-
-
-
-!===============================================================================
-
-!===============================================================================
-! FORMATS
+!----
+! Formats
 !----
 
- 1000 format(                                                           &
-'@                                                            ',/,&
+ 1000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
-'@                                                            ',/,&
-'@    Pour la phase ',I10                                      ,/,&
-'@      usini1 indique que la capacite calorifique a pression ',/,&
-'@      constante est uniforme ICP(',I10   ,') = ',I10   ,'   ',/,&
-'@      alors que l''on cherche a definir une capacite        ',/,&
-'@      calorifique variable dans uscfpv.                     ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Modifier usini1 ou uscfpv.                              ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in computation of physical properties',/,  &
+'@    =======',/,                                                 &
+'@     The data is inconsistent',/,                               &  
+'@',/,                                                            &
+'@     For phase ',i10,/,                                         &
+'@       in the GUI or in the user subroutine ''usini1'', the',/, &
+'@         isobaric specific heat is declared as a property',/,   &
+'@         uniform in space: icp(',i10   ,') = ',i10   ,/,        &
+'@       in the user subroutine ''uscfpv'', however, it is',/,    &
+'@         assumed to be potentially non uniform in space.',/,    &
+'@',/,                                                            & 
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            & 
+'@  Ensure consistency by modifying the GUI input data or the',/, &
+'@    user subroutines ''usini1'' or ''uscfpv''.',/,              &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1001 format(                                                           &
-'@                                                            ',/,&
+'@',/)
+ 1001 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
-'@                                                            ',/,&
-'@    Pour la phase ',I10                                      ,/,&
-'@      uscfth indique que la capacite calorifique a volume   ',/,&
-'@      constant  est uniforme ICV(',I10   ,') = ',I10   ,'   ',/,&
-'@      alors que l''on cherche a definir une capacite        ',/,&
-'@      calorifique variable dans uscfpv.                     ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Modifier usini1 ou uscfpv.                              ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in computation of physical properties',/,  &
+'@    =======',/,                                                 &
+'@     The data is inconsistent',/,                               &  
+'@',/,                                                            &
+'@     For phase ',i10,/,                                         &
+'@       in the GUI or in the user subroutine ''usini1'', the',/, &
+'@         isochoric specific heat is declared as a property',/,  &
+'@         uniform in space: icv(',i10   ,') = ',i10   ,/,        &
+'@       in the user subroutine ''uscfpv'', however, it is',/,    &
+'@         assumed to be potentially non uniform in space.',/,    &
+'@@',/,                                                           & 
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            & 
+'@  Ensure consistency by modifying the GUI input data or the',/, &
+'@    user subroutines ''usini1'' or ''uscfpv''.',/,              &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1010 format(                                                           &
-'@                                                            ',/,&
+'@',/)
+ 1010 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
-'@                                                            ',/,&
-'@    Pour le scalaire ',I10                                   ,/,&
-'@      usini1 indique que la diffusivite est uniforme        ',/,&
-'@        IVISLS(',I10   ,') = ',I10   ,' alors que           ',/,&
-'@      uscfpv impose une diffusivite variable.               ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Modifier usini1 ou uscfpv.                              ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in computation of physical properties',/,  &
+'@    =======',/,                                                 &
+'@     The data is inconsistent',/,                               &  
+'@',/,                                                            &
+'@     For the scalar ',i10,/,                                    &
+'@       in the GUI or in the user subroutine ''usini1'', the',/, &
+'@         molecular diffusivity is declared as a property',/,    &
+'@         uniform in space: ivisls(',i10   ,') = ',i10   ,/,     &
+'@       in the user subroutine ''uscfpv'', however, it is',/,    &
+'@         assumed to be potentially non uniform in space.',/,    &
+'@@',/,                                                           & 
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            & 
+'@  Ensure consistency by modifying the GUI input data or the',/, &
+'@    user subroutines ''usini1'' or ''uscfpv''.',/,              &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 2000 format(                                                           &
-'@                                                            ',/,&
+'@',/)
+ 2000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
-'@                                                            ',/,&
-'@    Pour la phase ',I10                                      ,/,&
-'@      uscfx2 indique que la viscosite en volume est uniforme',/,&
-'@        IVISCV(',I10   ,') = ',I10   ,' alors que           ',/,&
-'@      uscfpv impose une viscosite en volume variable.       ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Modifier uscfx2 ou uscfpv.                              ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in computation of physical properties',/,  &
+'@    =======',/,                                                 &
+'@     The data is inconsistent',/,                               &  
+'@',/,                                                            &
+'@     For phase ',i10,/,                                         &
+'@       in the user subroutine ''uscfx2'', the molecular',/,     &
+'@         volumetric viscosity is declared as a property',/,     &
+'@         uniform in space: iviscv(',i10   ,') = ',i10   ,/,     &
+'@       in the user subroutine ''uscfpv'', however, it is',/,    &
+'@         assumed to be potentially non uniform in space.',/,    &
+'@@',/,                                                           & 
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            & 
+'@  Ensure consistency by modifying the user subroutines',/,      &
+'@    ''uscfx2'' or ''uscfpv''.',/,                               &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9000 format(                                                           &
-'@                                                            ',/,&
+'@',/)
+ 9000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    APPEL A csexit DANS LE SOUS PROGRAMME uscfpv            ',/,&
-'@                                                            ',/,&
-'@    Un appel a csexit (arret) a ete rencontre dans le sous  ',/,&
-'@      programme uscfpv. L''utilisateur est invite a verifier',/,&
-'@      que les exemples standard fournis par defaut ont bien ',/,&
-'@      ete elimines si besoin.                               ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Modifier uscfpv.                                        ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in computation of physical properties',/,  &
+'@    =======',/,                                                 &
+'@     Call to ''csexit'' from the user subroutine ''uscfpv''.',/,&
+'@',/,                                                            &
+'@     The subroutine ''csexit'' (run stop) was called from ',/,  &
+'@       within the user subroutine ''uscfpv''. The user shall',/,&
+'@       ensure that all the default examples provided in the',/, &
+'@       reference version of the user subroutine have been',/,   &
+'@       discarded. It shall also be checked that there is no',/, &
+'@       remaining stopping test at the end of the examples ',/,  & 
+'@       that have been retained.',/,                             &
+'@@',/,                                                           & 
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            & 
+'@  Check and modify the user subroutine ''uscfpv''.',/,          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
+
 
 !----
-! FIN
+! End
 !----
 
 return

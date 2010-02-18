@@ -45,38 +45,28 @@ subroutine usnpst &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR : CHOIX DE REALISER DES SORTIES DE
-!                       POST-TRAITEMENT AU PAS DE TEMPS COURANT
+!    User subroutine.
 
+!    Force or inhibit post-processing output at the current time step.
 
-! CE SOUS-PROGRAMME EST APPELE A LA FIN DE CHAQUE PAS DE TEMPS.
+! This subroutine is called at the end of each time step.
 
+! We pass all the usual arguments to this routine to allow writing of complex
+! tests if necessary (for example, output when a given variable reaches a
+! given threshold).
 
-! QUELS QUE SOIENT LES CHOIX REALISES DANS CE SOUS-PROGRAMME ,
-!    IL Y AURA TOUJOURS UNE SORTIE POST-TRAITEMENT EN FIN DE CALCUL
+! We may also use the following variables from optcal.h:
 
-
-! ON PASSE UN MAXIMUM D'ARGUMENTS POUR PERMETTRE DE REALISER DES
-!    TESTS COMPLEXES SI BESOIN (SORTIE A UN INSTANT DONNE,
-!    SORTIE LORSQUE QU'UNE VARIABLE PREND UNE VALEUR DONNEE...)
-
-! ON DISPOSE PAR AILLEURS DES INFORMATIONS SUIVANTES DANS LES
-!    COMMONS DU FICHIER optcal.h
-
-! ! NTPABS       ! E  ! <-- ! NUMERO ABSOLU DU DERNIER PAS DE TEMPS          !
-! !              !    !     !  DU CALCUL PRECEDENT EN CAS DE SUITE           !
-! !              !    !     !  (SINON = 0)                                   !
-! ! NTCABS       ! E  ! <-- ! NUMERO ABSOLU DU PAS DE TEMPS COURANT          !
-! ! NTMABS       ! E  ! <-- ! NUMERO ABSOLU DU DERNIER PAS DE TEMPS          !
-! !              !    !     !  VISE                                          !
-! ! TTPABS       ! E  ! <-- ! TEMPS  ABSOLU DU DERNIER PAS DE TEMPS          !
-! !              !    !     !  DU CALCUL PRECEDENT EN CAS DE SUITE           !
-! !              !    !     !  (SINON = 0)                                   !
-! ! TTCABS       ! E  ! <-- ! TEMPS  ABSOLU DU PAS DE TEMPS COURANT          !
-
+! ntpabs <-- Absolute number of the last time step of the previous calculation
+!            in case of restart (0 otherwise)
+! ntcabs <-- Absolute number of the current time step
+! ntmabs <-- Absolute number of the last desired time step
+! ttpabs <-- Absolute time of at the end of the previous calculation
+!            in case of restart (0 otherwise)
+! ttcabs <-- Absolute time at the current time step
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -99,7 +89,7 @@ subroutine usnpst &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nvlsta           ! e  ! <-- ! nombre de variables stat. lagrangien           !
+! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
@@ -193,23 +183,22 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 integer          indwri, indact
 
 !===============================================================================
-!  ACTIVATION OU DESACTIVATION DES SORTIES
+! Activate or inhibit output
 !===============================================================================
 
-!  ON ACTIVE LES SORTIES PAR DEFAUT AUX PAS DE TEMPS MULTIPLES
-!  DES FREQUENCES DE SORTIE DES WRITERS DIVERS
+! For any given writer, default output is activated for time steps which are
+! multiples of the writer's output frequency.
 
 call pstntc(ntcabs)
 !==========
 
-!  ON PEUT FORCER L'ACTIVATION OU LA DESACTIVATION DES DIFFERENTS
-!  WRITERS A UN PAS DE TEMPS DONNE:
+! We may force the activation or deactivation of a given writer at a
+! given time step:
 
-!     INDWRI = 0 pour traiter tous les writers, ou le numero
-!              d'un writer particulier pour le traiter independamment
+! indwri = 0 to activate all writers, or a writer number for a specific writer
+! indact = 1 to activate for the current time step, 0 to deactivate.
 
-!     INDACT = 1 pour forcer l'activation a ce pas de temps
-!              0 pour forcer la desactivation a ce pas de temps
+! By default, all writers are active at the last time step:
 
 if (ntcabs .eq. ntmabs) then
   indwri = 0

@@ -43,12 +43,18 @@ subroutine usdpst &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR POUR LOCALISER DES CELLULES, DES FACES
-! INTERNES ET/OU DES FACES DE BORD DEFINISSANT UN MAILLAGE DE
-! POST-TRAITEMENT.
+!    User subroutine.
+
+! Define additional post-processing writers and meshes.
+!
+! Post-processing writers allow outputs in different formats or with
+! different format options and output frequancy than the default writer.
+!
+! Post-processing meshes are defined as a subset of the main meshe's
+! cells or faces (interior and boundary).
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -73,23 +79,18 @@ subroutine usdpst &
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
 ! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
-! (nfml,nprfml)    !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfac+1)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (lndfac)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!  (nfabor+1)      !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (lndfbr  )     !    !     !  (optionnel)                                   !
-! lstcel           ! te ! --- ! tableau de travail (liste des                  !
-! (ncelet)         !    !     !  cellules d'un maillage de sortie)             !
-! lstfac           ! te ! --- ! tableau de travail (liste des faces            !
-! (nfac)           !    !     !  internes d'un maillage de sortie)             !
-! lstfbr           ! te ! --- ! tableau de travail (liste des faces            !
-! (nfabor)         !    !     !  de bord d'un maillage de sortie)              !
-! ia(*)            ! te ! --- ! macro tableau entier                           !
+! iprfml           ! ia ! <-- ! property numbers per family                    !
+!  (nfml, nprfml)  !    !     !                                                !
+! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
+! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
+! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! lstcel(ncelet)   ! ia ! --- ! work array (list of cells)                     !
+! lstfac(nfac)     ! ia ! --- ! work array (list of interior faces)            !
+! lstfbr(nfabor)   ! ia ! --- ! work array (list of boundary faces)            !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
@@ -103,6 +104,8 @@ subroutine usdpst &
 ! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
+! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -153,7 +156,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          indmod, icas, nbcas, ipart, nbpart, ipref
+integer          indmod, icas, nbcas, ipart, nbpart, ipref, icat
 integer          ntchrl
 
 integer          nlcel, nlfac , nlfbr
@@ -164,7 +167,6 @@ character*32     nomcas, nomfmt, nommai
 character*96     nomrep, optfmt
 
 double precision xfac  , yfac  , zfac
-
 
 !===============================================================================
 
@@ -180,150 +182,150 @@ if(1.eq.1) return
 nbcas  = 0
 nbpart = 0
 
-! Entiers "pointeurs" sur la premiere case libre de IA et RA
+! "pointeurs" to the first free positions in 'ia' and 'ra'
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-!     CREATION DES GESTIONNAIRES D'ECRITURE POUR LE POST TRAITEMENT
-!         (UN PAR CAS ET PAR FORMAT, A RENSEIGNER PAR L'UTILISATEUR)
+! Create output writers for post-processing
+! (one per case and per format, to be adapted by the user)
 !===============================================================================
 
-!     NOMBRE DE GESTIONNAIRES (case au sens EnSight, etude au sens MED,
-!                              ou racine d'une arborescence CGNS)
+! Number of writers (case in the EnSight sense, study in the MED sense,
+!                    or root of a CGNS tree)
 
 nbcas = 4
 
 do icas = 1, nbcas
 
-!       INITIALISATIONS DIVERSES
+  ! Miscellaneous initializations
 
   do ii = 1, len(nomcas)
-    NOMCAS (II:II) = ' '
+    nomcas (II:II) = ' '
   enddo
   do ii = 1, len(nomrep)
-    NOMREP (II:II) = ' '
+    nomrep (ii:ii) = ' '
   enddo
   do ii = 1, len(nomfmt)
-    NOMFMT (II:II) = ' '
+    nomfmt (ii:ii) = ' '
   enddo
   do ii = 1, len(optfmt)
-    OPTFMT (II:II) = ' '
+    optfmt (ii:ii) = ' '
   enddo
 
-!       DEFINITION UTILISATEUR :
+  ! User definition:
 
-!       NOMCAS et NOMREP indiquent respectivement le prefixe du nom
-!       des fichiers et le repertoire correspondant.
-!       Si NOMREP est de la forme xxxx.ensight ou xxxx.med, le lanceur le
-!       rapatriera automatiquement sous le nom XXXX.ENSIGHT.$DATE ou
-!       XXXX.MED.$DATE dans le repertoire RESU. Si NOMREP est d'une autre
-!       forme, il faudra gerer son rapatriement a la main.
+  ! 'nomcas' and 'nomrep' respectively define the file names prefix and
+  ! the corresponding directory path.
+  ! If 'nomrep' is a local name of the "xxxx.ensight" or "xxxx.med" form,
+  ! the script will automatically retreive the results to the 'RESU'
+  ! directory, under a name such as XXXX.ENSIGHT.$DATE or XXXX.MED.$DATE.
+  ! If 'nomrep' is of another form, it will have to be defined as a
+  ! generic user output dire or directory so as to be copied.
 
-!       NOMFMT permet de choisir le format de sortie
-!       ("EnSight Gold", "MED_fichier", ou "CGNS").
+  ! A user may also defined 'nomrep' as an absolute path, outside of the
+  ! execution directory, in which case the results are output directly
+  ! to that directory, and not managed by the script.
 
-!       OPTFMT permet de fournir des options specifiques au format de
-!       sortie (separees par des virgules) ;
-!         Pour EnSight : "text" ou "binary" (defaut),
-!         Pour EnSight, MED, ou CGNS :
-!                        "discard_polygons" pour supprimer les polygones,
-!                        "discard_polyhedra" pour supprimer les polyedres.
-!         Pour EnSight  ou MED :
-!                        "divide_polygons" pour découper les polygones,
-!                        "divide_polyhedra" pour découper les polyedres.
+  ! 'nomfmt' allows choosing the output format ("EnSight Gold",
+  ! "MED_fichier", or "CGNS").
 
-!       INDMOD indique si les maillages ecrits seront :
-!         0 : fixes,
-!         1 : deformables a topologie constante,
-!         2 : modifiables (pourront etre completement redefinis en
-!             cours de calcul via le sous-programme USMPST).
-!        10 : comme INDMOD = 0, avec champ de déplacement
-!        11 : comme INDMOD = 1, avec champ de déplacement
-!        12 : comme INDMOD = 2, avec champ de déplacement
+  ! 'optfmt' allows the addition of a list of comma-separated
+  ! format-specific output options:
+  ! - EnSight:
+  !      "text" ou "binary" (default),
+  ! - EnSight, MED, or CGNS:
+  !     "discard_polygons" to ignore polygons in output.
+  !     "discard_polyhedra" to ignore polyhedra in output.
+  ! - EnSight or MED :
+  !     "divide_polygons" to divide polygons into triangles
+  !     "divide_polyhedra" to divide polyhedra into tetrahedra and pyramids
 
-!       NTCHRL donne la frequence de sortie par defaut associee,
-!       (la sortie a un pas de temps donne pouvant etre forcee ou
-!       empechee via le sous-programme utilisateur USNPST).
+  ! 'indmod' indicates if the meshes output using this writer will be:
+  !     0: fixed,
+  !     1: deformables with constant topology constante,
+  !     2 : modifyable (may be redefined during the calculation through
+  !         the 'usmpst' user subroutine).
+  !     10: as indmod = 0, with a vertex displacement field
+  !     11: as indmod = 1, with a vertex displacement field
+  !     12: as indmod = 2, with a vertex displacement field
+
+  ! 'ntchrl' defines the default output frequency (output at a specific
+  ! time may still be forced or inhibited using the 'usnpst' user subroutine).
 
   if (icas .eq. 1) then
 
-    NOMCAS = 'chr'
-    NOMREP = 'EnSight'
-    NOMFMT = 'EnSight Gold'
-    OPTFMT = 'binary, discard_polygons'
+    nomcas = 'chr'
+    nomrep = 'EnSight'
+    nomfmt = 'EnSight Gold'
+    optfmt = 'binary, discard_polygons'
     indmod = 0
     ntchrl = 4
 
   else if (icas .eq. 2) then
 
-    NOMCAS = 'chr'
-    NOMREP = 'EnSight_text'
-    NOMFMT = 'ensight'
-    OPTFMT = 'text, discard_polyhedra'
+    nomcas = 'chr'
+    nomrep = 'EnSight_text'
+    nomfmt = 'ensight'
+    optfmt = 'text, discard_polyhedra'
     indmod = 1
     ntchrl = ntchr
 
   else if (icas .eq. 3) then
 
-    NOMCAS = 'modif'
-    NOMREP = 'EnSight'
-    NOMFMT = 'ensight'
-    OPTFMT = 'discard_polyhedra'
+    nomcas = 'modif'
+    nomrep = 'EnSight'
+    nomfmt = 'ensight'
+    optfmt = 'discard_polyhedra'
     indmod = 2
     ntchrl = ntchr
     ntchrl = 2
 
   else if (icas .eq. 4) then
 
-    NOMCAS = 'CHR'
-    NOMREP = ' '
-    NOMFMT = 'MED'
-    OPTFMT = ' '
+    nomcas = 'CHR'
+    nomrep = ' '
+    nomfmt = 'MED'
+    optfmt = ' '
     indmod = 1
     ntchrl = ntchr
 
   endif
 
-!       DEFINITION EFFECTIVE
+  ! Create writer
 
   call pstcwr (icas  , nomcas, nomrep, nomfmt, optfmt, indmod, ntchrl)
   !==========
 
 enddo
 
-!===============================================================================
-!     NOMBRE DE MAILLAGES EXTRAITS POUR POST TRAITEMENT
-!         A RENSEIGNER PAR L'UTILISATEUR
-!===============================================================================
+! Define number of additional postprocessing output meshes
+!=========================================================
 
-!   NBPART est le nombre de "parts" qui seront generees
-!   (au sens EnSight ; les équivalents MED et CGNS sont le maillage
-!    et la base respectivement)
+! 'nbpart' is the number of parts which will be generated (in the EnSight
+! sense; the MED and CGNS equivalent terms are mesh and base respectively).
 
-!   Une "part" peut etre tout volume ou surface que l'on definira par
-!   l'identification des cellules ou faces du maillage
+! A "part" may be any volume or surface defined through a selection of the
+! main meshe's cells of faces.
 
-!   Exemple : 4 "parts", correspondant respectivement à une coupe
-!             mixte faces de bord / faces internes, puis à une coupe
-!             contenant uniquement des faces internes, puis à deux extraits
-!             evolutifs du maillage global. On ajoutera une 5eme "part",
-!             alias de la 2eme.
+! Example:
+!
+! 4 "parts", correspondant respectivey to a mixed "interior faces"
+! / "exterior faces" extraction, an extraction containing only
+! interior faces, and 2 time-varying mesh pieces.
+
+! We will later add a 5th "part", which is an alias of the second.
 
 nbpart = 4
 
-!===============================================================================
-!     DEBUT DE LA BOUCLE SUR LES PARTS DEFINIES PAR L'UTILISATEUR
-!===============================================================================
+! Start of loop on user-defined parts
+!====================================
 
 do ipart = 1, nbpart
 
-
-!===============================================================================
-!       INITIALISATIONS DIVERSES
-!         PAS D'INTERVENTION UTILISATEUR REQUISE
-!===============================================================================
+  ! Miscellaneous initializations
+  !==============================
 
   nlcel = 0
   nlfac = 0
@@ -339,43 +341,36 @@ do ipart = 1, nbpart
   enddo
 
   do ii = 1, len(nommai)
-    NOMMAI(II:II) = ' '
+    nommai(ii:ii) = ' '
   enddo
 
-!===============================================================================
-!       REPERAGE DES CELLULES OU FACES INCLUSES DANS LE MAILLAGE
-!         A RENSEIGNER PAR L'UTILISATEUR
-!===============================================================================
+  ! Mark cells or faces included in the mesh (to be adapted by the user)
+  !=====================================================================
 
-!       Ce sous programme est appele avant la definition des
-!        conditions aux limites
+  ! Note that this subroutine is called before boundary conditions
+  ! are defined.
 
-
-!       POUR LA 1ere COUPE (PART 1) : coupe exemple
-
-!         Exemple : on selectionne
-!                   les faces internes situees entre une cellule de
-!                   couleur 2 et une cellule de couleur 3
-!                   et les faces de bord  de couleur 4
+  ! Part 1:
+  !   We select interior faces separating cells with color 2 from cells
+  !   with color 3, as well as boundary faces of color 4.
 
   if (ipart .eq. 1) then
 
-    NOMMAI = 'Coupe 1'
+    nommai = 'Cut 1'
 
-!         Pour les faces internes
+    ! Interior faces
 
     do ifac = 1, nfac
 
-!           Elements voisins
+      ! Adjacent cells
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
 
-!           Couleur des elements voisins
+      ! Adjacent cell colors (with only 1 property per cell)
       icoul1 = iprfml(ifmcel(iel1),1)
       icoul2 = iprfml(ifmcel(iel2),1)
 
-!           Determination si la face appartient a la coupe
-
+      ! Should the face belong to the extracted mesh ?
       if ((icoul1.eq.2.and.icoul2.eq.3).or.(icoul1.eq.3.and.icoul2.eq.2)) then
         nlfac = nlfac+1
         lstfac(nlfac)= ifac
@@ -383,14 +378,14 @@ do ipart = 1, nbpart
 
     enddo
 
-!         Pour les faces de bord
+    ! Boundary faces
 
     do ifac = 1, nfabor
 
-!           Couleur de la face
+      ! Face color (with only 1 property per cell)
       icoul = iprfml(ifmfbr(ifac),1)
 
-!           Determination si la face appartient a la coupe
+      ! Should the face belong to the extracted mesh ?
       if (icoul.eq.4) then
         nlfbr = nlfbr+1
         lstfbr(nlfbr)= ifac
@@ -399,55 +394,36 @@ do ipart = 1, nbpart
     enddo
 
 
-
-!       POUR LA 2eme COUPE (PART 2) : coupe exemple
-
-!         Exemple : on selectionne
-!                   les faces internes situees a y = 0.5
+  ! Part 2:
+  !   We select interior faces with y = 0.5
 
   else if (ipart .eq. 2) then
 
-    NOMMAI = 'Coupe 2'
+    nommai = 'Cut 2'
 
-!         Pour les faces internes
+    ! Interior faces
 
-    do ifac = 1, nfac
+    call getfac('plane[0, -1, 0, 0.5, epsilon = 0.0001]', nlfac, lstfac)
+    !==========
 
-!           Determination si la face appartient a la coupe
 
-!           Centre de gravite de la face
-      xfac = cdgfac(1,ifac)
-      yfac = cdgfac(2,ifac)
-      zfac = cdgfac(3,ifac)
-
-      if ((yfac .gt. 0.4999).and.(yfac .lt. 0.5001)) then
-        nlfac = nlfac+1
-        lstfac(nlfac)= ifac
-      endif
-
-    enddo
-
-!       POUR LA PART NUMERO 3 (EXTRAIT DU DOMAINE FLUIDE)
-
-!         Par defaut : on selectionne toutes les cellules, on modifiera
-!                      la selection dans USMPST
+  ! Part 3:
+  !   We select all cells, and will modify the selection in 'usmpst'.
 
   else if (ipart .eq. 3) then
 
-    NOMMAI = 'Volume v > 0.5'
+    nommai = 'Volume v > 0.5'
 
     nlcel = ncel
     nlfac = 0
     nlfbr = 0
 
-!       POUR LA PART NUMERO 4 (EXTRAIT DU DOMAINE FLUIDE)
-
-!         Par defaut : on selectionne toutes les faces de bord,
-!                      on modifiera la selection dans USMPST
+  ! Part 4:
+  !   We select all boundary faces, and will modify the selection in 'usmpst'.
 
   else if (ipart .eq. 4) then
 
-    NOMMAI = 'Surface "iso" v'
+    nommai = 'Surface "iso" v'
 
     nlcel = 0
     nlfac = 0
@@ -455,22 +431,18 @@ do ipart = 1, nbpart
 
   endif
 
-!===============================================================================
-!       CREATION DES STRUCTURES CONSERVANT LES DONNEES DES PARTS
-!         PAS D'INTERVENTION UTILISATEUR REQUISE
-!===============================================================================
+  ! Create post-processing mesh
+  !============================
 
   call pstcma (ipart, nommai, nlcel, nlfac, nlfbr, lstcel, lstfac, lstfbr)
   !==========
 
-!===============================================================================
-!       IDENTIFICATION DU MAILLAGE EXTRAIT ET GESTION DE SORTIE
-!         A RENSEIGNER PAR L'UTILISATEUR
-!===============================================================================
+  ! Associate extracted mesh and writer (to be adapted by the user)
+  !================================================================
 
   if ((ipart .eq. 1) .or. (ipart .eq. 2)) then
 
-!         Les maillages extraits numero 1 et 2 sont associes aux cas 1 et 2
+    ! Associate post-processing meshes 1 and 2 with writers  1 and 2.
     icas = 1
     call pstass(ipart, icas)
     !==========
@@ -480,28 +452,25 @@ do ipart = 1, nbpart
 
   else if ((ipart .eq. 3) .or. (ipart .eq. 4)) then
 
-!         Les maillages extraits numero 3 et 4 sont associes au cas 3
+    ! Associate post-processing meshes 1 and 2 with writer 3.
     icas = 3
     call pstass(ipart, icas)
     !==========
 
   endif
 
-!===============================================================================
-!     FIN   DE LA BOUCLE SUR LES PARTS DEFINIES PAR L'UTILISATEUR
-!===============================================================================
+  ! End of loop on user-defined parts
+  !==================================
 
 enddo
 
 !===============================================================================
-!     TRAITEMENT DES ALIAS EVENTUELS ; UN ALIAS EST SURTOUT UTILE
-!     LORSQU'ON LUI AFFECTE UN 'WRITER' DIFFERENT DU MAILLAGE AUQUEL
-!     IL FAIT REFERENCE, AVEC LEQUEL ON PEUT SORTIR DES VARIABLES
-!     DIFFERENTES, SANS DUPLICATION EN MEMOIRE DU MAILLAGE POST
+! Handle possible aliases; an alias is useful when we seek to assign an
+! additional writer to an already defined mesh, with which we choose
+! to output specific variables without duplicating the mesh in memory.
 !===============================================================================
 
-!     PART NUMERO 7 : ALIAS DE LA PART 2 (POUR SORTIES DE VARIABLES
-!                       ASSOCIEES INDEPENDANTE)
+! Part 5: alias for part 2 (for independent varibles output)
 
 ipart = 5
 ipref = 2
@@ -509,17 +478,31 @@ ipref = 2
 call pstalm(ipart, ipref)
 !==========
 
-!     Pour le maillage numero 5 : writer 3
+! Associate part 5 (alias of 2) with writer 3
 icas = 3
 call pstass(ipart, icas)
 !==========
 
+!===============================================================================
+! Assign optional categories to user meshes
+!===============================================================================
+
+! Available categories are -1 (volume mesh) and -2 (boundary mesh).
+! When a category is assigned to a user mesh, all standard
+! (i.e. non-user) outputs which apply to the main category mesh
+! also apply to the user mesh.
+
+! In this example, variables output on the main volume mesh will
+! also be output on the subset defined by post-processing mesh 3.
+ipart = -3
+icat = -1
+call pstcat(ipart, icat)
+!==========
 
 return
 
 !===============================================================================
-!     FORMATS
+! Formats
 !===============================================================================
 
 end subroutine
-

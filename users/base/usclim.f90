@@ -406,7 +406,7 @@ subroutine usclim &
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfavor)  !    !     !                                                !
+!  (ndim, nfabor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -530,7 +530,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in definition of boundary conditions',/,   &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usclim'' must be completed.',/,      &
+'@     The user subroutine ''usclim'' must be completed.',/, &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
 '@                                                            ',/,&
@@ -591,7 +591,7 @@ do ilelt = 1, nlelt
     !     the Reynolds number (especially if it is variable, it may be
     !     useful to take the law from 'usphyv'. Here, we use by default
     !     the 'viscl0" value given in 'usini1'.
-    !   Regarding the density, we have acess to its value at boundary
+    !   Regarding the density, we have access to its value at boundary
     !     faces (romb) so this value is the one used here (specifically,
     !     it is consistent with the processing in 'usphyv', in case of
     !     variable density)

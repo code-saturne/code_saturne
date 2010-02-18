@@ -47,41 +47,39 @@ subroutine usproj &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! MODIFICATION UTILISATEUR EN FIN DE PAS DE TEMPS
-!   TOUT EST POSSIBLE,
+!    User subroutine.
 
-
-! ON DONNE ICI PLUSIEURS EXEMPLES :
-
-!  - CALCUL DE BILAN THERMIQUE
-!    (au besoin, voir "ADAPTATION A UN SCALAIRE QUELCONQUE")
-
-!  - CALCUL DES EFFORTS GLOBAUX SUR UN SOUS-ENSEMBLE DE FACES
-
-!  - MODIFICATION ARBITRAIRE D'UNE VARIABLE DE CALCUL
-
-!  - EXTRACTION D'UN PROFIL 1D
-
-!  - IMPRESSION D'UN MOMENT
-
-!  - EXEMPLES D'UTILISATION DES ROUTINES DE PARALLELISME
-
-! CES EXEMPLES SONT DONNES EN SUPPOSANT UN CAS AVEC PERIODICITE
-!  (IPERIO    .GT.0) ET PARALLELISME (IRANGP.GE.0).
+!    Called at end of each time step, very general purpose
+!    (i.e. anything that does not have another dedicated user subroutine)
 
 
-! LE CALCUL DE BILAN THERMIQUE FOURNIT EN OUTRE UNE TRAME POUR
-!  PLUSIEURS CHOSES
-!  - CALCUL DE GRADIENT (AVEC LES PRECAUTIONS UTILES EN PARALLELE ET
-!    PERIODIQUE)
-!  - CALCUL DE GRANDEUR DEPENDANT DES VALEURS AUX CELLULES VOISINES
-!    D'UNE FACE (AVEC LES PRECAUTIONS A PRENDRE EN PARALLELE ET
-!    PERIODIQUE : VOIR L'ECHANGE DE DT ET DE CP)
-!  - CALCUL D'UNE SOMME SUR LES PROCESSEURS LORS D'UN CALCUL
-!    PARALLELE (PARSOM)
+! Several examples are given here:
+
+!  - compute a thermal balance
+!    (if needed, see note  below on adapting this to any scalar)
+
+!  - compute global efforts on a subset of faces
+
+!  - arbitrarily modify a calculation variable
+
+!  - extract a 1 d profile
+
+!  - print a moment
+
+!  - examples on using parallel utility functions
+
+! These examples are valid when using periodicity (iperio .gt. 0)
+! and in parallel (irangp .ge. 0).
+
+! The thermal balance compution also illustates a few other features,
+! including the required precautions in parallel or with periodicity):
+! - gradient calculation
+! - computation of a value depending on cells adjacent to a face
+!   (see synchronization of Dt and Cp)
+! - computation of a global sum in parallel (parsom)
 
 
 ! Cells, boundary faces and interior faces identification
@@ -136,13 +134,13 @@ subroutine usproj &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nbpmax           ! e  ! <-- ! nombre max de particules autorise              !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
+! nbpmax           ! i  ! <-- ! max. number of particles allowed               !
+! nvp              ! i  ! <-- ! number of particle-defined variables           !
+! nvep             ! i  ! <-- ! number of real particle properties             !
+! nivep            ! i  ! <-- ! number of integer particle properties          !
+! ntersl           ! i  ! <-- ! number of return coupling source terms         !
+! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
+! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
@@ -153,18 +151,14 @@ subroutine usproj &
 !  (nfml, nprfml)  !    !     !                                                !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfac+1)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (lndfac)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!  (nfabor+1)      !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (lndfbr  )     !    !     !  (optionnel)                                   !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
+! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
+! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! itepa            ! ia ! <-- ! integer particle attributes                    !
+!  (nbpmax, nivep) !    !     !   (containing cell, ...)                       !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
@@ -187,23 +181,20 @@ subroutine usproj &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! statis           ! tr ! <-- ! moyennes statistiques                          !
-!(ncelet,nvlsta    !    !     !                                                !
-! stativ           ! tr ! <-- ! cumul pour les variances des                   !
-!(ncelet,          !    !     !    statistiques volumiques                     !
-!   nvlsta-1)      !    !     !                                                !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,ntersl    !    !     !   lagrangien sur la phase porteuse             !
-! parbor           ! tr ! <-- ! infos sur interaction des particules           !
-!(nfabor,nvisbr    !    !     !   aux faces de bord                            !
+! ettp, ettpa      ! ra ! <-- ! particle-defined variables                     !
+!  (nbpmax, nvp)   !    !     !  (at current and previous time steps)          !
+! tepa             ! ra ! <-- ! real particle properties                       !
+!  (nbpmax, nvep)  !    !     !  (statistical weight, ...                      !
+! statis           ! ra ! <-- ! statistic means                                !
+!  (ncelet, nvlsta)!    !     !                                                !
+! stativ(ncelet,   ! ra ! <-- ! accumulator for variance of volume statisitics !
+!        nvlsta -1)!    !     !                                                !
+! tslagr           ! ra ! <-- ! Lagrangian return coupling term                !
+!  (ncelet, ntersl)!    !     !  on carrier phase                              !
+! parbor           ! ra ! <-- ! particle interaction properties                !
+!  (nfabor, nvisbr)!    !     !  on boundary faces                             !
 ! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! rtuser(nrtuse)   ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -307,37 +298,34 @@ double precision xfor(3), xyz(3), xabs, xu, xv, xw, xk, xeps
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-
 !===============================================================================
-! 1. INITIALISATION
+! 1.  Initialization
 !===============================================================================
 
-! ---> Gestion memoire
+! Memory management
 
 idebia = idbia0
 idebra = idbra0
 
-
 !===============================================================================
-! 2. EXEMPLE : CALCUL DE BILAN D'ENERGIE RELATIF A LA TEMPERATURE
-!    ------------------------------------------------------------
+! 2. Example: compute energy balance relative to temperature
+!    -------------------------------------------------------
 
-!   On suppose que l'on souhaite faire des bilans (convectifs et
-!     diffusifs) aux frontieres du domaine de calcul represente
-!     ci-dessous (frontieres reperees par leurs couleurs).
+! We assume that we want to compute balances  (convective and diffusive)
+! at the boundaries of the calculation domain represented below
+! (with boundaries marked by colors).
 
-!   Le scalaire considere est la temperature. On fera egalement
-!     intervenir la chaleur massique (pour obtenir des bilans en Joules).
+! The scalar considered if the temperature. We will also use the
+! specific heat (to btain balances in Joules)
 
 
-
-!   Domaine et couleurs
-!   -------------------
+! Domain and associated boundary colors
+! -------------------------------------
 !                  6
 !      --------------------------
 !      |                        |
@@ -349,669 +337,599 @@ idebra = idbra0
 
 !         2  3             4
 
+! 2, 4, 7 : adiabatic walls
+! 6       : wall with fixed temperature
+! 3       : inlet
+! 5       : outlet
+! 1       : symmetry
 
-!    2, 4, 7 : parois adiabatiques
-!    6       : paroi  a temperature imposee
-!    3       : entree
-!    5       : sortie
-!    1       : symetrie
+!-------------------------------------------------------------------------------
 
+! To ensure calculations have physical meaning, it is best to use
+! a spatially unifor time step (idtvar = 0 or 1).
+! In addition, when restarting a calculation, the balance is
+! incorrect if inpdt0 = 1 (visct not initialized and t(n-1) not known)
 
-!  ---------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
-!     POUR LA SIGNIFICATION PHYSIQUE DE CALCULS, IL EST UTILE D'ADOPTER
-!       UN PAS DE TEMPS UNIFORME EN ESPACE (IDTVAR = 0 OU 1)
-!     EN OUTRE, MEME EN SUITE DE CALCUL, LE BILAN EST FAUX SI INPDT0=1
-!       (VISCT NON INITIALISE ET T(n-1) NON CONNU)
+! Temperature variable: ivar = isca(iscalt) (use rtp(iel, ivar))
 
-!  ---------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
-!     VARIABLE TEMPERATURE : IVAR = ISCA(ISCALT) (utiliser RTP(IEL,IVAR))
+! The balance at time step n is equal to:
 
-!  ---------------------------------------------------------------------
+!        n        iel=ncelet           n-1
+! balance  =   sum { volume(iel)*cp*rom(iel)*(rtpa(iel,ivar)-rtp(iel,ivar)) }
+!                 iel=1
 
-!     LE BILAN A L'INSTANT N VAUT :
+!                 ifac=nfabor
+!            + sum {
+!                 ifac=1
 
+!                     surfbn(ifac)*dt(ifabor(ifac))*cp
+!                   * [visls0(iscalt) + visct(ifabor(ifac))/sigmas(iscalt) ]
+!                   / distbr(ifac)
+!                   * [  coefa(ifac,iclvar)
+!                      + (coefb(ifac,iclvar)-1.d0)*rtp(ifabor(ifac,ivar))]
+!                  }
 
-!       n   iel=ncelet                n-1
-!  BILAN  = SOMME { VOLUME(iel)*CP*ROM(iel)
-!           iel=1
-!                                      *(RTPA(iel,ivar)-RTP(iel,ivar)) }
+!                 ifac=nfabor
+!            + sum {
+!                 ifac=1
+!                     dt(ifabor(ifac))*cp
+!                   * rtp(ifabor(ifac,ivar))*(-flumab(ifac))
+!                  }
 
-!           ifac=nfabor
-!         + SOMME { SURFBN(ifac)*DT(IFABOR(ifac))*CP
-!           ifac=1
+! The first term is negative if the amount of energy in the volume
+! has decreased (it is 0 in a steady regime).
 
-!              * [ VISLS0(ISCALT) + VISCT(IFABOR(ifac))/SIGMAS(ISCALT) ]
-!              / DISTBR(ifac)
-!              * [ COEFA(ifac,ICLVAR)
-!                   + (COEFB(ifac,ICLVAR)-1.D0)*RTP(IFABOR(ifac,ivar)) ] }
+! The other terms (convection, diffusion) are positive if the amount
+! of energy in the volume has increased due to boundary conditions.
 
-!           ifac=nfabor
-!         + SOMME { DT(IFABOR(ifac))*CP
-!           ifac=1
-!                              *RTP(IFABOR(ifac,ivar))*(-FLUMAB(ifac)) }
+! In a steady regime, a positive balance thus indicates an energy gain.
 
+!-------------------------------------------------------------------------------
 
-!  Le premier terme (nul en stationnaire) est negatif si la quantite
-!    d'energie a decru dans le volume.
-!  Les autres termes (convection, diffusion) sont positifs si la
-!    quantite d'energie a augmente dans le volume par les
-!    apports des conditions aux limites.
+! With 'rom' calculated using the density law from the usphyv subroutine,
+! for example:
 
-!  En regime stationnaire, un bilan positif indique donc
-!   un gain d'energie.
+!    n-1
+! rom(iel) = p0 / [rr * (rtpa(iel,ivar) + tkelv)]
 
-!  ---------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
+! Cp and lambda/Cp may be variable
 
-!   AVEC ROM CALCULE PAR LA LOI REGISSANT LA MASSE VOLUMIQUE DANS USPHYV,
-!     SOIT, PAR EXEMPLE :
-!           n-1
-!        ROM (iel) = P0 / [ RR * ( RTPA(iel,IVAR) + TKELV ) ]
+!-------------------------------------------------------------------------------
 
+! Adaptation to an arbitrary scalar
+! ---------------------------------
 
-!  ---------------------------------------------------------------------
+! The approach may be used for the balance of any other scalar (but the
+! balances are not in Joules and the specific heat is not used)
 
-!    CP ET LAMBDA/CP PEUVENT ETRE VARIABLES
+! In this case:
 
-!  ---------------------------------------------------------------------
-!  ---------------------------------------------------------------------
+! - replace iscalt(iphas) by the number iscal of the required scalar,
+!   iscal having an allowed range of 1 to nscal.
 
-
-
-
-!    ADAPTATION A UN SCALAIRE QUELCONQUE
-!    -----------------------------------
-
-!    L'approche peut s'utiliser pour realiser le bilan d'un scalaire
-!      quelconque (mais les bilans ne sont plus attendus en Joules et
-!      la chaleur massique n'intervient donc plus)
-
-!    Pour cela :
-
-!      - remplacer ISCALT(IPHAS) par le numero ISCAL du scalaire souhaite
-!        ISCAL pouvant varier de 1 a NSCAL
-
-!      - positionner IPCCP a 0 independamment de la valeur de ICP(IPHAS)
-!        et affecter la valeur 1 a  CP0IPH (au lieu de CP0(IPHAS)).
+! - set ipccp to 0 independently of the value of icp(iphas) and assign
+!   1 to cp0iph (instead of cp0(iphas)).
 
 !===============================================================================
 
+! The balance is not valid if inpdt0=1
 
-!  Le bilan n'est pas valable si INPDT0=1
 if (inpdt0.eq.0) then
 
+  ! 2.1 Initialization
+  ! ==================
 
-! 2.1 INITIALISATION
-! ==================
+  ! --> Local variables
+  !     ---------------
 
-! --> Variables locales
-!     -----------------
+  ! xbilvl: volume contribution of unsteady terms
+  ! xbildv: volume contribution due to to term in div(rho u)
+  ! xbilpa: contribution from adiabatic walls
+  ! xbilpt: contribution from walls with fixed temperature
+  ! xbilsy: contribution from symmetry boundaries
+  ! xbilen: contribution from inlets
+  ! xbilso: contribution from outlets
+  ! xbilmi: contribution from mass injections
+  ! xbilma: constribution from mass suctions
+  ! xbilan: total balance
 
-!       XBILVL : bilan volumique des termes instationnaires
-!       XBILDV : bilan volumique du au terme en div(rho u)
-!       XBILPA : bilan en paroi adiabatique
-!       XBILPT : bilan en paroi a temperature imposee
-!       XBILSY : bilan en symetrie
-!       XBILEN : bilan en entree
-!       XBILSO : bilan en sortie
-!       XBILMI : bilan lie aux injections de masse
-!       XBILMA : bilan lie aux aspirations de masse
-!       XBILAN : bilan total
+  xbilvl = 0.d0
+  xbildv = 0.d0
+  xbilpa = 0.d0
+  xbilpt = 0.d0
+  xbilsy = 0.d0
+  xbilen = 0.d0
+  xbilso = 0.d0
+  xbilmi = 0.d0
+  xbilma = 0.d0
+  xbilan = 0.d0
 
-xbilvl = 0.d0
-xbildv = 0.d0
-xbilpa = 0.d0
-xbilpt = 0.d0
-xbilsy = 0.d0
-xbilen = 0.d0
-xbilso = 0.d0
-xbilmi = 0.d0
-xbilma = 0.d0
-xbilan = 0.d0
+  iphas = 1   ! We only consider phase 1 in this example
 
-! --- On travaillera sur la phase 1 uniquement
-iphas = 1
+  iscal = iscalt(iphas)         ! temperature scalar number
+  ivar =  isca(iscal)           ! temperature variable number
+  iclvar = iclrtp(ivar,icoef)   ! boundary condition number
 
-! --- Le numero du scalaire temperature est ISCAL
-iscal = iscalt(iphas)
+  ! Physical quantity numbers
+  ipcrom = ipproc(irom(iphas))
+  ipcvst = ipproc(ivisct(iphas))
+  iflmas = ipprof(ifluma(ivar))
+  iflmab = ipprob(ifluma(ivar))
 
-! --- Le numero de variable temperature est IVAR
-ivar = isca(iscal)
+  ! We save in ipccp a flag allowing to determein if the specific heat is
+  ! constant (= cp0) or variable. It will be used to compute balances
+  ! (xbilvl is in Joules).
+  if (icp(iphas).gt.0) then
+    ipccp  = ipproc(icp   (iphas))
+  else
+    ipccp  = 0
+    cp0iph = cp0(iphas)
+  endif
 
-! --- Le numero pour les conditions aux limites est
-iclvar = iclrtp(ivar,icoef)
+  ! We save in ipcvsl a flag allowing to determine if the diffusivity is
+  ! constant (= visls0) or variable. It will be used for diffusive terms.
+  if (ivisls(iscal).gt.0) then
+    ipcvsl = ipproc(ivisls(iscal))
+  else
+    ipcvsl = 0
+  endif
 
-! --- Numero des grandeurs physiques
-ipcrom = ipproc(irom(iphas))
-ipcvst = ipproc(ivisct(iphas))
-iflmas = ipprof(ifluma(ivar))
-iflmab = ipprob(ifluma(ivar))
+  ! --> Synchronization of Cp and Dt
+  !     ----------------------------
 
-! --- On stocke dans IPCCP un indicateur permettant de determiner si
-!       la Chaleur massique est constante (=CP0) ou variable. Elle sera
-!       utilisee pour realiser les bilans (XBILVL est en Joules).
-if(icp(iphas).gt.0) then
-  ipccp  = ipproc(icp   (iphas))
-else
-  ipccp  = 0
-  cp0iph = cp0(iphas)
-endif
+  ! To compute fluxes at interior faces, it is necessary to have access
+  ! to variables at neighboring cells. Notably, it is necessary to know
+  ! the specific heat and the time step value. For this,
 
-! --- On stocke dans IPCVSL un indicateur permettant de determiner si
-!       la diffusivite est constante (=VISLS0) ou variable. Elle sera
-!       utilisee pour les termes diffusifs.
-if(ivisls(iscal).gt.0) then
-  ipcvsl = ipproc(ivisls(iscal))
-else
-  ipcvsl = 0
-endif
+  ! - in parallel calculations, it is necessary on faces at sub-domain
+  !   boundaries to know the value of these variables in cells from the
+  !   neighboring subdomain.
+  ! - in periodic calculations, it is necessary at periodic faces to know
+  !   the value of these variables in matching periodic cells.
 
+  ! To ensure that these values are up to date, it is necessary to use
+  ! the synchronization routines 'parcom' (parallel synchronization)
+  ! and 'percom' (periodic synchronization) to update parallel ghost
+  ! values for Cp and Dt before computing the gradient. 'parcom'
+  ! must always be called before 'percom' if both parallelism and
+  ! periodicity are used.
+  !
+  ! If the calculation is neither parallel nor periodic, the calls may be
+  ! kept, as tests on iperio and irangp ensure generality).
 
-! --> Echange de Cp et de Dt
-!     ----------------------
+  ! Parallel update
 
-!      Pour calculer les valeurs de flux aux faces internes, il est
-!        necessaire d'avoir acces aux variables dans les cellules voisines.
-!        En particulier, il faut connaitre la chaleur massique et la valeur
-!        du pas de temps. Pour cela,
-!        - dans les calculs paralleles, il est necessaire que
-!          les cellules situees sur un bord de sous-domaine connaissent
-!          la valeur de ces variables dans les cellules situees en
-!          vis-a-vis sur le sous-domaine voisin.
-!        - dans les calculs periodiques, il est necessaire que
-!          les cellules periodiques aient acces a la valeur de ces0
-!          variables dans les cellules periodiques correspondantes
+  if (irangp.ge.0) then
 
-!      Pour cela, il est necessaire d'appeler les routines de
-!        communication PARCOM (parallelisme) et PERCOM (periodicite)
-!        pour echanger les valeurs de Cp et de Dt avant de calculer le
-!        gradient. L'appel de ces routines doit etre dait dans cet ordre
-!        PARCOM puis PERCOM (si parallelisme et periodicite coexistent).
-
-!      Si le calcul n'est ni periodique, ni parallele, on peut conserver
-!        appels (les tests sur IPERIO et IRANGP assurent la generalite)
-
-
-
-!    - Echange pour le parallelisme
-
-  if(irangp.ge.0) then
-
-!       Echange de Dt
-    call parcom (dt)
+    ! update Dt
+    call parcom(dt)
     !==========
 
-!       Echange de Cp si variable (sinon CP0(IPHAS) est utilise)
-    if(ipccp.gt.0) then
+    ! update Cp if variable (otherwise cp0(iphas) is used)
+    if (ipccp.gt.0) then
       call parcom (propce(1,ipccp))
       !==========
     endif
 
   endif
 
+  ! - Periodic update
 
-!    - Echange pour la periodicite
-
-  if(iperio.eq.1) then
+  if (iperio.eq.1) then
 
     idimte = 0
     itenso = 0
 
-!       Echange de Dt
-    call percom                                                   &
+    ! update Dt
+    call percom                      &
     !==========
-      ( idimte , itenso ,                                         &
-        dt     , dt     , dt     ,                                &
-        dt     , dt     , dt     ,                                &
+      ( idimte , itenso ,            &
+        dt     , dt     , dt     ,   &
+        dt     , dt     , dt     ,   &
         dt     , dt     , dt     )
 
-!       Echange de Cp si variable (sinon CP0(IPHAS) est utilise)
-    if(ipccp.gt.0) then
-      call percom                                                 &
+    ! update Cp if variable (otherwise cp0(iphas) is used)
+    if (ipccp.gt.0) then
+      call percom                                             &
       !==========
-      ( idimte , itenso ,                                         &
-        propce(1,ipccp) , propce(1,ipccp) , propce(1,ipccp) ,     &
-        propce(1,ipccp) , propce(1,ipccp) , propce(1,ipccp) ,     &
-        propce(1,ipccp) , propce(1,ipccp) , propce(1,ipccp) )
+        ( idimte, itenso,                                     &
+          propce(1,ipccp), propce(1,ipccp), propce(1,ipccp),  &
+          propce(1,ipccp), propce(1,ipccp), propce(1,ipccp),  &
+          propce(1,ipccp), propce(1,ipccp), propce(1,ipccp))
     endif
 
   endif
 
+  ! --> Compute value reconstructed at I' for boundary faces
+
+  ! For non-orthogonal meshes, it must be equal to the value at the
+  ! cell center, which is computed in:
+  ! ra(itreco+ifac-1) (with ifac=1, nfabor)
+
+  ! For orthogonal meshes, it is sufficient to assign:
+  ! rtp(iel, ivar) to ra(itreco+ifac-1), with iel=ifabor(ifac)
+  ! (this option corresponds to the second branch of the test below,
+  ! with iortho different from 0).
+
+  iortho = 0
+
+  ! --> General case (for non-orthogonal meshes)
+
+  if (iortho.eq.0) then
+
+    ! Reserve memory
+
+    ifinia = idebia
+
+    igradx = idebra
+    igrady = igradx+ncelet
+    igradz = igrady+ncelet
+    itravx = igradz+ncelet
+    itravy = itravx+ncelet
+    itravz = itravy+ncelet
+    itreco = itravz+ncelet
+    ifinra = itreco+nfabor
+
+    ! Check memory availability
+
+    call iasize('usproj', ifinia)
+    call rasize('usproj', ifinra)
+
+    ! --- Compute temperature gradient
+
+    ! To compute the temperature gradient in a given cell, it is necessary
+    ! to have access to values at neighboring cells.  For this,
+
+    ! - in parallel calculations, it is necessary at cells on sub-domain
+    !   boundaries to know the value of these variables in cells from the
+    !   neighboring subdomain.
+    ! - in periodic calculations, it is necessary at cells on periodic
+    !   boundaries to know the value of these variables in matching
+    !   periodic cells.
+
+    ! To ensure that these values are up to date, it is necessary to use
+    ! the synchronization routines 'parcom' (parallel synchronization)
+    ! and 'percom' (periodic synchronization) to update parallel ghost
+    ! values for the temperature before computing the gradient. 'parcom'
+    ! must always be called before 'percom' if both parallelism and
+    ! periodicity are used.
+    !
+    ! If the calculation is neither parallel nor periodic, the calls may be
+    ! kept, as tests on iperio and irangp ensure generality).
+
+    ! - Parallel update
+
+    if (irangp.ge.0) then
+
+      call parcom (rtp(1,ivar))
+      !==========
+
+    endif
+
+    ! - Periodic update
+
+    if (iperio.eq.1) then
+
+      idimte = 0
+      itenso = 0
+      call percom                                 &
+      !==========
+        ( idimte , itenso ,                       &
+          rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),  &
+          rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),  &
+          rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
+
+    endif
 
 
+    ! - Compute gradient
 
+    inc = 1
+    iccocg = 1
+    nswrgp = nswrgr(ivar)
+    imligp = imligr(ivar)
+    iwarnp = iwarni(ivar)
+    epsrgp = epsrgr(ivar)
+    climgp = climgr(ivar)
+    extrap = extrag(ivar)
+    iphydp = 0
 
-! --> Calcul de la valeur reconstruite en I' pour les mailles de bord
-
-
-!     Pour les maillages orthogonaux, elle doit etre egale
-!        a la valeur au centre de la cellule
-!     Cette valeur est calculee dans RA(ITRECO+IFAC-1)
-!                                                   (avec IFAC=1,NFABOR)
-
-!     Dans le cas de maillages orthogonaux, on peut simplifier :
-!       il suffit d'affecter RTP(IEL,IVAR) a RA(ITRECO+IFAC-1),
-!                                                  avec IEL=IFABOR(IFAC)
-!       (cette option correspond a la deuxieme branche du if ci dessous,
-!        avec IORTHO different de 0)
-
-
-iortho = 0
-
-
-! --> Cas des maillages non orthogonaux
-
-if(iortho.eq.0) then
-
-! --- Reservation de la memoire
-
-  ifinia = idebia
-
-  igradx = idebra
-  igrady = igradx+ncelet
-  igradz = igrady+ncelet
-  itravx = igradz+ncelet
-  itravy = itravx+ncelet
-  itravz = itravy+ncelet
-  itreco = itravz+ncelet
-  ifinra = itreco+nfabor
-
-! --- Verification de la disponibilite de la memoire
-
-  CALL IASIZE('USPROJ',IFINIA)
-  CALL RASIZE('USPROJ',IFINRA)
-
-
-! --- Calcul du gradient de la temperature
-
-
-!      Pour calculer le gradient de Temperature
-!        - dans les calculs paralleles, il est necessaire que
-!          les cellules situees sur un bord de sous-domaine connaissent
-!          la valeur de temperature dans les cellules situees en
-!          vis-a-vis sur le sous-domaine voisin.
-!        - dans les calculs periodiques, il est necessaire que
-!          les cellules periodiques aient acces a la valeur de la
-!          temperature des cellules periodiques correspondantes
-
-!      Pour cela, il est necessaire d'appeler les routines de
-!        communication PARCOM (parallelisme) et PERCOM (periodicite)
-!        pour echanger les valeurs de temperature avant de calculer le
-!        gradient. L'appel a ces routines doit etre fait dans cet ordre
-!        PARCOM puis PERCOM (pour les cas ou parallelisme et periodicite
-!        coexistent).
-!      En effet, on se situe ici a la fin du pas de temps n. Or,
-!        les variables RTP ne seront echangees qu'en debut du pas de
-!        temps n+1. Ici, seules les variables RTPA (obtenues a la fin
-!        du pas de temps n-1) ont deja ete echangees.
-
-!      Si le calcul n'est ni periodique, ni parallele, on peut conserver
-!        appels (les tests sur IPERIO et IRANGP assurent la generalite)
-
-
-
-!    - Echange pour le parallelisme
-
-  if(irangp.ge.0) then
-
-    call parcom (rtp(1,ivar))
+    call grdcel                                                     &
     !==========
+      ( ifinia , ifinra ,                                              &
+        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+        nnod   , lndfac , lndfbr , ncelbr , nphas  ,                   &
+        nideve , nrdeve , nituse , nrtuse ,                            &
+        ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+        iwarnp , nfecra ,                                              &
+        epsrgp , climgp , extrap ,                                     &
+        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+        ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+        idevel , ituser , ia     ,                                     &
+        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+        ra(itravx) , ra(itravx) , ra(itravx) ,                         &
+        rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
+        ra(igradx) , ra(igrady) , ra(igradz) ,                         &
+        !---------   ----------   ----------
+        ra(itravx) , ra(itravy) , ra(itravz) ,                         &
+        rdevel , rtuser , ra     )
+
+    ! - Compute reconstructed value in boundary cells
+
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      iii = idiipb-1+3*(ifac-1)
+      diipbx = ra(iii+1)
+      diipby = ra(iii+2)
+      diipbz = ra(iii+3)
+      ra(itreco+ifac-1) =   rtp(iel,ivar)            &
+                          + diipbx*ra(igradx+iel-1)  &
+                          + diipby*ra(igrady+iel-1)  &
+                          + diipbz*ra(igradz+iel-1)
+    enddo
+
+  ! --> Case of orthogonal meshes
+
+  else
+
+    ! Reserve memory
+
+    ifinia = idebia
+
+    itreco = idebra
+    ifinra = itreco+nfabor
+
+    ! Check memory availability
+
+    call iasize('usproj', ifinia)
+    call rasize('usproj', ifinra)
+
+    ! Compute reconstructed value
+    ! (here, we assign the non-reconstructed value)
+
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      ra(itreco+ifac-1) = rtp(iel,ivar)
+    enddo
 
   endif
 
-!    - Echange pour la periodicite
+  ! 2.1 Compute the balance at time step n
+  ! ======================================
 
-  if(iperio.eq.1) then
+  ! --> Balance on interior volumes
+  !     ---------------------------
 
-    idimte = 0
-    itenso = 0
-    call percom                                                   &
-    !==========
-      ( idimte , itenso ,                                         &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
+  ! If it is variable, the density 'rom' has been computed at the beginning
+  ! of the time step using the temperature from the previous time step.
 
+  if (ipccp.gt.0) then
+    do iel = 1, ncel
+      xrtpa = rtpa(iel,ivar)
+      xrtp  = rtp (iel,ivar)
+      xbilvl =   xbilvl                                                &
+               + volume(iel) * propce(iel,ipccp) * propce(iel,ipcrom)  &
+                                                 * (xrtpa - xrtp)
+    enddo
+  else
+    do iel = 1, ncel
+      xrtpa = rtpa(iel,ivar)
+      xrtp  = rtp (iel,ivar)
+      xbilvl =   xbilvl  &
+               + volume(iel) * cp0iph * propce(iel,ipcrom) * (xrtpa - xrtp)
+    enddo
   endif
 
+  ! --> Balance on all faces (interior and boundary), for div(rho u)
+  !     ------------------------------------------------------------
 
-!    - Calcul du gradient
+  ! Caution: values of Cp and Dt in cells adjacent to interior faces are
+  !          used, which implies having synchronized these values for
+  !          parallelism and periodicity.
 
-  inc = 1
-  iccocg = 1
-  nswrgp = nswrgr(ivar)
-  imligp = imligr(ivar)
-  iwarnp = iwarni(ivar)
-  epsrgp = epsrgr(ivar)
-  climgp = climgr(ivar)
-  extrap = extrag(ivar)
-  iphydp = 0
+  ! Note that if Cp is variable, writing a balance on the temperature
+  ! equation is not absolutely correct.
 
-  call grdcel                                                     &
+  if (ipccp.gt.0) then
+    do ifac = 1, nfac
+      iel1 = ifacel(1,ifac)
+      iel2 = ifacel(2,ifac)
+      xbildv =   xbildv + propfa(ifac,iflmas)                 &
+               * (dt(iel1)*propce(iel1,ipccp)*rtp(iel1,ivar)  &
+               - dt(iel2)*propce(iel2,ipccp)*rtp(iel2,ivar))
+    enddo
+
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      xbildv = xbildv + dt(iel) * propce(iel,ipccp)    &
+                                * propfb(ifac,iflmab)  &
+                                * rtp(iel,ivar)
+    enddo
+
+  ! --- if Cp is constant
+
+  else
+    do ifac = 1, nfac
+      iel1 = ifacel(1,ifac)
+      iel2 = ifacel(2,ifac)
+      xbildv = xbildv +   (dt(iel1)+ dt(iel2))*0.5d0         &
+                        * cp0iph                             &
+                        * propfa(ifac,iflmas)                &
+                        * (rtp(iel1,ivar) - rtp(iel2,ivar))
+    enddo
+
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      xbildv = xbildv + dt(iel) * cp0iph               &
+                                * propfb(ifac,iflmab)  &
+                                * rtp(iel,ivar)
+    enddo
+  endif
+
+  ! In case of a mass source term, add contribution from Gamma*Tn+1
+
+  ncesmp=ncetsm(iphas)
+  if (ncesmp.gt.0) then
+    icesmp = iicesm(iphas)
+    ismacp = ismace(iphas)
+    itpsmp = iitpsm(iphas)
+    do ieltsm = 1, ncesmp
+      iel = ia(icesmp+ieltsm-1)
+      xrtp  = rtp (iel,ivar)
+      xgamma = ra( ismacp+ieltsm+ncesmp*(ipr(iphas)-1)-1)
+      if (ipccp.gt.0) then
+        xbildv =   xbildv                                     &
+                 - volume(iel) * propce(iel,ipccp) * dt(iel)  &
+                               * xgamma * xrtp
+      else
+        xbildv =   xbildv  &
+                 - volume(iel) * cp0iph * dt(iel) * xgamma * xrtp
+      endif
+    enddo
+  endif
+
+  ! --> Balance on boundary faces
+  !     -------------------------
+
+  ! We handle different types of boundary faces separately to better
+  ! analyze the information, but this is not mandatory.
+
+  ! - Compute the contribution from walls with colors 2, 4, and 7
+  !   (adiabatic here, so flux should be 0)
+
+  call getfbr('2 or 4 or 7', nlelt, lstelt)
   !==========
- ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr , nphas  ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
-   ra(itravx) , ra(itravx) , ra(itravx) ,                         &
-   rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-   ra(igradx) , ra(igrady) , ra(igradz) ,                         &
-!        ----------   ----------   ----------
-   ra(itravx) , ra(itravy) , ra(itravz) ,                         &
-   rdevel , rtuser , ra     )
 
+  do ilelt = 1, nlelt
 
-!    - Calcul de la valeur reconstruite dans les cellules de bord
+    ifac = lstelt(ilelt)
+    iel  = ifabor(ifac)   ! associated boundary cell
 
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    iii = idiipb-1+3*(ifac-1)
-    diipbx = ra(iii+1)
-    diipby = ra(iii+2)
-    diipbz = ra(iii+3)
-    ra(itreco+ifac-1) = rtp(iel,ivar)                             &
-         + diipbx*ra(igradx+iel-1)                                &
-         + diipby*ra(igrady+iel-1)                                &
-         + diipbz*ra(igradz+iel-1)
-  enddo
+    ! Geometric variables
 
+    surfbn = ra(isrfbn-1+ifac)
+    distbr = ra(idistb-1+ifac)
 
+    ! Physical variables
 
+    visct  = propce(iel,ipcvst)
+    flumab = propfb(ifac,iflmab)
 
-! --> Cas des maillages orthogonaux
-
-else
-
-! --- Reservation de la memoire
-
-  ifinia = idebia
-
-  itreco = idebra
-  ifinra = itreco+nfabor
-
-! --- Verification de la disponibilite de la memoire
-
-  CALL IASIZE('USPROJ',IFINIA)
-  CALL RASIZE('USPROJ',IFINRA)
-
-! ---  Calcul de la valeur reconstruite (en fait, ici, affectation
-!     de la valeur non reconstruite)
-
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    ra(itreco+ifac-1) = rtp(iel,ivar)
-  enddo
-
-endif
-
-
-
-
-
-! 2.2 CALCUL DU BILAN A L'INSTANT N
-! =================================
-
-! --> Bilan sur les volumes internes
-!     ------------------------------
-
-!       La masse volumique ROM est celle qui a ete calculee en debut de
-!       pas de temps a partir de la temperature au pas de temps
-!       precedent (dans usphyv ou, si elle est constante RO0)
-
-
-if(ipccp.gt.0) then
-  do iel = 1, ncel
-    xrtpa = rtpa(iel,ivar)
-    xrtp  = rtp (iel,ivar)
-    xbilvl = xbilvl                                               &
-        + volume(iel) * propce(iel,ipccp) * propce(iel,ipcrom)    &
-                                               * ( xrtpa - xrtp )
-  enddo
-else
-  do iel = 1, ncel
-    xrtpa = rtpa(iel,ivar)
-    xrtp  = rtp (iel,ivar)
-    xbilvl = xbilvl                                               &
-        + volume(iel) * cp0iph * propce(iel,ipcrom)               &
-                                               * ( xrtpa - xrtp )
-  enddo
-endif
-
-
-! --> Bilan sur toutes les faces, internes et de bord, pour prendre
-!     en compte le terme en div(rho u)-----------------------------
-!     --------------------------------
-
-!     Attention, on fait intervenir les valeurs de Cp et de Dt dans
-!     les cellules voisines des faces internes, ce qui necessite d'avoir
-!     pris ses precautions en periodicite et parallelisme.
-
-! --- Si Cp est variable
-!     Noter que si Cp est variable, ecrire ici un bilan sur l'equation
-!     de la temerature n'est pas absolument correct
-
-if(ipccp.gt.0) then
-  do ifac = 1, nfac
-    iel1 = ifacel(1,ifac)
-    iel2 = ifacel(2,ifac)
-    xbildv = xbildv + propfa(ifac,iflmas)                         &
-          *(dt(iel1)*propce(iel1,ipccp)*rtp(iel1,ivar)            &
-           -dt(iel2)*propce(iel2,ipccp)*rtp(iel2,ivar))
-  enddo
-
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    xbildv = xbildv + dt(iel)                                     &
-         * propce(iel,ipccp)                                      &
-         * propfb(ifac,iflmab)                                    &
-         * rtp(iel,ivar)
-  enddo
-
-! --- Si Cp est constant
-
-else
-  do ifac = 1, nfac
-    iel1 = ifacel(1,ifac)
-    iel2 = ifacel(2,ifac)
-    xbildv = xbildv + (dt(iel1)+ dt(iel2))*0.5d0                  &
-         * cp0iph                                                 &
-         * propfa(ifac,iflmas)                                    &
-         * (rtp(iel1,ivar) - rtp(iel2,ivar))
-  enddo
-
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    xbildv = xbildv + dt(iel)                                     &
-         * cp0iph                                                 &
-         * propfb(ifac,iflmab)                                    &
-         * rtp(iel,ivar)
-  enddo
-endif
-
-!     En cas de terme source de masse, on ajoute la contribution en Gamma*Tn+1
-
-ncesmp=ncetsm(iphas)
-if (ncesmp.gt.0) then
-  icesmp = iicesm(iphas)
-  ismacp = ismace(iphas)
-  itpsmp = iitpsm(iphas)
-  do ieltsm = 1, ncesmp
-    iel = ia(icesmp+ieltsm-1)
-    xrtp  = rtp (iel,ivar)
-    xgamma = ra( ismacp+ieltsm+ncesmp*(ipr(iphas)-1)-1)
-    if(ipccp.gt.0) then
-      xbildv = xbildv                                             &
-           - volume(iel) * propce(iel,ipccp) * dt(iel)            &
-           * xgamma * xrtp
+    if (ipccp.gt.0) then
+      xcp = propce(iel,ipccp)
     else
-      xbildv = xbildv                                             &
-           - volume(iel) * cp0iph * dt(iel)                       &
-           * xgamma * xrtp
+      xcp    = cp0iph
     endif
-  enddo
-endif
 
+    if (ipcvsl.gt.0) then
+      xvsl = propce(iel,ipcvsl)
+    else
+      xvsl = visls0(iscal)
+    endif
 
+    ! Contribution to flux from the current face
+    ! (diffusion and convection flux, negative if incoming)
 
-! --> Bilan sur les faces de bord
-!     ---------------------------
-
-!      On distingue ici les differents types de faces de bord
-!        pour mieux analyser l'information, mais ce n'est pas oblige.
-
-
-!     - Calcul de la contribution des parois de couleur 2, 4, 7
-!         (ici adiabatiques, donc flux nul a priori)
-
-CALL GETFBR('2 or 4 or 7',NLELT,LSTELT)
-!==========
-
-do ilelt = 1, nlelt
-
-  ifac = lstelt(ilelt)
-
-! ---   Element de bord
-
-  iel    = ifabor(ifac)
-
-! ---   Variables geometriques
-
-  surfbn = ra(isrfbn-1+ifac)
-  distbr = ra(idistb-1+ifac)
-
-! ---   Variables physiques
-
-  visct  = propce(iel,ipcvst)
-  flumab = propfb(ifac,iflmab)
-
-  if(ipccp.gt.0) then
-    xcp = propce(iel,ipccp)
-  else
-    xcp    = cp0iph
-  endif
-
-  if(ipcvsl.gt.0) then
-    xvsl = propce(iel,ipcvsl)
-  else
-    xvsl = visls0(iscal)
-  endif
-
-! ---   Calcul de la contribution au flux sur la facette courante
-!         (flux de diffusion et de convection, negatif si entrant)
-
-    xfluxf =          surfbn * dt(iel) * xcp *                    &
-     (xvsl+visct/sigmas(iscal))/distbr *                          &
-     (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)                &
-                                               *ra(itreco+ifac-1))&
-                    - flumab * dt(iel) * xcp *                    &
-     (coefa(ifac,iclvar)+ coefb(ifac,iclvar)                      &
-                                               *ra(itreco+ifac-1))
+    xfluxf =      surfbn * dt(iel) * xcp                            &
+                * (xvsl+visct/sigmas(iscal)) / distbr               &
+                * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
+                   * ra(itreco+ifac-1))                             &
+              -   flumab * dt(iel) * xcp                            &
+                * (  coefa(ifac,iclvar) + coefb(ifac,iclvar)        &
+                   * ra(itreco+ifac-1))
 
     xbilpa = xbilpa + xfluxf
 
-enddo
+  enddo
 
+  ! Contribution from walls with color 6
+  ! (here at fixed temperature; the convective flux should be 0)
 
-!     - Calcul de la contribution des parois de couleur 6
-!         (ici a temperature imposee ;
-!                                   le flux convectif est nul a priori)
+  call getfbr('6', nlelt, lstelt)
+  !==========
 
-CALL GETFBR('6',NLELT,LSTELT)
-!==========
+  do ilelt = 1, nlelt
 
-do ilelt = 1, nlelt
+    ifac = lstelt(ilelt)
+    iel  = ifabor(ifac)   ! associated boundary cell
 
-  ifac = lstelt(ilelt)
+    ! Geometric variables
 
-! ---   Element de bord
+    surfbn = ra(isrfbn-1+ifac)
+    distbr = ra(idistb-1+ifac)
 
-  iel    = ifabor(ifac)
+    ! Physical variables
 
-! ---   Variables geometriques
+    visct  = propce(iel,ipcvst)
+    flumab = propfb(ifac,iflmab)
 
-  surfbn = ra(isrfbn-1+ifac)
-  distbr = ra(idistb-1+ifac)
+    if (ipccp.gt.0) then
+      xcp = propce(iel,ipccp)
+    else
+      xcp    = cp0iph
+    endif
 
-! ---   Variables physiques
+    if (ipcvsl.gt.0) then
+      xvsl = propce(iel,ipcvsl)
+    else
+      xvsl = visls0(iscal)
+    endif
 
-  visct  = propce(iel,ipcvst)
-  flumab = propfb(ifac,iflmab)
+    ! Contribution to flux from the current face
+    ! (diffusion and convection flux, negative if incoming)
 
-  if(ipccp.gt.0) then
-    xcp = propce(iel,ipccp)
-  else
-    xcp    = cp0iph
-  endif
-
-  if(ipcvsl.gt.0) then
-    xvsl = propce(iel,ipcvsl)
-  else
-    xvsl = visls0(iscal)
-  endif
-
-! ---   Calcul de la contribution au flux sur la facette courante
-!         (flux de diffusion et de convection, negatif si entrant)
-
-    xfluxf =          surfbn * dt(iel) * xcp *                    &
-     (xvsl+visct/sigmas(iscal))/distbr *                          &
-     (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)                &
-                                               *ra(itreco+ifac-1))&
-                    - flumab * dt(iel) * xcp *                    &
-     (coefa(ifac,iclvar)+ coefb(ifac,iclvar)                      &
-                                               *ra(itreco+ifac-1))
+    xfluxf =    surfbn * dt(iel) * xcp                            &
+              * (xvsl+visct/sigmas(iscal)) / distbr               &
+              * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
+                 * ra(itreco+ifac-1))                             &
+              -   flumab * dt(iel) * xcp                          &
+                * (  coefa(ifac,iclvar) + coefb(ifac,iclvar)       &
+                   * ra(itreco+ifac-1))
 
     xbilpt = xbilpt + xfluxf
 
-enddo
+  enddo
 
+  ! Contribution from symmetries (should be 0).
 
-!     - Calcul de la contribution des symetries (couleur 1)
-!         (a priori nul).
+  call getfbr('1', nlelt, lstelt)
+  !==========
 
-CALL GETFBR('1',NLELT,LSTELT)
-!==========
+  do ilelt = 1, nlelt
 
-do ilelt = 1, nlelt
+    ifac = lstelt(ilelt)
+    iel  = ifabor(ifac)   ! associated boundary cell
 
-  ifac = lstelt(ilelt)
+    ! Geometric variables
 
-! ---   Element de bord
+    surfbn = ra(isrfbn-1+ifac)
+    distbr = ra(idistb-1+ifac)
 
-  iel    = ifabor(ifac)
+    ! Physical variables
 
-! ---   Variables geometriques
+    visct  = propce(iel,ipcvst)
+    flumab = propfb(ifac,iflmab)
 
-  surfbn = ra(isrfbn-1+ifac)
-  distbr = ra(idistb-1+ifac)
+    if (ipccp.gt.0) then
+      xcp = propce(iel,ipccp)
+    else
+      xcp    = cp0iph
+    endif
 
-! ---   Variables physiques
+    if (ipcvsl.gt.0) then
+      xvsl = propce(iel,ipcvsl)
+    else
+      xvsl = visls0(iscal)
+    endif
 
-  visct  = propce(iel,ipcvst)
-  flumab = propfb(ifac,iflmab)
-
-  if(ipccp.gt.0) then
-    xcp = propce(iel,ipccp)
-  else
-    xcp    = cp0iph
-  endif
-
-  if(ipcvsl.gt.0) then
-    xvsl = propce(iel,ipcvsl)
-  else
-    xvsl = visls0(iscal)
-  endif
-
-! ---   Calcul de la contribution au flux sur la facette courante
-!         (flux de diffusion et de convection, negatif si entrant)
+    ! Contribution to flux from the current face
+    ! (diffusion and convection flux, negative if incoming)
 
     xfluxf =          surfbn * dt(iel) * xcp *                    &
      (xvsl+visct/sigmas(iscal))/distbr *                          &
@@ -1023,234 +941,212 @@ do ilelt = 1, nlelt
 
     xbilsy = xbilsy + xfluxf
 
-enddo
+  enddo
 
+  ! Contribution from inlet (color 3, diffusion and convection flux)
 
-!     - Calcul de la contribution en entree (couleur 3)
-!         (flux de diffusion et de convection)
+  call getfbr('3', nlelt, lstelt)
+  !==========
 
-CALL GETFBR('3',NLELT,LSTELT)
-!==========
+  do ilelt = 1, nlelt
 
-do ilelt = 1, nlelt
+    ifac = lstelt(ilelt)
+    iel  = ifabor(ifac)   ! associated boundary cell
 
-  ifac = lstelt(ilelt)
+    ! Geometric variables
 
-! ---   Element de bord
+    surfbn = ra(isrfbn-1+ifac)
+    distbr = ra(idistb-1+ifac)
 
-  iel    = ifabor(ifac)
+    ! Physical variables
 
-! ---   Variables geometriques
+    visct  = propce(iel,ipcvst)
+    flumab = propfb(ifac,iflmab)
 
-  surfbn = ra(isrfbn-1+ifac)
-  distbr = ra(idistb-1+ifac)
+    if (ipccp.gt.0) then
+      xcp = propce(iel,ipccp)
+    else
+      xcp    = cp0iph
+    endif
 
-! ---   Variables physiques
+    if (ipcvsl.gt.0) then
+      xvsl = propce(iel,ipcvsl)
+    else
+      xvsl = visls0(iscal)
+    endif
 
-  visct  = propce(iel,ipcvst)
-  flumab = propfb(ifac,iflmab)
+    ! Contribution to flux from the current face
+    ! (diffusion and convection flux, negative if incoming)
 
-  if(ipccp.gt.0) then
-    xcp = propce(iel,ipccp)
-  else
-    xcp    = cp0iph
-  endif
-
-  if(ipcvsl.gt.0) then
-    xvsl = propce(iel,ipcvsl)
-  else
-    xvsl = visls0(iscal)
-  endif
-
-! ---   Calcul de la contribution au flux sur la facette courante
-!         (flux de diffusion et de convection, negatif si entrant)
-
-    xfluxf =          surfbn * dt(iel) * xcp *                    &
-     (xvsl+visct/sigmas(iscal))/distbr *                          &
-     (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)                &
-                                               *ra(itreco+ifac-1))&
-                    - flumab * dt(iel) * xcp *                    &
-     (coefa(ifac,iclvar)+ coefb(ifac,iclvar)                      &
-                                               *ra(itreco+ifac-1))
+    xfluxf =    surfbn * dt(iel) * xcp                            &
+              * (xvsl+visct/sigmas(iscal))/distbr                 &
+              * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
+                 * ra(itreco+ifac-1))                             &
+              -   flumab * dt(iel) * xcp                          &
+                * (  coefa(ifac,iclvar)+ coefb(ifac,iclvar)       &
+                   * ra(itreco+ifac-1))
 
     xbilen = xbilen + xfluxf
 
-enddo
+  enddo
 
-!     - Calcul de la contribution en sortie (couleur 5)
-!         (flux de diffusion et de convection)
+  ! Contribution from outlet (color 5, diffusion and convection flux)
 
-CALL GETFBR('5',NLELT,LSTELT)
-!==========
+  call getfbr('5', nlelt, lstelt)
+  !==========
 
-do ilelt = 1, nlelt
+  do ilelt = 1, nlelt
 
-  ifac = lstelt(ilelt)
+    ifac = lstelt(ilelt)
+    iel  = ifabor(ifac)   ! associated boundary cell
 
-! ---   Element de bord
+    ! Geometric variables
 
-  iel    = ifabor(ifac)
+    surfbn = ra(isrfbn-1+ifac)
+    distbr = ra(idistb-1+ifac)
 
-! ---   Variables geometriques
+    ! Physical variables
 
-  surfbn = ra(isrfbn-1+ifac)
-  distbr = ra(idistb-1+ifac)
+    visct  = propce(iel,ipcvst)
+    flumab = propfb(ifac,iflmab)
 
-! ---   Variables physiques
+    if (ipccp.gt.0) then
+      xcp = propce(iel,ipccp)
+    else
+      xcp    = cp0iph
+    endif
 
-  visct  = propce(iel,ipcvst)
-  flumab = propfb(ifac,iflmab)
+    if (ipcvsl.gt.0) then
+      xvsl = propce(iel,ipcvsl)
+    else
+      xvsl = visls0(iscal)
+    endif
 
-  if(ipccp.gt.0) then
-    xcp = propce(iel,ipccp)
-  else
-    xcp    = cp0iph
-  endif
+    ! Contribution to flux from the current face
+    ! (diffusion and convection flux, negative if incoming)
 
-  if(ipcvsl.gt.0) then
-    xvsl = propce(iel,ipcvsl)
-  else
-    xvsl = visls0(iscal)
-  endif
-
-! ---   Calcul de la contribution au flux sur la facette courante
-!         (flux de diffusion et de convection, negatif si entrant)
-
-    xfluxf =          surfbn * dt(iel) * xcp *                    &
-     (xvsl+visct/sigmas(iscal))/distbr *                          &
-     (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)                &
-                                               *ra(itreco+ifac-1))&
-                    - flumab * dt(iel) * xcp *                    &
-     (coefa(ifac,iclvar)+ coefb(ifac,iclvar)                      &
-                                               *ra(itreco+ifac-1))
+    xfluxf =     surfbn * dt(iel) * xcp                            &
+               * (xvsl+visct/sigmas(iscal))/distbr                 &
+               * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
+                  * ra(itreco+ifac-1))                             &
+             -   flumab * dt(iel) * xcp                            &
+               * (  coefa(ifac,iclvar)+ coefb(ifac,iclvar)         &
+                  * ra(itreco+ifac-1))
 
     xbilso = xbilso + xfluxf
 
-enddo
-
-
-! --> Bilan sur les termes sources de masse
-!     -------------------------------------
-!     On va séparer les injections de masse des aspirations
-!     pour plus de generalite
-
-ncesmp=ncetsm(iphas)
-if (ncesmp.gt.0) then
-  icesmp = iicesm(iphas)
-  ismacp = ismace(iphas)
-  itpsmp = iitpsm(iphas)
-  do ieltsm = 1, ncesmp
-!     suivant le type d'injection, on utilise la valeur SMACEL ou la valeur ambiante
-!     de la température
-    iel = ia(icesmp+ieltsm-1)
-    xgamma = ra( ismacp+ieltsm+ncesmp*(ipr(iphas)-1)-1)
-    if ( ia( itpsmp+ieltsm+ncesmp*(ivar-1)-1).eq.0                &
-         .or. xgamma.lt.0.d0 ) then
-      xrtp  = rtp (iel,ivar)
-    else
-      xrtp  = ra( ismacp+ieltsm+ncesmp*(ivar-1)-1)
-    endif
-    if(ipccp.gt.0) then
-      if (xgamma.lt.0.d0) then
-        xbilma = xbilma                                           &
-             + volume(iel) * propce(iel,ipccp) * dt(iel)          &
-             * xgamma * xrtp
-      else
-        xbilmi = xbilmi                                           &
-             + volume(iel) * propce(iel,ipccp) * dt(iel)          &
-             * xgamma * xrtp
-      endif
-    else
-      if (xgamma.lt.0.d0) then
-        xbilma = xbilma                                           &
-             + volume(iel) * cp0iph * dt(iel)                     &
-             * xgamma * xrtp
-      else
-        xbilmi = xbilmi                                           &
-             + volume(iel) * cp0iph * dt(iel)                     &
-             * xgamma * xrtp
-      endif
-    endif
   enddo
-endif
 
+  ! --> Balance on mass source terms
+  !     ----------------------------
 
-!     - Somme des grandeurs sur tous les processeurs (calculs paralleles)
+  ! We separate mass injections from suctions for better generality
 
-if (irangp.ge.0) then
-  call parsom (xbilvl)
-  call parsom (xbildv)
-  call parsom (xbilpa)
-  call parsom (xbilpt)
-  call parsom (xbilsy)
-  call parsom (xbilen)
-  call parsom (xbilso)
-  call parsom (xbilmi)
-  call parsom (xbilma)
-endif
+  ncesmp = ncetsm(iphas)
+  if (ncesmp.gt.0) then
+    icesmp = iicesm(iphas)
+    ismacp = ismace(iphas)
+    itpsmp = iitpsm(iphas)
+    do ieltsm = 1, ncesmp
+      ! depending on the type of injection we use the 'smacell' value
+      ! or the ambient temperature
+      iel = ia(icesmp+ieltsm-1)
+      xgamma = ra( ismacp+ieltsm+ncesmp*(ipr(iphas)-1)-1)
+      if (     ia(itpsmp+ieltsm+ncesmp*(ivar-1)-1).eq.0  &
+          .or. xgamma.lt.0.d0) then
+        xrtp = rtp (iel,ivar)
+      else
+        xrtp = ra(ismacp+ieltsm+ncesmp*(ivar-1)-1)
+      endif
+      if (ipccp.gt.0) then
+        if (xgamma.lt.0.d0) then
+          xbilma =   xbilma  &
+                   + volume(iel) * propce(iel,ipccp) * dt(iel) * xgamma * xrtp
+        else
+          xbilmi =   xbilmi  &
+                   + volume(iel) * propce(iel,ipccp) * dt(iel) * xgamma * xrtp
+        endif
+      else
+        if (xgamma.lt.0.d0) then
+          xbilma =   xbilma  &
+                   + volume(iel) * cp0iph * dt(iel) * xgamma * xrtp
+        else
+          xbilmi =   xbilmi  &
+                   + volume(iel) * cp0iph * dt(iel) * xgamma * xrtp
+        endif
+      endif
+    enddo
+  endif
 
+  ! Sum of values on all ranks (parallel calculations)
 
+  if (irangp.ge.0) then
+    call parsom(xbilvl)
+    call parsom(xbildv)
+    call parsom(xbilpa)
+    call parsom(xbilpt)
+    call parsom(xbilsy)
+    call parsom(xbilen)
+    call parsom(xbilso)
+    call parsom(xbilmi)
+    call parsom(xbilma)
+  endif
 
+  ! --> Total balance
+  !     -------------
 
-! --> Bilan total
-!     -----------
+  ! We add the different contributions calculated above.
 
-!      On ajoute les differentes contributions calculees plus haut.
+  xbilan =   xbilvl + xbildv + xbilpa + xbilpt + xbilsy + xbilen   &
+           + xbilso + xbilmi + xbilma
 
-xbilan = xbilvl + xbildv + xbilpa + xbilpt + xbilsy + xbilen      &
-     + xbilso+ xbilmi + xbilma
+  ! 2.3 Write the balance at time step n
+  ! ====================================
 
+  write (nfecra, 2000)                                               &
+    ntcabs, xbilvl, xbildv, xbilpa, xbilpt, xbilsy, xbilen, xbilso,  &
+    xbilmi, xbilma, xbilan
 
+2000 format                                                           &
+  (/,                                                                 &
+   3X,'** Thermal balance **', /,                                     &
+   3X,'   ---------------', /,                                        &
+   '---', '------',                                                   &
+   '------------------------------------------------------------', /, &
+   'bt ','  Iter',                                                    &
+   '   Volume     Divergence  Adia Wall   Fixed_T Wall  Symmetry',    &
+   '      Inlet       Outlet  Inj. Mass.  Suc. Mass.  Total', /,      &
+   'bt ', i6, 10e12.4, /,                                             &
+   '---','------',                                                    &
+   '------------------------------------------------------------')
 
-
-! 2.3 ECRITURE DU BILAN A L'INSTANT N
-! ===================================
-
-write(nfecra,2000)                                                &
- ntcabs, xbilvl, xbildv, xbilpa, xbilpt, xbilsy, xbilen, xbilso,  &
-     xbilmi, xbilma, xbilan
-
-
- 2000 format(/,                                                   &
- 3X,'** BILAN THERMIQUE **',/,                              &
- 3X,'   ---------------',/,                                 &
- '---','------',                                                  &
- '------------------------------------------------------------',/,&
- 'bt ','  ITER',                                                  &
- '   Volumique  Divergence  Paroi Adia  Paroi Timp    Symetrie',  &
- '      Entree      Sortie  Masse inj.  Masse asp.  Bil. total',/,&
- 'bt ',I6,10E12.4,/,                                        &
- '---','------',                                                  &
- '------------------------------------------------------------')
-
-!- Fin du test sur INPDT0
-endif
+endif ! End of test on inpdt0
 
 !===============================================================================
-! 3. EXEMPLE : CALCUL DES EFFORTS GLOBAUX SUR UN SOUS-ENSEMBLE DE FACES
+! 3. Example: compute global efforts on a subset of faces
+!    ----------------------------------------------------
 !===============================================================================
-
 
 ! ----------------------------------------------
 
-! Il est assez courant que l'on oublie d'eliminer cet exemple
-!   de ce sous-programme.
-! On a donc prevu le test suivant pour eviter les mauvaises surprises
+! The test below allows checking that the following example compiles
+! while disabling it by default.
 
 iutile = 0
 
-if(iutile.eq.0) return
+if (iutile.eq.0) return
 
 ! ----------------------------------------------
 
-!     Si les efforts ont bien ete calcules :
+! If efforts have been calculated correctly:
+
 if (ineedf.eq.1) then
 
   do ii = 1, ndim
     xfor(ii) = 0.d0
   enddo
 
-  CALL GETFBR('2 or 3',NLELT,LSTELT)
+  call getfbr('2 or 3', nlelt, lstelt)
   !==========
 
   do ilelt = 1, nlelt
@@ -1270,33 +1166,30 @@ if (ineedf.eq.1) then
 endif
 
 !===============================================================================
-! 4. EXEMPLE : MISE A 20 DE LA TEMPERATURE DANS UNE ZONE DONNEE
-!              A PARTIR DU TEMPS 12s
+! 4. Example: set temperature to 20 in a given region starting at t = 12s
+!    --------------------------------------------------------------------
 
-!           A FAIRE AVEC PRECAUTIONS ...
-!           L'UTILISATEUR PREND SES RESPONSABILITES.
+! Do this with precaution...
+! The user is responsible for the validity of results.
 !===============================================================================
-
 
 ! ----------------------------------------------
 
-! Il est assez courant que l'on oublie d'eliminer cet exemple
-!   de ce sous-programme.
-! On a donc prevu le test suivant pour eviter les mauvaises surprises
+! The test below allows checking that the following example compiles
+! while disabling it by default.
 
 iutile = 0
 
-if(iutile.eq.0) return
+if (iutile.eq.0) return
 
 ! ----------------------------------------------
-
 
 iphas = 1
 iscal = iscalt(iphas)
 
-if (ttcabs.ge.12.d0) then
+if (ttcabs .ge. 12.d0) then
 
-  if (iscal.gt.0.and.iscal.le.nscal) then
+  if (iscal.gt.0 .and. iscal.le.nscal) then
     do iel = 1, ncel
       rtp(iel,isca(iscal)) = 20.d0
     enddo
@@ -1306,53 +1199,51 @@ if (ttcabs.ge.12.d0) then
 
 endif
 
- 3000 format(/,                                                   &
- ' MODIFICATION UTILISATEUR DES VARIABLES EN FIN DE PAS DE TEMPS',&
- /)
+ 3000 format                                                       &
+  (/,                                                              &
+   ' User modification of variables at the end of the time step',  &
+   /)
 
 !===============================================================================
-! 5. EXEMPLE : EXTRACTION D'UN PROFIL 1D
+! 5. Example: extraction of a 1D profile
 !    -----------------------------------
 
-!    On cherche ici a extraire le profil de U, V, W, k et eps sur une
-!     courbe 1D quelconque en fonction de l'abscisse curviligne.
-!    Le profil est ecrit dans le fichier "profil.dat" (ne pas oublier de
-!     prevoir son rapatriement par le script de lancement).
+! We seek here to extract the profile of U, V, W, k and epsilon on an
+! arbitrary 1D curve based on a curvilear abscissa.
+! The profile is described in the 'profile.dat' file (do not forget to
+! define it as user data in the run script).
 
-!    - la courbe utilisee ici est le segment [(0;0;0),(0;0.1;0)], mais la
-!      generalisation a une courbe quelconque est simple.
-!    - la routine est adaptee au parallelisme et a la periodicite, ainsi
-!      qu'au differents modeles de turbulence.
-!    - la courbe 1D est discretisee en NPOINT points. Pour chacun de ces
-!      points, on calcule le centre de cellule le plus proche et on
-!      imprime la valeur des variables au centre de cette cellule. Pour plus
-!      de coherence, l'ordonnee imprimee est celle du centre de la cellule.
-!    - on evite d'imprimer deux fois la meme cellule (si plusieurs points de
-!      la courbe sont associes a la meme cellule).
+! - the curve used here is the segment: [(0;0;0),(0;0.1;0)], but the
+!   generalization to an arbitrary curve is simple.
+! - the routine handles parallelism an periodicity, as well as the different
+!   turbulence models.
+! - the 1D curve is discretized into 'npoint' points. For each of these
+!   points, we search for the closest cell center and we output the variable
+!   values at this cell center. For better consistency, the coordinate
+!   which is output is that of the cell center (instead of the initial point).
+! - we avoid using the same cell multiple times (in case several points
+!   an the curve are associated with the same cell).
 !===============================================================================
-
 
 ! ----------------------------------------------
 
-! Il est assez courant que l'on oublie d'eliminer cet exemple
-!   de ce sous-programme.
-! On a donc prevu le test suivant pour eviter les mauvaises surprises
+! The test below allows checking that the following example compiles
+! while disabling it by default.
 
 iutile = 0
 
-if(iutile.eq.0) return
+if (iutile.eq.0) return
 
 ! ----------------------------------------------
 
-
 if (ntcabs.eq.ntmabs) then
 
-!     Seul le processeur de rang 0 (parallele) ou -1 (scalaire) ecrit dans le
-!     fichier. On utilise les unites "utilisateur".
+  ! Only process of rank 0 (parallel) or -1 (scalar) writes to this file.
+  ! We use 'user' Fortran units.
   impout = impusr(1)
   if (irangp.le.0) then
-    open(impout,file="profil.dat")
-    write(impout,*)                                               &
+    open(impout,file='profile.dat')
+    write(impout,*)  &
          '# z(m) U(m/s) V(m/s) W(m/s) k(m2/s2) eps(m2/s3)'
   endif
 
@@ -1366,18 +1257,15 @@ if (ntcabs.eq.ntmabs) then
     xyz(2) = float(ii-1)/float(npoint-1)*0.1d0
     xyz(3) = 0.d0
 
-    call findpt                                                   &
+    call findpt(ncelet, ncel, xyzcen, xyz(1), xyz(2), xyz(3), iel, irangv)
     !==========
-      (ncelet, ncel, xyzcen,                                      &
-       xyz(1), xyz(2), xyz(3), iel, irangv)
 
     if ((iel.ne.iel1).or.(irangv.ne.irang1)) then
       iel1   = iel
       irang1 = irangv
 
-!     On remplit les variables temporaires XU, XV, ... pour le processeur
-!      qui contient le point et on envoie ensuite l'info aux autres
-!      processeurs.
+      ! Set temporary variables xu, xv, ... for the process containing
+      ! the point and then send it to other processes.
       if (irangp.eq.irangv) then
         xabs = xyzcen(2,iel)
         xu   = rtp(iel,iu(iphas))
@@ -1385,15 +1273,15 @@ if (ntcabs.eq.ntmabs) then
         xw   = rtp(iel,iw(iphas))
         xk   = 0.d0
         xeps = 0.d0
-        if (itytur(iphas).eq.2 .or. iturb(iphas).eq.50            &
-             .or. iturb(iphas).eq.60) then
+        if (     itytur(iphas).eq.2 .or. iturb(iphas).eq.50    &
+            .or. iturb(iphas).eq.60) then
           xk = rtp(iel,ik(iphas))
         elseif (itytur(iphas).eq.3) then
-          xk = ( rtp(iel,ir11(iphas))+rtp(iel,ir22(iphas))+       &
-               rtp(iel,ir33(iphas)) )/2.d0
+          xk = (  rtp(iel,ir11(iphas)) + rtp(iel,ir22(iphas))  &
+                + rtp(iel,ir33(iphas))) / 2.d0
         endif
-        if (itytur(iphas).eq.2 .or. itytur(iphas).eq.3            &
-             .or. iturb(iphas).eq.50) then
+        if (     itytur(iphas).eq.2 .or. itytur(iphas).eq.3    &
+            .or. iturb(iphas).eq.50) then
           xeps = rtp(iel,iep(iphas))
         elseif (iturb(iphas).eq.60) then
           xeps = cmu*rtp(iel,ik(iphas))*rtp(iel,iomg(iphas))
@@ -1407,21 +1295,20 @@ if (ntcabs.eq.ntmabs) then
         xeps = 0.d0
       endif
 
-!           Envoi aux autres processeurs si parallele
+      ! Broadcast to other ranks in parallel
       if (irangp.ge.0) then
         iun = 1
-        call parbcr(irangv,iun,xabs)
-        call parbcr(irangv,iun,xu  )
-        call parbcr(irangv,iun,xv  )
-        call parbcr(irangv,iun,xw  )
-        call parbcr(irangv,iun,xk  )
-        call parbcr(irangv,iun,xeps)
+        call parbcr(irangv, iun, xabs)
+        call parbcr(irangv, iun, xu)
+        call parbcr(irangv, iun, xv)
+        call parbcr(irangv, iun, xw)
+        call parbcr(irangv, iun, xk)
+        call parbcr(irangv, iun, xeps)
       endif
 
-      if (irangp.le.0)                                            &
-           write(impout,99) xabs,xu,xv,xw,xk,xeps
+      if (irangp.le.0) write(impout,99) xabs, xu, xv, xw, xk, xeps
 
- 99         format(6g17.9)
+99    format(6g17.9)
 
     endif
 
@@ -1431,157 +1318,145 @@ if (ntcabs.eq.ntmabs) then
 
 endif
 
-
 !===============================================================================
-! 6. EXEMPLE : IMPRESSION DU PREMIER MOMENT CALCULE
+! 6. Example: print first calculated statistical moment
 !===============================================================================
-
 
 ! ----------------------------------------------
 
-! Il est assez courant que l'on oublie d'eliminer cet exemple
-!   de ce sous-programme.
-! On a donc prevu le test suivant pour eviter les mauvaises surprises
+! The test below allows checking that the following example compiles
+! while disabling it by default.
 
 iutile = 0
 
-if(iutile.eq.0) return
+if (iutile.eq.0) return
 
 ! ----------------------------------------------
 
+if (nbmomt.gt.0) then
 
-if(nbmomt.gt.0) then
+  imom = 1 ! Moment number
 
-!     Numero du moment : IMOM
-  imom = 1
+  ! Position in 'propce' of the array of temporal accumulation for moments,
+  ! propce(iel,ipcmom)
 
-!     Position dans PROPCE du tableau de cumul temporel des moments
-!       PROPCE(IEL,IPCMOM)
   ipcmom = ipproc(icmome(imom))
 
-!     Le cumul temporel des moments doit etre divise par la variable
-!       de cumul du temps qui est un tableau NCEL ou un reel :
-!             un tableau NCEL   si IDTMOM(IMOM) > 0 : PROPCE(IEL,IDTCM)
-!             ou un simple reel si IDTMOM(IMOM) < 0 : DTCMOM(IDTCM)
+  ! The temporal accumulation for moments must be divided by the accumulated
+  ! time, which id an array of size ncel or a single real number:
+  ! - array of size ncel if idtmom(imom) > 0 : propce(iel, idtcm)
+  ! - or simple real     if idtmom(imom) < 0 : dtcmom(idtcm)
 
-  if(idtmom(imom).gt.0) then
+  if (idtmom(imom).gt.0) then
     idtcm = ipproc(icdtmo(idtmom(imom)))
     do iel = 1, ncel
-      write(nfecra,4000) iel,propce(iel,ipcmom)/                  &
-           max(propce(iel,idtcm),epzero)
+      write(nfecra, 4000)  &
+           iel, propce(iel, ipcmom)/max(propce(iel, idtcm), epzero)
     enddo
-  elseif(idtmom(imom).lt.0) then
+  elseif (idtmom(imom).lt.0) then
     idtcm = -idtmom(imom)
     do iel = 1, ncel
-      write(nfecra,4000) iel,propce(iel,ipcmom)/                  &
-           max(dtcmom(idtcm),epzero)
+      write(nfecra,4000)  &
+           iel, propce(iel, ipcmom)/max(dtcmom(idtcm), epzero)
     enddo
   endif
 
 endif
 
- 4000 format(' Cellule ',I10,'   Premier moment ',E14.5)
-
+4000 format(' Cell ',i10,'   First moment ',e14.5)
 
 !===============================================================================
-! 7. EXEMPLE : UTILISATION DES ROUTINES DE CALCUL PARALLELE
-!              POUR LES OPERATIONS SUIVANTES~:
+! 6. Example: use of parallel utility functions for several operations
 !===============================================================================
 
-!   Cet exemple n'a pas d'autre utilite que de fournir la liste des
-!     routines utilisables pour simplifier certaines operations
-!     globales en parallele.
+! This example demonstrates the parallel utility functions that may be used
+! to simplify parallel operations.
 
-!   ATTENTION, ces routines modifient leur argument
-
+! CAUTION: these routines modify their input
 
 ! ----------------------------------------------
 
-! Il est assez courant que l'on oublie d'eliminer cet exemple
-!   de ce sous-programme.
-! On a donc prevu le test suivant pour eviter les mauvaises surprises
+! The test below allows checking that the following example compiles
+! while disabling it by default.
 
 iutile = 0
 
-if(iutile.eq.0) return
+if (iutile.eq.0) return
 
 ! ----------------------------------------------
 
+! Sum of an integer counter 'ii', here the number of cells
 
-! Maximum d'un compteur entier II, ici le nombre de cellules par processeur
-
-!     Valeur locale
+! local value
 ii = ncel
-!     Calcul du maximum sur les processeurs
-if (irangp.ge.0) then
-  call parcmx(ii)
-endif
-!     Ecriture de la valeur maximale renvoyee
-write(nfecra,5010)ii
- 5010 format(' USPROJ: Nombre de cellules max par processeur = ', I10)
-
-
-! Somme d'un compteur entier II, ici le nombre de cellules
-
-!     Valeur locale
-ii = ncel
-!     Calcul de la somme sur les processeurs
+! global sum
 if (irangp.ge.0) then
   call parcpt(ii)
 endif
-!     Ecriture de la valeur somme renvoyee
+! print the global sum
 write(nfecra,5020)ii
- 5020 format(' USPROJ: Nombre de cellules total = ', I10)
+ 5020 format(' usproj: total number of cells = ', i10)
 
-! Somme d'un reel RRR, ici le volume
+! Maximum of an integer counter 'ii', here the number of cells
 
-!     Valeur locale
+! local value
+ii = ncel
+! global maximum
+if (irangp.ge.0) then
+  call parcmx(ii)
+endif
+! print the global maximum value
+write(nfecra,5010)ii
+ 5010 format(' usproj: max. number of cells per process = ', i10)
+
+! Sum of a real 'rrr', here the volume
+
+! local value
 rrr = 0.d0
 do iel = 1, ncel
   rrr = rrr + volume(iel)
 enddo
-!     Calcul de la somme sur les processeurs
+! global sum
 if (irangp.ge.0) then
   call parsom(rrr)
 endif
-!     Ecriture de la valeur somme renvoyee
+! print the global sum
 write(nfecra,5030)rrr
- 5030 format(' USPROJ: Volume du domaine total = ', E14.5)
+ 5030 format(' usproj: total domain volume = ', e14.5)
 
-! Maximum d'un reel RRR, ici le volume par processeur
+! Maximum of a real 'rrr', here the volume
 
-!     Valeur locale
+! local value
 rrr = 0.d0
 do iel = 1, ncel
-  rrr = rrr + volume(iel)
+  if (volume(iel).gt.rrr) rrr = volume(iel)
 enddo
-!     Calcul du maximum sur les processeurs
+! global maximum
 if (irangp.ge.0) then
   call parmax(rrr)
 endif
-!     Ecriture de la valeur maximale renvoyee
+! print the global maximum
 write(nfecra,5040)rrr
- 5040 format(' USPROJ: Volume max par processeur = ', E14.5)
+ 5040 format(' usproj: max volume per process = ', e14.5)
 
-! Minimum d'un reel RRR, ici le volume par processeur
+! Minimum of a real 'rrr', here the volume
 
-!     Valeur locale
-rrr = 0.d0
+! local value
+rrr = grand
 do iel = 1, ncel
-  rrr = rrr + volume(iel)
+  if (volume(iel).lt.rrr) rrr = volume(iel)
 enddo
-!     Calcul du minimum sur les processeurs
+! global minimum
 if (irangp.ge.0) then
   call parmin(rrr)
 endif
-!     Ecriture de la valeur minimale renvoyee
+! print the global minimum
 write(nfecra,5050)rrr
- 5050 format(' USPROJ: Volume min par processeur = ', E14.5)
+ 5050 format(' usproj: min volume per process = ', e14.5)
 
-!  Maximum d'un réel et valeurs reelles associées
-!       ici le volume et sa localisation
+! Maximum of a real and associated real values;
+! here the volume and its location (3 coordinates)
 
-!     Maximum local et sa localisation (NBR=3 coordonnees)
 nbr = 3
 rrr  = -1.d0
 xyz(1) = 0.d0
@@ -1595,19 +1470,18 @@ do iel = 1, ncel
     xyz(3) = xyzcen(3,iel)
   endif
 enddo
-!     Calcul du maximum et localisation sur les processeurs
+! global maximum and associated location
 if (irangp.ge.0) then
-  call parmxl(nbr,rrr,xyz)
+  call parmxl(nbr, rrr, xyz)
 endif
-!     Ecriture de la valeur maximale et localisation renvoyees
-write(nfecra,5060)rrr,xyz(1),xyz(2),xyz(3)
- 5060 format(' USPROJ: Volume max = ', E14.5,/,                   &
-       '         Localisation x,y,z = ',3E14.5)
+! print the global maximum and its associated values
+write(nfecra,5060) rrr, xyz(1), xyz(2), xyz(3)
+ 5060 format(' Usproj: Max. volume =      ', e14.5, /,  &
+             '         Location (x,y,z) = ', 3e14.5)
 
-!  Minimum d'un réel et valeurs reelles associées
-!       ici le volume et sa localisation
+! Minimum of a real and associated real values;
+! here the volume and its location (3 coordinates)
 
-!     Minimum local et sa localisation (NBR=3 coordonnees)
 nbr = 3
 rrr  = 1.d+30
 xyz(1) = 0.d0
@@ -1621,74 +1495,80 @@ do iel = 1, ncel
     xyz(3) = xyzcen(3,iel)
   endif
 enddo
-!     Calcul du minimum et localisation sur les processeurs
+! global minimum and associated location
 if (irangp.ge.0) then
   call parmnl(nbr,rrr,xyz)
 endif
-!     Ecriture de la valeur minimale et localisation renvoyees
-write(nfecra,5070)rrr,xyz(1),xyz(2),xyz(3)
- 5070 format(' USPROJ: Volume min = ', E14.5,/,                   &
-       '         Localisation x,y,z = ',3E14.5)
+! print the global minimum and its associated values
+write(nfecra,5070) rrr, xyz(1), xyz(2), xyz(3)
+ 5070 format(' Usproj: Min. volume =      ', e14.5, /,  &
+             '         Location (x,y,z) = ', 3e14.5)
 
-!  Somme d'un tableau d'entiers ici le nombre
-!         de cellules, de faces et de faces de bord
+! Sum of an array of integers;
+! here, the number of cells, faces, and boundary faces
 
-!     Valeurs locales
+! local values; note that to avoid counting interior faces on
+! parallel boundaries twice, we check if 'ifacel(1,ifac) .le. ncel',
+! as on a parallel boundary, this is always true for one domain
+! and false for the other.
+
+nbr = 3
+itab(1) = ncel
+itab(2) = 0
+itab(3) = nfabor
+do ifac = 1, nfac
+  if (ifacel(1, ifac).le.ncel) itab(2) = itab(2) + 1
+enddo
+! global sum
+if (irangp.ge.0) then
+  call parism(nbr, itab)
+endif
+! print the global sums
+write(nfecra,5080) itab(1), itab(2), itab(3)
+ 5080 format(' usproj: Number of cells =          ', i10, /,  &
+             '         Number of interior faces = ', i10, /,  &
+             '         Number of boundary faces = ', i10)
+
+! Maxima from an array of integers;
+! here, the number of cells, faces, and boundary faces
+
+! local values
 nbr = 3
 itab(1) = ncel
 itab(2) = nfac
 itab(3) = nfabor
-!     Calcul de la somme sur les processeurs
+! global maxima
 if (irangp.ge.0) then
-  call parism(nbr,itab)
+  call parimx(nbr, itab)
 endif
-!     Ecriture de la valeur somme renvoyee
-write(nfecra,5080)itab(1),itab(2),itab(3)
- 5080 format(' USPROJ: Nombre de cellules       = ',I10,/,        &
-       '         Nombre de faces internes = ',I10,/,        &
-       '         Nombre de faces de bord  = ',I10)
+! print the global maxima
+write(nfecra,5090) itab(1), itab(2), itab(3)
+ 5090 format(' usproj: Max. number of cells per proc. =          ', i10, /,  &
+             '         Max. number of interior faces per proc. = ', i10, /,  &
+             '         Max. number of boundary faces per proc. = ', i10)
 
-!  Maximum d'un tableau d'entiers ici le nombre
-!         de cellules, de faces et de faces de bord
+! Minima from an array of integers;
+! here, the number of cells, faces, and boundary faces
 
-!     Valeurs locales
+! local values
 nbr = 3
 itab(1) = ncel
 itab(2) = nfac
 itab(3) = nfabor
-!     Calcul du maximum sur les processeurs
+! global minima
 if (irangp.ge.0) then
-  call parimx(nbr,itab)
+  call parimn(nbr, itab)
 endif
-!     Ecriture de la valeur maximale renvoyee
-write(nfecra,5090)itab(1),itab(2),itab(3)
- 5090 format(' USPROJ: Nombre de cellules max       par proc = ',I10,/, &
-       '         Nombre de faces internes max par proc = ',I10,/, &
-       '         Nombre de faces de bord  max par proc = ',I10)
+! print the global minima
+write(nfecra,5100) itab(1), itab(2), itab(3)
+ 5100 format(' usproj: Min. number of cells per proc. =          ', i10, /,  &
+             '         Min. number of interior faces per proc. = ', i10, /,  &
+             '         Min. number of boundary faces per proc. = ', i10)
 
-!  Minimum d'un tableau d'entiers ici le nombre
-!         de cellules, et de faces de bord
-!     attention, une somme similaire pour compter les faces internes
-!         compte 2 fois les faces internes situes sur les bords des
-!         processeurs
+! Sum of an array of reals;
+! here, the 3 velocity components (so as to compute a mean for example)
 
-!     Valeurs locales
-nbr = 2
-itab(1) = ncel
-itab(2) = nfabor
-!     Calcul du minimum sur les processeurs
-if (irangp.ge.0) then
-  call parimn(nbr,itab)
-endif
-!     Ecriture de la valeur minimale renvoyee
-write(nfecra,5100)itab(1),itab(2)
- 5100 format(' USPROJ: Nombre de cellules       min par proc = ',I10,/, &
-       '         Nombre de faces de bord  min par proc = ',I10)
-
-!  Somme d'un tableau de reels ici les trois composantes de la vitesse
-!         (dans le but de faire une moyenne ensuite par exemple)
-
-!     Valeurs locales
+! local values
 nbr = 3
 xyz(1) = 0.d0
 xyz(2) = 0.d0
@@ -1698,19 +1578,20 @@ do iel = 1, ncel
   xyz(2) = xyz(2)+rtp(iel,iv(1))
   xyz(3) = xyz(3)+rtp(iel,iw(1))
 enddo
-!     Calcul de la somme sur les processeurs
+! global sum
 if (irangp.ge.0) then
-  call parrsm(nbr,xyz)
+  call parrsm(nbr, xyz)
 endif
-!     Ecriture de la valeur somme renvoyee
-write(nfecra,5110)xyz(1),xyz(2),xyz(3)
- 5110 format(' USPROJ: Somme de U sur le domaine = ',E14.5,/,     &
-       '         Somme de V sur le domaine = ',E14.5,/,     &
-       '         Somme de W sur le domaine = ',E14.5)
+! print the global sums
+write(nfecra,5110) xyz(1), xyz(2), xyz(3)
+ 5110 format(' usproj: Sum of U on the domain = ', e14.5, /,   &
+             '         Sum of V on the domain = ', e14.5, /,   &
+             '         Sum of V on the domain = ', e14.5)
 
-!  Maximum d'un tableau de reels ici les trois composantes de la vitesse
+! Maximum of an array of reals;
+! here, the 3 velocity components
 
-!     Valeurs locales
+! local values
 nbr = 3
 xyz(1) = rtp(1,iu(1))
 xyz(2) = rtp(1,iv(1))
@@ -1720,19 +1601,20 @@ do iel = 1, ncel
   xyz(2) = max(xyz(2),rtp(iel,iv(1)))
   xyz(3) = max(xyz(3),rtp(iel,iw(1)))
 enddo
-!     Calcul du maximum sur les processeurs
+! global maximum
 if (irangp.ge.0) then
-  call parrmx(nbr,xyz)
+  call parrmx(nbr, xyz)
 endif
-!     Ecriture de la valeur somme renvoyee
-write(nfecra,5120)xyz(1),xyz(2),xyz(3)
- 5120 format(' USPROJ: Maximum de U sur le domaine = ',E14.5,/,   &
-       '         Maximum de V sur le domaine = ',E14.5,/,   &
-       '         Maximum de W sur le domaine = ',E14.5)
+! print the global maxima
+write(nfecra,5120) xyz(1), xyz(2), xyz(3)
+ 5120 format(' usproj: Maximum of U on the domain = ', e14.5, /,   &
+             '         Maximum of V on the domain = ', e14.5, /,   &
+             '         Maximum of V on the domain = ', e14.5)
 
-!  Minimum d'un tableau de reels ici les trois composantes de la vitesse
+! Maximum of an array of reals;
+! here, the 3 velocity components
 
-!     Valeurs locales
+! local values
 nbr = 3
 xyz(1) = rtp(1,iu(1))
 xyz(2) = rtp(1,iv(1))
@@ -1742,111 +1624,102 @@ do iel = 1, ncel
   xyz(2) = min(xyz(2),rtp(iel,iv(1)))
   xyz(3) = min(xyz(3),rtp(iel,iw(1)))
 enddo
-!     Calcul du minimum sur les processeurs
+! global minimum
 if (irangp.ge.0) then
-  call parrmn(nbr,xyz)
+  call parrmn(nbr, xyz)
 endif
-!     Ecriture de la valeur somme renvoyee
-write(nfecra,5130)xyz(1),xyz(2),xyz(3)
- 5130 format(' USPROJ: Minimum de U sur le domaine = ',E14.5,/,   &
-       '         Minimum de V sur le domaine = ',E14.5,/,   &
-       '         Minimum de W sur le domaine = ',E14.5)
+! print the global maxima
+write(nfecra,5130) xyz(1), xyz(2), xyz(3)
+ 5130 format(' usproj: Minimum of U on the domain = ', e14.5, /,   &
+             '         Minimum of V on the domain = ', e14.5, /,   &
+             '         Minimum of V on the domain = ', e14.5)
 
-!  Envoi d'un tableau de valeurs entieres locales aux autres processeurs
-!     par exemple le nombre de cellules, de faces internes et de faces
-!     de bord du processeur numero IRANGV=0.
+! Broadcast an array of local integers to other ranks;
+! in this example, we use the number of cells, interior faces, and boundary
+! faces from process rank 0 (irangv).
 
-!     Valeurs locales
+! local values
 irangv = 0
 nbr = 3
 itab(1) = ncel
 itab(2) = nfac
 itab(3) = nfabor
-!     Envoi aux autres
+! broadcast from rank irangv to all others
 if (irangp.ge.0) then
-  call parbci(irangv,nbr,itab)
+  call parbci(irangv, nbr, itab)
 endif
-!     Ecriture par chaque processeur de la valeur envoyee par le proc 0
-write(nfecra,5140)irangv,itab(1),itab(2),itab(3)
- 5140 format(' USPROJ: Sur le processeur ', I10 ,/,               &
-       '         Nombre de cellules       = ',I10,/,        &
-       '         Nombre de faces internes = ',I10,/,        &
-       '         Nombre de faces de bord  = ',I10)
+! print values broadcast and received from rank 'irangv'
+write(nfecra,5140) irangv, itab(1), itab(2), itab(3)
+ 5140 format(' usproj: On rank ', i10 , /,                     &
+             '         Number of cells          = ', i10, /,   &
+             '         Number of interior faces = ', i10, /,   &
+             '         Number of boundary faces = ', i10)
 
-!  Envoi d'un tableau de valeurs reelles locales aux autres processeurs
-!     par exemple trois valeurs de la vitesse
-!     du processeur numero IRANGV=0.
+! Broadcast an array of local reals to other ranks;
+! in this example, we use 3 velocity values from process rank 0 (irangv).
 
-!     Valeurs locales
+! local values
 irangv = 0
 nbr = 3
 xyz(1) = rtp(1,iu(1))
 xyz(2) = rtp(1,iv(1))
 xyz(3) = rtp(1,iw(1))
-!     Envoi aux autres
+! broadcast from rank irangv to all others
 if (irangp.ge.0) then
-  call parbcr(irangv,nbr,xyz)
+  call parbcr(irangv, nbr, xyz)
 endif
-!     Ecriture par chaque processeur de la valeur envoyee par le proc 0
-write(nfecra,5150)irangv,xyz(1),xyz(2),xyz(3)
- 5150 format(' USPROJ: Sur le processeur ', I10 ,/,               &
-       '         Vitesse U dans la premiere cellule = ',E14.5,/,  &
-       '         Vitesse V dans la premiere cellule = ',E14.5,/,  &
-       '         Vitesse W dans la premiere cellule = ',E14.5)
+! print values broadcast and received from rank 'irangv'
+write(nfecra,5150) irangv, xyz(1), xyz(2), xyz(3)
+ 5150 format(' usproj: On rank ', i10 , /,                       &
+             '         Velocity U in first cell = ', e14.5, /,   &
+             '         Velocity V in first cell = ', e14.5, /,   &
+             '         Velocity W in first cell = ', e14.5)
 
-!  Recuperation par tous les processeurs du numero global d'une cellule
-!     appartenant a un processeur donne (exemple de la cellule IEL
-!     du processeur IRANGV)
+! All ranks obtain the global cell number from a given cell on a given rank;
+! in this example, cell 'iel' prom rank 'irangv'.
 iel = 1
 irangv = 0
 if (irangp.ge.0) then
-  call parcel(iel,irangv,ielg)
+  call parcel(iel, irangv, ielg)
 else
   ielg = -1
 endif
-!     Ecriture par chaque processeur du numero global de la cellule IEL
-!       du processeur IRANGV
-write(nfecra,5160)iel,irangv,ielg
- 5160 format(' USPROJ: La cellule de numero local IEL    = ',I10,/,     &
-       '            sur le processeur       IRANGV = ',I10,/,     &
-       '            a pour numero global    IELG   = ',I10)
+! print global cell number for cell 'iel' from rank 'irangv'
+write(nfecra,5160) iel, irangv, ielg
+ 5160 format(' usproj: local cell iel =         ', i10, /,   &
+             '         on rank irangv =         ', i10, /,   &
+             '         has global number ielg = ', i10)
 
-!  Recuperation par le processeur courant du numero global d'une cellule
-!     IEL lui appartenant (exemple avec IEL=1, tous les processeurs ayant
-!     au moins une cellule)
+! Get the global number of a local cel 'iel';
+! in this exemple, we use iel = 1, as all ranks should have at least one cell
 iel = 1
-call parclg(iel,irangp,ielg)
-!     Ecriture par chaque processeur du numero global de sa cellule IEL
-!       (si le processeur a moins de IEL cellules, affiche 0)
-!       (en sequentiel, affiche IEL)
-write(nfecra,5170)iel,irangp,ielg
- 5170 format(' USPROJ: La cellule de numero local IEL    = ',I10,/,     &
-       '            sur le processeur       IRANGP = ',I10,/,     &
-       '            a pour numero global    IELG   = ',I10)
+call parclg(iel, irangp, ielg)
+! each rank prints the global cell number of its cell number iel;
+! (or 0 if it has less than iel cells)
+write(nfecra,5170) iel, irangp, ielg
+ 5170 format(' usproj: Local cell number iel =  ', i10, /,    &
+             '         on rank irangp =         ', i10, /,    &
+             '         has global number ielg = ', i10)
 
-!  Recuperation par le processeur courant du numero global d'une face
-!     interne IFAC lui appartenant (exemple avec IFAC=1)
+! Get the global number of a local interior face 'ifac';
 ifac = 1
-call parfig(ifac,irangp,ifacg)
-!     Ecriture par chaque processeur du numero global de sa face IFAC
-!       (si le processeur a moins de IFAC faces internes, affiche 0)
-!       (en sequentiel, affiche IFAC)
-write(nfecra,5180)ifac,irangp,ifacg
- 5180 format(' USPROJ: La face interne de numero local IFAC = ',I10,/,  &
-       '            sur le processeur          IRANGP = ',I10,/,  &
-       '            a pour numero global        IFACG = ',I10)
+call parfig(ifac, irangp, ifacg)
+! each rank prints the global face number of its face number ifac;
+! (or 0 if it has less than ifac faces)
+write(nfecra,5180) ifac, irangp, ifacg
+ 5180 format(' usproj: Local face number ifac =  ', i10, /,  &
+             '         on rank irangp =          ', i10, /,  &
+             '         has global number ifacg = ', i10)
 
-!  Recuperation par le processeur courant du numero global d'une face
-!     de bord IFAC lui appartenant (exemple avec IFAC=1)
+! Get the global number of a local boundary face 'ifac';
 ifac = 1
-call parfbg(ifac,irangp,ifacg)
-!     Ecriture par chaque processeur du numero global de sa face IFAC
-!       (si le processeur a moins de IFAC faces de bord , affiche 0)
-!       (en sequentiel, affiche IFAC)
-write(nfecra,5190)ifac,irangp,ifacg
- 5190 format(' USPROJ: La face de bord de numero local IFAC = ',I10,/,  &
-       '            sur le processeur          IRANGP = ',I10,/,  &
-       '            a pour numero global        IFACG = ',I10)
+call parfbg(ifac, irangp, ifacg)
+! each rank prints the global face number of its boundary face number ifac;
+! (or 0 if it has less than ifac boundary faces, which may occur)
+write(nfecra,5190) ifac, irangp, ifacg
+ 5190 format(' usproj: Local boundary face number ifac =  ', i10, /,  &
+             '         on rank irangp =                   ', i10, /,  &
+             '         has global number ifacg =          ', i10)
 
 return
 end subroutine

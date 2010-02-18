@@ -50,78 +50,66 @@ subroutine uslabo &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
+!
+! User subroutine of the Lagrangian particle-tracking module:
+! -----------------------------------------------------------
+!
+! User subroutine (non-mandatory intervention)
+!
+! User subroutine managing the particle behavior during an interaction between
+! a particle and a boundary and recording the boundary statistics.
+!
+! The user does not need to modify this subroutine in the case of a standard use.
+! If he wishes to treat non-standard user-defined interactions, he needs to intervene
+! in sections 8 and 10.
+!
+! The interaction between a particle and a boundary face is treated with respect
+! to the information given by the user (value of iusclb per zone) in the subroutine uslag2.
+!
+! Given the name stored in iusclb and associated to the boundary face kface, the type
+! of particle behavior is defined. For a standard use, the value of iusclb can be either:
+!
+! * ientrl: for a zone where particles are injected into the domain (particle-inlet zone).
+! * isortl: for a zone where particle are getting out of the domain (particle-outlet zone).
+! * irebol: condition of elastic rebound.
+! * idepo1: definitive deposition of the particles; the particle is removed from the calculation
+! * idepo2: definitive deposition of the particles; the particle is kept in the calculation
+!           (useful only if iensi2 = 1)
+! * idepo3: deposition and resuspension possible depending on the flow conditions.
+! * iencrl: fouling only for coal particles (iphyla = 2)
+!
+! Besides, if one wishes to add another kind of non-standard interaction for a zone of
+! boundary faces, one must give (in uslag2) in iusclb(kzone) one of the following names:
+!
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
-!   -------------------------------------
+!       JBORD1, JBORD2, JBORD3, JBORD4, JBORD5
+!
+! And, in the present routine uslabo, the user has to program the behavior of the particles
+! for this boundary zone.
+!
+! CAUTION: At the beginning of the routine, the variable isuivi is initialized with an
+! absurd value and MUST be modified before the end of the routine.
+!
+! The velocities of the the particle and the flow seen must be modified with respect to
+! the interactions through the use of the arrays vitpar and vitflu, and MUST NOT be modified
+! directly in the ETTP and ETTPA arrays in this routine.
+!
+! Rule to modify the isuivi parameter:
+! ====================================
+!
+! 1) Set isuivi to 0 if the particle must not be followed in the mesh after its
+!    interaction with a boundary face (ex: ientrl, isortl, idepo1, idepo2)
 
-!  SOUS-PROGRAMME UTILISATEUR (INTERVENTION NON OBLIGATOIRE)
+! 2) Set isuivi to 1 if the particle must be followed in the mesh after its
+!    interaction with a boundary face (ex: idepo3)
 
-!  SOUS-PROGRAMME UTILISATEUR DE GESTION DU COMPORTEMENT
-!    DES PARTICULES A UNE INTERACTION PARTICULE/FRONTIERE
-!    ET D'ENREGISTREMENT DES STATISTIQUES AUX FRONTIERES.
-
-!  L'UTILISATEUR N'A PAS A MODIFIER LE PRESENT SOUS-PROGRAMME DANS
-!    LES CONDITIONS D'UTILISATION STANDARD. DANS LE CAS OU IL
-!    SOUHAITE AVOIR DES INTERACTIONS NON PREVU, IL DOIT INTERVENIR
-!    DANS LES RUBRIQUES NUMERO 8 et 10.
-
-!  Gestion de l'interaction particule/face de frontiere
-!    en fonction des informations donnees par l'utilisateur
-!    (valeur de IUSCLB par zone) dans la routine USLAG2.
-
-!  En fonction du nom stocke dans IUSCLB et affecte
-!    a la face de bord KFACE, on donne le type de comportement
-!    des particules.
-
-!  En standard, on a :
-
-!    IUSCLB conditions au bord pour les particules
-!    = IENTRL -> zone d'injection de particules
-!    = ISORTL -> sortie du domaine
-!    = IREBOL -> rebond des particules
-!    = IDEPO1 -> deposition definitive
-!    = IDEPO2 -> deposition definitive mais la particule reste en
-!                memoire (utile si IENSI2 = 1 uniquement)
-!    = IDEPO3 -> deposition et remise en suspension possible
-!                suivant les condition de l'ecoulement
-!    = IENCRL -> encrassement (Charbon uniquement IPHYLA = 2)
+! Remark: During an interaction, the computations of the velocities of the particle
+! ------  and of the flow seen are first-order (even if the calculation is second-order
+!         elsewhere in the domain)
 
 
-!  De plus, si on souhaite un autre type d'interaction non prevue
-!    pour zone de faces de bord, dans USLAG2 on affecte dans
-!    IUSCLB(KZONE) un des noms suivants :
-
-!               JBORD1, JBORD2, JBORD3, JBORD4, JBORD5
-
-!    et dans cette routine on code le comportement
-!    des particules pour cette zone frontiere.
-
-!  ATTENTION : en debut de routine la variable ISUIVI est
-!   initialisee a une valeur aberrante et DOIT etre modifiee
-!   avant la fin de la routine.
-!   Les vitesses de la particule et du fluide vu doivent etre
-!   modifiees en fonction de l'interaction via les tableaux
-!   VITPAR et VITFLU, elles NE DOIVENT PAS etre modifiees
-!   via ETTP et ETTPA dans ce sous-programme.
-
-!  Regle de modification de ISUIVI :
-!  =================================
-! 1) Mettre ISUIVI = 0 si la particule ne doit pas etre
-!    suivi dans le maillage apres l'interaction de sa trajectoire
-!    et de la face de bord (ex : IENTRL, ISORTL, IDEPO1, IDEPO2).
-
-! 2) mettre ISUIVI = 1 pour continuer a suivre la particule
-!    dans le maillage apres son interaction (ex : IREBOL, IDEPO3).
-!    On peut tres bien avoir ISUIVI = 0 ou ISUIVI = 1 pour un type
-!    d'interaction en fonction de comportement de la particule
-!    (ex : IENCRL).
-
-! REMARQUE : Lorsqu'il y a interaction, les calculs de la vitesse
-! ^^^^^^^^   de la particule et de la vitesse du fluide vu sont
-!            forcement a l'ordre 1 (meme si on est a l'ordre 2
-!            par ailleurs).
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -138,96 +126,105 @@ subroutine uslabo &
 ! nfml             ! i  ! <-- ! number of families (group classes)             !
 ! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
 ! nnod             ! i  ! <-- ! number of vertices                             !
-! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
+! lndnod           ! i  ! <-- ! dim connectivity cell->faces                   !
 ! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
 ! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
+!                  !    !     !                                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! kface            ! e  ! <-- ! numero de la face d'interaction                !
-! nbpt             ! e  ! <-- ! numero de la particule traitee                 !
-! isuivi           ! e  ! --> ! indicateur de suivi de la particule            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
+! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
+! nvp              ! i  ! <-- ! number of particle variables                   !
+! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
+! nvep             ! i  ! <-- ! number of particle properties (integer)        !
+! nivep            ! i  ! <-- ! number of particle properties (integer)        !
+! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
+! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
+! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
+! kface            ! i  ! <-- ! number of the interaction face                 !
+! nbpt             ! i  ! <-- ! number of the treated particle                 !
+! isuivi           ! i  ! <-- ! flag to follow (or not) the particle           !
+! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+! ifacel           ! ia ! <-- ! interior faces -> cells connectivity           !
+! (2, nfac)        !    !     !                                                !
+! ifabor           ! ia ! <-- ! boundary faces -> cells connectivity           !
+! (nfabor)         !    !     !                                                !
+! ifmfbr           ! ia ! <-- ! boundary face family numbers                   !
+! (nfabor)         !    !     !                                                !
+! ifmcel           ! ia ! <-- ! cell family numbers                            !
+! (ncelet)         !    !     !                                                !
+! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml,nprfml    !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfac)       !    !     !  face interne dans nodfac                      !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
+! ipnfac           ! ia ! <-- ! interior faces -> vertices index (optional)    !
+!   (lndfac)       !    !     !                                                !
+! nodfac           ! ia ! <-- ! interior faces -> vertices list (optional)     !
 !   (nfac+1)       !    !     !                                                !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfbr)       !    !     !  face de bord dans nodfbr                      !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
+! ipnfbr           ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+!   (lndfbr)       !    !     !                                                !
+! nodfbr           ! ia ! <-- ! boundary faces -> vertices list  (optional)    !
 !   (nfabor+1)     !    !     !                                                !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
-! itrifb(nfabor    ! te ! <-- ! tab d'indirection pour tri des faces           !
+! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
+!  nphas)          !    !     !                                                !
+! itrifb(nfabor    ! ia ! <-- ! indirection array for the sorting of the faces !
 !   nphas)         !    !     !                                                !
-! ifrlag           ! te ! <-- ! numero de zone de la face de bord              !
-!   (nfabor)       !    !     !  pour le module lagrangien                     !
-! itepa            ! te ! --> ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! indep            ! te ! --> ! pour chaque particule :                        !
-!   (nbpmax)       !    !     !   numero de la cellule de depart               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
+! ifrlag           ! ia ! <-- ! number of the boundary face                    !
+!   (nfabor)       !    !     ! for the Lagrangian module                      !
+! itepa            ! ra ! <-- ! particle information (integer)                 !
+! (nbpmax,nivep    !    !     !                                                !
+! indep            ! ia ! --> ! for each cell, number of the departure cell    !
+!   (nbpmax)       !    !     !                                                !
+! idevel(nideve    ! ia ! <-- ! dev. complementary integer array               !
+! ituser(nituse    ! ia ! <-- ! user complementary integer array               !
+! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
+! (ndim,ncelet     !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+! (ndim,nfabor)    !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
+! (ndim,nfabor)    !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 ! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
-! surfbn(nfabor    ! tr ! <-- ! surface des faces de bord                      !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
+! surfbn(nfabor    ! ra ! <-- ! area of the boundary faces                     !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! parbor(nfabor    ! tr ! <-- ! cumul des statistiques aux frontieres          !
+! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers          !
+! (ncelet,*)       !    !     ! (current and previous time step)               !
+! propce           ! ra ! <-- ! physical properties at cell centers            !
+! (ncelet,*)       !    !     !                                                !
+! propfa           ! ra ! <-- ! physical properties at interior face centers   !
+!  (nfac,*)        !    !     !                                                !
+! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
+!  (nfabor,*)      !    !     !                                                !
+! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
+!  (nfabor,*)      !    !     !                                                !
+! ettp             ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
+! ettpa            ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the previous time step        !
+! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
+! (nbpmax,nvep)    !    !     !                                                !
+! parbor(nfabor    ! ra ! <-- ! cumulation of the boundary statistics          !
 !    nvisbr)       !    !     !                                                !
-! vitpar           ! tr ! <-- ! vitesse particule pour le traitement           !
-!   (nbpmax,3)     !    !     !   interactions particules/frontieres           !
-! vitflu           ! tr ! <-- ! vitesse fluide vu pour le traitement           !
-!   (nbpmax,3)     !    !     !   interactions particules/frontieres           !
-! auxl(nbpmax,3    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
+! vitpar           ! ra ! <-- ! part. velocity for the treatment of the        !
+!   (nbpmax,3)     !    !     ! particle/wall interactions                     !
+! vitflu           ! ra ! <-- ! flow velocity for the treatment of the         !
+!   (nbpmax,3)     !    !     ! particle/wall interactions                     !
+! auxl(nbpmax,3    ! ra ! --- ! work array                                     !
+! rdevel(nrdeve    ! ra ! <-- ! Development complementary real array           !
+! rtuser(nrtuse    ! ra ! <-- ! Complementary user real array                  !
+! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
 !     mode: <-- input, --> output, <-> modifies data, --- work array
+
 !===============================================================================
 
 implicit none
@@ -310,27 +307,27 @@ double precision uxn   , vyn    , wzn
 !===============================================================================
 
 !===============================================================================
-! 0.  GESTION MEMOIRE
+! 0.  Memory management
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 1. Traitement en fonction du type de frontiere
+! 1. Treatment with respect to the type of boundary
 !===============================================================================
 
 iok = 0
 
-!--> numero de la particule traitee
+!--> number of the treated particle
 
 ip = nbpt
 
-!--> Zone de la face de bord a traitee
+!--> Zone of the boundary face to be treated
 
 kzone = ifrlag(kface)
 
-!-->normale normee sortante de la face KFACE
+!--> Normalized normale getting out from the face KFACE
 
 aa = 1.d0 / surfbn(kface)
 xnn = surfbo(1,kface) * aa
@@ -338,21 +335,19 @@ ynn = surfbo(2,kface) * aa
 znn = surfbo(3,kface) * aa
 
 !===============================================================================
-! 2. Recherche du point d'intersection entre la face de bord et
-!    le rayon. Les coordonnees sont stockees dans XK YK ZK
+! 2. Search of the intersection point between the boundary face and the ray.
+! The coordinates are stored in XK YK ZK
 !===============================================================================
 
-! Petit rappel de geometrie 3D :
-! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!            1)  equation d'un plan de normal (a,b,c) :
-!                a*x + b*y + c*z + d = 0
-!            2)  equation d'une droite qui passe par P et Q :
+!
+!            1)  Equation of a plan, of which normal vector has coordinates (a,b,c):
+!            2)  Equation of a line that contains points P and Q:
 !                x = XP + (XQ-XP) * AA
 !                y = YP + (YQ-YP) * AA
 !                z = ZP + (ZQ-ZP) * AA
-!                ou AA est un parametre qui varie dans l'ensemble des reels
+!                where AA is a parameter that varies in the real ensemble.
 
-!-->on determine le vecteur PQ
+!-->We determine the vector PQ:
 
 xp = ettpa(ip,jxp)
 yp = ettpa(ip,jyp)
@@ -366,13 +361,13 @@ xpq = xq - xp
 ypq = yq - yp
 zpq = zq - zp
 
-!-->si la particule n'a pas bougee ( si elle est deposee
-!   sur la face de bord), elle n'est pas traitee.
+!-->if the particle has not moved (if it is deposited on the boundary face),
+!   it is not treated anymore
 
 if (xpq.eq.0.d0 .and. ypq.eq.0.d0 .and. zpq.eq.0.d0) return
 
-!-->a partir de l'equation du plan de la face et de l'equation
-!   parametre du rayon, on determine le parametre du point d'intersection
+!--> From the equation of the plan of the face and the parametric equation
+!    of the ray, the intersection point is determined
 
 aa = xpq * surfbo(1,kface)                                        &
    + ypq * surfbo(2,kface)                                        &
@@ -396,16 +391,17 @@ aa =                                                              &
      - surfbo(3,kface) * zp )                                     &
      / aa
 
-!-->on reporte ce parametre dans l'equation de la droite du rayon pour
-!   avoir le point d'intersection (XK YK ZK)
+!--> The aa parameter is injected into the equation of the right of the ray to
+! get the intersection point of coordinates (XK YK ZK)
+
 
 xk = xp + xpq * aa
 yk = yp + ypq * aa
 zk = zp + zpq * aa
 
 !===============================================================================
-! 3. Depart de la particule du domaine de calcul,
-!    ou deposition de la particule sur la frontiere
+! 3. Departure of the particle from the calculation domain
+!    or deposition on a boundary
 !===============================================================================
 
 if ( iusclb(kzone).eq.isortl .or.                                 &
@@ -415,41 +411,41 @@ if ( iusclb(kzone).eq.isortl .or.                                 &
   isuivi = 0
   itepa(ip,jisor) = 0
 
-!      mise a jour du debit
+!      update of the flow
 
   deblag(kzone) = deblag(kzone)-tepa(ip,jrpoi)*ettp(ip,jmp)
 
-!--> La particule sort mais pour la visualisation ensight, on la place
-!    correctement au point d'intersection.
-!    Possibilite que le numero IP soit reutilise pour une autre
-!    particule a entrer.
+!--> The particle gets out, but for the Ensight visualization,
+!    it is placed correctly at the intersection point
+!
+!
 
   ettp(ip,jxp) = xk
   ettp(ip,jyp) = yk
   ettp(ip,jzp) = zk
 
 !===============================================================================
-! 4. Deposition de la particule, celle-ci reste en memoire
+! 4. Deposition of the particle, which remains in memory
 !===============================================================================
 
 else if (iusclb(kzone).eq.idepo2) then
 
-!--> La particule ne sort pas, elle n'est plus traitee,
-!    mais toujours visualisee. Le numero IP n'est pas reutilisable.
+!--> The particle does not get out of the domain, it is not treated any more
+!    but can still be visualized. The IP number is not reusable.
 
-    isuivi = 0
-    itepa(ip,jisor) = -itepa(ip,jisor)
+  isuivi = 0
+  itepa(ip,jisor) = -itepa(ip,jisor)
   ettp(ip,jxp) = xk
   ettp(ip,jyp) = yk
   ettp(ip,jzp) = zk
 
   do n1 = 1,3
-    vitpar(ip,n1) = 0.d0
-    vitflu(ip,n1) = 0.d0
+     vitpar(ip,n1) = 0.d0
+     vitflu(ip,n1) = 0.d0
   enddo
 
 !===============================================================================
-! 5. Deposition de la particule, la remise en suspension est possible
+! 5. Deposition of the particle, the resuspension is possible
 !===============================================================================
 
 else if (iusclb(kzone).eq.idepo3) then
@@ -469,14 +465,14 @@ else if (iusclb(kzone).eq.idepo3) then
   enddo
 
 !===============================================================================
-! 6. Deposition de la particule avec force d'attachement,
-!    vitesse conservee et re-entrainement possible
+! 6. Deposition of the particle with attachment force,
+!    the velocity is conserved, and reentrainment is possible
 !===============================================================================
 
 else if (iusclb(kzone).eq.idepfa) then
 
 
-! Calcul du critere
+! Calculation of the criterion
 
   uxn = ettp(ip,jup)*xnn
   vyn = ettp(ip,jvp)*ynn
@@ -510,8 +506,8 @@ else if (iusclb(kzone).eq.idepfa) then
     ettp(ip,jyp) = ettpa(ip,jyp)
     ettp(ip,jzp) = ettpa(ip,jzp)
 
-!-->changement de la vitesse de la particule au point d'arrive
-!   (comme pour une rebond elastique)
+!-->Modification of the particle velocity at the impaction point
+!   (like an elastic rebound)
 
     aa = abs(( vitpar(ip,1)*xnn                                   &
               +vitpar(ip,2)*ynn                                   &
@@ -521,8 +517,7 @@ else if (iusclb(kzone).eq.idepfa) then
     vitpar(ip,2) = vitpar(ip,2) - aa*ynn
     vitpar(ip,3) = vitpar(ip,3) - aa*znn
 
-!-->Annule  la vitesse du fluide vu au point d'arrive
-!   (comme pour une rebond elastique)
+!--> FIXME: (the flow velocity must not be cancelled)
 
     aa = abs( (vitflu(ip,1)*xnn                                   &
              + vitflu(ip,2)*ynn                                   &
@@ -534,7 +529,7 @@ else if (iusclb(kzone).eq.idepfa) then
   endif
 
 !===============================================================================
-! 7. Rebond elastique de la particule sur la frontiere
+! 7. Elastic rebound of the particle on the boundary
 !===============================================================================
 
 else if (iusclb(kzone).eq.irebol) then
@@ -542,7 +537,7 @@ else if (iusclb(kzone).eq.irebol) then
   isuivi = 1
   itepa(ip,jisor) = ifabor(kface)
 
-!-->changement du point de depart
+!-->Modification of the starting point
 
   ettpa(ip,jxp) = xk
   ettpa(ip,jyp) = yk
@@ -559,10 +554,9 @@ else if (iusclb(kzone).eq.irebol) then
          ettpa  , tepa   , ra)
     endif
 
-!-->changement du point d'arrive
-!   (la valeur absolue est pour eviter les p. scalaires
-!    negatifs impossibles qui interviennent avec des erreurs d'arrondi
-!    machines)
+!-->Modification of the arrival point
+!   (the absolute value is intended to avoid the negative scalar products
+!  that may occur due to computer round-off error
 
     aa = 2.d0 * abs( (xq-xk)*xnn + (yq-yk)*ynn + (zq-zk)*znn )
 
@@ -570,7 +564,7 @@ else if (iusclb(kzone).eq.irebol) then
   ettp(ip,jyp) = yq - aa*ynn
   ettp(ip,jzp) = zq - aa*znn
 
-!-->changement de la vitesse de la particule au point d'arrive
+!--> Modification of the particle velocity at the arrival point
 
 
   aa = abs( (vitpar(ip,1)*xnn                                     &
@@ -581,7 +575,7 @@ else if (iusclb(kzone).eq.irebol) then
   vitpar(ip,2) = vitpar(ip,2) - aa*ynn
   vitpar(ip,3) = vitpar(ip,3) - aa*znn
 
-!-->changement de la vitesse du fluide vu au point d'arrive
+!--> Modification of the velocity of the flow seen at the arrival point
 
   aa = abs( (vitflu(ip,1)*xnn                                     &
           +  vitflu(ip,2)*ynn                                     &
@@ -592,15 +586,15 @@ else if (iusclb(kzone).eq.irebol) then
   vitflu(ip,3) = vitflu(ip,3) - aa*znn
 
 !===============================================================================
-! 8. Encrassement des grains de charbon
+! 8. Fouling of coal particles
 !===============================================================================
 
 else if (iusclb(kzone).eq.iencrl) then
 
-!--> Encrassement de la particules si ses proprietes le permettent
-!    et en fonction d'une probabilite
-!      ICI c'est si Tp     > TPENC
-!                si VISCP  > VISCREF
+!--> Fouling of the particle, if its properties make it possible
+!    and with respect to a probability
+!      ICI if  Tp     > TPENC
+!          if  VISCP  > VISCREF
 
   icha = itepa(ip,jinch)
 
@@ -616,35 +610,36 @@ else if (iusclb(kzone).eq.iencrl) then
         trap = 1.d0-visref(icha) / viscp
       endif
 
-!  Si VISCP <= VISREF ===> 100% de chance d'encrasser
-!  Si VISCP  > VISREF ===> probabilte TRAP = 1-VISREF/VISCP
-!                          d'encrasser
-!                     ===> On encrasse si VNORL est compris
-!                          entre TRAP et 1.
+!  If VISCP <= VISREF ===> Probability of fouling equal to 1
+!  If VISCP  > VISREF ===> Probability equal to TRAP = 1-VISREF/VISCP
+!
+!                     ===> Fouling if VNORL is between
+!                          TRAP et 1.
 
       if ( viscp.le.visref(icha) .or.                             &
          (viscp.gt.visref(icha) .and. vnorl(1).ge.trap) ) then
 
-! La calcul de la masse de grains de charbon encrasses est faite plus bas.
+! The computation of the mass of coal particles fouled is carried out
+! in a following section
 
-        npencr = npencr + 1
-        isuivi = 0
-        itepa(ip,jisor)  =  0
-      ettp(ip,jxp) = xk
-      ettp(ip,jyp) = yk
-      ettp(ip,jzp) = zk
+         npencr = npencr + 1
+         isuivi = 0
+         itepa(ip,jisor)  =  0
+         ettp(ip,jxp) = xk
+         ettp(ip,jyp) = yk
+         ettp(ip,jzp) = zk
 
       endif
     endif
 
-!--> Si pas encrassement alors rebond elastique
+!--> if there is no fouling, then it is an elastic rebound
 
     if ( itepa(ip,jisor).ne.0 ) then
 
       isuivi = 1
       itepa(ip,jisor) = ifabor(kface)
 
-!-->changement du point de depart
+!--> Modification of the departure point
 
     ettpa(ip,jxp) = xk
     ettpa(ip,jyp) = yk
@@ -661,7 +656,7 @@ else if (iusclb(kzone).eq.iencrl) then
          ettpa  , tepa   , ra)
       endif
 
-!-->changement du point d'arrive
+!--> Modification of the arrival point
 
       aa = 2.d0 * abs((xq-xk)*xnn + (yq-yk)*ynn + (zq-zk)*znn)
 
@@ -673,7 +668,7 @@ else if (iusclb(kzone).eq.iencrl) then
 
   if (itepa(ip,jisor).gt.0) then
 
-!-->changement de la vitesse de la particule au point d'arrive
+!--> Modification of the particle velocity at the arrival point
 
 
     aa = abs( (vitpar(ip,1)*xnn                                   &
@@ -684,7 +679,7 @@ else if (iusclb(kzone).eq.iencrl) then
     vitpar(ip,2) = vitpar(ip,2) - aa*ynn
     vitpar(ip,3) = vitpar(ip,3) - aa*znn
 
-!-->changement de la vitesse du fluide vu au point d'arrive
+!--> Modification of the velocity of the flow seen at the arrival point
 
     aa = abs( (vitflu(ip,1)*xnn                                   &
             +  vitflu(ip,2)*ynn                                   &
@@ -697,32 +692,32 @@ else if (iusclb(kzone).eq.iencrl) then
     endif
 
 !===============================================================================
-! 9. Interaction utilisateur numero 1 : JBORD1
+! 9. User-defined interaction number 1 : JBORD1
 !===============================================================================
 
-!  ON PEUT FAIRE DE MEME AVEC JBORD2, JBORD3, JBORD4 et JBORD5
-!    On ne donnne l'exemple que pour JBORD1
+!  The following procedure is also valid for JBORD2, JBORD3, JBORD4 et JBORD5
+!  The example is given only for JBORD1
 
-!     On regarde si on est dans la zone cherchee
+!     We first check if we are in the zone of interest:
 !      ELSE IF (IUSCLB(KZONE).EQ.JBORD1) THEN
 
-!       si on doit continuer a suivre la particule
+!     if we need to keep on following the particle
 !         ISUIVI = 0 OU 1
 
-!       l'element de maillage concerne
+!     the mesh element of interest
 !         ITEPA(IP,JISOR) =
 
-!       on change la localisation de depart de la particule
+!     modification of the arrival point
 !         ETTP(IP,JXP) =
 !         ETTP(IP,JYP) =
 !         ETTP(IP,JZP) =
 
-!       la vitesse de la particule au point d'arrivee
+!     modification of the particle velocity at the arrival point
 !         VITPAR(IP,1) =
 !         VITPAR(IP,2) =
 !         VITPAR(IP,3) =
 
-!       la vitesse du fluide vu au point d'arrivee
+!      modification of the velocity of the flow seen at the arrival point
 !         VITFLU(IP,1) =
 !         VITFLU(IP,2) =
 !         VITFLU(IP,3) =
@@ -730,20 +725,17 @@ else if (iusclb(kzone).eq.iencrl) then
 
 else if (iusclb(kzone).eq.jbord1                                  &
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!    en standard, sans intervention de l'utilisateur,
-!      on ne souhaite pas passer ici
-!    mais on desire
-!      que le test IUSCLB(KZONE).EQ.JBORD1 soit dans le us* exemple
-!      que le source ci-dessous soit compile pour verifier
-!         qu'il n y a pas d'erreur
+!    For a standard use, without intervention of the user,
+!    we do not wish to go through this part but we want the
+!    test  IUSCLB(KZONE).EQ.JBORD1 to be in the us* example
+!    and the following source code to be compiled to check for errors
          .and.(0.eq.1)                                            &
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
                                 ) then
 
 !     ----------------------------------------------------
-!     EXEMPLE 1 : LA PARTICULE A UNE CHANCE SUR DEUX (TRAP)
-!                 DE SE DEPOSER DEFINITIVEMENT A LA PAROI
-!                 OU DE REBONDIR VERS L'ECOULEMENT.
+!     Example 1: The particle has 50% probality to definitely deposit
+!                 and 50% to bounce back to the flow
 !     ----------------------------------------------------
 
 
@@ -764,13 +756,13 @@ else if (iusclb(kzone).eq.jbord1                                  &
       isuivi = 1
       itepa(ip,jisor) = ifabor(kface)
 
-!-->changement du point de depart
+!-->Modification of the departure point
 
       ettpa(ip,jxp) = xk
       ettpa(ip,jyp) = yk
       ettpa(ip,jzp) = zk
 
-!-->changement du point d'arrive
+!-->Modification of the arrival point
 
       aa = 2.d0 * abs((xq-xk)*xnn + (yq-yk)*ynn + (zq-zk)*znn)
 
@@ -780,13 +772,12 @@ else if (iusclb(kzone).eq.jbord1                                  &
 
     endif
 
-!-->Inutile de traiter les particule ITEPA(IP,JISOR)=0 car
-!   Elle vont etre eliminees de la listes des particules.
+!-->No need to treat the particles with ITEPA(IP,JISOR)=0 because
+!   they will be removed from the particle list
 
     if (itepa(ip,jisor).gt.0) then
 
-!-->changement de la vitesse de la particule au point d'arrive
-
+!-->Modification of the particle velocity at the arrival point
 
       aa = abs( (vitpar(ip,1)*xnn                                 &
               +  vitpar(ip,2)*ynn                                 &
@@ -796,7 +787,7 @@ else if (iusclb(kzone).eq.jbord1                                  &
       vitpar(ip,2) = vitpar(ip,2) - aa*ynn
       vitpar(ip,3) = vitpar(ip,3) - aa*znn
 
-!-->changement de la vitesse du fluide vu au point d'arrive
+!-->Modification of the velocity of the flow seen at the arrival point
 
       aa = abs( (vitflu(ip,1)*xnn                                 &
               +  vitflu(ip,2)*ynn                                 &
@@ -810,7 +801,7 @@ else if (iusclb(kzone).eq.jbord1                                  &
 
 
 !===============================================================================
-! 10. Verification et sortie si erreur
+! 10. Verification and exit if error
 !===============================================================================
 
 else
@@ -824,36 +815,35 @@ if (iok.ne.0) then
 endif
 
 !===============================================================================
-! 11. Enregistrement de l'interaction particule-frontiere s'il y a lieu
+! 11. Recording of the particle/boundary interaction if needed
 !===============================================================================
 
-!     L'enregistrement des statistiques parietales debute des que
-!     l'indicateur est a IENSI3 = 1. Cependant tant que le numero
-!     de l'iteration Lagrangienne absolue est inferieur a NSTBOR,
-!     ou que l'ecoulement est instationnaire (ISTTIO = 0), alors
-!     le tableau PARBOR est remis a zero avant d'entrer dans ce
-!     sous-programme.
+! The recording of wall statistics start as soon as the parameter IENSI3
+! is set to 1. However, as long as the absolute number of the Lagrangian iteration
+! is inferior to NSTBOR, or if the flow is unsteady  (ISTTIO = 0); the array PARBOR
+! is reset to 0 before entering this surboutine.
 
-!     NPSTF   : nombre d'iterations de calcul de stat aux frontieres
-!               stationnaires
+! NPSTF :  number of iteractions of computation of statistics
+!          at the unsteady boundaries
 
-!     NPSTFT  : nombre d'iterations total des stats iaux frontieres
-!               depuis le du calcul, partie instationnaire comprise
-!               (a utiliser que pour les affichages listing)
+! NPSTFT : total number of statistics at the boundaries since the
+!          beginning of the computation, included the unsteady part
+!         (to be used only for the listing post-processing).
+!
 
-!     TSTATP  : Temps physique d'enregistrement des statistiques
-!               des interactions particules/frontiere stationnaires,
-!               si instatinnaire alors contient DTP le dernier
-!               pas de temps Lagrangien
+! TSTATP : physical duration of the recording of the statistics
+!          of the interactions between the particles and the stationary boundaries,
+!          if unsteady then it is equal DTP the last Lagrangian time step.
+!
 
-!     Avant impression dans le listing, ou sortie pour le
-!     post-processing, on applique aux statistiques sur les frontieres
-!     une moyenne en fonction des infos fournies dans USLAG1 de la
-!     maniere suivante :
-
+!
+!
+!
+!
 
 
-!     CES LIGNES NE SONT DONNEES QU'A TITRE INDICATIF
+
+!    The following lines are only indications:
 
 
 !     DO IVAR = 1,NVISBR
@@ -885,8 +875,8 @@ endif
 
 if ( iensi3.eq.1 ) then
 
-!--> exemple de types d'interaction sur lesquels on souhaite
-!    enregistrer des informations
+!--> Example of types of interactions about which we want to
+!    record information
 
   if ( iusclb(kzone).eq.irebol .or.                               &
        iusclb(kzone).eq.idepo1 .or.                               &
@@ -930,7 +920,7 @@ if ( iensi3.eq.1 ) then
       enddo
     endif
 
-!--> Cas particulier de la masse de grains de charbon encrasses
+!--> Particular case of the mass of fouled coal
 
   else if ( iusclb(kzone).eq.iencrl .and. isuivi.eq.0 ) then
 
@@ -958,15 +948,15 @@ endif
 
 
 !===============================================================================
-! Archives. Je laisse cette partie au cas ou...
-!           Creation d'un repere local associe a la face frontiere
+! Archives. This part is left here as it may be useful..
+!           Creation of a local referential associated to a boundary face
 !===============================================================================
 
-! Le repere local (T1,T2,N) est construit de facon a ce que N soit
-! la normale normee de la face et que T1 et T2 appartiennent a la face
+! The local referential (T1,T2,N) is built so that N is
+! the normalized normal of the face, and that T1 and T2 belong to the face
 
-!-->1. Je connais les vecteurs N et PK, je definis T1 tel que
-!      T1 = PK vectoriel N
+!-->1. I know N and PK, I define  T1 so that
+!      T1 = PK *  N (cross product)
 
 !     XPK = XK - ETTPA(IP,JXP)
 !     YPK = YK - ETTPA(IP,JYP)
@@ -981,7 +971,7 @@ endif
 !     YT1 = YT1 / AA
 !     ZT1 = ZT1 / AA
 
-!-->2. Maintenant je peux construire T2 = - T1 vectoriel N
+!-->2. Now I can define T2 = - T1 * N
 
 !     XT2 = YT1*ZNN - ZT1*YNN
 !     YT2 = ZT1*XNN - XT1*ZNN
@@ -993,22 +983,22 @@ endif
 !     ZT2 = -ZT2 / AA
 
 !--------
-! FORMATS
+! Formats
 !--------
 
  9010 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@ @@ ATTENTION : STOP IN THE EXECUTION OF THE LAGRANGIAN MODULE   ',/,&
 '@    =========   (USLABO)                                    ',/,&
 '@                                                            ',/,&
-'@  La normale d''une face de frontiere est perpendiculaire   ',/,&
-'@   a un rayon PQ : impossible                               ',/,&
+'@  the normal of a boundary face is perpendicular to   ',/,&
+'@   a PQ ray : impossible                               ',/,&
 '@                                                            ',/,&
-'@  La particle ',I10,' est ELIMINEE                          ',/,&
+'@  The particle ',I10,' is ELIMINATED                          ',/,&
 '@                                                            ',/,&
-'@  Contacter l''equipe de developpement.                     ',/,&
+'@  Please contact the development team.                     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1017,21 +1007,21 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@ @@ ATTENTION : STOP IN THE EXECUTION OF THE LAGRANGIAN MODULE  ',/,&
 '@    =========   (USLABO)                                    ',/,&
 '@                                                            ',/,&
-'@  Le type de condition aux limites IUSCLB                   ',/,&
-'@    n''est pas renseigne pour la frontiere NB = ',I10        ,/,&
+'@  The type of boundary condition IUSCLB                   ',/,&
+'@    is not defined for the boundary NB = ',I10        ,/,&
 '@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
+'@  The calculation cannot be run.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier USLAG2 et USLABO.                                ',/,&
+'@  Please check USLAG2 and USLABO.                                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
 !----
-! FIN
+! End
 !----
 
 return

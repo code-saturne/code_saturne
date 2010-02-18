@@ -45,17 +45,19 @@ subroutine usmpst &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statis ,                                     &
    tracel , trafac , trafbr , rdevel , rtuser , ra     )
-!===============================================================================
-! FONCTION :
-! --------
 
-! ROUTINE UTILISATEUR POUR LA MODIFICATION DES LISTES DE CELLULES
-! OU FACES INTERNES ET DE BORD DEFINISSANT UN MAILLAGE DE POST
-! TRAITEMENT EXISTANT ; CETTE ROUTINE EST APPELEE AUX PAS DE
-! TEMPS AUQUEL CE MAILLAGE EST ACTIF, ET UNIQUEMENT POUR LES
-! MAILLAGES POST UTILISATEUR PRINCIPAUX (NON ALIAS), SI TOUS LES
-! "WRITERS" ASSOCIES A CE MAILLAGE OU SES ALIAS PERMETTENT
-! CETTE MODIFICATION
+!===============================================================================
+! Purpose:
+! -------
+
+!    User subroutine.
+
+! Modify list of cells or faces defining an existing post-processing
+! output mesh; this subroutine is called for true (non-alias) user meshes,
+! for each time step at which output on this mesh is active, and only if
+! all writers associated with this mesh allow mesh modification
+! (i.e. were defined with 'indmod' = 2 or 12).
+
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -63,7 +65,7 @@ subroutine usmpst &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ipart            ! e  ! <-- ! numero du maillage post                        !
+! ipart            ! i  ! <-- ! number of the post-processing mesh (< 0 or > 0)!
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
@@ -78,17 +80,17 @@ subroutine usmpst &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nvlsta           ! e  ! <-- ! nombre de variables stat. lagrangien           !
-! ncelps           ! e  ! <-- ! nombre de cellules du maillage post            !
-! nfacps           ! e  ! <-- ! nombre de faces interieur post                 !
-! nfbrps           ! e  ! <-- ! nombre de faces de bord post                   !
+! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
+! ncelps           ! i  ! <-- ! number of cells in post-processing mesh        !
+! nfacps           ! i  ! <-- ! number of interior faces in post-process. mesh !
+! nfbrps           ! i  ! <-- ! number of boundary faces in post-process. mesh !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! imodif           ! e  ! <-- ! 0 si maillage non modifie par cette            !
-!                  !    !     ! fonction, 1 si modifie                         !
-! itypps(3)        ! te ! <-- ! indicateur de presence (0 ou 1) de             !
-!                  !    !     ! cellules (1), faces (2), ou faces de           !
-!                  !    !     ! de bord (3) dans le maillage post              !
+! imodif           ! i  ! --> ! 0 if the mesh was not modified by this call,   !
+!                  !    !     ! 1 if it has been modified.                     !
+! itypps(3)        ! ia ! <-- ! global presence flag (0 or 1) for cells (1),   !
+!                  !    !     ! interior faces (2), or boundary faces (3) in   !
+!                  !    !     ! post-processing mesh                           !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
@@ -99,12 +101,12 @@ subroutine usmpst &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! lstcel(ncelps    ! te ! <-- ! liste des cellules du maillage post            !
-! lstfac(nfacps    ! te ! <-- ! liste des faces interieures post               !
-! lstfbr(nfbrps    ! te ! <-- ! liste des faces de bord post                   !
+! lstcel(ncelps)   ! ia ! --> ! list of cells in post-processing mesh          !
+! lstfac(nfacps)   ! ia ! --> ! list of interior faces in post-processing mesh !
+! lstfbr(nfbrps)   ! ia ! --> ! list of boundary faces in post-processing mesh !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! te ! --- ! macro tableau entier                           !
+! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
+! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
@@ -117,8 +119,7 @@ subroutine usmpst &
 !  (ndim, nfabor)  !    !     !                                                !
 ! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 !  (ndim, nnod)    !    !     !                                                !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet)         !    !     !                                                !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -127,11 +128,11 @@ subroutine usmpst &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! statis           ! tr ! <-- ! statistiques (lagrangien)                      !
-!ncelet,nvlsta)    !    !     !                                                !
-! tracel(*)        ! tr ! <-- ! tab reel valeurs cellules post                 !
-! trafac(*)        ! tr ! <-- ! tab reel valeurs faces int. post               !
-! trafbr(*)        ! tr ! <-- ! tab reel valeurs faces bord post               !
+! statis           ! ra ! <-- ! statistic means                                !
+!  (ncelet, nvlsta)!    !     !                                                !
+! tracel(*)        ! ra ! --- ! work array for post-processed cell values      !
+! trafac(*)        ! ra ! --- ! work array for post-processed face values      !
+! trafbr(*)        ! ra ! --- ! work array for post-processed boundary face v. !
 ! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
 ! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -198,21 +199,18 @@ integer          ifac  , iphas
 integer          ii   , jj
 double precision vmin2, v2, w2
 
-
 !===============================================================================
 
-!     Remarque : le tableau ITYPPS permet de savoir si le maillage post
-!                contient a l'origine des cellules, des faces internes,
-!                ou des faces de bord (sur l'ensemble des processeurs).
+! Note:
 
-!                Ceci permet d'avoir un traitement "generique" qui
-!                peut fonctionner pour tous les numeros de maillage,
-!                mais si le maillage post est vide a un instant de
-!                post traitement donne, on ne saura plus s'il contenait
-!                des cellules ou faces. Dans ce cas, il est preferable
-!                d'utiliser explicitement le numero du maillage post
-!                pour bien determiner s'il doit contenir des cellules
-!                ou des faces.
+! The 'itypps" array allows determining if the mesh contains at first cells,
+! interior faces, or boundary faces (in a global sense when in parallel).
+
+! This enables using "generic" selection criteria, which may function on any
+! post-processing mesh, but if such a mesh is empty for a given call to this
+! function, we will not know at the next call if it contained cells of faces.
+! In this case, it may be preferable to use its number to decide if it should
+! contain cells or faces.
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
@@ -227,11 +225,8 @@ if(1.eq.1) return
 !         A RENSEIGNER PAR L'UTILISATEUR aux endroits indiques
 !===============================================================================
 
-!     Exemple :
-!               pour les maillage post utilisateur, on ne conserve que
-!               les mailles auxquelles la vitesse est superieure à
-!               un seuil donne.
-
+! Example: for user meshes 3 and 4, we only keep the cells of faces
+!          at which the velocity is greater than a given threshold.
 
 if (ipart.eq.3) then
 
@@ -243,8 +238,8 @@ if (ipart.eq.3) then
 
   vmin2 = (0.5d0)**2
 
-!       SI LE MAILLAGE POST CONTIENT DES CELLULES
-!       -----------------------------------------
+  ! If the mesh contains cells
+  ! --------------------------
 
   if (itypps(1) .eq. 1) then
 
@@ -261,8 +256,8 @@ if (ipart.eq.3) then
 
     enddo
 
-!       SI LE MAILLAGE POST CONTIENT DES FACES INTERNES
-!       -----------------------------------------------
+  ! If the mesh contains interior faces
+  ! -----------------------------------
 
   else if (itypps(2) .eq. 1) then
 
@@ -273,9 +268,11 @@ if (ipart.eq.3) then
       ii = ifacel(1, ifac)
       jj = ifacel(2, ifac)
 
-      v2 =   rtp(ii, iu(iphas))**2 + rtp(ii, iv(iphas))**2        &
+      v2 =   rtp(ii, iu(iphas))**2   &
+           + rtp(ii, iv(iphas))**2   &
            + rtp(ii, iw(iphas))**2
-      w2 =   rtp(jj, iu(iphas))**2 + rtp(jj, iv(iphas))**2        &
+      w2 =   rtp(jj, iu(iphas))**2   &
+           + rtp(jj, iv(iphas))**2   &
            + rtp(jj, iw(iphas))**2
 
       if (v2 .ge. vmin2 .or. w2 .ge. vmin2) then
@@ -285,8 +282,8 @@ if (ipart.eq.3) then
 
     enddo
 
-!       SI LE MAILLAGE POST CONTIENT DES FACES DE BORD
-!       ----------------------------------------------
+  ! If the mesh contains boundary faces
+  ! -----------------------------------
 
   else if (itypps(3) .eq. 1) then
 
@@ -296,7 +293,8 @@ if (ipart.eq.3) then
 
       ii = ifabor(ifac)
 
-      v2 =   rtp(ii, iu(iphas))**2 + rtp(ii, iv(iphas))**2        &
+      v2 =   rtp(ii, iu(iphas))**2   &
+           + rtp(ii, iv(iphas))**2   &
            + rtp(ii, iw(iphas))**2
 
       if (v2 .ge. vmin2) then
@@ -306,9 +304,7 @@ if (ipart.eq.3) then
 
     enddo
 
-  endif
-
-!       Fin du test sur le type de mailles deja existantes
+  endif ! End of test on pre-existing mesh element types
 
 else if (ipart.eq.4) then
 
@@ -320,8 +316,8 @@ else if (ipart.eq.4) then
 
   vmin2 = (0.5d0)**2
 
-!       SELECTION DES FACES INTERNES
-!       ----------------------------
+  ! Select interior faces
+  ! ---------------------
 
   do ifac = 1, nfac
 
@@ -330,12 +326,14 @@ else if (ipart.eq.4) then
     ii = ifacel(1, ifac)
     jj = ifacel(2, ifac)
 
-    v2 =   rtp(ii, iu(iphas))**2 + rtp(ii, iv(iphas))**2          &
+    v2 =   rtp(ii, iu(iphas))**2   &
+         + rtp(ii, iv(iphas))**2   &
          + rtp(ii, iw(iphas))**2
-    w2 =   rtp(jj, iu(iphas))**2 + rtp(jj, iv(iphas))**2          &
+    w2 =   rtp(jj, iu(iphas))**2   &
+         + rtp(jj, iv(iphas))**2   &
          + rtp(jj, iw(iphas))**2
 
-    if (     (v2 .ge. vmin2 .and. w2 .lt. vmin2)                  &
+    if (     (v2 .ge. vmin2 .and. w2 .lt. vmin2)         &
         .or. (v2 .lt. vmin2 .and. w2 .ge. vmin2)) then
       nfacps = nfacps + 1
       lstfac(nfacps) = ifac
@@ -343,8 +341,8 @@ else if (ipart.eq.4) then
 
   enddo
 
-!       SELECTION DES FACES DE BORD
-!       ---------------------------
+  ! Select boundary faces
+  ! ---------------------
 
   do ifac = 1, nfabor
 
@@ -352,7 +350,8 @@ else if (ipart.eq.4) then
 
     ii = ifabor(ifac)
 
-    v2 =   rtp(ii, iu(iphas))**2 + rtp(ii, iv(iphas))**2          &
+    v2 =   rtp(ii, iu(iphas))**2   &
+         + rtp(ii, iv(iphas))**2   &
          + rtp(ii, iw(iphas))**2
 
     if (v2 .ge. vmin2) then
@@ -362,9 +361,7 @@ else if (ipart.eq.4) then
 
   enddo
 
-endif
-!     Fin du test sur le numero de maillage post.
-
+endif ! end of test on post-processing mesh number
 
 return
 

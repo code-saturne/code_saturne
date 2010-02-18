@@ -52,27 +52,19 @@ subroutine usray2 &
    ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
 
-!   SOUS-PROGRAMME DU MODULE DE RAYONNEMENT :
-!   -----------------------------------------
+! User subroutine for input of radiative transfer parameters: boundary conditions
 
-!   CARACTERISTIQUES ET COMPORTEMENT RADIATIF DES FACES DE PAROI
-
-!   Ce sous-programme est appele autant de fois qu'il y a de phases
-!   pour lesquelles il faut faire un calcul de rayonnement
-!   semi-transparent
-
-!   IPHAS contient le numero absolu de la phase concernee
+! Sketch of thermal flux in boundary wall
 
 
-
-!  EXTERIEUR       PAROI       DOMAINE FLUIDE
+!  Outside      Inside wall       Fluid domain
 !            |               |
 !            |               |
 !            |               |
-!            | EPSP Qincid<--|<----- Qincid             [flux incident]
+!            | EPSP Qincid<--|<----- Qincid             [Incident flux]
 !            |               |
 !            | [absorption]  |
 !            |               |
@@ -89,7 +81,7 @@ subroutine usray2 &
 !            |     XLAMP     |   .    Hfluide
 !            |               |  .
 !            |            ...o..
-!            |          ..   | Tparop (temperature en paroi)
+!            |          ..   | Tparop (Inside wall temperature)
 !            |         .     |
 !            |       ..      |
 !            |      .        |
@@ -97,19 +89,20 @@ subroutine usray2 &
 !            |   .           |
 !            o...            |
 !       Textp|               |
-!            |               |
-!            |<------------->|
-!            |     EPAP      |
+!(Outside    |               |
+! wall       |<------------->|
+! temprature)|     EPAP      |
 !            |               |
 
 
-!  LE CALCUL DES TEMPERATURES EST REALISEE PAR UN BILAN DE FLUX
-!  COMME SUIT :
+!  The radiative boundary condition ios based on the calculation of
+!  a new wall temperature.
+!  This temparature is computed with a thermal flux balance:
 
 !  Q           =  Q           + (Qrayt           - Qrayt        )
 !   conduction     convection         absorption        emission
 
-!  SOIT (flux positif si sortant du domaine de calcul) :
+!  therfore:
 
 !   XLAMP
 !   -----(Tparop-Textp) =
@@ -117,19 +110,22 @@ subroutine usray2 &
 !                                                             4
 !         Hfluide (Tfluide-Tparop) + EPSP (QINCID - SIGMA Tparop )
 
-
-!      CORPS                        EPSP
+!  Note: in Code_Saturne the flux is positive when it is oriented
+!  from inside to outside.
+!
+!
+!      CORPS                     Emissivity
 !      ------------------------------------
-!      acier poli                   0,06
-!      acier oxydé                  0,80
-!      aceir rugueux                0,94
-!      aluminium poli               0,04
-!      aluminium oxydé (intérieur)  0,09
-!      aluminium oxydé (air humide) 0,90
-!      brique                       0,93
-!      béton                        0,93
-!      papier                     0,8 à 0,9
-!      eau                          0,96
+!      polished steel               0,06
+!      oxidized steel               0,80
+!      steel rough                  0,94
+!      polished aluminium           0,04
+!      oxidized aluminium (inside)  0,09
+!      oxidized aluminium (wet air) 0,90
+!      brick                        0,93
+!      concrete                     0,93
+!      paper                        0,8 to 0,9
+!      water                        0,96
 
 
 ! Boundary faces identification
@@ -139,9 +135,12 @@ subroutine usray2 &
 ! The syntax of this subroutine is described in the 'usclim' subroutine,
 ! but a more thorough description can be found in the user guide.
 
+! Note: these usefull constants are defined
+!       TKELVI = 273.16D0
+!       SIG    = 5.6703D-8
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
@@ -160,7 +159,7 @@ subroutine usray2 &
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iphas            ! i  ! <-- ! phase number                                   !
+! iphas            ! i  ! <-- ! current phase number                           !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
@@ -171,13 +170,13 @@ subroutine usray2 &
 !  (nfml, nprfml)  !    !     !                                                !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
+! maxelt           !  e ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! icodcl           ! ia ! --> ! boundary condition code                        !
+! icodcl           ! ia ! <-- ! boundary condition code                        !
 !  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
 !                  !    !     ! = 2  -> flux density                           !
 !                  !    !     ! = 4  -> sliding wall and u.n=0 (velocity)      !
@@ -185,17 +184,27 @@ subroutine usray2 &
 !                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
-! izfrdp(nfabor    ! te ! --> ! numero de zone pour les faces de bord          !
-! isothp(nfabor    ! te ! --> ! liste des frontieres isothermes                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! izfrdp(nfabor)   ! ia ! --> ! boundary faces -> zone number                  !
+! isothp(nfabor)   ! ia ! --> ! boundary face type for radative transfer       !
+!                  !    !     ! = itpimp -> Gray wall with fixed inside temp   !
+!                  !    !     ! = ipgrno -> Gray wall with fixed outside temp  !
+!                  !    !     ! = iprefl -> Reflecting wall with fixed         !
+!                  !    !     !                                  outside temp  !
+!                  !    !     ! = ifgrno -> Gray wall with fixed               !
+!                  !    !     !                               conduction flux  !
+!                  !    !     ! = ifrefl -> Reflecting wall with fixed         !
+!                  !    !     !                               conduction flux  !
+! tmin             ! r  !     ! min value of the wall temperature              !
+! tmax             ! r  !     ! max value of the wall temperature              !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -205,39 +214,28 @@ subroutine usray2 &
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
-!  (nfabor,nvar,3) !    !     ! rcodcl(1) = Dirichlet value                    !
-!                  !    !     ! rcodcl(2) = exterior exchange coefficient      !
-!                  !    !     !  (infinite if no exchange)                     !
 !                  !    !     ! rcodcl(3) = flux density value                 !
-!                  !    !     !  (negative for gain) in w/m2 or                !
-!                  !    !     !  roughness height (m) if icodcl=6              !
-!                  !    !     ! for velocities           ( vistl+visct)*gradu  !
-!                  !    !     ! for pressure                         dt*gradp  !
-!                  !    !     ! for scalars    cp*(viscls+visct/sigmas)*gradt  !
+!                  !    !     !  (negative for gain) in w/m2                   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
-! tparop(nfabor    ! tr ! <-- ! temperature de paroi en kelvin                 !
-! qincid(nfabor    ! tr ! <-- ! densite de flux radiatif aux bords             !
-! hfcnvp(nfabor    ! tr ! <-- ! coefficient d'echange fluide aux               !
-!                  !    !     ! faces de bord                                  !
-! flcnvp(nfabor    ! tr ! <-- ! densite de flux convectif aux faces            !
-!                  !    !     ! de bord                                        !
-! xlamp(nfabor)    ! tr ! --> ! coefficient de conductivite thermique          !
-!                  !    !     ! des facettes de paroi (w/m/k)                  !
-! epap(nfabor)     ! tr ! --> ! epaisseur des facettes de paroi (m)            !
-! epsp (nfabor)    ! tr ! --> ! emissivite des facettes de bord                !
-! textp(nfabor)    ! tr ! --> ! temperature de bord externe                    !
-!                  !    !     ! en kelvin                                      !
-! tintp(nfabor)    ! tr ! --> ! temperature de bord interne                    !
-!                  !    !     ! en kelvin                                      !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
+!  (ncelet)        !    !     !                                                !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse)   ! ra ! <-- ! user-reserved real work array                  !
+! tparop(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
+! qincid(nfabor)   ! ra ! <-- ! radiative incident flux  (W/m2)                !
+! hfcnvp(nfabor)   ! ra ! <-- ! convective exchange coefficient (W/m2/K)       !
+! flcnvp(nfabor)   ! ra ! <-- ! convective flux (W/m2)                         !
+! xlamp(nfabor)    ! ra ! --> ! conductivity (W/m/K)                           !
+! epap(nfabor)     ! ra ! --> ! thickness (m)                                  !
+! epsp(nfabor)     ! ra ! --> ! emissivity (>0)                                !
+! textp(nfabor)    ! ra ! --> ! outside temperature (K)                        !
+! tintp(nfabor)    ! ra ! --> ! initial inside temperature (K)                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -264,7 +262,6 @@ include "period.h"
 include "ppppar.h"
 include "radiat.h"
 include "ihmpre.h"
-
 
 !===============================================================================
 
@@ -311,7 +308,6 @@ double precision textp(nfabor), tintp(nfabor)
 
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-
 ! Local variables
 
 integer          idebia , idebra
@@ -322,9 +318,10 @@ integer          ilelt, nlelt
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if (iihmpr.eq.1) then
@@ -335,205 +332,118 @@ else
   !==========
 endif
 
- 9000 format(                                                           &
+ 9000 format(                                                     &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in definition of boundary conditions',/,   &
+'@    =======',/,                                                 &
+'@     The user subroutine ''usray2'' must be completed.',/, &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usray2 DOIT ETRE COMPLETE',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
+'@',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 !===============================================================================
-! 0. GESTION MEMOIRE
-!       Aucune modification requise
+! 0. Initialization
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 1. NUMERO DE LA VARIABLE THERMIQUE
-
-!       Noter que TKELVI, disponible ici, contient 273.16D0
-!       Noter que SIG   , disponible ici, contient 5.6703D-8
+! 1. IVAR: number of the thermal variable
 !===============================================================================
-
-!     IVAR est le numero de la variable thermique.
 
 ivar = isca(iscalt(iphas))
 
-
 !===============================================================================
-!  2. VALEURS MIN ET MAX ADMISSIBLES POUR LA TEMPERATURE DE PAROI
-!                            (clipping)
-
-
-
-!                            EN KELVIN
-
-
-!        (quel que soit le choix fait pour la variable thermique)
-
-
-
-
-!   TMIN et TMAX sont respectivement les valeurs minimale et maximale
-!     autorisees pour les temperatures de paroi. A chaque nouveau
-!     calcul de temperature de paroi, on verifie qu'il n'y a pas
-!     depassement, sinon il y a clipping.
-
-!   L'exemple ci-dessous correspond a un clipping tres peu contraignant.
-!     (valeurs par defaut)
-
+!  2. Min and max values for the wall temperatures (clipping otherwise)
+!   TMIN and TMAX are given in Kelvin.
 !===============================================================================
 
 tmin = 0.d0
 tmax = grand + tkelvi
 
 !===============================================================================
-! 3. ZONES FRONTIERE ET PROPRIETES DES PAROIS
+! 3. Assign boundary conditions to boundary wall
 !===============================================================================
 
+!     ZONES DEFINITION
+!     ================
 
-!     DEFINITION DES ZONES FRONTIERES
-!     ===============================
+!     We define zones of wall boundary, and we assign a type.
+!       This allows to apply the boundary conditions and realize
+!       balance sheets by treating them separately for each zone.
 
-!     On definit des zones de faces de paroi, et on leur affecte un type.
-!       Ceci permet d'appliquer les conditions aux limites et de realiser
-!       des bilans en traitant separement les differents sous ensembles
-!       ainsi constitues (on peut ainsi connaitre par exemple le flux au
-!       travers des differentes zones definies par l'utilisateur).
-
-!     Pour chaque face de bord IFAC (pas uniquement les faces de paroi),
-!       l'utilisateur definit selon son propre choix un numero de zone
-!       frontiere IZFRDP(IFAC) a partir
-!         de la couleur des faces de bord,
-!         ou, plus generalement, de leurs proprietes (couleurs, groupes...),
-!         ou des conditions aux limites fixees dans usclim,
-!         ou meme de leur coordonnees.
-!     Attention : il est indispensable que TOUTES les faces de bord
-!       aient ete affectees a une zone.
-!     Le numero des zones (la valeur de IZFRDP(IFAC)) est
-!       arbitrairement choisi par l'utilisateur, mais doit etre un
-!       entier strictement positif et inferieur ou egal a NBZRDM
-!       (valeur fixee en parametre dans radiat.h, a ne pas modifier).
+!     For each boundary face ifac (not just the faces of wall)
+!       the user defines his own choice by a number of zone
+!       IZFRDP(ifac) from color of the boundary face
+!         or more generally, their properties (color, groups ...),
+!         or boundary conditions specified in usclim,
+!         or even of their coordinates.
+!     Warning: it is essential that ALL boundary faces
+!       have been assigned to a zone.
+!     The number of zones (the value of IZFRDP(ifac)) is
+!       arbitrarily chosen by the user, but must be a
+!       positive integer and less than or equal to NBZRDM
+!       (value set in parameter radiat.h).
 
 
 
-!     PROPRIETES DES PAROIS
-!     =====================
+!     WALL CARACTERISTICS
+!     ===================
+
+!      WARNING: the unity of the temperature is the Kelvin
+!      -------
+
+!      Mandatory data:
+!      ---------------
+!      isothp(ifac) boundary face type
+!                  = itpimp -> Gray wall with fixed inside temperature
+!                  = ipgrno -> Gray wall with fixed outside temperature
+!                  = iprefl -> Reflecting wall with fixed outside temperature
+!                  = ifgrno -> Gray wall with fixed conduction flux
+!                  = ifrefl -> Reflecting wall with fixed conduction flux
+
+!      tintp(ifac) inside wall temperature (Kelvin)
+!                  initialize tparop at the first time step.
+!                  If isothp = itpimp, the value of tparop is fixed to tintp
+!                  In the other case, tintp is only for initialization.
 
 
-!      ATTENTION :
-!      ---------
+!      Other data (depend of the isothp):
+!      ----------------------------------
 
-!             L'unite des temperatures est le KELVIN
-
-!        quel que soit le choix de resolution fait par ailleurs
-
-
-
-!      DONNEES OBLIGATOIRES :
-!      --------------------
-
-!      ISOTHP = ITPIMP
-!                repere les facettes de paroi a temperature imposee
-!                  ("Indicateur Temperature Paroi IMPosee" ou "isotherme")
-!                  la temperature a imposer est TINTP(Kelvin)
-!             = IPGRNO ou IPREFL
-!                repere une facette de paroi dont il faut calculer
-!                  la temperature (un bilan de flux sera fait).
-!                  IPGRNO : Indicateur de Paroi GRise ou NOire (EPSP > 0)
-!                  IPREFL : Indicateur de Paroi REFLechissante (EPSP = 0)
-!             = IFGRNO ou IFREFL
-!                repere une facette de paroi pour laquelle on impose un
-!                  flux (conductif en paroi ou total sur le fluide)
-!                  IFGRNO : Indicateur de Flux en paroi GRise ou NOire
-!                  IFREFL : Indicateur de Flux en paroi REFLechissante
-
-!      TINTP = Temperature de peau interne (KELVIN)
-!               sert a l'initialisation de TPAROP en debut de calcul
-!               (lorsqu'il n'y a pas de fichier suite rayonnement)
-!                 Si ISOTHP = ITPIMP, la valeur de TPAROP est egale a
-!                   celle imposee dans TINTP a chaque pas de temps
-!                 Dans les autres cas, TINTP ne sert qu'a l'initialisation.
+!      rcodcl = conduction flux
+!      epsp   = emissivity
+!      xlamp  = conductivity (W/m/K)
+!      epap   = thickness (m)
+!      textp  = outside temperature (K)
 
 
-!      RENSEIGNEMENTS COMLEMENTAIRES A FOURNIR SUIVANT ISOTHP (VOIR EXEMPLES)
-!      --------------------------------------------------------------------
-
-!      RCODCL = valeur de flux (voir USCLIM pour la definition)
-
-!      EPSP   = Emissivite aux facettes de paroi (dans l'intervalle [0;1])
-
-!      XLAMP  = Conductivite thermique des parois (W/m/K)
-!               > 0 quand il est renseigne
-
-!      EPAP   = Epaisseur des parois (m)
-!               > 0 quand il est renseigne
-
-!      TEXTP  = Temperature de peau externe en KELVIN
-!               > 0 quand il est renseigne
-
-
-
-!     EXEMPLE
+!     EXAMPLE
 !     =======
 
-!      Attention a la coherence avec USCLIM
+!        Wall boundary faces (IPAROI and IPARUG), are devided into 5 zones
+!          located with IFRFAC(IFAC) in the range of number from 51 to 55.
+!          For each location a different radiative boundary condition is applied.
+!        For all other boundary that are not wall (i.e. inlet, oulet, symetry)
+!          the user can define arbritay new zone using the array IFRFAC(IFAC),
+!          for wich a value can be arbitrarily choosen between 1 and NBZRDM.
+!
+!     Warning: it is forbidden to modify tparop and qincid in this subroutine
+!     ========
 
-!      Dans cet EXEMPLE,
-!               -------
-
-!        Les faces de paroi (IPAROI et IPARUG), sont reparties en
-!          5 sous ensembles (zones) reperes par IFRFAC(IFAC) variant de
-!          51 a 55 (arbitraire) a chacun desquels on applique une
-!          condition (ISOTHP) differente.
-!        Les autres faces de bord (entree, sortie, sous-ensembles
-!          arbitraires sur lesquels on souhaite voir imprimer des
-!          informations) sont repartis en zones reperees
-!          par IFRFAC(IFAC), dont la valeur peut etre arbitrairement
-!          choisie (>0 et <NBZRDM+1).
-
-!        Remarque : une maniere simple (mais non generale) d'affecter
-!          rapidement des valeurs a IFRFAC est IFRFAC(IFAC) = ICOUL,
-!          ou ICOUL est la couleur de la face.
-
-
-
-
-
-
-
-
-
-
-!             DANS TOUS LES CAS, IL EST INTERDIT
-!                                       ========
-
-!                       DE MODIFIER TPAROP ou QINCID ICI.
-
-
-
-
-
-
-
-
-!    Indicateur : nombre de faces oubliees.
+!    Indicator for forgotten faces.
 iok = 0
 
 !   -------------------------------------------------------------------
-!-->  Exemple 1 :
-!      Pour les faces PAROI de couleur 1 :
-!           Profil de temperature imposee
+!-->  Example 1:
+!       For wall boundary faces, selection criteria: color 1
+!       Gray or black wall with profil of fixed inside temperature
 !       ------------------------------------
 
 CALL GETFBR('1',NLELT,LSTELT)
@@ -545,17 +455,16 @@ do ilelt = 1, nlelt
 
   if ( itypfb(ifac,iphas).eq.iparoi ) then
 
-!      Numero de zone
+!      zone number
     izfrdp(ifac) = 51
 
-!      Type de condition : Paroi grise ou noire et
-!                          Profil de temperature imposee TINTP
+!      Type of condition: gray or black wall with fixed inside temperature
     isothp(ifac) = itpimp
 
-!      Donnees complementaires necessaires et suffisantes
-!        Emissivite
+!      Emissivity
     epsp  (ifac) = 0.1d0
-!        Temperature de paroi imposee ("Profil" simple ici = 473.16 K)
+
+!      Profil of fixed inside temperature
     tintp (ifac) = 200.d0 + tkelvi
 
   endif
@@ -563,10 +472,9 @@ do ilelt = 1, nlelt
 enddo
 
 !   -------------------------------------------------------------------
-!-->  Exemple 2 :
-!      Pour les faces PAROI RUGUEUSE de couleur 2 :
-!           Paroi grise ou noire et
-!           Profil de temperature imposee TEXTP
+!-->  Example 2 :
+!       For wall boundary faces, selection criteria: color 2
+!       Gray or black wall with fixed outside temperature TEXTP
 !       ------------------------------------
 
 CALL GETFBR('2',NLELT,LSTELT)
@@ -578,23 +486,21 @@ do ilelt = 1, nlelt
 
   if ( itypfb(ifac,iphas).eq.iparug ) then
 
-!      Numero de zone
+!      zone number
     izfrdp(ifac) = 52
 
-!      Type de condition : Paroi grise ou noire et
-!                          Profil de temperature imposee TEXTP
+!      Type of condition: gray or black wall with fixed outside temperature TEXTP
     isothp(ifac) = ipgrno
 
-!      Donnees complementaires necessaires et suffisantes
-!        Emissivite (>0)
+!        Emissivity
     epsp  (ifac) = 0.9d0
-!        Conductivite (W/m/K)
+!        Conductivity (W/m/K)
     xlamp (ifac) = 3.0d0
-!        Epaisseur    (m)
+!        Thickness    (m)
     epap  (ifac) = 0.1d0
-!        Temperature externe imposee : 473.16 K
+!        Fixed outside temperature: 473.16 K
     textp (ifac) = 200.d0 + tkelvi
-!        Temperature de paroi initiale : 473.16 K
+!        Initial inside temperature: 473.16 K
     tintp (ifac) = 200.d0 + tkelvi
 
   endif
@@ -603,9 +509,8 @@ enddo
 
 !   -------------------------------------------------------------------
 !-->  Exemple 3 :
-!      Pour les faces PAROI de couleur 3 :
-!           Paroi reflechissante (EPSP = 0) et
-!           Profil de temperature imposee TEXTP
+!       For wall boundary faces, selection criteria: color 3
+!       Reflecting wall (EPSP = 0) with fixed outside temperature TEXTP
 !       ------------------------------------
 
 CALL GETFBR('3',NLELT,LSTELT)
@@ -617,21 +522,19 @@ do ilelt = 1, nlelt
 
   if ( itypfb(ifac,iphas).eq.iparoi ) then
 
-!      Numero de zone
+!      zone number
     izfrdp(ifac) = 53
 
-!      Type de condition : Paroi reflechissante (EPSP = 0) et
-!                          Profil de temperature imposee TEXTP
+!      Type of condition: reflecting wall with fixed outside temperature TEXTP
     isothp(ifac) = iprefl
 
-!      Donnees complementaires necessaires et suffisantes
-!        Conductivite (W/m/K)
+!        Conductivity (W/m/K)
     xlamp (ifac) = 3.0d0
-!        Epaisseur    (m)
+!        Thickness    (m)
     epap  (ifac) = 0.1d0
-!        Temperature externe imposee : 473.16 K
+!        Fixed outside temperature: 473.16 K
     textp (ifac) = 200.d0 + tkelvi
-!        Temperature de paroi initiale : 473.16 K
+!        Initial inside temperature: 473.16 K
     tintp (ifac) = 200.d0 + tkelvi
 
   endif
@@ -639,23 +542,21 @@ do ilelt = 1, nlelt
 enddo
 
 !   -------------------------------------------------------------------
-!-->  Exemple 4 :
-!      Pour les faces PAROI de couleur 4 :
-!           Paroi grise ou noire et
-!           Flux de conduction impose dans la paroi
+!-->  Example 4 :
+!      For wall boundary faces which have the color 4:
+!           gray or black wall and fixed conduction flux through the wall
 
 !        XLAMP
-!        -----(Tparop-Textp) = Flux de conduction impose (W/m2)
+!        -----(Tparop-Textp) = fixed conduction flux     (W/m2)
 !        EPAP
 !                         = RODCL(IFAC,IVAR,3)
 
-!       Si le flux de conduction est nul la paroi est adiabatique
-!       Le tableau RCODCL(IFAC,IVAR,3) recoit la valeur du flux.
-!       Densite de flux (< 0 si gain pour le fluide)
-!       Reprise de USCLIM :
-!         Pour les temperatures T,         en Watt/m2       :
+!       If the conduction flux is zero then the wall is adiabatic.
+!       The array RCODCL(IFAC,IVAR,3) has the value of the flux.
+!       Flux density (< 0 if gain for the fluid)
+!         For temperatures T,    in Watt/m2:
 !            RCODCL(IFAC,IVAR,3) = CP*(VISCLS+VISCT/SIGMAS) * GRAD T
-!         Pour les enthalpies H,           en Watt/m2       :
+!         For enthalpies H,      in Watt/m2:
 !            RCODCL(IFAC,IVAR,3) =    (VISCLS+VISCT/SIGMAS) * GRAD H
 !       ------------------------------------
 
@@ -668,19 +569,17 @@ do ilelt = 1, nlelt
 
   if ( itypfb(ifac,iphas).eq.iparoi ) then
 
-!      Numero de zone
+!      zone number
     izfrdp(ifac) = 54
 
-!      Type de condition : Paroi grise ou noire et
-!                          Flux de conduction impose dans la paroi
+!      Type of condition: gray or black wall with fixed conduction flux through the wall
     isothp(ifac) = ifgrno
 
-!      Donnees complementaires necessaires et suffisantes
-!        Emissivite (>0)
+!      Emissivity
     epsp  (ifac) = 0.9d0
-!        Flux de conduction (W/m2)
+!      Conduction flux (W/m2)
     rcodcl(ifac,ivar,3) = 0.d0
-!        Temperature de paroi initiale : 473.16 K
+!      Initial inside temperature: 473.16 K
     tintp (ifac) = 200.d0 + tkelvi
 
   endif
@@ -688,26 +587,25 @@ do ilelt = 1, nlelt
 enddo
 
 !   -------------------------------------------------------------------
-!-->  Exemple 5 :
+!-->  Example 5 :
 !      Pour les faces PAROI de couleur 5 :
 !           Paroi reflechissante (EPSP = 0) et
 !           Flux de conduction impose dans la paroi
+!      For wall boundary faces which have the color 5:
+!           reflecting wall and fixed conduction flux through the wall
 
 !      Equivalent a imposer une condition de flux au fluide
 
 !        XLAMP
-!        -----(Tparop-Textp) = Flux de conduction impose ET EPSP = 0
+!        -----(Tparop-Textp) = fixed conduction flux and EPSP = 0
 !        EPAP
 !                         = RODCL(IFAC,IVAR,3)
 
-!       Si le flux de conduction est nul la paroi est adiabatique
-!       Le tableau RCODCL(IFAC,IVAR,3) contient la valeur du flux (W/m2)
-!       imposee comme condition au limite pour le fluide
-!       Densite de flux (< 0 si gain pour le fluide)
-!       Reprise de USCLIM :
-!         Pour les temperatures T,         en Watt/m2       :
+!       If the conduction flux is zero then the wall is adiabatic.
+!       Flux density (< 0 if gain for the fluid)
+!         For temperatures T,    in Watt/m2:
 !            RCODCL(IFAC,IVAR,3) = CP*(VISCLS+VISCT/SIGMAS) * GRAD T
-!         Pour les enthalpies H,           en Watt/m2       :
+!         For enthalpies H,      in Watt/m2:
 !            RCODCL(IFAC,IVAR,3) =    (VISCLS+VISCT/SIGMAS) * GRAD H
 !       ------------------------------------
 
@@ -720,58 +618,27 @@ do ilelt = 1, nlelt
 
   if ( itypfb(ifac,iphas).eq.iparoi ) then
 
-!      Numero de zone
+!      zone number
     izfrdp(ifac) = 55
 
-!      Type de condition : Paroi reflechissante (EPSP = 0) et
-!                          Flux de conduction impose dans la paroi
+!      Type of condition: reflecting wall with fixed conduction flux through the wall
     isothp(ifac) = ifrefl
 
-!      Donnees complementaires necessaires et suffisantes
-!        Flux de conduction (W/m2)
+!      Conduction flux (W/m2)
     rcodcl(ifac,ivar,3) = 0.d0
-!        Temperature de paroi initiale : 473.16 K
+!      Initial inside temperature: 473.16 K
     tintp (ifac) = 200.d0 + tkelvi
 
   endif
 
 enddo
 
-
-
-
-
-
-
-!                           ATTENTION
-
-
-
-
-
-
-
-
-
-
+!                           WARNING
 
 !   -------------------------------------------------------------------
-!-->   Pour les faces non paroi : reperage obligatoire de la zone
-!        Les informations (flux par exemple) seront donnees zone par zone
-!        et il est donc conseille de regrouper entre elles les faces
-!        de meme nature.
-
-!                             PAR SECURITE
-!                        DANS CE SOUS-PROGRAMME
-!          ON DEMANDE A L'UTILISATEUR DE REPERER TOUTES LES FACES
-!                             PAROI OU NON
-
-!        (il est indispensable d'affecter une valeur a tous les
-!            IZFRDP(IFAC), IFAC = 1, NFABOR)
-
-
-
-
+!-->   For all boundary faces that are not wall it is MANDATORY to
+!      impose a number of zone in the array izfrdp.
+!      For each zone, informations will be displayed in the listing.
 !       ------------------------------------
 
 do ifac = 1, nfabor
@@ -790,9 +657,8 @@ do ifac = 1, nfabor
 
 
 !   -------------------------------------------------------------------
-!-->  Exemple 7 :
-!      Verification que toutes les faces de paroi ont ete vues
-!       Cette precaution est souhaitable dans tous les cas.
+!-->  Example 7 :
+!      Verification that all boundary faces have been treated.
 !       ------------------------------------
 
   elseif ( itypfb(ifac,iphas).eq.iparoi .or.                      &
@@ -806,12 +672,12 @@ do ifac = 1, nfabor
 
 
 
-!     Fin de la boucle sur les faces de bord
-!     --------------------------------------
+!     End of the loop on the boundary faces
+!     -------------------------------------
 
 enddo
 
-! Stop si des faces ont ete oubliees
+! Stop if there are forgotten faces
 if(iok.ne.0) then
   call csexit (1)
   !==========
@@ -822,25 +688,24 @@ endif
 ! -------
 
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in definition of boundary conditions',/,   &
+'@    =======',/,                                                 &
+'@   Radiative data are missing for face: ',I10,/,                &
+'@',/,                                                            &
+'@     The user subroutine ''usray2'' must be completed.',/, &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     LES DONNEES RAYONNEMENT NE SONT PAS RENSEIGNEES POUR   ',/,&
-'@       LA FACE DE PAROI ',I10                                ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usray2.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-! ---
-! FIN
-! ---
+'@',/)
 
+! ---
+! END
+! ---
 
 return
 

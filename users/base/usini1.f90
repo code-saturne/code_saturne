@@ -119,7 +119,7 @@ integer iphas
 !===============================================================================
 
 if (iverif.eq.0) then
-  if(iihmpu.eq.1) then
+  if (iihmpu.eq.1) then
     return
   else
     write(nfecra,9000)
@@ -133,7 +133,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usipph'' must be completed',/,       &
+'@     The user subroutine ''usipph'' must be completed',/, &
 '@       in file usini1.f90',/,                                   &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
@@ -289,7 +289,7 @@ integer iverif
 !===============================================================================
 
 if (iverif.eq.0) then
-  if(iihmpu.eq.1) then
+  if (iihmpu.eq.1) then
     return
   else
     write(nfecra,9000)
@@ -303,7 +303,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usinsc'' must be completed',/,       &
+'@     The user subroutine ''usinsc'' must be completed',/, &
 '@       in file usini1.f90',/,                                   &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
@@ -446,7 +446,7 @@ integer iutile, iscal
 !===============================================================================
 
 if (iverif.eq.0) then
-  if(iihmpu.eq.1) then
+  if (iihmpu.eq.1) then
     return
   else
     write(nfecra,9000)
@@ -460,7 +460,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usipsc'' must be completed',/,       &
+'@     The user subroutine ''usipsc'' must be completed',/, &
 '@       in file usini1.f90',/,                                   &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
@@ -528,7 +528,7 @@ endif
 !       (which are only given as an example).
 
 iutile = 0
-if(iutile.eq.1) then
+if (iutile.eq.1) then
   iscavr(3) = 2
 endif
 
@@ -562,7 +562,7 @@ endif
 do iscal = 1, nscaus
 
   ! For user scalars which do not represent the variance of another scalar
-  if(iscavr(iscal).le.0) then
+  if (iscavr(iscal).le.0) then
 
     ivisls(iscal) = 0
 
@@ -668,7 +668,7 @@ integer iphas, ialgce
 !===============================================================================
 
 if (iverif.eq.0) then
-  if(iihmpu.eq.1) then
+  if (iihmpu.eq.1) then
     return
   else
     write(nfecra,9000)
@@ -682,7 +682,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usipgl'' must be completed',/,       &
+'@     The user subroutine ''usipgl'' must be completed',/, &
 '@       in file usini1.f90',/,                                   &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
@@ -856,7 +856,7 @@ integer iphas, iutile, ii, jj, imom
 !===============================================================================
 
 if (iverif.eq.0) then
-  if(iihmpr.eq.1) then
+  if (iihmpr.eq.1) then
     return
   else
     write(nfecra,9000)
@@ -870,7 +870,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usipsu'' must be completed',/,       &
+'@     The user subroutine ''usipsu'' must be completed',/, &
 '@       in file usini1.f90',/,                                   &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
@@ -995,7 +995,7 @@ dtref  = 0.01d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-if(nmodpp.eq.0) then
+if (nmodpp.eq.0) then
 
   iphas = 1
 
@@ -1006,7 +1006,7 @@ if(nmodpp.eq.0) then
   iscalt(iphas) = -1
 
 ! If there is a temperature or enthalpy variable:
-  if(iscalt(iphas).gt.0) then
+  if (iscalt(iphas).gt.0) then
     ! we indicate if it is the temperature (=1) or the enthalpy (=2).
     iscsth(iscalt(iphas)) = 1
   endif
@@ -1071,7 +1071,7 @@ iphas = 1
 blencv(iu(iphas)) = 1.0d0
 blencv(iv(iphas)) = 1.0d0
 blencv(iw(iphas)) = 1.0d0
-if(nscaus.ge.1) then
+if (nscaus.ge.1) then
   do ii = 1, nscaus
     blencv(isca(ii)) = 1.0d0
   enddo
@@ -1101,7 +1101,7 @@ if (iutile.eq.1) then
   iresol(iu(iphas)) = 2
   iresol(iv(iphas)) = 2
   iresol(iw(iphas)) = 2
-  if(nscaus.ge.1) then
+  if (nscaus.ge.1) then
     do ii = 1, nscaus
       iresol(isca(ii)) = 2
       nitmax(isca(ii)) = 5000
@@ -1152,7 +1152,7 @@ imgr(ipr(iphas)) = 1
 !       (which are only given as an example).
 
 iutile = 0
-if(iutile.eq.1) then
+if (iutile.eq.1) then
 
   iphas = 1
   if (iturb(iphas).eq.20) then
@@ -1341,7 +1341,7 @@ p0(iphas) = 1.013d5
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-if(nmodpp.eq.0) then
+if (nmodpp.eq.0) then
   iphas = 1
   irovar(iphas) = 0
   ivivar(iphas) = 0
@@ -1370,12 +1370,12 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ! If there are user scalars
-if(nscaus.gt.0) then
+if (nscaus.gt.0) then
 
   ! Loop on user scalars:
   do jj = 1, nscaus
     ! For scalars which are not variances
-    if(iscavr(jj).le.0) then
+    if (iscavr(jj).le.0) then
       ! We define the min and max bounds
       scamin(jj) =-grand
       scamax(jj) =+grand
@@ -1413,12 +1413,12 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ! If there are user scalars
-if(nscaus.gt.0) then
+if (nscaus.gt.0) then
 
   ! We loop on user scalars:
   do jj = 1, nscaus
     ! For scalars which are not variances
-    if(iscavr(jj).le.0) then
+    if (iscavr(jj).le.0) then
       ! We define the diffusivity
       visls0(jj) = viscl0(iphsca(jj))
     endif
@@ -1480,7 +1480,7 @@ almax(iphas) = -grand
 !       (which are only given as an example).
 
 iutile = 0
-if(iutile.eq.1) then
+if (iutile.eq.1) then
 
   ! First moment: <u>
   imom  = 1
@@ -1580,7 +1580,7 @@ integer ii, iphas, ipp, imom, iutile
 !===============================================================================
 
 if (iverif.eq.0) then
-  if(iihmpr.eq.1) then
+  if (iihmpr.eq.1) then
     return
   else
     write(nfecra,9000)
@@ -1598,7 +1598,7 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''usipes'' must be completed',/,       &
+'@     The user subroutine ''usipes'' must be completed',/, &
 '@       in file usini1.f90',/,                                   &
 '@',/,                                                            &
 '@  The calculation will not be run.',/,                          &
@@ -1637,7 +1637,7 @@ endif
 !===============================================================================
 
 !===============================================================================
-! 1. Input-output (optcal.h)
+! 1. Input-output (entsor.h)
 !===============================================================================
 
 ! --- write auxiliary restart file iecaux = 1 yes, 0 no
@@ -1830,7 +1830,7 @@ if (icorio.eq.1) then
   nomvar(ipp)   = 'Rel VelocityZ'
 endif
 
-if(itytur(iphas).eq.2) then
+if (itytur(iphas).eq.2) then
 
   ! turbulent kinetic energy
   ipp = ipprtp(ik    (iphas))
@@ -1846,7 +1846,7 @@ if(itytur(iphas).eq.2) then
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-elseif(itytur(iphas).eq.3) then
+elseif (itytur(iphas).eq.3) then
 
   ! Reynolds stresses
   ipp = ipprtp(ir11  (iphas))
@@ -1897,7 +1897,7 @@ elseif(itytur(iphas).eq.3) then
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-elseif(iturb(iphas).eq.50) then
+elseif (iturb(iphas).eq.50) then
 
   ! turbulent kinetic energy
   ipp = ipprtp(ik    (iphas))
@@ -1927,7 +1927,7 @@ elseif(iturb(iphas).eq.50) then
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-elseif(iturb(iphas).eq.60) then
+elseif (iturb(iphas).eq.60) then
 
   ! turbulent kinetic energy
   ipp = ipprtp(ik    (iphas))
@@ -1958,7 +1958,7 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-if(isca(1).gt.0.and.nscaus.ge.1) then
+if (isca(1).gt.0.and.nscaus.ge.1) then
   ipp = ipprtp(isca  (1))
   nomvar(ipp)  = 'Scalar 1'
   ichrvr(ipp)  = 1
@@ -1966,7 +1966,7 @@ if(isca(1).gt.0.and.nscaus.ge.1) then
   ihisvr(ipp,1)= -1
 endif
 
-if(isca(2).gt.0.and.nscaus.ge.2) then
+if (isca(2).gt.0.and.nscaus.ge.2) then
   ipp = ipprtp(isca  (2))
   nomvar(ipp)  = 'Scalar 2'
   ichrvr(ipp)  = 1
@@ -1992,7 +1992,7 @@ ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ! specific heat
-if(icp   (iphas).gt.0) then
+if (icp   (iphas).gt.0) then
   ipp = ipppro(ipproc(icp   (iphas)))
   nomvar(ipp)   = 'Specific Heat'
   ichrvr(ipp)   = 0
@@ -2030,7 +2030,7 @@ ihisvr(ipp,1) = -1
 
 ! 'csmago' variable for dynamic L.E.S. models
 !    (square of the Samgorinsky "constant")
-if(ismago(iphas).gt.0) then
+if (ismago(iphas).gt.0) then
   ipp = ipppro(ipproc(ismago(iphas)))
   nomvar(ipp)   = 'Csdyn2'
   ichrvr(ipp)   = 1
@@ -2039,7 +2039,7 @@ if(ismago(iphas).gt.0) then
 endif
 
 ! temporal means (example for moment 1)
-if(nbmomt.gt.0) then
+if (nbmomt.gt.0) then
   imom = 1
   ipp = ipppro(ipproc(icmome(imom)))
   nomvar(ipp) = 'Time Average 01'
@@ -2160,7 +2160,7 @@ integer          nideve, nituse, nrdeve, nrtuse
 !     If a file from the GUI is used, this subroutine may not be mandatory,
 !       thus the default (library reference) version returns immediately.
 
-if(1.eq.1) return
+if (1.eq.1) return
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END

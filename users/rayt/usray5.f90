@@ -49,87 +49,66 @@ subroutine usray5 &
    ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+!  Purpose:
+!  --------
 
-!   SOUS-PROGRAMME DU MODULE DE RAYONNEMENT :
-!   -----------------------------------------
+! User subroutine for input of radiative transfer parameters.
 
-!   Ce sous-programme est appele 2 fois pour chaque phase IPHAS
-!   pour laquelle il faut faire un calcul de rayonnement
-!   semi-transparent.
+! This subroutine is calle twice. The first time is for boundary conditions.
+! The second time is for the net radiation flux computation.
 
 
+!  1. Fisrt call (IAPPEL = 1)
+!  ==========================
 
-!  1. PREMIER APPEL (IAPPEL = 1)
-!  =============================
+!    1.1 Boundary conditions fot the radiative intensity (DO model)
+!    --------------------------------------------------------------
 
+!       The array COFRUA store the intensity for each boundary faces,
+!         depending of the natur of the boundary (Dirichlet condition).
+!       The intensity of radiation is defined as the rate of emitted
+!         energy from unit surface area through unit solid angle.
 
-
-!    1.1 Conditions aux limites pour la luminance
-!    --------------------------------------------
-
-!       Il faut completer COFRUA qui fournit la luminance au bord
-!         selon le type de frontiere (condition de Dirichlet).
-!       La luminance est la puissance surfacique par unite
-!         d'angle solide
-
-
-!       Par exemple, on a
+!       For example:
 
 
-! 1/ Paroi grise : rayonnement isotrope.
+! 1/ Gray wall: isotropic radiation field.
 !                                    4
 !                      eps.sig.tparoi         (1-eps).qincid
 !        cofrua   =    --------------    +    --------------
 !                            pi                     pi
-!  luminance de bord   emission propre         flux reflechi.
+!  wall intensity     wall emission           reflecting flux.
 
-!     (eps=1 : paroi noire ; eps=0 : paroi reflechissante )
-
-! Pour une paroi , la luminance (i.e l'energie rayonnee par la
-! paroi ) comprend son emission propre  et l'energie reflechie.
-!  (CF LE SOUS-PROGRAMME usray2)
+!     (eps=1: black wall; eps=0: reflecting wall)
 
 
-! 2/ Milieu libre : luminance rentrante nulle
+! 2/ Free boundary: entering intensity is fixed to zero
 
 !        cofrua   =   0.D0
 
-!    (si l'utilisateur a plus d'informations, il peut ameliorer
-!     la situation)
+!    (if the user has more information, he can do something better)
 
 
 
-!    L'exemple fourni ci-apres represente les conditions "par defaut"
-!      et suffit generalement (si l'utilisateur a utilise
-!      les types standard de conditions aux limites dans usclim)
+!    1.2 Boundary conditions fior the P-1 model
+!    ------------------------------------------
 
 
 
-!    1.2 Conditions aux limites pour le modele P-1
-!    ---------------------------------------------
+!  2. Second call(IAPPEL = 2)
+!  ==========================
 
+!      The density of net radiation flux must calculated
+!        consistently with the boundary conditions of the intensity.
+!      The density of net flux is the balance between the radiative
+!      emiting part of a boudary face (and not the reflecting one)
+!      and the radiative absorbing part.
 
-
-
-!  2. DEUXIEME APPEL (IAPPEL = 2)
-!  =============================
-
-!      La densite de flux net radiatif doit etre calculee
-!        de maniere coherente avec les conditions aux limites
-!        de la luminance. La densite de flux net radiatif est
-!DONF         le bilan entre le rayonnement qu'une face de bord emet
-!        (et non pas le rayonnement qu'elle reflechit) et celui
-!        qu'elle absorbe.
-
-!      L'exemple fourni est coherent avec l'exemple fourni pour
-!        conditions aux limites sur la luminance au premier appel
-!        et suffi donc en general.
-
+!      The provided example is consistently with the proposed boundary
+!      conditions for the intensity.
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
@@ -148,7 +127,8 @@ subroutine usray5 &
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iphas            ! i  ! <-- ! phase number                                   !
+! iphas            ! i  ! <-- ! current phase number                           !
+! iappel           ! i  ! <-- ! current subroutine call number                 !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
@@ -163,16 +143,16 @@ subroutine usray5 &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! izfrdp(nfabor    ! te ! <-- ! numero de zone pour les faces de bord          !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! izfrdp(nfabor)   ! ia ! --> ! boundary faces -> zone number                  !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -182,26 +162,25 @@ subroutine usray5 &
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! cofrua,cofrub    ! tr ! --> ! conditions aux limites aux                     !
-!(nfabor)          !    !     !    faces de bord pour la luminances            !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
-! tparoi(nfabor    ! tr ! <-- ! temperature de paroi en kelvin                 !
-! qincid(nfabor    ! tr ! <-- ! densite de flux radiatif aux bords             !
-! flunet(nfabor    ! tr ! --> ! densite de flux net radiatif                   !
-! ck (ncelet)      ! tr ! --> ! coefficient d'absorption du milieu             !
-!                  !    !     ! (nul si transparent)                           !
-! xlam(nfabor)     ! tr ! <-- ! coefficient de conductivite thermique          !
-!                  !    !     ! des facettes de paroi (w/m/k)                  !
-! epa (nfabor)     ! tr ! <-- ! epaisseur des facettes de paroi (m)            !
-! eps (nfabor)     ! tr ! <-- ! emissivite des facettes de bord                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! cofrua, cofrub   ! ra ! --> ! boundary conditions for intensity or P-1 model !
+!  (nfabor, *)     !    !     !                                                !
+! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
+!  (ncelet)        !    !     !                                                !
+! tparoi(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
+! qincid(nfabor)   ! ra ! <-- ! radiative incident flux  (W/m2)                !
+! flunet(nfabor)   ! ra ! --> ! net flux (W/m2)                                !
+! xlamp(nfabor)    ! ra ! --> ! conductivity (W/m/K)                           !
+! epap(nfabor)     ! ra ! --> ! thickness (m)                                  !
+! epsp(nfabor)     ! ra ! --> ! emissivity (>0)                                !
+! ck(ncelet)       ! ra ! <-- ! absoprtion coefficient                         !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse)   ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -280,38 +259,37 @@ double precision unspi, xit, distbf
 !===============================================================================
 
 !===============================================================================
-! 0 - GESTION MEMOIRE
+! 0 - Initialization
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
-! Indicateur d'arret (pour savoir si des faces ont ete oubliees)
+! Stop indicator (forgotten boundary faces)
 iok = 0
 
 unspi = 1.d0/pi
 
-!===============================================================================
-!  1. PREMIER APPEL
-!  ================
+!==============================================================================
+!  1. First call
+!  =============
 !===============================================================================
 
 if (iappel.eq.1) then
 
 
 !===============================================================================
-!  1.1 - CONDITIONS AUX LIMITES :
-!        MODELE DOM : COFRUA CONTIENT LA LUMINANCE
-!        MODELE P-1 : COFRUA ET COFRUB SONT A REMPLIR
-!      LES EXEMPLES DONNES ICI SONT LES INITIALISATIONS FAITES
-!      PAR DEFAUT ET SONT SUFFISANTES EN GENERAL
+!  1.1 - Boundary conditions:
+!        DO model: COFRUA msut be filled with the intensity
+!        P-1 model: COFRUA and COFRUB msut be filled
+!      The provided examples are sufficient in most of cases.
 !===============================================================================
 
 
 
 
-!      A - MODELE DOM
-!      ^^^^^^^^^^^^^^
+!      A - DO model
+!      ^^^^^^^^^^^^
 
 
 
@@ -320,18 +298,18 @@ if (iappel.eq.1) then
 
     do ifac = 1,nfabor
 
-!      1.1.1 - SYMETRIE :
+!      1.1.1 - Symmetry :
 !              ----------
-!          REFLEXION TOTALE DU RAYONNEMENT ( EPS=0 )
-!          -----------------------------------------
+!          Reflecting boundary conditions ( EPS=0 )
+!          ----------------------------------------
 
       if (itypfb(ifac).eq.isymet) then
 
         cofrua(ifac) = qincid(ifac) * unspi
 
 
-!      1.1.2 - PAROIS 'FLUIDES' : LUMINANCES RENTRANTES "NULLES"
-!              (ATTENTION LOGIQUE DIFFERENTE DU MODELE P-1)
+!      1.1.2 - Inlet/Outlet face: entering intensity fixed to zero
+!              (WARNING: the treatment is different from than of P-1 model)
 !          -------------------------------------------------
 
       else if (itypfb(ifac).eq.ientre                             &
@@ -340,8 +318,8 @@ if (iappel.eq.1) then
         cofrua(ifac) = epzero
 
 
-!      1.1.3. - PAROIS 'SOLIDES' DE TEMPERATURE TPAROI ET D'EMISSIVITE EPS
-!               ----------------------------------------------------------
+!      1.1.3. - Wall boundary face: calculaed intensity
+!               ---------------------------------------
 
       else if (itypfb(ifac).eq.iparoi                             &
           .or. itypfb(ifac).eq.iparug) then
@@ -351,12 +329,12 @@ if (iappel.eq.1) then
 
       else
 
-!      1.1.4 - SI DES FACES N'ONT PAS ETE TRAITEES, IL FAUT S'ARRETER
-!              ------------------------------------------------------
+!      1.1.4 - Stop if there are forgotten faces
+!              ---------------------------------
 
 !           ==============================================
 
-!             CONSERVER IMPERATIVEMENT LE TEST D'ARRET
+!             Don't skip this test
 
 !           ==============================================
 
@@ -369,8 +347,8 @@ if (iappel.eq.1) then
 
 
 
-!   B - MODELE P-1
-!   ^^^^^^^^^^^^^^
+!   B - P-1 model
+!   ^^^^^^^^^^^^^
 
 
 
@@ -380,9 +358,9 @@ if (iappel.eq.1) then
 
     do ifac = 1,nfabor
 
-!      1.1.1 - SYMETRIE ET PAROI REFLECHISSANTE (EPS = 0) :
-!              CONDITION DE FLUX NUL
-!              ------------------------------------------
+!      1.1.1 - Symmetry or reflecting wall (EPS = 0) :
+!              zero flux
+!              ----------------------------------------
 
       if (itypfb(ifac).eq.isymet     .or.                         &
          ((itypfb(ifac).eq.iparoi.or.                             &
@@ -392,9 +370,9 @@ if (iappel.eq.1) then
         cofrub(ifac) = 1.d0
 
 
-!      1.1.2 - PAROIS 'FLUIDES' : CONDITION DE FLUX NUL
-!              (ATTENTION LOGIQUE DIFFERENTE DU MODELE DOM)
-!              --------------------------------------------
+!      1.1.2 - Inlet/Outlet faces: zero flux
+!              (WARNING: the treatment is different from than of DO model)
+!              ----------------------------------------------------------
 
       else if (itypfb(ifac).eq.ientre                             &
           .or. itypfb(ifac).eq.isolib) then
@@ -403,9 +381,8 @@ if (iappel.eq.1) then
         cofrub(ifac) = 1.d0
 
 
-!      1.1.3 - PAROIS 'SOLIDES' DE TEMPERATURE TPAROI ET D'EMISSIVITE EPS
-!              (EPS NON NUL)
-!              ----------------------------------------------------------
+!      1.1.3 - Wall boundary faces
+!              -------------------
 
       else if (itypfb(ifac).eq.iparoi .or.                        &
                itypfb(ifac).eq.iparug ) then
@@ -420,12 +397,12 @@ if (iappel.eq.1) then
 
       else
 
-!      1.1.4 - SI DES FACES N'ONT PAS ETE TRAITEES, IL FAUT S'ARRETER
-!              ------------------------------------------------------
+!      1.1.4 - Stop if there are forgotten faces
+!              ---------------------------------
 
 !           ==============================================
 
-!             CONSERVER IMPERATIVEMENT LE TEST D'ARRET
+!             Don't skip this test
 
 !           ==============================================
 
@@ -444,28 +421,25 @@ if (iappel.eq.1) then
   endif
 
 !===============================================================================
-!  2 - DEUXIEME APPEL
-!  ===================
+!  2 - Second call
+!  ================
 !===============================================================================
 
 else if (iappel.eq.2) then
 
 !===============================================================================
-!  2.1 - DENSITE DE FLUNET RADIATIF AUX DIFFERENTES FRONTIERES
-!      L'EXEMPLE DONNE ICI EST L'INITIALISATION FAITE PAR DEFAUT
+!  2.1 - Net flux dendity for the boundary faces
+!      The provided examples are sufficient in most of cases.
 !===============================================================================
 
-!    DANS LE CAS OU LES CONDITIONS A LA LIMITES CI-DESSUS
-!      AURAIENT ETE MODIFIEES, IL EST NECESSAIRE DE MODIFIER
-!      LA MANIERE DONT EST CALCULE LA DENSITE DE FLUX NET RADIATIF,
-!      DE MANIERE COHERENTE.
-!    LA REGLE EST LA SUIVANTE :
-!      LA DENSITE DE FLUX NET EST UN BILAN ENTRE CE QU'UNE FACE
-!      DE BORD EMET COMME RAYONNEMENT (ET NON CE QU'ELLE REFLECHIT)
-!      ET CE QU'ELLE ABSORBE  (ORIENTATION DE LA NORMALE SORTANTE)
-!      AINSI, SI UNE PAROI CHAUFFE LE FLUIDE, FLUNET < 0
-
-
+!    If the boundary conditions given above have been modified
+!      it is necessary to change the way in which density is calculated from
+!      the net radiative flux consistently.
+!    The rule is:
+!      the density of net flux is a balance between the emitting energy from a
+!      boundary face (and not the reflecting energy) and the absorbing radiative
+!      energy. Therefore if a wall heats the fluid by radiative transfer, the
+!      net flux is negative
 
 
   do ifac = 1,nfabor
@@ -473,24 +447,23 @@ else if (iappel.eq.2) then
     if (itypfb(ifac).eq.iparoi .or.                               &
         itypfb(ifac).eq.iparug) then
 
-!      2.1.1 - PAROIS 'SOLIDES' DE TEMPERATURE TPAROI ET D'EMISSIVITE EPS
-!              ----------------------------------------------------------
+!      2.1.1 - Wall faces
+!              ----------
 
       flunet(ifac) =                                              &
       eps(ifac) *(qincid(ifac) - stephn*tparoi(ifac)**4)
 
 
-!      2.1.2 - SYMETRIE :
+!      2.1.2 - Symmetry :
 !              ----------
-!          REFLEXION TOTALE DU RAYONNEMENT ( FLUNET = 0 )
-!          ----------------------------------------------
+
     else if (itypfb(ifac).eq.isymet) then
 
       flunet(ifac)= zero
 
 
-!      2.1.3 - PAROIS 'FLUIDES'
-!              ----------------
+!      2.1.3 - Inlet/Outlet
+!              ------------
 
     else if (itypfb(ifac).eq.ientre                               &
         .or. itypfb(ifac).eq.isolib) then
@@ -506,13 +479,13 @@ else if (iappel.eq.2) then
       endif
 
 
-!      2.1.4 - SI DES FACES N'ONT PAS ETE TRAITEES, IL FAUT S'ARRETER
-!              ------------------------------------------------------
+!      2.1.4 - Stop if there are forgotten faces
+!              ---------------------------------
     else
 
 !           ==============================================
 
-!             CONSERVER IMPERATIVEMENT LE TEST D'ARRET
+!             Don't skip this test
 
 !           ==============================================
 
@@ -543,11 +516,11 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT                                 ',/,&
-'@    =========                                               ',/,&
-'@                CONDITIONS AUX LIMITES NON RENSEIGNEES      ',/,&
+'@ @@ WARNING: Radiative transfer (usray5)                    ',/,&
+'@    ========                                                ',/,&
+'@              Boundary conditions non inquiries             ',/,&
 '@                                                            ',/,&
-'@    Face = ',I10   ,' Zone = ',I10   ,' Type = ',I10           )
+'@    Face = ',I10   ,' Zone = ',I10   ,' Nature = ',I10         )
 
  1100 format(                                                           &
 '@                                                            ',/,&
@@ -555,14 +528,14 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT                                 ',/,&
-'@    =========                                               ',/,&
-'@    LES CONDITIONS AUX LIMITES NE SONT PAS RENSEIGNEES POUR ',/,&
-'@     CERTAINES FACES DE BORD (Phase ',I10   ,')             ',/,&
+'@ @@ WARNING: Radiative transfer (usray5)                    ',/,&
+'@    ========                                                ',/,&
+'@    Boundary conditions are unknown for some faces          ',/,&
+'@     (Phase ',I10   ,')                                     ',/,&
 '@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
+'@    The calculation stops.                                  ',/,&
 '@                                                            ',/,&
-'@    Verifier le codage de usray3.                           ',/,&
+'@    Please verify subroutine usray5.                        ',/, &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -573,10 +546,11 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT (FLUNET    NON RENSEIGNE)       ',/,&
-'@    =========                                               ',/,&
+'@ @@ WARNING: Radiative transfer (usray5)                    ',/,&
+'@    ========                                                ',/,&
+'@              Net flux calculation non inquiries            ',/,&
 '@                                                            ',/,&
-'@    Face = ',I10   ,' Zone = ',I10   ,' Type = ',I10           )
+'@    Face = ',I10   ,' Zone = ',I10   ,' Nature = ',I10         )
 
  2100 format(                                                           &
 '@                                                            ',/,&
@@ -584,14 +558,14 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT                                 ',/,&
-'@    =========                                               ',/,&
-'@    LE FLUNET    N''EST PAS RENSEIGNEE POUR CERTAINES       ',/,&
-'@        FACES DE BORD (Phase ',I10   ,')                    ',/,&
+'@ @@ WARNING: Radiative transfer (usray5)                    ',/,&
+'@    ========                                                ',/,&
+'@    Net radiation flux is unknown for some faces            ',/,&
+'@     (Phase ',I10   ,')                                     ',/,&
 '@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
+'@    The calculation stops.                                  ',/,&
 '@                                                            ',/,&
-'@    Verifier le codage de usray3.                           ',/,&
+'@    Please verify subroutine usray5.                        ',/, &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

@@ -1,7 +1,7 @@
 !-------------------------------------------------------------------------------
 
-!VERS
-
+!                      Code_Saturne version 2.0.0-beta2
+!                      --------------------------
 
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
@@ -44,53 +44,97 @@ subroutine usd3pi &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
+! PURPOSE :
 ! --------
+! Initialisation of the transported variables of the 3-point
+! chemistry combustion model. The latter ones are used to calculate
+! diffusion flame properties by applying detailed thermochemistry data.
+!
+! FEATURES:
+! --------
+! - This subroutine is called at the beginning of both a restart-calculation
+!   and a new calculation.
+! - The user is able to modify the initial conditions of the tranported
+!   variables.
+! - All variables of state deducible from the transported variables, as well as
+!   the detailed thermochemistry data (JANAF-table) are located in the array named
+!
+!   a) PROPCE (Properties in the cell center).
+!   b) PROPFA (Properties at internal faces).
+!   c) PROPFB (Properties at boundary faces).
+!
+!   Examples:
+!   PROPCE(IEL,IPPROC(IROM  (IPHAS))) =  IROM of cell IEL of phase IPHAS
+!   PROPCE(IEL,IPPROC(ICP   (IPHAS))) =  ICP  of cell IEL of phase IPHAS
+!
+!   PROPFA(IFAC,IPPROF(IFLUMA(IVAR )))=  FLUMAS of IVAR at the internal face IFAC
+!
+!   PROPFB(IFAC,IPPROB(IROM  (IPHAS)))=  ROMB of IPHAS at the boundary face IFAC
+!   PROPFB(IFAC,IPPROB(IFLUMA(IVAR )))=  FLUMAB of IVAR at the boundary face IFAC
 
-! INITIALISATION DES VARIABLES DE CALCUL
-!    POUR LA PHYSIQUE PARTICULIERE :
-!        COMBUSTION GAZ - FLAMME DE DIFFUSION CHIMIE 3 POINTS
-!    PENDANT DE USINIV.F
+!   All cells can be identified by using the subroutine 'getcel'.
+!    Syntax of getcel:
+!     getcel(string, nelts, eltlst) :
+!     - string is a user-supplied character string containing
+!       selection criteria;
+!     - nelts is set by the subroutine. It is an integer value
+!       corresponding to the number of boundary faces verifying the
+!       selection criteria;
+!     - lstelt is set by the subroutine. It is an integer array of
+!       size nelts containing the list of boundary faces verifying
+!       the selection criteria.
 
-! Cette routine est appelee en debut de calcul (suite ou non)
-!     dans la boucle en temps avant la resolution des variables
-!     scalaires,
-
-! Elle permet d'INITIALISER ou de MODIFIER (pour les calculs suite)
-!     les variables de calcul.
-
-
-! On a repris a titre d'exemple dans cette routine utilisateur
-!     l'initialisation choisie par defaut.
-
-
-! Les proprietes physiques sont accessibles dans le tableau
-!     PROPCE (prop au centre), PROPFA (aux faces internes),
-!     PROPFB (prop aux faces de bord)
-!     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  (IPHAS))) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL(IPHAS))) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   (IPHAS))) designe CP    (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
-
-!      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
-
-!      PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
-!      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
-
-! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
-!     ET PAS ICI
-
-
-! Cells identification
-! ====================
-
-! Cells may be identified using the 'getcel' subroutine.
-! The syntax of this subroutine is described in the 'usclim' subroutine,
-! but a more thorough description can be found in the user guide.
-
-
+!       string may contain:
+!       - references to colors (ex.: 1, 8, 26, ...
+!       - references to groups (ex.: inlet, group1, ...)
+!       - geometric criteria (ex. x < 0.1, y >= 0.25, ...)
+!
+!       These criteria may be combined using logical operators
+!       ('and', 'or') and parentheses.
+!       Example: '1 and (group2 or group3) and y < 1' will select boundary
+!       faces of color 1, belonging to groups 'group2' or 'group3' and
+!       with face center coordinate y less than 1.
+!
+!   All boundary faces may be identified using the 'getfbr' subroutine.
+!    Syntax of getfbr:
+!     getfbr(string, nelts, eltlst) :
+!     - string is a user-supplied character string containing
+!       selection criteria;
+!     - nelts is set by the subroutine. It is an integer value
+!       corresponding to the number of boundary faces verifying the
+!       selection criteria;
+!     - lstelt is set by the subroutine. It is an integer array of
+!       size nelts containing the list of boundary faces verifying
+!       the selection criteria.
+!
+!     string may contain:
+!     - references to colors (ex.: 1, 8, 26, ...
+!     - references to groups (ex.: inlet, group1, ...)
+!     - geometric criteria (ex. x < 0.1, y >= 0.25, ...)
+!
+!     These criteria may be combined using logical operators
+!     ('and', 'or') and parentheses.
+!
+!   All internam faces may be identified using the 'getfac' subroutine.
+!    Syntax of getfac:
+!     getfac(string, nelts, eltlst) :
+!     - string is a user-supplied character string containing
+!       selection criteria;
+!     - nelts is set by the subroutine. It is an integer value
+!       corresponding to the number of boundary faces verifying the
+!       selection criteria;
+!     - lstelt is set by the subroutine. It is an integer array of
+!       size nelts containing the list of boundary faces verifying
+!       the selection criteria.
+!
+!     string may contain:
+!     - references to colors (ex.: 1, 8, 26, ...
+!     - references to groups (ex.: inlet, group1, ...)
+!     - geometric criteria (ex. x < 0.1, y >= 0.25, ...)
+!
+!     These criteria may be combined using logical operators
+!     ('and', 'or') and parentheses.
+!-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
@@ -119,21 +163,33 @@ subroutine usd3pi &
 ! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
 ! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml, nprfml)  !    !     !                                                !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
+! maxelt           !  e ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! nodfac(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! icodcl           ! ia ! --> ! boundary condition code                        !
+!  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
+!                  !    !     ! = 2  -> flux density                           !
+!                  !    !     ! = 4  -> sliding wall and u.n=0 (velocity)      !
+!                  !    !     ! = 5  -> friction and u.n=0 (velocity)          !
+!                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
+!                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
+!                  !    !     !         inflowing possibly blocked             !
+! itrifb(nfabor    ! ia ! <-- ! indirection for boundary faces ordering)       !
+!  (nfabor, nphas) !    !     !                                                !
+! itypfb           ! ia ! --> ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -141,16 +197,31 @@ subroutine usd3pi &
 ! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
+! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
+! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
+!  (nfabor, *)     !    !     !                                                !
+! rcodcl           ! ra ! --> ! boundary condition values                      !
+!                  !    !     ! rcodcl(1) = Dirichlet value                    !
+!                  !    !     ! rcodcl(2) = exterior exchange coefficient      !
+!                  !    !     !  (infinite if no exchange)                     !
+!                  !    !     ! rcodcl(3) = flux density value                 !
+!                  !    !     !  (negative for gain) in w/m2 or                !
+!                  !    !     !  roughness height (m) if icodcl=6              !
+!                  !    !     ! for velocities           ( vistl+visct)*gradu  !
+!                  !    !     ! for pressure                         dt*gradp  !
+!                  !    !     ! for scalars    cp*(viscls+visct/sigmas)*gradt  !
+! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
+!  (ncelet)        !    !     !  (computation of pressure gradient)            !
+! coefu            ! ra ! --- ! tab de trav                                    !
+!  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
+! rdevel(nrdeve)   ! ra ! <-> ! tab reel complementaire developemt             !
+! rdevel(nideve)   ! ra ! <-- ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -162,7 +233,7 @@ subroutine usd3pi &
 implicit none
 
 !===============================================================================
-! Common blocks
+!     COMMON BLOCKS
 !===============================================================================
 
 include "paramx.h"
@@ -206,7 +277,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 
-! Local variables
+! LOCAL VARIABLES
 
 integer          idebia, idebra
 integer          iel, igg, iphas
@@ -216,22 +287,15 @@ double precision coefg(ngazgm)
 !===============================================================================
 
 
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if(1.eq.1) return
 
 !===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
-! 0. IMPRESSION DE CONTROLE
+! 0. CONTROL OUTPUT
 !===============================================================================
 
 write(nfecra,9001)
 
 !===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
+! 1.  INITIALISATION OF LOCAL VARIABLES
 !===============================================================================
 
 idebia = idbia0
@@ -245,21 +309,20 @@ iphas    = 1
 
 
 !===============================================================================
-! 2. INITIALISATION DES INCONNUES :
-!      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
+! 2. INITIALISATION OF TRANSPORTED VARIABLES
 !===============================================================================
 
 if ( isuite.eq.0 ) then
 
   do iel = 1, ncel
 
-! ----- Moyenne et variance du taux de melange
-
+! ----- Mean Mixture Fraction
     rtp(iel,isca(ifm))   = fs(1)
+
+! ----- Variance of Mixture Fraction
     rtp(iel,isca(ifp2m)) = zero
 
-! ----- Enthalpie
-
+! ----- Enthalpy
     if ( ippmod(icod3p).eq.1 ) then
       rtp(iel,isca(ihm)) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
     endif
@@ -275,12 +338,12 @@ endif
 
  9001 format(                                                           &
 '                                                             ',/,&
-'  usd3pi : Initialisation des variables par l''utilisateur   ',/,&
+'  usd3pi : user defined initialisation of variables          ',/,&
 '                                                             ',/)
 
 
 !----
-! FIN
+! END
 !----
 
 

@@ -45,19 +45,20 @@ subroutine uslatp &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
+!
+! User subroutine of the Lagrangian particle-tracking module:
+! -----------------------------------------
+!
+! User subroutine (non-mandatory intervention)
+!
+! Modification of the calculation of the particle relaxation time
+! with respect to the chosen formulation for the drag coefficient
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
-!   -------------------------------------
-
-!    SOUS-PROGRAMME UTILISATEUR (INTERVENTION NON OBLIGATOIRE)
-
-!    MODIFICATION DU CALCUL DU TEMPS DE RELAXATION DES PARTICULES
-!      EN FONCTION DE LA FORMULATION CHOISIE POUR LE COEFFICIENT
-!      DE TRAINEE
-
-
+! This subroutine being called in a loop on the particle number,
+! be careful not to "load" it too heavily..
+!
 !            rho             4 d
 !               p               p
 !      Tau = ---- --------------------------------
@@ -65,29 +66,29 @@ subroutine uslatp &
 !            rho   3 C     | U [X (t),t] - V (t) |
 !               f     drag    f  p          p
 
-!     Tau  : TEMPS DE RELAXATION PARTICULAIRE (VALEUR A CALCULER)
+!     Tau  : Particle relaxation time
 !        p
 
-!     rho  : MASSE VOLUMIQUE DU FLUIDE
+!     rho  : Particle density
 !        p
 
-!     rho  : MASSE VOLUMIQUE DE LA PARTICULE
+!     rho  : Fluid density
 !        f
 
-!     C     : COEFFICIENT DE TRAINEE
+!     C    : Drag coefficient
 !      drag
 
-!     d    : DIAMETRE DE LA PARTICULE
+!     d    : Particle diameter
 !      p
 
-!     U [X (t),t] : VITESSE INSTANTANEE DU FLUIDE VU
+!     U [X (t),t] : Instantaneous velocity of the flow seen
 !      f  p
 
-!     V (t) : VITESSE DE LA PARTICULE
+!     V (t) : Particle velocity
 !      p
 
-!    CE SOUS PROGRAMME EST APPELE DANS UNE BOUCLE SUR
-!      LES PARTICULES : ATTENTION DE NE PAS TROP LE CHARGER
+!
+!
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -107,71 +108,77 @@ subroutine uslatp &
 ! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
 ! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
+!                  !    !     !                                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! numpt            ! e  ! <-- ! numero de la particule courante                !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! te ! --- ! macro tableau entier                           !
-! rep              ! r  ! <-- ! nombre de reynolds particulaire                !
+! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
+! nvp              ! i  ! <-- ! number of particle variables                   !
+! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
+! nvep             ! i  ! <-- ! number of particle properties (integer)        !
+! nivep            ! i  ! <-- ! number of particle properties (integer)        !
+! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+! numpt            ! i  ! <-- !                                                !
+! itepa            ! ia ! <-- ! particle information (integers)                !
+! (nbpmax,nivep    !    !     !                                                !
+! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
+! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
+! ia(*)            ! ia ! --- ! macro array of integers                        !
+! rep              ! r  ! <-- ! particle Reynolds number                       !
 !                  !    !     ! rep = uvwr * ettp(numpt,jdp) / xnul            !
-! uvwr             ! r  ! <-- ! vitesse relative de la particule               !
-!                  !    !     ! uvwr= |vit fluide vu - vit particule|          !
-! romf             ! r  ! <-- ! masse volumique du fluide a la                 !
-!                  !    !     ! position de la particule                       !
-! romp             ! r  ! <-- ! masse volumique de la particule                !
-! xnul             ! r  ! <-- ! viscosite cinematique du fluide a la           !
-!                  !    !     ! position de la particule                       !
-! taup             ! r  ! --> ! temps de relaxation particulaire               !
+! uvwr             ! r  ! <-- ! particle relative velocity                     !
+!                  !    !     ! uvwr= |flow-seen velocity - part. velocity|    !
+! romf             ! r  ! <-- ! fluid density at  particle position            !
+!                  !    !     !                                                !
+! romp             ! r  ! <-- ! particle density                               !
+! xnul             ! r  ! <-- ! kinematic viscosity of the fluid at            !
+!                  !    !     ! particle position                              !
+! taup             ! r  ! --> ! particle relaxation time                       !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
+! (ndim,ncelet     !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+! (ndim,nfabor)    !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
+! (ndim,nfabor)    !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 ! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
+! volume           ! ra ! <-- ! cell volumes                                   !
+! (ncelet          !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
+! rtp              ! ra ! <-- ! transported variables at cells centers         !
+! (ncelet,*)       !    !     ! at the previous time step                      !
+! propce           ! ra ! <-- ! physical properties at cell centers            !
+! (ncelet,*)       !    !     !                                                !
+! propfa           ! ra ! <-- ! physical properties at interior face centers   !
+!  (nfac,*)        !    !     !                                                !
+! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
+!  (nfabor,*)      !    !     !                                                !
+! ettp             ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
+! ettpa            ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the previous time step        !
+! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
+! (nbpmax,nvep)    !    !     !                                                !
+! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
+! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
+! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
 !     mode: <-- input, --> output, <-> modifies data, --- work array
+
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-! Common blocks
+!     Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -222,7 +229,7 @@ integer          idebia, idebra
 integer          ip
 double precision fdr
 
-! Local variables UTILISATEUR
+! User-defined local variables
 
 double precision cd1 , cd2 , d2
 double precision rec1, rec2, rec3, rec4
@@ -238,24 +245,24 @@ if(1.eq.1) return
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 0.  GESTION MEMOIRE
+! 0.  Memory management
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 1. INITIALISATIONS
+! 1. Initializations
 !===============================================================================
 
 ip = numpt
 
 !===============================================================================
-! 2. TEMPS DE RELAXATION AVEC LE COEFFICIENT DE TRAINEE STANDARD
+! 2. Relaxation time with the standard (Wen-Yu) formulation of the drag coefficient
 !===============================================================================
 
-!   Cet exemple est desactive, il donne le temps de relaxation
-!   standard a titre indicatif.
+! This example is unactivated, it gives the standard relaxation time
+! as an indication:
 
 if (1.eq.0) then
 
@@ -274,9 +281,8 @@ if (1.eq.0) then
 endif
 
 !===============================================================================
-! 3. CALCUL DU TEMPS DE RELAXATION AVEC LE COEFFICIENT DE TRAINEE DE
-!    MORSI S.A. et ALEXANDER A.J.,
-!    Journal of Fluid Mechanics Vol.55, pp 193-208 (1972)
+! 3. Computation of the relaxation time with the drag coefficient of
+!    S.A. Morsi and A.J. Alexander, J. of Fluid Mech., Vol.55, pp 193-208 (1972)
 !===============================================================================
 
 rec1 =  0.1d0
@@ -310,12 +316,12 @@ taup = romp / romf / fdr
 !==============================================================================
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 
 !----
-! FIN
+! End
 !----
 
 end subroutine

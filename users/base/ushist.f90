@@ -45,10 +45,13 @@ subroutine ushist &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! SORTIE D'HISTORIQUES NON STD LIVREE A L'UTILISATEUR
+!    User subroutine.
+
+!    Non-standard monitoring point definition.
+
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -166,7 +169,7 @@ integer          idebia, idebra
 integer          ii, kk, node, ndrang, nvarpp, numcel, lng
 double precision xx, yy, zz, xyztmp(3)
 
-!   Numero des noeuds ou on sort des historiques
+! Monitoring points number (lower than a maximum of 100)
 integer          ncapmx
 parameter       (ncapmx=100)
 integer          icapt(ncapmx)
@@ -174,16 +177,16 @@ save             icapt
 integer          ircapt(ncapmx)
 save             ircapt
 
-!   Nombre de noeuds ou on sort des historiques
+! Number of monitoring points
 integer          ncapts
 save             ncapts
 
-!   Numero du passage actuel dans ce ss pgm
+! Current pass number
 integer          ipass
 data             ipass /0/
 save             ipass
 
-!   Tableau de valeurs temporaires
+! Temporary array
 double precision vacapt(ncapmx)
 
 !===============================================================================
@@ -196,34 +199,33 @@ if(1.eq.1) return
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-
 !===============================================================================
-! 1. INITIALISATION
+! 1.  Initialization
 !===============================================================================
 
-! ---> Gestion memoire
+! Memory management
 
 idebia = idbia0
 idebra = idbra0
 
-! ---> Numero du passage actuel dans ce ss pgm
+! Current pass number in this subroutine
 
 ipass = ipass + 1
 
 !===============================================================================
-! 2. RECHERCHE DES CAPTEURS
+! 2.  Search for the monitoring points
 !===============================================================================
-! Les numeros stockes dans IRCAPT donnent le rang du processeur sur
-!   lequel se trouve la sonde. L'utilisateur n'a pas a s'en preoccuper
-!   specialement tant qu'il utilise bien la fonction FINDPT pour reperer
-!   les sondes.
 
+! The numbers stored in the 'ircapt' array give the processor rank on which
+!   is the probes. The user should not have to care as soon as she/he is
+!   using the 'findpt' subroutine to find the monitoring points.
 
-!  Au premier passage : reperage des numeros de cellule dont le centre est
-!    le plus proche des coordonnees XX YY ZZ.
-!    En parallelisme, le numero de cellule ICAPT(II) est local au processeur
-!    dont le rang est donne par IRCAPT(II) (de 0 a nombre de processeurs-1).
-!    NCAPTS donne le nombre de sondes total.
+! At the first pass:
+!    Search for the cell number the centre of which is the closest of the
+!    coordinates (xx, yy, zz).
+!    In case of parallelism, the cell number 'icapt(ii)' is local to the
+!    processor of rank 'ircapt(ii)' (from 0 to the number of processor - 1).
+!    'ncapts' gives the total number of monitoring points.
 
 if (ipass.eq.1) then
 
@@ -232,9 +234,9 @@ if (ipass.eq.1) then
   xx = 0.20d0
   yy = 0.15d0
   zz = 0.01d0
-  call findpt                                                     &
+  call findpt &
   !==========
- ( ncelet , ncel   , xyzcen ,                                     &
+ ( ncelet , ncel   , xyzcen ,                 &
    xx     , yy     , zz     , node  , ndrang)
   ii = ii + 1
   icapt(ii) = node
@@ -243,9 +245,9 @@ if (ipass.eq.1) then
   xx = 0.70d0
   yy = 0.15d0
   zz = 0.01d0
-  call findpt                                                     &
+  call findpt &
   !==========
- ( ncelet , ncel   , xyzcen ,                                     &
+ ( ncelet , ncel   , xyzcen ,                  &
    xx     , yy     , zz     , node  , ndrang)
   ii = ii + 1
   icapt(ii) = node
@@ -254,9 +256,9 @@ if (ipass.eq.1) then
   xx = 0.20d0
   yy = 0.75d0
   zz = 0.01d0
-  call findpt                                                     &
+  call findpt &
   !==========
- ( ncelet , ncel   , xyzcen ,                                     &
+ ( ncelet , ncel   , xyzcen ,                  &
    xx     , yy     , zz     , node  , ndrang)
   ii = ii + 1
   icapt(ii) = node
@@ -276,76 +278,78 @@ if (ipass.eq.1) then
   ncapts = ii
 
   if(ii.gt.ncapmx) then
-    WRITE(NFECRA,*) ' USHIST : NCAPMX = ',II,' AU MINIMUM '
-    call csexit (1)
+    write(nfecra,*) ' ushist: ncapmx should at least be', ii
+    call csexit(1)
+    !==========
   endif
 
 endif
 
 
 !===============================================================================
-! 3. OUVERTURE DES FICHIERS
-!     EXEMPLE D'UNE VARIABLE PAR FICHIER
+! 3.  Open files: example for a variable per file
 !===============================================================================
 
-! ---> Nombre de variables = nombre de fichiers
+! Number of variables = number of files
 
 nvarpp = nvar
 
 
-! ---> Au premier passage, on ouvre les fichiers et on ecrit une entete
+! At the first pass: open files and write a header
 
-if(ipass.eq.1) then
+if (ipass.eq.1) then
 
-!   --> Test du nombre max de fichiers
+  ! Test the maximum number of user files
 
-  if(nvarpp.gt.nushmx) then
-    write(nfecra,*)                                               &
-  ' USHIST : PAS DROIT A PLUS DE ',NUSHMX,' FICHIERS HISTORIQUES'
-    call csexit (1)
+  if (nvarpp.gt.nushmx) then
+    write(nfecra,*) &
+      ' ushist: no more than ', nushmx,' monitoring files are allowed'
+    call csexit(1)
+    !==========
   endif
 
   do ii = 1, nvarpp
 
-!   --> Ouverture des fichiers avec les unites disponibles
+    ! Open the files with the availabe Fortran 'file units'
 
     if (irangp.le.0) then
-      open(file=ficush(ii),unit=impush(ii))
+      open(file=ficush(ii), unit=impush(ii))
     endif
 
-!   --> On imprime le numero (global) de la cellule et les coordonnees
-!        du centre
+    ! Print the (global) cell number and the center coordinates
 
     do kk = 1, ncapts
-!           Numero de cellule (en parallele : local au processeur courant)
-      numcel    = icapt(kk)
+
+      ! Cell number (in a parallel run: local to the current processor)
+      numcel = icapt(kk)
+
       if (irangp.lt.0 .or. irangp.eq.ircapt(kk)) then
-!           Coordonnees de la cellule (en parallele, c'est le processeur
-!             qui la contient qui travaille)
+        ! Cell coordinates (in a parallel run: only one processor gives values)
         xyztmp(1) = xyzcen(1,numcel)
         xyztmp(2) = xyzcen(2,numcel)
         xyztmp(3) = xyzcen(3,numcel)
       else
-!           Valeurs bidons sur les autres processeurs
+        ! Fake values on the other processors
         xyztmp(1) = 0.d0
         xyztmp(2) = 0.d0
         xyztmp(3) = 0.d0
       endif
-!           En parallele, le processeur qui a trouve la cellule
-!           envoie son numero global et ses coordonnees aux autres.
+
+      ! In case of parallelism, the processor on which the cell was found
+      ! sends its global number and coordinates to the others.
       if (irangp.ge.0) then
         call parcel(icapt(kk), ircapt(kk), numcel)
         !==========
         lng = 3
-        call parbcr(ircapt(kk), lng , xyztmp)
+        call parbcr(ircapt(kk), lng, xyztmp)
         !==========
       endif
-!           On ecrit les informations (seul le processeur 0
-!           travaille en parallele : on n'a pasa besoin de
-!           plusieurs exemplaires du fichier)
+
+      ! Write information
+      !   (only rank 0 works in a parallel run: only one file is needed)
       if (irangp.le.0) then
-        WRITE(IMPUSH(II),1000) '#',' Cellule ',NUMCEL,            &
-            ' Coord ',XYZTMP(1),XYZTMP(2),XYZTMP(3)
+        write(impush(ii),1000) &
+          '#', ' Cell ', numcel, ' Coord ', xyztmp(1), xyztmp(2), xyztmp(3)
       endif
 
     enddo
@@ -354,19 +358,18 @@ if(ipass.eq.1) then
 
 endif
 
- 1000 format(a,a9,i10,a7,3e14.5)
+1000 format(a,a9,i10,a7,3e14.5)
 
 !===============================================================================
-! 4. ECRITURE
-!     EXEMPLE D'UNE VARIABLE PAR FICHIER
+! 4.  Write values: example for a variable per file
 !===============================================================================
 
-! Ecriture du numero du pas de temps,
-!          de la valeur du temps physique
-!          de la variable en tous les points d'historiques
-! En sequentiel, la valeur a ecrire est simplement RTP(ICAPT(KK),II)
-! en parallele, la valeur a ecrire peut etre sur un autre processeur
-!  et il faut la determiner dans  VACAPT(KK) avec PARHIS.
+! Write the time step number,
+!       the physical time value
+!       the variable at each monitoring points
+! In a serial run:   the value is merely 'rtp(icapt(kk),ii)'
+! In a parallel run: the value may come from a different processor, to be
+!                    determined in 'vacapt(kk)' with the 'parhis' subroutine)
 
 do ii = 1 , nvarpp
   do kk = 1, ncapts
@@ -378,32 +381,28 @@ do ii = 1 , nvarpp
     endif
   enddo
   if (irangp.le.0) then
-    write (impush(ii),1010) ntcabs,ttcabs,                        &
-                            (vacapt(kk),kk=1,ncapts)
+    write(impush(ii),1010) ntcabs, ttcabs, (vacapt(kk),kk=1,ncapts)
   endif
 enddo
 
+! WARNING: The format must be modified in case of more than 9 monitoring points
 
-
-!   ATTENTION : IL FAUT ADAPTER LE FORMAT POUR PLUS DE  9 CAPTEURS
-
-
- 1010 format(i10,10e17.9)
+1010 format(i10,10e17.9)
 
 !===============================================================================
-! 4. FERMETURE
+! 4.  Close files
 !===============================================================================
 
-if(ntcabs.eq.ntmabs .and. irangp.le.0) then
+if (ntcabs.eq.ntmabs .and. irangp.le.0) then
   do ii = 1, nvarpp
     close(impush(ii))
   enddo
 endif
 
 
-!===============================================================================
-! 5. SORTIE
-!===============================================================================
+!----
+! End
+!----
 
 return
 end subroutine

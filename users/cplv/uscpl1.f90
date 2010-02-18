@@ -51,19 +51,20 @@ subroutine uscpl1
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
+!    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
+!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
+!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
+!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
+!            --- tableau de travail
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-! Common blocks
+!     DONNEES EN COMMON
 !===============================================================================
 
 include "paramx.h"

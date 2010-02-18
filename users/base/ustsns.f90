@@ -50,45 +50,54 @@ subroutine ustsns &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! -------
 
-! ROUTINE UTILSATEUR ON PRECISE LES TERMES SOURCES UTILISATEURS
-!   POUR LA COMPOSANTE DE VITESSE IVAR
+!    User subroutine.
 
-! ON RESOUT RHO*VOLUME*D(VAR)/DT = CRVIMP*VAR + CRVEXP
+!    Additional right-hand side source terms for velocity components equation
+!    (Navier-Stokes)
 
-! ON FOURNIT ICI CRVIMP ET CRVEXP (ILS CONTIENNENT RHO*VOLUME)
-!    CRVEXP en kg variable/s :
-!     ex : pour la vitesse            kg m/s2
-!    CRVIMP en kg /s :
-
-! VEILLER A UTILISER UN CRVIMP NEGATIF
-! (ON IMPLICITERA CRVIMP
-!  IE SUR LA DIAGONALE DE LA MATRICE, LE CODE AJOUTERA :
-!   MAX(-CRVIMP,0) EN SCHEMA STANDARD EN TEMPS
-!       -CRVIMP    SI LES TERMES SOURCES SONT A L'ORDRE 2
-
-! CES TABLEAUX SONT INITIALISES A ZERO AVANT APPEL A CE SOUS
-!   PROGRAMME ET AJOUTES ENSUITE AUX TABLEAUX PRIS EN COMPTE
-!   POUR LA RESOLUTION
-
-! EN CAS D'ORDRE 2 DEMANDE SUR LES TERMES SOURCES, ON DOIT
-!   FOURNIR CRVEXP A L'INSTANT N     (IL SERA EXTRAPOLE) ET
-!           CRVIMP A L'INSTANT N+1/2 (IL EST  DANS LA MATRICE,
-!                                     ON LE SUPPOSE NEGATIF)
-
-
-! Cells identification
-! ====================
-
-! Cells may be identified using the 'getcel' subroutine.
-! The syntax of this subroutine is described in the 'usclim' subroutine,
-! but a more thorough description can be found in the user guide.
-
+!
+! Usage
+! -----
+! The routine is called for each velocity component. It is therefore necessary
+! to test the value of the variable ivar to separate the treatments of the
+! components iu(iphas), iv(iphas) or iw(iphas).
+!
+! The additional source term is decomposed into an explicit part (crvexp) and
+! an implicit part (crvimp) that must be provided here.
+! The resulting equation solved by the code for a velocity component u is:
+!
+!  rho*volume*du/dt + .... = crvimp*u + crvexp
+!
+! Note that crvexp and crvimp are defined after the Finite Volume integration
+! over the cells, so they include the "volume" term. More precisely:
+!   - crvexp is expressed in kg.m/s2
+!   - crvimp is expressed in kg/s
+!
+! The crvexp and crvimp arrays are already initialized to 0 before entering the
+! the routine. It is not needed to do it in the routine (waste of CPU time).
+!
+! For stability reasons, Code_Saturne will not add -crvimp directly to the
+! diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
+! treated implicitely only if it strengthens the diagonal of the matrix.
+! However, when using the second-order in time scheme, this limitation cannot
+! be done anymore and -crvimp is added directly. The user should therefore test
+! the negativity of crvimp by himself.
+!
+! When using the second-order in time scheme, one should supply:
+!   - crvexp at time n
+!   - crvimp at time n+1/2
+!
+!
+! The selection of cells where to apply the source terms is based on a getcel
+! command. For more info on the syntax of the getcel command, refer to the
+! user manual or to the comments on the similar command getfbr in the routine
+! usclim.
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
@@ -108,12 +117,12 @@ subroutine ustsns &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
+! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
+! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ivar             ! i  ! <-- ! variable number                                !
-! iphas            ! i  ! <-- ! phase number                                   !
+! ivar             ! i  ! <-- ! index number of the current variable           !
+! iphas            ! i  ! <-- ! index number of the current phase              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
@@ -126,19 +135,19 @@ subroutine ustsns &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
+! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
+! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
+!  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -147,25 +156,24 @@ subroutine ustsns &
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant            prec)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! crvexp(ncelet    ! tr ! --> ! tableau de travail pour part explicit          !
-! crvimp(ncelet    ! tr ! --> ! tableau de travail pour part implicit          !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
+! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
+!  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
+! crvexp           ! ra ! --> ! explicit part of the source term               !
+! crvimp           ! ra ! --> ! implicit part of the source term               !
+! dam(ncelet)      ! ra ! --- ! work array                                     !
+! xam(nfac,2)      ! ra ! --- ! work array                                     !
+! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
+!  (ncelet)        !    !     !  (computation of pressure gradient)            !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -245,7 +253,7 @@ if(1.eq.1) return
 
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 idebia = idbia0
@@ -262,48 +270,32 @@ ipcrom = ipproc(irom  (iphas))
 
 
 !===============================================================================
-! 2. EXEMPLE DE TERME SOURCE ARBITRAIRE, POUR LA VARIABLE U :
+! 2. Example of arbitrary source term for component u:
 
-!                             S = A * U + B
+!                             S = A * u + B
 
-!            APPARAISSANT DANS LES EQUATIONS SOUS LA FORME :
+!            appearing in the equation under the form:
 
-!                       RHO VOLUME D(U)/Dt = VOLUME*S
-
-
-!   CE TERME A UNE PARTIE QU'ON VEUT IMPLICITER         : A
-!           ET UNE PARTIE QU'ON VA TRAITER EN EXPLICITE : B
+!                       rho*du/dt = S (+ standard Navier-Stokes terms)
 
 
-!   ICI PAR EXEMPLE ARBITRAIREMENT :
-
-!     A = - RHO CKP
-!     B =   QDM
-!        AVEC
-!     CKP    = 10.D0  [1/s       ] (COEFFICIENT DE RAPPEL SUR U)
-!     QDM    = 100.D0 [kg/(m2 s2)] (PRODUCTION DE QUANTITE DE MOUVEMENT
-!                             PAR UNITE DE VOLUME ET PAR UNITE DE TEMPS)
-
-!   ON A ALORS
-!     CRVIMP(IEL) = VOLUME(IEL)* A = - VOLUME(IEL) (RHO CKP )
-!     CRVEXP(IEL) = VOLUME(IEL)* B =   VOLUME(IEL) (QDM     )
-
-!   ON REMPLIT CI-DESSOUS CRVIMP ET CRVEXP CORRESPONDANTS.
-
-!===============================================================================
-
-
-
-!     ATTENTION, L'EXEMPLE EST COMPLETEMENT ARBITRAIRE
-!     =========
-!         ET DOIT ETRE REMPLACE PAR LES TERMES UTILISATEURS ADEQUATS
-
+!In the following example:
+!  A = -rho*CKP
+!  B =  XMMT
+!
+!with:
+!  CKP = 1.D0 [1/s       ] (return term on velocity)
+!  MMT = 100.D0 [kg/m2/s2] (momentum production by volume and time unit)
+!
+!which yields:
+!     crvimp(iel) = volume(iel)* A = - volume(iel)*(rho*CKP )
+!     crvexp(iel) = volume(iel)* B =   volume(iel)*(XMMT    )
 
 ! ----------------------------------------------
 
-! Il est assez courant que l'on oublie d'eliminer cet exemple
-!   de ce sous-programme.
-! On a donc prevu le test suivant pour eviter les mauvaises surprises
+! It is quite frequent to forget to remove this example when it is
+!  not needed. Therefore the following test is designed to prevent
+!  any bad surprise.
 
 iutile = 0
 
@@ -311,26 +303,31 @@ if(iutile.eq.0) return
 
 ! ----------------------------------------------
 
-ckp  = 10.d0
-qdm  = 100.d0
+iphas=1
+if (ivar.eq.iu(1)) then
 
-do iel = 1, ncel
-  crvimp(iel) = - volume(iel)*propce(iel,ipcrom)*ckp
-enddo
+  ckp  = 10.d0
+  qdm  = 100.d0
 
-do iel = 1, ncel
-  crvexp(iel) =   volume(iel)*qdm
-enddo
+  do iel = 1, ncel
+     crvimp(iel) = - volume(iel)*propce(iel,ipcrom)*ckp
+  enddo
+
+  do iel = 1, ncel
+     crvexp(iel) =   volume(iel)*qdm
+  enddo
+
+endif
 
 
 !--------
-! FORMATS
+! Formats
 !--------
 
- 1000 format(' TERMES SOURCES UTILISATEURS POUR LA VARIABLE ',A8,/)
+ 1000 format(' User source termes for variable ',A8,/)
 
 !----
-! FIN
+! End
 !----
 
 return

@@ -50,52 +50,69 @@ subroutine ustske &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR ON PRECISE LES TERMES SOURCES UTILISATEURS
-!   POUR K-EPSILON SUR UN PAS DE TEMPS (PHASE IPHAS)
+!    User subroutine.
 
-! ON RESOUT RHO*VOLUME*D(VAR)/DT = CRVIMP*VAR + CRVEXP
+!    Additional right-hand side source terms for k and epsilon equations
+!    when using:
+!     - k-epsilon model (ITURB=20)
+!     - k-epsilon Linear Production model (ITURB=21)
+!     - v2-f phi-model (ITURB=50)
+!
+! Usage
+! -----
+!
+! The additional source term is decomposed into an explicit part (crkexp,creexp) and
+! an implicit part (crkimp,creimp) that must be provided here.
+! The resulting equations solved by the code are:
+!
+!  rho*volume*d(k)/dt   + .... = crkimp*k   + crkexp
 
-! ON FOURNIT ICI CRVIMP ET CRVEXP (ILS CONTIENNENT RHO*VOLUME)
-!    CRVEXP en kg variable/s :
-!     ex : pour k                     kg m2/s3
-!          pour epsilon               kg m2/s4
-!    CRVIMP en kg /s :
+!  rho*volume*d(eps)/dt + .... = creimp*eps + creexp
+!
+! Note that crkexp, crkimp, creexp and creimp are defined after the Finite Volume
+! integration over the cells, so they include the "volume" term. More precisely:
+!   - crkexp is expressed in kg.m2/s3
+!   - creexp is expressed in kg.m2/s4
+!   - crkimp is expressed in kg/s
+!   - creimp is expressed in kg/s
+!
+! The crkexp, crkimp, creexp and creimp arrays are already initialized to 0 before
+! entering the routine. It is not needed to do it in the routine (waste of CPU time).
+!
+! For stability reasons, Code_Saturne will not add -crkimp directly to the
+! diagonal of the matrix, but Max(-crkimp,0). This way, the crkimp term is
+! treated implicitely only if it strengthens the diagonal of the matrix.
+! However, when using the second-order in time scheme, this limitation cannot
+! be done anymore and -crkimp is added directly. The user should therefore test
+! the negativity of crkimp by himself.
+! The same mechanism applies to cveimp.
+!
+! When using the second-order in time scheme, one should supply:
+!   - crkexp and creexp at time n
+!   - crkimp and creimp at time n+1/2
+!
+! When entering the routine, two additional work arrays are already set for
+! potential user need:
+!   tinstk =  2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
+!          +  (2 S12)**2 + (2 S13)**2 + (2 S23)**2
+!
+!          where Sij = (dUi/dxj+dUj/dxi)/2
+!
+!   divu = du/dx + dv/dy + dw/dz
 
-! VEILLER A UTILISER UN CRVIMP NEGATIF
-! (ON IMPLICITERA CRVIMP
-!  IE SUR LA DIAGONALE DE LA MATRICE, LE CODE AJOUTERA :
-!   MAX(-CRVIMP,0) EN SCHEMA STANDARD EN TEMPS
-!       -CRVIMP    SI LES TERMES SOURCES SONT A L'ORDRE 2
-
-! CES TABLEAUX SONT INITIALISES A ZERO AVANT APPEL A CE SOUS
-!   PROGRAMME ET AJOUTES ENSUITE AUX TABLEAUX PRIS EN COMPTE
-!   POUR LA RESOLUTION
-
-! EN CAS D'ORDRE 2 DEMANDE SUR LES TERMES SOURCES, ON DOIT
-!   FOURNIR CR.EXP A L'INSTANT N     (IL SERA EXTRAPOLE) ET
-!           CR.IMP A L'INSTANT N+1/2 (IL EST  DANS LA MATRICE,
-!                                     ON LE SUPPOSE NEGATIF)
-
-! TINSTK = 2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
-!       + (2 S12)**2 + (2 S13)**2 + (2 S23)**2 )
-! DIVU = DUDX + DVDY + DWDZ
-
-!     Sij = (dUi/dxj+dUj/dxi)/2
 
 
-! Cells identification
-! ====================
-
-! Cells may be identified using the 'getcel' subroutine.
-! The syntax of this subroutine is described in the 'usclim' subroutine,
-! but a more thorough description can be found in the user guide.
-
+!
+! The selection of cells where to apply the source terms is based on a getcel
+! command. For more info on the syntax of the getcel command, refer to the
+! user manual or to the comments on the similar command getfbr in the routine
+! usclim.
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
@@ -115,11 +132,11 @@ subroutine ustske &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
+! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iphas            ! i  ! <-- ! phase number                                   !
+! iphas            ! i  ! <-- ! index number of the current phase              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
@@ -132,19 +149,19 @@ subroutine ustske &
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
+! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
+! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
+!  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -153,30 +170,29 @@ subroutine ustske &
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant            prec)          !
+! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (preceding time steps)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! valeur des variables associee a la             !
-! (ncesmp,*   )    !    !     !  source de masse                               !
-!                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! tinstk(ncelet    ! tr ! <-- ! somme sijsij  (en 1/s2)                        !
-! divu  (ncelet    ! tr ! <-- ! div(u)     (en 1/s )                           !
-! crkexp(ncelet    ! tr ! --> ! tableau pour k     pour part explicit          !
-! crkimp(ncelet    ! tr ! --> ! tableau pour k     pour terme instat           !
-! creexp(ncelet    ! tr ! --> ! tableau pour eps   pour part explicit          !
-! creimp(ncelet    ! tr ! --> ! tableau pour eps   pour terme instat           !
-! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
-! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
-! xam(nfac,2)      ! tr ! --- ! tableau de travail    faces de bord            !
-! w1..10(ncelet    ! tr ! --- ! tableau de travail    cellules                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
+! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
+!  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
+! tinstk           ! ra ! <-- ! tubulent production term (see comment above)   !
+! divu             ! ra ! <-- ! velocity divergence (see comment above)        !
+! crkexp           ! ra ! --> ! explicit part of the source term for k         !
+! creexp           ! ra ! --> ! explicit part of the source term for epsilon   !
+! crkimp           ! ra ! --> ! implicit part of the source term for k         !
+! creimp           ! ra ! --> ! implicit part of the source term for epsilon   !
+! viscf(nfac)      ! ra ! --- ! work array                                     !
+! viscb(nfabor)    ! ra ! --- ! work array                                     !
+! xam(nfac,2)      ! ra ! --- ! work array                                     !
+! w1 to w10        ! ra ! --- ! work arrays                                    !
+!  (ncelet)        !    !     !  (computation of pressure gradient)            !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -257,17 +273,17 @@ if(1.eq.1) return
 
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
-! --- Numero des variables k et epsilon de la phase IPHAS courante
+! --- Index numbers of variables k and epsilon for the current phase iphas
 ikiph = ik (iphas)
 ieiph = iep(iphas)
 
-! --- Numero des grandeurs physiques (voir usclim) : masse volumique
+! --- Index number of the density in the propce array
 ipcrom = ipproc(irom(iphas))
 
 if(iwarni(ikiph).ge.1) then
@@ -275,60 +291,46 @@ if(iwarni(ikiph).ge.1) then
 endif
 
 !===============================================================================
-! 2. EXEMPLE FICTIF :
+! 2. Example of arbitrary additional source term for k and epsilon
 
-!    Pour la phase 2
-
-!      Terme source k :
+!      Source term for k :
 !         rho volume d(k)/dt       = ...
 !                        ... - rho*volume*ff*epsilon - rho*volume*k/tau
 
-!      Terme source epsilon :
+!      Source term for epsilon :
 !         rho volume d(epsilon)/dt = ...
 !                        ... + rho*volume*xx
 
-!      Avec, pour l'exemple,
-!                 xx = 2.d0, ff=3.d0, tau = 4.d0
+!      With xx = 2.d0, ff=3.d0 and tau = 4.d0
 
 !===============================================================================
 
+! --- Explicit source terms
 
-! --- Si la phase est bien la phase selectionnee
+ff  = 3.d0
+tau = 4.d0
+xx  = 2.d0
 
-if(iphas.ne.2) then
+do iel = 1, ncel
+  crkexp(iel) = -propce(iel,ipcrom)*volume(iel)*ff*rtpa(iel,ieiph)
+  creexp(iel) =  propce(iel,ipcrom)*volume(iel)*xx
+enddo
 
+! --- Implicit source terms
+!        creimp is already initialized to 0, no need to set it here
 
-! --- Termes sources explicites
-
-  ff  = 3.d0
-  tau = 4.d0
-  xx  = 2.d0
-
-  do iel = 1, ncel
-    crkexp(iel) = -propce(iel,ipcrom)*volume(iel)                 &
-                                               *ff*rtpa(iel,ieiph)
-    creexp(iel) =  propce(iel,ipcrom)*volume(iel)*xx
-  enddo
-
-! --- Termes sources implicites (diagonale)
-!        CRKIMP et CREIMP sont initialises a zero avant l'entree dans ce
-!          sous-programme : il est donc inutile de completer CREIMP
-!          s'il est nul.
-
-  do iel = 1, ncel
-    crkimp(iel) = -propce(iel,ipcrom)*volume(iel)/tau
-  enddo
-
-endif
+do iel = 1, ncel
+  crkimp(iel) = -propce(iel,ipcrom)*volume(iel)/tau
+enddo
 
 !--------
-! FORMATS
+! Formats
 !--------
 
- 1000 format(' TERMES SOURCES UTILISATEURS K-EPSILON PHASE ',I4,/)
+ 1000 format(' User source terms for k and epsilon, phase ',I4,/)
 
 !----
-! FIN
+! End
 !----
 
 return

@@ -92,12 +92,12 @@ endif
 ! 1.  Choice for a specific physics
 !===============================================================================
 
-! --- cod3p: Diffusion flame in the framework of "3 points" rapid complete
-! ========== chemistry
+! --- cod3p: Diffusion flame with complete fast chemistry (3 points)
+! ==========
 
-!     if = -1   module not activated
-!     if =  0   adiabatic conditions
-!     if =  1   permeatic conditions
+!        if = -1   module not activated
+!        if =  0   adiabatic model
+!        if =  1   extended model with enthalpy source term
 
 ippmod(icod3p) = -1
 
@@ -105,11 +105,15 @@ ippmod(icod3p) = -1
 ! --- coebu: Eddy-Break Up pre-mixed flame
 ! ==========
 
-!     if = -1   module not activated
-!     if =  0   adiabatic conditions at constant richness
-!     if =  1   permeatic conditions at constant richness
-!     if =  2   adiabatic conditions at variable richness
-!     if =  3   permeatic conditions at variable richness
+!        if = -1   module not activated
+!        if =  0   reference Spalding model
+!                   (adiabatic, homogeneous mixture fraction)
+!        if =  1   extended model with enthalpy source term
+!                   (homogeneous mixture fraction : perfect premix)
+!        if =  2   extended model with mixture fraction transport
+!                   (adiabatic, no variance of mixture fraction)
+!        if =  3   extended model with enthalpy and mixture fraction transport
+!                   (dilution, thermal losses, etc.)
 
 ippmod(icoebu) = -1
 
@@ -117,35 +121,49 @@ ippmod(icoebu) = -1
 ! ==========
 
 !        if = -1   module not activated
-!        if =  0   two-peak model with adiabatic condition
-!        if =  1   two-peak model with permeatic condition
-!        if =  2   three-peak model with adiabatic condition
-!        if =  3   three-peak model with permeatic condition
-!        if =  4   four-peak model with adiabatic condition
-!        if =  5   four-peak model with permeatic condition
+!        if =  0   reference two-peak model with adiabatic condition
+!        if =  1   extended two-peak model with enthapy source terms
+!        if =  2   extended three-peak model, adiabatic
+!        if =  3   extended three-peak model with enthalpy source terms
+!        if =  4   extended four-peak model, adiabatic
+!        if =  5   extended four-peak model with enthalpy source terms
 
 ippmod(icolwc) = -1
 
-! --- cp3pl: Pulverized coal, with three gaseous fuels and granulometry
-! ========== CP3PL Combustible moyen local
+! --- cp3pl: Pulverized coal combustion
+! ==========
+
+!        Description of granulometry
+!        Assumption of diffusion flame around particles
+!         (extension of 3-point fast chemistry "D3P")
+!        Between a mixture of gaseous fuels (volatiles matters, CO from char
+!                                            oxydation)
+!            and a mixture of oxidisers (air and water vapor)
+!        Enthalpy for both mix and solid phase are solved
 
 !        if = -1   module not activated
-!        if = 0    H2 transport
-!        if = 1    H2 transport + drying
+!        if = 0    module activated
+!        if = 1    with drying
 
 ippmod(icp3pl) = -1
 
-! --- cpl3c: Pulverized coal with Lagrangian coupling, with three gaseous fuels
-! ========== and granulometry
+! --- cpl3c: Pulverized coal with Lagrangian reciprocal approach
+! ==========
+
+!        Not recently tested... at least outdated, may be obsolete
 
 !        if = -1   module not activated
-!        if = 0    H2 transport
-!        if = 1    H2 transport + drying (NOT functional)
+!        if = 0    module activated
+!        if = 1    with drying (NOT functional)
 
 ippmod(icpl3c) = -1
 
 ! --- cfuel: Heavy fuel oil combustion
 ! ==========
+
+!        Progressive evaporation (temperature gap)
+!        Char residue
+!        Sulphur tracking
 
 !        if = -1   module not activated
 !        if = 0    module activated
@@ -208,20 +226,26 @@ ippmod(iaeros) = -1
 ! WARNING: The following modules ARE NOT functional!
 ! =======
 
-! --- cobml: premelange avec le modele Bray - Moss - Libby
+! --- cobml: Premix model of Bray - Moss - Libby
 ! ==========
+
 !        if = -1   module not activated
+
 ippmod(icobml) = -1
 
-! --- codeq: Diffusion flame  en chimie rapide vers l'equilibre
+! --- codeq: Diffusion flame with fast equilibrium chemistry
 ! ==========
+
 !        if = -1   module not activated
+
 ippmod(icodeq) = -1
 
 ! --- elion: Ionic mobility
 ! ==========
+
 !        if = -1   module not activated
 !        if = 1    eletric potential
+
 ippmod(ielion) = -1
 
 
@@ -232,23 +256,38 @@ ippmod(ielion) = -1
 ! These options are defined here at the moment, this might change in the future
 
 ! --- Enthalpy-Temperature conversion law (for gas combustion modelling)
-!       indjon = 0   user-specified
-!       indjon = 1   tabulated by JANAF (default)
+
+!       if = 0   user-specified
+!       if = 1   tabulated by JANAF (default)
 
 indjon = 1
 
-! --- NOx modelling (ieqnox = 1)
-!       Only compatible with heavy fuel oil combustion
+! --- Kinetic model for NOx formation
+
+!         Only compatible with heavy fuel oil combustion
+
+!         if = 0  unused
+!         if = 1  activated
 
 ieqnox = 0
 
-! --- CO2 transport equation (ieqco2 = 1)
-!       Compatible with coal and heavy fuel oil combustion
+! --- Kinetic model for CO <=> CO2
+
+!         Compatible with coal and heavy fuel oil combustion
+
+!         if = 0  unused (maximal conversion in turbulent model)
+!         if = 1  transport of CO2 mass fraction
+!         if = 2  transport of CO mass fraction
 
 ieqco2 = 0
 
-! --- Heteregoneous combustion by CO2 (ihtco2 = 1)
-!       Needs the activation of the CO2 transport equation
+! --- Heteregoneous combustion by CO2
+
+!         Needs the activation of the CO2 transport equation
+!         Account for the reaction between char and CO2: C(s) + CO2 => 2 CO
+
+!         if = 0  unused
+!         if = 1  activated
 
 ihtco2 = 0
 

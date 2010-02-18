@@ -34,13 +34,15 @@ subroutine ussyrc &
  ( )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! -------
 
-!     DEFINITION DE COUPLAGE(S) AVEC LE CODE SYRTHES
+!    User subroutine.
+
+!    Define couplings with SYRTHES code.
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
@@ -65,8 +67,9 @@ include "parall.h"
 
 ! Arguments
 
-! Variables locales
+! Local variables
 
+character*32     namsyr
 character        cprjsy
 integer          numsyr, nbcsyr, ii
 integer          iwarns
@@ -81,50 +84,70 @@ if(1.eq.1) return
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
+numsyr = -1
 iwarns = 1
 
-numsyr = -1
 nbcsyr = 3
+
+! In the case of a single Code_Saturne and single SYRTHES instance, the
+! 'numsyr' and 'namsyr' arguments of 'defsyr' are ignored.
+
+! In case of multiple couplings, a coupling will be matched with available
+! SYRTHES instances prioritarily based on the 'namsyr' (SYRTHES instance name)
+! argument, then on the 'numsyr' (SYRTHES instance application number) argument.
+
+! If 'namsyr' is empty or when coupling with SYRTHES 3, matching will be based
+! on 'numsyr' only.
+
+! The arguments to defsyr are:
+!   numsyr <-- matching SYRTHES application id, or -1
+!   namsyr <-- matching SYRTHES application name
+!   cprjsy <-- ' ' : standard 3D coupling
+!              'x', 'y', or 'z': projection axis for coupling with 2D SYRTHES.
+!   critsu <-- surface selection criteria
+!   critvl <-- volume selection criteria (only for SYRTHES 4)
+!   iwarns <-- verbosity level
+
+! Loop on SYRTHES couplings
 
 do ii = 1, nbcsyr
 
-!       IPRJSY : ' ' : couplage 3D standard
-!                'x', 'y', ou 'z' : axe de projection pour couplage avec
-!                                   SYRTHES 2D.
-!       IWARNS : niveau d'impression associe
-
-!       Exemple : couplage surfacique 3D aux les faces de couleur 3
-!                 avec une instance nommee SYRTHES_01
+  ! Example: 3D surface coupling at faces of color 3 with instance
+  !          named 'SYRTHES_01'
 
   if (ii .eq. 1) then
 
-    CPRJSY= ' '
+    namsyr = 'SYRTHES_01'
 
-    CALL DEFSYR(NUMSYR, 'SYRTHES_01', CPRJSY, '3', ' ', IWARNS)
+    cprjsy = ' '
+
+    call defsyr(numsyr, namsyr, cprjsy, '3', ' ', iwarns)
     !==========
 
-!       Exemple : couplage surfacique 2D aux les faces du groupe 'wall'
-!                 avec une instance nommee SYRTHES_02
+  ! Example: 2D surface coupling at faces of group 'Wall' with instance
+  !          named 'SYRTHES_02'
 
   else if (ii .eq. 2) then
 
-    CPRJSY= 'z'
+    namsyr = 'SYRTHES_02'
 
-    CALL DEFSYR(NUMSYR, 'SYRTHES_02', CPRJSY,                     &
+    cprjsy = 'z'
+
+    call defsyr(numsyr, namsyr, cprjsy, 'Wall', ' ', iwarns)
     !==========
-                'wall', ' ', IWARNS)
 
-!       Exemple : couplage volumique 3D au niveau de la boite
-!                 de coins (0, 0, 0) et (1, 1, 1), avec une instance
-!                 nommee SOLID
+  ! Example: 3D volume coupling at box with corners (0, 0, 0) and (1, 1, 1)
+  !          with instance named 'Solid'
 
   else if (ii .eq. 3) then
 
-    CPRJSY= ' '
+    namsyr = 'Solid'
 
-    CALL DEFSYR(NUMSYR, 'SOLID', CPRJSY,                          &
+    cprjsy = ' '
+
+    call defsyr(numsyr, namsyr, cprjsy,                          &
     !==========
-                ' ', 'box[0., 0., 0., 1., 1., 1.]', IWARNS)
+                ' ', 'box[0., 0., 0., 1., 1., 1.]', iwarns)
 
 
   endif

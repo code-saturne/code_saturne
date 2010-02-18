@@ -51,24 +51,36 @@ subroutine uspt1d &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! -------
 
-!     ENTREE DES DONNEES DU MODULE THERMIQUE EN 1D PAROI
+!     User subroutine.
 
-! IAPPEL = 1 (un seul appel a l'initialisation) :
-!             CALCUL DU NOMBRE DE CELLULES OU L'ON IMPOSE UNE PAROI
+!     Data Entry ot the thermic module in 1-Dimension Wall.
 
-! IAPPEL = 2 (un seul appel a l'initialisation) :
-!             REPERAGE DES CELLULES OU L'ON IMPOSE UNE PAROI
-!             DONNEES RELATIVE AU MAILLAGE
 
-! IAPPEL = 3 (appel a chaque pas de temps) :
-!             VALEUR DES COEFFICIENTS PHYSIQUE DU CALCUL
-!             TYPE DE CONDITION LIMITE EN PAROI EXTERIEURE
-!             ICLT1D = 1 -> TEMPERATURE
-!             ICLT1D = 3 -> FLUX
-!             INITIALISATION DE LA TEMPERATURE
+! Introduction:
+!=============
+
+! Define the different values which can be taken by iappel:
+!--------------------------------------------------------
+
+! iappel = 1 (only one call on initialization):
+!            Computation of the cells number where we impose a wall
+
+! iappel = 2 (only one call on initialization):
+!            Locating cells where we impose a wall
+!            Data linked to the meshing.
+
+! iappel = 3 (call on each time step):
+!            Value of the physical computational coefficients and
+!            boundary condition type on the exterior wall:
+!            --------------------------------------------
+!
+!             iclt1d = 1 -> constant temperature imposed
+!             iclt1d = 3 -> heat flux imposed
+
+!            Initialization of the temperature on the wall.
 
 
 ! Boundary faces identification
@@ -78,52 +90,88 @@ subroutine uspt1d &
 ! The syntax of this subroutine is described in the 'usclim' subroutine,
 ! but a more thorough description can be found in the user guide.
 
-
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nfml             ! i  ! <-- ! number of families (group classes)             !
 ! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
+! nnod             ! i  ! <-- ! number of vertices                             !
+! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
+! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
+! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nfpt1d           ! e  ! <-- ! nombre de faces avec module therm 1d           !
+! nfpt1d           ! i  ! <-- ! number of faces with the 1-D thermic module    !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
+! iappel           ! i  ! <-- ! data type to send                              !
+! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
+! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
 ! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml, nprfml)  !    !     !                                                !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
+! maxelt           !  i ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
-! ifpt1d           ! te ! <-- ! numero de la face en traitement                !
-!                  !    !     ! thermique en paroi                             !
-! nppt1d           ! te ! <-- ! nombre de points de discretisation             !
-!                  !    !     ! dans la paroi                                  !
-! iclt1d           ! te ! <-- ! type de condition limite                       !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! eppt1d           ! tr ! <-- ! epaisseur de la paroi                          !
-! rgpt1d           ! tr ! <-- ! raison du maillage                             !
-! tppt1d           ! tr ! <-- ! temperature de paroi                           !
-! tept1d           ! tr ! <-- ! temperature exterieure                         !
-! hept1d           ! tr ! <-- ! coefficient d'echange exterieur                !
-! fept1d           ! tr ! <-- ! flux exterieur                                 !
-! xlmt1d           ! tr ! <-- ! conductivite thermique de la paroi             !
-! rcpt1d           ! tr ! <-- ! rocp de la paroi                               !
-! dtpt1d           ! tr ! <-- ! pas de temps de la paroi                       !
+! ifpt1d           ! ia ! <-- ! number of the face treated                     !
+! nppt1d           ! ia ! <-- ! number of discretized points                   !
+! iclt1d           ! ia ! <-- ! boundary condition type                        !
+!--begin. obsolesence ---------------------------------------------------------!
+! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
+! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
+! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+! nodfac(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+!--end obsolesence ------------------------------------------------------------!
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+!--new ------------------------------------------------------------------------!
+! eppt1d           ! ra ! <-- ! wall thickness                                 !<--new
+! rgpt1d           ! ra ! <-- ! geometric ratio of the meshing refinement      !<--new
+! tppt1d           ! ra ! <-- ! wall temperature initialization                !<--new
+! tept1d           ! ra ! <-- ! exterior temperature                           !<--new
+! hept1d           ! ra ! <-- ! exterior exchange coefficient                  !<--new
+! fept1d           ! ra ! <-- ! flux applied to the exterior                   !<--new
+! xlmt1d           ! ra ! <-- ! lambda wall conductivity coefficient           !<--new
+! rcpt1d           ! ra ! <-- ! rhoCp wall coefficient                         !<--new
+! dtpt1d           ! ra ! <-- ! wall time step                                 !<--new
+!--begin. obsolesence ---------------------------------------------------------!--!
+! xyzcen           ! ra ! <-- ! cell centers                                   !  !
+!  (ndim, ncelet)  !    !     !                                                !  !
+! surfac           ! ra ! <-- ! interior faces surface vectors                 !  !
+!  (ndim, nfac)    !    !     !                                                !  !
+! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !  !
+!  (ndim, nfavor)  !    !     !                                                !  !
+! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !  !
+!  (ndim, nfac)    !    !     !                                                !  !
+! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !  !
+!  (ndim, nfabor)  !    !     !                                                !  !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !  !
+!  (ndim, nnod)    !    !     !                                                !  !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !  !
+! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !  !
+! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !  !
+!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !  !
+! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !  !
+! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !  !
+! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !  !
+! coefa, coefb     ! ra ! <-- ! boundary conditions                            !  !
+!  (nfabor, *)     !    !     !                                                !  !
+! coefu            ! ra ! --- ! work array                                     !  !
+!  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !  !
+!-end obsolesence--------------------------------------------------------------!--!
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -132,10 +180,12 @@ subroutine uspt1d &
 !     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
+!===============================================================================
+
 implicit none
 
 !===============================================================================
-! Common blocks
+! Data in common
 !===============================================================================
 
 include "paramx.h"
@@ -150,7 +200,7 @@ include "period.h"
 !===============================================================================
 
 ! Arguments
-
+!-------------------------------------------------------------------
 integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor
 integer          nfml   , nprfml
@@ -181,8 +231,8 @@ double precision tept1d(nfpt1d) , hept1d(nfpt1d) , fept1d(nfpt1d)
 double precision xlmt1d(nfpt1d) , rcpt1d(nfpt1d) , dtpt1d(nfpt1d)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-! Variables locales
-
+! Local variables
+!-------------------------------------------------------------------
 integer          idebia , idebra
 integer          ifbt1d , ii , ifac
 integer          ilelt, nlelt
@@ -193,12 +243,19 @@ idebia = idbia0
 idebra = idbra0
 
 
-! --- Relecture d'un fichier suite :
-!     ISUIT1 = 0 ------> pas de relecture (reinitialisation du maillage et
-!                                           de la temperature dans la paroi)
-!     ISUIT1 = 1 ------> relecture du fichier suite de module thermique 1D
-!     ISUIT1 = ISUITE -> relecture si le calcul fluide est une suite
-!     L'initialisation de ISUIT1 dans uspt1d est obligatoire.
+!===============================================================================
+! Rereading of the restart file:
+!----------------------------------
+
+!     isuit1 = 0        --> No rereading
+!                           (meshing and wall temperature reinitialization)
+!     isuit1 = 1        --> Rereading of the restart file for the 1-Dimension
+!                           thermic module
+!     isuit1 = isuite   --> Rereading only if the computational fluid dynamic is
+!                           a continuation of the computation.
+
+!     The initialization of isuit1 is mandatory.
+!===============================================================================
 
 isuit1 = isuite
 
@@ -206,27 +263,32 @@ ifbt1d = 0
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-
 if(1.eq.1) return
-
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 if(iappel.eq.1.or.iappel.eq.2) then
 
+!===============================================================================
+! Faces determining with the 1-D thermic module:
+!----------------------------------------------
+!
+!     nfpt1d    : Total number of faces with the 1-D thermic module
+!     ifpt1d(ii): Number of the (ii)th face with the 1-D thermic module
 
-! --- Determination des faces avec module thermique 1D
-!     NFPT1D     : nb total de faces avec module thermique 1D
-!     IFPT1D(II) : numero de la IIeme face avec module thermque 1D
-
-!     Remarque : lors de la relecture d'un fichier suite, NFPT1D et IFPT1D
-!                sont compares aux valeurs issues du fichier suite. Une
-!                concordance totale est necessaire pour continuer le calcul.
-!                En ce qui concerne le test sur IFPT1D, il necessite qui
-!                le tableau soit range dans un ordre croissant
-!                   ( IFPT1D(JJ) > IFPT1D(II) si JJ > II ).
-!                Si ce n'est pas possible, contacter l'equipe de developpement
-!                pour desactiver le test.
+! Remarks:
+!--------
+!     During the rereading of the restart file, nfpt1d and ifpt1d are
+!     compared with the other values from the restart file being the result of
+!     the start or restarting computation.
+!
+!     A total similarity is required to continue with the previous computation.
+!     Regarding the test case on ifpt1d, it is necessary that the array will be
+!     arranged in increasing order
+!               (as following : ifpt1d(jj) > ifpt1d(ii) si jj > ii).
+!
+!     If it is impossible, contact the developer team to deactivate this test.
+!===============================================================================
 
   CALL GETFBR('3',NLELT,LSTELT)
   !==========
@@ -246,22 +308,32 @@ if (iappel.eq.1) then
    nfpt1d = ifbt1d
 endif
 
-! --- Remplissage des parametres du maillage et d'initialisation
-!     (un seul passage en debut de calcul)
-!     NPPT1D(II) : nombre de points de discretisation associes a la
-!                                   IIeme face avec module thermique 1D
-!     EPPT1D(II) : epaisseur de la paroi associee a la IIeme face avec
-!                                                   module thermique 1D
-!     RGPT1D(II) : raison geometrique du raffinement du maillage associe
-!                              a la IIeme face avec module thermique 1D
-!                       ( RGPT1D(II) > 1 => petites mailles cote fluide )
-!     TPPT1D(II) : temperature d'initialisation de la paroi associee a la
-!                                   IIeme face avec module thermique 1D
+!===============================================================================
+! Parameters padding of the mesh and initialization:
+!--------------------------------------------------
+!
+!     (Only one pass during the beginning of the computation)
 
-!     Remarque : lors de la relecture d'un fichier suite de module thermique
-!                1D, TPPT1D n'est pas utilise. NFPT1D, EPPT1D et RGPT1D sont
-!                compares aux valeurs issues du fichier suite. Une
-!                correspondance exacte est necessaire pour continuer le calcul.
+!     nppt1d(ii): number of discretized points associated to the (ii)th face
+!                 with the 1-D thermic module.
+!     eppt1d(ii): wall thickness associated to the (ii)th face
+!                 with the 1-D thermic module.
+!     rgpt1d(ii): geometric progression ratio of the meshing refinement
+!                 associated to the (ii)th face with the 1-D thermic module.
+!                 (with : rgpt1d(ii) > 1 => small meshes  on the fluid side)
+!     tppt1d(ii): wall temperature initialization associated to the (ii)th face
+!                 with the 1-D thermic module.
+
+! Remarks:
+!--------
+!     During the rereading of the restart file for the 1-D thermic module,
+!     the tppt1d variable is not used.
+!
+!     The nfpt1d, eppt1d and rgpt1d variables are compared to the previous
+!     values being the result of the restart file.
+!
+!     An exact similarity is necessary to continue with the previous computation.
+!===============================================================================
 if (iappel.eq.2) then
    if(iphas.eq.1) then
       do ii = 1, nfpt1d
@@ -273,24 +345,28 @@ if (iappel.eq.2) then
       enddo
    endif
 endif
-
-
-! --- Remplissage des conditions aux limites en paroi externe
-!     ICLT1D(II) : type de condition a la limite
-!                  = 1 : condition de dirichlet, avec coefficient d'echange
-!                  = 3 : condition de flux
-!     TEPT1D(II) : temperature exterieure
-!     HEPT1D(II) : coefficient d'echange exterieur
-!     FEPT1D(II) : flux applique a l'exterieur ( flux<0 = flux entrant)
-!     XLMT1D(II) : coefficient de conductivite lambda de la paroi (W/m/°C)
-!     RCPT1D(II) : coefficient rho*Cp de la paroi (J/m3/°C)
-!     DTPT1D(II) : pas de temps de resolution de l'equation thermique dans
-!                  la IIeme face de bord avec module thermique 1D (s)
+!===============================================================================
+! Padding of the wall exterior boundary conditions:
+!-------------------------------------------------
+!
+!     iclt1d(ii): boundary condition type
+!     ----------
+!                  iclt1d(ii) = 1: dirichlet's condition ,  with exchange coefficient
+!                  iclt1d(ii) = 3: flux condition
+!
+!     tept1d(ii): exterior temperature
+!     hept1d(ii): exterior exchange coefficient
+!     fept1d(ii): flux applied to the exterior (flux<0 = coming flux)
+!     xlmt1d(ii): lambda wall conductivity coefficient (W/m/°C)
+!     rcpt1d(ii): wall coefficient rho*Cp (J/m3/°C)
+!     dtpt1d(ii): time step resolution of the thermic equation to the
+!                 (ii)th border face with the 1-D thermic module (s)
+!===============================================================================
 if (iappel.eq.3) then
    if(iphas.eq.1) then
       do ii = 1, nfpt1d
          iclt1d(ii) = 1
-!     parametres physiques
+! Physical parameters
          ifac = ifpt1d(ii)
          if (cdgfbo(2,ifac).le.0.025d0) then
            iclt1d(ii) = 3
@@ -306,7 +382,9 @@ if (iappel.eq.3) then
    endif
 endif
 
+!===============================================================================
+! END of the uspt1d subroutine =====================================================
+!===============================================================================
 return
-
 end subroutine
 

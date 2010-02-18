@@ -47,22 +47,29 @@ subroutine uselcl &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose
 ! --------
-
-!    ROUTINE UTILISATEUR POUR PHYSIQUE PARTICULIERE
-!                MODULE ELECTRIQUE
-!   (Effet Joule, Arc Electrique, Conduction ionique)
-!    REMPLISSAGE DU TABLEAU DE CONDITIONS AUX LIMITES
-!    (ICODCL,RCODCL) POUR LES VARIABLES INCONNUES
-!    PENDANT DE USCLIM.F
-
-
-
-!    CE SOUS PROGRAMME UTILISATEUR EST OBLIGATOIRE
-!    =============================================
-
-
+!
+!    User subroutine
+!
+!    THIS ROUTINE IS UNAVOIDABLE
+!    ===========================
+!
+!    Fill boundary conditions arrays (icodcl, rcodcl) for variables
+!    used in the electric modules of the code
+!    (Joule effect by direct conduction, Electric arc and ionic mobility).
+!
+!    The variable are the standart one (enthalpy, velocity )and the "electric variables".
+!
+!    The "electric" variable are :
+!     - at first and always the electric potential (real component in the case of complex potential)
+!     - in option you could have imaginary component of the electrical potential
+!       (Joule effect by direct conduction)
+!
+!     - 3 components of the vector potential A (for Electric arc module)
+!
+!
+!
 ! Introduction
 ! ============
 
@@ -80,7 +87,6 @@ subroutine uselcl &
 ! turbulence, scalars) is described precisely in the 'usclim' subroutine.
 
 ! Detailed explanation will be found in the theory guide.
-
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -111,12 +117,12 @@ subroutine uselcl &
 ! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
 ! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml, nprfml)  !    !     !                                                !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
+! maxelt           !  e ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! nodfac(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
 ! icodcl           ! ia ! --> ! boundary condition code                        !
 !  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
 !                  !    !     ! = 2  -> flux density                           !
@@ -125,21 +131,19 @@ subroutine uselcl &
 !                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
+! itrifb(nfabor    ! ia ! <-- ! indirection for boundary faces ordering)       !
 !  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -149,14 +153,14 @@ subroutine uselcl &
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
-!  (nfabor,nvar,3) !    !     ! rcodcl(1) = Dirichlet value                    !
+!                  !    !     ! rcodcl(1) = Dirichlet value                    !
 !                  !    !     ! rcodcl(2) = exterior exchange coefficient      !
 !                  !    !     !  (infinite if no exchange)                     !
 !                  !    !     ! rcodcl(3) = flux density value                 !
@@ -169,8 +173,8 @@ subroutine uselcl &
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! coefu            ! ra ! --- ! work array                                     !
 !  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -182,7 +186,7 @@ subroutine uselcl &
 implicit none
 
 !===============================================================================
-! Common blocks
+!    Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -249,9 +253,10 @@ double precision z1   , z2
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if(1.eq.1) then
@@ -259,30 +264,25 @@ if(1.eq.1) then
   call csexit (1)
 endif
 
- 9001 format(                                                           &
-'@                                                            ',/,&
+ 9001 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES COND. LIM.      ',/,&
-'@    =========                                               ',/,&
-'@                      MODULE ELECTRIQUE                     ',/,&
+'@ @@ WARNING:    stop in definition of boundary conditions   ',/,&
+'@    =======                                                 ',/,&
+'@                         ELECTRIC MODULE                    ',/,&
 '@                                                            ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR uselcl DOIT ETRE COMPLETE',/,&
+'@     The user subroutine ''uselcl'' must be completed.      ',/, &
 '@                                                            ',/,&
-'@     Ce sous-programme utilisateur permet de definir les    ',/,&
-'@       conditions aux limites. Il est indispensable.        ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
+'@',/)
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1.  INITIALISATIONS
-
+! 1.  Initialization
 !===============================================================================
 
 idebia = idbia0
@@ -291,21 +291,20 @@ idebra = idbra0
 d2s3 = 2.d0/3.d0
 
 !===============================================================================
-! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR LES FACES DE BORD
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LA CONDITION LIMITE
+! 2.  Assign boundary conditions to boundary faces here
 
-!          IMPOSER ICI LES CONDITIONS LIMITES SUR LES FACES DE BORD
-
+!     One may use selection criteria to filter boundary case subsets
+!       Loop on faces from a subset
+!         Set the boundary condition for each face
 !===============================================================================
 
 iphas = 1
 
-
-! --- On impose en couleur 1 une entree ; exemple de Cathode
-!     ======================================================
-
+! --- For boundary faces of color 1 assign an inlet for all phases
+!     ============================================================
+!        and assign a cathode for "electric" variables.
+!        =============================================
+!
 CALL GETFBR('1',NLELT,LSTELT)
 !==========
 
@@ -315,10 +314,10 @@ do ilelt = 1, nlelt
 
   itypfb(ifac,iphas) = ientre
 
-!      - Numero de zone (on numerote de 1 a n)
+!      - Zone Number (from 1 to n)
   izone = 1
 
-!      - Reperage de la zone a laquelle appartient la face
+!      - Zone localization for a given face
   izfppp(ifac) = izone
 
   rcodcl(ifac,iu(iphas),1) = 0.d0
@@ -336,32 +335,29 @@ do ilelt = 1, nlelt
            +rcodcl(ifac,iw(iphas),1)**2
     uref2 = max(uref2,1.d-12)
 
+!   Turbulence example computed using equations valid for a pipe.
 
-!       Exemple de turbulence calculee a partir
-!         de formules valables pour une conduite
+!   We will be careful to specify a hydraulic diameter adapted
+!     to the current inlet.
 
-!       On veillera a specifier le diametre hydraulique
-!         adapte a l'entree courante.
-
-!       On s'attachera egalement a utiliser si besoin une formule
-!         plus precise pour la viscosite dynamique utilisee dans le
-!         calcul du nombre de Reynolds (en particulier, lorsqu'elle
-!         est variable, il peut etre utile de reprendre ici la loi
-!         imposee dans USPHYV. On utilise ici par defaut la valeur
-!         VISCL0 donnee dans USINI1
-!       En ce qui concerne la masse volumique, on dispose directement
-!         de sa valeur aux faces de bord (ROMB) et c'est celle que
-!         utilise donc ici (elle est en particulier coherente avec
-!         le traitement implante dans USPHYV, en cas de masse
-!         volumique variable)
-
-!         Diametre hydraulique
+!   We will also be careful if necessary to use a more precise
+!     formula for the dynamic viscosity use in the calculation of
+!     the Reynolds number (especially if it is variable, it may be
+!     useful to take the law from 'usphyv'. Here, we use by default
+!     the 'viscl0" value given in 'usini1'.
+!   Regarding the density, we have acess to its value at boundary
+!     faces (romb) so this value is the one used here (specifically,
+!     it is consistent with the processing in 'usphyv', in case of
+!     variable density)
+!
+!     Hydraulic diameter
     dhy     = 0.075d0
 
-!         Calcul de la vitesse de frottement au carre (USTAR2)
-!           et de k et epsilon en entree (XKENT et XEENT) a partir
-!           de lois standards en conduite circulaire
-!           (leur initialisation est inutile mais plus propre)
+!   Calculation of friction velocity squared (ustar2)
+!     and of k and epsilon at the inlet (xkent and xeent) using
+!     standard laws for a circular pipe
+!     (their initialization is not needed here but is good practice).
+
     rhomoy = propfb(ifac,ipprob(irom(iphas)))
     ustar2 = 0.d0
     xkent  = epzero
@@ -403,21 +399,30 @@ do ilelt = 1, nlelt
 
   endif
 
-! --- On traite les scalaires
+! --- Handle Scalars
 
-!      Enthalpie en J/kg
-
+!      Enthalpy in J/kg (ihm)
+!      On this example we impose the value of the enthalpy
+!      the arbitrary value of 1.d6 corresponds to a temperature of 2200 Kelvin
+!      for argon at atmospheric pressure (see dp_ELE)
+!
   ii = ihm
   icodcl(ifac,isca(ii))   = 1
   rcodcl(ifac,isca(ii),1) = 1.d6
 
-!  Potentiel electrique reel impose a 0. volts (exemple de Cathode en arc)
+!  Electric potential  ( ipotr)
+! (could corresponds also to the real part of the electrical potential if Joule Effect by direct conduction)
+!
+! In the Cathode example (electric arc applications),
+! we impose a constant value of the electrical potential which is zero,
+! assuming that the potential is equal to "ipotr + an arbitrary constant"
+! (What is important for electric arc is the difference between anode and cathode potentials)
 
   ii = ipotr
   icodcl(ifac,isca(ii))   = 1
   rcodcl(ifac,isca(ii),1) = 0.d0
 
-!  Fraction massique des (N-1) constituants
+!  Mass fraction of the (n-1) gas mixture components
 
   if ( ngazg .gt. 1 ) then
     do iesp=1,ngazg-1
@@ -427,9 +432,8 @@ do ilelt = 1, nlelt
     enddo
   endif
 
-!  Specifique Version Effet Joule :
-
-!       Potentiel Imaginaire impose a 0
+!  Specific model for Joule effect by direct conduction:
+!  Imaginary part of the potentiel (ipoti) is imposed to zero
 
   if ( ippmod(ieljou).ge. 2 ) then
     ii = ipoti
@@ -437,9 +441,14 @@ do ilelt = 1, nlelt
     rcodcl(ifac,isca(ii),1) = 0.d0
   endif
 
-!  Specifique Version Arc Electrique :
-
-!       Potentiel vecteur : Flux nul
+!  Specific model for Electric arc :
+!  Vector Potential  : Zero flux by default beacuse we don't a lot about vector potential
+!  (what we know, is that A is equal to zero at the infinite)
+!
+!  All the boundary conditions for A are zero flux, except on some chosen faces
+!  where we need to impose a value in order to have a stable calculation (well defined problem)
+!  These faces are chosen where we are sure that the electrical current density remains very low
+!  generally far from the center of the electric arc and from the electrodes (see above)
 
   if ( ippmod(ielarc).ge.2 ) then
     do idim= 1,ndimve
@@ -451,55 +460,51 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- On impose en couleur 5 une entree/sortie ;
-!     ====================================== exemple d'Electrode en Joule
-!                                            ============================
-
+! --- For boundary faces of color 5 assign an free outlet for all phases
+!     ==================================================================
+!        and example of electrode for Joule Effect by direct conduction.
+!        ==============================================================
+!
 CALL GETFBR('5',NLELT,LSTELT)
 !==========
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
-
-!          SORTIE : FLUX NUL VITESSE ET TEMPERATURE, PRESSION IMPOSEE
-!            Noter que la pression sera recalee a P0
-!                sur la premiere face de sortie libre (ISOLIB)
-
+!
   itypfb(ifac,iphas)   = isolib
 
-!      - Numero de zone (on numerote de 1 a n)
+!      - Zone Number (from 1 to n)
   izone = 2
 
-!      - Reperage de la zone a laquelle appartient la face
+!     - Zone localization for a given face
+
   izfppp(ifac) = izone
 
-! --- On traite les scalaires rattaches a la phase courante
+! --- Handle Scalars
 
-!  Enthalpie en J/kg  (Par defaut flux nul avec ISOLIB)
-!     Rien a faire
+!  Enthalpy in J/kg  (By default zero flux with ISOLIB)
+!     Nothing to do
 
-!  Fraction massique des (N-1) constituants (Par defaut flux nul avec ISOLIB)
-!     Rien a faire
+!  Mass fraction of the (n-1) gas mixture components (Zero flux by defaut with ISOLIB)
+!     Nothing to do
 
-!  Specifique Version Effet Joule :
+!  Specific model for Joule Effect by direct conduction :
+!
+!     If you want to make a simulation with an imposed Power PUISIM
+!     (you want to get PUISIM imposed in useli1 and PUISIM = Amp x Volt)
+!     you need to impose IELCOR=1 in useli1
+!     The boundary conditions will be scaled by COEJOU coefficient
+!     for example the electrical potential will be multiplied bu COEJOU
+!     (both real and imaginary part of the electrical potential if needed)
+!
+!     COEJOU is automatically defined in order that the calculated dissipated power by Joule effect
+!     (both real and imaginary part if needed) is equal to PUISIM
+!
+!      At the beginning of the calculation, COEJOU ie equal to 1 ;
+!      COEJOU is writing and reading in the result files.
 
-!     En effet Joule,
-!       si l'on souhaite faire un calcul en recalant les conditions
-!         aux limites (utiliser IELCOR=1 dans useli1)
-!       pour atteindre la valeur de la puissance PUISIM
-!         (a imposer dans useli1 en Ampere.Volt)
-!       on multiplie la condition limite initiale sur le potentiel
-!          reel (et sur le potentiel imaginaire s'il est pris en
-!          compte) par le coefficient COEJOU.
-!       COEJOU est determine automatiquement pour que la puissance
-!          dissipee par effet Joule (partie reelle et partie
-!          imaginaire si besoin) soit PUISIM
-!       au debut du calcul, COEJOU vaut 1 ; COEJOU est transmis dans
-!          les fichiers suites.
-
-!     Si on ne souhaite pas faire un calcul avec recalage, on impose
-!       directement une valeur adaptee.
+!      If you don't want to calculate with by scaling, you can impose directly the value .
 
   if ( ippmod(ieljou).ge. 1 ) then
     ii = ipotr
@@ -523,50 +528,57 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- On impose en couleur 2 une entree/sortie ;
-!     ============================== exemple d'Anode en arc electrique
-!                                    =================================
-
+! --- For boundary faces of color 2 assign a free outlet for all phases
+!     =================================================================
+!        and example of anode for electric arc.
+!        =====================================
+!
 CALL GETFBR('2',NLELT,LSTELT)
 !==========
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
-
-!          SORTIE : FLUX NUL VITESSE ET TEMPERATURE, PRESSION IMPOSEE
-!            Noter que la pression sera recalee a P0
-!                sur la premiere face de sortie libre (ISOLIB)
-
+!
   itypfb(ifac,iphas)   = isolib
 
-!      - Numero de zone (on numerote de 1 a n)
+!      - Zone number (from 1 to n)
   izone = 3
 
-!      - Reperage de la zone a laquelle appartient la face
+!      - Zone localization for a given face
   izfppp(ifac) = izone
 
-! --- On traite les scalaires rattaches a la phase courante
+! --- Handle scalars
 
-!  Enthalpie en J/kg  (Par defaut flux nul avec ISOLIB)
-!     Rien a faire
+!  Enthalpy in J/kg  (Zero flux by default with ISOLIB)
+!     Nothing to do
+!
+!  Real component of the electrical potential
+!
+!     For electric arc model,
+!     ======================
+!   *  we generally calculate the "electric variables" assuming that the total intensity
+!      of the electrical current is imposed (COUIMP is the value of the imposed total current).
+!
+!      In that case, you need to impose IELCOR=1 in useli1
+!      The "electrical variables" will be scaled by COEPOT coefficient :
+!      for example the electrical potential will be multiplied by COEPOT,
+!      Joule effect will be multipied by COEPOT * COEPOT and so on (see uselrc.f)
+!
+!      COEJOU is defined in uselrc.fr : different possibilities are described in uselrc.f,
+!      depending on the different physics you want to simulate (scaling from current, from power,
+!      special model for restriking ...)
+!
+!      The variable DPOT is defined : it correspond to the ddp (electrical potential difference)
+!      between the electrodes (Anode potential - cathode Potential).
+!      DPOT is calculated in uselrc.f. DPOT is saved at each time step, and for a following
+!      calculation
 
-!  Potentiel electrique reel
+!      DPOT is the value of the boundary condition on anode assuming that the cathode potential
+!      is equel to zero.
 
-!     En arc electrique,
-!       si l'on souhaite faire un calcul en recalant le potentiel
-!          de l'anode (utiliser IELCOR=1 dans useli1)
-!       pour atteindre la valeur du courant COUIMP
-!         (a imposer dans useli1 en Amperes)
-!       on utilise alors la valeur DPOT comme condition limite
-!       DPOT est en effet automatiquement adaptee par le calcul
-!          pour que (j.E Volume/DPOT) = COUIMP
-!          (initialiser DPOT dans useli1 en Volts avec une valeur
-!           representative de la difference de potentiel imposee)
-
-!     Si on ne souhaite pas faire un calcul avec recalage,  on impose
-!       directement une valeur adaptee au cas
-!       (par exemple, ici 1000 Volts ).
+!   *  It is also possible to fixe the value of the potential on the anode.
+!       (for example, 1000 Volts ).
 
   ii = ipotr
   icodcl(ifac,isca(ii))   = 1
@@ -577,43 +589,74 @@ do ilelt = 1, nlelt
     rcodcl(ifac,isca(ii),1) = 1000.d0
   endif
 
-
-!  Fraction massique des (N-1) constituants (Par defaut flux nul avec ISOLIB)
-
-!  Specifique Version Arc Electrique :
-!      Potentiel vecteur : flux nul (par defaut)
-
-
+!  Mass fraction of the (n-1) gas mixture components
+!   zero flux by default with ISOLIB
+!   nothing to do
+!
+!  vector Potential
+!   zero flux by default with ISOLIB
+!   nothing to do
+!
 enddo
 
-! --- On impose en couleur 3 une paroi
-!     ================================
-
+! --- For boundary faces of color 3 assign a wall for all phases
+!     ==========================================================
+!        and example of potential vector Dirichlet condition
+!        ===================================================
+!
 CALL GETFBR('3',NLELT,LSTELT)
 !==========
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
-
-!          PAROI : DEBIT NUL (FLUX NUL POUR LA PRESSION)
-!                  FROTTEMENT POUR LES VITESSES (+GRANDEURS TURB)
-!                  FLUX NUL SUR LES SCALAIRES
-
-!          Pour un calcul arc electrique 3D, on cale le potentiel
-!            vecteur avec une condition de Dirichlet issue des valeurs
-!            du potentiel vecteur au pas de temps precedent
-!            dans une zone de paroi choisie
-!            Par defaut, ailleurs, un flux nul s'applique (paroi isolee).
-
+!
   itypfb(ifac,iphas)   = iparoi
 
-!      - Numero de zone (on numerote de 1 a n)
+!      - Zone number (from 1 to n)
   izone = 4
 
-!      - Reperage de la zone a laquelle appartient la face
+!      - Zone localization for a given face
   izfppp(ifac) = izone
-
+!
+!
+! Wall: zero flow (zero flux for pressure)
+!       friction for velocities (+ turbulent variables)
+!       zero flux for scalars
+!
+! --- Handle scalars
+!  Enthalpy in J/kg  (Zero flux by default)
+!     Nothing to do
+!
+!  Real component of the electrical potential
+!     Zero flux by default
+!     Nothing to do
+!
+!
+!  Specific model for Electric arc :
+!  ================================
+!
+!  Vector potential  A (Ax, Ay, Az)
+!
+!     Zero flux by default because we don't a lot about vector potential
+!    (what we know, is that A is equal to zero at the infinite)
+!
+!     All the boundary conditions for A are zero flux, except on some chosen faces
+!     where we need to impose a value in order to have a stable calculation
+!     These faces are chosen where we are sure that the electrical current density remains
+!     very low generally far from the center of the electric arc and from the electrodes :
+!     on the following example, we choose to impose a "dirichlet" value for the 3 components of A
+!     on a small zone of the boundary located near the certical free outlet of the computation domain.
+!     In this example, the electric arc is at the center of the computational domain,
+!     located on z axis (near x = 0 and y = 0).
+!     The x (1st ) and y (the 3rd) coordinates are contained between -2.5 cm nd 2.5 cm :
+!
+!        Ax(t, x,y,z) = Ax(t-dt, x=2.5cm, y=2.5cm, z)
+!        Ay(t, x,y,z) = Ay(t-dt, x=2.5cm, y=2.5cm, z)
+!        Az(t, x,y,z) = Az(t-dt, x=2.5cm, y=2.5cm, z)
+!
+!
+!
   if ( ippmod(ielarc).ge.2 ) then
     if ( cdgfbo(1,ifac) .le.  2.249d-2  .or.                      &
          cdgfbo(1,ifac) .ge.  2.249d-2  .or.                      &
@@ -630,9 +673,12 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- On impose en couleur 51 : anode avec claquage
-!     =============================================
-
+!
+! --- For boundary faces of color 51 assign a wall
+!     ============================================
+!        and restriking model for electric arc (anode boundaray condition)
+!        =================================================================
+!
 CALL GETFBR('51',NLELT,LSTELT)
 !==========
 
@@ -642,20 +688,21 @@ do ilelt = 1, nlelt
 
   itypfb(ifac,iphas)   = iparoi
 
-!      - Numero de zone (on numerote de 1 a n)
+!      - Zone number (from 1 to n)
   izone = 5
 
-!      - Reperage de la zone a laquelle appartient la face
+!      - Zone localization for a given face
   izfppp(ifac) = izone
 
-! ---- Enthalpie (J/kg ) : coef echange impose
-
+! ---- Enthalpy (J/kg ) :
+!      imposed heat transfer coefficient
+!
   ii=ihm
   icodcl(ifac,isca(ii))   = 1
   rcodcl(ifac,isca(ii),1) = 2.d4
   rcodcl(ifac,isca(ii),2) = 1.d5
-
-!  Potentiel electrique reel
+!
+!  Real electrical potential :anode boundary condition : dpot calculated in uselrc.f
 
   ii = ipotr
   icodcl(ifac,isca(ii))   = 1
@@ -666,9 +713,11 @@ do ilelt = 1, nlelt
     rcodcl(ifac,isca(ii),1) = 100.d0
   endif
 
-!       Si CLAQUAGE : a adapter en fonction du cas et du
-!                     sous-programme USELRC
-
+! Restriking modeling  :
+! ===================
+!    example to fit depending on the case, the geometry etc... and also in agreement with uselrc.fr
+!
+!
   if ( ippmod(ielarc).ge.1 .and. ielcor .eq.1) then
     if(iclaq.eq.1 .and. ntcabs.le.ntdcla+30) then
 
@@ -688,7 +737,7 @@ do ilelt = 1, nlelt
     endif
   endif
 
-!       Potentiel vecteur : Flux nul
+! Vector potential : Zero flux
 
   if ( ippmod(ielarc).ge.2 ) then
     do idim= 1,ndimve
@@ -700,8 +749,10 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- On impose en couleur 4 une symetrie
-!     ===================================
+!
+! --- For boundary faces of color 4 assign a symetry
+!     ==============================================
+!
 
 CALL GETFBR('4',NLELT,LSTELT)
 !==========
@@ -714,17 +765,18 @@ do ilelt = 1, nlelt
 
   itypfb(ifac,iphas)   = isymet
 
-!      - Numero de zone (on numerote de 1 a n)
+!      - Zone number (from 1 to n)
   izone = 6
 
-!      - Reperage de la zone a laquelle appartient la face
+!      - Zone localization for a given face
   izfppp(ifac) = izone
 
-!     Par defaut tous les scalaires (potentiels en particulier)
-!       recoivent une condition de flux nul.
-!     En effet Joule, on peut souhaiter imposer une condition
-!       d'antisymetrie sur le potentiel imaginaire selon la
-!       configuration des electrodes :
+!    For all scalars, by default a zero flux condition is assumed ( for potentials also)
+!
+!    In Joule effect direct conduction,
+!    we can use an anti-symetry condition for the imaginary component of the electrical potential
+!    depending on the electrode configuration :
+!
   if ( ippmod(ieljou).ge. 2 ) then
     ii = ipoti
     icodcl(ifac,isca(ii))   = 1

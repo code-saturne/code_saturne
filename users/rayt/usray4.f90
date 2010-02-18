@@ -49,36 +49,20 @@ subroutine usray4 &
    ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
 
+! User subroutine for input of radiative transfer parameters:
 
-!   SOUS-PROGRAMME D'ACCUEIL DE LA ROUTINE USTHHT
-!   POUR LES CONVERSIONS TEMPERATURE <-> ENTHALPIE
+!   Temperature <--> enthalpy convertion
+!   Usefull if the thermal scalar is an enthalpy.
 
+!   PRECAUTIONS: ENTHALPY MUST BE CONVERTED IN KELVIN TEMPERATURE
 
-
-!   PRECAUTIONS D'EMPLOI :
-!   ======================
-
-!     A) L'ENTHALPIE DOIT ETRE CONVERTIE EN TEMPERATURE EN KELVIN
-!        IL FAUT ECRIRE UNE LOI DE CONVERSION :
-!        ENTHALPIE   -> TEMPERATURE (MODE =  1)
-!        POUR REMPLIR TEMPK
-
-
-!     B) SI DE PLUS ON CALCUL LES TEMPERATURES DE PAROI (ICALPA=1)
-!        ALORS IL FAUT FOURNIR UNE LOI DE CONVERSION :
-!        TEMPERATURE -> ENTHALPIE   (MODE = -1)
-!        POUR REMPLIR HPAROP
-
-!   ATTENTION : LA BONNE VALEUR DE MODE EST DONNEE EN ARGUMENT
-!   ^^^^^^^^^   ELLE NE DOIT PAS ETRE MODIFIEE PAR L'UTILISATEUR
-
-
+!   Warning: it is forbidden to modify MODE in this subroutine
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
@@ -97,30 +81,33 @@ subroutine usray4 &
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iphas            ! i  ! <-- ! phase number                                   !
+! iphas            ! i  ! <-- ! current phase number                           !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! mode             ! e  ! <-- ! type de conversion enthal<->tempk              !
+! mode             ! i  ! <-- ! convertion mode                                !
+!                  !    !     ! mode = 1 enthaly -> temperature                !
+!                  !    !     ! mode =-1 temperature -> enthaly                !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
 ! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
 ! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml, nprfml)  !    !     !                                                !
-! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
+! itypfb           ! ia ! <-- ! boundary face types                            !
+!  (nfabor, nphas) !    !     !                                                !
 ! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
 ! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -130,21 +117,19 @@ subroutine usray4 &
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! cofrua,cofrub    ! tr ! --> ! conditions aux limites aux                     !
-!(nfabor)          !    !     !    faces de bord pour la luminances            !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
-! tempk(ncelet)    ! tr ! --> ! temperature en kelvin                          !
-! hparop(nfabor    ! tr ! --> ! enthalpie massique de paroi en j/kg            !
-!                  !    !     ! (en degres celsius ou kelvin)                  !
-! tparop(nfabor    ! tr ! <-- ! temperature de paroi en kelvin                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
+!  (ncelet)        !    !     !                                                !
+! tparop(nfabor)   ! i  ! <-- ! temperature in kelvin for wall boundary faces  !
+! hparop(nfabor)   ! i  ! --> ! enthalpy for wall boundary faces               !
+! tempk(ncelet)    ! i  ! --> ! temperature in kelvin                          !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse)   ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -219,27 +204,19 @@ integer          iel , ifac , iscal
 !===============================================================================
 
 !===============================================================================
-! 0 - GESTION MEMOIRE
+! 1 - INITIALISATIONS GENERALES
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
-!===============================================================================
-! 1 - INITIALISATIONS GENERALES
-!===============================================================================
-
-!---> INITIALISATION DES CONSTANTES
-
 iscal = iscalt(iphas)
 
 !===============================================================================
-!  2.1 - CALCUL DE LA TEMPERATURE EN KELVIN AUX CELLULES
+!  2.1 - Tempearature in kelvin for cells
 !===============================================================================
 
-!---> CONVERSION ENTHALPIE -> TEMPERATURE (MODE =  1)
-!     AUX CELLULES FLUIDES
-!     (UTILE SI NON TRANSPARENT)
+!---> enthalpy -> temperature convertion (MODE =  1)
 !     -----------------------------------------------
 
 
@@ -253,12 +230,11 @@ endif
 
 
 !===============================================================================
-!  2.2 - CALCUL DE L'ENTHALPIE AU FACES DE BORD
+!  2.2 - Enthalpy for wall boundary faces
 !===============================================================================
 
-!---> CONVERSION TEMPERATURE -> ENTHALPIE (MODE = -1)
-!     AUX FACES DE BORD DE PAROI (ISOTHP.NE.-1) SOIT
-!                                (ITYPFB(IFAC).EQ.IPAROI OU IPARUG)
+!---> Temperature -> enthalpy (MODE = -1)
+!     -----------------------------------
 
 
 if (mode.eq.-1) then
@@ -277,7 +253,7 @@ if (mode.eq.-1) then
 endif
 
 !----
-! FIN
+! END
 !----
 
 return

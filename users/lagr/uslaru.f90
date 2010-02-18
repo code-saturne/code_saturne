@@ -51,15 +51,15 @@ subroutine uslaru &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
+!
+! User subroutine of the Lagrangian particle-tracking module:
+! -----------------------------------------
+!
+! User subroutine (non-mandatory intervention)
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
-!   -------------------------------------
-
-!    SOUS-PROGRAMME UTILISATEUR (INTERVENTION NON OBLIGATOIRE)
-
-!    Calcul de la fonction d'importance pour la Roulette Russe
+! Calculation of the function of significance for the Russian roulette
 
 
 !-------------------------------------------------------------------------------
@@ -80,84 +80,93 @@ subroutine uslaru &
 ! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
 ! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
+!                  !    !     !                                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
+! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
+! nvp              ! i  ! <-- ! number of particle variables                   !
+! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
+! nvep             ! i  ! <-- ! number of particle properties (integer)        !
+! nivep            ! i  ! <-- ! number of particle properties (integer)        !
+! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
+! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
+! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
+! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+! ifacel           ! ia ! <-- ! interior faces -> cells connectivity           !
+! (2, nfac)        !    !     !                                                !
+! ifabor           ! ia ! <-- ! boundary faces -> cells connectivity           !
+! (nfabor)         !    !     !                                                !
+! ifmfbr           ! ia ! <-- ! boundary face family numbers                   !
+! (nfabor)         !    !     !                                                !
+! ifmcel           ! ia ! <-- ! cell family numbers                            !
+! (ncelet)         !    !     !                                                !
+! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml,nprfml    !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfac)       !    !     !  face interne dans nodfac                      !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
+! ipnfac           ! ia ! <-- ! interior faces -> vertices index (optional)    !
+!   (lndfac)       !    !     !                                                !
+! nodfac           ! ia ! <-- ! interior faces -> vertices list (optional)     !
 !   (nfac+1)       !    !     !                                                !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfbr)       !    !     !  face de bord dans nodfbr                      !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
+! ipnfbr           ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+!   (lndfbr)       !    !     !                                                !
+! nodfbr           ! ia ! <-- ! boundary faces -> vertices list  (optional)    !
 !   (nfabor+1)     !    !     !                                                !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
-! itrifb(nfabor    ! te ! --> ! tab d'indirection pour tri des faces           !
+! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
 !  nphas)          !    !     !                                                !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
+! itrifb(nfabor    ! ia ! --> ! indirection for the sorting of the             !
+!  nphas)          !    !     ! boundary faces                                 !
+! itepa            ! ia ! <-- ! particle information (integers)                !
+! (nbpmax,nivep    !    !     !                                                !
+! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
+! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
+! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
+! (ndim,ncelet     !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+! (ndim,nfabor)    !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
+! (ndim,nfabor)    !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 ! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
-! surfbn(nfabor    ! tr ! <-- ! surface des faces de bord                      !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
+! surfbn(nfabor    ! ra ! <-- !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant prec)                     !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
+! rtpa             ! ra ! <-- ! transported variables at cell centers for      !
+! (ncelet,*)       !    !     ! the previous timestep                          !
+! propce           ! ra ! <-- ! physical properties at cell centers            !
+! (ncelet,*)       !    !     !                                                !
+! propfa           ! ra ! <-- ! physical properties at interior face centers   !
+!  (nfac,*)        !    !     !                                                !
+! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
+!  (nfabor,*)      !    !     !                                                !
+! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
+!  (nfabor,*)      !    !     !                                                !
+! ettp             ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
+! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
+! (nbpmax,nvep)    !    !     !                                                !
+! vagaus           ! ra ! <-- ! Gaussian random variables                      !
 !(nbpmax,nvgaus    !    !     !                                                !
-! croule(ncelet    ! tr ! --> ! fonction d'importance pour la                  !
-!                  !    !     !   roulette russe                               !
-! auxl(nbpmax,3    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
-! distpa(ncelet    ! tr ! <-- ! tab des distances a la paroi                   !
-! disty(ncelet)    ! tr ! <-- ! distance y+                                    !
-! w1...w3(ncel)    ! tr ! --- ! tableau de travail                             !
+! croule(ncelet    ! ra ! --> ! function of significance for                   !
+!                  !    !     ! the Russian roulette                           !
+! auxl(nbpmax,3    ! ra ! --- !                                                !
+! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
+! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
+! ra(*)            ! ra ! --- ! macro array of reals                           !
+! distpa(ncelet    ! ra ! <-- ! wall-normal distance arrays                    !
+! disty(ncelet)    ! ra ! <-- ! y+ distance                                    !
+! w1...w3(ncel)    ! ra ! --- ! work arrays                                    !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
 !     mode: <-- input, --> output, <-> modifies data, --- work array
+
 !===============================================================================
 
 implicit none
@@ -225,22 +234,18 @@ double precision zref
 
 
 !===============================================================================
-! 0.  GESTION MEMOIRE
+! 0.  Memory management
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 1. INITIALISATION PAR DEFAUT
+! 1. Default initialization
+!---------------------------
 
-
-!        ATTENTION, CROULE N'EST PAS INITIALISE AILLEURS QUE DANS
-
-!                     LE PRESENT SOUS-PROGRAMME
-
-
-!        VEILLER A CE QU'IL SOIT COMPLETE POUR TOUTES LES CELLULES
+!     Caution : the croule parameter is only initialized in this subroutine.
+!               Make sure that it is prescribed for every cell.
 
 
 !===============================================================================
@@ -251,7 +256,7 @@ enddo
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! -1.  SI L'UTILISATEUR N'INTERVIENT PAS, ON LAISSE CROULE = 1 PARTOUT
+! -1.  If the user does not intervene, croule = 1 everywhere
 !===============================================================================
 
 if(1.eq.1) then
@@ -261,21 +266,19 @@ endif
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 2. CALCUL DE LA FONCTION D'IMPORTANCE PAR L'UTILISATEUR
+! 2. Calculation of a user-defined function of significance
 !===============================================================================
 
-!   ATTENTION :  le tableau CROULE doit contenir
-!   ^^^^^^^^^    des reels strictement positifs
-!                permettant de ponderer l'importance de zones par
-!                rapport a d'autres
-!                (plus CROULE est grand, plus l'importance de la zone
-!                 est grande)
+!   CAUTION:   the croule array must be filled with positive
+!   ^^^^^^^^^  real numbers enabling to weight the importance
+!              of some zones with respect to others.
+!
+!              (the greater croule, the more important the zone)
 
-!     Par exemple, on peut decider que la zone est
-!                    d'importance d'autant plus grande qu'elle est
-!                      proche de z=zref
-!                    d'importance constante a 1E-3 autour de  zref
-!                    d'importance au moins egale a 1.D-6 (loin de zref)
+!              For instance, we can decide that the zone is as important
+!              as it is close to a position z=zref; with an importance equal
+!              to 1.e-3 near zref, and with an importance equal to 1.e-6
+!              far from zref.
 
 
 zref = 0
@@ -291,7 +294,7 @@ enddo
 !===============================================================================
 
 !----
-! FIN
+! End
 !----
 
 end subroutine

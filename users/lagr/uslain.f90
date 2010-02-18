@@ -50,22 +50,21 @@ subroutine uslain &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
+!
+! User subroutine of the Lagrangian particle-tracking module:
+! -----------------------------------------
+!
+! User subroutine (non-mandatory intervention)
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
-!   -------------------------------------
-
-!    SOUS-PROGRAMME UTILISATEUR (INTERVENTION NON OBLIGATOIRE)
-
-!    ROUTINE UTILISATEUR POUR LES CONDITIONS AUX LIMITES RELATIVES
-!      AUX PARTICULES (ENTREE ET TRAITEMENT AUX AUTRES BORDS)
-
-!    CE SOUS-PROGRAMME EST APPELE
-!      APRES INITIALISATION DES TABLEAUX ETTP TEPA ET ITEPA
-!      POUR LES NOUVELLES PARTICULES AFIN DE LES MODIFIER POUR
-!      INJECTER DES PROFILS DE PARTICULES.
-
+! User subroutine for the boundary conditions for the particles
+! (inlet and treatment for the other boundaries)
+!
+! This routine is called after the initialization of the
+! ettp, tepa and itepa arrays for the new particles in order to modify them
+! to inject new particle profiles.
+!
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -85,89 +84,99 @@ subroutine uslain &
 ! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
 ! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
+!                  !    !     !                                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nptnew           ! e  ! <-- ! nombre total de nouvelles particules           !
-!                  !    !     ! pour toutes les zones d'injection              !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-!                  !    !     ! le module lagrangien                           !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
+! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
+! nvp              ! i  ! <-- ! number of particle variables                   !
+! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
+! nvep             ! i  ! <-- ! number of particle properties (integer)        !
+! nivep            ! i  ! <-- ! number of particle properties (integer)        !
+! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
+! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
+! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
+! nptnew           ! i  ! <-- ! total number of new particles for all the      !
+!                  !    !     ! injection zones                                !
+! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+!                  !    !     !                                                !
+! ifacel           ! ia ! <-- ! interior faces -> cells connectivity           !
+! (2, nfac)        !    !     !                                                !
+! ifabor           ! ia ! <-- ! boundary faces -> cells connectivity           !
+! (nfabor)         !    !     !                                                !
+! ifmfbr           ! ia ! <-- ! boundary face family numbers                   !
+! (nfabor)         !    !     !                                                !
+! ifmcel           ! ia ! <-- ! cell family numbers                            !
+! (ncelet)         !    !     !                                                !
+! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml,nprfml    !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfac)       !    !     !  face interne dans nodfac                      !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
+! ipnfac           ! ia ! <-- ! interior faces -> vertices index (optional)    !
+!   (lndfac)       !    !     !                                                !
+! nodfac           ! ia ! <-- ! interior faces -> vertices list (optional)     !
 !   (nfac+1)       !    !     !                                                !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfbr)       !    !     !  face de bord dans nodfbr                      !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
+! ipnfbr           ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+!   (lndfbr)       !    !     !                                                !
+! nodfbr           ! ia ! <-- ! boundary faces -> vertices list  (optional)    !
 !   (nfabor+1)     !    !     !                                                !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
-! ifrlag(nfabor    ! te ! --> ! type des faces de bord lagrangien              !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! injfac(nbpmax    ! te ! <-- ! numero de la face de bord d'injection          !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
+! itrifb(nfabor    ! ia ! <-- ! indirection for the sorting of the boundary    !
+!  nphas      )    !    !     ! faces                                          !
+! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
+!  nphas      )    !    !     !                                                !
+! ifrlag(nfabor    ! ia ! --> ! type of the Lagrangian boundary faces          !
+! itepa            ! ia ! <-- ! particle information (integers)                !
+! (nbpmax,nivep    !    !     !                                                !
+! injfac(nptnew    ! ia ! <-- ! number of the injection boundary face          !
+! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
+! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
+! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
+! (ndim,ncelet     !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+! (ndim,nfabor)    !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
+! (ndim,nfac)      !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
+! (ndim,nfabor)    !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 ! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
+! volume           ! ra ! <-- ! cell volumes                                   !
+! (ncelet          !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant prec)                     !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! vagaus           ! tr ! --> ! variables aleatoires gaussiennes               !
+! rtpa             ! ra ! <-- ! transported variables at the previous timestep !
+! (ncelet,*)       !    !     !                                                !
+! propce           ! ra ! <-- ! physical properties at cell centers            !
+! (ncelet,*)       !    !     !                                                !
+! propfa           ! ra ! <-- ! physical properties at interior face centers   !
+!  (nfac,*)        !    !     !                                                !
+! propfb           ! ra ! <-- ! physical properties at boundary face centers   !
+!  (nfabor,*)      !    !     !                                                !
+! coefa, coefb     ! ra ! <-- ! boundary conditions at the boundary faces      !
+!  (nfabor,*)      !    !     !                                                !
+! ettp             ! ra ! <-- ! array of the variables associated to           !
+!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
+! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
+! (nbpmax,nvep)    !    !     !                                                !
+! vagaus           ! ra ! --> ! Gaussian random variables                      !
 !(nbpmax,nvgaus    !    !     !                                                !
-! w1..w3(ncelet    ! tr ! --- ! tableaux de travail                            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
+! w1..w3(ncelet    ! ra ! --- ! work arrays                                    !
+! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
+! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
+! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
 !     mode: <-- input, --> output, <-> modifies data, --- work array
+
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-! Common blocks
+!  Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -203,7 +212,7 @@ integer          ipnfac(nfac+1) , nodfac(lndfac)
 integer          ipnfbr(nfabor+1) , nodfbr(lndfbr)
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
-integer          injfac(nbpmax)
+integer          injfac(nbpnew)
 integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 
@@ -227,8 +236,8 @@ integer          idebia , idebra
 integer          iclas , izone , ifac
 integer          ii , ip , npt , npar1 , npar2, ipnorm
 
-! Local variables UTILISATEUR
-!     (VGAUSS est dimensionne a 3, mais 2 suffirait ici)
+! User-defined local variables
+! (the dimension of vgauss is 3, but 2 would be sufficient here)
 
 double precision vgauss(3)
 
@@ -238,7 +247,7 @@ double precision vgauss(3)
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
-!     Par defaut on ne les modifie pas.
+!     By default, we do not modify them
 
 if(1.eq.1) return
 
@@ -248,64 +257,63 @@ if(1.eq.1) return
 if (nbpnew.eq.0) return
 
 !===============================================================================
-! 1. GESTION MEMOIRE
+! 1. Memory management
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 2. INITIALISATIONS
+! 2. Initializations
 !===============================================================================
 
 
 
 !===============================================================================
-! 3. MODIFICATION DES DONNEES PARTICULAIRES DES NOUVELLES PARTICULES
-!    (PROFILS D'INJECTION, REPLACEMENT DU POINT D'INJECTION,
-!     MODIFICATION DES POIDS STATISTIQUES, CORRECTION DU DIAMETRE
-!     SI OPTION ECART-TYPE ACTIVEE...)
+! 3. Modification of properties of the new particles (injection profiles,
+!    position of the injection point, statistical
+!    weights, correction of the diameter if the standard-deviation option
+!    is activated.)
 !===============================================================================
 
-!       LES MODIFICATIONS DES DONNEES PARTICULAIRES
-!       INTERVIENNENT APRES TOUTES LES INITIALISATIONS LIEES
-!       A L'INJECTION DES NOUVELLES PARTICULES, MAIS AVANT LE
-!       TRAITEMENT DE L'INJECTION CONTINUE (IL EST DONC POSSIBLE
-!       D'IMPOSER UN PROFIL D'INJECTION AVEC OPTION D'INJECTION
-!       CONTINUE).
+!    These modifications occur after all the initializations related to
+!    the particle injection, but before the treatment of the continuous
+!    injection: it is thus possible to impose an injection profile with
+!    the continous-injection option.
+!
 
-!   reinitialisation du compteur de nouvelles particules
+!   reinitialization of the counter of the new particles
 npt = nbpart
 
-!     pour chaque zone de bord:
+!   for each boundary zone:
 do ii = 1,nfrlag
   izone = ilflag(ii)
 
-!       pour chaque classe :
+!       for each class:
   do iclas = 1, iusncl(izone)
 
-!         si de nouvelles particules doivent entrer :
+!         if new particles must enter the domain:
     if (mod(ntcabs,iuslag(iclas,izone,ijfre)).eq.0) then
 
       do ip = npt+1 , npt+iuslag(iclas,izone,ijnbp)
 
-!         NUMERO DE LA FACE DE BORD D'INJECTION D'ORIGINE
+!         number of the original boundary face of injection
 
       ifac = injfac(ip)
-
-!         EXEMPLE DE MODIFICATION DES VITESSES D'INJECTION
-!           EN FONCTION DE LA POSITION D'INJECTION
-
-!     Appeler par exemple votre propre sous-programme
-!       qui fournirait les trois composantes de la vitesse instantanee
-!       ETTP(IP,JUP),ETTP(IP,JVP),ETTP(IP,JWP)
-!       en fonction de ETTP(IP,JZP) (interpolation par exemple)
-!     Plus simplement on peut aussi imaginer de fournir les trois
-!       composantes de la vitesse instantanee, sous la forme d'une
-!       valeur moyenne (prise arbitrairement egale a (2,0,0) m/s ici)
-!       et d'une valeur fluctuante calculee a partir d'une fluctuation
-!       (prise arbitrairement egale a 0,2 m/s ici pour les composantes
-!       1 et 3) :
+!
+!-----------------------------------------------------------
+!        EXAMPLE OF MODIFICATION OF THE INJECTION VELOCITY
+!        WITH RESPECT TO THE INJECTION POSITION
+!-----------------------------------------------------------
+!    For instance, the user can call his own subroutine that provides
+!    the three components of the instantaneous velocities ettp(ip,jup)
+!    ettp(ip,jvp) and  ettp(ip,jwp) with respect to  ettp(ip,jzp)
+!    (through interpolation for instance). More simply, the user can provide
+!    the three components of the instantaneous velocities, under the form
+!    of a mean value (taken arbitrarily here equal to (2,0,0) m/s) added
+!    to a fluctuating value (equal here to 0,2 m/s for the 1st and 3rd components)
+!
+!
         ipnorm = 2
         call normalen(ipnorm,vgauss)
         ettp(ip,jup) = 2.d0 + vgauss(1) * 0.2d0
@@ -322,30 +330,24 @@ do ii = 1,nfrlag
 enddo
 
 !===============================================================================
-! 4. SIMULATION DES VITESSES TURBULENTES FLUIDES INSTANTANNEES VUES
-!    PAR LES PARTICULES SOLIDES LE LONG DE LEUR TRAJECTOIRE.
+! 4. SIMULATION OF THE INSTANTANEOUS TURBULENT FLUID FLOW VELOCITIES SEEN
+!    BY THE SOLID PARTICLES ALONG THEIR TRAJECTORIES.
 !===============================================================================
-
-!    En entrant dans ce sous-programme, les tableaux :
-!         ETTP(IP,JUF)
-!         ETTP(IP,JVF)
-!         ETTP(IP,JWF)
-!      contiennent les composantes de la vitesse instantanee
-!      (partie fluctuante + partie moyenne) du fluide vu
-!      par les particules.
-
-!    Lorsque la vitesse du fluide vu est modifiee ci-dessus,
-!      le plus souvent l'utilisateur n'en connait que
-!      la partie moyenne. Dans certaines configurations d'ecoulement
-!      et d'injection des particules, il peut parfois s'averer
-!      necessaire d'en reconstruire la partie turbulente.
-!      C'est l'objet de l'appel au sous-programme suivant.
-
-!    Attention : il ne faut reconstruire cette composante turbulente
-!      que sur les vitesses du fluide vu modifiees.
-
-!    La reconstruction est desactivee ici et doit etre adaptee au
-!      cas traite.
+!
+! Entering this subroutine, the ettp(ip,juf) ettp(ip,jvf) and ettp(ip,jwf) arrays
+! are filled with the components of the instantaneous velocity (fluctuation + mean value)
+! seen by the particles
+!
+! When the velocity of the flow is modified just above, most of the time
+! the user knows only the mean value. In some flow configurations and some
+! injection conditions, it may be necessary to reconstruct the fluctuating part.
+! That is why the following routine is called.
+!
+! Caution: this turbulent component must be reconstructed only on the modified
+! velocities of the flow seen.
+!
+! The reconstruction is unactivated here and must be adapted to the case.
+!
 
 if ( 1.eq.0 ) then
 
@@ -371,11 +373,11 @@ endif
 !===============================================================================
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !----
-! FIN
+! End
 !----
 
 return

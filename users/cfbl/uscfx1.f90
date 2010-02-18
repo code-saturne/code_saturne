@@ -33,18 +33,18 @@ subroutine uscfx1
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-!    INIT DES OPTIONS DE CALCUL NON STANDARD
-!            POUR LE COMPRESSIBLE SANS CHOC
+!    User subroutine.
 
-!     (ex. : ICFGRP, IVIVAR...)
+!    Initialize non standard options for the compressible flow scheme.
+
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
+!    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
@@ -74,6 +74,11 @@ include "ppincl.h"
 
 !===============================================================================
 
+! Arguments
+
+
+! Local variables
+
 integer          iphas
 
 !===============================================================================
@@ -82,9 +87,10 @@ integer          iphas
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     This subroutine is  mandatory for compressible flow,
+!       thus the default (library reference) version stops immediately.
 !===============================================================================
 
 if(1.eq.1) then
@@ -92,37 +98,31 @@ if(1.eq.1) then
   call csexit (1)
 endif
 
- 9000 format(                                                           &
+ 9000 format(                                                     &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in compressible flow options definition',/,&
+'@    =======',/,                                                 &
+'@     The user subroutine ''uscfx1'' must be completed.',/,      &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES DONNEES         ',/,&
-'@    =========                                               ',/,&
-'@                      MODULE ELECTRIQUE                     ',/,&
-'@                                                            ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR uscfx1 DOIT ETRE COMPLETE',/,&
-'@                                                            ',/,&
-'@     Ce sous-programme utilisateur permet de definir les    ',/,&
-'@       options generales. Il est indispensable.             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
-!===============================================================================
+
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1. OPTIONS DE CALCUL
+! 1. Scheme options
 !===============================================================================
 
-!     Pour chaque phase
-
+! For each phase
 do iphas = 1, nphas
 
-! --> Conditions aux limites prenant en compte l'equilibre hydrostatique
-!     (oui = 1 , non = 0)
+  ! Specify if the hydrostatic equilibrium must be accounted for 
+  !     (yes = 1 , no = 0)
 
   icfgrp(iphas) = 1
 

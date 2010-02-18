@@ -32,24 +32,26 @@ subroutine uscfx2
 !================
 
 
-!===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-! INIT DES OPTIONS DES VARIABLES POUR LE COMPRESSIBLE SANS CHOC
-!   EN COMPLEMENT DE CE QUI A DEJA ETE FAIT DANS USINI1
+!    User subroutine.
 
+!    Set options for viscosity and conductivity for compressible flow.
 
-!    CE SOUS PROGRAMME UTILISATEUR EST OBLIGATOIRE
-!    =============================================
+!    In addition to options set in the user subroutine 'usini1' (or in 
+!    the GUI): this subroutine allows to set switches to indicate if the 
+!    volumetric viscosity and the conductivity are constants. If they are,
+!    the subroutines allows to set their values. 
 
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
+!    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
+
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
@@ -60,6 +62,8 @@ implicit none
 
 !===============================================================================
 ! Common blocks
+!===============================================================================
+
 !===============================================================================
 
 include "paramx.h"
@@ -75,15 +79,20 @@ include "ppincl.h"
 
 !===============================================================================
 
+! Arguments
+
+! Local variables
+
 integer          iphas
 
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     This subroutine is  mandatory for compressible flow,
+!       thus the default (library reference) version stops immediately.
 !===============================================================================
 
 if(1.eq.1) then
@@ -91,73 +100,66 @@ if(1.eq.1) then
   call csexit (1)
 endif
 
- 9000 format(                                                           &
-'@                                                            ',/,&
+ 9000 format(                                                     &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES DONNEES         ',/,&
-'@    =========                                               ',/,&
-'@                      MODULE COMPRESSIBLE                   ',/,&
-'@                                                            ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR uscfx2 DOIT ETRE COMPLETE',/,&
-'@                                                            ',/,&
-'@     Ce sous-programme utilisateur permet de definir les    ',/,&
-'@       options generales. Il est indispensable.             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input for compressible flow',/,    &
+'@    =======',/,                                                 &
+'@     The user subroutine ''uscfx2'' must be completed',/,       &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
 
-!===============================================================================
+
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1. PROPRIETES PHYSIQUES
+! 1. Physical properties
 !===============================================================================
 
-! --> Pour chaque phase
+! --> Only done for phase 1
 
 iphas = 1
 
-! --> Conductivite thermique laminaire
+! --> Molecular thermal conductivity
 
-!       Conductivite thermique constante : IVISLS = 0
-!       Conductivite thermique variable  : IVISLS = 1
+!       constant  : ivisls = 0
+!       variable  : ivisls = 1
 
 ivisls(itempk(iphas)) = 0
 
-!       Conductivite thermique de reference :
+!       Reference molecular thermal conductivity 
+!       visls0 = lambda0  (molecular thermal conductivity, W/(m K))
 
-!       VISLS0 = LAMBDA0  (conductivite thermique en W/(m K))
-
-
-!       ATTENTION ! IL FAUT QUE VISLS0 SOIT STRICTEMENT POSITIF
-!         (donner une valeur meme si la conductivite est variable)
+!       WARNING: visls0 must be strictly positive 
+!         (set a realistic value here even if conductivity is variable)
 
 visls0(itempk(iphas)) = 3.d-2
 
-!       Si la conductivite thermique est variable, il faut donner
-!       sa loi de variation dans uscfpv.F
+!       If the molecular thermal conductivity is variable, its values 
+!         must be provided in the user subroutine 'uscfpv'
 
 
-! --> Viscosite en volume
+! --> Volumetric molecular viscosity 
 
-!       Viscosite en volume de reference :
+!       Reference volumetric molecular viscosity
 
-!       VISCV0 = KAPPA0  (viscosite en volume en kg/(m s))
-!       IVISCV = 0 : uniforme en espace et constant en temps
-!              = 1 : variable en espace et  en temps
+!       viscv0 = kappa0  (volumetric molecular viscosity, kg/(m s))
+!       iviscv = 0 : uniform  in space and constant in time
+!              = 1 : variable in space and time 
 
 iviscv(iphas) = 0
 viscv0(iphas) = 0.d0
 
-!       Si la Viscosite en volume est variable, il faut donner
-!       sa loi de variation dans uscfpv.F
+!       If the volumetric molecular viscosity is variable, its values 
+!         must be provided in the user subroutine 'uscfpv'
 
 
 !----
-! FIN
+! End 
 !----
 
 return

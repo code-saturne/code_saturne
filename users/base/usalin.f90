@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -32,12 +32,15 @@ subroutine usalin
 !================
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+!  Purpose :
+! --------
 
-! ROUTINE UTILISATEUR POUR ENTREE
-!   DES PARAMETRES DE DE L'ALE
-
+! --- User subroutine dedicated to the use of ALE (Arbitrary Lagrangian Eulerian)
+!     method :
+!
+!          Here one defines parameters and input data dedicated to the use ALE
+!          method
+!
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -56,58 +59,35 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-
 include "paramx.h"
 include "optcal.h"
 include "albase.h"
-
 
 !===============================================================================
 
 ! Arguments
 
-
 ! Local variables
-
 
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
-!===============================================================================
 
 if(1.eq.1) return
+
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-
-
-!     CE SOUS-PROGRAMME PERMET DE RENSEIGNER LES PARAMETRES
-
-!       SPECIFIQUES AU MODULE ALE
-
-
-!     IL EST POSSIBLE D'AJOUTER OU DE RETRANCHER DES PARAMETRES
-
-
+!
+!     Here are some examples that can be adapted and changed by Code Saturne
+!     users.
+!
+!
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-!     SI L'ON    DISPOSE     DE L'INTERFACE DE CODE_SATURNE :
-
-!       on trouvera ci-dessous des exemples commentes.
-
-!       L'utilisateur pourra, si necessaire, les decommenter et les
-!       adapter a ses besoins.
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-! --- Activation de la methode ALE
+! --- Activation of ALE (Arbitrary Lagrangian Eulerian) method
 iale = 1
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
@@ -115,10 +95,11 @@ iale = 1
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-! --- Nombre de sous-iterations d'initialisation du fluide. Dans le cas
-!     d'un calcul suite, il s'agit du nombre d'iterations a partir du
-!     debut de l'iteration en cours (i.e. pas un nombre absolu).
-!     Dans le cas general, NALINF = 0 pour une suite de calcul.
+! --- Number of iterations for fluid initialization. Contrary to ntmabs (for example)
+!     nalinf is not an absolute iteration number, meaning that in case of
+!     restart calculation nalinf corresponds to the number of iterations
+!     for fuid initialization beginning from the first current iteration of
+!     the calculation restart. In general nalinf = 0 in that case.
 
   nalinf = 75
 
@@ -126,24 +107,25 @@ iale = 1
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-! --- Nombre maximal d'iterations d'implicitation du deplacement des
-!     structures (=1 pour le couplage explicite)
+! --- Maximum number of iterations in case of implicit Fluid Structure Coupling with structural
+!     calculations (internal and/or external(i.e. using Code_Aster)). NALIMX = 1, in case of
+!     explicit FSI algorithm.
+
 nalimx = 15
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-! --- Precision relative d'implicitation du deplacement des structures
+! --- Relative precision of sub-cycling Fluid Structure Coupling algorithm.
 epalim = 1.d-5
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-! --- Type de viscosite de maillage (cf. usvima)
-!     0 : isotrope
-!     1 : orthotrope
+! --- Mesh viscosity modeling (cf. usvima)
+!     0 : isotropic
+!     1 : orthotropic
 iortvm = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
@@ -152,8 +134,9 @@ iortvm = 0
 ! FORMATS
 !----
 
-
+!----
+! End
+!----
 
 return
 end subroutine
-

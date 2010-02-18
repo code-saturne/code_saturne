@@ -32,11 +32,10 @@ subroutine usfui1
 !================
 
 !===============================================================================
-!  FONCTION  :
+!  PURPOSE   :
 !  ---------
 
-!  ROUTINE UTILISATEUR POUR ENTREE DES PARAMETRES DE CALCUL
-!  RELATIFS A LA COMBUSTION DU FUEL
+!  USER ROUTINE FOR ALLOCATE COMPUTATION PARAMETERS DEALING WITH FUEL
 !    (COMMONS)
 
 !-------------------------------------------------------------------------------
@@ -50,11 +49,10 @@ subroutine usfui1
 !           and composite types (ex: ra real array)
 !     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
-
 implicit none
 
 !===============================================================================
-! Common blocks
+!     DONNEES EN COMMON
 !===============================================================================
 
 include "paramx.h"
@@ -82,9 +80,8 @@ integer          jpp , icla
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  THIS TEST CERTIFY THIS VERY ROUINE IS USED
+!     IN PLACE OF LIBRARY'S ONE
 !===============================================================================
 
 if(1.eq.1) then
@@ -96,12 +93,12 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@ @@ Beware : Stop during DATA Inlet                         ',/,&
 '@    =========                                               ',/,&
-'@     MODULE COMBUSTION FUEL :                               ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usfui1 DOIT ETRE COMPLETE',/,&
+'@     Heavy Fuel Oil Combustion                              ',/,&
+'@     user subroutine USFUI1 must be completed               ',/, &
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  Computation will be stopped                               ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -109,46 +106,44 @@ endif
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-
 !===============================================================================
-! 1. VARIABLES TRANSPORTEES
+! 1. TRANSPORTED VARIABLES
 !===============================================================================
 
-!  Sortie chrono, suivi listing, sortie histo
-!     Si l'on n'affecte pas les tableaux suivants,
-!     les valeurs par defaut seront utilisees
+! OUTLET chrono, listing, and histo
+!     if below vector are not allocated, default values will be used
 
-!       ICHRVR( ) = sortie chono (oui 1/non 0)
-!       ILISVR( ) = suivi listing (oui 1/non 0)
-!       IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes definies
-!                            dans usini1
+!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
+!       ILISVR( ) =  listing outlet (Yes 1/No  0)
+!       IHISVR( ) =  histo outlet (number of roiqu and number)
+!       if IHISVR(.,1)  = -1 every probes defined in usini1
 
 
-! --> Variables propres a la suspension gaz - particules
+! --> Variables for the mix (carrying gas and coal particles)
 
-!      - Enthalpie de la suspension
+!      - Enthalpy
+
 jpp = ipprtp(isca(ihm))
 ichrvr(jpp)  = 1
 ilisvr(jpp)  = 1
 ihisvr(jpp,1)= -1
 
-! --> Variables propres a la phase dispersee
+! --> Variables for droplets
 
 do icla = 1, nclafu
-!       - Fraction massique de Fuel
+!       - Fuel mass fraction
   jpp = ipprtp(isca(iyfol(icla)))
   ichrvr(jpp)  = 1
   ilisvr(jpp)  = 1
   ihisvr(jpp,1)= -1
 
-!       - Nb de particules par kg de melange
+!       - Number of droplets in mix (1/kg)
   jpp = ipprtp(isca(ing(icla)))
   ichrvr(jpp)  = 1
   ilisvr(jpp)  = 1
   ihisvr(jpp,1)= -1
 
-!       - Enthalpie du Fuel
+!       - Fuel enthalpy (J/kg)
   jpp = ipprtp(isca(ihlf(icla)))
   ichrvr(jpp)  = 1
   ilisvr(jpp)  = 1
@@ -156,22 +151,22 @@ do icla = 1, nclafu
 enddo
 
 
-! --> Variables propres a la phase continue
+! --> Variables for carrying gas
 
-!       - Moyenne de F1 (vapeur )
+!       - Mean of 1 mixture fraction (fuel vapor)
 jpp = ipprtp(isca(ifvap))
 ichrvr(jpp)  = 1
 ilisvr(jpp)  = 1
 ihisvr(jpp,1)= -1
 
-!     - Moyenne du F3 (representatif du C libere sous forme de CO
-!       lors de la combustion heterogene)
+!     - Mean of 3 mixture fraction
+!       (carbon from heterogeneous oxidation of char)
 jpp = ipprtp(isca(ifhtf))
 ichrvr(jpp)  = 1
 ilisvr(jpp)  = 1
 ihisvr(jpp,1)= -1
 
-!     - Variance associe au traceur 4 (air)
+!     - Variance of 4 mixture fraction (air)
 jpp = ipprtp(isca(if4p2m))
 ichrvr(jpp)  = 1
 ilisvr(jpp)  = 1
@@ -186,7 +181,7 @@ if ( ieqco2 .ge. 1 ) then
   ihisvr(jpp,1)= -1
 endif
 
-!     - HCN et NO
+!     - HCN and NO
 
 if ( ieqnox .eq. 1 ) then
   jpp = ipprtp(isca(iyhcn))
@@ -204,118 +199,119 @@ if ( ieqnox .eq. 1 ) then
 endif
 
 !===============================================================================
-! 2. VARIABLES ALGEBRIQUES OU D'ETAT
+! 2. State variables
 !===============================================================================
 
-!  Sortie chrono, suivi listing, sortie histo
-!     Si l'on n'affecte pas les tableaux suivants,
-!     les valeurs par defaut seront utilisees
+! OUTLET chrono, listing, and histo
+!     if below vector are not allocated, default values will be used
 
-!       ICHRVR( ) = sortie chono (oui 1/non 0)
-!       ILISVR( ) = suivi listing (oui 1/non 0)
-!       IHISVR( ) = sortie historique (nombre de sondes et numeros)
-!       si IHISVR(.,1)  = -1 sortie sur toutes les sondes definies
-!                            dans usini1
+!       ICHRVR( ) =  chono outlet (Yes 1/No  0)
+!       ILISVR( ) =  listing outlet (Yes 1/No  0)
+!       IHISVR( ) =  histo outlet (number of roiqu and number)
+!       if IHISVR(.,1)  = -1 every probes defined in usini1
 
-! --> Variables algebriques propres a la suspension gaz - particules
 
-!     - Masse molaire du melange gazeux
+! --> Variables for the mix (carrying gas and coal particles)
+
+
+!     - Mean Molar Mass of gases in kg
 jpp = ipppro(ipproc(immel))
 ichrvr(jpp)   = 0
 ilisvr(jpp)   = 0
 ihisvr(jpp,1) = -1
 
-! --> Variables algebriques propres a la phase dispersee
+! --> Variables for droplets
 
 do icla = 1, nclafu
-!       - Temperature des gouttes
+!       - Droplets' Temperature in K
   jpp = ipppro(ipproc(itemp3(icla)))
   ichrvr(jpp)   = 1
   ilisvr(jpp)   = 1
   ihisvr(jpp,1) = -1
 
-!       - Masse volumique des gouttes
+!       - Droplet's Density in kg/m3
   jpp = ipppro(ipproc(irom3(icla)))
   ichrvr(jpp)   = 1
   ilisvr(jpp)   = 1
   ihisvr(jpp,1) = -1
 
-!       - Diametre des gouttes
+!       - Droplet's Diameter
   jpp = ipppro(ipproc(idiam3(icla)))
   ichrvr(jpp)   = 1
   ilisvr(jpp)   = 1
   ihisvr(jpp,1) = -1
 
-!       - Transfert d'energie par convection-diffusion
+!       - Heat flux (between gases and ICLA class droplets)
   jpp = ipppro(ipproc(ih1hlf(icla)))
   ichrvr(jpp)   = 0
   ilisvr(jpp)   = 0
   ihisvr(jpp,1) = -1
 
-!       - Transfert de masse du a l'evaporation (s-1) < 0
+!       - Evaporation mass flow rate (s-1) < 0
   jpp = ipppro(ipproc(igmeva(icla)))
   ichrvr(jpp)   = 0
   ilisvr(jpp)   = 0
   ihisvr(jpp,1) = -1
 
-!       - Transfert de masse du a la combustion heterogene
+!       - Char combsution mass flow rate
   jpp = ipppro(ipproc(igmhtf(icla)))
   ichrvr(jpp)   = 0
   ilisvr(jpp)   = 0
   ihisvr(jpp,1) = -1
 enddo
 
-! --> Variables algebriques propres a la phase continue
+! --> State variables for carrying gas
 
-!     - Temperature du melange gazeux
+!     - Temperature for gases only (not mixed with droplets)
 jpp = ipppro(ipproc(itemp1))
 ichrvr(jpp)   = 1
 ilisvr(jpp)   = 1
 ihisvr(jpp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du FOV
+!      - Mass fraction of fuel vapor
+!          (relative to pure gases : not mixed with droplets ..)
 jpp = ipppro(ipproc(iym1(ifov)))
 ichrvr(jpp)   = 1
 ilisvr(jpp)   = 1
 ihisvr(jpp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du CO
+!     - Mass fraction of CO ( pure gases)
 jpp = ipppro(ipproc(iym1(ico)))
 ichrvr(jpp)   = 1
 ilisvr(jpp)   = 1
 ihisvr(jpp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du O2
+!     - Mass fraction of O2 ( same)
 jpp = ipppro(ipproc(iym1(io2)))
 ichrvr(jpp)   = 1
 ilisvr(jpp)   = 1
 ihisvr(jpp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du CO2
+!     - Mass fraction of CO2
 jpp = ipppro(ipproc(iym1(ico2)))
 ichrvr(jpp)   = 1
 ilisvr(jpp)   = 1
 ihisvr(jpp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du H2O
+!     - Mass fraction of H2O
 jpp = ipppro(ipproc(iym1(ih2o)))
 ichrvr(jpp)   = 1
 ilisvr(jpp)   = 1
 ihisvr(jpp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du N2
+!     - Mass fraction of N2
 jpp = ipppro(ipproc(iym1(in2)))
 ichrvr(jpp)   = 1
 ilisvr(jpp)   = 1
 ihisvr(jpp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du H2S
+!     - Mass fraction of H2S (exhaust form of sulphur during evaporation)
 jpp = ipppro(ipproc(iym1(ih2s)))
 ichrvr(jpp)   = 1
 ilisvr(jpp)   = 1
 ihisvr(jpp,1) = -1
 
-!     - Fraction massique (dans le melange gazeux) du SO2
+!     - mass fraction of SO2 (final form of sulphur)
 jpp = ipppro(ipproc(iym1(iso2)))
 ichrvr(jpp)   = 1
 ilisvr(jpp)   = 1
@@ -337,27 +333,28 @@ if ( ieqnox .eq. 1 ) then
   ihisvr(jpp,1) = -1
 endif
 
+
 !===============================================================================
-! 3. OPTIONS DE CALCUL
+! 3. Computation OPTION
 !===============================================================================
 
-! --- Coefficient de relaxation de la masse volumique
+! --- Relaxation for density (Advisable when starting combustion computation)
+!                            (Forbidden for unstationnary computation)
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
 
-srrom = 0.8d0
+srrom = 0.95d0
 
 
 !===============================================================================
-! 4. CONSTANTES PHYSIQUES
+! 4. Physical constants
 !===============================================================================
 
-! ---> Viscosite laminaire associee au scalaire enthalpie
-!       DIFTL0 (diffusivite dynamique en kg/(m s))
+! ---  Laminar viscosity for enthalpy (dynamical diffusivity) kg/(m.s)
 diftl0 = 4.25d-5
 
 
 !----
-! FIN
+! END
 !----
 
 return

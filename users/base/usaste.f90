@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2008 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -44,13 +44,21 @@ subroutine usaste &
 
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! -------
 
-! GESTION DES STRUCTURES MOBILES EN ALE AVEC COUPLAGE EXTERNE
+!    User subroutine dedicated the Fluid-Structure external coupling
+!    with Code_Aster :
+!          Here one defines the boundary faces coupled
+!          with Code_Aster and the fluid forces components
+!          which are given to structural calculations
 
-!   DEFINITION DES STRUCTURES
-!   DEPLACEMENT ET VITESSE INITIAUX
+!    Boundary faces identification
+!    =============================
+
+!    Boundary faces may be identified using the 'getfbr' subroutine.
+!    The syntax of this subroutine is described in the 'usclim' subroutine,
+!    but a more thorough description can be found in the user guide.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -70,9 +78,6 @@ subroutine usaste &
 ! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
 ! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
@@ -83,20 +88,14 @@ subroutine usaste &
 !  (nfml, nprfml)  !    !     !                                                !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfac+1)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (lndfac)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfabor+1)     !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (lndfbr)       !    !     !  (optionnel)                                   !
-! idfstr(nfabor    ! te ! <-- ! definition des structures                      !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
+! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
+! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! idfstr(nfabor)   ! ia ! <-- ! boundary faces -> structure definition         !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! aexxst,bexxst    ! r  ! <-- ! coefficients de prediction du deplact          !
-! cfopre           ! r  ! <-- ! coeff de prediction des efforts                !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
@@ -110,14 +109,8 @@ subroutine usaste &
 ! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-! xstr0(ndim,      ! tr ! <-- ! deplacement initial des structures             !
-!       nbstru)    !    !     !                                                !
-! vstr0(ndim,      ! tr ! <-- ! vitesse initiale des structures                !
-!       nbstru)    !    !     !                                                !
-! xstreq(ndim,     ! tr ! <-- ! deplacement du maillage initial par            !
-!       nbstru)    !    !     ! rapport a l'equilibre                          !
 ! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! rtuser(nrtuse)   ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -176,7 +169,6 @@ integer          ifac
 integer          ilelt, nlelt
 
 !===============================================================================
-
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 
 
@@ -188,7 +180,7 @@ endif
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1.  INITIALIZATION
 
 !===============================================================================
 
@@ -196,20 +188,36 @@ idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 2.  DEFINITION DES STRUCTURES (appel a l'initialisation)
+! 2.  Definition of external structures
 !===============================================================================
 
-!     On remplit le tableau IDFSTR(NFABOR)
-!     IDFSTR(IFAC) est le numero de la structure a laquelle appartient
-!       la face de bord IFAC (0 si elle n'appartient a aucune structure)
-!     Le nombre de structure est automatiquement determine a partir du
-!       plus grand element de IDFSTR (les numeros des structures doivent
-!       donc etre affectes de maniere sequentielle sans trou en commencant
-!       par 1).
+!    Here one fills array IDFSTR(NFABOR)
+!    For each boundary face IFAC, IDFSTR(IFAC) is the number of the structure
+!    the face belongs to (if IDFSTR(IFAC) = 0, the face IFAC doesn't
+!    belong to any structure.)
+!    When using external coupling with Code_Aster, structure number necessarily
+!    needs to be negative (as shown in following examples).
 
-! Dans l'exemple ci-dessous la structure 1 est bordee par les faces de
-!   couleur 4, la structure 2 par les faces de couleur 6
+!    The number of "external" structures with Code Aster is automatically
+!    defined with the maximum absolute value of IDFSTR table, meaning that
+!    external structure numbers must be defined sequentially with negative values
+!    beginning with integer value '-1'.
 
+
+!    In following example, boundary faces with color 2 and which abscissa X < 2.0
+!    belong to external structure '-1'.
+!    Boundary faces with color 2 and which abscissa X > 2.0 belong to external
+!    structure '-2'. The total number of external structures coupled with Code_Aster
+!    equals 2.
+
+!    Boundary faces identification
+!    =============================
+
+!    Boundary faces may be identified using the 'getfbr' subroutine.
+!    The syntax of this subroutine is described in the 'usclim' subroutine,
+!    but a more thorough description can be found in the user guide.
+
+!================================================================================
 
 CALL GETFBR('2 and X < 2.0',NLELT,LSTELT)
 !==========
@@ -234,22 +242,26 @@ do ilelt = 1, nlelt
 
 enddo
 
-!     On bloque les efforts selon Z des structures 1 et 2
+! --- The movement of external structure called '-1' is blocked in Z direction.
 
 asddlf(3,1) = 0
+
+! --- The movement of external structure called '-2' is blocked in Z direction.
+
 asddlf(3,2) = 0
 
-
-
-! --- Indicateur d'impression au meme instant des sorties
-!     Code_Saturne et Code_Aster (sortie EnSight pour Code_Aster)
-!     (1: OUI, 0: NON)
-
-!     Si 0, aucune sortie Code_Aster n'est enclenchee
-!     l'utilisateur doit le specifie lui-meme dans le fichier de commande
+! --- Activation of Code_Saturne/Code_Aster synchronized chronological output.
+!     (ISYNCP = 1 : Synchronized output, ISYNCP = 0: Non synchronized output)
 
 isyncp = 1
 
+!----
+! Formats
+!----
+
+!----
+! End
+!----
 return
 
 end subroutine

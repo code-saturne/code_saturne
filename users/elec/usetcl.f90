@@ -47,19 +47,16 @@ subroutine usetcl &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose  :
 ! --------
 
-!    ROUTINE UTILISATEUR POUR PHYSIQUE PARTICULIERE
-!                MODULE ELECTRIQUE
-!   (Effet Joule, Arc Electrique, Conduction ionique)
-!    REMPLISSAGE DU TABLEAU DE CONDITIONS AUX LIMITES
-!    (ICODCL,RCODCL) POUR LES VARIABLES INCONNUES
-!    PENDANT DE USCLIM.F
+!    User routine for extended physic
+!    Electric module
+!    Allocation of boundary conditions for varaibles unknown during usclim
 
 
 
-!    CE SOUS PROGRAMME UTILISATEUR EST OBLIGATOIRE
+!    This user subroutine is compulsory
 !    =============================================
 
 
@@ -80,7 +77,6 @@ subroutine usetcl &
 ! turbulence, scalars) is described precisely in the 'usclim' subroutine.
 
 ! Detailed explanation will be found in the theory guide.
-
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -111,12 +107,12 @@ subroutine usetcl &
 ! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
 ! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml, nprfml)  !    !     !                                                !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
+! maxelt           !  e ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! nodfac(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
 ! icodcl           ! ia ! --> ! boundary condition code                        !
 !  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
 !                  !    !     ! = 2  -> flux density                           !
@@ -125,21 +121,19 @@ subroutine usetcl &
 !                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
-! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
+! itrifb(nfabor    ! ia ! <-- ! indirection for boundary faces ordering)       !
 !  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -149,14 +143,14 @@ subroutine usetcl &
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
-!  (nfabor,nvar,3) !    !     ! rcodcl(1) = Dirichlet value                    !
+!                  !    !     ! rcodcl(1) = Dirichlet value                    !
 !                  !    !     ! rcodcl(2) = exterior exchange coefficient      !
 !                  !    !     !  (infinite if no exchange)                     !
 !                  !    !     ! rcodcl(3) = flux density value                 !
@@ -167,10 +161,11 @@ subroutine usetcl &
 !                  !    !     ! for scalars    cp*(viscls+visct/sigmas)*gradt  !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! coefu            ! ra ! --- ! work array                                     !
+! coefu            ! ra ! --- ! tab de trav                                    !
 !  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! rdevel(nrdeve)   ! ra ! <-> ! tab reel complementaire developemt             !
+! rdevel(nideve)   ! ra ! <-- ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -182,7 +177,7 @@ subroutine usetcl &
 implicit none
 
 !===============================================================================
-! Common blocks
+!     Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -258,19 +253,16 @@ idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR LES FACES DE BORD
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LA CONDITION LIMITE
-
-!          IMPOSER ICI LES CONDITIONS LIMITES SUR LES FACES DE BORD
-
+! 2.  Allocation of Boundary Conditions
+!       Loop on boundary faces
+!       Allocation of family tyoe and properties
+!       Allocation of boundary conditions
 !===============================================================================
 
-! 2.1 - Calcul des intensites de courant sur chaque electrode
+! 2.1 - Computation of intensity (A/m2) for each electrode
 !       -----------------------------------------------------
 
-!   Mise a zero
+!   Pre - initialisation
 
 do i= 1,nbelec
   sir(i) = 0.d0
@@ -289,7 +281,7 @@ if(ntcabs.lt.(ntpabs+2)) then
   enddo
 endif
 
-!     Boucle sur les faces de bord selectionnees
+!     Loop on selected boundary faces
 
 iphas = 1
 
@@ -327,10 +319,10 @@ do i=1,nbelec
 enddo
 
 
-! 2.2 - Definitions des CL sur les tensions de chaque bornes des transfo
+! 2.2 - Definition of Voltage on each termin of transformers
 !       ----------------------------------------------------------------
 
-!  2.2.1 Calcul des intensites de courant sur chaque borne des transfo
+!  2.2.1 Computation of Intensity on each termin of transformers
 
 do i=1,nbelec
   sirb(ielect(i),ielecb(i)) = 0.d0
@@ -350,11 +342,11 @@ do i=1,nbelec
   endif
 enddo
 
-!  2.2.2 Tensions sur chaque bornes des transfo
+!  2.2.2 RVoltage on each termin
 
 do ntf=1,nbtrf
 
-!      Primaire et Secondaire en Triangle
+!      Primary and Secondary in Triangle
 
   if (ibrpr(ntf) .eq. 0 .and. ibrsec(ntf) .eq. 0 ) then
 
@@ -384,7 +376,8 @@ do ntf=1,nbtrf
   endif
 enddo
 
-!  2.2.3 Intensite de courant totale par transfo
+!  2.2.3 Total intensity for a transformer
+!         (zero valued WHEN Offset established)
 
 do ntf=1,nbtrf
   sirt(ntf) = 0.d0
@@ -402,7 +395,7 @@ do i=1,nbelec
   endif
 enddo
 
-!  2.2.4 Prise en compte des Offset
+!  2.2.4 Take in account of Offset
 
 capaeq = 3.d0
 
@@ -413,7 +406,7 @@ do ntf=1,nbtrf
   endif
 enddo
 
-! Transfo de reference ===> Offset nul
+! A reference transformer is assumed to have an Offset zero valued
 
 if ( ntfref .gt. 0 ) then
   uroff(ntfref) = 0.d0
@@ -429,7 +422,7 @@ do ntf=1,nbtrf
   enddo
 enddo
 
-! Affichage des UROFF
+! Print of UROFF (real part of offset potential)
 
 write(nfecra,1500)
 do ntf=1,nbtrf
@@ -437,10 +430,10 @@ do ntf=1,nbtrf
 enddo
 write(nfecra,1501)
 
-!  2.2.5 Prise en compte des CL
+!  2.2.5 Take in account of Boundary Conditions
 
 
-!     Boucle sur les faces de bord selectionnees
+!     Loop on selected Boundary Faces
 
 iphas = 1
 
@@ -460,10 +453,10 @@ do i=1,nbelec
 
     itypfb(ifac,iphas) = iparoi
 
-!     - Numero de zone (choix du numero de l'arc)
+!     - Zone number
     izone = i
 
-!      - Reperage de la zone a laquelle appartient la face
+!      - Allocation of zone number
     izfppp(ifac) = izone
 
     if ( ielect(i) .ne. 0 ) then
@@ -492,8 +485,8 @@ do i=1,nbelec
 
 enddo
 
-! 3 - Verification dans le cas ou pas de transfo de referenc qu'il existe
-!     une paroi avec potentielle nul
+! 3 - Test, if not any reference transformer
+!      a piece of wall may be at ground.
 
 if ( ntfref .eq. 0 ) then
 
@@ -537,22 +530,22 @@ endif
 ! FORMATS
 !----
 
- 1000 format(1X,' ERREUR VERSION JOULE : ',/,                     &
-       1X,' ====================   ',/,                     &
-      10X,' Vous n''avez pas donne de transfo de référence',/,    &
-      10X,' et vous n''avez pas de CL a potentiel nul dans le',   &
-          ' domaine')
- 1500 format(/,2X,' ** INFORMATIONS SUR LES DIFFERENTS TRANSFO'/, &
-         2X,'    ---------------------------------------'/,/,     &
-         1X,'      ---------------------------------',/,    &
-         1X,'      Numero du Transfo        UROFF    ',/,   &
+ 1000 format(1X,' ERROR in JOULE : '                          ,/, &
+       1X,' ====================   '                          ,/, &
+      10X,' Lack of reference : choose a transformer for wich',/, &
+      10X,' offset is assumed zero or a face at ground on the',/, &
+          ' boundary')
+ 1500 format(/,2X,' ** INFORMATIONS ON TRANSFOMERS           ',/, &
+         2X,'    ---------------------------------------'/    ,/, &
+         1X,'      ---------------------------------'         ,/, &
+         1X,'      Number of Transfo        UROFF    '        ,/, &
          1X,'      ---------------------------------')
  1501 format(1X,'      ---------------------------------')
  2000 format(10x,i6,12x,e12.5)
  3000 format(i7)
 
 !----
-! FIN
+! END
 !----
 
 end subroutine

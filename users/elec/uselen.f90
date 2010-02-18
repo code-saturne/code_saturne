@@ -48,94 +48,110 @@ subroutine uselen &
    tracel , trafac , trafbr , rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose :
 ! --------
 
-! POUR LA SORTIE POST-TRAITEMENT MODULE ELECTRIQUE
+! For post-processing in electric module
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
+!    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
+! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
 ! nummai           ! ec ! <-- ! numero du maillage post                        !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
+! ndim             ! e  ! <-- ! dimension de l'espace                          !
+! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
+! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
+! nfac             ! e  ! <-- ! nombre de faces internes                       !
+! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
+! nfml             ! e  ! <-- ! nombre de familles d entites                   !
+! nprfml           ! e  ! <-- ! nombre de proprietese des familles             !
+! nnod             ! e  ! <-- ! nombre de sommets                              !
+! lndfac           ! e  ! <-- ! longueur du tableau nodfac (optionnel          !
+! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr (optionnel          !
+! ncelbr           ! e  ! <-- ! nombre d'elements ayant au moins une           !
+!                  !    !     ! face de bord                                   !
+! nvar             ! e  ! <-- ! nombre total de variables                      !
+! nscal            ! e  ! <-- ! nombre total de scalaires                      !
+! nphas            ! e  ! <-- ! nombre de phases                               !
 ! ncelps           ! e  ! <-- ! nombre de cellules du maillage post            !
 ! nfacps           ! e  ! <-- ! nombre de faces interieur post                 !
 ! nfbrps           ! e  ! <-- ! nombre de faces de bord post                   !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml, nprfml)  !    !     !                                                !
-! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
-! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
-! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
+! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
+! ifacel           ! te ! <-- ! elements voisins d'une face interne            !
+! (2, nfac)        !    !     !                                                !
+! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
+! (nfabor)         !    !     !                                                !
+! ifmfbr           ! te ! <-- ! numero de famille d'une face de bord           !
+! (nfabor)         !    !     !                                                !
+! ifmcel           ! te ! <-- ! numero de famille d'une cellule                !
+! (ncelet)         !    !     !                                                !
+! iprfml           ! te ! <-- ! proprietes d'une famille                       !
+! nfml  ,nprfml    !    !     !                                                !
+! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
+!   (lndfac)       !    !     !  face interne dans nodfac (optionnel)          !
+! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
+!   (nfac+1)       !    !     !  (optionnel)                                   !
+! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
+!   (lndfbr)       !    !     !  face de bord dans nodfbr (optionnel)          !
+! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
+!   (nfabor+1)     !    !     !  (optionnel)                                   !
 ! lstcel(ncelps    ! te ! <-- ! liste des cellules du maillage post            !
 ! lstfac(nfacps    ! te ! <-- ! liste des faces interieures post               !
 ! lstfbr(nfbrps    ! te ! <-- ! liste des faces de bord post                   !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-!  (ndim, nnod)    !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
-!  (nfabor, *)     !    !     !                                                !
+! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
+! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
+! ia(*)            ! tr ! --- ! macro tableau entier                           !
+! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
+! (ndim,ncelet     !    !     !                                                !
+! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
+! (ndim,nfac)      !    !     !                                                !
+! surfbo           ! tr ! <-- ! vecteur surface des faces de bord              !
+! (ndim,nfabor)    !    !     !                                                !
+! cdgfac           ! tr ! <-- ! centre de gravite des faces internes           !
+! (ndim,nfac)      !    !     !                                                !
+! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
+! (ndim,nfabor)    !    !     !                                                !
+! xyznod           ! tr ! <-- ! coordonnes des noeuds (optionnel)              !
+! (ndim,nnod)      !    !     !                                                !
+! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
+! (ncelet          !    !     !                                                !
+! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
+! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
+! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
+! propce           ! tr ! <-- ! proprietes physiques au centre des             !
+! (ncelet,*)       !    !     !    cellules                                    !
+! propfa           ! tr ! <-- ! proprietes physiques au centre des             !
+!  (nfac,*)        !    !     !    faces internes                              !
+! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
+!  (nfabor,*)      !    !     !    faces de bord                               !
+! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
+!  (nfabor,*)      !    !     !    faces de bord                               !
 ! tracel(*)        ! tr ! <-- ! tab reel valeurs cellules post                 !
 ! trafac(*)        ! tr ! <-- ! tab reel valeurs faces int. post               !
 ! trafbr(*)        ! tr ! <-- ! tab reel valeurs faces bord post               !
 ! w1-w2            ! tr ! --- ! tab reel pour calcul gradient                  !
 ! (ncelet,3)       !    !     !                                                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
+! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
+! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
+! ra(*)            ! tr ! --- ! macro tableau reel                             !
 !__________________!____!_____!________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
+!__________________!____!_____!________________________________________________!
+
+!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
+!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
+!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
+!            --- tableau de travail
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-! Common blocks
+!    Common blocks
 !===============================================================================
 
 include "dimfbr.h"
@@ -208,7 +224,7 @@ double precision rbid(1)
 !     L'UTILISATEUR N'A PAS A MODIFIER LE PRESENT SOUS-PROGRAMME DANS
 !       LES CONDITIONS D'UTILISATION STANDARD.
 !     DANS LE CAS OU IL SOUHAITE PRODUIRE DES VARIABLES SUPPLEMENTAIRES
-!       ILPEUT LES AJOUTER A LA FIN, VOIR LA DOCUMENTATION DE USEEVO
+!       IL PEUT LES AJOUTER A LA FIN, VOIR LA DOCUMENTATION DE USEEVO
 !===============================================================================
 
 
@@ -218,7 +234,7 @@ idebra = idbra0
 if(nummai.eq.-1) then
 
 !===============================================================================
-! 1.   Gradient du potentiel reel
+! 1.   Graident of the real potential
 !===============================================================================
 
   idimt  = 3
@@ -235,18 +251,9 @@ if(nummai.eq.-1) then
   epsrgp = epsrgr(ivar)
   climgp = climgr(ivar)
   extrap = extrag(ivar)
-
-! En periodique et parallele, echange avant calcul du gradient
-!     Cela a deja ete fait puisqu'on a deja fait le calcul de cette variable
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
   ivar0 = 0
-
-!    Sans prise en compte de la pression hydrostatique
-
   iphydp = 0
-
+!
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
@@ -267,9 +274,7 @@ if(nummai.eq.-1) then
    w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
    rdevel , rtuser , ra     )
 
-!       Le gradient est defini sur le maillage principal tout entier ;
-!       inutile de le recopier, on utilise l'indirection (IVARPR = 1),
-!       et les valeurs sont non entrelacees (IENTLA = 0)
+!
   ientla = 0
   ivarpr = 1
 
@@ -278,7 +283,8 @@ if(nummai.eq.-1) then
               ntcabs, ttcabs, w1, rbid, rbid)
 
 !===============================================================================
-! 2.   Gradient du potentiel imaginaire si Joule
+! 2.   For Joule Heating by direct conduction :
+!                           gradient of the imaginary component of the potential
 !===============================================================================
 
   if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
@@ -297,18 +303,10 @@ if(nummai.eq.-1) then
     epsrgp = epsrgr(ivar)
     climgp = climgr(ivar)
     extrap = extrag(ivar)
-
-! En periodique et parallele, echange avant calcul du gradient
-!     Cela a deja ete fait puisqu'on a deja fait le calcul de cette variable
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
+!
     ivar0 = 0
-
-!    Sans prise en compte de la pression hydrostatique
-
     iphydp = 0
-
+!
     call grdcel                                                   &
     !==========
  ( idebia , idebra ,                                              &
@@ -329,9 +327,7 @@ if(nummai.eq.-1) then
    w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
    rdevel , rtuser , ra     )
 
-!         Le gradient est defini sur le maillage principal tout entier ;
-!         inutile de le recopier, on utilise l'indirection (IVARPR = 1),
-!         et les valeurs sont non entrelacees (IENTLA = 0)
+!
     ientla = 0
     ivarpr = 1
 
@@ -342,7 +338,8 @@ if(nummai.eq.-1) then
   endif
 
 !===============================================================================
-! 3.   Courant imaginaire si Joule
+! 3.  For Joule heating by direct conduction :
+!                                     imaginary component of the current density
 !===============================================================================
 
   if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
@@ -353,7 +350,7 @@ if(nummai.eq.-1) then
     ivar = isca(ipoti)
     iclimv = iclrtp(ivar,icoef)
 
-!     Commme dans elflux
+!    As in elflux
     ipcsii = ipproc(ivisls(ipoti))
 
     inc = 1
@@ -364,16 +361,8 @@ if(nummai.eq.-1) then
     epsrgp = epsrgr(ivar)
     climgp = climgr(ivar)
     extrap = extrag(ivar)
-
-! En periodique et parallele, echange avant calcul du gradient
-!     Cela a deja ete fait puisqu'on a deja fait le calcul de cette variable
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
+!
     ivar0 = 0
-
-!    Sans prise en compte de la pression hydrostatique
-
     iphydp = 0
 
     call grdcel                                                   &
@@ -402,10 +391,7 @@ if(nummai.eq.-1) then
       tracel(iloc+ncelps)   = -propce(iel,ipcsii)*w1(iel,2)
       tracel(iloc+2*ncelps) = -propce(iel,ipcsii)*w1(iel,3)
     enddo
-
-!         La variable est définie sur le tableau de travail. On
-!         a deja utilise l'indirection via LSTCEL (donc IVARPR = 0),
-!         et les valeurs sont non entrelacees (IENTLA = 0)
+!
     ientla = 0
     ivarpr = 0
 
@@ -415,16 +401,16 @@ if(nummai.eq.-1) then
 
   endif
 
-!===============================================================================
-! 5.   Champ Magnetique si Arc
-!===============================================================================
+!==========================================================
+! 5.   For electric arc : electromagnetic field calculation
+!==========================================================
 
   if( ippmod(ielarc).ge.2 ) then
 
     idimt  = 3
     NAMEVR = 'Ch_Mag'
 
-!    Sur Ax
+!   Ax Component
 
     ivar = isca(ipotva(1))
     iclimv = iclrtp(ivar,icoef)
@@ -437,19 +423,10 @@ if(nummai.eq.-1) then
     epsrgp = epsrgr(ivar)
     climgp = climgr(ivar)
     extrap = extrag(ivar)
-
-! En periodique et parallele, echange avant calcul du gradient
-!     Cela a deja ete fait puisqu'on a deja fait le calcul de cette variable
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-
+!
     ivar0 = 0
-
-!    SANS PRISE EN COMPTE DE LA PRESSION HYDROSTATIQUE
-
     iphydp = 0
-
+!
     call grdcel                                                   &
     !==========
  ( idebia , idebra ,                                              &
@@ -469,7 +446,7 @@ if(nummai.eq.-1) then
    w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
    rdevel , rtuser , ra     )
 
-!       B = rot A
+!       B = rot A ( B = curl A)
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
@@ -478,7 +455,7 @@ if(nummai.eq.-1) then
       tracel(iloc+2*ncelps) = -w1(iel,2)
     enddo
 
-!    Sur Ay
+!    Ay component
 
     ivar = isca(ipotva(2))
     iclimv = iclrtp(ivar,icoef)
@@ -491,19 +468,10 @@ if(nummai.eq.-1) then
     epsrgp = epsrgr(ivar)
     climgp = climgr(ivar)
     extrap = extrag(ivar)
-
-! En periodique et parallele, echange avant calcul du gradient
-!     Cela a deja ete fait puisqu'on a deja fait le calcul de cette variable
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-
+!
     ivar0 = 0
-
-!    SANS PRISE EN COMPTE DE LA PRESSION HYDROSTATIQUE
-
     iphydp = 0
-
+!
     call grdcel                                                   &
     !==========
   ( idbia0 , idbra0 ,                                             &
@@ -523,7 +491,7 @@ if(nummai.eq.-1) then
     w2(1,1) , w2(1,2) , w2(1,3) ,                                 &
     rdevel , rtuser , ra     )
 
-!       B = rot A
+!       B = rot A (B = curl A)
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
@@ -532,7 +500,7 @@ if(nummai.eq.-1) then
       tracel(iloc+2*ncelps) = tracel(iloc+2*ncelps) + w1(iel,1)
     enddo
 
-!    Sur Az
+!    Az component
 
     ivar = isca(ipotva(3))
     iclimv = iclrtp(ivar,icoef)
@@ -545,19 +513,10 @@ if(nummai.eq.-1) then
     epsrgp = epsrgr(ivar)
     climgp = climgr(ivar)
     extrap = extrag(ivar)
-
-! En periodique et parallele, echange avant calcul du gradient
-!     Cela a deja ete fait puisqu'on a deja fait le calcul de cette variable
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-
+!
     ivar0 = 0
-
-!    SANS PRISE EN COMPTE DE LA PRESSION HYDROSTATIQUE
-
-    iphydp = 0
-
+   iphydp = 0
+!
     call grdcel                                                   &
     !==========
   ( idbia0 , idbra0 ,                                             &
@@ -577,7 +536,7 @@ if(nummai.eq.-1) then
     w2(1,1) , w2(1,2) , w2(1,3) ,                                 &
     rdevel , rtuser , ra     )
 
-!       B = rot A
+!       B = rot A (B = curl A)
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
@@ -585,10 +544,7 @@ if(nummai.eq.-1) then
       tracel(iloc+ncelps)   = tracel(iloc+ncelps)   - w1(iel,1)
       tracel(iloc+2*ncelps) = tracel(iloc+2*ncelps) + zero
     enddo
-
-!         La variable est définie sur le tableau de travail. On
-!         a deja utilise l'indirection via LSTCEL (donc IVARPR = 0),
-!         et les valeurs sont non entrelacees (IENTLA = 0)
+!
     ientla = 0
     ivarpr = 0
 
@@ -600,7 +556,7 @@ if(nummai.eq.-1) then
 
 
 !===============================================================================
-! 4.   Module et Argument du potentiel si IELJOU = 4
+! 4.   Calculation of Module and Argument of the complex potential if IELJOU = 4
 !===============================================================================
 
   if (ippmod(ieljou).eq.4) then

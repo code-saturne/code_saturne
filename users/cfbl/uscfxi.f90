@@ -45,43 +45,35 @@ subroutine uscfxi &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! INITIALISATION DES VARIABLES DE CALCUL
-!    POUR LA PHYSIQUE PARTICULIERE : COMPRESSIBLE SANS CHOC
-!    PENDANT DE USINIV.F
+!    User subroutine.
 
-! Cette routine est appelee en debut de calcul (suite ou non)
-!     dans la boucle en temps avant la resolution des scalaires
-
-! Elle permet d'INITIALISER ou de MODIFIER (pour les calculs suite)
-!     les variables de calcul.
+!    Initialize the unknown variables for the compressible flow scheme.
 
 
-! On a repris a titre d'exemple dans cette routine utilisateur
-!     l'initialisation choisie par defaut.
+! Description
+! ===========
 
-! On pourra trouver des exemples d'initialisations dans usiniv.F
+! This subroutine is similar to the user subroutine 'usiniv', but 
+! is dedicated to the compressible flow scheme. 
+! It is called at the beginning of the computation (only if it is 
+! not a restart), just before the time marching loop starts. 
+! It allows to initialize all the unknown variables. 
+
+! The standard initialization has been reproduced here as an example. 
+
+! More examples can be found in 'usiniv'. 
 
 
-! Les proprietes physiques sont accessibles dans le tableau
-!     PROPCE (prop au centre), PROPFA (aux faces internes),
-!     PROPFB (prop aux faces de bord)
-!     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  (IPHAS))) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL(IPHAS))) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   (IPHAS))) designe CP    (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
+! Physical properties
+! ===================
 
-!      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
-
-!      PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
-!      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
-
-! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
-!     ET PAS ICI
+! The physical properties (viscosity, specific heat, thermal 
+! conductivity, Schmidt number) that are stored in the arrays propce, 
+! propfa and propfb must not be modified here: if it is necessary to 
+! do so, it must be done in the dedicated user programme 'uscfpv'. 
 
 
 ! Cells identification
@@ -94,7 +86,7 @@ subroutine uscfxi &
 
 ! Arguments
 !__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
+!    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
@@ -125,16 +117,16 @@ subroutine uscfxi &
 ! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! nodfac(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary developpement !
+! ituser(nituse    ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
+!  (ndim, nfavor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -142,17 +134,16 @@ subroutine uscfxi &
 ! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
 !  (ndim, nnod)    !    !     !                                                !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
+! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
+! rtp(ncelet,*)    ! ra ! <-> ! calculated variables at cell centers           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
-! w1..4(ncelet)    ! tr ! --- ! tableaux de travail                            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
+!  (nfabor, *)     !    !     !                                                !
+! w1..4(ncelet)    ! tr ! --- ! work arrays                                    !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
+! rtuser(nituse    ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -181,6 +172,8 @@ include "ppthch.h"
 include "ppincl.h"
 
 !===============================================================================
+
+! Arguments
 
 integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor
@@ -218,19 +211,26 @@ integer          iccfth, iscal, imodif, iutile
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
 
+!===============================================================================
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     However, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
+!===============================================================================
+
 if(1.eq.1) return
 
-!===============================================================================
+
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
-! 0. IMPRESSION DE CONTROLE
+! 1. Control print
 !===============================================================================
 
 write(nfecra,9001)
 
 !===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
+! 2.  Initialization of local variables
 !===============================================================================
 
 idebia = idbia0
@@ -239,20 +239,16 @@ idebra = idbra0
 imodif = 1
 
 !===============================================================================
-! 2. INITIALISATION DES INCONNUES :
-!      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
+! 3. Unknown variable initialization 
+!      for initial calculations (not in case of restart)
 !===============================================================================
 
 if ( isuite.eq.0 ) then
 
-! --- Pour chaque phase
-
   iphas  = 1
 
-! --- CONDITIONS INITIALES
-!     ====================
+! --- Velocity components
 
-! --- Vitesse
   do iel = 1, ncel
     rtp(iel,iu(iphas)) = 0.d0
     rtp(iel,iv(iphas)) = 0.d0
@@ -260,15 +256,16 @@ if ( isuite.eq.0 ) then
   enddo
 
 
-! --- Scalaires passifs
+! --- User defined scalars 
 
-!       Si il y a des scalaires passifs utilisateurs
+  ! If there are user defined scalars 
   if(nscaus.gt.0) then
-!         Boucle sur ces scalaires
+    ! For each scalar 
     do iscal = 1, nscaus
-!           Si le scalaire est porte par la phase consideree
+      ! If the scalar is associated to the considered phase iphas
       if(iphsca(iscal).eq.iphas) then
 
+        ! Initialize each cell value 
         do iel = 1, ncel
           rtp(iel,isca(iscal)) = 0.d0
         enddo
@@ -278,28 +275,30 @@ if ( isuite.eq.0 ) then
   endif
 
 
-! --- Pression, Masse Volumique, Temperature, Energie Totale Specifique
+! --- Pressure, Density, Temperature, Total Energy 
 
-!       Seules 2 variables sur les 4 sont independantes
-!       On peut donc initialiser le couple de variables que l'on veut
-!       (sauf Temperature-Energie) et les 2 autres variables seront
-!       calculees automatiquement
-
-!  ** Initialiser 2 variables et 2 seulement
-
-!        Pour cela, imposer IUTILE=1 pour les variables choisies
-!                        et IUTILE=0 pour les autres
-
-!        Ainsi, dans l'exemple fourni, on initialise la pression et
-!          la temperature
-
-!  ** ICCFTH est un indicateur permettant de reperer quelles variables
-!       ont été renseignées. Ne pas le modifier.
+  ! Only 2 out of these 4 variables are independent: one may choose to 
+  ! initialize any pair of variables picked out of these 4, except 
+  ! (Temperature-Energy). The remaining 2 variables will be deduced 
+  ! automatically.  
 
 
+  ! Initialize 2 and only 2 variables 
+
+  !   To do so, set iutile=1 for each of the 2 selected variables 
+  !             and iutile=0 for each of the 2 others
+
+  !   In the example provided below, Pressure and Temperature are 
+  !   initialized.
+
+
+  ! iccfth indicates which variables have been set: 
+  !   it is completed automatically for each variable and 
+!     it must not be modified. 
   iccfth = 10000
 
-!     1. Pression (en Pa)
+
+  ! 1. Pressure (Pa)
   iutile = 1
   if(iutile.eq.1) then
     iccfth = iccfth*2
@@ -308,7 +307,7 @@ if ( isuite.eq.0 ) then
     enddo
   endif
 
-!     2. Masse Volumique (en kg/m3)
+  ! 2. Density (kg/m3)
   iutile = 0
   if(iutile.eq.1) then
     iccfth = iccfth*3
@@ -317,7 +316,7 @@ if ( isuite.eq.0 ) then
     enddo
   endif
 
-!     3. Temperature (en K)
+  ! 3. Temperature (K -- Warning: Kelvin)
   iutile = 1
   if(iutile.eq.1) then
     iccfth = iccfth*5
@@ -326,7 +325,7 @@ if ( isuite.eq.0 ) then
     enddo
   endif
 
-!     4. Energie Totale Specifique (en J/kg)
+  ! 4. Total Energy (J/kg)
   iutile = 0
   if(iutile.eq.1) then
     iccfth = iccfth*7
@@ -335,9 +334,10 @@ if ( isuite.eq.0 ) then
     enddo
   endif
 
-!  ** Calcul automatique des deux autres variables
-!     Ce sont les valeurs de ICCFTH qui déterminent les variables
-!       connues et les variables à calculer.
+
+  ! ** The following subroutine returns automatically the values for the 
+  ! two remaining variables that need to be computed, using the 
+  ! indicator iccfth.  
 
   call uscfth                                                     &
   !==========
@@ -357,22 +357,20 @@ if ( isuite.eq.0 ) then
    rdevel , rtuser , ra     )
 
 
-! FIN DE TEST DE SUITE
 endif
 
 !----
-! FORMATS
+! Formats
 !----
 
- 9001 format(                                                           &
-'                                                             ',/,&
-'  uscfxi : Initialisation des variables par l''utilisateur   ',/,&
-'                                                             ',/)
+ 9001 format(                                                     &
+/,                                                                &
+'  uscfxi: User defined initialization of the variables.',/,      &
+/)
 
 !----
-! FIN
+! End
 !----
-
 
 return
 end subroutine
