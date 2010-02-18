@@ -1,4 +1,7 @@
 * 18/02/2010 - David Monfort <david.monfort@edf.fr>
+  Release of Code_Saturne 2.0-rc1.
+
+* 18/02/2010 - Pierre Plion <pierre.plion@edf.fr>
   Improve combustion documentation in the theory manual.
   added files:
     doc/theory/combbase.tex
