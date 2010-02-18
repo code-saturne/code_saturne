@@ -1,3 +1,13 @@
+* 18/02/2010 - Marc Sakiz <marc.sakiz@edf.fr>
+  Remove unused arguments in source term subroutines in Rij and v2-f models.
+  modified routines:
+    src/base/reseps.f90
+    src/base/resrij.f90
+    src/base/resssg.f90
+    src/base/resv2f.f90
+    users/base/ustsri.f90
+    users/base/ustsv2.f90
+
 * 18/02/2010 - David Monfort <david.monfort@edf.fr>
   Improve MEI detection (for mei_prefix variable) in case --with-mei is not
   provided.

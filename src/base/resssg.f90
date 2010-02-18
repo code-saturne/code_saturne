@@ -318,7 +318,7 @@ call ustsri                                                       &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   iphas  , ivar   , isou   , ipp    ,                            &
+   iphas  , ivar   ,                                              &
    ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    icepdc , icetsm , itpsmp ,                                     &

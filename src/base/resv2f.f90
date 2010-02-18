@@ -176,7 +176,7 @@ integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
 integer          nideve , nrdeve , nituse , nrtuse
-integer          iphas  , ivar   , isou   , ipp
+integer          iphas
 
 integer          ifacel(2,nfac) , ifabor(nfabor)
 integer          ifmfbr(nfabor) , ifmcel(ncelet)
@@ -211,6 +211,7 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 integer          idebia, idebra, ifinia
 integer          init  , ifac  , iel   , inc   , iccocg
+integer          ivar, ipp
 integer          iiun
 integer          ipriph,iuiph
 integer          ikiph, ieiph, iphiph, ifbiph
@@ -345,7 +346,6 @@ endif
 !===============================================================================
 
 ivar = ifbiph
-isou = 3
 iclvar = iclfbp
 iclvaf = iclfbp
 ipp    = ipprtp(ivar)
@@ -392,7 +392,7 @@ call ustsv2                                                       &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   iphas  , ivar   , isou   , ipp    ,                            &
+   iphas  , ivar   ,                                              &
    ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    icepdc , icetsm , itypsm ,                                     &
@@ -411,10 +411,10 @@ call ustsv2                                                       &
 if(isto2t(iphas).gt.0) then
   do iel = 1, ncel
 !       Sauvegarde pour echange
-    tuexpe = propce(iel,iptsta+isou-1)
+    tuexpe = propce(iel,iptsta+2)
 !       Pour la suite et le pas de temps suivant
 !       On met un signe "-" car on résout en fait "-div(grad fb) = ..."
-    propce(iel,iptsta+isou-1) = - smbr(iel)
+    propce(iel,iptsta+2) = - smbr(iel)
 !       Second membre du pas de temps precedent
 !       on implicite le terme source utilisateur (le reste)
     smbr(iel) = - rovsdt(iel)*rtpa(iel,ivar) - thets*tuexpe
@@ -532,9 +532,9 @@ enddo
 if(isto2t(iphas).gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    propce(iel,iptsta+isou-1) =                                   &
-    propce(iel,iptsta+isou-1) + w5(iel)
-    smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+isou-1)
+    propce(iel,iptsta+2) =                                   &
+    propce(iel,iptsta+2) + w5(iel)
+    smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+2)
   enddo
 !     Sinon : SMBR
 else
@@ -625,7 +625,6 @@ call codits                                                       &
 !===============================================================================
 
 ivar = iphiph
-isou = 4
 iclvar = iclphi
 iclvaf = iclphi
 ipp    = ipprtp(ivar)
@@ -672,7 +671,7 @@ call ustsv2                                                       &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   iphas  , ivar   , isou   , ipp    ,                            &
+   iphas  , ivar   ,                                              &
    ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    icepdc , icetsm , itypsm ,                                     &
@@ -691,9 +690,9 @@ call ustsv2                                                       &
 if(isto2t(iphas).gt.0) then
   do iel = 1, ncel
 !       Sauvegarde pour echange
-    tuexpe = propce(iel,iptsta+isou-1)
+    tuexpe = propce(iel,iptsta+3)
 !       Pour la suite et le pas de temps suivant
-    propce(iel,iptsta+isou-1) = smbr(iel)
+    propce(iel,iptsta+3) = smbr(iel)
 !       Second membre du pas de temps precedent
 !       On suppose -ROVSDT > 0 : on implicite
 !          le terme source utilisateur (le reste)
@@ -729,8 +728,8 @@ if (ncesmp.gt.0) then
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
   if(isto2t(iphas).gt.0) then
     do iel = 1, ncel
-      propce(iel,iptsta+isou-1) =                                 &
-      propce(iel,iptsta+isou-1) + w2(iel)
+      propce(iel,iptsta+3) =                                 &
+      propce(iel,iptsta+3) + w2(iel)
     enddo
 !       Sinon on le met directement dans SMBR
   else
@@ -789,9 +788,9 @@ enddo
 if(isto2t(iphas).gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    propce(iel,iptsta+isou-1) =                                   &
-    propce(iel,iptsta+isou-1) + w2(iel)
-    smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+isou-1)
+    propce(iel,iptsta+3) =                                   &
+    propce(iel,iptsta+3) + w2(iel)
+    smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+3)
   enddo
 !     Sinon : SMBR
 else
@@ -873,7 +872,7 @@ enddo
 if(isto2t(iphas).gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+isou-1)
+    smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+3)
   enddo
 endif
 

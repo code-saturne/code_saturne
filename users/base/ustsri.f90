@@ -36,7 +36,7 @@ subroutine ustsri &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   iphas  , ivar   , isou   , ipp    ,                            &
+   iphas  , ivar   ,                                              &
    ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , lstelt , &
    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    icepdc , icetsm , itpsmp ,                                     &
@@ -129,8 +129,6 @@ subroutine ustsri &
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! ivar             ! i  ! <-- ! variable number                                !
-! isou             ! e  ! <-- ! numero de passage                              !
-! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
@@ -222,7 +220,7 @@ integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
 integer          nideve , nrdeve , nituse , nrtuse
-integer          iphas  , ivar   , isou   , ipp
+integer          iphas  , ivar
 
 integer          ifacel(2,nfac) , ifabor(nfabor)
 integer          ifmfbr(nfabor) , ifmcel(ncelet)
