@@ -1,4 +1,18 @@
 * 18/02/2010 - David Monfort <david.monfort@edf.fr>
+  Improve combustion documentation in the theory manual.
+  added files:
+    doc/theory/combbase.tex
+    doc/theory/combcharb.tex
+    doc/theory/combfuel.tex
+    doc/theory/combgaz.tex
+    doc/theory/thermo.tex
+  removed files:
+    doc/theory/combustion.tex
+  modified files:
+    doc/theory/Makefile.am
+    doc/theory/theory.tex
+
+* 18/02/2010 - David Monfort <david.monfort@edf.fr>
   Third pass for English translation: translation of most of users
   subroutines.
   Thanks to many of Code_Saturne developpers for their input!

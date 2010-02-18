@@ -1,0 +1,289 @@
+\programme{cpbase}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Function}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+Pulverised coal combustion is described ({\small excluding grid
+burning}) allowing the use of mixture of coals ({\small or of coal and
+biomass}) and a description of granulometry ({\small as many classes
+of initial diameter as wished}). After a particle enters the furnace,
+radiation increases its temperature.
+\begin{enumerate}
+  \item As particle's temperature increases, evaporation of free water
+  ({\small if any}) begins. During evaporation, the vapor pressure
+  gradient extract some water from the particle. The interfacial mass
+  flux brings some mass, water and enthalpy ({\small computed for
+  water vapour}) then latent heath is taken from the particle's
+  enthalpy so the heating is slowed ({\small during evaporation, the
+  water can't reach the boiling point}).
+\item After drying is achevied, the temperature  reachs higher level, allowing pyrolysis to take place. The pyrolysis is described by two competitive reactions : the first one with a moderate activation energy is able to free peripherals atoms group from skeleton leaving to light gases and a big amount of char ; the second one with an higher activation enrgy is able to break links deeper in the skeleton leaving to heavier gases ({\small or tar}) and less char ({\small more porous}. So a complete description needs two set of three parameters ({\small two kinetics ones and a partitioning one}): \\
+\\
+\centerline{$Coal =(k01, T01)=> Y1. light volatiles + (1-Y1).char$}\\
+\centerline{$Coal =(k02, T02)=> Y2. heavy volatiles + (1-Y2).char$}\\
+\\ Where Y1, the partitionning ({\small or selectivity}) factor of the "{\em low temperature}" reaction is less than Y2, the "{\em high temperature}" one. A practical rule is to consider that the same hydrogen and oxygen can bring twice more carbon by the second reaction than by the first one.\\
+
+
+When ultimate analysis are available both for coal and for char, it is
+ releavant to check partioning coefficient ({\small $Y_{i}$}) and
+ composition of volatiles matters ({\small mainly ratio of Carbon
+ monoxide and C$/$H in the hydrocarbon fraction}) : assumptions on
+ volatiles composition gives partitionning coefficients ; assumptions
+ on $Y_{i}$ determine volatiles equivalent formulae. Pyrolisis
+ interfacial mass flux brings energy of volatile gases ({\small
+ computed at the particle's temperature}) in wich the formation of
+ enthalpy of gaseous species differs from the coal one's, as a result
+ the enthalpy for pyrolisis reaction ({\small the most ofen, moderate})
+ is taken from particle energy.  \item After pyrolysis, when every
+ volatiles are burnt, oxygen is able to reach the surface of the char
+ particle. So heterogenous combustion can take place : diffusion of
+ oxygen from bulk, heterogeneous reaction ({\small kinetically
+ limited}) and back diffusion of carbone monoxide. The heterogeneous
+ oxidation interfacial mass flux is the difference of an incoming
+ oxygen flux and an outcoming carbon monoxide mass flux, each of them
+ at their own temperature. The incoming oxygen has a zero valued
+ formation enthalpy ({\small reference state}) and the outcoming
+ carbon monoxide has a negative formation enthalpy, as a result the
+ enthalpy liberated by the first oxidation of carbon is leaked in the
+ particle energy, contributiong to its heating. The heterogenous
+ combustion is achieved if all the carbon of the char particle is
+ converted, leaving an ash particle. Unburnt carbon can leave the
+ boiler as flying particle. The heterogeneous reaction is wrotten
+ : \\ \centerline{$Char + \frac{1}{2} 0_{2} =(k0het, T0het)=> CO$}
+\end{enumerate}
+
+The $2006$ version is able to deal with many class of particles
+\fort{NCLA}, each class beeing described by an initial diameter and a
+constituting char. Every char, among \fort{NCHAR} is described by a
+complete set of parameters : immediate and ultimate analysis, low
+heating value ({\small at user choice on raw, dry or pure}) and
+kinetic parameters ({\em for both the two competitive pyrolysis
+reaction and for heterogeneous reaction}). This allows to describe the
+combustion of a mixture or coals or of coal and every material
+describable by such evolution kinetics ({\small woods chips ...}). It
+is, obviously, possible to mix fuels with ({\small very}) different
+proximate analysis, like dry hard coal and wet biomass.
+
+
+\newpage
+%=================================
+\subsection{Notations}
+%=================================
+
+\begin{table}[h!]
+\begin{tabular}{ccp{10,5cm}}
+
+{\bf Symbol} & {\bf Unit} & {\bf Meaning}\\
+
+
+$H$ 		& $J/kg$ 	& specific enthalpy \\
+$K$ 		& $kg/(m.\,s)$ 	& thermal diffusivity\\
+$\lambda$ 	& $W/(m.\,K)$ 	& thermal conductivity\\
+$\mu$	 	& $kg/(m.\,s)$ 	& dynamical viscosity\\
+$\rho$ 		& $kg/m^3$ 	& density\\
+$M$, $M_i$ 	& $kg/mol$ 	& molar mass ($M_i$ for  $i$° constituant)\\
+$P$ 		& $Pa$ 		& pressure\\
+$R$ 		& $J/(mol.\,K)$ & perfect gas constant\\
+$T$ 		& $K$ 		& temperature ($>0$)\\
+$Y_i$ 		& 		& mass fraction of constituant $i$ 
+					($0 \leqslant Y_i \leqslant 1$)\\
+$D^{t}$         & $kg/(m.\,s)$  & turbulent viscosity \\
+$\alpha_{i}$    & 		& mass fraction of phase k \\
+$t$ 		& $s$ 		& time\\
+\end{tabular}
+\end{table}
+
+\clearpage
+
+%=================================
+\subsection{Budget Equations}
+%=================================
+
+The bulk, done of gases and particles, is assumed to be describable
+with only one pressure and velocity. The slipping velocitiy between
+particles and gases is supposed negligible compared to this mean
+velocity.  Scalars for the bulk are :
+\vspace{0.5cm}
+\begin{itemize}
+  \item Bulk density 
+     \begin{equation} 
+        \rho_{m} = \alpha_{1}\rho_{1} + \alpha_{2}\rho_{2}
+     \end{equation} 
+  \item Bulk velocity 
+     \begin{equation} 
+       U_{m} = \frac{ \alpha_{1}\rho_{1} U_{1} 
+                    + \alpha_{2}\rho_{2} U_{2} }{\rho_{m}}
+     \end{equation} 
+  \item Bulk enthalpy 
+     \begin{equation} 
+        H_{m} = \frac{ \alpha_{1}\rho_{1} H_{1} 
+                     + \alpha_{2}\rho_{2} H_{2} }{\rho_{m}}
+     \end{equation} 
+  \item Bulk pressure 
+     \begin{equation} 
+       P_{m} = P_{1}
+     \end{equation} 
+\end{itemize}  
+
+Mass fractions of gaseous medium ($Y_{1}^{*}$) and of partciles are defined by :
+\begin{eqnarray}
+  Y_{1}^{*} = \frac{\alpha_{1}\rho_{1}}{\rho_{m}} &\\
+  Y_{2}^{*} = \frac{\alpha_{2}\rho_{2}}{\rho_{m}} &
+\end{eqnarray}
+
+So budget equations for the bulk can be written :
+
+\begin{equation}
+  \frac{\partial}{\partial t    } \rho_{m}
+ +\frac{\partial}{\partial x_{j}} (\rho_{m}U_{m,j}) = 0 
+\end{equation}
+
+\begin{equation}
+  \frac{\partial}{\partial t    } (\rho_{m}U_{m,i})
+ +\frac{\partial}{\partial x_{j}} (\rho_{m}U_{m,i}U_{m,j})
+       =  \frac{\partial}{\partial x_{j}}
+              \left[ \rho_{m} \left[ D_{m}^{t}( \frac{\partial U_{m,i}}{\partial x_{j}}
+                                  +\frac{\partial U_{m,i}}{\partial x_{j}} ) \\
+                      -\frac{2}{3}\delta_{ij}
+                            ( q_{m}^{2}
+                             +D_{m}^{t}\frac{\partial U_{m,l}}{\partial x_{l}}) \right]  \right]
+           - \frac{\partial P_{m}}{\partial x_{i}}+\rho_{m}g_{i}
+\end{equation}
+
+\begin{equation}
+  \frac{\partial}{\partial t    } (\rho_{m} H_{m})
+ +\frac{\partial}{\partial x_{j}} (\rho_{m}U_{m,j}H_{m})
+              = \frac{\partial}{\partial x_{j}} 
+                       (\rho_{m}D_{m}^{t} \frac{\partial H_{m}}{\partial x_{j}})
+               +S_{m,R}
+\end{equation}
+ 
+With the ({\small velocity}) homogeneity assumption, mainly budget
+equation for bulk caracteristic are pertinent. So transport equation
+for the scalar $\Phi_{k}$, where k is the phase, can be written :
+
+\begin{equation}
+  \frac{\partial}{\partial t    } (\rho_{m} Y_{k}^{*}\Phi_{k})
+ +\frac{\partial}{\partial x_{j}} (\rho_{m} U_{m,j} Y_{k}^{*} \Phi_{k})
+              = \frac{\partial}{\partial x_{j}} 
+                       (\rho_{m}D_{m}^{t} \frac{\partial Y_{k}^{*} \Phi_{k}}{\partial x_{j}})
+               +S_{\Phi_{k}}+\Gamma_{\Phi_{k}}
+\end{equation}
+
+%=================================
+\subsection{Coal combustion scalars}
+%=================================
+
+\subsubsection{Bulk enthalpy : $H_{m}$ }
+Budget equation for the specific enthalpy of the mixture ({\small gas
++ particles}) admits only one source term for radiative effects
+$S_{m,R}$ :
+\begin{equation}
+    S_{m,R}= S_{1,R}+ S_{2,R}
+\end{equation}
+With contributions of each phases liable to be described by different
+models ({\small eg : wide band for gases, black body for particles}).
+
+\subsubsection{Particles enthalpy : $Y_{2}^{*}H_{2}$ }
+Enthalpy of droplets ({\small J in particles/kg bulk}) is the product
+of solid phase mass fraction ({\small kg liq/kg bulk}) by the specific
+enthalpy of solid ({\small kg solid/kg bulk}). So the budget equation
+for liquid enthalpy has six source terms : :
+\begin{equation}
+     \Pi_{2}^{'}+S_{2,R}-\Gamma_{evap}H_{H2Ovap}(T_{2})-\Gamma_{devol1}H_{MV1}(T_{2})-\Gamma_{devol2}H_{MV2}(T_{2})
+                        +\Gamma_{het}\left( \frac{M_{O}}{M_{C}}H_{O_{2}}(T_{1})
+                                      -\frac{M_{CO   }}{M_{C}}H_{CO   }(T_{2})\right) 
+\end{equation}
+with
+\begin{itemize}
+  \item $\Pi_{2}^{'}$ : heat flux between phases
+  \item $S_{2,R}$ : radiative source term for droplets
+  \item $\Gamma_{evap}H_{H2Ovap}(T_{2})$ the vapor flux leaves at particle temperature ($H_{vap}$ includes latent heat)
+\item $\Gamma_{dvol1}H_{MV1}(T_{2})$ the light volatile matter flux leaves at particle temperature ($H_{vap}$ includes latent heat)
+\item $\Gamma_{dvol2}H_{MV2}(T_{2})$ the heavy volatile matter flux leaves at particle temperature ($H_{vap}$ includes latent heat)
+   \item $\Gamma_{het}(...)$ heterogenous combustion induces reciprocal mass flux : oxygen arriving at gas temperature and carbone monoxide leaving at char particle one.
+
+\end{itemize}
+
+\subsubsection{Dispersed phase mass fraction : $Y_{2}^{*}$}
+In budget equation for the mass fraction of the dispersed phase
+({\small first droplets, then char particles, at last ashes}) the
+source terms are interfacial mass fluxes ({\small first evaporation,
+then net flux for heterogeneous combustion}):
+
+\begin{equation}
+     -\Gamma_{evap}-\Gamma_{het}
+\end{equation}
+          
+\subsubsection{Number of particles : $N_{p}^{*}$}
+No source term in the budget equation for number of droplets : a
+droplet became a particle ({\small eventually a tiny flying ash}) but
+never vanish ({\small particles it have to get out}).
+
+                                
+\subsubsection{Mean of the passive scalar for light volatile : $F_{1}$}  
+This scalar represent the amount of matter which have leaved the
+particle as fuel vapour, whatever it happens after. It's a mass
+fraction of gaseous matter ({\small in hydrocarbon form or carbon
+oxide ones}). So the source term in its budget is only evaporation
+mass flux :
+\begin{equation}
+   \Gamma_{evap}
+\end{equation}     
+
+\subsubsection{ Variance of $F_{1}$ : $F_{1}^{'2}$}
+Budget equation for $F_{1}^{'2}$ have three source term :
+\begin{equation}
+   \Gamma_{F_{1}^{'2}}
+   -2\rho_{m}Y_{1}^{*}\frac{F_{1}^{'2}}{\tau_{\chi_{F_{1}^{'2}}}} 
+   + \rho_{m}Y_{1}^{*}D_{m}^{t}\frac{\partial F_{1}}{\partial x_{j}} 
+                               \frac{\partial F_{1}}{\partial x_{j}}
+\end{equation} 
+where $\Gamma_{F_{1}^{'2}}$ is due to interfacial mass fluxes ({\small
+every interfacial mass fluxes impact gaseous phase variances}).
+                                                 
+\subsubsection{Mean of the passive scalar for carbon from char : $F_{3}$}  
+Budget equation for $F_{3}$ have for lone source term the mass flux
+due to heterogeneous combsution ({\small mass flux of carbon monoxide
+minus oxygene mass flux}). As for $F_{1}$ oxidation in the gaseous
+phase does not modifiy this {\em passive} scalar :
+\begin{equation}
+   \Gamma_{het}
+\end{equation}   
+         
+                       
+\subsubsection{ Variance of the passive scalar for air : $F_{4}^{'2}$} 
+ 
+This passive scalar incomes with air but is'nt destroyed by any
+({\small in gaseous phase or heterogeneous}). No budget equation
+needed for it, $F_{4}$ can be determined from the wholeness
+relation.\\
+
+Budget equation for $F_{4}^{'2}$ have, like other passive scalar
+variance budget equaiton, four source terms :
+\begin{equation} 
+    \Gamma_{F_{4}^{'2}}
+   -2\rho_{m}Y_{1}^{*}\frac{F_{4}^{'2}}{\tau_{\chi_{F_{4}^{'2}}}} 
+   + \rho_{m}Y_{1}^{*}D_{m}^{t}\frac{\partial F_{4}}{\partial x_{j}} 
+                               \frac{\partial F_{4}}{\partial x_{j}}
+\end{equation} 
+where $\Gamma_{F_{4}^{'2}}$ is due to interfacial mass fluxes ({\small every interfacial mass fluxes impact gaseous phase variances}).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discr\'etisation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+On se reportera aux sections relatives aux sous-programmes
+\fort{cfmsvl} (masse volumique), \fort{cfqdmv} 
+(quantit\'e de mouvement) et \fort{cfener} (\'energie).  La
+documentation du sous-programme
+\fort{cfxtcl} fournit des \'el\'ements relatifs aux 
+conditions
+aux limites. 

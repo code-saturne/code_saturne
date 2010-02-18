@@ -37,7 +37,10 @@ clptrg.tex \
 clptur.tex \
 clsyvt.tex \
 codits.tex \
-combustion.tex \
+combbase.tex \
+combcharb.tex \
+combfuel.tex \
+combgaz.tex \
 condli.tex \
 covofi.tex \
 elbase.tex \
@@ -51,6 +54,7 @@ navsto.tex \
 preduv.tex \
 recvmc.tex \
 resolp.tex \
+thermo.tex \
 summary.tex \
 turbke.tex \
 turrij.tex \
