@@ -315,6 +315,8 @@ else
 #  On the CCRT, there is no TMPDIR. We work by default in SCRATCHDIR
   if [ "$SCRATCHDIR" != "" ] ; then
     RUN=$SCRATCHDIR/tmp_Saturne/$STUDY.$CASE.$DATE
+  elif [ -d "/scratch/$USER" ] ; then
+    RUN=/scratch/$USER/tmp_Saturne/$STUDY.$CASE.$DATE
 #
   elif [ "$TMPDIR" != "" -a "$TMPDIR" != "/tmp" ] ; then
     RUN=$TMPDIR/tmp_Saturne/$STUDY.$CASE.$DATE

@@ -205,6 +205,7 @@ def def_exec_prefix():
         user = os.getenv('USER')
 
         exec_prefix_prefs = [os.getenv('SCRATCHDIR'),
+                             os.path.join('/scratch', user),
                              os.path.join('/local00/users', user),
                              os.path.join('/local01/users', user)]
 

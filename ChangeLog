@@ -1,3 +1,9 @@
+* 19/02/2010 - David Monfort <david.monfort@edf.fr>
+  Add Clamart 2 cluster "scratchdir" to the list of the temporary directories.
+  modified scripts:
+    bin/runcase.in
+    bin/runcase.py.in
+
 * 19/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a bug in handling FVM long-gnum option in the restart files.
   modified routine:
