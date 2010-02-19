@@ -722,7 +722,6 @@ endif
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser ,                                              &
    propfb(1,ipprob(itparo)) , tbord  , tempk  ,                   &
 !                                   Resultat : T en K
    rdevel , rtuser ,                                              &
