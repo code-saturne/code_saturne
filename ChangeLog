@@ -1,3 +1,8 @@
+* 19/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a bug in handling FVM long-gnum option in the restart files.
+  modified routine:
+    src/base/cs_io.c
+
 * 19/02/2010 - David Monfort <david.monfort@edf.fr>
   Fix last-minute bug where the number of arguments of a subroutine did not
   match (with no impact on the calculation).

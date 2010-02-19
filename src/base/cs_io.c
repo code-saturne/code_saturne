@@ -1937,7 +1937,7 @@ _write_header(const char      *sec_name,
       break;
     case FVM_INT64:
       outp->type_name[0] = 'i';
-      outp->type_name[1] = '4';
+      outp->type_name[1] = '8';
       break;
     case FVM_UINT32:
       outp->type_name[0] = 'u';
@@ -1945,7 +1945,7 @@ _write_header(const char      *sec_name,
       break;
     case FVM_UINT64:
       outp->type_name[0] = 'u';
-      outp->type_name[1] = '4';
+      outp->type_name[1] = '8';
       break;
     case FVM_CHAR:
       outp->type_name[0] = 'c';
