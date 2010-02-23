@@ -69,10 +69,6 @@ def process_cmd_line(argv):
                       metavar="<case>",
                       help="create a case from another one")
 
-    parser.add_option("--new-runcase", dest="new_runcase",
-                      action="store_true",
-                      help="use the new Python runcase")
-
     parser.add_option("--nogui", dest="use_gui",
                       action="store_false",
                       help="don't use the GUI")
@@ -99,7 +95,6 @@ def process_cmd_line(argv):
 
     parser.set_defaults(use_gui=True)
     parser.set_defaults(use_ref=True)
-    parser.set_defaults(new_runcase=False)
     parser.set_defaults(study_name=os.path.basename(os.getcwd()))
     parser.set_defaults(cases_name=[])
     parser.set_defaults(copy=None)
@@ -115,14 +110,11 @@ def process_cmd_line(argv):
         else:
             options.cases_name = ["CASE1"]
 
-    if options.n_sat > 1: options.new_runcase = True
-
     return Study(options.study_name,
                  options.cases_name,
                  options.copy,
                  options.use_gui,
                  options.use_ref,
-                 options.new_runcase,
                  options.verbose,
                  options.n_sat,
                  options.n_syr)
@@ -198,7 +190,7 @@ def comments(filename, use_gui):
 class Study:
 
 
-    def __init__(self, name, cases, copy, use_gui, use_ref, new_runcase,
+    def __init__(self, name, cases, copy, use_gui, use_ref,
                  verbose, n_sat, n_syr):
         """
         Initialize the structure for a study.
@@ -213,7 +205,6 @@ class Study:
             self.copy = os.path.abspath(self.copy)
         self.use_gui = use_gui
         self.use_ref = use_ref
-        self.new_runcase = new_runcase
         self.verbose = verbose
         self.n_sat = n_sat
         self.n_syr = n_syr
@@ -377,13 +368,7 @@ class Study:
         scripts = 'SCRIPTS'
         os.mkdir(scripts)
 
-        if not self.new_runcase:
-            shutil.copy(os.path.join(datadir, 'runcase.help'), scripts)
-            shutil.copy(os.path.join(datadir, 'runcase'), scripts)
-        else:
-            shutil.copy(os.path.join(datadir, 'runcase.py'),
-                        os.path.join(scripts, 'runcase'))
-
+        shutil.copy(os.path.join(datadir, 'runcase'), scripts)
         runcase = os.path.join(scripts, 'runcase')
 
         kwd1 = re.compile('nameandcase')
@@ -428,7 +413,6 @@ class Study:
             print "Copy from case:", self.copy
         print "Use the GUI:", self.use_gui
         print "Copy references:", self.use_ref
-        print "Use the Python runcase:", self.new_runcase
         if self.n_sat > 1:
             print "Number of Code_Saturne instances:", self.n_sat
         if self.n_syr > 0:

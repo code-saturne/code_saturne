@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2007 EDF S.A., France
+#     Copyright (C) 1998-2010 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -113,36 +113,36 @@ class BatchRunningModel(Model):
         # DicoValues's initialisation
 
         self.dicoValues = {}
-        self.dicoValues['SOLCOM'] = '0'
-        self.dicoValues['PARAM'] = ""
-        self.dicoValues['NUMBER_OF_PROCESSORS'] = ""
-        self.dicoValues['PROCESSOR_LIST'] = ""
-        self.dicoValues['PARTITION_LIST'] = ""
-        self.dicoValues['USER_INPUT_FILES'] = ""
-        self.dicoValues['USER_OUTPUT_FILES'] = ""
-        self.dicoValues['CS_TMP_PREFIX'] = ""
-        self.dicoValues['MESH'] = ""
-        self.dicoValues['COMMAND_REORIENT'] = ""
-        self.dicoValues['COMMAND_JOIN'] = ""
-        self.dicoValues['COMMAND_CWF'] = ""
-        self.dicoValues['COMMAND_PERIO'] = ""
+        self.dicoValues['MESHES'] = None
+        self.dicoValues['REORIENT'] = False
+        self.dicoValues['JOIN'] = None
+        self.dicoValues['PERIODICITY'] = None
+        self.dicoValues['THERMOCHEMISTRY_DATA'] = None
+        self.dicoValues['METEO_DATA'] = None
+        self.dicoValues['USER_INPUT_FILES'] = None
+        self.dicoValues['USER_OUTPUT_FILES'] = None
+        self.dicoValues['N_PROCS'] = None
+        self.dicoValues['PARTITION_LIST'] = None
+        self.dicoValues['PARAMETERS'] = None
+        self.dicoValues['SOLCOM'] = False
+        self.dicoValues['CUT_WARPED_FACES'] = None
+        self.dicoValues['CHECK_ARGS'] = None
+        self.dicoValues['OUTPUT_ARGS'] = None
+        self.dicoValues['HOSTS_LIST'] = None
+        self.dicoValues['EXEC_PREPROCESS'] = True
+        self.dicoValues['EXEC_PARTITION'] = True
+        self.dicoValues['EXEC_SOLVER'] = True
+
+        self.dicoValues['CS_TMP_PREFIX'] = None
         self.dicoValues['PBS_JOB_NAME'] = ""
         self.dicoValues['PBS_nodes'] = '1'
         self.dicoValues['PBS_ppn'] = '2'
         self.dicoValues['PBS_walltime'] = '1:00:00'
         self.dicoValues['PBS_mem'] = '320'
-        self.dicoValues['EXEC_PREPROCESS'] = "yes"
-        self.dicoValues['EXEC_PARTITION'] = "yes"
-        self.dicoValues['EXEC_KERNEL'] = "yes"
-        self.dicoValues['CS_LIB_ADD'] = ""
-        self.dicoValues['VALGRIND'] = ""
-        self.dicoValues['ARG_CS_OUTPUT'] = ""
-        self.dicoValues['ARG_CS_VERIF'] = ""
-        self.dicoValues['THERMOCHEMISTRY_DATA'] = ""
-        self.dicoValues['METEO_DATA'] = ""
+        self.dicoValues['VALGRIND'] = None
 
         if self.case['salome']:
-            self.dicoValues['ARG_CS_OUTPUT'] = "--log 0"
+            self.dicoValues['OUTPUT_ARGS'] = "--log 0"
 
 
     def _getRegex(self, word):
@@ -186,54 +186,22 @@ class BatchRunningModel(Model):
         for i in range(2,len(resu)): L = L  + "="+ resu[i]
         resu = L
 
-        if resu:
-            if resu.split(' ')[0] == '': resu = resu.split(' ')[1]
-            if resu == '""': resu =''
-        else:
-            resu =''
+        try:
+            self.dicoValues[word] = eval(resu)
+        except Exception:
+            self.dicoValues[word] = None
 
-        self.dicoValues[word] = resu
         return self.dicoValues[word]
-
-
-    def _removeQuotes(self, line, index=0, word=""):
-        """
-        1) Delete quotes and return caracters,
-        2) Return  the associated value of the word
-        """
-        if not line: return ""
-
-        ch = line[index+len(word):]
-        if not ch: return ""
-        ch = string.join(string.split(ch))
-
-        try:
-            if ch[-1:] == '\n': ch = ch[:-1]
-        except IndexError:
-            pass
-
-        try:
-            if ch[-1:] == '"': ch = ch[:-1]
-        except IndexError:
-            pass
-
-        try:
-            if ch[0] == '"': ch = ch[1:]
-        except IndexError:
-            pass
-
-        ch = string.join(string.split(ch))
-
-        return ch
 
 
     def _addQuotes(self, ch):
         """
         Add quotes in front of and behind string c.
         """
-        ch = string.join(string.split(ch))
-        if string.rfind(ch, " ") != -1:
-            ch = '"' + ch + '"'
+
+        if ch[0] != "'" and ch[0] != '"' and ch != 'True' and ch != 'False':
+            ch = "'" + ch + "'"
+
         return ch
 
 
@@ -256,12 +224,9 @@ class BatchRunningModel(Model):
                             nbkey = nbkey + 1
                             if nbkey == 1:
                                 ch = self._getValueInPattern(pat, k, self.dicoValues)
-                                ch = self._removeQuotes(str(ch))
-                                self.dicoValues[k] = ch
                             else:
                                 # If there are more than one occurence of the keyword in the
                                 # batch script file, only the first one is modified
-                                #
                                 pass
 
         if self.case['computer'] == "pbs":
@@ -301,25 +266,23 @@ class BatchRunningModel(Model):
         prm = ProfilesModel(self.case)
 
         # MESH
-        meshes = string.join(sdm.getMeshList())
-        if meshes:
-            self.dicoValues['MESH'] = meshes
+        self.dicoValues['MESH'] = sdm.getMeshList()
 
-        self.dicoValues['COMMAND_REORIENT'] = sdm.getReorientCommand()
-        self.dicoValues['COMMAND_JOIN'] = sdm.getJoinCommand()
-        self.dicoValues['COMMAND_CWF'] = sdm.getCutCommand()
-        self.dicoValues['COMMAND_PERIO'] = sdm.getPerioCommand()
-        self.dicoValues['PARAM'] = os.path.basename(self.case['xmlfile'])
+        self.dicoValues['REORIENT'] = sdm.getReorientCommand()
+        self.dicoValues['JOIN'] = sdm.getJoinCommand()
+        self.dicoValues['CUT_WARPED_FACES'] = sdm.getCutCommand()
+        self.dicoValues['PERIODICITY'] = sdm.getPerioCommand()
+        self.dicoValues['PARAMETERS'] = os.path.basename(self.case['xmlfile'])
 
         # User 1D profiles are loaded as user result files
 
         if prm.getProfilesLabelsList():
             if self.dicoValues['USER_OUTPUT_FILES']:
-                v = string.split(self.dicoValues['USER_OUTPUT_FILES'])
+                v = self.dicoValues['USER_OUTPUT_FILES']
+                vlist = prm.updateOutputFiles(v)
             else:
-                v = []
-            vlist = prm.updateOutputFiles(v)
-            self.dicoValues['USER_OUTPUT_FILES'] = string.join(vlist, " ")
+                vlist = None
+            self.dicoValues['USER_OUTPUT_FILES'] = vlist
 
         # Specific data file for specific physics
 
@@ -340,16 +303,19 @@ class BatchRunningModel(Model):
         """
         # update the name of the param, useful when the xml file is new
         # and was never saved before
-        self.dicoValues['PARAM'] = os.path.basename(self.case['xmlfile'])
+        self.dicoValues['PARAMETERS'] = os.path.basename(self.case['xmlfile'])
 
         l = self.dicoValues.keys()
         l.append(None) # Add 'None' when no keyword is specified in argument.
+        for k in self.dicoValues.keys():
+            if self.dicoValues[k] == 'None':
+                self.dicoValues[k] = None
         self.isInList(keyword, l)
         lines = self.lines
 
         if self.case['computer'] == "pbs" \
-          or str(self.dicoValues['NUMBER_OF_PROCESSORS']) == "1":
-            self.dicoValues['NUMBER_OF_PROCESSORS'] = ""
+          or self.dicoValues['N_PROCS'] == 1:
+            self.dicoValues['N_PROCS'] = None
 
         for k in self.dicoValues.keys():
             nbkey = 0
@@ -360,8 +326,17 @@ class BatchRunningModel(Model):
                     if pat != None:
                         nbkey = nbkey + 1
                         if nbkey == 1:
-                            ch = self._addQuotes(str(self.dicoValues[k]))
-                            new = k + "=" + ch
+                            if isinstance(self.dicoValues[k], str):
+                                ch = self.dicoValues[k]
+                                if len(ch) > 0:
+                                    ch = self._addQuotes(self.dicoValues[k])
+                                else:
+                                    ch = 'None'
+                            else:
+                                ch = str(self.dicoValues[k])
+                                if ch == '[]':
+                                    ch = 'None'
+                            new = k + " = " + ch
                             lines[i] = self._substituteLine(pat, new, lines[i])
             if keyword: break
 
@@ -427,28 +402,27 @@ class BatchRunningModelTestCase(unittest.TestCase):
         self.case['scripts_path'] = os.getcwd()
         self.case['batchScript'] = {'pbs': 'lance_PBS', 'lsf': 'lance_LSF', 'station': 'lance_test'}
         self.case['backupBatchScript'] = {'pbs': 'yes', 'lsf': 'yes', 'station': 'yes'}
-        lance_test = '# test \n'\
-        '#SOLCOM=6\n'\
-        'SOLCOM=999\n'\
-        'PARAM=NEW.xml\n'\
-        'NUMBER_OF_PROCESSORS=2\n'\
-        'PROCESSOR_LIST=\n'\
-        'PARTITION_LIST=\n'\
-        'USER_INPUT_FILES=data\n'\
-        'USER_OUTPUT_FILES=titi\n'\
-        'CS_TMP_PREFIX=/home/toto\n'\
-        'MESH=\n'\
-        'COMMAND_REORIENT=\n'\
-        'COMMAND_JOIN=" --j  --color 98 99  --fraction 0.1  --plane 0.8"\n'\
-        'COMMAND_CWF="--cwf 0.001"\n'\
-        'COMMAND_PERIO=\n'\
-        'EXEC_PREPROCESS=yes\n'\
-        'EXEC_PARTITION=yes\n'\
-        'EXEC_KERNEL=yes\n'\
-        'CS_LIB_ADD=''\n'\
-        'VALGRIND=''\n'\
-        'ARG_CS_OUTPUT=''\n'\
-        'ARG_CS_VERIF=''\n'
+        lance_test = "# test \n"\
+        "#SOLCOM=6\n"\
+        "SOLCOM=False\n"\
+        "PARAMETERS='NEW.xml'\n"\
+        "N_PROCS=2\n"\
+        "HOSTS_LIST=None\n"\
+        "PARTITION_LIST=None\n"\
+        "USER_INPUT_FILES=['data']\n"\
+        "USER_OUTPUT_FILES=['titi']\n"\
+        "CS_TMP_PREFIX='/home/toto'\n"\
+        "MESHES=None\n"\
+        "REORIENT=\n"\
+        "JOIN='--j  --color 98 99  --fraction 0.1  --plane 0.8'\n"\
+        "CUT_WARPED_FACES='--cwf 0.001'\n"\
+        "PERIODICITY=\n"\
+        "EXEC_PREPROCESS=True\n"\
+        "EXEC_PARTITION=True\n"\
+        "EXEC_SOLVER=True\n"\
+        "VALGRIND=None\n"\
+        "OUTPUT_ARGS=None\n"\
+        "CHECK_ARGS=None\n"
 
         lance_PBS = '# test \n'\
         '#\n'\
@@ -459,7 +433,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
 
         lance_LSF = '# test \n'\
         '#\n'\
-        '#        CARTES BATCH POUR LE CCRT (Nickel/Chrome/Tantale sous LSF)\n'\
+        '#        CARTES BATCH POUR LE CCRT (Platine sous LSF)\n'\
         '#\n'\
         '#BSUB -n 2\n'\
         '#BSUB -c 00:05\n'\
@@ -568,40 +542,39 @@ class BatchRunningModelTestCase(unittest.TestCase):
 
         # The following keywords from the batch script file
         # are cancelled by the informations from the case !
-        #   MESH
-        #   COMMAND_JOIN
-        #   COMMAND_CWF
-        #   COMMAND_PERIO
-        #   COMMAND_REORIENT
+        #   MESHES
+        #   JOIN
+        #   CUT_WARPED_FACES
+        #   PERIODICITY
+        #   REORIENT
         #
         dico = {\
-        'PROCESSOR_LIST': '',
-        'PARTITION_LIST': '',
+        'HOSTS_LIST': '',
+        'PARTITION_LIST': None,
         'PBS_nodes': '1',
-        'MESH': 'mail1.des mail2.des mail3.des',
+        'MESHES': ['mail1.des', 'mail2.des', 'mail3.des'],
         'PBS_JOB_NAME': '',
-        'COMMAND_CWF': ' --cwf 0.0321',
-        'SOLCOM': '999',
-        'USER_OUTPUT_FILES': 'titi',
-        'PARAM': 'NEW.xml',
-        'NUMBER_OF_PROCESSORS': '2',
-        'USER_INPUT_FILES': 'data',
-        'COMMAND_JOIN': '',
-        'COMMAND_REORIENT': ' --reorient ',
+        'CUT_WARPED_FACES': ' --cwf 0.0321',
+        'SOLCOM': False,
+        'USER_OUTPUT_FILES': ['titi'],
+        'PARAMETERS': 'NEW.xml',
+        'N_PROCS': 2,
+        'USER_INPUT_FILES': ['data'],
+        'JOIN': None,
+        'REORIENT': ' --reorient ',
         'CS_TMP_PREFIX': '/home/toto',
         'PBS_ppn': '2',
         'PBS_walltime': '1:00:00',
         'PBS_mem': '320',
-        'COMMAND_PERIO': '',
-        'EXEC_PREPROCESS':'yes',
-        'EXEC_PARTITION':'yes',
-        'EXEC_KERNEL':'yes',
-        'CS_LIB_ADD':'',
-        'VALGRIND':'',
-        'ARG_CS_OUTPUT':'',
-        'ARG_CS_VERIF':'',
-        'THERMOCHEMISTRY_DATA':'',
-        'METEO_DATA':''}
+        'PERIODICITY': None,
+        'EXEC_PREPROCESS':True,
+        'EXEC_PARTITION':True,
+        'EXEC_SOLVER':True,
+        'VALGRIND':None,
+        'OUTPUT_ARGS':None,
+        'CHECK_ARGS':None,
+        'THERMOCHEMISTRY_DATA':None,
+        'METEO_DATA':None}
         for k in mdl.dicoValues.keys():
             if mdl.dicoValues[k] != dico[k]:
                 print "\nwarning for key: ", k
@@ -619,28 +592,28 @@ class BatchRunningModelTestCase(unittest.TestCase):
 
         # The following keywords from the batch script file
         # are cancelled by the informations from the case !
-        #   MESH
-        #   COMMAND_JOIN
-        #   COMMAND_CWF
-        #   COMMAND_PERIO
+        #   MESHES
+        #   JOIN
+        #   CUT_WARPED_FACES
+        #   PERIODICITY
         #
         #
         dico_PBS = {\
         'PBS_nodes': '16',
-        'MESH': 'mail1.des mail2.des mail3.des',
+        'MESHES': ['mail1.des', 'mail2.des', 'mail3.des'],
         'PBS_JOB_NAME': 'super_toto',
-        'COMMAND_CWF': ' --cwf 0.0321',
-        'SOLCOM': '0',
-        'PARAM': 'NEW.xml',
-        'NUMBER_OF_PROCESSORS': '',
-        'USER_INPUT_FILES': '',
-        'COMMAND_JOIN': '',
-        'COMMAND_REORIENT': ' --reorient ',
+        'CUT_WARPED_FACES': ' --cwf 0.0321',
+        'SOLCOM': False,
+        'PARAMETERS': 'NEW.xml',
+        'N_PROCS': None,
+        'USER_INPUT_FILES': None,
+        'JOIN': '',
+        'REORIENT': ' --reorient ',
         'CS_TMP_PREFIX': '',
         'PBS_ppn': '1',
         'PBS_walltime': '34:77:22',
         'PBS_mem': '832',
-        'COMMAND_PERIO': ''}
+        'PERIODICITY': ''}
 
         for k in dico_PBS.keys():
             if mdl.dicoValues[k] != dico_PBS[k] :
@@ -654,7 +627,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         """ Check whether the BatchRunningModel class could update file"""
         mdl = BatchRunningModel(self.case)
         mdl.readBatchScriptFile()
-        mdl.dicoValues['NUMBER_OF_PROCESSORS']='48'
+        mdl.dicoValues['N_PROCS']=48
         dico_updated = mdl.dicoValues
         mdl.updateBatchScriptFile()
         mdl.readBatchScriptFile()

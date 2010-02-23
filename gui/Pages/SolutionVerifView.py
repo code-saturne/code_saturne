@@ -417,7 +417,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
     @pyqtSignature("")
     def slotOutputOptions(self):
         """
-        Create characters ligne for command of format's options
+        Create format's command line options
         """
         line = []
         opt_format = self.modelFormat.dicoV2M[str(self.comboBoxFormat.currentText())]
@@ -439,7 +439,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
 
     def __updateOptionsFormat(self, line):
         """
-        Update ligne for command of format's options at each modification of
+        Update command-line options at each modification of
         post processing format
         """
         list = string.split(line, ',')

@@ -1,3 +1,25 @@
+* 23/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Make the Python runcase script mandatory, and update the interface behaviour
+  accordingly.
+  modified scripts:
+    bin/cs_create.py
+    configure.ac
+    Makefile.am
+  modified routine:
+    gui/Pages/BatchRunningAdvancedOptionsDialogForm.ui
+    gui/Pages/BatchRunningForm.ui
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/BatchRunningView.py
+    gui/Pages/SolutionDomainModel.py
+    gui/Pages/SolutionVerifView.py
+    gui/Pages/WelcomeForm.ui
+  deleted scripts:
+    bin/runcase.help
+    bin/runcase.in
+    bin/runcase_mpi_env
+  renamed script:
+    bin/runcase.py.in
+
 * 23/02/2010 - David Monfort <david.monfort@edf.fr>
   Fix PyQt dev tools detection (pyuic4/pyrcc4) for kfreebsd-* systems.
   Thanks to Petr Salinger for providing the hack.

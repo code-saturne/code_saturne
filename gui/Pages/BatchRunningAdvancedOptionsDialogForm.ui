@@ -32,7 +32,7 @@
       <widget class="QLabel" name="label" >
        <property name="text" >
         <string>Prefix of temporary execution
-directory (CS_TMP_PREFIX)</string>
+ directory (CS_TMP_PREFIX)</string>
        </property>
       </widget>
      </item>
@@ -85,7 +85,7 @@ directory (CS_TMP_PREFIX)</string>
      <item row="3" column="0" >
       <widget class="QLabel" name="label_4" >
        <property name="text" >
-        <string>Calculation (EXEC_KERNEL)</string>
+        <string>Calculation (EXEC_SOLVER)</string>
        </property>
       </widget>
      </item>
@@ -106,7 +106,7 @@ directory (CS_TMP_PREFIX)</string>
      <item row="5" column="0" >
       <widget class="QLabel" name="label_7" >
        <property name="text" >
-        <string>valgrind (VALGRIND)</string>
+        <string>Valgrind (VALGRIND)</string>
        </property>
       </widget>
      </item>
@@ -121,25 +121,14 @@ directory (CS_TMP_PREFIX)</string>
       </widget>
      </item>
      <item row="6" column="0" >
-      <widget class="QLabel" name="label_8" >
+      <widget class="QLabel" name="label_9" >
        <property name="text" >
-        <string>List of external libraries
- for link (CS_LIB_ADD)</string>
+        <string>Mesh quality and consistency
+ check (CHECK_ARGS)</string>
        </property>
       </widget>
      </item>
      <item row="6" column="1" colspan="3" >
-      <widget class="QLineEdit" name="lineEdit_4" />
-     </item>
-     <item row="7" column="0" >
-      <widget class="QLabel" name="label_9" >
-       <property name="text" >
-        <string>Elementary test of the mesh 
- (ARG_CS_VERIF)</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="1" colspan="3" >
       <widget class="QComboBox" name="comboBox_5" />
      </item>
     </layout>
@@ -175,7 +164,7 @@ directory (CS_TMP_PREFIX)</string>
      <item>
       <widget class="QGroupBox" name="groupBox" >
        <property name="title" >
-        <string>Output redirection management (ARG_CS_OUTPUT)</string>
+        <string>Output redirection management (OUTPUT_ARGS)</string>
        </property>
        <layout class="QGridLayout" >
         <item row="0" column="0" >
@@ -198,8 +187,8 @@ directory (CS_TMP_PREFIX)</string>
             <item row="0" column="0" >
              <widget class="QLabel" name="label_10" >
               <property name="text" >
-               <string>Redirection for single processor job or for 
- processor rank 0 of multi-processors job (--log)</string>
+               <string>Redirection for serial job or for 
+ process rank 0 of parallel job (--log)</string>
               </property>
              </widget>
             </item>
@@ -222,8 +211,8 @@ directory (CS_TMP_PREFIX)</string>
             <item row="1" column="0" >
              <widget class="QLabel" name="label_11" >
               <property name="text" >
-               <string>Redirection for processors from rank 1 to N-&amp; 
- of multi-processors job (--logp)</string>
+               <string>Redirection for processes from rank 1 to p
+ of parallel job (--logp)</string>
               </property>
              </widget>
             </item>

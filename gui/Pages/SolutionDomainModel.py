@@ -238,23 +238,22 @@ class SolutionDomainModel(MeshModel, Model):
         Update, for keyword, the backup file if it's ready to run.
         """
         self.isInList(keyword,('MESH',
-                               'COMMAND_REORIENT',
-                               'COMMAND_JOIN',
-                               'COMMAND_CWF',
-                               'COMMAND_PERIO',
-                               'CWF_OFF',
+                               'REORIENT',
+                               'JOIN',
+                               'CUT_WARPED_FACES',
+                               'PERIODICITY',
+                               'CUT_WARPED_FACES_OFF',
                                'JOIN_OFF',
-                               'PERIO_OFF'))
+                               'PERIODICITY_OFF'))
         key = self.case['computer']
         if key:
             if not self.case['batchScript'][key]: return
 
             from BatchRunningModel import BatchRunningModel
             batch = BatchRunningModel(self.case)
-            if keyword in ('CWF_OFF', 'JOIN_OFF', 'PERIO_OFF'):
-                cmd = string.split(keyword,'_')[:1][0]
-                keyword = 'COMMAND_' + str(cmd)
-                batch.dicoValues[keyword] = ''
+            if keyword in ('CUT_WARPED_FACES_OFF', 'JOIN_OFF', 'PERIODICITY_OFF'):
+                keyword = string.split(keyword,'_OFF')[:1][0]
+                batch.dicoValues[keyword] = None
             batch.initializeBatchScriptFile()
             batch.updateBatchScriptFile(keyword)
             del BatchRunningModel
@@ -618,7 +617,7 @@ class SolutionDomainModel(MeshModel, Model):
         if status == 'off':
             self._updateBatchScriptFile('JOIN_OFF')
         else:
-            self._updateBatchScriptFile('COMMAND_JOIN')
+            self._updateBatchScriptFile('JOIN')
 
 
     def getCutStatus(self):
@@ -639,26 +638,26 @@ class SolutionDomainModel(MeshModel, Model):
         self.isOnOff(status)
         self.node_cut['status'] = status
         if status == 'off':
-            self._updateBatchScriptFile('CWF_OFF')
+            self._updateBatchScriptFile('CUT_WARPED_FACES_OFF')
         else:
-            self._updateBatchScriptFile('COMMAND_CWF')
+            self._updateBatchScriptFile('CUT_WARPED_FACES')
 
 
     def setCutAngle(self, var):
         """
-        input '--cwf' parameter.
+        input '--cut_warped_faces' parameter.
         """
         self.isGreaterOrEqual(var, 0.0)
         if var != self.defaultValues()['angle']:
             self.node_cut.xmlSetData('warp_angle_max', var)
         else:
             self.node_cut.xmlRemoveChild('warp_angle_max')
-        self._updateBatchScriptFile('COMMAND_CWF')
+        self._updateBatchScriptFile('CUT_WARPED_FACES')
 
 
     def getCutAngle(self):
         """
-        get '--cwf' parameters.
+        get '--cut_warped_faces' parameters.
         """
         angle = self.node_cut.xmlGetDouble('warp_angle_max')
         if angle == None:
@@ -683,7 +682,7 @@ class SolutionDomainModel(MeshModel, Model):
         """
         self.isOnOff(status)
         self.node_orient['status'] = status
-        self._updateBatchScriptFile('COMMAND_REORIENT')
+        self._updateBatchScriptFile('REORIENT')
 
 
     def getSimCommStatus(self):
@@ -849,7 +848,7 @@ class SolutionDomainModel(MeshModel, Model):
                     if not node.xmlGetChildNodeList('rotation2'):
                         self._setRotation2Default(perio_name)
 
-            self._updateBatchScriptFile('COMMAND_PERIO')
+            self._updateBatchScriptFile('PERIODICITY')
 
 
     def deletePeriodicity(self, perio_name):
@@ -865,9 +864,9 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_perio.xmlGetNode('transformation', name=perio_name).xmlRemoveNode()
 
         if len(self.node_perio.xmlGetNodeList('transformation')) == 0:
-            self._updateBatchScriptFile('PERIO_OFF')
+            self._updateBatchScriptFile('PERIODICITY_OFF')
         else:
-            self._updateBatchScriptFile('COMMAND_PERIO')
+            self._updateBatchScriptFile('PERIODICITY')
 
 
     def changePeriodicityName(self, perio_name, new_name):
@@ -919,7 +918,7 @@ class SolutionDomainModel(MeshModel, Model):
         node = self.node_perio.xmlGetNode('transformation', name=perio_name)
         for n in node.xmlGetChildNodeList('translation'):
             n.xmlSetData(dir, valcoor)
-        self._updateBatchScriptFile('COMMAND_PERIO')
+        self._updateBatchScriptFile('PERIODICITY')
 
 
     def getRotationDirection(self, perio_name):
@@ -948,7 +947,7 @@ class SolutionDomainModel(MeshModel, Model):
         node = self.node_perio.xmlGetNode('transformation', name=perio_name)
         n = node.xmlGetChildNode('rotation1')
         n.xmlSetData(dir,valcoor)
-        self._updateBatchScriptFile('COMMAND_PERIO')
+        self._updateBatchScriptFile('PERIODICITY')
 
 
     def getRotationAngle(self, perio_name):
@@ -973,7 +972,7 @@ class SolutionDomainModel(MeshModel, Model):
         node = self.node_perio.xmlGetNode('transformation', name=perio_name)
         n = node.xmlGetChildNode('rotation1')
         n.xmlSetData('rotation_angle', angle)
-        self._updateBatchScriptFile('COMMAND_PERIO')
+        self._updateBatchScriptFile('PERIODICITY')
 
 
     def getRotationCenter(self, perio_name):
@@ -1014,7 +1013,7 @@ class SolutionDomainModel(MeshModel, Model):
         elif mode == "rotation2" or mode == "tr+rota2":
             n = node.xmlGetChildNode('rotation2')
         n.xmlSetData(pos, val)
-        self._updateBatchScriptFile('COMMAND_PERIO')
+        self._updateBatchScriptFile('PERIODICITY')
 
 
     def getRotationMatrix(self, perio_name):
@@ -1055,7 +1054,7 @@ class SolutionDomainModel(MeshModel, Model):
         node = self.node_perio.xmlGetNode('transformation', 'mode', name=perio_name)
         n = node.xmlGetChildNode('rotation2')
         n.xmlSetData(pos, val)
-        self._updateBatchScriptFile('COMMAND_PERIO')
+        self._updateBatchScriptFile('PERIODICITY')
 
 
 # Methods to manage faces :
@@ -1070,7 +1069,7 @@ class SolutionDomainModel(MeshModel, Model):
         name = str(nb +1)
         node = self.node_join.xmlAddChild('faces_join', status="on", name=name)
         self._addFacesSelect(node, select)
-        self._updateBatchScriptFile('COMMAND_JOIN')
+        self._updateBatchScriptFile('JOIN')
 
 
     def getJoinFaces(self, number):
@@ -1092,7 +1091,7 @@ class SolutionDomainModel(MeshModel, Model):
         node = self.node_join.xmlGetNode('faces_join', status="on", name=number)
         self._removeChildren(node)
         self._addFacesSelect(node, select)
-        self._updateBatchScriptFile('COMMAND_JOIN')
+        self._updateBatchScriptFile('JOIN')
 
 
     def deleteJoinFaces(self, number):
@@ -1105,7 +1104,7 @@ class SolutionDomainModel(MeshModel, Model):
         node.xmlRemoveNode()
         if int(number) <= int(self.getJoinSelectionsNumber()):
             self._updateJoinSelectionsNumbers()
-        self._updateBatchScriptFile('COMMAND_JOIN')
+        self._updateBatchScriptFile('JOIN')
 
 
     def setJoinStatus(self, number, status):
@@ -1138,7 +1137,7 @@ class SolutionDomainModel(MeshModel, Model):
         if node_tr:
             node = node_tr.xmlAddChild('faces_periodic', status="on")
             self._addFacesSelect(node, select)
-            self._updateBatchScriptFile('COMMAND_PERIO')
+            self._updateBatchScriptFile('PERIODICITY')
 
 
     def getPeriodicFaces(self, perio_name):
@@ -1169,7 +1168,7 @@ class SolutionDomainModel(MeshModel, Model):
             node = node_tr.xmlGetChildNode('faces_periodic', status="on")
             self._removeChildren(node)
             self._addFacesSelect(node, select)
-            self._updateBatchScriptFile('COMMAND_PERIO')
+            self._updateBatchScriptFile('PERIODICITY')
 
 
     def deletePeriodicFaces(self, perio_name):
@@ -1181,7 +1180,7 @@ class SolutionDomainModel(MeshModel, Model):
         if node_tr:
             node = node_tr.xmlGetChildNode('faces_periodic', status="on")
             node.xmlRemoveNode()
-            self._updateBatchScriptFile('COMMAND_PERIO')
+            self._updateBatchScriptFile('PERIODICITY')
 
 
     def setPeriodicStatus(self, perio_name, status):
@@ -1195,7 +1194,7 @@ class SolutionDomainModel(MeshModel, Model):
             if node:
                 node['status'] = status
             if status == 'on':
-                self._updateBatchScriptFile('COMMAND_PERIO')
+                self._updateBatchScriptFile('PERIODICITY')
 
 
     def getPeriodicStatus(self, perio_name):
@@ -1354,7 +1353,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def getCutCommand(self):
         """
-        Get cwf command line for preprocessor execution
+        Get cut_warped_faces command line for preprocessor execution
         """
         line = ''
         if self.node_cut and self.node_cut['status'] == 'on':

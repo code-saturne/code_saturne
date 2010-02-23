@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2010 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -118,10 +118,12 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
         self.connect(self.buttonDeleteResu, SIGNAL("clicked()"), self.slotDeleteResu)
 
         # Previous values
-        for item in self.default['data']:
-            self.setFileData(item)
-        for item in self.default['results']:
-            self.setFileResu(item)
+        if self.default['data'] != None:
+            for item in self.default['data']:
+                self.setFileData(item)
+        if self.default['results'] != None:
+            for item in self.default['results']:
+                self.setFileResu(item)
 
 
     def setFileData(self, item):
@@ -496,15 +498,15 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelCSTMPPREFIX.addItem(self.tr("automatic"), 'automatic')
         self.modelCSTMPPREFIX.addItem(self.tr("prescribed"), 'prescribed')
 
-        self.modelExecPrepro.addItem(self.tr("Run the preprocessor"), 'yes')
-        self.modelExecPrepro.addItem(self.tr("Use existing DATA/preprocessor_output"), 'no')
+        self.modelExecPrepro.addItem(self.tr("Run the preprocessor"), 'True')
+        self.modelExecPrepro.addItem(self.tr("Use existing DATA/preprocessor_output"), 'False')
 
-        self.modelExecPartit.addItem(self.tr("Run the partioner"), 'yes')
+        self.modelExecPartit.addItem(self.tr("Run the partitioner"), 'True')
         self.modelExecPartit.addItem(self.tr("Use existing domain_number_<p> file in DATA/PARTITION_OUTPUT/\n"\
-                                             "if present, unoptimized partition otherwise"), 'no')
+                                             "if present, unoptimized partition otherwise"), 'False')
 
-        self.modelExecKernel.addItem(self.tr("Setup data and run the calculation"), 'yes')
-        self.modelExecKernel.addItem(self.tr("Do not setup data and run the calculation"), 'no')
+        self.modelExecKernel.addItem(self.tr("Setup data and run the calculation"), 'True')
+        self.modelExecKernel.addItem(self.tr("Do not setup data and run the calculation"), 'False')
 
         self.modelArg_cs_verif.addItem(self.tr("Off"), 'standard')
         self.modelArg_cs_verif.addItem(self.tr("Mesh quality criteria"), 'mesh_quality')
@@ -514,7 +516,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
         self.modelCSOUT2.addItem(self.tr("no output"), 'shunte')
         self.modelCSOUT2.addItem(self.tr("to standard output"), 'standard')
-        self.modelCSOUT2.addItem(self.tr("to listing_n<N>"), 'listing')
+        self.modelCSOUT2.addItem(self.tr("to listing_n<p>"), 'listing')
 
         # connections
         self.connect(self.comboBoxCSTMPPREFIX, SIGNAL("activated(const QString&)"), self.slotCSTMPPREFIX)
@@ -525,13 +527,14 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.connect(self.toolButton_2, SIGNAL("clicked()"), self.slotSearchFile)
         self.connect(self.lineEdit_2, SIGNAL("textChanged(const QString &)"), self.slotPartitionList)
         self.connect(self.lineEdit_3, SIGNAL("textChanged(const QString &)"), self.slotValgrind)
-        self.connect(self.lineEdit_4, SIGNAL("textChanged(const QString &)"), self.slotCs_lib_add)
         self.connect(self.comboBox_5, SIGNAL("activated(const QString&)"), self.slotArgCsVerif)
         self.connect(self.comboBox_6, SIGNAL("activated(const QString&)"), self.slotArgCsOutput)
         self.connect(self.comboBox_7, SIGNAL("activated(const QString&)"), self.slotArgCsOutput)
 
         # Previous values
         self.dir_name = self.default['CS_TMP_PREFIX']
+        if self.dir_name == None:
+            self.dir_name = ""
         self.lineEdit.setText(QString(self.dir_name))
         if self.dir_name == "":
             self.lineEdit.setEnabled(False)
@@ -543,22 +546,25 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
             self.modelCSTMPPREFIX.setItem(str_model='prescribed')
 
         self.exe_prepro = self.default['EXEC_PREPROCESS']
-        self.modelExecPrepro.setItem(str_model=self.exe_prepro)
+        self.modelExecPrepro.setItem(str_model=str(self.exe_prepro))
 
         self.exe_partit = self.default['EXEC_PARTITION']
-        self.modelExecPartit.setItem(str_model=self.exe_partit)
+        self.modelExecPartit.setItem(str_model=str(self.exe_partit))
 
-        self.exe_kernel = self.default['EXEC_KERNEL']
-        self.modelExecKernel.setItem(str_model=self.exe_kernel)
+        self.exe_kernel = self.default['EXEC_SOLVER']
+        self.modelExecKernel.setItem(str_model=str(self.exe_kernel))
 
         self.partition_list = self.default['PARTITION_LIST']
+        plist = []
+        if self.partition_list != None:
+            for p in self.partition_list:
+                plist.append(str(p))
+        self.partition_list = string.join(plist)
         self.lineEdit_2.setText(QString(self.partition_list))
 
         self.valgrind = self.default['VALGRIND']
-        self.lineEdit_3.setText(QString(self.valgrind))
-
-        self.cs_lib_add = self.default['CS_LIB_ADD']
-        self.lineEdit_4.setText(QString(self.cs_lib_add))
+        if self.valgrind != None:
+            self.lineEdit_3.setText(QString(self.valgrind))
 
         self.setArgCsVerif()
         self.setArgCsOutput()
@@ -599,14 +605,6 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
 
     @pyqtSignature("const QString &")
-    def slotCs_lib_add(self, text):
-        """
-        Input for external libraries.
-        """
-        self.cs_lib_add = str(text)
-
-
-    @pyqtSignature("const QString &")
     def slotExePrepro(self, text):
         """
         Preprocessor execution mode option.
@@ -632,21 +630,21 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
     def setArgCsVerif(self):
         """
-        Put ARG_CS_VERIF option from "lance" file.
+        Put CHECK_ARGS option from "lance" file.
         """
-        if self.default['ARG_CS_VERIF'] == '':
-            self.arg_cs_verif = 'standard'
-            self.val_verif = ""
-        if self.default['ARG_CS_VERIF'] == '--quality' or self.default['ARG_CS_VERIF'] == '-q':
+        if self.default['CHECK_ARGS'] == '--quality' or self.default['CHECK_ARGS'] == '-q':
             self.arg_cs_verif = 'mesh_quality'
             self.val_verif = '--quality'
+        else:
+            self.arg_cs_verif = 'standard'
+            self.val_verif = ""
         self.modelArg_cs_verif.setItem(str_model=self.arg_cs_verif)
 
 
     @pyqtSignature("const QString &")
     def slotArgCsVerif(self, text):
         """
-        Input ARG_CS_VERIF option.
+        Input CHECK_ARGS option.
         """
         self.val_verif = ''
         self.arg_cs_verif = self.modelArg_cs_verif.dicoV2M[str(text)]
@@ -658,14 +656,14 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
     def setArgCsOutput(self):
         """
-        Put ARG_CS_OUTPUT options from 'lancer' file.
+        Put OUTPUT_ARGS options from 'runcase' file.
         """
-        self.val_output = self.default['ARG_CS_OUTPUT']
-        if self.default['ARG_CS_OUTPUT'] == '':
+        self.val_output = self.default['OUTPUT_ARGS']
+        if self.default['OUTPUT_ARGS'] == None:
             self.modelCSOUT1.setItem(str_model='listing')
             self.modelCSOUT2.setItem(str_model='shunte')
         else:
-            list = self.default['ARG_CS_OUTPUT'].split()
+            list = self.default['OUTPUT_ARGS'].split()
             l1 = 0
             l2 = 0
             for n in range(len(list)):
@@ -685,7 +683,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
     @pyqtSignature("const QString &")
     def slotArgCsOutput(self, text):
         """
-        Input ARG_CS_OUTPUT options.
+        Input OUTPUT_ARGS options.
         """
         self.val_output =''
         out1 = ''
@@ -698,6 +696,8 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         if arg_out2 == 'standard': out2 = '--logp 0'
         if arg_out2 == 'listing': out2 = '--logp 1'
         self.val_output = out1 + ' ' + out2
+        if len(self.val_output) < 2:
+            self.val_output = None
 
 
     @pyqtSignature("")
@@ -758,15 +758,25 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         """
         Method called when user clicks 'OK'
         """
+
+        plist = []
+        for p in self.partition_list.split():
+            try:
+                plist.append(int(p))
+            except Exception:
+                pass
+        partition_tuple = None
+        if len(plist) > 0:
+            partition_tuple = tuple(plist)
+
         self.result['CS_TMP_PREFIX']   = self.dir_name
         self.result['EXEC_PREPROCESS'] = self.exe_prepro
         self.result['EXEC_PARTITION']  = self.exe_partit
-        self.result['EXEC_KERNEL']     = self.exe_kernel
-        self.result['PARTITION_LIST']  = self.partition_list
+        self.result['EXEC_SOLVER']     = self.exe_kernel
+        self.result['PARTITION_LIST']  = partition_tuple
         self.result['VALGRIND']        = self.valgrind
-        self.result['CS_LIB_ADD']      = self.cs_lib_add
-        self.result['ARG_CS_VERIF']    = self.val_verif
-        self.result['ARG_CS_OUTPUT']   = self.val_output
+        self.result['CHECK_ARGS']    = self.val_verif
+        self.result['OUTPUT_ARGS']   = self.val_output
 
         QDialog.accept(self)
 
@@ -852,8 +862,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        self.mdl.dicoValues['NUMBER_OF_PROCESSORS'] = v
-        self.mdl.updateBatchScriptFile('NUMBER_OF_PROCESSORS')
+        self.mdl.dicoValues['N_PROCS'] = v
+        self.mdl.updateBatchScriptFile('N_PROCS')
 
 
     @pyqtSignature("")
@@ -906,8 +916,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         default = {}
         default['data_path'] = self.case['data_path']
-        default['data']      = string.split(self.mdl.dicoValues['USER_INPUT_FILES'])
-        default['results']   = string.split(self.mdl.dicoValues['USER_OUTPUT_FILES'])
+        default['data']      = self.mdl.dicoValues['USER_INPUT_FILES']
+        default['results']   = self.mdl.dicoValues['USER_OUTPUT_FILES']
         log.debug("slotUserFiles -> %s" % str(default))
 
         dialog = BatchRunningUserFilesDialogView(self, default)
@@ -915,8 +925,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotUserFiles -> %s" % str(result))
-            self.mdl.dicoValues['USER_INPUT_FILES']   = string.join(result['data'])
-            self.mdl.dicoValues['USER_OUTPUT_FILES'] = string.join(result['results'])
+            self.mdl.dicoValues['USER_INPUT_FILES']  = result['data']
+            self.mdl.dicoValues['USER_OUTPUT_FILES'] = result['results']
             self.mdl.updateBatchScriptFile('USER_INPUT_FILES')
             self.mdl.updateBatchScriptFile('USER_OUTPUT_FILES')
 
@@ -927,9 +937,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Ask one popup for advanced specifications
         """
         default = {}
-        list = ['CS_TMP_PREFIX', 'EXEC_PREPROCESS', 'EXEC_PARTITION', 'EXEC_KERNEL',
-                'PARTITION_LIST', 'VALGRIND', 'CS_LIB_ADD',
-                'ARG_CS_VERIF', 'ARG_CS_OUTPUT', ]
+        list = ['CS_TMP_PREFIX', 'EXEC_PREPROCESS', 'EXEC_PARTITION', 'EXEC_SOLVER',
+                'PARTITION_LIST', 'VALGRIND', 'CHECK_ARGS', 'OUTPUT_ARGS', ]
         for option in list:
             default[option] = self.mdl.dicoValues[option]
         log.debug("slotAdvancedOptions result = %s "%str(default))
@@ -960,8 +969,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             return
 #        if self.case.saved() == "no":
 #            self.case.xmlSaveDocument()
-#            self.mdl.dicoValues['PARAM'] = os.path.basename(self.case['xmlfile'])
-#            self.mdl.updateBatchScriptFile('PARAM')
+#            self.mdl.dicoValues['PARAMETERS'] = os.path.basename(self.case['xmlfile'])
+#            self.mdl.updateBatchScriptFile('PARAMETERS')
 
         # Test 2: have we a mesh?
 
@@ -1086,10 +1095,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         dico = self.mdl.dicoValues
 
-        if dico['NUMBER_OF_PROCESSORS'] == "":
-            dico['NUMBER_OF_PROCESSORS'] = "1"
+        if not isinstance(dico['N_PROCS'], int):
+            dico['N_PROCS'] = 1
         if self.case['computer'] == 'station':
-            self.spinBoxProcs.setValue(int(dico['NUMBER_OF_PROCESSORS']))
+            self.spinBoxProcs.setValue(dico['N_PROCS'])
 
         self.mdl.updateBatchScriptFile()
 

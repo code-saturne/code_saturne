@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -99,7 +99,7 @@ edit = sed \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g'
 
-edit_scripts = bin/code_saturne bin/cs_config.py bin/runcase.py 
+edit_scripts = bin/code_saturne bin/cs_config.py bin/runcase
 
 $(edit_scripts): Makefile
 	rm -f $@ $@.tmp
@@ -110,7 +110,7 @@ $(edit_scripts): Makefile
 
 bin/code_saturne: $(srcdir)/bin/code_saturne.in 
 bin/cs_config.py: bin/cs_config.py.in 
-bin/runcase.py: $(srcdir)/bin/runcase.py.in 
+bin/runcase: $(srcdir)/bin/runcase.in 
 
 # Install binary scripts
 
@@ -138,14 +138,9 @@ bin/cs_plot_probes.py
 
 nodist_pkgdata_DATA = \
 bin/runcase \
-bin/runcase.py \
 bin/SaturneGUI
 
-dist_pkgdata_DATA = \
-bin/runcase.help
-
 dist_pkgdata_SCRIPTS = \
-bin/runcase_mpi_env \
 bin/runcase_mpi_rank \
 bin/runcase_syrthes
 
