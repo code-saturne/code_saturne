@@ -453,8 +453,8 @@ sys.stdout.write(path)]"
     PYPATH=${PYQT4_EXE}
   fi
 
-  AC_PATH_PROG([PYUIC4], [pyuic4], ["no"], [${PYPATH}])
-  AC_PATH_PROG([PYRCC4], [pyrcc4], ["no"], [${PYPATH}])
+  AC_PATH_PROG([PYUIC4], [pyuic4], ["no"], [${PYPATH}:$PATH])
+  AC_PATH_PROG([PYRCC4], [pyrcc4], ["no"], [${PYPATH}:$PATH])
 
   if test "x$PYUIC4" == "xno" -o "x$PYRCC4" == "xno" ; then
     AC_MSG_FAILURE([cannot find PyQt4 dev tools, Graphical User Interface cannot be installed])
