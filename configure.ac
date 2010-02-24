@@ -222,7 +222,11 @@ fi
 # Fortran flags for French translation
 
 if test "x$french" = "xtrue"; then
-  FCFLAGS="${FCFLAGS} -D_CS_LANG_FR"
+  if test "x$cs_ibm_bg_type" != "x" ; then
+    FCFLAGS="${FCFLAGS} -WF,-D_CS_LANG_FR"
+  else
+    FCFLAGS="${FCFLAGS} -D_CS_LANG_FR"
+  fi
 fi
 
 # We may only turn on processing for libtool now that the basic compiler
@@ -234,7 +238,7 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "x$cs_disable_shared" = "xyes" ; then
+if test "x$cs_ibm_bg_type" != "x" ; then
    enable_shared=no
 fi
 
