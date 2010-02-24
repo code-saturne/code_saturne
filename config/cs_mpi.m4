@@ -202,9 +202,9 @@ if test "x$with_mpi" != "xno" -a "x$cs_have_mpi" = "xno" ; then
     CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
     mpi_type=""
     if test "x$cs_ibm_bg_type" != "x" ; then
-      if test "x$cs_ibm_bg_type" = "L" ; then
+      if test "x$cs_ibm_bg_type" = "xL" ; then
         mpi_type=BGL_MPI
-      elif test "x$cs_ibm_bg_type" = "P" ; then
+      elif test "x$cs_ibm_bg_type" = "xP" ; then
         mpi_type=BGP_MPI
       fi
     fi

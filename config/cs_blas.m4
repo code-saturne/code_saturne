@@ -78,12 +78,6 @@ if test "x$with_blas" != "xno" ; then
 
   # Add known paths and libraries for Blue Gene/L or P if not given
 
-  if test "x$with_blas_type" = "x" ; then
-    if test "x$cs_ibm_bg_type" != "x" ; then
-      with_blas_type="ESSL"
-    fi
-  fi
-
   # Test for IBM ESSL BLAS
 
   if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xESSL" ; then
@@ -91,22 +85,6 @@ if test "x$with_blas" != "xno" ; then
     # Test compilation/header separately from link, as linking may require
     # Fortran libraries, and header is for C. Test library (link) first,
     # as header is only useful if library is present.
-
-    if test "x$BLAS_CPPFLAGS" = "x" ; then
-      if test "x$cs_ibm_bg_type" = "xL" ; then
-        BLAS_CPPFLAGS="-I/opt/ibmmath/essl/4.2/include"
-      elif test "x$cs_ibm_bg_type" = "xP" ; then
-        BLAS_CPPFLAGS="-I/opt/ibmmath/essl/4.4/include"
-      fi
-    fi
-
-    if test "x$BLAS_LDFLAGS" = "x" ; then
-      if test "x$cs_ibm_bg_type" = "xL" ; then
-        BLAS_LDFLAGS="-L/opt/ibmmath/essl/4.2/lib"
-      elif test "x$cs_ibm_bg_type" = "xP" ; then
-        BLAS_LDFLAGS="-L/opt/ibmmath/essl/4.4/lib"
-      fi
-    fi
 
     AC_LANG_PUSH([Fortran])
     

@@ -110,7 +110,11 @@ AC_MSG_RESULT($cs_fc_flush)
 AC_LANG_POP([Fortran])
 
 if test "x$cs_fc_flush" = "xyes"; then
-  FCFLAGS="${FCFLAGS} -D_CS_FC_HAVE_FLUSH"
+  if test "x$cs_ibm_bg_type" != "x" ; then
+    FCFLAGS="${FCFLAGS} -WF,-D_CS_FC_HAVE_FLUSH"
+  else
+    FCFLAGS="${FCFLAGS} -D_CS_FC_HAVE_FLUSH"
+  fi
 fi
 
 unset $cs_fc_flush
