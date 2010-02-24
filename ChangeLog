@@ -6,6 +6,8 @@
     config/cs_fortran.m4
     config/cs_mpi.m4
     configure.ac
+  modified routine:
+    src/base/cs_opts.c
 
 * 23/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Make the Python runcase script mandatory, and update the interface behaviour

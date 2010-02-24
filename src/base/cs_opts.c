@@ -397,7 +397,14 @@ cs_opts_mpi_init(int    *argc,
   int appnum = -1;
   int use_mpi = false;
 
-#if defined(MPICH_NAME)
+#if defined(__bg__) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+
+  /* Notes: Blue Gene/L also defines the BGLMPI_SIZE environment variable.
+   *        Blue Gene/P defines BG_SIZE (plus BG_MAPPING, and BG_RELEASE). */
+
+  use_mpi = true;
+
+#elif defined(MPICH_NAME)
 
   /*
     Using standard MPICH1 1.2.x with the p4 (default) mechanism,
@@ -419,12 +426,6 @@ cs_opts_mpi_init(int    *argc,
 
   if (getenv("GMPI_ID") != NULL) /* In case we are using MPICH-GM */
     use_mpi = true;
-
-  /* Notes: Blue Gene/L also defines the BGLMPI_SIZE environment variable.
-   *        Blue Gene/P defines BG_SIZE (plus BG_MAPPING, and BG_RELEASE). */
-#elif   defined(__blrts__) || defined(__bgp__) \
-   || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
-  use_mpi = true;
 
 #elif defined(LAM_MPI)
   if (getenv("LAMRANK") != NULL)
