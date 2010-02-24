@@ -6,6 +6,8 @@
     config/cs_fortran.m4
     config/cs_mpi.m4
     configure.ac
+  modified routine:
+    src/base/cs_opts.c
 
 * 23/02/2010 - David Monfort <david.monfort@edf.fr>
   Fix PyQt dev tools detection (pyuic4/pyrcc4) for kfreebsd-* systems.
