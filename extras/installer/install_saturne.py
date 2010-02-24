@@ -315,6 +315,7 @@ class Setup:
         self.packages = {}
 
         url_cs = "http://research.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/%s"
+	# See below for kernel specific url
         url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/918391265/724961558/%s"
 
         # BFT library
@@ -361,6 +362,8 @@ class Setup:
                     url=url_cs)
 
         # Code_Saturne Kernel
+
+        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/918391265/569282765/%s"
 
         self.packages['ncs'] = \
             Package(name="NCS",
