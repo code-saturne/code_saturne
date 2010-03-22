@@ -3,7 +3,7 @@
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
 %
-%     Copyright (C) 1998-2008 EDF S.A., France
+%     Copyright (C) 1998-2010 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
 %
@@ -146,7 +146,7 @@ The following options are considered for the case:
         \item Scalar(s): temperature
         \item Physical properties: uniform and constant for specific heat and
 thermal conductivity and variable for density and dynamic viscosity
-        \item Pressure interpolation in stratified fows : improved
+        \item Pressure interpolation in stratified flows : improved
 \end{itemize}
 
 
@@ -196,9 +196,35 @@ Colors & Conditions \\
 \end{table}
 
 
+
+        \subsection{Variable density and dynamic viscosity}
+%------------------------------
+
+In this case the density and the dynamic are functions of the temperature, the following variation laws are specified in the Graphical User Interface:
+\begin{equation}
+\rho = T.(A.T + B) + C
+\end{equation}
+where $\rho$ is the density, $T$ is the temperature, $A = -4.0668\times10^{-3}$,
+$B =-5.0754\times 10^{-2}$ and $C = 1\,000.9$
+
+
+For the dynamic viscosity, the variation law is:
+
+\begin{equation}
+\mu = T.(T.(AM.T + BM) + CM) + DM
+\end{equation}
+where $\mu$ is the dynamic viscosity, $T$ is the temperature,
+$AM=-3.4016\times 10^{-9}$, $BM = 6.2332\times 10^{-7}$,
+$CM = -4.5577\times 10^{-5}$ and $DM = 1.6935\times 10^{-3}$
+
+In order for the variable density to have an effect on the flow, gravity must be
+set to a non-zero value. $\vect{g} = -9.81 \vect{e}_z$ will be specified in the
+Graphical Interface.
+
+
         \subsection{Parameters}
 %------------------------------
-All the parameter necessary to this study can be defined through the Graphical
+All the parameters necessary to this study can be defined through the Graphical
 Interface, except the variable fluid characteristics and the advanced
 post-processing features that have to be specified in user routines.
 
@@ -263,36 +289,7 @@ profil32: & $x=3.2\qquad$ & $y=0\qquad$ & $-0.2 \leqslant z \leqslant 0.2$ ($m$)
 
 The following routines have to be copied from the folder SRC/REFERENCE/base into the
 folder SRC\footnote{only when they appear in the SRC directory will they be
-taken into account by the code}: usphyv.F, usdpst.F, usvpst.F and usmpst.F
-
-
-$\bullet$ {\bfseries usphyv.F}\\
-This routine allows to specify variable physical properties, density and
-viscosity in particular. In this case, the following variation laws are specified:
-\begin{equation}
-\rho = T.(A.T + B) + C
-\end{equation}
-where $\rho$ is the density, $T$ is the temperature, $A = -4.0668\times10^{-3}$,
-$B =-5.0754\times 10^{-2}$ and $C = 1\,000.9$
-
-
-For the dynamic viscosity, the variation law is:
-
-\begin{equation}
-\mu = T.(T.(AM.T + BM) + CM) + DM
-\end{equation}
-where $\mu$ is the dynamic viscosity, $T$ is the temperature,
-$AM=-3.4016\times 10^{-9}$, $BM = 6.2332\times 10^{-7}$,
-$CM = -4.5577\times 10^{-5}$ and $DM = 1.6935\times 10^{-3}$
-
-
-\textbf{Note:} in the example routine, the examples are protected by a test to prevent any
-undesired use. Do not forget to deactivate them.
-
-In order for the variable density to have an effect on the flow, gravity must be
-set to a non-zero value. $\vect{g} = -9.81 \vect{e}_y$ will be specified in the
-Graphical Interface.
-
+taken into account by the code}: usdpst.f90, usvpst.f90 and usmpst.f90
 
 In this test case, advanced post-processing features will be used. A clip
 plane will be created, along the symmetry plane of the domain, on which the
@@ -307,15 +304,15 @@ as for the cells it contains.
 
 Three Fortran routines will be used:
 
-$\bullet$ {\bfseries usdpst.F}\\
+$\bullet$ {\bfseries usdpst.f90}\\
 This routine is called only once, at the beginning of the calculation. It allows
 to define the different writers and parts.
 
-$\bullet$ {\bfseries usmpst.F}\\
+$\bullet$ {\bfseries usmpst.f90}\\
 This routine is called at each time step. It allows to redefine the content of
 certain parts using any variable, especially the temperature for this case.
 
-$\bullet$ {\bfseries usvpst.F}\\
+$\bullet$ {\bfseries usvpst.f90}\\
 This routine is called at each time step. It allows to specify which variable
 will be written on which part.
 

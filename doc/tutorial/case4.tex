@@ -3,7 +3,7 @@
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
 %
-%     Copyright (C) 1998-2008 EDF S.A., France
+%     Copyright (C) 1998-2010 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
 %
@@ -134,6 +134,20 @@ Colors & Conditions \\
 \end{center}
 \end{table}
 
+        \subsection{Variable Density}
+%---------------------------------
+In this case the density is a function of temperature, the variation law is defined
+ in the Graphical User Interface although it can also be defined in a Fortran user 
+routine. The expression is:
+\begin{equation}
+\rho = T.(A.T + B) + C
+\end{equation}
+where $\rho$ is the density, $T$ is the temperature, $A = -4.0668\times10^{-3}$,
+$B =-5.0754\times 10^{-2}$ and $C = 1\,000.9$
+
+In order for the variable density to have an effect on the flow, gravity must be
+set to a non-zero value. $\vect{g} = -9.81 \vect{e}_y$ will be specified in the
+Graphical Interface.
 
 
         \subsection{Head loss}
@@ -141,7 +155,7 @@ Colors & Conditions \\
 
 To simulate the presence of an obstacle $0.20\ m$ large and $0.5\ m$ high in the
 vessel, a zone of head loss will be created in the domain (fig \ref{figante41}).
-The head loss zone is situated between the coordinates $X=0.2\ m$ and $X=0.4\ m$,
+The head loss zone is located between the coordinates $X=0.2\ m$ and $X=0.4\ m$,
 and $Y=-0.75\ m$ and $Y=-0.25\ m$. The head loss coefficient to apply is $10^4$
 and is isotropic.
 
@@ -154,14 +168,11 @@ and is isotropic.
 \end{figure}
 
 
-
         \subsection{Parameters}
 %------------------------------
 
-All the parameter necessary to this study can be defined through the Graphical
-Interface, except the time dependent boundary conditions, the variable
-density and the head loss that have to be specified in user routines. The
-calculation of the spatial average is also defined by a user routine.
+All the parameters necessary to this study can be defined through the Graphical
+Interface. However, the calculation of the spatial average is defined by a user routine.
 
 
 \begin{center}
@@ -179,22 +190,22 @@ The calculation will be run in parallel on 2 processors \\
 \end{tabular}\\
 \end{center}
 
-In order to paste the separate meshes into a single domain, colors 5, 24 and 32
-will have to be pasted through the Graphical Interface.
+In order to join the separate meshes into a single domain, colors 5, 24 and 32
+will have to be joined through the Graphical Interface.
 
 
         \subsection{User routines}
 %---------------------------------
 
-The following routines have to be copied from the folder FORT/USER/base into the
-folder FORT\footnote{only when they appear in the FORT directory will they be
-taken into account by the code}: usclim.F, usphyv.F, usproj.F and uskpdc.F.
+The following routines have to be copied from the folder SRC/REFERENCE/base into the
+folder SRC\footnote{only when they appear in the SRC directory will they be
+taken into account by the code}: usclim.f90, usphyv.f90, usproj.f90 and uskpdc.f90.
 
-$\bullet$ {\bfseries usclim.F}\\
+$\bullet$ {\bfseries usclim.f90}\\
 This routine allows to define advanced boundary conditions on the boundary
-faces. Even if usclim.F is used, all boundary conditions have to be defined in
+faces. Even if usclim.f90 is used, all boundary conditions have to be defined in
 the Graphical User Interface. Only the conditions that differ from this first
-definition need appear in usclim.F. The boundary conditions defined in usclim.F
+definition need to appear in usclim.f90. The boundary conditions defined in usclim.f90
 will replace those specified in the Graphical Interface.
 
 In this case, the temperature at entry is supposed variable in time, following
@@ -210,32 +221,14 @@ where $T$ is the temperature in \degresC\ and $t$ is the time in $s$.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm,height=6.4cm]{probe9.png}
+\includegraphics[width=9cm,height=6.4cm]{probe9}
 \caption{Time evolution of the temperature at inlet}
 \label{figp9_e4}
 \end{center}
 \end{figure}
 
 
-$\bullet$ {\bfseries usphyv.F}\\
-This routine allows to specify variable physical properties, density in
-particular. In this case, the variation law given as an example in the routine
-will be appropriate:
-\begin{equation}
-\rho = T.(A.T + B) + C
-\end{equation}
-where $\rho$ is the density, $T$ is the temperature, $A = -4.0668\times10^{-3}$,
-$B =-5.0754\times 10^{-2}$ and $C = 1\,000.9$
-
-\textbf{Note:} in the example routine, the example is protected by a test to prevent any
-undesired use. Do not forget to deactivate it.
-
-In order for the variable density to have an effect on the flow, gravity must be
-set to a non-zero value. $\vect{g} = -9.81 \vect{e}_y$ will be specified in the
-Graphical Interface.
-
-
-$\bullet$ {\bfseries usproj.F}\\
+$\bullet$ {\bfseries usproj.f90}\\
 This routine is called at the end of each time step and has access to the whole
 set of variables of the code. It is therefore useful for many user-specific
 post-processing, including the calculation of a spatial average in the present
@@ -250,28 +243,9 @@ yield for each processor the sum on the cells managed by this processor. In
 order to obtain the full sum, the parallelism routine PARSOM must be used (see
 example).
 
-\textbf{Note:} usproj.F contains many examples. They should be removed before
+\textbf{Note:} usproj.f90 contains many examples. They should be removed before
 running the case.
 
-
-$\bullet$ {\bfseries uskpdc.F}
-
-This routine allows to apply head loss on the fluid domain.
-
-The localization of the obstacle is made geometrically, using the
-coordinates of the centers of the cells.
-
-
-If $XYZCEN(1,IEL) \leq 0.40$ and $XYZCEN(1,IEL) \geq 0.20$ \\
-and $XYZCEN(2,IEL) \geq -0.75$ and $XYZCEN(2,IEL) \leq -0.25$\\
-then an isotropic head loss coefficient $K = 10^{4}$ is applied:\\
-
-$CKUPDC(IELPDC,1) = K*ABS(RTPA(IEL,IU(IPHAS)))$ \\
-$CKUPDC(IELPDC,2) = K*ABS(RTPA(IEL,IV(IPHAS)))$ \\
-$CKUPDC(IELPDC,3) = K*ABS(RTPA(IEL,IW(IPHAS)))$ \\
-$CKUPDC(IELPDC,4) = 0.$ \\
-$CKUPDC(IELPDC,5) = 0.$ \\
-$CKUPDC(IELPDC,6) = 0.$
 
         \subsection{Output management}
 %-------------------------------------
@@ -320,7 +294,7 @@ removed from the
 post-processing results\footnote{this can be very useful to save some disk space
 if some variables are of no interest, as post-processing files can be large}.
 
-Eventually, probes will be defined for chronological records, folowing the data
+Eventually, probes will be defined for chronological records, following the data
 given in figure \ref{figante25}. Then the {\itshape total pressure} will be
 deactivated from all probes and the {\itshape Velocity U} will be only activated
 on probes  1, 2, 6, 7 and 8.
@@ -337,7 +311,7 @@ Figure \ref{fige2_e4} shows the evolution of the spatial average of the temperat
 
 \begin{figure}[h]
 \begin{center}
-\includegraphics[width=9cm]{moytemp.png}
+\includegraphics[width=9cm]{moytemp}
 \caption{Evolution of spatial average of the temperature as a function of time}
 \label{fige2_e4}
 \end{center}
