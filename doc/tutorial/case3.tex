@@ -3,7 +3,7 @@
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
 %
-%     Copyright (C) 1998-2008 EDF S.A., France
+%     Copyright (C) 1998-2010 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
 %
@@ -28,7 +28,7 @@
 %-----------------------------------------------------------------------------------------------------------------
 \section{CASE 3:  Time dependent boundary conditions and variable fluid density}
 %-----------------------------------------------------------------------------------------------------------------
-In this case some boundary conditions will be time dependent and some physycal
+In this case some boundary conditions will be time dependent and some physical
 characteristics of the fluid will be dependent on the temperature.
 
         \subsection{Calculation options}
@@ -134,13 +134,28 @@ Colors & Conditions \\
 \end{center}
 \end{table}
 
+        \subsection{Variable Density}
+%---------------------------------
+In this case the density is a function of temperature, the variation law is defined
+ in the Graphical User Interface although it can also be defined in a Fortran user 
+routine. The expression is:
+\begin{equation}
+\rho = T.(A.T + B) + C
+\end{equation}
+where $\rho$ is the density, $T$ is the temperature, $A = -4.0668\times10^{-3}$,
+$B =-5.0754\times 10^{-2}$ and $C = 1\,000.9$
+
+In order for the variable density to have an effect on the flow, gravity must be
+set to a non-zero value. $\vect{g} = -9.81 \vect{e}_y$ will be specified in the
+Graphical Interface.
+
 
         \subsection{Parameters}
 %------------------------------
 
-All the parameter necessary to this study can be defined through the Graphical
-Interface, except the time dependent boundary conditions and the variable
-density that have to be specified in user routines.
+All the parameters necessary to this study can be defined through the Graphical
+Interface, except the time dependent boundary conditions that have to be specified 
+in user routines.
 
 \begin{center}
 \begin{tabular}{|l|c|}
@@ -156,22 +171,22 @@ Output period for post-processing files& $2$ \\
 \end{tabular}\\
 \end{center}
 
-In order to paste the separate meshes into a single domain, colors 5, 24 and 32
-will have to be pasted through the Graphical Interface.
+In order to join the separate meshes into a single domain, colors 5, 24 and 32
+will have to be joined through the Graphical Interface.
 
 
-        \subsection{User routines}
+        \subsection{User routine}
 %---------------------------------
 
-The following routines have to be copied from the folder FORT/USER/base into the
-folder FORT\footnote{only when they appear in the FORT directory will they be
-taken into account by the code}: usclim.F and usphyv.F.
+The following routine has to be copied from the folder SRC/REFERENCE/base into the
+folder SRC\footnote{only when it appears in the SRC directory will it be
+taken into account by the code}: usclim.f90.
 
-$\bullet$ {\bfseries usclim.F}\\
+{\bfseries usclim.f90}\\
 This routine allows to define advanced boundary conditions on the boundary
-faces. Even if usclim.F is used, all boundary conditions have to be defined in
+faces. Even if usclim.f90 is used, all boundary conditions have to be defined in
 the Graphical User Interface. Only the conditions that differ from this first
-definition need appear in usclim.F. The boundary conditions defined in usclim.F
+definition need to appear in usclim.f90. The boundary conditions defined in usclim.f90
 will replace those specified in the Graphical Interface.
 
 In this case, the temperature at entry is supposed variable in time, following
@@ -187,29 +202,12 @@ where $T$ is the temperature in \degresC\ and $t$ is the time in $s$.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=9cm,height=6.4cm]{probe9.png}
+\includegraphics[width=9cm,height=6.4cm]{probe9}
 \caption{Time evolution of the temperature at inlet}
 \label{figp9_e3}
 \end{center}
 \end{figure}
 
-
-$\bullet$ {\bfseries usphyv.F}\\
-This routine allows to specify variable physical properties, density in
-particular. In this case, the variation law given as an example in the routine
-will be appropriate:
-\begin{equation}
-\rho = T.(A.T + B) + C
-\end{equation}
-where $\rho$ is the density, $T$ is the temperature, $A = -4.0668\times10^{-3}$,
-$B =-5.0754\times 10^{-2}$ and $C = 1\,000.9$
-
-\textbf{Note:} in the example routine, the example is protected by a test to prevent any
-undesired use. Do not forget to deactivate it.
-
-In order for the variable density to have an effect on the flow, gravity must be
-set to a non-zero value. $\vect{g} = -9.81 \vect{e}_y$ will be specified in the
-Graphical Interface.
 
         \subsection{Output management}
 %-------------------------------------
@@ -259,7 +257,7 @@ removed from the
 post-processing results\footnote{this can be very useful to save some disk space
 if some variables are of no interest, as post-processing files can be large}.
 
-Eventually, probes will be defined for chronological records, folowing the data
+Eventually, probes will be defined for chronological records, following the data
 given in figure \ref{figante25}. Then the {\itshape total pressure} will be
 deactivated from all probes and the {\itshape Velocity U} will be only activated
 on probes  1, 2, 6, 7 and 8.
@@ -283,7 +281,7 @@ monitoring probe.
 \begin{figure}[hb]
 \begin{center}
 \begin{tabular}{cc}
-\includegraphics[width=11cm]{evotemp_case3.png} \\
+\includegraphics[width=11cm]{evotemp_case3} \\
 \end{tabular}
 \caption{Time evolution of temperature at monitoring probes for case 3}
 \label{fige3_e3}

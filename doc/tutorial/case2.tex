@@ -31,7 +31,7 @@
 %-----------------------------
 
 This aim of this case is to tackle the merging of initially separate meshes into
-a single fluid domain. The questions of mesh pasting and hanging nodes will be
+a single fluid domain. The questions of mesh joining and hanging nodes will be
 addressed. The test case will then be used to present more complex calculations,
 with time dependent variables and Fortran user routines.
 
@@ -105,14 +105,14 @@ variable in cases 3 and 4:
 %---------------------------------------
 
 Figure \ref{figante22} shows a global view of the mesh and some details of
-the pasting zones, to show that \CS can deal with hanging nodes.
+the joining zones, to show that \CS can deal with hanging nodes.
 This mesh is composed of 1\,650 cells, which is very small compared to those used in real
 studies. This is a deliberate choice so that tutorial calculations run fast.
 
 \begin{figure}[h!]
 \begin{center}
 \includegraphics[width=8.65cm,height=7.4cm]{fig05}
-\caption{View of the full domain mesh with zoom on the pasting regions}
+\caption{View of the full domain mesh with zoom on the joining regions}
 \label{figante22}
 \end{center}
 \end{figure}
@@ -122,7 +122,7 @@ studies. This is a deliberate choice so that tutorial calculations run fast.
 {\bfseries Coordinates system}: cartesian, origin on the edge of the main
 pipe at the outlet level, on the nozzle side (figure \ref{figante22})
 
-{\bfseries Mesh generator used}: SIMAIL and mesh pasting with the Preprocessor
+{\bfseries Mesh generator used}: SIMAIL and mesh joining with the Preprocessor
 of \CS (in order to deal with hanging nodes)
 
 {\bfseries Color definition}: see figure \ref{figante23}
@@ -290,8 +290,8 @@ Output period for post-processing files& $2$ \\
 \end{tabular}\\
 \end{center}
 
-In order to paste the separate meshes into a single domain, colors 5, 24 and 32
-will have to be pasted through the Graphical Interface.
+In order to join the separate meshes into a single domain, colors 5, 24 and 32
+will have to be joined through the Graphical Interface.
 
 
 
@@ -312,7 +312,7 @@ removed from the
 post-processing results\footnote{this can be very useful to save some disk space
 if some variables are of no interest, as post-processing files can be large}.
 
-Eventually, probes will be defined for chronological records, folowing the data
+Eventually, probes will be defined for chronological records, following the data
 given in figure \ref{figante25}. Then the {\itshape total pressure} will be
 deactivated for all probes and the {\itshape Velocity U} will only be activated
 on probes  1, 2, 6, 7 and 8.

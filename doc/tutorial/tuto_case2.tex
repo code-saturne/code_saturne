@@ -3,7 +3,7 @@
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
 %
-%     Copyright (C) 1998-2008 EDF S.A., France
+%     Copyright (C) 1998-2010 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
 %
@@ -27,30 +27,29 @@
 \section{SOLUTION FOR CASE 2}
 This case corresponds to a new study, in which there will be three calculation
 cases (cases 2, 3 and 4). All of them can be created in a single {\itshape
-cree\_sat} command, or additional cases can be added later. To test both
+code\_saturne create} command, or additional cases can be added later. To test both
 possibilities, first create the study directory, with cases directories CAS2
 and CAS4:\\
-{\itshape cree\_sat -etude FULL\_DOMAIN CAS2 CAS4}\\
+{\itshape code\_saturne create -s FULL\_DOMAIN CAS2 CAS4}\\
 then go in the study directory and add the CAS3 directory:\\
 {\itshape cd FULL\_DOMAIN}\\
-{\itshape cree\_sat -cas CAS3}
+{\itshape code\_saturne create -c CAS3}
 
-Go to the SCRIPT directory in CAS2,
+Go to the DATA directory in CAS2,
 open a new case and select the meshes to use. Click on the
-item {\itshape Solution Domain}. In this case the three meshes have to be
-pasted. So don't delete any mesh and activate the {\itshape Paste mesh} option by
-clicking it {\itshape on}. Additional information appears on the page. If it is
+heading {\itshape Calculation environment} then on the item {\itshape Meshes selection}. In this case the three meshes have to be
+joined. So don't delete any mesh and activate the {\itshape Join meshes} option by clicking in the box. Additional information appears on the page. If it is
 left untouched, the \CS Preprocessor will test all the boundary faces for
-potential pasting (based on geometrical criteria). To make mesh pasting more
+potential joining (based on geometrical criteria). To make mesh joining more
 efficient, this analysis can be restricted to a sub-set of boundary faces. This
 is the case in the present calculation, since only faces of colors 5, 24 and 34
-are liable to be pasted.
+are liable to be joined.
 
-Click on the {\itshape Add} icon to enter the list of colors to be pasted.
+Click on the {\itshape New} icon to enter the list of colors to be joined.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture02}
+\includegraphics[width=12cm]{V-40}
 \caption{Meshes: list of meshes}
 \label{fig2_e2}
 \end{center}
@@ -58,30 +57,14 @@ Click on the {\itshape Add} icon to enter the list of colors to be pasted.
 
 
 \newpage
-Clicking on {\itshape Add} opens a new window. Fill in the
-{\itshape Input references} for the color reference to be pasted: 5, 24 and 32.
-(different colors can be entered on a single line, separated by blanks). They
-will appear in the area above. Then click on {\itshape Validate}.
-
+Fill the array
+{\itshape References} for the color reference to be joined: 5, 24 and 32.
+(different colors can be entered on a single line, separated by blanks).
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture04}
-\caption{Meshes: Join a mesh}
-\label{fig4_e2}
-\end{center}
-\end{figure}
-
-
-\newpage
-The Preprocessor command for mesh pasting is now visible in the window (Fig
-\ref{fig5_e2}). It will automatically be transfered into the launch script when
-it is edited by the Interface.
-
-\begin{figure}[h!]
-\begin{center}
-\includegraphics[width=12cm]{c2_capture05}
-\caption{Meshes}
+\includegraphics[width=12cm]{V-41}
+\caption{Join a Mesh}
 \label{fig5_e2}
 \end{center}
 \end{figure}
@@ -93,7 +76,7 @@ In this case ``Unsteady flow'' must be selected in the
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture06}
+\includegraphics[width=12cm]{V-43}
 \caption{Thermophysical models - Analysis features - Unsteady flow}
 \label{fig6_e2}
 \end{center}
@@ -111,18 +94,16 @@ The characteristics of the thermal scalar are still the
 same. Its initial value is 20\degresC\ and it can vary between
 0\degresC\ and 400\degresC.
 
-To create an additional scalar, enter:\\
+To create an additional scalar, click on {\itshape Add}, then enter:\\
 \hspace*{1cm}$\bullet\ $its {\itshape Name}: scalar\_2\\
 \hspace*{1cm}$\bullet\ $its {\itshape Initial value}: 10\\
 \hspace*{1cm}$\bullet\ $its {\itshape Minimal value}: 0\\
 \hspace*{1cm}$\bullet\ $its {\itshape Maximal value}: 400
 
-Then click on {\itshape Create}; the scalar will appear on the list,
-below the thermal scalar.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture08}
+\includegraphics[width=12cm]{V-44}
 \caption{Additional scalar - User scalar definition}
 \label{fig8_e2}
 \end{center}
@@ -138,7 +119,7 @@ $0.895\times 10^{-4}\ m^{2}.s^{-1}$
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture09}
+\includegraphics[width=12cm]{V-45}
 \caption{Additional scalar - User scalar physical properties}
 \label{fig9_e2}
 \end{center}
@@ -148,7 +129,7 @@ $0.895\times 10^{-4}\ m^{2}.s^{-1}$
 \newpage
 Create the boundary zones. The procedure is the same as in case 1, but the
 colors are different. Note that colors 5 and 32 have completely disappeared in
-the pasting process (they are now internal faces and are not considered as
+the joining process (they are now internal faces and are not considered as
 boundaries), while some boundary faces of color 24 remain.\\
 Create the inlet, outlet
 and symmetry boundary zones with the following colors:\\
@@ -158,7 +139,7 @@ and symmetry boundary zones with the following colors:\\
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture10}
+\includegraphics[width=12cm]{V-46}
 \caption{Creation of the boundary zones}
 \label{fig10_e2}
 \end{center}
@@ -182,8 +163,8 @@ wall\_6 & 9 & wall & 31 or 33 \\
 \end{center}
 
 The ``wall\_1'' region combines color and geometrical criteria. The associated
-character string to enter in the ``Localization'' box is as follows:\\
-``24 and 0.1$<$=X and 0.5$>$=X''\footnote{Note that, due to the pasting process,
+character string to enter in the ``Selection criteria'' box is as follows:\\
+``24 and 0.1$<$=X and 0.5$>$=X''\footnote{Note that, due to the joining process,
 there are in fact no boundary faces of color 24 with X coordinate outside the
 [0.1;0.5] intervalle. The geometrical criterium is therefore not
 necessary. It is presented here to show the capacity of the face selection
@@ -191,7 +172,7 @@ module}.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture11}
+\includegraphics[width=10cm]{V-47}
 \caption{Creation of a wall boundary region}
 \label{fig11_e2}
 \end{center}
@@ -204,7 +185,7 @@ two separate zones, based on a geometrical criterium on $Y$.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture152}
+\includegraphics[width=9cm]{V-48}
 \caption{Creation of wall boundary regions}
 \label{fig152_e2}
 \end{center}
@@ -218,7 +199,7 @@ there are still no sliding walls.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture16}
+\includegraphics[width=12cm]{V-49}
 \caption{Dynamic variables boundary: inlet}
 \label{fig16_e2}
 \end{center}
@@ -226,34 +207,33 @@ there are still no sliding walls.
 
 
 \newpage
-To configure the scalar boundary conditions, click on the item
-{\itshape Scalars boundaries}.
-On all the walls, a default homogeneous Neumann condition is set for
-temperature, and Dirichlet conditions are specified for the passive scalar,
+To configure the scalar boundary conditions on the walls, select individually each wall in the item {\itshape Boundary conditions}.
+On all the walls, a default homogeneous prescribed flux is set for
+temperature, and prescribed values are specified for the passive scalar,
 according to the following table:
 \begin{center}
 \begin{tabular}{|c|c|c|}
 \hline
 Wall & Nature & Value \\
 \hline
-wall\_1 & Dirichlet  & 0 \\
+wall\_1 & Prescribed value  & 0 \\
 \hline
-wall\_2 & Dirichlet  & 5 \\
+wall\_2 & Prescribed value  & 5 \\
 \hline
-wall\_3 & Dirichlet  & 0 \\
+wall\_3 & Prescribed value  & 0 \\
 \hline
-wall\_4 & Dirichlet  & 25 \\
+wall\_4 & Prescribed value  & 25 \\
 \hline
-wall\_5 & Dirichlet  & 320 \\
+wall\_5 & Prescribed value  & 320 \\
 \hline
-wall\_6 & Dirichlet  & 40 \\
+wall\_6 & Prescribed value  & 40 \\
 \hline
 \end{tabular}
 \end{center}
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture21}
+\includegraphics[width=9cm]{V-50}
 \caption{Scalars boundaries: wall\_5}
 \label{fig21_e2}
 \end{center}
@@ -266,7 +246,7 @@ for temperature and 200 for the passive scalar.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture22}
+\includegraphics[width=8cm]{V-51}
 \caption{Scalars boundaries: inlet}
 \label{fig22_e2}
 \end{center}
@@ -276,25 +256,26 @@ for temperature and 200 for the passive scalar.
 \newpage
 Some calculation parameters now need to be defined.
 Go to the item {\itshape Time step} under the heading
-{\itshape Analysis control}. In our case the time step is
+{\itshape Numerical parameters}. In our case the time step is
 {\itshape Uniform and constant}. Set the number of iterations to 300 and the
 reference time step to $0.05\ s$.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture23}
+\includegraphics[width=12cm]{V-52}
 \caption{Time step setting}
 \label{fig23_e2}
 \end{center}
 \end{figure}
 
+No change is needed in the {\itshape Equation parameters} and {\itshape Global parameters} items.
 
 \newpage
-Go to the item {\itshape Output control} to set the output parameters.
+Go to the item {\itshape Output control} under the heading {\itshape Calculation control} to set the output parameters.
 
 Keep the default value for the output listing frequency.
 
-For the Post-processing, select the second option (output every 'n' time steps)
+For the Post-processing, select the third option (output every 'n' time steps)
 and set the value of 'n' to 2.
 
 Activate the post-processing on the boundary faces by ticking the
@@ -305,7 +286,7 @@ the boundary conditions for the passive scalar have been properly set.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture24}
+\includegraphics[width=12cm]{V-53}
 \caption{Output control: post-processing}
 \label{fig24_e2}
 \end{center}
@@ -315,11 +296,11 @@ the boundary conditions for the passive scalar have been properly set.
 \newpage
 In this case, chronological records on specified monitoring probes are needed.
 To define the probes, click on the
-{\itshape Monitoring points management} tab.
+{\itshape Monitoring points Coordinates} tab.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture25}
+\includegraphics[width=12cm]{V-54}
 \caption{Output control: monitoring points}
 \label{fig25_e2}
 \end{center}
@@ -328,27 +309,15 @@ To define the probes, click on the
 
 
 \newpage
-Enter the coordinates of the monitoring points you want to define. For the first point:\\
+Click on ``Add'' and enter the coordinates of the monitoring points you want to define. For the first point:\\
 \hspace*{1cm}$\bullet\ X = -0.25\ m$\\
 \hspace*{1cm}$\bullet\ Y = 2.25\ m$\\
 \hspace*{1cm}$\bullet\ Z = 0\ m$
 
-\begin{figure}[h!]
-\begin{center}
-\includegraphics[width=12cm]{c2_capture26}
-\caption{Output controls: monitoring points - $1^{st}$ point}
-\label{fig26_e2}
-\end{center}
-\end{figure}
-
-
-\newpage
-Then click on the {\itshape Add} button. The newly created point will appear in
-the window above.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture27}
+\includegraphics[width=8cm]{V-56}
 \caption{Output controls: monitoring points - $1^{st}$ point}
 \label{fig27_e2}
 \end{center}
@@ -382,7 +351,7 @@ Points & X(m) & Y(m) \\
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture28}
+\includegraphics[width=9cm]{V-57}
 \caption{Output control: monitoring points}
 \label{fig28_e2}
 \end{center}
@@ -392,7 +361,7 @@ Remember to save the Xml file regularly.
 
 
 \newpage
-Go to the item {\itshape Solution control} to define which variables will
+Go to the item {\itshape Volume solution control} to define which variables will
 appear in the listing, the post-processing and the chronological records.
 
 Uncheck the boxes in front of the {\itshape Pressure}, {\itshape Tubulent energy}
@@ -406,7 +375,7 @@ variables will be removed from the post-processing results.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture29}
+\includegraphics[width=12cm]{V-58}
 \caption{Solution control - Output configuration}
 \label{fig29_e2}
 \end{center}
@@ -416,19 +385,18 @@ variables will be removed from the post-processing results.
 \newpage
 Delete all the probe numbers for the {\itshape total\_pressure} variable. No
 chronological record will be created for this variable. As for the
-{\itshape VelocitU} variable, only select probes  1, 2, 6, 7 and 8. Time
+{\itshape VelocitX} variable, only select probes  1, 2, 6, 7 and 8. Time
 evolution on the other probes will not be recorded.
 
 \begin{figure}[h!]
 \begin{center}
-\includegraphics[width=12cm]{c2_capture30}
+\includegraphics[width=10cm]{V-59}
 \caption{Solution control - Probes}
 \label{fig30_e2}
 \end{center}
 \end{figure}
 
 
-No change is needed under the {\itshape Numerical parameters} heading.
 Switch to the {\itshape Calculation management} heading to prepare the launch
 script and run the calculation.
 
