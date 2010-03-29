@@ -56,24 +56,24 @@ subroutine uscfxi &
 ! Description
 ! ===========
 
-! This subroutine is similar to the user subroutine 'usiniv', but 
-! is dedicated to the compressible flow scheme. 
-! It is called at the beginning of the computation (only if it is 
-! not a restart), just before the time marching loop starts. 
-! It allows to initialize all the unknown variables. 
+! This subroutine is similar to the user subroutine 'usiniv', but
+! is dedicated to the compressible flow scheme.
+! It is called at the beginning of the computation (only if it is
+! not a restart), just before the time marching loop starts.
+! It allows to initialize all the unknown variables.
 
-! The standard initialization has been reproduced here as an example. 
+! The standard initialization has been reproduced here as an example.
 
-! More examples can be found in 'usiniv'. 
+! More examples can be found in 'usiniv'.
 
 
 ! Physical properties
 ! ===================
 
-! The physical properties (viscosity, specific heat, thermal 
-! conductivity, Schmidt number) that are stored in the arrays propce, 
-! propfa and propfb must not be modified here: if it is necessary to 
-! do so, it must be done in the dedicated user programme 'uscfpv'. 
+! The physical properties (viscosity, specific heat, thermal
+! conductivity, Schmidt number) that are stored in the arrays propce,
+! propfa and propfb must not be modified here: if it is necessary to
+! do so, it must be done in the dedicated user programme 'uscfpv'.
 
 
 ! Cells identification
@@ -239,7 +239,7 @@ idebra = idbra0
 imodif = 1
 
 !===============================================================================
-! 3. Unknown variable initialization 
+! 3. Unknown variable initialization
 !      for initial calculations (not in case of restart)
 !===============================================================================
 
@@ -256,16 +256,16 @@ if ( isuite.eq.0 ) then
   enddo
 
 
-! --- User defined scalars 
+! --- User defined scalars
 
-  ! If there are user defined scalars 
+  ! If there are user defined scalars
   if(nscaus.gt.0) then
-    ! For each scalar 
+    ! For each scalar
     do iscal = 1, nscaus
       ! If the scalar is associated to the considered phase iphas
       if(iphsca(iscal).eq.iphas) then
 
-        ! Initialize each cell value 
+        ! Initialize each cell value
         do iel = 1, ncel
           rtp(iel,isca(iscal)) = 0.d0
         enddo
@@ -275,26 +275,26 @@ if ( isuite.eq.0 ) then
   endif
 
 
-! --- Pressure, Density, Temperature, Total Energy 
+! --- Pressure, Density, Temperature, Total Energy
 
-  ! Only 2 out of these 4 variables are independent: one may choose to 
-  ! initialize any pair of variables picked out of these 4, except 
-  ! (Temperature-Energy). The remaining 2 variables will be deduced 
-  ! automatically.  
+  ! Only 2 out of these 4 variables are independent: one may choose to
+  ! initialize any pair of variables picked out of these 4, except
+  ! (Temperature-Energy). The remaining 2 variables will be deduced
+  ! automatically.
 
 
-  ! Initialize 2 and only 2 variables 
+  ! Initialize 2 and only 2 variables
 
-  !   To do so, set iutile=1 for each of the 2 selected variables 
+  !   To do so, set iutile=1 for each of the 2 selected variables
   !             and iutile=0 for each of the 2 others
 
-  !   In the example provided below, Pressure and Temperature are 
+  !   In the example provided below, Pressure and Temperature are
   !   initialized.
 
 
-  ! iccfth indicates which variables have been set: 
-  !   it is completed automatically for each variable and 
-!     it must not be modified. 
+  ! iccfth indicates which variables have been set:
+  !   it is completed automatically for each variable and
+!     it must not be modified.
   iccfth = 10000
 
 
@@ -335,9 +335,9 @@ if ( isuite.eq.0 ) then
   endif
 
 
-  ! ** The following subroutine returns automatically the values for the 
-  ! two remaining variables that need to be computed, using the 
-  ! indicator iccfth.  
+  ! ** The following subroutine returns automatically the values for the
+  ! two remaining variables that need to be computed, using the
+  ! indicator iccfth.
 
   call uscfth                                                     &
   !==========

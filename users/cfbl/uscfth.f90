@@ -52,16 +52,16 @@ subroutine uscfth &
 
 !    User subroutine.
 
-!    Define thermodynamic laws (especially for the compressible flow scheme). 
+!    Define thermodynamic laws (especially for the compressible flow scheme).
 
-!    This user subroutine is mandatory for the compressible flow scheme. 
+!    This user subroutine is mandatory for the compressible flow scheme.
 
 
 ! Introduction
 ! ============
 
-! This user subroutine allows to define all physical properties and 
-! variables, through the implementation of thermodynamic laws. 
+! This user subroutine allows to define all physical properties and
+! variables, through the implementation of thermodynamic laws.
 
 
 ! Avalable thermodynamic laws
@@ -75,84 +75,84 @@ subroutine uscfth &
 ! Implemented calculations
 ! ========================
 
-! This user subroutine implements the computation of several quantities. 
-! Each calculation has to be explicitly implemented in the appropriate 
-! section below (already done for perfect gas). 
+! This user subroutine implements the computation of several quantities.
+! Each calculation has to be explicitly implemented in the appropriate
+! section below (already done for perfect gas).
 
 
 ! Selection of the quantity to return
 ! ===================================
 
-! When calling the user subroutine, the integer 'iccfth' specifies which 
+! When calling the user subroutine, the integer 'iccfth' specifies which
 ! calculation has to be performed (and which quantity has to be returned).
-! The values for 'iccfth' for each case are provided below. 
+! The values for 'iccfth' for each case are provided below.
 ! For some configurations, two systems of references are used for 'iccfth'
-! (this is useful to make tests easier to implement in the calling 
-! subroutines): both systems are explained hereafter for information. 
+! (this is useful to make tests easier to implement in the calling
+! subroutines): both systems are explained hereafter for information.
 
-! First system: 
+! First system:
 
-!   the variables are referred to using an index i: 
-!     Variable  P  rho  T   e   h   s  'internal energy - CvT' 
-!        Index  1   2   3   4   5   6              7      
+!   the variables are referred to using an index i:
+!     Variable  P  rho  T   e   h   s  'internal energy - CvT'
+!        Index  1   2   3   4   5   6              7
 
 !   iccfth is as follows, depending on which quantity needs to be computed:
-!     - compute all variables at cell centers from variable i 
-!                                              and variable j (i<j): 
-!               => iccfth = 10*i+j 
-!     - compute all variables at boundary faces from variable i 
-!                                                and variable j (i<j): 
-!               => iccfth = 10*i+j+900 
- 
-! Second system:  
+!     - compute all variables at cell centers from variable i
+!                                              and variable j (i<j):
+!               => iccfth = 10*i+j
+!     - compute all variables at boundary faces from variable i
+!                                                and variable j (i<j):
+!               => iccfth = 10*i+j+900
 
-!   the variables are referred to using a different index i: 
+! Second system:
+
+!   the variables are referred to using a different index i:
 !     Variable  P  rho  T  e  s
 !        Index  2   3   5  7  13
 
 !   iccfth is as follows, depending on which quantity needs to be computed:
-!     - compute all variables at cell centers from variable i 
-!                                              and variable j (i<j): 
-!               => iccfth = i*j*10000 
-!     - compute all variables at boundary faces from variable i 
-!                                                and variable j (i<j): 
-!               => iccfth = i*j*10000+900 
+!     - compute all variables at cell centers from variable i
+!                                              and variable j (i<j):
+!               => iccfth = i*j*10000
+!     - compute all variables at boundary faces from variable i
+!                                                and variable j (i<j):
+!               => iccfth = i*j*10000+900
 
-! Other quantities: 
+! Other quantities:
 
 !   the variables are referred to using the index of the first system.
 !   iccfth is defined as follows:
-!     - compute variable i at cell centers (for s and 'internal energy-CvT') 
+!     - compute variable i at cell centers (for s and 'internal energy-CvT')
 !               => iccfth = i
 !                                   \partial(variable i)|
-!     - compute partial derivative  --------------------|           
-!                                   \partial(variable j)|variable k  
-!               => iccfth = 100*i+10*j+k 
+!     - compute partial derivative  --------------------|
+!                                   \partial(variable j)|variable k
+!               => iccfth = 100*i+10*j+k
 !     - compute boundary conditions, resp. symmetry, wall, inlet, outlet:
 !               => iccfth = 91, 92, 93, 94
 
 
-! Values of iccfth 
+! Values of iccfth
 ! ================
 
-! To summarize, the values for iccfth are as follows: 
+! To summarize, the values for iccfth are as follows:
 
-!   Values at the cell centers: 
+!   Values at the cell centers:
 
 !   -> set calculation options (cst/variable cp)   : iccfth = -1
 !   -> set default initialization                  : iccfth =  0
 !   -> calculate gamma                             : iccfth =  1
 !   -> verification of the density                 : iccfth = -2
 !   -> verification of the energy                  : iccfth = -4
-!   -> calculation of temperature and energy 
+!   -> calculation of temperature and energy
 !                     from pressure and density    : iccfth =  12 or  60000
-!   -> calculation of density and energy 
+!   -> calculation of density and energy
 !                     from pressure and temperature: iccfth =  13 or 100000
-!   -> calculation of density and temperature 
+!   -> calculation of density and temperature
 !                     from pressure and energy     : iccfth =  14 or 140000
-!   -> calculation of pressure and energy 
+!   -> calculation of pressure and energy
 !                     from density and temperature : iccfth =  23 or 150000
-!   -> calculation of pressure and temperature 
+!   -> calculation of pressure and temperature
 !                     from density and energy      : iccfth =  24 or 210000
 !
 !                      2    dP |
@@ -172,23 +172,23 @@ subroutine uscfth &
 !
 !   Values at the boundary faces
 !
-!   -> calculation of the boundary conditions:  
+!   -> calculation of the boundary conditions:
 !     - symmetry                                   : iccfth =  90
 !     - wall                                       : iccfth =  91
 !     - inlet                                      : iccfth =  92
 !     - outlet                                     : iccfth =  93
 !     - different outlet,not implemented yet       : iccfth =  94
 !
-!   -> calculation of the variables at the faces for boundary conditions:  
-!     - temperature and energy 
+!   -> calculation of the variables at the faces for boundary conditions:
+!     - temperature and energy
 !         from pressure and density                : iccfth = 912 ou  60900
-!     - density and energy 
+!     - density and energy
 !         from pressure and temperature            : iccfth = 913 ou 100900
-!     - density and temperature 
+!     - density and temperature
 !         from pressure and energy                 : iccfth = 914 ou 140900
-!     - pressure and energy 
+!     - pressure and energy
 !         from density and temperature             : iccfth = 923 ou 150900
-!     - pressure and temperature 
+!     - pressure and temperature
 !         from density and energy                  : iccfth = 924 ou 210900
 
 
@@ -364,7 +364,7 @@ idebra = idbra0
 ! Error indicator (stop if non zero)
 ierr   = 0
 
-! Rank of the variables in their associated arrays 
+! Rank of the variables in their associated arrays
 if(iccfth.ge.0.or.iccfth.le.-2) then
   ipriph = ipr(iphas)
   irhiph = isca(irho  (iphas))
@@ -382,7 +382,7 @@ if(iccfth.ge.0.or.iccfth.le.-2) then
   iclw = iclrtp(iwiph,icoef)
 endif
 
-! For calculation of values at the cell centers, 
+! For calculation of values at the cell centers,
 !   ifac0 > indicates that the array rtp must be modified
 ! For calculation of values at the cell faces,
 !   ifac0 is the number of the current face
@@ -402,7 +402,7 @@ do iiph = 1, nphas
 enddo
 
 
-! Warning: once the thermodynamic law has been chosen, 
+! Warning: once the thermodynamic law has been chosen,
 ! =======  the remainder of the user subroutine must be modified
 
 
@@ -413,7 +413,7 @@ enddo
 if(ieos(iphas).eq.1) then
 
 !===============================================================================
-! 2.1. Parameters to be completed by the user 
+! 2.1. Parameters to be completed by the user
 !===============================================================================
 
 ! For each phase
@@ -439,10 +439,10 @@ if(ieos(iphas).eq.1) then
 
   if(iccfth.gt.0) then
 
-    ! Gamagp is supposed to be superior or equal to 1. 
-    ! It is computed at each call, even if this may seem costly, 
-    !   to be coherent with the "constant gamma" case for which this 
-    !   constant is not saved. A ''save'' instruction and a test would  
+    ! Gamagp is supposed to be superior or equal to 1.
+    ! It is computed at each call, even if this may seem costly,
+    !   to be coherent with the "constant gamma" case for which this
+    !   constant is not saved. A ''save'' instruction and a test would
     !   be sufficient to avoid computing gamagp at each call if necessary.
 
     gamagp = 1.d0 + rr/(xmasml*cp0(iphas)-rr)
@@ -452,7 +452,7 @@ if(ieos(iphas).eq.1) then
       call csexit (1)
     endif
 
-    ! Gamma is returned if required 
+    ! Gamma is returned if required
 
     if(iccfth.eq.1) then
       gamagr(1) = gamagp
@@ -461,12 +461,12 @@ if(ieos(iphas).eq.1) then
   endif
 
 
-! --- Calculation options: constant Cp and Cv (perfect gas) 
+! --- Calculation options: constant Cp and Cv (perfect gas)
 
   if(iccfth.eq.-1) then
 
     ! The value for the isobaric specific heat Cp0 must be provided in
-    !   the user subroutine ''usini1''. The value for the isochoric 
+    !   the user subroutine ''usini1''. The value for the isochoric
     !   specific heat Cv0 is calculated in a subsequent section (from Cp0)
 
     icp(iphas) = 0
@@ -475,7 +475,7 @@ if(ieos(iphas).eq.1) then
 
 ! --- Default initializations (before uscfxi)
 
-!     T0 is positive (this assumption has been checked in 
+!     T0 is positive (this assumption has been checked in
 !       the user programme 'verini')
 
   elseif(iccfth.eq.0) then
@@ -496,8 +496,8 @@ if(ieos(iphas).eq.1) then
 
     ! If the density is lower or equal to zero: clipping, write and stop.
     !   Indeed, if this is the case, the thermodynamic computations will
-    !   most probably fail. 
-    ! This call is done at the end of the density calculation (after 
+    !   most probably fail.
+    ! This call is done at the end of the density calculation (after
     !   a classical clipping and before parallel communications).
 
     ierr = 0
@@ -516,13 +516,13 @@ if(ieos(iphas).eq.1) then
     endif
 
 
-! --- Verification of the energy 
+! --- Verification of the energy
 
   elseif(iccfth.eq.-4) then
 
     ! If the total energy <= zero: clipping, write and stop
     !   Indeed, if this is the case, the thermodynamic computations will
-    !   most probably fail. 
+    !   most probably fail.
 
     ierr = 0
     do iel = 1, ncel
@@ -558,8 +558,8 @@ if(ieos(iphas).eq.1) then
         write(nfecra,3010)rtp(iel,irhiph),iel
       endif
     enddo
-    ! Stop if a negative value is detected (since the density has been 
-    ! provided by the user, one potential cause is a wrong user 
+    ! Stop if a negative value is detected (since the density has been
+    ! provided by the user, one potential cause is a wrong user
     ! initialization)
     if(ierr.eq.1) then
       call csexit (1)
@@ -574,7 +574,7 @@ if(ieos(iphas).eq.1) then
                                        + rtp(iel,iwiph)**2 )
     enddo
 
-    ! Transfer to the array rtp 
+    ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,itkiph) = sorti1(iel)
@@ -594,8 +594,8 @@ if(ieos(iphas).eq.1) then
         write(nfecra,2010)rtp(iel,itkiph),iel
       endif
     enddo
-    ! Stop if a negative value is detected (since the temperature has been 
-    ! provided by the user, one potential cause is a wrong user 
+    ! Stop if a negative value is detected (since the temperature has been
+    ! provided by the user, one potential cause is a wrong user
     ! initialization: a value not provided in Kelvin for example)
     if(ierr.eq.1) then
       call csexit (1)
@@ -610,7 +610,7 @@ if(ieos(iphas).eq.1) then
                                        + rtp(iel,iwiph)**2 )
     enddo
 
-    ! Transfer to the array rtp 
+    ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,irhiph) = sorti1(iel)
@@ -636,7 +636,7 @@ if(ieos(iphas).eq.1) then
       sorti2(iel) = xmasml * (gamagp-1.d0) * enint / rr
     enddo
 
-    ! Transfer to the array rtp 
+    ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,irhiph) = sorti1(iel)
@@ -658,7 +658,7 @@ if(ieos(iphas).eq.1) then
                                        + rtp(iel,iwiph)**2 )
     enddo
 
-    ! Transfer to the array rtp 
+    ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,ipriph) = sorti1(iel)
@@ -684,7 +684,7 @@ if(ieos(iphas).eq.1) then
       sorti2(iel) = xmasml * (gamagp-1.d0) * enint / rr
     enddo
 
-    ! Transfer to the array rtp 
+    ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,ipriph) = sorti1(iel)
@@ -699,8 +699,8 @@ if(ieos(iphas).eq.1) then
 
   elseif(iccfth.eq.126) then
 
-    ! Verification of the values of the density 
-    !   This test can be discarded to reduce the CPU time (if 
+    ! Verification of the values of the density
+    !   This test can be discarded to reduce the CPU time (if
     !     density is <= 0, the calculation will simply fail)
     !   It is discarded here with iutile = 0
     iutile = 0
@@ -727,7 +727,7 @@ if(ieos(iphas).eq.1) then
   elseif(iccfth.eq.162) then
 
     ! Verification of the values of the density
-    !   This test can be discarded to reduce the CPU time (if 
+    !   This test can be discarded to reduce the CPU time (if
     !     density is <= 0, the calculation will simply fail)
     !   It is discarded here with iutile = 0
     iutile = 0
@@ -748,7 +748,7 @@ if(ieos(iphas).eq.1) then
     enddo
 
 
-! --- Calculation of the isochoric specific heat 
+! --- Calculation of the isochoric specific heat
 
     ! It is a constant: nothing to do
 
@@ -761,7 +761,7 @@ if(ieos(iphas).eq.1) then
   elseif(iccfth.eq.6) then
 
     ! Verification of the values of the density
-    !   This test can be discarded to reduce the CPU time (if 
+    !   This test can be discarded to reduce the CPU time (if
     !     density is <= 0, the calculation will simply fail)
     ierr = 0
     do iel = 1, ncel
@@ -778,18 +778,18 @@ if(ieos(iphas).eq.1) then
     enddo
 
 
-! --- Calculation of 'internal energy - Cv.T' 
+! --- Calculation of 'internal energy - Cv.T'
 
   elseif(iccfth.eq.7) then
 
-    ! It is zero for a perfect gas 
+    ! It is zero for a perfect gas
 
-    !   At the cell centers 
+    !   At the cell centers
     do iel = 1, ncel
       sorti1(iel) = 0.d0
     enddo
 
-    !   On the boundary faces  
+    !   On the boundary faces
     do ifac = 1, nfabor
       sorti2(ifac) = 0.d0
     enddo
@@ -804,7 +804,7 @@ if(ieos(iphas).eq.1) then
     ifac = ifac0
     iel  = ifabor(ifac)
 
-    ! Calculation of the Mach number at the boundary face, using the 
+    ! Calculation of the Mach number at the boundary face, using the
     !   cell center velocity projected on the vector normal to the boundary
     xmach =                                                       &
          ( rtp(iel,iuiph)*surfbo(1,ifac)                          &
@@ -812,13 +812,13 @@ if(ieos(iphas).eq.1) then
          + rtp(iel,iwiph)*surfbo(3,ifac) ) / ra(isrfbn+ifac-1)    &
          / sqrt( gamagp * rtp(iel,ipriph) / rtp(iel,irhiph) )
 
-    ! Pressure 
+    ! Pressure
 
-    !   A Neumann boundary condition is used. This does not allow to use 
-    !     the Rusanov scheme, but some stabilization effect is expected. 
-    !     A test based on the value of coefb at the previous time step 
-    !     is implemented to avoid oscillating between a rarefaction 
-    !     situation and a shock configuration from one time step to the 
+    !   A Neumann boundary condition is used. This does not allow to use
+    !     the Rusanov scheme, but some stabilization effect is expected.
+    !     A test based on the value of coefb at the previous time step
+    !     is implemented to avoid oscillating between a rarefaction
+    !     situation and a shock configuration from one time step to the
     !     next.
 
     !   Rarefaction
@@ -828,8 +828,8 @@ if(ieos(iphas).eq.1) then
         coefb(ifac,iclp) = (1.d0 + (gamagp-1.d0)/2.d0 * xmach)    &
              ** (2.d0*gamagp/(gamagp-1.d0))
       else
-        ! In case the rarefaction is too strong, a zero Dirichlet value 
-        !   is used for pressure (the value of coefb is used here as an 
+        ! In case the rarefaction is too strong, a zero Dirichlet value
+        !   is used for pressure (the value of coefb is used here as an
         !   indicator and will be modified later in cfxtcl)
         coefb(ifac,iclp) = rinfin
       endif
@@ -854,36 +854,36 @@ if(ieos(iphas).eq.1) then
     ifac = ifac0
     iel  = ifabor(ifac)
 
-    ! A zero flux condition (homogeneous Neumann condition) is 
+    ! A zero flux condition (homogeneous Neumann condition) is
     !   prescribed by default.
     ! No user input required
 
 
 !  -- Subsonic inlet with prescribed density and velocity
 
-    ! The subsonic nature of the inlet is postulated. 
+    ! The subsonic nature of the inlet is postulated.
 
-    ! Further testing may be required here. Contrary to the initial 
-    !   development, an explicit Dirichlet condition is prescribed for 
-    !   pressure instead of a Neumann condition (however, the same 
-    !   physical value for pressure is used). 
+    ! Further testing may be required here. Contrary to the initial
+    !   development, an explicit Dirichlet condition is prescribed for
+    !   pressure instead of a Neumann condition (however, the same
+    !   physical value for pressure is used).
     ! The advantage of this approach is to allow the use of the Rusanov
-    !   scheme to stabilize the user defined inlet conditions. 
-    ! Moreover, with this approach, coefb does not have to be filled in 
-    !   here (it is not a major point, since coefb has to be filled in 
-    !   for the wall boundary condition anyway)  
-    ! Shall an oscillatory behavior (in time) be observed, it might be 
-    !   worth trying to add a test to avoid switching between  
-    !   rarefaction and shock from one time step to the other (just as 
-    !   for the wall boundary condition).  
-    ! The relevance of this approach remains to be demonstrated. 
+    !   scheme to stabilize the user defined inlet conditions.
+    ! Moreover, with this approach, coefb does not have to be filled in
+    !   here (it is not a major point, since coefb has to be filled in
+    !   for the wall boundary condition anyway)
+    ! Shall an oscillatory behavior (in time) be observed, it might be
+    !   worth trying to add a test to avoid switching between
+    !   rarefaction and shock from one time step to the other (just as
+    !   for the wall boundary condition).
+    ! The relevance of this approach remains to be demonstrated.
 
   elseif(iccfth.eq.92) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-    ! Calculation of the Mach number at the boundary face, using the 
+    ! Calculation of the Mach number at the boundary face, using the
     !   cell center velocity projected on the vector normal to the boundary
     xmachi =                                                      &
          ( rtp(iel,iuiph)*surfbo(1,ifac)                          &
@@ -916,7 +916,7 @@ if(ieos(iphas).eq.1) then
            + sqrt(1.d0 + (gamagp+1.d0)**2/16.d0*dxmach**2) )  )
     endif
 
-    ! This choice overrides the previous Rusanov choice 
+    ! This choice overrides the previous Rusanov choice
     coefa(ifac,iclp) = rtp(iel,ipriph)
 
     ! Total energy
@@ -926,15 +926,15 @@ if(ieos(iphas).eq.1) then
                 + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
 
-!  -- Subsonic inlet with prescribed mass and enthalpy flow rates 
+!  -- Subsonic inlet with prescribed mass and enthalpy flow rates
     ! The quantities prescribed are rho*u and rho*u*h
 
-    ! The subsonic nature of the inlet is postulated. 
+    ! The subsonic nature of the inlet is postulated.
 
-    ! This section remains to be implemented: stop for the moment 
+    ! This section remains to be implemented: stop for the moment
 
-    ! One may proceed as follows: 
-    !   Pressure computed with a Newton method 
+    ! One may proceed as follows:
+    !   Pressure computed with a Newton method
     !   Velocity and density computed from pressure
     !   Total energy computed from enthalpy
     !   (written on paper, to be implemented: contact the user support)
@@ -950,16 +950,16 @@ if(ieos(iphas).eq.1) then
     !==========
 
 
-!  -- Subsonic outlet 
+!  -- Subsonic outlet
 
-    ! The subsonic nature of the inlet is postulated. 
+    ! The subsonic nature of the inlet is postulated.
 
   elseif(iccfth.eq.93) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-    ! Rarefaction case 
+    ! Rarefaction case
     if(coefa(ifac,iclp).le.rtp(iel,ipriph)) then
 
       ! Density
@@ -994,7 +994,7 @@ if(ieos(iphas).eq.1) then
            + 0.5d0*(coefa(ifac,iclu)**2                           &
                   + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
-    ! Shock 
+    ! Shock
     else
 
       ! Density
@@ -1038,9 +1038,9 @@ if(ieos(iphas).eq.1) then
     endif
 
 
-! --- Calculation of temperature and energy from pressure and density 
+! --- Calculation of temperature and energy from pressure and density
 
-    ! It is postulated that the pressure and density values are 
+    ! It is postulated that the pressure and density values are
     !   strictly positive
 
   elseif(iccfth.eq.912.or.iccfth.eq.60900) then
@@ -1059,7 +1059,7 @@ if(ieos(iphas).eq.1) then
                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 )
 
 
-! --- Calculation of density and energy from pressure and temperature 
+! --- Calculation of density and energy from pressure and temperature
 
   elseif(iccfth.eq.913.or.iccfth.eq.100900) then
 
@@ -1083,7 +1083,7 @@ if(ieos(iphas).eq.1) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
-    
+
     ! Density
     coefa(ifac,iclr) = coefa(ifac,iclp)/( (gamagp-1.d0)*          &
          (coefa(ifac,icle)                                        &
@@ -1113,7 +1113,7 @@ if(ieos(iphas).eq.1) then
                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 )
 
 
-! --- Calculation of pressure and temperature from density and energy 
+! --- Calculation of pressure and temperature from density and energy
 
   elseif(iccfth.eq.924.or.iccfth.eq.210900) then
 
@@ -1138,7 +1138,7 @@ if(ieos(iphas).eq.1) then
 
 
 !===============================================================================
-! 3. Perfect gas with variable gamma 
+! 3. Perfect gas with variable gamma
 !===============================================================================
 
 ! This section requires further checking and testing
@@ -1148,7 +1148,7 @@ elseif(ieos(iphas).eq.2) then
 !===============================================================================
 
 !===============================================================================
-! 3.1. Parameters to be completed by the user 
+! 3.1. Parameters to be completed by the user
 !===============================================================================
 
 
@@ -1174,7 +1174,7 @@ elseif(ieos(iphas).eq.2) then
 
     if(iccfth.gt.0) then
 
-      ! Calculation of the molar mass of the mixture at cell centers  
+      ! Calculation of the molar mass of the mixture at cell centers
       do iel = 1, ncel
         xmasmr(iel) = 1.d0 / ( rtp(iel,isca(1))/cstgr(1)          &
                              + rtp(iel,isca(2))/cstgr(2)          &
@@ -1198,7 +1198,7 @@ elseif(ieos(iphas).eq.2) then
 ! End of the examples
 
 
-! Verification of the values of gamagr: gamagr >= 1., otherwise stop 
+! Verification of the values of gamagr: gamagr >= 1., otherwise stop
 
   ierr = 0
 
@@ -1214,7 +1214,7 @@ elseif(ieos(iphas).eq.2) then
   endif
 
 
-! --- Calculation options: variable Cp and Cv  
+! --- Calculation options: variable Cp and Cv
 !     (isobaric and isochoric specific heat)
 
   if(iccfth.eq.-1) then
@@ -1225,7 +1225,7 @@ elseif(ieos(iphas).eq.2) then
     cv0(iphas) = epzero
 
 
-! Default initializations 
+! Default initializations
 
   elseif(iccfth.eq.0) then
 
@@ -1256,7 +1256,7 @@ elseif(ieos(iphas).eq.2) then
 
     enddo
 
-    ! Transfer to the array rtp 
+    ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,itkiph) = sorti1(iel)
@@ -1283,7 +1283,7 @@ elseif(ieos(iphas).eq.2) then
 
     enddo
 
-    ! Transfer to the array rtp 
+    ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,irhiph) = sorti1(iel)
@@ -1309,7 +1309,7 @@ elseif(ieos(iphas).eq.2) then
 
     enddo
 
-    ! Transfer to the array rtp 
+    ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,irhiph) = sorti1(iel)
@@ -1336,7 +1336,7 @@ elseif(ieos(iphas).eq.2) then
 
     enddo
 
-    ! Transfer to the array rtp 
+    ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,ipriph) = sorti1(iel)
@@ -1362,7 +1362,7 @@ elseif(ieos(iphas).eq.2) then
 
     enddo
 
-    ! Transfer to the array rtp 
+    ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
         rtp(iel,ipriph) = sorti1(iel)
@@ -1378,7 +1378,7 @@ elseif(ieos(iphas).eq.2) then
 
     do iel = 1, ncel
 
-      ! Verification of the positivity of the pressure 
+      ! Verification of the positivity of the pressure
       if(rtp(iel,ipriph).lt.0.d0) then
         write(nfecra,1110) iel , rtp(iel,ipriph)
         ierr = 1
@@ -1427,7 +1427,7 @@ elseif(ieos(iphas).eq.2) then
     if(ierr.eq.1) call csexit (1)
 
 
-! --- Calculation of the isochoric specific heat: Cv = Cp - R/M 
+! --- Calculation of the isochoric specific heat: Cv = Cp - R/M
 
   elseif(iccfth.eq.432) then
 
@@ -1449,7 +1449,7 @@ elseif(ieos(iphas).eq.2) then
 
     do iel = 1, ncel
 
-      ! Verification of the positivity of the pressure 
+      ! Verification of the positivity of the pressure
       if(rtp(iel,ipriph).lt.0.d0) then
         write(nfecra,1310) iel , rtp(iel,ipriph)
         ierr = 1
@@ -1469,22 +1469,22 @@ elseif(ieos(iphas).eq.2) then
 
     enddo
 
-    ! Stop if error detected 
+    ! Stop if error detected
     if(ierr.eq.1) call csexit (1)
 
 
-! --- Calculation of 'internal energy - Cv.T' 
+! --- Calculation of 'internal energy - Cv.T'
 
   elseif(iccfth.eq.7) then
 
-    ! It is zero for a perfect gas 
+    ! It is zero for a perfect gas
 
-    !   At the cell centers 
+    !   At the cell centers
     do iel = 1, ncel
       sorti1(iel) = 0.d0
     enddo
 
-    !   On the boundary faces  
+    !   On the boundary faces
     do ifac = 1, nfabor
       sorti2(ifac) = 0.d0
     enddo
@@ -1495,14 +1495,14 @@ elseif(ieos(iphas).eq.2) then
 
 ! --- Calculation of the boundary conditions on the face ifac = ifac0
 
-!  -- Wall/symmetry 
+!  -- Wall/symmetry
 
   elseif(iccfth.eq.91) then
 
     ifac = ifac0
     iel  = ifabor(ifac)
 
-    ! Calculation of the Mach number at the boundary face, using the 
+    ! Calculation of the Mach number at the boundary face, using the
     !   cell center velocity projected on the vector normal to the boundary
     xmach = ( rtp(iel,iuiph)*surfbo(1,ifac)                       &
            + rtp(iel,iviph)*surfbo(2,ifac)                        &
@@ -1511,7 +1511,7 @@ elseif(ieos(iphas).eq.2) then
 
     coefa(ifac,iclp) = 0.d0
 
-    ! Pression and entropy: rarefaction 
+    ! Pression and entropy: rarefaction
 
     if(xmach.le.0.d0 .and. xmach.gt.2.d0/(1.d0-gamagr(iel))) then
       coefb(ifac,iclp) = (1.d0 + (gamagr(iel)-1.d0)/2.d0 * xmach) &
@@ -1535,7 +1535,7 @@ elseif(ieos(iphas).eq.2) then
               + rtp(iel,ipriph) *(1.d0-coefb(ifac,iclp)) )
     endif
 
-    ! Total energy: 'internal energy - Cv T' 
+    ! Total energy: 'internal energy - Cv T'
 
     coefa(ifac,icle) = 0.d0
 
@@ -1550,7 +1550,7 @@ elseif(ieos(iphas).eq.2) then
     ifac = ifac0
     iel  = ifabor(ifac)
 
-    ! Calculation of the Mach number at the boundary face, using the 
+    ! Calculation of the Mach number at the boundary face, using the
     !   cell center velocity projected on the vector normal to the boundary
     xmachi = ( rtp(iel,iuiph)*surfbo(1,ifac)                      &
          + rtp(iel,iviph)*surfbo(2,ifac)                          &
@@ -1582,10 +1582,10 @@ elseif(ieos(iphas).eq.2) then
                                            *dxmach**2) )  )
     endif
 
-    ! This choice overrides the previous Rusanov choice 
+    ! This choice overrides the previous Rusanov choice
     coefa(ifac,iclp) = rtp(iel,ipriph)
 
-    ! Total energy 
+    ! Total energy
     coefa(ifac,icle) =                                            &
          coefa(ifac,iclp)/((gamagr(iel)-1.d0)*coefa(ifac,iclr))   &
          + 0.5d0*(coefa(ifac,iclu)**2                             &
@@ -1598,14 +1598,14 @@ elseif(ieos(iphas).eq.2) then
     ifac = ifac0
     iel  = ifabor(ifac)
 
-    ! Calculation of the Mach number at the boundary face, using the 
+    ! Calculation of the Mach number at the boundary face, using the
     !   cell center velocity projected on the vector normal to the boundary
     xmach = ( rtp(iel,iuiph)*surfbo(1,ifac)                       &
            + rtp(iel,iviph)*surfbo(2,ifac)                        &
            + rtp(iel,iwiph)*surfbo(3,ifac) ) / ra(isrfbn+ifac-1)  &
          / sqrt(gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph))
 
-    ! Supersonic outlet: Dirichlet for all variables 
+    ! Supersonic outlet: Dirichlet for all variables
     if(xmach.ge.1.d0) then
       do ivar = 1, nvar
         coefa(ifac,iclrtp(ivar,icoef)) = rtp(iel,ivar)
@@ -1711,7 +1711,7 @@ elseif(ieos(iphas).eq.2) then
     if(ierr.eq.1) call csexit (1)
 
 
-! --- Calculation of temperature and energy from pressure and density 
+! --- Calculation of temperature and energy from pressure and density
 
   elseif(iccfth.eq.912.or.iccfth.eq.60900) then
 
@@ -1728,7 +1728,7 @@ elseif(ieos(iphas).eq.2) then
                     + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
 
-! --- Calculation of density and energy from pressure and temperature 
+! --- Calculation of density and energy from pressure and temperature
 
   elseif(iccfth.eq.913.or.iccfth.eq.100900) then
 
@@ -1745,7 +1745,7 @@ elseif(ieos(iphas).eq.2) then
                     + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
 
-! --- Calculation of density and temperature from pressure and total energy 
+! --- Calculation of density and temperature from pressure and total energy
 
   elseif(iccfth.eq.914.or.iccfth.eq.140900) then
 
@@ -1779,7 +1779,7 @@ elseif(ieos(iphas).eq.2) then
                     + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
 
-! --- Calculation of pressure and temperature from density and energy 
+! --- Calculation of pressure and temperature from density and energy
 
   elseif(iccfth.eq.924.or.iccfth.eq.210900) then
 
@@ -1797,10 +1797,10 @@ elseif(ieos(iphas).eq.2) then
                                        /coefa(ifac,iclr)
 
 
-! --- End of perfect gas with variable gamma 
+! --- End of perfect gas with variable gamma
   endif
 
-! --- End of test on the thermodynamic laws 
+! --- End of test on the thermodynamic laws
 endif
 
 
@@ -1814,11 +1814,11 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with constant gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
-'@     Gamma = ',e12.4   ,/,                                      &  
-'@     Gamma must be a real number greater or equal to 1.',/,     &  
+'@     Gamma = ',e12.4   ,/,                                      &
+'@     Gamma must be a real number greater or equal to 1.',/,     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1828,11 +1828,11 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with constant gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
-'@     In cell ',i10   ,', Gamma = ',e12.4   ,/,                  &  
-'@     Gamma must be a real number greater or equal to 1.',/,     &  
+'@     In cell ',i10   ,', Gamma = ',e12.4   ,/,                  &
+'@     Gamma must be a real number greater or equal to 1.',/,     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1842,13 +1842,13 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with constant gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of density failed.',/,                     &
 '@',/,                                                            &
-'@     Temperature = ',e12.4   ,' in cell ',i10  ,/,              &  
-'@     Temperature must be strictly positive.',/,                 &  
+'@     Temperature = ',e12.4   ,' in cell ',i10  ,/,              &
+'@     Temperature must be strictly positive.',/,                 &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1858,13 +1858,13 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with constant gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of temperature failed.',/,                 &
 '@',/,                                                            &
-'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &  
-'@     Density must be strictly positive.',/,                     &  
+'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &
+'@     Density must be strictly positive.',/,                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1874,13 +1874,13 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with constant gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the squared speed of sound failed.',/,  &
 '@',/,                                                            &
-'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &  
-'@     Density must be strictly positive.',/,                     &  
+'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &
+'@     Density must be strictly positive.',/,                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1890,13 +1890,13 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with constant gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the variable beta failed.',/,           &
 '@',/,                                                            &
-'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &  
-'@     Density must be strictly positive.',/,                     &  
+'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &
+'@     Density must be strictly positive.',/,                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1906,13 +1906,13 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with constant gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the entropy failed.',/,                 &
 '@',/,                                                            &
-'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &  
-'@     Density must be strictly positive.',/,                     &  
+'@     Density = ',e12.4   ,' in cell ',i10  ,/,                  &
+'@     Density must be strictly positive.',/,                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1922,14 +1922,14 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with constant gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     The boundary condition of the type ''prescribed mass',/,   &
 '@     and enthalpy flow rates '' is not available in the ',/,    &
 '@     current release.',/,                                       &
 '@',/,                                                            &
-'@     Modify the user subroutine ''uscfth''.',/,                 &  
+'@     Modify the user subroutine ''uscfth''.',/,                 &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1939,8 +1939,8 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with constant gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     Negative values of the density were encountered ',/,       &
 '@     in ',i10   ,' cells.',/,                                   &
@@ -1952,7 +1952,7 @@ endif
 '@     by setting a minimum value for the density variable in',/, &
 '@     the GUI or in the user subroutine ''usini1'' (set the ',/, &
 '@     scamin value associated to the variable ',/,               &
-'@     isca(irho(iphas)).',/,                                     & 
+'@     isca(irho(iphas)).',/,                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -1962,8 +1962,8 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with constant gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with constant gamma.',/,                 &
 '@',/,                                                            &
 '@     Negative values of the internal energy were encountered',/,&
 '@     in ',i10   ,' cells.',/,                                   &
@@ -1974,7 +1974,7 @@ endif
 '@',/)
 
 
-! The following formats may be discarded if or when the 
+! The following formats may be discarded if or when the
 ! gamma variable option will have been fixed
 
 
@@ -1984,13 +1984,13 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with variable gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with variable gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the squared speed of sound failed.',/,  &
 '@',/,                                                            &
-'@     In cell ',i10   ,' Pressure = ',e12.4   ,/,                &  
-'@     Pressure must be positive.',/,                             &  
+'@     In cell ',i10   ,' Pressure = ',e12.4   ,/,                &
+'@     Pressure must be positive.',/,                             &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -2000,13 +2000,13 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with variable gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with variable gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the squared speed of sound failed.',/,  &
 '@',/,                                                            &
-'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &  
-'@     Density must be strictly positive.',/,                     &  
+'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &
+'@     Density must be strictly positive.',/,                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -2016,13 +2016,13 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with variable gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with variable gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the variable beta failed.',/,           &
 '@',/,                                                            &
-'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &  
-'@     Density must be strictly positive.',/,                     &  
+'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &
+'@     Density must be strictly positive.',/,                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -2032,13 +2032,13 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with variable gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with variable gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the entropy failed.',/,                 &
 '@',/,                                                            &
-'@     In cell ',i10   ,' Pressure = ',e12.4   ,/,                &  
-'@     Pressure must be positive.',/,                             &  
+'@     In cell ',i10   ,' Pressure = ',e12.4   ,/,                &
+'@     Pressure must be positive.',/,                             &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -2048,13 +2048,13 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in thermodynamics computations',/,         &
 '@    =======',/,                                                 &
-'@     Error encountered in the user subroutine ''uscfth'', ',/,  &  
-'@       for perfect gas with variable gamma.',/,                 &  
+'@     Error encountered in the user subroutine ''uscfth'', ',/,  &
+'@       for perfect gas with variable gamma.',/,                 &
 '@',/,                                                            &
 '@     The computation of the entropy failed.',/,                 &
 '@',/,                                                            &
-'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &  
-'@     Density must be striclty positive.',/,                     &  
+'@     In cell ',i10   ,' Density = ',e12.4   ,/,                 &
+'@     Density must be striclty positive.',/,                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
@@ -2065,4 +2065,4 @@ endif
 !----
 
 return
-end subroutine 
+end subroutine
