@@ -76,7 +76,7 @@ typedef struct {
 extern cs_mesh_quantities_t  *cs_glob_mesh_quantities;
 
 /*============================================================================
- * Public functions definition for API Fortran
+ * Public function prototypes for API Fortran
  *============================================================================*/
 
 /*----------------------------------------------------------------------------

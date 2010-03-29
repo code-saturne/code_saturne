@@ -197,7 +197,7 @@ extern cs_mesh_builder_t  *cs_glob_mesh_builder; /* Pointer to builder mesh
                                                     structure */
 
 /*============================================================================
- *  Public functions definition for Fortran API
+ *  Public function prototypes for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
