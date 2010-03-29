@@ -39,10 +39,10 @@ subroutine uscfx2
 
 !    Set options for viscosity and conductivity for compressible flow.
 
-!    In addition to options set in the user subroutine 'usini1' (or in 
-!    the GUI): this subroutine allows to set switches to indicate if the 
+!    In addition to options set in the user subroutine 'usini1' (or in
+!    the GUI): this subroutine allows to set switches to indicate if the
 !    volumetric viscosity and the conductivity are constants. If they are,
-!    the subroutines allows to set their values. 
+!    the subroutines allows to set their values.
 
 
 !-------------------------------------------------------------------------------
@@ -131,35 +131,35 @@ iphas = 1
 
 ivisls(itempk(iphas)) = 0
 
-!       Reference molecular thermal conductivity 
+!       Reference molecular thermal conductivity
 !       visls0 = lambda0  (molecular thermal conductivity, W/(m K))
 
-!       WARNING: visls0 must be strictly positive 
+!       WARNING: visls0 must be strictly positive
 !         (set a realistic value here even if conductivity is variable)
 
 visls0(itempk(iphas)) = 3.d-2
 
-!       If the molecular thermal conductivity is variable, its values 
+!       If the molecular thermal conductivity is variable, its values
 !         must be provided in the user subroutine 'uscfpv'
 
 
-! --> Volumetric molecular viscosity 
+! --> Volumetric molecular viscosity
 
 !       Reference volumetric molecular viscosity
 
 !       viscv0 = kappa0  (volumetric molecular viscosity, kg/(m s))
 !       iviscv = 0 : uniform  in space and constant in time
-!              = 1 : variable in space and time 
+!              = 1 : variable in space and time
 
 iviscv(iphas) = 0
 viscv0(iphas) = 0.d0
 
-!       If the volumetric molecular viscosity is variable, its values 
+!       If the volumetric molecular viscosity is variable, its values
 !         must be provided in the user subroutine 'uscfpv'
 
 
 !----
-! End 
+! End
 !----
 
 return
