@@ -216,7 +216,7 @@ cs_int_t cblas_idamax(cs_int_t       n,
 #endif /* !defined(HAVE_CBLAS) */
 
 /*============================================================================
- *  Public function definitions for Fortran API
+ *  Public function prototypes for Fortran API
  *============================================================================*/
 
 double CS_PROCF(dasum, DASUM)(const cs_int_t  *n,

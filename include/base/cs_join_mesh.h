@@ -133,7 +133,7 @@ typedef struct {
 } cs_join_mesh_t;
 
 /*============================================================================
- * Public function definitions
+ * Public function prototypes
  *===========================================================================*/
 
 #if defined(HAVE_MPI)
