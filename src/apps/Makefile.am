@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -39,6 +39,7 @@ libsaturne_la_SOURCES = cs_solver.c
 libsaturne_la_LIBADD = \
 $(top_builddir)/src/base/libcshot.la \
 $(top_builddir)/src/base/libcsbase.la \
+$(top_builddir)/src/base/libcscore.la \
 $(top_builddir)/src/pprt/libcspprt.la \
 $(top_builddir)/src/atmo/libcsatmo.la \
 $(top_builddir)/src/cfbl/libcscfbl.la \

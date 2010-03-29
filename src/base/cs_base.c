@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -144,7 +144,7 @@ int  cs_glob_n_ranks =  1;     /* Number of processes in communicator */
 MPI_Comm  cs_glob_mpi_comm = MPI_COMM_NULL;   /* Intra-communicator */
 #endif
 
-static bft_error_handler_t  *cs_glob_base_gest_erreur_save = NULL;
+static bft_error_handler_t  *cs_glob_base_err_handler_save = NULL;
 
 /* Static (private) global variables */
 /*-----------------------------------*/
@@ -185,70 +185,33 @@ static cs_int_t  _cs_glob_mem_ra_size = 0;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Print a message to standard output
+ * False print of a message to standard output for discarded logs
  *----------------------------------------------------------------------------*/
 
 static int
-_cs_base_bft_printf(const char     *const format,
-                    va_list         arg_ptr)
+_cs_base_bft_printf_null(const char  *format,
+                         va_list      arg_ptr)
 {
- cs_int_t  line;
- cs_int_t  msgsize;
-
- /* Buffer for printing from C code: print to a character string, which will
-    be printed to file by Fortran code.
-    If Fortran output is completely replaced by C output in the future,
-    we will be able to remove this step, but it is currently necessary
-    so as to ensure that the same output files may be used and output
-    remains ordered. */
-
-#undef CS_BUF_PRINT_F_SIZE
-#define CS_BUF_PRINT_F_SIZE 16384
-
- static char cs_buf_print_f[CS_BUF_PRINT_F_SIZE];
-
- /* Write to buffer */
-
-#if (_CS_STDC_VERSION < 199901L)
-  msgsize = vsprintf (cs_buf_print_f, format, arg_ptr);
-#else
-  msgsize = vsnprintf (cs_buf_print_f, CS_BUF_PRINT_F_SIZE, format, arg_ptr);
-#endif
-
-  line = __LINE__ - 1;
-
-  if (msgsize == -1 || msgsize > CS_BUF_PRINT_F_SIZE - 1) {
-    fprintf(stderr,
-            _("Fatal error: bft_printf() called on a message of size %d\n"
-              "whereas the print buffer is of size %d."),
-            msgsize, CS_BUF_PRINT_F_SIZE);
-
-    /* Try to force segmentation fault (to call signal handlers);
-       as stack has most likely been corrupted, this is the most
-       "similar" error that allows for portable handling. */
-    {
-      int *_force_err = NULL;
-      *_force_err = 0;
-    }
-    cs_exit(EXIT_FAILURE);
-  }
-
-  /* Effective output by Fortran code */
-
-  CS_PROCF (csprnt, CSPRNT) (cs_buf_print_f, &msgsize);
-
-  return msgsize;
+  return 0;
 }
 
 /*----------------------------------------------------------------------------
- * Flush log output buffer
+ * Flush of log output buffer
  *----------------------------------------------------------------------------*/
 
 static int
 _cs_base_bft_printf_flush(void)
 {
-  CS_PROCF (csflsh, CSFLSH) ();
+  return fflush(stdout);
+}
 
+/*----------------------------------------------------------------------------
+ * False flush of log output buffer for discarded logs
+ *----------------------------------------------------------------------------*/
+
+static int
+_cs_base_bft_printf_flush_null(void)
+{
   return 0;
 }
 
@@ -269,13 +232,14 @@ _cs_base_err_vprintf(const char  *format,
 #if defined(va_copy) || defined(__va_copy)
   {
     va_list arg_ptr_2;
+    bft_printf_proxy_t  *_bft_printf_proxy = bft_printf_proxy_get();
 
 #if defined(va_copy)
     va_copy(arg_ptr_2, arg_ptr);
 #else
     __va_copy(arg_ptr_2, arg_ptr);
 #endif
-    _cs_base_bft_printf(format, arg_ptr_2);
+    _bft_printf_proxy(format, arg_ptr_2);
     va_end(arg_ptr_2);
   }
 #endif
@@ -285,10 +249,10 @@ _cs_base_err_vprintf(const char  *format,
 
   if (initialized == false) {
 
-    char nom_fic_err[81];
+    char err_file_name[81];
 
     if (cs_glob_rank_id < 1)
-      strcpy(nom_fic_err, "error");
+      strcpy(err_file_name, "error");
 
     else {
 #if defined(HAVE_SLEEP)
@@ -310,12 +274,12 @@ _cs_base_err_vprintf(const char  *format,
                                                             is unusable. */
 #endif
       if (cs_glob_n_ranks > 9999)
-        sprintf(nom_fic_err, "error_n%07d", cs_glob_rank_id + 1);
+        sprintf(err_file_name, "error_n%07d", cs_glob_rank_id + 1);
       else
-        sprintf(nom_fic_err, "error_n%04d", cs_glob_rank_id + 1);
+        sprintf(err_file_name, "error_n%04d", cs_glob_rank_id + 1);
     }
 
-    stderr = freopen(nom_fic_err, "w", stderr);
+    stderr = freopen(err_file_name, "w", stderr);
 
     initialized = true;
   }
@@ -384,11 +348,11 @@ _cs_base_exit(int status)
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_base_gestion_erreur(const char  *nom_fic,
-                        int          num_ligne,
-                        int          code_err_sys,
-                        const char  *format,
-                        va_list      arg_ptr)
+_cs_base_error_handler(const char  *nom_fic,
+                       int          num_ligne,
+                       int          code_err_sys,
+                       const char  *format,
+                       va_list      arg_ptr)
 {
   bft_printf_flush();
 
@@ -608,7 +572,7 @@ _cs_base_mpi_fin(void)
   fvm_parall_set_mpi_comm(MPI_COMM_NULL);
 #endif
 
-  bft_error_handler_set(cs_glob_base_gest_erreur_save);
+  bft_error_handler_set(cs_glob_base_err_handler_save);
 
   if (   cs_glob_mpi_comm != MPI_COMM_NULL
       && cs_glob_mpi_comm != MPI_COMM_WORLD)
@@ -660,8 +624,85 @@ _cs_base_erreur_mpi(MPI_Comm  *comm,
 }
 
 #endif
-#endif /* HAVE_MPI */
 
+/*----------------------------------------------------------------------------
+ * Complete MPI setup.
+ *
+ * MPI should have been initialized by cs_opts_mpi_init().
+ *
+ * parameters:
+ *   app_num <-- -1 if MPI is not needed, or application number in
+ *               MPI_COMM_WORLD of this instance of Code_Saturne.
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_base_mpi_setup(int  app_num)
+{
+  int nbr, rank;
+
+  int app_num_l = app_num, app_num_max = -1;
+
+#if defined(DEBUG) || !defined(NDEBUG)
+  MPI_Errhandler errhandler;
+#endif
+
+  /*
+    If necessary, split MPI_COMM_WORLD to separate different coupled
+    applications (collective operation, like all MPI communicator
+    creation operations).
+
+    We suppose the color argument to MPI_Comm_split is equal to the
+    application number, given through the command line or through
+    mpiexec and passed here as an argument.
+  */
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  MPI_Allreduce(&app_num_l, &app_num_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+  if (app_num_max > 0)
+    MPI_Comm_split(MPI_COMM_WORLD, app_num, rank, &cs_glob_mpi_comm);
+  else
+    cs_glob_mpi_comm = MPI_COMM_WORLD;
+
+  MPI_Comm_size(cs_glob_mpi_comm, &nbr);
+  MPI_Comm_rank(cs_glob_mpi_comm, &rank);
+
+  cs_glob_n_ranks = nbr;
+
+  if (cs_glob_n_ranks > 1)
+    cs_glob_rank_id = rank;
+
+  /* cs_glob_mpi_comm may not be freed at this stage, as it
+     it may be needed to build intercommunicators for couplings,
+     but we may set cs_glob_rank_id to its serial value if
+     we are only using MPI for coupling. */
+
+  if (cs_glob_n_ranks == 1 && app_num_max > 0)
+    cs_glob_rank_id = -1;
+
+  /* Initialize associated libraries */
+
+#if defined(FVM_HAVE_MPI)
+  if (cs_glob_rank_id > -1)
+    fvm_parall_set_mpi_comm(cs_glob_mpi_comm);
+  else
+    fvm_parall_set_mpi_comm(MPI_COMM_NULL);
+#endif
+
+#if defined(DEBUG) || !defined(NDEBUG)
+  if (nbr > 1 || cs_glob_mpi_comm != MPI_COMM_NULL) {
+    MPI_Errhandler_create(&_cs_base_erreur_mpi, &errhandler);
+    MPI_Errhandler_set(MPI_COMM_WORLD, errhandler);
+    if (   cs_glob_mpi_comm != MPI_COMM_WORLD
+        && cs_glob_mpi_comm != MPI_COMM_NULL)
+      MPI_Errhandler_set(cs_glob_mpi_comm, errhandler);
+    MPI_Errhandler_free(&errhandler);
+  }
+#endif
+}
+
+#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
  * Maximum value of a counter and associated 6 character string
@@ -828,85 +869,275 @@ void CS_PROCF (rasize, RASIZE)
  * Public function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Print logfile header
+ *
+ * parameters:
+ *   argc  <-- number of command line arguments
+ *   argv  <-- array of command line arguments
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_logfile_head(int    argc,
+                     char  *argv[])
+{
+  char str[81];
+  int ii;
+  char date_str[] = __DATE__;
+  char time_str[] = __TIME__;
+  const char mon_name[12][4]
+    = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+  struct tm time_cnv;
+
+  /* Define MPI Information */
+
+#if defined(MPI_VERSION) && defined(MPI_SUBVERSION)
+#if defined(OPEN_MPI)
+  const char mpi_lib[] = "Open MPI";
+#elif defined(MPICH2)
+  const char mpi_lib[] = "MPICH2";
+#elif defined(LAM_MPI)
+  const char mpi_lib[] = "LAM/MPI";
+#elif defined(MPICH_NAME)
+  const char mpi_lib[] = "MPICH";
+#elif defined(HP_MPI)
+  const char mpi_lib[] = "HP-MPI";
+#elif defined(MPI_VERSION) && defined(MPI_SUBVERSION)
+  const char *mpi_lib = NULL;
+#endif
+#endif /* defined(MPI_VERSION) && defined(MPI_SUBVERSION) */
+
+  /* Determine compilation date */
+
+  for (ii = 0; ii < 12; ii++) {
+    if (strncmp(date_str, mon_name[ii], 3) == 0) {
+      time_cnv.tm_mon = ii ;
+      break;
+    }
+  }
+
+  sscanf(date_str + 3, "%d", &(time_cnv.tm_mday)) ;
+  sscanf(date_str + 6, "%d", &(time_cnv.tm_year)) ;
+
+  time_cnv.tm_year -= 1900 ;
+
+  sscanf(time_str    , "%d", &(time_cnv.tm_hour)) ;
+  sscanf(time_str + 3, "%d", &(time_cnv.tm_min)) ;
+  sscanf(time_str + 6, "%d", &(time_cnv.tm_sec)) ;
+
+  time_cnv.tm_isdst = -1 ;
+
+  /* Re-compute and internationalize build date */
+
+  mktime(&time_cnv) ;
+  strftime(str, 80, "%c", &time_cnv) ;
+
+  /* Now print info */
+
+  bft_printf(_("command: \n"));
+
+  for (ii = 0 ; ii < argc ; ii++)
+    bft_printf(" %s", argv[ii]);
+
+  bft_printf("\n");
+  bft_printf("\n************************************"
+             "***************************\n\n");
+  bft_printf("                                  (R)\n"
+             "                      Code_Saturne\n\n"
+             "                      Version %s\n\n",
+             CS_APP_VERSION);
+
+  bft_printf("\n  Copyright (C) 1998-2010 EDF S.A., France\n\n");
+
+  bft_printf(_("  build %s\n"), str);
+
+#if defined(MPI_VERSION) && defined(MPI_SUBVERSION)
+  if (mpi_lib != NULL)
+    bft_printf(_("  MPI version %d.%d (%s)\n\n"),
+               MPI_VERSION, MPI_SUBVERSION, mpi_lib);
+  else
+    bft_printf(_("  MPI version %d.%d\n\n"),
+               MPI_VERSION, MPI_SUBVERSION);
+#endif
+
+  bft_printf("\n");
+  bft_printf("  The Code_Saturne CFD tool  is free software;\n"
+             "  you can redistribute it and/or modify it under the terms\n"
+             "  of the GNU General Public License as published by the\n"
+             "  Free Software Foundation; either version 2 of the License,\n"
+             "  or (at your option) any later version.\n\n");
+
+  bft_printf("  The Code_Saturne CFD tool is distributed in the hope that\n"
+             "  it will be useful, but WITHOUT ANY WARRANTY; without even\n"
+             "  the implied warranty of MERCHANTABILITY or FITNESS FOR A\n"
+             "  PARTICULAR PURPOSE.  See the GNU General Public License\n"
+             "  for more details.\n");
+
+  bft_printf("\n************************************"
+             "***************************\n\n");
+}
+
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Complete MPI setup.
+ * First analysis of the command line and environment variables to determine
+ * if we require MPI, and initialization if necessary.
  *
- * MPI should have been initialized by cs_opts_mpi_init().
+ * parameters:
+ *   argc  <-> number of command line arguments
+ *   argv  <-> array of command line arguments
  *
  * Global variables `cs_glob_n_ranks' (number of Code_Saturne processes)
  * and `cs_glob_rank_id' (rank of local process) are set by this function.
  *
- * parameters:
- *   app_num <-- -1 if MPI is not needed, or application number in
- *               MPI_COMM_WORLD of this instance of Code_Saturne.
+ * returns:
+ *   -1 if MPI is not needed, or application number in MPI_COMM_WORLD of
+ *   processes associated with this instance of Code_Saturne
  *----------------------------------------------------------------------------*/
 
-void
-cs_base_mpi_init(int  app_num)
+int
+cs_base_mpi_init(int    *argc,
+                 char  **argv[])
 {
-  int nbr, rank;
+#if defined(HAVE_MPI)
 
-  int app_num_l = app_num, app_num_max = -1;
+  char *s;
 
-#if defined(DEBUG) || !defined(NDEBUG)
-  MPI_Errhandler errhandler;
-#endif
+  int arg_id = 0, flag = 0;
+  int appnum = -1;
+  int use_mpi = false;
+
+#if   defined(__bg__) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+
+  /* Notes: Blue Gene/L also defines the BGLMPI_SIZE environment variable.
+   *        Blue Gene/P defines BG_SIZE (plus BG_MAPPING, and BG_RELEASE). */
+
+  use_mpi = true;
+
+#elif defined(MPICH_NAME)
 
   /*
-    If necessary, split MPI_COMM_WORLD to separate different coupled
-    applications (collective operation, like all MPI communicator
-    creation operations).
-
-    We suppose the color argument to MPI_Comm_split is equal to the
-    application number, given through the command line or through
-    mpiexec and passed here as an argument.
+    Using standard MPICH1 1.2.x with the p4 (default) mechanism,
+    the information required by MPI_Init() are transferred through
+    the command line, which is then modified by MPI_Init();
+    in this case, only rank 0 knows the "user" command line arguments
+    at program startup, the other processes obtaining them only upon
+    calling  MPI_Init(). In this case, it is thus necessary to initialize
+    MPI before parsing the command line.
   */
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  for (arg_id = 0 ; arg_id < *argc ; arg_id++) {
+    if (   !strcmp((*argv)[arg_id], "-p4pg")         /* For process 0 */
+        || !strcmp((*argv)[arg_id], "-p4rmrank")) {  /* For other processes */
+      use_mpi = true;
+      break;
+    }
+  }
 
-  MPI_Allreduce(&app_num_l, &app_num_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  if (getenv("GMPI_ID") != NULL) /* In case we are using MPICH-GM */
+    use_mpi = true;
 
-  if (app_num_max > 0)
-    MPI_Comm_split(MPI_COMM_WORLD, app_num, rank, &cs_glob_mpi_comm);
-  else
-    cs_glob_mpi_comm = MPI_COMM_WORLD;
+#elif defined(LAM_MPI)
+  if (getenv("LAMRANK") != NULL)
+    use_mpi = true;
 
-  MPI_Comm_size(cs_glob_mpi_comm, &nbr);
-  MPI_Comm_rank(cs_glob_mpi_comm, &rank);
+#elif defined(OPEN_MPI)
+  if (getenv("OMPI_MCA_ns_nds_vpid") != NULL)         /* OpenMPI 1.2 */
+    use_mpi = true;
+  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 */
+    use_mpi = true;
 
-  cs_glob_n_ranks = nbr;
+#elif defined(MPICH2)
+  if (getenv("PMI_RANK") != NULL)
+    use_mpi = true;
 
-  if (cs_glob_n_ranks > 1)
-    cs_glob_rank_id = rank;
+#endif /* Tests for known MPI variants */
 
-  /* cs_glob_mpi_comm may not be freed at this stage, as it
-     it may be needed to build intercommunicators for couplings,
-     but we may set cs_glob_rank_id to its serial value if
-     we are only using MPI for coupling. */
+  /* If we have determined from known MPI environment variables
+     of command line arguments that we are running under MPI,
+     initialize MPI */
 
-  if (cs_glob_n_ranks == 1 && app_num_max > 0)
-    cs_glob_rank_id = -1;
+  if (use_mpi == true) {
+    MPI_Initialized(&flag);
+    if (!flag) {
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
+      int mpi_threads;
+      MPI_Init_thread(argc, argv, MPI_THREAD_FUNNELED, &mpi_threads);
+#else
+      MPI_Init(argc, argv);
+#endif
+    }
+  }
 
-  /* Initialize associated libraries */
+  /* Loop on command line arguments */
 
-#if defined(FVM_HAVE_MPI)
-  if (cs_glob_rank_id > -1)
-    fvm_parall_set_mpi_comm(cs_glob_mpi_comm);
-  else
-    fvm_parall_set_mpi_comm(MPI_COMM_NULL);
+  arg_id = 0;
+
+  while (++arg_id < *argc) {
+
+    s = (*argv)[arg_id];
+
+    /* Parallel run */
+
+    if (strcmp(s, "--mpi") == 0) {
+      int _appnum = 0;
+      use_mpi = true;
+      if (arg_id + 1 < *argc) {
+        char *start = (*argv)[arg_id + 1];
+        char *end = start + strlen(start);
+        _appnum = strtol(start, &end, 0);
+        if (end == start + strlen(start)) { /* following argument is an int */
+          arg_id++;
+          appnum = _appnum;
+        }
+      }
+    }
+
+  } /* End of loop on command line arguments */
+
+  if (use_mpi == true) {
+
+    MPI_Initialized(&flag);
+    if (!flag) {
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
+      int mpi_threads;
+      MPI_Init_thread(argc, argv, MPI_THREAD_FUNNELED, &mpi_threads);
+#else
+      MPI_Init(argc, argv);
+#endif
+    }
+
+    /*
+      If appnum was not given through the command line but we
+      are running under MPI-2, appnum may be available through
+      the MPI_APPNUM attribute.
+    */
+
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2)
+    if (appnum < 0) {
+      void *attp = NULL;
+      MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &attp, &flag);
+      if (flag != 0)
+        appnum = *(int *)attp;
+    }
 #endif
 
-#if defined(DEBUG) || !defined(NDEBUG)
-  if (nbr > 1 || cs_glob_mpi_comm != MPI_COMM_NULL) {
-    MPI_Errhandler_create(&_cs_base_erreur_mpi, &errhandler);
-    MPI_Errhandler_set(MPI_COMM_WORLD, errhandler);
-    if (   cs_glob_mpi_comm != MPI_COMM_WORLD
-        && cs_glob_mpi_comm != MPI_COMM_NULL)
-      MPI_Errhandler_set(cs_glob_mpi_comm, errhandler);
-    MPI_Errhandler_free(&errhandler);
+    if (appnum < 0)
+      appnum = 0;
   }
+
+  /* Now setup global variables and communicators */
+
+  if (use_mpi == true)
+    _cs_base_mpi_setup(appnum);
+
+  return appnum;
+
+#else /* if defined(HAVE_MPI) */
+
+  return -1;
+
 #endif
 }
 
@@ -932,8 +1163,6 @@ cs_exit(int  status)
     bft_backtrace_print(2);
 
   }
-
-  CS_PROCF(csclli, CSCLLI)(); /* Close log files */
 
 #if defined(HAVE_MPI)
 
@@ -964,8 +1193,8 @@ cs_base_error_init(void)
 {
   /* Error handler */
 
-  cs_glob_base_gest_erreur_save = bft_error_handler_get();
-  bft_error_handler_set(_cs_base_gestion_erreur);
+  cs_glob_base_err_handler_save = bft_error_handler_get();
+  bft_error_handler_set(_cs_base_error_handler);
 
   /* Signal handlers */
 
@@ -1010,7 +1239,7 @@ cs_base_mem_init(void)
 
   /* Memory management initialization */
 
-  if ((nom_base = getenv("CS_FIC_MEM")) != NULL) {
+  if ((nom_base = getenv("CS_MEM_LOG")) != NULL) {
 
     /* We may not use BFT_MALLOC here as memory management has
        not yet been initialized using bft_mem_init() */
@@ -1073,7 +1302,7 @@ cs_base_mem_init_work(size_t       iasize,
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_mem_fin(void)
+cs_base_mem_finalize(void)
 {
   int    ind_bil, itot;
   double valreal[2];
@@ -1232,7 +1461,7 @@ cs_base_mem_fin(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_bilan_temps(void)
+cs_base_time_summary(void)
 {
   double  utime;
   double  stime;
@@ -1416,15 +1645,75 @@ cs_base_system_info(void)
 /*----------------------------------------------------------------------------
  * Replace default bft_printf() mechanism with internal mechanism.
  *
- * This is necessary for good consistency of messages output from C or
- * from Fortran, and to handle parallel and serial logging options.
+ * This allows redirecting or suppressing logging for different ranks.
+ *
+ * parameters:
+ *   log_name    <-- base file name for log, or NULL for stdout
+ *   r0_log_flag <-- redirection for rank 0 log;
+ *                   0: not redirected; 1: redirected to <log_name> file
+ *   rn_log_flag <-- redirection for ranks > 0 log:
+ *                   0: not redirected; 1: redirected to <log_name>_n*" file;
+ *                   2: redirected to "/dev/null" (suppressed)
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_bft_printf_set(void)
+cs_base_bft_printf_set(const char  *log_name,
+                       int          r0_log_flag,
+                       int          rn_log_flag)
 {
-  bft_printf_proxy_set(_cs_base_bft_printf);
-  bft_printf_flush_proxy_set(_cs_base_bft_printf_flush);
+  /* Non-suppressed logs */
+
+  if (log_name != NULL && (cs_glob_rank_id < 1 || rn_log_flag != 2)) {
+
+    char *filename = NULL;
+    BFT_MALLOC(filename, strlen(log_name) + 10, char);
+
+    bft_printf_proxy_set(vprintf);
+    bft_printf_flush_proxy_set(_cs_base_bft_printf_flush);
+
+    filename[0] = '\0';
+
+    if (cs_glob_rank_id < 1) {
+      if (r0_log_flag != 0)
+        strcpy(filename, log_name);
+    }
+    else {
+      if (rn_log_flag != 0) {
+        if (cs_glob_n_ranks > 9999)
+          sprintf(filename, "%s_n%07d", log_name, cs_glob_rank_id+1);
+        else
+          sprintf(filename, "%s_n%04d", log_name, cs_glob_rank_id+1);
+      }
+    }
+
+    /* Redirect log */
+
+    if (filename[0] != '\0') {
+
+      FILE *fp = freopen(filename, "w", stdout);
+
+      if (fp == NULL)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("It is impossible to redirect the standard output "
+                    "to file:\n%s"), filename);
+
+#if defined(HAVE_DUP2)
+      if (dup2(fileno(fp), fileno(stderr)) == -1)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("It is impossible to redirect the standard error "
+                    "to file:\n%s"), filename);
+#endif
+    }
+
+    BFT_FREE(filename);
+  }
+
+  /* Suppressed logs */
+
+  else if (cs_glob_rank_id > 0) {
+    bft_printf_proxy_set(_cs_base_bft_printf_null);
+    bft_printf_flush_proxy_set(_cs_base_bft_printf_flush_null);
+  }
 }
 
 /*----------------------------------------------------------------------------

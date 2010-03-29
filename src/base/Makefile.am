@@ -58,6 +58,7 @@ $(top_srcdir)/include/base/cplsat.h \
 $(top_srcdir)/include/base/cs_ale.h \
 $(top_srcdir)/include/base/cs_ast_coupling.h \
 $(top_srcdir)/include/base/cs_base.h \
+$(top_srcdir)/include/base/cs_base_fortran.h \
 $(top_srcdir)/include/base/cs_benchmark.h \
 $(top_srcdir)/include/base/cs_blas.h \
 $(top_srcdir)/include/base/cs_boundary_conditions.h \
@@ -140,6 +141,7 @@ $(top_srcdir)/include/base/vortex.h
 # Library source files
 
 noinst_LTLIBRARIES = libcshot.la \
+                     libcscore.la \
                      libcsbase.la
 
 libcshot_la_CFLAGS = @CFLAGS_DBG@ @CFLAGS_HOT@
@@ -169,6 +171,13 @@ prods3.f90 \
 prodsc.f90 \
 promav.f90
 libcshot_la_LDFLAGS = -no-undefined
+
+###
+
+libcscore_la_SOURCES = \
+cs_base.c \
+cs_io.c
+libcscore_la_LDFLAGS = -no-undefined
 
 ###
 
@@ -208,7 +217,7 @@ cregeo.f90 \
 crstgr.f90 \
 cs_ale.c \
 cs_ast_coupling.c \
-cs_base.c \
+cs_base_fortran.c \
 cs_boundary_conditions.c \
 cs_calcium.c \
 csc2cl.f90 \
@@ -236,7 +245,6 @@ cs_gui_specific_physics.c \
 cs_gui_util.c \
 cs_halo.c \
 csinit.f90 \
-cs_io.c \
 cs_join.c \
 cs_join_f2c.f90 \
 cs_join_intersect.c \
@@ -257,6 +265,7 @@ cs_mesh_solcom.c \
 cs_mesh_warping.c \
 cs_multigrid.c \
 cs_numbering.c \
+csopli.f90 \
 cs_opts.c \
 cs_parall.c \
 cs_perio.c \

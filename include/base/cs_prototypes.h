@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -173,7 +173,7 @@ extern void CS_PROCF (csflsh, CSFLSH)
 );
 
 /*----------------------------------------------------------------------------
- * Initialize Fortran log (listing) files
+ * Initialize Fortran base common bloc values
  *----------------------------------------------------------------------------*/
 
 extern void CS_PROCF (csinit, CSINIT)
@@ -181,10 +181,20 @@ extern void CS_PROCF (csinit, CSINIT)
  const cs_int_t  *ifoenv,  /* <-- 0: SolCom mesh; 1: Preprocesor mesh */
  const cs_int_t  *irgpar,  /* <-- MPI Rank in parallel, -1 otherwise */
  const cs_int_t  *nrgpar,  /* <-- Number of MPI processes, or 1 */
- const cs_int_t  *nthpar,  /* <-- Number of threads */
- const cs_int_t  *ilisr0,  /* <-- Output of main log (listing (rank 0): */
+ const cs_int_t  *nthpar   /* <-- Number of threads */
+);
+
+/*----------------------------------------------------------------------------
+ * Initialize Fortran log (listing) files
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (csopli, CSOPLI)
+(
+ const cs_int_t  *irkpar,  /* <-- MPI Rank in parallel, -1 otherwise */
+ const cs_int_t  *nrkpar,  /* <-- Number of MPI processes, or 1 */
+ const cs_int_t  *ilogr0,  /* <-- Output of main log (listing (rank 0): */
                            /*     0: non redirected; 1: to 'listing' file */
- const cs_int_t  *ilisrp   /* <-- Output of logs for ranks > 0: */
+ const cs_int_t  *ilogrp   /* <-- Output of logs for ranks > 0: */
                            /*     0: non redirected; 1: to 'listing_n*' files */
                            /*     2: to '/dev/null' (suppressed) */
 );

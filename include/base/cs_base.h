@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -328,23 +328,39 @@ void CS_PROCF (rasize, RASIZE)
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Print logfile header
+ *
+ * parameters:
+ *   argc  <-- number of command line arguments
+ *   argv  <-- array of command line arguments
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_logfile_head(int    argc,
+                     char  *argv[]);
+
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Complete MPI setup.
+ * First analysis of the command line and environment variables to determine
+ * if we require MPI, and initialization if necessary.
  *
- * MPI should have been initialized by cs_opts_mpi_init().
+ * parameters:
+ *   argc  <-> number of command line arguments
+ *   argv  <-> array of command line arguments
  *
  * Global variables `cs_glob_n_ranks' (number of Code_Saturne processes)
  * and `cs_glob_rank_id' (rank of local process) are set by this function.
  *
- * parameters:
- *   app_num <-- -1 if MPI is not needed, or application number in
- *               MPI_COMM_WORLD of this instance of Code_Saturne.
+ * returns:
+ *   -1 if MPI is not needed, or application number in MPI_COMM_WORLD of
+ *   processes associated with this instance of Code_Saturne
  *----------------------------------------------------------------------------*/
 
-void
-cs_base_mpi_init(int  app_num);
+int
+cs_base_mpi_init(int    *argc,
+                 char  **argv[]);
 
 #endif /* defined(HAVE_MPI) */
 
@@ -399,14 +415,14 @@ cs_base_mem_init_work(size_t       iasize,
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_mem_fin(void);
+cs_base_mem_finalize(void);
 
 /*----------------------------------------------------------------------------
  * Print summary of running time, including CPU and elapsed times.
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_bilan_temps(void);
+cs_base_time_summary(void);
 
 /*----------------------------------------------------------------------------
  * Print available system information.
@@ -418,12 +434,21 @@ cs_base_system_info(void);
 /*----------------------------------------------------------------------------
  * Replace default bft_printf() mechanism with internal mechanism.
  *
- * This is necessary for good consistency of messages output from C or
- * from Fortran, and to handle parallel and serial logging options.
+ * This allows redirecting or suppressing logging for different ranks.
+ *
+ * parameters:
+ *   log_name    <-- base file name for log
+ *   r0_log_flag <-- redirection for rank 0 log;
+ *                   0: not redirected; 1: redirected to "listing" file
+ *   rn_log_flag <-- redirection for ranks > 0 log:
+ *                   0: not redirected; 1: redirected to "listing_n*" file;
+ *                   2: redirected to "/dev/null" (suppressed)
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_bft_printf_set(void);
+cs_base_bft_printf_set(const char  *log_name,
+                       int          r0_log_flag,
+                       int          rn_log_flag);
 
 /*----------------------------------------------------------------------------
  * Print a warning message header.

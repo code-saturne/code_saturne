@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -85,6 +85,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_base_fortran.h"
 #include "cs_benchmark.h"
 #include "cs_base.h"
 #include "cs_calcium.h"
@@ -513,8 +514,8 @@ cs_run(void)
 
   cs_restart_print_stats();
 
-  cs_base_bilan_temps();
-  cs_base_mem_fin();
+  cs_base_time_summary();
+  cs_base_mem_finalize();
 }
 
 /*============================================================================
@@ -529,9 +530,7 @@ main(int    argc,
      and MPI initialization if it is. */
 
 #if defined(HAVE_MPI)
-  app_num = cs_opts_mpi_init(&argc, &argv);
-  if (app_num > -1)
-    cs_base_mpi_init(app_num);
+  app_num = cs_base_mpi_init(&argc, &argv);
 #endif
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -597,16 +596,14 @@ main(int    argc,
     CS_PROCF(csinit, CSINIT)(&(opts.ifoenv),
                              &_rank_id,
                              &_n_ranks,
-                             &_n_threads,
-                             &(opts.ilisr0),
-                             &(opts.ilisrp));
+                             &_n_threads);
   }
 
-  cs_base_bft_printf_set();
+  cs_base_fortran_bft_printf_set(opts.ilisr0, opts.ilisrp);
 
   /* Log-file header and command line arguments recap */
 
-  cs_opts_logfile_head(argc, argv);
+  cs_base_logfile_head(argc, argv);
 
   /* MPI-IO options */
 

@@ -1,3 +1,21 @@
+* 29/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Split the base functions in two parts (Fortran and C) to prepare for linking
+  executable with onry the C functions.
+  Seemingly add a libcscore library.
+  added routines:
+    include/base/cs_base_fortran.h
+    src/base/cs_base_fortran.c
+    src/base/csopli.f90
+  modified routines:
+    include/base/cs_base.h
+    include/base/cs_opts.h
+    include/base/cs_prototypes.h
+    src/apps/cs_solver.c
+    src/apps/Makefile.am
+    src/base/cs_base.c
+    src/base/cs_opts.c
+    src/base/Makefile.am
+
 * 22/03/2010 - David Monfort <david.monfort@edf.fr>
   Update the tutorial documentation and replace .jpg by .png files.
 
