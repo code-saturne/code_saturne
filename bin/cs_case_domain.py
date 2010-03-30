@@ -3,7 +3,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009  EDF
+#   Copyright (C) 2009-2010  EDF
 #
 #   Code_Saturne is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -831,7 +831,7 @@ class domain(base_domain):
         Runs the partitioner in the execution directory
         """
 
-        partitioner = os.path.join(cs_config.dirs.ecs_bindir, 'cs_partition')
+        partitioner = os.path.join(cs_config.dirs.bindir, 'cs_partition')
         if not os.path.isfile(partitioner):
             if self.n_procs > 1:
                 w_str = \
@@ -849,7 +849,7 @@ class domain(base_domain):
 
         # Build command
 
-        cmd = os.path.join(cs_config.dirs.ecs_bindir, 'cs_partition')
+        cmd = os.path.join(cs_config.dirs.bindir, 'cs_partition')
 
         if self.partition_opts != None:
             cmd += ' ' + self.partition_opts

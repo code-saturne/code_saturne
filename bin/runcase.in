@@ -160,6 +160,7 @@ N_PROCS_MAX = None
 # Partition options (if separate run from resolution)
 
 PARTITION_LIST = None
+PARTITION_OPTS = None
 
 # Solver options
 
@@ -234,6 +235,7 @@ if __name__ == '__main__':
                join = JOIN,
                periodicity = PERIODICITY,
                partition_list = PARTITION_LIST,
+               partition_opts = PARTITION_OPTS,
                param = PARAMETERS,
                solcom = SOLCOM,
                cut_warped_faces = CUT_WARPED_FACES,

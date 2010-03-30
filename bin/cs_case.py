@@ -427,7 +427,7 @@ class case:
         s = open(s_path, 'w')
 
         preprocessor = os.path.join(cs_config.dirs.ecs_bindir, 'cs_preprocess')
-        partitioner = os.path.join(cs_config.dirs.ecs_bindir, 'cs_partition')
+        partitioner = os.path.join(cs_config.dirs.bindir, 'cs_partition')
         if not os.path.isfile(partitioner):
             partitioner = ''
         solver = os.path.join(self.exec_dir, 'cs_solver')

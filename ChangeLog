@@ -1,3 +1,26 @@
+* 30/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Move the partitioning and I/O dump tools from the preprocessor to the kernel
+  package. Add the ParMETIS and PT-SCOTCH/SCOTCH support.
+  added routines:
+    src/apps/cs_io_dump.c
+    src/apps/cs_partition.c
+  added scripts:
+    config/cs_metis.m4
+    config/cs_scotch.m4
+  modified routines:
+    include/base/cs_io.h
+    src/base/cs_io.c
+  modified scripts:
+    bin/cs_case_domain.py
+    bin/cs_case.py
+    bin/runcase.in
+    configure.ac
+    doc/manpages/cs_io_dump.1
+    doc/manpages/cs_partition.1
+    Makefile.am
+    src/apps/Makefile.am
+
 * 29/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Split the base functions in two parts (Fortran and C) to prepare for linking
   executable with onry the C functions.

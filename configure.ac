@@ -90,6 +90,7 @@ AC_PROG_CC
 AC_PROG_FC
 AC_PROG_INSTALL
 AC_PROG_LN_S
+AM_PROG_CC_C_O
 AC_PROG_SED
 
 AC_FC_LIBRARY_LDFLAGS
@@ -347,7 +348,21 @@ CS_AC_TEST_MEI
 CS_AC_TEST_LIBXML2
 CS_AC_TEST_BLAS([$cs_have_openmp])
 CS_AC_TEST_MPI
+CS_AC_TEST_METIS
+CS_AC_TEST_SCOTCH
 CS_AC_TEST_SYRTHES
+
+have_partitioner=no
+if test x$have_parmetis = xyes -o x$have_metis = xyes ; then
+  have_partitioner=yes
+fi
+if test x$have_ptscotch = xyes -o x$have_scotch = xyes ; then
+  have_partitioner=yes
+fi
+
+AM_CONDITIONAL(HAVE_PARTITIONER, test x$have_partitioner = xyes)
+
+unset have_partitioner
 
 #------------------------------------------------------------------------------
 # Checks for Code_Saturne preprocessor
@@ -652,6 +667,14 @@ echo " OpenMP support: "$cs_have_openmp""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
 echo " Libxml2 (XML Reader) support: "$have_libxml2""
 echo " MEI (Mathematical Expressions Interpreter) support: "$have_mei""
+echo " ParMETIS (Parallel Graph Partitioning) support: "$have_parmetis""
+if test x$have_parmetis = xno ; then
+  echo " METIS (Graph Partitioning) support: "$have_metis""
+fi
+echo " PT-SCOTCH (Parallel Graph Partitioning) support: "$have_ptscotch""
+if test x$have_ptscotch = xno ; then
+  echo " SCOTCH (Graph Partitioning) support: "$have_scotch""
+fi
 echo " SYRTHES 3 coupling support: "$have_syrthes""
 echo " IP socket support (for SYRTHES 3 or CFD_Proxy): "$have_socket""
 echo " Dynamic loader support (for YACS): "$have_dlloader""

@@ -1,0 +1,83 @@
+.\"
+.\"  This file is part of the Code_Saturne Kernel, element of the
+.\"  Code_Saturne CFD tool.
+.\"
+.\"  Copyright (C) 2009 EDF S.A., France
+.\"
+.\"  contact: saturne-support@edf.fr
+.\"
+.\"  The Code_Saturne Kernel is free software; you can redistribute it
+.\"  and/or modify it under the terms of the GNU General Public License
+.\"  as published by the Free Software Foundation; either version 2 of
+.\"  the License, or (at your option) any later version.
+.\"
+.\"  The Code_Saturne Kernel is distributed in the hope that it will be
+.\"  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+.\"  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"  GNU General Public License for more details.
+.\"
+.\"  You should have received a copy of the GNU General Public License
+.\"  along with the Code_Saturne Kernel; if not, write to the
+.\"  Free Software Foundation, Inc.,
+.\"  51 Franklin St, Fifth Floor,
+.\"  Boston, MA  02110-1301  USA
+.\"
+.TH CS_PARTITION 1 2009-09-14 "" "Code_Saturne commands"
+.SH NAME
+cs_partition \- Compute domain partition(s) of Code_Saturne preprocessor output.
+.SH SYNOPSIS
+.B cs_partition
+.RI <n_ranks> [<n_ranks_2> ... <n_ranks_n>]
+.RI [options]
+.br
+.SH DESCRIPTION
+The
+.B cs_partition
+program takes the file named
+.B preprocessor_output
+created by the Code_Saturne preprocessor.
+.B cs_preprocess
+and builds one or several "cells \-> domain" association files, named
+.B domain_number_p
+by using a graph splitting if linked with a METIS or SCOTCH library.
+.SH OPTIONS
+.B
+.IP --log
+Output redirection for rank -1 or 0. Differents possibilities are: 0
+for standard output and 1 for output in
+.B partition.log
+(default)
+.B
+.IP --logp
+Output redirection for rank > 0. Differents possibilities are: -1 to
+remove output (default), 0 for no redirection (if independant
+terminal, debugger type) and 1 for output in
+.B partition.log_<rank>
+.B
+.IP "--mpi"
+Use MPI for parallelism.
+.B
+.IP --metis
+Use METIS for partitioning (default if available).
+.B
+.IP --scotch
+Use SCOTCH for partitioning.
+.B
+.IP --no-perio
+Ignore periodicity information if present.
+.B
+.IP --no-write
+Do not write output.
+.B
+.IP -h
+Print a usage message and exit.
+.SH ENVIRONMENT
+.IP CS_MEM_LOG
+Name of memory operations trace file.
+.SH EXAMPLE
+cs_partition 32 64 -no-write
+.SH SEE ALSO
+.BR cs_io_dump (1),
+.BR cs_preprocess (1)
+.BR cs_solver (1)
+

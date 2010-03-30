@@ -56,6 +56,17 @@ libsaturne_la_LDFLAGS = -no-undefined -version 0:0:0
 # Main program
 
 bin_PROGRAMS = cs_solver
+
+# Code_Saturne IO utility program
+
+bin_PROGRAMS += cs_io_dump
+
+# MPI partitioning program
+
+if HAVE_PARTITIONER
+bin_PROGRAMS += cs_partition
+endif
+
 cs_solver_SOURCES =
 cs_solver_LDADD = libsaturne.la $(LTLIBINTL) \
 @FVM_LDFLAGS@ @FVM_LIBS@ \
@@ -65,3 +76,23 @@ cs_solver_LDADD = libsaturne.la $(LTLIBINTL) \
 @LIBXML2_LDFLAGS@ @LIBXML2_LIBS@ \
 @BLAS_LDFLAGS@ @BLAS_LIBS@ \
 @FCLIBS@
+
+# Code_Saturne IO utility (minimal dependencies)
+
+cs_io_dump_SOURCES = cs_io_dump.c
+
+# Conditionally compiled executables
+
+if HAVE_PARTITIONER
+
+cs_partition_CPPFLAGS = $(AM_CPPFLAGS) \
+@BFT_CPPFLAGS@ @METIS_CPPFLAGS@ @SCOTCH_CPPFLAGS@
+cs_partition_SOURCES = cs_partition.c
+cs_partition_LDADD = $(top_builddir)/src/base/libcscore.la \
+@FVM_LDFLAGS@ @FVM_LIBS@ \
+@BFT_LDFLAGS@ @BFT_LIBS@ \
+@METIS_LDFLAGS@ @METIS_LIBS@ \
+@SCOTCH_LDFLAGS@ @SCOTCH_LIBS@ \
+@MPI_LDFLAGS@ @MPI_LIBS@
+
+endif

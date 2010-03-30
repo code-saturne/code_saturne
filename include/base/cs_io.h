@@ -507,6 +507,31 @@ cs_io_write_block_buffer(const char      *sec_name,
                          cs_io_t         *outp);
 
 /*----------------------------------------------------------------------------
+ * Return the position of the file pointer for an open kernel IO file.
+ *
+ * parameters:
+ *   inp <-- input kernel IO structure
+ *
+ * returns:
+ *   offset in file
+ *----------------------------------------------------------------------------*/
+
+fvm_file_off_t
+cs_io_get_offset(cs_io_t  *inp);
+
+/*----------------------------------------------------------------------------
+ * Set the position of the file pointer for an open kernel IO file.
+ *
+ * parameters:
+ *   inp    <-- input kernel IO structure
+ *   offset <-- offset in file
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_set_offset(cs_io_t         *inp,
+                 fvm_file_off_t   offset);
+
+/*----------------------------------------------------------------------------
  * Print information on default options for file access.
  *----------------------------------------------------------------------------*/
 

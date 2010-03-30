@@ -55,7 +55,9 @@ $(ac_aux_dir)/cs_fortran.m4 \
 $(ac_aux_dir)/cs_fvm.m4 \
 $(ac_aux_dir)/cs_libxml2.m4 \
 $(ac_aux_dir)/cs_mei.m4 \
+$(ac_aux_dir)/cs_metis.m4 \
 $(ac_aux_dir)/cs_mpi.m4 \
+$(ac_aux_dir)/cs_scotch.m4 \
 $(ac_aux_dir)/cs_syrthes.m4
 
 # One adds two whole sub-directories and get rid of the .svn
@@ -163,8 +165,13 @@ data/thch/meteo
 
 # Install man pages
 
+if HAVE_PARTITIONER
+CS_PARTITION_1=doc/manpages/cs_partition.1
+endif
+
 dist_man_MANS = \
 doc/manpages/code_saturne.1 \
+doc/manpages/cs_io_dump.1 $(CS_PARTITION_1) \
 doc/manpages/cs_solver.1
 
 # Install bash completion script
