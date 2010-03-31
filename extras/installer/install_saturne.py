@@ -269,7 +269,7 @@ class Setup:
         self.libs = self.optlibs + self.satlibs
 
         # Code_Saturne version 
-        self.version='2.0-beta2'
+        self.version='2.0-rc1'
 
         # Logging file
         self.log_file = sys.stdout
