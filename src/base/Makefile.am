@@ -472,6 +472,7 @@ $(top_srcdir)/users/base/uskpdc.f90 \
 $(top_srcdir)/users/base/usmodg.f90 \
 $(top_srcdir)/users/base/usmpst.f90 \
 $(top_srcdir)/users/base/usnpst.f90 \
+$(top_srcdir)/users/base/usperi.f90 \
 $(top_srcdir)/users/base/usphyv.f90 \
 $(top_srcdir)/users/base/usproj.f90 \
 $(top_srcdir)/users/base/uspt1d.f90 \
