@@ -1582,7 +1582,7 @@ _build_subsets(cs_int_t          set_size,
 
   }
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (n_loops >= CS_JOIN_MERGE_MAX_LOC_ITERS)
     bft_printf("WARNING max sub_loops to build subset reached\n");
 #endif

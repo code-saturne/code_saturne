@@ -78,6 +78,7 @@ cs_join_split_faces(cs_join_param_t          param,
  * Send back to the original rank the new face description.
  *
  * parameters:
+ *   param           <-- set of user-defined parameters
  *   work_mesh       <-- distributed mesh on faces to join
  *   gnum_rank_index <-- index on ranks for the old global face numbering
  *   o2n_hist        <-> old global face -> new local face numbering
@@ -85,7 +86,8 @@ cs_join_split_faces(cs_join_param_t          param,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_split_update_struct(const cs_join_mesh_t   *work_mesh,
+cs_join_split_update_struct(const cs_join_param_t   param,
+                            const cs_join_mesh_t   *work_mesh,
                             const fvm_gnum_t        gnum_rank_index[],
                             cs_join_gset_t        **o2n_hist,
                             cs_join_mesh_t        **local_mesh);

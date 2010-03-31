@@ -39,6 +39,7 @@
 #include <fvm_defs.h>
 #include <fvm_group.h>
 #include <fvm_selector.h>
+#include <fvm_interface.h>
 #include <fvm_periodicity.h>
 
 /*----------------------------------------------------------------------------
@@ -184,6 +185,11 @@ typedef struct {
   cs_int_t   *per_rank_lst;    /* Remote ranks list. For each couple,
                                   we have the distant rank number. Exist
                                   only in case of parallelism. */
+
+  fvm_interface_set_t   *face_ifs;  /* Build while reading the
+                                       preprocessor_data or while joining
+                                       periodic faces in parallel.
+                                       Otherwise NULL */
 
 } cs_mesh_builder_t ;
 

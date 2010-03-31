@@ -248,10 +248,14 @@ cs_run(void)
 
   cs_post_init_main_writer();
 
-  /* Join meshes if necessary */
+  /* Read joining parameters and join meshes if necessary */
 
   CS_PROCF (usjoin, USJOIN)();
+  cs_join_all();
 
+  /* Read periodicity parameters and join periodicity faces if necessary */
+
+  CS_PROCF (usperi, USPERI)();
   cs_join_all();
 
   /* Initialize ghost cells and other parallelism-related structures */

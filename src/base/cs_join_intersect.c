@@ -3797,6 +3797,26 @@ cs_join_intersect_faces(const cs_join_param_t   param,
 
   fvm_neighborhood_destroy(&face_neighborhood);
 
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  {
+    int  len;
+    FILE  *dbg_file = NULL;
+    char  *filename = NULL;
+
+    len = strlen("JoinDBG_FaceVis.dat")+1+2+4;
+    BFT_MALLOC(filename, len, char);
+    sprintf(filename, "Join%02dDBG_FaceVis%04d.dat",
+            param.num, CS_MAX(cs_glob_rank_id, 0));
+    dbg_file = fopen(filename, "w");
+
+    cs_join_gset_dump(dbg_file, face_visibility);
+
+    fflush(dbg_file);
+    BFT_FREE(filename);
+    fclose(dbg_file);
+  }
+#endif /* defined(DEBUG) && !defined(NDEBUG) */
+
   return face_visibility;
 }
 

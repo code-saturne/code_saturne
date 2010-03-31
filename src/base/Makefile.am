@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -83,6 +83,7 @@ $(top_srcdir)/include/base/cs_join.h \
 $(top_srcdir)/include/base/cs_join_intersect.h \
 $(top_srcdir)/include/base/cs_join_merge.h \
 $(top_srcdir)/include/base/cs_join_mesh.h \
+$(top_srcdir)/include/base/cs_join_perio.h \
 $(top_srcdir)/include/base/cs_join_post.h \
 $(top_srcdir)/include/base/cs_join_set.h \
 $(top_srcdir)/include/base/cs_join_split.h \
@@ -250,6 +251,8 @@ cs_join_f2c.f90 \
 cs_join_intersect.c \
 cs_join_merge.c \
 cs_join_mesh.c \
+cs_join_perio.c \
+cs_join_perio_f2c.f90 \
 cs_join_post.c \
 cs_join_set.c \
 cs_join_split.c \
@@ -432,6 +435,7 @@ $(top_srcdir)/users/base/uskpdc.f90 \
 $(top_srcdir)/users/base/usmodg.f90 \
 $(top_srcdir)/users/base/usmpst.f90 \
 $(top_srcdir)/users/base/usnpst.f90 \
+$(top_srcdir)/users/base/usperi.f90 \
 $(top_srcdir)/users/base/usphyv.f90 \
 $(top_srcdir)/users/base/usproj.f90 \
 $(top_srcdir)/users/base/uspt1d.f90 \

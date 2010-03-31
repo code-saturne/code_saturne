@@ -244,38 +244,36 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
                                 const cs_join_mesh_t  *parent_mesh);
 
 /*----------------------------------------------------------------------------
- * Allocate and define a cs_join_mesh_t structure relative to an extraction
- * of selected faces.
+ * Define a cs_join_mesh_t structure from a selection of faces and its
+ * related vertices.
  *
  * parameters:
- *   mesh_name           <-- name of the mesh to create
- *   n_faces             <-- number of selected faces
- *   n_g_faces           <-- global number of selected faces
- *   selected_faces      <-- list of selected faces (based on parent mesh)
- *   face_gnum           <-- global face numbers
- *   face_vtx_idx        <-- "face -> vertex" connectivity index
- *   face_vtx_lst        <-- "face -> vertex" connectivity
- *   n_select_vertices   <-- number of vertices used in joining operation
- *   n_g_select_vertices <-- global number of vertices used in joining
- *   select_vertices     <-- list of selected vertices (based on parent mesh)
- *   vtx_data            <-- array on data associated to selected vertices
+ *   name       <-- mesh name of the resulting cs_join_mesh_t structure
+ *   param      <-- set of user-defined parameters for the joining
+ *   selection  <-> selected entities
+ *   b_f2v_idx  <-- border "face -> vertex" connectivity index
+ *   b_f2v_lst  <-- border "face -> vertex" connectivity
+ *   i_f2v_idx  <-- interior "face -> vertex" connectivity index
+ *   i_f2v_lst  <-- interior "face -> vertex" connectivity
+ *   n_vertices <-- number of vertices in the parent mesh
+ *   vtx_coord  <-- vertex coordinates in parent mesh
+ *   vtx_gnum   <-- global numbering of vertices
  *
  * returns:
  *   a pointer to a cs_join_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 cs_join_mesh_t *
-cs_join_mesh_create_from_extract(const char              *mesh_name,
-                                 cs_int_t                 n_faces,
-                                 fvm_gnum_t               n_g_faces,
-                                 const cs_int_t           selected_faces[],
-                                 const fvm_gnum_t         face_gnum[],
-                                 const cs_int_t           face_vtx_idx[],
-                                 const cs_int_t           face_vtx_lst[],
-                                 cs_int_t                 n_select_vertices,
-                                 fvm_gnum_t               n_g_select_vertices,
-                                 const cs_int_t           selected_vertices[],
-                                 const cs_join_vertex_t  *vtx_data);
+cs_join_mesh_create_from_select(const char              *name,
+                                const cs_join_param_t    param,
+                                cs_join_select_t        *selection,
+                                const cs_int_t           b_f2v_idx[],
+                                const cs_int_t           b_f2v_lst[],
+                                const cs_int_t           i_f2v_idx[],
+                                const cs_int_t           i_f2v_lst[],
+                                const cs_int_t           n_vertices,
+                                const cs_real_t          vtx_coord[],
+                                const fvm_gnum_t         vtx_gnum[]);
 
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_mesh_t structure.

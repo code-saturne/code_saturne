@@ -1556,10 +1556,10 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
 
   for (i = 0; i < n_new_faces; i++) {
 
-    id = subfaces[i];
-    new_mesh->face_gnum[i] = builder->subface_gnum[id];
-    new_mesh->face_vtx_idx[i+1] =  builder->subface_index->array[id+1]
-                                 - builder->subface_index->array[id];
+      id = subfaces[i];
+      new_mesh->face_gnum[i] = builder->subface_gnum[id];
+      new_mesh->face_vtx_idx[i+1] =  builder->subface_index->array[id+1]
+                                   - builder->subface_index->array[id];
 
   } /* End of loop on new faces */
 
@@ -2078,6 +2078,7 @@ cs_join_split_faces(cs_join_param_t          param,
  * Send back to the original rank the new face description.
  *
  * parameters:
+ *   param           <-- set of user-defined parameter
  *   work_mesh       <-- distributed mesh on faces to join
  *   gnum_rank_index <-- index on ranks for the old global face numbering
  *   o2n_hist        <-> old global face -> new local face numbering
@@ -2085,7 +2086,8 @@ cs_join_split_faces(cs_join_param_t          param,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_split_update_struct(const cs_join_mesh_t   *work_mesh,
+cs_join_split_update_struct(const cs_join_param_t   param,
+                            const cs_join_mesh_t   *work_mesh,
                             const fvm_gnum_t        gnum_rank_index[],
                             cs_join_gset_t        **o2n_hist,
                             cs_join_mesh_t        **local_mesh)
@@ -2118,12 +2120,32 @@ cs_join_split_update_struct(const cs_join_mesh_t   *work_mesh,
 
     MPI_Comm  mpi_comm = fvm_parall_get_mpi_comm();
 
-    /* Save the initial global face numbering */
+    if (param.perio_num > 0) {
 
-    BFT_MALLOC(init_face_gnum, n_init_faces, fvm_gnum_t);
+      n_g_init_faces *= 2;
 
-    for (i = 0; i < n_init_faces; i++)
-      init_face_gnum[i] = _local_mesh->face_gnum[i];
+      /* Save the initial global face numbering */
+
+      BFT_MALLOC(init_face_gnum, 2*n_init_faces, fvm_gnum_t);
+
+      for (i = 0; i < n_init_faces; i++) {
+        init_face_gnum[2*i] = _local_mesh->face_gnum[i];
+        init_face_gnum[2*i+1] = _local_mesh->face_gnum[i]+1;
+      }
+
+      n_init_faces *= 2;
+
+    }
+    else {
+
+      /* Save the initial global face numbering */
+
+      BFT_MALLOC(init_face_gnum, n_init_faces, fvm_gnum_t);
+
+      for (i = 0; i < n_init_faces; i++)
+        init_face_gnum[i] = _local_mesh->face_gnum[i];
+
+    }
 
     /* Free some structures of the mesh */
 

@@ -55,22 +55,9 @@ BEGIN_C_DECLS
  * Type definition
  *===========================================================================*/
 
-typedef struct {
-
-  cs_join_param_t   param;      /* Set of parameters used to control
-                                   the joining operations */
-
-  char             *criteria;   /* Criteria used to select border faces
-                                   implied in the joining operation */
-
-} cs_join_t;
-
 /*=============================================================================
  * Global variables
  *===========================================================================*/
-
-extern cs_int_t  cs_glob_n_joinings;
-extern cs_join_t  **cs_glob_join_array;
 
 /*============================================================================
  *  Public function prototypes for Fortran API
@@ -159,14 +146,15 @@ void CS_PROCF(setajp, SETAJP)
  *===========================================================================*/
 
 /*----------------------------------------------------------------------------
- * Create and initialize a cs_join_t structure.
+ * Add a cs_join_t structure to the list of pending joinings.
  *
  * parameters:
- *   join_number   <-- number related to the joining operation
- *   sel_criteria  <-- boundary face selection criteria
- *   fraction      <-- value of the fraction parameter
- *   plane         <-- value of the plane parameter
- *   verbosity     <-- level of verbosity required
+ *   join_number  <-- number related to the joining operation
+ *   sel_criteria <-- boundary face selection criteria
+ *   fraction     <-- value of the fraction parameter
+ *   plane        <-- value of the plane parameter
+ *   perio_num    <-- periodicity number (0 if not a periodic joining)
+ *   verbosity    <-- level of verbosity required
  *---------------------------------------------------------------------------*/
 
 void
@@ -175,34 +163,6 @@ cs_join_add(int     join_number,
             float   fraction,
             float   plane,
             int     verbosity);
-
-/*----------------------------------------------------------------------------
- * Set advanced parameters to user-defined values.
- *
- * parameters:
- *   join           <-> pointer a to cs_join_t struct. to update
- *   mtf            <-- merge tolerance coefficient
- *   pmf            <-- pre-merge factor
- *   tcm            <-- tolerance computation mode
- *   icm            <-- intersection computation mode
- *   maxbrk         <-- max number of equivalences to break (merge step)
- *   max_sub_faces  <-- max. possible number of sub-faces by splitting a face
- *   tml            <-- tree max level
- *   tmb            <-- tree max boxes
- *   tmr            <-- tree max ratio
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_set_advanced_param(cs_join_t   *join,
-                           cs_real_t    mtf,
-                           cs_real_t    pmf,
-                           cs_int_t     tcm,
-                           cs_int_t     icm,
-                           cs_int_t     maxbrk,
-                           cs_int_t     max_sub_faces,
-                           cs_int_t     tml,
-                           cs_int_t     tmb,
-                           cs_real_t    tmr);
 
 /*----------------------------------------------------------------------------
  * Apply all the defined joining operations.

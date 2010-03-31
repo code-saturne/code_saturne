@@ -1,4 +1,30 @@
 * 31/03/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Add the periodicity "joining" handling in parallel by the solver.
+  modified script:
+    src/base/Makefile.am
+  added routines:
+    include/base/cs_join_perio.h
+    src/base/cs_join_perio.c
+    src/base/cs_join_perio_f2c.f90
+    users/base/usperi.f90
+  modified routines:
+    include/base/cs_join.h
+    include/base/cs_join_mesh.h
+    include/base/cs_join_split.h
+    include/base/cs_join_util.h
+    include/base/cs_mesh.h
+    src/apps/cs_solver.c
+    src/base/cs_join.c
+    src/base/cs_join_f2c.f90
+    src/base/cs_join_intersect.c
+    src/base/cs_join_merge.c
+    src/base/cs_join_mesh.c
+    src/base/cs_join_split.c
+    src/base/cs_join_update.c
+    src/base/cs_join_util.c
+    src/base/cs_mesh.c
+
+* 31/03/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Miscellaneous improvements for the parallel joining algorithm and
   preparation for the periodicity handling.
   modified routines:
