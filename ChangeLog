@@ -1,4 +1,9 @@
 * 31/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a bug in the standard initaliziation of MPI class.
+  modified script:
+    bin/cs_exec_environment.py
+
+* 31/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add many comments to the runcase script.
   Expose the VALGRIND option.
   modified script:

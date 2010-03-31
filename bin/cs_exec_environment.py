@@ -772,7 +772,7 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_other__(self, resource_info=None):
+    def __init_other__(self, p, resource_info=None):
         """
         Initialize MPI environment info for environments not handled
         in one the the previous cases.
