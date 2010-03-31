@@ -1,4 +1,10 @@
 * 31/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add many comments to the runcase script.
+  Expose the VALGRIND option.
+  modified script:
+    bin/runcase.in
+
+* 31/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix some minor bugs in library detections and a compilation issue with
   ParMETIS.
   modified scripts:
