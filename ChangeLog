@@ -1,3 +1,27 @@
+* 31/03/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Miscellaneous improvements for the parallel joining algorithm and
+  preparation for the periodicity handling.
+  modified routines:
+    include/base/cs_join.h
+    include/base/cs_join_intersect.h
+    include/base/cs_join_merge.h
+    include/base/cs_join_mesh.h
+    include/base/cs_join_post.h
+    include/base/cs_join_set.h
+    include/base/cs_join_update.h
+    include/base/cs_join_util.h
+    src/base/cs_join.c
+    src/base/cs_join_intersect.c
+    src/base/cs_join_merge.c
+    src/base/cs_join_mesh.c
+    src/base/cs_join_post.c
+    src/base/cs_join_set.c
+    src/base/cs_join_split.c
+    src/base/cs_join_update.c
+    src/base/cs_join_util.c
+    src/base/resolp.f90
+    users/base/usjoin.f90
+
 * 31/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a bug in the standard initaliziation of MPI class.
   modified script:

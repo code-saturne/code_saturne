@@ -114,7 +114,7 @@ typedef struct {
 
   fvm_gnum_t    n_g_subfaces;     /* Global number of subfaces after splitting */
   fvm_gnum_t   *subface_gconnect; /* Subface -> glob. vertex list */
-  fvm_gnum_t   *subface_gnum;    /* Subface global numbering */
+  fvm_gnum_t   *subface_gnum;     /* Subface global numbering */
 
 } face_builder_t;
 
@@ -1255,13 +1255,16 @@ _indexed_is_greater(size_t           i1,
 
 /*----------------------------------------------------------------------------
  * Define a global numbering for the subfaces after splitting faces.
+ * Synchronize face connectivity.
  *
  * parameters:
- *   builder <-> pointer to a face builder structure
+ *   builder  <-> pointer to a face builder structure
+ *   work     <-- cs_join_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_get_subface_gnum(face_builder_t  *builder)
+_get_subface_gnum(face_builder_t         *builder,
+                  const cs_join_mesh_t   *work)
 {
   cs_int_t  i, j, k, shift;
   fvm_gnum_t  min_val;
@@ -1270,10 +1273,11 @@ _get_subface_gnum(face_builder_t  *builder)
   cs_int_t  n_subfaces = builder->face_index[builder->n_faces];
   cs_int_t  *index = builder->subface_index->array;
   fvm_gnum_t  *gconnect = builder->subface_gconnect;
-  fvm_gnum_t  *glob_list = NULL, *tmp = NULL;
+  fvm_gnum_t  *glob_list = NULL, *tmp = NULL, *vgnum = NULL;
   fvm_io_num_t  *subface_io_num = NULL;
 
   const fvm_gnum_t  *global_num = NULL;
+  const cs_join_vertex_t  *vertices = work->vertices;
 
   assert(index != NULL);
 
@@ -1338,10 +1342,32 @@ _get_subface_gnum(face_builder_t  *builder)
 
   } /* End of loop on subfaces */
 
-  /* Copy glob_list as the new subface global connectivity */
+  /* Copy glob_list as the new subface global connectivity and
+     use it to define a synchronized sub-face connectivity */
 
-  for (i = 0; i < index[n_subfaces]; i++)
-    gconnect[i] = glob_list[i];
+  BFT_MALLOC(vgnum, work->n_vertices, fvm_gnum_t);
+
+  for (i = 0; i < work->n_vertices; i++)
+    vgnum[i] = vertices[i].gnum;
+
+  for (i = 0; i < n_subfaces; i++) {
+
+    for (j = index[i]; j < index[i+1]; j++) {
+
+      gconnect[j] = glob_list[j];
+
+      k = cs_search_g_binary(work->n_vertices,
+                             glob_list[j],
+                             vgnum);
+
+      assert(k != -1);
+      builder->subface_connect->array[j] = k+1;
+
+    }
+
+  } /* End of loop on subfaces */
+
+  BFT_FREE(vgnum);
 
   if (cs_glob_n_ranks > 1) { /* Parallel treatment */
 
@@ -1405,10 +1431,10 @@ _get_subface_gnum(face_builder_t  *builder)
       cs_int_t  start = index[i], end = index[i+1];
       cs_int_t  n_elts = end - start;
 
-      bft_printf(" subface %5d - gnum: %u - connect_size: %d - ",
+      bft_printf(" subface %5d - gnum: %10u - connect_size: %d - ",
                  i+1, builder->subface_gnum[i], n_elts);
       for (j = start; j < end; j++)
-        bft_printf(" %u ", glob_list[j]);
+        bft_printf(" %8u ", glob_list[j]);
       bft_printf("\n");
 
     }
@@ -1434,15 +1460,17 @@ _get_subface_gnum(face_builder_t  *builder)
  * Update a cs_join_mesh_t structure thanks to a face_builder_t structure.
  *
  * parameters:
- *   block_info <-- set of paramaters defining a contiguous distribution
- *   builder    <-- pointer to the distributed face builder structure
- *   mesh       <-> pointer to the local cs_join_mesh_t structure
+ *   block_info  <-- set of paramaters defining a contiguous distribution
+ *   builder     <-- pointer to the distributed face builder structure
+ *   mesh        <-> pointer to the local cs_join_mesh_t structure
+ *   p_o2n_hist  <-> pointer to old global face -> new local face numbering
  *---------------------------------------------------------------------------*/
 
 static void
 _update_mesh_after_split(cs_join_block_info_t    block_info,
                          face_builder_t         *builder,
-                         cs_join_mesh_t        **mesh)
+                         cs_join_mesh_t        **mesh,
+                         cs_join_gset_t        **p_o2n_hist)
 {
   cs_int_t  i, j, k, id, shift, n_subfaces, o_id;
   fvm_gnum_t  prev, cur;
@@ -1451,8 +1479,8 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
   char  *new_mesh_name = NULL;
   cs_int_t  *subfaces = NULL;
   fvm_lnum_t  *order = NULL;
-  cs_join_mesh_t  *init_mesh = *mesh;
-  cs_join_mesh_t  *new_mesh = NULL;
+  cs_join_gset_t  *o2n_hist = NULL;
+  cs_join_mesh_t  *init_mesh = *mesh, *new_mesh = NULL;
 
   /* Sanity checks */
 
@@ -1571,39 +1599,8 @@ _update_mesh_after_split(cs_join_block_info_t    block_info,
   BFT_FREE(subfaces);
   BFT_FREE(order);
 
-  cs_join_mesh_destroy(&init_mesh);
-
-  /* Set return pointer */
-
-  *mesh = new_mesh;
-}
-
-/*----------------------------------------------------------------------------
- * For each new sub-face we keep a relation between new and old
- * face global number.
- *
- * parameters:
- *   mesh       <-- mesh on sub-faces after splitting
- *   block_info <-- set of paramaters defining a contiguous distribution
- *   builder    <-- pointer to the distributed face builder structure
- *
- * returns:
- *   a pointer to a cs_join_gset_t structure saving relation between new
- *   and old faces
- *---------------------------------------------------------------------------*/
-
-static cs_join_gset_t *
-_keep_history(cs_join_mesh_t        *mesh,
-              cs_join_block_info_t   block_info,
-              face_builder_t        *builder)
-{
-  cs_int_t  i, j;
-
-  cs_join_gset_t  *o2n_hist = NULL;
-
-  assert(mesh != NULL);
-
-  /* Create structure in which we keep the history of each new face */
+  /* Create a structure in which we keep a history of global
+     face numbering for each new face */
 
   o2n_hist = cs_join_gset_create(block_info.local_size);
 
@@ -1622,27 +1619,32 @@ _keep_history(cs_join_mesh_t        *mesh,
       o2n_hist->index[i] = builder->face_index[i];
 
     BFT_MALLOC(o2n_hist->g_list,
-               o2n_hist->index[o2n_hist->n_elts],
-               fvm_gnum_t);
+               o2n_hist->index[o2n_hist->n_elts], fvm_gnum_t);
 
     for (i = 0; i < builder->n_faces; i++) {
+
       for (j = builder->face_index[i]; j < builder->face_index[i+1]; j++) {
 
-        cs_int_t  id = cs_search_g_binary(mesh->n_faces,
-                                          builder->subface_gnum[j],
-                                          mesh->face_gnum);
+        id = cs_search_g_binary(new_mesh->n_faces,
+                                builder->subface_gnum[j],
+                                new_mesh->face_gnum);
 
         assert(id != -1);
-        o2n_hist->g_list[j] = id + 1;  /* store local face num. */
+        o2n_hist->g_list[j] = id + 1;  /* store local new face num. */
 
       }
-    }
+
+    } /* End of loop on initial faces */
 
   } /* block.local_size > 0 */
 
-  /* Free memory */
+  cs_join_mesh_destroy(&init_mesh);
 
-  return  o2n_hist;
+  /* Set return pointer */
+
+  *mesh = new_mesh;
+  *p_o2n_hist = o2n_hist;
+
 }
 
 /*============================================================================
@@ -1650,7 +1652,7 @@ _keep_history(cs_join_mesh_t        *mesh,
  *===========================================================================*/
 
 /*----------------------------------------------------------------------------
- * Build new faces after the vertex fusion operation. Split initial faces into
+ * Build new faces after the vertex merge operation. Split initial faces into
  * subfaces and keep the historic between initial/final faces.
  *
  * parameters:
@@ -1679,7 +1681,7 @@ cs_join_split_faces(cs_join_param_t          param,
   cs_join_rset_t  *open_cycle = NULL, *edge_traversed_twice = NULL;
   cs_join_rset_t  *loop_limit = NULL, *head_edges = NULL;
   cs_join_rset_t  *subface_edges = NULL, *ext_edges = NULL, *int_edges = NULL;
-  face_builder_t  *loc_builder = NULL;
+  face_builder_t  *builder = NULL;
   cs_join_mesh_t  *_work = *work;
 
   const double plane = cos(param.plane *acos(-1.0)/180.);
@@ -1713,7 +1715,7 @@ cs_join_split_faces(cs_join_param_t          param,
 
   block_info = cs_join_get_block_info(_work->n_g_faces, n_ranks, local_rank);
 
-  loc_builder = _create_face_builder(block_info.local_size);
+  builder = _create_face_builder(block_info.local_size);
 
   /*
      We only have to treat faces for the current rank's block because the
@@ -1753,10 +1755,10 @@ cs_join_split_faces(cs_join_param_t          param,
                                  ext_edges,
                                  0); /* No permutation */
 
-      /* Store initial loc_builder state in case of code > 0 */
+      /* Store initial builder state in case of code > 0 */
 
-      face_s = loc_builder->face_index[block_id];
-      subface_s = loc_builder->subface_index->array[face_s];
+      face_s = builder->face_index[block_id];
+      subface_s = builder->subface_index->array[face_s];
 
       /* Split the current face into subfaces */
 
@@ -1770,7 +1772,7 @@ cs_join_split_faces(cs_join_param_t          param,
                          edges,
                          edge_face_idx,
                          edge_face_lst,
-                         loc_builder,
+                         builder,
                          &head_edges,
                          &subface_edges,
                          &ext_edges,
@@ -1779,7 +1781,7 @@ cs_join_split_faces(cs_join_param_t          param,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
       if (param.verbosity > 1 && code != NO_SPLIT_ERROR) {
         bft_printf(_("  Split face: %d with returned code: %d\n"), i+1, code);
-        _dump_face_builder(block_id, loc_builder);
+        _dump_face_builder(block_id, builder);
       }
 #endif
 
@@ -1802,11 +1804,11 @@ cs_join_split_faces(cs_join_param_t          param,
                                      ext_edges,
                                      _n_problems); /* permutation */
 
-          /* Retrieve initial loc_builder state */
+          /* Retrieve initial builder state */
 
-          loc_builder->face_index[block_id] = face_s;
-          loc_builder->subface_index->array[face_s] = subface_s;
-          loc_builder->subface_connect->n_elts = subface_s;
+          builder->face_index[block_id] = face_s;
+          builder->subface_index->array[face_s] = subface_s;
+          builder->subface_connect->n_elts = subface_s;
 
           /* Split the current face into subfaces */
 
@@ -1820,7 +1822,7 @@ cs_join_split_faces(cs_join_param_t          param,
                              edges,
                              edge_face_idx,
                              edge_face_lst,
-                             loc_builder,
+                             builder,
                              &head_edges,
                              &subface_edges,
                              &ext_edges,
@@ -1867,33 +1869,32 @@ cs_join_split_faces(cs_join_param_t          param,
 
           /* Keep the initial face connectivity */
 
-          loc_builder->face_index[block_id] = face_s;
-          loc_builder->face_index[block_id+1] = face_s + 1;
+          builder->face_index[block_id] = face_s;
+          builder->face_index[block_id+1] = face_s + 1;
 
           /* face -> subface connectivity index update */
 
-          cs_join_rset_resize(&(loc_builder->subface_index), face_s+1);
+          cs_join_rset_resize(&(builder->subface_index), face_s+1);
 
-          loc_builder->subface_index->n_elts = face_s + 1;
-          loc_builder->subface_index->array[face_s] = subface_s;
-          loc_builder->subface_index->array[face_s+1]
-            = subface_s + n_face_vertices;
+          builder->subface_index->n_elts = face_s + 1;
+          builder->subface_index->array[face_s] = subface_s;
+          builder->subface_index->array[face_s+1] = subface_s + n_face_vertices;
 
           /* face -> subface connectivity list update */
 
-          cs_join_rset_resize(&(loc_builder->subface_connect),
+          cs_join_rset_resize(&(builder->subface_connect),
                               subface_s + n_face_vertices);
 
-          loc_builder->subface_connect->n_elts = subface_s + n_face_vertices;
+          builder->subface_connect->n_elts = subface_s + n_face_vertices;
 
           for (j = 0; j < n_face_vertices; j++)
-            loc_builder->subface_connect->array[subface_s + j]
+            builder->subface_connect->array[subface_s + j]
               = _work->face_vtx_lst[j + _work->face_vtx_idx[i] - 1];
 
           if (param.verbosity > 1) {
             bft_printf("\n Keep initial connectivity for face %d (%u):\n",
                        i+1, _work->face_gnum[i]);
-            _dump_face_builder(block_id, loc_builder);
+            _dump_face_builder(block_id, builder);
           }
 
         } /* End if n_current_face_problems >= n_face_vertices */
@@ -1996,41 +1997,41 @@ cs_join_split_faces(cs_join_param_t          param,
   BFT_FREE(edge_face_idx);
   BFT_FREE(edge_face_lst);
 
-  { /* Define a global number for each new sub-faces */
-
-    cs_int_t  n_subfaces = loc_builder->face_index[loc_builder->n_faces];
-    cs_int_t  sub_connect_size = loc_builder->subface_index->array[n_subfaces];
-
-    /* Define subface_gconnect */
-
-    BFT_MALLOC(loc_builder->subface_gconnect, sub_connect_size, fvm_gnum_t);
-
-    for (i = 0; i < sub_connect_size; i++) {
-
-      cs_int_t  vid = loc_builder->subface_connect->array[i] - 1;
-      fvm_gnum_t  vgnum = _work->vertices[vid].gnum;
-
-      loc_builder->subface_gconnect[i] = vgnum;
-
-    }
-
-    _get_subface_gnum(loc_builder);
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-    bft_printf("\nFINAL BUILDER STATE\n");
-    for (i = 0; i < loc_builder->n_faces; i++)
-      _dump_face_builder(i, loc_builder);
-#endif
-
-    BFT_FREE(loc_builder->subface_gconnect);
-
-  }
-
   /* Delete error management lists */
 
   cs_join_rset_destroy(&open_cycle);
   cs_join_rset_destroy(&edge_traversed_twice);
   cs_join_rset_destroy(&loop_limit);
+
+  { /* Define a global number for each new sub-faces */
+
+    cs_int_t  n_subfaces = builder->face_index[builder->n_faces];
+    cs_int_t  sub_connect_size = builder->subface_index->array[n_subfaces];
+
+    /* Define subface_gconnect */
+
+    BFT_MALLOC(builder->subface_gconnect, sub_connect_size, fvm_gnum_t);
+
+    for (i = 0; i < sub_connect_size; i++) {
+
+      cs_int_t  vid = builder->subface_connect->array[i] - 1;
+      fvm_gnum_t  vgnum = _work->vertices[vid].gnum;
+
+      builder->subface_gconnect[i] = vgnum;
+
+    }
+
+    _get_subface_gnum(builder, _work);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+    bft_printf("\nFINAL BUILDER STATE\n");
+    for (i = 0; i < builder->n_faces; i++)
+      _dump_face_builder(i, builder);
+#endif
+
+    BFT_FREE(builder->subface_gconnect);
+
+  }
 
   /* Update cs_join_mesh_t structure and keep a relation between
      new and old faces.
@@ -2053,20 +2054,18 @@ cs_join_split_faces(cs_join_param_t          param,
   */
 
   /* Reduce the definition of the working mesh to the set of new
-     global face numbers built from the local block. */
+     global face numbers built from the local block.
+     For each new sub-face we maintain a relation between new and old
+     face global number. Update also face state */
 
-  _update_mesh_after_split(block_info, loc_builder, &_work);
-
-  /* For each new sub-face we maintain a relation between new and old
-     face global number */
-
-  _old2new_history = _keep_history(_work,
-                                   block_info,
-                                   loc_builder);
+  _update_mesh_after_split(block_info,
+                           builder,
+                           &_work,
+                           &_old2new_history);
 
   /* Free face_builder_t structure */
 
-  loc_builder = _destroy_face_builder(loc_builder);
+  builder = _destroy_face_builder(builder);
 
   /* Set return pointers */
 
@@ -2162,9 +2161,9 @@ cs_join_split_update_struct(const cs_join_mesh_t   *work_mesh,
 
     /* Synchronize _o2n_hist */
 
-    distrib_sync_hist = cs_join_gset_sync_by_block(n_g_init_faces,
-                                                   _o2n_hist,
-                                                   mpi_comm);
+    distrib_sync_hist = cs_join_gset_block_sync(n_g_init_faces,
+                                                _o2n_hist,
+                                                mpi_comm);
 
     cs_join_gset_destroy(&_o2n_hist);
     _o2n_hist = cs_join_gset_create(n_init_faces);
@@ -2174,38 +2173,15 @@ cs_join_split_update_struct(const cs_join_mesh_t   *work_mesh,
 
     BFT_FREE(init_face_gnum);
 
-    cs_join_gset_update_from_block(n_g_init_faces,
-                                   distrib_sync_hist,
-                                   _o2n_hist,
-                                   mpi_comm);
+    cs_join_gset_block_update(n_g_init_faces,
+                              distrib_sync_hist,
+                              _o2n_hist,
+                              mpi_comm);
 
     cs_join_gset_destroy(&distrib_sync_hist);
 
-
   }
 #endif /* HAVE_MPI */
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  { /* Full dump of structures */
-
-    int  len;
-    FILE  *dbg_file = NULL;
-    char  *filename = NULL;
-
-    len = strlen("JoinDBG_o2nFaceHist.dat")+1+4;
-    BFT_MALLOC(filename, len, char);
-    sprintf(filename, "JoinDBG_o2nFaceHist%04d.dat",
-            CS_MAX(cs_glob_rank_id, 0));
-    dbg_file = fopen(filename, "w");
-
-    cs_join_gset_dump(dbg_file, _o2n_hist);
-
-    fflush(dbg_file);
-    BFT_FREE(filename);
-    fclose(dbg_file);
-
-  }
-#endif
 
   /* Set return pointers */
 

@@ -1094,7 +1094,7 @@ if (ncesmp.gt.0) then
   enddo
 endif
 
-! ---> Terme sources de masse
+! ---> Termes sources Lagrangien
 if (iilagr.eq.2 .and. ltsmas.eq.1 .and. iphas.eq.ilphas) then
   do iel = 1, ncel
     w7(iel) = w7(iel) -tslagr(iel,itsmas)

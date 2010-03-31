@@ -70,6 +70,18 @@ typedef enum {
 
 } cs_join_type_t;
 
+typedef enum {
+
+  CS_JOIN_STATE_UNDEF,
+  CS_JOIN_STATE_NEW,
+  CS_JOIN_STATE_ORIGIN,
+  CS_JOIN_STATE_PERIO,
+  CS_JOIN_STATE_MERGE,
+  CS_JOIN_STATE_PERIO_MERGE,
+  CS_JOIN_STATE_SPLIT
+
+} cs_join_state_t;
+
 /*----------------------------------------------------------------------------
  * Set of user parameters to control the join operation
  *----------------------------------------------------------------------------*/
@@ -151,7 +163,11 @@ typedef struct {
 
 } cs_join_param_t;
 
-typedef struct { /* Structure used to synchronize single elements */
+/*----------------------------------------------------------------------------
+ * Set of variables to synchronize single elements
+ *---------------------------------------------------------------------------*/
+
+typedef struct {
 
   int      n_elts;
   int      n_ranks;
@@ -185,7 +201,7 @@ typedef struct {
 
   cs_real_t    *cell_cen;        /* Cell center for cells implied */
   fvm_gnum_t   *cell_gnum;       /* Global cell numbering of the cells
-                                         holding the selected face */
+                                    bearing the selected face */
 
   cs_int_t      n_vertices;      /* Number of vertices selected
                                     for the joining operation */
@@ -199,6 +215,11 @@ typedef struct {
 
   cs_int_t     *b_adj_faces;
   cs_int_t     *i_adj_faces;
+
+  /* Keep the status of all faces of the related cs_mesh_t */
+
+  cs_join_state_t   *b_face_state;
+  cs_join_state_t   *i_face_state;
 
   /*
      Single elements (Only possible in parallel). It appears

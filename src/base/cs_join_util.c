@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2009 EDF S.A., France
+ *     Copyright (C) 2008-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -573,11 +573,11 @@ _add_single_vertices(fvm_interface_set_t    *interfaces,
 
     for (ii = 0; ii < n_entities; ii++) {
 
-      int vtx_id = local_num[ii] - 1;
+      int  vtx_id = local_num[ii] - 1;
 
       assert(vtx_id < var_size);
 
-      if (count[vtx_id] == 0 && recv_buf[ii] > 0) {
+      if (count[vtx_id] == 0 && recv_buf[ii] > 0) { /* Find a single vertex */
 
         if (last_found_rank != distant_rank) {
           last_found_rank = distant_rank;
@@ -593,7 +593,7 @@ _add_single_vertices(fvm_interface_set_t    *interfaces,
 
   }
 
-  if (n_max_elts > 0) {
+  if (n_max_elts > 0) { /* We have found single vertices */
 
     BFT_MALLOC(single->ranks, n_max_ranks, int);
     BFT_MALLOC(single->index, n_max_ranks + 1, int);
@@ -810,7 +810,7 @@ _add_coupled_vertices(fvm_interface_set_t    *interfaces,
 
     for (ii = 0; ii < n_entities; ii++) {
 
-      if (recv_buf[ii] == local_rank) {
+      if (recv_buf[ii] == local_rank) { /* Coupled vertex found */
         coupled->n_elts++;
         if (last_found_rank != distant_rank) {
           last_found_rank = distant_rank;
@@ -912,7 +912,7 @@ _get_missing_vertices(cs_int_t              n_vertices,
                       cs_join_select_t     *selection)
 {
   cs_int_t  i;
-  fvm_gnum_t  n_g_elts;
+  fvm_gnum_t  n_l_elts, n_g_elts;
 
   cs_int_t  *vtx_tag = NULL, *related_ranks = NULL;
 
@@ -938,7 +938,9 @@ _get_missing_vertices(cs_int_t              n_vertices,
                        related_ranks,
                        selection->s_vertices);
 
-  MPI_Allreduce(&(selection->s_vertices->n_elts), &n_g_elts, 1, FVM_MPI_GNUM,
+  n_l_elts = selection->s_vertices->n_elts;
+
+  MPI_Allreduce(&n_l_elts, &n_g_elts, 1, FVM_MPI_GNUM,
                 MPI_SUM, cs_glob_mpi_comm);
 
   if (n_g_elts > 0) {
@@ -1312,7 +1314,7 @@ _add_single_edges(fvm_interface_set_t   *ifs,
 
       for (j = 0; j < tmp_size; j++) {
 
-        if (edge_tag[j] == 0) {
+        if (edge_tag[j] == 0) { /* Not already treated */
           if (cs_search_binary(n_entities, tmp_edges[2*j], local_num) > -1) {
             if (cs_search_binary(n_entities, tmp_edges[2*j+1], local_num) > -1) {
 
@@ -1323,7 +1325,7 @@ _add_single_edges(fvm_interface_set_t   *ifs,
                 last_found_rank = distant_rank;
               }
 
-              edge_tag[j] = 1;
+              edge_tag[j] = 1; /* Tag as done */
               s_edges->array[2*shift] = tmp_edges[2*j];
               s_edges->array[2*shift+1] = tmp_edges[2*j+1];
               shift++;
@@ -1812,7 +1814,7 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
                    cs_int_t              i_face_cells[],
                    cs_join_select_t     *selection)
 {
-  fvm_gnum_t  n_g_elts;
+  fvm_gnum_t  n_l_elts, n_g_elts;
 
   cs_int_t  *sel_v2v_idx = NULL, *sel_v2v_lst = NULL;
 
@@ -1837,7 +1839,9 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
                     i_face_cells,
                     selection->s_edges);
 
-  MPI_Allreduce(&(selection->s_edges->n_elts), &n_g_elts, 1, FVM_MPI_GNUM,
+  n_l_elts = selection->s_edges->n_elts;
+
+  MPI_Allreduce(&n_l_elts, &n_g_elts, 1, FVM_MPI_GNUM,
                 MPI_SUM, cs_glob_mpi_comm);
 
   if (n_g_elts > 0) {
@@ -2398,6 +2402,9 @@ cs_join_select_create(const char  *selection_criteria,
   selection->n_i_adj_faces = 0;
   selection->i_adj_faces = NULL;
 
+  selection->b_face_state = NULL;
+  selection->i_face_state = NULL;
+
   /*
      Single elements (Only possible in parallel. It appears
      when the domain splitting has a poor quality and elements
@@ -2449,7 +2456,9 @@ cs_join_select_create(const char  *selection_criteria,
 #if defined(HAVE_MPI)
   if (n_ranks > 1) { /* Parallel treatment */
 
-    MPI_Allreduce(&(selection->n_faces), &(selection->n_g_faces),
+    fvm_gnum_t n_l_faces = selection->n_faces;
+
+    MPI_Allreduce(&n_l_faces, &(selection->n_g_faces),
                   1, FVM_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
 
     for (i = 0; i < selection->n_faces; i++) {
@@ -2473,7 +2482,7 @@ cs_join_select_create(const char  *selection_criteria,
                        &(selection->cell_cen));
 
   if (verbosity > 0)
-    bft_printf(_("  Number of boundary faces selected for joining: %10u\n"),
+    bft_printf(_("  Global number of boundary faces selected for joining: %10u\n"),
                selection->n_g_faces);
 
   /* Define a compact global numbering on selected border faces and
@@ -2485,15 +2494,6 @@ cs_join_select_create(const char  *selection_criteria,
 
   assert(selection->n_g_faces == selection->compact_rank_index[n_ranks]);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Selected faces for the joining operation:\n"));
-  for (i = 0; i < selection->n_faces; i++)
-    bft_printf(" %9d | %9d | %10u | %10u\n",
-               i, selection->faces[i], selection->compact_face_gnum[i],
-               selection->cell_gnum[i]);
-  bft_printf("\n");
-#endif
-
   /* Extract selected vertices from the selected border faces */
 
   _extract_vertices(selection->n_faces,
@@ -2503,13 +2503,6 @@ cs_join_select_create(const char  *selection_criteria,
                     mesh->n_vertices,
                     &(selection->n_vertices),
                     &(selection->vertices));
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Select vertices for the joining operation:\n"));
-  for (i = 0; i < selection->n_vertices; i++)
-    bft_printf(" %9d | %9d\n", i, selection->vertices[i]);
-  bft_printf("\n");
-#endif
 
 #if defined(HAVE_MPI)
   if (n_ranks > 1) { /* Search for missing vertices */
@@ -2552,13 +2545,6 @@ cs_join_select_create(const char  *selection_criteria,
                    selection->n_faces,
                    selection->faces);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Contiguous border faces for the joining operation:\n"));
-  for (i = 0; i < selection->n_b_adj_faces; i++)
-    bft_printf(" %9d | %9d\n", i, selection->b_adj_faces[i]);
-  bft_printf("\n");
-#endif
-
   /* Extract list of interior faces contiguous to the selected vertices */
 
   _extract_contig_faces(mesh->n_vertices,
@@ -2568,13 +2554,6 @@ cs_join_select_create(const char  *selection_criteria,
                         mesh->i_face_vtx_lst,
                         &(selection->n_i_adj_faces),
                         &(selection->i_adj_faces));
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Contiguous interior faces for the joining operation:\n"));
-  for (i = 0; i < selection->n_i_adj_faces; i++)
-    bft_printf(" %9d | %9d\n", i, selection->i_adj_faces[i]);
-  bft_printf("\n");
-#endif
 
    /* Check if there is no forgotten vertex in the selection.
       Otherwise define structures to enable future synchronization.
@@ -2599,9 +2578,39 @@ cs_join_select_create(const char  *selection_criteria,
   }
 #endif
 
+  /* Face state setting */
+
+  BFT_MALLOC(selection->b_face_state, mesh->n_b_faces, cs_join_state_t);
+  BFT_MALLOC(selection->i_face_state, mesh->n_i_faces, cs_join_state_t);
+
+  for (i = 0; i < mesh->n_b_faces; i++)
+    selection->b_face_state[i] = CS_JOIN_STATE_UNDEF;
+
+  for (i = 0; i < mesh->n_i_faces; i++)
+    selection->i_face_state[i] = CS_JOIN_STATE_UNDEF;
+
+  for (i = 0; i < selection->n_faces; i++)
+    selection->b_face_state[selection->faces[i]-1] = CS_JOIN_STATE_ORIGIN;
+
+  for (i = 0; i < selection->n_b_adj_faces; i++)
+    selection->b_face_state[selection->b_adj_faces[i]-1] = CS_JOIN_STATE_ORIGIN;
+
+  for (i = 0; i < selection->n_i_adj_faces; i++)
+    selection->i_face_state[selection->i_adj_faces[i]-1] = CS_JOIN_STATE_ORIGIN;
+
   /* Display information according to the level of verbosity */
 
   if (verbosity > 1) {
+
+    bft_printf(_("\n  Local information about selection structure:\n"));
+    bft_printf(_("    number of faces:               %8d\n"),
+               selection->n_faces);
+    bft_printf(_("    number of vertices:            %8d\n"),
+               selection->n_vertices);
+    bft_printf(_("    number of adj. border faces:   %8d\n"),
+               selection->n_b_adj_faces);
+    bft_printf(_("    number of adj. interior faces: %8d\n"),
+               selection->n_i_adj_faces);
 
     if (selection->do_single_sync == true) {
       bft_printf("\n Information on single/coupled elements:\n");
@@ -2620,11 +2629,41 @@ cs_join_select_create(const char  *selection_criteria,
       for (i = 0; i < n_ranks + 1; i++)
         bft_printf(" %5d | %11u\n", i, selection->compact_rank_index[i]);
       bft_printf("\n");
-
-      bft_printf_flush();
     }
 
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Selected faces for the joining operation:\n"));
+  for (i = 0; i < selection->n_faces; i++)
+    bft_printf(" %9d | %9d | %10u | %10u\n",
+               i, selection->faces[i], selection->compact_face_gnum[i],
+               selection->cell_gnum[i]);
+  bft_printf("\n");
+#endif
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Select vertices for the joining operation:\n"));
+  for (i = 0; i < selection->n_vertices; i++)
+    bft_printf(" %9d | %9d\n", i, selection->vertices[i]);
+  bft_printf("\n");
+#endif
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Contiguous border faces for the joining operation:\n"));
+  for (i = 0; i < selection->n_b_adj_faces; i++)
+    bft_printf(" %9d | %9d\n", i, selection->b_adj_faces[i]);
+  bft_printf("\n");
+#endif
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Contiguous interior faces for the joining operation:\n"));
+  for (i = 0; i < selection->n_i_adj_faces; i++)
+    bft_printf(" %9d | %9d\n", i, selection->i_adj_faces[i]);
+  bft_printf("\n");
+#endif
+
   } /* End if verbosity > 1 */
+
+  bft_printf_flush();
 
   return  selection;
 }
@@ -2652,6 +2691,8 @@ cs_join_select_destroy(cs_join_select_t  **join_select)
     BFT_FREE(_js->vertices);
     BFT_FREE(_js->b_adj_faces);
     BFT_FREE(_js->i_adj_faces);
+    BFT_FREE(_js->b_face_state);
+    BFT_FREE(_js->i_face_state);
 
     _destroy_join_sync(&(_js->s_vertices));
     _destroy_join_sync(&(_js->c_vertices));

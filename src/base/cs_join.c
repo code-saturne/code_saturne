@@ -99,6 +99,72 @@ cs_join_t  **cs_glob_join_array = NULL;
  * Private function definitions
  *===========================================================================*/
 
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+/*----------------------------------------------------------------------------
+ * Dump a cs_mesh_t structure into a file for debugging purpose
+ *
+ * parameters:
+ *   join_num    <-- join number
+ *   basename    <-- string
+ *   mesh        <-- pointer to cs_mesh_t structure
+ *---------------------------------------------------------------------------*/
+
+static void
+_dump_mesh(const  int          join_num,
+           const  char         basename[],
+           const  cs_mesh_t   *mesh)
+{
+  int  base_len, len;
+  FILE  *dbg_file = NULL;
+  char  *filename = NULL;
+
+  base_len = strlen(basename);
+  len = strlen("JoinDBG__.dat")+1+4+2+base_len;
+  BFT_MALLOC(filename, len, char);
+  sprintf(filename, "Join%02dDBG_%s_%04d.dat",
+          join_num, basename, fvm_parall_get_rank());
+  dbg_file = fopen(filename, "w");
+
+  cs_mesh_dump_file(dbg_file, mesh);
+
+  fflush(dbg_file);
+  BFT_FREE(filename);
+  fclose(dbg_file);
+}
+
+/*----------------------------------------------------------------------------
+ * Dump a cs_join_gset_t structure into a file for debugging purpose
+ *
+ * parameters:
+ *   join_num    <-- join number
+ *   basename    <-- string
+ *   set         <-- pointer to cs_join_gset_t structure
+ *---------------------------------------------------------------------------*/
+
+static void
+_dump_gset(const  int               join_num,
+           const  char              basename[],
+           const  cs_join_gset_t   *set)
+{
+  int  base_len, len;
+  FILE  *dbg_file = NULL;
+  char  *filename = NULL;
+
+  base_len = strlen(basename);
+  len = strlen("JoinDBG__.dat")+1+4+2+base_len;
+  BFT_MALLOC(filename, len, char);
+  sprintf(filename, "Join%02dDBG_%s_%04d.dat",
+          join_num, basename, fvm_parall_get_rank());
+  dbg_file = fopen(filename, "w");
+
+  cs_join_gset_dump(dbg_file, set);
+
+  fflush(dbg_file);
+  BFT_FREE(filename);
+  fclose(dbg_file);
+}
+#endif
+
 /*----------------------------------------------------------------------------
  * Compute the cross product of two vectors.
  *
@@ -1059,8 +1125,7 @@ _build_join_structures(cs_join_param_t           join_param,
  *   work_join_edges      <--  pointer to a cs_join_edges_t structure
  *   p_edge_edge_vis      <->  pointer to a cs_join_glist_t structure
  *                             (freed here)
- *   n_g_ifm_vertices     <--  global number of vertices on the full mesh before
- *                             joining. Use to create the new glob. vertex num.
+ *   init_max_vtx_gnum    <--  initial max. global numbering for vertices
  *   p_n_g_new_vertices   -->  global number of vertices created during the
  *                             intersection of edges
  *   p_vtx_eset           -->  structure storing equivalences between vertices
@@ -1075,7 +1140,7 @@ _intersect_edges(cs_join_param_t          param,
                  cs_join_mesh_t          *work_join_mesh,
                  const cs_join_edges_t   *work_join_edges,
                  cs_join_gset_t         **p_edge_edge_vis,
-                 fvm_gnum_t               n_g_ifm_vertices,
+                 fvm_gnum_t               init_max_vtx_gnum,
                  fvm_gnum_t              *p_n_g_new_vertices,
                  cs_join_eset_t         **p_vtx_eset,
                  cs_join_inter_edges_t  **p_inter_edges)
@@ -1155,7 +1220,7 @@ _intersect_edges(cs_join_param_t          param,
                                 work_join_edges,
                                 work_join_mesh,
                                 inter_set,
-                                n_g_ifm_vertices,
+                                init_max_vtx_gnum,
                                 &n_g_new_vertices,
                                 &vtx_eset);
 
@@ -1183,7 +1248,8 @@ _intersect_edges(cs_join_param_t          param,
 
       /* Add new vertices to edge description if necessary */
 
-      cs_join_intersect_update_struct(work_join_edges,
+      cs_join_intersect_update_struct(param.verbosity,
+                                      work_join_edges,
                                       work_join_mesh,
                                       &inter_edges);
 
@@ -1244,8 +1310,7 @@ _intersect_edges(cs_join_param_t          param,
  *  join_select          <--  list of all implied entities in the
  *                            joining operation
  *  n_iwm_vertices       <--  initial number of vertices in work struct.
- *  n_g_ifm_vertices     <--  initial global number of vertices for the full
- *                            mesh
+ *  init_max_vtx_gnum    <--  initial max. global numbering for vertices
  *  n_g_new_vertices     <--  global number of vertices created with the
  *                            intersection of edges
  *  rank_face_gnum_index <--  index on face global numering to determine the
@@ -1265,7 +1330,7 @@ static void
 _merge_vertices(cs_join_param_t           param,
                 cs_join_select_t         *join_select,
                 cs_int_t                  n_iwm_vertices,
-                fvm_gnum_t                n_g_ifm_vertices,
+                fvm_gnum_t                init_max_vtx_gnum,
                 fvm_gnum_t                n_g_new_vertices,
                 cs_join_eset_t           *vtx_eset,
                 cs_join_inter_edges_t    *inter_edges,
@@ -1277,7 +1342,7 @@ _merge_vertices(cs_join_param_t           param,
   int  i;
   double  clock_start, clock_end, cpu_start, cpu_end;
 
-  fvm_gnum_t  n_g_ai_vertices = n_g_ifm_vertices + n_g_new_vertices;
+  fvm_gnum_t  new_max_vtx_gnum = init_max_vtx_gnum + n_g_new_vertices;
   fvm_gnum_t  *rank_face_gnum_index = join_select->compact_rank_index;
   fvm_gnum_t  *iwm_vtx_gnum = NULL;
   fvm_gnum_t  *o2n_vtx_gnum = NULL;
@@ -1306,7 +1371,7 @@ _merge_vertices(cs_join_param_t           param,
   /* Merge vertices */
 
   cs_join_merge_vertices(param,
-                         n_g_ai_vertices,  /* ai: after intersection */
+                         new_max_vtx_gnum,
                          work_join_mesh,
                          vtx_eset);
 
@@ -1317,8 +1382,8 @@ _merge_vertices(cs_join_param_t           param,
 
   cs_join_merge_update_struct(param,
                               n_iwm_vertices,
-                              n_g_ifm_vertices,
                               iwm_vtx_gnum,
+                              init_max_vtx_gnum,
                               rank_face_gnum_index,
                               &work_join_mesh,
                               &work_join_edges,
@@ -1332,15 +1397,6 @@ _merge_vertices(cs_join_param_t           param,
 
   inter_edges = cs_join_inter_edges_destroy(inter_edges);
 
-  /* Post if required and level of verbosity is reached */
-
-  if (param.verbosity > 2)
-    cs_join_post_dump_mesh("MergeWorkMesh", work_join_mesh, param);
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-    cs_join_mesh_dump_edges(work_join_edges, work_join_mesh);
-#endif
-
   /* Update cs_mesh_t structure after the vertex merge */
 
   cs_join_update_mesh_after_merge(param,
@@ -1348,6 +1404,20 @@ _merge_vertices(cs_join_param_t           param,
                                   o2n_vtx_gnum,       /* free inside */
                                   local_join_mesh,
                                   mesh);
+
+  /* Clean meshes after update (empty edges, degenerated edges,  ...) */
+
+  cs_join_mesh_clean(work_join_mesh, param.verbosity);
+  cs_join_mesh_clean(local_join_mesh, param.verbosity);
+
+  /* Define a new cs_join_edges_t structure */
+
+  cs_join_mesh_destroy_edges(&work_join_edges);
+  work_join_edges = cs_join_mesh_define_edges(work_join_mesh);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+    cs_join_mesh_dump_edges(work_join_edges, work_join_mesh);
+#endif
 
   clock_end = bft_timer_wtime();
   cpu_end = bft_timer_cpu_time();
@@ -1359,6 +1429,11 @@ _merge_vertices(cs_join_param_t           param,
                  "    CPU time:                   %10.3g\n"),
                clock_end - clock_start, cpu_end - cpu_start);
   bft_printf_flush();
+
+  /* Post if required and level of verbosity is reached */
+
+  if (param.verbosity > 2)
+    cs_join_post_dump_mesh("MergeWorkMesh", work_join_mesh, param);
 
   /* Set return pointers */
 
@@ -1395,7 +1470,7 @@ _split_faces(cs_join_param_t      param,
   double  clock_start, clock_end, cpu_start, cpu_end;
 
   fvm_gnum_t  *rank_face_gnum_index = join_select->compact_rank_index;
-  cs_join_gset_t  *old2new_hist = NULL;
+  cs_join_gset_t  *history = NULL;
   cs_mesh_t  *mesh = *p_mesh;
 
   clock_start = bft_timer_wtime();
@@ -1405,20 +1480,20 @@ _split_faces(cs_join_param_t      param,
                       work_face_normal,
                       work_join_edges,
                       p_work_join_mesh,
-                      &old2new_hist);
+                      &history);
 
   /* Send back to the original rank the new face description */
 
   cs_join_split_update_struct(*p_work_join_mesh,
                               rank_face_gnum_index,
-                              &old2new_hist,
+                              &history,
                               &local_join_mesh);
 
   /* Update cs_mesh_t structure after the face splitting */
 
   cs_join_update_mesh_after_split(param,
                                   join_select,
-                                  old2new_hist,
+                                  history,
                                   local_join_mesh,
                                   mesh);
 
@@ -1442,7 +1517,7 @@ _split_faces(cs_join_param_t      param,
 
   /* Free memory */
 
-  cs_join_gset_destroy(&old2new_hist);
+  cs_join_gset_destroy(&history);
 }
 
 /*----------------------------------------------------------------------------
@@ -1491,6 +1566,8 @@ void CS_PROCF(numjoi, NUMJOI)
 )
 {
   *numjoi = cs_glob_n_joinings;
+
+  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -1571,7 +1648,6 @@ void CS_PROCF(setajp, SETAJP)
  cs_int_t    *tml,
  cs_int_t    *tmb,
  cs_real_t   *tmr
- CS_ARGF_SUPP_CHAINE
 )
 {
   cs_int_t  i, join_id = -1;
@@ -1650,7 +1726,7 @@ cs_join_add(int     join_number,
                 "  It must be between [0, 90] and is here: %f\n"),
               plane);
 
-   /* Allocate and initialize a cs_join_t structure */
+  /* Allocate and initialize a cs_join_t structure */
 
   BFT_REALLOC(cs_glob_join_array, cs_glob_n_joinings + 1, cs_join_t *);
   BFT_MALLOC(join, 1, cs_join_t);
@@ -1837,7 +1913,7 @@ cs_join_all(void)
     /* Print information into listing file */
 
     bft_printf(_("\n -------------------------------------------------------\n"
-                 "  Joining number %d:\n\n"), join_id + 1);
+                 "  Joining number %d:\n\n"), join_param.num);
     bft_printf(_("  Selection criteria: \"%s\"\n"), join_info->criteria);
 
     if (join_param.verbosity > 0) {
@@ -1847,48 +1923,33 @@ cs_join_all(void)
                    "    Maximum angle between joined face planes: %8.5f\n\n"),
                  join_param.fraction, join_param.plane);
 
-      if (join_param.verbosity > 1)
-         bft_printf(_("  Advanced join parameters:\n"
-                      "    Deepest level reachable in tree building: %8d\n"
-                      "    Max boxes by leaf:                        %8d\n"
-                      "    Max ratio of linked boxes / init. boxes:  %8.5f\n"
-                      "    Merge step tolerance multiplier:          %8.5f\n"
-                      "    Pre-merge factor:                         %8.5f\n"
-                      "    Tolerance computation mode:               %8d\n"
-                      "    Intersection computation mode:            %8d\n"
-                      "    Max. number of equiv. breaks:             %8d\n"
-                      "    Max. number of subfaces by face:          %8d\n\n"),
-                    join_param.tree_max_level,
-                    join_param.tree_n_max_boxes,
-                    join_param.tree_max_box_ratio,
-                    join_param.merge_tol_coef,
-                    join_param.pre_merge_factor,
-                    join_param.tcm, join_param.icm,
-                    join_param.n_max_equiv_breaks,
-                    join_param.max_sub_faces);
+      bft_printf(_("  Advanced joining parameters:\n"
+                   "    Verbosity level:                          %8d\n"
+                   "    Deepest level reachable in tree building: %8d\n"
+                   "    Max boxes by leaf:                        %8d\n"
+                   "    Max ratio of linked boxes / init. boxes:  %8.5f\n"
+                   "    Merge step tolerance multiplier:          %8.5f\n"
+                   "    Pre-merge factor:                         %8.5f\n"
+                   "    Tolerance computation mode:               %8d\n"
+                   "    Intersection computation mode:            %8d\n"
+                   "    Max. number of equiv. breaks:             %8d\n"
+                   "    Max. number of subfaces by face:          %8d\n\n"),
+                 join_param.verbosity,
+                 join_param.tree_max_level,
+                 join_param.tree_n_max_boxes,
+                 join_param.tree_max_box_ratio,
+                 join_param.merge_tol_coef,
+                 join_param.pre_merge_factor,
+                 join_param.tcm, join_param.icm,
+                 join_param.n_max_equiv_breaks,
+                 join_param.max_sub_faces);
 
       cs_mesh_print_info(mesh, _(" Before joining"));
       bft_printf("\n");
     }
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    {
-      int  len;
-      FILE  *dbg_file = NULL;
-      char  *filename = NULL;
-
-      len = strlen("JoinDBG_InitMesh_.dat")+1+4+2;
-      BFT_MALLOC(filename, len, char);
-      sprintf(filename, "Join%02dDBG_InitMesh_%04d.dat",
-              join_id+1, fvm_parall_get_rank());
-      dbg_file = fopen(filename, "w");
-
-      cs_mesh_dump_file(dbg_file, mesh);
-
-      fflush(dbg_file);
-      BFT_FREE(filename);
-      fclose(dbg_file);
-    }
+    _dump_mesh(join_param.num, "InitMesh", mesh);
 #endif
 
     /* Build arrays and structures required for selection;
@@ -1936,8 +1997,7 @@ cs_join_all(void)
     if (join_select->n_g_faces > 0) {
 
       cs_int_t  n_iwm_vertices;      /* iwm: initial work mesh */
-      fvm_gnum_t  n_g_ifm_vertices;  /* ifm: initial full mesh */
-      fvm_gnum_t  n_g_new_vertices;
+      fvm_gnum_t  init_max_vtx_gnum, n_g_new_vertices;
 
       cs_real_t  *work_face_normal = NULL;
       cs_join_gset_t  *edge_edge_visibility = NULL;
@@ -1954,9 +2014,6 @@ cs_join_all(void)
                              &work_join_edges,
                              &work_face_normal,
                              &edge_edge_visibility);
-
-      n_iwm_vertices = work_join_mesh->n_vertices;
-      n_g_ifm_vertices = mesh->n_g_vertices;
 
       if (join_param.verbosity > 2)
         bft_printf(_("\n  Number of faces to treat locally: %10d\n"),
@@ -1975,6 +2032,9 @@ cs_join_all(void)
         because the synchronization step has to be done.
 
       */
+
+      n_iwm_vertices = work_join_mesh->n_vertices;
+      init_max_vtx_gnum = mesh->n_g_vertices;
 
       _intersect_edges(join_param,
                        work_join_mesh,
@@ -1996,7 +2056,7 @@ cs_join_all(void)
       _merge_vertices(join_param,
                       join_select,
                       n_iwm_vertices,
-                      n_g_ifm_vertices,
+                      init_max_vtx_gnum,
                       n_g_new_vertices,
                       vtx_eset,         /* free during this step */
                       inter_edges,      /* free during this step */
@@ -2004,6 +2064,10 @@ cs_join_all(void)
                       &work_join_edges,
                       &local_join_mesh,
                       mesh);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+    _dump_mesh(join_param.num, "MeshAfterMerge", mesh);
+#endif
 
       /*
          Split faces in work_join_mesh. Apply modification to the
@@ -2035,6 +2099,16 @@ cs_join_all(void)
     else
       bft_printf(_("\nStop joining algorithm: no face selected...\n"));
 
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+    _dump_mesh(join_param.num, "FinalMesh", mesh);
+#endif
+
+    if (join_param.verbosity > 0) {
+      bft_printf("\n");
+      cs_mesh_print_info(mesh, _(" After joining"));
+      bft_printf("\n");
+    }
+
     /* Free memory */
 
     cs_join_select_destroy(&join_select);
@@ -2046,34 +2120,8 @@ cs_join_all(void)
                  "  Complete joining treatment for joining %2d\n"
                  "    wall clock time:            %10.3g\n"
                  "    CPU time:                   %10.3g\n"),
-               join_id+1, clock_end - clock_start, cpu_end - cpu_start);
+               join_param.num, clock_end - clock_start, cpu_end - cpu_start);
     bft_printf_flush();
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-    {
-      int  len;
-      FILE  *dbg_file = NULL;
-      char  *filename = NULL;
-
-      len = strlen("JoinDBG_FinalMesh_.dat")+1+4+2;
-      BFT_MALLOC(filename, len, char);
-      sprintf(filename, "Join%02dDBG_FinalMesh_%04d.dat",
-              join_id+1, fvm_parall_get_rank());
-      dbg_file = fopen(filename, "w");
-
-      cs_mesh_dump_file(dbg_file, mesh);
-
-      fflush(dbg_file);
-      BFT_FREE(filename);
-      fclose(dbg_file);
-    }
-#endif
-
-    if (join_param.verbosity > 0) {
-      bft_printf("\n");
-      cs_mesh_print_info(mesh, _(" After joining"));
-      bft_printf("\n");
-    }
 
 #if defined(HAVE_MPI)   /* Synchronization */
     if (cs_glob_n_ranks > 1)
@@ -2102,26 +2150,6 @@ cs_join_all(void)
 }
 
 /*---------------------------------------------------------------------------*/
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  {
-    int  len;
-    FILE  *dbg_file = NULL;
-    char  *filename = NULL;
-
-    len = strlen("JoinDBG_.dat")+ strlen(local_join_mesh->name) + 4 + 1 + 2;
-    BFT_MALLOC(filename, len, char);
-    sprintf(filename, "Join%02dDBG_%s%04d.dat",
-            join_param.num, local_join_mesh->name, fvm_parall_get_rank());
-    dbg_file = fopen(filename, "w");
-
-    cs_join_mesh_dump_file(dbg_file, local_join_mesh);
-
-    fflush(dbg_file);
-    BFT_FREE(filename);
-    fclose(dbg_file);
-  }
-#endif
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     cs_debug_glob_mesh_dump("FinalGlobalVertices", mesh);

@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2009 EDF S.A., France
+ *     Copyright (C) 2008-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -123,6 +123,155 @@ _coupled_adapted_gnum_shellsort(int         l,
 
   }
 
+}
+
+/*----------------------------------------------------------------------------
+ * Test if an array of local numbers with stride 2 is lexicographically
+ * ordered.
+ *
+ * parameters:
+ *   number   <-- array of all entity numbers (number of entity i
+ *                given by number[i] or number[list[i] - 1])
+ *   nb_ent   <-- number of entities considered
+ *
+ * returns:
+ *   1 if ordered, 0 otherwise.
+ *----------------------------------------------------------------------------*/
+
+static int
+_order_local_test_s2(const fvm_lnum_t  number[],
+                     size_t            n_elts)
+{
+  size_t i = 0;
+
+  assert (number != NULL || n_elts == 0);
+
+  for (i = 1 ; i < n_elts ; i++) {
+    size_t i_prev, k;
+    bool unordered = false;
+    i_prev = i-1;
+    for (k = 0; k < 2; k++) {
+      if (number[i_prev*2 + k] < number[i*2 + k])
+        break;
+      else if (number[i_prev*2 + k] > number[i*2 + k])
+        unordered = true;
+    }
+    if (unordered == true)
+      break;
+  }
+
+  if (i == n_elts || n_elts == 0)
+    return 1;
+  else
+    return 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Descend binary tree for the lexicographical ordering of an local numbering
+ * array of stride 2.
+ *
+ * parameters:
+ *   number    <-- pointer to numbers of entities that should be ordered.
+ *   level     <-- level of the binary tree to descend
+ *   n_elts    <-- number of entities in the binary tree to descend
+ *   order     <-> ordering array
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_order_descend_tree_s2(const fvm_lnum_t  number[],
+                       size_t            level,
+                       const size_t      n_elts,
+                       fvm_lnum_t        order[])
+{
+  size_t i_save, i1, i2, j, lv_cur;
+
+  i_save = (size_t)(order[level]);
+
+  while (level <= (n_elts/2)) {
+
+    lv_cur = (2*level) + 1;
+
+    if (lv_cur < n_elts - 1) {
+
+      i1 = (size_t)(order[lv_cur+1]);
+      i2 = (size_t)(order[lv_cur]);
+
+      for (j = 0; j < 2; j++) {
+        if (number[i1*2 + j] != number[i2*2 + j])
+          break;
+      }
+
+      if (j < 2) {
+        if (number[i1*2 + j] > number[i2*2 + j])
+          lv_cur++;
+      }
+
+    }
+
+    if (lv_cur >= n_elts) break;
+
+    i1 = i_save;
+    i2 = (size_t)(order[lv_cur]);
+
+    for (j = 0; j < 2; j++) {
+      if (number[i1*2 + j] != number[i2*2 + j])
+        break;
+    }
+
+    if (j == 2) break;
+    if (number[i1*2 + j] >= number[i2*2 + j]) break;
+
+    order[level] = order[lv_cur];
+    level = lv_cur;
+
+  }
+
+  order[level] = i_save;
+}
+
+/*----------------------------------------------------------------------------
+ * Order array of local numbers with stride 2 lexicographically.
+ *
+ * parameters:
+ *   number   <-- array of entity numbers
+ *   order    --> pre-allocated ordering table
+ *   n_elts   <-- number of entities considered
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_local_s2(const fvm_lnum_t  number[],
+                fvm_lnum_t        order[],
+                const size_t      n_elts)
+{
+  size_t i;
+  fvm_lnum_t o_save;
+
+  assert (number != NULL || n_elts == 0);
+
+  /* Initialize ordering array */
+
+  for (i = 0 ; i < n_elts ; i++)
+    order[i] = i;
+
+  if (n_elts < 2)
+    return;
+
+  /* Create binary tree */
+
+  i = (n_elts / 2) ;
+  do {
+    i--;
+    _order_descend_tree_s2(number, i, n_elts, order);
+  } while (i > 0);
+
+  /* Sort binary tree */
+
+  for (i = n_elts - 1 ; i > 0 ; i--) {
+    o_save   = order[0];
+    order[0] = order[i];
+    order[i] = o_save;
+    _order_descend_tree_s2(number, 0, i, order);
+  }
 }
 
 /*============================================================================
@@ -306,8 +455,6 @@ cs_join_eset_clean(cs_join_eset_t  **eset)
   cs_join_eset_t  *new_eset = NULL;
   cs_join_eset_t  *_eset = *eset;
 
-  assert(sizeof(fvm_gnum_t) == sizeof(fvm_lnum_t));
-
   if (_eset == NULL)
     return;
 
@@ -316,18 +463,14 @@ cs_join_eset_clean(cs_join_eset_t  **eset)
 
   BFT_MALLOC(order, _eset->n_equiv, fvm_lnum_t);
 
-  if (fvm_order_local_test_s(NULL,
-                             (fvm_gnum_t *)_eset->equiv_couple,
-                             2,
-                             _eset->n_equiv) == false) {
+  if (_order_local_test_s2(_eset->equiv_couple,
+                           _eset->n_equiv) == false) {
 
     /* Order equiv_lst */
 
-    fvm_order_local_allocated_s(NULL,
-                                (fvm_gnum_t *)_eset->equiv_couple,
-                                2,
-                                order,
-                                _eset->n_equiv);
+    _order_local_s2(_eset->equiv_couple,
+                    order,
+                    _eset->n_equiv);
 
   }
   else
@@ -749,6 +892,8 @@ cs_join_gset_copy(const cs_join_gset_t  *src)
   for (i = 0; i < src->n_elts + 1; i++)
     copy->index[i] = src->index[i];
 
+  BFT_MALLOC(copy->g_list, copy->index[copy->n_elts], fvm_gnum_t);
+
   for (i = 0; i < src->index[src->n_elts]; i++)
     copy->g_list[i] = src->g_list[i];
 
@@ -1003,6 +1148,8 @@ cs_join_gset_invert(const cs_join_gset_t  *set)
 /*----------------------------------------------------------------------------
  * Delete redudancies in a cs_join_gset_t structure.
  *
+ * Output set has an ordered sub-list for each element in set.
+ *
  * parameters:
  *   set <-> pointer to the structure to clean
  *---------------------------------------------------------------------------*/
@@ -1222,7 +1369,10 @@ cs_join_gset_single_order(const cs_join_gset_t  *set,
 /*----------------------------------------------------------------------------
  * Compress a g_list such as for each element "e" in g_elts:
  *  - there is no redundancy for the linked elements of set->g_list
- *  - there is no element in set->g_list < e
+ *  - there is no element in set->g_list < e except if this element is not
+ *    present in g_elts
+ *
+ * g_list and g_elts must be ordered before calling this function
  *
  * parameters:
  *   set <-> pointer to the structure to work with
@@ -1251,17 +1401,41 @@ cs_join_gset_compress(cs_join_gset_t  *set)
 
     if (end - start > 0) {
 
-      cs_sort_gnum_shell(start, end, set->g_list);
+      /* Sub-lists must be ordered */
 
       if (cur < set->g_list[start])
         set->g_list[shift++] = set->g_list[start];
+      else if (cur > set->g_list[start]) {
 
-      for (j = start + 1; j < end; j++)
-        if (cur < set->g_list[j])
+        int  id = cs_search_g_binary(i+1,
+                                     set->g_list[start],
+                                     set->g_elts);
+
+        if (id == -1) /* Not found. Keep it. */
+          set->g_list[shift++] = set->g_list[start];
+
+      }
+
+      for (j = start + 1; j < end; j++) {
+
+        if (cur < set->g_list[j]) {
           if (set->g_list[j-1] != set->g_list[j])
             set->g_list[shift++] = set->g_list[j];
+        }
+        else if (cur > set->g_list[j]) {
 
-    }
+          int  id = cs_search_g_binary(i+1,
+                                       set->g_list[j],
+                                       set->g_elts);
+
+          if (id == -1) /* Not found. Keep it. */
+            set->g_list[shift++] = set->g_list[j];
+
+        }
+
+      } /* End of loop on sub-elements */
+
+    } /* end - start > 0 */
 
     save = end;
     set->index[i+1] = shift;
@@ -1271,10 +1445,8 @@ cs_join_gset_compress(cs_join_gset_t  *set)
   /* Reshape cs_join_gset_t structure if necessary */
 
   if (save != set->index[set->n_elts]) {
-
     assert(save > set->index[set->n_elts]);
     BFT_REALLOC(set->g_list, set->index[set->n_elts], fvm_gnum_t);
-
   }
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
@@ -1369,10 +1541,11 @@ cs_join_gset_merge_elts(cs_join_gset_t  *set,
 
 /*----------------------------------------------------------------------------
  * Synchronize a cs_join_gset_t structure and distribute the resulting set
- * over the rank by block
+ * over the rank using a round-robin distribution. Elements in sync_set
+ * are ordered and there is no redundancy but list may have redundancies.
+ * Use cs_join_gset_clean() to remove redundancies in g_list.
  *
  * parameters:
- *   n_g_elts <-- global number of elements
  *   loc_set  <-> pointer to the local structure to work with
  *   comm     <-- mpi_comm on which synchro. and distribution take place
  *
@@ -1381,9 +1554,413 @@ cs_join_gset_merge_elts(cs_join_gset_t  *set,
  *---------------------------------------------------------------------------*/
 
 cs_join_gset_t *
-cs_join_gset_sync_by_block(fvm_gnum_t       n_g_elts,
-                           cs_join_gset_t  *loc_set,
-                           MPI_Comm         comm)
+cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
+                        MPI_Comm         comm)
+{
+  int  i, j, shift, elt_id;
+  int  rank, local_rank, n_ranks, n_recv_elts, n_sub_elts;
+  fvm_gnum_t  gnum;
+
+  cs_int_t  *send_count = NULL, *recv_count = NULL;
+  cs_int_t  *send_shift = NULL, *recv_shift = NULL;
+  fvm_gnum_t  *send_buffer = NULL, *recv_buffer = NULL;
+  cs_join_gset_t  *sync_set = NULL;
+
+  MPI_Comm_rank(comm, &local_rank);
+  MPI_Comm_size(comm, &n_ranks);
+
+  /* Allocate parameters for MPI functions */
+
+  BFT_MALLOC(send_count, n_ranks, cs_int_t);
+  BFT_MALLOC(recv_count, n_ranks, cs_int_t);
+  BFT_MALLOC(send_shift, n_ranks + 1, cs_int_t);
+  BFT_MALLOC(recv_shift, n_ranks + 1, cs_int_t);
+
+  /* Initialization */
+
+  for (i = 0; i < n_ranks; i++)
+    send_count[i] = 0;
+
+  /* Synchronize list definition for each global element */
+
+  for (i = 0; i < loc_set->n_elts; i++) {
+    rank = (loc_set->g_elts[i] - 1) % n_ranks;
+    send_count[rank] += 1;
+  }
+
+  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
+
+  send_shift[0] = 0;
+  recv_shift[0] = 0;
+
+  for (rank = 0; rank < n_ranks; rank++) {
+    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
+    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
+  }
+
+  n_recv_elts = recv_shift[n_ranks];
+
+  /* Define sync_set: a distributed cs_join_gset_t structure which
+     synchronize data over the ranks */
+
+  sync_set = cs_join_gset_create(n_recv_elts);
+
+  /* Synchronize list definition for each global element */
+
+  for (i = 0; i < n_ranks; i++)
+    send_count[i] = 0;
+
+  for (i = 0; i < loc_set->n_elts; i++) {
+
+    rank = (loc_set->g_elts[i] - 1) % n_ranks;
+    n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
+    send_count[rank] += 2 + n_sub_elts;
+
+  }
+
+  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
+
+  send_shift[0] = 0;
+  recv_shift[0] = 0;
+
+  for (rank = 0; rank < n_ranks; rank++) {
+    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
+    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
+  }
+
+  /* Fill send_buffer: global number and number of elements in index */
+
+  BFT_MALLOC(send_buffer, send_shift[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], fvm_gnum_t);
+
+  for (i = 0; i < n_ranks; i++)
+    send_count[i] = 0;
+
+  for (i = 0; i < loc_set->n_elts; i++) {
+
+    gnum = loc_set->g_elts[i];
+    rank = (gnum - 1) % n_ranks;
+    shift = send_shift[rank] + send_count[rank];
+    n_sub_elts = loc_set->index[i+1] - loc_set->index[i];
+
+    send_buffer[shift++] = gnum;
+    send_buffer[shift++] = n_sub_elts;
+
+    for (j = 0; j < n_sub_elts; j++)
+      send_buffer[shift + j] = loc_set->g_list[loc_set->index[i] + j];
+
+    send_count[rank] += 2 + n_sub_elts;
+
+  }
+
+  MPI_Alltoallv(send_buffer, send_count, send_shift, FVM_MPI_GNUM,
+                recv_buffer, recv_count, recv_shift, FVM_MPI_GNUM,
+                comm);
+
+  n_recv_elts = recv_shift[n_ranks];
+
+  /* Partial free memory */
+
+  BFT_FREE(send_buffer);
+  BFT_FREE(send_count);
+  BFT_FREE(send_shift);
+  BFT_FREE(recv_count);
+  BFT_FREE(recv_shift);
+
+  /* Fill sync_set->index and define a new recv_count for the next comm. */
+
+  i = 0; /* position in recv_buffer */
+  elt_id = 0; /* position of the element in sync_set */
+
+  while (i < n_recv_elts) {
+
+    sync_set->g_elts[elt_id] = recv_buffer[i++];
+    n_sub_elts = recv_buffer[i++];
+    sync_set->index[elt_id+1] = n_sub_elts;
+    i += n_sub_elts;
+    elt_id++;
+
+  } /* End of loop on ranks */
+
+  /* Build index on elements of sync_set */
+
+  for (i = 0; i < sync_set->n_elts; i++)
+    sync_set->index[i+1] += sync_set->index[i];
+
+  BFT_MALLOC(sync_set->g_list,
+             sync_set->index[sync_set->n_elts],
+             fvm_gnum_t);
+
+  /* Fill g_list of sync_set */
+
+  i = 0; /* position in recv_buffer */
+  elt_id = 0; /* position of the element in sync_set */
+
+  while (i < n_recv_elts) {
+
+    i++; /* element numbering */
+    shift = sync_set->index[elt_id];
+    n_sub_elts = recv_buffer[i++];
+
+    for (j = 0; j < n_sub_elts; j++)
+      sync_set->g_list[j + shift] = recv_buffer[i++];
+
+    elt_id++;
+
+  } /* End of loop on ranks */
+
+  BFT_FREE(recv_buffer);
+
+  /* Return pointer */
+
+  cs_join_gset_merge_elts(sync_set, 0); /* sync_set elts are not ordered */
+
+  return  sync_set;
+}
+
+/*----------------------------------------------------------------------------
+ * Update a local cs_join_gset_t structure from a distributed and
+ * synchronized cs_join_gset_t structure. Round-robin distribution is used
+ * to store synchronized elements.
+ *
+ * loc_set should not have redundant elements.
+ *
+ * parameters:
+ *   sync_set <-- pointer to the structure which holds a synchronized block
+ *   loc_set  <-> pointer to a local structure holding elements to update
+ *   comm     <-- comm on which synchronization and distribution take place
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
+                          cs_join_gset_t        *loc_set,
+                          MPI_Comm               comm)
+{
+  int  i, j, k, shift, elt_id, start, end;
+  int  rank, local_rank, n_ranks, n_sub_elts, n_recv_elts;
+  fvm_gnum_t  gnum;
+
+  cs_int_t  *send_count = NULL, *recv_count = NULL;
+  cs_int_t  *send_shift = NULL, *recv_shift = NULL, *wanted_rank_index = NULL;
+  fvm_gnum_t  *send_buffer = NULL, *recv_buffer = NULL, *wanted_elts = NULL;
+
+  /* Sanity checks */
+
+  assert(sync_set != NULL);
+
+  /* Build a cs_join_block_info_t structure */
+
+  MPI_Comm_rank(comm, &local_rank);
+  MPI_Comm_size(comm, &n_ranks);
+
+  /* Allocate parameters for MPI functions */
+
+  BFT_MALLOC(send_count, n_ranks, cs_int_t);
+  BFT_MALLOC(recv_count, n_ranks, cs_int_t);
+  BFT_MALLOC(send_shift, n_ranks + 1, cs_int_t);
+  BFT_MALLOC(recv_shift, n_ranks + 1, cs_int_t);
+  BFT_MALLOC(wanted_rank_index, n_ranks + 1, cs_int_t);
+
+  /* Initialization */
+
+  for (i = 0; i < n_ranks; i++)
+    send_count[i] = 0;
+
+  /* Get a synchronized list definition for each global element */
+
+  for (i = 0; i < loc_set->n_elts; i++) {
+    rank = (loc_set->g_elts[i] - 1) % n_ranks;
+    send_count[rank] += 1;
+  }
+
+  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
+
+  send_shift[0] = 0;
+  wanted_rank_index[0] = 0;
+
+  for (rank = 0; rank < n_ranks; rank++) {
+    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
+    wanted_rank_index[rank + 1] = wanted_rank_index[rank] + recv_count[rank];
+  }
+
+  /* Fill send_buffer: global number */
+
+  BFT_MALLOC(send_buffer, send_shift[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(wanted_elts, wanted_rank_index[n_ranks], fvm_gnum_t);
+
+  for (i = 0; i < n_ranks; i++)
+    send_count[i] = 0;
+
+  for (i = 0; i < loc_set->n_elts; i++) {
+
+    gnum = loc_set->g_elts[i];
+    rank = (gnum - 1) % n_ranks;
+    shift = send_shift[rank] + send_count[rank];
+
+    send_buffer[shift] = gnum;
+    send_count[rank] += 1;
+
+  }
+
+  MPI_Alltoallv(send_buffer, send_count, send_shift, FVM_MPI_GNUM,
+                wanted_elts, recv_count, wanted_rank_index, FVM_MPI_GNUM,
+                comm);
+
+  /* Send new list definition holding by sync_set to ranks which have
+     request it */
+
+  for (i = 0; i < n_ranks; i++)
+    send_count[i] = 0;
+
+  for (rank = 0; rank < n_ranks; rank++) {
+
+    for (i = wanted_rank_index[rank]; i < wanted_rank_index[rank+1]; i++) {
+
+      elt_id = cs_search_g_binary(sync_set->n_elts,
+                                  wanted_elts[i],
+                                  sync_set->g_elts);
+
+      assert(elt_id != -1);
+
+      wanted_elts[i] = elt_id;
+      n_sub_elts = sync_set->index[elt_id+1] - sync_set->index[elt_id];
+      send_count[rank] +=  2 + n_sub_elts; /* glob. num,
+                                              n_sub_elts,
+                                              g_list */
+
+    }
+
+  } /* End of loop on ranks */
+
+  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
+
+  send_shift[0] = 0;
+  recv_shift[0] = 0;
+
+  for (rank = 0; rank < n_ranks; rank++) {
+    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
+    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
+  }
+
+  BFT_REALLOC(send_buffer, send_shift[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], fvm_gnum_t);
+
+  for (i = 0; i < n_ranks; i++)
+    send_count[i] = 0;
+
+  for (rank = 0; rank < n_ranks; rank++) {
+
+    for (i = wanted_rank_index[rank]; i < wanted_rank_index[rank+1]; i++) {
+
+      shift = send_shift[rank] + send_count[rank];
+      elt_id = wanted_elts[i];
+
+      start = sync_set->index[elt_id];
+      end = sync_set->index[elt_id+1];
+      n_sub_elts = end - start;
+
+      send_buffer[shift++] = sync_set->g_elts[elt_id];
+      send_buffer[shift++] = n_sub_elts;
+
+      for (j = start, k = 0; j < end; j++, k++)
+        send_buffer[shift+k] = sync_set->g_list[j];
+
+      send_count[rank] +=  2 + n_sub_elts; /* glob. num, n_sub_elts, g_list */
+
+    }
+
+  } /* End of loop on ranks */
+
+  MPI_Alltoallv(send_buffer, send_count, send_shift, FVM_MPI_GNUM,
+                recv_buffer, recv_count, recv_shift, FVM_MPI_GNUM,
+                comm);
+
+  n_recv_elts = recv_shift[n_ranks];
+
+  /* Partial memory free */
+
+  BFT_FREE(send_buffer);
+  BFT_FREE(send_count);
+  BFT_FREE(send_shift);
+  BFT_FREE(recv_count);
+  BFT_FREE(recv_shift);
+
+  /* Re-initialize loc_set
+     As loc_set->g_elts and sync_set->g_elts are ordered, it's easier.
+     We can take values as they come */
+
+  /* First redefine index */
+
+  assert(loc_set->index[0] == 0);
+
+  for (i = 0; i < loc_set->n_elts; i++)
+    loc_set->index[i+1] = 0;
+
+  i = 0; /* id in recv_buffer */
+  j = 0; /* id in g_elts */
+
+  while (i < n_recv_elts) {
+
+    gnum = recv_buffer[i++];
+
+    assert(loc_set->g_elts[j] = gnum);
+
+    n_sub_elts = recv_buffer[i++];
+    loc_set->index[j+1] = n_sub_elts;
+
+    i += n_sub_elts;
+    j++; /* go to the next elements */
+
+  } /* End of loop on elements of recv_buffer */
+
+  /* Define the new index */
+
+  for (i = 0; i < loc_set->n_elts; i++)
+    loc_set->index[i+1] += loc_set->index[i];
+
+  BFT_REALLOC(loc_set->g_list, loc_set->index[loc_set->n_elts], fvm_gnum_t);
+
+  i = 0; /* id in recv_buffer */
+  j = 0; /* id in g_elts */
+
+  while (i < n_recv_elts) {
+
+    gnum = recv_buffer[i++];
+    n_sub_elts = recv_buffer[i++];
+
+    assert(loc_set->g_elts[j] = gnum);
+
+    for (k = 0; k < n_sub_elts; k++)
+      loc_set->g_list[loc_set->index[j] + k] = recv_buffer[i + k];
+
+    i += n_sub_elts;
+    j++; /* go to the next elements */
+
+  } /* End of loop on elements of recv_buffer */
+
+  BFT_FREE(recv_buffer);
+  BFT_FREE(wanted_elts);
+  BFT_FREE(wanted_rank_index);
+
+}
+
+/*----------------------------------------------------------------------------
+ * Synchronize a cs_join_gset_t structure and distribute the resulting set
+ * over the rank by block
+ *
+ * parameters:
+ *   max_gnum <-- max global number in global element numbering
+ *   loc_set  <-> pointer to the local structure to work with
+ *   comm     <-- mpi_comm on which synchro. and distribution take place
+ *
+ * returns:
+ *   a synchronized and distributed cs_join_gset_t structure.
+ *---------------------------------------------------------------------------*/
+
+cs_join_gset_t *
+cs_join_gset_block_sync(fvm_gnum_t       max_gnum,
+                        cs_join_gset_t  *loc_set,
+                        MPI_Comm         comm)
 {
   int  i, j, shift, block_id;
   int  rank, local_rank, n_ranks, n_recv_elts, n_sub_elts;
@@ -1395,13 +1972,13 @@ cs_join_gset_sync_by_block(fvm_gnum_t       n_g_elts,
   fvm_gnum_t  *send_buffer = NULL, *recv_buffer = NULL;
   cs_join_gset_t  *sync_set = NULL;
 
-  if (n_g_elts == 0)
+  if (max_gnum == 0)
     return  sync_set;
 
   MPI_Comm_rank(comm, &local_rank);
   MPI_Comm_size(comm, &n_ranks);
 
-  block_info = cs_join_get_block_info(n_g_elts, n_ranks, local_rank);
+  block_info = cs_join_get_block_info(max_gnum, n_ranks, local_rank);
 
   /* Allocate parameters for MPI functions */
 
@@ -1544,18 +2121,20 @@ cs_join_gset_sync_by_block(fvm_gnum_t       n_g_elts,
  * Update a local cs_join_gset_t structure from a distributed and
  * synchronized cs_join_gset_t structure.
  *
+ * Loc_set should not have redundant elements.
+ *
  * parameters:
- *   n_g_elts <-- global number of elements
+ *   max_gnum <-- max global number in global element numbering
  *   sync_set <-- pointer to the structure which holds a synchronized block
  *   loc_set  <-> pointer to a local structure holding elements to update
  *   comm     <-- comm on which synchronization and distribution take place
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_gset_update_from_block(fvm_gnum_t             n_g_elts,
-                               const cs_join_gset_t  *sync_set,
-                               cs_join_gset_t        *loc_set,
-                               MPI_Comm               comm)
+cs_join_gset_block_update(fvm_gnum_t             max_gnum,
+                          const cs_join_gset_t  *sync_set,
+                          cs_join_gset_t        *loc_set,
+                          MPI_Comm               comm)
 {
   int  i, j, k, shift, block_id, start, end;
   int  rank, local_rank, n_ranks, n_sub_elts, n_recv_elts;
@@ -1566,21 +2145,19 @@ cs_join_gset_update_from_block(fvm_gnum_t             n_g_elts,
   cs_int_t  *send_shift = NULL, *recv_shift = NULL, *wanted_rank_index = NULL;
   fvm_gnum_t  *send_buffer = NULL, *recv_buffer = NULL, *wanted_elts = NULL;
 
-  if (n_g_elts == 0)
+  if (max_gnum == 0)
     return;
 
   /* Sanity checks */
 
   assert(sync_set != NULL);
 
-  /* loc_set should not have redundant elements. */
-
   /* Build a cs_join_block_info_t structure */
 
   MPI_Comm_rank(comm, &local_rank);
   MPI_Comm_size(comm, &n_ranks);
 
-  block_info = cs_join_get_block_info(n_g_elts, n_ranks, local_rank);
+  block_info = cs_join_get_block_info(max_gnum, n_ranks, local_rank);
 
   /* Allocate parameters for MPI functions */
 
@@ -1847,7 +2424,7 @@ void
 cs_join_gset_dump(FILE                  *file,
                   const cs_join_gset_t  *set)
 {
-  int  i, j, n_matches;
+  int  i, j;
 
   if (set == NULL)
     return;
@@ -1861,14 +2438,52 @@ cs_join_gset_dump(FILE                  *file,
 
   for (i = 0; i < set->n_elts; i++) {
 
-    n_matches = set->index[i+1] - set->index[i];
+    int  s = set->index[i], e = set->index[i+1];
+    int  n_matches = e-s;
+    int  n_loops = n_matches/10;
 
-    fprintf(file, "Global num.: %8u | n_matches : %3d |",
-            set->g_elts[i], n_matches);
+    fprintf(file, "Global num: %8lu | subsize: %3d |",
+            (unsigned long)set->g_elts[i], n_matches);
 
-    for (j = set->index[i]; j < set->index[i+1]; j++)
-      fprintf(file, "%8u ", set->g_list[j]);
-    fprintf(file, "\n");
+    for (j = 0; j < n_loops; j++) {
+      if (j == 0)
+        fprintf(file, "%8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu\n",
+                (unsigned long)set->g_list[s+ 10*j],
+                (unsigned long)set->g_list[s+ 10*j + 1],
+                (unsigned long)set->g_list[s+ 10*j + 2],
+                (unsigned long)set->g_list[s+ 10*j + 3],
+                (unsigned long)set->g_list[s+ 10*j + 4],
+                (unsigned long)set->g_list[s+ 10*j + 5],
+                (unsigned long)set->g_list[s+ 10*j + 6],
+                (unsigned long)set->g_list[s+ 10*j + 7],
+                (unsigned long)set->g_list[s+ 10*j + 8],
+                (unsigned long)set->g_list[s+ 10*j + 9]);
+      else
+        fprintf(file, "                                     "
+                "%8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu\n",
+                (unsigned long)set->g_list[s+ 10*j],
+                (unsigned long)set->g_list[s+ 10*j + 1],
+                (unsigned long)set->g_list[s+ 10*j + 2],
+                (unsigned long)set->g_list[s+ 10*j + 3],
+                (unsigned long)set->g_list[s+ 10*j + 4],
+                (unsigned long)set->g_list[s+ 10*j + 5],
+                (unsigned long)set->g_list[s+ 10*j + 6],
+                (unsigned long)set->g_list[s+ 10*j + 7],
+                (unsigned long)set->g_list[s+ 10*j + 8],
+                (unsigned long)set->g_list[s+ 10*j + 9]);
+    }
+
+    if (e - s+10*n_loops > 0) {
+      for (j = s + 10*n_loops; j < e; j++) {
+        if (j == s + 10*n_loops && n_loops > 0)
+          fprintf(file,"                                     ");
+        fprintf(file,"%8lu ", (unsigned long)set->g_list[j]);
+      }
+      fprintf(file,"\n");
+    }
+
+    if (n_matches == 0)
+      fprintf(file,"\n");
 
   } /* End of loop on boxes */
 

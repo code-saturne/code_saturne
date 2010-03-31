@@ -150,8 +150,8 @@ pmf = 0.10d0
 !      multiplication by a coef. which is equal to the max sin(e1, e2)
 !      where e1 and e2 are two edges sharing the same vertex V for which
 !      we want to compute the tolerance
-!  11: like 1 but only in taking into account only the selected faces
-!  12: like 2 but only in taking into account only the selected faces
+!  11: like 1 but in taking into account only the selected faces
+!  12: like 2 but in taking into account only the selected faces
 
 tcm = 1
 
@@ -184,11 +184,10 @@ tml = 30
 tmb = 25
 
 ! Tree Max. Ratio: stop to build the tree structure when
-! number of BB linked in the tree > tmr * initial number of BB
+! number of bounding boxes > tmr * number of faces to locate
 ! Efficient parameter to reduce memory consumption.
 
 tmr = 5.0
-
 
 ! Advanced parameters setup
 

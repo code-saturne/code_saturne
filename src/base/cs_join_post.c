@@ -493,9 +493,7 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
  *
  * parameters:
  *   n_old_i_faces   <-- initial number of interior faces
- *   n_new_i_faces   <-- number of interior faces added to the mesh definition
  *   n_old_b_faces   <-- initial number of border faces
- *   n_new_b_faces   <-- number of border faces added to the mesh definition
  *   n_g_new_b_faces <-- global number of new border faces
  *   n_select_faces  <-- number of selected faces
  *   mesh            <-- pointer to a cs_mesh_t structure
@@ -504,9 +502,7 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
 
 void
 cs_join_post_after_split(cs_int_t          n_old_i_faces,
-                         cs_int_t          n_new_i_faces,
                          cs_int_t          n_old_b_faces,
-                         cs_int_t          n_new_b_faces,
                          fvm_gnum_t        n_g_new_b_faces,
                          cs_int_t          n_select_faces,
                          const cs_mesh_t  *mesh,
@@ -514,8 +510,12 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
 {
   cs_int_t  i, j;
 
-  cs_int_t  *post_i_faces = NULL, *post_b_faces = NULL;
   char  *mesh_name = NULL;
+  cs_int_t  *post_i_faces = NULL, *post_b_faces = NULL;
+  cs_int_t  post_i_mesh_id = cs_post_get_free_mesh_id();
+
+  const int  n_new_i_faces = mesh->n_i_faces - n_old_i_faces;
+  const int  n_new_b_faces = mesh->n_b_faces - n_old_b_faces + n_select_faces;
 
   if (_cs_join_post_initialized == false)
     return;
@@ -531,61 +531,37 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
   for (i = n_old_b_faces-n_select_faces, j = 0; i < mesh->n_b_faces; i++, j++)
     post_b_faces[j] = i + 1;
 
-  if (join_param.verbosity < 2) {
+  BFT_MALLOC(mesh_name, strlen("InteriorJoinedFaces_j") + 2 + 1, char);
+  sprintf(mesh_name,"%s%02d", "InteriorJoinedFaces_j", join_param.num);
 
-    int  post_mesh_id = cs_post_get_free_mesh_id();
+  cs_post_add_mesh(post_i_mesh_id,
+                   mesh_name,
+                   0,
+                   n_new_i_faces,
+                   0,
+                   NULL,
+                   post_i_faces,
+                   NULL);
 
-    BFT_MALLOC(mesh_name, strlen("JoinedFaces_j") + 2 + 1, char);
-    sprintf(mesh_name, "%s%02d", "JoinedFaces_j", join_param.num);
+  cs_post_associate(post_i_mesh_id, _cs_join_post_param.writer_num);
 
-    cs_post_add_mesh(post_mesh_id,
+  if (n_g_new_b_faces > 0) {
+
+    cs_int_t  post_b_mesh_id = cs_post_get_free_mesh_id();
+
+    BFT_REALLOC(mesh_name, strlen("BorderJoinedFaces_j") + 2 + 1, char);
+    sprintf(mesh_name,"%s%02d", "BorderJoinedFaces_j", join_param.num);
+
+    cs_post_add_mesh(post_b_mesh_id,
                      mesh_name,
                      0,
-                     n_new_i_faces,
+                     0,
                      n_new_b_faces,
                      NULL,
-                     post_i_faces,
+                     NULL,
                      post_b_faces);
 
-    cs_post_associate(post_mesh_id, _cs_join_post_param.writer_num);
-
-  }
-  else {
-
-    cs_int_t  post_i_mesh_id = cs_post_get_free_mesh_id();
-
-    BFT_MALLOC(mesh_name, strlen("InteriorJoinedFaces_j") + 2 + 1, char);
-    sprintf(mesh_name,"%s%02d", "InteriorJoinedFaces_j", join_param.num);
-
-    cs_post_add_mesh(post_i_mesh_id,
-                     mesh_name,
-                     0,
-                     n_new_i_faces,
-                     0,
-                     NULL,
-                     post_i_faces,
-                     NULL);
-
-    cs_post_associate(post_i_mesh_id, _cs_join_post_param.writer_num);
-
-    if (n_g_new_b_faces > 0) {
-
-      int  post_b_mesh_id = cs_post_get_free_mesh_id();
-
-      BFT_REALLOC(mesh_name, strlen("BorderJoinedFaces_j") + 2 + 1, char);
-      sprintf(mesh_name,"%s%02d", "BorderJoinedFaces_j", join_param.num);
-
-      cs_post_add_mesh(post_b_mesh_id,
-                       mesh_name,
-                       0,
-                       0,
-                       n_new_b_faces,
-                       NULL,
-                       NULL,
-                       post_b_faces);
-
-      cs_post_associate(post_b_mesh_id, _cs_join_post_param.writer_num);
-    }
+    cs_post_associate(post_b_mesh_id, _cs_join_post_param.writer_num);
 
   }
 
@@ -660,38 +636,35 @@ cs_join_post_dump_mesh(const char            *basename,
                        const cs_join_mesh_t  *mesh,
                        cs_join_param_t        param)
 {
-  int  rank;
-  cs_join_mesh_t  *tmp;
+  int  rank, len;
+
+  cs_join_mesh_t  *tmp = NULL;
+  char  *fullname = NULL;
 
   const  int  n_ranks = cs_glob_n_ranks;
   const  int  rank_id = CS_MAX(cs_glob_rank_id, 0);
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG) /* Dump mesh structure */
+  /* Define a specific name for the output */
+
+  len = strlen("JoinDBG_.dat") + strlen(basename) + 4 + 2 + 1;
+  BFT_MALLOC(fullname, len, char);
+  sprintf(fullname, "Join%02dDBG_%s%04d.dat",
+          param.num, basename, rank_id);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump mesh structure */
   if (param.verbosity > 2) {
-
-    int  len;
     FILE  *dbg_file = NULL;
-    char  *filename = NULL;
-
-    len = strlen("JoinDBG_.dat") + strlen(basename) + 4 + 2 + 1;
-    BFT_MALLOC(filename, len, char);
-    sprintf(filename, "Join%02dDBG_%s%04d.dat",
-            param.num, basename, rank_id);
-    dbg_file = fopen(filename, "w");
-
+    dbg_file = fopen(fullname, "w");
     cs_join_mesh_dump_file(dbg_file, mesh);
-
     fflush(dbg_file);
-    BFT_FREE(filename);
     fclose(dbg_file);
-
   }
 #endif
 
   if (_cs_join_post_initialized == true && param.verbosity > 3) {
 
     if (n_ranks == 1)
-      cs_join_post_mesh(basename, mesh);
+      cs_join_post_mesh(fullname, mesh);
 
     else { /* Parallel */
 
@@ -716,6 +689,8 @@ cs_join_post_dump_mesh(const char            *basename,
       } /* End of loop on ranks */
     } /* End of parallel treatment */
   }
+
+  BFT_FREE(fullname);
 
 #if defined(HAVE_MPI)
   if (n_ranks > 1)

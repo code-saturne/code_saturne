@@ -219,15 +219,11 @@ _get_new_vertex(float                  curv_abs,
   assert(curv_abs >= 0.0);
   assert(curv_abs <= 1.0);
 
-  /* New global number */
+  /* New vertex features */
 
+  new_vtx_data.state = CS_JOIN_STATE_NEW;
   new_vtx_data.gnum = gnum;
-
-  /* New tolerance */
-
   new_vtx_data.tolerance = (1-curv_abs)*v1.tolerance + curv_abs*v2.tolerance;
-
-  /* New coordinates */
 
   for (k = 0; k < 3; k++)
     new_vtx_data.coord[k] = (1-curv_abs)*v1.coord[k] + curv_abs*v2.coord[k];
@@ -273,7 +269,7 @@ _define_inter_tag(fvm_gnum_t  tag[],
  *   work               <-- pointer to a cs_join_mesh_t structure
  *   edges              <-- list of edges
  *   inter_set          <-- structure including data on edge intersections
- *   n_g_vertices       <-- global number of vertices (initial full mesh)
+ *   init_max_vtx_gnum  <-- initial max. global numbering for vertices
  *   n_iwm_vertices     <-- initial local number of vertices (work struct)
  *   n_new_vertices     <-- local number of new vertices to define
  *   p_n_g_new_vertices <-> pointer to the global number of new vertices
@@ -285,7 +281,7 @@ static void
 _compute_new_vertex_gnum(const cs_join_mesh_t       *work,
                          const cs_join_edges_t      *edges,
                          const cs_join_inter_set_t  *inter_set,
-                         fvm_gnum_t                  n_g_vertices,
+                         fvm_gnum_t                  init_max_vtx_gnum,
                          cs_int_t                    n_iwm_vertices,
                          cs_int_t                    n_new_vertices,
                          fvm_gnum_t                 *p_n_g_new_vertices,
@@ -335,7 +331,7 @@ _compute_new_vertex_gnum(const cs_join_mesh_t       *work,
       if (inter1.vtx_id + 1 > n_iwm_vertices)
         _define_inter_tag(&(inter_tag[3*n_new_vertices]),
                           e1_gnum, e2_gnum,
-                          n_g_vertices + 1);
+                          init_max_vtx_gnum + 1);
       else
         _define_inter_tag(&(inter_tag[3*n_new_vertices]),
                           e1_gnum, e2_gnum,
@@ -385,7 +381,7 @@ _compute_new_vertex_gnum(const cs_join_mesh_t       *work,
     global_num = fvm_io_num_get_global_num(new_vtx_io_num);
 
     for (i = 0; i < n_new_vertices; i++)
-      new_vtx_gnum[order[i]] = global_num[i] + n_g_vertices;
+      new_vtx_gnum[order[i]] = global_num[i] + init_max_vtx_gnum;
 
     fvm_io_num_destroy(new_vtx_io_num);
 
@@ -395,7 +391,7 @@ _compute_new_vertex_gnum(const cs_join_mesh_t       *work,
 
     if (n_new_vertices > 0) {
 
-      fvm_gnum_t  new_gnum = n_g_vertices + 1;
+      fvm_gnum_t  new_gnum = init_max_vtx_gnum + 1;
 
       new_vtx_gnum[order[0]] = new_gnum;
 
@@ -1227,6 +1223,7 @@ _compute_merged_vertex(cs_int_t                n_elts,
 
   /* Initialize cs_join_vertex_t structure */
 
+  mvtx.state = CS_JOIN_STATE_UNDEF;
   mvtx.gnum = set[0].gnum;
   mvtx.tolerance = set[0].tolerance;
 
@@ -1239,8 +1236,9 @@ _compute_merged_vertex(cs_int_t                n_elts,
 
     mvtx.tolerance = CS_MIN(set[i].tolerance, mvtx.tolerance);
     mvtx.gnum = CS_MIN(set[i].gnum, mvtx.gnum);
+    mvtx.state = CS_MAX(set[i].state, mvtx.state);
 
-  /* Compute the resulting coordinates of the merged vertices */
+    /* Compute the resulting coordinates of the merged vertices */
 
 #if CS_JOIN_MERGE_INV_TOL
     w = 1.0/set[i].tolerance;
@@ -1251,10 +1249,16 @@ _compute_merged_vertex(cs_int_t                n_elts,
 
     for (k = 0; k < 3; k++)
       mvtx.coord[k] += w * set[i].coord[k];
+
   }
 
   for (k = 0; k < 3; k++)
     mvtx.coord[k] /= denum;
+
+  if (mvtx.state == CS_JOIN_STATE_ORIGIN)
+    mvtx.state = CS_JOIN_STATE_MERGE;
+  else if (mvtx.state == CS_JOIN_STATE_PERIO)
+    mvtx.state = CS_JOIN_STATE_PERIO_MERGE;
 
   return mvtx;
 }
@@ -2038,6 +2042,7 @@ _merge_vertices(cs_join_param_t    param,
     fvm_parall_counter_max(&g_max_list_size, 1);
 
     if (g_max_list_size < 2) {
+      cs_join_gset_destroy(&equiv_gnum);
       bft_printf(_("\n  No need to merge vertices.\n"));
       return;
     }
@@ -2201,54 +2206,45 @@ _merge_vertices(cs_join_param_t    param,
  * operation.
  *
  * parameters:
- *   n_iwm_vertices   <-- number of vertices before intersection for the work
- *                        cs_join_mesh_t structure
- *   n_g_ifm_vertices <-- global number of vertices on the initial full mesh
- *   iwm_vtx_gnum     <-- initial global vertex num. (work mesh struct.)
- *   n_vertices       <-- number of vertices before merge/after intersection
- *   vertices         <-- array of cs_join_vertex_t structures
- *   p_o2n_vtx_gnum   --> distributed array by block on the new global vertex
- *                        numbering for the initial vertices (before inter.)
+ *   n_iwm_vertices    <-- number of vertices before intersection for the
+ *                          work cs_join_mesh_t structure
+ *   iwm_vtx_gnum      <-- initial global vertex num. (work mesh struct.)
+ *   init_max_vtx_gnum <-- initial max. global numbering for vertices
+ *   n_vertices        <-- number of vertices before merge/after intersection
+ *   vertices          <-- array of cs_join_vertex_t structures
+ *   p_o2n_vtx_gnum    --> distributed array by block on the new global vertex
+ *                         numbering for the initial vertices (before inter.)
  *---------------------------------------------------------------------------*/
 
 static void
 _keep_global_vtx_evolution(cs_int_t                n_iwm_vertices,
-                           fvm_gnum_t              n_g_ifm_vertices,
                            const fvm_gnum_t        iwm_vtx_gnum[],
+                           fvm_gnum_t              init_max_vtx_gnum,
                            cs_int_t                n_vertices,
                            const cs_join_vertex_t  vertices[],
                            fvm_gnum_t             *p_o2n_vtx_gnum[])
 {
   cs_int_t  i;
-  cs_join_block_info_t  block_info;
 
-  int  n_ranks = cs_glob_n_ranks;
   fvm_gnum_t  *o2n_vtx_gnum = NULL;
 
+  const int  n_ranks = cs_glob_n_ranks;
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
 
   assert(n_iwm_vertices <= n_vertices); /* after inter. >= init */
 
-  block_info = cs_join_get_block_info(n_g_ifm_vertices,
-                                      n_ranks,
-                                      local_rank);
-
-  BFT_MALLOC(o2n_vtx_gnum, block_info.local_size, fvm_gnum_t);
-
   if (n_ranks == 1) {
+
+    BFT_MALLOC(o2n_vtx_gnum, n_iwm_vertices, fvm_gnum_t);
 
     for (i = 0; i < n_iwm_vertices; i++)
       o2n_vtx_gnum[i] = vertices[i].gnum;
 
-    /* Return pointer */
-
-    *p_o2n_vtx_gnum = o2n_vtx_gnum;
-
-    return;
   }
 
 #if defined(HAVE_MPI) /* Parallel treatment */
-  {
+  if (n_ranks > 1) {
+
     fvm_gnum_t  ii;
     cs_int_t  shift, rank, n_recv_elts;
 
@@ -2256,9 +2252,15 @@ _keep_global_vtx_evolution(cs_int_t                n_iwm_vertices,
     cs_int_t  *send_count = NULL, *recv_count = NULL;
     fvm_gnum_t  *send_glist = NULL, *recv_glist = NULL;
 
+    cs_join_block_info_t  block_info = cs_join_get_block_info(init_max_vtx_gnum,
+                                                              n_ranks,
+                                                              local_rank);
+
     MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
     /* Initialize o2n_vtx_gnum */
+
+    BFT_MALLOC(o2n_vtx_gnum, block_info.local_size, fvm_gnum_t);
 
     for (ii = 0; ii < block_info.local_size; ii++)
       o2n_vtx_gnum[ii] = block_info.first_gnum + ii;
@@ -2989,7 +2991,7 @@ _redistribute_mesh(const fvm_gnum_t        gnum_rank_index[],
  *   work               <-> joining mesh maintaining initial vertex data
  *   inter_set          <-> cs_join_inter_set_t structure including
  *                          data on edge-edge  intersections
- *   n_g_vertices       <-- global number of vertices (initial parent mesh)
+ *   init_max_vtx_gnum  <-- initial max. global numbering for vertices
  *   p_n_g_new_vertices <-> pointer to the global number of new vertices
  *   p_vtx_eset         <-> pointer to a structure dealing with vertex
  *                          equivalences
@@ -3000,7 +3002,7 @@ cs_join_create_new_vertices(int                     verbosity,
                             const cs_join_edges_t  *edges,
                             cs_join_mesh_t         *work,
                             cs_join_inter_set_t    *inter_set,
-                            fvm_gnum_t              n_g_vertices,
+                            fvm_gnum_t              init_max_vtx_gnum,
                             fvm_gnum_t             *p_n_g_new_vertices,
                             cs_join_eset_t        **p_vtx_eset)
 {
@@ -3042,7 +3044,7 @@ cs_join_create_new_vertices(int                     verbosity,
   _compute_new_vertex_gnum(work,
                            edges,
                            inter_set,
-                           n_g_vertices,
+                           init_max_vtx_gnum,
                            n_iwm_vertices,
                            n_new_vertices,
                            &n_g_new_vertices,
@@ -3070,6 +3072,7 @@ cs_join_create_new_vertices(int                     verbosity,
     incoherency.coord[1] = -9999.9999;
     incoherency.coord[2] = -9999.9999;
     incoherency.tolerance = -1.0;
+    incoherency.state = CS_JOIN_STATE_UNDEF;
 
     for (i = 0; i < n_new_vertices; i++)
       work->vertices[n_iwm_vertices + i] = incoherency;
@@ -3321,8 +3324,8 @@ cs_join_merge_vertices(cs_join_param_t        param,
  * parameters:
  *   param                <-- set of user-defined parameters for the joining
  *   n_iwm_vertices       <-- initial number of vertices (work mesh struct.)
- *   n_g_ifm_vertices     <-- initial global number of vertices (full mesh)
  *   iwm_vtx_gnum         <-- initial global vertex num. (work mesh struct)
+ *   init_max_vtx_gnum    <-- initial max. global numbering for vertices
  *   rank_face_gnum_index <-- index on face global numbering to determine
  *                            the related rank
  *   p_mesh               <-> pointer to cs_join_mesh_t structure
@@ -3336,8 +3339,8 @@ cs_join_merge_vertices(cs_join_param_t        param,
 void
 cs_join_merge_update_struct(cs_join_param_t          param,
                             cs_int_t                 n_iwm_vertices,
-                            fvm_gnum_t               n_g_ifm_vertices,
                             const fvm_gnum_t         iwm_vtx_gnum[],
+                            fvm_gnum_t               init_max_vtx_gnum,
                             const fvm_gnum_t         rank_face_gnum_index[],
                             cs_join_mesh_t         **p_mesh,
                             cs_join_edges_t        **p_edges,
@@ -3356,8 +3359,8 @@ cs_join_merge_update_struct(cs_join_param_t          param,
   /* Keep an history of the evolution of each vertex */
 
   _keep_global_vtx_evolution(n_iwm_vertices,   /* n_vertices before inter */
-                             n_g_ifm_vertices,
                              iwm_vtx_gnum,
+                             init_max_vtx_gnum,
                              mesh->n_vertices, /* n_vertices after inter */
                              mesh->vertices,
                              &o2n_vtx_gnum);   /* defined by block in // */
@@ -3413,15 +3416,6 @@ cs_join_merge_update_struct(cs_join_param_t          param,
   _redistribute_mesh(rank_face_gnum_index,
                      mesh,
                      &local_mesh);
-
-  /* Clean mesh: remove degenerate and empty edges */
-
-  cs_join_mesh_clean(mesh, param.verbosity);
-
-  /* Define a new cs_join_edges_t structure */
-
-  cs_join_mesh_destroy_edges(&edges);
-  edges = cs_join_mesh_define_edges(mesh);
 
   /* Set return pointers */
 

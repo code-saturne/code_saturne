@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  *   work               <-> joining mesh maintaining initial vertex data
  *   inter_set          <-> cs_join_inter_set_t structure including
  *                          data on edge-edge  intersections
- *   n_g_vertices       <-- global number of vertices (initial parent mesh)
+ *   init_max_vtx_gnum  <-- initial max. global number for vertices
  *   p_n_g_new_vertices <-> pointer to the global number of new vertices
  *   p_vtx_eset         <-> pointer to a structure dealing with vertex
  *                          equivalences
@@ -87,7 +87,7 @@ cs_join_create_new_vertices(int                     verbosity,
                             const cs_join_edges_t  *edges,
                             cs_join_mesh_t         *work,
                             cs_join_inter_set_t    *inter_set,
-                            fvm_gnum_t              n_g_vertices,
+                            fvm_gnum_t              init_max_vtx_gnum,
                             fvm_gnum_t             *p_n_g_new_vertices,
                             cs_join_eset_t        **p_vtx_eset);
 
@@ -121,8 +121,8 @@ cs_join_merge_vertices(cs_join_param_t        param,
  * parameters:
  *   param                <-- set of user-defined parameters for the joining
  *   n_iwm_vertices       <-- initial number of vertices (work mesh struct.)
- *   n_g_ifm_vertices     <-- initial global number of vertices (full mesh)
  *   iwm_vtx_gnum         <-- initial global vertex num. (work mesh struct)
+ *   init_max_vtx_gnum    <-- initial max. global number for vertices
  *   rank_face_gnum_index <-- index on face global numbering to determine
  *                            the related rank
  *   p_mesh               <-> pointer to cs_join_mesh_t structure
@@ -136,8 +136,8 @@ cs_join_merge_vertices(cs_join_param_t        param,
 void
 cs_join_merge_update_struct(cs_join_param_t          param,
                             cs_int_t                 n_iwm_vertices,
-                            fvm_gnum_t               n_g_ifm_vertices,
                             const fvm_gnum_t         iwm_vtx_gnum[],
+                            fvm_gnum_t               init_max_vtx_gnum,
                             const fvm_gnum_t         rank_face_gnum_index[],
                             cs_join_mesh_t         **p_mesh,
                             cs_join_edges_t        **p_edges,

@@ -74,10 +74,11 @@ typedef enum {
 
 typedef struct {
 
-  double       tolerance;  /* Tolerance = radius of the sphere in which
-                              intersection and merge is possible. */
-  cs_real_t    coord[3];   /* Coordinates of the vertex */
-  fvm_gnum_t   gnum;       /* Global vertex number */
+  cs_join_state_t  state;      /* State of the vertices (perio/origin/...) */
+  fvm_gnum_t       gnum;       /* Global vertex number */
+  double           tolerance;  /* Tolerance = radius of the sphere in which
+                                  intersection and merge is possible. */
+  double           coord[3];   /* Coordinates of the vertex */
 
 } cs_join_vertex_t;
 
@@ -158,10 +159,11 @@ cs_join_mesh_create_vtx_datatype(void);
  *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
  *---------------------------------------------------------------------------*/
 
-void  cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
-                                  cs_join_vertex_t   *inout,
-                                  int                *len,
-                                  MPI_Datatype       *datatype);
+void
+cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
+                            cs_join_vertex_t   *inout,
+                            int                *len,
+                            MPI_Datatype       *datatype);
 
 /*----------------------------------------------------------------------------
  * Create a function to define an operator for MPI reduction operation
@@ -173,10 +175,11 @@ void  cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
  *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
  *---------------------------------------------------------------------------*/
 
-void  cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
-                                  cs_join_vertex_t   *inout,
-                                  int                *len,
-                                  MPI_Datatype       *datatype);
+void
+cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
+                            cs_join_vertex_t   *inout,
+                            int                *len,
+                            MPI_Datatype       *datatype);
 
 #endif /* HAVE_MPI */
 
@@ -341,6 +344,19 @@ cs_join_mesh_exchange(int                    n_ranks,
                       cs_join_mesh_t        *recv_mesh,
                       MPI_Comm               comm);
 
+/*----------------------------------------------------------------------------
+ * Synchronize vertices definition over the ranks.
+ *
+ * For vertices with the same global number but a different tolerance,
+ * we keep the smallest tolerance.
+ *
+ * parameters:
+ *  mesh <->  pointer to the cs_join_mesh_t structure to synchronize
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh);
+
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
@@ -354,7 +370,7 @@ void
 cs_join_mesh_destroy_edges(cs_join_edges_t  **edges);
 
 /*----------------------------------------------------------------------------
- * Order a cs_join_mesh_t structure according to the global face numbering
+ * Order a cs_join_mesh_t structure according to its global face numbering
  *
  * Delete redundancies.
  *

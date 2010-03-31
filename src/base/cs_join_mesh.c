@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2009 EDF S.A., France
+ *     Copyright (C) 2008-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -23,7 +23,7 @@
  *     51 Franklin St, Fifth Floor,
  *     Boston, MA  02110-1301  USA
  *
- *============================================================================*/
+ *===========================================================================*/
 
 /*============================================================================
  * Manipulation of a cs_join_mesh_t structure
@@ -89,6 +89,37 @@ BEGIN_C_DECLS
  *===========================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Return a string related to a state
+ *
+ * parameters:
+ *   state <-- state to display
+ *
+ * returns:
+ *   related string
+ *---------------------------------------------------------------------------*/
+
+static const char *
+_print_state(cs_join_state_t  state)
+{
+  if (state == CS_JOIN_STATE_UNDEF)
+    return "UDF";
+  else if (state == CS_JOIN_STATE_NEW)
+    return "NEW";
+  else if (state == CS_JOIN_STATE_ORIGIN)
+    return "ORI";
+  else if (state == CS_JOIN_STATE_PERIO)
+    return "PER";
+  else if (state == CS_JOIN_STATE_MERGE)
+    return "MRG";
+  else if (state == CS_JOIN_STATE_PERIO_MERGE)
+    return "PMG";
+  else if (state == CS_JOIN_STATE_SPLIT)
+    return "SPL";
+  else
+    return "ERR";
+}
+
+/*----------------------------------------------------------------------------
  * Compute the cross product of two vectors.
  *
  * parameters:
@@ -97,7 +128,7 @@ BEGIN_C_DECLS
  *
  * returns:
  *   the resulting cross product (v1 x v2)
- *----------------------------------------------------------------------------*/
+ *---------------------------------------------------------------------------*/
 
 inline static void
 _cross_product(const double  v1[],
@@ -118,7 +149,7 @@ _cross_product(const double  v1[],
  *
  * returns:
  *   the resulting dot product (v1.v2)
- *----------------------------------------------------------------------------*/
+ *---------------------------------------------------------------------------*/
 
 inline static double
 _dot_product(const double  v1[],
@@ -495,32 +526,30 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
 
       /* Display the degenerate face */
 
-      if (n_face_vertices < 3 || verbosity > 2) {
+      if (verbosity > 4) {
 
         bft_printf("\n  Remove edge for face: %d [%u]:",
                    i+1, mesh->face_gnum[i]);
-
         bft_printf("\n    Initial def: ");
         for (j = start_id; j < end_id; j++) {
           cs_int_t  v_id = mesh->face_vtx_lst[j] - 1;
           bft_printf(" %d (%u) ", v_id+1, mesh->vertices[v_id].gnum);
         }
-
         bft_printf("\n    Final def:   ");
         for (j = 0; j < n_face_vertices; j++) {
           cs_int_t  v_id = tmp->array[j] - 1;
           bft_printf(" %d (%u) ", v_id+1, mesh->vertices[v_id].gnum);
         }
-
         bft_printf("\n");
         bft_printf_flush();
 
-        if (n_face_vertices < 3)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("  The simplified face has less than 3 vertices.\n"
-                      "  Check your joining parameters.\n"
-                      "  Face %d (%u)\n"), i+1, mesh->face_gnum[i]);
       }
+
+      if (n_face_vertices < 3)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("  The simplified face has less than 3 vertices.\n"
+                    "  Check your joining parameters.\n"
+                    "  Face %d (%u)\n"), i+1, mesh->face_gnum[i]);
 
     } /* End if n_face_vertices != n_init_vertices */
 
@@ -712,29 +741,33 @@ cs_join_mesh_create_vtx_datatype(void)
   cs_join_vertex_t  v_data;
   MPI_Datatype  new_type;
 
-  int  blocklengths[3] = {1, 1, 3};
-  MPI_Aint  displacements[3] = {0 , 0, 0};
-  MPI_Datatype  types[3] = {MPI_DOUBLE, FVM_MPI_GNUM, FVM_MPI_COORD};
+  int  blocklengths[4] = {1, 1, 1, 3};
+  MPI_Aint  displacements[4] = {0 , 0, 0, 0};
+  MPI_Datatype  types[4] = {MPI_INT,  FVM_MPI_GNUM, MPI_DOUBLE, FVM_MPI_COORD};
 
-  /* Initialize bbox */
+  /* Initialize vertex structure */
 
-  v_data.tolerance = 0.0;
+  v_data.state = CS_JOIN_STATE_UNDEF;
   v_data.gnum = 1;
+  v_data.tolerance = 0.0;
   for (j = 0; j < 3; j++)
-    v_data.coord[j] = 0.;
+    v_data.coord[j] = 0.0;
 
   /* Define array of displacements */
 
 #if defined(MPI_VERSION) && (MPI_VERSION >= 2)
   MPI_Get_address(&v_data, displacements);
   MPI_Get_address(&v_data.gnum, displacements + 1);
-  MPI_Get_address(&v_data.coord, displacements + 2);
+  MPI_Get_address(&v_data.tolerance, displacements + 2);
+  MPI_Get_address(&v_data.coord, displacements + 3);
 #else
   MPI_Address(&v_data, displacements);
   MPI_Address(&v_data.gnum, displacements + 1);
-  MPI_Address(&v_data.coord, displacements + 2);
+  MPI_Address(&v_data.tolerance, displacements + 2);
+  MPI_Address(&v_data.coord, displacements + 3);
 #endif
 
+  displacements[3] -= displacements[0];
   displacements[2] -= displacements[0];
   displacements[1] -= displacements[0];
   displacements[0] = 0;
@@ -742,9 +775,9 @@ cs_join_mesh_create_vtx_datatype(void)
   /* Create new datatype */
 
 #if defined(MPI_VERSION) && (MPI_VERSION >= 2)
-  MPI_Type_create_struct(3, blocklengths, displacements, types, &new_type);
+  MPI_Type_create_struct(4, blocklengths, displacements, types, &new_type);
 #else
-  MPI_Type_struct(3, blocklengths, displacements, types, &new_type);
+  MPI_Type_struct(4, blocklengths, displacements, types, &new_type);
 #endif
 
   MPI_Type_commit(&new_type);
@@ -762,10 +795,11 @@ cs_join_mesh_create_vtx_datatype(void)
  *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
  *---------------------------------------------------------------------------*/
 
-void  cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
-                                  cs_join_vertex_t   *inout,
-                                  int                *len,
-                                  MPI_Datatype       *datatype)
+void
+cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
+                            cs_join_vertex_t   *inout,
+                            int                *len,
+                            MPI_Datatype       *datatype)
 {
   int  i, j;
 
@@ -807,10 +841,11 @@ void  cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
  *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
  *---------------------------------------------------------------------------*/
 
-void  cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
-                                  cs_join_vertex_t   *inout,
-                                  int                *len,
-                                  MPI_Datatype       *datatype)
+void
+cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
+                            cs_join_vertex_t   *inout,
+                            int                *len,
+                            MPI_Datatype       *datatype)
 {
   int  i, j;
 
@@ -958,6 +993,8 @@ cs_join_mesh_create_from_glob_sel(const char            *mesh_name,
 
     BFT_FREE(send_faces);
     BFT_FREE(send_rank_index);
+
+    cs_join_mesh_face_order(new_mesh);
   }
 
 #endif
@@ -1025,15 +1062,18 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
 
   mesh->n_faces = subset_size;
 
-  /* Build face_vtx_idx */
+  /* Build face_vtx_idx, and face global numbering */
 
   BFT_MALLOC(mesh->face_vtx_idx, mesh->n_faces + 1, cs_int_t);
+  BFT_MALLOC(mesh->face_gnum, mesh->n_faces, fvm_gnum_t);
 
   for (i = 0; i < mesh->n_faces; i++) {
 
     parent_id = selection[i] - 1;
+
     mesh->face_vtx_idx[i+1] =  parent_mesh->face_vtx_idx[parent_id+1]
                              - parent_mesh->face_vtx_idx[parent_id];
+    mesh->face_gnum[i] = parent_mesh->face_gnum[parent_id];
 
   }
 
@@ -1064,7 +1104,7 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
 
   } /* End of loop on selected faces */
 
- /* Define vertices */
+  /* Define vertices */
 
   mesh->n_vertices = n_select_vertices;
 
@@ -1076,16 +1116,7 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
       mesh->vertices[n_select_vertices++] = parent_mesh->vertices[i];
   }
 
-  /* Define global face numbering and linked global cell numbering */
-
-  BFT_MALLOC(mesh->face_gnum, mesh->n_faces, fvm_gnum_t);
-
-  for (i = 0; i < mesh->n_faces; i++) {
-
-    parent_id = selection[i] - 1;
-    mesh->face_gnum[i] = parent_mesh->face_gnum[parent_id];
-
-  }
+  /* Define global numbering */
 
   if (cs_glob_n_ranks == 1) {
 
@@ -1132,6 +1163,10 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
   /* Free memory */
 
   BFT_FREE(select_vtx_id);
+
+  /* Order faces by increasing global number */
+
+  cs_join_mesh_face_order(mesh);
 
   return  mesh;
 }
@@ -1386,7 +1421,7 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
 
     if (param.verbosity > 2) {
       bft_printf(_("\n  Local min/max. tolerance:\n\n"
-                   "Glob. Num.  |  Tolerance  |        Coordinates\n"));
+                   " Glob. Num. |  Tolerance  |              Coordinates\n"));
       cs_join_mesh_dump_vertex(_min);
       cs_join_mesh_dump_vertex(_max);
     }
@@ -1410,7 +1445,7 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
                   cs_glob_mpi_comm);
 
     bft_printf(_("\n  Global min/max. tolerance:\n\n"
-                 "Glob. Num.  |  Tolerance  |        Coordinates\n"));
+                 " Glob. Num. |  Tolerance  |              Coordinates\n"));
     cs_join_mesh_dump_vertex(g_min);
     cs_join_mesh_dump_vertex(g_max);
 
@@ -1498,11 +1533,9 @@ cs_join_mesh_exchange(int                    n_ranks,
   BFT_MALLOC(recv_mesh->face_gnum, n_face_to_recv, fvm_gnum_t);
   BFT_MALLOC(recv_mesh->face_vtx_idx, n_face_to_recv + 1, cs_int_t);
 
-  /*
-     The mesh doesn't change from a global point of view.
+  /* The mesh doesn't change from a global point of view.
      It's only a redistribution of the elements according to the send_faces
-     list.
-  */
+     list. */
 
   recv_mesh->n_g_faces = send_mesh->n_g_faces;
   recv_mesh->n_g_vertices = send_mesh->n_g_vertices;
@@ -1542,8 +1575,7 @@ cs_join_mesh_exchange(int                    n_ranks,
 
       }
 
-      send_count[rank] +=  1            /* face_gnum     */
-                         + 1            /* n_vertices    */
+      send_count[rank] +=  2            /* face_gnum and n_vertices */
                          + n_vertices;  /* face connect. */
 
     }
@@ -1606,8 +1638,7 @@ cs_join_mesh_exchange(int                    n_ranks,
 
       }
 
-      send_count[rank] +=  1            /* face_gnum     */
-                         + 1            /* n_vertices    */
+      send_count[rank] +=  2            /* face_gnum and n_vertices */
                          + n_vertices;  /* face connect. */
 
     }
@@ -1817,8 +1848,7 @@ cs_join_mesh_destroy_edges(cs_join_edges_t  **edges)
 }
 
 /*----------------------------------------------------------------------------
- * Order a cs_join_mesh_t structure according to the global face numbering
- *
+ * Order a cs_join_mesh_t structure according to its global face numbering
  * Delete redundancies.
  *
  * parameters:
@@ -1923,7 +1953,7 @@ cs_join_mesh_face_order(cs_join_mesh_t  *mesh)
 
 /*----------------------------------------------------------------------------
  * Synchronize vertices definition over the rank. For a vertex with the same
- * global number but a not equal tolerance, we keep the minimal tolerance.
+ * global number but a different tolerance, we keep the minimal tolerance.
  *
  * parameters:
  *  mesh <->  pointer to the cs_join_mesh_t structure to synchronize
@@ -2979,10 +3009,8 @@ cs_join_mesh_get_edge_face_adj(const cs_join_mesh_t   *mesh,
   cs_int_t  n_edges, n_faces;
 
   cs_int_t  n_max_vertices = 0;
-  cs_int_t  *counter = NULL;
-  cs_int_t  *face_connect = NULL;
-  cs_int_t  *_edge_face_idx = NULL;
-  cs_int_t  *_edge_face_lst = NULL;
+  cs_int_t  *counter = NULL, *face_connect = NULL;
+  cs_int_t  *_edge_face_idx = NULL, *_edge_face_lst = NULL;
 
   if (mesh == NULL || edges == NULL)
     return;
@@ -3120,9 +3148,10 @@ cs_join_mesh_dump_vertex(const cs_join_vertex_t   vertex)
   assert(vertex.gnum > 0);
   assert(vertex.tolerance >= 0.0);
 
-  bft_printf(" %10u | %11.8f |  [ %12.9e %12.9e  %12.9e]\n",
+  bft_printf(" %10u | %11.8f | % 12.10e % 12.10e  % 12.10e | %s\n",
              vertex.gnum, vertex.tolerance,
-             vertex.coord[0], vertex.coord[1], vertex.coord[2]);
+             vertex.coord[0], vertex.coord[1], vertex.coord[2],
+             _print_state(vertex.state));
 }
 
 /*----------------------------------------------------------------------------
@@ -3140,9 +3169,10 @@ cs_join_mesh_dump_vertex_file(FILE                   *file,
   assert(vertex.gnum > 0);
   assert(vertex.tolerance >= 0.0);
 
-  fprintf(file," %10u | %11.6f |  [ %12.6g  %12.6g  %12.6g]\n",
-          vertex.gnum, vertex.tolerance,
-          vertex.coord[0], vertex.coord[1], vertex.coord[2]);
+  fprintf(file," %10lu | %11.6f | % 12.10e  % 12.10e  % 12.10e | %s\n",
+          (unsigned long)vertex.gnum, vertex.tolerance,
+          vertex.coord[0], vertex.coord[1], vertex.coord[2],
+          _print_state( vertex.state));
 }
 
 /*----------------------------------------------------------------------------
@@ -3175,7 +3205,7 @@ cs_join_mesh_dump(const cs_join_mesh_t  *mesh)
       cs_int_t  start = mesh->face_vtx_idx[i] - 1;
       cs_int_t  end = mesh->face_vtx_idx[i+1] - 1;
 
-      bft_printf(_("\n face_id: %5d gnum: %9u - n_vertices: %4d\n"),
+      bft_printf(_("\n face_id: %5d gnum: %9u n_vertices: %4d\n"),
                  i, mesh->face_gnum[i], end-start);
 
       for (j = start; j < end; j++) {
@@ -3288,17 +3318,18 @@ cs_join_mesh_dump_file(FILE                  *file,
       cs_int_t  start = mesh->face_vtx_idx[i] - 1;
       cs_int_t  end = mesh->face_vtx_idx[i+1] - 1;
 
-      fprintf(file,_("\n face_id: %9d gnum: %10u - n_vertices : %4d\n"),
-              i, mesh->face_gnum[i],end-start);
+      fprintf(file,_("\n face_id: %9d gnum: %10lu n_vertices : %4d\n"),
+              i, (unsigned long)mesh->face_gnum[i], end-start);
 
       for (j = start; j < end; j++) {
 
         cs_int_t  vtx_id = mesh->face_vtx_lst[j]-1;
         cs_join_vertex_t  v_data = mesh->vertices[vtx_id];
 
-        fprintf(file," %9d - %10u - [ %12.6g %12.6g %12.6g]\n",
-                vtx_id+1, v_data.gnum,
-                v_data.coord[0], v_data.coord[1], v_data.coord[2]);
+        fprintf(file," %8d - %10lu - [ % 7.5e % 7.5e % 7.5e] - %s\n",
+                vtx_id+1, (unsigned long)v_data.gnum,
+                v_data.coord[0], v_data.coord[1], v_data.coord[2],
+                _print_state(v_data.state));
 
       }
       fprintf(file,"\n");
@@ -3312,12 +3343,12 @@ cs_join_mesh_dump_file(FILE                  *file,
 
         if (vtx_id1 == vtx_id2) {
           fprintf(file,_("  Incoherency found in the current mesh definition\n"
-                         "  Face number: %d (global: %u)\n"
-                         "  Vertices: local (%d, %d), global (%u, %u)"
+                         "  Face number: %d (global: %lu)\n"
+                         "  Vertices: local (%d, %d), global (%lu, %lu)"
                          " are defined twice\n"),
-                  i+1, mesh->face_gnum[i], vtx_id1+1, vtx_id2+1,
-                  (mesh->vertices[vtx_id1]).gnum,
-                  (mesh->vertices[vtx_id2]).gnum);
+                  i+1, (unsigned long)mesh->face_gnum[i], vtx_id1+1, vtx_id2+1,
+                  (unsigned long)(mesh->vertices[vtx_id1]).gnum,
+                  (unsigned long)(mesh->vertices[vtx_id2]).gnum);
           fflush(file);
           assert(0);
         }
@@ -3395,7 +3426,7 @@ cs_join_mesh_dump_edges(const cs_join_edges_t  *edges,
     fvm_gnum_t  v1_gnum = (mesh->vertices[v1_id]).gnum;
     fvm_gnum_t  v2_gnum = (mesh->vertices[v2_id]).gnum;
 
-    bft_printf(_("  Edge %6d  (%7u) <Vertex> [%7u %7u]\n"),
+    bft_printf(_("  Edge %6d  (%8u) <Vertex> [%8u %8u]\n"),
                i+1, edges->gnum[i], v1_gnum, v2_gnum);
 
     /* Check coherency */

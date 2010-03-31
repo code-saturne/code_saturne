@@ -152,7 +152,6 @@ void CS_PROCF(setajp, SETAJP)
  cs_int_t    *tml,
  cs_int_t    *tmb,
  cs_real_t   *tmr
- CS_ARGF_SUPP_CHAINE
 );
 
 /*=============================================================================
