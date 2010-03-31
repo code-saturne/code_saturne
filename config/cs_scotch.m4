@@ -49,8 +49,6 @@ AC_ARG_WITH(scotch-include,
                if test "x$with_scotch" != "xyes" \
 	               -a "x$with_scotch" != "xcheck"; then
                  SCOTCH_CPPFLAGS="-I$with_scotch/include"
-               else
-                 SCOTCH_CPPFLAGS="-I/usr/include"
                fi
              fi])
 

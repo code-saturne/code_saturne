@@ -49,8 +49,6 @@ AC_ARG_WITH(metis-include,
                if test "x$with_metis" != "xyes" \
 	               -a "x$with_metis" != "xcheck"; then
                  METIS_CPPFLAGS="-I$with_metis/include"
-               else
-                 METIS_CPPFLAGS="-I/usr/include"
                fi
              fi])
 

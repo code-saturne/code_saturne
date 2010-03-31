@@ -79,7 +79,9 @@ extern "C" {
    direct calling of METIS functions, so we also include prototypes
    in this case. */
 
+#if !defined(IDXTYPE_INT)
 typedef int idxtype;
+#endif
 
 void METIS_PartGraphRecursive(int *, idxtype *, idxtype *, idxtype *, idxtype *,
                               int *, int *, int *, int *, int *, idxtype *);

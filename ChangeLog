@@ -1,3 +1,12 @@
+* 31/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix some minor bugs in library detections and a compilation issue with
+  ParMETIS.
+  modified scripts:
+    config/cs_metis.m4
+    config/cs_scotch.m4
+  modified routines:
+    src/apps/cs_partition.c
+
 * 30/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Move the partitioning and I/O dump tools from the preprocessor to the kernel
