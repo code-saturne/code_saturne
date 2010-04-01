@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -34,10 +34,12 @@ subroutine usjoin &
  ( )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! -------
 
-!     DEFINITION DE RECOLLEMENT DE MAILLAGES
+!    User subroutine.
+
+! Define (conforming or non-conforming) mesh joinings.
 
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
@@ -65,7 +67,7 @@ include "parall.h"
 
 ! Arguments
 
-! Variables locales
+! Local variables
 
 integer          iutile, ii, nbjoin
 integer          iwarnj
@@ -150,8 +152,8 @@ pmf = 0.10d0
 !      multiplication by a coef. which is equal to the max sin(e1, e2)
 !      where e1 and e2 are two edges sharing the same vertex V for which
 !      we want to compute the tolerance
-!  11: like 1 but in taking into account only the selected faces
-!  12: like 2 but in taking into account only the selected faces
+!  11: as 1 but taking into account only the selected faces
+!  12: as 2 but taking into account only the selected faces
 
 tcm = 1
 

@@ -1432,8 +1432,8 @@ _pre_merge(cs_join_param_t     param,
     fvm_gnum_t n_g_counter = n_local_pre_merge;
     fvm_parall_counter(&n_g_counter, 1);
 
-    bft_printf(_("\n  Pre-merge for %lu global couple of elements.\n"),
-               (unsigned long)n_g_counter);
+    bft_printf(_("\n  Pre-merge for %llu global couple of elements.\n"),
+               (unsigned long long)n_g_counter);
 
     if (param.verbosity > 1) {
       bft_printf(_("\n  Local number of pre-merge: %d\n"),
@@ -2047,8 +2047,8 @@ _merge_vertices(cs_join_param_t    param,
       return;
     }
     else
-      bft_printf(_("\n  Max size of a merge set of vertices: %lu\n"),
-                 (unsigned long)g_max_list_size);
+      bft_printf(_("\n  Max size of a merge set of vertices: %llu\n"),
+                 (unsigned long long)g_max_list_size);
   }
 
   /* Temporary buffers allocation */
@@ -2179,14 +2179,14 @@ _merge_vertices(cs_join_param_t    param,
     fvm_gnum_t n_g_counter = n_transitivity;
     fvm_parall_counter(&n_g_counter, 1);
 
-    bft_printf(_("\n  Excessive transitivity for %lu set(s) of vertices.\n"),
-               (unsigned long)n_g_counter);
+    bft_printf(_("\n  Excessive transitivity for %llu set(s) of vertices.\n"),
+               (unsigned long long)n_g_counter);
 
     if (verbosity > 1) {
       fvm_lnum_t g_n_max_loops = n_max_loops;
       fvm_parall_counter_max(&g_n_max_loops, 1);
       bft_printf(_("\n  Max. number of iterations to solve transitivity"
-                   " excess: %lu\n"), (unsigned long)g_n_max_loops);
+                   " excess: %llu\n"), (unsigned long long)g_n_max_loops);
     }
   }
 
@@ -3051,8 +3051,8 @@ cs_join_create_new_vertices(int                     verbosity,
                            &new_vtx_gnum);
 
   if (verbosity > 0)
-    bft_printf(_("\n  Global number of new vertices to create: %10lu\n"),
-               (unsigned long)n_g_new_vertices);
+    bft_printf(_("\n  Global number of new vertices to create: %10llu\n"),
+               (unsigned long long)n_g_new_vertices);
 
   /* Define new vertices */
 
@@ -3222,8 +3222,8 @@ cs_join_merge_vertices(cs_join_param_t        param,
     fvm_parall_counter(&g_n_equiv, 1);
     bft_printf(_("\n"
                  "  Final number of equiv. between vertices; local: %9d\n"
-                 "                                          global: %9lu\n"),
-               vtx_eset->n_equiv, (unsigned long)g_n_equiv);
+                 "                                          global: %9llu\n"),
+               vtx_eset->n_equiv, (unsigned long long)g_n_equiv);
   }
 
   /* Operate merge between equivalent vertices.

@@ -2288,7 +2288,7 @@ cs_join_inter_set_create(cs_int_t  init_size)
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_inter_set_t structure.
  *
- * parameter:
+ * parameters:
  *   inter_set <-- a pointer to the inter_set_t structure to destroy
  *
  * returns:

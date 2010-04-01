@@ -145,7 +145,7 @@ _create_perio_builder(void)
  * builder->periodicity is not freed here because it's transfered to a
  * cs_mesh_t structure.
  *
- * parameter:
+ * parameters:
  *   builder     <-> a pointer to a cs_join_perio_builder_t struct. to free
  *---------------------------------------------------------------------------*/
 
@@ -172,7 +172,7 @@ _delete_perio_builder(cs_join_perio_builder_t   **builder)
 /*----------------------------------------------------------------------------
  * Update a cs_join_perio_builder_t structure. Add a new periodicity.
  *
- * parameter:
+ * parameters:
  *   builder     <-> a pointer to a cs_join_perio_builder_t structure
  *---------------------------------------------------------------------------*/
 
@@ -1367,9 +1367,10 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
   }
 
   n_new_vertices = 0;
-  for (i = 0; i < jmesh->n_vertices; i++)
+  for (i = 0; i < jmesh->n_vertices; i++) {
     if (vtag[i] > 0)
       n_new_vertices++;
+  }
 
   BFT_REALLOC(jmesh->vertices,
               jmesh->n_vertices + n_new_vertices,

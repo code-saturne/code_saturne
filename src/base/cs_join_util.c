@@ -1893,8 +1893,8 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
 
   if (n_g_elts > 0) {
 
-    bft_printf("  Global number of single edges found:    %6lu\n",
-               (unsigned long)n_g_elts);
+    bft_printf("  Global number of single edges found:    %6llu\n",
+               (unsigned long long)n_g_elts);
     bft_printf_flush();
     selection->do_single_sync = true;
 

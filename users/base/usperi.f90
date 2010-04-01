@@ -34,10 +34,12 @@ subroutine usperi &
  ( )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! -------
 
-!     DEFINITION DES PERIODICITES
+!    User subroutine.
+
+! Define (conforming or non-conforming) periodicity.
 
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
@@ -49,8 +51,6 @@ subroutine usperi &
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
 !     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
 !===============================================================================
 
 implicit none
@@ -67,7 +67,7 @@ include "parall.h"
 
 ! Arguments
 
-! Variables locales
+! Local variables
 
 integer          nbperio, ii, iwarnp, iutile
 integer          tml, tmb, tcm, icm, maxsf, maxbrk
@@ -109,19 +109,19 @@ iwarnp = 1
 ! Periodic transformation definitions
 ! -----------------------------------
 
-call numper(nbperio) ! Number of periodicity already defined
-!    ======
+call numper(nbperio) ! Number of periodicities already defined
+!==========
 
 do ii = nbperio, nbperio + 3
 
    ! Definition of a periodicity of translation
-   ! -----------------------------------------
+   ! ------------------------------------------
 
   if (ii .eq. nbperio + 1) then
 
     call defptr(ii, '99', fract, plane, iwarnp, &  ! Main joining parameters
-                1.0d0, 0.0d0, 0.0d0)               ! Translation vector
     !==========
+                1.0d0, 0.0d0, 0.0d0)               ! Translation vector
 
   endif
 
@@ -135,10 +135,10 @@ do ii = nbperio, nbperio + 3
      iwarnp = 2
 
      call defpro(ii, '3', fract, plane, iwarnp,  &  ! Main joining parameters
+     !==========
                  1.0d0, 0.0d0, 0.0d0,            &  ! Axis of the rotation
                  20d0,                           &  ! Rotation angle in degree
                  0.0d0, 0.0d0, 0.0d0)               ! Invariant point
-     !==========
 
      ! restore default value
      fract = 0.10d0
@@ -146,8 +146,8 @@ do ii = nbperio, nbperio + 3
 
   endif
 
-  ! Definition of a general transformation thanks to a homogeneous matrix
-  ! ---------------------------------------------------------------------
+  ! Definition of a general transformation using a homogeneous matrix
+  ! -----------------------------------------------------------------
 
   ! 4x4 matrix
   !    _               _
@@ -161,10 +161,10 @@ do ii = nbperio, nbperio + 3
   if (ii .eq. nbperio + 3) then
 
     call defpge(ii, 'all[]', fract, plane, iwarnp,  &  ! Main joining parameters
+    !==========
                 1.0d0, 0.0d0, 0.0d0, 0.0d0,         &  ! 1st row: r11 r12 r13 tx
                 0.0d0, 1.0d0, 0.0d0, 0.0d0,         &  ! 2nd row: r21 r22 r23 ty
                 0.0d0, 0.0d0, 1.0d0, 0.0d0)            ! 3rd row: r31 r32 r33 tz
-    !==========
 
   endif
 
@@ -205,8 +205,8 @@ pmf = 0.10d0
 !      multiplication by a coef. which is equal to the max sin(e1, e2)
 !      where e1 and e2 are two edges sharing the same vertex V for which
 !      we want to compute the tolerance
-!  11: like 1 but in taking into account only the selected faces
-!  12: like 2 but in taking into account only the selected faces
+!  11: as 1 but taking into account only the selected faces
+!  12: as 2 but taking into account only the selected faces
 
 tcm = 1
 

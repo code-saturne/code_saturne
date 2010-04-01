@@ -761,8 +761,8 @@ _define_vertices(cs_join_param_t        param,
                           vertices);
 
     if (param.verbosity > 1)
-      bft_printf(_("  Global number of selected vertices: %11lu\n\n"),
-                 (unsigned long)(selection->n_g_vertices));
+      bft_printf(_("  Global number of selected vertices: %11llu\n\n"),
+                 (unsigned long long)(selection->n_g_vertices));
 
     fvm_io_num_destroy(select_vtx_io_num);
 
@@ -773,8 +773,8 @@ _define_vertices(cs_join_param_t        param,
     selection->n_g_vertices = selection->n_vertices;
 
     if (param.verbosity > 1)
-      bft_printf(_("  Number of selected vertices: %11lu\n\n"),
-                 (unsigned long)(selection->n_g_vertices));
+      bft_printf(_("  Number of selected vertices: %11llu\n\n"),
+                 (unsigned long long)(selection->n_g_vertices));
 
   }
 
@@ -1011,8 +1011,8 @@ _remove_empty_edges(cs_join_mesh_t  *mesh,
   if (verbosity > 1) {
     fvm_gnum_t n_g_simplified_faces = n_simplified_faces;
     fvm_parall_counter(&n_g_simplified_faces, 1);
-    bft_printf(_("\n  Number of simplified faces: %lu\n"),
-               (unsigned long)n_simplified_faces);
+    bft_printf(_("\n  Number of simplified faces: %llu\n"),
+               (unsigned long long)n_simplified_faces);
   }
 }
 
@@ -1179,9 +1179,9 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
   fvm_parall_counter(&n_g_modified_faces, 1);
 
   if (verbosity > 0)
-    bft_printf("\n  Edge removed for %lu faces (global).\n"
+    bft_printf("\n  Edge removed for %llu faces (global).\n"
                "  Join mesh cleaning done.\n",
-               (unsigned long)n_g_modified_faces);
+               (unsigned long long)n_g_modified_faces);
 
   for (i = n_faces; i > 0; i--)
     mesh->face_vtx_idx[i] = mesh->face_vtx_idx[i-1] + 1;
@@ -2504,8 +2504,9 @@ cs_join_mesh_face_order(cs_join_mesh_t  *mesh)
   BFT_MALLOC(gnum_buf, n_faces, fvm_gnum_t);
   BFT_MALLOC(selection, n_faces, cs_int_t);
 
-  for (i = 0; i < n_faces; i++)
+  for (i = 0; i < n_faces; i++) {
     gnum_buf[i] = mesh->face_gnum[i];
+  }
 
   prev = 0;
   n_new_faces = 0;
@@ -3353,13 +3354,13 @@ cs_join_mesh_update(cs_join_mesh_t         *mesh,
       if (new_face_vtx_idx[i+1] < 3)
         bft_error(__FILE__, __LINE__, 0,
                   _(" Problem in mesh connectivity."
-                    " Face: %lu\n"
+                    " Face: %llu\n"
                     " Problem detected during connectivity update:\n"
                     " The face is defined by less than 3 points"
                     " (excessive merging has occured).\n\n"
                     " Modify joining parameters to reduce merging"
                     " (fraction & merge).\n"),
-                  (unsigned long)(mesh->face_gnum[i]));
+                  (unsigned long long)(mesh->face_gnum[i]));
 
     }
 
@@ -3790,8 +3791,8 @@ cs_join_mesh_dump_vertex_file(FILE                   *file,
   assert(vertex.gnum > 0);
   assert(vertex.tolerance >= 0.0);
 
-  fprintf(file," %10lu | %11.6f | % 12.10e  % 12.10e  % 12.10e | %s\n",
-          (unsigned long)vertex.gnum, vertex.tolerance,
+  fprintf(file," %10llu | %11.6f | % 12.10e  % 12.10e  % 12.10e | %s\n",
+          (unsigned long long)vertex.gnum, vertex.tolerance,
           vertex.coord[0], vertex.coord[1], vertex.coord[2],
           _print_state( vertex.state));
 }
@@ -3939,16 +3940,16 @@ cs_join_mesh_dump_file(FILE                  *file,
       cs_int_t  start = mesh->face_vtx_idx[i] - 1;
       cs_int_t  end = mesh->face_vtx_idx[i+1] - 1;
 
-      fprintf(file,_("\n face_id: %9d gnum: %10lu n_vertices : %4d\n"),
-              i, (unsigned long)mesh->face_gnum[i], end-start);
+      fprintf(file,_("\n face_id: %9d gnum: %10llu n_vertices : %4d\n"),
+              i, (unsigned long long)mesh->face_gnum[i], end-start);
 
       for (j = start; j < end; j++) {
 
         cs_int_t  vtx_id = mesh->face_vtx_lst[j]-1;
         cs_join_vertex_t  v_data = mesh->vertices[vtx_id];
 
-        fprintf(file," %8d - %10lu - [ % 7.5e % 7.5e % 7.5e] - %s\n",
-                vtx_id+1, (unsigned long)v_data.gnum,
+        fprintf(file," %8d - %10llu - [ % 7.5e % 7.5e % 7.5e] - %s\n",
+                vtx_id+1, (unsigned long long)v_data.gnum,
                 v_data.coord[0], v_data.coord[1], v_data.coord[2],
                 _print_state(v_data.state));
 
@@ -3964,12 +3965,13 @@ cs_join_mesh_dump_file(FILE                  *file,
 
         if (vtx_id1 == vtx_id2) {
           fprintf(file,_("  Incoherency found in the current mesh definition\n"
-                         "  Face number: %d (global: %lu)\n"
-                         "  Vertices: local (%d, %d), global (%lu, %lu)"
+                         "  Face number: %d (global: %llu)\n"
+                         "  Vertices: local (%d, %d), global (%llu, %llu)"
                          " are defined twice\n"),
-                  i+1, (unsigned long)mesh->face_gnum[i], vtx_id1+1, vtx_id2+1,
-                  (unsigned long)(mesh->vertices[vtx_id1]).gnum,
-                  (unsigned long)(mesh->vertices[vtx_id2]).gnum);
+                  i+1, (unsigned long long)mesh->face_gnum[i],
+                  vtx_id1+1, vtx_id2+1,
+                  (unsigned long long)(mesh->vertices[vtx_id1]).gnum,
+                  (unsigned long long)(mesh->vertices[vtx_id2]).gnum);
           fflush(file);
           assert(0);
         }

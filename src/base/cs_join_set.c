@@ -310,7 +310,7 @@ cs_join_rset_create(cs_int_t  max_size)
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_rset_t structure.
  *
- * parameter:
+ * parameters:
  *   set <-- pointer to pointer to the cs_join_rset_t structure to destroy
  *---------------------------------------------------------------------------*/
 
@@ -422,7 +422,7 @@ cs_join_eset_check_size(cs_int_t          request_size,
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_eset_t structure.
  *
- * parameter:
+ * parameters:
  *   equiv_set <-- pointer to pointer to the structure to destroy
  *---------------------------------------------------------------------------*/
 
@@ -2442,42 +2442,45 @@ cs_join_gset_dump(FILE                  *file,
     int  n_matches = e-s;
     int  n_loops = n_matches/10;
 
-    fprintf(file, "Global num: %8lu | subsize: %3d |",
-            (unsigned long)set->g_elts[i], n_matches);
+    fprintf(file, "Global num: %8llu | subsize: %3d |",
+            (unsigned long long)set->g_elts[i], n_matches);
 
     for (j = 0; j < n_loops; j++) {
       if (j == 0)
-        fprintf(file, "%8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu\n",
-                (unsigned long)set->g_list[s+ 10*j],
-                (unsigned long)set->g_list[s+ 10*j + 1],
-                (unsigned long)set->g_list[s+ 10*j + 2],
-                (unsigned long)set->g_list[s+ 10*j + 3],
-                (unsigned long)set->g_list[s+ 10*j + 4],
-                (unsigned long)set->g_list[s+ 10*j + 5],
-                (unsigned long)set->g_list[s+ 10*j + 6],
-                (unsigned long)set->g_list[s+ 10*j + 7],
-                (unsigned long)set->g_list[s+ 10*j + 8],
-                (unsigned long)set->g_list[s+ 10*j + 9]);
+        fprintf(file,
+                "%8llu %8llu %8llu %8llu %8llu "
+                "%8llu %8llu %8llu %8llu %8llu\n",
+                (unsigned long long)set->g_list[s+ 10*j],
+                (unsigned long long)set->g_list[s+ 10*j + 1],
+                (unsigned long long)set->g_list[s+ 10*j + 2],
+                (unsigned long long)set->g_list[s+ 10*j + 3],
+                (unsigned long long)set->g_list[s+ 10*j + 4],
+                (unsigned long long)set->g_list[s+ 10*j + 5],
+                (unsigned long long)set->g_list[s+ 10*j + 6],
+                (unsigned long long)set->g_list[s+ 10*j + 7],
+                (unsigned long long)set->g_list[s+ 10*j + 8],
+                (unsigned long long)set->g_list[s+ 10*j + 9]);
       else
         fprintf(file, "                                     "
-                "%8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu %8lu\n",
-                (unsigned long)set->g_list[s+ 10*j],
-                (unsigned long)set->g_list[s+ 10*j + 1],
-                (unsigned long)set->g_list[s+ 10*j + 2],
-                (unsigned long)set->g_list[s+ 10*j + 3],
-                (unsigned long)set->g_list[s+ 10*j + 4],
-                (unsigned long)set->g_list[s+ 10*j + 5],
-                (unsigned long)set->g_list[s+ 10*j + 6],
-                (unsigned long)set->g_list[s+ 10*j + 7],
-                (unsigned long)set->g_list[s+ 10*j + 8],
-                (unsigned long)set->g_list[s+ 10*j + 9]);
+                "%8llu %8llu %8llu %8llu %8llu "
+                "%8llu %8llu %8llu %8llu %8llu\n",
+                (unsigned long long)set->g_list[s+ 10*j],
+                (unsigned long long)set->g_list[s+ 10*j + 1],
+                (unsigned long long)set->g_list[s+ 10*j + 2],
+                (unsigned long long)set->g_list[s+ 10*j + 3],
+                (unsigned long long)set->g_list[s+ 10*j + 4],
+                (unsigned long long)set->g_list[s+ 10*j + 5],
+                (unsigned long long)set->g_list[s+ 10*j + 6],
+                (unsigned long long)set->g_list[s+ 10*j + 7],
+                (unsigned long long)set->g_list[s+ 10*j + 8],
+                (unsigned long long)set->g_list[s+ 10*j + 9]);
     }
 
     if (e - s+10*n_loops > 0) {
       for (j = s + 10*n_loops; j < e; j++) {
         if (j == s + 10*n_loops && n_loops > 0)
           fprintf(file,"                                     ");
-        fprintf(file,"%8lu ", (unsigned long)set->g_list[j]);
+        fprintf(file,"%8llu ", (unsigned long long)set->g_list[j]);
       }
       fprintf(file,"\n");
     }

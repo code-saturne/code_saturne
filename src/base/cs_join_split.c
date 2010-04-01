@@ -1952,15 +1952,15 @@ cs_join_split_faces(cs_join_param_t          param,
 
       bft_printf
         (_("\n  *** WARNING ***\n"
-           "  Globally, %lu problem(s) found during the face splitting\n"
-           "     %12lu  open cycles,\n"
-           "     %12lu  edges traversed twice,\n"
-           "     %12lu  faces split into more than max_subfaces (= %d)\n\n"
+           "  Globally, %llu problem(s) found during the face splitting\n"
+           "     %12llu  open cycles,\n"
+           "     %12llu  edges traversed twice,\n"
+           "     %12llu  faces split into more than max_subfaces (= %d)\n\n"
            "    => Eventually modify joining parameters\n\n"),
-         (unsigned long)n_g_face_problems,
-         (unsigned long)n_g_open_cycles,
-         (unsigned long)n_g_edges_twice,
-         (unsigned long)n_g_loop_limit, param.max_sub_faces);
+         (unsigned long long)n_g_face_problems,
+         (unsigned long long)n_g_open_cycles,
+         (unsigned long long)n_g_edges_twice,
+         (unsigned long long)n_g_loop_limit, param.max_sub_faces);
       bft_printf_flush();
 
       assert(   n_g_face_problems
