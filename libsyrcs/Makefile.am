@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@
 # Main part
 
 AM_CPPFLAGS = @BFT_CPPFLAGS@  @FVM_CPPFLAGS@ @MPI_CPPFLAGS@
-AM_CFLAGS =
+AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 AM_LDFLAGS =
 
 # Library source files

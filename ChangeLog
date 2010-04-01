@@ -1,4 +1,9 @@
 * 01/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add correct flags for the libsyrcs library.
+  modified script:
+    libsyrcs/Makefile.am
+
+* 01/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor modifications to the joining alogrithm (mostly English translation
   and switch from unsigned long to unsigned long long for printing).
   modified routines:
