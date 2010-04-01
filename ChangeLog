@@ -45,7 +45,6 @@
     src/base/cs_join_split.c
     src/base/cs_join_update.c
     src/base/cs_join_util.c
-    src/base/resolp.f90
     users/base/usjoin.f90
 
 * 31/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
