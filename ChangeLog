@@ -1,4 +1,16 @@
 * 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Prepare the XML reader for the joining and periodicity support.
+  added routines:
+    include/base/cs_gui_mesh.h
+    src/base/cs_gui_mesh.c
+  modified script:
+    src/base/Makefile.am
+  modified routines:
+    include/base/cs_gui_util.h
+    src/apps/cs_solver.c
+    src/base/cs_gui_util.c
+
+* 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Miscellaneous improvement for robustness.
   modified routines:
     src/base/cs_benchmark.c

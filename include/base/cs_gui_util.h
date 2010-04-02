@@ -64,6 +64,16 @@ CS_PROCF (csihmp, CSIHMP) (int *const iihmpr);
  * Public function prototypes
  *============================================================================*/
 
+/*-----------------------------------------------------------------------------
+ * Indicate if an XML file has been loaded
+ *
+ * returns:
+ *   1 if an XML file has been loaded, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_file_is_loaded(void);
+
 /*----------------------------------------------------------------------------
  * Load the XML file in memory.
  *

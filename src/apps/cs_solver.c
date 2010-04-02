@@ -250,8 +250,10 @@ cs_run(void)
 
   /* Define joining and periodicity parameters if requested */
 
+  cs_gui_mesh_define_joinings();
   CS_PROCF (usjoin, USJOIN)();
 
+  cs_gui_mesh_define_periodicities();
   CS_PROCF (usperi, USPERI)();
 
   /* Join meshes / build periodicity links if necessary */

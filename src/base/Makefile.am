@@ -71,6 +71,7 @@ $(top_srcdir)/include/base/cs_gui.h \
 $(top_srcdir)/include/base/cs_gui_boundary_conditions.h \
 $(top_srcdir)/include/base/cs_gui_conjugate_heat_transfer.h \
 $(top_srcdir)/include/base/cs_gui_matisse.h \
+$(top_srcdir)/include/base/cs_gui_mesh.h \
 $(top_srcdir)/include/base/cs_gui_mobile_mesh.h \
 $(top_srcdir)/include/base/cs_gui_particles.h \
 $(top_srcdir)/include/base/cs_gui_radiative_transfer.h \
@@ -239,6 +240,7 @@ cs_gui.c \
 cs_gui_boundary_conditions.c \
 cs_gui_conjugate_heat_transfer.c \
 cs_gui_matisse.c \
+cs_gui_mesh.c \
 cs_gui_mobile_mesh.c \
 cs_gui_particles.c \
 cs_gui_radiative_transfer.c \
