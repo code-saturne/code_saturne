@@ -124,12 +124,12 @@ class LineEditDelegateGroups(QItemDelegate):
         model.setData(index, QVariant(value), Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
-# Line edit delegate for Fraction and Plan
+# Line edit delegate for Fraction and Plane
 #-------------------------------------------------------------------------------
 
-class FractionPlanDelegate(QItemDelegate):
+class FractionPlaneDelegate(QItemDelegate):
     def __init__(self, parent=None):
-        super(FractionPlanDelegate, self).__init__(parent)
+        super(FractionPlaneDelegate, self).__init__(parent)
 
 
     def createEditor(self, parent, option, index):
@@ -279,7 +279,7 @@ class StandardItemModelFaces(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        if col   == 0:
+        if col == 0:
             self.dataFaces[row]['color'] = str(value.toString())
         elif col == 1:
             self.dataFaces[row]['group'] = str(value.toString())
@@ -392,11 +392,11 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
         delegateGroups = LineEditDelegateGroups(self.tableView)
         self.tableView.setItemDelegateForColumn(1, delegateGroups)
 
-        delegateFraction = FractionPlanDelegate(self.tableView)
+        delegateFraction = FractionPlaneDelegate(self.tableView)
         self.tableView.setItemDelegateForColumn(3, delegateFraction)
 
-        delegatePlan = FractionPlanDelegate(self.tableView)
-        self.tableView.setItemDelegateForColumn(4, delegatePlan)
+        delegatePlane = FractionPlaneDelegate(self.tableView)
+        self.tableView.setItemDelegateForColumn(4, delegatePlane)
 
 ##        self.tableView.resizeColumnsToContents()
 ##         self.tableView.resizeRowsToContents()
@@ -405,7 +405,7 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
 
         # Connections
 
-        self.connect(self.pushButtonNew,    SIGNAL("clicked()"), self.slotAddItem)
+        self.connect(self.pushButtonAdd,    SIGNAL("clicked()"), self.slotAddItem)
         self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.slotDelItem)
 
 
@@ -428,7 +428,7 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
     @pyqtSignature("")
     def slotDelItem(self):
         """
-        Delete a single selectded row.
+        Delete a single selected row.
         """
         for index in self.tableView.selectionModel().selectedIndexes():
             self.modelFaces.delItem(index.row())
@@ -440,6 +440,7 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
         Translation
         """
         return text
+
 
 #-------------------------------------------------------------------------------
 # Testing part

@@ -591,12 +591,12 @@ class SolutionDomainModel(MeshModel, Model):
             grp = 'off'
         return grp
 
-# Methods to manage status of all main balises :
-#=============================================
+# Methods to manage status of all main tags :
+#==========================================
 
     def getJoinMeshesStatus(self):
         """
-        Get status on balise "join_meshes" from xml file
+        Get status on tag "join_meshes" from xml file
         """
         status = self.node_join['status']
         if not status:
@@ -607,7 +607,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def setJoinMeshesStatus(self, status):
         """
-        Put status on balise "join_meshes" in xml file
+        Put status on tag "join_meshes" in xml file
         """
         self.isOnOff(status)
         if self.node_join:
@@ -622,7 +622,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def getCutStatus(self):
         """
-        Get status on balise "faces_cutting" from xml file
+        Get status on tag "faces_cutting" from xml file
         """
         status = self.node_cut['status']
         if not status:
@@ -633,7 +633,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def setCutStatus(self, status):
         """
-        Put status on balise "faces_cutting" in xml file
+        Put status on tag "faces_cutting" in xml file
         """
         self.isOnOff(status)
         self.node_cut['status'] = status
@@ -667,7 +667,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def getOrientation(self):
         """
-        Get status on balise "reorientation" from xml file
+        Get status on tag "reorientation" from xml file
         """
         status = self.node_orient['status']
         if not status:
@@ -678,7 +678,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def setOrientation(self, status):
         """
-        Put status on balise "reorientation" in xml file
+        Put status on tag "reorientation" in xml file
         """
         self.isOnOff(status)
         self.node_orient['status'] = status
@@ -687,7 +687,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def getSimCommStatus(self):
         """
-        Get status of balise ''similation_communication' into xml file
+        Get status of tag ''similation_communication' into xml file
         """
         node = self.node_standalone.xmlInitNode('simulation_communication', 'status')
         status = node['status']
@@ -699,7 +699,7 @@ class SolutionDomainModel(MeshModel, Model):
 
     def setSimCommStatus(self, status):
         """
-        Put status of balise ''similation_communication' into xml file
+        Put status of tag ''similation_communication' into xml file
         """
         self.isOnOff(status)
         node = self.node_standalone.xmlInitNode('simulation_communication', 'status')
@@ -1524,9 +1524,9 @@ class SolutionDomainTestCase(ModelTest):
         mdl.setJoinMeshesStatus('on')
         doc = '''<join_meshes status="on"/>'''
         assert mdl.node_join == self.xmlNodeFromString(doc), \
-            'Could not set status in join meshes balise'
+            'Could not set status in join meshes tag'
         assert mdl.getJoinMeshesStatus() == 'on', \
-            'Could not get status from join meshes balise'
+            'Could not get status from join meshes tag'
 
     def checkSetandGetCutStatusAndAngleValue(self):
         """ Check whether the status of node cut and value of angle could be set and get"""

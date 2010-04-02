@@ -178,7 +178,7 @@ class XMLinit(Variables):
             nodeList = self.root.xmlInitChildNodeList(tag)
 
             if len(nodeList) > 1:
-                msg = "There is an error in with the use of the initHeading method. "\
+                msg = "There is an error with the use of the initHeading method. "\
                       "There is more than one occurence of the tag: \n\n" + tag + \
                       "\n\nThe application will finish. Sorry."
                 self._errorExit(msg)
@@ -187,7 +187,7 @@ class XMLinit(Variables):
             nodeList = self.case.xmlInitNodeList(tag)
 
             if len(nodeList) > 1:
-                msg = "There is an error in with the use of the initHeading method. "\
+                msg = "There is an error with the use of the initHeading method. "\
                       "There is more than one occurence of the tag: \n\n" + tag + \
                       "\n\nThe application will finish. Sorry."
                 self._errorExit(msg)

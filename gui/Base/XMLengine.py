@@ -113,7 +113,7 @@ class Dico:
 
     def __setitem__(self, key, name):
         """
-        Store values in the data dictionary when the key existe
+        Store values in the data dictionary when the key exists
         in the  dictionary.
         """
         if hasattr(self, 'data'):
@@ -123,7 +123,7 @@ class Dico:
                 msg = "There is an error in the use of the dictionary "+ \
                       "with the key named: " + key + ". \n" + \
                       "The application will finish.\n" \
-                      "Please contact the devlopment team."
+                      "Please contact the development team."
 
                 print self._errorExit(msg)
 

@@ -197,7 +197,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                     predif += s
 
         predif += self.tr("<br>"\
-                  "<big><u>Usefull functions:</u></big><br>"\
+                  "<big><u>Useful functions:</u></big><br>"\
                   "<b>cos</b>: cosine<br>"\
                   "<b>sin</b>: sinus<br>"\
                   "<b>tan</b>: tangent<br>"\
@@ -217,7 +217,7 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                   "<b>min</b>: minimum<br>"\
                   "<b>max</b>: maximum<br>"\
                   "<br>"\
-                  "<big><u>Usefull constants:</u></big><br>"\
+                  "<big><u>Useful constants:</u></big><br>"\
                   "<b>pi</b> = 3.14159265358979323846<br>"\
                   "<b>e</b> = 2.718281828459045235<br>"\
                   "<br>"\

@@ -6,7 +6,7 @@
     <x>0</x>
     <y>0</y>
     <width>450</width>
-    <height>252</height>
+    <height>274</height>
    </rect>
   </property>
   <property name="minimumSize" >
@@ -51,7 +51,7 @@
           <property name="orientation" >
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0" >
            <size>
             <width>40</width>
             <height>22</height>
@@ -71,7 +71,7 @@
              </font>
             </property>
             <property name="text" >
-             <string>Gravity along X</string>
+             <string>g<sub>X</sub></string>
             </property>
            </widget>
           </item>
@@ -106,7 +106,7 @@
              </font>
             </property>
             <property name="text" >
-             <string>Gravity along Y</string>
+             <string>g<sub>Y</sub></string>
             </property>
            </widget>
           </item>
@@ -141,7 +141,7 @@
              </font>
             </property>
             <property name="text" >
-             <string>Gravity along Z</string>
+             <string>g<sub>Z</sub></string>
             </property>
            </widget>
           </item>
@@ -173,7 +173,7 @@
           <property name="orientation" >
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0" >
            <size>
             <width>40</width>
             <height>22</height>
@@ -199,7 +199,7 @@
           <property name="orientation" >
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0" >
            <size>
             <width>40</width>
             <height>20</height>
@@ -240,7 +240,7 @@
           <property name="orientation" >
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0" >
            <size>
             <width>40</width>
             <height>20</height>
@@ -258,7 +258,7 @@
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0" >
       <size>
        <width>21</width>
        <height>16</height>

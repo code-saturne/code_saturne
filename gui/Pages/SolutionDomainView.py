@@ -668,7 +668,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.groupBoxJoin.setChecked(False)
             self.slotJoinMeshes(False)
 
-        # 3.3) Warp faces cutting
+        # 3.3) Warped faces cutting
 
         if self.mdl.getCutStatus() == 'on':
             self.groupBoxWarp.setChecked(True)
@@ -692,7 +692,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     def setLink(self, fullfile):
         """
         Tab1: set link between asked file and case's directory 'MESH'
-        and keep dependance between file ena directory if destruction
+        and keep dependency between file in a directory if destruction
         """
         name = os.path.basename(fullfile)
         new_full = self.case['mesh_path'] + "/" + name

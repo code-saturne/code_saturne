@@ -359,7 +359,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.modelVelocity.disableItem(str_model="flow1_formula")
             self.modelDirection.disableItem(str_model="formula")
 
-        # Usefull information about coals, classes, and ratios
+        # Useful information about coals, classes, and ratios
 
         mdl =  CoalCombustion.CoalCombustionModel(self.__case)
         if mdl.getCoalCombustionModel() != "off":

@@ -413,7 +413,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         "USER_OUTPUT_FILES=['titi']\n"\
         "CS_TMP_PREFIX='/home/toto'\n"\
         "MESHES=None\n"\
-        "REORIENT=\n"\
+        "REORIENT=False\n"\
         "JOIN='--j  --color 98 99  --fraction 0.1  --plane 0.8'\n"\
         "CUT_WARPED_FACES='--cwf 0.001'\n"\
         "PERIODICITY=\n"\
@@ -561,7 +561,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'N_PROCS': 2,
         'USER_INPUT_FILES': ['data'],
         'JOIN': None,
-        'REORIENT': ' --reorient ',
+        'REORIENT': True,
         'CS_TMP_PREFIX': '/home/toto',
         'PBS_ppn': '2',
         'PBS_walltime': '1:00:00',
@@ -593,6 +593,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         # The following keywords from the batch script file
         # are cancelled by the informations from the case !
         #   MESHES
+        #   REORIENT
         #   JOIN
         #   CUT_WARPED_FACES
         #   PERIODICITY

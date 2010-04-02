@@ -1,4 +1,17 @@
 * 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Code and comments cleanup.
+  modifed routines:
+    gui/Base/XMLengine.py
+    gui/Base/XMLinitialize.py
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/BodyForcesForm.ui
+    gui/Pages/BoundaryConditionsCoalInletView.py
+    gui/Pages/FacesSelectionView.py
+    gui/Pages/QMeiEditorView.py
+    gui/Pages/SolutionDomainModel.py
+    gui/Pages/SolutionDomainView.py
+
+* 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Prepare the XML reader for the joining and periodicity support.
   added routines:
     include/base/cs_gui_mesh.h
