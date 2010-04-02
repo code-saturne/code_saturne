@@ -1,3 +1,8 @@
+* 02/04/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Improve the mesh halo construction. Is is now based on the face interface.
+  modified routine:
+    src/base/cs_mesh_halo.c
+
 * 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Switch the joining and periodicity support from the runcase script to the
   XML reader when using the graphical interface.

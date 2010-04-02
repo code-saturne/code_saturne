@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -103,26 +103,6 @@ typedef struct _vtx_lookup_table {
 } vtx_lookup_table_t;
 
 
-typedef struct _table_int {
-
-  cs_int_t  n_elts;
-  cs_int_t  size_max;
-  cs_int_t  *values;
-
-} table_int_t;
-
-
-typedef struct {
-
-  cs_int_t  n_elts;   /* Number of elements of the index */
-  cs_int_t  *index;   /* size = n_elts + 1: [ 0 ... n_elts ] */
-
-  cs_int_t  size;     /* size of the list */
-  cs_int_t  n_lists;  /* number of lists */
-  cs_int_t  **lists;  /* list of the corresponding elements */
-
-} lookup_table_t;
-
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -134,245 +114,6 @@ typedef struct {
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*---------------------------------------------------------------------------
- * Create a table_int_t structure and initialize it with a given value and
- * a given size.
- *
- * parameters:
- *   init_value  -->  initial values
- *   size        -->  size of the table
- *
- * returns:
- *   pointer to a table_int_t structure
- *---------------------------------------------------------------------------*/
-
-static table_int_t *
-_create_table_int(cs_int_t  init_value,
-                  cs_int_t  size)
-{
-  cs_int_t  i;
-
-  table_int_t  *ret_table = NULL;
-
-  BFT_MALLOC(ret_table, 1, table_int_t);
-  BFT_MALLOC(ret_table->values, size, cs_int_t);
-
-  ret_table->size_max = size;
-  ret_table->n_elts = 0;
-
-  for (i = 0; i < size; i++)
-    ret_table->values[i] = init_value;
-
-  return ret_table;
-}
-
-/*---------------------------------------------------------------------------
- * Delete table_int_t structure.
- *
- * parameters:
- *   this_table  -->  a pointer to a table_int_t structure
- *
- * returns:
- *   A NULL pointer
- *---------------------------------------------------------------------------*/
-
-static table_int_t *
-_delete_table_int(table_int_t  *this_table)
-{
-  BFT_FREE(this_table->values);
-  this_table->size_max = 0;
-  this_table->n_elts = 0;
-  BFT_FREE(this_table);
-
-  return NULL;
-}
-
-/*---------------------------------------------------------------------------
- * Reset a table_int_t structure. Memory is not freed but structure
- * is reinitialized.
- *
- * parameters:
- *   this_table -->  a pointer to a table_int_t structure
- *   init_value -->  new value given to the elements of the table
- *---------------------------------------------------------------------------*/
-
-static void
-_reset_table_int(table_int_t  *this_table,
-                 cs_int_t      init_value)
-{
-  cs_int_t  i;
-
-  for (i = 0; i < this_table->n_elts; i++)
-    this_table->values[i] = init_value;
-  this_table->n_elts = 0;
-
-}
-
-/*---------------------------------------------------------------------------
- * Find value in table_int_t structure.
- *
- * parameters:
- *   this_table   -->  a pointer to a table_int_t structure
- *   value        -->  value to find
- *
- * returns:
- *  The associated index or -1 if value was not found
- *---------------------------------------------------------------------------*/
-
-static cs_int_t
-_find_table_int_value(table_int_t  *this_table,
-                      cs_int_t     value)
-{
-  cs_int_t  i;
-
-  cs_int_t  ret_index = -1;
-
-  for (i = 0; i < this_table->n_elts; i++) {
-    if (this_table->values[i] == value)
-      break;
-  }
-
-  if (i < this_table->n_elts)
-    ret_index = i;
-
-  return ret_index;
-}
-
-/*---------------------------------------------------------------------------
- * Add value in a table_int_t structure if this value does not already exist
- * in the table.
- *
- * parameters:
- *   this_table   -->  a pointer to a table_int_t structure
- *   value        -->  value to add
- *---------------------------------------------------------------------------*/
-
-static void
-_add_table_int_value(table_int_t  *this_table,
-                     cs_int_t     value)
-{
-  cs_int_t  index;
-
-  index = _find_table_int_value(this_table, value);
-
-  if (index == -1) { /* Value does not already exist in the table */
-
-    if (this_table->n_elts == this_table->size_max) {
-      this_table->size_max = 2*this_table->n_elts;
-      BFT_REALLOC(this_table->values, this_table->size_max, cs_int_t);
-    }
-
-    this_table->values[this_table->n_elts] = value;
-    this_table->n_elts += 1;
-
-  } /* End of value addition */
-
-}
-
-/*---------------------------------------------------------------------------
- * Add a value in a table_int_t structure. Value can already exist in the
- * table.
- *
- * parameters:
- *   this_table   -->  a pointer to a table_int_t structure
- *   value        -->  value to find
- *---------------------------------------------------------------------------*/
-
-static void
-_add_table_int_value_dup(table_int_t  *this_table,
-                         cs_int_t     value)
-{
-
-  if (this_table->n_elts == this_table->size_max) {
-    this_table->size_max = 2*this_table->n_elts;
-    BFT_REALLOC(this_table->values, this_table->size_max, cs_int_t);
-  }
-
-  this_table->values[this_table->n_elts] = value;
-  this_table->n_elts += 1;
-
-}
-
-/*---------------------------------------------------------------------------
- * Raise the value of index "idx" by "count".
- *
- * parameters:
- *   this_table   -->  a pointer to a table_int_t structure
- *   idx          -->  value has the index "idx"
- *   count        -->  value is raised by count
- *---------------------------------------------------------------------------*/
-
-static void
-_raise_table_int_value(table_int_t  *this_table,
-                       cs_int_t      idx,
-                       cs_int_t      count)
-{
-
-  if (idx >= this_table->n_elts)
-    bft_error(__FILE__, __LINE__, 0,
-              _("_raise_table_int_value:\n"
-                "Invalid index. table_int structure has a lower n_elts.\n"
-                "Index = %d, n_elts = %d and table size max = %d\n"),
-              idx, this_table->n_elts, this_table->size_max);
-
-  else
-    this_table->values[idx] += count;
-
-}
-
-/*---------------------------------------------------------------------------
- * Get value for element of index "idx" in table_int_t.
- *
- * parameters:
- *
- * returns:
- *   The value of the element of index "idx"
- *---------------------------------------------------------------------------*/
-
-static cs_int_t
-_get_table_int_value(table_int_t  *this_table,
-                     cs_int_t      idx)
-{
-  cs_int_t  retval = -9999;
-
-  if (idx >= this_table->n_elts)
-    bft_error(__FILE__, __LINE__, 0,
-              _("get_table_int_value:\n"
-                "Invalid index. table_int structure has a lower n_elts.\n"
-                "Index = %d, n_elts = %d and table size max = %d\n"),
-              idx, this_table->n_elts, this_table->size_max);
-
-  else
-    retval = this_table->values[idx];
-
-  return retval;
-}
-
-/*---------------------------------------------------------------------------
- * Delete a lookup_table_t structure
- *
- * this_table  -->  pointer to a lookup_table_t structure
- *
- * returns:
- *   NULL
- *---------------------------------------------------------------------------*/
-
-static lookup_table_t *
-_delete_lookup_table(lookup_table_t  *this_table)
-{
-  cs_int_t  i;
-
-  BFT_FREE(this_table->index);
-
-  for (i = 0; i < this_table->n_lists; i++)
-    BFT_FREE(this_table->lists[i]);
-  BFT_FREE(this_table->lists);
-
-  BFT_FREE(this_table);
-
-  return NULL;
-}
 
 /*---------------------------------------------------------------------------
  * Fill a look up table structure without periodicity
@@ -1009,7 +750,6 @@ static cs_bool_t
 _test_loop_continues(cs_mesh_t   *mesh,
                      cs_int_t     face_num)
 {
-  cs_int_t  fac_id = face_num - mesh->n_b_faces - 1;
   cs_bool_t  choice = false;
 
   /* Face has to be an internal face */
@@ -1017,6 +757,8 @@ _test_loop_continues(cs_mesh_t   *mesh,
   if (face_num > mesh->n_b_faces) {
 
     if (mesh->halo_type == CS_HALO_STANDARD) {
+
+      cs_int_t  fac_id = face_num - mesh->n_b_faces - 1;
 
       if (   mesh->i_face_cells[2*fac_id] < 1
           || mesh->i_face_cells[2*fac_id+1] < 1 )
@@ -1032,7 +774,7 @@ _test_loop_continues(cs_mesh_t   *mesh,
 
     }
 
-  }
+  } /* face_num > mesh->n_b_faces */
 
   return choice;
 }
@@ -1330,11 +1072,11 @@ _get_vertex_tag(cs_int_t                    n_vertices,
  *---------------------------------------------------------------------------*/
 
 static cs_int_t
-_get_n_par_ghost_cells(cs_mesh_t       *mesh,
-                       cs_int_t         rank,
-                       cs_halo_type_t   type,
-                       cs_int_t        *index,
-                       cs_int_t        *perio_lst)
+_get_n_par_ghost_cells(const cs_mesh_t  *mesh,
+                       cs_int_t          rank,
+                       cs_halo_type_t    type,
+                       const cs_int_t    index[],
+                       const cs_int_t    perio_lst[])
 {
   cs_int_t  i;
   cs_int_t  n_per_gcells = 0, n_par_gcells = 0;
@@ -1804,14 +1546,14 @@ _define_dist_num_lst(fvm_interface_set_t  *ifs,
  *---------------------------------------------------------------------------*/
 
 static void
-_get_start_end_idx(cs_mesh_t    *mesh,
-                   cs_int_t     *index,
-                   cs_int_t     *perio_lst,
-                   cs_int_t      rank_id,
-                   cs_int_t      tr_id,
-                   cs_int_t      type_id,
-                   cs_int_t     *p_start_idx,
-                   cs_int_t     *p_end_idx)
+_get_start_end_idx(const cs_mesh_t    *mesh,
+                   const cs_int_t     *index,
+                   const cs_int_t     *perio_lst,
+                   cs_int_t            rank_id,
+                   cs_int_t            tr_id,
+                   cs_int_t            type_id,
+                   cs_int_t           *p_start_idx,
+                   cs_int_t           *p_end_idx)
 {
   cs_int_t  i, n_par_gcells, n_per_gcells;
   cs_int_t  start_idx = -1, end_idx = -1;
@@ -1968,18 +1710,28 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
             vtx_id = fac_vtx_lst[i_vtx-1] - 1;
 
             /* If vertex is on the interface for this rank and this
-             transformation */
+               transformation */
 
             n_added_vertices =  vtx_interface_idx[vtx_id+1]
                               - vtx_interface_idx[vtx_id];
 
             if (n_added_vertices > 0) {
 
-              if (n_added_vertices > 1)
+              if (n_added_vertices > 1) {
+
+                bft_printf("fac_num: %d (%u)\n", fac_id+1,
+                           mesh->global_i_face_num[fac_id]);
+                bft_printf("vtx_num: %d (%u) - n_added: %d\n",
+                           vtx_id+1, mesh->global_vtx_num[vtx_id],
+                           n_added_vertices);
+                bft_printf_flush();
+
                 bft_error(__FILE__, __LINE__, 0, _(err_corresp),
                           mesh->vtx_coord[vtx_id*3],
                           mesh->vtx_coord[vtx_id*3+1],
                           mesh->vtx_coord[vtx_id*3+2]);
+
+              }
 
               /* Add this vertex if not already checked */
 
@@ -2392,550 +2144,665 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
 }
 
 /*---------------------------------------------------------------------------
- * Reverse "ghost cell -> vertex" connectivity into "vertex -> ghost cells"
- * connectivity for halo elements.
- *
- * Build the connectivity index.
+ * Check mesh->i_face_cells array for ghost cells in standard halo.
  *
  * parameters:
- *   halo            -->  pointer to a cs_halo_t structure
- *   n_vertices      -->  number of vertices
- *   rank_id         -->  rank number to work with
- *   checker         <->  temporary array to check vertices
- *   gcell_vtx_idx   -->  "ghost cell -> vertices" connectivity index
- *   gcell_vtx_lst   -->  "ghost cell -> vertices" connectivity list
- *   vtx_gcells_idx  <->  "vertex -> ghost cells" connectivity index
+ *   mesh   <->  pointer to cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_reverse_connectivity_idx(cs_halo_t   *halo,
-                          cs_int_t     n_vertices,
-                          cs_int_t     rank_id,
-                          cs_int_t    *checker,
-                          cs_int_t    *gcell_vtx_idx,
-                          cs_int_t    *gcell_vtx_lst,
-                          cs_int_t    *vtx_gcells_idx)
+_check_i_face_cells(cs_mesh_t  *mesh)
 {
-  cs_int_t  i, j, id, vtx_id, start_idx, end_idx;
-
-  /* Initialize index */
-
-  vtx_gcells_idx[0] = 0;
-  for (i = 0; i < n_vertices; i++) {
-    vtx_gcells_idx[i+1] = 0;
-    checker[i] = -1;
-  }
-
-  if (rank_id == -1) {
-    start_idx = 0;
-    end_idx = halo->n_elts[CS_HALO_EXTENDED];
-  }
-  else { /* Call with rank_id > 1 for standard halo */
-    start_idx = halo->index[2*rank_id];
-    end_idx = halo->index[2*rank_id+1];
-  }
-
-  /* Define index */
-
-  for (id = start_idx; id < end_idx; id++) {
-
-    for (j = gcell_vtx_idx[id]; j < gcell_vtx_idx[id+1]; j++) {
-
-      vtx_id = gcell_vtx_lst[j] - 1;
-
-      if (checker[vtx_id] != id) {
-        checker[vtx_id] = id;
-        vtx_gcells_idx[vtx_id+1] += 1;
-      }
-
-    }
-
-  } /* End of loop of ghost cells */
-
-  for (i = 0; i < n_vertices; i++)
-    vtx_gcells_idx[i+1] += vtx_gcells_idx[i];
-
-}
-
-/*---------------------------------------------------------------------------
- * Reverse "ghost cells -> vertex" connectivity into "vertex -> ghost cells"
- * connectivity for halo elements.
- *
- * Build the connectivity list.
- *
- * parameters:
- *   halo            -->  pointer to a cs_halo_t structure
- *   n_vertices      -->  number of vertices
- *   rank_id         -->  rank number to work with
- *   counter         <->  temporary array to count vertices
- *   checker         <->  temporary array to check vertices
- *   gcell_vtx_idx   -->  "ghost cell -> vertices" connectivity index
- *   gcell_vtx_lst   -->  "ghost cell -> vertices" connectivity list
- *   vtx_gcells_idx  -->  "vertex -> ghost cells" connectivity index
- *   vtx_gcells_lst  <->  "vertex -> ghost cells" connectivity list
- *---------------------------------------------------------------------------*/
-
-static void
-_reverse_connectivity_lst(cs_halo_t   *halo,
-                          cs_int_t     n_vertices,
-                          cs_int_t     rank_id,
-                          cs_int_t    *counter,
-                          cs_int_t    *checker,
-                          cs_int_t    *gcell_vtx_idx,
-                          cs_int_t    *gcell_vtx_lst,
-                          cs_int_t    *vtx_gcells_idx,
-                          cs_int_t    *vtx_gcells_lst)
-{
-  cs_int_t  i, j, id, shift, vtx_id, start_idx, end_idx;
-
-  /* Initialize buffers */
-
-  for (i = 0; i < n_vertices; i++) {
-    counter[i] = 0;
-    checker[i] = -1;
-  }
-
-  if (rank_id == -1) {
-    start_idx = 0;
-    end_idx = halo->n_elts[CS_HALO_EXTENDED];
-  }
-  else {
-    start_idx = halo->index[2*rank_id];
-    end_idx = halo->index[2*rank_id+1];
-  }
-
-  /* Fill the connectivity list */
-
-  for (id = start_idx; id < end_idx; id++) {
-
-    for (j = gcell_vtx_idx[id]; j < gcell_vtx_idx[id+1]; j++) {
-
-      vtx_id = gcell_vtx_lst[j] - 1;
-
-      if (checker[vtx_id] != id) {
-
-        checker[vtx_id] = id;
-        shift = vtx_gcells_idx[vtx_id] + counter[vtx_id];
-        vtx_gcells_lst[shift] = id;
-        counter[vtx_id] += 1;
-
-      }
-
-    }
-
-  } /* End of loop of ghost cells */
-
-}
-
-/*---------------------------------------------------------------------------
- * Define a lookup table structure on periodic faces.
- *
- * parameters:
- *   mesh                     --> pointer to cs_mesh_t structure
- *   mesh_builder             --> pointer to cs_mesh_builder_t structure
- *
- * returns:
- *   a pointer to a lookup_table_t structure.
- *---------------------------------------------------------------------------*/
-
-static lookup_table_t *
-_define_periodic_lookup_table(cs_mesh_t           *mesh,
-                              cs_mesh_builder_t   *mesh_builder)
-{
-  cs_int_t  i, fst_face, snd_face, shift;
-
-  lookup_table_t  *periodic_table =  NULL;
-  cs_int_t  *face_list = NULL, *rank_list = NULL;
-
-  const cs_int_t  n_init_perio = mesh->n_init_perio;
-  const cs_int_t  n_i_faces = mesh->n_i_faces;
-  const cs_int_t  *per_face_idx = mesh_builder->per_face_idx;
-  const cs_int_t  *per_face_lst = mesh_builder->per_face_lst;
-  const cs_int_t  *per_rank_lst = mesh_builder->per_rank_lst;
-
-  assert(mesh->n_init_perio > 0);
-  assert(per_face_idx != NULL);
-
-  /* Create a lookup table structure */
-
-  BFT_MALLOC(periodic_table, 1, lookup_table_t);
-
-  /* Define the lookup table structure */
-
-  periodic_table->n_elts = n_i_faces;
-
-  BFT_MALLOC(periodic_table->index, n_i_faces + 1, cs_int_t);
-
-  for (i = 0; i < n_i_faces + 1; i++)
-    periodic_table->index[i] = 0;
-
-  for (i = per_face_idx[0]; i < per_face_idx[n_init_perio]; i++)
-    periodic_table->index[CS_ABS(per_face_lst[2*i])] += 1;
-
-  for (i = 0; i < n_i_faces; i++)
-    periodic_table->index[i+1] += periodic_table->index[i];
-
-  periodic_table->size = periodic_table->index[n_i_faces];
-
-  if (per_rank_lst != NULL)
-    periodic_table->n_lists = 2;
-  else
-    periodic_table->n_lists = 1;
-
-  BFT_MALLOC(periodic_table->lists, periodic_table->n_lists, cs_int_t *);
-
-  for (i = 0; i < periodic_table->n_lists; i++)
-    BFT_MALLOC(periodic_table->lists[i], periodic_table->size, cs_int_t);
-
-  face_list = periodic_table->lists[0];
-
-  if (per_rank_lst != NULL)
-    rank_list = periodic_table->lists[1];
-
-  /* Define face_list and rank_list */
-
-  for (i = per_face_idx[0]; i < per_face_idx[n_init_perio]; i++) {
-
-    fst_face = CS_ABS(per_face_lst[2*i]) - 1;
-    snd_face = per_face_lst[2*i+1] - 1;
-
-    /* A face is periodic with only one face */
-
-    assert(  periodic_table->index[fst_face + 1]
-           - periodic_table->index[fst_face] == 1);
-
-    shift = periodic_table->index[fst_face];
-    face_list[shift] = snd_face;
-
-    if (per_rank_lst != NULL)
-      rank_list[shift] = per_rank_lst[i];
-
-  }
-
-  return periodic_table;
-}
-
-/*---------------------------------------------------------------------------
- * Define the number of vertices owned by each face of halo cells.
- * This will enable to check the right ghost cell in case of multiple
- * choices.
- *
- * parameters:
- *   mesh                   <->  pointer to cs_mesh_t structure
- *   cell_faces_idx         -->  "cell -> faces" connectivity index
- *   cell_faces_lst         -->  "cell -> faces" connectivity list
- *   perio_table            -->  pointer to the periodic face lookup table
- *   gcell_faces_idx        -->  pointer to "ghost cell -> faces" conn. index
- *   gcell_glob_faces_lst   -->  pointer to "ghost cell -> glob face" list
- *---------------------------------------------------------------------------*/
-
-static void
-_define_gcells_connect(cs_mesh_t       *mesh,
-                       cs_int_t        *cell_faces_idx,
-                       cs_int_t        *cell_faces_lst,
-                       cs_int_t        *p_gcell_faces_idx[],
-                       cs_int_t        *p_gcell_glob_faces_lst[])
-{
-  cs_int_t  i, j, cell_id, fac_num, fac_id;
-  cs_int_t  rank_id, n_faces, shift, _shift, counter;
-  cs_int_t  distant_rank, value;
-
-  cs_int_t  n_elts = 0;
-  int  request_count = 0;
-  cs_int_t  *rank_shift = NULL, *send_buffer = NULL;
-  cs_int_t  *gcell_faces_idx = NULL;
-  cs_int_t  *gcell_glob_faces_lst = NULL;
-  lookup_table_t  *perio_table = NULL;
+  int  i;
 
   cs_halo_t  *halo = mesh->halo;
-  cs_mesh_builder_t  *mesh_builder = cs_glob_mesh_builder;
+
+  const cs_int_t  n_c_domains = halo->n_c_domains;
+
+  for (i = 0; i < mesh->n_i_faces; i++) {
+
+    if (mesh->i_face_cells[2*i] < 1) {
+      if (n_c_domains > 1)
+        bft_error(__FILE__, __LINE__, 0,
+                  " Error detected in interior face -> cells connectivity.\n"
+                  " Face %d (%u) has an incomplete connectivity.\n"
+                  " Cell1: %d - Cell2: %d (%u)",
+                  i+1, mesh->global_i_face_num[i],
+                  mesh->i_face_cells[2*i],
+                  mesh->i_face_cells[2*i+1],
+                  mesh->global_cell_num[mesh->i_face_cells[2*i+1]-1]);
+      else /* Serial run */
+        bft_error(__FILE__, __LINE__, 0,
+                  " Error detected in interior face -> cells connectivity.\n"
+                  " Face %d has an incomplete connectivity.\n"
+                  " Cell1: %d - Cell2: %d",
+                  i+1, mesh->i_face_cells[2*i], mesh->i_face_cells[2*i+1]);
+    }
+
+    if (mesh->i_face_cells[2*i+1] < 1) {
+      if (n_c_domains > 1)
+        bft_error(__FILE__, __LINE__, 0,
+                  " Error detected in interior face -> cells connectivity.\n"
+                  " Face %d (%u) has an incomplete connectivity.\n"
+                  " Cell1: %d (%u) - Cell2: %d",
+                  i+1, mesh->global_i_face_num[i],
+                  mesh->i_face_cells[2*i],
+                  mesh->global_cell_num[mesh->i_face_cells[2*i]-1],
+                  mesh->i_face_cells[2*i+1]);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " Error detected in interior face -> cells connectivity.\n"
+                  " Face %d has an incomplete connectivity.\n"
+                  " Cell1: %d - Cell2: %d",
+                  i+1, mesh->i_face_cells[2*i], mesh->i_face_cells[2*i+1]);
+    }
+
+  }
+
+}
+
+/*---------------------------------------------------------------------------
+ * Return a fvm_interface_set_t structure on faces.
+ *
+ * parameters:
+ *   mesh  -->  pointer to cs_mesh_t structure
+ *
+ * returns:
+ * a pointer to a fvm_interface_set_t structure on faces.
+ *---------------------------------------------------------------------------*/
+
+static fvm_interface_set_t *
+_get_face_ifs(cs_mesh_t       *mesh)
+{
+  int  i, j, k;
+
+  cs_mesh_builder_t  *mb = cs_glob_mesh_builder;
+  fvm_interface_set_t  *face_ifs = NULL;
+
+  const int  n_init_perio = mesh->n_init_perio;
+  const int  n_ranks = cs_glob_n_ranks;
+
+  if (mb->face_ifs != NULL)
+    face_ifs = mb->face_ifs;
+
+  else {
+
+    assert(n_ranks == 1 || n_init_perio == 0);
+
+    if (n_ranks > 1 && n_init_perio == 0)
+      face_ifs = fvm_interface_set_create(mesh->n_i_faces,
+                                          NULL,
+                                          mesh->global_i_face_num,
+                                          NULL,
+                                          0,
+                                          NULL,
+                                          NULL,
+                                          NULL);
+
+    else if (n_ranks == 1 && n_init_perio > 0) {
+
+      fvm_lnum_t  *periodicity_num = NULL;
+      fvm_lnum_t  *n_perio_couples = NULL;
+      fvm_gnum_t  **perio_couples = NULL;
+
+      BFT_MALLOC(periodicity_num, n_init_perio, fvm_lnum_t);
+      BFT_MALLOC(n_perio_couples, n_init_perio, fvm_lnum_t);
+      BFT_MALLOC(perio_couples, n_init_perio, fvm_gnum_t *);
+
+      for (i = 0; i < n_init_perio; i++) {
+
+        periodicity_num[i] = i+1;
+        n_perio_couples[i] = mb->per_face_idx[i+1] - mb->per_face_idx[i];
+
+        BFT_MALLOC(perio_couples[i], 2*n_perio_couples[i], fvm_gnum_t);
+
+        for (k = 0, j = mb->per_face_idx[i];
+             j < mb->per_face_idx[i+1]; j++, k++) {
+          perio_couples[i][2*k] = mb->per_face_lst[2*j];
+          perio_couples[i][2*k+1] = mb->per_face_lst[2*j+1];
+        }
+
+      }
+
+      face_ifs = fvm_interface_set_create(mesh->n_i_faces,
+                                          NULL,
+                                          NULL,
+                                          mesh->periodicity,
+                                          n_init_perio,
+                                          periodicity_num,
+                                          n_perio_couples,
+                (const fvm_gnum_t **const)perio_couples);
+
+      BFT_FREE(periodicity_num);
+      BFT_FREE(n_perio_couples);
+
+      for (i = 0; i < n_init_perio; i++)
+        BFT_FREE(perio_couples[i]);
+      BFT_FREE(perio_couples);
+
+    }
+
+  }
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  fvm_interface_set_dump(face_ifs);
+#endif
+
+  mb->face_ifs = face_ifs;
+
+  return face_ifs;
+
+}
+
+/*---------------------------------------------------------------------------
+ * Tag local face by its distant face id and reset previous tag
+ *
+ * parameters:
+ *   prev      -->  previous start index
+ *   start     -->  start index in lnum and dnum
+ *   end       -->  end index in lnum and dnum
+ *   lnum      -->  local_num array in fvm_interface_t struct.
+ *   dnum      -->  distant_num array in fvm_interface_t struct.
+ *   l2d_fids  <->  tag on local faces
+ *---------------------------------------------------------------------------*/
+
+static void
+_tag_interface_faces(int                prev,
+                     int                start,
+                     int                end,
+                     const fvm_lnum_t   lnum[],
+                     const fvm_lnum_t   dnum[],
+                     cs_int_t           l2d_fids[])
+{
+  int  i;
+
+  assert(l2d_fids != NULL);
+
+  if (prev > -1) /* Reset previous face num. */
+    for (i = prev; i < start; i++)
+      l2d_fids[lnum[i]-1] = -1;
+
+  for (i = start; i < end; i++)
+    l2d_fids[lnum[i]-1] = dnum[i] - 1;
+
+}
+
+/*---------------------------------------------------------------------------
+ * Update mesh->i_face_cells array for ghost cells in standard halo.
+ *
+ * parameters:
+ *   mesh            <->  pointer to cs_mesh_t structure
+ *   cell_faces_idx  -->  "cell -> faces" connectivity index
+ *   cell_faces_lst  -->  "cell -> faces" connectivity list
+ *---------------------------------------------------------------------------*/
+
+static void
+_update_i_face_cells(cs_mesh_t    *mesh,
+                     cs_int_t     *cell_faces_idx,
+                     cs_int_t     *cell_faces_lst)
+{
+  int  i, j, gcell_id, face_id, if_id, rank, shift, index_end;
+  int  tr_id, start, end, length, n_interfaces, mpi_count, distant_rank;
+
+  int  local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
+  cs_halo_t  *halo = mesh->halo;
+  fvm_interface_set_t  *face_ifs = NULL;
+  cs_int_t  *gcell_face_count = NULL, *l2d_fids = NULL;
+  cs_int_t  *send_buffer = NULL, *recv_buffer = NULL, *buffer = NULL;
+  cs_int_t  *send_shift = NULL, *recv_shift = NULL, *halo2ifs_rank = NULL;
+
+  const int  n_init_perio = mesh->n_init_perio;
+  const int  n_ranks = cs_glob_n_ranks;
+  const int  local_rank = (cs_glob_rank_id == -1) ? 0 : cs_glob_rank_id;
+  const int  n_c_domains = halo->n_c_domains;
+  const int  *s_index = halo->send_index;
+  const int  *s_gcell_ids = halo->send_list;
+  const fvm_interface_t  *interface = NULL;
+  const fvm_lnum_t  *loc_num = NULL;
+  const fvm_lnum_t  *dist_num = NULL;
+  const fvm_lnum_t  *tr_index = NULL;
 
 #if defined(HAVE_MPI)
   MPI_Request _request[128];
   MPI_Request *request = _request;
   MPI_Status _status[128];
   MPI_Status *status = _status;
-#endif
 
-  const cs_int_t  n_init_perio = mesh->n_init_perio;
-  const cs_int_t  n_c_domains = halo->n_c_domains;
-  const cs_int_t  local_rank = (cs_glob_rank_id == -1) ? 0:cs_glob_rank_id;
-  const cs_int_t  n_gcells = halo->n_elts[CS_HALO_EXTENDED];
-  const cs_int_t  n_send_gcells = halo->n_send_elts[CS_HALO_EXTENDED];
-
-#if defined(HAVE_MPI)
-  if (halo->n_c_domains*2 > 128) {
-    BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
-    BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
+  if (n_c_domains*2 > 128) {
+    BFT_MALLOC(request, n_c_domains*2, MPI_Request);
+    BFT_MALLOC(status, n_c_domains*2, MPI_Status);
   }
 #endif
 
-  BFT_MALLOC(gcell_faces_idx, n_gcells + 1, cs_int_t);
-  BFT_MALLOC(send_buffer, n_send_gcells, cs_int_t);
+  /* Get an interface set struct. on faces */
 
-  /* Exchange number of face for each ghost cells */
+  face_ifs = _get_face_ifs(mesh);
+  assert(face_ifs != NULL);
+  n_interfaces = fvm_interface_set_size(face_ifs);
 
-  for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
+  /* Allocate auxiliary buffers */
 
-    shift = halo->index[2*rank_id] + 1;
-    n_elts = halo->index[2*rank_id+2] - halo->index[2*rank_id];
+  BFT_MALLOC(l2d_fids, mesh->n_i_faces, cs_int_t);
+  BFT_MALLOC(halo2ifs_rank, n_c_domains, cs_int_t);
 
-    if (halo->c_domain_rank[rank_id] != local_rank) {
-
-#if defined(HAVE_MPI)
-      MPI_Irecv(&(gcell_faces_idx[shift]), n_elts, CS_MPI_INT,
-                halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                cs_glob_mpi_comm, &(request[request_count++]));
-#endif
-
-    }
-
-  } /* End of loop on ranks */
-
-  /* We wait for receiving all messages */
-
-#if defined(HAVE_MPI)
-  if (mesh->n_domains > 1)
-    MPI_Barrier(cs_glob_mpi_comm);
-#endif
-
-  /* Send data to distant ranks */
-
-  for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
-
-    shift = halo->send_index[2*rank_id];
-    n_elts = halo->send_index[2*rank_id+2] - halo->send_index[2*rank_id];
-
-    for (i = halo->send_index[2*rank_id];
-         i < halo->send_index[2*rank_id+2];
-         i++) {
-
-      cell_id = halo->send_list[i];
-      n_faces = cell_faces_idx[cell_id+1] - cell_faces_idx[cell_id];
-      send_buffer[i] = n_faces;
-
-    }
-
-    if (halo->c_domain_rank[rank_id] != local_rank) {
-
-#if defined(HAVE_MPI)
-      MPI_Isend(&(send_buffer[shift]), n_elts, CS_MPI_INT,
-                halo->c_domain_rank[rank_id], local_rank,
-                cs_glob_mpi_comm, &(request[request_count++]));
-#endif
-
-    }
-    else {
-
-      for (i = halo->send_index[2*rank_id];
-           i < halo->send_index[2*rank_id+2];
-           i++)
-        gcell_faces_idx[i+1] = send_buffer[i];
-
-    }
-
-  } /* End of loop on ranks */
-
-  /* Wait for all exchanges to finish */
-
-#if defined(HAVE_MPI)
-  if (mesh->n_domains > 1)
-    MPI_Waitall(request_count, request, status);
-#endif
-  request_count = 0;
-
-  /* Build index */
-
-  gcell_faces_idx[0] = 0;
-  for (i = 0; i < n_gcells; i++)
-    gcell_faces_idx[i+1] += gcell_faces_idx[i];
-
-  /* Exchange global face numbering for each face of ghost cells */
-
-  BFT_MALLOC(gcell_glob_faces_lst, gcell_faces_idx[n_gcells], cs_int_t);
-
-  /* Define send_buffer size */
-
-  BFT_MALLOC(rank_shift, n_c_domains + 1, cs_int_t);
-
-  for (i = 0; i < n_c_domains + 1; i++)
-    rank_shift[i] = 0;
-
-  for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
-
-    for (i = halo->send_index[2*rank_id];
-         i < halo->send_index[2*rank_id+2];
-         i++) {
-
-      cell_id = halo->send_list[i];
-
-      for (j = cell_faces_idx[cell_id]; j < cell_faces_idx[cell_id+1]; j++) {
-
-        fac_num = CS_ABS(cell_faces_lst[j-1]);
-
-        if (_test_loop_continues(mesh, fac_num) == true)
-          rank_shift[rank_id+1] += 1;
-
-      } /* End of loop on faces */
-
-    } /* End of loop on cells belonging to "in halo" */
-
-  } /* End of loop on ranks */
+  /* If there is an extended neighborhood, n_c_domains can be different
+     from n_interfaces (c_rank with only vertices on the interface) */
 
   for (i = 0; i < n_c_domains; i++)
-    rank_shift[i+1] += rank_shift[i];
+    halo2ifs_rank[i] = -1; /* No face interface between ranks */
 
-  n_elts = rank_shift[n_c_domains];
+  index_end = 1; /* Only purely parralel faces are taking into account */
+  index_end += 2*n_init_perio ; /* 2 transform. by initial periodicity */
 
-  BFT_REALLOC(send_buffer, n_elts, cs_int_t);
+  /* Identify interface id and communicating rank */
 
-  /* Define a look-up table on periodic faces.
-     TODO: a global approach will have to be done to avoid mistakes
-     on face -> cells connectivity in case of periodicity . This case
-     appears only when a periodic face is on a parallel frontier and when
-     several faces (at least two) shared the same n_face_vertices vertices.
-     This extremely rarely occurs. */
+  for (if_id = 0; if_id < n_interfaces; if_id++) {
 
-  if (n_init_perio > 0)
-    perio_table = _define_periodic_lookup_table(mesh, mesh_builder);
+    interface = fvm_interface_set_get(face_ifs, if_id);
+    distant_rank = fvm_interface_rank(interface);
 
-  /* Receive data */
+    for (i = 0; i < n_c_domains; i++)
+      if (halo->c_domain_rank[i] == distant_rank)
+        break;
+    assert(i < n_c_domains);
+    halo2ifs_rank[i] = if_id;
 
-  for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
+  } /* End of loop on interfaces */
 
-    shift = gcell_faces_idx[halo->index[2*rank_id]];
-    n_elts =  gcell_faces_idx[halo->index[2*rank_id+2]]
-            - gcell_faces_idx[halo->index[2*rank_id]];
+  /* First exchange number of faces linked to each ghost cells */
 
-    if (halo->c_domain_rank[rank_id] != local_rank) {
+  BFT_MALLOC(send_buffer, halo->n_send_elts[CS_HALO_EXTENDED], cs_int_t);
+  BFT_MALLOC(send_shift, n_c_domains + 1, cs_int_t);
 
-#if defined(HAVE_MPI)
-      MPI_Irecv(&(gcell_glob_faces_lst[shift]), n_elts, CS_MPI_INT,
-                halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
-                cs_glob_mpi_comm, &(request[request_count++]));
-#endif
+  send_shift[0] = 0;
+  for (i = 0; i < halo->n_send_elts[CS_HALO_EXTENDED]; i++)
+    send_buffer[i] = 0;
 
-    }
+  /* Loop on communicating ranks to build send_buffer */
+
+  for (rank = 0, shift = 0; rank < n_c_domains; rank++) {
+
+    if_id = halo2ifs_rank[rank];
+
+    if (if_id > -1) { /* This communicating rank shares elements
+                         in the standard neighborhood */
+
+      interface = fvm_interface_set_get(face_ifs, if_id);
+      loc_num = fvm_interface_get_local_num(interface);
+      dist_num = fvm_interface_get_distant_num(interface);
+      tr_index = fvm_interface_get_tr_index(interface);
+
+      assert(fvm_interface_rank(interface) == halo->c_domain_rank[rank]);
+
+      /* Initalize l2d_fids */
+
+      for (i = 0; i < mesh->n_i_faces; i++)
+        l2d_fids[i] = -1;
+
+      for (tr_id = 0; tr_id < index_end; tr_id++) {
+
+        _get_start_end_idx(mesh, s_index, halo->send_perio_lst,
+                           rank, tr_id, 0, /* STANDARD */
+                           &start, &end);
+
+        if (tr_id == 0) { /* Purely parallel faces */
+
+          if (tr_index != NULL) {
+            _tag_interface_faces(-1, 0, tr_index[1],
+                                 loc_num, dist_num, l2d_fids);
+            assert(n_init_perio > 0);
+          }
+          else {
+            _tag_interface_faces(-1, 0, fvm_interface_size(interface),
+                                 loc_num, dist_num, l2d_fids);
+            assert(n_init_perio == 0);
+          }
+
+        }
+        else /* Periodic faces */
+          _tag_interface_faces(tr_index[tr_id-1],
+                               tr_index[tr_id],
+                               tr_index[tr_id+1],
+                               loc_num, dist_num, l2d_fids);
+
+        for (i = start; i < end; i++) {
+
+          gcell_id = s_gcell_ids[i];
+          //          bft_printf("gcell_id: %d -", gcell_id);
+
+          for (j = cell_faces_idx[gcell_id] - 1;
+               j < cell_faces_idx[gcell_id+1] - 1; j++) {
+
+            face_id = CS_ABS(cell_faces_lst[j]) - mesh->n_b_faces - 1;
+            //            bft_printf(" %d", face_id);
+            if (face_id > -1) {
+              if (l2d_fids[face_id] > -1) {
+                shift++;
+                send_buffer[i] += 1;
+                //                bft_printf("(tag %d)",i);
+              }
+            }
+
+          } /* End of loop cell -> face connectivity */
+          //          bft_printf("\n");
+
+        } /* End of loop on standard neighborhood for this tr_id and rank */
+
+      } /* End of loop on tr_ids */
+
+    } /* if_id > -1 */
+
+    send_shift[rank+1] = shift;
 
   } /* End of loop on ranks */
 
-  /* We wait for receiving all messages */
+  /* Exchange data over the ranks  => build face_count */
+
+  BFT_MALLOC(gcell_face_count, halo->n_elts[CS_HALO_EXTENDED], cs_int_t);
+
+  for (i = 0; i < halo->n_elts[CS_HALO_EXTENDED]; i++)
+    gcell_face_count[i] = 0;
 
 #if defined(HAVE_MPI)
-  if (mesh->n_domains > 1)
+  if (n_ranks > 1) {
+
+    /* Receive data from distant ranks */
+
+    mpi_count = 0;
+
+    for (rank = 0; rank < n_c_domains; rank++) {
+
+      start = halo->index[2*rank];
+      length = halo->index[2*rank+1] - halo->index[2*rank];
+
+      if (halo->c_domain_rank[rank] != local_rank) {
+
+        buffer = gcell_face_count + start ;
+
+        MPI_Irecv(buffer,
+                  length,
+                  CS_MPI_INT,
+                  halo->c_domain_rank[rank],
+                  halo->c_domain_rank[rank],
+                  cs_glob_mpi_comm,
+                  &(request[mpi_count++]));
+
+      }
+      else
+        local_rank_id = rank;
+
+    }
+
+    /* We wait for posting all receives (often recommended) */
+
     MPI_Barrier(cs_glob_mpi_comm);
-#endif
 
-  /* Send data to distant ranks */
+    /* Send data to distant ranks */
 
-  for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
+    for (rank = 0; rank < n_c_domains; rank++) {
 
-    shift = rank_shift[rank_id];
-    n_elts = rank_shift[rank_id+1] - rank_shift[rank_id];
-    counter = 0;
+      /* If this is not the local rank */
 
-    /* Fill send_buffer */
+      if (halo->c_domain_rank[rank] != local_rank) {
 
-    for (i = halo->send_index[2*rank_id];
-         i < halo->send_index[2*rank_id+2];
-         i++) {
+        start = s_index[2*rank];
+        length = s_index[2*rank + 1] - s_index[2*rank];
+        buffer = send_buffer + start;
 
-      cell_id = halo->send_list[i];
+        MPI_Isend(buffer,
+                  length,
+                  CS_MPI_INT,
+                  halo->c_domain_rank[rank],
+                  local_rank,
+                  cs_glob_mpi_comm,
+                  &(request[mpi_count++]));
 
-      for (j = cell_faces_idx[cell_id]; j < cell_faces_idx[cell_id+1]; j++) {
-
-        fac_num = CS_ABS(cell_faces_lst[j-1]);
-
-        if (_test_loop_continues(mesh, fac_num) == true) {
-
-          fac_id = fac_num - mesh->n_b_faces - 1;
-
-          if (mesh->global_i_face_num != NULL) { /* Parallel treatment */
-
-            if (n_init_perio > 0) { /* Periodic treatment */
-
-              if (  perio_table->index[fac_id+1]
-                  - perio_table->index[fac_id] > 0) { /* periodic face */
-
-                distant_rank =
-                  perio_table->lists[1][perio_table->index[fac_id]] - 1;
-
-                if (distant_rank == halo->c_domain_rank[rank_id])
-                  value = - perio_table->lists[0][perio_table->index[fac_id]];
-                else
-                  value = 0;
-
-              }
-              else /* Face is not periodic */
-                value = (cs_int_t)mesh->global_i_face_num[fac_id];
-
-            }
-            else /* Non periodic treatment */
-              value = (cs_int_t)mesh->global_i_face_num[fac_id];
-
-          }
-          else { /* Non parallel treatment */
-
-            if (n_init_perio > 0) { /* Periodic treatment */
-
-              if (  perio_table->index[fac_id+1]
-                  - perio_table->index[fac_id] > 0) { /* periodic face */
-
-                value = perio_table->lists[0][perio_table->index[fac_id]] + 1;
-
-              }
-              else /* face is not periodic */
-                value = fac_id + 1;
-
-            }
-            else /* Non periodic treatment */
-              value = fac_id + 1;
-
-          }
-
-          send_buffer[shift + counter++] = value;
-
-        } /* End if face has to be treat */
-
-      } /* End of loop on cell->faces connectivity */
-
-    } /* End of loop on cells belonging to "in halo" */
-
-    if (halo->c_domain_rank[rank_id] != local_rank) {
-
-#if defined(HAVE_MPI)
-      MPI_Isend(&(send_buffer[shift]), n_elts, CS_MPI_INT,
-                halo->c_domain_rank[rank_id], local_rank,
-                cs_glob_mpi_comm, &(request[request_count++]));
-#endif
+      }
 
     }
-    else {
 
-      assert(counter == n_elts);
-      _shift = gcell_faces_idx[halo->index[2*rank_id]];
+    /* Wait for all exchanges */
 
-      for (i = 0; i < n_elts; i++)
-        gcell_glob_faces_lst[_shift + i] = send_buffer[shift + i];
+    MPI_Waitall(mpi_count, request, status);
+  }
 
-    }
+#endif /* defined(HAVE_MPI) */
+
+  /* Copy local values in case of periodicity */
+
+  if (n_init_perio > 0 && local_rank_id > -1) {
+
+    buffer = gcell_face_count + halo->index[2*local_rank_id];
+    start = s_index[2*local_rank_id];
+    length = s_index[2*local_rank_id + 1] - s_index[2*local_rank_id];
+
+    for (i = 0; i < length; i++)
+      buffer[i] = send_buffer[start + i];
+
+  }
+
+  /* Build recv_shift */
+
+  BFT_MALLOC(recv_shift, n_c_domains + 1, cs_int_t);
+
+  recv_shift[0] = 0;
+  for (rank = 0; rank < n_c_domains; rank++) {
+    recv_shift[rank+1] = 0;
+    for (i = halo->index[2*rank]; i < halo->index[2*rank+1]; i++)
+      recv_shift[rank+1] += gcell_face_count[i];
+  }
+
+  for (rank = 0; rank < n_c_domains; rank++)
+    recv_shift[rank+1] += recv_shift[rank];
+
+  BFT_REALLOC(send_buffer, send_shift[n_c_domains], cs_int_t);
+  BFT_MALLOC(recv_buffer, recv_shift[n_c_domains], cs_int_t);
+
+#if 0
+  for (i = 0; i < n_c_domains + 1; i++)
+    bft_printf(" send_shift[%d] = %d\n", i, send_shift[i]);
+  for (i = 0; i < n_c_domains + 1; i++)
+    bft_printf(" recv_shift[%d] = %d\n", i, recv_shift[i]);
+  for (i = 0; i < halo->n_elts[CS_HALO_EXTENDED]; i++)
+    bft_printf("face_count[%d] = %d\n", i, gcell_face_count[i]);
+#endif
+
+  /* Build send_buffer */
+
+  for (rank = 0; rank < n_c_domains; rank++) {
+
+    if_id = halo2ifs_rank[rank];
+
+    if (if_id > -1) {
+
+      interface = fvm_interface_set_get(face_ifs, if_id);
+      loc_num = fvm_interface_get_local_num(interface);
+      dist_num = fvm_interface_get_distant_num(interface);
+      tr_index = fvm_interface_get_tr_index(interface);
+      shift = send_shift[rank];
+
+      /* Initalize l2d_fids */
+
+      for (i = 0; i < mesh->n_i_faces; i++)
+        l2d_fids[i] = -1;
+
+      for (tr_id = 0; tr_id < index_end; tr_id++) {
+
+        _get_start_end_idx(mesh, s_index, halo->send_perio_lst,
+                           rank, tr_id, 0, /* STANDARD */
+                           &start, &end);
+
+        if (tr_id == 0) { /* Purely parallel faces */
+
+          if (tr_index != NULL) {
+            _tag_interface_faces(-1, 0, tr_index[1],
+                                 loc_num, dist_num, l2d_fids);
+            assert(n_init_perio > 0);
+          }
+          else {
+            _tag_interface_faces(-1, 0, fvm_interface_size(interface),
+                                 loc_num, dist_num, l2d_fids);
+            assert(n_init_perio == 0);
+          }
+
+        }
+        else /* Periodic faces */
+          _tag_interface_faces(tr_index[tr_id-1],
+                               tr_index[tr_id],
+                               tr_index[tr_id+1],
+                               loc_num, dist_num, l2d_fids);
+
+        for (i = start; i < end; i++) {
+
+          gcell_id = s_gcell_ids[i];
+
+          for (j = cell_faces_idx[gcell_id] - 1;
+               j < cell_faces_idx[gcell_id+1] - 1; j++) {
+
+            face_id = CS_ABS(cell_faces_lst[j]) - mesh->n_b_faces - 1;
+            if (face_id > -1)
+              if (l2d_fids[face_id] > -1)
+                send_buffer[shift++] = l2d_fids[face_id];
+
+          } /* End of loop cell -> face connectivity */
+
+        }
+
+      } /* End of loop on standard neighborhood for this communicating rank */
+
+    } /* if_id > -1 */
 
   } /* End of loop on ranks */
 
-  /* Wait for all exchanges being done */
+  /* Exchange face ids */
 
 #if defined(HAVE_MPI)
-  if (mesh->n_domains > 1)
-    MPI_Waitall(request_count, request, status);
+  if (n_ranks > 1) { /* Exchange data over the ranks  => build face_count */
+
+    /* Receive data from distant ranks */
+
+    mpi_count = 0;
+
+    for (rank = 0; rank < n_c_domains; rank++) {
+
+      start = recv_shift[rank];
+      length = recv_shift[rank+1] - recv_shift[rank];
+
+      if (halo->c_domain_rank[rank] != local_rank) {
+
+        buffer = recv_buffer + start ;
+
+        MPI_Irecv(buffer,
+                  length,
+                  CS_MPI_INT,
+                  halo->c_domain_rank[rank],
+                  halo->c_domain_rank[rank],
+                  cs_glob_mpi_comm,
+                  &(request[mpi_count++]));
+
+      }
+
+    }
+
+    /* We wait for posting all receives (often recommended) */
+
+    MPI_Barrier(cs_glob_mpi_comm);
+
+    /* Send data to distant ranks */
+
+    for (rank = 0; rank < n_c_domains; rank++) {
+
+      /* If this is not the local rank */
+
+      if (halo->c_domain_rank[rank] != local_rank) {
+
+        start = send_shift[rank];
+        length = send_shift[rank + 1] - send_shift[rank];
+        buffer = send_buffer + start;
+
+        MPI_Isend(buffer,
+                  length,
+                  CS_MPI_INT,
+                  halo->c_domain_rank[rank],
+                  local_rank,
+                  cs_glob_mpi_comm,
+                  &(request[mpi_count++]));
+
+      }
+
+    }
+
+    /* Wait for all exchanges */
+
+    MPI_Waitall(mpi_count, request, status);
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  /* Copy local values in case of periodicity */
+
+  if (n_init_perio > 0 && local_rank_id > -1) {
+
+    buffer = recv_buffer + recv_shift[local_rank_id];
+    start = send_shift[local_rank_id];
+    length = send_shift[local_rank_id + 1] - send_shift[local_rank_id];
+
+    for (i = 0; i < length; i++)
+      buffer[i] = send_buffer[start + i];
+
+  }
+
+  /* Update face-> cells connect */
+
+  for (rank = 0; rank < n_c_domains; rank++) {
+
+    shift = recv_shift[rank];
+
+    for (i = halo->index[2*rank]; i < halo->index[2*rank+1]; i++) {
+
+      for (j = 0; j < gcell_face_count[i]; j++) {
+
+        face_id = recv_buffer[shift++];
+
+#if 0
+        gcell_id = s_gcell_ids[i];
+        bft_printf("face_id: %d (%d, %d) - gcell_id: %d\n",
+                   face_id,
+                   mesh->i_face_cells[2*face_id],
+                   mesh->i_face_cells[2*face_id+1],
+                   gcell_id);
 #endif
 
-  *p_gcell_faces_idx = gcell_faces_idx;
-  *p_gcell_glob_faces_lst = gcell_glob_faces_lst;
+        /* In case of periodicity, a ghost cell may appear several times
+           in the same halo. So we can have a face->cell connect up-to-date
+           when it is not the first pass */
+
+        if (mesh->i_face_cells[2*face_id] == 0)
+          mesh->i_face_cells[2*face_id] = mesh->n_cells + i + 1;
+        else if (mesh->i_face_cells[2*face_id+1] == 0)
+          mesh->i_face_cells[2*face_id+1] = mesh->n_cells + i + 1;
+
+#if 0
+        bft_printf("face_id: %d (%d, %d)\n", face_id,
+                   mesh->i_face_cells[2*face_id],
+                   mesh->i_face_cells[2*face_id+1]);
+#endif
+
+      } /* End of loop on related faces */
+
+    } /* End of loop on standard neighborhood for this communicating rank */
+
+  } /* End of loop on ranks */
 
   /* Free memory */
 
-  BFT_FREE(rank_shift);
+  BFT_FREE(recv_buffer);
   BFT_FREE(send_buffer);
+  BFT_FREE(send_shift);
+  BFT_FREE(recv_shift);
+  BFT_FREE(gcell_face_count);
+  BFT_FREE(halo2ifs_rank);
+  BFT_FREE(l2d_fids);
 
 #if defined(HAVE_MPI)
   if (request != _request) {
@@ -2944,248 +2811,10 @@ _define_gcells_connect(cs_mesh_t       *mesh,
   }
 #endif
 
-  if (n_init_perio > 0)
-    perio_table = _delete_lookup_table(perio_table);
-
-}
-
-/*---------------------------------------------------------------------------
- * Update mesh->i_face_cells array for ghost cells in standard halo.
- *
- * Define face to ghost cells connectivity for standard halo and
- * if necessary, for extended halo.
- *
- * parameters:
- *   mesh               <->  pointer to cs_mesh_t structure
- *   cell_faces_idx     -->  "cell -> faces" connectivity index
- *   cell_faces_lst     -->  "cell -> faces" connectivity list
- *   gcell_vtx_idx      -->  "ghost cell -> vertices" connect. index
- *   gcell_vtx_lst      -->  "ghost cell -> vertices" connect. list
- *---------------------------------------------------------------------------*/
-
-static void
-_update_gcells_connect(cs_mesh_t       *mesh,
-                       cs_int_t        *cell_faces_idx,
-                       cs_int_t        *cell_faces_lst,
-                       cs_int_t        *gcell_vtx_idx,
-                       cs_int_t        *gcell_vtx_lst)
-{
-  cs_int_t  i, j, k, i_cel, i_fac, i_vtx;
-  cs_int_t  rank_id, vtx_id, fac_num, fac_id, cell_id;
-  cs_int_t  n_face_vertices, n_shared_vertices, tag, counter;
-  cs_int_t  ghost_cell_num, _glob_face_num, glob_face_num;
-  cs_bool_t  ok;
-
-  table_int_t  *cell_checker = NULL, *cell_list = NULL;
-  cs_int_t  *vtx_gcells_idx = NULL, *vtx_gcells_lst = NULL;
-  cs_int_t  *gcell_faces_idx = NULL, *gcell_glob_faces_lst = NULL;
-  cs_int_t  *vtx_buffer = NULL, *vtx_counter = NULL, *vtx_checker = NULL;
-
-  cs_halo_t  *halo = mesh->halo;
-
-  const cs_int_t  n_vertices = mesh->n_vertices;
-  const cs_int_t  n_c_domains = halo->n_c_domains;
-  const cs_int_t  *fac_vtx_idx = mesh->i_face_vtx_idx;
-  const cs_int_t  *fac_vtx_lst = mesh->i_face_vtx_lst;
-
-  /* Define cell -> face  connectivity for halo to know
-     exactly the right cell to use in face -> cells connectivity. */
-
-  _define_gcells_connect(mesh,
-                         cell_faces_idx,
-                         cell_faces_lst,
-                         &gcell_faces_idx,
-                         &gcell_glob_faces_lst);
-
-  /* Allocation and initialization of buffers */
-
-  BFT_MALLOC(vtx_buffer, 3*n_vertices + 1, cs_int_t);
-  vtx_counter = &(vtx_buffer[0]);
-  vtx_checker = &(vtx_buffer[n_vertices]);
-  vtx_gcells_idx = &(vtx_buffer[2*n_vertices]);
-
-  cell_checker = _create_table_int(0, 20);
-  cell_list = _create_table_int(-1, 20);
-
-  /* Loop on each rank to define ghost cell connectivity */
-
-  for (rank_id = 0; rank_id < n_c_domains; rank_id++) {
-
-    _reverse_connectivity_idx(halo,
-                              n_vertices,
-                              rank_id,
-                              vtx_checker,
-                              gcell_vtx_idx,
-                              gcell_vtx_lst,
-                              vtx_gcells_idx);
-
-    BFT_REALLOC(vtx_gcells_lst, vtx_gcells_idx[n_vertices], cs_int_t);
-
-    _reverse_connectivity_lst(halo,
-                              n_vertices,
-                              rank_id,
-                              vtx_counter,
-                              vtx_checker,
-                              gcell_vtx_idx,
-                              gcell_vtx_lst,
-                              vtx_gcells_idx,
-                              vtx_gcells_lst);
-
-    for (i = halo->send_index[2*rank_id];
-         i < halo->send_index[2*rank_id+2]; i++) {
-
-      i_cel = halo->send_list[i];
-
-      _reset_table_int(cell_list, -1);
-      _reset_table_int(cell_checker, 0);
-
-      for (i_fac = cell_faces_idx[i_cel];
-           i_fac < cell_faces_idx[i_cel+1]; i_fac++) {
-
-        fac_num = CS_ABS(cell_faces_lst[i_fac-1]);
-
-        if (_test_loop_continues(mesh, fac_num) == true) {
-
-          fac_id = fac_num - mesh->n_b_faces - 1;
-          n_face_vertices = fac_vtx_idx[fac_id+1] - fac_vtx_idx[fac_id];
-
-          /* Loop on vertices of the face */
-
-          for (i_vtx = fac_vtx_idx[fac_id];
-               i_vtx < fac_vtx_idx[fac_id+1]; i_vtx++) {
-
-            vtx_id = fac_vtx_lst[i_vtx-1] - 1;
-
-            /* For each vertex, we store cell in halo */
-
-            for (j = vtx_gcells_idx[vtx_id];
-                 j < vtx_gcells_idx[vtx_id+1]; j++) {
-
-              tag = _find_table_int_value(cell_list, vtx_gcells_lst[j]);
-
-              if (tag == -1) /* New cell */
-                _add_table_int_value_dup(cell_checker, 1);
-              else
-                _raise_table_int_value(cell_checker, tag, 1);
-
-              _add_table_int_value(cell_list, vtx_gcells_lst[j]);
-
-            } /* End of loop on out ghost cells connecting to this vertex */
-
-          } /* End of loop on face's vertices */
-
-          counter = 0;
-          for (j = 0; j < cell_checker->n_elts; j++) {
-            n_shared_vertices = _get_table_int_value(cell_checker, j);
-            if (n_shared_vertices == n_face_vertices)
-              counter++;
-          }
-
-          if (counter > 0) {
-
-            for (j = 0; j < cell_checker->n_elts; j++) {
-
-              n_shared_vertices = _get_table_int_value(cell_checker, j);
-
-              if (n_shared_vertices == n_face_vertices) { /* Standard Cell */
-
-                cell_id = _get_table_int_value(cell_list, j);
-
-                if (counter > 1) {
-
-                  /* Test if this is the right ghost cell */
-
-                  if (mesh->global_i_face_num != NULL)
-                    glob_face_num = mesh->global_i_face_num[fac_id];
-                  else
-                    glob_face_num = fac_id + 1;
-
-                  ok = false;
-                  for (k = gcell_faces_idx[cell_id];
-                       k < gcell_faces_idx[cell_id+1]; k++) {
-
-                    _glob_face_num = gcell_glob_faces_lst[k];
-
-                    if (_glob_face_num < 0) {
-
-                      assert(mesh->global_i_face_num != NULL);
-                      _glob_face_num = mesh->global_i_face_num[-_glob_face_num];
-
-                    }
-
-                    if (_glob_face_num == glob_face_num) {
-                      ok = true;
-                      break;
-                    }
-
-                  } /* End of loop on faces of the out ghost cell */
-
-                } /* End if counter > 1 */
-
-                else if (counter == 1)
-                  ok = true;
-
-                if (ok == true) { /* Update face -> cells connectivity */
-
-                  ghost_cell_num = mesh->n_cells + cell_id + 1;
-
-                  if (mesh->i_face_cells[2*fac_id] < 1)
-                    mesh->i_face_cells[2*fac_id] = ghost_cell_num;
-
-                  if (mesh->i_face_cells[2*fac_id+1] < 1)
-                    mesh->i_face_cells[2*fac_id+1] = ghost_cell_num;
-
-                }
-
-              } /* If n_shared_vertices == n_face_vertices */
-
-            } /* End of loop on cell sharing vertex/vertices */
-
-          } /* End if counter > 0 */
-
-          _reset_table_int(cell_checker, 0);
-          _reset_table_int(cell_list, -1);
-
-        } /* If face is concerned */
-
-      } /* End of loop on faces */
-
-    } /* End of loop on ghost cells */
-
-  } /* End of loop on ranks */
-
-  BFT_FREE(vtx_buffer);
-  BFT_FREE(vtx_gcells_lst);
-  BFT_FREE(gcell_faces_idx);
-  BFT_FREE(gcell_glob_faces_lst);
-
-  cell_checker = _delete_table_int(cell_checker);
-  cell_list = _delete_table_int(cell_list);
-
   /* Sanity check */
 
-  for (i = 0; i < mesh->n_i_faces; i++) {
-    if (mesh->i_face_cells[2*i] < 1)
-      bft_error(__FILE__, __LINE__, 0,
-                " Error detected in interior face -> cells connectivity.\n"
-                " Face %d (%u) has an incomplete connectivity.\n"
-                " Cell1: %d - Cell2: %d (%u)",
-                i+1, mesh->global_i_face_num[i],
-                mesh->i_face_cells[2*i],
-                mesh->i_face_cells[2*i+1],
-                mesh->global_cell_num[mesh->i_face_cells[2*i+1]-1]);
+  _check_i_face_cells(mesh);
 
-    if (mesh->i_face_cells[2*i+1] < 1)
-      bft_error(__FILE__, __LINE__, 0,
-                " Error detected in interior face -> cells connectivity.\n"
-                " Face %d (%u) has an incomplete connectivity.\n"
-                " Cell1: %d (%u) - Cell2: %d",
-                i+1, mesh->global_i_face_num[i],
-                mesh->i_face_cells[2*i],
-                mesh->global_cell_num[mesh->i_face_cells[2*i]-1],
-                mesh->i_face_cells[2*i+1]);
-
-  }
 }
 
 #if 0 /* TODO: check algorithm (deadlock on BG/L on one test case) */
@@ -3551,6 +3180,11 @@ cs_mesh_halo_define(cs_mesh_t            *mesh,
                                 &gcell_vtx_idx,
                                 &gcell_vtx_lst);
 
+    /* Free memory */
+
+    BFT_FREE(send_gcell_vtx_idx);
+    BFT_FREE(send_gcell_vtx_lst);
+
     /* Define mesh->i_face_cells array for ghost cells in standard halo and
        also ghost cells to ghost cells connectivity for standard and extended
        halo if necessary */
@@ -3558,16 +3192,7 @@ cs_mesh_halo_define(cs_mesh_t            *mesh,
     bft_printf(_("    Updating the faces -> cells connectivity\n"));
     bft_printf_flush();
 
-    _update_gcells_connect(mesh,
-                           gcell_faces_idx,
-                           gcell_faces_lst,
-                           gcell_vtx_idx,
-                           gcell_vtx_lst);
-
-    /* Free memory */
-
-    BFT_FREE(send_gcell_vtx_idx);
-    BFT_FREE(send_gcell_vtx_lst);
+    _update_i_face_cells(mesh, gcell_faces_idx, gcell_faces_lst);
 
   }
 
@@ -3587,7 +3212,6 @@ cs_mesh_halo_define(cs_mesh_t            *mesh,
 #if 0 /* for debugging purposes */
   cs_halo_dump(halo, 1);
 #endif
-
 }
 
 /*----------------------------------------------------------------------------*/
