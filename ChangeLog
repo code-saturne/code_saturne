@@ -1,3 +1,10 @@
+* 02/04/2010 - David Monfort <david.monfort@edf.fr>
+  Update the list of "gettextized" files and the French dictionnary
+  accordingly.
+  modified files:
+    po/fr.po
+    po/POTFILES.in
+
 * 02/04/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Improve the mesh halo construction. Is is now based on the face interface.
   modified routine:
