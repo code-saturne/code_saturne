@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>450</width>
-    <height>867</height>
+    <width>454</width>
+    <height>966</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -24,6 +24,10 @@
    </property>
    <item row="0" column="0" >
     <widget class="QTabWidget" name="tabWidget" >
+     <property name="toolTip" >
+      <string>Match periodic boundary faces (conforming or not).
+periodic faces become interior faces.</string>
+     </property>
      <property name="currentIndex" >
       <number>0</number>
      </property>
@@ -45,8 +49,8 @@
            <widget class="QTableView" name="tableViewMeshes" >
             <property name="minimumSize" >
              <size>
-              <width>0</width>
-              <height>0</height>
+              <width>350</width>
+              <height>100</height>
              </size>
             </property>
             <property name="horizontalScrollBarPolicy" >
@@ -112,11 +116,14 @@
        </item>
        <item row="1" column="0" >
         <widget class="QGroupBox" name="groupBoxJoin" >
+         <property name="toolTip" >
+          <string>Join abutting boundary faces (conforming or not);\njoined faces become interior faces.</string>
+         </property>
          <property name="title" >
-          <string>Join meshes</string>
+          <string>Face joining (optional)</string>
          </property>
          <property name="checkable" >
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
          <layout class="QGridLayout" >
           <item row="0" column="0" >
@@ -136,62 +143,6 @@
              </property>
              <item row="0" column="0" >
               <layout class="QHBoxLayout" >
-               <item>
-                <spacer>
-                 <property name="orientation" >
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0" >
-                  <size>
-                   <width>20</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_5" >
-                 <property name="statusTip" >
-                  <string>Boundary faces selections for meshes join. These selections are optional. A selection can be activated or not. </string>
-                 </property>
-                 <property name="text" >
-                  <string>Select boundary faces from single meshes to join (optional)</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer>
-                 <property name="orientation" >
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0" >
-                  <size>
-                   <width>21</width>
-                   <height>16</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-              </layout>
-             </item>
-             <item row="1" column="0" >
-              <layout class="QHBoxLayout" >
-               <item>
-                <spacer>
-                 <property name="orientation" >
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeType" >
-                  <enum>QSizePolicy::Minimum</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0" >
-                  <size>
-                   <width>20</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
                <item>
                 <widget class="FacesSelectionView" native="1" name="widgetFacesJoin" >
                  <property name="sizePolicy" >
@@ -213,22 +164,6 @@
                   </size>
                  </property>
                 </widget>
-               </item>
-               <item>
-                <spacer>
-                 <property name="orientation" >
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeType" >
-                  <enum>QSizePolicy::Minimum</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0" >
-                  <size>
-                   <width>16</width>
-                   <height>16</height>
-                  </size>
-                 </property>
-                </spacer>
                </item>
               </layout>
              </item>
@@ -384,35 +319,63 @@
       </attribute>
       <layout class="QGridLayout" >
        <item row="0" column="0" >
-        <layout class="QGridLayout" >
-         <item rowspan="2" row="0" column="0" >
-          <widget class="QTreeView" name="treeViewPeriod" >
-           <property name="alternatingRowColors" >
-            <bool>true</bool>
-           </property>
-           <property name="indentation" >
-            <number>0</number>
-           </property>
-           <property name="rootIsDecorated" >
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1" >
-          <widget class="QPushButton" name="pushButtonAddPeriod" >
-           <property name="text" >
-            <string>Add</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1" >
-          <widget class="QPushButton" name="pushButtonDeletePeriod" >
-           <property name="text" >
-            <string>Delete</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <widget class="QGroupBox" name="groupBoxPerio" >
+         <property name="toolTip" >
+          <string>Define periodic faces (conforming or not);\nperiodic faces become interior faces.</string>
+         </property>
+         <property name="title" >
+          <string>Periodicity</string>
+         </property>
+         <property name="checkable" >
+          <bool>false</bool>
+         </property>
+         <layout class="QGridLayout" >
+          <item row="0" column="0" >
+           <widget class="QFrame" name="framePerio" >
+            <property name="frameShape" >
+             <enum>QFrame::NoFrame</enum>
+            </property>
+            <property name="frameShadow" >
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QGridLayout" >
+             <property name="margin" >
+              <number>0</number>
+             </property>
+             <property name="spacing" >
+              <number>6</number>
+             </property>
+             <item row="0" column="0" >
+              <layout class="QHBoxLayout" >
+               <item>
+                <widget class="FacesSelectionView" native="1" name="widgetFacesPerio" >
+                 <property name="sizePolicy" >
+                  <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize" >
+                  <size>
+                   <width>350</width>
+                   <height>150</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize" >
+                  <size>
+                   <width>16777215</width>
+                   <height>200</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item row="1" column="0" >
         <widget class="QGroupBox" name="groupBoxMode" >
@@ -435,9 +398,6 @@
           </item>
           <item row="0" column="1" >
            <widget class="QComboBox" name="comboBoxPeriodicity" >
-            <property name="toolTip" >
-             <string>Preprocessor option:-trans or -rota</string>
-            </property>
             <property name="statusTip" >
              <string>Periodicity's transformation mode selection </string>
             </property>
@@ -462,56 +422,183 @@
        <item row="2" column="0" >
         <widget class="QGroupBox" name="groupBoxTranslation" >
          <property name="toolTip" >
-          <string/>
+          <string>Translation vector.</string>
          </property>
          <property name="title" >
           <string>Translation vector </string>
          </property>
          <layout class="QGridLayout" >
           <item row="0" column="0" >
-           <layout class="QHBoxLayout" >
-            <item>
-             <widget class="QLabel" name="labelTX" >
-              <property name="text" >
-               <string>T&lt;sub>X&lt;/sub></string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditTX" >
-              <property name="toolTip" >
-               <string>Code_Saturne key word: -trans</string>
-              </property>
-             </widget>
-            </item>
-            <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="1" >
+           <widget class="QLabel" name="labelTX" >
+            <property name="text" >
+             <string>T&lt;sub>X&lt;/sub></string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2" >
+           <widget class="QLineEdit" name="lineEditTX" >
+            <property name="sizePolicy" >
+             <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize" >
+             <size>
+              <width>20</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="baseSize" >
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3" >
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="0" >
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="1" >
+           <widget class="QLabel" name="labelTY" >
+            <property name="text" >
+             <string>T&lt;sub>Y&lt;/sub></string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2" >
+           <widget class="QLineEdit" name="lineEditTY" >
+            <property name="minimumSize" >
+             <size>
+              <width>20</width>
+              <height>0</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3" >
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="2" column="0" >
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="2" column="1" >
+           <widget class="QLabel" name="labelTZ" >
+            <property name="text" >
+             <string>T&lt;sub>Z&lt;/sub></string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2" >
+           <widget class="QLineEdit" name="lineEditTZ" >
+            <property name="minimumSize" >
+             <size>
+              <width>20</width>
+              <height>0</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3" >
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="3" column="0" >
+        <widget class="QGroupBox" name="groupBoxRotation" >
+         <property name="toolTip" >
+          <string>Rotation defined by angle in degrees,
+an axis vector (does not need to be normalized),
+and coordinates of an invariant point.</string>
+         </property>
+         <property name="title" >
+          <string>Rotation definition</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout" >
+          <item row="0" column="0" >
+           <layout class="QGridLayout" name="_2" >
+            <item row="0" column="2" >
              <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
               <property name="sizeHint" stdset="0" >
                <size>
-                <width>16</width>
+                <width>20</width>
                 <height>20</height>
                </size>
               </property>
              </spacer>
             </item>
-            <item>
-             <widget class="QLabel" name="labelTY" >
-              <property name="text" >
-               <string>T&lt;sub>Y&lt;/sub></string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditTY" >
-              <property name="toolTip" >
-               <string/>
-              </property>
-             </widget>
-            </item>
-            <item>
+            <item row="0" column="5" >
              <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
@@ -524,34 +611,7 @@
               </property>
              </spacer>
             </item>
-            <item>
-             <widget class="QLabel" name="labelTZ" >
-              <property name="text" >
-               <string>T&lt;sub>Z&lt;/sub></string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditTZ" >
-              <property name="toolTip" >
-               <string/>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="3" column="0" >
-        <widget class="QGroupBox" name="groupBoxRotation1" >
-         <property name="title" >
-          <string>Rotation definitions</string>
-         </property>
-         <layout class="QVBoxLayout" >
-          <item>
-           <layout class="QHBoxLayout" >
-            <item>
+            <item row="0" column="8" >
              <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
@@ -564,68 +624,68 @@
               </property>
              </spacer>
             </item>
-            <item>
-             <layout class="QGridLayout" >
-              <item row="0" column="0" >
-               <widget class="QLabel" name="labelAngle" >
-                <property name="text" >
-                 <string>angle (deg)</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1" >
-               <widget class="QLineEdit" name="lineEditAngle" />
-              </item>
-             </layout>
+            <item row="1" column="0" >
+             <widget class="QLabel" name="labelAngle" >
+              <property name="font" >
+               <font>
+                <family>Standard Symbols L</family>
+               </font>
+              </property>
+              <property name="text" >
+               <string>a</string>
+              </property>
+             </widget>
             </item>
-            <item>
+            <item row="1" column="1" >
+             <widget class="QLineEdit" name="lineEditAngle" />
+            </item>
+            <item row="1" column="2" >
              <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
               <property name="sizeHint" stdset="0" >
                <size>
-                <width>16</width>
-                <height>21</height>
+                <width>20</width>
+                <height>20</height>
                </size>
               </property>
              </spacer>
             </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox_2" >
-            <property name="title" >
-             <string>Rotation vector</string>
-            </property>
-            <property name="alignment" >
-             <set>Qt::AlignHCenter</set>
-            </property>
-            <property name="flat" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" >
-            <item>
+            <item row="1" column="3" >
              <widget class="QLabel" name="labelDX" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
-              </property>
               <property name="text" >
                <string>D&lt;sub>X&lt;/sub></string>
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditDX" >
-              <property name="toolTip" >
-               <string/>
+            <item row="1" column="4" >
+             <widget class="QLineEdit" name="lineEditDX" />
+            </item>
+            <item row="1" column="5" >
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>16</width>
+                <height>16</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="6" >
+             <widget class="QLabel" name="labelX1" >
+              <property name="text" >
+               <string>X&lt;sub>0&lt;/sub></string>
               </property>
              </widget>
             </item>
-            <item>
+            <item row="1" column="7" >
+             <widget class="QLineEdit" name="lineEditX1" />
+            </item>
+            <item row="1" column="8" >
              <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
@@ -638,20 +698,30 @@
               </property>
              </spacer>
             </item>
-            <item>
-             <widget class="QLabel" name="labelDY" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
+            <item row="2" column="2" >
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
               </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>20</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="2" column="3" >
+             <widget class="QLabel" name="labelDY" >
               <property name="text" >
                <string>D&lt;sub>Y&lt;/sub></string>
               </property>
              </widget>
             </item>
-            <item>
+            <item row="2" column="4" >
              <widget class="QLineEdit" name="lineEditDY" />
             </item>
-            <item>
+            <item row="2" column="5" >
              <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
@@ -659,75 +729,68 @@
               <property name="sizeHint" stdset="0" >
                <size>
                 <width>16</width>
-                <height>21</height>
+                <height>16</height>
                </size>
               </property>
              </spacer>
             </item>
-            <item>
+            <item row="2" column="6" >
+             <widget class="QLabel" name="labelY1" >
+              <property name="text" >
+               <string>Y&lt;sub>0&lt;/sub></string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="7" >
+             <widget class="QLineEdit" name="lineEditY1" />
+            </item>
+            <item row="2" column="8" >
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>20</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="3" column="2" >
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>20</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="3" column="3" >
              <widget class="QLabel" name="labelDZ" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
+              <property name="enabled" >
+               <bool>true</bool>
               </property>
               <property name="text" >
                <string>D&lt;sub>Z&lt;/sub></string>
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditDZ" />
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox_3" >
-            <property name="title" >
-             <string>Invariant point coordinates</string>
-            </property>
-            <property name="alignment" >
-             <set>Qt::AlignHCenter</set>
-            </property>
-            <property name="flat" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" >
-            <item>
-             <widget class="QLabel" name="labelX1" >
+            <item row="3" column="4" >
+             <widget class="QLineEdit" name="lineEditDZ" >
+              <property name="enabled" >
+               <bool>true</bool>
+              </property>
               <property name="text" >
-               <string>X</string>
+               <string>0</string>
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditX1" />
-            </item>
-            <item>
-             <spacer>
-              <property name="orientation" >
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0" >
-               <size>
-                <width>20</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QLabel" name="labelY1" >
-              <property name="text" >
-               <string>Y</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditY1" />
-            </item>
-            <item>
+            <item row="3" column="5" >
              <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
@@ -740,15 +803,69 @@
               </property>
              </spacer>
             </item>
-            <item>
+            <item row="3" column="6" >
              <widget class="QLabel" name="labelZ1" >
+              <property name="enabled" >
+               <bool>true</bool>
+              </property>
               <property name="text" >
-               <string>Z</string>
+               <string>Z&lt;sub>0&lt;/sub></string>
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditZ1" />
+            <item row="3" column="7" >
+             <widget class="QLineEdit" name="lineEditZ1" >
+              <property name="enabled" >
+               <bool>true</bool>
+              </property>
+              <property name="text" >
+               <string>0</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="8" >
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>20</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="0" column="1" >
+             <widget class="QLabel" name="label" >
+              <property name="toolTip" >
+               <string>Angle of rotation, in degrees</string>
+              </property>
+              <property name="text" >
+               <string>Angle (deg)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="4" >
+             <widget class="QLabel" name="label_2" >
+              <property name="toolTip" >
+               <string>Vector defining the axis direction
+(does not need to be normalized)</string>
+              </property>
+              <property name="text" >
+               <string>Axis direction</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="7" >
+             <widget class="QLabel" name="label_3" >
+              <property name="toolTip" >
+               <string>Coordinates of invariant point</string>
+              </property>
+              <property name="text" >
+               <string>Invariant point</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -756,31 +873,20 @@
         </widget>
        </item>
        <item row="4" column="0" >
-        <widget class="QGroupBox" name="groupBoxRotation2" >
+        <widget class="QGroupBox" name="groupBoxMixed" >
+         <property name="toolTip" >
+          <string>The first 3x3 block corresponds to rotation, and the last column to translation.
+Any combination of rotations and translations may be expressed using
+(non-commutative) matrix products.</string>
+         </property>
          <property name="title" >
-          <string>Rotation definition</string>
+          <string>Transformation matrix (homogeneous coordinates)</string>
          </property>
          <layout class="QVBoxLayout" >
-          <item>
-           <widget class="QGroupBox" name="groupBox_4" >
-            <property name="title" >
-             <string>Rotation matrix coefficients</string>
-            </property>
-            <property name="alignment" >
-             <set>Qt::AlignHCenter</set>
-            </property>
-            <property name="flat" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
           <item>
            <layout class="QGridLayout" >
             <item row="0" column="0" >
              <widget class="QLabel" name="labelM11" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
-              </property>
               <property name="text" >
                <string>m&lt;sub>11&lt;/sub></string>
               </property>
@@ -804,9 +910,6 @@
             </item>
             <item row="0" column="3" >
              <widget class="QLabel" name="labelM12" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
-              </property>
               <property name="text" >
                <string>m&lt;sub>12&lt;/sub></string>
               </property>
@@ -830,9 +933,6 @@
             </item>
             <item row="0" column="6" >
              <widget class="QLabel" name="labelM13" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
-              </property>
               <property name="text" >
                <string>m&lt;sub>13&lt;/sub></string>
               </property>
@@ -841,11 +941,31 @@
             <item row="0" column="7" >
              <widget class="QLineEdit" name="lineEditM13" />
             </item>
+            <item row="0" column="8" >
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>20</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="0" column="9" >
+             <widget class="QLabel" name="labelM14" >
+              <property name="text" >
+               <string>m&lt;sub>14&lt;/sub></string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="10" >
+             <widget class="QLineEdit" name="lineEditM14" />
+            </item>
             <item row="1" column="0" >
              <widget class="QLabel" name="labelM21" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
-              </property>
               <property name="text" >
                <string>m&lt;sub>21&lt;/sub></string>
               </property>
@@ -869,9 +989,6 @@
             </item>
             <item row="1" column="3" >
              <widget class="QLabel" name="labelM22" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
-              </property>
               <property name="text" >
                <string>m&lt;sub>22&lt;/sub></string>
               </property>
@@ -895,9 +1012,6 @@
             </item>
             <item row="1" column="6" >
              <widget class="QLabel" name="labelM23" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
-              </property>
               <property name="text" >
                <string>m&lt;sub>23&lt;/sub></string>
               </property>
@@ -906,11 +1020,31 @@
             <item row="1" column="7" >
              <widget class="QLineEdit" name="lineEditM23" />
             </item>
+            <item row="1" column="8" >
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>20</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="9" >
+             <widget class="QLabel" name="labelM24" >
+              <property name="text" >
+               <string>m&lt;sub>24&lt;/sub></string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="10" >
+             <widget class="QLineEdit" name="lineEditM24" />
+            </item>
             <item row="2" column="0" >
              <widget class="QLabel" name="labelM31" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
-              </property>
               <property name="text" >
                <string>m&lt;sub>31&lt;/sub></string>
               </property>
@@ -934,9 +1068,6 @@
             </item>
             <item row="2" column="3" >
              <widget class="QLabel" name="labelM32" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
-              </property>
               <property name="text" >
                <string>m&lt;sub>32&lt;/sub></string>
               </property>
@@ -960,9 +1091,6 @@
             </item>
             <item row="2" column="6" >
              <widget class="QLabel" name="labelM33" >
-              <property name="toolTip" >
-               <string>Preprocessor option: -trans</string>
-              </property>
               <property name="text" >
                <string>m&lt;sub>33&lt;/sub></string>
               </property>
@@ -971,34 +1099,7 @@
             <item row="2" column="7" >
              <widget class="QLineEdit" name="lineEditM33" />
             </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox_5" >
-            <property name="title" >
-             <string>Invariant point coordinates</string>
-            </property>
-            <property name="alignment" >
-             <set>Qt::AlignHCenter</set>
-            </property>
-            <property name="flat" >
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" >
-            <item>
-             <widget class="QLabel" name="labelX2" >
-              <property name="text" >
-               <string>X</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditX2" />
-            </item>
-            <item>
+            <item row="2" column="8" >
              <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
@@ -1011,82 +1112,37 @@
               </property>
              </spacer>
             </item>
-            <item>
-             <widget class="QLabel" name="labelY2" >
+            <item row="2" column="9" >
+             <widget class="QLabel" name="labelM34" >
               <property name="text" >
-               <string>Y</string>
+               <string>m&lt;sub>34&lt;/sub></string>
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditY2" />
+            <item row="2" column="10" >
+             <widget class="QLineEdit" name="lineEditM34" />
             </item>
-            <item>
-             <spacer>
-              <property name="orientation" >
-               <enum>Qt::Horizontal</enum>
+            <item row="3" column="0" >
+             <widget class="QLabel" name="labelM41" >
+              <property name="enabled" >
+               <bool>false</bool>
               </property>
-              <property name="sizeHint" stdset="0" >
-               <size>
-                <width>16</width>
-                <height>16</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QLabel" name="labelZ2" >
               <property name="text" >
-               <string>Z</string>
+               <string>m&lt;sub>41&lt;/sub></string>
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditZ2" />
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="5" column="0" >
-        <widget class="QGroupBox" name="groupBoxFaces" >
-         <property name="title" >
-          <string>List of boundary faces for the selected periodicity (optional)</string>
-         </property>
-         <layout class="QGridLayout" >
-          <item row="0" column="0" >
-           <layout class="QHBoxLayout" >
-            <item>
-             <spacer>
-              <property name="orientation" >
-               <enum>Qt::Horizontal</enum>
+            <item row="3" column="1" >
+             <widget class="QLineEdit" name="lineShowM41" >
+              <property name="enabled" >
+               <bool>false</bool>
               </property>
-              <property name="sizeHint" stdset="0" >
-               <size>
-                <width>16</width>
-                <height>16</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="FacesSelectionView" native="1" name="widgetFacesPeriodic" >
-              <property name="minimumSize" >
-               <size>
-                <width>350</width>
-                <height>100</height>
-               </size>
-              </property>
-              <property name="maximumSize" >
-               <size>
-                <width>16777215</width>
-                <height>200</height>
-               </size>
+              <property name="text" >
+               <string>0</string>
               </property>
              </widget>
             </item>
-            <item>
+            <item row="3" column="2" >
              <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
@@ -1098,6 +1154,92 @@
                </size>
               </property>
              </spacer>
+            </item>
+            <item row="3" column="3" >
+             <widget class="QLabel" name="labelM42" >
+              <property name="enabled" >
+               <bool>false</bool>
+              </property>
+              <property name="text" >
+               <string>m&lt;sub>42&lt;/sub></string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="4" >
+             <widget class="QLineEdit" name="lineShowM42" >
+              <property name="enabled" >
+               <bool>false</bool>
+              </property>
+              <property name="text" >
+               <string>0</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="5" >
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>16</width>
+                <height>16</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="3" column="6" >
+             <widget class="QLabel" name="labelM43" >
+              <property name="enabled" >
+               <bool>false</bool>
+              </property>
+              <property name="text" >
+               <string>m&lt;sub>43&lt;/sub></string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="7" >
+             <widget class="QLineEdit" name="lineShowM43" >
+              <property name="enabled" >
+               <bool>false</bool>
+              </property>
+              <property name="text" >
+               <string>0</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="8" >
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>20</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="3" column="9" >
+             <widget class="QLabel" name="labelM44" >
+              <property name="enabled" >
+               <bool>false</bool>
+              </property>
+              <property name="text" >
+               <string>m&lt;sub>44&lt;/sub></string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="10" >
+             <widget class="QLineEdit" name="lineShowM44" >
+              <property name="enabled" >
+               <bool>false</bool>
+              </property>
+              <property name="text" >
+               <string>1</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -1108,6 +1250,9 @@
         <spacer>
          <property name="orientation" >
           <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType" >
+          <enum>QSizePolicy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0" >
           <size>

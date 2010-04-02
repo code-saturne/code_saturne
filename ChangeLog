@@ -1,4 +1,20 @@
 * 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Switch the joining and periodicity support from the runcase script to the
+  XML reader when using the graphical interface.
+  Remove rarely used interior faces selection for mesh checking.
+  Missing feature is the joining and periodicity support when checking the
+  mesh quality.
+  modified routines:
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/FacesSelectionForm.ui
+    gui/Pages/FacesSelectionView.py
+    gui/Pages/SolutionDomainForm.ui
+    gui/Pages/SolutionDomainModel.py
+    gui/Pages/SolutionDomainView.py
+    gui/Pages/SolutionVerifForm.ui
+    gui/Pages/SolutionVerifView.py
+
+* 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Code and comments cleanup.
   modifed routines:
     gui/Base/XMLengine.py

@@ -60,7 +60,6 @@ from SolutionVerifForm import Ui_SolutionVerifForm
 from MeshQualityCriteriaLogDialogForm import Ui_MeshQualityCriteriaLogDialogForm
 from Pages.SolutionDomainModel import SolutionDomainModel
 from OutputControlModel import OutputControlModel
-from FacesSelectionView import StandardItemModelFaces
 
 #-------------------------------------------------------------------------------
 # log config
@@ -114,9 +113,6 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
         lines = []
         lines.append(self.mdl.getMeshCommand())
-        lines.append(self.mdl.getJoinCommand())
-        lines.append(self.mdl.getPerioCommand())
-        lines.append(self.mdl.getSelectCommand())
         lines.append(self.__getPostCommand())
         lines.append(" --case check_mesh ")
         log.debug("ecs_cmd = %s" % lines)
@@ -341,7 +337,6 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
 
         # connections
 
-        self.connect(self.groupBoxFaces, SIGNAL("clicked(bool)"), self.slotInterneFacesPostPro)
         self.connect(self.comboBoxFMTCHR, SIGNAL("activated(const QString&)"), self.slotOutputFormat)
         self.connect(self.comboBoxFormat, SIGNAL("activated(const QString&)"), self.slotOutputOptions)
         self.connect(self.comboBoxPolygon, SIGNAL("activated(const QString&)"), self.slotOutputOptions)
@@ -349,23 +344,9 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         self.connect(self.checkBoxBigEndian, SIGNAL("clicked()"), self.slotOutputOptions)
         self.connect(self.toolButtonBatch, SIGNAL("clicked()"), self.slotMeshChecking)
 
-        # Faces for selection (Custom Widgets)
-
-        model = StandardItemModelFaces(self, self.mdl, 'faces_select')
-        self.widgetFacesSelect.modelFaces = model
-        self.widgetFacesSelect.tableView.setModel(model)
-
         # INITIALISATIONS
-        # 1 - Visualization faces parameters
 
-        if self.mdl.getSelectStatus() == 'on':
-            self.groupBoxFaces.setChecked(True)
-            self.slotInterneFacesPostPro(True)
-        else:
-            self.groupBoxFaces.setChecked(False)
-            self.slotInterneFacesPostPro(False)
-
-        # 2 - Values of post processing's format
+        # 1 - Values of post processing's format
 
         fmt = self.out.getPostProFormat()
         self.modelFMTCHR.setItem(str_model=fmt)
@@ -374,25 +355,6 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
 
         if not self.mdl.getMeshList():
             self.toolButtonBatch.setEnabled(False)
-
-
-    @pyqtSignature("bool")
-    def slotInterneFacesPostPro(self, checked):
-        """
-        Private slot.
-
-        Do we join any meshes ?
-
-        @type checked: C{True} or C{False}
-        @param checked: if C{True}, shows the QGroupBox join parameters
-        """
-        self.groupBoxFaces.setFlat(not checked)
-        if checked:
-            self.mdl.setSelectStatus("on")
-            self.frameFaces.show()
-        else:
-            self.mdl.setSelectStatus("off")
-            self.frameFaces.hide()
 
 
     @pyqtSignature("const QString &")

@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2010 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -31,7 +31,6 @@
 This module contains the following classes and function:
 - SpinBoxDelegate
 - StandardItemModelMeshes
-- StandardItemModelPeriod
 - SolutionDomainMeshFormatDialogView
 - SolutionDomainView
 """
@@ -326,93 +325,6 @@ class StandardItemModelMeshes(QStandardItemModel):
         """
         return self.dataMeshes[row][0]
 
-#-------------------------------------------------------------------------------
-# StandarItemModelPeriod class
-#-------------------------------------------------------------------------------
-
-class StandardItemModelPeriod(QStandardItemModel):
-
-    def __init__(self, mdl):
-        """
-        """
-        QStandardItemModel.__init__(self)
-        self.mdl = mdl
-        self.headers = [ self.tr("Number"), self.tr("Name")]
-        self.tooltip = [self.tr("Code_Saturne Preprocessor option: --perio"),
-                        self.tr("Code_Saturne Preprocessor option: --perio")]
-
-        self.setColumnCount(len(self.headers))
-        self.dataPeriod = []
-
-        self.populateModel()
-
-
-    def populateModel(self):
-        l = self.mdl.getPeriodicityListName()
-        for i in range(self.mdl.getPeriodicityNumber()):
-            list   = []
-            list.append(i+1)
-            list.append(l[i])
-            self.dataPeriod.append(list)
-            log.debug("populateModel-> dataPeriod = %s" % list)
-            row = self.rowCount()
-            self.setRowCount(row + 1)
-
-
-    def data(self, index, role):
-        if not index.isValid():
-            return QVariant()
-        if role == Qt.DisplayRole:
-            return QVariant(self.dataPeriod[index.row()][index.column()])
-        return QVariant()
-
-
-    def flags(self, index):
-        if not index.isValid():
-            return Qt.ItemIsEnabled
-        elif index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        elif index.column() == 1:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-
-
-    def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.headers[section])
-        return QVariant()
-
-
-    def setData(self, index, value, role):
-        if index.column() == 1:
-            row = index.row()
-            new_name = str(value.toString())
-            if new_name:
-                self.mdl.changePeriodicityName(self.dataPeriod[row][1], new_name)
-                self.dataPeriod[row][1] = new_name
-
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
-        return True
-
-
-    def addRow(self):
-        """
-        Add a row in the model.
-        """
-        row = self.rowCount()
-        self.mdl.addPeriodicity("perio" + str(row+1))
-        item = [row+1, "perio" + str(row+1)]
-        self.dataPeriod.append(item)
-        self.setRowCount(row+1)
-
-
-    def deleteRow(self, row):
-        """
-        Delete the row in the model.
-        """
-        self.mdl.deletePeriodicity(self.dataPeriod[row][1])
-        del self.dataPeriod[row]
-        row = self.rowCount()
-        self.setRowCount(row-1)
 
 #-------------------------------------------------------------------------------
 # Popup window: Mesh Format dialog window
@@ -516,7 +428,6 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         self.connect(self.pushButtonAddMesh, SIGNAL("clicked()"), self.slotSearchMesh)
         self.connect(self.pushButtonDeleteMesh, SIGNAL("clicked()"), self.slotDeleteMesh)
-        self.connect(self.groupBoxJoin, SIGNAL("clicked(bool)"), self.slotJoinMeshes)
         self.connect(self.groupBoxWarp, SIGNAL("clicked(bool)"), self.slotFacesCutting)
         self.connect(self.lineEditWarp, SIGNAL("textChanged(const QString &)"), self.slotWarpParam)
         self.connect(self.groupBoxOrient, SIGNAL("clicked(bool)"), self.slotOrientation)
@@ -527,35 +438,31 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         # 1.4) Faces to join selection (Custom Widgets)
 
-        model = StandardItemModelFaces(self, self.mdl, 'faces_join')
-        #self.widgetFacesJoin.tableView.reset()
+        model = StandardItemModelFaces(self, self.mdl, 'face_joining')
         self.widgetFacesJoin.modelFaces = model
         self.widgetFacesJoin.tableView.setModel(model)
 
         # 2) PERIODICITIES
 
-        self.perio_name = ""
         self.perio_mode = ""
 
         # Model for periodicities
-        self.modelPeriod = StandardItemModelPeriod(self.mdl)
-        self.treeViewPeriod.setModel(self.modelPeriod)
-        self.treeViewPeriod.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        model = StandardItemModelFaces(self, self.mdl, 'face_periodicity')
+        self.widgetFacesPerio.modelFaces = model
+        self.widgetFacesPerio.tableView.setModel(model)
 
         # Combo model for type of periodicity
-        self.modelComboPeriod = ComboModel(self.comboBoxPeriodicity, 5, 1)
-        self.modelComboPeriod.addItem(self.tr("Periodicity of translation"), "translation")
-        self.modelComboPeriod.addItem(self.tr("Periodicity of rotation (defined by angle and direction)"), "rotation1")
-        self.modelComboPeriod.addItem(self.tr("Periodicity of rotation (defined by matrix)"), "rotation2")
-        self.modelComboPeriod.addItem(self.tr("Translation + rotation (defined by angle and direction)"), "tr+rota1")
-        self.modelComboPeriod.addItem(self.tr("Translation + rotation (defined by matrix)"), "tr+rota2")
+        self.modelComboPeriod = ComboModel(self.comboBoxPeriodicity, 3, 1)
+        self.modelComboPeriod.addItem(self.tr("Periodicity by translation"), "translation")
+        self.modelComboPeriod.addItem(self.tr("Periodicity by rotation (defined by angle and direction)"), "rotation")
+        self.modelComboPeriod.addItem(self.tr("Composite periodicity (defined by matrix)"), "mixed")
 
         # Display
         self.groupBoxMode.hide()
-        self.groupBoxFaces.hide()
         self.groupBoxTranslation.hide()
-        self.groupBoxRotation1.hide()
-        self.groupBoxRotation2.hide()
+        self.groupBoxRotation.hide()
+        self.groupBoxMixed.hide()
 
         # Set up validators
 
@@ -573,22 +480,27 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.lineEditM11.setValidator(DoubleValidator(self.lineEditM11))
         self.lineEditM12.setValidator(DoubleValidator(self.lineEditM12))
         self.lineEditM13.setValidator(DoubleValidator(self.lineEditM13))
+        self.lineEditM14.setValidator(DoubleValidator(self.lineEditM14))
         self.lineEditM21.setValidator(DoubleValidator(self.lineEditM21))
         self.lineEditM22.setValidator(DoubleValidator(self.lineEditM22))
         self.lineEditM23.setValidator(DoubleValidator(self.lineEditM23))
+        self.lineEditM24.setValidator(DoubleValidator(self.lineEditM24))
         self.lineEditM31.setValidator(DoubleValidator(self.lineEditM31))
         self.lineEditM32.setValidator(DoubleValidator(self.lineEditM32))
         self.lineEditM33.setValidator(DoubleValidator(self.lineEditM33))
-        self.lineEditX2.setValidator(DoubleValidator(self.lineEditX2))
-        self.lineEditY2.setValidator(DoubleValidator(self.lineEditY2))
-        self.lineEditZ2.setValidator(DoubleValidator(self.lineEditZ2))
+        self.lineEditM34.setValidator(DoubleValidator(self.lineEditM34))
 
         # Connections
 
-        self.connect(self.treeViewPeriod, SIGNAL("clicked(const QModelIndex &)"), self.slotUpdatePeriodicity)
-        self.connect(self.modelPeriod, SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.slotUpdateByModel)
-        self.connect(self.pushButtonAddPeriod,    SIGNAL("clicked()"), self.slotAddPeriodicity)
-        self.connect(self.pushButtonDeletePeriod, SIGNAL("clicked()"), self.slotDeletePeriodicity)
+        self.connect(self.widgetFacesPerio.tableView,
+                     SIGNAL("clicked(const QModelIndex &)"),
+                     self.slotUpdatePeriodicity)
+
+        self.connect(self.widgetFacesPerio.pushButtonDelete,
+                     SIGNAL("clicked()"),
+                     self.slotDeletePeriodicity)
+
+        # self.connect(self.modelPeriod, SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), self.slotUpdateByModel)
 
         self.connect(self.comboBoxPeriodicity, SIGNAL("activated(const QString&)"), self.slotPeriodicityMode)
 
@@ -609,16 +521,15 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.connect(self.lineEditM11, SIGNAL("textChanged(const QString &)"), self.slotMatrix11)
         self.connect(self.lineEditM12, SIGNAL("textChanged(const QString &)"), self.slotMatrix12)
         self.connect(self.lineEditM13, SIGNAL("textChanged(const QString &)"), self.slotMatrix13)
+        self.connect(self.lineEditM14, SIGNAL("textChanged(const QString &)"), self.slotMatrix14)
         self.connect(self.lineEditM21, SIGNAL("textChanged(const QString &)"), self.slotMatrix21)
         self.connect(self.lineEditM22, SIGNAL("textChanged(const QString &)"), self.slotMatrix22)
-        self.connect(self.lineEditM23, SIGNAL("textChanged(const QString &)"), self.slotMatrix22)
+        self.connect(self.lineEditM23, SIGNAL("textChanged(const QString &)"), self.slotMatrix23)
+        self.connect(self.lineEditM24, SIGNAL("textChanged(const QString &)"), self.slotMatrix24)
         self.connect(self.lineEditM31, SIGNAL("textChanged(const QString &)"), self.slotMatrix31)
         self.connect(self.lineEditM32, SIGNAL("textChanged(const QString &)"), self.slotMatrix32)
         self.connect(self.lineEditM33, SIGNAL("textChanged(const QString &)"), self.slotMatrix33)
-
-        self.connect(self.lineEditX2, SIGNAL("textChanged(const QString &)"), self.slotCenterRotationX2)
-        self.connect(self.lineEditY2, SIGNAL("textChanged(const QString &)"), self.slotCenterRotationY2)
-        self.connect(self.lineEditZ2, SIGNAL("textChanged(const QString &)"), self.slotCenterRotationZ2)
+        self.connect(self.lineEditM34, SIGNAL("textChanged(const QString &)"), self.slotMatrix34)
 
         # 3) INITIALIZE MESHES LIST
 
@@ -659,16 +570,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self._tableViewLayout()
 
 
-        # 3.2) Join parameters
-
-        if self.mdl.getJoinMeshesStatus() == 'on':
-            self.groupBoxJoin.setChecked(True)
-            self.slotJoinMeshes(True)
-        else:
-            self.groupBoxJoin.setChecked(False)
-            self.slotJoinMeshes(False)
-
-        # 3.3) Warped faces cutting
+        # 3.2) Warped faces cutting
 
         if self.mdl.getCutStatus() == 'on':
             self.groupBoxWarp.setChecked(True)
@@ -681,7 +583,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.warp = v
         self.lineEditWarp.setText(str(self.warp))
 
-        # 3.4) Reorientation
+        # 3.3) Reorientation
 
         if self.mdl.getOrientation() == 'on':
             self.groupBoxOrient.setChecked(True)
@@ -840,25 +742,6 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
 
     @pyqtSignature("bool")
-    def slotJoinMeshes(self, checked):
-        """
-        Private slot.
-
-        Do we join any meshes ?
-
-        @type checked: C{True} or C{False}
-        @param checked: if C{True}, shows the QGroupBox join parameters
-        """
-        self.groupBoxJoin.setFlat(not checked)
-        if checked:
-            self.mdl.setJoinMeshesStatus("on")
-            self.frameJoin.show()
-        else:
-            self.mdl.setJoinMeshesStatus("off")
-            self.frameJoin.hide()
-
-
-    @pyqtSignature("bool")
     def slotFacesCutting(self, checked):
         """
         Private slot.
@@ -910,47 +793,54 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
 
     @pyqtSignature("")
-    def slotAddPeriodicity(self):
-        """
-        Add a periodicity in the list.
-        """
-        self.modelPeriod.addRow()
-
-
-    @pyqtSignature("")
     def slotDeletePeriodicity(self):
         """
         Delete a periodicity from the list.
         """
-        self.groupBoxMode.hide()
-        self.groupBoxFaces.hide()
-        self.groupBoxTranslation.hide()
-        self.groupBoxRotation1.hide()
-        self.groupBoxRotation2.hide()
 
-        for index in self.treeViewPeriod.selectionModel().selectedIndexes():
-            self.modelPeriod.deleteRow(index.row())
-            break
+        log.debug("slotDeletePeriodicity  = %s " % self.perio_mode)
+
+        sel_rows = self.widgetFacesPerio.tableView.selectionModel().selectedIndexes()
+
+        perio_id = None
+
+        for row in sel_rows:
+
+            perio_id = row.row()
+            perio_mode = self.mdl.getPeriodicityMode(perio_id)
+
+            self.perio_id = perio_id
+            self.perio_mode = perio_mode
+            self.modelComboPeriod.setItem(str_model=perio_mode)
+            txt = str(self.comboBoxPeriodicity.currentText())
+            self.slotPeriodicityMode(txt)
+
+        if perio_id == None:
+
+            self.groupBoxMode.hide()
+            self.groupBoxTranslation.hide()
+            self.groupBoxRotation.hide()
+            self.groupBoxMixed.hide()
 
 
-    def __setValuesTranslation(self, perio_name):
+    def __setValuesTranslation(self, perio_id):
         """
         Put values found in xml file as soon as mode is "translation"
         """
-        dx, dy, dz = self.mdl.getTranslationDirection(perio_name)
+        dx, dy, dz = self.mdl.getTranslationDirection(perio_id)
 
         self.lineEditTX.setText(QString(dx))
         self.lineEditTY.setText(QString(dy))
         self.lineEditTZ.setText(QString(dz))
 
 
-    def __setValuesRotation1(self, perio_name):
+    def __setValuesRotation(self, perio_id):
         """
-        Put values found in xml file as soon as mode is "rotation1"
+        Put values found in xml file as soon as mode is "rotation"
         """
-        angle = self.mdl.getRotationAngle(perio_name)
-        rx, ry, rz = self.mdl.getRotationDirection(perio_name)
-        px, py, pz = self.mdl.getRotationCenter(perio_name)
+        angle = self.mdl.getRotationAngle(perio_id)
+        rx, ry, rz = self.mdl.getRotationDirection(perio_id)
+        px, py, pz = self.mdl.getRotationCenter(perio_id)
 
         self.lineEditAngle.setText(QString((angle)))
         self.lineEditDX.setText(QString(rx))
@@ -961,25 +851,24 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.lineEditZ1.setText(QString(pz))
 
 
-    def __setValuesRotation2(self, perio_name):
+    def __setValuesMixed(self, perio_id):
         """
         Put values found in xml file as soon as mode is "rotation"2
         """
-        m11,m12,m13,m21,m22,m23,m31,m32,m33 = self.mdl.getRotationMatrix(perio_name)
-        px, py, pz = self.mdl.getRotationCenter(perio_name)
+        m11,m12,m13,m14,m21,m22,m23,m24,m31,m32,m33,m34 = self.mdl.getTransformationMatrix(perio_id)
 
         self.lineEditM11.setText(QString(m11))
         self.lineEditM12.setText(QString(m12))
         self.lineEditM13.setText(QString(m13))
+        self.lineEditM14.setText(QString(m14))
         self.lineEditM21.setText(QString(m21))
         self.lineEditM22.setText(QString(m22))
         self.lineEditM23.setText(QString(m23))
+        self.lineEditM24.setText(QString(m24))
         self.lineEditM31.setText(QString(m31))
         self.lineEditM32.setText(QString(m32))
         self.lineEditM33.setText(QString(m33))
-        self.lineEditX2.setText(QString(px))
-        self.lineEditY2.setText(QString(py))
-        self.lineEditZ2.setText(QString(pz))
+        self.lineEditM34.setText(QString(m34))
 
 
     def __setValuesPeriodicTransformation(self, perio, mode):
@@ -990,23 +879,17 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         log.debug("__setValuesPeriodicTransformation perio mode = %s %s "% (perio, mode))
         if mode == "translation" :
             self.__setValuesTranslation(perio)
-        if mode == "rotation1":
-            self.__setValuesRotation1(perio)
-        if mode == "rotation2":
-            self.__setValuesRotation2(perio)
-        if mode == "tr+rota1":
-            self.__setValuesTranslation(perio)
-            self.__setValuesRotation1(perio)
-        if mode == "tr+rota2":
-            self.__setValuesTranslation(perio)
-            self.__setValuesRotation2(perio)
+        if mode == "rotation":
+            self.__setValuesRotation(perio)
+        if mode == "mixed":
+            self.__setValuesMixed(perio)
 
 
     @pyqtSignature("const QModelIndex&, const QModelIndex&")
     def slotUpdateByModel(self, index1, index2):
         """
-        This slot update the display for the periodicity modified
-        in the tree view.
+        This slot updates the display for the periodicity modified in the
+        in the table view.
         """
         log.debug("slotUpdateByModel index.row() = %i " % index1.row())
         self.slotUpdatePeriodicity(index1)
@@ -1015,90 +898,75 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     @pyqtSignature("const QModelIndex&")
     def slotUpdatePeriodicity(self, index):
         """
-        This slot update the display for the periodicity selected
-        in the tree view.
+        This slot updates the display for the periodicity selected
+        in the table view.
         """
         log.debug("slotUpdatePeriodicity index.row() = %i " % index.row())
 
         self.groupBoxMode.show()
-        self.groupBoxFaces.show()
 
-        perio_name = self.mdl.getPeriodicityListName()[index.row()]
-        perio_mode = self.mdl.getPeriodicityMode(perio_name)
-        self.perio_name = perio_name
+        perio_id = index.row()
+        perio_mode = self.mdl.getPeriodicityMode(perio_id)
+        self.perio_id = perio_id
         self.perio_mode = perio_mode
 
         self.modelComboPeriod.setItem(str_model=perio_mode)
         txt = str(self.comboBoxPeriodicity.currentText())
         self.slotPeriodicityMode(txt)
 
-        # Update FaceSelection
-#        self.widgetFacesPeriodic.setPeriodicityName(perio_name)
-#        self.widgetFacesPeriodic.populateModel(self.mdl, 'faces_periodic')
-        model = StandardItemModelFaces(self, self.mdl, 'faces_periodic', perio_name)
-        self.widgetFacesPeriodic.modelFaces = model
-        self.widgetFacesPeriodic.tableView.setModel(model)
-
     @pyqtSignature("const QString&")
     def slotPeriodicityMode(self, text):
         """
         Do we have a periodicity ?
         """
+
         self.perio_mode = self.modelComboPeriod.dicoV2M[str(text)]
-        #perio_number = self.treeViewPeriod.currentIndex().row()
-        #self.perio_number = str(perio_number+1)
 
         log.debug("slotPeriodicityMode  = %s " % self.perio_mode)
 
-        self.mdl.updatePeriodicityMode(self.perio_name, self.perio_mode)
-
-        # exit if no periodicity
-#        if self.perio_number == "0":
-#            log.debug("slotPeriodicityMode -> no periodicity ")
-#            return
-
         self.groupBoxTranslation.hide()
-        self.groupBoxRotation1.hide()
-        self.groupBoxRotation2.hide()
+        self.groupBoxRotation.hide()
+        self.groupBoxMixed.hide()
 
         if self.perio_mode == "":
             self.modelComboPeriod(str_model='translation')
-            self.__setValuesTranslation(self.perio_name)
 
         if self.perio_mode == "translation":
             self.groupBoxTranslation.show()
-            self.groupBoxRotation1.hide()
-            self.groupBoxRotation2.hide()
-            self.__setValuesTranslation(self.perio_name)
+            self.groupBoxRotation.hide()
+            self.groupBoxMixed.hide()
 
-        elif self.perio_mode == "rotation1":
+        elif self.perio_mode == "rotation":
             self.groupBoxTranslation.hide()
-            self.groupBoxRotation1.show()
-            self.groupBoxRotation2.hide()
-            self.__setValuesRotation1(self.perio_name)
+            self.groupBoxRotation.show()
+            self.groupBoxMixed.hide()
 
-        elif self.perio_mode == "rotation2":
+        elif self.perio_mode == "mixed":
             self.groupBoxTranslation.hide()
-            self.groupBoxRotation1.hide()
-            self.groupBoxRotation2.show()
-            self.__setValuesRotation2(self.perio_name)
+            self.groupBoxRotation.hide()
+            self.groupBoxMixed.show()
 
-        elif self.perio_mode == "tr+rota1":
-            self.groupBoxTranslation.show()
-            self.groupBoxRotation1.show()
-            self.groupBoxRotation2.hide()
-            self.__setValuesTranslation(self.perio_name)
-            self.__setValuesRotation1(self.perio_name)
+        sel_rows = self.widgetFacesPerio.tableView.selectionModel().selectedIndexes()
 
-        elif self.perio_mode == "tr+rota2":
-            self.groupBoxTranslation.show()
-            self.groupBoxRotation1.hide()
-            self.groupBoxRotation2.show()
-            self.__setValuesTranslation(self.perio_name)
-            self.__setValuesRotation2(self.perio_name)
+        for row in sel_rows:
 
-#        self.mdl.addPeriodicity(self.perio_name, self.perio_mode)
-        self.__setValuesPeriodicTransformation(self.perio_name, self.perio_mode)
+            perio_id = row.row()
+
+            self.mdl.updatePeriodicityMode(perio_id, self.perio_mode)
+
+            if self.perio_mode == "":
+                self.__setValuesTranslation(perio_id)
+
+            if self.perio_mode == "translation":
+                self.__setValuesTranslation(perio_id)
+
+            elif self.perio_mode == "rotation":
+                self.__setValuesRotation(perio_id)
+
+            elif self.perio_mode == "mixed":
+                self.__setValuesMixed(perio_id)
+
+            self.__setValuesPeriodicTransformation(self.perio_id, self.perio_mode)
 
 
     @pyqtSignature("const QString&")
@@ -1106,10 +974,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         """
         Periodicity translation for X
         """
-        if self.perio_mode != "rotation1" or self.perio_mode != "rotation2":
+        if self.perio_mode != "rotation" or self.perio_mode != "mixed":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setTranslationDirection(self.perio_name, 'translation_x', val)
+                self.mdl.setTranslationDirection(self.perio_id, 'translation_x', val)
 
 
     @pyqtSignature("const QString&")
@@ -1117,10 +985,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         """
         Periodicity translation for Y
         """
-        if self.perio_mode != "rotation1" or self.perio_mode != "rotation2":
+        if self.perio_mode != "rotation" or self.perio_mode != "mixed":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setTranslationDirection(self.perio_name, 'translation_y', val)
+                self.mdl.setTranslationDirection(self.perio_id, 'translation_y', val)
 
 
     @pyqtSignature("const QString&")
@@ -1128,10 +996,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         """
         Periodicity translation for Z
         """
-        if self.perio_mode != "rotation1" or self.perio_mode != "rotation2":
+        if self.perio_mode != "rotation" or self.perio_mode != "mixed":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setTranslationDirection(self.perio_name, 'translation_z', val)
+                self.mdl.setTranslationDirection(self.perio_id, 'translation_z', val)
 
 
     @pyqtSignature("const QString&")
@@ -1139,10 +1007,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         """
         Periodicity rotation angle
         """
-        if self.perio_mode == "rotation1" or self.perio_mode == "tr+rota1":
+        if self.perio_mode == "rotation":
             angle, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setRotationAngle(self.perio_name, angle)
+                self.mdl.setRotationAngle(self.perio_id, angle)
 
 
     @pyqtSignature("const QString&")
@@ -1150,10 +1018,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         """
         Periodicity rotation for X
         """
-        if self.perio_mode == "rotation1" or self.perio_mode =="tr+rota1":
+        if self.perio_mode == "rotation":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setRotationVector(self.perio_name, "rotation_x", val)
+                self.mdl.setRotationVector(self.perio_id, "axis_x", val)
 
 
     @pyqtSignature("const QString&")
@@ -1161,10 +1029,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         """
         Periodicity rotation for Y
         """
-        if self.perio_mode == "rotation1" or self.perio_mode =="tr+rota1":
+        if self.perio_mode == "rotation":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setRotationVector(self.perio_name, "rotation_y", val)
+                self.mdl.setRotationVector(self.perio_id, "axis_y", val)
 
 
     @pyqtSignature("const QString&")
@@ -1172,10 +1040,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         """
         Periodicity rotation for Z
         """
-        if self.perio_mode == "rotation1" or self.perio_mode =="tr+rota1":
+        if self.perio_mode == "rotation":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setRotationVector(self.perio_name, "rotation_z", val)
+                self.mdl.setRotationVector(self.perio_id, "axis_z", val)
 
 
     @pyqtSignature("const QString&")
@@ -1186,7 +1054,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setRotationCenter(self.perio_name, "rotation_center_x", val)
+                self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
 
     @pyqtSignature("const QString&")
@@ -1197,7 +1065,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setRotationCenter(self.perio_name, "rotation_center_y", val)
+                self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
 
     @pyqtSignature("const QString&")
@@ -1208,63 +1076,78 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setRotationCenter(self.perio_name, "rotation_center_z", val)
+                self.mdl.setRotationCenter(self.perio_id, "invariant_z", val)
 
 
     # Methods for matrix components
     @pyqtSignature("const QString&")
     def slotMatrix11(self, text):
-        self.__cmdMatrixRotation("rotation_matrix_11", text)
+        self.__cmdTransformationMatrix("matrix_11", text)
 
 
     @pyqtSignature("const QString&")
     def slotMatrix12(self, text):
-        self.__cmdMatrixRotation("rotation_matrix_12", text)
+        self.__cmdTransformationMatrix("matrix_12", text)
 
 
     @pyqtSignature("const QString&")
     def slotMatrix13(self, text):
-        self.__cmdMatrixRotation("rotation_matrix_13", text)
+        self.__cmdTransformationMatrix("matrix_13", text)
+
+
+    @pyqtSignature("const QString&")
+    def slotMatrix14(self, text):
+        self.__cmdTransformationMatrix("matrix_14", text)
 
 
     @pyqtSignature("const QString&")
     def slotMatrix21(self, text):
-        self.__cmdMatrixRotation("rotation_matrix_21", text)
+        self.__cmdTransformationMatrix("matrix_21", text)
 
 
     @pyqtSignature("const QString&")
     def slotMatrix22(self, text):
-        self.__cmdMatrixRotation("rotation_matrix_22", text)
+        self.__cmdTransformationMatrix("matrix_22", text)
 
 
     @pyqtSignature("const QString&")
     def slotMatrix23(self, text):
-        self.__cmdMatrixRotation("rotation_matrix_23", text)
+        self.__cmdTransformationMatrix("matrix_23", text)
+
+
+    @pyqtSignature("const QString&")
+    def slotMatrix24(self, text):
+        self.__cmdTransformationMatrix("matrix_24", text)
 
 
     @pyqtSignature("const QString&")
     def slotMatrix31(self, text):
-        self.__cmdMatrixRotation("rotation_matrix_31", text)
+        self.__cmdTransformationMatrix("matrix_31", text)
 
 
     @pyqtSignature("const QString&")
     def slotMatrix32(self, text):
-        self.__cmdMatrixRotation("rotation_matrix_32", text)
+        self.__cmdTransformationMatrix("matrix_32", text)
 
 
     @pyqtSignature("const QString&")
     def slotMatrix33(self, text):
-        self.__cmdMatrixRotation("rotation_matrix_33", text)
+        self.__cmdTransformationMatrix("matrix_33", text)
 
 
-    def __cmdMatrixRotation(self, pos, text):
+    @pyqtSignature("const QString&")
+    def slotMatrix34(self, text):
+        self.__cmdTransformationMatrix("matrix_34", text)
+
+
+    def __cmdTransformationMatrix(self, pos, text):
         """
         Periodicity translation
         """
-        if self.perio_mode == "rotation2" or self.perio_mode == "tr+rota2":
+        if self.perio_mode == "mixed":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setRotationMatrix(self.perio_name, pos, val)
+                self.mdl.setTransformationMatrix(self.perio_id, pos, val)
 
 
     @pyqtSignature("const QString&")
@@ -1275,7 +1158,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setRotationCenter(self.perio_name, "rotation_center_x", val)
+                self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
 
     @pyqtSignature("const QString&")
@@ -1286,7 +1169,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setRotationCenter(self.perio_name, "rotation_center_y", val)
+                self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
 
     @pyqtSignature("const QString&")
@@ -1297,7 +1180,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         if self.perio_mode != "translation":
             val, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
-                self.mdl.setRotationCenter(self.perio_name, "rotation_center_z", val)
+                self.mdl.setRotationCenter(self.perio_id, "invariant_z", val)
 
 
     def tr(self, text):

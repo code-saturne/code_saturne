@@ -115,8 +115,6 @@ class BatchRunningModel(Model):
         self.dicoValues = {}
         self.dicoValues['MESHES'] = None
         self.dicoValues['REORIENT'] = False
-        self.dicoValues['JOIN'] = None
-        self.dicoValues['PERIODICITY'] = None
         self.dicoValues['THERMOCHEMISTRY_DATA'] = None
         self.dicoValues['METEO_DATA'] = None
         self.dicoValues['USER_INPUT_FILES'] = None
@@ -269,9 +267,7 @@ class BatchRunningModel(Model):
         self.dicoValues['MESH'] = sdm.getMeshList()
 
         self.dicoValues['REORIENT'] = sdm.getReorientCommand()
-        self.dicoValues['JOIN'] = sdm.getJoinCommand()
         self.dicoValues['CUT_WARPED_FACES'] = sdm.getCutCommand()
-        self.dicoValues['PERIODICITY'] = sdm.getPerioCommand()
         self.dicoValues['PARAMETERS'] = os.path.basename(self.case['xmlfile'])
 
         # User 1D profiles are loaded as user result files
@@ -414,9 +410,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         "CS_TMP_PREFIX='/home/toto'\n"\
         "MESHES=None\n"\
         "REORIENT=False\n"\
-        "JOIN='--j  --color 98 99  --fraction 0.1  --plane 0.8'\n"\
         "CUT_WARPED_FACES='--cwf 0.001'\n"\
-        "PERIODICITY=\n"\
         "EXEC_PREPROCESS=True\n"\
         "EXEC_PARTITION=True\n"\
         "EXEC_SOLVER=True\n"\
@@ -543,9 +537,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         # The following keywords from the batch script file
         # are cancelled by the informations from the case !
         #   MESHES
-        #   JOIN
         #   CUT_WARPED_FACES
-        #   PERIODICITY
         #   REORIENT
         #
         dico = {\
@@ -560,13 +552,11 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'PARAMETERS': 'NEW.xml',
         'N_PROCS': 2,
         'USER_INPUT_FILES': ['data'],
-        'JOIN': None,
         'REORIENT': True,
         'CS_TMP_PREFIX': '/home/toto',
         'PBS_ppn': '2',
         'PBS_walltime': '1:00:00',
         'PBS_mem': '320',
-        'PERIODICITY': None,
         'EXEC_PREPROCESS':True,
         'EXEC_PARTITION':True,
         'EXEC_SOLVER':True,
@@ -594,10 +584,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         # are cancelled by the informations from the case !
         #   MESHES
         #   REORIENT
-        #   JOIN
         #   CUT_WARPED_FACES
-        #   PERIODICITY
-        #
         #
         dico_PBS = {\
         'PBS_nodes': '16',
@@ -608,13 +595,11 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'PARAMETERS': 'NEW.xml',
         'N_PROCS': None,
         'USER_INPUT_FILES': None,
-        'JOIN': '',
         'REORIENT': True,
         'CS_TMP_PREFIX': '',
         'PBS_ppn': '1',
         'PBS_walltime': '34:77:22',
-        'PBS_mem': '832',
-        'PERIODICITY': ''}
+        'PBS_mem': '832'}
 
         for k in dico_PBS.keys():
             if mdl.dicoValues[k] != dico_PBS[k] :

@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2010 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -193,12 +193,11 @@ class SolutionDomainModel(MeshModel, Model):
 
         self.node_ecs        = self.case.xmlGetNode('solution_domain')
         self.node_meshes     = self.node_ecs.xmlInitNode('meshes_list')
-        self.node_join       = self.node_ecs.xmlInitNode('join_meshes', "status")
         self.node_cut        = self.node_ecs.xmlInitNode('faces_cutting', "status")
         self.node_orient     = self.node_ecs.xmlInitNode('reorientation', "status")
-        self.node_perio      = self.node_ecs.xmlInitNode('periodic_boundary')
+        self.node_join       = self.node_ecs.xmlInitNode('joining')
+        self.node_perio      = self.node_ecs.xmlInitNode('periodicity')
         self.node_standalone = self.node_ecs.xmlInitNode('standalone')
-##        self.node_select     = self.node_standalone.xmlInitNode('faces_select', "status")
 
 
 #************************* Private methods *****************************
@@ -208,16 +207,13 @@ class SolutionDomainModel(MeshModel, Model):
         Return a dictionary with default values
         """
         defvalue = {}
-        defvalue['join_status']    = "off"
         defvalue['cutting_status'] = "off"
         defvalue['reorientation']  = "off"
         defvalue['select_status']  = "off"
-        defvalue['color']          = ""
-        defvalue['group']          = ""
-        defvalue['reverse']        = "off"
+        defvalue['selector']       = "all[]"
         defvalue['fraction']       = 0.1
-        defvalue['plan']           = 0.8
-        defvalue['semiconf']       = "off"
+        defvalue['plane']          = 25.0
+        defvalue['verbosity']      = 1
         defvalue['angle']          = 0.01
         defvalue['syrth_status']   = "off"
         defvalue['syrth_mesh_2d']  = "off"
@@ -225,7 +221,7 @@ class SolutionDomainModel(MeshModel, Model):
         defvalue['verif_mail']     = "on"
         defvalue['postprocessing_format'] = "EnSight"
         defvalue['postprocessing_options'] = "binary"
-        defvalue['dir_cas']        = "cas_defaut"
+        defvalue['dir_cas']        = "default_case"
         defvalue['poly_status']    = "off"
         defvalue['perio_mode']     = "translation"
         defvalue['transfo_val']    = 0.0
@@ -239,19 +235,15 @@ class SolutionDomainModel(MeshModel, Model):
         """
         self.isInList(keyword,('MESH',
                                'REORIENT',
-                               'JOIN',
                                'CUT_WARPED_FACES',
-                               'PERIODICITY',
-                               'CUT_WARPED_FACES_OFF',
-                               'JOIN_OFF',
-                               'PERIODICITY_OFF'))
+                               'CUT_WARPED_FACES_OFF'))
         key = self.case['computer']
         if key:
             if not self.case['batchScript'][key]: return
 
             from BatchRunningModel import BatchRunningModel
             batch = BatchRunningModel(self.case)
-            if keyword in ('CUT_WARPED_FACES_OFF', 'JOIN_OFF', 'PERIODICITY_OFF'):
+            if keyword in ('CUT_WARPED_FACES_OFF'):
                 keyword = string.split(keyword,'_OFF')[:1][0]
                 batch.dicoValues[keyword] = None
             batch.initializeBatchScriptFile()
@@ -266,21 +258,30 @@ class SolutionDomainModel(MeshModel, Model):
         """
         Private method: Return node corresponding at item "tag"
         """
-        self.isInList(tagName, ('faces_join', 'faces_select', 'faces_periodic'))
-        if tagName == 'faces_join':
+        self.isInList(tagName, ('face_joining', 'face_periodicity'))
+        if tagName == 'face_joining':
             node = self.node_join
-        elif tagName == 'faces_select':
-            node = self.node_standalone
-        elif tagName == 'faces_periodic':
+        elif tagName == 'face_periodicity':
             node = self.node_perio
         return node
 
 
-    def _updateJoinSelectionsNumbers(self):
+    def _getJoinNode(self, join_id):
+        """
+        Get node for a given joining
+        """
+        node = None
+        listNode = self.node_join.xmlGetNodeList('face_joining')
+        if join_id < len(listNode):
+            node = listNode[join_id]
+
+        return node
+
+    def _updateJoinSelectionNumbers(self):
         """
         Update names of join selection
         """
-        listNode = self.node_join.xmlGetNodeList('faces_join')
+        listNode = self.node_join.xmlGetNodeList('face_joining')
         i = 0
         for node in listNode:
             i = i + 1
@@ -288,135 +289,96 @@ class SolutionDomainModel(MeshModel, Model):
                 node['name'] = str(i)
 
 
-    def getJoinSelectionsNumber(self):
-        """
-        Public method.
-
-        @return: number of join faces selections
-        @rtype: C{int}
-        """
-        return len(self.node_join.xmlGetNodeList('faces_join'))
-
-
-    def _addFacesSelect(self, node, select):
+    def _addJoinSelect(self, node, select):
         """
         Private method: Add faces to node (join, periodic) with dictionary select.
         """
-        for sel, txt in [ (select['color'],    'faces_color'),
-                          (select['group'],    'faces_group'),
-                          (select['fraction'], 'faces_fraction'),
-                          (select['plan'],     'faces_plan')]:
+        for sel, txt in [ (select['selector'],  'selector'),
+                          (select['fraction'],  'fraction'),
+                          (select['plane'],     'plane'),
+                          (select['verbosity'], 'verbosity')]:
             if sel:
                 node.xmlSetData(txt, sel)
             else:
                 node.xmlRemoveChild(txt)
 
-        if select['reverse'] == 'on':
-            node_revers = node.xmlInitNode('faces_reverse', status='on')
-        else:
-            node.xmlRemoveChild('faces_reverse')
-
-        if select['semiconf'] == 'on':
-            node_semiconf = node.xmlInitNode('faces_semi_conf', status='on')
-        else:
-            node.xmlRemoveChild('faces_semi_conf')
-
 
     def _getFaces(self, node):
         """
-        Private method: Return values found for color, group .. for node "node"
+        Private method: Return values found for joining for a given node
         """
         default = {}
-        default['color'] =""
-        default['group'] = ""
+        default['selector'] =""
         default['fraction'] = ""
-        default['plan'] = ""
-        default['reverse'] = ""
-        default['semiconf'] = ""
+        default['plane'] = ""
+        default['verbosity'] = ""
 
         if node:
-            default['color']    = node.xmlGetString('faces_color')
-            default['group']    = node.xmlGetString('faces_group')
-            default['fraction'] = node.xmlGetString('faces_fraction')
-            default['plan']     = node.xmlGetString('faces_plan')
+            default['selector']  = node.xmlGetString('selector')
+            default['fraction']  = node.xmlGetString('fraction')
+            default['plane']     = node.xmlGetString('plane')
+            default['verbosity'] = node.xmlGetString('verbosity')
 
-            n_revers = node.xmlGetNode('faces_reverse', 'status')
-
-            if n_revers:
-                default['reverse'] = n_revers['status']
-            else:
-                default['reverse'] = "off"
-
-            n_semi_conf = node.xmlGetNode('faces_semi_conf', 'status')
-
-            if n_semi_conf:
-                default['semiconf'] = n_semi_conf['status']
-            else:
-                default['semiconf'] = "off"
-        if default['color'] == '' and default['group'] == '' and default['fraction'] == ""\
-                                  and default['plan'] == "" and default['reverse'] == "off" \
-                                  and default['semiconf'] == "off":
+        if     default['selector'] == '' and default['fraction'] == "" \
+           and default['plane'] == "" and default['verbosity'] == "":
             default = {}
 
         return default
 
 
-    def _removeChildren(self, node):
+    def _removeJoinChildren(self, node):
         """
         Private method: Remove all child nodes of node for one selection
         """
-        for tag in ('faces_color',
-                    'faces_group',
-                    'faces_fraction',
-                    'faces_plan',
-                    'faces_reverse',
-                    'faces_semi_conf'):
+        for tag in ('selector',
+                    'fraction',
+                    'plane',
+                    'verbosity',):
             node.xmlRemoveChild(tag)
-
-
-    def _getLineCommand(self, node):
-        """
-        Private method: Get color group faces and revers satus and fraction
-        and plan datas for ommand line to preprocessor execution
-        """
-        line = ""
-        coul = node.xmlGetString('faces_color')
-        grp = node.xmlGetString('faces_group')
-        n_revers = node.xmlGetNode('faces_reverse', 'status')
-        n_semi_conf = node.xmlGetNode('faces_semi_conf',' status')
-
-        if coul:
-            line += " --color " + coul
-        if grp:
-            line += " --group " + grp
-        if n_revers and n_revers['status'] == "on":
-            line += " --invsel"
-        if n_semi_conf and n_semi_conf['status'] == "on":
-            line += " --semi-conf"
-
-        return line
 
 
 #To follow : private methods for periodicity:
 #===========================================
 
-
-    def _setPeriodicNewMode(self, perio_name, new_mode):
+    def _getPerioNode(self, perio_id):
         """
-        Private method: Set node and mode of periodicity for transformation named 'perio_name'
+        Get node for a given periodicity
         """
-        #self.isInList(perio_name, ("0", "1", "2", "3"))
-        #self.isLowerOrEqual(int(perio_name), int(self.getPeriodicityNumber()))
-        self.isInList(perio_name, self.getPeriodicityListName())
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
-        node['mode'] = new_mode
+        node = None
+        listNode = self.node_perio.xmlGetNodeList('face_periodicity')
+        if perio_id < len(listNode):
+            node = listNode[perio_id]
+
+        return node
+
+    def _updatePerioSelectionNumbers(self):
+        """
+        Update names of periodicity selections
+        """
+        listNode = self.node_perio.xmlGetNodeList('face_periodicity')
+        i = 0
+        for node in listNode:
+            i = i + 1
+            if int(node['name']) > i:
+                node['name'] = str(i)
 
 
-    def _setTranslationDefault(self, perio_name):
+    def _setPeriodicNewMode(self, perio_id, new_mode):
+        """
+        Private method: Set node and mode of given periodicity'
+        """
+        listNode = self.node_perio.xmlGetNodeList('face_periodicity')
+        if perio_id < len(listNode):
+            node = listNode[perio_id]
+            node['mode'] = new_mode
+
+
+    def _setTranslationDefault(self, perio_id):
         """
         Private method: Put default values of translation for periodic translation
         """
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
+        node = self._getPerioNode(perio_id)
+
         if node:
             nList = node.xmlInitChildNodeList('translation')
             for n in nList:
@@ -425,34 +387,39 @@ class SolutionDomainModel(MeshModel, Model):
                 n.xmlSetData('translation_z', self.defaultValues()['transfo_val'])
 
 
-    def _setRotation1Default(self, perio_name):
+    def _setRotationDefault(self, perio_id):
         """
         Private method: Put default values of translation for periodic translation
         """
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
-        nList = node.xmlInitChildNodeList('rotation1')
-        for n in nList:
-            n.xmlSetData('rotation_angle', self.defaultValues()['transfo_val'])
-            n.xmlSetData('rotation_x', self.defaultValues()['transfo_val'])
-            n.xmlSetData('rotation_y', self.defaultValues()['transfo_val'])
-            n.xmlSetData('rotation_z', self.defaultValues()['transfo_val'])
-            n.xmlSetData('rotation_center_x', self.defaultValues()['transfo_val'])
-            n.xmlSetData('rotation_center_y', self.defaultValues()['transfo_val'])
-            n.xmlSetData('rotation_center_z', self.defaultValues()['transfo_val'])
+        node = self._getPerioNode(perio_id)
+
+        if node:
+            nList = node.xmlInitChildNodeList('rotation')
+            for n in nList:
+                n.xmlSetData('angle', self.defaultValues()['transfo_val'])
+                n.xmlSetData('axis_x', self.defaultValues()['transfo_val'])
+                n.xmlSetData('axis_y', self.defaultValues()['transfo_val'])
+                n.xmlSetData('axis_z', self.defaultValues()['transfo_val'])
+                n.xmlSetData('invariant_x', self.defaultValues()['transfo_val'])
+                n.xmlSetData('invariant_y', self.defaultValues()['transfo_val'])
+                n.xmlSetData('invariant_z', self.defaultValues()['transfo_val'])
 
 
-    def _setRotation2Default(self, perio_name):
+    def _setMixedDefault(self, perio_id):
         """
         Private method: Put default values of translation for periodic translation
         """
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
-        nList = node.xmlInitChildNodeList('rotation2')
-        for n in nList:
-            for txt in ('rotation_matrix_11', 'rotation_matrix_12', 'rotation_matrix_13',
-                        'rotation_matrix_21', 'rotation_matrix_22', 'rotation_matrix_23',
-                        'rotation_matrix_31', 'rotation_matrix_32', 'rotation_matrix_33',
-                        'rotation_center_y', 'rotation_center_z', ):
-                n.xmlSetData(txt, self.defaultValues()['transfo_val'])
+        node = self._getPerioNode(perio_id)
+
+        if node:
+            nList = node.xmlInitChildNodeList('mixed')
+            for n in nList:
+                for txt in ('matrix_12', 'matrix_13', 'matrix_14',
+                            'matrix_21', 'matrix_23', 'matrix_24',
+                            'matrix_31', 'matrix_32', 'matrix_34'):
+                    n.xmlSetData(txt, 0.0)
+                for txt in ('matrix_11', 'matrix_22', 'matrix_33'):
+                    n.xmlSetData(txt, 1.0)
 
 
 #************************* Methods callable by users*****************************
@@ -594,32 +561,6 @@ class SolutionDomainModel(MeshModel, Model):
 # Methods to manage status of all main tags :
 #==========================================
 
-    def getJoinMeshesStatus(self):
-        """
-        Get status on tag "join_meshes" from xml file
-        """
-        status = self.node_join['status']
-        if not status:
-            status = self.defaultValues()['join_status']
-            self.setJoinMeshesStatus(status)
-        return status
-
-
-    def setJoinMeshesStatus(self, status):
-        """
-        Put status on tag "join_meshes" in xml file
-        """
-        self.isOnOff(status)
-        if self.node_join:
-            self.node_join['status'] = status
-        else:
-            self.node_join = self.node_ecs.xmlInitNode('join_meshes', status=status)
-        if status == 'off':
-            self._updateBatchScriptFile('JOIN_OFF')
-        else:
-            self._updateBatchScriptFile('JOIN')
-
-
     def getCutStatus(self):
         """
         Get status on tag "faces_cutting" from xml file
@@ -752,153 +693,90 @@ class SolutionDomainModel(MeshModel, Model):
 # Methods to manage periodicity :
 #==============================
 
-    def getPeriodicityListName(self):
+    def getPeriodicSelectionsCount(self):
         """
         Public method.
 
-        @return: list of name of defined periodic transformation
-        @rype: C{list}
-        """
-        l = []
-        for node in self.node_perio.xmlGetNodeList('transformation'):
-            l.append(node['name'])
-        return l
-
-
-    def getPeriodicityNumber(self):
-        """
-        Public method.
-
-        @return: number of "periodic_boundary" markup in xml file
+        @return: number of periodic faces selections
         @rtype: C{int}
         """
-        return len(self.node_perio.xmlGetNodeList('transformation'))
+        return len(self.node_perio.xmlGetNodeList('face_periodicity'))
 
 
-    def getPeriodicityMode(self, perio_name):
+    def getPeriodicityMode(self, perio_id):
         """
         Public method.
 
-        @type perio_name: C{str}
-        @param perio_name: name of the periodic boundary
-        @return: mode of transformation of periodic boundary I{perio_name}
+        @type perio_id: C{int}
+        @param perio_id: id of the periodic boundary
+        @return: mode of transformation of periodic boundary I{perio_id}
         @rtype: C{str}
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
+        node = self._getPerioNode(perio_id)
 
-        node = self.node_perio.xmlGetNode('transformation', 'mode', name=perio_name)
         mode = node['mode']
         if not mode:
             mode = self.defaultValues()['perio_mode']
-            self.addPeriodicity(perio_name)
+
         return mode
 
 
-    def addPeriodicity(self, perio_name):
-        """
-        Public method.
-
-        Add a new transformation in periodic boundary.
-
-        @type perio_name: C{str}
-        @param perio_name: name of the periodic boundary
-        """
-        self.isNotInList(perio_name, self.getPeriodicityListName())
-
-        m = self.defaultValues()['perio_mode']
-        self.node_perio.xmlInitNode('transformation', mode="", name=perio_name)
-        self.updatePeriodicityMode(perio_name, m)
-
-
-    def updatePeriodicityMode(self, perio_name, mode):
+    def updatePeriodicityMode(self, perio_id, mode):
         """
         Public method.
 
         Update transformation mode from a periodic boundary
 
-        @type perio_name: C{str}
-        @param perio_name: name of the periodic boundary
+        @type perio_id: C{int}
+        @param perio_id: id of the periodic boundary
         @type mode: C{str}
-        @param mode: mode of the periodic boundary (i.e.: 'translation', 'rotation1', 'rotation2', 'tr+rota1', 'tr+rota2')
+        @param mode: mode of the periodic boundary (i.e.: 'translation', 'rotation', 'mixed')
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
-        self.isInList(mode, ('translation', 'rotation1', 'rotation2', 'tr+rota1', 'tr+rota2'))
+        node = self._getPerioNode(perio_id)
 
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
+        self.isInList(mode, ('translation', 'rotation', 'mixed'))
+
         if node['mode'] != mode:
             node['mode'] = mode
 
-            if mode in ('translation', 'rotation1', 'rotation2'):
+            if mode in ('translation', 'rotation', 'mixed'):
                 if not node.xmlGetChildNode(mode):
                   if mode =="translation":
-                      self._setTranslationDefault(perio_name)
-                  elif mode =="rotation1":
-                      self._setRotation1Default(perio_name)
-                  elif mode =="rotation2":
-                      self._setRotation2Default(perio_name)
-            else:
-                if mode =="tr+rota1":
-                    if not node.xmlGetChildNode('translation'):
-                        self._setTranslationDefault(perio_name)
-                    if not node.xmlGetChildNode('rotation1'):
-                        self._setRotation1Default(perio_name)
-                elif mode =="tr+rota2":
-                    if not node.xmlGetChildNodeList('translation'):
-                        self._setTranslationDefault(perio_name)
-                    if not node.xmlGetChildNodeList('rotation2'):
-                        self._setRotation2Default(perio_name)
-
-            self._updateBatchScriptFile('PERIODICITY')
+                      self._setTranslationDefault(perio_id)
+                  elif mode =="rotation":
+                      self._setRotationDefault(perio_id)
+                  elif mode =="mixed":
+                      self._setMixedDefault(perio_id)
 
 
-    def deletePeriodicity(self, perio_name):
+    def deletePeriodicity(self, perio_id):
         """
         Public method.
 
         Delete a transformation in periodic boundary.
 
-        @type perio_name: C{str}
-        @param perio_name: name of the periodic boundary
+        @type perio_id: C{str}
+        @param perio_id: name of the periodic boundary
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
-        self.node_perio.xmlGetNode('transformation', name=perio_name).xmlRemoveNode()
-
-        if len(self.node_perio.xmlGetNodeList('transformation')) == 0:
-            self._updateBatchScriptFile('PERIODICITY_OFF')
-        else:
-            self._updateBatchScriptFile('PERIODICITY')
+        node = self._getPerioNode(perio_id)
+        node.xmlRemoveNode()
+        if perio_id < self.getPeriodicSelectionsCount():
+            self._updatePerioSelectionNumbers()
 
 
-    def changePeriodicityName(self, perio_name, new_name):
-        """
-        Public method.
-
-        Change the label name of a periodic boundary
-
-        @type perio_name: C{str}
-        @param perio_name: old name of the periodic boundary
-        @type new_name: C{str}
-        @param new_name: new name of the periodic boundary
-        """
-        self.isInList(perio_name, self.getPeriodicityListName())
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
-        node['name'] = new_name
-
-
-    def getTranslationDirection(self, perio_name):
+    def getTranslationDirection(self, perio_id):
         """
         Public method.
 
         Get values of translation for periodic translation
 
-        @type perio_name: C{str}
-        @param perio_name: name of the periodic boundary
+        @type perio_id: C{int}
+        @param perio_id: name of the periodic boundary
         @return: values of translation for periodic translation
         @rtype: 3 C{float}
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
+        node = self._getPerioNode(perio_id)
 
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
         n = node.xmlGetChildNode('translation')
         dx = n.xmlGetString('translation_x')
         dy = n.xmlGetString('translation_y')
@@ -907,386 +785,240 @@ class SolutionDomainModel(MeshModel, Model):
         return dx, dy, dz
 
 
-    def setTranslationDirection(self, perio_name, dir, valcoor):
+    def setTranslationDirection(self, perio_id, dir, valcoor):
         """
         Put values of translation for periodic translation
         """
         self.isFloat(valcoor)
-        self.isInList(perio_name, self.getPeriodicityListName())
-        self.isInList(dir, ("translation_x", "translation_y", "translation_z"))
+        self.isInList(dir, ('translation_x', 'translation_y', 'translation_z'))
 
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
+        node = self._getPerioNode(perio_id)
+
         for n in node.xmlGetChildNodeList('translation'):
             n.xmlSetData(dir, valcoor)
-        self._updateBatchScriptFile('PERIODICITY')
 
 
-    def getRotationDirection(self, perio_name):
+    def getRotationDirection(self, perio_id):
         """
         Get values for director vector rotation for periodic translation
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
+        node = self._getPerioNode(perio_id)
 
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
-        n = node.xmlGetChildNode('rotation1')
-        rx = n.xmlGetString('rotation_x')
-        ry = n.xmlGetString('rotation_y')
-        rz = n.xmlGetString('rotation_z')
+        n = node.xmlGetChildNode('rotation')
+        rx = n.xmlGetString('axis_x')
+        ry = n.xmlGetString('axis_y')
+        rz = n.xmlGetString('axis_z')
 
         return rx, ry, rz
 
 
-    def setRotationVector(self, perio_name, dir, valcoor):
+    def setRotationVector(self, perio_id, dir, valcoor):
         """
         Put values for director vector rotation for periodic translation
         """
         self.isFloat(valcoor)
-        self.isInList(perio_name, self.getPeriodicityListName())
-        self.isInList(dir, ("rotation_x", "rotation_y", "rotation_z"))
+        self.isInList(dir, ("axis_x", "axis_y", "axis_z"))
 
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
-        n = node.xmlGetChildNode('rotation1')
+        node = self._getPerioNode(perio_id)
+
+        n = node.xmlGetChildNode('rotation')
         n.xmlSetData(dir,valcoor)
-        self._updateBatchScriptFile('PERIODICITY')
 
 
-    def getRotationAngle(self, perio_name):
+    def getRotationAngle(self, perio_id):
         """
         Get angle for rotation for periodic rotation
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
+        node = self._getPerioNode(perio_id)
 
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
-        n = node.xmlGetChildNode('rotation1')
-        angle = n.xmlGetString('rotation_angle')
+        n = node.xmlGetChildNode('rotation')
+        angle = n.xmlGetString('angle')
 
         return angle
 
 
-    def setRotationAngle(self, perio_name, angle):
+    def setRotationAngle(self, perio_id, angle):
         """
         Put angle for rotation for periodic rotation
         """
         self.isGreaterOrEqual(angle, 0.0)
-        self.isInList(perio_name, self.getPeriodicityListName())
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
-        n = node.xmlGetChildNode('rotation1')
-        n.xmlSetData('rotation_angle', angle)
-        self._updateBatchScriptFile('PERIODICITY')
+
+        node = self._getPerioNode(perio_id)
+
+        n = node.xmlGetChildNode('rotation')
+        n.xmlSetData('angle', angle)
 
 
-    def getRotationCenter(self, perio_name):
+    def getRotationCenter(self, perio_id):
         """
         Get coordinates of center of rotation for periodic transformation
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
-        mode = self.getPeriodicityMode(perio_name)
-        self.isInList(mode, ('rotation1', 'rotation2', 'tr+rota1', 'tr+rota2'))
+        mode = self.getPeriodicityMode(perio_id)
+        self.isInList(mode, ('rotation'))
 
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
+        node = self._getPerioNode(perio_id)
 
-        if mode == "rotation1" or mode == "tr+rota1":
-            n = node.xmlGetChildNode('rotation1')
-        elif mode == "rotation2" or mode == "tr+rota2":
-            n = node.xmlGetChildNode('rotation2')
-        px = n.xmlGetString('rotation_center_x')
-        py = n.xmlGetString('rotation_center_y')
-        pz = n.xmlGetString('rotation_center_z')
+        if mode == "rotation":
+            n = node.xmlGetChildNode('rotation')
+        px = n.xmlGetString('invariant_x')
+        py = n.xmlGetString('invariant_y')
+        pz = n.xmlGetString('invariant_z')
 
         return px, py, pz
 
 
-    def setRotationCenter(self, perio_name, pos, val):
+    def setRotationCenter(self, perio_id, pos, val):
         """
         Put coordinates of center of rotation for periodic transformation
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
         self.isFloat(val)
-        self.isInList(pos, ("rotation_center_x", "rotation_center_y", "rotation_center_z"))
-        mode = self.getPeriodicityMode(perio_name)
-        self.isInList(mode, ('rotation1', 'rotation2', 'tr+rota1', 'tr+rota2'))
+        self.isInList(pos, ('invariant_x', 'invariant_y', 'invariant_z'))
+        mode = self.getPeriodicityMode(perio_id)
+        self.isInList(mode, ('rotation'))
 
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
+        node = self._getPerioNode(perio_id)
 
-        if mode == "rotation1" or mode == "tr+rota1":
-            n = node.xmlGetChildNode('rotation1')
-        elif mode == "rotation2" or mode == "tr+rota2":
-            n = node.xmlGetChildNode('rotation2')
+        if mode == 'rotation':
+            n = node.xmlGetChildNode('rotation')
         n.xmlSetData(pos, val)
-        self._updateBatchScriptFile('PERIODICITY')
 
 
-    def getRotationMatrix(self, perio_name):
+    def getTransformationMatrix(self, perio_id):
         """
         Get values of matrix of rotation for periodic transformation
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
-        mode = self.getPeriodicityMode(perio_name)
-        self.isInList(mode, ('rotation2', 'tr+rota2'))
+        mode = self.getPeriodicityMode(perio_id)
+        self.isInList(mode, ('mixed'))
 
-        node = self.node_perio.xmlGetNode('transformation', name=perio_name)
-        n = node.xmlGetChildNode('rotation2')
-        m11 = n.xmlGetString('rotation_matrix_11')
-        m12 = n.xmlGetString('rotation_matrix_12')
-        m13 = n.xmlGetString('rotation_matrix_13')
-        m21 = n.xmlGetString('rotation_matrix_21')
-        m22 = n.xmlGetString('rotation_matrix_22')
-        m23 = n.xmlGetString('rotation_matrix_23')
-        m31 = n.xmlGetString('rotation_matrix_31')
-        m32 = n.xmlGetString('rotation_matrix_32')
-        m33 = n.xmlGetString('rotation_matrix_33')
+        node = self._getPerioNode(perio_id)
 
-        return m11, m12, m13, m21, m22, m23, m31, m32, m33
+        n = node.xmlGetChildNode('mixed')
+        m11 = n.xmlGetString('matrix_11')
+        m12 = n.xmlGetString('matrix_12')
+        m13 = n.xmlGetString('matrix_13')
+        m14 = n.xmlGetString('matrix_14')
+        m21 = n.xmlGetString('matrix_21')
+        m22 = n.xmlGetString('matrix_22')
+        m23 = n.xmlGetString('matrix_23')
+        m24 = n.xmlGetString('matrix_24')
+        m31 = n.xmlGetString('matrix_31')
+        m32 = n.xmlGetString('matrix_32')
+        m33 = n.xmlGetString('matrix_33')
+        m34 = n.xmlGetString('matrix_34')
+
+        return m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34
 
 
-    def setRotationMatrix(self, perio_name, pos, val):
+    def setTransformationMatrix(self, perio_id, pos, val):
         """
         Put values of matrix of rotation for periodic transformation
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
         self.isFloat(val)
-        self.isInList(pos, ('rotation_matrix_11','rotation_matrix_12','rotation_matrix_13',
-                            'rotation_matrix_21','rotation_matrix_22','rotation_matrix_23',
-                            'rotation_matrix_31','rotation_matrix_32','rotation_matrix_33'))
-        mode = self.getPeriodicityMode(perio_name)
-        self.isInList(mode, ('rotation2', 'tr+rota2'))
+        self.isInList(pos, ('matrix_11','matrix_12', 'matrix_13','matrix_14',
+                            'matrix_21','matrix_22', 'matrix_23','matrix_24',
+                            'matrix_31','matrix_32', 'matrix_33','matrix_34'))
+        mode = self.getPeriodicityMode(perio_id)
+        self.isInList(mode, ('mixed'))
 
-        node = self.node_perio.xmlGetNode('transformation', 'mode', name=perio_name)
-        n = node.xmlGetChildNode('rotation2')
+        node = self._getPerioNode(perio_id)
+
+        n = node.xmlGetChildNode('mixed')
         n.xmlSetData(pos, val)
-        self._updateBatchScriptFile('PERIODICITY')
 
 
-# Methods to manage faces :
-#========================
-
-    def addJoinFaces(self, select):
-        """
-        Add faces selection for join meshes.
-        Select is a dictionary with 'color', 'group', 'fraction', 'plan'
-        """
-        nb = self.getJoinSelectionsNumber()
-        name = str(nb +1)
-        node = self.node_join.xmlAddChild('faces_join', status="on", name=name)
-        self._addFacesSelect(node, select)
-        self._updateBatchScriptFile('JOIN')
-
-
-    def getJoinFaces(self, number):
-        """
-        Return faces selection named 'number' for join meshes .
-        """
-        self.isLowerOrEqual(int(number), int(self.getJoinSelectionsNumber()))
-
-        node = self.node_join.xmlGetNode('faces_join', status="on", name=number)
-        return self._getFaces(node)
-
-
-    def replaceJoinFaces(self, number, select):
-        """
-        Replace values of faces selection named 'number' for join meshes, by select
-        """
-        self.isLowerOrEqual(int(number), int(self.getJoinSelectionsNumber()))
-
-        node = self.node_join.xmlGetNode('faces_join', status="on", name=number)
-        self._removeChildren(node)
-        self._addFacesSelect(node, select)
-        self._updateBatchScriptFile('JOIN')
-
-
-    def deleteJoinFaces(self, number):
-        """
-        Delete faces selection named 'number' for join meshes
-        """
-        self.isLowerOrEqual(int(number), int(self.getJoinSelectionsNumber()))
-
-        node = self.node_join.xmlGetNode('faces_join', status="on", name=number)
-        node.xmlRemoveNode()
-        if int(number) <= int(self.getJoinSelectionsNumber()):
-            self._updateJoinSelectionsNumbers()
-        self._updateBatchScriptFile('JOIN')
-
-
-    def setJoinStatus(self, number, status):
-        """
-        Set status of faces selection named 'number' for join meshes
-        """
-        self.isOnOff(status)
-        self.isLowerOrEqual(int(number), int(self.getJoinSelectionsNumber()))
-
-        node = self.node_join.xmlGetNode('faces_join', 'status', name=number)
-        node['status'] = status
-
-
-    def getJoinStatus(self, number):
-        """
-        Get status of faces selection named 'number' for join meshes
-        """
-        self.isLowerOrEqual(int(number), int(self.getJoinSelectionsNumber()))
-
-        return self.node_join.xmlGetNode('faces_join', 'status', name=number)['status']
-
-
-    def addPeriodicFaces(self, perio_name, select):
+    def addPeriodicFaces(self, select):
         """
         Add faces selection for periodic transformation.
-        Select is a dictionary with 'color', 'group', 'fraction', 'plan' ...
+        Select is a dictionary with 'selector', 'fraction', 'plane', 'verbosity'
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
-        node_tr = self.node_perio.xmlGetNode('transformation', 'mode', name=perio_name)
-        if node_tr:
-            node = node_tr.xmlAddChild('faces_periodic', status="on")
-            self._addFacesSelect(node, select)
-            self._updateBatchScriptFile('PERIODICITY')
+        nb = self.getPeriodicSelectionsCount()
+        name = str(nb +1)
+        node = self.node_perio.xmlAddChild('face_periodicity', mode="", name=name)
+        self._addJoinSelect(node, select)
+        self.updatePeriodicityMode(nb, 'translation')
 
 
-    def getPeriodicFaces(self, perio_name):
+    def getPeriodicFaces(self, perio_id):
         """
         Public method.
 
-        @return: faces selection for periodic transformation named perio_name
+        @return: faces selection for given periodic transformation
         @rtype: C{dictionary}
         """
-        self.isInList(perio_name, self.getPeriodicityListName())
         result = {}
-        node_tr = self.node_perio.xmlGetNode('transformation', 'mode', name=perio_name)
-        if node_tr:
-            node = node_tr.xmlGetChildNode('faces_periodic', 'status')
-            if node and node['status'] == 'on':
-                result = self._getFaces(node)
 
-        return result
-
-
-    def replacePeriodicFaces(self, perio_name, select):
-        """
-        Replace values of faces selection for periodic transformation, by select
-        """
-        self.isInList(perio_name, self.getPeriodicityListName())
-        node_tr = self.node_perio.xmlGetNode('transformation', 'mode', name=perio_name)
-        if node_tr:
-            node = node_tr.xmlGetChildNode('faces_periodic', status="on")
-            self._removeChildren(node)
-            self._addFacesSelect(node, select)
-            self._updateBatchScriptFile('PERIODICITY')
-
-
-    def deletePeriodicFaces(self, perio_name):
-        """
-        Delete faces selection for periodic transformation named 'perio_name'
-        """
-        self.isInList(perio_name, self.getPeriodicityListName())
-        node_tr = self.node_perio.xmlGetNode('transformation', 'mode', name=perio_name)
-        if node_tr:
-            node = node_tr.xmlGetChildNode('faces_periodic', status="on")
-            node.xmlRemoveNode()
-            self._updateBatchScriptFile('PERIODICITY')
-
-
-    def setPeriodicStatus(self, perio_name, status):
-        """
-        Set status of faces for periodic transformation named 'perio_name'
-        """
-        self.isOnOff(status)
-        node_tr = self.node_perio.xmlGetNode('transformation', 'mode', name=perio_name)
-        if node_tr:
-            node = node_tr.xmlGetChildNode('faces_periodic', 'status')
-            if node:
-                node['status'] = status
-            if status == 'on':
-                self._updateBatchScriptFile('PERIODICITY')
-
-
-    def getPeriodicStatus(self, perio_name):
-        """
-        Get status of faces for periodic transformation named 'perio_name'
-        """
-        node_tr = self.node_perio.xmlGetNode('transformation', 'mode', name=perio_name)
-        if node_tr:
-            node = node_tr.xmlGetChildNode('faces_periodic', 'status')
-            if node:
-                status = node['status']
-            return status
-        else:
-            raise ValueError, "wrong periodicity"
-
-
-    def addSelectFaces(self, select):
-        """
-        Add faces selection for standalone selection.
-        Select is a dictionary with 'color', 'group', 'fraction', 'plan' ...
-        """
-        node = self.node_standalone.xmlGetChildNode('faces_select', 'status')
-        if node:
-            node['status'] = "on"
-        else:
-            node = self.node_standalone.xmlAddChild('faces_select', status="on")
-        select['fraction'] =""
-        select['plan'] = ""
-        select['semiconf'] = ""
-        self._addFacesSelect(node, select)
-
-
-    def getSelectFaces(self):
-        """
-        Return faces selection for standalone selection (only one authorized selection)
-        """
-        result = {}
-        node  = self.node_standalone.xmlGetChildNode('faces_select', status="on")
+        node = self._getPerioNode(perio_id)
         if node:
             result = self._getFaces(node)
 
         return result
 
 
-    def replaceSelectFaces(self, select):
+    def replacePeriodicFaces(self, perio_id, select):
         """
-        Replace values of faces selection for standalone selection (only one authorized selection)
-        by select
+        Replace values of faces selection for periodic transformation, by select
         """
-        node  = self.node_standalone.xmlGetChildNode('faces_select', status="on")
-        self._removeChildren(node)
-        select['fraction'] =""
-        select['plan'] = ""
-        select['semiconf'] = ""
-        self._addFacesSelect(node, select)
+
+        node = self._getPerioNode(perio_id)
+
+        if node:
+            self._removeJoinChildren(node)
+            self._addJoinSelect(node, select)
 
 
-    def deleteSelectFaces(self):
+# Methods to manage faces :
+#========================
+
+    def getJoinSelectionsCount(self):
         """
-        Delete faces selection for standalone selection (only one authorized selection)
+        Public method.
+
+        @return: number of join faces selections
+        @rtype: C{int}
         """
-        node = self.node_standalone.xmlGetChildNode('faces_select', 'status')
+        return len(self.node_join.xmlGetNodeList('face_joining'))
+
+
+    def addJoinFaces(self, select):
+        """
+        Add faces selection for face joining.
+        Select is a dictionary with 'selector', 'fraction', 'plane', 'verbosity'
+        """
+        nb = self.getJoinSelectionsCount()
+        name = str(nb +1)
+        node = self.node_join.xmlAddChild('face_joining', name=name)
+        self._addJoinSelect(node, select)
+
+
+    def getJoinFaces(self, join_id):
+        """
+        Return faces selection named 'number' for face joining .
+        """
+        node = self._getJoinNode(join_id)
+        return self._getFaces(node)
+
+
+    def replaceJoinFaces(self, join_id, select):
+        """
+        Replace values of faces selection named 'number' for face joining, by select
+        """
+        node = self._getJoinNode(join_id)
+        self._removeJoinChildren(node)
+        self._addJoinSelect(node, select)
+
+
+    def deleteJoinFaces(self, join_id):
+        """
+        Delete faces selection named 'number' for face joining
+        """
+        node = self._getJoinNode(join_id)
         node.xmlRemoveNode()
+        if join_id < self.getJoinSelectionsCount():
+            self._updateJoinSelectionNumbers()
 
 
-    def setSelectStatus(self, status):
-        """
-        Set status of faces selection for standalone selection (only one authorized selection)
-        """
-        self.isOnOff(status)
-        node = self.node_standalone.xmlInitNode('faces_select', 'status')
-        if status == "off":
-            self.deleteSelectFaces()
-        else:
-            node['status'] = status
-
-
-    def getSelectStatus(self):
-        """
-        Get status of faces selection for standalone selection (only one authorized selection)
-        """
-        node = self.node_standalone.xmlInitChildNode('faces_select', 'status')
-        status = node['status']
-        if not status:
-            status = self.defaultValues()['select_status']
-            self.deleteSelectFaces()
-
-        return status
-
-
-# In following methods we build command for "lance" file
-#=======================================================
+# In following methods we build command for "runcase" file
+#=========================================================
 
     def getMeshCommand(self):
         """
@@ -1317,38 +1049,13 @@ class SolutionDomainModel(MeshModel, Model):
 
     def getReorientCommand(self):
         """
-        Get reorient value line for preprocessor execution
+        Get reorient value for preprocessor execution
         """
         line = 'False'
         if self.node_orient and self.node_orient['status'] == 'on':
-            line += 'True'
+            line = 'True'
 
         return line
-
-
-    def getJoinCommand(self):
-        """
-        Get rc command line for preprocessor execution
-        """
-        lines = ''
-        if self.node_join and self.node_join['status'] == 'on':
-            node_face_join_list = self.node_join.xmlGetNodeList('faces_join')
-            if node_face_join_list:
-                for node_face_join in node_face_join_list:
-                    if node_face_join['status'] == 'on':
-                        linecoul = ' -j '
-                        line = self._getLineCommand(node_face_join)
-                        lines = lines + linecoul + line
-
-                        fraction = node_face_join.xmlGetString('faces_fraction')
-                        lines = lines + " --fraction " + fraction +" "
-                        plan = node_face_join.xmlGetString('faces_plan')
-                        lines = lines + " --plane " + plan +" "
-                        lines = lines + ' '
-            else:
-                lines = ' -j '
-
-        return lines
 
 
     def getCutCommand(self):
@@ -1362,48 +1069,6 @@ class SolutionDomainModel(MeshModel, Model):
         return line
 
 
-    def getPerioCommand(self):
-        """
-        Get perio command line for preprocessor execution
-        """
-        line   = ''
-        for perio_name in self.getPeriodicityListName():
-            node = self.node_perio.xmlGetNode('transformation', 'mode', name=perio_name)
-            mode = self.getPeriodicityMode(perio_name)
-            node_face_perio = node.xmlGetNode('faces_periodic', 'status')
-            if node_face_perio:
-                node_face_perio_list = node.xmlGetNodeList('faces_periodic', 'status')
-                if node_face_perio_list:
-                    for node in node_face_perio_list:
-                        if node['status'] == 'on':
-                            lineperio = ' --perio '
-                            l = self._getLineCommand(node)
-                            line = line + lineperio + l
-                            fraction = node.xmlGetString('faces_fraction')
-                            if fraction:
-                                line = line + " --fraction " + fraction +" "
-                            plan = node.xmlGetString('faces_plan')
-                            if plan:
-                                line = line + " --plane " + plan +" "
-            else:
-                line = line + ' --perio '
-            mode = self.getPeriodicityMode(perio_name)
-            if mode == 'translation' or mode == 'tr+rota1' or mode == 'tr+rota2':
-                dx, dy, dz = self.getTranslationDirection(perio_name)
-                line = line + " --trans " + dx +" " + dy +" " + dz +" "
-            if mode == 'rotation1' or mode == 'tr+rota1':
-                angle = self.getRotationAngle(perio_name)
-                rx, ry, rz = self.getRotationDirection(perio_name)
-                px, py, pz = self.getRotationCenter(perio_name)
-                line = line + " --rota "  + " --angle " + angle + " --dir " + rx +" " + ry +" " + rz +" " + " --invpt " + px +" " + py +" " + pz +" "
-            if mode == 'rotation2' or mode == 'tr+rota2':
-                m11, m12, m13, m21, m22, m23, m31, m32, m33 = self.getRotationMatrix(perio_name)
-                px, py, pz = self.getRotationCenter(perio_name)
-                line = line + " --rota "  + " --matrix " + m11 +" " + m12 +" " + m13 +" " + m21 +" " + m22 +" " + m23 +" " + m31 +" " + m32 +" " + m33 +" " + " --invpt " + px +" " + py +" " + pz +" "
-
-        return line
-
-
     def getSimCommCommand(self):
         """
         Get " --sim-comm " command line for preprocessor execution
@@ -1412,19 +1077,6 @@ class SolutionDomainModel(MeshModel, Model):
         node = self.node_standalone.xmlGetNode('simulation_communication')
         if node and node['status'] == 'on':
             lines = " -sc "
-        return lines
-
-
-    def getSelectCommand(self):
-        """
-        Get "--int-face" command line for preprocessor execution
-        """
-        lines  = ''
-        node_list = self.node_standalone.xmlGetNodeList('faces_select')
-        for nod in node_list:
-            if nod['status'] == 'on':
-                line = ' --int-face ' + self._getLineCommand(nod)
-                lines += line
         return lines
 
 
@@ -1476,15 +1128,6 @@ class SolutionDomainModel(MeshModel, Model):
         return status
 
 
-    def getFacesSelect(self, tagName, n):
-        """
-        Return default filled with values found for color, group ..
-        """
-        nodeList = self.getListNodes(tagName)
-        node = nodeList[n]
-        return self._getFaces(node)
-
-
 #-------------------------------------------------------------------------------
 # SolutionDomain Model test case
 #-------------------------------------------------------------------------------
@@ -1517,16 +1160,6 @@ class SolutionDomainTestCase(ModelTest):
         assert mdl.getMeshList() == ['fdc','pic','up'],\
             'Could not get mesh list'
 
-
-    def checkSetandGetJoinMeshesStatus(self):
-        """ Check whether the status of join meshes could be set and get"""
-        mdl = SolutionDomainModel(self.case)
-        mdl.setJoinMeshesStatus('on')
-        doc = '''<join_meshes status="on"/>'''
-        assert mdl.node_join == self.xmlNodeFromString(doc), \
-            'Could not set status in join meshes tag'
-        assert mdl.getJoinMeshesStatus() == 'on', \
-            'Could not get status from join meshes tag'
 
     def checkSetandGetCutStatusAndAngleValue(self):
         """ Check whether the status of node cut and value of angle could be set and get"""
@@ -1562,85 +1195,93 @@ class SolutionDomainTestCase(ModelTest):
         assert mdl.getSimCommStatus() == 'on', \
             'Could not get status of node simulation_communication'
 
-    def checkGetPeriodicityNumber(self):
+    def checkgetPeriodicSelectionsCount(self):
         """ Check whether the number of periodicities could be get"""
+        select = {}
+        select['selector'] = '1 or 2 or 3 or toto'
+        select['fraction'] = '0.1'
+        select['plane'] = '20'
+        select['verbosity'] = 1
         mdl = SolutionDomainModel(self.case)
-        mdl.addPeriodicity('1')
-        mdl.addPeriodicity('2')
-        doc ='''<periodic_boundary>
-                    <transformation mode="translation" name="1">
-                        <translation>
+        mdl.addPeriodicFaces(select)
+        mdl.addPeriodicFaces(select)
+        doc ='''<face_periodicity mode="translation" name="1">
+                      <translation>
+                            <translation_x>0</translation_x>
+                            <translation_y>0</translation_y>
+                            <translation_z>0</translation_z>
+                      </translation>
+                </face_periodicity>
+                <face_periodicity mode="translation" name="2">
+                      <translation>
                             <translation_x>0</translation_x>
                             <translation_y>0</translation_y>
                             <translation_z>0</translation_z>
                         </translation>
-                    </transformation>
-                    <transformation mode="translation" name="2">
-                        <translation>
-                            <translation_x>0</translation_x>
-                            <translation_y>0</translation_y>
-                            <translation_z>0</translation_z>
-                        </translation>
-                    </transformation>
-                 </periodic_boundary>'''
+                </face_periodicity>'''
 
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
             'Could not set number of periodicities'
-        assert mdl.getPeriodicityNumber() == 2,\
+        assert mdl.getPeriodicSelectionsCount() == 2,\
             'Could not get number for periodicities'
 
     def checkSetandgetPeriodicityMode(self):
         """ Check whether the mode of transformation could be set and get """
+        select = {}
+        select['selector'] = '1 or 2 or 3 or toto'
+        select['fraction'] = '0.1'
+        select['plane'] = '20'
+        select['verbosity'] = 1
         mdl = SolutionDomainModel(self.case)
-        mdl.addPeriodicity('1')
-        mdl.addPeriodicity('2')
-        mdl.updatePeriodicityMode('2', "tr+rota1")
-        doc ='''<periodic_boundary>
-                    <transformation mode="translation" name="1">
-                        <translation>
+        mdl.addPeriodicFaces(select)
+        mdl.addPeriodicFaces(select)
+        mdl.updatePeriodicityMode('2', "rotation")
+        doc ='''<face_periodicity mode="translation" name="1">
+                      <translation>
                             <translation_x>0</translation_x>
                             <translation_y>0</translation_y>
                             <translation_z>0</translation_z>
-                        </translation>
-                    </transformation>
-                    <transformation mode="tr+rota1" name="2">
-                        <translation>
+                      </translation>
+                </face_periodicity mode="rotation" name="2">
+                      <translation>
                             <translation_x>0</translation_x>
                             <translation_y>0</translation_y>
                             <translation_z>0</translation_z>
-                        </translation>
-                        <rotation1>
-                            <rotation_angle>0</rotation_angle>
-                            <rotation_x>0</rotation_x>
-                            <rotation_y>0</rotation_y>
-                            <rotation_z>0</rotation_z>
-                            <rotation_center_x>0</rotation_center_x>
-                            <rotation_center_y>0</rotation_center_y>
-                            <rotation_center_z>0</rotation_center_z>
-                        </rotation1>
-                    </transformation>
-            </periodic_boundary>'''
+                      </translation>
+                      <rotation>
+                            <angle>0</angle>
+                            <axis_x>0</axis_x>
+                            <axis_y>0</axis_y>
+                            <axis_z>0</axis_z>
+                            <invariant_x>0</invariant_x>
+                            <invariant_y>0</invariant_y>
+                            <invariant_z>0</invariant_z>
+                      </rotation>
+                </face_periodicity>'''
 
 
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
             'Could not set mode of transformation for periodicities'
-        assert mdl.getPeriodicityMode('2') == "tr+rota1",\
+        assert mdl.getPeriodicityMode('2') == "rotation",\
             'Could not get mode of transformation for periodicities'
 
     def checkSetandgetTranslationDirection(self):
         """ Check whether the dir values translation mode of periodicity could be set and get"""
+        select = {}
+        select['selector'] = '1 or 2 or 3 or toto'
+        select['fraction'] = '0.1'
+        select['plane'] = '20'
+        select['verbosity'] = 1
         mdl = SolutionDomainModel(self.case)
-        mdl.addPeriodicity('1')
+        mdl.addPeriodicFaces(select)
         mdl.setTranslationDirection('1','translation_y',3.0)
-        doc ='''<periodic_boundary>
-                    <transformation mode="translation" name="1">
-                            <translation>
-                                    <translation_x>0</translation_x>
-                                    <translation_y>3</translation_y>
-                                    <translation_z>0</translation_z>
-                            </translation>
-                    </transformation>
-                </periodic_boundary>'''
+        doc ='''<face_periodicity mode="translation" name="1">
+                      <translation>
+                            <translation_x>0</translation_x>
+                            <translation_y>3</translation_y>
+                            <translation_z>0</translation_z>
+                      </translation>
+                </face_periodicity>'''
 
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
             'Could not set one direction values for translation'
@@ -1649,40 +1290,43 @@ class SolutionDomainTestCase(ModelTest):
 
     def checkSetandgetRotationDirectionandAngleandCenter(self):
         """ Check whether the values for rotation's mode of periodicity could be set and get"""
+        select = {}
+        select['selector'] = '1 or 2 or 3 or toto'
+        select['fraction'] = '0.1'
+        select['plane'] = '20'
+        select['verbosity'] = 1
         mdl = SolutionDomainModel(self.case)
-        mdl.addPeriodicity('1')
+        mdl.addPeriodicFaces(select)
         mdl.setTranslationDirection('1','translation_y', 3.0)
-        mdl.addPeriodicity('2')
-        mdl.updatePeriodicityMode('2', "tr+rota1")
+        mdl.addPeriodicFaces(select)
+        mdl.updatePeriodicityMode('2', "rotation")
         mdl.setRotationAngle('2', 180.)
-        mdl.setRotationVector('2', 'rotation_x', 0.5)
-        mdl.setRotationVector('2', 'rotation_z', 2.5)
-        mdl.setRotationCenter('2', 'rotation_center_y', 9.8)
-        doc ='''<periodic_boundary>
-                    <transformation mode="translation" name="1">
-                            <translation>
-                                    <translation_x>0</translation_x>
-                                    <translation_y>3</translation_y>
-                                    <translation_z>0</translation_z>
-                            </translation>
-                    </transformation>
-                    <transformation mode="tr+rota1" name="2">
-                            <translation>
-                                    <translation_x>0</translation_x>
-                                    <translation_y>0</translation_y>
-                                    <translation_z>0</translation_z>
-                            </translation>
-                            <rotation1>
-                                    <rotation_angle>180</rotation_angle>
-                                    <rotation_x>0.5</rotation_x>
-                                    <rotation_y>0.0</rotation_y>
-                                    <rotation_z>2.5</rotation_z>
-                                    <rotation_center_x>0</rotation_center_x>
-                                    <rotation_center_y>9.8</rotation_center_y>
-                                    <rotation_center_z>0</rotation_center_z>
-                            </rotation1>
-                    </transformation>
-                </periodic_boundary>'''
+        mdl.setRotationVector('2', 'axis_x', 0.5)
+        mdl.setRotationVector('2', 'axis_z', 2.5)
+        mdl.setRotationCenter('2', 'invariant_y', 9.8)
+        doc ='''<face_periodicity mode="translation" name="1">
+                      <translation>
+                            <translation_x>0</translation_x>
+                            <translation_y>3</translation_y>
+                            <translation_z>0</translation_z>
+                      </translation>
+                </face_periodicity>
+                <face_periodicity mode="rotation" name="2">
+                      <translation>
+                            <translation_x>0</translation_x>
+                            <translation_y>0</translation_y>
+                            <translation_z>0</translation_z>
+                      </translation>
+                      <rotation>
+                            <angle>180</angle>
+                            <axis_x>0.5</axis_x>
+                            <axis_y>0.0</axis_y>
+                            <axis_z>2.5</axis_z>
+                            <invariant_x>0</invariant_x>
+                            <invariant_y>9.8</invariant_y>
+                            <invariant_z>0</invariant_z>
+                      </rotation>
+                </face_periodicity>'''
 
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
             'Could not set values for rotation transformation mode'
@@ -1693,228 +1337,202 @@ class SolutionDomainTestCase(ModelTest):
         assert mdl.getRotationCenter('2') == ('0', '9.8', '0'),\
             'Could not get value of center of rotation for rotation transformation mode'
 
-    def checkSetandgetRotationMatrix(self):
-        """ Check whether the matrix of rotation for rotation2 mode could be set """
+    def checkSetandgetTransformationMatrix(self):
+        """ Check whether the matrix of rotation for mixed mode could be set """
+        select = {}
+        select['selector'] = '1 or 2 or 3 or toto'
+        select['fraction'] = '0.1'
+        select['plane'] = '20'
+        select['verbosity'] = 1
         mdl = SolutionDomainModel(self.case)
-        mdl.addPeriodicity('1')
-        mdl.updatePeriodicityMode('1','rotation2')
-        mdl.setRotationMatrix('1', 'rotation_matrix_31', 31.31)
-        doc = '''<periodic_boundary>
-                    <transformation mode="rotation2" name="1">
-                            <translation>
-                                    <translation_x>0.0</translation_x>
-                                    <translation_y>0.0</translation_y>
-                                    <translation_z>0.0</translation_z>
-                            </translation>
-                            <rotation2>
-                                    <rotation_matrix_11>0.0</rotation_matrix_11>
-                                    <rotation_matrix_12>0.0</rotation_matrix_12>
-                                    <rotation_matrix_13>0.0</rotation_matrix_13>
-                                    <rotation_matrix_21>0.0</rotation_matrix_21>
-                                    <rotation_matrix_22>0.0</rotation_matrix_22>
-                                    <rotation_matrix_23>0.0</rotation_matrix_23>
-                                    <rotation_matrix_31>31.31</rotation_matrix_31>
-                                    <rotation_matrix_32>0.0</rotation_matrix_32>
-                                    <rotation_matrix_33>0.0</rotation_matrix_33>
-                                    <rotation_center_y>0.0</rotation_center_y>
-                                    <rotation_center_z>0.0</rotation_center_z>
-                            </rotation2>
-                    </transformation>
-                 </periodic_boundary>'''
+        mdl.addPeriodicFaces(select)
+        mdl.updatePeriodicityMode('1','mixed')
+        mdl.setTransformationMatrix('1', 'matrix_31', 31.31)
+        doc = '''<face_periodicity mode="mixed" name="1">
+                      <mixed>
+                            <matrix_11>0.0</matrix_11>
+                            <matrix_12>0.0</matrix_12>
+                            <matrix_13>0.0</matrix_13>
+                            <matrix_14>0.0</matrix_14>
+                            <matrix_21>0.0</matrix_21>
+                            <matrix_22>0.0</matrix_22>
+                            <matrix_23>0.0</matrix_23>
+                            <matrix_24>0.0</matrix_24>
+                            <matrix_31>31.31</matrix_31>
+                            <matrix_32>0.0</matrix_32>
+                            <matrix_33>0.0</matrix_33>
+                            <matrix_34>0.0</matrix_34>
+                      </mixed>
+                 </face_periodicity>'''
 
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
-            'Could not set values for matrix of rotation for rotation2 transformation mode'
-        assert mdl.getRotationMatrix('1') == ('0', '0', '0', '0', '0', '0', '31.31','0', '0'),\
-            'Could not get values for matrix of rotation for rotation2 transformation mode'
+            'Could not set values for matrix of rotation for mixed transformation mode'
+        assert mdl.getTransformationMatrix('1') == ('0', '0', '0', '0',
+                                                    '0', '0', '0', '0',
+                                                    '31.31','0', '0', '0'),\
+            'Could not get values for matrix of rotation for mixed transformation mode'
 
     def checkAddandGetJoinFaces(self):
-        """ Check whether faces of join meshes could be added and get """
+        """ Check whether faces of face joining could be added and get """
         select = {}
-        select['color'] = '1 2 3'
-        select['group'] = 'toto'
+        select['selector'] = '1 or 2 or 3 or toto'
         select['fraction'] = '0.1'
-        select['plan'] = '0.8'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'on'
+        select['plane'] = '20'
+        select['verbosity'] = 1
         mdl = SolutionDomainModel(self.case)
-        mdl.setJoinMeshesStatus('on')
         mdl.addJoinFaces(select)
-        doc = '''<join_meshes status="on">
-                    <faces_join name="1" status="on">
-                            <faces_color>1 2 3</faces_color>
-                            <faces_group>toto</faces_group>
-                            <faces_fraction>0.1</faces_fraction>
-                            <faces_plan>0.8</faces_plan>
-                            <faces_semi_conf status="on"/>
-                    </faces_join>
-                 </join_meshes>'''
+        doc = '''<face_joining name="1">
+                    <selector>1 or 2 or 3 or toto</selector>
+                    <fraction>0.1</fraction>
+                    <plane>20</plane>
+                    <verbosity>1</verbosity>
+                 </face_joining>'''
 
         assert mdl.node_join == self.xmlNodeFromString(doc),\
-            'Could not set values of faces join for join meshes'
-        assert mdl.getJoinFaces('1') == {'semiconf': 'on', 'reverse': 'off',
-                                         'color': '1 2 3', 'plan': '0.8',
-                                         'fraction': '0.1', 'group': 'toto'},\
-            'Could not get values of faces join for join meshes'
+            'Could not set values of faces join for face joining'
+        assert mdl.getJoinFaces('1') == {'selector': '1 or 2 or 3 or toto', 'plane': '20',
+                                         'fraction': '0.1', 'verbosity': '1'},\
+            'Could not get values of faces join for face joining'
 
-    def checkReplaceandDeleteandSetandGetStatusForJoinFaces(self):
+    def checkReplaceandDeleteandSetandGetForJoinFaces(self):
         """
-        Check whether faces of join meshes could be replaced and deleted
+        Check whether faces of face joining could be replaced and deleted
         and status could be set and get
         """
         select = {}
-        select['color'] = '1 2 3'
-        select['group'] = 'toto'
+        select['selector'] = '1 or 2 or 3 or toto'
         select['fraction'] = '0.1'
-        select['plan'] = '0.8'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'on'
+        select['plane'] = '20'
+        select['verbosity'] = '1'
         deux = {}
-        deux['color'] = '9 8 7'
-        deux['group'] = 'coucou'
+        deux['selector'] = '9 or 8 or 7 or coucou'
         deux['fraction'] = '0.2'
-        deux['plan'] = '0.82'
-        deux['reverse'] = 'off'
-        deux['semiconf'] = 'off'
+        deux['plane'] = '20'
+        deux['verbosity'] = '2'
         mdl = SolutionDomainModel(self.case)
-        mdl.setJoinMeshesStatus('on')
         mdl.addJoinFaces(select)
         mdl.addJoinFaces(deux)
-        doc = '''<join_meshes status="on">
-                    <faces_join name="1" status="on">
-                            <faces_color>1 2 3</faces_color>
-                            <faces_group>toto</faces_group>
-                            <faces_fraction>0.1</faces_fraction>
-                            <faces_plan>0.8</faces_plan>
-                            <faces_semi_conf status="on"/>
-                    </faces_join>
-                    <faces_join name="2" status="on">
-                            <faces_color>9 8 7</faces_color>
-                            <faces_group>coucou</faces_group>
-                            <faces_fraction>0.2</faces_fraction>
-                            <faces_plan>0.82</faces_plan>
-                    </faces_join>
-                 </join_meshes>'''
+        doc = '''<joining>
+                    <face_joining name="1">
+                            <selector>1 or 2 or 3 or toto</selector>
+                            <fraction>0.1</fraction>
+                            <plane>20</plane>
+                            <verbosity>1</verbosity>
+                    </face_joining>
+                    <face_joining name="2">
+                            <selector>9 or 8 or 7 or coucou</selector>
+                            <fraction>0.2</fraction>
+                            <plane>30</plane>
+                            <verbosity>2</verbosity>
+                    </face_joining>
+                 </joining>'''
 
         assert mdl.node_join == self.xmlNodeFromString(doc),\
-            'Could not set values of faces join for join meshes'
-        assert mdl.getJoinFaces('1') == {'group': 'toto', 'reverse': 'off', 'color': '1 2 3',
-                                        'plan': '0.8', 'fraction': '0.1',
-                                        'semiconf': 'on'},\
-            'Could not get values of faces join for join meshes'
+            'Could not set values of faces join for face joining'
+        assert mdl.getJoinFaces('1') == {'selector': '1 or 2 or 3 or toto',
+                                        'plane': '20', 'fraction': '0.1',
+                                        'verbosity': '1'},\
+            'Could not get values of faces join for face joining'
 
-        select['group'] = 'je vais partir'
+        select['selector'] = 'je vais partir'
         mdl.replaceJoinFaces('1', select)
-        doc = '''<join_meshes status="on">
-                    <faces_join name="1" status="on">
-                            <faces_color>1 2 3</faces_color>
-                            <faces_group>je vais partir</faces_group>
-                            <faces_fraction>0.1</faces_fraction>
-                            <faces_plan>0.8</faces_plan>
-                            <faces_semi_conf status="on"/>
-                    </faces_join>
-                    <faces_join name="2" status="on">
-                            <faces_color>9 8 7</faces_color>
-                            <faces_group>coucou</faces_group>
-                            <faces_fraction>0.2</faces_fraction>
-                            <faces_plan>0.82</faces_plan>
-                    </faces_join>
-                 </join_meshes>'''
+        doc = '''<joining>
+                    <face_joining name="1">
+                            <selector>1 or 2 or 3 or toto</selector>
+                            <fraction>0.1</fraction>
+                            <plane>20</plane>
+                            <verbosity>1</verbosity>
+                    </face_joining>
+                    <face_joining name="2">
+                            <selector>9 or 8 or 7 or coucou</selector>
+                            <fraction>0.2</fraction>
+                            <plane>30</plane>
+                            <verbosity>2</verbosity>
+                    </face_joining>
+                 </joining>'''
 
         assert mdl.node_join == self.xmlNodeFromString(doc),\
-            'Could not replace values of faces join for join meshes'
+            'Could not replace values of faces join for face joining'
 
         mdl.deleteJoinFaces('1')
-        doc = '''<join_meshes status="on">
-                    <faces_join name="1" status="on">
-                            <faces_color>9 8 7</faces_color>
-                            <faces_group>coucou</faces_group>
-                            <faces_fraction>0.2</faces_fraction>
-                            <faces_plan>0.82</faces_plan>
-                    </faces_join>
-                 </join_meshes>'''
+        doc = '''<joining>
+                    <face_joining name="1">
+                            <selector>9 or 8 or 7 or coucou</selector>
+                            <fraction>0.2</fraction>
+                            <plane>30</plane>
+                            <verbosity>2</verbosity>
+                    </face_joining>
+                 </joining>'''
 
         assert mdl.node_join == self.xmlNodeFromString(doc),\
-            'Could not delete faces join for join meshes'
+            'Could not delete faces join for face joining'
 
         mdl.addJoinFaces(select)
-        mdl.setJoinStatus('1', 'off')
-        doc = '''<join_meshes status="on">
-                    <faces_join name="1" status="off">
-                            <faces_color>9 8 7</faces_color>
-                            <faces_group>coucou</faces_group>
-                            <faces_fraction>0.2</faces_fraction>
-                            <faces_plan>0.82</faces_plan>
-                    </faces_join>
-                    <faces_join name="2" status="on">
-                            <faces_color>1 2 3</faces_color>
-                            <faces_group>je vais partir</faces_group>
-                            <faces_fraction>0.1</faces_fraction>
-                            <faces_plan>0.8</faces_plan>
-                            <faces_semi_conf status="on"/>
-                    </faces_join>
-                 </join_meshes>'''
+        doc = '''<joining>
+                    <face_joining name="1">
+                            <selector>9 or 8 or 7 or coucou</selector>
+                            <fraction>0.2</fraction>
+                            <plane>30</plane>
+                            <verbosity>2</verbosity>
+                    </face_joining>
+                    <face_joining name="2">
+                            <selector>1 or 2 or 3 or toto</selector>
+                            <fraction>0.1</fraction>
+                            <plane>20</plane>
+                            <verbosity>1</verbosity>
+                    </face_joining>
+                 </joining>'''
 
         assert mdl.node_join == self.xmlNodeFromString(doc),\
-            'Could not set status for active or not faces join for join meshes'
-        assert mdl.getJoinStatus('1') == 'off',\
-            'Could not get status for active or not faces join for join meshes'
+            'Could not set faces join for joinings'
 
     def checkAddandGetPeriodicFaces(self):
         """ Check whether faces of periodicity could be added and get """
         select = {}
-        select['color'] = '5 6'
-        select['group'] = 'toto'
+        select['selector'] = '5 or 6 or toto'
         select['fraction'] = '0.1'
-        select['plan'] = '0.8'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'off'
+        select['plane'] = '20'
+        select['verbosity'] = '2'
         mdl = SolutionDomainModel(self.case)
-        mdl.addPeriodicity('1')
-        mdl.addPeriodicity('2')
-        mdl.updatePeriodicityMode('2', 'rotation1')
-        mdl.addPeriodicFaces('1', select)
-        mdl.addPeriodicFaces('2', select)
-        doc = '''<periodic_boundary>
-                    <transformation mode="translation" name="1">
+        mdl.addPeriodicFaces(select)
+        mdl.addPeriodicFaces(select)
+        mdl.updatePeriodicityMode('2', 'rotation')
+        doc = '''<face_periodicity>
+                 <face_periodicity mode="translation" name="1">
+                        <selector>5 or 6 or toto</selector>
+                        <fraction>0.1</fraction>
+                        <plane>0.8</plane>
                         <translation>
                             <translation_x>0</translation_x>
                             <translation_y>0</translation_y>
                             <translation_z>0</translation_z>
                         </translation>
-                        <faces_periodic status="on">
-                            <faces_color>5 6</faces_color>
-                            <faces_group>toto</faces_group>
-                            <faces_fraction>0.1</faces_fraction>
-                            <faces_plan>0.8</faces_plan>
-                        </faces_periodic>
-                    </transformation>
-                    <transformation mode="rotation1" name="2">
+                 </face_periodicity>
+                 <face_periodicity mode="rotation" name="2">
                         <translation>
                             <translation_x>0</translation_x>
                             <translation_y>0</translation_y>
                             <translation_z>0</translation_z>
                         </translation>
-                        <rotation1>
-                            <rotation_angle>0</rotation_angle>
-                            <rotation_x>0</rotation_x>
-                            <rotation_y>0</rotation_y>
-                            <rotation_z>0</rotation_z>
-                            <rotation_center_x>0</rotation_center_x>
-                            <rotation_center_y>0</rotation_center_y>
-                            <rotation_center_z>0</rotation_center_z>
-                        </rotation1>
-                        <faces_periodic status="on">
-                            <faces_color>5 6</faces_color>
-                            <faces_group>toto</faces_group>
-                            <faces_fraction>0.1</faces_fraction>
-                            <faces_plan>0.8</faces_plan>
-                        </faces_periodic>
-                    </transformation>
-                 </periodic_boundary>'''
+                        <rotation>
+                            <angle>0</angle>
+                            <axis_x>0</axis_x>
+                            <axis_y>0</axis_y>
+                            <axis_z>0</axis_z>
+                            <invariant_x>0</invariant_x>
+                            <invariant_y>0</invariant_y>
+                            <invariant_z>0</invariant_z>
+                        </rotation>
+                        <face_periodicity status="on">
+                            <selector>5 or 6 or toto</selector>
+                            <fraction>0.1</fraction>
+                            <plane>0.8</plane>
+                        </face_periodicity>
+                 </face_periodicity>'''
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
             'Could not add values of faces for periodicities'
-        assert mdl.getPeriodicFaces('1') == {'group': 'toto', 'reverse': 'off', 'color': '5 6',
-                                        'plan': '0.8', 'fraction': '0.1', 'semiconf': 'off'},\
+        assert mdl.getPeriodicFaces('1') == {'selector': '5 or 6 or toto',
+                                        'plane': '30', 'fraction': '0.1', 'verbosity': '2'},\
             'Could not get values of faces for periodicities'
 
     def checkReplaceandDeleteandSetandGetStatusForPeriodicFaces(self):
@@ -1923,197 +1541,110 @@ class SolutionDomainTestCase(ModelTest):
         and status could be set and get
         """
         select = {}
-        select['color'] = '5 6'
-        select['group'] = 'toto'
+        select['selector'] = '5 or 6 or toto'
         select['fraction'] = '0.1'
-        select['plan'] = '0.8'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'off'
+        select['plane'] = '25'
+        select['verbosity'] = '1'
         mdl = SolutionDomainModel(self.case)
-        mdl.addPeriodicity('1')
-        mdl.addPeriodicity('2')
-        mdl.updatePeriodicityMode('2', 'rotation1')
-        mdl.addPeriodicFaces('1', select)
-        mdl.addPeriodicFaces('2', select)
-        mdl.deletePeriodicFaces('2')
-        doc = '''<periodic_boundary>
-                    <transformation mode="translation" name="1">
-                            <translation>
-                                    <translation_x>0.0</translation_x>
-                                    <translation_y>0.0</translation_y>
-                                    <translation_z>0.0</translation_z>
-                            </translation>
-                            <faces_periodic status="on">
-                                    <faces_color>5 6</faces_color>
-                                    <faces_group>toto</faces_group>
-                                    <faces_fraction>0.1</faces_fraction>
-                                    <faces_plan>0.8</faces_plan>
-                            </faces_periodic>
-                    </transformation>
-                    <transformation mode="rotation1" name="2">
-                            <translation>
-                                    <translation_x>0.0</translation_x>
-                                    <translation_y>0.0</translation_y>
-                                    <translation_z>0.0</translation_z>
-                            </translation>
-                            <rotation1>
-                                    <rotation_angle>0.0</rotation_angle>
-                                    <rotation_x>0.0</rotation_x>
-                                    <rotation_y>0.0</rotation_y>
-                                    <rotation_z>0.0</rotation_z>
-                                    <rotation_center_x>0.0</rotation_center_x>
-                                    <rotation_center_y>0.0</rotation_center_y>
-                                    <rotation_center_z>0.0</rotation_center_z>
-                            </rotation1>
-                    </transformation>
-                 </periodic_boundary>'''
+        mdl.addPeriodicFaces(select)
+        mdl.addPeriodicFaces(select)
+        mdl.updatePeriodicityMode('2', 'rotation')
+        doc = '''<face_periodicity mode="translation" name="1">
+                       <translation>
+                            <translation_x>0.0</translation_x>
+                            <translation_y>0.0</translation_y>
+                            <translation_z>0.0</translation_z>
+                       </translation>
+                       <selector>5 or 6 or toto</selector>
+                       <fraction>0.1</fraction>
+                       <plane>25</plane>
+                       <verbosity>1</verbosity>
+                 </face_periodicity>
+                 <face_periodic mode="rotation" name="2">
+                       <translation>
+                            <translation_x>0.0</translation_x>
+                            <translation_y>0.0</translation_y>
+                            <translation_z>0.0</translation_z>
+                       </translation>
+                       <rotation>
+                            <angle>0.0</angle>
+                            <axis_x>0.0</axis_x>
+                            <axis_y>0.0</axis_y>
+                            <axis_z>0.0</axis_z>
+                            <invariant_x>0.0</invariant_x>
+                            <invariant_y>0.0</invariant_y>
+                            <invariant_z>0.0</invariant_z>
+                       </rotation>
+                 </face_periodicity>'''
 
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
             'Could not delete one selection of faces for periodicities'
 
-        select['color'] = '147 963'
-        select['group'] = 'PERIODIC'
+        select['selector'] = '147 or 963 or PERIODIC'
         select['fraction'] = '0.1'
-        select['plan']  = '0.77'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'off'
+        select['plane']  = '20'
+        select['verbosity'] = '2'
         mdl.replacePeriodicFaces('1', select)
-        doc = '''<periodic_boundary>
-                    <transformation mode="translation" name="1">
-                            <translation>
-                                    <translation_x>0.0</translation_x>
-                                    <translation_y>0.0</translation_y>
-                                    <translation_z>0.0</translation_z>
-                            </translation>
-                            <faces_periodic status="on">
-                                    <faces_color>147 963</faces_color>
-                                    <faces_group>PERIODIC</faces_group>
-                                    <faces_fraction>0.1</faces_fraction>
-                                    <faces_plan>0.77</faces_plan>
-                            </faces_periodic>
-                    </transformation>
-                    <transformation mode="rotation1" name="2">
-                            <translation>
-                                    <translation_x>0.0</translation_x>
-                                    <translation_y>0.0</translation_y>
-                                    <translation_z>0.0</translation_z>
-                            </translation>
-                            <rotation1>
-                                    <rotation_angle>0.0</rotation_angle>
-                                    <rotation_x>0.0</rotation_x>
-                                    <rotation_y>0.0</rotation_y>
-                                    <rotation_z>0.0</rotation_z>
-                                    <rotation_center_x>0.0</rotation_center_x>
-                                    <rotation_center_y>0.0</rotation_center_y>
-                                    <rotation_center_z>0.0</rotation_center_z>
-                            </rotation1>
-                    </transformation>
-                 </periodic_boundary>'''
+        doc = '''<face_periodicity mode="translation" name="1">
+                     <translation>
+                            <translation_x>0.0</translation_x>
+                            <translation_y>0.0</translation_y>
+                            <translation_z>0.0</translation_z>
+                     </translation>
+                     <selector>147 or 963 or PERIODIC</selector>
+                     <fraction>0.1</fraction>
+                     <plane>30</plane>
+                     <verbosity>1</verbosity>
+                 </face_periodicity>
+                 </face_periodicity mode="rotation" name="2">
+                     <translation>
+                            <translation_x>0.0</translation_x>
+                            <translation_y>0.0</translation_y>
+                            <translation_z>0.0</translation_z>
+                     </translation>
+                     <rotation>
+                            <angle>0.0</angle>
+                            <axis_x>0.0</axis_x>
+                            <axis_y>0.0</axis_y>
+                            <axis_z>0.0</axis_z>
+                            <invariant_x>0.0</invariant_x>
+                            <invariant_y>0.0</invariant_y>
+                            <invariant_z>0.0</invariant_z>
+                     </rotation>
+                 </face_periodicity>'''
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
             'Could not replace values of faces for periodicities'
 
-        mdl.setPeriodicStatus('1', 'off')
-        doc = '''<periodic_boundary>
-                    <transformation mode="translation" name="1">
-                            <translation>
-                                    <translation_x>0.0</translation_x>
-                                    <translation_y>0.0</translation_y>
-                                    <translation_z>0.0</translation_z>
-                            </translation>
-                            <faces_periodic status="off">
-                                    <faces_color>147 963</faces_color>
-                                    <faces_group>PERIODIC</faces_group>
-                                    <faces_fraction>0.1</faces_fraction>
-                                    <faces_plan>0.77</faces_plan>
-                            </faces_periodic>
-                    </transformation>
-                    <transformation mode="rotation1" name="2">
-                            <translation>
-                                    <translation_x>0.0</translation_x>
-                                    <translation_y>0.0</translation_y>
-                                    <translation_z>0.0</translation_z>
-                            </translation>
-                            <rotation1>
-                                    <rotation_angle>0.0</rotation_angle>
-                                    <rotation_x>0.0</rotation_x>
-                                    <rotation_y>0.0</rotation_y>
-                                    <rotation_z>0.0</rotation_z>
-                                    <rotation_center_x>0.0</rotation_center_x>
-                                    <rotation_center_y>0.0</rotation_center_y>
-                                    <rotation_center_z>0.0</rotation_center_z>
-                            </rotation1>
-                    </transformation>
-                 </periodic_boundary>'''
+        doc = '''<face_periodicity mode="translation" name="1">
+                      <selector>147 or 963 or PERIODIC</selector>
+                      <fraction>0.1</fraction>
+                      <plane>30</plane>
+                      <verbosity>1</verbosity>
+                      <translation>
+                            <translation_x>0.0</translation_x>
+                            <translation_y>0.0</translation_y>
+                            <translation_z>0.0</translation_z>
+                      </translation>
+                 </face_periodicity>
+                 <face_periodicity mode="rotation" name="2">
+                      <translation>
+                            <translation_x>0.0</translation_x>
+                            <translation_y>0.0</translation_y>
+                            <translation_z>0.0</translation_z>
+                      </translation>
+                      <rotation>
+                            <angle>0.0</angle>
+                            <axis_x>0.0</axis_x>
+                            <axis_y>0.0</axis_y>
+                            <axis_z>0.0</axis_z>
+                            <invariant_x>0.0</invariant_x>
+                            <invariant_y>0.0</invariant_y>
+                            <invariant_z>0.0</invariant_z>
+                     </rotation>
+                 </face_periodicity>'''
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
-            'Could not set status for activate or not selection of faces for periodicities'
-        assert mdl.getPeriodicStatus('1') == 'off',\
-            'Could not get status for activate or not selection of faces for periodicities'
+            'Could not set selection of faces for periodicities'
 
-    def checkAddandGetSelectFaces(self):
-        """ Check whether faces of standalone could be added and get """
-        select = {}
-        select['color'] = '8 2'
-        select['group'] = 'STAND'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'off'
-        mdl = SolutionDomainModel(self.case)
-        mdl.addSelectFaces(select)
-        doc = '''<standalone>
-                    <faces_select status="on">
-                            <faces_color>8 2</faces_color>
-                            <faces_group>STAND</faces_group>
-                    </faces_select>
-                 </standalone>'''
-
-        assert mdl.node_standalone == self.xmlNodeFromString(doc),\
-            'Could not add values of faces for standalone selection'
-        assert mdl.getSelectFaces() == {'group': 'STAND', 'reverse': 'off', 'color': '8 2',
-                                        'plan': '', 'fraction': '', 'semiconf': 'off'},\
-            'Could not get values of faces for standalone selection'
-
-    def checkReplaceandDeleteandSetandGetStatusForSelectFaces(self):
-        """
-        Check whether faces of standalone could be replaced and deleted
-        and status could be set and get
-        """
-        select = {}
-        select['color'] = '8 2'
-        select['group'] = 'STAND'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'off'
-        mdl = SolutionDomainModel(self.case)
-        mdl.addSelectFaces(select)
-        new = {}
-        new['color'] = '7 8 9'
-        new['group'] = 'NEW'
-        new['reverse'] = 'off'
-        new['semiconf'] = 'off'
-        mdl.replaceSelectFaces(new)
-        doc = '''<standalone>
-                    <faces_select status="on">
-                        <faces_color>7 8 9</faces_color>
-                        <faces_group>NEW</faces_group>
-                    </faces_select>
-                 </standalone>'''
-
-        assert mdl.node_standalone == self.xmlNodeFromString(doc),\
-            'Could not replace values of faces for standalone selection'
-
-        mdl.deleteSelectFaces()
-        doc = '''<standalone/>'''
-
-        assert mdl.node_standalone == self.xmlNodeFromString(doc),\
-            'Could not delete values of faces for standalone selection'
-
-        select['group'] = 'NOUVEAU'
-        mdl.addSelectFaces(select)
-        mdl.setSelectStatus('off')
-        doc = '''<standalone/>'''
-
-        assert mdl.node_standalone == self.xmlNodeFromString(doc),\
-            'Could not set status for activate selection of faces for standalone selection'
-        assert mdl.getSelectStatus() == 'off',\
-            'Could not get status for activate selection of faces for standalone selection'
 
     def checkMeshCommand(self):
         """ Check whether  command for meshes could be set """
@@ -2144,49 +1675,6 @@ class SolutionDomainTestCase(ModelTest):
             'Reorient command is not verified in SolutionDomain Model'
 
 
-    def checkJoinAndCutCommand(self):
-        """ Check whether join and cut command lines could be get """
-        mdl = SolutionDomainModel(self.case)
-        select = {}
-        select['color'] = '1 2 3'
-        select['group'] = 'toto'
-        select['fraction'] = '0.1'
-        select['plan'] = '0.8'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'on'
-        mdl.setJoinMeshesStatus('on')
-        mdl.addJoinFaces(select)
-        cmd_join = ' -j  --color 1 2 3 --group toto --fraction 0.1  --plane 0.8  '
-
-        assert mdl.getJoinCommand() == cmd_join,\
-            'Join command is not verified in SolutionDomain Model'
-
-        mdl.setCutStatus('on')
-        mdl.setCutAngle(0.05)
-        cmd_cut = mdl.getCutCommand()
-        cut = ' --cwf 0.05'
-        assert mdl.getCutCommand() == cmd_cut,\
-            'Cut command is not verified in SolutionDomain Model'
-
-    def checkPerioCommand(self):
-        """ Check whether perio command line could be get """
-        mdl = SolutionDomainModel(self.case)
-        mdl.addPeriodicity('1')
-        mdl.updatePeriodicityMode('1','rotation1')
-        mdl.setRotationVector('1', 'rotation_x', 9.)
-        mdl.setRotationVector('1', 'rotation_y', 8.)
-        mdl.setRotationVector('1', 'rotation_z', 7.)
-        mdl.setRotationAngle('1', 45.)
-        mdl.setRotationCenter('1', 'rotation_center_y', 66.)
-        mdl.addPeriodicity('2')
-        mdl.updatePeriodicityMode('2','tr+rota2')
-        mdl.setTranslationDirection('2','translation_y', 3)
-        mdl.setRotationMatrix('2', 'rotation_matrix_31', 31.31)
-        cmd_perio = " --perio  --rota  --angle 45 --dir 9 8 7  --invpt 0 66 0  --perio  --trans 0 3 0  --rota  --matrix 0 0 0 0 0 0 31.31 0 0  --invpt  0 0 "
-
-        assert mdl.getPerioCommand() == cmd_perio,\
-            'Perio command is not verified in SolutionDomain Model'
-
     def checkSimCommAndVerifMaillCommand(self):
         """ Check whether simulation_communication command line could be get """
         mdl = SolutionDomainModel(self.case)
@@ -2196,23 +1684,6 @@ class SolutionDomainTestCase(ModelTest):
         assert mdl.getSimCommCommand() == sim,\
             'Simulation_communication command is not verified in SolutionDomain Model'
 
-        #A reprendre :
-####    def checkSelectCommand(self):
-####        """Check whether standalone selection command line could be get"""
-####        select = {}
-####        select['color'] = '1 2 3'
-####        select['group'] = 'toto'
-####        select['reverse'] = 'off'
-####        select['semiconf'] = 'on'
-####        mdl = SolutionDomainModel(self.case)
-####        mdl.addSelectFaces(select)
-####        print mdl.getSelectCommand()
-######        --int-face  --color 1 2 3 --group toto
-####        select =' --color 1 2 3  --group toto  --semi-conf '
-######        select =' --int-face  --color 1 2 3  --group toto  --semi-conf '
-####        assert mdl.getSelectCommand().split() == select.split(),\
-####            'Standalone selection faces command is not verified in SolutionDomain Model'
-####
     def checkPostCommand(self):
         """Check whether output postprocessing format command line could be get"""
         mdl = SolutionDomainModel(self.case)
@@ -2221,38 +1692,6 @@ class SolutionDomainTestCase(ModelTest):
         cmd_post = ' --cgns '
         assert mdl.getPostCommand() == cmd_post,\
             'Post command is not verified for postprocessing format in SolutionDomain Model'
-
-
-    def checkGetStatusNodeAndGetFacesSelect(self):
-        """Check whether status of node and selection pf fzces could be get - only for view"""
-        mdl = SolutionDomainModel(self.case)
-        select = {}
-        select['color'] = '1 2 3'
-        select['group'] = 'toto'
-        select['fraction'] = '0.12'
-        select['plan'] = '0.88'
-        select['reverse'] = 'off'
-        select['semiconf'] = 'on'
-        mdl.setJoinMeshesStatus('on')
-        mdl.addJoinFaces(select)
-        node = mdl.node_join.xmlGetChildNode('faces_join')
-
-        assert mdl.getStatusNode(node) == 'on',\
-            'Could not get status of node in SolutionDomainModel'
-
-        deux = {}
-        deux['color'] = '4 5 6'
-        deux['group'] = 'coucou'
-        deux['fraction'] = '0.1'
-        deux['plan'] = '0.8'
-        deux['reverse'] = 'off'
-        deux['semiconf'] = 'on'
-        mdl.addJoinFaces(deux)
-        list = {'group': 'coucou', 'reverse': 'off', 'color': '4 5 6', 'plan': '0.8', 'fraction': '0.1', 'semiconf': 'on'}
-
-        assert mdl.getFacesSelect('faces_join', 1) == list,\
-            'Could not get faces for view in SolutionDomainModel'
-
 
 
 #-------------------------------------------------------------------------------

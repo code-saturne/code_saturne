@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2010 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -29,8 +29,8 @@
 
 """
 This module contains the following classes:
-- LineEditDelegateReferences
-- LineEditDelegateGroups
+- LineEditDelegateVerbosity
+- LineEditDelegateSelector
 - StandardItemModelFaces
 - FacesSelectionView
 """
@@ -69,7 +69,7 @@ log.setLevel(GuiParam.DEBUG)
 # Line edit delegate for references
 #-------------------------------------------------------------------------------
 
-class LineEditDelegateReferences(QItemDelegate):
+class LineEditDelegateVerbosity(QItemDelegate):
     """
     Use of a QLineEdit in the table.
     """
@@ -95,10 +95,10 @@ class LineEditDelegateReferences(QItemDelegate):
         model.setData(index, QVariant(value), Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
-# Line edit delegate for groups
+# Line edit delegate for selection
 #-------------------------------------------------------------------------------
 
-class LineEditDelegateGroups(QItemDelegate):
+class LineEditDelegateSelector(QItemDelegate):
     """
     Use of a QLineEdit in the table.
     """
@@ -108,7 +108,8 @@ class LineEditDelegateGroups(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        validator =  RegExpValidator(editor, QRegExp("[ '_A-Za-z0-9]*"))
+        #validator =  RegExpValidator(editor, QRegExp("[ '_A-Za-z0-9]*"))
+        validator =  RegExpValidator(editor, QRegExp("[ -~]*"))
         editor.setValidator(validator)
         #editor.installEventFilter(self)
         return editor
@@ -157,7 +158,7 @@ class FractionPlaneDelegate(QItemDelegate):
 
 class StandardItemModelFaces(QStandardItemModel):
 
-    def __init__(self, parent, mdl=None, tag=None, perio_name=None):
+    def __init__(self, parent, mdl=None, tag=None):
         """
         """
         QStandardItemModel.__init__(self)
@@ -165,31 +166,16 @@ class StandardItemModelFaces(QStandardItemModel):
         self.parent = parent
         self.mdl = mdl
         self.tag = tag
-        self.perio_name = perio_name
 
-        self.headers = [self.tr("References"),
-                        self.tr("Groups"),
-                        self.tr("Reverse"),
-                        self.tr("Fraction"),
+        self.headers = [self.tr("Fraction"),
                         self.tr("Plane"),
-                        self.tr("Semi-conf")]
+                        self.tr("Verbosity"),
+                        self.tr("Selection criteria")]
 
-        self.tooltip = [self.tr("Code_Saturne Preprocessor sub-option: --color"),
-                        self.tr("Code_Saturne Preprocessor sub-option: --group"),
-                        self.tr("Code_Saturne Preprocessor sub-option: --invsel"),
-                        self.tr("Code_Saturne Preprocessor sub-option: --fraction"),
-                        self.tr("Code_Saturne Preprocessor sub-option: --plane"),
-                        self.tr("Code_Saturne Preprocessor sub-option: --semi-conf")]
-
-        if self.tag == "faces_periodic":
-                self.headers.pop()
-                self.tooltip.pop()
-
-        elif self.tag == "faces_select":
-            self.headers = [self.tr("References"), self.tr("Groups"), self.tr("Reverse")]
-            self.tooltip = [self.tr("Code_Saturne Preprocessor sub-option: --color"),
-                            self.tr("Code_Saturne Preprocessor sub-option: --group"),
-                            self.tr("Code_Saturne Preprocessor sub-option: --invsel")]
+        self.tooltip = [self.tr("Relative merge tolerance"),
+                        self.tr("Maximum angle for normals of coplanar faces"),
+                        self.tr("Verbosity"),
+                        self.tr("Selection criteria string")]
 
         self.setColumnCount(len(self.headers))
 
@@ -202,24 +188,19 @@ class StandardItemModelFaces(QStandardItemModel):
 
         # Default values
         self.default = {}
-        for key in ('color', 'group', 'reverse', 'fraction', 'plan', 'semiconf'):
+        for key in ('selector', 'fraction', 'plane', 'verbosity'):
             self.default[key] = self.mdl.defaultValues()[key]
 
-        if self.tag == "faces_join":
-            for j in range(self.mdl.getJoinSelectionsNumber()):
-                d = self.mdl.getJoinFaces(j+1)
+        if self.tag == "face_joining":
+            for j in range(self.mdl.getJoinSelectionsCount()):
+                d = self.mdl.getJoinFaces(j)
                 self.dataFaces.append(d)
                 row = self.rowCount()
                 self.setRowCount(row+1)
 
-        else:
-            if self.tag == "faces_periodic":
-                d = self.mdl.getPeriodicFaces(self.perio_name)
-
-            elif self.tag == "faces_select":
-                d = self.mdl.getSelectFaces()
-
-            if d:
+        elif self.tag == "face_periodicity":
+            for j in range(self.mdl.getPeriodicSelectionsCount()):
+                d = self.mdl.getPeriodicFaces(j)
                 self.dataFaces.append(d)
                 row = self.rowCount()
                 self.setRowCount(row+1)
@@ -237,25 +218,13 @@ class StandardItemModelFaces(QStandardItemModel):
 
         if role == Qt.DisplayRole:
             if col == 0:
-                return QVariant(self.dataFaces[row]['color'])
-            elif col == 1:
-                return QVariant(self.dataFaces[row]['group'])
-            elif col == 3:
                 return QVariant(self.dataFaces[row]['fraction'])
-            elif col == 4:
-                return QVariant(self.dataFaces[row]['plan'])
-
-        if role == Qt.CheckStateRole:
-            if col == 2:
-                if self.dataFaces[row]['reverse'] == "on":
-                    return QVariant(Qt.Checked)
-                else:
-                    return QVariant(Qt.Unchecked)
-            elif col == 5:
-                if self.dataFaces[row]['semiconf'] == "on":
-                    return QVariant(Qt.Checked)
-                else:
-                    return QVariant(Qt.Unchecked)
+            elif col == 1:
+                return QVariant(self.dataFaces[row]['plane'])
+            elif col == 2:
+                return QVariant(self.dataFaces[row]['verbosity'])
+            elif col == 3:
+                return QVariant(self.dataFaces[row]['selector'])
 
         return QVariant()
 
@@ -263,10 +232,7 @@ class StandardItemModelFaces(QStandardItemModel):
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
-        if index.column() in [2, 5]:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
-        else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -280,34 +246,19 @@ class StandardItemModelFaces(QStandardItemModel):
         col = index.column()
 
         if col == 0:
-            self.dataFaces[row]['color'] = str(value.toString())
-        elif col == 1:
-            self.dataFaces[row]['group'] = str(value.toString())
-        elif col == 3:
             self.dataFaces[row]['fraction'] = str(value.toString())
-        elif col == 4:
-            self.dataFaces[row]['plan'] = str(value.toString())
+        elif col == 1:
+            self.dataFaces[row]['plane'] = str(value.toString())
         elif col == 2:
-            v, ok = value.toInt()
-            if v == Qt.Checked:
-                self.dataFaces[row]['reverse'] = "on"
-            else:
-                self.dataFaces[row]['reverse'] = "off"
-        elif col == 5:
-            v, ok = value.toInt()
-            if v == Qt.Checked:
-                self.dataFaces[row]['semiconf'] = "on"
-            else:
-                self.dataFaces[row]['semiconf'] = "off"
+            self.dataFaces[row]['verbosity'] = str(value.toString())
+        elif col == 3:
+            self.dataFaces[row]['selector'] = str(value.toString())
 
-        if self.tag == "faces_join":
-            self.mdl.replaceJoinFaces(row+1, self.dataFaces[row])
+        if self.tag == "face_joining":
+            self.mdl.replaceJoinFaces(row, self.dataFaces[row])
 
-        elif self.tag == "faces_periodic":
-            self.mdl.replacePeriodicFaces(self.perio_name, self.dataFaces[row])
-
-        elif self.tag == "faces_select":
-            self.mdl.replaceSelectFaces(self.dataFaces[row])
+        elif self.tag == "face_periodicity":
+            self.mdl.replacePeriodicFaces(row, self.dataFaces[row])
 
         log.debug("setData -> dataFaces = %s" % self.dataFaces)
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
@@ -320,26 +271,11 @@ class StandardItemModelFaces(QStandardItemModel):
         """
         title = self.tr("Warning")
 
-        if self.tag == "faces_select":
-            if self.mdl.getSelectFaces() or self.rowCount() == 1:
-                msg = self.tr("For interior faces selection, only a single criterion is allowed.")
-                QMessageBox.information(self.parent, title, msg)
-                return
-
-        elif self.tag == "faces_periodic":
-            if self.mdl.getPeriodicFaces(self.perio_name):
-                msg = self.tr("For a given periodicity, only a single faces selection is allowed.")
-                QMessageBox.information(self.parent, title, msg)
-                return
-
-        if self.tag == "faces_join":
+        if self.tag == "face_joining":
             self.mdl.addJoinFaces(self.default)
 
-        elif self.tag == "faces_periodic":
-            self.mdl.addPeriodicFaces(self.perio_name, self.default)
-
-        elif self.tag == "faces_select":
-            self.mdl.addSelectFaces(self.default)
+        elif self.tag == "face_periodicity":
+            self.mdl.addPeriodicFaces(self.default)
 
         self.dataFaces.append(self.default.copy())
         log.debug("addItem -> dataFaces = %s" % self.dataFaces)
@@ -351,21 +287,19 @@ class StandardItemModelFaces(QStandardItemModel):
         """
         Delete an item from the QTableView.
         """
-        log.debug("StandardItemModelFaces.delete row = %i %i" % (row, self.mdl.getJoinSelectionsNumber()))
+        log.debug("StandardItemModelFaces.delete row = %i %i" % (row, self.mdl.getJoinSelectionsCount()))
 
-        if self.tag == "faces_join":
-            self.mdl.deleteJoinFaces(str(row+1))
+        if self.tag == "face_joining":
+            self.mdl.deleteJoinFaces(row)
+            del self.dataFaces[row]
+            row = self.rowCount()
+            self.setRowCount(row-1)
 
-        elif self.tag == "faces_periodic":
-            self.mdl.deletePeriodicFaces(self.perio_name)
-
-        elif self.tag == "faces_select":
-            self.mdl.deleteSelectFaces()
-
-        del self.dataFaces[row]
-        row = self.rowCount()
-        self.setRowCount(row-1)
-
+        elif self.tag == "face_periodicity":
+            self.mdl.deletePeriodicity(row)
+            del self.dataFaces[row]
+            row = self.rowCount()
+            self.setRowCount(row-1)
 
 #-------------------------------------------------------------------------------
 # Main class
@@ -383,23 +317,25 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
         self.setupUi(self)
 
         self.modelFaces = None
-        #self.modelFaces = StandardItemModelFaces(self)
-        #self.tableView.setModel(self.modelFaces)
 
-        delegateReferences = LineEditDelegateReferences(self.tableView)
-        self.tableView.setItemDelegateForColumn(0, delegateReferences)
+        self.tableView.setModel(self.modelFaces)
 
-        delegateGroups = LineEditDelegateGroups(self.tableView)
-        self.tableView.setItemDelegateForColumn(1, delegateGroups)
+        self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
+        self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
+        self.tableView.horizontalHeader().setStretchLastSection(True)
 
         delegateFraction = FractionPlaneDelegate(self.tableView)
-        self.tableView.setItemDelegateForColumn(3, delegateFraction)
+        self.tableView.setItemDelegateForColumn(0, delegateFraction)
 
         delegatePlane = FractionPlaneDelegate(self.tableView)
-        self.tableView.setItemDelegateForColumn(4, delegatePlane)
+        self.tableView.setItemDelegateForColumn(1, delegatePlane)
 
-##        self.tableView.resizeColumnsToContents()
-##         self.tableView.resizeRowsToContents()
+        delegateVerbosity = LineEditDelegateVerbosity(self.tableView)
+        self.tableView.setItemDelegateForColumn(2, delegateVerbosity)
+
+        delegateSelector = LineEditDelegateSelector(self.tableView)
+        self.tableView.setItemDelegateForColumn(3, delegateSelector)
+
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableView.setSelectionMode(QAbstractItemView.SingleSelection)
 
@@ -411,10 +347,6 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
 
 #    def populateModel(self, model, tag):
 #        self.modelFaces.populateModel(model, tag)
-#
-#
-#    def setPeriodicityName(self, perio_name):
-#        self.modelFaces.perio_name = perio_name
 
 
     @pyqtSignature("")
