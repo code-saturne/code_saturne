@@ -452,8 +452,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   if (syr_coupling->verbosity > 0) {
     fvm_gnum_t n_g_elts = coupling_ent->n_elts;
     fvm_parall_counter(&n_g_elts, 1);
-    bft_printf(_("\nExtracted mesh built of %lu elements.\n"),
-               (unsigned long)n_g_elts);
+    bft_printf(_("\nExtracted mesh built of %llu elements.\n"),
+               (unsigned long long)n_g_elts);
   }
 
   /* Build and initialize associated locator */
@@ -504,9 +504,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   if (n_exterior)
     bft_error(__FILE__, __LINE__, 0,
               _("Coupling with SYRTHES impossible:\n"
-                "%lu element centers from mesh \"%s\"\n"
+                "%llu element centers from mesh \"%s\"\n"
                 "not located on SYRTHES mesh."),
-              (unsigned long)n_exterior, coupled_mesh_name);
+              (unsigned long long)n_exterior, coupled_mesh_name);
 
   if (location_elts != coupling_ent->elts)
     fvm_nodal_destroy(location_elts);

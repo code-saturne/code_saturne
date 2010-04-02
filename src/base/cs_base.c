@@ -388,12 +388,12 @@ _error_mem_summary(void)
   /* Available memory usage information */
 
   _cs_base_err_printf
-    (_("Theoretical current allocated memory:   %lu kB\n"),
-     (unsigned long)(bft_mem_size_current()));
+    (_("Theoretical current allocated memory:   %llu kB\n"),
+     (unsigned long long)(bft_mem_size_current()));
 
   _cs_base_err_printf
-    (_("Theoretical maximum allocated memory:   %lu kB\n"),
-     (unsigned long)(bft_mem_size_max()));
+    (_("Theoretical maximum allocated memory:   %llu kB\n"),
+     (unsigned long long)(bft_mem_size_max()));
 
   if (bft_mem_usage_initialized() == 1) {
 
@@ -402,16 +402,16 @@ _error_mem_summary(void)
     mem_usage = bft_mem_usage_max_pr_size();
     if (mem_usage > 0)
       _cs_base_err_printf
-        (_("Maximum program memory measure:         %lu kB\n"),
-         (unsigned long)mem_usage);
+        (_("Maximum program memory measure:         %llu kB\n"),
+         (unsigned long long)mem_usage);
 
     /* Current measured memory */
 
     mem_usage = bft_mem_usage_pr_size();
     if (mem_usage > 0)
       _cs_base_err_printf
-        (_("Current program memory measure:         %lu kB\n"),
-         (unsigned long)mem_usage);
+        (_("Current program memory measure:         %llu kB\n"),
+         (unsigned long long)mem_usage);
   }
 }
 
@@ -1435,12 +1435,12 @@ cs_base_mem_finalize(void)
 
     bft_printf(_("\n"
                  "  Fortran work arrays memory use:\n"
-                 "   %-12lu integers needed (maximum reached in %s)\n"
-                 "   %-12lu reals    needed (maximum reached in %s)\n\n"
+                 "   %-12llu integers needed (maximum reached in %s)\n"
+                 "   %-12llu reals    needed (maximum reached in %s)\n\n"
                  "   Local maximum work memory requested %12.3f %cb\n"
                  "                                  used %12.3f %cb\n"),
-               (unsigned long)_cs_glob_mem_ia_peak, _cs_glob_srt_ia_peak,
-               (unsigned long)_cs_glob_mem_ra_peak, _cs_glob_srt_ra_peak,
+               (unsigned long long)_cs_glob_mem_ia_peak, _cs_glob_srt_ia_peak,
+               (unsigned long long)_cs_glob_mem_ra_peak, _cs_glob_srt_ra_peak,
                wk_size[0], unite[wk_unit[0]],
                wk_size[1], unite[wk_unit[1]]);
 
@@ -1625,7 +1625,7 @@ cs_base_system_info(void)
   bft_printf("  %s%s\n", _("Processor:         "), bft_sys_info_cpu());
 
   if (ram > 0)
-    bft_printf("  %s%lu\n", _("Memory:            "), (unsigned long)ram);
+    bft_printf("  %s%llu\n", _("Memory:            "), (unsigned long long)ram);
 
   if (str_user != NULL) {
     bft_printf("  %s%s\n", _("User:              "), str_user);

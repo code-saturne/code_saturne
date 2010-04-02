@@ -2758,14 +2758,14 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
     fvm_gnum_t n_g_break_counter = n_break_counter;
     fvm_parall_counter(&n_g_break_counter, 1);
 
-    bft_printf(_("\n  Equivalences broken for %lu edges.\n"),
-               (unsigned long)n_g_break_counter);
+    bft_printf(_("\n  Equivalences broken for %llu edges.\n"),
+               (unsigned long long)n_g_break_counter);
 
     if (param.verbosity > 1) {
       fvm_lnum_t g_n_max_breaks = n_max_breaks;
       fvm_parall_counter_max(&g_n_max_breaks, 1);
-      bft_printf(_("\n  Max. number of equiv. breaks: %lu\n"),
-                 (unsigned long)g_n_max_breaks);
+      bft_printf(_("\n  Max. number of equiv. breaks: %llu\n"),
+                 (unsigned long long)g_n_max_breaks);
     }
   }
 

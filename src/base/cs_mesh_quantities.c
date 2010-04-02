@@ -1229,10 +1229,11 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
 
   if (error_count > 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("  %lu cells have a Negative volume.\n"
+              _("  %llu cells have a Negative volume.\n"
                 " Run mesh quality check for post-processing output.\n"
                 " In case of mesh joining, this may be due to overly "
-                " agressive joining parameters."), (unsigned long)error_count);
+                " agressive joining parameters."),
+              (unsigned long long)error_count);
 }
 
 /*----------------------------------------------------------------------------

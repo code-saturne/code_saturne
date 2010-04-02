@@ -1163,12 +1163,12 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
            " Extended neighborhood reduced by non-orthogonality\n"
            " --------------------------------------------------\n"
            "\n"
-           " Size of complete cell-cell connectivity: %12lu\n"
-           " Size of filtered cell-cell conectivity:  %12lu\n"
+           " Size of complete cell-cell connectivity: %12llu\n"
+           " Size of filtered cell-cell conectivity:  %12llu\n"
            " %lu connections removed, for a ratio of %4.2g %% used\n"),
-         (unsigned long)init_cell_cells_connect_size,
-         (unsigned long)(init_cell_cells_connect_size - n_deleted_cells),
-         (unsigned long)n_deleted_cells,
+         (unsigned long long)init_cell_cells_connect_size,
+         (unsigned long long)(init_cell_cells_connect_size - n_deleted_cells),
+         (unsigned long long)n_deleted_cells,
          ratio);
 
 #if 0 /* For debugging purpose */

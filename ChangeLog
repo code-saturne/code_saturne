@@ -1,3 +1,18 @@
+* 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Cast all the printing in unsigned long long instead of unsigned long.
+  modified routines:
+    src/base/cs_base.c
+    src/base/cs_boundary_conditions.c
+    src/base/cs_ext_neighborhood.c
+    src/base/cs_io.c
+    src/base/cs_join_intersect.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_quantities.c
+    src/base/cs_multigrid.c
+    src/base/cs_preprocessor_data.c
+    src/base/cs_restart.c
+    src/base/cs_syr4_coupling.c
+
 * 01/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add correct flags for the libsyrcs library.
   modified script:

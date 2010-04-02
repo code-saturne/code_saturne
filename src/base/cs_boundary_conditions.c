@@ -307,9 +307,9 @@ cs_boundary_conditions_error(int             n_phases,
         bft_printf(_("\nPhase %d:\n  "), phase_id + 1);
 
       bft_printf(_("\nFirst face with boundary condition definition error\n"
-                   "  (out of %lu)\n"
+                   "  (out of %llu)\n"
                    "  has boundary condition type %d, center (%g, %g, %g)\n\n"),
-                 (unsigned long)n_errors , abs(err_face_type),
+                 (unsigned long long)n_errors , abs(err_face_type),
                  err_face_coo[0], err_face_coo[1], err_face_coo[2]);
     }
 

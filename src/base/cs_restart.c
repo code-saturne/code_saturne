@@ -1370,11 +1370,11 @@ cs_restart_check_base_location(const cs_restart_t  *restart,
     else if (cs_glob_rank_id <= 0) {
       cs_base_warn(__FILE__, __LINE__);
       bft_printf(_("The size of location \"%s\" associated with\n"
-                   "the restart file \"%s\" is %lu and does not\n"
-                   "correspond to that of the current mesh (%lu).\n"),
+                   "the restart file \"%s\" is %llu and does not\n"
+                   "correspond to that of the current mesh (%llu).\n"),
                  loc->name, restart->name,
-                 (unsigned long)loc->n_glob_ents_f,
-                 (unsigned long)loc->n_glob_ents);
+                 (unsigned long long)loc->n_glob_ents_f,
+                 (unsigned long long)loc->n_glob_ents);
     }
 
   }
@@ -1491,8 +1491,9 @@ cs_restart_dump_index(const cs_restart_t  *restart)
   for (loc_id = 0; loc_id < restart->n_locations; loc_id++) {
     const _location_t *loc = &(restart->location[loc_id]);
     bft_printf(_("  Location: %s\n"
-                 "    (number: %03d, n_glob_ents: %lu)\n"),
-               loc->name, (int)(loc->id), (unsigned long)(loc->n_glob_ents));
+                 "    (number: %03d, n_glob_ents: %llu)\n"),
+               loc->name, (int)(loc->id),
+               (unsigned long long)(loc->n_glob_ents));
   }
   if (restart->n_locations > 0)
     bft_printf("\n");
@@ -1564,11 +1565,12 @@ cs_restart_read_section(cs_restart_t  *restart,
     }
     n_glob_ents = (restart->location[location_id-1]).n_glob_ents;
     if ((restart->location[location_id-1]).n_glob_ents_f != n_glob_ents) {
-      bft_printf(_("  %s: location id %d for \"%s\" has "
-                   "size %lu, but %lu is expected.\n"),
-                 restart->name, location_id, sec_name,
-                 (unsigned long)(restart->location[location_id-1]).n_glob_ents_f,
-                 (unsigned long)n_glob_ents);
+      bft_printf
+        (_("  %s: location id %d for \"%s\" has "
+           "size %llu, but %llu is expected.\n"),
+         restart->name, location_id, sec_name,
+         (unsigned long long)(restart->location[location_id-1]).n_glob_ents_f,
+         (unsigned long long)n_glob_ents);
       return CS_RESTART_ERR_LOCATION;
     }
     n_ents  = (restart->location[location_id-1]).n_ents;
