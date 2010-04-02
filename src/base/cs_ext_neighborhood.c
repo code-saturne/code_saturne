@@ -1165,7 +1165,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
            "\n"
            " Size of complete cell-cell connectivity: %12llu\n"
            " Size of filtered cell-cell conectivity:  %12llu\n"
-           " %lu connections removed, for a ratio of %4.2g %% used\n"),
+           " %llu connections removed, for a ratio of %4.2g %% used\n"),
          (unsigned long long)init_cell_cells_connect_size,
          (unsigned long long)(init_cell_cells_connect_size - n_deleted_cells),
          (unsigned long long)n_deleted_cells,
