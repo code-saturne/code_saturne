@@ -609,7 +609,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'N_PROCS': None,
         'USER_INPUT_FILES': None,
         'JOIN': '',
-        'REORIENT': ' --reorient ',
+        'REORIENT': True,
         'CS_TMP_PREFIX': '',
         'PBS_ppn': '1',
         'PBS_walltime': '34:77:22',

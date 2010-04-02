@@ -1317,11 +1317,11 @@ class SolutionDomainModel(MeshModel, Model):
 
     def getReorientCommand(self):
         """
-        Get reorient command line for preprocessor execution
+        Get reorient value line for preprocessor execution
         """
-        line = ''
+        line = 'False'
         if self.node_orient and self.node_orient['status'] == 'on':
-            line += ' --reorient '
+            line += 'True'
 
         return line
 
