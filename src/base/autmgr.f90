@@ -217,8 +217,7 @@ do while (npass .lt. npasmx)
     if (i.le.ncelf .and. j.le.ncelf) then
 
       inditt = 0
-      critr  = (daf(i)/indic(i))*(daf(j)/indic(j)) &
-               /( xaf(ifac,1)*xaf(ifac,isym))
+      critr  = (daf(i)/indic(i))*(daf(j)/indic(j))/(xaf(ifac,1)*xaf(ifac,isym))
 
       if (critr.lt.(1.d0-epslon) .and. irscel(i)*irscel(j).le.0) then
 

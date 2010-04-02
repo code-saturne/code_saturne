@@ -61,9 +61,9 @@ BEGIN_C_DECLS
  * Updates border face connectivity and associated mesh quantities.
  *
  * parameters:
- *   mesh             <-> pointer to mesh structure.
- *   max_warp_angle   --> criterion to know which face to cut
- *   post_tag         --> tag to know if we have to post-treat cut faces.
+ *   mesh           <-> pointer to mesh structure.
+ *   max_warp_angle <-- criterion to know which face to cut
+ *   post_flag      <-- 1 if we have to post-process cut faces, 0 otherwise
  *----------------------------------------------------------------------------*/
 
 void

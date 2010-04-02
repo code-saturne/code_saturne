@@ -65,25 +65,30 @@ CS_PROCF (csihmp, CSIHMP) (int *const iihmpr);
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Load the xml file in memory. Return an error code for the main programme.
+ * Load the XML file in memory.
  *
  * parameter:
- *   filename            -->  xml file containing the parameters
+ *   filename <-- XML file containing the parameters
+ *
+ * returns:
+ *   error code (0 in case of success)
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_file_loading(const char *const filename);
+cs_gui_load_file(const char  *filename);
 
-/*----------------------------------------------------------------------------
+/*-----------------------------------------------------------------------------
  * Check the xml file version.
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_get_version(void);
+cs_gui_check_version(void);
 
 /*----------------------------------------------------------------------------
  * Initialize the path for the xpath request with the root node.
- * Return the root path.
+ *
+ * returns:
+ *   the root path
  *----------------------------------------------------------------------------*/
 
 char*
@@ -91,280 +96,316 @@ cs_xpath_init_path(void);
 
 /*----------------------------------------------------------------------------
  * Initialize the path for the xpath request with a short way.
- * Return the short path.
+ *
+ * returns:
+ *   the short path.
  *----------------------------------------------------------------------------*/
 
 char*
 cs_xpath_short_path(void);
 
 /*----------------------------------------------------------------------------
- * Add all element (*) to the path.
+ * Add all elements (*) to the path.
  *
  * parameter:
- *   path               <-->  path for the xpath request
+ *   path <--> path for the xpath request
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_all_elements(char **path);
+cs_xpath_add_all_elements(char  **path);
 
 /*----------------------------------------------------------------------------
  * Add an element (i.e. markup's label) to the path.
  *
- * parameter:
- *   path               <-->  path for the xpath request
- *   element             -->  label of the new element in the path
+ * parameters:
+ *   path    <-> path for the xpath request
+ *   element <-- label of the new element in the path
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_element(      char **     path,
-                     const char *const element);
+cs_xpath_add_element(char        **path,
+                     const char   *element);
 
 /*----------------------------------------------------------------------------
  * Add a list of elements (i.e. markup's label) to the path.
  *
  * parameters:
- *   path               <-->  path for the xpath request
- *   nbr                 -->  size of the labels list
- *   ...                 -->  list of labels of new elements in the path
+ *   path <->  path for the xpath request
+ *   nbr  <--  size of the labels list
+ *   ...  <--  list of labels of new elements in the path
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_elements(      char **path,
-                      const int    nbr, ...);
+cs_xpath_add_elements(char  **path,
+                      int     nbr,
+                      ...);
 
 /*----------------------------------------------------------------------------
  * Add an element's attribute to the path.
  *
- * parameter:
- *   path               <-->  path for the xpath request
- *   attribute_name      -->  label of the new attribute in the path
+ * parameters:
+ *   path           <-> path for the xpath request
+ *   attribute_name <-- label of the new attribute in the path
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_attribute(      char **     path,
-                       const char *const attribute_name);
+cs_xpath_add_attribute(char        **path,
+                       const char   *attribute_name);
 
 /*----------------------------------------------------------------------------
- * Add the i'st element to the path.
+ * Add the i'th element to the path.
  *
  * parameters:
- *   path               <-->  path for the xpath request
- *   element             -->  label of the new element in the path
- *   num                 -->  number of the element's markup
+ *   path    <-> path for the xpath request
+ *   element <-- label of the new element in the path
+ *   num     <-- number of the element's markup
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_element_num(      char **     path,
-                         const char *const element,
-                         const int         num);
+cs_xpath_add_element_num(char        **path,
+                         const char   *element,
+                         int           num);
 
 /*----------------------------------------------------------------------------
  * Add a test on a value associated to an attribute to the path.
  *
  * parameters:
- *   path               <-->  path for the xpath request
- *   attribute_type      -->  label of the attribute for the test in the path
- *   attribute_value     -->  value of the attribute for the test in the path
+ *   path            <-> path for the xpath request
+ *   attribute_type  <-- label of the attribute for the test in the path
+ *   attribute_value <-- value of the attribute for the test in the path
  *----------------------------------------------------------------------------*/
 
-
 void
-cs_xpath_add_test_attribute(      char **      path,
-                            const char  *const attribute_type,
-                            const char  *const attribute_value);
+cs_xpath_add_test_attribute(char        **path,
+                            const char   *attribute_type,
+                            const char   *attribute_value);
 
 /*----------------------------------------------------------------------------
  * Add the 'text()' xpath function to the path.
  *
- * parameter:
- *   path               <-->  path for the xpath request
+ * parameters:
+ *   path <->  path for the xpath request
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_function_text(char **path);
+cs_xpath_add_function_text(char  **path);
 
 /*----------------------------------------------------------------------------
- * Return a list of attributes nodes name from the xpath request in an array.
+ * Return a list of attribute node names from the xpath request in an array.
+ *
  * Example: from <a attr="c"/><b attr="d"/> return {c,d}
  *
- * parameter:
- *   path                -->  path for the xpath request
- *   size               <--   array size
+ * parameters:
+ *   path <-- path for the xpath request
+ *   size --> array size
  *----------------------------------------------------------------------------*/
 
 char**
-cs_gui_get_attribute_values(char *const path,
-                            int  *const size);
+cs_gui_get_attribute_values(char  *path,
+                            int   *size);
 
 /*----------------------------------------------------------------------------
  * Return the value of an element's attribute.
+ *
  * Example: from <a b="c"/> return c
  *
- * parameter:
- *   path                -->  path for the xpath request
+ * parameters:
+ *   path <-- path for the xpath request
  *----------------------------------------------------------------------------*/
 
 char*
-cs_gui_get_attribute_value(char *const path);
+cs_gui_get_attribute_value(char  *path);
 
 /*----------------------------------------------------------------------------
  * Return a list of children nodes name from the xpath request in an array.
+ *
  * Example: from <a>3<\a><b>4<\b> return {a,b}
  *
  * parameters:
- *   path                -->  path for the xpath request
- *   size               <--   array size
+ *   path <-- path for the xpath request
+ *   size --> array size
+ *
+ * returns:
+ *   node's names
  *----------------------------------------------------------------------------*/
 
 char**
-cs_gui_get_nodes_name(char   *const path,
-                      int    *const size);
+cs_gui_get_nodes_name(char  *path,
+                      int   *size);
 
 /*----------------------------------------------------------------------------
  * Return a single node's name from the xpath request.
  *
  * parameter:
- *   path                -->  path for the xpath request
+ *   path <-- path for the xpath request
+ *
+ * returns:
+ *   node's name
  *----------------------------------------------------------------------------*/
 
 char*
-cs_gui_get_node_name(char *const path);
+cs_gui_get_node_name(char  *path);
 
 /*----------------------------------------------------------------------------
  * Return a list of children text nodes from the xpath request in an array.
+ *
  * Example: from <a>3<\a><a>4<\a> return {3,4}
  *
  * parameters:
- *   path                -->  path for the xpath request
- *   size               <--   array size
+ *   path <-- path for the xpath request
+ *   size --> array size
  *----------------------------------------------------------------------------*/
 
 char**
-cs_gui_get_text_values(char   *const path,
-                       int    *const size);
+cs_gui_get_text_values(char  *path,
+                       int   *size);
 
 /*----------------------------------------------------------------------------
- * Return a single children text node from the xpath request.
+ * Return a single child text node from the xpath request.
  *
  * parameter:
- *   path                -->  path for the xpath request
+ *   path <-- path for the xpath request
+ *
+ * returns:
+ *   child node based on request
  *----------------------------------------------------------------------------*/
 
 char*
-cs_gui_get_text_value(char *const path);
+cs_gui_get_text_value(char  *path);
 
 /*----------------------------------------------------------------------------
- * Modify the value parameter and return 1 if the xpath request succeeded,
- * otherwise just return 0.
- * Example: from <a>3<\a><a>4<\a> return {3,4}
+ * Query a double value parameter.
  *
  * parameters:
- *   path                -->  path for the xpath request
- *   value              <--   double result of the xpath request
+ *   path  <-- path for the xpath request
+ *   value --> double result of the xpath request
+ *
+ * returns:
+ *   1 if the xpath request succeeded, 0 otherwise.
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_double(char   *const path,
-                  double *const value);
+cs_gui_get_double(char    *path,
+                  double  *value);
 
 /*----------------------------------------------------------------------------
- * Modify the value parameter and return 1 if the xpath request succeeded,
- * otherwise just return 0.
+ * Query an integer value parameter.
  *
  * parameters:
- *   path                -->  path for the xpath request
- *   value              <--   integer result of the xpath request
+ *   path  <-- path for the xpath request
+ *   value --> double result of the xpath request
+ *
+ * returns:
+ *   1 if the xpath request succeeded, 0 otherwise.
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_int(char *const path,
-               int  *const value);
+cs_gui_get_int(char  *path,
+               int   *value);
 
 /*----------------------------------------------------------------------------
- * Return the number of elements (i.e. the number of xml markups)
+ * Query the number of elements (i.e. the number of xml markups)
  * from a xpath request.
+ *
  * Example: from <a>3<\a><a>4<\a> return 2
  *
- * parameter:
- *   path                -->  path for the xpath request
+ * parameters:
+ *   path <-- path for the xpath request
+ *
+ * returns:
+ *   the number of elements in xpath request
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_nb_element(char *const path);
+cs_gui_get_nb_element(char  *path);
 
 /*----------------------------------------------------------------------------
- * Return the integer max value from a list, which is a xpath request result.
+ * Query the maximum integer value from an xpath request result list.
+ *
  * Example: from <a>3<\a><a>4<\a> return 4
  *
- * parameter:
- *   path                -->  path for the xpath request
+ * parameters:
+ *   path <-- path for the xpath request
+ *
+ * returns:
+ *   the maximum integer value in the list
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_max_value(char *const path);
+cs_gui_get_max_value(char  *path);
 
 /*-----------------------------------------------------------------------------
  * Evaluate the "status" attribute value.
- * Return 1 if the xpath request has succeeded, 0 otherwise.
  *
  * parameter:
- *   path                -->  path for the xpath request
- *   result             <--   status="on" return 1,  status="off" return 0
+ *   path   <-- path for the xpath request
+ *   result --> status="on" return 1, status="off" return 0
+ *
+ * returns:
+ *   1 if the xpath request has succeeded, 0 otherwise
  *----------------------------------------------------------------------------*/
 
-
 int
-cs_gui_get_status(char *const path,
-                  int  *const result);
+cs_gui_get_status(char  *path,
+                  int   *result);
 
 /*-----------------------------------------------------------------------------
- * Returns the number of markup described with a path
+ * Return the xml markup quantity.
  *
  * parameters:
- *   markup             -->  path for the markup
- *   flag               -->  1: initialize the path with the root node;
- *                           0: initialize the path with a short way
- *----------------------------------------------------------------------------*/
-
-int
-cs_gui_get_tag_number(const char *const markup, const int flag);
-
-/*-----------------------------------------------------------------------------
- *  Return the number of sign needed to write an integer number
+ *   markup <--  path for the markup
+ *   flag   <--  1: initialize the path with the root node;
+ *               0: initialize the path with a short way
  *
- * parameter:
- *   num                -->  integer number
+ * returns:
+ *   XML markup quantity
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_characters_number(const int num);
+cs_gui_get_tag_number(const char  *markup,
+                      int          flag);
 
 /*-----------------------------------------------------------------------------
- * Comparison between two string: return 1 if the two string are equal, 0
- * otherwise.
+ * Return the number of characters needed to print an integer number
  *
  * parameters:
- *   s1                -->  first string
- *   s2                -->  second string
+ *   num <-- integer number
+ *
+ * returns:
+ *   number of characters required
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_strcmp(const char *const s1,
-              const char *const s2);
+cs_gui_characters_number(int num);
+
+/*-----------------------------------------------------------------------------
+ * Compare two strings.
+ *
+ * parameters:
+ *   s1 <-- first string
+ *   s2 <-- second string
+ *
+ * returns:
+ *   1 if the strings are equal, 0 otherwise.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_strcmp(const char  *s1,
+              const char  *s2);
 
 /*-----------------------------------------------------------------------------
  * Copy a C string into a Fortran string.
  *
  * parameters:
- *   chainef          <--> Fortran string
- *   chainc            -->  C string
- *   lstrF             -->  maximum length of the Fortran string
+ *   chainef <-> Fortran string
+ *   chainc  <-- C string
+ *   lstrF   <-- maximum length of the Fortran string
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_strcpy_c2f(      char *const chainef,
-                  const char *const chainec,
-                  const int         lstrF);
+cs_gui_strcpy_c2f(char        *chainef,
+                  const char  *chainec,
+                  const int    lstrF);
 
 /*----------------------------------------------------------------------------*/
 

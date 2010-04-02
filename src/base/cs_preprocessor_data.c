@@ -423,7 +423,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
         cs_io_read_global(&header, &n_ranks, rank_pp_in);
         if (n_ranks != cs_glob_n_ranks)
           bft_error(__FILE__, __LINE__, 0,
-                    _("Le number of ranks reported by file\n"
+                    _("The number of ranks reported by file\n"
                       "\"%s\" (%d) does not\n"
                       "correspond to the current number of ranks (%d)."),
                     cs_io_get_name(rank_pp_in), (int)n_ranks,
@@ -2087,7 +2087,7 @@ _decompose_data_l(cs_mesh_t          *mesh,
 }
 
 /*============================================================================
- *  Public functions definition for Fortran API
+ *  Public function definitions for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------

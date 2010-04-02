@@ -873,7 +873,7 @@ _compute_cell_volume(const cs_mesh_t  *const mesh,
 }
 
 /*============================================================================
- * Public functions definition for Fortran API
+ * Public function definitions for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------

@@ -95,7 +95,7 @@ typedef void
 /*----------------------------------------------------------------------------
  * Create a writer based on Fortran data; this object is based on a choice
  * of a case, directory, and format, as well as indicator for associated
- * meshe's time dependency, and the default output frequency for associated
+ * mesh's time dependency, and the default output frequency for associated
  * variables.
  *
  * Fortran Interface: use PSTCWR (see cs_post_util.F)
@@ -217,7 +217,7 @@ void CS_PROCF (pstedg, PSTEDG)
  * The automatic variables output associated with the main volume and
  * boundary meshes will also be applied to meshes of the same categories
  * (i.e. -1 and -2 respectively, whether meshes -1 and -2 are actually
- * defined or not), so setting a user meshe's category to one of these
+ * defined or not), so setting a user mesh's category to one of these
  * values will automatically provide the same automatic variable output to
  * the user mesh.
  *
@@ -517,7 +517,7 @@ void CS_PROCF (pstev1, PSTEV1)
 
 /*----------------------------------------------------------------------------
  * Create a writer; this objects manages a case's name, directory, and format,
- * as well as associated meshe's time dependency, and the default output
+ * as well as associated mesh's time dependency, and the default output
  * frequency for associated variables.
  *
  * parameters:
@@ -633,7 +633,7 @@ cs_post_add_mesh_edges(int  edges_id,
  * The automatic variables output associated with the main volume and
  * boundary meshes will also be applied to meshes of the same categories
  * (i.e. -1 and -2 respectively, whether meshes -1 and -2 are actually
- * defined or not), so setting a user meshe's category to one of these
+ * defined or not), so setting a user mesh's category to one of these
  * values will automatically provide the same automatic variable output to
  * the user mesh.
  *

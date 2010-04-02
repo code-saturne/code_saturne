@@ -1918,7 +1918,7 @@ write(nfecra,9900)
 '    ---------'                                                ,/,&
                                                                 /,&
 '       NCEGRM = ',4X,I10,    ' (Max nb cells coarsest grid  )',/,&
-'       NGRMAX = ',4X,I10,    ' (Max numeber of levels       )',/,&
+'       NGRMAX = ',4X,I10,    ' (Max number of levels        )',/,&
 '------------------------------                               ',/,&
 ' Variable   IMGR NCYMAX NITMGF                               ',/,&
 '------------------------------                               '  )

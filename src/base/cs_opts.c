@@ -389,7 +389,7 @@ cs_opts_define(int         argc,
 #if defined(HAVE_LIBXML2)
     else if (strcmp(s, "-p") == 0 || strcmp(s, "--param") == 0) {
       s = argv[++arg_id];
-      argerr = cs_gui_file_loading(s);
+      argerr = cs_gui_load_file(s);
     }
 #endif
 

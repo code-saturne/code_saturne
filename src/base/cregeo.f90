@@ -167,7 +167,7 @@ ifinia = ilfacb + nfabor
 
 !     VERIFICATION DE LA DISPONIBILITE DE LA MEMOIRE
 
-CALL IASIZE ('CREGEO', IFINIA)
+call iasize ('cregeo', ifinia)
 !==========
 
 !===============================================================================
@@ -218,7 +218,7 @@ if (ippmod(iaeros).ge.0) then
 
   ils    = idebia
   ifinia = ils + maxelt
-  CALL IASIZE('CREGEO',IFINIA)
+  call iasize('cregeo',ifinia)
   !==========
 
   call usctdz                                                     &

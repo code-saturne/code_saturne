@@ -125,7 +125,7 @@ ipass = ipass + 1
 !     Nombre max pour les formats choisis
 nfmtmo = 9999
 !     Indefini a 4 caracteres
-CINDFM = 'YYYY'
+cindfm = 'YYYY'
 
 !===============================================================================
 ! 1. PREMIER APPEL : VERIFICATION DU NOMBRE DE PHASES

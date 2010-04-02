@@ -1717,9 +1717,6 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
  *   name         <-- file name
  *   magic_string <-- magic string associated with file type
  *   comm         <-- associated MPI communicator
- *
- * returns:
- *   pointer to kernel IO structure
  *----------------------------------------------------------------------------*/
 
 #if defined(FVM_HAVE_MPI)
@@ -2814,7 +2811,9 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 {
   fvm_gnum_t _global_num_start = global_num_start;
   fvm_gnum_t _global_num_end = global_num_end;
+
   fvm_gnum_t *retval = NULL;
+
   cs_bool_t last_data_rank = false;
   cs_bool_t past_last_data_rank = false;
 

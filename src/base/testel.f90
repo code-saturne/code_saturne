@@ -104,10 +104,9 @@ subroutine testel &
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
@@ -186,7 +185,7 @@ iw2    = iw1    + ncelet
 iw3    = iw2    + ncelet
 ifinra = iw3    + ncelet
 
-CALL RASIZE('TESTEL',IFINRA)
+call rasize('testel', ifinra)
 !==========
 
 !===============================================================================
@@ -281,7 +280,7 @@ call grdcel                                                       &
 
 ! On sort le gradient
 
-NAMEVR = 'Grad_RC'
+namevr = 'Grad_RC'
 call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
 !==========
             ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
@@ -299,7 +298,7 @@ enddo
 
 ! On sort l'erreur
 
-NAMEVR = 'Err_Grad_RC'
+namevr = 'Err_Grad_RC'
 call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
 !==========
             ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
@@ -333,7 +332,7 @@ call grdcel                                                       &
 
 ! On sort le gradient
 
-NAMEVR = 'Grad_LSQ'
+namevr = 'Grad_LSQ'
 call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
 !==========
             ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
@@ -351,7 +350,7 @@ enddo
 
 ! On sort l'erreur
 
-NAMEVR = 'Err_Grad_LSQ'
+namevr = 'Err_Grad_LSQ'
 call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
 !==========
             ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
@@ -384,7 +383,7 @@ call grdcel                                                       &
 
 ! On sort le gradient
 
-NAMEVR = 'Grad_LSQ_Ext'
+namevr = 'Grad_LSQ_Ext'
 call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
 !==========
             ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
@@ -402,7 +401,7 @@ enddo
 
 ! On sort l'erreur
 
-NAMEVR = 'Err_Grad_LSQ_Ext'
+namevr = 'Err_Grad_LSQ_Ext'
 call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
 !==========
             ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
@@ -435,7 +434,7 @@ call grdcel                                                       &
 
 ! On sort le gradient
 
-NAMEVR = 'Grad_LSQ_RC'
+namevr = 'Grad_LSQ_RC'
 call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
 !==========
             ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
@@ -453,7 +452,7 @@ enddo
 
 ! On sort l'erreur
 
-NAMEVR = 'Err_Grad_LSQ_RC'
+namevr = 'Err_Grad_LSQ_RC'
 call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
 !==========
             ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
@@ -491,7 +490,7 @@ call grdcel                                                       &
 
 ! On sort le gradient
 
-NAMEVR = 'Grad_LSQ_ExtRed'
+namevr = 'Grad_LSQ_ExtRed'
 call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
 !==========
             ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
@@ -509,7 +508,7 @@ enddo
 
 ! On sort l'erreur
 
-NAMEVR = 'Err_Grad_LSQ_ExtRed'
+namevr = 'Err_Grad_LSQ_ExtRed'
 call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
 !==========
             ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)

@@ -118,7 +118,7 @@ cs_loc_tpar1d_cree(cs_int_t         nfpt1d,
   BFT_MALLOC(cs_glob_par1d, nfpt1d, struct par1d);
 
   /* Initialization of the number of discretization points in each structure
-     Computation of the toatl number of discretization points */
+     Computation of the total number of discretization points */
   nb_pts_tot = 0;
 
   for (i = 0; i < nfpt1d; i++) {

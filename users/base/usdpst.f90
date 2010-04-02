@@ -311,7 +311,7 @@ enddo
 
 ! Example:
 !
-! 4 "parts", correspondant respectivey to a mixed "interior faces"
+! 4 "parts", corresponding respectively to a mixed "interior faces"
 ! / "exterior faces" extraction, an extraction containing only
 ! interior faces, and 2 time-varying mesh pieces.
 

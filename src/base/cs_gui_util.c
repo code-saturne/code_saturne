@@ -133,14 +133,17 @@ void CS_PROCF (csihmp, CSIHMP) (int *const iihmpr)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Load the xml file in memory. Return an error code for the main program.
+ * Load the XML file in memory.
  *
  * parameter:
- *   filename            -->  xml file containing the parameters
+ *   filename <-- XML file containing the parameters
+ *
+ * returns:
+ *   error code (0 in case of success)
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_file_loading(const char *const filename)
+cs_gui_load_file(const char  *filename)
 {
 #if defined(HAVE_LIBXML2)
 
@@ -196,14 +199,14 @@ cs_gui_file_loading(const char *const filename)
   }
 
   /* Check the Interface version */
-  cs_gui_get_version();
+  cs_gui_check_version();
 
   return argerr;
 
 #else
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without Xml support."));
+            _("Code_Saturne has been compiled without XML support."));
 
   return -1;
 
@@ -215,7 +218,7 @@ cs_gui_file_loading(const char *const filename)
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_get_version(void)
+cs_gui_check_version(void)
 {
   char *path;
   char *version;
@@ -236,10 +239,10 @@ cs_gui_get_version(void)
   if (major != maj_sat)
      bft_error(__FILE__, __LINE__, 0,
                _("========================================================\n"
-                 "   ** INVALID VERSION OF THE XML FILE\n"
+                 "   ** Invalid version of the XML file\n"
                  "      -------------------------------------- \n"
-                 "      XML FILE VERSION: %.1f  \n"
-                 "      XML READER VERSION: %.1f \n"
+                 "      XML file version: %.1f  \n"
+                 "      XML reader version: %.1f \n"
                  "========================================================\n"),
                   version_number, version_sat);
 
@@ -247,12 +250,12 @@ cs_gui_get_version(void)
 
      cs_base_warn(__FILE__, __LINE__);
      bft_printf(_("========================================================\n"
-                 "   ** INCOMPATIBLE VERSION OF THE XML FILE\n"
-                 "      -------------------------------------- \n"
-                 "      XML FILE VERSION: %.1f  \n"
-                 "      XML READER VERSION: %.1f \n"
+                 "   ** Unexpected version XML file version\n"
+                 "      -----------------------------------\n"
+                 "      XML file version: %.1f  \n"
+                 "      XML reader version: %.1f \n"
                  "\n"
-                 "      YOU SHOULD RESTART YOUR CALCUL WITH A NEW XML FILE\n"
+                 "      It is recommenende to rebuild a new XML file.\n"
                  "========================================================\n"),
                  version_number, version_sat);
 
@@ -264,7 +267,9 @@ cs_gui_get_version(void)
 
 /*----------------------------------------------------------------------------
  * Initialize the path for the xpath request with the root node.
- * Return the root path.
+ *
+ * returns:
+ *   the root path
  *----------------------------------------------------------------------------*/
 
 char*
@@ -283,7 +288,7 @@ cs_xpath_init_path(void)
 #else
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without Xml support."));
+            _("Code_Saturne has been compiled without XML support."));
 
   return NULL;
 
@@ -292,7 +297,9 @@ cs_xpath_init_path(void)
 
 /*----------------------------------------------------------------------------
  * Initialize the path for the xpath request with a short way.
- * Return the short path.
+ *
+ * returns:
+ *   the short path.
  *----------------------------------------------------------------------------*/
 
 char*
@@ -307,10 +314,10 @@ cs_xpath_short_path(void)
 }
 
 /*----------------------------------------------------------------------------
- * Add all element (*) to the path.
+ * Add all elements (*) to the path.
  *
  * parameter:
- *   path               <-->  path for the xpath request
+ *   path <--> path for the xpath request
  *----------------------------------------------------------------------------*/
 
 void
@@ -329,13 +336,13 @@ cs_xpath_add_all_elements(char **path)
  * Add an element (i.e. markup's label) to the path.
  *
  * parameters:
- *   path               <-->  path for the xpath request
- *   element             -->  label of the new element in the path
+ *   path    <-> path for the xpath request
+ *   element <-- label of the new element in the path
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_element(      char **      path,
-                     const char  *const element)
+cs_xpath_add_element(char        **path,
+                     const char   *element)
 {
   assert(path);
 
@@ -355,14 +362,15 @@ cs_xpath_add_element(      char **      path,
  * Add a list of elements (i.e. markup's label) to the path.
  *
  * parameters:
- *   path               <-->  path for the xpath request
- *   nbr                 -->  size of the labels list
- *   ...                 -->  list of labels of new elements in the path
+ *   path <->  path for the xpath request
+ *   nbr  <--  size of the labels list
+ *   ...  <--  list of labels of new elements in the path
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_elements(      char **path,
-                      const int    nbr, ...)
+cs_xpath_add_elements(char  **path,
+                      int     nbr,
+                      ...)
 {
   va_list list;
   char *elt = NULL;
@@ -394,13 +402,13 @@ cs_xpath_add_elements(      char **path,
  * Add an element's attribute to the path.
  *
  * parameters:
- *   path               <-->  path for the xpath request
- *   attribute_name      -->  label of the new attribute in the path
+ *   path           <-> path for the xpath request
+ *   attribute_name <-- label of the new attribute in the path
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_attribute(      char      **path,
-                       const char *const attribute_name)
+cs_xpath_add_attribute(char        **path,
+                       const char   *attribute_name)
 {
   assert(path);
   assert(attribute_name);
@@ -414,18 +422,18 @@ cs_xpath_add_attribute(      char      **path,
 }
 
 /*----------------------------------------------------------------------------
- * Add the i'st element to the path.
+ * Add the i'th element to the path.
  *
  * parameters:
- *   path               <-->  path for the xpath request
- *   element             -->  label of the new element in the path
- *   num                 -->  number of the element's markup
+ *   path    <-> path for the xpath request
+ *   element <-- label of the new element in the path
+ *   num     <-- number of the element's markup
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_element_num(      char  **     path,
-                         const char  *const element,
-                         const int          num)
+cs_xpath_add_element_num(char        **path,
+                         const char   *element,
+                         int           num)
 {
   int   nfigures = 0;
   char *strnum = NULL;
@@ -460,15 +468,15 @@ cs_xpath_add_element_num(      char  **     path,
  * Add a test on a value associated to an attribute to the path.
  *
  * parameters:
- *   path               <-->  path for the xpath request
- *   attribute_type      -->  label of the attribute for the test in the path
- *   attribute_value     -->  value of the attribute for the test in the path
+ *   path            <-> path for the xpath request
+ *   attribute_type  <-- label of the attribute for the test in the path
+ *   attribute_value <-- value of the attribute for the test in the path
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_test_attribute(      char **      path,
-                            const char  *const attribute_type,
-                            const char  *const attribute_value)
+cs_xpath_add_test_attribute(char        **path,
+                            const char   *attribute_type,
+                            const char   *attribute_value)
 {
   assert(path);
   assert(attribute_type);
@@ -492,12 +500,12 @@ cs_xpath_add_test_attribute(      char **      path,
 /*----------------------------------------------------------------------------
  * Add the 'text()' xpath function to the path.
  *
- * parameter:
- *   path               <-->  path for the xpath request
+ * parameters:
+ *   path <->  path for the xpath request
  *----------------------------------------------------------------------------*/
 
 void
-cs_xpath_add_function_text(char **path)
+cs_xpath_add_function_text(char  **path)
 {
   assert(path);
 
@@ -509,17 +517,18 @@ cs_xpath_add_function_text(char **path)
 }
 
 /*----------------------------------------------------------------------------
- * Return a list of attributes nodes name from the xpath request in an array.
+ * Return a list of attribute node names from the xpath request in an array.
+ *
  * Example: from <a attr="c"/><b attr="d"/> return {c,d}
  *
- * parameter:
- *   path                -->  path for the xpath request
- *   size               <--   array size
+ * parameters:
+ *   path <-- path for the xpath request
+ *   size --> array size
  *----------------------------------------------------------------------------*/
 
 char**
-cs_gui_get_attribute_values(char *const path,
-                            int  *const size)
+cs_gui_get_attribute_values(char  *path,
+                            int   *size)
 {
 #if defined(HAVE_LIBXML2)
 
@@ -566,7 +575,7 @@ cs_gui_get_attribute_values(char *const path,
 #else
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without Xml support."));
+            _("Code_Saturne has been compiled without XML support."));
 
   return NULL;
 
@@ -575,14 +584,15 @@ cs_gui_get_attribute_values(char *const path,
 
 /*----------------------------------------------------------------------------
  * Return the value of an element's attribute.
+ *
  * Example: from <a b="c"/> return c
  *
- * parameter:
- *   path                -->  path for the xpath request
+ * parameters:
+ *   path <-- path for the xpath request
  *----------------------------------------------------------------------------*/
 
 char*
-cs_gui_get_attribute_value(char *const path)
+cs_gui_get_attribute_value(char  *path)
 {
   char **array = NULL;
   char  *attr = NULL;
@@ -610,16 +620,17 @@ cs_gui_get_attribute_value(char *const path)
 
 /*----------------------------------------------------------------------------
  * Return a list of children nodes name from the xpath request in an array.
+ *
  * Example: from <a>3<\a><b>4<\b> return {a,b}
  *
  * parameters:
- *   path                -->  path for the xpath request
- *   size               <--   array size
+ *   path <-- path for the xpath request
+ *   size --> array size
  *----------------------------------------------------------------------------*/
 
 char**
-cs_gui_get_nodes_name(char *const path,
-                      int  *const size)
+cs_gui_get_nodes_name(char  *path,
+                      int   *size)
 {
 #if defined(HAVE_LIBXML2)
 
@@ -663,7 +674,7 @@ cs_gui_get_nodes_name(char *const path,
 #else
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without Xml support."));
+            _("Code_Saturne has been compiled without XML support."));
 
   return NULL;
 
@@ -675,11 +686,11 @@ cs_gui_get_nodes_name(char *const path,
  * Return a single node's name from the xpath request.
  *
  * parameter:
- *   path                -->  path for the xpath request
+ *   path <-- path for the xpath request
  *----------------------------------------------------------------------------*/
 
 char*
-cs_gui_get_node_name(char *const path)
+cs_gui_get_node_name(char  *path)
 {
   char **array = NULL;
   char  *name = NULL;
@@ -707,16 +718,17 @@ cs_gui_get_node_name(char *const path)
 
 /*----------------------------------------------------------------------------
  * Return a list of children text nodes from the xpath request in an array.
+ *
  * Example: from <a>3<\a><a>4<\a> return {3,4}
  *
  * parameters:
- *   path                -->  path for the xpath request
- *   size               <--   array size
+ *   path <-- path for the xpath request
+ *   size --> array size
  *----------------------------------------------------------------------------*/
 
 char**
-cs_gui_get_text_values(char   *const path,
-                       int    *const size)
+cs_gui_get_text_values(char  *path,
+                       int   *size)
 {
 #if defined(HAVE_LIBXML2)
 
@@ -762,7 +774,7 @@ cs_gui_get_text_values(char   *const path,
 #else
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without Xml support."));
+            _("Code_Saturne has been compiled without XML support."));
 
   return NULL;
 
@@ -770,14 +782,17 @@ cs_gui_get_text_values(char   *const path,
 }
 
 /*----------------------------------------------------------------------------
- * Return a single children text node from the xpath request.
+ * Return a single child text node from the xpath request.
  *
  * parameter:
- *   path                -->  path for the xpath request
+ *   path <-- path for the xpath request
+ *
+ * returns:
+ *   child node based on request
  *----------------------------------------------------------------------------*/
 
 char*
-cs_gui_get_text_value(char *const path)
+cs_gui_get_text_value(char  *path)
 {
   char **array = NULL;
   char  *text = NULL;
@@ -804,17 +819,19 @@ cs_gui_get_text_value(char *const path)
 }
 
 /*----------------------------------------------------------------------------
- * Modify the value parameter and return 1 if the xpath request succeeded,
- * otherwise just return 0.
+ * Query a double value parameter.
  *
  * parameters:
- *   path                -->  path for the xpath request
- *   value              <--   double result of the xpath request
+ *   path  <-- path for the xpath request
+ *   value --> double result of the xpath request
+ *
+ * returns:
+ *   1 if the xpath request succeeded, 0 otherwise.
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_double(char   *const path,
-                  double *const value)
+cs_gui_get_double(char    *path,
+                  double  *value)
 {
   char *text_name = NULL;
   int   test;
@@ -832,17 +849,19 @@ cs_gui_get_double(char   *const path,
 }
 
 /*----------------------------------------------------------------------------
- * Modify the value parameter and return 1 if the xpath request succeeded,
- * otherwise just return 0.
+ * Query an integer value parameter.
  *
  * parameters:
- *   path                -->  path for the xpath request
- *   value              <--   integer result of the xpath request
+ *   path  <-- path for the xpath request
+ *   value --> double result of the xpath request
+ *
+ * returns:
+ *   1 if the xpath request succeeded, 0 otherwise.
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_int(char *const path,
-               int  *const value)
+cs_gui_get_int(char  *path,
+               int   *value)
 {
   char *text_name = NULL;
   int   test;
@@ -860,16 +879,20 @@ cs_gui_get_int(char *const path,
 }
 
 /*----------------------------------------------------------------------------
- * Return the number of elements (i.e. the number of xml markups)
+ * Query the number of elements (i.e. the number of xml markups)
  * from a xpath request.
+ *
  * Example: from <a>3<\a><a>4<\a> return 2
  *
- * parameter:
- *   path                -->  path for the xpath request
+ * parameters:
+ *   path <-- path for the xpath request
+ *
+ * returns:
+ *   the number of elements in xpath request
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_nb_element(char *const path)
+cs_gui_get_nb_element(char  *path)
 {
 #if defined(HAVE_LIBXML2)
 
@@ -892,7 +915,7 @@ cs_gui_get_nb_element(char *const path)
 #else
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without Xml support."));
+            _("Code_Saturne has been compiled without XML support."));
 
   return 0;
 
@@ -900,15 +923,19 @@ cs_gui_get_nb_element(char *const path)
 }
 
 /*----------------------------------------------------------------------------
- * Return the integer max value from a list, which is a xpath request result.
+ * Query the maximum integer value from an xpath request result list.
+ *
  * Example: from <a>3<\a><a>4<\a> return 4
  *
- * parameter:
- *   path                -->  path for the xpath request
+ * parameters:
+ *   path <-- path for the xpath request
+ *
+ * returns:
+ *   the maximum integer value in the list
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_max_value(char *const path)
+cs_gui_get_max_value(char  *path)
 {
 #if defined(HAVE_LIBXML2)
 
@@ -953,7 +980,7 @@ cs_gui_get_max_value(char *const path)
 #else
 
   bft_error(__FILE__, __LINE__, 0,
-            _("Code_Saturne has been compiled without Xml support."));
+            _("Code_Saturne has been compiled without XML support."));
 
   return 0;
 
@@ -962,16 +989,18 @@ cs_gui_get_max_value(char *const path)
 
 /*-----------------------------------------------------------------------------
  * Evaluate the "status" attribute value.
- * Return 1 if the xpath request has succeeded, 0 otherwise.
  *
  * parameter:
- *   path                -->  path for the xpath request
- *   result             <--   status="on" return 1, status="off" return 0
+ *   path   <-- path for the xpath request
+ *   result --> status="on" return 1, status="off" return 0
+ *
+ * returns:
+ *   1 if the xpath request has succeeded, 0 otherwise
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_status(char *const path,
-                  int  *const result)
+cs_gui_get_status(char  *path,
+                  int   *result)
 {
   char *status;
   int   istatus;
@@ -998,16 +1027,20 @@ cs_gui_get_status(char *const path,
 }
 
 /*-----------------------------------------------------------------------------
- * Return the xml markup quantity
+ * Return the xml markup quantity.
  *
  * parameters:
- *   markup             -->  path for the markup
- *   flag               -->  1: initialize the path with the root node;
- *                           0: initialize the path with a short way
+ *   markup <--  path for the markup
+ *   flag   <--  1: initialize the path with the root node;
+ *               0: initialize the path with a short way
+ *
+ * returns:
+ *   XML markup quantity
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_tag_number(const char *const markup, const int flag)
+cs_gui_get_tag_number(const char  *markup,
+                      int          flag)
 {
   char *path = NULL;
   int   number = 0;
@@ -1027,14 +1060,17 @@ cs_gui_get_tag_number(const char *const markup, const int flag)
 }
 
 /*-----------------------------------------------------------------------------
- * Return the number of characters needed to write an integer number
+ * Return the number of characters needed to print an integer number
  *
- * parameter:
- *   num                -->  integer number
+ * parameters:
+ *   num <-- integer number
+ *
+ * returns:
+ *   number of characters required
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_characters_number(const int num)
+cs_gui_characters_number(int num)
 {
   int i      = 1;
   int number = 0;
@@ -1051,17 +1087,19 @@ cs_gui_characters_number(const int num)
 }
 
 /*-----------------------------------------------------------------------------
- * Comparison between two string: return 1 if the two string are equal, 0
- * otherwise.
+ * Compare two strings.
  *
  * parameters:
- *   s1                -->  first string
- *   s2                -->  second string
+ *   s1 <-- first string
+ *   s2 <-- second string
+ *
+ * returns:
+ *   1 if the strings are equal, 0 otherwise.
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_strcmp(const char *const s1,
-              const char *const s2)
+cs_gui_strcmp(const char  *s1,
+              const char  *s2)
 {
   if (s1 == NULL || s2 == NULL) return 0;
   if ( strlen(s1) != strlen(s2)) return 0;
@@ -1073,15 +1111,15 @@ cs_gui_strcmp(const char *const s1,
  * Copy a C string into a Fortran string.
  *
  * parameters:
- *   chainef          <--> Fortran string
- *   chainc            -->  C string
- *   lstrF             -->  maximum length of the Fortran string
+ *   chainef <-> Fortran string
+ *   chainc  <-- C string
+ *   lstrF   <-- maximum length of the Fortran string
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_strcpy_c2f(      char *const chainef,
-                  const char *const chainec,
-                  const int         lstrF)
+cs_gui_strcpy_c2f(char        *chainef,
+                  const char  *chainec,
+                  const int    lstrF)
 {
   int i;
 

@@ -87,11 +87,11 @@ BEGIN_C_DECLS
  * Create the list of faces to cut in order to respect warping criterion.
  *
  * parameters:
- *   n_faces                 --> number of faces
- *   max_warp_angle          --> criterion above which face is cut
- *   face_warping            --> face warping angle
- *   p_n_warp_faces          <-> pointer to the number of warped faces
- *   p_warp_face_lst         <-> pointer to the warped face list
+ *   n_faces         <-- number of faces
+ *   max_warp_angle  <-- criterion above which face is cut
+ *   face_warping    <-- face warping angle
+ *   p_n_warp_faces  <-> pointer to the number of warped faces
+ *   p_warp_face_lst <-> pointer to the warped face list
  *----------------------------------------------------------------------------*/
 
 static void
@@ -131,12 +131,12 @@ _select_warped_faces(cs_int_t        n_faces,
  * Define periodic index for send/receive operations.
  *
  * parameters:
- *   mesh                 --> pointer to a mesh structure
- *   face_warping         --> face warping angle
- *   max_warp_angle       --> criterion above which face is cut
- *   p_domain_to_c_ranks  <-> pointer to a rank indirection array
- *   p_s_rank_index       <-> pointer to the sending index on ranks
- *   p_r_rank_index       <-> pointer to the receiving index on ranks
+ *   mesh                <-- pointer to a mesh structure
+ *   face_warping        <-- face warping angle
+ *   max_warp_angle      <-- criterion above which face is cut
+ *   p_domain_to_c_ranks <-> pointer to a rank indirection array
+ *   p_s_rank_index      <-> pointer to the sending index on ranks
+ *   p_r_rank_index      <-> pointer to the receiving index on ranks
  *----------------------------------------------------------------------------*/
 
 static void
@@ -294,9 +294,9 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
  * Fill periodic buffer to send
  *
  * parameters:
- *   mesh                 --> pointer to a mesh structure
- *   face_warping         --> face warping angle
- *   max_warp_angle       --> criterion above which face is cut
+ *   mesh                 <-- pointer to a mesh structure
+ *   face_warping         <-- face warping angle
+ *   max_warp_angle       <-- criterion above which face is cut
  *   p_domain_to_c_ranks  <-> pointer to a rank indirection array
  *   s_rank_index         <-> sending index on ranks
  *   r_rank_index         <-> receiving index on ranks
@@ -504,9 +504,9 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
  *
  * parameters:
  *   mesh                    <-> pointer to a mesh structure
- *   face_type               --> internal or border faces
- *   max_warp_angle          --> criterion above which face is cut
- *   face_warping            --> face warping angle
+ *   face_type               <-- internal or border faces
+ *   max_warp_angle          <-- criterion above which face is cut
+ *   face_warping            <-- face warping angle
  *   p_n_cut_faces           <-> pointer to the number of cut faces
  *   p_cut_face_lst          <-> pointer to the cut face list
  *   p_n_sub_elt_lst         <-> pointer to the sub-elt count list
@@ -780,9 +780,9 @@ _cut_warped_faces_perio(cs_mesh_t       *mesh,
  *
  * parameters:
  *   mesh                    <-> pointer to a mesh structure
- *   face_type               --> internal or border faces
- *   max_warp_angle          --> criterion above which face is cut
- *   face_warping            --> face warping angle
+ *   face_type               <-- internal or border faces
+ *   max_warp_angle          <-- criterion above which face is cut
+ *   face_warping            <-- face warping angle
  *   p_n_cut_faces           <-> pointer to the number of cut faces
  *   p_cut_face_lst          <-> pointer to the cut face list
  *   p_n_sub_elt_lst         <-> pointer to the sub-elt count list
@@ -991,14 +991,14 @@ _cut_warped_faces(cs_mesh_t       *mesh,
  * Update warped faces global numbers after cutting
  *
  * parameters:
- *   mesh                <-> pointer to a mesh structure
- *   n_faces             --> number of faces
- *   n_init_faces        --> initial number of faces
- *   n_cut_faces         --> number of cut faces
- *   cut_face_lst        --> pointer to the cut face list
- *   n_sub_elt_lst       --> sub-elt count list
- *   n_g_faces           <-> global number of faces
- *   p_global_face_num   <-> pointer to the global face numbers
+ *   mesh              <-> pointer to a mesh structure
+ *   n_faces           <-- number of faces
+ *   n_init_faces      <-- initial number of faces
+ *   n_cut_faces       <-- number of cut faces
+ *   cut_face_lst      <-- pointer to the cut face list
+ *   n_sub_elt_lst     <-- sub-elt count list
+ *   n_g_faces         <-> global number of faces
+ *   p_global_face_num <-> pointer to the global face numbers
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1065,12 +1065,12 @@ _update_cut_faces_num(cs_mesh_t       *mesh,
  * Post-process the warped faces before cutting.
  *
  * parameters:
- *   n_i_warp_faces       --> number of internal warped faces
- *   n_b_warp_faces       --> number of border warped faces
- *   i_warp_face_lst      --> internal warped face list
- *   b_warp_face_lst      --> border warped face list
- *   i_face_warping       --> face warping angle for internal faces
- *   b_face_warping       --> face warping angle for internal faces
+ *   n_i_warp_faces  <-- number of internal warped faces
+ *   n_b_warp_faces  <-- number of border warped faces
+ *   i_warp_face_lst <-- internal warped face list
+ *   b_warp_face_lst <-- border warped face list
+ *   i_face_warping  <-- face warping angle for internal faces
+ *   b_face_warping  <-- face warping angle for internal faces
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1139,10 +1139,10 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
  * Post-process the warped faces after cutting.
  *
  * parameters:
- *   n_i_cut_faces       --> number of internal faces generated by cutting
- *   n_b_cut_faces       --> number of border faces generated by cutting
- *   i_cut_face_lst      --> face warping angle for internal faces
- *   b_cut_face_lst      --> face warping angle for internal faces
+ *   n_i_cut_faces  <-- number of internal faces generated by cutting
+ *   n_b_cut_faces  <-- number of border faces generated by cutting
+ *   i_cut_face_lst <-- face warping angle for internal faces
+ *   b_cut_face_lst <-- face warping angle for internal faces
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1188,15 +1188,15 @@ _post_after_cutting(cs_int_t       n_i_cut_faces,
  * Update border face connectivity and associated mesh quantities.
  *
  * parameters:
- *   mesh             <-> pointer to mesh structure.
- *   max_warp_angle   --> criterion to know which face to cut
- *   post_tag         --> tag to know if we have to post-treat cut faces.
+ *   mesh           <-> pointer to mesh structure.
+ *   max_warp_angle <-- criterion to know which face to cut
+ *   post_flag      <-- 1 if we have to post-process cut faces, 0 otherwise
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
                           double        max_warp_angle,
-                          cs_bool_t     post_tag)
+                          cs_bool_t     post_flag)
 {
   cs_int_t  i;
 
@@ -1285,7 +1285,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
 
   /* Post-processing management */
 
-  if (post_tag == true)
+  if (post_flag == true)
     _post_before_cutting(n_i_warp_faces,
                          n_b_warp_faces,
                          i_face_lst,
@@ -1390,7 +1390,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
 
   /* Post-treatment of the selected faces */
 
-  if (post_tag == true)
+  if (post_flag == true)
     _post_after_cutting(n_i_cut_faces,
                         n_b_cut_faces,
                         i_face_lst,

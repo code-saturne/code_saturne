@@ -268,7 +268,6 @@ _exchange_sync(cs_syr4_coupling_t  *syr_coupling,
       strncpy(_op_name_send, op_name_send, 32);
       _op_name_send[32] = '\0';
 
-
     /* Exchange command messages */
       if (op_name_recv != NULL) {
         MPI_Sendrecv(_op_name_send, 32, MPI_CHAR,

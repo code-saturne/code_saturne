@@ -1,4 +1,28 @@
 * 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Cosmetic changes.
+  modified routines:
+    include/base/cs_gui_conjugate_heat_transfer.h
+    include/base/cs_gui_util.h
+    include/base/cs_mesh_warping.h
+    include/base/cs_post.h
+    src/base/autmgr.f90
+    src/base/cregeo.f90
+    src/base/cs_gui_util.c
+    src/base/cs_io.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_quantities.c
+    src/base/cs_mesh_warping.c
+    src/base/cs_opts.c
+    src/base/cs_parall.c
+    src/base/cs_preprocessor_data.c
+    src/base/cs_syr4_coupling.c
+    src/base/cs_tpar1d.c
+    src/base/impini.f90
+    src/base/testel.f90
+    src/base/varpos.f90
+    users/base/usdpst.f90
+
+* 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Cast all the printing in unsigned long long instead of unsigned long.
   modified routines:
     src/base/cs_base.c
