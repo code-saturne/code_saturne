@@ -435,7 +435,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
                      CS_IO_NAME_LEN) == 0) {
 
       n_elts = mesh->n_g_cells;
-      if (header.n_vals != n_elts)
+      if (header.n_vals != (fvm_file_off_t)n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name,
                   cs_io_get_name(rank_pp_in));
@@ -455,6 +455,11 @@ _read_cell_rank(cs_mesh_t       *mesh,
       cs_io_finalize(&rank_pp_in);
       rank_pp_in = NULL;
     }
+
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Message of type <%s> on <%s> is unexpected."),
+                header.sec_name, cs_io_get_name(rank_pp_in));
   }
 
   if (rank_pp_in != NULL)
@@ -881,6 +886,8 @@ _extract_face_gc_id(cs_mesh_t        *mesh,
   /* Now copy face group class (family) id */
 
   for (i = 0; i < n_faces; i++) {
+
+    assert(face_gc_id[i] > -1 && face_gc_id[i] <= mesh->n_families);
 
     if (face_type[i] == '\0')
       mesh->i_face_family[n_i_faces++] = face_gc_id[i];

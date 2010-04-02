@@ -1187,7 +1187,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
     int zones = 0;
     int izone, ith_zone, zone_nbr;
     int ifac, ifbr;
-    int i, k, ivar, icharb, iclass, iwall;
+    int i, ivar, icharb, iclass, iwall;
     double norm = 0.;
     double X[3];
     int *faces_list = NULL;

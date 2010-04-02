@@ -623,6 +623,8 @@ _create_coeff_native(void)
 
   /* Initialize */
 
+  mc->symmetric = false;
+
   mc->da = NULL;
   mc->xa = NULL;
 
