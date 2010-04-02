@@ -1105,9 +1105,9 @@ _part_metis(size_t    n_cells,
   end_time[1] = bft_timer_cpu_time();
 
   bft_printf(_("\n"
-               "  Total number of faces on parallel boundaries: %lu\n"
+               "  Total number of faces on parallel boundaries: %llu\n"
                "  wall-clock time: %f s; CPU time: %f s\n\n"),
-             (unsigned long)edgecut,
+             (unsigned long long)edgecut,
              (double)(end_time[0] - start_time[0]),
              (double)(end_time[1] - start_time[1]));
 
@@ -1188,9 +1188,9 @@ _part_parmetis(fvm_gnum_t  n_g_cells,
     BFT_MALLOC(_cell_part, n_cells, idxtype);
 
   bft_printf(_("\n"
-               "Partitioning %lu cells to %d domains"
+               "Partitioning %llu cells to %d domains"
                " (ParMETIS_V3_PartKway).\n"),
-             (unsigned long)n_g_cells, n_parts);
+             (unsigned long long)n_g_cells, n_parts);
 
   /* Build vtxdist */
 
@@ -1224,9 +1224,9 @@ _part_parmetis(fvm_gnum_t  n_g_cells,
   BFT_FREE(vtxdist);
 
   bft_printf(_("\n"
-               "  Total number of faces on parallel boundaries: %lu\n"
+               "  Total number of faces on parallel boundaries: %llu\n"
                "  wall-clock time: %f s\n\n"),
-             (unsigned long)edgecut,
+             (unsigned long long)edgecut,
              (double)(end_time - start_time));
 
   if (sizeof(idxtype) != sizeof(int)) {
@@ -1522,9 +1522,9 @@ _part_scotch(SCOTCH_Num   n_cells,
   end_time[1] = bft_timer_cpu_time();
 
   bft_printf(_("\n"
-               "  Total number of faces on parallel boundaries: %lu\n"
+               "  Total number of faces on parallel boundaries: %llu\n"
                "  wall-clock time: %f s; CPU time: %f s\n\n"),
-             (unsigned long)edgecut,
+             (unsigned long long)edgecut,
              (double)(end_time[0] - start_time[0]),
              (double)(end_time[1] - start_time[1]));
 
@@ -1578,9 +1578,9 @@ _part_ptscotch(fvm_gnum_t   n_g_cells,
     BFT_MALLOC(_cell_part, n_cells, SCOTCH_Num);
 
   bft_printf(_("\n"
-               "Partitioning %lu cells to %d domains"
+               "Partitioning %llu cells to %d domains"
                " (SCOTCH_dgraphPart).\n"),
-             (unsigned long)n_g_cells, n_parts);
+             (unsigned long long)n_g_cells, n_parts);
 
   /* Partition using libScotch */
 
@@ -1786,11 +1786,11 @@ _read_input(const char   *path,
     /* Print info */
 
     if (header.n_vals > 0) {
-      bft_printf(_("  %s \"%-32s\"; Type: %-6s; Size: %lu\n"),
+      bft_printf(_("  %s \"%-32s\"; Type: %-6s; Size: %llu\n"),
                  _(read_type_name[read_type]),
                  header.sec_name,
                  fvm_datatype_name[header.type_read],
-                 (unsigned long)(header.n_vals));
+                 (unsigned long long)(header.n_vals));
     }
     else {
       bft_printf(_("  %s \"%-32s\"\n"),

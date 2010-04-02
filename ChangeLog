@@ -25,6 +25,7 @@
 * 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Cast all the printing in unsigned long long instead of unsigned long.
   modified routines:
+    src/apps/cs_partition.c
     src/base/cs_base.c
     src/base/cs_boundary_conditions.c
     src/base/cs_ext_neighborhood.c
