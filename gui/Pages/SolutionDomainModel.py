@@ -234,18 +234,13 @@ class SolutionDomainModel(MeshModel, Model):
         Update, for keyword, the backup file if it's ready to run.
         """
         self.isInList(keyword,('MESH',
-                               'REORIENT',
-                               'CUT_WARPED_FACES',
-                               'CUT_WARPED_FACES_OFF'))
+                               'REORIENT'))
         key = self.case['computer']
         if key:
             if not self.case['batchScript'][key]: return
 
             from BatchRunningModel import BatchRunningModel
             batch = BatchRunningModel(self.case)
-            if keyword in ('CUT_WARPED_FACES_OFF'):
-                keyword = string.split(keyword,'_OFF')[:1][0]
-                batch.dicoValues[keyword] = None
             batch.initializeBatchScriptFile()
             batch.updateBatchScriptFile(keyword)
             del BatchRunningModel
@@ -578,10 +573,6 @@ class SolutionDomainModel(MeshModel, Model):
         """
         self.isOnOff(status)
         self.node_cut['status'] = status
-        if status == 'off':
-            self._updateBatchScriptFile('CUT_WARPED_FACES_OFF')
-        else:
-            self._updateBatchScriptFile('CUT_WARPED_FACES')
 
 
     def setCutAngle(self, var):
@@ -593,7 +584,6 @@ class SolutionDomainModel(MeshModel, Model):
             self.node_cut.xmlSetData('warp_angle_max', var)
         else:
             self.node_cut.xmlRemoveChild('warp_angle_max')
-        self._updateBatchScriptFile('CUT_WARPED_FACES')
 
 
     def getCutAngle(self):
@@ -1054,17 +1044,6 @@ class SolutionDomainModel(MeshModel, Model):
         line = 'False'
         if self.node_orient and self.node_orient['status'] == 'on':
             line = 'True'
-
-        return line
-
-
-    def getCutCommand(self):
-        """
-        Get cut_warped_faces command line for preprocessor execution
-        """
-        line = ''
-        if self.node_cut and self.node_cut['status'] == 'on':
-            line += ' --cwf ' + str(self.getCutAngle())
 
         return line
 

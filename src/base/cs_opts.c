@@ -132,10 +132,6 @@ _arg_env_help(const char  *name)
   fprintf
     (e, _(" -q, --quality     mesh quality verification mode\n"));
   fprintf
-    (e, _(" --cwf             <criterion> cut warped faces\n"
-          "                    -post: activate the post-processing related\n"
-          "                           to the cutting of warped faces\n"));
-  fprintf
     (e, _(" --benchmark       elementary operations performance\n"
           "                   [--mpitrace] operations done only once\n"
           "                                for light MPI traces\n"));
@@ -217,44 +213,6 @@ _arg_to_int(int    arg_id,
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Convert an argument to a double and check its validity
- *
- * parameters:
- *   arg_id  <-- index of argument in argv
- *   argc    <-- number of command line arguments
- *   argv    <-- array of command line arguments
- *   argerr  --> error indicator
- *
- * returns:
- *   integer value
- *----------------------------------------------------------------------------*/
-
-static double
-_arg_to_double(int    arg_id,
-               int    argc,
-               char  *argv[],
-               int   *argerr)
-{
-  char  *start = NULL;
-  char  *end =  NULL;
-  double  retval = 0.;
-
-  *argerr = 0;
-
-  if (arg_id < argc) {
-    start = argv[arg_id];
-    end = start + strlen(start);
-    retval = strtod(start, &end);
-    if (end != start + strlen(start)) *argerr = 1;
-  }
-  else {
-    *argerr = 1;
-  }
-
-  return retval;
-}
-
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
@@ -298,10 +256,6 @@ cs_opts_define(int         argc,
 
   opts->verif = false;
   opts->benchmark = 0;
-
-  opts->cwf = false;
-  opts->cwf_post = false;
-  opts->cwf_criterion = 0.01;
 
   opts->syr_socket = -1;
 
@@ -392,23 +346,6 @@ cs_opts_define(int         argc,
       argerr = cs_gui_load_file(s);
     }
 #endif
-
-    else if (strcmp(s, "--cwf") == 0) {
-      opts->cwf = true;
-      if (arg_id + 1 < argc) {
-        if (*(argv[arg_id+1]) != '-') {
-          opts->cwf_criterion = _arg_to_double(arg_id + 1, argc, argv, &argerr);
-          if (argerr == 0)
-            arg_id++;
-        }
-      }
-      if (arg_id + 1 < argc) {
-        if (strcmp((argv[arg_id+1]), "--post") == 0) {
-          opts->cwf_post = true;
-          arg_id++;
-        }
-      }
-    }
 
 #if defined(HAVE_SOCKET)
 

@@ -229,7 +229,6 @@ PARTITION_OPTS = None
 # Otherwise, it is set to None.
 
 PARAMETERS = None
-CUT_WARPED_FACES = None
 CHECK_ARGS = None
 OUTPUT_ARGS = None
 
@@ -324,7 +323,6 @@ if __name__ == '__main__':
                partition_opts = PARTITION_OPTS,
                param = PARAMETERS,
                solcom = SOLCOM,
-               cut_warped_faces = CUT_WARPED_FACES,
                mode_args = CHECK_ARGS,
                logging_args = OUTPUT_ARGS,
                thermochemistry_data = THERMOCHEMISTRY_DATA,

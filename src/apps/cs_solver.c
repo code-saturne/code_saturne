@@ -184,6 +184,8 @@ cs_run(void)
   cs_int_t  nituse, nrtuse, nideve, nrdeve;
 
   int  _verif = -1;
+  int  cwf_post = 0;
+  double  cwf_threshold = -1.0;
 
   cs_int_t  *ia = NULL;
   cs_int_t  *ituser = NULL;
@@ -290,10 +292,12 @@ cs_run(void)
 
   /* Triangulate warped faces if necessary */
 
-  if (opts.cwf == true) {
+  cs_mesh_warping_get_defaults(&cwf_threshold, &cwf_post);
+
+  if (cwf_threshold >= 0.0) {
 
     t1 = bft_timer_wtime();
-    cs_mesh_warping_cut_faces(cs_glob_mesh, opts.cwf_criterion, opts.cwf_post);
+    cs_mesh_warping_cut_faces(cs_glob_mesh, cwf_threshold, cwf_post);
     t2 = bft_timer_wtime();
 
     bft_printf(_("\n Cutting warped faces (%.3g s)\n"), t2-t1);

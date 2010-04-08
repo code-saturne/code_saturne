@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-04-02 19:46+0200\n"
+"POT-Creation-Date: 2010-04-08 19:31+0200\n"
 "PO-Revision-Date: 2010-04-02 19:53+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -303,7 +303,7 @@ msgid ""
 "                     ip:  MPI-IO with individual file pointers\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:245 src/base/cs_opts.c:143
+#: src/apps/cs_partition.c:245 src/base/cs_opts.c:139
 #, c-format
 msgid ""
 " --log             output redirection for rank -1 or 0:\n"
@@ -314,7 +314,7 @@ msgstr ""
 "                     0 : sortie standard\n"
 "                     1 : sorties dans \"listing\" (défaut)\n"
 
-#: src/apps/cs_partition.c:249 src/base/cs_opts.c:147
+#: src/apps/cs_partition.c:249 src/base/cs_opts.c:143
 #, c-format
 msgid ""
 " --logp            output redirection for rank > 0:\n"
@@ -333,7 +333,7 @@ msgstr ""
 msgid " -v, --version     print version number\n"
 msgstr " -v, --version     affiche le numéro de version\n"
 
-#: src/apps/cs_partition.c:257 src/base/cs_opts.c:166
+#: src/apps/cs_partition.c:257 src/base/cs_opts.c:162
 #, c-format
 msgid ""
 " -h, --help        this help message\n"
@@ -342,7 +342,7 @@ msgstr ""
 " -h, --help        appel de l'aide (cet affichage)\n"
 "\n"
 
-#: src/apps/cs_partition.c:270 src/base/cs_opts.c:179
+#: src/apps/cs_partition.c:270 src/base/cs_opts.c:175
 #, c-format
 msgid "%s version %s\n"
 msgstr "%s version %s\n"
@@ -511,7 +511,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_solver.c:299
+#: src/apps/cs_solver.c:303
 #, c-format
 msgid ""
 "\n"
@@ -520,7 +520,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/apps/cs_solver.c:305
+#: src/apps/cs_solver.c:309
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -528,11 +528,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:361
+#: src/apps/cs_solver.c:365
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:375
+#: src/apps/cs_solver.c:379
 #, c-format
 msgid ""
 "\n"
@@ -541,7 +541,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:391
+#: src/apps/cs_solver.c:395
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -549,7 +549,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:413
+#: src/apps/cs_solver.c:417
 #, c-format
 msgid ""
 "\n"
@@ -564,7 +564,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:423
+#: src/apps/cs_solver.c:427
 #, c-format
 msgid ""
 "\n"
@@ -577,7 +577,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:429
+#: src/apps/cs_solver.c:433
 #, c-format
 msgid ""
 "\n"
@@ -592,7 +592,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:491
+#: src/apps/cs_solver.c:495
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -1750,11 +1750,11 @@ msgstr ""
 msgid "Missing 'value' markup for xpath : %s\n"
 msgstr ""
 
-#: src/base/cs_gui_mesh.c:418
+#: src/base/cs_gui_mesh.c:468
 msgid "Number of periodicities (%d) and modes (%) do not match."
 msgstr ""
 
-#: src/base/cs_gui_mesh.c:470
+#: src/base/cs_gui_mesh.c:520
 #, c-format
 msgid "Periodicity mode \"%s\" unknown."
 msgstr ""
@@ -3955,7 +3955,7 @@ msgstr ""
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
-#: src/base/cs_mesh_warping.c:1028
+#: src/base/cs_mesh_warping.c:1035
 msgid ""
 "The faces have been renumbered before cutting.\n"
 "This case should not arise, because the mesh entities\n"
@@ -3965,12 +3965,12 @@ msgstr ""
 "Ce cas ne devrait pas se produire, car on devrait découper\n"
 "les entités de maillage avant de les renuméroter."
 
-#: src/base/cs_mesh_warping.c:1036
+#: src/base/cs_mesh_warping.c:1043
 #, c-format
 msgid "\t%12d global faces before cutting\n"
 msgstr "\t%12d faces globales avant découpage\n"
 
-#: src/base/cs_mesh_warping.c:1056
+#: src/base/cs_mesh_warping.c:1063
 #, c-format
 msgid ""
 "\t%12d global faces after cutting\n"
@@ -3979,19 +3979,19 @@ msgstr ""
 "\t%12d faces globales après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1102
+#: src/base/cs_mesh_warping.c:1109
 msgid "Warped faces to cut"
 msgstr "Faces gauche a decouper"
 
-#: src/base/cs_mesh_warping.c:1123
+#: src/base/cs_mesh_warping.c:1130
 msgid "Face warping"
 msgstr "Gauchissement des faces"
 
-#: src/base/cs_mesh_warping.c:1163
+#: src/base/cs_mesh_warping.c:1170
 msgid "Warped faces after cutting"
 msgstr "Faces gauche apres decoupage"
 
-#: src/base/cs_mesh_warping.c:1218
+#: src/base/cs_mesh_warping.c:1252
 #, c-format
 msgid ""
 "\n"
@@ -4010,7 +4010,7 @@ msgstr ""
 " Angle maximal autorisé (rad) :\t%7.4f\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1281
+#: src/base/cs_mesh_warping.c:1315
 msgid ""
 "\n"
 " No face to cut. Verify the criterion if necessary.\n"
@@ -4018,7 +4018,7 @@ msgstr ""
 "\n"
 " Aucune face à découper. Revoir le critère si nécessaire.\n"
 
-#: src/base/cs_mesh_warping.c:1328
+#: src/base/cs_mesh_warping.c:1362
 #, c-format
 msgid ""
 " Interior faces:\n"
@@ -4035,7 +4035,7 @@ msgstr ""
 "\t%12d faces localement après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1335 src/base/cs_mesh_warping.c:1375
+#: src/base/cs_mesh_warping.c:1369 src/base/cs_mesh_warping.c:1409
 #, c-format
 msgid ""
 " Size of the new face -> vertices connectivity: %12d\n"
@@ -4044,7 +4044,7 @@ msgstr ""
 " Taille de la nouvelle connectivité face -> sommets :%12d\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1368
+#: src/base/cs_mesh_warping.c:1402
 #, c-format
 msgid ""
 " Boundary faces:\n"
@@ -4340,18 +4340,6 @@ msgstr " -q, --quality     vérification de la qualité du maillage\n"
 #: src/base/cs_opts.c:135
 #, c-format
 msgid ""
-" --cwf             <criterion> cut warped faces\n"
-"                    -post: activate the post-processing related\n"
-"                           to the cutting of warped faces\n"
-msgstr ""
-" --cwf             <critere> découpage des faces gauches\n"
-"                   (cut warped faces)\n"
-"                    -post : active le post-traitement lié au \n"
-"                            découpage des faces\n"
-
-#: src/base/cs_opts.c:139
-#, c-format
-msgid ""
 " --benchmark       elementary operations performance\n"
 "                   [--mpitrace] operations done only once\n"
 "                                for light MPI traces\n"
@@ -4360,19 +4348,19 @@ msgstr ""
 "                   [--mpitrace] opérations effectuées une seule\n"
 "                                fois pour traces MPI légères\n"
 
-#: src/base/cs_opts.c:154
+#: src/base/cs_opts.c:150
 #, c-format
 msgid " -p, --param       <file_name> parameter file\n"
 msgstr " -p, --param       <nom_du_fichier> fichier de paramètres\n"
 
-#: src/base/cs_opts.c:159
+#: src/base/cs_opts.c:155
 #, c-format
 msgid ""
 " --syr-socket      enable sockets for SYRTHES 3 coupling\n"
 "                   <port_num> port number on rank 0\n"
 msgstr ""
 
-#: src/base/cs_opts.c:164
+#: src/base/cs_opts.c:160
 #, c-format
 msgid " --version         print version number\n"
 msgstr " --version         affiche le numéro de version\n"

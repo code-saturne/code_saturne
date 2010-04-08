@@ -123,7 +123,6 @@ class BatchRunningModel(Model):
         self.dicoValues['PARTITION_LIST'] = None
         self.dicoValues['PARAMETERS'] = None
         self.dicoValues['SOLCOM'] = False
-        self.dicoValues['CUT_WARPED_FACES'] = None
         self.dicoValues['CHECK_ARGS'] = None
         self.dicoValues['OUTPUT_ARGS'] = None
         self.dicoValues['HOSTS_LIST'] = None
@@ -267,7 +266,6 @@ class BatchRunningModel(Model):
         self.dicoValues['MESH'] = sdm.getMeshList()
 
         self.dicoValues['REORIENT'] = sdm.getReorientCommand()
-        self.dicoValues['CUT_WARPED_FACES'] = sdm.getCutCommand()
         self.dicoValues['PARAMETERS'] = os.path.basename(self.case['xmlfile'])
 
         # User 1D profiles are loaded as user result files
@@ -389,8 +387,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         domain.addMesh('mail1.des', 'des')
         domain.addMesh('mail2.des', 'des')
         domain.addMesh('mail3.des', 'des')
-        domain.setCutStatus('on')
-        domain.setCutAngle(0.0321)
         domain.setOrientation('on')
 
         self.case['xmlfile'] = 'NEW.xml'
@@ -410,7 +406,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         "CS_TMP_PREFIX='/home/toto'\n"\
         "MESHES=None\n"\
         "REORIENT=False\n"\
-        "CUT_WARPED_FACES='--cwf 0.001'\n"\
         "EXEC_PREPROCESS=True\n"\
         "EXEC_PARTITION=True\n"\
         "EXEC_SOLVER=True\n"\
@@ -537,7 +532,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         # The following keywords from the batch script file
         # are cancelled by the informations from the case !
         #   MESHES
-        #   CUT_WARPED_FACES
         #   REORIENT
         #
         dico = {\
@@ -546,7 +540,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'PBS_nodes': '1',
         'MESHES': ['mail1.des', 'mail2.des', 'mail3.des'],
         'PBS_JOB_NAME': '',
-        'CUT_WARPED_FACES': ' --cwf 0.0321',
         'SOLCOM': False,
         'USER_OUTPUT_FILES': ['titi'],
         'PARAMETERS': 'NEW.xml',
@@ -584,13 +577,11 @@ class BatchRunningModelTestCase(unittest.TestCase):
         # are cancelled by the informations from the case !
         #   MESHES
         #   REORIENT
-        #   CUT_WARPED_FACES
         #
         dico_PBS = {\
         'PBS_nodes': '16',
         'MESHES': ['mail1.des', 'mail2.des', 'mail3.des'],
         'PBS_JOB_NAME': 'super_toto',
-        'CUT_WARPED_FACES': ' --cwf 0.0321',
         'SOLCOM': False,
         'PARAMETERS': 'NEW.xml',
         'N_PROCS': None,

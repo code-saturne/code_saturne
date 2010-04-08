@@ -326,6 +326,56 @@ _get_periodicity_mixed(int     number,
  * Public Fortran function definitions
  *============================================================================*/
 
+/*-----------------------------------------------------------------------------
+ * Determine whether warped faces should be cut.
+ *
+ * subroutine uicwf
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uicwf, UICWF) (void)
+{
+  char  *path = NULL;
+  int cut_warped_faces = 0;
+  double max_warp_angle = -1;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "solution_domain", "faces_cutting");
+  cs_xpath_add_attribute(&path, "status");
+
+  cs_gui_get_status(path, &cut_warped_faces);
+
+  if (cut_warped_faces) {
+
+    BFT_FREE(path);
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 3,
+                          "solution_domain",
+                          "faces_cutting",
+                          "warp_angle_max");
+    cs_xpath_add_function_text(&path);
+
+    if (!cs_gui_get_double(path, &max_warp_angle))
+      max_warp_angle = -1;
+
+#if _XML_DEBUG_
+  bft_printf("==> uicwf\n");
+  bft_printf("--cut_warped_faces = %d\n"
+             "--warp_angle_max   = %f\n",
+             cut_warped_faces, max_warp_angle);
+#endif
+
+  }
+
+  BFT_FREE(path);
+
+  /* Apply warp angle options now */
+
+  if (cut_warped_faces && max_warp_angle > 0.0)
+    cs_mesh_warping_set_defaults(max_warp_angle, 0);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/

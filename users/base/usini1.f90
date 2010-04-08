@@ -591,7 +591,8 @@ subroutine usipgl &
  ( nphmax, nesmax,                                                &
    iespre, iesder, iescor, iestot,                                &
    nphas , iihmpu, nfecra,                                        &
-   idtvar, ipucou, iphydr, ialgce , iescal , iverif )
+   idtvar, ipucou, iphydr, ialgce , iescal , iverif ,             &
+   icwfps, cwfthr )
 
 
 !===============================================================================
@@ -625,6 +626,8 @@ subroutine usipgl &
 ! iescal           ! ia ! <-- ! flag for activation of error estimators for    !
 !  (nesmax,nphmax) !    !     ! Navier-Stokes                                  !
 ! iverif           ! i  ! <-- ! flag for elementary tests                      !
+! cwfthr           ! i  ! <-- ! Treshold angle to cut warped faces (do not     !
+!                  !    !     !  cut warped faces if value is negative)        !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -649,13 +652,15 @@ implicit none
 integer nphmax, nesmax
 integer iespre, iesder, iescor, iestot
 integer nphas , iihmpu, nfecra
-integer idtvar, ipucou, iphydr
+integer idtvar, ipucou, iphydr, ialgce
 integer iescal(nesmax,nphmax)
-integer iverif
+integer iverif, icwfps
+
+double precision cwfthr
 
 ! Local variables
 
-integer iphas, ialgce
+integer iphas
 
 !===============================================================================
 
@@ -768,6 +773,21 @@ iphas = 1
 iescal(iescor,iphas) = 0
 !       resolution precision for the momentum
 iescal(iestot,iphas) = 0
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
+
+
+! --- Triangulate warped faces:
+!       If cwfthr is positive, faces whose warping angle are greater than
+!         the given value (in degrees) are subdivided into triangles;
+!       if cwfthr negative, faces are not subdivided.
+!       If icwfps = 1, additional postprocessing will be activated to
+!         show faces before and after cutting.
+
+! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+icwfps = 0
+cwfthr= -1.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 

@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -80,6 +80,13 @@
 BEGIN_C_DECLS
 
 /*============================================================================
+ * Global variables
+ *============================================================================*/
+
+static int cs_glob_mesh_warping_post = 0;
+static double cs_glob_mesh_warping_threshold = -1.0;
+
+/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -150,11 +157,11 @@ _define_periodic_index(const cs_mesh_t   *const mesh,
   cs_int_t  i, face_id, perio_id, rank_id, shift;
   cs_int_t  n_triangles = 0;
 
-  int  cpt_request = 0;
   cs_int_t  *domain_to_c_rank = NULL;
   cs_int_t  *s_rank_index = NULL, *r_rank_index = NULL;
 
 #if defined(HAVE_MPI)
+  int  cpt_request = 0;
   MPI_Request _request[128];
   MPI_Request *request = _request;
   MPI_Status _status[128];
@@ -320,11 +327,11 @@ _fill_perio_buffers(const cs_mesh_t   *mesh,
   cs_int_t  perio_shift, shift;
   cs_int_t  n_face_vertices, n_triangles, n_elts;
 
-  int  cpt_request = 0;
   cs_int_t  *counter = NULL;
   cs_int_t  *perio_s_buffer = NULL, *perio_r_buffer = NULL;
 
 #if defined(HAVE_MPI)
+  int  cpt_request = 0;
   MPI_Request _request[128];
   MPI_Request *request = _request;
   MPI_Status _status[128];
@@ -1179,6 +1186,33 @@ _post_after_cutting(cs_int_t       n_i_cut_faces,
 }
 
 /*============================================================================
+ * Public function definitions for Fortran API
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Set the threshold to cut warped faces.
+ *
+ * Fortran interface :
+ *
+ * subroutine setcwf (cwfthr)
+ * *****************
+ *
+ * integer          cwfpst      : <-> : if 1, activate postprocessing when
+ *                                      cutting warped faces (default 0)
+ * double precision cwfthr      : <-> : threshold angle (in degrees) if
+ *                                      positive, do not cut warped faces
+ *                                      if negative (default -1)
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (setcwf, SETCWF) (const cs_int_t   *cwfpst,
+                           const cs_real_t  *cwfthr)
+{
+  cs_mesh_warping_set_defaults((double)(*cwfthr),
+                               (int)(*cwfpst));
+}
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -1402,6 +1436,51 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
   BFT_FREE(i_face_lst);
   BFT_FREE(b_face_lst);
 
+}
+
+/*----------------------------------------------------------------------------
+ * Set defaults for cutting of warped faces.
+ *
+ * parameters:
+ *   max_warp_angle <-- maximum warp angle (in degrees) over which faces will
+ *                      be cut; negative (-1) if faces should not be cut
+ *   postprocess    <-- 1 if postprocessing should be activated when cutting
+ *                      warped faces, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_warping_set_defaults(double  max_warp_angle,
+                             int     postprocess)
+{
+  if (max_warp_angle >= 0.0 && max_warp_angle <= 180.0)
+    cs_glob_mesh_warping_threshold = max_warp_angle;
+  else
+    cs_glob_mesh_warping_threshold = -1.0;
+
+  if (postprocess != 0)
+    cs_glob_mesh_warping_post = 1;
+}
+
+/*----------------------------------------------------------------------------
+ * Get defaults for cutting of warped faces.
+ *
+ * parameters:
+ *   max_warp_angle --> if non NULL, returns maximum warp angle (in degrees)
+ *                      over which faces will be cut, or -1 if faces should
+ *                      not be cut
+ *   postprocess    --> if non NULL, returns 1 if postprocessing should be
+ *                      activated when cutting warped faces, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_warping_get_defaults(double  *max_warp_angle,
+                             int     *postprocess)
+{
+  if (max_warp_angle != NULL)
+    *max_warp_angle = cs_glob_mesh_warping_threshold;
+
+  if (postprocess != NULL)
+    *postprocess = cs_glob_mesh_warping_post;
 }
 
 /*----------------------------------------------------------------------------*/

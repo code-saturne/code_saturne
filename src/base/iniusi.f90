@@ -98,9 +98,9 @@ integer          iverif
 integer          ii, iphas , iscal , nmodpp
 integer          nphmax, nscmax, nesmax, nphusi, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
-integer          ialgce, imgrpr
+integer          ialgce, imgrpr, icwfps
 integer          iappel
-double precision relaxp, extrap
+double precision relaxp, extrap, cwfthr
 
 !===============================================================================
 
@@ -331,13 +331,18 @@ enddo
 !   - Interface Code_Saturne
 !     ======================
 
-if(iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
   call csidtv(idtvar)
   !==========
 
   call csiphy(iphydr)
   !==========
+
+  ! Mesh related options
+
+  call uicwf
+  !=========
 
 endif
 
@@ -360,15 +365,19 @@ iihmpu = iihmpr
 !     Le blindage en erreur est dans cs_maillage_grd.c (erreur si IALGCE>1,
 !       cs_glob_maillage_grd_cdg_cel inchange si IALGCE<0)
 ialgce = -999
+icwfps = 0     ! Set to 1 to postprocess cutting of warped faces
+cwfthr = -1.d0 ! Threshold (in degrees) to triangulate warped faces if positive
 
 call usipgl                                                       &
 !==========
  ( nphmax , nesmax ,                                              &
    ieepre , ieeder , ieecor , ieetot ,                            &
    nphusi , iihmpu , nfecra ,                                     &
-   idtvar , ipucou , iphydr , ialgce , iescal , iverif )
+   idtvar , ipucou , iphydr , ialgce , iescal , iverif,           &
+   icwfps,  cwfthr )
 
 if (ialgce.ne.-999) call algcen(ialgce)
+if (cwfthr.ge.0.d0) call setcwf(cwfthr)
 
 ! --- Parametres de la methode ALE
 

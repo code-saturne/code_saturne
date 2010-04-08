@@ -84,12 +84,6 @@ typedef struct {
                                    1: timing (CPU + Walltime) mode
                                    2: MPI trace-friendly mode */
 
-  /* Cut of warped faces */
-
-  cs_bool_t      cwf;           /* true if cut is required */
-  cs_bool_t      cwf_post;      /* true if post-treatment is required */
-  double         cwf_criterion; /* Criterion to choose which face to cut */
-
   /* Server socket for SYRTHES 3 coupling */
 
   int           syr_socket;     /* socket number to use, or -1 */

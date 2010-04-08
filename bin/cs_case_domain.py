@@ -359,7 +359,6 @@ class domain(base_domain):
                  partition_list = None,       # list of partitions
                  partition_opts = None,       # partitioner options
                  solcom = False,              # use old geomet mesh file input
-                 cut_warped_faces = None,     # command-line option
                  mode_args = None,            # --quality or --benchmark ?
                  logging_args = None,         # command-line options for logging
                  param = None,                # XML parameters file
@@ -404,7 +403,6 @@ class domain(base_domain):
         # Solver options
 
         self.solcom = solcom
-        self.cut_warped_faces = cut_warped_faces
         self.mode_args = mode_args
 
         self.logging_args = logging_args
@@ -918,11 +916,7 @@ class domain(base_domain):
         if self.logging_args != None:
             args += ' ' + self.logging_args
 
-        if not self.solcom:
-            if self.cut_warped_faces != None:
-                args += ' ' + self.cut_warped_faces
-
-        else:
+        if self.solcom:
             args += ' --solcom'
 
         if self.mode_args != None:
