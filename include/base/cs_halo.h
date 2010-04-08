@@ -183,7 +183,7 @@ typedef struct {
  * Create a halo structure.
  *
  * parameters:
- *   ifs  -->  pointer to a fvm_interface_set structure
+ *   ifs  <--  pointer to a fvm_interface_set structure
  *
  * returns:
  *   pointer to created cs_halo_t structure
@@ -196,7 +196,7 @@ cs_halo_create(fvm_interface_set_t  *ifs);
  * Create a halo structure, using a reference halo
  *
  * parameters:
- *   ref  -->  pointer to reference halo
+ *   ref  <--  pointer to reference halo
  *
  * returns:
  *   pointer to created cs_halo_t structure
@@ -209,7 +209,7 @@ cs_halo_create_from_ref(const cs_halo_t  *ref);
  * Destroy a halo structure.
  *
  * parameters:
- *   this_halo  -->  pointer to cs_halo structure to destroy
+ *   this_halo  <--  pointer to cs_halo structure to destroy
  *
  * returns:
  *   pointer to deleted halo structure (NULL)
@@ -229,7 +229,7 @@ cs_halo_destroy(cs_halo_t  *this_halo);
  * so that buffer sizes are increased if necessary.
  *
  * parameters:
- *   halo --> pointer to cs_halo_t structure.
+ *   halo <-- pointer to cs_halo_t structure.
  *---------------------------------------------------------------------------*/
 
 void
@@ -239,8 +239,8 @@ cs_halo_update_buffers(const cs_halo_t *halo);
  * Apply cell renumbering to a halo
  *
  * parameters:
- *   halo        --> pointer to halo structure
- *   new_cell_id --> array indicating old -> new cell id (0 to n-1)
+ *   halo        <-- pointer to halo structure
+ *   new_cell_id <-- array indicating old -> new cell id (0 to n-1)
  *---------------------------------------------------------------------------*/
 
 void
@@ -255,8 +255,8 @@ cs_halo_renumber_cells(cs_halo_t       *halo,
  * (id between n_local_elements + 1 to n_local_elements_with_halo).
  *
  * parameters:
- *   halo      --> pointer to halo structure
- *   sync_mode --> synchronization mode (standard or extended)
+ *   halo      <-- pointer to halo structure
+ *   sync_mode <-- synchronization mode (standard or extended)
  *   num       <-> pointer to local number value array
  *----------------------------------------------------------------------------*/
 
@@ -274,8 +274,8 @@ cs_halo_sync_num(const cs_halo_t  *halo,
  * (id between n_local_elements + 1 to n_local_elements_with_halo).
  *
  * parameters:
- *   halo      --> pointer to halo structure
- *   sync_mode --> synchronization mode (standard or extended)
+ *   halo      <-- pointer to halo structure
+ *   sync_mode <-- synchronization mode (standard or extended)
  *   var       <-> pointer to variable value array
  *----------------------------------------------------------------------------*/
 
@@ -293,10 +293,10 @@ cs_halo_sync_var(const cs_halo_t  *halo,
  * (id between n_local_elements + 1 to n_local_elements_with_halo).
  *
  * parameters:
- *   halo      --> pointer to halo structure
- *   sync_mode --> synchronization mode (standard or extended)
+ *   halo      <-- pointer to halo structure
+ *   sync_mode <-- synchronization mode (standard or extended)
  *   var       <-> pointer to variable value array
- *   stride    --> number of (interlaced) values by entity
+ *   stride    <-- number of (interlaced) values by entity
  *----------------------------------------------------------------------------*/
 
 void
@@ -325,8 +325,8 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
  * the behavior is the same as that of cs_halo_sync_var().
  *
  * parameters:
- *   halo      --> pointer to halo structure
- *   sync_mode --> synchronization mode (standard or extended)
+ *   halo      <-- pointer to halo structure
+ *   sync_mode <-- synchronization mode (standard or extended)
  *   var       <-> pointer to variable value array
  *----------------------------------------------------------------------------*/
 
@@ -340,8 +340,8 @@ cs_halo_sync_component(const cs_halo_t    *halo,
  * Dump a cs_halo_t structure.
  *
  * parameters:
- *   halo           -->  pointer to cs_halo_t struture
- *   print_level    -->  0 only dimensions and indexes are printed, else (1)
+ *   halo           <--  pointer to cs_halo_t struture
+ *   print_level    <--  0 only dimensions and indexes are printed, else (1)
  *                       everything is printed
  *---------------------------------------------------------------------------*/
 

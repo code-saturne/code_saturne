@@ -1,4 +1,10 @@
 * 08/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct Doxygen-like documentation for headers.
+  modified routines:
+    include/base/cs_halo.h
+    src/base/cs_halo.c
+
+* 08/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Move the warped-face-cutting setup from the command line option to a Fortran
   user routine and XML file.
   modified routines:
