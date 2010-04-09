@@ -201,9 +201,6 @@ int  cs_glob_io_hints = FVM_FILE_EXPLICIT_OFFSETS;
 int  cs_glob_io_hints = 0;
 #endif
 
-/* Global pointer on preprocessor data file handle */
-cs_io_t  *cs_glob_pp_io = NULL;
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/

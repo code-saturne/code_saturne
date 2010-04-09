@@ -1,4 +1,12 @@
 * 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add preprocessor_output files concatenation (works in parallel).
+  modified routines:
+    include/base/cs_io.h
+    include/base/cs_preprocessor_data.h
+    src/base/cs_io.c
+    src/base/cs_preprocessor_data.c
+
+* 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Use a more robust algorithm in I/O management.
   modified routine:
     src/base/cs_io.c

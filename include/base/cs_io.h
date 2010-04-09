@@ -99,10 +99,6 @@ typedef struct {
 
 extern int       cs_glob_io_hints;
 
-/* Global structure associated with pre-processor output (kernel input) file */
-
-extern cs_io_t  *cs_glob_pp_io;
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
