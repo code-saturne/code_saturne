@@ -1,4 +1,9 @@
 * 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Free temporary mesh structure in the Code_Aster coupling.
+  modified routine:
+    src/base/cs_ast_coupling.c
+
+* 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add preprocessor_output files concatenation (works in parallel).
   modified routines:
     include/base/cs_io.h
