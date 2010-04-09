@@ -188,6 +188,12 @@ ifinra = iw3    + ncelet
 call rasize('testel', ifinra)
 !==========
 
+! Symmetry type:
+! value 0 avoids extrapolating the gradient on boundary faces.
+do ifac = 1, nfabor
+   ia(iisymp-1+ifac) = 0
+enddo
+
 !===============================================================================
 ! 1. FONCTION ANALYTIQUE SIN(X+2Y+3Z)
 !===============================================================================

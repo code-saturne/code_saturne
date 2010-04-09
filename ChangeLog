@@ -1,4 +1,9 @@
 * 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a valgrind warning for an uninitialized array in the quality tests.
+  modified routine:
+    src/base/testel.f90
+
+* 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix some integer sizes in the reduced-neighborhood algorithm (only relevant
   for big meshes).
   modified routine:
