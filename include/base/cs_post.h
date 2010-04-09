@@ -627,7 +627,23 @@ cs_post_add_mesh_edges(int  edges_id,
                        int  base_id);
 
 /*----------------------------------------------------------------------------
- * Assign a category post-processing mesh.
+ * Remove a post-processing mesh.
+ *
+ * No further post-processing output will be allowed on this mesh,
+ * so the associated structures may be freed.
+ *
+ * A post-processing mesh that has been associated with a time-varying
+ * writer or that is referenced by an alias may not be removed.
+ *
+ * parameters:
+ *   mesh_id <-- id of mesh to remove
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_free_mesh(int  mesh_id);
+
+/*----------------------------------------------------------------------------
+ * Assign a category to a post-processing mesh.
  *
  * By default, each mesh is assigned a category id identical to its id.
  * The automatic variables output associated with the main volume and

@@ -1,3 +1,9 @@
+* 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a function freeing a post-processing mesh.
+  modified routines:
+    include/base/cs_post.h
+    src/base/cs_post.c
+
 * 08/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct Doxygen-like documentation for headers.
   modified routines:

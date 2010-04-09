@@ -2241,6 +2241,72 @@ cs_post_add_mesh_edges(int  edges_id,
 }
 
 /*----------------------------------------------------------------------------
+ * Remove a post-processing mesh.
+ *
+ * No further post-processing output will be allowed on this mesh,
+ * so the associated structures may be freed.
+ *
+ * A post-processing mesh that has been associated with a time-varying
+ * writer or that is referenced by an alias may not be removed.
+ *
+ * parameters:
+ *   mesh_id <-- id of mesh to remove
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_free_mesh(int  mesh_id)
+{
+  int i;
+  cs_post_mesh_t  *post_mesh = NULL;
+
+  /* Search for requested mesh */
+
+  int _mesh_id = _cs_post_mesh_id(mesh_id);
+
+  /* Check if mesh was aliased */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+
+    post_mesh = _cs_post_meshes + i;
+    if (post_mesh->alias == _mesh_id)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Post-processing mesh number %d has been aliased\n"
+                  "by mesh %d, so it may not be freed.\n"),
+                mesh_id, post_mesh->id);
+  }
+
+  /* Now set pointer to mesh and check for time dependency */
+
+  post_mesh = _cs_post_meshes + _mesh_id;
+
+  for (i = 0; i < post_mesh->n_writers; i++) {
+
+    cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
+
+    fvm_writer_time_dep_t time_dep = fvm_writer_get_time_dep(writer->writer);
+
+    if (time_dep != FVM_WRITER_FIXED_MESH)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Post-processing mesh number %d has been associated\n"
+                  "to writer %d which allows time-varying meshes, so\n"
+                  "it may not be freed.\n"),
+                mesh_id, writer->id);
+  }
+
+  /* Finally, remove mesh if allowed */
+
+  if (post_mesh->_exp_mesh != NULL)
+    fvm_nodal_destroy(post_mesh->_exp_mesh);
+  BFT_FREE(post_mesh->writer_id);
+
+  /* Shift remaining meshes */
+
+  for (i = _mesh_id + 1; i < _cs_post_n_meshes; i++)
+    _cs_post_meshes[i-1] = _cs_post_meshes[i];
+  _cs_post_n_meshes -= 1;
+}
+
+/*----------------------------------------------------------------------------
  * Assign a category to a post-processing mesh.
  *
  * By default, each mesh is assigned a category id identical to its id.
