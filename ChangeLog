@@ -1,4 +1,17 @@
 * 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor update to the documentation (mostly English corrections).
+  modified files:
+    doc/theory/bilsc2.tex
+    doc/theory/combbase.tex
+    doc/theory/combfuel.tex
+    doc/theory/combgaz.tex
+    doc/theory/thermo.tex
+    doc/user/a1_autovalid.tex
+    doc/user/graphics/cs_components.fig
+    doc/user/saturne1.tex
+    doc/user/saturne2.tex
+
+* 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a valgrind warning for an uninitialized array in the quality tests.
   modified routine:
     src/base/testel.f90

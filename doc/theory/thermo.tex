@@ -7,9 +7,21 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The description of the thermodynamical of gases mixture is as close as possible of the JANAF standard. The gases mixture is, often, considered as composed of some {\em global} species ({\small eg. oxidizer, products, fuel}) each of them beeing a mixture ({\small with known ratio}) of {\em elementary} species ({\small oxygen, nitrogen, carbon dioxide, ...}).\\
- A tabulation of the enthalpy of both elementary and global species for some temperatures is constructed ({\small using JANAF polynoms}) or read ({\small if the user found useful to define a global specie not simply related to elementary ones ; eg. unspecified hydrocarbon known by C, H, O, N, S analysis and heating value.}).\\ 
-The thermodynamic properties of condensed phase are more simple : formation enthalpy is computed using properties of gaseous products of combustion with air ({\small formation enthalpy of wich is zero valued as O2 and N2 are reference state}) and the lower heating value. The heat capacity of condensed phase is assumed constant and it is a data the user have to type ({\small in the corresponding data file dp\_FCP or dp\_FUE}).
+The description of the thermodynamical of gases mixture is as close as possible
+of the JANAF standard. The gases mixture is, often, considered as composed of
+some {\em global} species ({\small eg. oxidizer, products, fuel}) each of them
+beeing a mixture ({\small with known ratio}) of {\em elementary} species
+({\small oxygen, nitrogen, carbon dioxide, ...}).\\ A tabulation of the enthalpy
+of both elementary and global species for some temperatures is constructed
+({\small using JANAF polynoms}) or read ({\small if the user found useful to
+define a global specie not simply related to elementary ones ; eg. unspecified
+hydrocarbon known by C, H, O, N, S analysis and heating value.}).\\ The
+thermodynamic properties of condensed phase are more simple : formation enthalpy
+is computed using properties of gaseous products of combustion with air ({\small
+formation enthalpy of wich is zero valued as O2 and N2 are reference state}) and
+the lower heating value. The heat capacity of condensed phase is assumed
+constant and it is a data the user have to type ({\small in the corresponding
+data file dp\_FCP or dp\_FUE}).
 
 
 %d
@@ -19,11 +31,34 @@ The thermodynamic properties of condensed phase are more simple : formation enth
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-A table of gases ({\small both elementary species and global ones}) enthalpy for some temperatures ({\small user choses number of points, temperature in dp\_*** file}) is computed ({\small enthalpy of elementary species is computed using JANAF polynomia ; enthalpy for global species are computed by weighting of elementary ones})or read ({\small subroutine PPTBHT}). Then the entahlpy is supposed to be linear vs. temperature in each temperature gap ({\small i.e. continuous piece wise linear on the whole temperature range}). As a consequence, temperature is a linear function of entahlpy ; and a simple algorithm ({\small subroutine COTHHT}) allows to determine the enthalpy of a mixture of gases ({\small for inlet conditions it is more useful to indicate temperature and mass fractions}) or to determine temperature from enthalpy of the mixture and mass fractions of global species ({\small common use in every fluid particle, at every time step}). 
+A table of gases ({\small both elementary species and global ones}) enthalpy for
+some temperatures ({\small user choses number of points, temperature in dp\_***
+file}) is computed ({\small enthalpy of elementary species is computed using
+JANAF polynomia ; enthalpy for global species are computed by weighting of
+elementary ones})or read ({\small subroutine PPTBHT}). Then the entahlpy is
+supposed to be linear vs. temperature in each temperature gap ({\small
+i.e. continuous piece wise linear on the whole temperature range}). As a
+consequence, temperature is a linear function of entahlpy ; and a simple
+algorithm ({\small subroutine COTHHT}) allows to determine the enthalpy of a
+mixture of gases ({\small for inlet conditions it is more useful to indicate
+temperature and mass fractions}) or to determine temperature from enthalpy of
+the mixture and mass fractions of global species ({\small common use in every
+fluid particle, at every time step}).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Particles enthalpy discretisation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Enthalpy of condensed material are rarely known. Commonly, the thermal power and ultimate analysis are determined. So, using simple assumptions and the enthalpy of known released species ({\small after burning with air}) the formation enthalpy of coal or heavy oil can be computed. Assuming the thermal capacity is constant for every condensed material a table can be build with ... two temperatures, allowing the use of the same simple algorithm for temperature-enthalpy conversion. When intermediate gazeous species ({\small volatile or vapour}) are thermodynamically known, simple assumptions({\small eg : char is thermodynamically equivalent to pure carbon in reference state ; ashes are inert}) allow to deduce enthalpy for heterogeneous reactions ({\small these energies have not to be explicitely taken in account for the energy budget of particles}).
+Enthalpy of condensed material are rarely known. Commonly, the thermal power and
+ultimate analysis are determined. So, using simple assumptions and the enthalpy
+of known released species ({\small after burning with air}) the formation
+enthalpy of coal or heavy oil can be computed. Assuming the thermal capacity is
+constant for every condensed material a table can be build with ... two
+temperatures, allowing the use of the same simple algorithm for
+temperature-enthalpy conversion. When intermediate gaseous species ({\small
+volatile or vapour}) are thermodynamically known, simple assumptions({\small eg
+: char is thermodynamically equivalent to pure carbon in reference state ; ashes
+are inert}) allow to deduce enthalpy for heterogeneous reactions ({\small these
+energies have not to be explicitely taken in account for the energy budget of
+particles}).

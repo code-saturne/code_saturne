@@ -1,5 +1,5 @@
 \programme{ Gas combustion}
-{\huge subroutines : co** and d3p*, ebu*, lwc*, pdf*}
+{\huge subroutines: co** and d3p*, ebu*, lwc*, pdf*}
 
 Flames with gaseous fuels can be categorized in premix, diffusion or
 partial-premix.
@@ -7,7 +7,7 @@ partial-premix.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Premix : Eddy Break Up}
+\section{Premix: Eddy Break Up}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -18,7 +18,7 @@ inlet}) ; the key-word of which is {\em"If it mixes, it burns"}.\\
 If the chemistry is fast, vs. mixing, fluid particles are made of
 fresh gases or of burned ones. This situation is described by a
 progress variable ({\small valued 0 in fresh gases and 1 in burnt
-ones}) with a source term : the reaction one. The mixture of totally
+ones}) with a source term: the reaction one. The mixture of totally
 fresh or totally burnt gases, called intermittency, leads to a maximal
 variance of the progress variable determined by the mean value of the
 progress variable.\\
@@ -33,7 +33,7 @@ ones. So the source term for the ({\small mean}) progress variable is
 the dissipation of its ({\small algebraic}) variance.\\
 
 In \CS the progress variable chosen is the mass fraction of fresh
-gases, so :\\
+gases, so:\\
 \begin{equation}
 S(Ygf) = - Cebu . \rho . \frac{\epsilon}{k} . Ygf . (1-Ygf)
 \end{equation}
@@ -46,10 +46,10 @@ Some improvements have been proposed, and largely used, for situations
 with mixture fraction gradient ({\small staggering of reactant(s)})
 but are not theorically funded. The simplest extension is available
 ({\small options 2 and 3 }) in \CS with one extra equation solved for
-f the mean of mixture fraction : the corresponding hypothesis is "no
+f the mean of mixture fraction: the corresponding hypothesis is "no
 variance for mixture fraction" ... a little bit surprising in an EBU
 context ({\small maximal variance for progress variable}). The choice
-of the fresh gas mass fraction appears now quite pertinent : the
+of the fresh gas mass fraction appears now quite pertinent: the
 computation of species mass fraction can be done, with respect to the
 mean mixture fraction, both in fresh ({\small the mass fraction of
 which is Ygf}) and burnt gases ({\small the mass fraction of which is
@@ -92,7 +92,7 @@ or a constant value ({\small in regular EBU model}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Diffusion : PDF with 3 points chemistry}
+\section{Diffusion: PDF with 3 points chemistry}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -100,11 +100,11 @@ In diffusion model, the combustion is supposed limited only by mixing
 ({\small between air and fuel}), so the reaction is assumed to reach
 instantaneously its equilibrium state and the temperature and
 concentrations can be computed for every value of the mixture
-fraction. In \CS the implemented version uses an extra hypothesis :
+fraction. In \CS the implemented version uses an extra hypothesis:
 the reaction is complete ; so if the mixture is stoechiometric, the
 burnt gases contains only final products ({\small none unburnt like
 CO...}). As a consequence, every concentration is a piecewise linear
-function of the mixture fraction (subroutines : \fort{D3PPHY, D3PINT,
+function of the mixture fraction (subroutines: \fort{D3PPHY, D3PINT,
 CPCYM,FUCYM}) .\\
 \begin{equation}
 0<f<fs => Yi(f) = Yair + \frac{f}{fs} . (Ys-Yair)
@@ -117,10 +117,10 @@ fs<f<1 => Yi(f) = Ys + \frac{f-fs}{1-fs} . (Yfuel-Ys)
 \caption{mass fraction of global species are piecewise linear with mixture fraction}
 \end{figure}
 Where fs is the stoechiometric mixture fraction, Yair and Yfuel are
-concentrations in ({\small supposed unable to react : inert}) initial
+concentrations in ({\small supposed unable to react: inert}) initial
 reactant, Ys concentrations in products of the complete reaction of a
 stoechiometric mixture ({\small in such products, the chemical
-reaction is no more possible : inert}).\\
+reaction is no more possible: inert}).\\
 
 The diffusion model uses two equations for the mixture fraction and
 its variance both of them having no reaction term. The mean and the
@@ -132,13 +132,13 @@ by Borghi \cite{4} with a rectangle and Dirac's peak is used
 \begin{figure}[h]
 %\centerline{\includegraphics[height=4cm]{../Comb/Cogz/Images/Pf.pdf}}
 %\centerline{\includegraphics[height=2.5cm]{../Comb/Cogz/Images/Pf2.pdf}}
-\caption{Examples of presumed PDF : cheapest form}
+\caption{Examples of presumed PDF: cheapest form}
 \end{figure}
 The determination of mean concentration is done by integration the
 local concentration weighted by the probability density function. As a
 matter of fact, integrate the product of a piecewise linear function
 by a constant ({\small height of the rectangle}) is a very simple
-exercise : analytic solution are available ({\small the original
+exercise: analytic solution are available ({\small the original
 Borghi formulation \cite{3} wich uses $\beta$ function was much more
 computationaly expensive}).
 
@@ -164,7 +164,7 @@ be computed.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Partial premix : Libby Williams models}
+\section{Partial premix: Libby Williams models}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -174,7 +174,7 @@ be computed.
 The Libby \& Williams model have been developped to address the
 description of the combustor can of gas turbine in regime allowing a
 reduction of NOx production using ({\small sometimes very}) lean
-premix : by this way, the combustion occurs at moderate temperatures
+premix: by this way, the combustion occurs at moderate temperatures
 avoiding the hot spots which are favourable to thermal NOx
 production. As a consequence of the moderate temperatures, the
 chemistry is no more so fast and the stability is questionnable. To
@@ -199,23 +199,23 @@ chemistry description is used ({\small source term for every variables
 is a weighting of the reaction fluxes}).\\ With two peaks
 distribution, the two-variable PDF is restricted to one line, crossing
 the mean state and the slope of which is the ratio of variances
-({\small chose of the sign is user free, ... but relevant : expertise
+({\small chose of the sign is user free, ... but relevant: expertise
 is needed}). The correlation between variables is unity.\\ On this
 line the distribution is supposed to obey a modified Curl
 model \cite{7}.\\
 \begin{figure}[h]
 %\centerline{\includegraphics[height=5cm]{../Comb/Cogz/Images/LW2.pdf}}
-\caption{PDF recommended by Libby \& Williams : still undetermined}
+\caption{PDF recommended by Libby \& Williams: still undetermined}
 \end{figure}
 With three or four peaks distribution, the whole concentration space
 is available and the determination of the covariance allows evolution
 of the correlation ({\small with f and Yf, it have been shown that the
 correlation is positive in mixing layer and can become negative across
-flame : the particle nearer of stoechiometry being able to burn -then
+flame: the particle nearer of stoechiometry being able to burn -then
 destroy Yf- faster than poor ones}). \\
 \begin{figure}[h]
 %\centerline{\includegraphics[height=5cm]{../Comb/Cogz/Images/LW4.pdf}}
-\caption{PDF form in LWP approach : succesive modified Curl distributions}
+\caption{PDF form in LWP approach: succesive modified Curl distributions}
 \end{figure}
 In adiabatic conditions, the temperature can be computed for every
 pair (f,Yfuel), allowing the determination of the kinetic constant.\\
@@ -259,7 +259,7 @@ Comb. Sci. Technol., 161 , pp. 351-390, (2000).
 
 \bibitem{5}
 {\sc Ribert, G. {\em et al.}},\\
-{\em Modeling turbulent reactive flows with variable equivalence ratio : application to the calculation of a reactive shear layer},\\
+{\em Modeling turbulent reactive flows with variable equivalence ratio: application to the calculation of a reactive shear layer},\\
 Comb. Sci. Technol., 176 , pp. 907-923, (2004).
 
 \bibitem{6}
@@ -269,7 +269,7 @@ ICDERS, (2005) to be published.
 
 \bibitem{7}
 {\sc Curl, R.L.},\\
-{\em Dispersed phase mixing : theory and effects in simple reactors},\\
+{\em Dispersed phase mixing: theory and effects in simple reactors},\\
 AIChE J., 9 , pp. 175-181 (1963).
 
 
@@ -301,7 +301,7 @@ vaporisation, or pyrolysis, and heterogeneous combustion two or three
 gaseous fuels are taken in account, each of them having its own inert
 scalar, so the PDF is build for an inert scalar incoming with air and
 ranging from a minimum value and one ; the minimum value for air
-tracker is due to heterogeneous combustion : some air is needed to
+tracker is due to heterogeneous combustion: some air is needed to
 allow heterogeneous combsution and carbon releasing ({\small as carbon
 monoxide}) ; after some heteregenous reaction took place, air is
 lacking for gas combustion ({\small at the bottom stone mile of the
@@ -318,12 +318,12 @@ the three pertinent parameters ({\small three conditions given by
 momenta $m_{0}=1, m_{1}=mean, m_{2}=mean^{2}+variance$}).\\
 
 - for a lonesome rectangle Dirac's peak intensity is null, the three
-  parameters are : the begin and end values of the rectangle and its
+  parameters are: the begin and end values of the rectangle and its
   heigth\\
 
 - for a rectangle with a Dirac's peak at one boundary ({\small which
   is determined during the choose of shape}), one of the rectangle
-  hedge is fixed at this boundary, so the three parameters are : the
+  hedge is fixed at this boundary, so the three parameters are: the
   other rectangle hedge, height of rectangle, intensity of the Dirac's
   peak\\
 
@@ -350,7 +350,7 @@ With the above Probability Density Function and assumption of
 concentrations piecewise linear vs. the variable, it is quite easy to
 integrate and found the mean concentrations. For gas diffusion flame
 this is done by \fort{D3PPHY, D3PINT}, it seems more relevant to
-explain the algorithm in a more complicated case : for heavy fuel
+explain the algorithm in a more complicated case: for heavy fuel
 oil \fort{FYUCYM} or for coal \fort{CPCYM} three reactions are
 considered. \\
 
@@ -380,19 +380,19 @@ diffusion flammelet take place between this mixture and pure oxidiser
 ({\small but for solid particles introduced wet, when a first drying
 process releases water vapor which is mixed with air}) and the
 composition is described with respect to the inert scalar introduced
-with air : \fort{f4}.\\
+with air: \fort{f4}.\\
 
 For the description of compositions ({\small as piecewise linear
-functions}) the composition is computed in some remarkable points :
+functions}) the composition is computed in some remarkable points:
 the local mean fuel \fort{CL}, the oxidiser \fort{F4} and the three
 mixture ratio corresponding to the stoechiometry of the three
 successive reactions.\\ Before reaction between gases, only exist
-species coming from entries or interfacial source term :\\
+species coming from entries or interfacial source term:\\
 \begin{figure}[h]
 %\centerline{\includegraphics[height=6cm]{../Comb/Cogz/Images/YF0f.pdf}}
 \caption{Heavy Fuel Oil before any gas combustion} 
 \end{figure}
-{\centerline {\em Caution : axis for f4 is reverted, so fuel is on the
+{\centerline {\em Caution: axis for f4 is reverted, so fuel is on the
 right side like in a scheme with a mixture fraction direct axis}}}\\
 
 The oxygen and the hydrocarbon vapor have concentrations linear in f4
@@ -442,7 +442,7 @@ compute.\\
 \caption{Heavy Fuel Oil after final carbon oxidation}
 \end{figure}
 \\
-To have not any unburnt, the PDF may be zero valued for F4 $<$ F4s3 :
+To have not any unburnt, the PDF may be zero valued for F4 $<$ F4s3:
 every gas particle may have an F4 greater than F4s3.\\
 
 During pulverised coal combustion, two kinds of volatile matters are
@@ -451,7 +451,7 @@ successive reactions is quite similar.\\
 
 The first reaction is a partial dehydrogenation of the light volatile
 $CH_{x1}$ to form the species caracteristic of heavy volatile
-$CH_{x2}$ : in f4s1, all of $CH_{x1}$ ({\small issued from the low
+$CH_{x2}$: in f4s1, all of $CH_{x1}$ ({\small issued from the low
 temperature pyrolisis reaction}) is converted, and the $CH_{x2}$
 ({\small issued from the high temperature pyrolisis reaction}) is
 incremented.\\
@@ -468,22 +468,22 @@ is the same final oxidation of carbon monoxide to carbon dioxide.\\
 \\
 Comparisons of the PDF rectangle hedges [$f_{deb} , f_{fin}$] and
 remarkable composition points [CL, f4s1, f4s2, f4s3, F4] allows a
-simple integration : 1) Dirac's peak intensity are used to weight
+simple integration: 1) Dirac's peak intensity are used to weight
 composition at boundaries, 2) the piece linear part is integrated with
-analytical formulae on each band :\\
+analytical formulae on each band:\\
 \begin{enumerate}
-\item rich range, here exists species with the higher calorific value : $CH_{x}$ ({\small in fuel case}) or $CH_{x2}$ ({\small in coal case }) :\\  \centerline{[Max($f_{deb}$,CL) ; Min($f_{fin}$,f4s1)]}\\
-\item middle-class range $H_{2}S$ or $CH_{x1}$ conversion :\\
+\item rich range, here exists species with the higher calorific value: $CH_{x}$ ({\small in fuel case}) or $CH_{x2}$ ({\small in coal case }):\\  \centerline{[Max($f_{deb}$,CL) ; Min($f_{fin}$,f4s1)]}\\
+\item middle-class range $H_{2}S$ or $CH_{x1}$ conversion:\\
  \centerline{[Max($f_{deb}$ , f4s1 ); Min ($f_{fin}$ , f4s2 )]}\\
-\item working range, carbon monoxide consumption frees enthalpy :\\ \centerline{ [Max($f_{deb}$ ,f4s2 ); Min ($f_{fin}$ , f4s3 )]}\\
-\item poor range, only products and oxidisers :\\ \centerline{ [Max($f_{deb}$ , f4s3 ); Min ($f_{fin}$ , 1)]}\\
+\item working range, carbon monoxide consumption frees enthalpy:\\ \centerline{ [Max($f_{deb}$ ,f4s2 ); Min ($f_{fin}$ , f4s3 )]}\\
+\item poor range, only products and oxidisers:\\ \centerline{ [Max($f_{deb}$ , f4s3 ); Min ($f_{fin}$ , 1)]}\\
 \end{enumerate}
 
-For each band (eg. [f4si , f4sj]) concentrations can be written :\\
+For each band (eg. [f4si , f4sj]) concentrations can be written:\\
 \centerline{$Ye = Ye(f4si) + \frac{f4-f4si}{f4sj-f4si} . \left( Ye(f4sj)-Ye(f4si) \right) $}\\ 
 Integration on the band [b1 , b2] ({\small obviously b1$\geq$f4si \&
-b2$\leq$f4sj}) gives the increment :\\
-\centerline{$Ye := Ye + h_{rec}.(b2-b1) + \left[ \frac{Ye(f4si).f4sj-Ye(f4sj).f4si}{f4sj-f4si}+\frac{Ye(f4sj)-Ye(f4si)}{f4sj-f4si}.\frac{b1+b2}{2} \right] $}\\
+b2$\leq$f4sj}) gives the increment:\\
+\centerline{$Ye:= Ye + h_{rec}.(b2-b1) + \left[ \frac{Ye(f4si).f4sj-Ye(f4sj).f4si}{f4sj-f4si}+\frac{Ye(f4sj)-Ye(f4si)}{f4sj-f4si}.\frac{b1+b2}{2} \right] $}\\
 Where $h_{rec}$ is the height of the PDF's rectangle. 
 
  
