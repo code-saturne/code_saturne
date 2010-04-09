@@ -139,11 +139,13 @@ void CS_PROCF(nbcsyr, NBCSYR)
  *
  * SUBROUTINE GEOSYR
  * *****************
+ *
+ * INTEGER          ICHRSY      : <-- : flag for associated postprocessing
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(geosyr, GEOSYR)
 (
- void
+ cs_int_t  *ichrsy
 );
 
 /*----------------------------------------------------------------------------
@@ -270,20 +272,6 @@ void CS_PROCF (varsyo, VARSYO)
  cs_int_t   *numsyr,
  cs_real_t  *tfluid,
  cs_real_t  *hwall
-);
-
-/*----------------------------------------------------------------------------
- * Initialize post processing of SYRTHES couplings.
- *
- * Fortran Interface:
- *
- * SUBROUTINE PSTISY
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(pstisy, PSTISY)
-(
- void
 );
 
 /*============================================================================

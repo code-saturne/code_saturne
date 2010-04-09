@@ -674,11 +674,13 @@ void CS_PROCF(nbcsyr, NBCSYR)
  *
  * SUBROUTINE GEOSYR
  * *****************
+ *
+ * INTEGER          ICHRSY      : <-- : flag for associated postprocessing
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(geosyr, GEOSYR)
 (
- void
+ cs_int_t  *ichrsy
 )
 {
   int coupl_id;
@@ -691,11 +693,15 @@ void CS_PROCF(geosyr, GEOSYR)
     cs_syr3_coupling_init_mesh(syr_coupling);
   }
 
-  for (coupl_id = 0; coupl_id < _cs_glob_n_syr4_cp; coupl_id++) {
-    cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupl_id);
-    cs_syr4_coupling_init_mesh(syr_coupling);
+  if (*ichrsy != 0) {
+    for (coupl_id = 0; coupl_id < _cs_glob_n_syr3_cp; coupl_id++)
+      cs_syr3_coupling_post_init(coupl_id, -1);
   }
 
+  for (coupl_id = 0; coupl_id < _cs_glob_n_syr4_cp; coupl_id++) {
+    cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupl_id);
+    cs_syr4_coupling_init_mesh(syr_coupling, *ichrsy);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -921,29 +927,6 @@ void CS_PROCF (varsyo, VARSYO)
       cs_syr4_coupling_send_tf_hwall(syr_coupling, tfluid, hwall);
     }
   }
-}
-
-/*----------------------------------------------------------------------------
- * Initialize post processing of SYRTHES couplings.
- *
- * Fortran Interface:
- *
- * SUBROUTINE PSTISY
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(pstisy, PSTISY)
-(
- void
-)
-{
-  int coupl_id;
-
-  for (coupl_id = 0; coupl_id < _cs_glob_n_syr3_cp; coupl_id++)
-    cs_syr3_coupling_post_init(coupl_id, -1);
-
-  for (coupl_id = 0; coupl_id < _cs_glob_n_syr4_cp; coupl_id++)
-    cs_syr4_coupling_post_init(coupl_id, -1);
 }
 
 /*============================================================================

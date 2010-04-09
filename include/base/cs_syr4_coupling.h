@@ -180,10 +180,12 @@ cs_syr4_coupling_new_time_step(int  nt_cur_abs,
  *
  * parameters:
  *   syr_coupling <-- SYRTHES coupling structure
+ *   post_process <-- if 1, activate associated post-processing
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling);
+cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling,
+                           int                  post_process);
 
 /*----------------------------------------------------------------------------
  * Get number of associated coupled faces in main mesh

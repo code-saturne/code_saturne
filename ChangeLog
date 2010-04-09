@@ -1,4 +1,13 @@
 * 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Refactoring of the post-processing management of the SYRTHES coupling.
+  modified routines:
+    include/base/cs_syr4_coupling.h
+    include/base/cs_syr_coupling.h
+    src/base/cregeo.f90
+    src/base/cs_syr4_coupling.c
+    src/base/cs_syr_coupling.c
+
+* 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a function freeing a post-processing mesh.
   modified routines:
     include/base/cs_post.h

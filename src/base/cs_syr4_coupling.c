@@ -300,6 +300,142 @@ _exchange_sync(cs_syr4_coupling_t  *syr_coupling,
 }
 
 /*----------------------------------------------------------------------------
+ * Post process variables associated with Syrthes couplings
+ *
+ * parameters:
+ *   coupling_id         <--  Id of Syrthes coupling
+ *   nt_cur_abs          <--  Current time step
+ *   t_cur_abs           <--  Current time value
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_syr4_coupling_post_function(int        coupling_id,
+                                int        nt_cur_abs,
+                                cs_real_t  t_cur_abs)
+{
+  int type_id, var_id;
+
+  cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupling_id);
+  cs_syr4_coupling_ent_t *coupling_ent = NULL;
+  const char *var_name[2] = {N_("Wall T"), N_("Flux")};
+
+  for (type_id = 0; type_id < 2; type_id++) {
+
+    if (type_id == 0)
+      coupling_ent = syr_coupling->faces;
+    else
+      coupling_ent = syr_coupling->cells;
+
+    if (coupling_ent != NULL) {
+
+      if (coupling_ent->post_mesh_id != 0) {
+
+        const float *cell_var[2] = {NULL, NULL};
+        const float *face_var[2] = {NULL, NULL};
+
+        if (type_id == 0) {
+          face_var[0] = coupling_ent->wall_temp;
+          face_var[1] = coupling_ent->flux;
+        }
+        else {
+          cell_var[0] = coupling_ent->wall_temp;
+          cell_var[1] = coupling_ent->flux;
+        }
+
+        for (var_id = 0; var_id < 2; var_id++)
+          cs_post_write_var(coupling_ent->post_mesh_id,
+                            _(var_name[var_id]),
+                            1,
+                            false,
+                            false,
+                            CS_POST_TYPE_float,
+                            nt_cur_abs,
+                            t_cur_abs,
+                            cell_var[var_id],
+                            NULL,
+                            face_var[var_id]);
+
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize post-processing of a SYRTHES coupling
+ *
+ * parameters:
+ *   syr_coupling <-- partially initialized SYRTHES coupling structure
+ *   coupling_ent <-- associated coupling mesh entity
+ *----------------------------------------------------------------------------*/
+
+static void
+_post_init(cs_syr4_coupling_t      *syr_coupling,
+           cs_syr4_coupling_ent_t  *coupling_ent)
+{
+  int dim_shift = 0;
+  int coupling_id = -1;
+
+  const int writer_id = -1;
+
+  /* Determine coupling id */
+
+  for (coupling_id = 0;
+       (   coupling_id < cs_glob_syr4_n_couplings
+        && cs_glob_syr4_couplings[coupling_id] != syr_coupling);
+       coupling_id++);
+
+  /* Exit silently if associated writer is not available */
+
+  if (cs_post_writer_exists(writer_id) != true)
+    return;
+
+  /* Initialize post processing flag, and free previous arrays in
+     case this function is called more than once */
+
+  coupling_ent->post_mesh_id = cs_post_get_free_mesh_id();
+
+  if (coupling_ent->wall_temp != NULL)
+    BFT_FREE(coupling_ent->wall_temp);
+  if (coupling_ent->flux != NULL)
+    BFT_FREE(coupling_ent->flux);
+  if (coupling_ent->tfluid_tmp != NULL)
+    BFT_FREE(coupling_ent->tfluid_tmp);
+
+  /* Allocate arrays */
+
+  if (coupling_ent->n_elts > 0) {
+    BFT_MALLOC(coupling_ent->wall_temp, coupling_ent->n_elts, float);
+    BFT_MALLOC(coupling_ent->flux, coupling_ent->n_elts, float);
+  }
+  coupling_ent->tfluid_tmp = NULL;
+
+  /* Associate external mesh description with post processing subsystem */
+
+  if (syr_coupling->dim == 2)
+    dim_shift = 1;
+
+  cs_post_add_existing_mesh(coupling_ent->post_mesh_id,
+                            coupling_ent->elts,
+                            dim_shift,
+                            false);
+
+  cs_post_associate(coupling_ent->post_mesh_id, writer_id);
+
+  /* Register post processing function */
+
+  cs_post_add_time_dep_var(_cs_syr4_coupling_post_function,
+                           coupling_id);
+
+  /* Update start and end (negative) numbers associated with
+     dedicated post processing meshes */
+
+  if (cs_glob_syr4_post_mesh_ext[0] == 0)
+    cs_glob_syr4_post_mesh_ext[0] = coupling_ent->post_mesh_id;
+
+  cs_glob_syr4_post_mesh_ext[1] = coupling_ent->post_mesh_id;
+}
+
+/*----------------------------------------------------------------------------
  * Define nodal mesh for Syrthes coupling from selection criteria.
  *
  * parameters:
@@ -307,6 +443,7 @@ _exchange_sync(cs_syr4_coupling_t  *syr_coupling,
  *   select_criteria <-- selection criteria
  *   coupling_number <-- number of the corresponding SYRTHES coupling
  *   elt_dim         <-- element dimension
+ *   post_process    <-- if 1, activate associated post-processing
  *
  * returns:
  *   pointer to created Syrthes coupling entity helper structure
@@ -316,7 +453,8 @@ static cs_syr4_coupling_ent_t *
 _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                     const char          *select_criteria,
                     int                  coupling_number,
-                    int                  elt_dim)
+                    int                  elt_dim,
+                    int                  post_process)
 {
   char coupled_mesh_name[64];
   fvm_gnum_t n_exterior = 0;
@@ -453,6 +591,17 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     fvm_parall_counter(&n_g_elts, 1);
     bft_printf(_("\nExtracted mesh built of %llu elements.\n"),
                (unsigned long long)n_g_elts);
+  }
+
+  /* Initialize post-processing */
+
+  if (post_process != 0) {
+    int coupling_id;
+    for (coupling_id = 0;
+         (   coupling_id < cs_glob_syr4_n_couplings
+          && cs_glob_syr4_couplings[coupling_id] != syr_coupling);
+         coupling_id++);
+    _post_init(syr_coupling, coupling_ent);
   }
 
   /* Build and initialize associated locator */
@@ -599,67 +748,6 @@ _post_var_update(cs_syr4_coupling_ent_t  *coupling_ent,
     assert(0);
   }
 
-}
-
-/*----------------------------------------------------------------------------
- * Post process variables associated with Syrthes couplings
- *
- * parameters:
- *   coupling_id         <--  Id of Syrthes coupling
- *   nt_cur_abs          <--  Current time step
- *   t_cur_abs           <--  Current time value
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_syr4_coupling_post_function(int        coupling_id,
-                                int        nt_cur_abs,
-                                cs_real_t  t_cur_abs)
-{
-  int type_id, var_id;
-
-  cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupling_id);
-  cs_syr4_coupling_ent_t *coupling_ent = NULL;
-  const char *var_name[2] = {N_("Wall T"), N_("Flux")};
-
-  for (type_id = 0; type_id < 2; type_id++) {
-
-    if (type_id == 0)
-      coupling_ent = syr_coupling->faces;
-    else
-      coupling_ent = syr_coupling->cells;
-
-    if (coupling_ent != NULL) {
-
-      if (coupling_ent->post_mesh_id != 0) {
-
-        const float *cell_var[2] = {NULL, NULL};
-        const float *face_var[2] = {NULL, NULL};
-
-        if (type_id == 0) {
-          face_var[0] = coupling_ent->wall_temp;
-          face_var[1] = coupling_ent->flux;
-        }
-        else {
-          cell_var[0] = coupling_ent->wall_temp;
-          cell_var[1] = coupling_ent->flux;
-        }
-
-        for (var_id = 0; var_id < 2; var_id++)
-          cs_post_write_var(coupling_ent->post_mesh_id,
-                            _(var_name[var_id]),
-                            1,
-                            false,
-                            false,
-                            CS_POST_TYPE_float,
-                            nt_cur_abs,
-                            t_cur_abs,
-                            cell_var[var_id],
-                            NULL,
-                            face_var[var_id]);
-
-      }
-    }
-  }
 }
 
 /*============================================================================
@@ -961,10 +1049,12 @@ cs_syr4_coupling_sync_iter(int   nt_cur_abs,
  *
  * parameters:
  *   syr_coupling <-- SYRTHES coupling structure
+ *   post_process <-- if 1, activate associated post-processing
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_init_mesh(cs_syr4_coupling_t *syr_coupling)
+cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling,
+                           int                  post_process)
 {
   char op_name_send[32 + 1];
   char op_name_recv[32 + 1];
@@ -984,13 +1074,15 @@ cs_syr4_coupling_init_mesh(cs_syr4_coupling_t *syr_coupling)
     syr_coupling->faces = _create_coupled_ent(syr_coupling,
                                               syr_coupling->face_sel,
                                               syr_coupling->syr_num,
-                                              syr_coupling->dim - 1);
+                                              syr_coupling->dim - 1,
+                                              post_process);
 
   if (syr_coupling->cell_sel != NULL)
     syr_coupling->cells = _create_coupled_ent(syr_coupling,
                                               syr_coupling->cell_sel,
                                               syr_coupling->syr_num,
-                                              syr_coupling->dim);
+                                              syr_coupling->dim,
+                                              post_process);
 
   /* Communication with SYRTHES */
   /*----------------------------*/
@@ -1150,88 +1242,6 @@ cs_syr4_coupling_send_tf_hwall(cs_syr4_coupling_t  *syr_coupling,
   if (coupling_ent->n_elts > 0) {
     _post_var_update(coupling_ent, 1, tf);
     _post_var_update(coupling_ent, 1, hwall);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Initialize post-processing of a SYRTHES coupling
- *
- * parameters:
- *   coupling_id <-- Id of SYRTHES coupling
- *   writer_id   <-- Id of associated writer
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr4_coupling_post_init(fvm_lnum_t  coupling_id,
-                           fvm_lnum_t  writer_id)
-{
-  int type_id;
-  int dim_shift = 0;
-
-  cs_syr4_coupling_t  *syr_coupling = cs_syr4_coupling_by_id(coupling_id);
-  cs_syr4_coupling_ent_t *coupling_ent = NULL;
-
-  assert(syr_coupling != NULL);
-
-  /* Exit silently if associated writer is not available */
-
-  if (cs_post_writer_exists(writer_id) != true)
-    return;
-
-  /* Initialize post processing flag, and free previous arrays in
-     case this function is called more than once */
-
-  for (type_id = 0; type_id < 2; type_id++) {
-
-    if (type_id == 0)
-      coupling_ent = syr_coupling->faces;
-    else
-      coupling_ent = syr_coupling->cells;
-
-    if (coupling_ent != NULL) {
-
-      coupling_ent->post_mesh_id = cs_post_get_free_mesh_id();
-
-      if (coupling_ent->wall_temp != NULL)
-        BFT_FREE(coupling_ent->wall_temp);
-      if (coupling_ent->flux != NULL)
-        BFT_FREE(coupling_ent->flux);
-      if (coupling_ent->tfluid_tmp != NULL)
-        BFT_FREE(coupling_ent->tfluid_tmp);
-
-      /* Allocate arrays */
-
-      if (coupling_ent->n_elts > 0) {
-        BFT_MALLOC(coupling_ent->wall_temp, coupling_ent->n_elts, float);
-        BFT_MALLOC(coupling_ent->flux, coupling_ent->n_elts, float);
-      }
-      coupling_ent->tfluid_tmp = NULL;
-
-      /* Associate external mesh description with post processing subsystem */
-
-      if (syr_coupling->dim == 2)
-        dim_shift = 1;
-
-      cs_post_add_existing_mesh(coupling_ent->post_mesh_id,
-                                coupling_ent->elts,
-                                dim_shift,
-                                false);
-
-      cs_post_associate(coupling_ent->post_mesh_id, writer_id);
-
-      /* Register post processing function */
-
-      cs_post_add_time_dep_var(_cs_syr4_coupling_post_function,
-                               coupling_id);
-
-      /* Update start and end (negative) numbers associated with
-         dedicated post processing meshes */
-
-      if (cs_glob_syr4_post_mesh_ext[0] == 0)
-        cs_glob_syr4_post_mesh_ext[0] = coupling_ent->post_mesh_id;
-
-      cs_glob_syr4_post_mesh_ext[1] = coupling_ent->post_mesh_id;
-    }
   }
 }
 
