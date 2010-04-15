@@ -837,6 +837,19 @@ class case:
 
         s.write('#!/bin/sh\n\n')
 
+        # Add detection and handling of SALOME YACS module if run from
+        # this environment.
+
+        yacs_test = \
+"""
+# Detect and handle running under SALOME YACS module.
+YACS_ARG=
+if test "$SALOME_CONTAINERNAME" != "" -a "$CFDRUN_ROOT_DIR" != "" ; then
+  YACS_ARG="--yacs-module=${CFDRUN_ROOT_DIR}"/lib/salome/libCFD_RunExelib.so
+fi
+"""
+        s.write(yacs_test + '\n')
+
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')
@@ -881,7 +894,7 @@ class case:
 
             if len(self.syr_domains) == 0:
 
-                s_args = self.domains[0].solver_args()
+                s_args = self.domains[0].solver_args() + ' $YACS_ARGS'
                 s.write('cd ' + s_args[0] + '\n\n')
 
                 s.write('# Run solver.\n')
