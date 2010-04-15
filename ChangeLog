@@ -1,4 +1,9 @@
 * 15/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix minor issue for SYRTHES coupling and JANAF file handling.
+  modified script:
+    bin/cs_case_domain.py
+
+* 15/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add YACS detection in the runcase script.
   modified script:
     bin/cs_case.py
