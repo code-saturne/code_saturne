@@ -1,4 +1,10 @@
 * 15/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove deprecated FPE handling for non GNU_SOURCE system (fake routines now
+  removed from BFT).
+  modified routine:
+    src/apps/cs_solver.c
+
+* 15/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix minor issue for SYRTHES coupling and JANAF file handling.
   modified script:
     bin/cs_case_domain.py
