@@ -1,3 +1,8 @@
+* 15/04/2010 - David Monfort <david.monfort@edf.fr>
+  Fix an uninitialized variable in fioul combustion module.
+  modified routine:
+    src/fuel/fuiniv.f90
+
 * 15/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove deprecated FPE handling for non GNU_SOURCE system (fake routines now
   removed from BFT).
