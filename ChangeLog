@@ -1,3 +1,8 @@
+* 16/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix YACS command line handling.
+  modified script:
+    bin/cs_case.py
+
 * 15/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Handle the difference between HP-UX hppa and Itanium systems.
   modified script:

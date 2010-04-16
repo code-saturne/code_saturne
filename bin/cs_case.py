@@ -894,12 +894,12 @@ fi
 
             if len(self.syr_domains) == 0:
 
-                s_args = self.domains[0].solver_args() + ' $YACS_ARGS'
+                s_args = self.domains[0].solver_args()
+
                 s.write('cd ' + s_args[0] + '\n\n')
-
                 s.write('# Run solver.\n')
-
-                s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2] + ' $@\n')
+                s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2]
+                        + ' $YACS_ARGS' + ' $@\n')
 
             else: # coupling through sockets
 
