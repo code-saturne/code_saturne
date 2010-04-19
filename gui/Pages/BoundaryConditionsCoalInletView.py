@@ -48,12 +48,6 @@ import string, logging
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
-try:
-    import mei
-    _have_mei = True
-except:
-    _have_mei = False
-
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
@@ -66,8 +60,8 @@ from Base.Toolbox import GuiParam
 from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
-if _have_mei:
-    from QMeiEditorView import QMeiEditorView
+
+from QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -345,19 +339,12 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         self.lineEditDirectionZ.setValidator(validatorZ)
         self.lineEditTemperature.setValidator(validatorTemp)
 
-        if _have_mei:
-            self.connect(self.pushButtonVelocityFormula,
-                         SIGNAL("clicked()"),
-                         self.__slotVelocityFormula)
-            self.connect(self.pushButtonDirectionFormula,
-                         SIGNAL("clicked()"),
-                         self.__slotDirectionFormula)
-        else:
-            self.pushButtonVelocityFormula.setEnabled(False)
-            self.pushButtonDirectionFormula.setEnabled(False)
-            self.modelVelocity.disableItem(str_model="norm_formula")
-            self.modelVelocity.disableItem(str_model="flow1_formula")
-            self.modelDirection.disableItem(str_model="formula")
+        self.connect(self.pushButtonVelocityFormula,
+                     SIGNAL("clicked()"),
+                     self.__slotVelocityFormula)
+        self.connect(self.pushButtonDirectionFormula,
+                     SIGNAL("clicked()"),
+                     self.__slotDirectionFormula)
 
         # Useful information about coals, classes, and ratios
 
@@ -409,14 +396,6 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         choice = self.__boundary.getVelocityChoice()
         self.modelVelocity.setItem(str_model=choice)
         self.__updateLabel()
-
-        if not _have_mei:
-            if self.__boundary.getVelocityChoice()[-7:] == "formula":
-                c = self.__boundary.defaultValues()['velocityChoice']
-                self.__boundary.setVelocityChoice(c)
-            if self.__boundary.getDirectionChoice() == "formula":
-                c = self.__boundary.defaultValues()['directionChoice']
-                self.__boundary.setDirectionChoice(c)
 
         if choice[-7:] == "formula":
             self.pushButtonVelocityFormula.setEnabled(True)

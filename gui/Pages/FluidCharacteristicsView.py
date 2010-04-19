@@ -48,12 +48,6 @@ import logging
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
-try:
-    import mei
-    _have_mei = True
-except:
-    _have_mei = False
-
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
@@ -63,8 +57,8 @@ from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
 from FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
 from FluidCharacteristicsModel import FluidCharacteristicsModel
 from DefineUserScalarsModel import DefineUserScalarsModel
-if _have_mei:
-    from QMeiEditorView import QMeiEditorView
+
+from QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -194,17 +188,10 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         self.connect(self.lineEditMu, SIGNAL("textChanged(const QString &)"), self.slotMu)
         self.connect(self.lineEditCp, SIGNAL("textChanged(const QString &)"), self.slotCp)
         self.connect(self.lineEditAl, SIGNAL("textChanged(const QString &)"), self.slotAl)
-        if _have_mei:
-            self.connect(self.pushButtonRho, SIGNAL("clicked()"), self.slotFormulaRho)
-            self.connect(self.pushButtonMu, SIGNAL("clicked()"), self.slotFormulaMu)
-            self.connect(self.pushButtonCp, SIGNAL("clicked()"), self.slotFormulaCp)
-            self.connect(self.pushButtonAl, SIGNAL("clicked()"), self.slotFormulaAl)
-        else:
-            for tag, symbol in list:
-                getattr(self, "pushButton" + symbol).setEnabled(False)
-                getattr(self, "model" + symbol).disableItem(str_model="user_law")
-                if self.mdl.getPropertyMode(tag) == 'user_law':
-                    self.__changeChoice("constant", symbol, tag)
+        self.connect(self.pushButtonRho, SIGNAL("clicked()"), self.slotFormulaRho)
+        self.connect(self.pushButtonMu, SIGNAL("clicked()"), self.slotFormulaMu)
+        self.connect(self.pushButtonCp, SIGNAL("clicked()"), self.slotFormulaCp)
+        self.connect(self.pushButtonAl, SIGNAL("clicked()"), self.slotFormulaAl)
 
         # Validators
 

@@ -47,12 +47,6 @@ import logging
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
-try:
-    import mei
-    _have_mei = True
-except:
-    _have_mei = False
-
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
@@ -62,8 +56,7 @@ from MobileMeshForm  import Ui_MobileMeshForm
 from Base.QtPage    import setGreenColor, IntValidator,  ComboModel
 from MobileMeshModel import MobileMeshModel
 
-if _have_mei:
-    from QMeiEditorView import QMeiEditorView
+from QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -232,7 +225,7 @@ if (xray2 < xr2) {
         self.mdl.setMEI(MEI)
         # enable disable formula button
 
-        isFormulaButtonEnabled = _have_mei and MEI == 'user_function'
+        isFormulaButtonEnabled = MEI == 'user_function'
         self.pushButtonFormula.setEnabled(isFormulaButtonEnabled)
         setGreenColor(self.pushButtonFormula, isFormulaButtonEnabled)
 

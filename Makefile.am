@@ -24,7 +24,7 @@ if HAVE_GUI
 GUI = gui
 endif
 
-SUBDIRS = src libsyrcs po doc $(GUI)
+SUBDIRS = src libsyrcs po doc $(GUI) tests
 
 MAINTAINERCLEANFILES = \
 $(top_srcdir)/Makefile.in \
@@ -54,7 +54,6 @@ $(ac_aux_dir)/cs_config_info.m4 \
 $(ac_aux_dir)/cs_fortran.m4 \
 $(ac_aux_dir)/cs_fvm.m4 \
 $(ac_aux_dir)/cs_libxml2.m4 \
-$(ac_aux_dir)/cs_mei.m4 \
 $(ac_aux_dir)/cs_metis.m4 \
 $(ac_aux_dir)/cs_mpi.m4 \
 $(ac_aux_dir)/cs_scotch.m4 \
@@ -91,7 +90,6 @@ edit = sed \
 	-e 's|@cs_python[@]|$(cs_python)|g' \
 	-e 's|@pythondir[@]|$(pythondir)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
-	-e 's|@mei_prefix[@]|$(mei_prefix)|g' \
 	-e 's|@ecs_bindir[@]|$(ecs_bindir)|g' \
 	-e 's|@syrthes_prefix[@]|$(syrthes_prefix)|g' \
 	-e 's|@mpi_type[@]|$(mpi_type)|g' \
@@ -171,6 +169,7 @@ endif
 
 dist_man_MANS = \
 doc/manpages/code_saturne.1 \
+doc/manpages/cs_check_syntax.1 \
 doc/manpages/cs_io_dump.1 $(CS_PARTITION_1) \
 doc/manpages/cs_solver.1
 

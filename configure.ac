@@ -344,7 +344,6 @@ fi
 
 CS_AC_TEST_BFT(["1.1.0"])
 CS_AC_TEST_FVM(["0.15.0"])
-CS_AC_TEST_MEI
 CS_AC_TEST_LIBXML2
 CS_AC_TEST_BLAS([$cs_have_openmp])
 CS_AC_TEST_MPI
@@ -500,6 +499,9 @@ AC_CHECK_FUNCS([getcwd sleep])
 AC_CHECK_FUNCS([getpwuid geteuid])
 AC_CHECK_FUNCS([uname])
 
+AC_CHECK_FUNCS([memset pow])
+AC_FUNC_STRTOD
+
 #------------------------------------------------------------------------------
 # Checks for system services.
 #------------------------------------------------------------------------------
@@ -617,6 +619,7 @@ cs_config_comments=cs_config_comments_include
 
 AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/Makefile      src/apps/Makefile
+                 src/mei/Makefile
                  src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
                  src/cogz/Makefile src/cplv/Makefile src/ctwr/Makefile
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile
@@ -631,6 +634,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  doc/theory/Makefile doc/theory/graphics/Makefile
                  doc/tutorial/Makefile doc/tutorial/graphics/Makefile
                  doc/user/Makefile doc/user/graphics/Makefile
+                 tests/Makefile
                  bin/cs_config_build.py bin/SaturneGUI])
 
 #------------------------------------------------------------------------------
@@ -666,7 +670,6 @@ echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 echo " OpenMP support: "$cs_have_openmp""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
 echo " Libxml2 (XML Reader) support: "$have_libxml2""
-echo " MEI (Mathematical Expressions Interpreter) support: "$have_mei""
 echo " ParMETIS (Parallel Graph Partitioning) support: "$have_parmetis""
 if test x$have_parmetis = xno ; then
   echo " METIS (Graph Partitioning) support: "$have_metis""

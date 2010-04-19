@@ -114,11 +114,9 @@ typedef struct {
   double     **standard_deviation;/* standard deviation of diameter for each class   */
   double     **specific_heat;     /* specific heat for each class                    */
   double     **emissivity;        /* emissivity for each class                       */
-#if defined(HAVE_MEI)
 #if 0
   mei_tree_t **velocity;          /* formula for norm or mass flow rate of velocity  */
   mei_tree_t **direction;         /* formula for direction of velocity               */
-#endif
 #endif
 } cs_particles_boundary_t;
 
