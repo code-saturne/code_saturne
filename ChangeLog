@@ -1,3 +1,11 @@
+* 19/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix several bugs in the runcase management.
+  modified script:
+    bin/cs_case.py
+  modified routines:
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/SolutionDomainModel.py
+
 * 16/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix YACS command line handling.
   modified script:
