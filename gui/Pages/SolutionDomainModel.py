@@ -233,7 +233,7 @@ class SolutionDomainModel(MeshModel, Model):
         """
         Update, for keyword, the backup file if it's ready to run.
         """
-        self.isInList(keyword,('MESH',
+        self.isInList(keyword,('MESHES',
                                'REORIENT'))
         key = self.case['computer']
         if key:
@@ -433,7 +433,7 @@ class SolutionDomainModel(MeshModel, Model):
             self.isInList(format, MeshModel().ext.values())
 
         self.node_meshes.xmlInitNode('mesh', name=mesh, format=format)
-        self._updateBatchScriptFile('MESH')
+        self._updateBatchScriptFile('MESHES')
 
 
     def delMesh(self, mesh):
@@ -445,7 +445,7 @@ class SolutionDomainModel(MeshModel, Model):
         for node in nodeList:
             if node['name'] == mesh:
                 node.xmlRemoveNode()
-        self._updateBatchScriptFile('MESH')
+        self._updateBatchScriptFile('MESHES')
 
 
     def getMeshList(self):
@@ -487,7 +487,7 @@ class SolutionDomainModel(MeshModel, Model):
         self.isGreater(num, 0)
 
         self.node_meshes.xmlGetNode('mesh', name=mesh)['num'] = num
-        self._updateBatchScriptFile('MESH')
+        self._updateBatchScriptFile('MESHES')
 
 
     def getMeshNumber(self, mesh):
@@ -512,7 +512,7 @@ class SolutionDomainModel(MeshModel, Model):
             del self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_cel']
         else:
             self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_cel'] = grp_cel
-        self._updateBatchScriptFile('MESH')
+        self._updateBatchScriptFile('MESHES')
 
 
     def getMeshGroupCells(self, mesh):
@@ -533,7 +533,7 @@ class SolutionDomainModel(MeshModel, Model):
             del self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_fac']
         else:
             self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_fac'] = grp_fac
-        self._updateBatchScriptFile('MESH')
+        self._updateBatchScriptFile('MESHES')
 
 
     def getMeshGroupFaces(self, mesh):

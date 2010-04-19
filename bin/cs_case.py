@@ -1219,6 +1219,9 @@ fi
         Run solver proper.
         """
 
+        if not self.exec_solver:
+            return 0
+
         if suffix != None:
             self.suffix = suffix
 
@@ -1242,12 +1245,10 @@ fi
 
         # Maximum remaining time for PBS or similar batch system.
 
-        if self.exec_solver:
-
-            b = cs_exec_environment.batch_info()
-            max_time = b.get_remaining_time()
-            if max_time != None:
-                os.putenv('CS_MAXTIME', max_time)
+        b = cs_exec_environment.batch_info()
+        max_time = b.get_remaining_time()
+        if max_time != None:
+            os.putenv('CS_MAXTIME', max_time)
 
         # Now run the calculation
 
@@ -1309,7 +1310,7 @@ fi
 
         os.chdir(self.exec_dir)
 
-        self.update_scripts_tmp(('failed', 'finished'), 'saving')
+        self.update_scripts_tmp(('ready', 'failed', 'finished'), 'saving')
 
         # Now save results
 
@@ -1369,7 +1370,7 @@ fi
                 retcode = self.prepare_data(n_procs,
                                             hosts_list,
                                             mpi_environment)
-            if run_solver == True and run_solver == True:
+            if run_solver == True:
                 self.run_solver()
 
             if save_results == True:

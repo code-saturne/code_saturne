@@ -262,8 +262,8 @@ class BatchRunningModel(Model):
         sdm = SolutionDomainModel(self.case)
         prm = ProfilesModel(self.case)
 
-        # MESH
-        self.dicoValues['MESH'] = sdm.getMeshList()
+        # MESHES
+        self.dicoValues['MESHES'] = sdm.getMeshList()
 
         self.dicoValues['REORIENT'] = sdm.getReorientCommand()
         self.dicoValues['PARAMETERS'] = os.path.basename(self.case['xmlfile'])
