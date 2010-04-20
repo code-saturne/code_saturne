@@ -45,6 +45,12 @@ import string, logging
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
+try:
+    import mei
+    _have_mei = True
+except ImportError:
+    _have_mei = False
+
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
@@ -57,7 +63,8 @@ from Base.QtPage import ComboModel, setGreenColor
 from Pages.LocalizationModel import LocalizationModel, Zone
 from Pages.Boundary import Boundary
 
-from QMeiEditorView import QMeiEditorView
+if _have_mei:
+    from QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -155,7 +162,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         """
         modelData = self.__comboModel.dicoV2M[str(text)]
         # Enable/disable formula button.
-        isFormulaEnabled = modelData in ["fixed_velocity", "fixed_displacement"]
+        isFormulaEnabled = _have_mei and modelData in ["fixed_velocity", "fixed_displacement"]
         self.pushButtonMobilBoundary.setEnabled(isFormulaEnabled)
         setGreenColor(self.pushButtonMobilBoundary, isFormulaEnabled)
         self.__boundary.setALEChoice(modelData)
@@ -169,7 +176,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
             self.__boundary = Boundary("mobile_boundary", b.getLabel(), self.__case)
             modelData = self.__boundary.getALEChoice()
             self.__comboModel.setItem(str_model=modelData)
-            isFormulaEnabled = modelData in ["fixed_velocity", "fixed_displacement"]
+            isFormulaEnabled = _have_mei and modelData in ["fixed_velocity", "fixed_displacement"]
             self.pushButtonMobilBoundary.setEnabled(isFormulaEnabled)
             self.show()
         else:

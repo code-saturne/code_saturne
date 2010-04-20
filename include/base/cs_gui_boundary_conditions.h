@@ -36,7 +36,9 @@
  * MEI library headers
  *----------------------------------------------------------------------------*/
 
+#ifdef HAVE_MEI
 #include "mei_evaluate.h"
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -89,8 +91,10 @@ typedef struct {
   double     *dirx;        /* directions x inlet velocity                     */
   double     *diry;        /* directions y inlet velocity                     */
   double     *dirz;        /* directions z inlet velocity                     */
+#if defined(HAVE_MEI)
   mei_tree_t **velocity;   /* formula for norm or mass flow rate of velocity  */
   mei_tree_t **direction;  /* formula for direction of velocity               */
+#endif
   cs_meteo_t  *meteo;      /* inlet or outlet info for atmospheric flow       */
 } cs_boundary_t;
 

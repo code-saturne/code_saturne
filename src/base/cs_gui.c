@@ -76,7 +76,11 @@
  * MEI library headers
  *----------------------------------------------------------------------------*/
 
+#ifdef HAVE_MEI
+
 #include "mei_evaluate.h"
+
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -4753,6 +4757,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_real_t        rtp[],
                                     cs_real_t        propce[])
 {
+#if defined(HAVE_MEI)
+
     cs_var_t  *vars = cs_glob_var;
     mei_tree_t *ev_rho = NULL;
     mei_tree_t *ev_mu  = NULL;
@@ -5100,6 +5106,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     BFT_FREE(law_mu);
     BFT_FREE(law_cp);
     BFT_FREE(law_la);
+
+#endif
 }
 
 /*----------------------------------------------------------------------------

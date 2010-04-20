@@ -63,7 +63,9 @@
  * MEI library headers
  *----------------------------------------------------------------------------*/
 
+#ifdef HAVE_MEI
 #include "mei_evaluate.h"
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -551,6 +553,7 @@ _inlet_coal(const int         izone,
  *   symbol_size    -->  number of symbol in symbols
  *----------------------------------------------------------------------------*/
 
+#ifdef HAVE_MEI
 static mei_tree_t *_boundary_init_mei_tree(const char *formula,
                                            const char *symbols[],
                                            const int   symbol_size)
@@ -581,6 +584,7 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
 
     return tree;
 }
+#endif /* HAVE_MEI */
 
 /*----------------------------------------------------------------------------
  * Boundary conditions treatment: global structure initialization
@@ -633,8 +637,10 @@ _init_boundaries(const int *const nfabor,
     BFT_MALLOC(boundaries->diry,      zones,      double       );
     BFT_MALLOC(boundaries->dirz,      zones,      double       );
 
+#if defined(HAVE_MEI)
     BFT_MALLOC(boundaries->velocity,  zones,      mei_tree_t*  );
     BFT_MALLOC(boundaries->direction, zones,      mei_tree_t*  );
+#endif
 
     if (cs_gui_strcmp(vars->model, "pulverized_coal"))
     {
@@ -693,8 +699,10 @@ _init_boundaries(const int *const nfabor,
         boundaries->dh[izone]     = 0;
         boundaries->xintur[izone] = 0;
         boundaries->rough[izone]  = -999;
+#if defined(HAVE_MEI)
         boundaries->velocity[izone] = NULL;
         boundaries->direction[izone] = NULL;
+#endif
 
         if (cs_gui_strcmp(vars->model, "pulverized_coal"))
         {
@@ -772,6 +780,7 @@ _init_boundaries(const int *const nfabor,
                 _inlet_data(label, "flow2", &boundaries->qimp[izone]);
                 boundaries->iqimp[izone] = 2;
             }
+#if defined(HAVE_MEI)
             else if (cs_gui_strcmp(choice_v, "norm_formula"))
             {
                 const char *sym[] = {"u_norm"};
@@ -789,18 +798,21 @@ _init_boundaries(const int *const nfabor,
                 boundaries->velocity[izone] = _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
                 boundaries->iqimp[izone] = 2;
             }
+#endif
             if (cs_gui_strcmp(choice_d, "coordinates"))
             {
                 _inlet_data(label, "direction_x", &boundaries->dirx[izone]);
                 _inlet_data(label, "direction_y", &boundaries->diry[izone]);
                 _inlet_data(label, "direction_z", &boundaries->dirz[izone]);
             }
+#if defined(HAVE_MEI)
             else if (cs_gui_strcmp(choice_d, "formula"))
             {
                 const char *sym[] = {"dir_x", "dir_y", "dir_z"};
                 boundaries->direction[izone] =
                     _boundary_init_mei_tree(_inlet_formula(label, "direction_formula"), sym, 3);
             }
+#endif
             BFT_FREE(choice_v);
             BFT_FREE(choice_d);
 
@@ -1241,6 +1253,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
             }
             else
             {
+#ifdef HAVE_MEI
                 if (cs_gui_strcmp(choice_v, "flow1_formula") || cs_gui_strcmp(choice_v, "flow2_formula") )
                 {
                     mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
@@ -1255,8 +1268,11 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 }
                 else
                 {
+#endif
                     qimp[zone_nbr-1] = boundaries->qimp[izone];
+#ifdef HAVE_MEI
                 }
+#endif
             }
 
             /* data by boundary faces */
@@ -1323,6 +1339,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                         rcodcl[vars->rtp[3] * (*nfabor) + ifbr] = boundaries->dirz[izone];
                     }
                 }
+#ifdef HAVE_MEI
                 else if (cs_gui_strcmp(choice_v, "norm_formula"))
                 {
                     mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
@@ -1349,6 +1366,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                         rcodcl[vars->rtp[3] * (*nfabor) + ifbr] = boundaries->dirz[izone] * norm;
                     }
                 }
+#endif
             }
             else if (cs_gui_strcmp(choice_d, "normal"))
             {
@@ -1381,6 +1399,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                         rcodcl[vars->rtp[3] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + vars->rtp[3] -1]/norm;
                     }
                 }
+#ifdef HAVE_MEI
                 else if (cs_gui_strcmp(choice_v, "norm_formula"))
                 {
                     norm = boundaries->norm[izone] /
@@ -1495,6 +1514,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                             rcodcl[vars->rtp[i] * (*nfabor) + ifbr] = X[i-1] * norm;
                     }
                 }
+#endif
             }
             BFT_FREE(choice_v);
             BFT_FREE(choice_d);
@@ -1926,8 +1946,10 @@ cs_gui_boundary_conditions_free_memory(const int *const ncharb)
     for (izone=0 ; izone < zones ; izone++) {
       BFT_FREE(boundaries->label[izone]);
       BFT_FREE(boundaries->nature[izone]);
+#if defined(HAVE_MEI)
       mei_tree_destroy(boundaries->velocity[izone]);
       mei_tree_destroy(boundaries->direction[izone]);
+#endif
     }
 
     for (i=0; i < vars->nvar; i++) {
@@ -1969,8 +1991,10 @@ cs_gui_boundary_conditions_free_memory(const int *const ncharb)
     BFT_FREE(boundaries->dirx);
     BFT_FREE(boundaries->diry);
     BFT_FREE(boundaries->dirz);
+#if defined(HAVE_MEI)
     BFT_FREE(boundaries->velocity);
     BFT_FREE(boundaries->direction);
+#endif
     BFT_FREE(boundaries);
   }
 }

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-04-19 17:24+0200\n"
+"POT-Creation-Date: 2010-04-09 15:26+0200\n"
 "PO-Revision-Date: 2010-04-09 15:28+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -511,7 +511,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_solver.c:300
+#: src/apps/cs_solver.c:304
 #, c-format
 msgid ""
 "\n"
@@ -520,7 +520,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/apps/cs_solver.c:306
+#: src/apps/cs_solver.c:310
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -528,11 +528,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:362
+#: src/apps/cs_solver.c:366
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:376
+#: src/apps/cs_solver.c:380
 #, c-format
 msgid ""
 "\n"
@@ -541,7 +541,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:392
+#: src/apps/cs_solver.c:396
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -549,7 +549,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:414
+#: src/apps/cs_solver.c:418
 #, c-format
 msgid ""
 "\n"
@@ -564,7 +564,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:424
+#: src/apps/cs_solver.c:428
 #, c-format
 msgid ""
 "\n"
@@ -577,7 +577,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:430
+#: src/apps/cs_solver.c:434
 #, c-format
 msgid ""
 "\n"
@@ -592,7 +592,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:492
+#: src/apps/cs_solver.c:496
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -1517,26 +1517,26 @@ msgstr ""
 "Erreur de connectivité :\n"
 "La face %d voit la cellule %d des deux cotés."
 
-#: src/base/cs_gui_boundary_conditions.c:470
+#: src/base/cs_gui_boundary_conditions.c:472
 #, c-format
 msgid "Invalid number of coal-> dp_FCP: %i xml: %i\n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:574 src/base/cs_gui.c:4803
-#: src/base/cs_gui.c:4851 src/base/cs_gui.c:4899 src/base/cs_gui.c:4947
-#: src/base/cs_gui.c:5021 src/base/cs_gui_mobile_mesh.c:278
+#: src/base/cs_gui_boundary_conditions.c:577 src/base/cs_gui.c:4809
+#: src/base/cs_gui.c:4857 src/base/cs_gui.c:4905 src/base/cs_gui.c:4953
+#: src/base/cs_gui.c:5027 src/base/cs_gui_mobile_mesh.c:281
 #, c-format
 msgid "Error: can not interprete expression: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:580 src/base/cs_gui.c:4807
-#: src/base/cs_gui.c:4855 src/base/cs_gui.c:4903 src/base/cs_gui.c:4951
-#: src/base/cs_gui.c:5025 src/base/cs_gui_mobile_mesh.c:288
+#: src/base/cs_gui_boundary_conditions.c:583 src/base/cs_gui.c:4813
+#: src/base/cs_gui.c:4861 src/base/cs_gui.c:4909 src/base/cs_gui.c:4957
+#: src/base/cs_gui.c:5031 src/base/cs_gui_mobile_mesh.c:291
 #, c-format
 msgid "Error: can not find the required symbol: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:889
+#: src/base/cs_gui_boundary_conditions.c:901
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1559,12 +1559,12 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:1061
+#: src/base/cs_gui_boundary_conditions.c:1073
 #, c-format
 msgid "zone's label number %i is greater than %i, the maximum allowed \n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:1079 src/base/cs_selector.c:243
+#: src/base/cs_gui_boundary_conditions.c:1091 src/base/cs_selector.c:243
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -1577,13 +1577,13 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune face de bord.\n"
 
-#: src/base/cs_gui_boundary_conditions.c:1660
-#: src/base/cs_gui_boundary_conditions.c:1823
+#: src/base/cs_gui_boundary_conditions.c:1680
+#: src/base/cs_gui_boundary_conditions.c:1843
 #, c-format
 msgid "boundary nature %s is unknown \n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:1836
+#: src/base/cs_gui_boundary_conditions.c:1856
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1607,7 +1607,7 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:1875
+#: src/base/cs_gui_boundary_conditions.c:1895
 #, c-format
 msgid ""
 "@                                                            \n"
@@ -1631,17 +1631,17 @@ msgid ""
 "@                                                            \n"
 msgstr ""
 
-#: src/base/cs_gui.c:160 src/base/cs_gui_radiative_transfer.c:447
+#: src/base/cs_gui.c:164 src/base/cs_gui_radiative_transfer.c:447
 #, c-format
 msgid "Variable index %d out of bounds (1 to %d)"
 msgstr ""
 
-#: src/base/cs_gui.c:203 src/base/cs_gui.c:362 src/base/cs_gui.c:1352
-#: src/base/cs_gui.c:1487 src/base/cs_gui.c:1613 src/base/cs_gui.c:1743
-#: src/base/cs_gui.c:1936 src/base/cs_gui.c:2110 src/base/cs_gui.c:2504
+#: src/base/cs_gui.c:207 src/base/cs_gui.c:366 src/base/cs_gui.c:1356
+#: src/base/cs_gui.c:1491 src/base/cs_gui.c:1617 src/base/cs_gui.c:1747
+#: src/base/cs_gui.c:1940 src/base/cs_gui.c:2114 src/base/cs_gui.c:2508
 #: src/base/cs_gui_matisse.c:116 src/base/cs_gui_matisse.c:139
 #: src/base/cs_gui_matisse.c:159 src/base/cs_gui_matisse.c:189
-#: src/base/cs_gui_mobile_mesh.c:156 src/base/cs_gui_mobile_mesh.c:218
+#: src/base/cs_gui_mobile_mesh.c:158 src/base/cs_gui_mobile_mesh.c:220
 #: src/base/cs_gui_util.c:564 src/base/cs_gui_util.c:666
 #: src/base/cs_gui_util.c:764 src/base/cs_gui_util.c:925
 #: src/base/cs_gui_util.c:972
@@ -1649,75 +1649,75 @@ msgstr ""
 msgid "Invalid xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:257
+#: src/base/cs_gui.c:261
 #, c-format
 msgid "Invalid thermal model: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:1290
+#: src/base/cs_gui.c:1294
 #, c-format
 msgid ""
 "Coordinate %s of the monitoring probe number %i not found.\n"
 "Xpath: %s\n"
 msgstr ""
 
-#: src/base/cs_gui.c:2428
+#: src/base/cs_gui.c:2432
 #, c-format
 msgid ""
 "Invalid xpath: %s\n"
 " name not found"
 msgstr ""
 
-#: src/base/cs_gui.c:2475
+#: src/base/cs_gui.c:2479
 #, c-format
 msgid ""
 "Invalid markup name: %s\n"
 " label not found"
 msgstr ""
 
-#: src/base/cs_gui.c:2626
+#: src/base/cs_gui.c:2630
 #, c-format
 msgid "Invalid turbulence model: %s.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:2736
+#: src/base/cs_gui.c:2740
 #, c-format
 msgid "Scalar: %i and its variance: %i are the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3098
+#: src/base/cs_gui.c:3102
 #, c-format
 msgid ""
 "The kernel variables number %i and the calculated one by the GUI %i are not "
 "the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3546
+#: src/base/cs_gui.c:3550
 msgid "Specific heat value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3567
+#: src/base/cs_gui.c:3571
 msgid "mass molar value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3575
+#: src/base/cs_gui.c:3579
 msgid "Density value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3831 src/base/cs_gui_radiative_transfer.c:744
-#: src/base/cs_gui_specific_physics.c:530
+#: src/base/cs_gui.c:3835 src/base/cs_gui_radiative_transfer.c:744
+#: src/base/cs_gui_specific_physics.c:532
 #, c-format
 msgid "number of properties is not correct: %i instead of: %i\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4208 src/base/cs_gui_particles.c:780
-#: src/base/cs_gui_particles.c:786 src/base/cs_gui_particles.c:792
+#: src/base/cs_gui.c:4212 src/base/cs_gui_particles.c:782
+#: src/base/cs_gui_particles.c:788 src/base/cs_gui_particles.c:794
 #: src/base/cs_gui_radiative_transfer.c:845
 #, c-format
 msgid "Name of variable %i was never set.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4289 src/base/cs_selector.c:315
+#: src/base/cs_gui.c:4293 src/base/cs_selector.c:315
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -1730,7 +1730,7 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune cellule.\n"
 
-#: src/base/cs_gui.c:5203 src/base/cs_gui_util.c:180
+#: src/base/cs_gui.c:5211 src/base/cs_gui_util.c:180
 #, c-format
 msgid "Unable to open the file: %s\n"
 msgstr ""
@@ -1759,32 +1759,32 @@ msgstr ""
 msgid "Periodicity mode \"%s\" unknown."
 msgstr ""
 
-#: src/base/cs_gui_mobile_mesh.c:319
+#: src/base/cs_gui_mobile_mesh.c:323
 #, c-format
 msgid "Unknow ale property choice %s.\n"
 msgstr ""
 
-#: src/base/cs_gui_mobile_mesh.c:431 src/base/cs_gui_mobile_mesh.c:497
+#: src/base/cs_gui_mobile_mesh.c:436 src/base/cs_gui_mobile_mesh.c:506
 #, c-format
 msgid "Boundary nature formula is null for %s.\n"
 msgstr ""
 
-#: src/base/cs_gui_mobile_mesh.c:633
+#: src/base/cs_gui_mobile_mesh.c:643
 #, c-format
 msgid "cannot get value for %s %s %s"
 msgstr ""
 
-#: src/base/cs_gui_mobile_mesh.c:766
+#: src/base/cs_gui_mobile_mesh.c:777
 #, c-format
 msgid "Formula is null for %s %s"
 msgstr ""
 
-#: src/base/cs_gui_mobile_mesh.c:972
+#: src/base/cs_gui_mobile_mesh.c:985
 msgid "Formula is null for ale.\n"
 msgstr ""
 
-#: src/base/cs_gui_particles.c:480 src/base/cs_gui_particles.c:510
-#: src/base/cs_gui_particles.c:540
+#: src/base/cs_gui_particles.c:482 src/base/cs_gui_particles.c:512
+#: src/base/cs_gui_particles.c:542
 #, c-format
 msgid "Variable index %i out of bounds (1 to %i)"
 msgstr ""
@@ -1815,12 +1815,12 @@ msgid ""
 "with these new natures.\n"
 msgstr ""
 
-#: src/base/cs_gui_specific_physics.c:209
+#: src/base/cs_gui_specific_physics.c:211
 #, c-format
 msgid "Invalid coal model: %s.\n"
 msgstr ""
 
-#: src/base/cs_gui_specific_physics.c:221
+#: src/base/cs_gui_specific_physics.c:223
 #, c-format
 msgid "Invalid atmospheric flow model: %s.\n"
 msgstr ""
