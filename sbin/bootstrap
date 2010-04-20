@@ -47,3 +47,8 @@ automake -a -c
 echo "removing autom4te.cache"
 \rm -rf autom4te.cache
 
+echo "generating parser/scanner"
+cd src/mei
+\rm -f mei_parser.h mei_parser.c mei_scanner.c
+bison -o mei_parser.c  -d mei_parser.y
+flex  -o mei_scanner.c -l mei_scanner.l

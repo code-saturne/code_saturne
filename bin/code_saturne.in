@@ -26,19 +26,8 @@ import sys
 
 # Trick so that one doesn't have to set the PYTHONPATH variable
 cspath = '@pkgpythondir@'
-
-# Similar trick for the MEI library
-# (consistent with autoconf/automake behavior for MEI)
-try:
-   from distutils import sysconfig
-   meipath = os.path.join(sysconfig.get_python_lib(0, 0, prefix='@mei_prefix@'),
-                          'mei')
-except Exception:
-   meipath = ''
-
-for p in [meipath, cspath]:
-   if os.path.isdir(p) and not p in sys.path:
-      sys.path.insert(0, p)
+if os.path.isdir(cspath) and not cspath in sys.path:
+    sys.path.insert(0, cspath)
 
 #-------------------------------------------------------------------------------
 

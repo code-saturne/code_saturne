@@ -42,6 +42,7 @@ This module contains the following classes and function:
 
 import sys, string
 import logging
+import subprocess
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -56,7 +57,8 @@ from PyQt4.QtGui  import *
 
 from Base.Toolbox import GuiParam
 from QMeiEditorForm import Ui_QMeiDialog
-import mei
+
+from Base.Common import cs_check_syntax
 
 #-------------------------------------------------------------------------------
 # log config
@@ -257,27 +259,50 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
         """
         What to do when user clicks on 'OK'.
         """
+
+        if cs_check_syntax == None:
+            QDialog.accept(self)
+            return
+
         log.debug("accept()")
 
         doc = self.textEditExpression.document()
 
-        intr = mei.mei_tree_new(str(self.textEditExpression.toPlainText()))
-        log.debug("intr.string: %s" % intr.string)
-        log.debug("intr.errors: %s" % intr.errors)
+        log.debug("check.string: %s" % str(self.textEditExpression.toPlainText()))
 
+        check = subprocess.Popen([cs_check_syntax],
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        check.stdin.write(str(self.textEditExpression.toPlainText()) + '\30')
+
+        check.stdin.write(str(len(self.symbols)) + '\30')
         for p,q in self.symbols:
-            mei.mei_tree_insert(intr, p, 0.0)
+            check.stdin.write(str(p) + '\30')
 
-        # Unknown symbols
+        check.stdin.write(str(len(self.required)) + '\30')
+        for p,q in self.required:
+            check.stdin.write(str(p) + '\30')
 
-        if mei.mei_tree_builder(intr):
-            log.debug("intr.errors: %s" % intr.errors)
-            for i in range(0, intr.errors):
-                log.debug("  line:   %s \n  column: %s\n" % (intr.lines[i], intr.columns[i]))
+        check_out, check_err = check.communicate()
+
+        # Invalid expression
+
+        if check.returncode == 2:
+
+            # In this case, first record defines the number of errors,
+            # and following records given by groups of 3,
+            # for line, column, and label.
+
+            errors = check_err.split('\30')
+            log.debug("check.errors: %s" % errors)
+            n_errors = int(errors[0])
+
             msg = ""
-            for i in range(0, intr.errors):
-                l = intr.lines[i]
-                c = intr.columns[i]
+            for i in range(0, n_errors):
+                l = int(errors[i*3+1])
+                c = int(errors[i*3+2])
+                log.debug("  line:   %s \n  column: %s\n" % (l, c))
                 block_text = doc.findBlockByNumber(l - 1)
                 cursor = QTextCursor(block_text)
                 block_format = QTextBlockFormat()
@@ -286,23 +311,25 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
 
                 #self.textEditExpression.setCursorPosition(l, c)
                 #self.textEditExpression.setFocus()
-                msg += intr.labels[i] + \
+                msg += errors[i*3+3] + \
                        "    line: "   + str(l)   + " \n" + \
                        "    column: " + str(c) + " \n\n"
 
             QMessageBox.critical(self, self.tr('Expression Editor'), QString(msg))
-            intr.errors = 0
-            intr = mei.mei_tree_destroy(intr)
             QObject.connect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
             return
 
         # If required symbols are missing
 
-        list = []
-        for p,q in self.required:
-            list.append(p)
+        elif check.returncode == 3:
 
-        if mei.mei_tree_find_symbols(intr, len(list), list):
+            # In this case, first record defines the number of errors,
+            # and following records give matching labels.
+
+            errors = check_err.split('\30')
+            log.debug("check.errors: %s" % errors)
+            n_errors = int(errors[0])
+
             msg = "Warning, these required symbols are not found:\n\n"
             for i in range(0, doc.blockCount()):
                 block_text = doc.findBlockByNumber(i)
@@ -311,14 +338,22 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                 block_format.setBackground(QBrush(QColor(Qt.yellow)))
                 cursor.setBlockFormat(block_format)
                 #self.textEditExpression.setFocus()
-            for i in range(0, intr.errors): msg += intr.labels[i] + " \n"
+            for i in range(0, n_errors): msg += errors[i+1] + " \n"
             QMessageBox.critical(self, self.tr('Expression Editor'), QString(msg))
-            intr.errors = 0
-            intr = mei.mei_tree_destroy(intr)
             QObject.connect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
             return
 
-        intr = mei.mei_tree_destroy(intr)
+        # If another error was found
+
+        elif check.returncode != 0:
+
+            errors = check_err.split('\30')
+            log.debug("check.errors: %s" % errors)
+
+            msg = "Warning, expression check failed unexpectedly:\n\n"
+            QMessageBox.critical(self, self.tr('Expression Editor'), QString(msg))
+            QObject.connect(self.textEditExpression, SIGNAL("textChanged()"), self.slotClearBackground)
+            return
 
         QDialog.accept(self)
 

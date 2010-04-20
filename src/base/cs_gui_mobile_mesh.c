@@ -63,9 +63,7 @@
  * MEI library headers
  *----------------------------------------------------------------------------*/
 
-#ifdef HAVE_MEI
 #include "mei_evaluate.h"
-#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -242,7 +240,6 @@ cs_gui_get_ale_viscosity_type(int  * type)
  *   ntcabs         --> current iteration number
  *----------------------------------------------------------------------------*/
 
-#ifdef HAVE_MEI
 static mei_tree_t *
 cs_gui_init_mei_tree(char         *formula,
                      const char   **symbols,
@@ -294,7 +291,6 @@ cs_gui_init_mei_tree(char         *formula,
 
     return tree;
 }
-#endif /* HAVE_MEI */
 
 /*----------------------------------------------------------------------------
  *  Get the ale property choice
@@ -421,7 +417,6 @@ uialcl_fixed_displacement(const char *const label,
                           const int         ntcabs)
 {
     int ii = 0;
-#ifdef HAVE_MEI
     mei_tree_t *ev;
     double X_mesh, Y_mesh, Z_mesh;
 
@@ -448,7 +443,6 @@ uialcl_fixed_displacement(const char *const label,
 
     BFT_FREE(formula);
     mei_tree_destroy(ev);
-#endif /* HAVE_MEI */
 
     /* Set depale and impale */
     for (ii = begin; ii < end; ++ii)
@@ -456,11 +450,9 @@ uialcl_fixed_displacement(const char *const label,
         int inod = nodfbr[ii-1] - 1;
         if (impale[inod] == 0)
         {
-#ifdef HAVE_MEI
             depale[inod + 0 * (*nnod)] = X_mesh;
             depale[inod + 1 * (*nnod)] = Y_mesh;
             depale[inod + 2 * (*nnod)] = Z_mesh;
-#endif /* HAVE_MEI */
             impale[inod] = 1;
         }
     }
@@ -494,7 +486,6 @@ uialcl_fixed_velocity(const char*   label,
                       const double  ttcabs,
                       const int     ntcabs)
 {
-#ifdef HAVE_MEI
     mei_tree_t *ev;
     const char*  variables[3] = { "mesh_u", "mesh_v", "mesh_w" };
 
@@ -518,7 +509,6 @@ uialcl_fixed_velocity(const char*   label,
 
     BFT_FREE(formula);
     mei_tree_destroy(ev);
-#endif /* HAVE_MEI */
 }
 
 /*-----------------------------------------------------------------------------
@@ -765,7 +755,6 @@ get_internal_coupling_matrix(const char    *label,
                              const double  ttcabs,
                              const int     ntcabs)
 {
-#ifdef HAVE_MEI
     /* Get the formula */
     mei_tree_t *tree;
 
@@ -790,7 +779,6 @@ get_internal_coupling_matrix(const char    *label,
     }
     BFT_FREE(matrix);
     mei_tree_destroy(tree);
-#endif /* HAVE_MEI */
 }
 
 /*-----------------------------------------------------------------------------
@@ -962,7 +950,6 @@ void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
                                 double         *const ttcabs,
                                 const int      *const ntcabs)
 {
-#if defined(HAVE_MEI)
     int          iel            = 0;
     const char*  symbols[3]     = { "x", "y", "z" };
     const char*  variables[3]   = { "mesh_vi1", "mesh_vi2", "mesh_vi3" };
@@ -1012,7 +999,6 @@ void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
         BFT_FREE(aleFormula);
         BFT_FREE(viscosityType);
     }
-#endif /* HAVE_MEI */
 }
 
 /*----------------------------------------------------------------------------

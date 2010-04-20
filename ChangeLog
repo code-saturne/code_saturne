@@ -1,4 +1,65 @@
 * 19/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Migrate the MEI (Mathematical Expression Interpreter) library in the
+  Code_Saturne directory, from rev 32.
+  Replace the SWIG dependency for the syntax checking in the graphical
+  interface by a small executable called at each check.
+  added scripts:
+    src/mei/Makefile.am
+    tests/Makefile.am
+  added file:
+    doc/manpages/cs_check_syntax.1
+    src/mei
+    tests
+  added routines:
+    src/apps/cs_check_syntax.c
+    src/mei/mei_evaluate.c
+    src/mei/mei_evaluate.h
+    src/mei/mei_hash_table.c
+    src/mei/mei_hash_table.h
+    src/mei/mei_math_util.c
+    src/mei/mei_math_util.h
+    src/mei/mei_node.c
+    src/mei/mei_node.h
+    src/mei/mei_parser_glob.c
+    src/mei/mei_parser_glob.h
+    src/mei/mei_parser.y
+    src/mei/mei_scanner.l
+    tests/mei_test_graph.c
+    tests/mei_test_main.c
+  deleted script:
+    config/cs_mei.m4
+  modified files:
+    AUTHORS
+    po/fr.po
+  modified routines:
+    gui/Base/Common.py
+    gui/Pages/BoundaryConditionsCoalInletView.py
+    gui/Pages/BoundaryConditionsMobileMeshView.py
+    gui/Pages/BoundaryConditionsVelocityInletView.py
+    gui/Pages/FluidCharacteristicsView.py
+    gui/Pages/FluidStructureInteractionView.py
+    gui/Pages/MobileMeshView.py
+    gui/Pages/QMeiEditorView.py
+    include/base/cs_gui_boundary_conditions.h
+    src/base/cs_gui_boundary_conditions.c
+    src/base/cs_gui.c
+    src/base/cs_gui_conjugate_heat_transfer.c
+    src/base/cs_gui_mobile_mesh.c
+    src/base/cs_gui_particles.c
+    src/base/cs_gui_specific_physics.c
+  modified scripts:
+    bin/code_saturne.in
+	bin/cs_compile.py
+    bin/cs_config_build.py.in
+    configure.ac
+    Makefile.am
+    sbin/bootstrap
+    src/apps/Makefile.am
+    src/base/Makefile.am
+    src/Makefile.am
+
+* 19/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix several bugs in the runcase management.
   modified script:
     bin/cs_case.py

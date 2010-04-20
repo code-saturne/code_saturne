@@ -61,6 +61,14 @@ The Code_Saturne Kernel may contain code by Wes Petersen
 (ETHZ, Zurich, Switzerland) for random number generation
 (zufall.F routine)
 
+Part of the work of the Mathematical Expression Interpreter library
+is based in part on previous work by Tom Niemann (http://epaperpress.com/)
+with the following autorization: "Source code, when part of a software
+project, may be used freely without reference to the author.";
+and the hashtable implementation is based on 
+http://www.liafa.jussieu.fr/~carton/Enseignement/C/Licence/LicenceInfo/Td09/hachage.c
+from olivier.carton@liafa.jussieu.fr
+
 
 The following people should also be thanked for cooperating
 with the Code_Saturne development team by providing fresh

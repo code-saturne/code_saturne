@@ -177,7 +177,7 @@ def compile_and_link(srcdir, destdir, optlibs, force_link,
         if (len(c_files) + len(f_files)) > 0:
           cmd = cmd + " *.o"
         cmd = cmd + " -L" + os.path.join(dirs.prefix, "lib")
-        cmd = cmd + " -lsaturne"
+        cmd = cmd + " -lsaturne -lmei"
         if optlibs != None:
             if len(optlibs) > 0:
                 cmd = cmd + " " + optlibs

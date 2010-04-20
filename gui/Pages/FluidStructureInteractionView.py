@@ -55,12 +55,6 @@ from PyQt4.QtCore import Qt, QVariant, QString, SIGNAL, pyqtSignature
 from PyQt4.QtGui  import QDialog, QHeaderView, QStandardItemModel, QWidget
 from PyQt4.QtGui  import QAbstractItemView, QItemSelectionModel, QValidator
 
-try:
-    import mei
-    _have_mei = True
-except ImportError:
-    _have_mei = False
-
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
@@ -73,8 +67,7 @@ from Pages.Boundary                       import Boundary
 from Pages.FluidStructureInteractionAdvancedOptionsDialogForm import \
 Ui_FluidStructureInteractionAdvancedOptionsDialogForm
 
-if _have_mei:
-    from Pages.QMeiEditorView import QMeiEditorView
+from QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -422,10 +415,6 @@ class FormulaCoupling(Coupling):
         """
         # call getter to create default value if needed
         self.getBoundaryDefinedValue()
-
-        # Disable button if _have_mei is false
-        if not _have_mei:
-            self.getWidget().setEnabled(False)
 
 
     @pyqtSignature("const QString&")
