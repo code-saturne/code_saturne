@@ -50,10 +50,12 @@ sbin/rmb \
 $(ac_aux_dir)/cs_auto_flags.sh \
 $(ac_aux_dir)/cs_bft.m4 \
 $(ac_aux_dir)/cs_blas.m4 \
+$(ac_aux_dir)/cs_cgns.m4 \
 $(ac_aux_dir)/cs_config_info.m4 \
 $(ac_aux_dir)/cs_fortran.m4 \
-$(ac_aux_dir)/cs_fvm.m4 \
+$(ac_aux_dir)/cs_hdf5.m4 \
 $(ac_aux_dir)/cs_libxml2.m4 \
+$(ac_aux_dir)/cs_med.m4 \
 $(ac_aux_dir)/cs_metis.m4 \
 $(ac_aux_dir)/cs_mpi.m4 \
 $(ac_aux_dir)/cs_ple.m4 \
