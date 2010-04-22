@@ -47,6 +47,7 @@
     tests/bft_printf_test.c
     tests/bft_test.c
   modified routines:
+    src/apps/cs_partition.c
     src/apps/cs_solver.c
     src/base/cs_ale.c
     src/base/cs_mesh_solcom.c
