@@ -546,7 +546,7 @@ _search_height(cs_ctwr_zone_t   *ct,
 
   /* Create locator on the proj surf  */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(PLE_HAVE_MPI)
   locator = ple_locator_create(tolerance,
                                cs_glob_mpi_comm,
                                cs_glob_n_ranks,
