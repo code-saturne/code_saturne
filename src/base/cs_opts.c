@@ -51,7 +51,6 @@
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_config.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
 

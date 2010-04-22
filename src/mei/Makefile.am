@@ -20,9 +20,9 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #------------------------------------------------------------------------------
 
-AM_CPPFLAGS = $(DEBUG_CPPFLAGS) @BFT_CPPFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/src/bft
 AM_CFLAGS =
-AM_LDFLAGS = @BFT_LDFLAGS@
+AM_LDFLAGS =
 
 include_HEADERS = \
 mei_evaluate.h \

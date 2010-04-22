@@ -22,6 +22,27 @@
 
 check_PROGRAMS =
 
+# BFT tests
+
+check_PROGRAMS += \
+bft_test \
+bft_backtrace_test \
+bft_error_test \
+bft_mem_usage_test \
+bft_mem_test \
+bft_printf_test
+
+CPPFLAGS_BFT = -I$(top_srcdir)/src/bft
+LDFLAGS_BFT  =
+LDADD_BFT    = $(top_builddir)/src/libbft.la
+
+bft_test_SOURCES = bft_test.c
+bft_backtrace_test_SOURCES = bft_backtrace_test.c
+bft_error_test_SOURCES = bft_error_test.c
+bft_mem_usage_test_SOURCES = bft_mem_usage_test.c
+bft_mem_test_SOURCES = bft_mem_test.c
+bft_printf_test_SOURCES = bft_printf_test.c
+
 # FVM tests
 
 check_PROGRAMS += \

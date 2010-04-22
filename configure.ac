@@ -212,6 +212,17 @@ case "$host_os" in
     ;;
 esac
 
+case "$host_os" in
+  linux*)           AC_DEFINE(bft_OS_Linux, 1, bft_OS_Linux) ;;
+  solaris2.*)       AC_DEFINE(bft_OS_Solaris, 1, bft_OS_SunOS) ;;
+  aix*)             AC_DEFINE(bft_OS_AIX, 1, bft_OS_AIX) ;;
+  osf*)             AC_DEFINE(bft_OS_OSF1, 1, bft_OS_OSF1) ;;
+  irix5.*|irix6.*)  AC_DEFINE(bft_OS_IRIX64, 1, bft_OS_IRIX64) ;;
+  hpux*)            AC_DEFINE(bft_OS_HP_UX, 1, bft_OS_HP_UX) ;;
+  uxpv*)            AC_DEFINE(bft_OS_UXPV, 1, bft_OS_UNIX_System_V) ;;
+esac
+
+
 # Preprocessor flags for debugging purposes
 
 if test "x$debug" = "xtrue"; then
@@ -361,7 +372,6 @@ fi
 # Checks for libraries.
 #------------------------------------------------------------------------------
 
-CS_AC_TEST_BFT(["1.1.0"])
 CS_AC_TEST_PLE(["1.0.0"])
 CS_AC_TEST_LIBXML2
 CS_AC_TEST_BLAS([$cs_have_openmp])
@@ -511,6 +521,8 @@ AM_CONDITIONAL(HAVE_GUI, [test "x$have_gui" = "xyes"])
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([sys/types.h sys/utsname.h sys/stat.h stddef.h])
+AC_CHECK_HEADERS([malloc.h unistd.h fcntl.h sys/types.h sys/signal.h])
+AC_CHECK_HEADERS([sys/procfs.h sys/sysinfo.h sys/resource.h])
 
 #------------------------------------------------------------------------------
 # Checks for library functions.
@@ -521,8 +533,10 @@ AC_CHECK_FUNCS([snprintf])
 AC_CHECK_FUNCS([getcwd sleep])
 AC_CHECK_FUNCS([getpwuid geteuid])
 AC_CHECK_FUNCS([uname])
-
+AC_CHECK_FUNCS([getrusage gettimeofday sbrk sysinfo])
+AC_CHECK_FUNCS([posix_memalign])
 AC_CHECK_FUNCS([memset pow])
+
 AC_FUNC_STRTOD
 
 #------------------------------------------------------------------------------
@@ -534,6 +548,10 @@ AC_FUNC_STRTOD
 
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
+
+# Test for size of off_t once largefile support is activated
+
+AC_CHECK_SIZEOF([off_t])
 
 # Optional socket support
 #------------------------
@@ -592,6 +610,78 @@ if test "x$have_dlloader" = "xyes" ; then
 
 fi
 
+# Optional malloc hooks support (for glibc)
+#------------------------------
+
+have_malloc_hooks=no
+
+AC_ARG_ENABLE(malloc_hooks,
+  [  --disable-malloc-hooks  Do not use malloc hooks when available],
+  [
+    case "${enableval}" in
+      yes) malloc_hooks=true ;;
+      no)  malloc_hooks=false ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-malloc-hooks]) ;;
+    esac
+  ],
+  [ malloc_hooks=true ]
+)
+
+# If we use malloc hooks, we may need to add a -lmalloc link flag.
+
+if test "x$malloc_hooks" = "xtrue" ; then
+
+  # Basic test
+  AC_MSG_CHECKING([for malloc hooks])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],
+                 [[ int __malloc_hook(); __malloc_hook(); ]])],
+                 [have_malloc_hooks=yes],
+                 [have_malloc_hooks=no])
+  AC_MSG_RESULT($have_malloc_hooks)
+
+fi
+
+if test "x$have_malloc_hooks" = "xyes"; then
+  AC_DEFINE(HAVE_MALLOC_HOOKS, 1, HAVE_MALLOC_HOOKS)
+fi
+
+# Backtrace support (for glibc)
+#------------------
+
+# Basic backtrace functionnality
+
+have_glibc_backtrace=no
+
+AC_MSG_CHECKING([for glibc backtrace])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#if defined(__GNUC__)
+#define _GNU_SOURCE
+#include <memory.h>
+#include <execinfo.h>
+#endif]],
+               [[ void *tr_array[10]; backtrace(tr_array, 10); ]])],
+               [have_glibc_backtrace=yes],
+               [have_glibc_backtrace=no])
+AC_MSG_RESULT($have_glibc_backtrace)
+
+if test "x$have_glibc_backtrace" = "xyes"; then
+  AC_DEFINE(HAVE_GLIBC_BACKTRACE, 1, HAVE_GLIBC_BACKTRACE)
+fi
+
+# C++ demangling
+
+have_cplus_demangle=no
+
+AC_MSG_CHECKING([for glibc cplus_demangle])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <demangle.h>]],
+               [[ const char *s; cplus_demangle(s, auto_demangling); ]])],
+               [have_cplus_demangle=yes],
+               [have_cplus_demangle=no])
+AC_MSG_RESULT($have_cplus_demangle)
+
+if test "x$have_cplus_demangle" = "xyes"; then
+  AC_DEFINE(HAVE_CPLUS_DEMANGLE, 1, HAVE_CPLUS_DEMANGLE)
+fi
+
 #------------------------------------------------------------------------------
 # Internationalization
 #------------------------------------------------------------------------------
@@ -627,6 +717,7 @@ CS_AC_CONFIG_INFO_INIT([cs_config_comments_include])
 
 CS_AC_CONFIG_INFO_EXTRA([
 # use debugging code:                              "$debug"
+# use malloc hooks:                                "$have_malloc_hooks"
 # use graphical user interface:                    "$have_gui"
 # MPI (Message Passing Interface) support:         "$cs_have_mpi"
 # OpenMP support:                                  "$cs_have_openmp"
@@ -651,7 +742,7 @@ cs_config_comments=cs_config_comments_include
 
 AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/Makefile      src/apps/Makefile
-                 src/fvm/Makefile  src/mei/Makefile
+                 src/bft/Makefile  src/fvm/Makefile  src/mei/Makefile
                  src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
                  src/cogz/Makefile src/cplv/Makefile src/ctwr/Makefile
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile
@@ -697,6 +788,7 @@ rm -f cs_config_comments_include
 echo
 echo "Configuration options:"
 echo " use debugging code: "$debug""
+echo " use malloc hooks: "$have_malloc_hooks""
 echo " use graphical user interface: "$have_gui""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 if (test x$cs_have_mpi = xyes) ; then

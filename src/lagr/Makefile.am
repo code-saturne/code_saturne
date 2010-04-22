@@ -25,8 +25,9 @@
 AM_CPPFLAGS = \
 -I$(top_srcdir)/include/base \
 -I$(top_srcdir)/include/lagr \
+-I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
-@BFT_CPPFLAGS@ @MPI_CPPFLAGS@
+@MPI_CPPFLAGS@
 
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@ @CFLAGS_EXT@
 

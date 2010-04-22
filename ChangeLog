@@ -1,4 +1,58 @@
 * 24/04/2010 - David Monfort <david.monfort@edf.fr>
+  Migrate the BFT (Basic Functions and Tools) library in the Code_Saturne
+  directory, from rev 184.
+  added scritps:
+    src/bft/Makefile.am
+    src/fvm/Makefile.am
+    src/mei/Makefile.am
+    src/apps/Makefile.am
+    src/base/Makefile.am
+    src/ctwr/Makefile.am
+    src/lagr/Makefile.am
+    src/Makefile.am
+    tests/Makefile.am
+  deleted script:
+    config/cs_bft.m4
+  added routines:
+    src/bft
+    src/bft/bft_backtrace.c
+    src/bft/bft_backtrace.h
+    src/bft/bft_config_defs.h
+    src/bft/bft_error.c
+    src/bft/bft_error.h
+    src/bft/bft_file.c
+    src/bft/bft_file.h
+    src/bft/bft_mem.c
+    src/bft/bft_mem.h
+    src/bft/bft_mem_usage.c
+    src/bft/bft_mem_usage.h
+    src/bft/bft_printf.c
+    src/bft/bft_printf.h
+    src/bft/bft_sys_info.c
+    src/bft/bft_sys_info.h
+    src/bft/bft_timer.c
+    src/bft/bft_timer.h
+    tests/bft_backtrace_test.c
+    tests/bft_error_test.c
+    tests/bft_mem_test.c
+    tests/bft_mem_usage_test.c
+    tests/bft_printf_test.c
+    tests/bft_test.c
+  modified routines:
+    src/apps/cs_solver.c
+    src/base/cs_ale.c
+    src/base/cs_mesh_solcom.c
+    src/base/cs_opts.c
+    src/base/cs_post.c
+    src/base/cs_sat_coupling.c
+  modified scripts:
+    bin/cs_compile.py
+    configure.ac
+    Makefile.am
+  modified file:
+    AUTHORS
+
+* 24/04/2010 - David Monfort <david.monfort@edf.fr>
   Migrate the FVM (Finite Volume Mesh) library in the Code_Saturne
   directory, from rev 594.
   added scripts:
@@ -6,6 +60,8 @@
     config/cs_hdf5.m4
     config/cs_med.m4
     src/fvm/Makefile.am
+  deleted script:
+    config/cs_fvm.m4
   added routines:
     src/fvm
     src/fvm/fvm_block_dist.c
@@ -97,6 +153,7 @@
     bin/cs_compile.py
     config/cs_mpi.m4
     configure.ac
+    Makefile.am
     src/apps/Makefile.am
     src/base/Makefile.am
     src/ctwr/Makefile.am
@@ -165,10 +222,10 @@
     tests/Makefile.am
   added file:
     doc/manpages/cs_check_syntax.1
-    src/mei
     tests
   added routines:
     src/apps/cs_check_syntax.c
+    src/mei
     src/mei/mei_evaluate.c
     src/mei/mei_evaluate.h
     src/mei/mei_hash_table.c

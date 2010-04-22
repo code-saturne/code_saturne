@@ -69,6 +69,12 @@ and the hashtable implementation is based on
 http://www.liafa.jussieu.fr/~carton/Enseignement/C/Licence/LicenceInfo/Td09/hachage.c
 from olivier.carton@liafa.jussieu.fr
 
+The BFT (Basic Functions and Tools) work is based in part
+on previous work by Yvan Fournier (EDF) from 1999 to 2004
+and Didier Poizat (CS-SI) from 1999 to 2000 on the "Enveloppe
+Code_Saturne" software (Code_Saturne CFD code's pre/post-processing
+module).
+
 
 The following people should also be thanked for cooperating
 with the Code_Saturne development team by providing fresh

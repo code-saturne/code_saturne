@@ -26,8 +26,9 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/include/base \
 -I$(top_srcdir)/include/ctwr \
 -I$(top_srcdir)/include/lagr \
+-I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
-@PLE_CPPFLAGS@ @BFT_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@
+@PLE_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@
 
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 
@@ -76,8 +77,8 @@ cs_solver_SOURCES =
 cs_solver_LDADD = libsaturne.la $(LTLIBINTL) \
 $(top_builddir)/src/mei/libmei.la \
 $(top_builddir)/src/fvm/libfvm.la \
+$(top_builddir)/src/bft/libbft.la \
 @PLE_LDFLAGS@ @PLE_LIBS@ \
-@BFT_LDFLAGS@ @BFT_LIBS@ \
 @CGNS_LDFLAGS@ @CGNS_LIBS@ \
 @MED_LDFLAGS@ @MED_LIBS@ \
 @HDF5_LDFLAGS@ @HDF5_LIBS@ \
@@ -93,23 +94,26 @@ cs_io_dump_SOURCES = cs_io_dump.c
 # Code_Saturne syntax checker
 
 cs_check_syntax_CPPFLAGS = \
--I$(top_srcdir)/src/mei \
-@BFT_CPPFLAGS@
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/mei
 cs_check_syntax_SOURCES = cs_check_syntax.c
-cs_check_syntax_LDADD = $(top_builddir)/src/mei/libmei.la \
-@BFT_LDFLAGS@ @BFT_LIBS@ -lm
+cs_check_syntax_LDADD = \
+$(top_builddir)/src/mei/libmei.la \
+$(top_builddir)/src/bft/libbft.la \
+-lm
 
 # Conditionally compiled executables
 
 if HAVE_PARTITIONER
 
 cs_partition_CPPFLAGS = $(AM_CPPFLAGS) \
-@BFT_CPPFLAGS@ @METIS_CPPFLAGS@ @SCOTCH_CPPFLAGS@
+-I$(top_srcdir)/src/bft \
+@METIS_CPPFLAGS@ @SCOTCH_CPPFLAGS@
 cs_partition_SOURCES = cs_partition.c
 cs_partition_LDADD = $(top_builddir)/src/base/libcscore.la \
 $(top_builddir)/src/fvm/libfvm.la \
+$(top_builddir)/src/bft/libbft.la \
 @PLE_LDFLAGS@ @PLE_LIBS@ \
-@BFT_LDFLAGS@ @BFT_LIBS@ \
 @METIS_LDFLAGS@ @METIS_LIBS@ \
 @SCOTCH_LDFLAGS@ @SCOTCH_LIBS@ \
 @MPI_LDFLAGS@ @MPI_LIBS@

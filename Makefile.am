@@ -48,7 +48,6 @@ sbin/bootstrap \
 sbin/clean \
 sbin/rmb \
 $(ac_aux_dir)/cs_auto_flags.sh \
-$(ac_aux_dir)/cs_bft.m4 \
 $(ac_aux_dir)/cs_blas.m4 \
 $(ac_aux_dir)/cs_cgns.m4 \
 $(ac_aux_dir)/cs_config_info.m4 \
