@@ -52,7 +52,6 @@
 
 #include <bft_error.h>
 #include <bft_mem.h>
-#include <bft_mem_usage.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -302,72 +301,6 @@ void
 syr_errhandler_initialize(void)
 {
   bft_error_handler_set(_syr_error_handler);
-}
-
-/*----------------------------------------------------------------------------
- * Initialize memory management
- *----------------------------------------------------------------------------*/
-
-void
-syr_mem_initialize(void)
-{
-  char  *base_name;
-  char  *full_name = NULL;
-
-  /* Initialize memory counting */
-
-  bft_mem_usage_init();
-
-  /* Initialize memory management */
-
-  if ((base_name = getenv("SYR_FIC_MEM")) != NULL) {
-
-    full_name = (char *)(malloc((strlen(base_name) + 6) * sizeof (char)));
-
-    if (full_name != NULL)
-        strcpy(full_name, base_name);
-
-  }
-
-  bft_mem_init(full_name);
-
-  if (full_name != NULL)
-    free(full_name);
-}
-
-/*----------------------------------------------------------------------------
- * Finalize memory management
- *----------------------------------------------------------------------------*/
-
-void
-syr_mem_finalize(void)
-{
-  double  rval;
-  int ii;
-
-  const char  unit[] = {'k', 'm', 'g', 't', 'p'};
-
-  /* Memory summary */
-
-  printf("\nBilan de l'occupation memoire :\n\n");
-
-  rval = (double) bft_mem_usage_max_pr_size();
-
-  for (ii = 0; rval > 1024. && unit[ii] != 'p'; ii++)
-    rval /= 1024.;
-
-  /* Printout */
-
-  printf ("  Consommation memoire totale mesuree :  %12.3f %co\n",
-          rval, unit[ii]);
-
-  /* Finalize memory managment */
-
-  bft_mem_end();
-
-  /* Finalize memory count */
-
-  bft_mem_usage_end();
 }
 
 #if defined (HAVE_MPI)

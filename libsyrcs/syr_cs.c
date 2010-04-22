@@ -49,8 +49,8 @@
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
 #include <bft_error.h>
+#include <bft_mem.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -263,7 +263,7 @@ main(int argc,
 
   /* Initialize memory management */
 
-  syr_mem_initialize();
+  bft_mem_init(NULL);
 
   /* Initialize MPI if necessary (pre-analyze command line) */
 
@@ -661,7 +661,7 @@ main(int argc,
 
   /* Finalize memory management */
 
-  syr_mem_finalize();
+  bft_mem_end();
 
   /* Close MPI communications if necessary */
 
