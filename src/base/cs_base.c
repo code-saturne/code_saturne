@@ -69,11 +69,6 @@
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
-#include <fvm_config.h>
-#if !defined(HAVE_MPI) && defined(FVM_HAVE_MPI)
-#error "Either both or neither Code_Saturne and FVM must be configured with MPI"
-#endif
-
 #include <fvm_parall.h>
 
 /*----------------------------------------------------------------------------
@@ -574,7 +569,7 @@ _cs_base_sig_fatal(int  signum)
 static void
 _cs_base_mpi_fin(void)
 {
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   fvm_parall_set_mpi_comm(MPI_COMM_NULL);
 #endif
 
@@ -690,7 +685,7 @@ _cs_base_mpi_setup(int  app_num)
 
   /* Initialize associated libraries */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   if (cs_glob_rank_id > -1)
     fvm_parall_set_mpi_comm(cs_glob_mpi_comm);
   else

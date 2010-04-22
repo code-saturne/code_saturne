@@ -26,7 +26,8 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/include/base \
 -I$(top_srcdir)/include/ctwr \
 -I$(top_srcdir)/include/lagr \
-@PLE_CPPFLAGS@ @FVM_CPPFLAGS@ @BFT_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@
+-I$(top_srcdir)/src/fvm \
+@PLE_CPPFLAGS@ @BFT_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@
 
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 
@@ -74,9 +75,12 @@ endif
 cs_solver_SOURCES =
 cs_solver_LDADD = libsaturne.la $(LTLIBINTL) \
 $(top_builddir)/src/mei/libmei.la \
+$(top_builddir)/src/fvm/libfvm.la \
 @PLE_LDFLAGS@ @PLE_LIBS@ \
-@FVM_LDFLAGS@ @FVM_LIBS@ \
 @BFT_LDFLAGS@ @BFT_LIBS@ \
+@CGNS_LDFLAGS@ @CGNS_LIBS@ \
+@MED_LDFLAGS@ @MED_LIBS@ \
+@HDF5_LDFLAGS@ @HDF5_LIBS@ \
 @MPI_LDFLAGS@ @MPI_LIBS@ \
 @LIBXML2_LDFLAGS@ @LIBXML2_LIBS@ \
 @BLAS_LDFLAGS@ @BLAS_LIBS@ \
@@ -103,8 +107,8 @@ cs_partition_CPPFLAGS = $(AM_CPPFLAGS) \
 @BFT_CPPFLAGS@ @METIS_CPPFLAGS@ @SCOTCH_CPPFLAGS@
 cs_partition_SOURCES = cs_partition.c
 cs_partition_LDADD = $(top_builddir)/src/base/libcscore.la \
+$(top_builddir)/src/fvm/libfvm.la \
 @PLE_LDFLAGS@ @PLE_LIBS@ \
-@FVM_LDFLAGS@ @FVM_LIBS@ \
 @BFT_LDFLAGS@ @BFT_LIBS@ \
 @METIS_LDFLAGS@ @METIS_LIBS@ \
 @SCOTCH_LDFLAGS@ @SCOTCH_LIBS@ \

@@ -20,4 +20,4 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-SUBDIRS = mei base pprt atmo cfbl cogz cplv ctwr elec fuel lagr mati rayt apps
+SUBDIRS = fvm mei base pprt atmo cfbl cogz cplv ctwr elec fuel lagr mati rayt apps

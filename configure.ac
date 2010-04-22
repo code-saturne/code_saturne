@@ -264,13 +264,32 @@ AC_CHECK_TYPES([uint32_t])
 AC_CHECK_TYPES([uint64_t])
 AC_CHECK_TYPES([ptrdiff_t])
 
-AC_CHECK_SIZEOF([void *], [cs])
-AC_CHECK_SIZEOF([short], [cs])
-AC_CHECK_SIZEOF([int], [cs])
-AC_CHECK_SIZEOF([long], [cs])
-AC_CHECK_SIZEOF([float], [cs])
-AC_CHECK_SIZEOF([double], [cs])
+AC_CHECK_SIZEOF([void *])
+AC_CHECK_SIZEOF([short])
+AC_CHECK_SIZEOF([int])
+AC_CHECK_SIZEOF([long])
+AC_CHECK_SIZEOF([long long])
+AC_CHECK_SIZEOF([float])
+AC_CHECK_SIZEOF([double])
 
+# Use long global numbers ?
+AC_ARG_ENABLE(long-gnum,
+  [AS_HELP_STRING([--enable-long-gnum],[use long global numbers])],
+  [
+    case "${enableval}" in
+      yes) have_long_gnum=yes ;;
+      no)  have_long_gnum=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-long-gnum]) ;;
+    esac
+  ],
+  [ have_long_gnum=no ]
+)
+
+if test "x$ have_long_gnum" = "xyes"; then
+  AC_DEFINE([HAVE_LONG_GNUM],1,[Use 64-bit type if available for fvm_gnum_t.])
+fi
+
+# Check for Fortran 2003 flush feature
 CS_AC_TEST_FC_FLUSH
 
 #------------------------------------------------------------------------------
@@ -343,13 +362,15 @@ fi
 #------------------------------------------------------------------------------
 
 CS_AC_TEST_BFT(["1.1.0"])
-CS_AC_TEST_FVM(["0.15.0"])
 CS_AC_TEST_PLE(["1.0.0"])
 CS_AC_TEST_LIBXML2
 CS_AC_TEST_BLAS([$cs_have_openmp])
 CS_AC_TEST_MPI
 CS_AC_TEST_METIS
 CS_AC_TEST_SCOTCH
+CS_AC_TEST_HDF5
+CS_AC_TEST_CGNS
+CS_AC_TEST_MED
 CS_AC_TEST_SYRTHES
 
 have_partitioner=no
@@ -495,6 +516,7 @@ AC_CHECK_HEADERS([sys/types.h sys/utsname.h sys/stat.h stddef.h])
 # Checks for library functions.
 #------------------------------------------------------------------------------
 
+AC_CHECK_FUNCS([mkdir])
 AC_CHECK_FUNCS([snprintf])
 AC_CHECK_FUNCS([getcwd sleep])
 AC_CHECK_FUNCS([getpwuid geteuid])
@@ -506,6 +528,12 @@ AC_FUNC_STRTOD
 #------------------------------------------------------------------------------
 # Checks for system services.
 #------------------------------------------------------------------------------
+
+# Largefile support (may be disabled in case of conflicts)
+#------------------
+
+AC_SYS_LARGEFILE
+AC_FUNC_FSEEKO
 
 # Optional socket support
 #------------------------
@@ -604,6 +632,9 @@ CS_AC_CONFIG_INFO_EXTRA([
 # OpenMP support:                                  "$cs_have_openmp"
 # BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas"
 # Libxml2 (XML Reader) support:                    "$have_libxml2"
+# HDF5 (Hierarchical Data Format) support:         "$have_hdf5"
+# CGNS (CFD General Notation System) support:      "$have_cgns"
+# MED (Model for Exchange of Data) support:        "$have_med"
 # IP socket support (for SYRTHES 3 or CFD_Proxy):  "$have_socket"
 # Dynamic loader support (for YACS):               "$have_dlloader"
 ])
@@ -620,7 +651,7 @@ cs_config_comments=cs_config_comments_include
 
 AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/Makefile      src/apps/Makefile
-                 src/mei/Makefile
+                 src/fvm/Makefile  src/mei/Makefile
                  src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
                  src/cogz/Makefile src/cplv/Makefile src/ctwr/Makefile
                  src/elec/Makefile src/fuel/Makefile src/mati/Makefile
@@ -668,6 +699,10 @@ echo "Configuration options:"
 echo " use debugging code: "$debug""
 echo " use graphical user interface: "$have_gui""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
+if (test x$cs_have_mpi = xyes) ; then
+  echo "   MPI I/O support: "$cs_have_mpi_io""
+  echo "   MPI2 one-sided communication support: "$cs_have_mpi_one_sided""
+fi
 echo " OpenMP support: "$cs_have_openmp""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
 echo " Libxml2 (XML Reader) support: "$have_libxml2""
@@ -679,6 +714,9 @@ echo " PT-SCOTCH (Parallel Graph Partitioning) support: "$have_ptscotch""
 if test x$have_ptscotch = xno ; then
   echo " SCOTCH (Graph Partitioning) support: "$have_scotch""
 fi
+echo " HDF (Hierarchical Data Format) support: "$have_hdf5""
+echo " CGNS (CFD General Notation System) support: "$have_cgns""
+echo " MED (Model for Exchange of Data) support: "$have_med""
 echo " SYRTHES 3 coupling support: "$have_syrthes""
 echo " IP socket support (for SYRTHES 3 or CFD_Proxy): "$have_socket""
 echo " Dynamic loader support (for YACS): "$have_dlloader""

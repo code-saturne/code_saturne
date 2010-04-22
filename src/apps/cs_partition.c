@@ -1685,7 +1685,7 @@ _read_input(const char   *path,
 
   /* Open mesh file */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   inp = cs_io_initialize_with_index(path,
                                     "Face-based mesh definition, R0",
                                     cs_glob_io_hints,
@@ -1932,7 +1932,7 @@ _write_output(fvm_gnum_t  n_g_cells,
 
   sprintf(filename, "domain_number_%d", n_ranks);
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   fh = cs_io_initialize(filename,
                         magic_string,
                         CS_IO_MODE_WRITE,

@@ -170,7 +170,7 @@ struct _cs_io_t {
 
   long                echo;           /* Data echo level (verbosity) */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   MPI_Comm            comm;           /* Assigned communicator */
 #endif
 };
@@ -195,7 +195,7 @@ static char  _type_name_r4[] =   "r4";  /* Single precision real */
 static char  _type_name_r8[] =   "r8";  /* Double precsision real */
 
 /* Default hints for files using this API (for MPI-IO) */
-#if defined(FVM_HAVE_MPI_IO)
+#if defined(HAVE_MPI_IO)
 int  cs_glob_io_hints = FVM_FILE_EXPLICIT_OFFSETS;
 #else
 int  cs_glob_io_hints = 0;
@@ -380,7 +380,7 @@ _cs_io_create(cs_io_mode_t   mode,
 
   cs_io->echo = echo;
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   cs_io->comm = MPI_COMM_NULL;
 #endif
 
@@ -568,7 +568,7 @@ _update_index_and_shift(cs_io_t             *inp,
  *   comm         <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 static void
 _file_open(cs_io_t     *cs_io,
            const char  *name,
@@ -610,7 +610,7 @@ _file_open(cs_io_t     *cs_io,
 
   /* Create interface file descriptor */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   cs_io->f = fvm_file_open(name, f_mode, hints, comm);
 #else
   cs_io->f = fvm_file_open(name, f_mode, hints);
@@ -618,7 +618,7 @@ _file_open(cs_io_t     *cs_io,
 
   fvm_file_set_big_endian(cs_io->f);
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   cs_io->comm = comm;
 #endif
 
@@ -789,7 +789,7 @@ _file_legacy_add_sizes(cs_io_t     *inp,
  *   1 if file is a legacy restart file, 0 otherwise.
  *----------------------------------------------------------------------------*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 static int
 _file_legacy_restart_open(cs_io_t     *inp,
                           const char  *name,
@@ -813,7 +813,7 @@ _file_legacy_restart_open(cs_io_t    *inp,
 
   /* Create interface file descriptor */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   inp->f = fvm_file_open(name, FVM_FILE_MODE_READ, FVM_FILE_NO_MPI_IO, comm);
 #else
   inp->f = fvm_file_open(name, FVM_FILE_MODE_READ, 0);
@@ -884,7 +884,7 @@ _file_legacy_restart_open(cs_io_t    *inp,
  *   1 if file is a legacy restart file, 0 otherwise.
  *----------------------------------------------------------------------------*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 static int
 _file_legacy_restart_index(cs_io_t     *inp,
                            const char  *name,
@@ -905,7 +905,7 @@ _file_legacy_restart_index(cs_io_t     *inp,
     = N_("Restart file \"%s\" does not correspond\n"
          "to part %d of the original restart file.");
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   retval = _file_legacy_restart_open(inp, name, sizes, comm);
 #else
   retval = _file_legacy_restart_open(inp, name, sizes);
@@ -973,7 +973,7 @@ _file_legacy_restart_index(cs_io_t     *inp,
       /* Open new file */
       end_of_file = 0;
       inp->index->f[inp->index->n_files - 1] = inp->f;
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
       retval = _file_legacy_restart_open(inp, _name, cmp_sizes, comm);
 #else
       retval = _file_legacy_restart_open(inp, _name, cmp_sizes);
@@ -1057,7 +1057,7 @@ _file_legacy_restart_index(cs_io_t     *inp,
  *   comm         <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 static void
 _file_reopen_read(cs_io_t   *inp,
                   int        hints,
@@ -1066,7 +1066,7 @@ _file_reopen_read(cs_io_t   *inp,
 static void
 _file_reopen_read(cs_io_t   *inp,
                   int        hints)
-#endif /* FVM_HAVE_MPI */
+#endif /* HAVE_MPI */
 {
   size_t i;
   char _tmpname[128];
@@ -1084,7 +1084,7 @@ _file_reopen_read(cs_io_t   *inp,
 
     inp->index->f[i] = fvm_file_free(inp->index->f[i]);
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
     inp->index->f[i] = fvm_file_open(tmpname, FVM_FILE_MODE_READ, hints, comm);
 #else
     inp->index->f[i] = fvm_file_open(tmpname, FVM_FILE_MODE_READ, hints);
@@ -1728,7 +1728,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
  *   comm         <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 static void
 _cs_io_initialize_with_index(cs_io_t       *inp,
                              const char    *file_name,
@@ -1739,7 +1739,7 @@ static void
 _cs_io_initialize_with_index(cs_io_t       *inp,
                              const char    *file_name,
                              const char    *magic_string)
-#endif /* FVM_HAVE_MPI */
+#endif /* HAVE_MPI */
 {
   cs_io_sec_header_t  h;
   int  end_reached = 0;
@@ -1748,7 +1748,7 @@ _cs_io_initialize_with_index(cs_io_t       *inp,
      stage, as we only read global headers of limited size, and
      a "lighter" method than MPI-IO should be well adapted. */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   _file_open(inp, file_name, magic_string, FVM_FILE_NO_MPI_IO, comm);
 #else
   _file_open(inp, file_name, magic_string, 0);
@@ -2068,7 +2068,7 @@ _dump_index(const cs_io_sec_index_t  *idx)
  *   pointer to kernel IO structure
  *----------------------------------------------------------------------------*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 cs_io_t *
 cs_io_initialize(const char    *file_name,
                  const char    *magic_string,
@@ -2083,7 +2083,7 @@ cs_io_initialize(const char    *file_name,
                  cs_io_mode_t   mode,
                  int            hints,
                  long           echo)
-#endif /* FVM_HAVE_MPI */
+#endif /* HAVE_MPI */
 {
   cs_io_t  *cs_io =_cs_io_create(mode, echo);
 
@@ -2099,7 +2099,7 @@ cs_io_initialize(const char    *file_name,
 
   /* Create interface file descriptor */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   _file_open(cs_io, file_name, magic_string, hints, comm);
 #else
   _file_open(cs_io, file_name, magic_string, hints);
@@ -2125,7 +2125,7 @@ cs_io_initialize(const char    *file_name,
  *   pointer to kernel IO structure
  *----------------------------------------------------------------------------*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 cs_io_t *
 cs_io_initialize_with_index(const char    *file_name,
                             const char    *magic_string,
@@ -2138,7 +2138,7 @@ cs_io_initialize_with_index(const char    *file_name,
                             const char    *magic_string,
                             int            hints,
                             long           echo)
-#endif /* FVM_HAVE_MPI */
+#endif /* HAVE_MPI */
 {
   int retval = 0;
 
@@ -2157,7 +2157,7 @@ cs_io_initialize_with_index(const char    *file_name,
 
   /* Test for legacy restart format first */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   retval = _file_legacy_restart_index(inp, file_name, comm);
 #else
   retval = _file_legacy_restart_index(inp, file_name);
@@ -2166,7 +2166,7 @@ cs_io_initialize_with_index(const char    *file_name,
 
   if (retval == 0) {
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
     _cs_io_initialize_with_index(inp, file_name, magic_string, comm);
 #else
     _cs_io_initialize_with_index(inp, file_name, magic_string);
@@ -2176,7 +2176,7 @@ cs_io_initialize_with_index(const char    *file_name,
 
   /* Now reopen all indexed files using hints */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   _file_reopen_read(inp, hints, comm);
 #else
   _file_reopen_read(inp, hints);
@@ -2827,7 +2827,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
   fvm_gnum_t *retval = NULL;
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   int rank_id = 0;
   int n_ranks = 1;
   MPI_Comm comm = cs_io->comm;
@@ -2878,7 +2878,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
   /* Exchange past-the-end values */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (n_ranks > 1) {
 
@@ -2952,7 +2952,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
                (unsigned long long)(global_num_end),
                (unsigned long long)retval[global_num_end - global_num_start]);
 
-#endif /* defined(FVM_HAVE_MPI) */
+#endif /* defined(HAVE_MPI) */
 
   return retval;
 }
@@ -3158,7 +3158,7 @@ cs_io_defaults_info(void)
   cs_bool_t  mpi_io = false;
   const char *fmt = N_("  I/O mode:          %s\n");
 
-#if defined(FVM_HAVE_MPI_IO)
+#if defined(HAVE_MPI_IO)
 
   if (cs_glob_n_ranks > 1) {
     if (cs_glob_io_hints & FVM_FILE_EXPLICIT_OFFSETS) {
@@ -3230,7 +3230,7 @@ cs_io_dump(const cs_io_t  *cs_io)
   else if (cs_io->mode == CS_IO_MODE_WRITE)
     bft_printf(_("  mode: CS_IO_MODE_WRITE\n"), cs_io->contents);
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   bft_printf(_("  MPI communicator: %l\n"), (long)(cs_io->comm));
 #endif
 

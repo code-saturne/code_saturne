@@ -1,4 +1,120 @@
 * 24/04/2010 - David Monfort <david.monfort@edf.fr>
+  Migrate the FVM (Finite Volume Mesh) library in the Code_Saturne
+  directory, from rev 594.
+  added scripts:
+    config/cs_cgns.m4
+    config/cs_hdf5.m4
+    config/cs_med.m4
+    src/fvm/Makefile.am
+  added routines:
+    src/fvm
+    src/fvm/fvm_block_dist.c
+    src/fvm/fvm_block_dist.h
+    src/fvm/fvm_block_to_part.c
+    src/fvm/fvm_block_to_part.h
+    src/fvm/fvm_box.c
+    src/fvm/fvm_box.h
+    src/fvm/fvm_box_priv.h
+    src/fvm/fvm_box_tree.c
+    src/fvm/fvm_box_tree.h
+    src/fvm/fvm_config_defs.h
+    src/fvm/fvm_convert_array.c
+    src/fvm/fvm_convert_array.h
+    src/fvm/fvm_defs.c
+    src/fvm/fvm_defs.h
+    src/fvm/fvm_file.c
+    src/fvm/fvm_file.h
+    src/fvm/fvm_gather.c
+    src/fvm/fvm_gather.h
+    src/fvm/fvm_group.c
+    src/fvm/fvm_group.h
+    src/fvm/fvm_interface.c
+    src/fvm/fvm_interface.h
+    src/fvm/fvm_io_num.c
+    src/fvm/fvm_io_num.h
+    src/fvm/fvm_morton.c
+    src/fvm/fvm_morton.h
+    src/fvm/fvm_neighborhood.c
+    src/fvm/fvm_neighborhood.h
+    src/fvm/fvm_nodal_append.c
+    src/fvm/fvm_nodal_append.h
+    src/fvm/fvm_nodal.c
+    src/fvm/fvm_nodal_extract.c
+    src/fvm/fvm_nodal_extract.h
+    src/fvm/fvm_nodal_extrude.c
+    src/fvm/fvm_nodal_extrude.h
+    src/fvm/fvm_nodal_from_desc.c
+    src/fvm/fvm_nodal_from_desc.h
+    src/fvm/fvm_nodal.h
+    src/fvm/fvm_nodal_order.c
+    src/fvm/fvm_nodal_order.h
+    src/fvm/fvm_nodal_priv.h
+    src/fvm/fvm_nodal_project.c
+    src/fvm/fvm_nodal_project.h
+    src/fvm/fvm_nodal_triangulate.c
+    src/fvm/fvm_nodal_triangulate.h
+    src/fvm/fvm_order.c
+    src/fvm/fvm_order.h
+    src/fvm/fvm_parall.c
+    src/fvm/fvm_parall.h
+    src/fvm/fvm_part_to_block.c
+    src/fvm/fvm_part_to_block.h
+    src/fvm/fvm_periodicity.c
+    src/fvm/fvm_periodicity.h
+    src/fvm/fvm_point_location.c
+    src/fvm/fvm_point_location.h
+    src/fvm/fvm_selector.c
+    src/fvm/fvm_selector.h
+    src/fvm/fvm_selector_postfix.c
+    src/fvm/fvm_selector_postfix.h
+    src/fvm/fvm_tesselation.c
+    src/fvm/fvm_tesselation.h
+    src/fvm/fvm_to_cgns.c
+    src/fvm/fvm_to_cgns.h
+    src/fvm/fvm_to_ensight.c
+    src/fvm/fvm_to_ensight_case.c
+    src/fvm/fvm_to_ensight_case.h
+    src/fvm/fvm_to_ensight.h
+    src/fvm/fvm_to_med.c
+    src/fvm/fvm_to_med.h
+    src/fvm/fvm_to_text.c
+    src/fvm/fvm_to_text.h
+    src/fvm/fvm_trace.c
+    src/fvm/fvm_trace.h
+    src/fvm/fvm_triangulate.c
+    src/fvm/fvm_triangulate.h
+    src/fvm/fvm_writer.c
+    src/fvm/fvm_writer.h
+    src/fvm/fvm_writer_helper.c
+    src/fvm/fvm_writer_helper.h
+    src/fvm/fvm_writer_priv.h
+    tests/fvm_file_test.c
+    tests/fvm_interface_test.c
+    tests/fvm_selector_postfix_test.c
+    tests/fvm_selector_test.c
+    tests/fvm_sizes_test.c
+  modified scripts:
+    bin/cs_compile.py
+    config/cs_mpi.m4
+    configure.ac
+    src/apps/Makefile.am
+    src/base/Makefile.am
+    src/ctwr/Makefile.am
+    src/lagr/Makefile.am
+    src/Makefile.am
+    tests/Makefile.am
+  modified routines:
+    include/base/cs_io.h
+    src/apps/cs_partition.c
+    src/base/cs_base.c
+    src/base/cs_io.c
+    src/base/cs_preprocessor_data.c
+    src/base/cs_restart.c
+    src/base/cs_search.c
+  modified file:
+    TODO
+
+* 24/04/2010 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Replace the FVM coupling library by the new PLE one.
   added script:

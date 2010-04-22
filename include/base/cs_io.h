@@ -127,7 +127,7 @@ extern int       cs_glob_io_hints;
  *   pointer to kernel IO structure
  *----------------------------------------------------------------------------*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 cs_io_t *
 cs_io_initialize(const char    *file_name,
@@ -146,7 +146,7 @@ cs_io_initialize(const char    *file_name,
                  int            hints,
                  long           echo);
 
-#endif /* FVM_HAVE_MPI */
+#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
  * Initialize a kernel IO file structure in read mode, building an index.
@@ -165,7 +165,7 @@ cs_io_initialize(const char    *file_name,
  *   pointer to kernel IO structure
  *----------------------------------------------------------------------------*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 
 cs_io_t *
 cs_io_initialize_with_index(const char    *file_name,
@@ -182,7 +182,7 @@ cs_io_initialize_with_index(const char    *file_name,
                             int            hints,
                             long           echo);
 
-#endif /* FVM_HAVE_MPI */
+#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
  * Free a preprocessor output file structure, closing the associated file.

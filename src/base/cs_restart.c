@@ -342,7 +342,7 @@ _add_file(cs_restart_t  *r)
 
   if (r->mode == CS_RESTART_MODE_READ) {
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
     r->fh = cs_io_initialize_with_index(r->name,
                                         magic_string,
                                         cs_glob_io_hints,
@@ -357,7 +357,7 @@ _add_file(cs_restart_t  *r)
 
   else {
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
     r->fh = cs_io_initialize(r->name,
                              magic_string,
                              CS_IO_MODE_WRITE,

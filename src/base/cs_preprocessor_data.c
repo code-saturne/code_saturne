@@ -413,7 +413,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
 
   /* Open file */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   rank_pp_in = cs_io_initialize(file_name,
                                 "Domain partitioning, R0",
                                 CS_IO_MODE_READ,
@@ -2201,7 +2201,7 @@ _read_dimensions(const char      *filename,
 
   bft_printf(_(" Reading metadata from file: \"%s\"\n"), filename);
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   pp_in = cs_io_initialize(filename,
                            "Face-based mesh definition, R0",
                            CS_IO_MODE_READ,
@@ -2660,7 +2660,7 @@ _read_data(int              file_id,
   const char  *unexpected_msg = N_("Section of type <%s> on <%s>\n"
                                    "unexpected or of incorrect size.");
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
   pp_in = cs_io_initialize(mr->filename[file_id],
                            "Face-based mesh definition, R0",
                            CS_IO_MODE_READ,

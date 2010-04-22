@@ -33,6 +33,20 @@ saved_LDFLAGS="$LDFLAGS"
 saved_LIBS="$LIBS"
 
 cs_have_mpi=no
+cs_have_mpi_io=no
+cs_have_mpi_one_sided=no
+
+AC_ARG_ENABLE(mpi-io,
+  [AS_HELP_STRING([--disable-mpi-io], [do not use MPI I/O when available])],
+  [
+    case "${enableval}" in
+      yes) mpi_io=true ;;
+      no)  mpi_io=false ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-mpi-io]) ;;
+    esac
+  ],
+  [ mpi_io=true ]
+)
 
 AC_ARG_WITH(mpi,
             [AS_HELP_STRING([--with-mpi=PATH],
@@ -96,7 +110,7 @@ fi
 # If we do not use an MPI compiler wrapper, we must add compilation
 # and link flags; we try to detect the correct flags to add.
 
-if test "x$with_mpi" != "xno" -a "x$cs_have_mpi" = "xno" ; then
+if test "x$with_mpi" != "xno" ; then
 
   # try several tests for MPI
 
@@ -196,6 +210,21 @@ if test "x$with_mpi" != "xno" -a "x$cs_have_mpi" = "xno" ; then
     fi
     MPI_LIBS=""
   else
+    # Try to detect some MPI 2 features
+    if test "x$mpi_io" = "xtrue"; then
+      AC_MSG_CHECKING([for MPI I/O])
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                     [[ MPI_File_close((void *)0); ]])],
+                     [cs_have_mpi_io=yes],
+                     [cs_have_mpi_io=no])
+      AC_MSG_RESULT($cs_have_mpi_io)
+    fi
+    AC_MSG_CHECKING([for MPI2 one-sided communication])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                   [[ MPI_Win_free((void *)0); ]])],
+                   [cs_have_mpi_one_sided=yes],
+                   [cs_have_mpi_one_sided=no])
+    AC_MSG_RESULT($cs_have_mpi_one_sided)
     # Try to detect MPI variants as this may be useful for the run scripts to
     # determine the correct mpi startup syntax (especially when multiple
     # librairies are installed on the same machine).
@@ -271,6 +300,8 @@ if test "x$with_mpi" != "xno" -a "x$cs_have_mpi" = "xno" ; then
 fi
 
 AM_CONDITIONAL(HAVE_MPI, test x$cs_have_mpi = xyes)
+AM_CONDITIONAL(HAVE_MPI_IO, test x$cs_have_mpi_io = xyes)
+AM_CONDITIONAL(HAVE_MPI_ONE_SIDED, test x$cs_have_mpi_one_sided = xyes)
 
 AC_SUBST(MPI_CPPFLAGS)
 AC_SUBST(MPI_LDFLAGS)

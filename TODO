@@ -475,3 +475,22 @@ BONNES PRATIQUES (POUR MEMOIRE)
   preferer si possible double precision trois
                        trois = 3.d0
                        a = trois * b  
+
+======
+ FVM
+======
+
+- Add finer caching control to selector for geometric operands.
+
+- Add support of tensor variables (and tensor splitting when not
+  allowed) in writers. Use _fvm_writer_tensor_order[] and
+  fvm_writer_set_tensor_order to allow for different orderings).
+
+- Add fvm_nodal_simplify_polygons() and fvm_nodal_simplify_polyhedra()
+  functions.
+
+- Add MPI communicator as argument to fvm_io_num_create()
+  function (keeping track of communicator in structure),
+  and replace use of fvm_parall_counter() type functions
+  by similar mpi_io_num functions so as to allow for
+  subcommunicators.
