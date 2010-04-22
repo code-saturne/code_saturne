@@ -29,6 +29,10 @@
 #include "cs_config.h"
 #endif
 
+#if defined(bft_OS_Linux)
+# define _GNU_SOURCE
+#endif
+
 #include "bft_config_defs.h"
 
 /*

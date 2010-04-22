@@ -25,12 +25,12 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#if defined(HAVE_GLIBC_BACKTRACE) && defined(__GNUC__)
-#define _GNU_SOURCE
-#endif
-
 #if defined(HAVE_CONFIG_H)
 #include "cs_config.h"
+#endif
+
+#if defined(HAVE_GLIBC_BACKTRACE) && defined(__GNUC__)
+#define _GNU_SOURCE
 #endif
 
 #include "bft_config_defs.h"

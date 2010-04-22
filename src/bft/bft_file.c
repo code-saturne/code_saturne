@@ -29,8 +29,6 @@
 #include "cs_config.h"
 #endif
 
-#include "bft_config_defs.h"
-
 /*
   Force LARGEFILE_SOURCE if largefiles enabled under 32-bit Linux or Blue Gene
   (otherwise, we may encounter bugs with glibc 2.3 due to fseeko end ftello
@@ -48,6 +46,8 @@
 #  endif
 # endif
 #endif
+
+#include "bft_config_defs.h"
 
 /*-----------------------------------------------------------------------------*/
 

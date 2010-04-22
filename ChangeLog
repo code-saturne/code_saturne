@@ -1,4 +1,12 @@
 * 24/04/2010 - David Monfort <david.monfort@edf.fr>
+  Fix some system definition on GNU Linux systems for better portability.
+  modified routines:
+    src/bft/bft_backtrace.c
+    src/bft/bft_file.c
+    src/bft/bft_mem.c
+    src/bft/bft_mem_usage.c
+
+* 24/04/2010 - David Monfort <david.monfort@edf.fr>
   Migrate the BFT (Basic Functions and Tools) library in the Code_Saturne
   directory, from rev 184.
   added scritps:
