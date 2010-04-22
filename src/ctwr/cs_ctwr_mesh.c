@@ -68,10 +68,17 @@
 #include <fvm_nodal_project.h>
 
 /*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_locator.h>
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_coupling.h"
 #include "cs_ctwr.h"
 #include "cs_ctwr_air_props.h"
 #include "cs_ctwr_halo.h"
@@ -483,7 +490,7 @@ _search_height(cs_ctwr_zone_t   *ct,
 
   double matrice[6] = {0., 0., 0., 0., 0., 0. };
 
-  fvm_locator_t   *locator = NULL;
+  ple_locator_t   *locator = NULL;
 
   nb = (cs_int_t) fvm_nodal_get_n_entities(ct->face_sup_mesh, 0);
   BFT_MALLOC(lst_xyz_sup, nb*3, fvm_coord_t);
@@ -540,26 +547,29 @@ _search_height(cs_ctwr_zone_t   *ct,
   /* Create locator on the proj surf  */
 
 #if defined(FVM_HAVE_MPI)
-  locator = fvm_locator_create(tolerance,
+  locator = ple_locator_create(tolerance,
                                cs_glob_mpi_comm,
                                cs_glob_n_ranks,
                                0);
 #else
-  locator = fvm_locator_create(tolerance);
+  locator = ple_locator_create(tolerance);
 #endif
 
   nb = (cs_int_t) fvm_nodal_get_n_entities(fs_tmp_mesh, 0);
 
 
-  fvm_locator_set_nodal(locator,
-                        fi_tmp_mesh,
-                        0,
-                        2,
-                        nb,
-                        NULL,
-                        lst_xyz_fs);
+  ple_locator_set_mesh(locator,
+                       fi_tmp_mesh,
+                       2,
+                       nb,
+                       NULL,
+                       lst_xyz_fs,
+                       NULL,
+                       cs_coupling_mesh_extents,
+                       cs_coupling_point_in_mesh,
+                       NULL);
 
-  nb_dist = fvm_locator_get_n_dist_points(locator);
+  nb_dist = ple_locator_get_n_dist_points(locator);
 
   /* Construction de la connectivite Face->sommet du projete  */
 
@@ -569,8 +579,8 @@ _search_height(cs_ctwr_zone_t   *ct,
                                 &(faces_vtx_idx),
                                 &(faces_vtx_lst));
 
-  location_fac = fvm_locator_get_dist_locations(locator);
-  lst_xyz_dist = fvm_locator_get_dist_coords(  locator);
+  location_fac = ple_locator_get_dist_locations(locator);
+  lst_xyz_dist = ple_locator_get_dist_coords(  locator);
 
   for (i = 0; i < nb_dist; i++) {
 
@@ -662,7 +672,7 @@ _search_height(cs_ctwr_zone_t   *ct,
   }
 
 
-  fvm_locator_exchange_point_var(locator,
+  ple_locator_exchange_point_var(locator,
                                  hmin_dist, hmin, NULL, sizeof(cs_real_t),1,0);
 
   for (i = 0; i < nb; i++) {
@@ -682,7 +692,7 @@ _search_height(cs_ctwr_zone_t   *ct,
    BFT_FREE(lst_xyz_fs);
    BFT_FREE(hmin_dist);
 
-   locator = fvm_locator_destroy(locator);
+   locator = ple_locator_destroy(locator);
    fs_tmp_mesh = fvm_nodal_destroy(fs_tmp_mesh);
    fi_tmp_mesh = fvm_nodal_destroy(fi_tmp_mesh);
 }
@@ -1209,48 +1219,54 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     /* Create locator for interpolate */
 
-#if defined(FVM_HAVE_MPI)
-    ct->locat_water_air = fvm_locator_create(tolerance,
+#if defined(PLE_HAVE_MPI)
+    ct->locat_water_air = ple_locator_create(tolerance,
                                              cs_glob_mpi_comm,
                                              cs_glob_n_ranks,
                                              0);
 #else
-    ct->locat_water_air = fvm_locator_create(tolerance);
+    ct->locat_water_air = ple_locator_create(tolerance);
 #endif
 
     BFT_MALLOC(lst_xyz_cel, ct->nbevct*3, fvm_coord_t);
 
     fvm_nodal_get_element_centers(ct->cell_mesh, FVM_INTERLACE, 3, lst_xyz_cel);
 
-    fvm_locator_set_nodal(ct->locat_water_air,
-                          ct->water_mesh,
-                          0,
-                          3,
-                          ct->nbevct,
-                          NULL,
-                          lst_xyz_cel);
+    ple_locator_set_mesh(ct->locat_water_air,
+                         ct->water_mesh,
+                         3,
+                         ct->nbevct,
+                         NULL,
+                         lst_xyz_cel,
+                         NULL,
+                         cs_coupling_mesh_extents,
+                         cs_coupling_point_in_mesh,
+                         NULL);
 
 
-#if defined(FVM_HAVE_MPI)
-    ct->locat_air_water = fvm_locator_create(tolerance,
+#if defined(PLE_HAVE_MPI)
+    ct->locat_air_water = ple_locator_create(tolerance,
                                              cs_glob_mpi_comm,
                                              cs_glob_n_ranks,
                                              0);
 #else
-    ct->locat_air_water = fvm_locator_create(tolerance);
+    ct->locat_air_water = ple_locator_create(tolerance);
 #endif
 
     BFT_MALLOC(lst_xyz, ct->nnpsct*ct->nelect*3, fvm_coord_t);
 
     fvm_nodal_get_element_centers(ct->water_mesh, FVM_INTERLACE, 3, lst_xyz);
 
-    fvm_locator_set_nodal(ct->locat_air_water,
-                          ct->cell_mesh,
-                          1,
-                          3,
-                          ct->nnpsct*ct->nelect,
-                          NULL,
-                          lst_xyz);
+    ple_locator_set_mesh(ct->locat_air_water,
+                         ct->cell_mesh,
+                         3,
+                         ct->nnpsct*ct->nelect,
+                         NULL,
+                         lst_xyz,
+                         NULL,
+                         cs_coupling_mesh_extents,
+                         cs_coupling_point_in_mesh_p,
+                         NULL);
 
     BFT_FREE(mesh_name);
     BFT_FREE(export_name);
@@ -1319,7 +1335,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     ct = cs_glob_ct_tab[ict];
     /* Liste des voisins eau des cellules air */
-    nb = (int) fvm_locator_get_n_dist_points(ct->locat_air_water);
+    nb = (int) ple_locator_get_n_dist_points(ct->locat_air_water);
     BFT_MALLOC(ct->voiseau,(nb * cs_ctwr_nmaxvoi), cs_int_t);
     /* Coefficients d interpolation eau pour l air*/
     BFT_MALLOC(ct->coefeau, (nb * cs_ctwr_nmaxvoi), cs_real_t);
@@ -1333,7 +1349,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
       ct->voiseau[iaux] = -1;
     }
 
-    nb = (int) fvm_locator_get_n_dist_points(ct->locat_water_air);
+    nb = (int) ple_locator_get_n_dist_points(ct->locat_water_air);
 
     BFT_MALLOC(ct->voisair,(nb * cs_ctwr_nmaxvoi), cs_int_t);
     /* Positions dans la liste voisins air */
@@ -1422,13 +1438,13 @@ void cs_ctwr_adeau
 
     /* Copy element centers of the water mesh to an array.*/
 
-    nb_node_water = (int) fvm_locator_get_n_dist_points(ct->locat_air_water);
+    nb_node_water = (int) ple_locator_get_n_dist_points(ct->locat_air_water);
 
     /* */
-    location_cel = fvm_locator_get_dist_locations(ct->locat_air_water);
+    location_cel = ple_locator_get_dist_locations(ct->locat_air_water);
 
     /* */
-    lst_xyz_water   = fvm_locator_get_dist_coords(ct->locat_air_water);
+    lst_xyz_water   = ple_locator_get_dist_coords(ct->locat_air_water);
 
     BFT_MALLOC(lst_xyz_cel, ct->nbevct*3, fvm_coord_t);
     fvm_nodal_get_element_centers(ct->cell_mesh, FVM_INTERLACE, 3, lst_xyz_cel);
@@ -1757,11 +1773,11 @@ void cs_ctwr_adair (void)
     /* Copy element centers of the water mesh to an array.*/
 
 
-    nb_air_node = (int)fvm_locator_get_n_dist_points(ct->locat_water_air);
+    nb_air_node = (int)ple_locator_get_n_dist_points(ct->locat_water_air);
 
-    lst_xyz_cel = fvm_locator_get_dist_coords(ct->locat_water_air);
+    lst_xyz_cel = ple_locator_get_dist_coords(ct->locat_water_air);
 
-    location_cel = fvm_locator_get_dist_locations(ct->locat_water_air);
+    location_cel = ple_locator_get_dist_locations(ct->locat_water_air);
 
 
     BFT_MALLOC(lst_xyz_water, (3*ct->nelect*ct->nnpsct), fvm_coord_t);
@@ -2171,25 +2187,28 @@ cs_ctwr_stacking(void)
           lst_xyz[3*i + 2] -= tmp * gravite[2];
         }
 
-        BFT_REALLOC(ct->locat_cell_ct_upwind, nb_ct, fvm_locator_t *);
+        BFT_REALLOC(ct->locat_cell_ct_upwind, nb_ct, ple_locator_t *);
 
-#if defined(FVM_HAVE_MPI)
+#if defined(PLE_HAVE_MPI)
         ct->locat_cell_ct_upwind[nb_ct-1] =
-          fvm_locator_create(tolerance,
+          ple_locator_create(tolerance,
                              cs_glob_mpi_comm,
                              cs_glob_n_ranks,
                              0);
 #else
-        ct->locat_cell_ct_upwind[nb_ct-1] = fvm_locator_create(tolerance);
+        ct->locat_cell_ct_upwind[nb_ct-1] = ple_locator_create(tolerance);
 #endif
 
-        fvm_locator_set_nodal(ct->locat_cell_ct_upwind[nb_ct-1],
-                              ct_upw->water_mesh,
-                              0,
-                              3,
-                              ct_upw->nbfac_ict+ct_upw->nbfbr_ict,
-                              NULL,
-                              lst_xyz);
+        ple_locator_set_mesh(ct->locat_cell_ct_upwind[nb_ct-1],
+                             ct_upw->water_mesh,
+                             3,
+                             ct_upw->nbfac_ict+ct_upw->nbfbr_ict,
+                             NULL,
+                             lst_xyz,
+                             NULL,
+                             cs_coupling_mesh_extents,
+                             cs_coupling_point_in_mesh,
+                             NULL);
         BFT_FREE(lst_xyz);
 
       }

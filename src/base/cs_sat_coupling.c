@@ -56,10 +56,15 @@
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
-#include <fvm_coupling.h>
-#include <fvm_locator.h>
 #include <fvm_nodal.h>
 #include <fvm_writer.h>
+
+/*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
+#include <ple_locator.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -112,8 +117,8 @@ struct _cs_sat_coupling_t {
   char                    *face_sup_sel; /* Face selection criteria */
   char                    *cell_sup_sel; /* Face selection criteria */
 
-  fvm_locator_t   *localis_cel;  /* Locator associated with cells */
-  fvm_locator_t   *localis_fbr;  /* Locator associated with boundary faces */
+  ple_locator_t   *localis_cel;  /* Locator associated with cells */
+  ple_locator_t   *localis_fbr;  /* Locator associated with boundary faces */
 
   cs_int_t         nbr_cel_sup;  /* Number of associated cell locations */
   cs_int_t         nbr_fbr_sup;  /* Number of associated face locations */
@@ -267,7 +272,7 @@ _init_comm(cs_sat_coupling_t *sat_coupling,
              coupling_id);
   bft_printf_flush();
 
-  fvm_coupling_mpi_intracomm_create(cs_glob_mpi_comm,
+  ple_coupling_mpi_intracomm_create(cs_glob_mpi_comm,
                                     sat_coupling->sat_root_rank,
                                     &(sat_coupling->comm),
                                     local_range,
@@ -337,7 +342,7 @@ _print_all_mpi_sat(void)
 {
   int i;
 
-  const fvm_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
+  const ple_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
   const char empty_string[] = "";
 
   /* Loop on defined Code_Saturne instances */
@@ -351,8 +356,8 @@ _print_all_mpi_sat(void)
       const char *local_name = empty_string;
       const char *distant_name = empty_string;
 
-      const fvm_coupling_mpi_world_info_t
-        ai = fvm_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
+      const ple_coupling_mpi_world_info_t
+        ai = ple_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
 
       if (scb->app_name != NULL)
         local_name = scb->app_name;
@@ -392,18 +397,18 @@ _init_all_mpi_sat(void)
   int n_sat_apps = 0;
   int sat_app_id = -1;
 
-  const fvm_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
+  const ple_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
 
   if (mpi_apps == NULL)
     return;
 
-  n_apps = fvm_coupling_mpi_world_n_apps(mpi_apps);
+  n_apps = ple_coupling_mpi_world_n_apps(mpi_apps);
 
   /* First pass to count available Code_Saturne couplings */
 
   for (i = 0; i < n_apps; i++) {
-    const fvm_coupling_mpi_world_info_t
-      ai = fvm_coupling_mpi_world_get_info(mpi_apps, i);
+    const ple_coupling_mpi_world_info_t
+      ai = ple_coupling_mpi_world_get_info(mpi_apps, i);
     if (strncmp(ai.app_type, "Code_Saturne", 12) == 0) {
       n_sat_apps += 1;
       sat_app_id = i;
@@ -414,11 +419,11 @@ _init_all_mpi_sat(void)
 
   if (n_sat_apps == 2 && _sat_coupling_builder_size == 1) {
 
-    const int local_app_id = fvm_coupling_mpi_world_get_app_id(mpi_apps);
+    const int local_app_id = ple_coupling_mpi_world_get_app_id(mpi_apps);
 
     for (i = 0; i < n_apps; i++) {
-      const fvm_coupling_mpi_world_info_t
-        ai = fvm_coupling_mpi_world_get_info(mpi_apps, i);
+      const ple_coupling_mpi_world_info_t
+        ai = ple_coupling_mpi_world_get_info(mpi_apps, i);
       if (   strncmp(ai.app_type, "Code_Saturne", 12) == 0
           && ai.app_num != local_app_id) {
         _sat_coupling_builder->match_id = i;
@@ -434,7 +439,7 @@ _init_all_mpi_sat(void)
   else {
 
     int j;
-    fvm_coupling_mpi_world_info_t ai;
+    ple_coupling_mpi_world_info_t ai;
 
     int *sat_appinfo = NULL;
 
@@ -446,7 +451,7 @@ _init_all_mpi_sat(void)
     n_sat_apps = 0;
 
     for (i = 0; i < n_apps; i++) {
-      ai = fvm_coupling_mpi_world_get_info(mpi_apps, i);
+      ai = ple_coupling_mpi_world_get_info(mpi_apps, i);
       if (strncmp(ai.app_type, "Code_Saturne", 12) == 0) {
         sat_appinfo[n_sat_apps*2] = 0;
         sat_appinfo[n_sat_apps*2 + 1] = i;
@@ -469,7 +474,7 @@ _init_all_mpi_sat(void)
           if (sat_appinfo[j*2] != 0) /* Consider only unmatched applications */
             continue;
 
-          ai = fvm_coupling_mpi_world_get_info(mpi_apps, sat_appinfo[j*2 + 1]);
+          ai = ple_coupling_mpi_world_get_info(mpi_apps, sat_appinfo[j*2 + 1]);
           if (ai.app_name != NULL) {
             if (strcmp(ai.app_name, scb->app_name) == 0) {
               scb->match_id = sat_appinfo[j*2 + 1];
@@ -491,7 +496,7 @@ _init_all_mpi_sat(void)
           if (sat_appinfo[j*2] != 0) /* Consider only unmatched applications */
             continue;
 
-          ai = fvm_coupling_mpi_world_get_info(mpi_apps, sat_appinfo[j*2 + 1]);
+          ai = ple_coupling_mpi_world_get_info(mpi_apps, sat_appinfo[j*2 + 1]);
           if (ai.app_num == scb->app_num) {
             scb->match_id = sat_appinfo[j*2 + 1];
             sat_appinfo[j*2] = i;
@@ -519,8 +524,8 @@ _init_all_mpi_sat(void)
     _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
 
     if (scb->match_id > -1) {
-      const fvm_coupling_mpi_world_info_t
-        ai = fvm_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
+      const ple_coupling_mpi_world_info_t
+        ai = ple_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
 
       if (strncmp(ai.app_type, "Code_Saturne", 12) == 0)
         _sat_add_mpi(i, ai.root_rank, ai.n_ranks);
@@ -548,8 +553,8 @@ _init_all_mpi_sat(void)
 static cs_sat_coupling_t *
 _sat_coupling_destroy(cs_sat_coupling_t  *couplage)
 {
-  fvm_locator_destroy(couplage->localis_cel);
-  fvm_locator_destroy(couplage->localis_fbr);
+  ple_locator_destroy(couplage->localis_cel);
+  ple_locator_destroy(couplage->localis_fbr);
 
   if (couplage->cells_sup != NULL)
     fvm_nodal_destroy(couplage->cells_sup);
@@ -631,12 +636,12 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
   /* Interpolation structure */
 
-  n_fbr_loc  = fvm_locator_get_n_interior(couplage->localis_fbr);
-  lstfbr     = fvm_locator_get_interior_list(couplage->localis_fbr);
+  n_fbr_loc  = ple_locator_get_n_interior(couplage->localis_fbr);
+  lstfbr     = ple_locator_get_interior_list(couplage->localis_fbr);
 
-  n_fbr_dist    = fvm_locator_get_n_dist_points(couplage->localis_fbr);
-  element       = fvm_locator_get_dist_locations(couplage->localis_fbr);
-  distant_coord = fvm_locator_get_dist_coords(couplage->localis_fbr);
+  n_fbr_dist    = ple_locator_get_n_dist_points(couplage->localis_fbr);
+  element       = ple_locator_get_dist_locations(couplage->localis_fbr);
+  distant_coord = ple_locator_get_dist_coords(couplage->localis_fbr);
 
 
   /* Calculation of the distance DJJPB defining the distance from */
@@ -664,7 +669,7 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
   BFT_MALLOC(distant_surf, 3*n_fbr_dist, cs_real_t);
 
-  fvm_locator_exchange_point_var(couplage->localis_fbr,
+  ple_locator_exchange_point_var(couplage->localis_fbr,
                                  distant_surf,
                                  local_surf,
                                  NULL,
@@ -724,7 +729,7 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
   BFT_MALLOC(local_xyzcen, 3*n_fbr_loc, cs_real_t);
 
-  fvm_locator_exchange_point_var(couplage->localis_fbr,
+  ple_locator_exchange_point_var(couplage->localis_fbr,
                                  distant_xyzcen,
                                  local_xyzcen,
                                  NULL,
@@ -776,7 +781,7 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
   reverse = 1;
 
-  fvm_locator_exchange_point_var(couplage->localis_fbr,
+  ple_locator_exchange_point_var(couplage->localis_fbr,
                                  couplage->distant_pond_fbr,
                                  couplage->local_pond_fbr,
                                  NULL,
@@ -832,7 +837,7 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
   reverse = 1;
 
-  fvm_locator_exchange_point_var(couplage->localis_fbr,
+  ple_locator_exchange_point_var(couplage->localis_fbr,
                                  couplage->distant_of,
                                  couplage->local_of,
                                  NULL,
@@ -1079,22 +1084,22 @@ void CS_PROCF (defloc, DEFLOC)
 
   /* Build and initialize associated locator */
 
-#if defined(FVM_HAVE_MPI)
+#if defined(PLE_HAVE_MPI)
 
-  coupl->localis_cel = fvm_locator_create(tolerance,
+  coupl->localis_cel = ple_locator_create(tolerance,
                                           coupl->comm,
                                           coupl->n_sat_ranks,
                                           coupl->sat_root_rank);
 
-  coupl->localis_fbr = fvm_locator_create(tolerance,
+  coupl->localis_fbr = ple_locator_create(tolerance,
                                           coupl->comm,
                                           coupl->n_sat_ranks,
                                           coupl->sat_root_rank);
 
 #else
 
-  coupl->localis_cel = fvm_locator_create(tolerance);
-  coupl->localis_fbr = fvm_locator_create(tolerance);
+  coupl->localis_cel = ple_locator_create(tolerance);
+  coupl->localis_fbr = ple_locator_create(tolerance);
 
 #endif
 
@@ -1108,13 +1113,16 @@ void CS_PROCF (defloc, DEFLOC)
                               &nbr_cel_cpl,
                               elt_list);
 
-    fvm_locator_set_nodal(coupl->localis_cel,
-                          coupl->cells_sup,
-                          1,
-                          3,
-                          nbr_cel_cpl,
-                          elt_list,
-                          mesh_quantities->cell_cen);
+    ple_locator_set_mesh(coupl->localis_cel,
+                         coupl->cells_sup,
+                         3,
+                         nbr_cel_cpl,
+                         elt_list,
+                         mesh_quantities->cell_cen,
+                         NULL,
+                         cs_coupling_mesh_extents,
+                         cs_coupling_point_in_mesh_p,
+                         NULL);
 
     BFT_FREE(elt_list);
 
@@ -1134,13 +1142,16 @@ void CS_PROCF (defloc, DEFLOC)
                                 &nbr_fbr_cpl,
                                 elt_list);
 
-    fvm_locator_set_nodal(coupl->localis_fbr,
-                          support_fbr,
-                          1,
-                          3,
-                          nbr_fbr_cpl,
-                          elt_list,
-                          mesh_quantities->b_face_cog);
+    ple_locator_set_mesh(coupl->localis_fbr,
+                         support_fbr,
+                         3,
+                         nbr_fbr_cpl,
+                         elt_list,
+                         mesh_quantities->b_face_cog,
+                         NULL,
+                         cs_coupling_mesh_extents,
+                         cs_coupling_point_in_mesh_p,
+                         NULL);
 
     BFT_FREE(elt_list);
 
@@ -1177,8 +1188,8 @@ void CS_PROCF (defloc, DEFLOC)
     fvm_nodal_reduce(coupl->faces_sup, 1);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  fvm_locator_dump(coupl->localis_cel);
-  fvm_locator_dump(coupl->localis_fbr);
+  ple_locator_dump(coupl->localis_cel);
+  ple_locator_dump(coupl->localis_fbr);
 #endif
 }
 
@@ -1234,13 +1245,13 @@ void CS_PROCF (nbecpl, NBECPL)
   *nfbncp = 0;
 
   if (coupl->localis_cel != NULL) {
-    *ncecpl = fvm_locator_get_n_interior(coupl->localis_cel);
-    *ncencp = fvm_locator_get_n_exterior(coupl->localis_cel);
+    *ncecpl = ple_locator_get_n_interior(coupl->localis_cel);
+    *ncencp = ple_locator_get_n_exterior(coupl->localis_cel);
   }
 
   if (coupl->localis_fbr != NULL) {
-    *nfbcpl = fvm_locator_get_n_interior(coupl->localis_fbr);
-    *nfbncp = fvm_locator_get_n_exterior(coupl->localis_fbr);
+    *nfbcpl = ple_locator_get_n_interior(coupl->localis_fbr);
+    *nfbncp = ple_locator_get_n_exterior(coupl->localis_fbr);
   }
 
 }
@@ -1292,10 +1303,10 @@ void CS_PROCF (lelcpl, LELCPL)
     coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   if (coupl->localis_cel != NULL)
-    _ncecpl = fvm_locator_get_n_interior(coupl->localis_cel);
+    _ncecpl = ple_locator_get_n_interior(coupl->localis_cel);
 
   if (coupl->localis_fbr != NULL)
-    _nfbcpl = fvm_locator_get_n_interior(coupl->localis_fbr);
+    _nfbcpl = ple_locator_get_n_interior(coupl->localis_fbr);
 
   if (*ncecpl != _ncecpl || *nfbcpl != _nfbcpl)
     bft_error(__FILE__, __LINE__, 0,
@@ -1308,13 +1319,13 @@ void CS_PROCF (lelcpl, LELCPL)
   /* Copy lists (would be useless with a pure C API) */
 
   if (_ncecpl > 0) {
-    lst = fvm_locator_get_interior_list(coupl->localis_cel);
+    lst = ple_locator_get_interior_list(coupl->localis_cel);
     for (ind = 0 ; ind < _ncecpl ; ind++)
       lcecpl[ind] = lst[ind];
   }
 
   if (_nfbcpl > 0) {
-    lst = fvm_locator_get_interior_list(coupl->localis_fbr);
+    lst = ple_locator_get_interior_list(coupl->localis_fbr);
     for (ind = 0 ; ind < _nfbcpl ; ind++)
       lfbcpl[ind] = lst[ind];
   }
@@ -1367,10 +1378,10 @@ void CS_PROCF (lencpl, LENCPL)
     coupl = cs_glob_sat_couplings[*numcpl - 1];
 
   if (coupl->localis_cel != NULL)
-    _ncencp = fvm_locator_get_n_exterior(coupl->localis_cel);
+    _ncencp = ple_locator_get_n_exterior(coupl->localis_cel);
 
   if (coupl->localis_fbr != NULL)
-    _nfbncp = fvm_locator_get_n_exterior(coupl->localis_fbr);
+    _nfbncp = ple_locator_get_n_exterior(coupl->localis_fbr);
 
   if (*ncencp != _ncencp || *nfbncp != _nfbncp)
     bft_error(__FILE__, __LINE__, 0,
@@ -1383,13 +1394,13 @@ void CS_PROCF (lencpl, LENCPL)
   /* Copy lists (would be useless with a pure C API) */
 
   if (_ncencp > 0) {
-    lst = fvm_locator_get_exterior_list(coupl->localis_cel);
+    lst = ple_locator_get_exterior_list(coupl->localis_cel);
     for (ind = 0 ; ind < _ncencp ; ind++)
       lcencp[ind] = lst[ind];
   }
 
   if (_nfbncp > 0) {
-    lst = fvm_locator_get_exterior_list(coupl->localis_fbr);
+    lst = ple_locator_get_exterior_list(coupl->localis_fbr);
     for (ind = 0 ; ind < _nfbncp ; ind++)
       lfbncp[ind] = lst[ind];
   }
@@ -1433,10 +1444,10 @@ void CS_PROCF (npdcpl, NPDCPL)
   *nfbdis = 0;
 
   if (coupl->localis_cel != NULL)
-    *ncedis = fvm_locator_get_n_dist_points(coupl->localis_cel);
+    *ncedis = ple_locator_get_n_dist_points(coupl->localis_cel);
 
   if (coupl->localis_fbr != NULL)
-    *nfbdis = fvm_locator_get_n_dist_points(coupl->localis_fbr);
+    *nfbdis = ple_locator_get_n_dist_points(coupl->localis_fbr);
 
 }
 
@@ -1486,7 +1497,7 @@ void CS_PROCF (coocpl, COOCPL)
 
   cs_int_t  n_pts_dist = 0;
   cs_sat_coupling_t  *coupl = NULL;
-  fvm_locator_t  *localis = NULL;
+  ple_locator_t  *localis = NULL;
 
   /* Initializations and verifications */
 
@@ -1512,7 +1523,7 @@ void CS_PROCF (coocpl, COOCPL)
   }
 
   if (localis != NULL)
-    n_pts_dist = fvm_locator_get_n_dist_points(localis);
+    n_pts_dist = ple_locator_get_n_dist_points(localis);
 
   if (*nbrpts != n_pts_dist)
     bft_error(__FILE__, __LINE__, 0,
@@ -1525,15 +1536,15 @@ void CS_PROCF (coocpl, COOCPL)
 
   if (localis != NULL) {
 
-    n_pts_dist = fvm_locator_get_n_dist_points(localis);
+    n_pts_dist = ple_locator_get_n_dist_points(localis);
 
     if (n_pts_dist > 0) {
 
       const fvm_lnum_t   *element;
       const fvm_coord_t  *coord;
 
-      element = fvm_locator_get_dist_locations(localis);
-      coord   = fvm_locator_get_dist_coords(localis);
+      element = ple_locator_get_dist_locations(localis);
+      coord   = ple_locator_get_dist_coords(localis);
 
       for (ind = 0 ; ind < n_pts_dist ; ind++) {
         locpts[ind] = element[ind];
@@ -1584,7 +1595,7 @@ void CS_PROCF (pndcpl, PNDCPL)
   cs_int_t        ind;
   cs_int_t        nfbcpl = 0;
   cs_sat_coupling_t  *coupl = NULL;
-  fvm_locator_t  *localis = NULL;
+  ple_locator_t  *localis = NULL;
 
   /* Initializations and verifications */
 
@@ -1604,7 +1615,7 @@ void CS_PROCF (pndcpl, PNDCPL)
 
 
   if (localis != NULL)
-    nfbcpl = fvm_locator_get_n_interior(localis);
+    nfbcpl = ple_locator_get_n_interior(localis);
 
   if (*nbrpts != nfbcpl)
     bft_error(__FILE__, __LINE__, 0,
@@ -1663,7 +1674,7 @@ void CS_PROCF (varcpl, VARCPL)
   cs_real_t  *val_dist = NULL;
   cs_real_t  *val_loc = NULL;
   cs_sat_coupling_t  *coupl = NULL;
-  fvm_locator_t  *localis = NULL;
+  ple_locator_t  *localis = NULL;
 
   /* Initializations and verifications */
 
@@ -1680,8 +1691,8 @@ void CS_PROCF (varcpl, VARCPL)
     localis = coupl->localis_fbr;
 
   if (localis != NULL) {
-    n_val_dist_ref = fvm_locator_get_n_dist_points(localis);
-    n_val_loc_ref  = fvm_locator_get_n_interior(localis);
+    n_val_dist_ref = ple_locator_get_n_dist_points(localis);
+    n_val_loc_ref  = ple_locator_get_n_interior(localis);
   }
 
   if (*nbrdis > 0 && *nbrdis != n_val_dist_ref)
@@ -1707,7 +1718,7 @@ void CS_PROCF (varcpl, VARCPL)
     if (*nbrloc > 0)
       val_loc = varloc;
 
-    fvm_locator_exchange_point_var(localis,
+    ple_locator_exchange_point_var(localis,
                                    val_dist,
                                    val_loc,
                                    NULL,

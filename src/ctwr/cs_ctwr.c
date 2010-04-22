@@ -62,8 +62,13 @@
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
-#include <fvm_locator.h>
 #include <fvm_nodal_extract.h>
+
+/*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_locator.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -1218,7 +1223,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
     /*--------------------------------------------*
      * interpolation  air->eau                    *
      *--------------------------------------------*/
-    nb_dist_water = (int) fvm_locator_get_n_dist_points(ct->locat_air_water);
+    nb_dist_water = (int) ple_locator_get_n_dist_points(ct->locat_air_water);
 
     BFT_MALLOC( tai_inter  , nb_dist_water, cs_real_t);
     BFT_MALLOC( xai_inter  , nb_dist_water, cs_real_t);
@@ -1250,17 +1255,17 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
     BFT_MALLOC( vy   , ct->nnpsct*ct->nelect, cs_real_t );
     BFT_MALLOC( vz   , ct->nnpsct*ct->nelect, cs_real_t );
 
-    fvm_locator_exchange_point_var(ct->locat_air_water,
+    ple_locator_exchange_point_var(ct->locat_air_water,
                                    tai_inter, tai, NULL, sizeof(cs_real_t),1,0);
-    fvm_locator_exchange_point_var(ct->locat_air_water,
+    ple_locator_exchange_point_var(ct->locat_air_water,
                                    xai_inter, xai, NULL, sizeof(cs_real_t),1,0);
-    fvm_locator_exchange_point_var(ct->locat_air_water,
+    ple_locator_exchange_point_var(ct->locat_air_water,
                                    rhoai_inter,rhoai, NULL, sizeof(cs_real_t),1,0);
-    fvm_locator_exchange_point_var(ct->locat_air_water,
+    ple_locator_exchange_point_var(ct->locat_air_water,
                                    vx_inter,vx, NULL, sizeof(cs_real_t),1,0);
-    fvm_locator_exchange_point_var(ct->locat_air_water,
+    ple_locator_exchange_point_var(ct->locat_air_water,
                                    vy_inter,vy, NULL, sizeof(cs_real_t),1,0);
-    fvm_locator_exchange_point_var(ct->locat_air_water,
+    ple_locator_exchange_point_var(ct->locat_air_water,
                                    vz_inter,vz, NULL, sizeof(cs_real_t),1,0);
 
     BFT_FREE( tai_inter  );
@@ -1289,7 +1294,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
         ct_upw = cs_glob_ct_tab[ cs_chain_ct[j]];
 
         nb_dist_upw =
-              (int)fvm_locator_get_n_dist_points(ct->locat_cell_ct_upwind[ind]);
+              (int)ple_locator_get_n_dist_points(ct->locat_cell_ct_upwind[ind]);
 
         BFT_MALLOC( teau_upw_send  , nb_dist_upw, cs_real_t);
         BFT_MALLOC( fem_upw_send  , nb_dist_upw, cs_real_t);
@@ -1298,7 +1303,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
         fvm_nodal_get_parent_num(ct_upw->face_inf_mesh,
                                       2,lst_par_fac_inf_ct_upw);
         locat_cel_upw =
-                  fvm_locator_get_dist_locations(ct->locat_cell_ct_upwind[ind]);
+                  ple_locator_get_dist_locations(ct->locat_cell_ct_upwind[ind]);
 
         for (i=0; i < nb_dist_upw; i++){
           teau_upw_send[i] =  ct_upw->teau[(cs_int_t) locat_cel_upw[i]-1];
@@ -1310,13 +1315,13 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
         BFT_MALLOC( fem_upw_rec,
                    (ct_upw->nbfac_ict+ct_upw->nbfbr_ict), cs_real_t );
 
-        fvm_locator_exchange_point_var(ct->locat_cell_ct_upwind[ind],
+        ple_locator_exchange_point_var(ct->locat_cell_ct_upwind[ind],
                                        teau_upw_send,
                                        teau_upw_rec,
                                        NULL,
                                        sizeof(cs_real_t),
                                        1,0);
-        fvm_locator_exchange_point_var(ct->locat_cell_ct_upwind[ind],
+        ple_locator_exchange_point_var(ct->locat_cell_ct_upwind[ind],
                                        fem_upw_send,
                                        fem_upw_rec,
                                        NULL,
@@ -1739,7 +1744,7 @@ void cs_ctwr_aetssc
       /*--------------------------------------------*
       * interpolation  air->eau                   *
       *--------------------------------------------*/
-      nb_dist_water = (int) fvm_locator_get_n_dist_points(ct->locat_air_water);
+      nb_dist_water = (int) ple_locator_get_n_dist_points(ct->locat_air_water);
 
       BFT_MALLOC( tai_inter  , nb_dist_water, cs_real_t);
       BFT_MALLOC( xai_inter  , nb_dist_water, cs_real_t);
@@ -1771,17 +1776,17 @@ void cs_ctwr_aetssc
       BFT_MALLOC( vy   , ct->nnpsct*ct->nelect, cs_real_t );
       BFT_MALLOC( vz   , ct->nnpsct*ct->nelect, cs_real_t );
 
-      fvm_locator_exchange_point_var(ct->locat_air_water,
+      ple_locator_exchange_point_var(ct->locat_air_water,
                                    tai_inter, tai, NULL, sizeof(cs_real_t),1,0);
-      fvm_locator_exchange_point_var(ct->locat_air_water,
+      ple_locator_exchange_point_var(ct->locat_air_water,
                                    xai_inter, xai, NULL, sizeof(cs_real_t),1,0);
-      fvm_locator_exchange_point_var(ct->locat_air_water,
+      ple_locator_exchange_point_var(ct->locat_air_water,
                                    rhoai_inter,rhoai, NULL, sizeof(cs_real_t),1,0);
-      fvm_locator_exchange_point_var(ct->locat_air_water,
+      ple_locator_exchange_point_var(ct->locat_air_water,
                                    vx_inter,vx, NULL, sizeof(cs_real_t),1,0);
-      fvm_locator_exchange_point_var(ct->locat_air_water,
+      ple_locator_exchange_point_var(ct->locat_air_water,
                                    vy_inter,vy, NULL, sizeof(cs_real_t),1,0);
-      fvm_locator_exchange_point_var(ct->locat_air_water,
+      ple_locator_exchange_point_var(ct->locat_air_water,
                                    vz_inter,vz, NULL, sizeof(cs_real_t),1,0);
       /*--------------------------------------------*
       *  end interpolation  air->eau              *
@@ -1878,7 +1883,7 @@ void cs_ctwr_aetssc
     /*--------------------------------------------*
      * interpolation  eau->air                    *
      *--------------------------------------------*/
-    nb_dist_air = (int) fvm_locator_get_n_dist_points(ct->locat_water_air);
+    nb_dist_air = (int) ple_locator_get_n_dist_points(ct->locat_water_air);
 
     BFT_MALLOC( tei_inter   , nb_dist_air, cs_real_t );
     BFT_MALLOC( femei_inter , nb_dist_air, cs_real_t );
@@ -1899,11 +1904,11 @@ void cs_ctwr_aetssc
     BFT_MALLOC( femei , ct->nbevct, cs_real_t );
     BFT_MALLOC( vgin  , ct->nbevct, cs_real_t );
 
-    fvm_locator_exchange_point_var(ct->locat_water_air,
+    ple_locator_exchange_point_var(ct->locat_water_air,
                                    tei_inter,     tei, NULL, sizeof(cs_real_t),1,0);
-    fvm_locator_exchange_point_var(ct->locat_water_air,
+    ple_locator_exchange_point_var(ct->locat_water_air,
                                    femei_inter, femei, NULL, sizeof(cs_real_t),1,0);
-    fvm_locator_exchange_point_var(ct->locat_water_air,
+    ple_locator_exchange_point_var(ct->locat_water_air,
                                    vgin_inter,   vgin, NULL, sizeof(cs_real_t),1,0);
 
 
@@ -2179,7 +2184,7 @@ void cs_ctwr_aetsvi
     /*--------------------------------------------*
      * interpolation  eau->air                    *
      *--------------------------------------------*/
-    nb_dist_air = (int) fvm_locator_get_n_dist_points(ct->locat_water_air);
+    nb_dist_air = (int) ple_locator_get_n_dist_points(ct->locat_water_air);
 
     BFT_MALLOC( femei_inter  , nb_dist_air, cs_real_t);
     BFT_MALLOC( vgin_inter  , nb_dist_air, cs_real_t);
@@ -2199,9 +2204,9 @@ void cs_ctwr_aetsvi
     BFT_MALLOC( femei , ct->nbevct, cs_real_t );
     BFT_MALLOC( vgin , ct->nbevct, cs_real_t );
 
-    fvm_locator_exchange_point_var(ct->locat_water_air,
+    ple_locator_exchange_point_var(ct->locat_water_air,
                                    femei_inter, femei, NULL, sizeof(cs_real_t),1,0);
-    fvm_locator_exchange_point_var(ct->locat_water_air,
+    ple_locator_exchange_point_var(ct->locat_water_air,
                                    vgin_inter, vgin, NULL, sizeof(cs_real_t),1,0);
 
     /*--------------------------------------------*/

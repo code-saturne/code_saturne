@@ -77,6 +77,12 @@
 #include <fvm_parall.h>
 
 /*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_defs.h>
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -573,6 +579,7 @@ _cs_base_mpi_fin(void)
 #endif
 
   bft_error_handler_set(cs_glob_base_err_handler_save);
+  ple_error_handler_set(cs_glob_base_err_handler_save);
 
   if (   cs_glob_mpi_comm != MPI_COMM_NULL
       && cs_glob_mpi_comm != MPI_COMM_WORLD)
@@ -1195,6 +1202,7 @@ cs_base_error_init(void)
 
   cs_glob_base_err_handler_save = bft_error_handler_get();
   bft_error_handler_set(_cs_base_error_handler);
+  ple_error_handler_set(_cs_base_error_handler);
 
   /* Signal handlers */
 
@@ -1232,6 +1240,12 @@ cs_base_mem_init(void)
   /* Set error handler */
 
   bft_mem_error_handler_set(_cs_mem_error_handler);
+
+  /* Set PLE library memory handler */
+
+  ple_mem_functions_set(bft_mem_malloc,
+                        bft_mem_realloc,
+                        bft_mem_free);
 
   /* Memory usage measure initialization */
 
@@ -1670,6 +1684,7 @@ cs_base_bft_printf_set(const char  *log_name,
 
     bft_printf_proxy_set(vprintf);
     bft_printf_flush_proxy_set(_cs_base_bft_printf_flush);
+    ple_printf_function_set(vprintf);
 
     filename[0] = '\0';
 
@@ -1713,6 +1728,7 @@ cs_base_bft_printf_set(const char  *log_name,
   else if (cs_glob_rank_id > 0) {
     bft_printf_proxy_set(_cs_base_bft_printf_null);
     bft_printf_flush_proxy_set(_cs_base_bft_printf_flush_null);
+    ple_printf_function_set(_cs_base_bft_printf_null);
   }
 }
 

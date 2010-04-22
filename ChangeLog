@@ -1,4 +1,37 @@
 * 24/04/2010 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Replace the FVM coupling library by the new PLE one.
+  added script:
+    config/cs_ple.m4
+  modified routines:
+    include/base/cs_coupling.h
+    include/ctwr/cs_ctwr.h
+    libsyrcs/syr_comm.c
+    libsyrcs/syr_comm.h
+    libsyrcs/syr_coupling.c
+    libsyrcs/syr_coupling.h
+    libsyrcs/syr_cs.c
+    libsyrcs/syr_defs.c
+    src/base/cs_base.c
+    src/base/cs_base_fortran.c
+    src/base/cs_coupling.c
+    src/base/cs_sat_coupling.c
+    src/base/cs_syr4_coupling.c
+    src/base/cs_syr_coupling.c
+    src/ctwr/cs_ctwr.c
+    src/ctwr/cs_ctwr_mesh.c
+  modified scripts:
+    bin/cs_config_build.py.in
+    configure.ac
+    config/cs_fvm.m4
+    config/cs_syrthes.m4
+    libsyrcs/Makefile.am
+    Makefile.am
+    src/apps/Makefile.am
+    src/base/Makefile.am
+    src/ctwr/Makefile.am
+
+* 24/04/2010 - David Monfort <david.monfort@edf.fr>
   Remove memory couting from the SYRTHES wrapper.
   modified routines:
     libsyrcs/syr_cs.c

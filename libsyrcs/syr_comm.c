@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -57,12 +57,10 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
+ * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_file.h>
-#include <bft_error.h>
+#include <ple_defs.h>
 
 /*---------------------------------------------------------------------------
  *  Local headers
@@ -146,6 +144,43 @@ static char  syr_glob_comm_err_socket[]
 /*===========================================================================
  * Private function definitions
  *===========================================================================*/
+
+/*--------------------------------------------------------------------------
+ * Convert data from "little-endian" to "big-endian" or the reverse.
+ *
+ * The memory areas pointed to by src and dest should overlap either
+ * exactly or not at all.
+ *--------------------------------------------------------------------------*/
+
+static void
+_swap_endian(void          *dest,
+	     const void    *src,
+	     const size_t   size,
+	     const size_t   ni)
+{
+  size_t   i, ib, shift;
+  unsigned char  tmpswap;
+
+  unsigned char  *pdest = (unsigned char *)dest;
+  const unsigned char  *psrc = (const unsigned char *)src;
+
+  for (i = 0 ; i < ni ; i++) {
+
+    shift = i * size;
+
+    for (ib = 0 ; ib < (size / 2) ; ib++) {
+
+      tmpswap = *(psrc + shift + ib);
+      *(pdest + shift + ib) = *(psrc + shift + (size - 1) - ib);
+      *(pdest + shift + (size - 1) - ib) = tmpswap;
+
+    }
+
+  }
+
+  if (dest != src && size == 1)
+    memcpy(dest, src, ni);
+}
 
 /*--------------------------------------------------------------------------
  * Print "wait on message"
@@ -354,7 +389,7 @@ _comm_mpi_msg_err(const syr_comm_t  *comm,
 
   MPI_Error_string(error, buffer, &buffer_len);
 
-  bft_error(__FILE__, __LINE__, 0,
+  ple_error(__FILE__, __LINE__, 0,
             "Erreur MPI pour la communication : %s (proc %4d)\n"
             "Type d'erreur : %s", comm->name, proc_id + 1, buffer);
 }
@@ -585,7 +620,7 @@ _comm_read_sock(const syr_comm_t  *comm,
     ret = read(comm->socket[proc_id], (void *)(rec + start_id), n_loc);
 
     if (ret < 1)
-      bft_error(__FILE__, __LINE__, errno,
+      ple_error(__FILE__, __LINE__, errno,
                 "Communication %s (proc %d) :\n"
                 "Erreur a la reception via un socket",
                 comm->name, proc_id + 1);
@@ -595,7 +630,7 @@ _comm_read_sock(const syr_comm_t  *comm,
   }
 
   if (comm->swap_endian == 1 && size > 1)
-    bft_file_swap_endian(rec, rec, size, n);
+    _swap_endian(rec, rec, size, n);
 }
 
 /*--------------------------------------------------------------------------
@@ -646,8 +681,8 @@ _comm_write_sock(const syr_comm_t  *comm,
   /* Convert if "little-endian" */
 
   if (comm->swap_endian == 1 && size != 1) {
-    BFT_MALLOC(rec_tmp, n_bytes, char);
-    bft_file_swap_endian(rec_tmp, rec, size, n);
+    PLE_MALLOC(rec_tmp, n_bytes, char);
+    _swap_endian(rec_tmp, rec, size, n);
   }
   else
     rec_tmp = NULL;
@@ -669,7 +704,7 @@ _comm_write_sock(const syr_comm_t  *comm,
                   n_loc);
 
     if (ret < 1)
-      bft_error(__FILE__, __LINE__, errno,
+      ple_error(__FILE__, __LINE__, errno,
                 "Communication %s (proc %d) :\n"
                 "Erreur a l'envoi via un socket",
                 comm->name, proc_id + 1);
@@ -678,7 +713,7 @@ _comm_write_sock(const syr_comm_t  *comm,
   }
 
   if (rec_tmp != NULL)
-    BFT_FREE(rec_tmp);
+    PLE_FREE(rec_tmp);
 }
 
 #endif /* defined(HAVE_SOCKET) */
@@ -696,7 +731,7 @@ _comm_magic_string(syr_comm_t  *comm,
 
   int lng_magic_string = strlen(magic_string);
 
-  BFT_MALLOC(comm_magic_string, lng_magic_string + 1, char);
+  PLE_MALLOC(comm_magic_string, lng_magic_string + 1, char);
 
   /* Write magic string */
   /*--------------------*/
@@ -789,7 +824,7 @@ _comm_magic_string(syr_comm_t  *comm,
   /* If the magic string does not correspond, we have an error */
 
   if (strcmp(comm_magic_string, magic_string) != 0)
-    bft_error(__FILE__, __LINE__, 0,
+    ple_error(__FILE__, __LINE__, 0,
               "Error a la lecture de : \"%s\".\n"
               "La version du format d'interface est incompatible.\n"
               "La chaine magique indique la version du format d'interface :\n"
@@ -797,7 +832,7 @@ _comm_magic_string(syr_comm_t  *comm,
               "chaine magique attendue : \"%s\"",
               comm->name, comm_magic_string, magic_string);
 
-  BFT_FREE(comm_magic_string);
+  PLE_FREE(comm_magic_string);
 }
 
 #if defined(HAVE_MPI)
@@ -817,7 +852,7 @@ _comm_mpi_open(syr_comm_t  *comm,
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
   if (comm->proc_rank + proc_id >= comm_size)
-    bft_error(__FILE__, __LINE__, 0,
+    ple_error(__FILE__, __LINE__, 0,
               "Communication impossible avec :\n"
               "%s (proc %4d) comme le rang du processus correspondant\n"
               "(rang_base + (id_proc - 1)) = %d + %d est superieur ou\n"
@@ -862,7 +897,7 @@ _comm_sock_connect(syr_comm_t  *comm,
   comm->socket[proc_id] = socket(AF_INET, SOCK_STREAM, 0);
 
   if (comm->socket[proc_id] == -1)
-    bft_error(__FILE__, __LINE__, errno,
+    ple_error(__FILE__, __LINE__, errno,
               "Erreur a l'initialisation de la communication par socket "
               "(proc %d).\n",
               proc_id + 1);
@@ -880,7 +915,7 @@ _comm_sock_connect(syr_comm_t  *comm,
     host_ent = gethostbyname(host_name);
 
     if (!host_ent)
-      bft_error(__FILE__, __LINE__, 0,
+      ple_error(__FILE__, __LINE__, 0,
                 "Communication par socket : hote \"%s\" inconnu.",
                 host_name);
 
@@ -890,14 +925,14 @@ _comm_sock_connect(syr_comm_t  *comm,
   sock_addr.sin_port = port_num;
 
   if (comm->swap_endian == 1)
-    bft_file_swap_endian((char *)&(sock_addr.sin_port),
-                         (char *)&(sock_addr.sin_port),
-                         sizeof(sock_addr.sin_port),
-                         1);
+    _swap_endian((char *)&(sock_addr.sin_port),
+		 (char *)&(sock_addr.sin_port),
+		 sizeof(sock_addr.sin_port),
+		 1);
 
   if ( connect(comm->socket[proc_id],
                (struct sockaddr *)&sock_addr, sock_len) < 0)
-    bft_error(__FILE__, __LINE__, errno,
+    ple_error(__FILE__, __LINE__, errno,
               "Communication par socket : erreur de connexion a\n"
               "%s (port %d)\n", host_name, port_num);
 
@@ -923,7 +958,7 @@ _comm_sock_init(syr_comm_t  *comm,
 
   port_num = atoi(sock_serv + id + 1);
 
-  BFT_MALLOC(host_name, id + 1, char);
+  PLE_MALLOC(host_name, id + 1, char);
   strncpy(host_name, sock_serv, id);
   host_name[id] = '\0';
 
@@ -934,14 +969,14 @@ _comm_sock_init(syr_comm_t  *comm,
   /* Receive number of ranks */
 
   if (read(comm->socket[0], str_len, 6) < 6)
-    bft_error(__FILE__, __LINE__, errno,
+    ple_error(__FILE__, __LINE__, errno,
               syr_glob_comm_err_socket, comm->name,  1);
 
   str_len[6] = '\0';
   comm->n_procs = atoi(str_len);
 
   if (comm->n_procs > 1) {
-    BFT_REALLOC(comm->socket, comm->n_procs, int);
+    PLE_REALLOC(comm->socket, comm->n_procs, int);
     for (i = 1; i < comm->n_procs; i++)
       comm->socket[i] = 0;
   }
@@ -953,20 +988,20 @@ _comm_sock_init(syr_comm_t  *comm,
     /* Receive max hostname size */
 
     if (read(comm->socket[0], str_len, 4) < 4)
-      bft_error(__FILE__, __LINE__, errno,
+      ple_error(__FILE__, __LINE__, errno,
                 syr_glob_comm_err_socket, comm->name,  1);
 
     str_len[4] = '\0';
     name_len = atoi(str_len);
 
-    BFT_REALLOC(host_name, name_len + 1, char);
+    PLE_REALLOC(host_name, name_len + 1, char);
 
     for (proc_id = 1; proc_id < comm->n_procs; proc_id++) {
 
       /* Receive hostname */
 
       if (read(comm->socket[0], host_name, name_len) < name_len)
-        bft_error(__FILE__, __LINE__, errno,
+        ple_error(__FILE__, __LINE__, errno,
                   syr_glob_comm_err_socket, comm->name, proc_id + 1);
 
       host_name[name_len] = '\0';
@@ -974,7 +1009,7 @@ _comm_sock_init(syr_comm_t  *comm,
       /* Receive port number */
 
       if (read(comm->socket[0], str_len, 6) < 6)
-        bft_error(__FILE__, __LINE__, errno,
+        ple_error(__FILE__, __LINE__, errno,
                   syr_glob_comm_err_socket, comm->name, proc_id + 1);
 
       str_len[6] = '\0';
@@ -988,7 +1023,7 @@ _comm_sock_init(syr_comm_t  *comm,
 
   } /* End of n_procs > 1 case */
 
-  BFT_FREE(host_name);
+  PLE_FREE(host_name);
 }
 
 /*--------------------------------------------------------------------------
@@ -1006,7 +1041,7 @@ _comm_sock_open(syr_comm_t  *comm,
 
   if (write(comm->socket[proc_id], comm_header, strlen(comm_header))
       < (ssize_t)strlen(comm_header))
-    bft_error(__FILE__, __LINE__, errno,
+    ple_error(__FILE__, __LINE__, errno,
               "Erreur dans la communication par socket.");
 
   /* Write or read "magic string" */
@@ -1025,7 +1060,7 @@ _comm_sock_close(syr_comm_t  *comm,
                  int          proc_id)
 {
   if (close(comm->socket[proc_id]) != 0)
-    bft_error(__FILE__, __LINE__, errno,
+    ple_error(__FILE__, __LINE__, errno,
               "Communication %s (proc %d) :\n"
               "Erreur a la fermeture d'un socket.",
               comm->name, proc_id + 1);
@@ -1067,12 +1102,12 @@ syr_comm_initialize(int               coupling_num,
   const char magic_string[] = "CFD_SYRTHES_COUPLING_2.2";
   const char base_name[] = "CFD_";
 
-  BFT_MALLOC(comm, 1, syr_comm_t);
+  PLE_MALLOC(comm, 1, syr_comm_t);
 
   /* Build communicator name */
   /*------------------------ */
 
-  BFT_MALLOC(comm->name, strlen(base_name) + 4 + 1, char);
+  PLE_MALLOC(comm->name, strlen(base_name) + 4 + 1, char);
 
   sprintf(comm->name, "%s%04d", base_name, coupling_num);
 
@@ -1109,7 +1144,7 @@ syr_comm_initialize(int               coupling_num,
     comm->proc_rank = cs_root_rank;
     comm->n_procs = cs_n_ranks;
 #else
-    bft_error
+    ple_error
       (__FILE__, __LINE__, 0,
        "Librarie compilee sans support MPI, donc le type communicateur\n"
        "doit etre different de SYR_COMM_TYPE_MPI (%d).",
@@ -1119,7 +1154,7 @@ syr_comm_initialize(int               coupling_num,
 
   if (type == SYR_COMM_TYPE_SOCKET) {
 #if defined(HAVE_SOCKET)
-    BFT_MALLOC(comm->socket, 1, int);
+    PLE_MALLOC(comm->socket, 1, int);
     comm->socket[0] = 0;
 
     /* Using sockets communication, the number of associated ranks
@@ -1127,7 +1162,7 @@ syr_comm_initialize(int               coupling_num,
 
     _comm_sock_init(comm, sock_str);
 #else
-    bft_error
+    ple_error
       (__FILE__, __LINE__, 0,
        "Librarie compilee sans support \"socket\", donc le type communicateur\n"
        "doit etre different de SYR_COMM_TYPE_SOCKET (%d).",
@@ -1182,7 +1217,7 @@ syr_comm_initialize(int               coupling_num,
 
   }
 
-  BFT_MALLOC(comm->n_sec_elts, comm->n_procs, int);
+  PLE_MALLOC(comm->n_sec_elts, comm->n_procs, int);
   for (proc_id = 0; proc_id < comm->n_procs; proc_id++)
     comm->n_sec_elts[proc_id] = 0;
 
@@ -1236,13 +1271,13 @@ syr_comm_finalize(syr_comm_t *comm)
 
 #if defined(HAVE_SOCKET)
   if (comm->socket != NULL)
-    BFT_FREE(comm->socket);
+    PLE_FREE(comm->socket);
 #endif
 
-  BFT_FREE(comm->name);
-  BFT_FREE(comm->n_sec_elts);
+  PLE_FREE(comm->name);
+  PLE_FREE(comm->n_sec_elts);
 
-  BFT_FREE(comm);
+  PLE_FREE(comm);
 
   return NULL;
 }
@@ -1617,7 +1652,7 @@ syr_comm_read_body(int                n_sec_elts,
       {
         int *sec_elts_int;
 
-        BFT_MALLOC(sec_elts_int, n_sec_elts, int);
+        PLE_MALLOC(sec_elts_int, n_sec_elts, int);
         _sec_elts = (void *)sec_elts_int;
       }
       break;
@@ -1626,7 +1661,7 @@ syr_comm_read_body(int                n_sec_elts,
       {
         float *sec_elts_flo;
 
-        BFT_MALLOC(sec_elts_flo, n_sec_elts, float);
+        PLE_MALLOC(sec_elts_flo, n_sec_elts, float);
         _sec_elts = (void *)sec_elts_flo;
       }
       break;
@@ -1635,7 +1670,7 @@ syr_comm_read_body(int                n_sec_elts,
       {
         double *sec_elts_dou;
 
-        BFT_MALLOC(sec_elts_dou, n_sec_elts, double);
+        PLE_MALLOC(sec_elts_dou, n_sec_elts, double);
         _sec_elts = (void *)sec_elts_dou;
       }
       break;
@@ -1644,7 +1679,7 @@ syr_comm_read_body(int                n_sec_elts,
       {
         char *sec_elts_cha;
 
-        BFT_MALLOC(sec_elts_cha, n_sec_elts + 1, char);
+        PLE_MALLOC(sec_elts_cha, n_sec_elts + 1, char);
         _sec_elts = (void *)sec_elts_cha;
       }
       break;

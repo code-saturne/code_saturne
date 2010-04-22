@@ -64,16 +64,11 @@ AC_ARG_WITH(fvm-lib,
 
 FVM_LIBS="-lfvm"
 
-FVM_COUPL_LDFLAGS="$FVM_LDFLAGS"
-FVM_COUPL_LIBS="-lfvm_coupl"
-
 type "$fvm_config" > /dev/null 2>&1
 if test "$?" = "0" ; then
   FVM_CPPFLAGS="$FVM_CPPFLAGS `$fvm_config --cppflags`"
   FVM_LDFLAGS="$FVM_LDFLAGS `$fvm_config --ldflags`"
   FVM_LIBS="$FVM_LIBS `$fvm_config --libs`"
-
-  FVM_COUPL_LDFLAGS="$FVM_LDFLAGS"
 
   FVM_LDFLAGS="$FVM_LDFLAGS `$fvm_config --ldflags cgns`"
   FVM_LDFLAGS="$FVM_LDFLAGS `$fvm_config --ldflags med`"
@@ -159,26 +154,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <fvm_config.h>
                [AC_MSG_RESULT([compatible fvm version found])],
                [AC_MSG_FAILURE([compatible fvm version not found])])
 
-# Now check if fvm_coupl library is available (using MPI)
-
-AC_MSG_CHECKING([for fvm_coupling discovery functions])
-
-LDFLAGS="$FVM_COUPL_LDFLAGS `$fvm_config --ldflags bft` $FVM_MPI_LDFLAGS ${saved_LDFLAGS}"
-LIBS="$FVM_COUPL_LIBS `$fvm_config --libs bft` $FVM_MPI_LIBS ${saved_LIBS}"
-
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[int fvm_coupling_mpi_world_n_apps(void *);]],
-               [[fvm_coupling_mpi_world_n_apps(0); ]])],
-                [fvm_have_coupl=yes],
-                [fvm_have_coupl=no])
-
-AC_MSG_RESULT($fvm_have_coupl)
-if test "$fvm_have_coupl" = "yes"; then
-  FVM_LIBS="$FVM_LIBS $FVM_COUPL_LIBS"
-else
-  FVM_COUPL_LDFLAGS=""
-  FVM_COUPL_LIBS=""
-fi
-
 # Unset temporary variables
 
 unset fvm_version_major_min
@@ -206,7 +181,5 @@ unset saved_LIBS
 AC_SUBST(FVM_CPPFLAGS)
 AC_SUBST(FVM_LDFLAGS)
 AC_SUBST(FVM_LIBS)
-AC_SUBST(FVM_COUPL_LDFLAGS)
-AC_SUBST(FVM_COUPL_LIBS)
 
 ])dnl

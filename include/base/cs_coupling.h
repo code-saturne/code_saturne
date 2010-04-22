@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -37,10 +37,10 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * FVM library headers
+ * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include <fvm_coupling.h>
+#include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -96,10 +96,91 @@ cs_coupling_finalize(void);
  *   info on other applications structure.
  *----------------------------------------------------------------------------*/
 
-const fvm_coupling_mpi_world_t *
+const ple_coupling_mpi_world_t *
 cs_coupling_get_mpi_apps(void);
 
 #endif /* HAVE_MPI */
+
+/*----------------------------------------------------------------------------
+ * Compute extents of a mesh representation
+ *
+ * parameters:
+ *   mesh          <-- pointer to mesh representation structure
+ *   n_max_extents <-- maximum number of sub-extents (such as element extents)
+ *                     to compute, or -1 to query
+ *   tolerance     <-- addition to local extents of each element:
+ *                     extent = base_extent * (1 + tolerance)
+ *   extents       <-> extents associated with mesh:
+ *                     x_min, y_min, ..., x_max, y_max, ... (size: 2*dim)
+ *
+ * returns:
+ *   the number of extents computed
+ *----------------------------------------------------------------------------*/
+
+ple_lnum_t
+cs_coupling_mesh_extents(const void  *mesh,
+                         ple_lnum_t   n_max_extents,
+                         double       tolerance,
+                         double       extents[]);
+
+/*----------------------------------------------------------------------------
+ * Find elements in a given mesh containing points: updates the
+ * location[] and distance[] arrays associated with a set of points
+ * for points that are in an element of this mesh, or closer to one
+ * than to previously encountered elements.
+ *
+ * Location is relative to the id of a given element + 1 in
+ * concatenated sections of same element dimension.
+ *
+ * parameters:
+ *   mesh         <-- pointer to mesh representation structure
+ *   tolerance    <-- associated tolerance
+ *   n_points     <-- number of points to locate
+ *   point_coords <-- point coordinates
+ *   location     <-> number of element containing or closest to each
+ *                    point (size: n_points)
+ *   distance     <-> distance from point to element indicated by
+ *                    location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                    and > 1 if outside a volume element, or absolute
+ *                    distance to a surface element (size: n_points)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_coupling_point_in_mesh(const void         *mesh,
+                          double              tolerance,
+                          ple_lnum_t          n_points,
+                          const ple_coord_t   point_coords[],
+                          ple_lnum_t          location[],
+                          float               distance[]);
+
+/*----------------------------------------------------------------------------
+ * Find elements in a given mesh containing points: updates the
+ * location[] and distance[] arrays associated with a set of points
+ * for points that are in an element of this mesh, or closer to one
+ * than to previously encountered elements.
+ *
+ * Location is relative to parent element numbers.
+ *
+ * parameters:
+ *   mesh         <-- pointer to mesh representation structure
+ *   tolerance    <-- associated tolerance
+ *   n_points     <-- number of points to locate
+ *   point_coords <-- point coordinates
+ *   location     <-> number of element containing or closest to each
+ *                    point (size: n_points)
+ *   distance     <-> distance from point to element indicated by
+ *                    location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                    and > 1 if outside a volume element, or absolute
+ *                    distance to a surface element (size: n_points)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_coupling_point_in_mesh_p(const void         *mesh,
+                            double              tolerance,
+                            ple_lnum_t          n_points,
+                            const ple_coord_t   point_coords[],
+                            ple_lnum_t          location[],
+                            float               distance[]);
 
 /*----------------------------------------------------------------------------*/
 

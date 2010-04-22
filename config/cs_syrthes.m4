@@ -80,7 +80,7 @@ rm -f $outfile syr-nomarch-tmp syr-version-tmp syr-cc-tmp syr-fc-tmp syr-cflags-
 # Get mandatory Fortran libs for linking stage
 # We assume that only SYRTHES user subroutines written in Fortran 77
 # will need to be compiled (as versions older than 3.4 are not
-# supported, and version 4 will be coupled directly through FVM,
+# supported, and version 4 will be coupled directly through PLE,
 # not through the syrcs wrapper).
 
 F77=$SYRTHES_FC
@@ -91,8 +91,8 @@ SYRTHES_CPPFLAGS="-I$with_syrthes/include"
 SYRTHES_LDFLAGS="-L$with_syrthes/lib/${SYRTHES_NOM_ARCH}"
 SYRTHES_LIBS="-lsatsyrthes${SYRTHES_VERSION}_${SYRTHES_NOM_ARCH} -lsyrthes${SYRTHES_VERSION}_${SYRTHES_NOM_ARCH}"
 
-SYRTHES_LDFLAGS="$FVM_COUPL_LDFLAGS $BFT_LDFLAGS $MPI_LDFLAGS $SYRTHES_LDFLAGS"
-SYRTHES_LIBS="$FVM_COUPL_LIBS $BFT_LIBS $MPI_LIBS $SYRTHES_LIBS"
+SYRTHES_LDFLAGS="$PLE_LDFLAGS $MPI_LDFLAGS $SYRTHES_LDFLAGS"
+SYRTHES_LIBS="$PLE_LIBS $MPI_LIBS $SYRTHES_LIBS"
 
 AC_SUBST(syrthes_prefix)
 

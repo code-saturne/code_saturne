@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -46,11 +46,10 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
+ * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_error.h>
-#include <bft_mem.h>
+#include <ple_defs.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -261,10 +260,6 @@ main(int argc,
 
   syr_errhandler_initialize();
 
-  /* Initialize memory management */
-
-  bft_mem_init(NULL);
-
   /* Initialize MPI if necessary (pre-analyze command line) */
 
 #if defined (HAVE_MPI)
@@ -300,8 +295,8 @@ main(int argc,
 
       while (   numarg + 1 < argc
              && *(argv[numarg + 1]) != '-') {
-        BFT_REALLOC(app_sat, nbr_cas_sat + 1, int);
-        BFT_REALLOC(sock_str, nbr_cas_sat + 1, char *);
+        PLE_REALLOC(app_sat, nbr_cas_sat + 1, int);
+        PLE_REALLOC(sock_str, nbr_cas_sat + 1, char *);
         app_sat[nbr_cas_sat]
           = (int)syr_cs_loc_argint(++numarg, argc, argv, &argerr);
         sock_str[nbr_cas_sat] = NULL;
@@ -315,10 +310,10 @@ main(int argc,
       type_comm = SYR_COMM_TYPE_SOCKET;
 
       while (numarg + 1 < argc && *(argv[numarg + 1]) != '-') {
-        BFT_REALLOC(app_sat, nbr_cas_sat + 1, int);
-        BFT_REALLOC(sock_str, nbr_cas_sat + 1, char *);
+        PLE_REALLOC(app_sat, nbr_cas_sat + 1, int);
+        PLE_REALLOC(sock_str, nbr_cas_sat + 1, char *);
         app_sat[nbr_cas_sat] = -1;
-        BFT_MALLOC(sock_str[nbr_cas_sat], strlen(argv[numarg + 1]) + 1, char);
+        PLE_MALLOC(sock_str[nbr_cas_sat], strlen(argv[numarg + 1]) + 1, char);
         strcpy(sock_str[nbr_cas_sat], argv[++numarg]);
         nbr_cas_sat++;
       }
@@ -346,7 +341,7 @@ main(int argc,
 
   if (argerr != 0) {
     syr_cs_loc_aidelc(argv[0], argerr);
-    bft_error(__FILE__, __LINE__, 0,
+    ple_error(__FILE__, __LINE__, 0,
               "Erreur lors de la lecture de la ligne de commande.\n");
   }
 
@@ -360,7 +355,7 @@ main(int argc,
     fflush(stdout);
   }
 
-  BFT_MALLOC(syrcoupl, nbr_cas_sat, syr_coupling_t *);
+  PLE_MALLOC(syrcoupl, nbr_cas_sat, syr_coupling_t *);
 
   for (i_cas_sat = 0; i_cas_sat < nbr_cas_sat; i_cas_sat++) {
 
@@ -372,27 +367,27 @@ main(int argc,
                                                   echo_comm);
 
 #if defined (HAVE_SOCKET)
-    BFT_FREE(sock_str[i_cas_sat]);
+    PLE_FREE(sock_str[i_cas_sat]);
 #endif
 
   }
 
 #if defined (HAVE_SOCKET)
-  BFT_FREE(sock_str);
+  PLE_FREE(sock_str);
 #endif
 
-  BFT_FREE(app_sat);
+  PLE_FREE(app_sat);
 
   /* Allocate working arrays */
   /* ----------------------- */
 
-  BFT_MALLOC(_ndim_,  nbr_cas_sat, int);
+  PLE_MALLOC(_ndim_,  nbr_cas_sat, int);
 
-  BFT_MALLOC(_npoinf, nbr_cas_sat, int);
-  BFT_MALLOC(_nelebf, nbr_cas_sat, int);
+  PLE_MALLOC(_npoinf, nbr_cas_sat, int);
+  PLE_MALLOC(_nelebf, nbr_cas_sat, int);
 
-  BFT_MALLOC(idx_som, nbr_cas_sat + 1, int);
-  BFT_MALLOC(idx_elt, nbr_cas_sat + 1, int);
+  PLE_MALLOC(idx_som, nbr_cas_sat + 1, int);
+  PLE_MALLOC(idx_elt, nbr_cas_sat + 1, int);
 
   for (i = 0; i < nbr_cas_sat; i++) {
     _npoinf[i] = 0;
@@ -403,8 +398,8 @@ main(int argc,
 
   /* Element connectivity and vertex coordinates */
 
-  BFT_MALLOC(_nodebf, nbr_cas_sat, int *);
-  BFT_MALLOC(_xyzf,   nbr_cas_sat, double *);
+  PLE_MALLOC(_nodebf, nbr_cas_sat, int *);
+  PLE_MALLOC(_xyzf,   nbr_cas_sat, double *);
 
   for (i = 0; i < nbr_cas_sat; i++) {
     _xyzf[i] = NULL;
@@ -459,8 +454,8 @@ main(int argc,
 
   if (nbr_cas_sat > 1) {
 
-    BFT_MALLOC(xyzf, npoinf * ndim_, double);
-    BFT_MALLOC(nodebf, nelebf * ndim_, int);
+    PLE_MALLOC(xyzf, npoinf * ndim_, double);
+    PLE_MALLOC(nodebf, nelebf * ndim_, int);
 
     for (i_cas_sat = 0; i_cas_sat < nbr_cas_sat; i_cas_sat++) {
 
@@ -490,8 +485,8 @@ main(int argc,
     /* Free arrays not needed anymore */
 
     for (i_cas_sat = 0; i_cas_sat < nbr_cas_sat; i_cas_sat++) {
-      BFT_FREE(_xyzf[i_cas_sat]);
-      BFT_FREE(_nodebf[i_cas_sat]);
+      PLE_FREE(_xyzf[i_cas_sat]);
+      PLE_FREE(_nodebf[i_cas_sat]);
     }
 
   }
@@ -502,21 +497,21 @@ main(int argc,
 
   }
 
-  BFT_FREE(idx_elt);
+  PLE_FREE(idx_elt);
 
-  BFT_FREE(_ndim_);
-  BFT_FREE(_xyzf);
-  BFT_FREE(_nodebf);
-  BFT_FREE(_npoinf);
-  BFT_FREE(_nelebf);
+  PLE_FREE(_ndim_);
+  PLE_FREE(_xyzf);
+  PLE_FREE(_nodebf);
+  PLE_FREE(_npoinf);
+  PLE_FREE(_nelebf);
 
   /* Allocate arrays for exchanged variables:   */
   /* fluid temperature and exchange coefficient */
 
-  BFT_MALLOC(tf,  npoinf, double);
-  BFT_MALLOC(hht, npoinf, double);
+  PLE_MALLOC(tf,  npoinf, double);
+  PLE_MALLOC(hht, npoinf, double);
 
-  BFT_MALLOC(_dtfluid, nbr_cas_sat, double);
+  PLE_MALLOC(_dtfluid, nbr_cas_sat, double);
 
   /* ----------- */
   /* Call syrtc1 */
@@ -532,14 +527,14 @@ main(int argc,
 
   /* Free nodebf and xyzf, which are not needed anymore */
 
-  BFT_FREE(xyzf);
-  BFT_FREE(nodebf);
+  PLE_FREE(xyzf);
+  PLE_FREE(nodebf);
 
   /* Prepare for time loop */
   /* --------------------- */
 
-  BFT_MALLOC(dernier, nbr_cas_sat, int);
-  BFT_MALLOC(fin,     nbr_cas_sat, int);
+  PLE_MALLOC(dernier, nbr_cas_sat, int);
+  PLE_MALLOC(fin,     nbr_cas_sat, int);
 
   for (i_cas_sat = 0; i_cas_sat < nbr_cas_sat; i_cas_sat++) {
     dernier[i_cas_sat] = 0;
@@ -647,21 +642,17 @@ main(int argc,
 
   }
 
-  BFT_FREE(syrcoupl);
+  PLE_FREE(syrcoupl);
 
-  BFT_FREE(idx_som);
+  PLE_FREE(idx_som);
 
-  BFT_FREE(fin);
-  BFT_FREE(dernier);
+  PLE_FREE(fin);
+  PLE_FREE(dernier);
 
-  BFT_FREE(tf);
-  BFT_FREE(hht);
+  PLE_FREE(tf);
+  PLE_FREE(hht);
 
-  BFT_FREE(_dtfluid);
-
-  /* Finalize memory management */
-
-  bft_mem_end();
+  PLE_FREE(_dtfluid);
 
   /* Close MPI communications if necessary */
 

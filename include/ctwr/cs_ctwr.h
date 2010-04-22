@@ -37,7 +37,12 @@
  *----------------------------------------------------------------------------*/
 
 #include <fvm_nodal.h>
-#include <fvm_locator.h>
+
+/*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_locator.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -149,9 +154,9 @@ struct _cs_ctwr_zone_t {
 
   cs_real_t  dgout;           /* Drop diameter for rain zones */
 
-  fvm_locator_t   *locat_air_water; /* Locator water -> air interpolation */
-  fvm_locator_t   *locat_water_air; /* Locator for air -> water interpolation */
-  fvm_locator_t * *locat_cell_ct_upwind;
+  ple_locator_t   *locat_air_water; /* Locator water -> air interpolation */
+  ple_locator_t   *locat_water_air; /* Locator for air -> water interpolation */
+  ple_locator_t * *locat_cell_ct_upwind;
 
   cs_int_t   post_mesh_id;    /* 0 if post-processing is not active,
                                  mesh_id if post-processing is active */

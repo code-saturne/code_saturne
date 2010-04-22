@@ -60,19 +60,25 @@
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
-#include <fvm_coupling.h>
 #include <fvm_nodal.h>
 #include <fvm_interface.h>
 #include <fvm_nodal_extract.h>
 #include <fvm_nodal_project.h>
-#include <fvm_locator.h>
 #include <fvm_parall.h>
 #include <fvm_selector.h>
+
+/*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
+#include <ple_locator.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_coupling.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_selector.h"
@@ -105,7 +111,7 @@ typedef struct _cs_syr4_coupling_ent_t {
 
   /* Mesh-related members */
 
-  fvm_locator_t     *locator;        /* Associated locator */
+  ple_locator_t     *locator;        /* Associated locator */
 
   int                elt_dim;        /* Element dimension */
   fvm_lnum_t         n_elts;         /* Number of coupled elements */
@@ -201,7 +207,7 @@ _init_comm(cs_syr4_coupling_t *syr_coupling,
              coupling_id);
   bft_printf_flush();
 
-  fvm_coupling_mpi_intracomm_create(cs_glob_mpi_comm,
+  ple_coupling_mpi_intracomm_create(cs_glob_mpi_comm,
                                     syr_coupling->syr_root_rank,
                                     &(syr_coupling->comm),
                                     local_range,
@@ -606,13 +612,13 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   /* Build and initialize associated locator */
 
-#if defined(FVM_HAVE_MPI)
-  coupling_ent->locator = fvm_locator_create(tolerance,
+#if defined(PLE_HAVE_MPI)
+  coupling_ent->locator = ple_locator_create(tolerance,
                                              syr_coupling->comm,
                                              syr_coupling->n_syr_ranks,
                                              syr_coupling->syr_root_rank);
 #else
-  coupling_ent->locator = fvm_locator_create(tolerance);
+  coupling_ent->locator = ple_locator_create(tolerance);
 #endif
 
   /* Retrieve coordinates using FVM functions rather than previous list and
@@ -632,20 +638,23 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   /* Locate entities */
 
-  fvm_locator_set_nodal(coupling_ent->locator,
-                        location_elts,
-                        0, /* do not locate on parents */
-                        syr_coupling->dim,
-                        coupling_ent->n_elts,
-                        elt_list,
-                        elt_centers);
+  ple_locator_set_mesh(coupling_ent->locator,
+                       location_elts,
+                       syr_coupling->dim,
+                       coupling_ent->n_elts,
+                       elt_list,
+                       elt_centers,
+                       NULL,
+                       cs_coupling_mesh_extents,
+                       cs_coupling_point_in_mesh,
+                       NULL);
 
   if (elt_centers != NULL)
     BFT_FREE(elt_centers);
 
   /* Check that all points are effectively located */
 
-  n_exterior =  fvm_locator_get_n_exterior(coupling_ent->locator);
+  n_exterior =  ple_locator_get_n_exterior(coupling_ent->locator);
 
   fvm_parall_counter(&n_exterior, 1);
 
@@ -678,7 +687,7 @@ _destroy_coupled_ent(cs_syr4_coupling_ent_t **coupling_ent)
     return;
 
   if (ce->locator != NULL)
-    ce->locator = fvm_locator_destroy(ce->locator);
+    ce->locator = ple_locator_destroy(ce->locator);
 
   if (ce->wall_temp != NULL)
     BFT_FREE(ce->wall_temp);
@@ -1178,7 +1187,7 @@ cs_syr4_coupling_recv_twall(cs_syr4_coupling_t  *syr_coupling,
 
   /* Receive data */
 
-  fvm_locator_exchange_point_var(coupling_ent->locator,
+  ple_locator_exchange_point_var(coupling_ent->locator,
                                  NULL,
                                  twall,
                                  NULL,
@@ -1217,8 +1226,8 @@ cs_syr4_coupling_send_tf_hwall(cs_syr4_coupling_t  *syr_coupling,
   if (coupling_ent == NULL)
     return;
 
-  n_dist = fvm_locator_get_n_dist_points(coupling_ent->locator);
-  dist_loc = fvm_locator_get_dist_locations(coupling_ent->locator);
+  n_dist = ple_locator_get_n_dist_points(coupling_ent->locator);
+  dist_loc = ple_locator_get_dist_locations(coupling_ent->locator);
 
   /* Prepare and send data */
 
@@ -1229,7 +1238,7 @@ cs_syr4_coupling_send_tf_hwall(cs_syr4_coupling_t  *syr_coupling,
     send_var[ii*2 + 1] = hwall[dist_loc[ii] - 1];
   }
 
-  fvm_locator_exchange_point_var(coupling_ent->locator,
+  ple_locator_exchange_point_var(coupling_ent->locator,
                                  send_var,
                                  NULL,
                                  NULL,

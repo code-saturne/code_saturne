@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -46,11 +46,10 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
+ * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_error.h>
+#include <ple_defs.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -136,9 +135,9 @@ _syr_coupling_dist_finalize(syr_coupling_dist_t  *dist)
     if (dist->n_elts_g != 0) {
       dist->n_elts_g = 0;
       dist->n_elts_max = 0;
-      BFT_FREE(dist->proc_id);
-      BFT_FREE(dist->index);
-      BFT_FREE(dist->elt_num);
+      PLE_FREE(dist->proc_id);
+      PLE_FREE(dist->index);
+      PLE_FREE(dist->elt_num);
     }
 
   }
@@ -237,7 +236,7 @@ syr_coupling_initialize(int               syr_num,
 
   /* Allocate syr_coupling_t structure */
 
-  BFT_MALLOC(coupling, 1, syr_coupling_t);
+  PLE_MALLOC(coupling, 1, syr_coupling_t);
 
   /* Default initialization */
 
@@ -286,13 +285,13 @@ syr_coupling_finalize(syr_coupling_t  *coupling)
   coupling->comm = syr_comm_finalize(coupling->comm);
 
   if (coupling->cs_rank != NULL)
-    BFT_FREE(coupling->cs_rank);
+    PLE_FREE(coupling->cs_rank);
 
   /* Finalize distribution */
 
   _syr_coupling_dist_finalize(&(coupling->dist));
 
-  BFT_FREE(coupling);
+  PLE_FREE(coupling);
 
   return NULL;
 }
@@ -406,7 +405,7 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
       /* Sanity test */
 
       if (strncmp(sec_name_cmp, sec_name, SYR_COMM_L_SEC_NAME))
-        bft_error(__FILE__, __LINE__, 0,
+        ple_error(__FILE__, __LINE__, 0,
                   syr_glob_coupling_sec_name_error,
                   syr_comm_get_name(comm), sec_name,
                   proc_id + 1, sec_name_cmp);
@@ -429,7 +428,7 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
       int rank_count = 0;
       int *_n_elts = NULL;
 
-      BFT_MALLOC(_n_elts, n_ranks, int);
+      PLE_MALLOC(_n_elts, n_ranks, int);
 
       /* Set distribution based on vertices or elements */
 
@@ -462,12 +461,12 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
       /* Build the list of coupled ranks, and associated index */
 
       if (dist->proc_id != NULL) {/* in case of re-definition */
-        BFT_FREE(dist->proc_id);
-        BFT_FREE(dist->index);
+        PLE_FREE(dist->proc_id);
+        PLE_FREE(dist->index);
       }
 
-      BFT_MALLOC(dist->proc_id, dist->n_ranks, int);
-      BFT_MALLOC(dist->index, dist->n_ranks + 1, int);
+      PLE_MALLOC(dist->proc_id, dist->n_ranks, int);
+      PLE_MALLOC(dist->index, dist->n_ranks + 1, int);
 
       dist->index[0] = 0;
       rank_count = 0;
@@ -500,7 +499,7 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
       if (dist == &elt_dist)
         dist->n_elts_g = dist->index[dist->n_ranks];
 
-      BFT_FREE(_n_elts);
+      PLE_FREE(_n_elts);
 
     } /* End reading the local number of entities */
 
@@ -543,9 +542,9 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
       /* Receive data */
 
       if (dist->elt_num != NULL) /* in case of re-definition */
-        BFT_FREE(dist->elt_num);
+        PLE_FREE(dist->elt_num);
 
-      BFT_MALLOC(dist->elt_num, dist->index[dist->n_ranks], int);
+      PLE_MALLOC(dist->elt_num, dist->index[dist->n_ranks], int);
 
       for (ii = 0; ii < dist->n_ranks; ii++) {
 
@@ -571,10 +570,10 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
 
       /* Allocate necessary memory then receive data */
 
-      BFT_MALLOC(*vtx_coords, dist->n_elts_g * stride, double);
+      PLE_MALLOC(*vtx_coords, dist->n_elts_g * stride, double);
 
       if (dist->n_ranks > 1)
-        BFT_MALLOC(buffer, max_msg_size * stride, double);
+        PLE_MALLOC(buffer, max_msg_size * stride, double);
       else
         buffer = *vtx_coords;
 
@@ -608,7 +607,7 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
       } /* End of loop on distant ranks */
 
       if (buffer != *vtx_coords) {
-        BFT_FREE(buffer);
+        PLE_FREE(buffer);
       }
 
       *n_vtx = dist->n_elts_g;
@@ -628,10 +627,10 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
 
       /* Allocate necessary memory then receive data */
 
-      BFT_MALLOC(*elt_connect, dist->n_elts_g * stride, int);
+      PLE_MALLOC(*elt_connect, dist->n_elts_g * stride, int);
 
       if (dist->n_ranks > 1)
-        BFT_MALLOC(buffer, max_msg_size * stride, int);
+        PLE_MALLOC(buffer, max_msg_size * stride, int);
       else
         buffer = *elt_connect;
 
@@ -680,7 +679,7 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
       } /* End of loop on distant ranks */
 
       if (buffer != (*elt_connect)) {
-        BFT_FREE(buffer);
+        PLE_FREE(buffer);
       }
 
       /* Set return values */
@@ -693,7 +692,7 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
     /*-----------------------------------------*/
 
     else
-      bft_error(__FILE__, __LINE__, 0,
+      ple_error(__FILE__, __LINE__, 0,
                 "Message \"%s\" inconnu ou inattendu a cette etape :\n"
                 "--> abandon.",
                 sec_name);
@@ -707,11 +706,11 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
   /* Check all data was received */
 
   if (*n_vtx == 0 || *vtx_coords == NULL)
-    bft_error(__FILE__, __LINE__, 0,
+    ple_error(__FILE__, __LINE__, 0,
               "Aucune donnee sur les sommets n'a ete recue.");
 
   if (*n_elts == 0 || *elt_connect == NULL)
-    bft_error(__FILE__, __LINE__, 0,
+    ple_error(__FILE__, __LINE__, 0,
               "Aucune donnee sur les elements n'a ete recue.");
 
 }
@@ -814,7 +813,7 @@ syr_coupling_supervise(syr_coupling_t  *coupling,
   /*-------------------------------*/
 
   else
-    bft_error(__FILE__, __LINE__, 0,
+    ple_error(__FILE__, __LINE__, 0,
               "Message \"%s\" inconnu ou inattendu a cette etape :\n"
               "--> abandon.",
               sec_name);
@@ -870,7 +869,7 @@ syr_coupling_exchange_var(syr_coupling_t  *coupling,
 
   dist = &(coupling->dist);
 
-  BFT_MALLOC(buffer, dist->n_elts_max, double);
+  PLE_MALLOC(buffer, dist->n_elts_max, double);
 
   for (ii = 0; ii < dist->n_ranks; ii++) {
 
@@ -950,7 +949,7 @@ syr_coupling_exchange_var(syr_coupling_t  *coupling,
           r_hht = 1;
         }
         else
-          bft_error(__FILE__, __LINE__, 0,
+          ple_error(__FILE__, __LINE__, 0,
                     "Message \"%s\" inconnu ou inattendu a cette etape",
                     sec_name);
 
@@ -963,7 +962,7 @@ syr_coupling_exchange_var(syr_coupling_t  *coupling,
 
       else if (   ii > 0
                && strncmp(sec_name_cmp, sec_name, SYR_COMM_L_SEC_NAME))
-        bft_error(__FILE__, __LINE__, 0,
+        ple_error(__FILE__, __LINE__, 0,
                   syr_glob_coupling_sec_name_error,
                   syr_comm_get_name(comm), sec_name, ii + 1,
                   sec_name_cmp);
@@ -992,7 +991,7 @@ syr_coupling_exchange_var(syr_coupling_t  *coupling,
 
   }
 
-  BFT_FREE(buffer);
+  PLE_FREE(buffer);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -47,18 +47,13 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * BFT library headers
+ * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_error.h>
-#include <bft_mem.h>
-
-/*----------------------------------------------------------------------------
- * FVM library headers
- *----------------------------------------------------------------------------*/
+#include <ple_defs.h>
 
 #if defined(HAVE_MPI)
-#include <fvm_coupling.h>
+#include <ple_coupling.h>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -85,7 +80,7 @@ int syr_glob_base_rank = - 1;           /* Parallel rank; -1 if serial */
 char syr_glob_build_date[] = __DATE__;  /* Build date */
 
 #if defined(HAVE_MPI)
-fvm_coupling_mpi_world_t *syr_glob_coupling_world = NULL;
+ple_coupling_mpi_world_t *syr_glob_coupling_world = NULL;
 #endif
 
 /*===========================================================================
@@ -300,7 +295,7 @@ _mpi_app_num(int    argc,
 void
 syr_errhandler_initialize(void)
 {
-  bft_error_handler_set(_syr_error_handler);
+  ple_error_handler_set(_syr_error_handler);
 }
 
 #if defined (HAVE_MPI)
@@ -347,13 +342,13 @@ syr_mpi_initialize(int    *argc,
     ierror = 1;
 
   if (ierror != 0)
-    bft_error(__FILE__, __LINE__, 0,
+    ple_error(__FILE__, __LINE__, 0,
               "Erreur a la creation d'un communicateur local a SYRTHES.\n");
 
   /* Discover other applications in the same MPI root communicator
      (and participate in correspondig communication). */
 
-  syr_glob_coupling_world = fvm_coupling_mpi_world_create(app_num,
+  syr_glob_coupling_world = ple_coupling_mpi_world_create(app_num,
                                                           "SYRTHES 3.4",
                                                           NULL,
                                                           mpi_comm_syr);
@@ -373,21 +368,21 @@ syr_mpi_finalize(void)
 {
   int ierror = 0;
 
-  fvm_coupling_mpi_world_destroy(&syr_glob_coupling_world);
+  ple_coupling_mpi_world_destroy(&syr_glob_coupling_world);
 
   assert(syr_glob_coupling_world == NULL);
 
   ierror = MPI_Barrier(MPI_COMM_WORLD);
 
   if (ierror != 0)
-    bft_error(__FILE__, __LINE__, 0,
+    ple_error(__FILE__, __LINE__, 0,
               "Erreur dans MPI_Barrier lors de la finalisation du\n"
               "communicateur global cote SYRTHES.");
 
   ierror = MPI_Finalize();
 
   if (ierror != 0)
-    bft_error(__FILE__, __LINE__, 0,
+    ple_error(__FILE__, __LINE__, 0,
               "Erreur lors de la finalisation du\n"
               "communicateur global cote SYRTHES.");
 }
@@ -431,12 +426,12 @@ syr_mpi_appinfo(int    app_num,
 
     int i;
 
-    n_apps = fvm_coupling_mpi_world_n_apps(syr_glob_coupling_world);
+    n_apps = ple_coupling_mpi_world_n_apps(syr_glob_coupling_world);
 
     for (i = 0; i < n_apps; i++) {
 
-      const fvm_coupling_mpi_world_info_t
-        ai = fvm_coupling_mpi_world_get_info(syr_glob_coupling_world, i);
+      const ple_coupling_mpi_world_info_t
+        ai = ple_coupling_mpi_world_get_info(syr_glob_coupling_world, i);
 
       if (ai.app_num == app_num) {
 
@@ -458,7 +453,7 @@ syr_mpi_appinfo(int    app_num,
   }
 
   if (*root_rank < 0)
-    bft_error(__FILE__, __LINE__, 0,
+    ple_error(__FILE__, __LINE__, 0,
               "Application MPI numero %d non trouvee.", app_num);
 }
 

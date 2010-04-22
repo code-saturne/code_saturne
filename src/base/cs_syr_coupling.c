@@ -61,6 +61,12 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -281,7 +287,7 @@ _print_all_mpi_syr(void)
 {
   int i;
 
-  const fvm_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
+  const ple_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
   const char empty_string[] = "";
 
   /* Loop on defined SYRTHES instances */
@@ -296,8 +302,8 @@ _print_all_mpi_syr(void)
       const char *local_name = empty_string;
       const char *distant_name = empty_string;
 
-      const fvm_coupling_mpi_world_info_t
-        ai = fvm_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
+      const ple_coupling_mpi_world_info_t
+        ai = ple_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
 
       if (scb->app_name != NULL)
         local_name = scb->app_name;
@@ -340,18 +346,18 @@ _init_all_mpi_syr(void)
   int n_syr3_apps = 0, n_syr4_apps = 0;
   int syr_app_id = -1, syr_app_type = 0;
 
-  const fvm_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
+  const ple_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
 
   if (mpi_apps == NULL)
     return;
 
-  n_apps = fvm_coupling_mpi_world_n_apps(mpi_apps);
+  n_apps = ple_coupling_mpi_world_n_apps(mpi_apps);
 
   /* First pass to count available SYRTHES couplings */
 
   for (i = 0; i < n_apps; i++) {
-    const fvm_coupling_mpi_world_info_t
-      ai = fvm_coupling_mpi_world_get_info(mpi_apps, i);
+    const ple_coupling_mpi_world_info_t
+      ai = ple_coupling_mpi_world_get_info(mpi_apps, i);
     if (strncmp(ai.app_type, "SYRTHES 4", 9) == 0) {
       n_syr4_apps += 1;
       syr_app_id = i;
@@ -376,7 +382,7 @@ _init_all_mpi_syr(void)
   else {
 
     int j;
-    fvm_coupling_mpi_world_info_t ai;
+    ple_coupling_mpi_world_info_t ai;
 
     int n_syr_apps = 0;
     int *syr_appinfo = NULL;
@@ -387,7 +393,7 @@ _init_all_mpi_syr(void)
     BFT_MALLOC(syr_appinfo, (n_syr3_apps + n_syr4_apps)*2, int);
 
     for (i = 0; i < n_apps; i++) {
-      ai = fvm_coupling_mpi_world_get_info(mpi_apps, i);
+      ai = ple_coupling_mpi_world_get_info(mpi_apps, i);
       if (   (strncmp(ai.app_type, "SYRTHES 4", 9) == 0)
           || (strncmp(ai.app_type, "SYRTHES 3", 9) == 0)) {
         syr_appinfo[n_syr_apps*2] = 0;
@@ -413,7 +419,7 @@ _init_all_mpi_syr(void)
           if (syr_appinfo[j*2] != 0) /* Consider only unmatched applications */
             continue;
 
-          ai = fvm_coupling_mpi_world_get_info(mpi_apps, syr_appinfo[j*2 + 1]);
+          ai = ple_coupling_mpi_world_get_info(mpi_apps, syr_appinfo[j*2 + 1]);
           if (ai.app_name != NULL) {
             if (strcmp(ai.app_name, scb->app_name) == 0) {
               scb->match_id = syr_appinfo[j*2 + 1];
@@ -435,7 +441,7 @@ _init_all_mpi_syr(void)
           if (syr_appinfo[j*2] != 0) /* Consider only unmatched applications */
             continue;
 
-          ai = fvm_coupling_mpi_world_get_info(mpi_apps, syr_appinfo[j*2 + 1]);
+          ai = ple_coupling_mpi_world_get_info(mpi_apps, syr_appinfo[j*2 + 1]);
           if (ai.app_num == scb->app_num) {
             scb->match_id = syr_appinfo[j*2 + 1];
             syr_appinfo[j*2] = i;
@@ -463,8 +469,8 @@ _init_all_mpi_syr(void)
     _cs_syr_coupling_builder_t *scb = _syr_coupling_builder + i;
 
     if (scb->match_id > -1) {
-      const fvm_coupling_mpi_world_info_t
-        ai = fvm_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
+      const ple_coupling_mpi_world_info_t
+        ai = ple_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
 
       if (strncmp(ai.app_type, "SYRTHES 4", 9) == 0)
         _syr4_add_mpi(i, ai.root_rank, ai.n_ranks);
@@ -668,7 +674,7 @@ void CS_PROCF(nbcsyr, NBCSYR)
  * Create nodal coupled mesh.
  *
  * Send vertices's coordinates and connectivity of coupled mesh for SYRTHES 3,
- * setup FVM locator for SYRTHES 4.
+ * setup PLE locator for SYRTHES 4.
  *
  * Fortran Interface:
  *

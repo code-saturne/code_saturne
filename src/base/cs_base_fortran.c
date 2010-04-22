@@ -197,6 +197,7 @@ cs_base_fortran_bft_printf_set(int r0_log_flag,
 
   bft_printf_proxy_set(_bft_printf);
   bft_printf_flush_proxy_set(_bft_printf_flush);
+  ple_printf_function_set(_bft_printf);
 
   /* Open Fortran log files */
 

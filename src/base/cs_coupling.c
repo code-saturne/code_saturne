@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -50,7 +50,14 @@
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
-#include <fvm_coupling.h>
+#include <fvm_nodal_extract.h>
+#include <fvm_point_location.h>
+
+/*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -79,10 +86,10 @@ BEGIN_C_DECLS
  *  Global variables
  *============================================================================*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(PLE_HAVE_MPI)
 
 static int                       _cs_glob_coupling_mpi_app_num = -1;
-static fvm_coupling_mpi_world_t *_cs_glob_coupling_mpi_app_world = NULL;
+static ple_coupling_mpi_world_t *_cs_glob_coupling_mpi_app_world = NULL;
 
 #endif
 
@@ -127,13 +134,13 @@ cs_coupling_discover_mpi_apps(int          app_num,
     }
 
     _cs_glob_coupling_mpi_app_world
-      = fvm_coupling_mpi_world_create(app_num,
+      = ple_coupling_mpi_world_create(app_num,
                                       app_type,
                                       app_name,
                                       cs_glob_mpi_comm);
 
-    n_apps = fvm_coupling_mpi_world_n_apps(_cs_glob_coupling_mpi_app_world);
-    app_id = fvm_coupling_mpi_world_get_app_id(_cs_glob_coupling_mpi_app_world);
+    n_apps = ple_coupling_mpi_world_n_apps(_cs_glob_coupling_mpi_app_world);
+    app_id = ple_coupling_mpi_world_get_app_id(_cs_glob_coupling_mpi_app_world);
 
     if (cs_glob_rank_id < 1) {
 
@@ -142,8 +149,8 @@ cs_coupling_discover_mpi_apps(int          app_num,
 
       for (i = 0; i< n_apps; i++) {
         const char *is_local = nolocal_add;
-        fvm_coupling_mpi_world_info_t
-          ai = fvm_coupling_mpi_world_get_info(_cs_glob_coupling_mpi_app_world,
+        ple_coupling_mpi_world_info_t
+          ai = ple_coupling_mpi_world_get_info(_cs_glob_coupling_mpi_app_world,
                                                i);
         if (i == app_id)
           is_local = local_add;
@@ -167,7 +174,7 @@ void
 cs_coupling_finalize(void)
 {
   if (_cs_glob_coupling_mpi_app_world != NULL)
-    fvm_coupling_mpi_world_destroy(&_cs_glob_coupling_mpi_app_world);
+    ple_coupling_mpi_world_destroy(&_cs_glob_coupling_mpi_app_world);
 }
 
 /*----------------------------------------------------------------------------
@@ -177,13 +184,134 @@ cs_coupling_finalize(void)
  *   info on other applications structure.
  *----------------------------------------------------------------------------*/
 
-const fvm_coupling_mpi_world_t *
+const ple_coupling_mpi_world_t *
 cs_coupling_get_mpi_apps(void)
 {
   return _cs_glob_coupling_mpi_app_world;
 }
 
 #endif /* HAVE_MPI */
+
+/*----------------------------------------------------------------------------
+ * Compute extents of a mesh representation
+ *
+ * parameters:
+ *   mesh          <-- pointer to mesh representation structure
+ *   n_max_extents <-- maximum number of sub-extents (such as element extents)
+ *                     to compute, or -1 to query
+ *   tolerance     <-- addition to local extents of each element:
+ *                     extent = base_extent * (1 + tolerance)
+ *   extents       <-> extents associated with mesh:
+ *                     x_min, y_min, ..., x_max, y_max, ... (size: 2*dim)
+ *
+ * returns:
+ *   the number of extents computed
+ *----------------------------------------------------------------------------*/
+
+ple_lnum_t
+cs_coupling_mesh_extents(const void  *mesh,
+                         ple_lnum_t   n_max_extents,
+                         double       tolerance,
+                         double       extents[])
+{
+  const fvm_nodal_t  *m = mesh;
+  ple_lnum_t retval = 0;
+
+  if (m == NULL)
+    return 0;
+
+  /* In query mode, return maximum extents available
+     (currently limited to 1) */
+
+  if (n_max_extents < 0)
+    retval = 1;
+
+  /* If n_max_extents > 0 return global mesh extents */
+
+  else if (n_max_extents > 0) {
+    fvm_nodal_extents(m, tolerance, extents);
+    retval = 1;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Find elements in a given mesh containing points: updates the
+ * location[] and distance[] arrays associated with a set of points
+ * for points that are in an element of this mesh, or closer to one
+ * than to previously encountered elements.
+ *
+ * Location is relative to the id of a given element + 1 in
+ * concatenated sections of same element dimension.
+ *
+ * parameters:
+ *   mesh         <-- pointer to mesh representation structure
+ *   tolerance    <-- associated tolerance
+ *   n_points     <-- number of points to locate
+ *   point_coords <-- point coordinates
+ *   location     <-> number of element containing or closest to each
+ *                    point (size: n_points)
+ *   distance     <-> distance from point to element indicated by
+ *                    location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                    and > 1 if outside a volume element, or absolute
+ *                    distance to a surface element (size: n_points)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_coupling_point_in_mesh(const void         *mesh,
+                          double              tolerance,
+                          ple_lnum_t          n_points,
+                          const ple_coord_t   point_coords[],
+                          ple_lnum_t          location[],
+                          float               distance[])
+{
+  fvm_point_location_nodal((const fvm_nodal_t *)mesh,
+                           tolerance,
+                           0, /* Do not locate on parents */
+                           n_points,
+                           point_coords,
+                           location,
+                           distance);
+}
+
+/*----------------------------------------------------------------------------
+ * Find elements in a given mesh containing points: updates the
+ * location[] and distance[] arrays associated with a set of points
+ * for points that are in an element of this mesh, or closer to one
+ * than to previously encountered elements.
+ *
+ * Location is relative to parent element numbers.
+ *
+ * parameters:
+ *   mesh         <-- pointer to mesh representation structure
+ *   tolerance    <-- associated tolerance
+ *   n_points     <-- number of points to locate
+ *   point_coords <-- point coordinates
+ *   location     <-> number of element containing or closest to each
+ *                    point (size: n_points)
+ *   distance     <-> distance from point to element indicated by
+ *                    location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                    and > 1 if outside a volume element, or absolute
+ *                    distance to a surface element (size: n_points)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_coupling_point_in_mesh_p(const void         *mesh,
+                            double              tolerance,
+                            ple_lnum_t          n_points,
+                            const ple_coord_t   point_coords[],
+                            ple_lnum_t          location[],
+                            float               distance[])
+{
+  fvm_point_location_nodal((const fvm_nodal_t *)mesh,
+                           tolerance,
+                           1, /* Locate on parents */
+                           n_points,
+                           point_coords,
+                           location,
+                           distance);
+}
 
 /*----------------------------------------------------------------------------*/
 
