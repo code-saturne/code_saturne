@@ -67,9 +67,9 @@ extern "C" {
  * parameters:
  *   this_nodal        <-- pointer to nodal mesh representation structure
  *   tolerance         <-- associated tolerance
- *   locate_on_parents <-- location relative to parent element numbers if
- *                         true, id of element + 1 in concatenated sections
- *                         of same element dimension if false
+ *   locate_on_parents <-- location relative to parent element numbers if 1,
+ *                         id of element + 1 in concatenated sections of
+ *                         same element dimension if 0
  *   n_points          <-- number of points to locate
  *   point_coords      <-- point coordinates
  *   location          <-> number of element containing or closest to each
@@ -83,7 +83,7 @@ extern "C" {
 void
 fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
                          double              tolerance,
-                         _Bool               locate_on_parents,
+                         int                 locate_on_parents,
                          fvm_lnum_t          n_points,
                          const fvm_coord_t   point_coords[],
                          fvm_lnum_t          location[],
@@ -100,9 +100,9 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
  *
  * parameters:
  *   this_nodal        <-- pointer to nodal mesh representation structure
- *   locate_on_parents <-- location relative to parent element numbers if
- *                         true, id of element + 1 in concatenated sections
- *                         of same element dimension if false
+ *   locate_on_parents <-- location relative to parent element numbers if 1,
+ *                         id of element + 1 in concatenated sections of
+ *                         same element dimension if 0
  *   n_points          <-- number of points to locate
  *   point_coords      <-- point coordinates
  *   location          <-> number of element containing or closest to each
@@ -114,7 +114,7 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
 
 void
 fvm_point_location_closest_nodal(const fvm_nodal_t  *this_nodal,
-                                 _Bool               locate_on_parents,
+                                 int                 locate_on_parents,
                                  fvm_lnum_t          n_points,
                                  const fvm_coord_t   point_coords[],
                                  fvm_lnum_t          location[],

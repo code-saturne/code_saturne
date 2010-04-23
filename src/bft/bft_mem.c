@@ -29,7 +29,7 @@
 #include "cs_config.h"
 #endif
 
-#if defined(bft_OS_Linux)
+#if defined(__linux__) || defined(__blrts__) || defined(__bgp__)
 # define _GNU_SOURCE
 #endif
 

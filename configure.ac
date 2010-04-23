@@ -4,7 +4,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@ m4_define([cs_licence_c_comment],
    This file is part of the Code_Saturne Kernel, element of the
    Code_Saturne CFD tool.
 
-   Copyright (C) 2009 EDF S.A., France
+   Copyright (C) 2009-2010 EDF S.A., France
 
    The Code_Saturne Kernel is free software; you can redistribute it
    and/or modify it under the terms of the GNU General Public License
@@ -211,17 +211,6 @@ case "$host_os" in
   *)
     ;;
 esac
-
-case "$host_os" in
-  linux*)           AC_DEFINE(bft_OS_Linux, 1, bft_OS_Linux) ;;
-  solaris2.*)       AC_DEFINE(bft_OS_Solaris, 1, bft_OS_SunOS) ;;
-  aix*)             AC_DEFINE(bft_OS_AIX, 1, bft_OS_AIX) ;;
-  osf*)             AC_DEFINE(bft_OS_OSF1, 1, bft_OS_OSF1) ;;
-  irix5.*|irix6.*)  AC_DEFINE(bft_OS_IRIX64, 1, bft_OS_IRIX64) ;;
-  hpux*)            AC_DEFINE(bft_OS_HP_UX, 1, bft_OS_HP_UX) ;;
-  uxpv*)            AC_DEFINE(bft_OS_UXPV, 1, bft_OS_UNIX_System_V) ;;
-esac
-
 
 # Preprocessor flags for debugging purposes
 
@@ -460,7 +449,7 @@ AC_ARG_WITH(pyqt4-exec, [AS_HELP_STRING([--with-pyqt4-exec=PATH],
                         [PYQT4_EXE=none])dnl
 
 # Test for PyQt4
-if test "x$have_gui" == "xyes" ; then
+if test "x$have_gui" = "xyes" ; then
 
   AC_MSG_CHECKING([for PyQt4 version >= 4.3])
 
@@ -486,9 +475,9 @@ sys.exit(0)]"
 fi
 
 # Test for PyQt4 developper tools
-if test "x$have_gui" == "xyes" ; then
+if test "x$have_gui" = "xyes" ; then
 
-  if test "x${PYQT4_EXE}" == "xnone" ; then
+  if test "x${PYQT4_EXE}" = "xnone" ; then
 
     # Try to find PyQt4 tools through Python interpreter
     prog="[import os, sys
@@ -506,7 +495,7 @@ sys.stdout.write(path)]"
   AC_PATH_PROG([PYUIC4], [pyuic4], ["no"], [${PYPATH}:$PATH])
   AC_PATH_PROG([PYRCC4], [pyrcc4], ["no"], [${PYPATH}:$PATH])
 
-  if test "x$PYUIC4" == "xno" -o "x$PYRCC4" == "xno" ; then
+  if test "x$PYUIC4" = "xno" -o "x$PYRCC4" = "xno" ; then
     AC_MSG_FAILURE([cannot find PyQt4 dev tools, Graphical User Interface cannot be installed])
     have_gui=no
   fi

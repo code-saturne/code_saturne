@@ -37,7 +37,7 @@
 
 #include <string.h>
 
-#if defined(bft_OS_Linux)
+#if defined(__linux__)
 #include <stdio.h>
 #endif
 
@@ -89,7 +89,7 @@ static char _bft_sys_info_cpu_string[BFT_SYS_INFO_STRING_LENGTH + 1] = "";
  * \return Pointer to static string containing CPU info.
  */
 
-#if defined(bft_OS_Linux)
+#if defined(__linux__)
 
 const char *
 bft_sys_info_cpu(void)
@@ -161,7 +161,7 @@ bft_sys_info_cpu(void)
  * \return System memory (in kB), or 0 if information unavailable.
  */
 
-#if defined(bft_OS_Linux)
+#if defined(__linux__)
 
 size_t
 bft_sys_info_mem_ram(void)
@@ -194,7 +194,7 @@ bft_sys_info_mem_ram(void)
  * \return Swap memory (in kB), or 0 if information unavailable.
  */
 
-#if defined(bft_OS_Linux)
+#if defined(__linux__)
 
 size_t
 bft_sys_info_mem_swap(void)
@@ -219,7 +219,7 @@ bft_sys_info_mem_swap(void)
   return(0);
 }
 
-#endif /* bft_OS*/
+#endif /* OS type */
 
 /*-----------------------------------------------------------------------------*/
 

@@ -32,7 +32,8 @@
 /* On Solaris, procfs may not be compiled in a largefile environment,
  * so we redefine macros before including any system header file. */
 
-#if defined(bft_OS_Solaris) && defined(HAVE_UNISTD_H) \
+#if (defined(__solaris__) || defined(__sunos__)) \
+   && defined(HAVE_UNISTD_H) \
    && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
 #define _STRUCTURED_PROC 1
 #undef _FILE_OFFSET_BITS
@@ -49,13 +50,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined (bft_OS_Linux) && defined(HAVE_SYS_STAT_H) \
-                           && defined(HAVE_SYS_TYPES_H)
+#if defined (__linux__) && defined(HAVE_SYS_STAT_H) \
+                        && defined(HAVE_SYS_TYPES_H)
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#elif defined(bft_OS_OSF1) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
+#elif defined(__osf__) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/signal.h>
@@ -64,13 +65,13 @@
 #include <sys/procfs.h>
 #include <unistd.h>
 
-#elif defined(bft_OS_Solaris) && defined(HAVE_UNISTD_H) \
-   && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
+#elif (defined(__solaris__) || defined(__sunos__)) && defined(HAVE_UNISTD_H) \
+    && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
 #include <sys/types.h>
 #include <sys/procfs.h>
 #include <unistd.h>
 
-#elif (defined(bft_OS_IRIX64) || defined(bft_OS_UXPV))
+#elif (defined(IRIX64) || defined(__uxpv__))
 #if defined(HAVE_UNISTD_H) && defined(HAVE_SYS_TYPES_H) \
                            && defined(HAVE_SYS_STAT_H)
 #include <sys/stat.h>
@@ -78,7 +79,7 @@
 #include <unistd.h>
 #endif
 
-#elif defined (bft_OS_AIX) && defined(HAVE_GETRUSAGE)
+#elif (defined(__aix__) || defined(__AIX__)) && defined(HAVE_GETRUSAGE)
 #include <sys/times.h>
 #include <sys/resource.h>
 
@@ -91,7 +92,7 @@
 #if defined(HAVE_UNISTD_H) && defined(HAVE_SBRK)
 #if defined(__blrts__) || defined(__bgp_)
 #define USE_SBRK 1
-#elif defined (bft_OS_Linux)
+#elif defined (__linux__)
 #define __USE_MISC 1
 #endif
 #include <unistd.h>
@@ -136,8 +137,8 @@ static size_t _bft_mem_usage_global_max_pr = 0;
 static void  *_bft_mem_usage_global_init_sbrk = NULL;
 #endif
 
-#if defined (bft_OS_Linux) && defined(HAVE_SYS_STAT_H) \
-                           && defined(HAVE_SYS_TYPES_H)
+#if defined (__linux__) && defined(HAVE_SYS_STAT_H) \
+                        && defined(HAVE_SYS_TYPES_H)
 static int    _bft_mem_usage_proc_file_init = 0;
 static int    _bft_mem_usage_proc_file_peak = 0;
 static int    _bft_mem_usage_proc_file_fd   = -1;
@@ -358,8 +359,8 @@ _bft_mem_usage_unset_hooks(void)
 
 #endif /* defined(HAVE_MALLOC_HOOKS) */
 
-#if defined (bft_OS_Linux) && defined(HAVE_SYS_STAT_H) \
-                           && defined(HAVE_SYS_TYPES_H)
+#if defined (__linux__) && defined(HAVE_SYS_STAT_H) \
+                        && defined(HAVE_SYS_TYPES_H)
 
 /*!
  * \brief Initialize current process memory use count depending on system.
@@ -468,12 +469,12 @@ _bft_mem_usage_pr_size_end(void)
   }
 }
 
-#else  /* defined (bft_OS_Linux) && ... */
+#else  /* defined (__linux__) && ... */
 
 #define _bft_mem_usage_pr_size_init()
 #define _bft_mem_usage_pr_size_end()
 
-#endif /* defined (bft_OS_Linux) && ... */
+#endif /* defined (__linux__) && ... */
 
 /*============================================================================
  * Public function definitions
@@ -549,8 +550,8 @@ bft_mem_usage_initialized(void)
  * non-portable function calls), 0 is returned.
  */
 
-#if defined (bft_OS_Linux) && defined(HAVE_SYS_STAT_H) \
-                           && defined(HAVE_SYS_TYPES_H)
+#if defined (__linux__) && defined(HAVE_SYS_STAT_H) \
+                        && defined(HAVE_SYS_TYPES_H)
 
 size_t
 bft_mem_usage_pr_size(void)
@@ -654,7 +655,7 @@ bft_mem_usage_pr_size(void)
   return sys_mem_usage;
 }
 
-#elif defined (bft_OS_OSF1) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
+#elif defined (__osf__) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
 
 size_t
 bft_mem_usage_pr_size(void)
@@ -690,8 +691,8 @@ bft_mem_usage_pr_size(void)
   return sys_mem_usage;
 }
 
-#elif defined(bft_OS_Solaris) && defined(HAVE_UNISTD_H) \
-   && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
+#elif (defined(__solaris__) || defined(__sunos__)) && defined(HAVE_UNISTD_H) \
+    && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
 
 size_t
 bft_mem_usage_pr_size(void)
@@ -728,7 +729,7 @@ bft_mem_usage_pr_size(void)
   return sys_mem_usage;
 }
 
-#elif (defined(bft_OS_IRIX64) || defined(bft_OS_UXPV))
+#elif (defined(IRIX64) || defined(__uxpv__))
 
 size_t
 bft_mem_usage_pr_size(void)
@@ -737,7 +738,7 @@ bft_mem_usage_pr_size(void)
 
 #if defined(HAVE_UNISTD_H) && defined(HAVE_SYS_TYPES_H) \
  && defined(HAVE_SYS_STAT_H)
-  /* On SGI IRIX and Fujitsu VPP 5000, what follows should work */
+  /* On SGI IRIX64 and Fujitsu VPP 5000, what follows should work */
 
   {
     char   buf[81];     /* should be large enough for "/proc/%lu/status" */
@@ -809,7 +810,7 @@ bft_mem_usage_pr_size(void)
   return 0;
 }
 
-#endif /* bft_OS_Linux, bft_OS_OSF1, ... */
+#endif /* __linux__, __osf__, ... */
 
 /*
  * \brief Return maximum process memory use (in kB) depending on OS.

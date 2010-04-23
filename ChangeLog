@@ -1,3 +1,16 @@
+* 25/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix minor issues due to the migration of the different libraries.
+  modified script:
+    configure.ac
+  modified routines:
+    src/base/cs_syr3_comm.c
+    src/bft/bft_mem.c
+    src/bft/bft_mem_usage.c
+    src/bft/bft_sys_info.c
+    src/fvm/fvm_point_location.c
+    src/fvm/fvm_point_location.h
+    src/fvm/fvm_to_cgns.c
+
 * 24/04/2010 - David Monfort <david.monfort@edf.fr>
   Fix some system definition on GNU Linux systems for better portability.
   modified routines:

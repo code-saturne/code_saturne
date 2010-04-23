@@ -1631,7 +1631,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
     if (vertex_num != NULL) {
       int *_vertex_num = (int *)vertex_num;
       if (sizeof(int) < sizeof(fvm_lnum_t)) {
-        int i = 0, j = 0, n = (elt_end + 1 - elt_start)*stride;
+        int i = 0, n = (elt_end + 1 - elt_start)*stride;
         for (i = 0; i < n; i++)
           _vertex_num[i] = vertex_num[i];
       }
