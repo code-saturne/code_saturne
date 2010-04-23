@@ -1,4 +1,10 @@
 * 25/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Change the behavior of the configure option for finding a Python
+  interpreter.
+  modified script:
+    configure.ac
+
+* 25/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix minor issues due to the migration of the different libraries.
   modified script:
     configure.ac

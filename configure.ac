@@ -422,18 +422,21 @@ AC_ARG_ENABLE(gui, [AS_HELP_STRING([--disable-gui],
 # Checks for Python support.
 #------------------------------------------------------------------------------
 
-AC_ARG_WITH(python-exec, [AS_HELP_STRING([--with-python-exec=PATH],
-                                         [specify prefix directory for a Python interpreter])],
+AC_ARG_WITH(python, [AS_HELP_STRING([--with-python=PYTHON],
+                                    [specify a Python interpreter])],
                          [PYTHON_EXE=${withval}],
-                         [PYTHON_EXE=none])dnl
+                         [PYTHON_EXE=python])dnl
 
-if test "x${PYTHON_EXE}" == "xnone" ; then
-   cs_python="/usr/bin/env python"
-   AC_PATH_PROG([PYEXE], [python], ["no"])
+cs_python="${PYTHON_EXE}"
+cs_python_basename=`basename $cs_python`
+if test "x${cs_python_basename}" != "x${cs_python}" ; then
+  cs_python_dirname=`dirname $cs_python`
+  AC_PATH_PROG([PYEXE], [${cs_python_basename}], ["no"], [${cs_python_dirname}])
+  unset cs_python_dirname
 else
-   cs_python="${PYTHON_EXE}/python"
-   AC_PATH_PROG([PYEXE], [python], ["no"], [${PYTHON_EXE}])
+  AC_PATH_PROG([PYEXE], [${cs_python}], ["no"])
 fi
+unset cs_python_basename
 AC_SUBST(cs_python)
 
 PYTHON=${PYEXE}
