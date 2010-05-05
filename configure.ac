@@ -424,22 +424,22 @@ AC_ARG_ENABLE(gui, [AS_HELP_STRING([--disable-gui],
 
 AC_ARG_WITH(python, [AS_HELP_STRING([--with-python=PYTHON],
                                     [specify a Python interpreter])],
-                         [PYTHON_EXE=${withval}],
-                         [PYTHON_EXE=python])dnl
+                         [cs_python=${withval}],
+                         [cs_python=python])dnl
 
-cs_python="${PYTHON_EXE}"
-cs_python_basename=`basename $cs_python`
+cs_python_basename=`basename ${cs_python}`
 if test "x${cs_python_basename}" != "x${cs_python}" ; then
-  cs_python_dirname=`dirname $cs_python`
-  AC_PATH_PROG([PYEXE], [${cs_python_basename}], ["no"], [${cs_python_dirname}])
+  cs_python_dirname=`dirname ${cs_python}`
+  AC_PATH_PROG([PYTHON], [${cs_python_basename}], ["no"], [${cs_python_dirname}])
   unset cs_python_dirname
 else
-  AC_PATH_PROG([PYEXE], [${cs_python}], ["no"])
+  AC_PATH_PROG([PYTHON], [${cs_python}], ["no"])
 fi
 unset cs_python_basename
+
+cs_python=${PYTHON}
 AC_SUBST(cs_python)
 
-PYTHON=${PYEXE}
 AM_PATH_PYTHON([2.3])
 
 #------------------------------------------------------------------------------
