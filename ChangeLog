@@ -1,3 +1,9 @@
+* 05/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve MPICH2 detection and some MPI shell commands.
+  modified scritps:
+	bin/cs_case.py
+    bin/cs_exec_environment.py
+
 * 25/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Change the behavior of the configure option for finding a Python
   interpreter.

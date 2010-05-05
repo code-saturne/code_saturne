@@ -864,11 +864,11 @@ fi
 
         if mpi_env.gen_hostsfile != None:
             s.write('# Generate hostsfile.\n')
-            s.write(mpi_env.gen_hostsfile + '|| exit $?\n\n')
+            s.write(mpi_env.gen_hostsfile + ' || exit $?\n\n')
 
         if n_procs > 1 and mpi_env.mpiboot != None:
             s.write('# Boot MPI daemons.\n')
-            s.write(mpi_env.mpiboot + '|| exit $?\n\n')
+            s.write(mpi_env.mpiboot + ' || exit $?\n\n')
 
         # Start assembling command
 
@@ -961,7 +961,7 @@ fi
 
         if n_procs > 1 and mpi_env.mpihalt != None:
             s.write('\n# Halt MPI daemons.\n')
-            s.write(mpi_env.mpihalt + '\n')
+            s.write(mpi_env.mpihalt + '\n\n')
 
         if mpi_env.del_hostsfile != None:
             s.write('# Remove hostsfile.\n')
