@@ -281,7 +281,7 @@ def def_exec_prefix():
     """
 
     if CS_TMP_PREFIX != None:
-        return os.path.join(CS_TMP_PREFIX, tmp_Saturne)
+        return os.path.join(CS_TMP_PREFIX, "tmp_Saturne")
 
     exec_prefix = None
 
