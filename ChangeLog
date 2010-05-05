@@ -1,4 +1,9 @@
 * 05/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve Code_Saturne manuals launch from the main script.
+  modified script:
+    bin/cs_info.py
+
+* 05/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve MPICH2 detection and some MPI shell commands.
   modified scritps:
 	bin/cs_case.py

@@ -3,7 +3,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2008 EDF S.A., France
+#     Copyright (C) 1998-2010 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -83,7 +83,7 @@ def process_cmd_line(argv):
 
     (options, args) = parser.parse_args(argv)
 
-    if len(args) > 0:
+    if len(args) > 0 or len(options.guides) == 0:
         parser.print_help()
         sys.exit(1)
 
@@ -141,13 +141,7 @@ def launch_manual(reader, m):
 
         elif os.name == "posix":
 
-            for t in sys_tools:
-                cmd = t + ' ' + manual + ' 2>/dev/null &'
-                try: os.system(cmd)
-                except: pass
-                return
-
-            for r in readers:
+            for r in (sys_tools + readers):
                 cmd = r + ' ' + manual + ' 2>/dev/null &'
                 try: os.system(cmd)
                 except: pass
