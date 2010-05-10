@@ -1,7 +1,9 @@
 * 10/05/2010 - David Monfort <david.monfort@edf.fr>
   Remove useless BFT dependency check in PLE detection.
-  modified script:
+  Remove useless PLE dependency while linking the partitionner.
+  modified scripts:
     config/cs_ple.m4
+	src/apps/Makefile.am
 
 * 05/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix Python detection at configure stage (when detected in /usr/bin).
