@@ -117,8 +117,8 @@ if test "x$with_ple" != "xno" ; then
   saved_LIBS=$LIBS
 
   CPPFLAGS="${CPPFLAGS} $PLE_CPPFLAGS"
-  LDFLAGS="$PLE_LDFLAGS $PLE_MPI_LDFLAGS `$ple_config --ldflags bft` ${LDFLAGS}"
-  LIBS="$PLE_LIBS $PLE_MPI_LIBS `$ple_config --libs bft` ${LIBS}"
+  LDFLAGS="$PLE_LDFLAGS $PLE_MPI_LDFLAGS ${LDFLAGS}"
+  LIBS="$PLE_LIBS $PLE_MPI_LIBS ${LIBS}"
 
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <ple_config.h>
   ]],
