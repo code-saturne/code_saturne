@@ -53,6 +53,7 @@ fvm_order.h \
 fvm_parall.h \
 fvm_part_to_block.h \
 fvm_periodicity.h \
+fvm_point_location.h \
 fvm_selector.h \
 fvm_trace.h \
 fvm_triangulate.h \
@@ -68,7 +69,6 @@ fvm_convert_array.h \
 fvm_gather.h \
 fvm_morton.h \
 fvm_nodal_priv.h \
-fvm_point_location.h \
 fvm_selector_postfix.h \
 fvm_tesselation.h \
 fvm_to_cgns.h \
