@@ -1,3 +1,53 @@
+* 11/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add PLE library to Code_Saturne Subversion repository.
+  added files:
+    libple
+    libple/AUTHORS
+    libple/ChangeLog
+    libple/config
+    libple/config/ple_auto_flags.sh
+    libple/config/ple_config_info.m4
+    libple/config/ple_config_publ.m4
+    libple/config/ple_mpi.m4
+    libple/config/ple_types.m4
+    libple/configure.ac
+    libple/COPYING
+    libple/doc
+    libple/doc/configuration
+    libple/doc/internationalization
+    libple/doc/Makefile.am
+    libple/doc/manpages
+    libple/doc/manpages/ple-config.1
+    libple/examples
+    libple/examples/Makefile
+    libple/examples/my_ple_mesh.c
+    libple/examples/my_ple_mesh.h
+    libple/examples/my_ple_mesh_priv.h
+    libple/examples/my_ple_point_location.c
+    libple/examples/my_ple_point_location.h
+    libple/INSTALL
+    libple/Makefile.am
+    libple/NEWS
+    libple/README
+    libple/sbin
+    libple/sbin/backup
+    libple/sbin/bootstrap
+    libple/sbin/clean
+    libple/sbin/rmb
+    libple/src
+    libple/src/Makefile.am
+    libple/src/ple_config_defs.h
+    libple/src/ple_coupling.c
+    libple/src/ple_coupling.h
+    libple/src/ple_defs.c
+    libple/src/ple_defs.h
+    libple/src/ple_locator.c
+    libple/src/ple_locator.h
+    libple/tests
+    libple/tests/Makefile.am
+    libple/tests/ple_coupling_test.c
+    libple/TODO
+
 * 11/05/2010 - David Monfort <david.monfort@edf.fr>
   The header fvm_point_location.h is now installed.
   modified script:

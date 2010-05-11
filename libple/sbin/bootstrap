@@ -1,0 +1,48 @@
+#!/bin/sh
+
+if [ ! -d sbin ]; then
+  echo "$0 must be called from top directory (../$0)"
+  exit 1
+fi
+
+# To add gettext support, use :
+# gettextize -f -c --no-changelog --intl
+# rm -rf config/m4_gettext ; mv m4 config/m4_gettext
+
+# To use an external gettext version, do not use --intl
+# To use a link instead of copy, do not use -c
+
+# if [ ! -d config/m4_gettext ]; then
+#   echo "running gettextize"
+#   \rm -rf configure.ac~ Makefile.am~
+#   gettextize -c --no-changelog
+#   mv m4 config/m4_gettext
+#   if [ -f configure.ac~ ]; then
+#     mv configure.ac~ configure.ac
+#   fi
+#   if [ -f Makefile.am~ ]; then
+#     mv Makefile.am~ Makefile.am
+#   fi
+#   rm -rf po/*~
+# fi
+
+echo "running aclocal"
+aclocal -I config
+
+echo "running autoconf"
+autoconf
+
+if [ ! -f config/ltmain.sh ]; then
+  echo "running libtoolize"
+  libtoolize --force --copy
+fi
+
+echo "running autoheader"
+autoheader
+
+echo "running automake"
+automake -a -c
+
+echo "removing autom4te.cache"
+\rm -rf autom4te.cache
+
