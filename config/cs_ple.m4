@@ -27,13 +27,15 @@ dnl-----------------------------------------------------------------------------
 
 AC_DEFUN([CS_AC_TEST_PLE], [
 
+have_internal_ple=yes
+
 AC_ARG_WITH(ple,
             [AS_HELP_STRING([--with-ple=PATH],
                             [specify prefix directory for PLE])],
             [if test "x$withval" = "x"; then
                with_ple=yes
              fi],
-            [with_ple=yes])
+            [with_ple=no])
 
 AC_ARG_WITH(ple-exec,
             [AS_HELP_STRING([--with-ple-exec=PATH],
@@ -145,8 +147,9 @@ if test "x$with_ple" != "xno" ; then
 #  endif
 #endif
   ]])],
-                 [AC_MSG_RESULT([compatible ple version found])],
-                 [AC_MSG_FAILURE([compatible ple version not found])])
+                 [have_internal_ple=no
+                  AC_MSG_RESULT([using external PLE library])],
+                 [AC_MSG_RESULT([external PLE library not found, using internal])])
 
   CPPFLAGS=$saved_CPPFLAGS
   LDFLAGS=$saved_LDFLAGS

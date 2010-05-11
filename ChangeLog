@@ -1,3 +1,16 @@
+* 11/05/2010 - David Monfort <david.monfort@edf.fr>
+  Enable the capability to use either the internal PLE library or an external
+  already installed library.
+  modified scripts:
+    config/cs_ple.m4
+    configure.ac
+    libsyrcs/Makefile.am
+    Makefile.am
+    sbin/bootstrap
+    src/apps/Makefile.am
+    src/base/Makefile.am
+    src/ctwr/Makefile.am
+
 * 11/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add PLE library to Code_Saturne Subversion repository.
   added files:

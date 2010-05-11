@@ -52,3 +52,10 @@ cd src/mei
 \rm -f mei_parser.h mei_parser.c mei_scanner.c
 bison -o mei_parser.c  -d mei_parser.y
 flex  -o mei_scanner.c -l mei_scanner.l
+cd ../..
+
+echo
+echo "running bootstrap for PLE library"
+echo
+cd libple
+sbin/bootstrap

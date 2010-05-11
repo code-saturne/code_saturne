@@ -362,6 +362,12 @@ fi
 #------------------------------------------------------------------------------
 
 CS_AC_TEST_PLE(["1.0.0"])
+
+AM_CONDITIONAL(HAVE_INTERNAL_PLE, test x$have_internal_ple = xyes)
+if test "x$have_internal_ple" = xyes; then
+  AC_CONFIG_SUBDIRS([libple])
+fi
+
 CS_AC_TEST_LIBXML2
 CS_AC_TEST_BLAS([$cs_have_openmp])
 CS_AC_TEST_MPI

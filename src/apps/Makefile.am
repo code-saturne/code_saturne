@@ -20,6 +20,18 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
+# PLE dependency
+
+if HAVE_INTERNAL_PLE
+  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
+  LDFLAGS_PLE =
+  LIBS_PLE = $(top_builddir)/libple/src/libple.la
+else
+  CPPFLAGS_PLE = @PLE_CPPFLAGS@
+  LDFLAGS_PLE = @PLE_LDFLAGS@
+  LIBS_PLE = @PLE_LIBS@
+endif
+
 # Main part
 
 AM_CPPFLAGS = \
@@ -28,7 +40,8 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/include/lagr \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
-@PLE_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@
+$(CPPFLAGS_PLE) \
+@MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@
 
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 
@@ -78,7 +91,7 @@ cs_solver_LDADD = libsaturne.la $(LTLIBINTL) \
 $(top_builddir)/src/mei/libmei.la \
 $(top_builddir)/src/fvm/libfvm.la \
 $(top_builddir)/src/bft/libbft.la \
-@PLE_LDFLAGS@ @PLE_LIBS@ \
+$(LDFLAGS_PLE) $(LIBS_PLE) \
 @CGNS_LDFLAGS@ @CGNS_LIBS@ \
 @MED_LDFLAGS@ @MED_LIBS@ \
 @HDF5_LDFLAGS@ @HDF5_LIBS@ \

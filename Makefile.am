@@ -24,7 +24,11 @@ if HAVE_GUI
 GUI = gui
 endif
 
-SUBDIRS = src libsyrcs po doc $(GUI) tests
+if HAVE_INTERNAL_PLE
+PLE = libple
+endif
+
+SUBDIRS = $(PLE) src libsyrcs po doc $(GUI) tests
 
 MAINTAINERCLEANFILES = \
 $(top_srcdir)/Makefile.in \

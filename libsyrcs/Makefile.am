@@ -20,9 +20,17 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
+# PLE dependency
+
+if HAVE_INTERNAL_PLE
+  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
+else
+  CPPFLAGS_PLE = @PLE_CPPFLAGS@
+endif
+
 # Main part
 
-AM_CPPFLAGS = @PLE_CPPFLAGS@  @MPI_CPPFLAGS@
+AM_CPPFLAGS = $(CPPFLAGS_PLE) @MPI_CPPFLAGS@
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 AM_LDFLAGS =
 
