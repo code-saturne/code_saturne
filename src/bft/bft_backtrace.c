@@ -47,7 +47,6 @@
 
 #if defined(HAVE_GLIBC_BACKTRACE)
 #include <memory.h>
-#include <signal.h>
 #include <execinfo.h>
 #endif
 
