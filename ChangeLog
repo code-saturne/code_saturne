@@ -1,4 +1,9 @@
 * 12/05/2010 - David Monfort <david.monfort@edf.fr>
+  Fix a bug when updating the user file list (with 1d-profiles).
+  modified routine:
+    gui/Pages/BatchRunningModel.py
+
+* 12/05/2010 - David Monfort <david.monfort@edf.fr>
   Missing PLE dependency for the partitioner.
   modified script:
     src/apps/Makefile.am

@@ -275,7 +275,8 @@ class BatchRunningModel(Model):
                 v = self.dicoValues['USER_OUTPUT_FILES']
                 vlist = prm.updateOutputFiles(v)
             else:
-                vlist = None
+                v = []
+                vlist = prm.updateOutputFiles(v)
             self.dicoValues['USER_OUTPUT_FILES'] = vlist
 
         # Specific data file for specific physics
