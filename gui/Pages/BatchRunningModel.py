@@ -273,10 +273,9 @@ class BatchRunningModel(Model):
         if prm.getProfilesLabelsList():
             if self.dicoValues['USER_OUTPUT_FILES']:
                 v = self.dicoValues['USER_OUTPUT_FILES']
-                vlist = prm.updateOutputFiles(v)
             else:
                 v = []
-                vlist = prm.updateOutputFiles(v)
+            vlist = prm.updateOutputFiles(v)
             self.dicoValues['USER_OUTPUT_FILES'] = vlist
 
         # Specific data file for specific physics
