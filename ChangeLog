@@ -1,3 +1,8 @@
+* 19/05/2010 - David Monfort <david.monfort@edf.fr>
+  Fix a bug in the user files results copy in the Python runcase.
+  modified script:
+    bin/cs_case_domain.py
+
 * 12/05/2010 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix a useless test on the number of directions in the radiative transfer
   module when using the P1 model.

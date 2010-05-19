@@ -1029,7 +1029,7 @@ class domain(base_domain):
                 if f in dir_files:
                     user_files.append(f)
             if len(user_files) > 0:
-                self.copy_results_to_dir(restart_files, 'RES_USER')
+                self.copy_results_to_dir(user_files, 'RES_USER')
 
         # Parameter or similar data files
 
