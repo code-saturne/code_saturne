@@ -87,14 +87,7 @@ user_LDFLAGS=$LDFLAGS
 user_LIBS=$LIBS
 
 AC_PROG_CC
-if test "x$ac_cv_prog_ac_ct_CC" = x; then
-  AC_MSG_ERROR([no C compiler found, please install one])
-fi
-
 AC_PROG_FC
-if test "x$ac_cv_prog_ac_ct_FC" = x; then
-  AC_MSG_ERROR([no Fortran 90 compiler found, please install one])
-fi
 
 AC_PROG_INSTALL
 AC_PROG_LN_S

@@ -1,4 +1,10 @@
 * 19/05/2010 - David Monfort <david.monfort@edf.fr>
+  Revert previous changeset for improving compilers detection as it isn't as
+  straigthforward as I thought...
+  modified script:
+    configure.ac
+
+* 19/05/2010 - David Monfort <david.monfort@edf.fr>
   Enhance the compilers detection in the configury stage. Abort with error if
   none is found.
   modified script:
