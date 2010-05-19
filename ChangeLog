@@ -1,4 +1,10 @@
 * 19/05/2010 - David Monfort <david.monfort@edf.fr>
+  Enhance the compilers detection in the configury stage. Abort with error if
+  none is found.
+  modified script:
+    configure.ac
+
+* 19/05/2010 - David Monfort <david.monfort@edf.fr>
   Revert a changeset regarding the turbulence relaxation (k/epsilon/omega) to
   avoid stability issues in some calculations. This still needs to be
   investigated in order to have a correct unsteadyness when needed.
