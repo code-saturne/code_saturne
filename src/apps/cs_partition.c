@@ -1913,7 +1913,7 @@ _write_output(fvm_gnum_t  n_g_cells,
 
   if (sizeof(fvm_gnum_t) == 4)
     datatype_gnum = FVM_UINT32;
-  else if (sizeof(int) == 8)
+  else if (sizeof(fvm_gnum_t) == 8)
     datatype_gnum = FVM_UINT64;
   else {
     assert(0);

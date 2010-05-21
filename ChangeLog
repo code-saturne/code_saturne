@@ -1,3 +1,8 @@
+* 21/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a wrong integer type in the partitioner.
+  modified routine:
+    src/apps/cs_partition.c
+
 * 21/05/2010 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix small bugs in post-processing management of the Lagrangian module.
   modified routines:
