@@ -7,9 +7,9 @@
 # Saturne <saturne-support@edf.fr>, 2008.
 msgid ""
 msgstr ""
-"Project-Id-Version: ncs 2.0\n"
+"Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-04-20 14:50+0200\n"
+"POT-Creation-Date: 2010-05-21 19:00+0200\n"
 "PO-Revision-Date: 2010-04-09 15:28+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -22,19 +22,36 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"  Usage: %s [-n <level>] <file_name>\n"
+"Usage: %s [options] <file_name>\n"
+"   or: %s -d [options] <file_name_1> <file_name_2>\n"
 "\n"
-"  Dump headers and optionnaly content of a Code_Saturne\n"
-"  Preprocessor, Partitioner, or restart file.\n"
+"Dump headers and optionnaly content of a Code_Saturne Preprocessor,\n"
+"Partitioner, or restart file, or compare two such files.\n"
 "\n"
-"  -n  <level>    number of first and last elements of each section\n"
-"                 to output (default: print headers only).\n"
+"Options:\n"
 "\n"
-"  -h             this message.\n"
+"  -d, --diff        diff mode.\n"
+"\n"
+"  -e, --extract     extract mode (extract full section data, with\n"
+"                    no metadata).\n"
+"\n"
+"  --f-format <fmt>  define format for floating-point numbers (default:\n"
+"                    \"15.9e\" for floats, \"22.15e\" for doubles).\n"
+"  --location <id>   only output section(s) with given location id.\n"
+"\n"
+"  -n <level>        number of first and last elements of each section\n"
+"                    to output (default: print headers only).\n"
+"\n"
+"  --section <name>  only consider section matching given criteria.\n"
+"\n"
+"  --threshold <val> in diff mode, real value above which a difference is\n"
+"                    considered significant (default: 1e-30).\n"
+"\n"
+"  -h, --help        this message.\n"
 "\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:296 src/base/cs_base.c:362
+#: src/apps/cs_io_dump.c:307 src/base/cs_base.c:363
 #, c-format
 msgid ""
 "\n"
@@ -43,7 +60,7 @@ msgstr ""
 "\n"
 "Erreur système : %s\n"
 
-#: src/apps/cs_io_dump.c:298 src/base/cs_base.c:364
+#: src/apps/cs_io_dump.c:309 src/base/cs_base.c:365
 #, c-format
 msgid ""
 "\n"
@@ -54,17 +71,17 @@ msgstr ""
 "%s:%d: Erreur fatale.\n"
 "\n"
 
-#: src/apps/cs_io_dump.c:346
+#: src/apps/cs_io_dump.c:357
 #, c-format
 msgid "Failure to allocate \"%s\" (%lu bytes)"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:385
+#: src/apps/cs_io_dump.c:396
 #, c-format
 msgid "Failure to reallocate \"%s\" (%lu bytes)"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:462
+#: src/apps/cs_io_dump.c:473
 #, c-format
 msgid ""
 "Error reading file \"%s\":\n"
@@ -75,18 +92,18 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/apps/cs_io_dump.c:466
+#: src/apps/cs_io_dump.c:477
 #, c-format
 msgid "Premature end of file \"%s\""
 msgstr ""
 
-#: src/apps/cs_io_dump.c:469
+#: src/apps/cs_io_dump.c:480
 #, c-format
 msgid "Error reading file \"%s\""
 msgstr "Erreur à la lecture du fichier \"%s\""
 
-#: src/apps/cs_io_dump.c:513 src/apps/cs_io_dump.c:525
-#: src/apps/cs_io_dump.c:532 src/apps/cs_io_dump.c:546
+#: src/apps/cs_io_dump.c:524 src/apps/cs_io_dump.c:536
+#: src/apps/cs_io_dump.c:543 src/apps/cs_io_dump.c:557
 #, c-format
 msgid ""
 "Error setting position in file \"%s\":\n"
@@ -94,11 +111,11 @@ msgid ""
 "  %s"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:534
+#: src/apps/cs_io_dump.c:545
 msgid "sizeof(off_t) > sizeof(long) but fseeko() not available"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:601
+#: src/apps/cs_io_dump.c:612
 #, c-format
 msgid ""
 "Error obtaining position in file \"%s\":\n"
@@ -106,7 +123,7 @@ msgid ""
 "  %s"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:640 src/base/cs_io.c:285 src/base/cs_io.c:326
+#: src/apps/cs_io_dump.c:651 src/base/cs_io.c:285 src/base/cs_io.c:326
 #, c-format
 msgid ""
 "Compilation configuration / porting error:\n"
@@ -114,7 +131,7 @@ msgid ""
 "size_t is %d bits, unsigned long long %d bits"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:701
+#: src/apps/cs_io_dump.c:712
 #, c-format
 msgid ""
 "\n"
@@ -122,7 +139,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:709
+#: src/apps/cs_io_dump.c:720
 #, c-format
 msgid ""
 "Error opening file \"%s\":\n"
@@ -133,23 +150,21 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/apps/cs_io_dump.c:719
+#: src/apps/cs_io_dump.c:730
 #, c-format
 msgid ""
 "File format of \"%s\" is not recognized:\n"
 "First %d bytes: \"%s\"."
 msgstr ""
 
-#: src/apps/cs_io_dump.c:727
-#, c-format
-msgid ""
-"\n"
-"  File type: %s\n"
+#: src/apps/cs_io_dump.c:739
+#, fuzzy, c-format
+msgid "  File type: %s\n"
 msgstr ""
 "\n"
 "  Type de fichier : %s\n"
 
-#: src/apps/cs_io_dump.c:737
+#: src/apps/cs_io_dump.c:750
 #, c-format
 msgid ""
 "\n"
@@ -162,7 +177,7 @@ msgstr ""
 "  Alignement des en-têtes :     %d\n"
 "  Alignement des corps :        %d\n"
 
-#: src/apps/cs_io_dump.c:766
+#: src/apps/cs_io_dump.c:782
 #, c-format
 msgid ""
 "\n"
@@ -170,7 +185,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:771
+#: src/apps/cs_io_dump.c:787
 #, c-format
 msgid ""
 "Error closing file \"%s\":\n"
@@ -181,7 +196,7 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/apps/cs_io_dump.c:852
+#: src/apps/cs_io_dump.c:981
 #, c-format
 msgid ""
 "\n"
@@ -190,7 +205,7 @@ msgid ""
 "  `----------------------------'\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:1127 src/base/cs_io.c:2476
+#: src/apps/cs_io_dump.c:1212 src/base/cs_io.c:2476
 #, c-format
 msgid ""
 "Type \"%s\" is not known\n"
@@ -199,23 +214,23 @@ msgstr ""
 "Type \"%s\" inconnu\n"
 "Types connus : \"c \", \"i4\", \"i8\", \"u4\", \"u8\", \"r4\", \"r8\"."
 
-#: src/apps/cs_io_dump.c:1162
+#: src/apps/cs_io_dump.c:1329
 #, c-format
 msgid "      Values in header\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:1201
+#: src/apps/cs_io_dump.c:1368
 #, c-format
 msgid "    %lu first and last elements:\n"
 msgstr "    %lu premiers et derniers éléments :\n"
 
-#: src/apps/cs_io_dump.c:1203 src/base/cs_calcium.c:268
-#: src/base/cs_syr3_comm.c:881
+#: src/apps/cs_io_dump.c:1370 src/base/cs_calcium.c:268
+#: src/base/cs_syr3_comm.c:885
 #, c-format
 msgid "    elements:\n"
 msgstr "    éléments :\n"
 
-#: src/apps/cs_io_dump.c:1258
+#: src/apps/cs_io_dump.c:1648
 #, c-format
 msgid ""
 "\n"
@@ -226,12 +241,12 @@ msgstr ""
 "  Rubrique :              \"%s\"\n"
 "    Nombre d'éléments :    %lu\n"
 
-#: src/apps/cs_io_dump.c:1264
+#: src/apps/cs_io_dump.c:1654
 #, c-format
 msgid "    Type:                 \"%s\"\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:1266
+#: src/apps/cs_io_dump.c:1656
 #, c-format
 msgid ""
 "      Location id:         %lu\n"
@@ -239,7 +254,84 @@ msgid ""
 "      Values per location: %lu\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:207
+#: src/apps/cs_io_dump.c:1924
+#, c-format
+msgid ""
+"File file \"%s\" contains multiple section:\n"
+"named \"%s\" with location id %d\n"
+"\n"
+msgstr ""
+
+#: src/apps/cs_io_dump.c:2101
+#, c-format
+msgid ""
+"  \"%-32s\"; Location: %2lu Size: %llu\n"
+"    Type: %-6s;  |  Type: %-6s; \n"
+msgstr ""
+
+#: src/apps/cs_io_dump.c:2107
+#, c-format
+msgid "  \"%-32s\"; Location: %2lu; Type: %-6s; Size: %llu\n"
+msgstr ""
+
+#: src/apps/cs_io_dump.c:2372
+#, c-format
+msgid ""
+"  \"%-32s\"; Location: %2lu; Size: %llu\n"
+"    Type: %-6s; |  Type: %-6s\n"
+"\n"
+msgstr ""
+
+#: src/apps/cs_io_dump.c:2376
+#, c-format
+msgid ""
+"  \"%-32s\"; Location: %2lu; Type: %-6s\n"
+"    Size: %llu  |  Size: %llu\n"
+"\n"
+msgstr ""
+
+#: src/apps/cs_io_dump.c:2380
+#, c-format
+msgid ""
+"  \"%-32s\"; Location: %2lu\n"
+"    Type: %-6s; Size: %llu  |  Type: %-6s; Size: %llu\n"
+"\n"
+msgstr ""
+
+#: src/apps/cs_io_dump.c:2459
+#, c-format
+msgid ""
+"    Differences: %llu; Max: %g; Mean: %g\n"
+"\n"
+msgstr ""
+
+#: src/apps/cs_io_dump.c:2462
+#, c-format
+msgid ""
+"    Differences: %llu\n"
+"\n"
+msgstr ""
+
+#: src/apps/cs_io_dump.c:2497
+#, c-format
+msgid "  \"%-32s\"; Type: %-6s; Location: %2lu; Size: %llu\n"
+msgstr ""
+
+#: src/apps/cs_io_dump.c:2501
+#, fuzzy, c-format
+msgid "  \"%-32s\"\n"
+msgstr "  \"%s\"\n"
+
+#: src/apps/cs_io_dump.c:2598 src/apps/cs_io_dump.c:2626
+#, fuzzy, c-format
+msgid ""
+"Sections only found in file \"%s\":\n"
+"\n"
+msgstr ""
+"\n"
+"  Section écrite sur \"%s\" :\n"
+
+#: src/apps/cs_partition.c:206
 #, c-format
 msgid ""
 "Usage: %s [options] <n_ranks> [<n_ranks_2> ... <n_ranks_n>]\n"
@@ -249,7 +341,7 @@ msgid ""
 "<n_ranks> number of ranks of destination partition (> 1).\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:212 src/base/cs_opts.c:116
+#: src/apps/cs_partition.c:211 src/base/cs_opts.c:115
 #, c-format
 msgid ""
 "\n"
@@ -260,29 +352,29 @@ msgstr ""
 "Options de la ligne de commandes :\n"
 "\n"
 
-#: src/apps/cs_partition.c:215
+#: src/apps/cs_partition.c:214
 msgid ""
 " --no-perio        ignore periodicity information if present.\n"
 " --no-write        do not write output.\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:220
+#: src/apps/cs_partition.c:219
 msgid " --metis           use ParMETIS for partitioning (default).\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:223
+#: src/apps/cs_partition.c:222
 msgid " --metis           use METIS for partitioning (default).\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:227
+#: src/apps/cs_partition.c:226
 msgid " --scotch          use PT-SCOTCH for partitioning.\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:230
+#: src/apps/cs_partition.c:229
 msgid " --scotch          use SCOTCH for partitioning.\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:234 src/base/cs_opts.c:122
+#: src/apps/cs_partition.c:233 src/base/cs_opts.c:120
 #, c-format
 msgid ""
 " --mpi             use MPI for parallelism or coupling\n"
@@ -293,7 +385,7 @@ msgstr ""
 "                   [appnum] : numéro de cette application en cas de\n"
 "                              couplage de codes (défaut : 0)\n"
 
-#: src/apps/cs_partition.c:238 src/base/cs_opts.c:126
+#: src/apps/cs_partition.c:237 src/base/cs_opts.c:124
 #, c-format
 msgid ""
 " --mpi-io          <mode> set parallel I/O behavior\n"
@@ -303,7 +395,7 @@ msgid ""
 "                     ip:  MPI-IO with individual file pointers\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:245 src/base/cs_opts.c:139
+#: src/apps/cs_partition.c:244 src/base/cs_opts.c:136
 #, c-format
 msgid ""
 " --log             output redirection for rank -1 or 0:\n"
@@ -314,7 +406,7 @@ msgstr ""
 "                     0 : sortie standard\n"
 "                     1 : sorties dans \"listing\" (défaut)\n"
 
-#: src/apps/cs_partition.c:249 src/base/cs_opts.c:143
+#: src/apps/cs_partition.c:248 src/base/cs_opts.c:140
 #, c-format
 msgid ""
 " --logp            output redirection for rank > 0:\n"
@@ -329,11 +421,11 @@ msgstr ""
 "                         indépendants, type deboggeur)\n"
 "                     1 : sorties dans \"listing_n<rang>\"\n"
 
-#: src/apps/cs_partition.c:255
+#: src/apps/cs_partition.c:254
 msgid " -v, --version     print version number\n"
 msgstr " -v, --version     affiche le numéro de version\n"
 
-#: src/apps/cs_partition.c:257 src/base/cs_opts.c:162
+#: src/apps/cs_partition.c:256 src/base/cs_opts.c:155
 #, c-format
 msgid ""
 " -h, --help        this help message\n"
@@ -342,58 +434,58 @@ msgstr ""
 " -h, --help        appel de l'aide (cet affichage)\n"
 "\n"
 
-#: src/apps/cs_partition.c:270 src/base/cs_opts.c:175
+#: src/apps/cs_partition.c:269 src/base/cs_opts.c:168
 #, c-format
 msgid "%s version %s\n"
 msgstr "%s version %s\n"
 
-#: src/apps/cs_partition.c:494
+#: src/apps/cs_partition.c:493
 msgid "  Number of cells per domain (histogramm):\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:601
+#: src/apps/cs_partition.c:600
 #, c-format
 msgid ""
 "Section: \"%s\" of file \"%s\" has  %d values per\n"
 "location where 0 were expected."
 msgstr ""
 
-#: src/apps/cs_partition.c:611
+#: src/apps/cs_partition.c:610
 #, c-format
 msgid ""
 "Section: \"%s\" of file \"%s\" is not\n"
 "of unsigned integer type."
 msgstr ""
 
-#: src/apps/cs_partition.c:655
+#: src/apps/cs_partition.c:654
 #, c-format
 msgid ""
 "Section: \"%s\" of file \"%s\" has  %d values per\n"
 "location where 2 were expected."
 msgstr ""
 
-#: src/apps/cs_partition.c:666
+#: src/apps/cs_partition.c:665
 #, c-format
 msgid ""
 "Section: \"%s\" of file \"%s\" is not\n"
 "of integer type."
 msgstr ""
 
-#: src/apps/cs_partition.c:1064
+#: src/apps/cs_partition.c:1063
 #, c-format
 msgid ""
 "\n"
 "Partitioning %d cells to %d domains (METIS_PartGraphRecursive).\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1085
+#: src/apps/cs_partition.c:1084
 #, c-format
 msgid ""
 "\n"
 "Partitioning %d cells to %d domains (METIS_PartGraphKway).\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1107 src/apps/cs_partition.c:1524
+#: src/apps/cs_partition.c:1106 src/apps/cs_partition.c:1523
 #, c-format
 msgid ""
 "\n"
@@ -402,14 +494,14 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1190
+#: src/apps/cs_partition.c:1189
 #, c-format
 msgid ""
 "\n"
 "Partitioning %llu cells to %d domains (ParMETIS_V3_PartKway).\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1226
+#: src/apps/cs_partition.c:1225
 #, c-format
 msgid ""
 "\n"
@@ -418,7 +510,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1269
+#: src/apps/cs_partition.c:1268
 #, c-format
 msgid ""
 "\n"
@@ -426,7 +518,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1314
+#: src/apps/cs_partition.c:1313
 #, c-format
 msgid ""
 "\n"
@@ -434,21 +526,21 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1454
+#: src/apps/cs_partition.c:1453
 #, c-format
 msgid ""
 "\n"
 "Partitioning %d cells to %d domains (SCOTCH_graphPart).\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1580
+#: src/apps/cs_partition.c:1579
 #, c-format
 msgid ""
 "\n"
 "Partitioning %llu cells to %d domains (SCOTCH_dgraphPart).\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1632
+#: src/apps/cs_partition.c:1631
 #, c-format
 msgid ""
 "\n"
@@ -456,15 +548,15 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1680
+#: src/apps/cs_partition.c:1679
 msgid "Read:   "
 msgstr ""
 
-#: src/apps/cs_partition.c:1681
+#: src/apps/cs_partition.c:1680
 msgid "Ignored:"
 msgstr ""
 
-#: src/apps/cs_partition.c:1683 src/base/cs_preprocessor_data.c:2660
+#: src/apps/cs_partition.c:1682 src/base/cs_preprocessor_data.c:2660
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
@@ -473,36 +565,36 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendue ou de taille incorrecte"
 
-#: src/apps/cs_partition.c:1789
+#: src/apps/cs_partition.c:1788
 #, c-format
 msgid "  %s \"%-32s\"; Type: %-6s; Size: %llu\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1796
+#: src/apps/cs_partition.c:1795
 #, c-format
 msgid "  %s \"%-32s\"\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2060
+#: src/apps/cs_partition.c:2059
 msgid ""
 " .------------------------------.\n"
 " |   Code_Saturne Partitioner   |\n"
 " `------------------------------'\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2072
+#: src/apps/cs_partition.c:2071
 msgid ""
 "\n"
 "  External library:\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2074
+#: src/apps/cs_partition.c:2073
 msgid ""
 "\n"
 "  External libraries:\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2242
+#: src/apps/cs_partition.c:2241
 msgid ""
 "\n"
 " .------------------------.\n"
@@ -511,7 +603,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_solver.c:300
+#: src/apps/cs_solver.c:299
 #, c-format
 msgid ""
 "\n"
@@ -520,7 +612,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/apps/cs_solver.c:306
+#: src/apps/cs_solver.c:305
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -528,11 +620,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:362
+#: src/apps/cs_solver.c:361
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:376
+#: src/apps/cs_solver.c:375
 #, c-format
 msgid ""
 "\n"
@@ -541,7 +633,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:392
+#: src/apps/cs_solver.c:391
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -549,7 +641,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:414
+#: src/apps/cs_solver.c:413
 #, c-format
 msgid ""
 "\n"
@@ -564,7 +656,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:424
+#: src/apps/cs_solver.c:423
 #, c-format
 msgid ""
 "\n"
@@ -577,7 +669,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:430
+#: src/apps/cs_solver.c:429
 #, c-format
 msgid ""
 "\n"
@@ -592,7 +684,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:492
+#: src/apps/cs_solver.c:491
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -600,7 +692,7 @@ msgstr ""
 "\n"
 " Destruction des structures et clôture du calcul\n"
 
-#: src/base/cs_base.c:384
+#: src/base/cs_base.c:385
 msgid ""
 "\n"
 "\n"
@@ -614,27 +706,27 @@ msgstr ""
 "------------------------------\n"
 "\n"
 
-#: src/base/cs_base.c:391
+#: src/base/cs_base.c:392
 #, c-format
 msgid "Theoretical current allocated memory:   %llu kB\n"
 msgstr "Mémoire dynamique instrumentée théorique : %llu ko\n"
 
-#: src/base/cs_base.c:395
+#: src/base/cs_base.c:396
 #, c-format
 msgid "Theoretical maximum allocated memory:   %llu kB\n"
 msgstr "Mémoire dynamique instrumentée théorique : %llu ko\n"
 
-#: src/base/cs_base.c:405
+#: src/base/cs_base.c:406
 #, c-format
 msgid "Maximum program memory measure:         %llu kB\n"
 msgstr "Mémoire programme mesurée maximale:        %llu ko\n"
 
-#: src/base/cs_base.c:413
+#: src/base/cs_base.c:414
 #, c-format
 msgid "Current program memory measure:         %llu kB\n"
 msgstr "Mémoire programme mesurée courante:        %llu ko\n"
 
-#: src/base/cs_base.c:475
+#: src/base/cs_base.c:476
 msgid ""
 "\n"
 "Call stack:\n"
@@ -642,7 +734,7 @@ msgstr ""
 "\n"
 "Pile d'appels :\n"
 
-#: src/base/cs_base.c:503
+#: src/base/cs_base.c:504
 msgid ""
 "End of stack\n"
 "\n"
@@ -650,7 +742,7 @@ msgstr ""
 "Fin de la pile\n"
 "\n"
 
-#: src/base/cs_base.c:521
+#: src/base/cs_base.c:522
 msgid ""
 "SIGHUP signal (hang-up) intercepted.\n"
 "--> computation interrupted.\n"
@@ -658,7 +750,7 @@ msgstr ""
 "Signal SIGHUP (déconnexion) intercepté.\n"
 "--> calcul interrompu.\n"
 
-#: src/base/cs_base.c:527
+#: src/base/cs_base.c:528
 msgid ""
 "SIGINT signal (Control+C or equivalent) received.\n"
 "--> computation interrupted by user.\n"
@@ -666,7 +758,7 @@ msgstr ""
 "Signal SIGINT (Control+C ou équivalent) reçu.\n"
 "--> calcul interrompu par l'utilisateur.\n"
 
-#: src/base/cs_base.c:532
+#: src/base/cs_base.c:533
 msgid ""
 "SIGTERM signal (termination) received.\n"
 "--> computation interrupted by environment.\n"
@@ -674,24 +766,24 @@ msgstr ""
 "Signal SIGTERM (terminaison) reçu.\n"
 "--> calcul interrompu par l'environnement.\n"
 
-#: src/base/cs_base.c:537
+#: src/base/cs_base.c:538
 msgid "SIGFPE signal (floating point exception) intercepted!\n"
 msgstr "Signal SIGFPE (exception en virgule flottante) intercepté !\n"
 
-#: src/base/cs_base.c:542
+#: src/base/cs_base.c:543
 msgid "SIGSEGV signal (forbidden memory area access) intercepted!\n"
 msgstr "Signal SIGSEGV (accès à une zone mémoire interdite) intercepté !\n"
 
-#: src/base/cs_base.c:548
+#: src/base/cs_base.c:549
 msgid "SIGXCPU signal (CPU time limit reached) intercepted.\n"
 msgstr "Signal SIGXCPU (temps CPU limite atteint) intercepté.\n"
 
-#: src/base/cs_base.c:554
+#: src/base/cs_base.c:555
 #, c-format
 msgid "Signal %d intercepted!\n"
 msgstr "Signal %d intercepté !\n"
 
-#: src/base/cs_base.c:612
+#: src/base/cs_base.c:614
 #, c-format
 msgid ""
 "\n"
@@ -702,7 +794,7 @@ msgstr ""
 "Erreur MPI (communicateur %s):\n"
 "%s\n"
 
-#: src/base/cs_base.c:615
+#: src/base/cs_base.c:617
 #, c-format
 msgid ""
 "\n"
@@ -713,7 +805,7 @@ msgstr ""
 "Erreur MPI :\n"
 "%s\n"
 
-#: src/base/cs_base.c:807
+#: src/base/cs_base.c:809
 #, c-format
 msgid ""
 " Sub-routine calling iasize:                %s\n"
@@ -728,7 +820,7 @@ msgstr ""
 "\n"
 " ----> Définir iasize au moins égale à %d entiers)."
 
-#: src/base/cs_base.c:851
+#: src/base/cs_base.c:853
 #, c-format
 msgid ""
 " Sub-routine calling rasize:             %s\n"
@@ -743,16 +835,16 @@ msgstr ""
 "\n"
 " ----> Définir rasize au moins égale à %d réels)."
 
-#: src/base/cs_base.c:938
+#: src/base/cs_base.c:940
 msgid "command: \n"
 msgstr "commande : \n"
 
-#: src/base/cs_base.c:953
+#: src/base/cs_base.c:955
 #, c-format
 msgid "  build %s\n"
 msgstr "  build %s\n"
 
-#: src/base/cs_base.c:957
+#: src/base/cs_base.c:959
 #, c-format
 msgid ""
 "  MPI version %d.%d (%s)\n"
@@ -761,7 +853,7 @@ msgstr ""
 "  Version MPI %d.%d (%s)\n"
 "\n"
 
-#: src/base/cs_base.c:960
+#: src/base/cs_base.c:962
 #, c-format
 msgid ""
 "  MPI version %d.%d\n"
@@ -770,15 +862,15 @@ msgstr ""
 "  Version MPI %d.%d\n"
 "\n"
 
-#: src/base/cs_base.c:1320
+#: src/base/cs_base.c:1329
 msgid "Total memory used:                       "
 msgstr "Consommation mémoire totale mesurée :     "
 
-#: src/base/cs_base.c:1321
+#: src/base/cs_base.c:1330
 msgid "Theoretical instrumented dynamic memory: "
 msgstr "Mémoire dynamique instrumentée théorique :"
 
-#: src/base/cs_base.c:1325
+#: src/base/cs_base.c:1334
 msgid ""
 "\n"
 "Memory use summary:\n"
@@ -788,22 +880,22 @@ msgstr ""
 "Bilan de l'occupation mémoire :\n"
 "\n"
 
-#: src/base/cs_base.c:1388
+#: src/base/cs_base.c:1397
 #, c-format
 msgid "  %s %12.3f %cb\n"
 msgstr "  %s %12.3f %co\n"
 
-#: src/base/cs_base.c:1393
+#: src/base/cs_base.c:1402
 #, c-format
 msgid "                             local minimum: %12.3f %cb  (rank %d)\n"
 msgstr "                             minimum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1396
+#: src/base/cs_base.c:1405
 #, c-format
 msgid "                             local maximum: %12.3f %cb  (rank %d)\n"
 msgstr "                             maximum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1436
+#: src/base/cs_base.c:1445
 #, c-format
 msgid ""
 "\n"
@@ -822,7 +914,7 @@ msgstr ""
 "   Mémoire de travail maximale locale demandée %12.3f %co\n"
 "                                      utilisée %12.3f %co\n"
 
-#: src/base/cs_base.c:1473
+#: src/base/cs_base.c:1482
 msgid ""
 "\n"
 "Calculation time summary:\n"
@@ -830,7 +922,7 @@ msgstr ""
 "\n"
 "Bilan des temps de calcul :\n"
 
-#: src/base/cs_base.c:1487
+#: src/base/cs_base.c:1496
 #, c-format
 msgid ""
 "\n"
@@ -839,12 +931,12 @@ msgstr ""
 "\n"
 "  Temps CPU utilisateur : %12.3f s\n"
 
-#: src/base/cs_base.c:1489
+#: src/base/cs_base.c:1498
 #, c-format
 msgid "  System CPU time:     %12.3f s\n"
 msgstr "  Temps CPU système :     %12.3f s\n"
 
-#: src/base/cs_base.c:1494
+#: src/base/cs_base.c:1503
 #, c-format
 msgid ""
 "\n"
@@ -853,12 +945,12 @@ msgstr ""
 "\n"
 "  Temps CPU :             %12.3f s\n"
 
-#: src/base/cs_base.c:1503
+#: src/base/cs_base.c:1512
 #, c-format
 msgid "  Total CPU time:      %12.3f s\n"
 msgstr "  Temps CPU cumulé :      %12.3f s\n"
 
-#: src/base/cs_base.c:1514
+#: src/base/cs_base.c:1523
 #, c-format
 msgid ""
 "\n"
@@ -867,66 +959,66 @@ msgstr ""
 "\n"
 "  Temps écoulé :          %12.3f s\n"
 
-#: src/base/cs_base.c:1517
+#: src/base/cs_base.c:1526
 #, c-format
 msgid "  CPU / elapsed time   %12.3f\n"
 msgstr "  Temps CPU / écoulé      %12.3f\n"
 
-#: src/base/cs_base.c:1609
+#: src/base/cs_base.c:1618
 msgid "Local case configuration:\n"
 msgstr "Configuration locale du cas :\n"
 
-#: src/base/cs_base.c:1611
+#: src/base/cs_base.c:1620
 msgid "Date:              "
 msgstr "Date :             "
 
-#: src/base/cs_base.c:1619
+#: src/base/cs_base.c:1628
 msgid "System:            "
 msgstr "Système :          "
 
-#: src/base/cs_base.c:1621
+#: src/base/cs_base.c:1630
 msgid "Machine:           "
 msgstr "Machine :          "
 
-#: src/base/cs_base.c:1625
+#: src/base/cs_base.c:1634
 msgid "Processor:         "
 msgstr "Processeur :       "
 
-#: src/base/cs_base.c:1628
+#: src/base/cs_base.c:1637
 msgid "Memory:            "
 msgstr "Mémoire :          "
 
-#: src/base/cs_base.c:1631
+#: src/base/cs_base.c:1640
 msgid "User:              "
 msgstr "Utilisateur :      "
 
-#: src/base/cs_base.c:1635
+#: src/base/cs_base.c:1644
 msgid "Directory:         "
 msgstr "Répertoire :       "
 
-#: src/base/cs_base.c:1638
+#: src/base/cs_base.c:1647
 msgid "MPI ranks:         "
 msgstr "Rangs MPI :        "
 
-#: src/base/cs_base.c:1641
+#: src/base/cs_base.c:1650
 msgid "OpenMP threads:    "
 msgstr "Threads OpenMP:    "
 
-#: src/base/cs_base.c:1697
+#: src/base/cs_base.c:1707
 #, c-format
 msgid ""
 "It is impossible to redirect the standard output to file:\n"
 "%s"
 msgstr ""
 
-#: src/base/cs_base.c:1703
+#: src/base/cs_base.c:1713
 #, c-format
 msgid ""
 "It is impossible to redirect the standard error to file:\n"
 "%s"
 msgstr ""
 
-#: src/base/cs_base.c:1731
+#: src/base/cs_base.c:1742
 #, c-format
 msgid ""
 "\n"
@@ -937,7 +1029,7 @@ msgstr ""
 "\n"
 "Code_Saturne : %s:%d : Avertissement\n"
 
-#: src/base/cs_base_fortran.c:124
+#: src/base/cs_base_fortran.c:130
 #, c-format
 msgid ""
 "Fatal error: bft_printf() called on a message of size %d\n"
@@ -1360,7 +1452,7 @@ msgstr ""
 "  Pour plus de détails, vérifiez la fin du \"listing\" de calcul,\n"
 "  ou visualisez le post traitement dédié aux erreurs."
 
-#: src/base/cs_calcium.c:262 src/base/cs_syr3_comm.c:877
+#: src/base/cs_calcium.c:262 src/base/cs_syr3_comm.c:881
 #, c-format
 msgid "    %d first and last elements:\n"
 msgstr "    %d premiers et derniers éléments :\n"
@@ -1414,8 +1506,8 @@ msgstr ""
 "Écriture de %d valeurs de type %s, dep_temps %s\n"
 "        (temps %f, itération %d) ..."
 
-#: src/base/cs_calcium.c:475 src/base/cs_sat_coupling.c:276
-#: src/base/cs_syr4_coupling.c:210
+#: src/base/cs_calcium.c:475 src/base/cs_sat_coupling.c:280
+#: src/base/cs_syr4_coupling.c:216
 msgid "[ok]\n"
 msgstr "[ok]\n"
 
@@ -1438,7 +1530,7 @@ msgstr ""
 "Support de librairies partagées non disponible.\n"
 "Impossible de charger : %s\n"
 
-#: src/base/cs_coupling.c:123
+#: src/base/cs_coupling.c:130
 msgid ""
 "\n"
 "Applications accessible through MPI:\n"
@@ -1449,7 +1541,7 @@ msgstr ""
 "Applications accessibles grâce à MPI :\n"
 "--------------------------------------\n"
 
-#: src/base/cs_coupling.c:150
+#: src/base/cs_coupling.c:157
 #, c-format
 msgid ""
 "  %d; type:      \"%s\"%s\n"
@@ -1998,7 +2090,7 @@ msgstr ""
 "    nom de la rubrique :    \"%s\"\n"
 "    nombre d'éléments :     %llu\n"
 
-#: src/base/cs_io.c:1203 src/base/cs_syr3_comm.c:849
+#: src/base/cs_io.c:1203 src/base/cs_syr3_comm.c:853
 #, c-format
 msgid "    element type name:      \"%s\"\n"
 msgstr "    nom du type d'élément : \"%s\"\n"
@@ -3955,7 +4047,7 @@ msgid ""
 "parameters."
 msgstr ""
 
-#: src/base/cs_mesh_solcom.c:382 src/base/cs_post.c:3460
+#: src/base/cs_mesh_solcom.c:381 src/base/cs_post.c:3459
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
@@ -4322,12 +4414,12 @@ msgstr "vectorisation"
 msgid "threads"
 msgstr ""
 
-#: src/base/cs_opts.c:114
+#: src/base/cs_opts.c:113
 #, c-format
 msgid "Usage: %s [options]\n"
 msgstr "Utilisation : %s [options]\n"
 
-#: src/base/cs_opts.c:118
+#: src/base/cs_opts.c:117
 #, c-format
 msgid ""
 " --solcom          stand-alone kernel with \"geomet\" mesh in\n"
@@ -4336,12 +4428,12 @@ msgstr ""
 " --solcom          noyau autonome avec maillage \"geomet\" au\n"
 "                   format SolCom (obsolète)\n"
 
-#: src/base/cs_opts.c:133
+#: src/base/cs_opts.c:130
 #, c-format
 msgid " -q, --quality     mesh quality verification mode\n"
 msgstr " -q, --quality     vérification de la qualité du maillage\n"
 
-#: src/base/cs_opts.c:135
+#: src/base/cs_opts.c:132
 #, c-format
 msgid ""
 " --benchmark       elementary operations performance\n"
@@ -4352,22 +4444,50 @@ msgstr ""
 "                   [--mpitrace] opérations effectuées une seule\n"
 "                                fois pour traces MPI légères\n"
 
-#: src/base/cs_opts.c:150
+#: src/base/cs_opts.c:146
 #, c-format
 msgid " -p, --param       <file_name> parameter file\n"
 msgstr " -p, --param       <nom_du_fichier> fichier de paramètres\n"
 
-#: src/base/cs_opts.c:155
+#: src/base/cs_opts.c:149
 #, c-format
 msgid ""
 " --syr-socket      enable sockets for SYRTHES 3 coupling\n"
 "                   <port_num> port number on rank 0\n"
 msgstr ""
 
-#: src/base/cs_opts.c:160
+#: src/base/cs_opts.c:153
 #, c-format
 msgid " --version         print version number\n"
 msgstr " --version         affiche le numéro de version\n"
+
+#: src/base/cs_opts.c:300
+#, c-format
+msgid ""
+"%s was built without MPI support,\n"
+"so option \"%s\" may not be used.\n"
+msgstr ""
+
+#: src/base/cs_opts.c:351
+#, c-format
+msgid ""
+"%s was built without XML support,\n"
+"so parameter file \"%s\" may not be loaded.\n"
+msgstr ""
+
+#: src/base/cs_opts.c:393
+#, c-format
+msgid ""
+"%s was built without socket support,\n"
+"so option \"%s\" may not be used.\n"
+msgstr ""
+
+#: src/base/cs_opts.c:410
+#, c-format
+msgid ""
+"%s was built without dynamic loader support,\n"
+"so module file \"%s\" may not be loaded.\n"
+msgstr ""
 
 #: src/base/cs_perio.c:344
 #, c-format
@@ -4395,7 +4515,7 @@ msgstr ""
 "alors que les dernières variables dont le halo de rotation\n"
 "a été sauvegardé sont définies à partir de [%p, %p, %p]."
 
-#: src/base/cs_post.c:281
+#: src/base/cs_post.c:280
 #, c-format
 msgid ""
 "The requested post-processing writer number\n"
@@ -4404,7 +4524,7 @@ msgstr ""
 "Le gestionnaire de post traitement numéro %d demandé\n"
 "n'est pas défini.\n"
 
-#: src/base/cs_post.c:312
+#: src/base/cs_post.c:311
 #, c-format
 msgid ""
 "The requested post-processing mesh number\n"
@@ -4413,7 +4533,7 @@ msgstr ""
 "Le maillage de post traitement numéro %d demandé\n"
 "n'est pas défini.\n"
 
-#: src/base/cs_post.c:342
+#: src/base/cs_post.c:341
 msgid ""
 "The requested post-processing mesh number\n"
 "must be < 0 (reserved) or > 0 (user).\n"
@@ -4421,7 +4541,7 @@ msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-#: src/base/cs_post.c:348
+#: src/base/cs_post.c:347
 #, c-format
 msgid ""
 "The requested post-processing mesh number\n"
@@ -4430,15 +4550,15 @@ msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "(%d) a déjà été affecté.\n"
 
-#: src/base/cs_post.c:770
+#: src/base/cs_post.c:769
 msgid "parallel domain"
 msgstr ""
 
-#: src/base/cs_post.c:951
+#: src/base/cs_post.c:950
 msgid "displacement"
 msgstr ""
 
-#: src/base/cs_post.c:1885
+#: src/base/cs_post.c:1884
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IVARPR must be\n"
@@ -4447,7 +4567,7 @@ msgstr ""
 "L'argument IVARPR du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1894
+#: src/base/cs_post.c:1893
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IENTLA must be\n"
@@ -4456,7 +4576,7 @@ msgstr ""
 "L'argument IENTLA du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1961
+#: src/base/cs_post.c:1960
 msgid ""
 "The requested post-processing writer number\n"
 "must be < 0 (reserved) or > 0 (user).\n"
@@ -4464,7 +4584,7 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-#: src/base/cs_post.c:1967
+#: src/base/cs_post.c:1966
 #, c-format
 msgid ""
 "The requested post-processing writer number\n"
@@ -4473,18 +4593,18 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "(%d) a déjà été affecté.\n"
 
-#: src/base/cs_post.c:2228 src/base/cs_post.c:2231
+#: src/base/cs_post.c:2227 src/base/cs_post.c:2230
 msgid " edges"
 msgstr ""
 
-#: src/base/cs_post.c:2273
+#: src/base/cs_post.c:2272
 #, c-format
 msgid ""
 "Post-processing mesh number %d has been aliased\n"
 "by mesh %d, so it may not be freed.\n"
 msgstr ""
 
-#: src/base/cs_post.c:2290
+#: src/base/cs_post.c:2289
 #, c-format
 msgid ""
 "Post-processing mesh number %d has been associated\n"
@@ -4492,7 +4612,7 @@ msgid ""
 "it may not be freed.\n"
 msgstr ""
 
-#: src/base/cs_post.c:2386
+#: src/base/cs_post.c:2385
 #, c-format
 msgid ""
 "The mesh %d cannot be an alias of mesh %d,\n"
@@ -4501,7 +4621,7 @@ msgstr ""
 "Le maillage %d ne peut être un alias du maillage %d,\n"
 "qui est lui-même déjà un alias du maillage %d.\n"
 
-#: src/base/cs_post.c:3305
+#: src/base/cs_post.c:3304
 #, c-format
 msgid ""
 "\n"
@@ -4522,11 +4642,11 @@ msgstr ""
 "  Temps écoulé pour les maillages : %12.3f\n"
 "  Temps écoulé pour les champs :    %12.3f\n"
 
-#: src/base/cs_post.c:3477
+#: src/base/cs_post.c:3476
 msgid "Boundary"
 msgstr "Bord"
 
-#: src/base/cs_post.c:3601
+#: src/base/cs_post.c:3600
 msgid "Calculation domain"
 msgstr "Domaine de calcul"
 
@@ -4883,7 +5003,7 @@ msgstr ""
 "  Temps écoulé pour la lecture :    %12.3f\n"
 "  Temps écoulé pour l'écriture :    %12.3f\n"
 
-#: src/base/cs_sat_coupling.c:231
+#: src/base/cs_sat_coupling.c:235
 #, c-format
 msgid ""
 " Code_Saturne coupling:\n"
@@ -4898,19 +5018,19 @@ msgstr ""
 "   numéro local :               %d\n"
 "\n"
 
-#: src/base/cs_sat_coupling.c:266
+#: src/base/cs_sat_coupling.c:270
 #, c-format
 msgid " Code_Saturne coupling %d: initializing MPI communication ... "
 msgstr " Couplage Code_Saturne %d : initialisation de la communication MPI ..."
 
-#: src/base/cs_sat_coupling.c:277 src/base/cs_syr4_coupling.c:211
+#: src/base/cs_sat_coupling.c:281 src/base/cs_syr4_coupling.c:217
 #, c-format
 msgid ""
 "  Local ranks = [%d..%d], distant ranks = [%d..%d].\n"
 "\n"
 msgstr "Rangs locaux = [%d..%d], rangs distants = [%d..%d].\n"
 
-#: src/base/cs_sat_coupling.c:362
+#: src/base/cs_sat_coupling.c:366
 #, c-format
 msgid ""
 " Code_Saturne coupling:\n"
@@ -4933,27 +5053,27 @@ msgstr ""
 "   nombre de rangs MPI :        %d\n"
 "\n"
 
-#: src/base/cs_sat_coupling.c:1015 src/base/cs_sat_coupling.c:1222
-#: src/base/cs_sat_coupling.c:1289 src/base/cs_sat_coupling.c:1364
-#: src/base/cs_sat_coupling.c:1425 src/base/cs_sat_coupling.c:1495
-#: src/base/cs_sat_coupling.c:1593 src/base/cs_sat_coupling.c:1672
-#: src/base/cs_sat_coupling.c:1763 src/base/cs_sat_coupling.c:1839
-#: src/base/cs_sat_coupling.c:1907
+#: src/base/cs_sat_coupling.c:1019 src/base/cs_sat_coupling.c:1232
+#: src/base/cs_sat_coupling.c:1299 src/base/cs_sat_coupling.c:1374
+#: src/base/cs_sat_coupling.c:1435 src/base/cs_sat_coupling.c:1505
+#: src/base/cs_sat_coupling.c:1603 src/base/cs_sat_coupling.c:1682
+#: src/base/cs_sat_coupling.c:1773 src/base/cs_sat_coupling.c:1849
+#: src/base/cs_sat_coupling.c:1917
 #, c-format
 msgid "Impossible coupling number %d; there are %d couplings"
 msgstr "Numéro de couplage %d impossible ;  on a %d couplages"
 
-#: src/base/cs_sat_coupling.c:1030
+#: src/base/cs_sat_coupling.c:1034
 #, c-format
 msgid "coupled_cells_%d"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1049
+#: src/base/cs_sat_coupling.c:1053
 #, c-format
 msgid "coupled_faces_%d"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1302
+#: src/base/cs_sat_coupling.c:1312
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELCPL()\n"
@@ -4964,7 +5084,7 @@ msgstr ""
 "On a indiqué NCECPL = %d et NFBCPL = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:1377
+#: src/base/cs_sat_coupling.c:1387
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELNCP()\n"
@@ -4975,7 +5095,7 @@ msgstr ""
 "On a indiqué NCENCP = %d et NFBNCP = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:1519
+#: src/base/cs_sat_coupling.c:1529
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for COOCPL()\n"
@@ -4986,13 +5106,13 @@ msgstr ""
 "On a indiqué ITYDIS = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#: src/base/cs_sat_coupling.c:1600
+#: src/base/cs_sat_coupling.c:1610
 msgid ""
 "The centred interpolation scheme is not available\n"
 "when coupling cells"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1611
+#: src/base/cs_sat_coupling.c:1621
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for PNDCPL().\n"
@@ -5003,7 +5123,7 @@ msgstr ""
 "On a indiqué ITYLOC = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#: src/base/cs_sat_coupling.c:1689
+#: src/base/cs_sat_coupling.c:1699
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -5014,7 +5134,7 @@ msgstr ""
 "On a indiqué ITYVAR = %d et NBRDIS = %d.\n"
 "On devrait avoir la valeur 0 ou %d pour NBRDIS."
 
-#: src/base/cs_sat_coupling.c:1696
+#: src/base/cs_sat_coupling.c:1706
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -5025,7 +5145,7 @@ msgstr ""
 "On a indiqué ITYVAR = %d et NBRLOC = %d.\n"
 "On devrait avoir la valeur 0 ou %d pour NBRLOC."
 
-#: src/base/cs_sat_coupling.c:2068
+#: src/base/cs_sat_coupling.c:2078
 msgid ""
 "At least 1 Code_Saturne coupling was defined for which\n"
 "no communication with a Code_Saturne instance is possible."
@@ -5179,12 +5299,12 @@ msgstr ""
 "%s [%s]:\n"
 "  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"
 
-#: src/base/cs_syr3_comm.c:151
+#: src/base/cs_syr3_comm.c:155
 #, c-format
 msgid "Error in socket communication:  %s (node %4d)\n"
 msgstr "Erreur pour la communication par socket :  %s (noeud %4d)\n"
 
-#: src/base/cs_syr3_comm.c:175
+#: src/base/cs_syr3_comm.c:179
 #, c-format
 msgid ""
 "MPI error for communication:  %s\n"
@@ -5193,7 +5313,7 @@ msgstr ""
 "Erreur MPI pour la communication :  %s\n"
 "Type d'erreur : %s"
 
-#: src/base/cs_syr3_comm.c:204
+#: src/base/cs_syr3_comm.c:208
 #, c-format
 msgid ""
 "Impossible to establish the communication: %s\n"
@@ -5204,7 +5324,7 @@ msgstr ""
 "car le rang du processus recherché (%d)\n"
 "est supérieur ou égal au nombre de processus MPI (%d)."
 
-#: src/base/cs_syr3_comm.c:228
+#: src/base/cs_syr3_comm.c:232
 #, c-format
 msgid ""
 "Error for communication: \"%s\".\n"
@@ -5219,7 +5339,7 @@ msgstr ""
 "chaîne magique lue      : \"%s\"\n"
 "chaîne magique attendue : \"%s\"\n"
 
-#: src/base/cs_syr3_comm.c:488
+#: src/base/cs_syr3_comm.c:492
 #, c-format
 msgid ""
 "Communication %s:\n"
@@ -5228,7 +5348,7 @@ msgstr ""
 "Communication %s :\n"
 "Erreur de réception de données par socket.\n"
 
-#: src/base/cs_syr3_comm.c:570
+#: src/base/cs_syr3_comm.c:574
 #, c-format
 msgid ""
 "Communication %s:\n"
@@ -5237,30 +5357,30 @@ msgstr ""
 "Communication %s :\n"
 "Erreur d'envoi de données par socket.\n"
 
-#: src/base/cs_syr3_comm.c:626 src/base/cs_syr3_comm.c:679
-#: src/base/cs_syr3_comm.c:688 src/base/cs_syr3_comm.c:696
+#: src/base/cs_syr3_comm.c:630 src/base/cs_syr3_comm.c:683
+#: src/base/cs_syr3_comm.c:692 src/base/cs_syr3_comm.c:700
 msgid "Error in socket communication\n"
 msgstr "Erreur de communication par socket\n"
 
-#: src/base/cs_syr3_comm.c:646
+#: src/base/cs_syr3_comm.c:650
 msgid ""
 "Error while sending the host name through MPI in sockets initialization.\n"
 msgstr ""
 "Erreur lors de l'envoi via MPI du nom de l'hôte en initialisant les "
 "sockets.\n"
 
-#: src/base/cs_syr3_comm.c:656
+#: src/base/cs_syr3_comm.c:660
 msgid ""
 "Error while sending the port number through MPI in sockets initialization.\n"
 msgstr ""
 "Erreur lors de l'envoi via MPI du numéro du port en initialisant les "
 "sockets.\n"
 
-#: src/base/cs_syr3_comm.c:666
+#: src/base/cs_syr3_comm.c:670
 msgid "MPI is needed for socket initialization.\n"
 msgstr "Besoin de MPI lors de l'initialisation des sockets.\n"
 
-#: src/base/cs_syr3_comm.c:734
+#: src/base/cs_syr3_comm.c:738
 msgid ""
 "Attempt to connect to the communication port with\n"
 "an unknown message format\n"
@@ -5268,7 +5388,7 @@ msgstr ""
 "Tentative de connexion au port de communication avec\n"
 "un format de message non reconnu\n"
 
-#: src/base/cs_syr3_comm.c:753
+#: src/base/cs_syr3_comm.c:757
 #, c-format
 msgid ""
 "Error while initializating communication: \"%s\".\n"
@@ -5283,7 +5403,7 @@ msgstr ""
 "chaîne magique lue      : \"%s\"\n"
 "chaîne magique actuelle : \"%s\"\n"
 
-#: src/base/cs_syr3_comm.c:780
+#: src/base/cs_syr3_comm.c:784
 #, c-format
 msgid ""
 "Communication %s):\n"
@@ -5292,7 +5412,7 @@ msgstr ""
 "Communication %s) :\n"
 "Erreur à la fermeture du socket.\n"
 
-#: src/base/cs_syr3_comm.c:800
+#: src/base/cs_syr3_comm.c:804
 #, c-format
 msgid ""
 "\n"
@@ -5301,7 +5421,7 @@ msgstr ""
 "\n"
 "Message reçu sur \"%s\" :\n"
 
-#: src/base/cs_syr3_comm.c:803
+#: src/base/cs_syr3_comm.c:807
 #, c-format
 msgid ""
 "\n"
@@ -5310,7 +5430,7 @@ msgstr ""
 "\n"
 "Message envoyé sur \"%s\" :\n"
 
-#: src/base/cs_syr3_comm.c:825
+#: src/base/cs_syr3_comm.c:829
 #, c-format
 msgid ""
 "    section name:          \"%s\"\n"
@@ -5319,7 +5439,7 @@ msgstr ""
 "    nom de la rubrique :    \"%s\"\n"
 "    nombre d'éléments :     %d\n"
 
-#: src/base/cs_syr3_comm.c:1017
+#: src/base/cs_syr3_comm.c:1021
 #, c-format
 msgid ""
 "\n"
@@ -5328,7 +5448,7 @@ msgstr ""
 "\n"
 "  Ouverture de la communication :  %s ..."
 
-#: src/base/cs_syr3_comm.c:1063
+#: src/base/cs_syr3_comm.c:1067
 #, c-format
 msgid ""
 "\n"
@@ -5337,16 +5457,16 @@ msgstr ""
 "\n"
 "  Fermeture de la communication :  %s\n"
 
-#: src/base/cs_syr3_comm.c:1536 src/base/cs_syr3_comm.c:1574
-#: src/base/cs_syr3_comm.c:1578 src/base/cs_syr3_comm.c:1586
+#: src/base/cs_syr3_comm.c:1540 src/base/cs_syr3_comm.c:1578
+#: src/base/cs_syr3_comm.c:1582 src/base/cs_syr3_comm.c:1590
 msgid "Initialization error for socket communication support.\n"
 msgstr "Erreur d'initialisation du support de communication par socket.\n"
 
-#: src/base/cs_syr3_comm.c:1564
+#: src/base/cs_syr3_comm.c:1568
 msgid "Error obtaining computer's name"
 msgstr "Erreur de récupération du nom de la machine"
 
-#: src/base/cs_syr3_comm.c:1633
+#: src/base/cs_syr3_comm.c:1637
 msgid ""
 "\n"
 "Closing socket...\t [ok]\n"
@@ -5371,11 +5491,11 @@ msgstr ""
 "\n"
 " *** Renumerotation de la liste des faces de bord    ..."
 
-#: src/base/cs_syr3_coupling.c:827 src/base/cs_syr4_coupling.c:320
+#: src/base/cs_syr3_coupling.c:827 src/base/cs_syr4_coupling.c:326
 msgid "Wall T"
 msgstr "T Paroi"
 
-#: src/base/cs_syr3_coupling.c:837 src/base/cs_syr4_coupling.c:320
+#: src/base/cs_syr3_coupling.c:837 src/base/cs_syr4_coupling.c:326
 msgid "Flux"
 msgstr "Flux"
 
@@ -5395,7 +5515,7 @@ msgstr ""
 "\n"
 "Libération des structures associées au couplage avec SYRTHES 3.\n"
 
-#: src/base/cs_syr3_coupling.c:1253 src/base/cs_syr4_coupling.c:1065
+#: src/base/cs_syr3_coupling.c:1253 src/base/cs_syr4_coupling.c:1074
 #, c-format
 msgid ""
 "\n"
@@ -5459,7 +5579,7 @@ msgstr "\tInterpolation des sommets vers les éléments           ..."
 msgid "\tInterpolation from elements to vertices            ..."
 msgstr "\tInterpolation des éléments sur les sommets            ..."
 
-#: src/base/cs_syr3_messages.c:157 src/base/cs_syr4_coupling.c:1020
+#: src/base/cs_syr3_messages.c:157 src/base/cs_syr4_coupling.c:1029
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5492,8 +5612,8 @@ msgstr ""
 "========================================================\n"
 
 #: src/base/cs_syr3_messages.c:276 src/base/cs_syr3_messages.c:359
-#: src/base/cs_syr_coupling.c:799 src/base/cs_syr_coupling.c:840
-#: src/base/cs_syr_coupling.c:879 src/base/cs_syr_coupling.c:918
+#: src/base/cs_syr_coupling.c:805 src/base/cs_syr_coupling.c:846
+#: src/base/cs_syr_coupling.c:885 src/base/cs_syr_coupling.c:924
 #, c-format
 msgid "SYRTHES coupling number %d impossible; there are %d couplings"
 msgstr "Numéro de couplage SYRTHES %d impossible ;  on a %d couplages"
@@ -5509,12 +5629,12 @@ msgstr ""
 " on attendait \"%s\" (%d éléments, type %d)\n"
 " on a reçu    \"%s\"(%d éléments, type %d)\n"
 
-#: src/base/cs_syr4_coupling.c:200
+#: src/base/cs_syr4_coupling.c:206
 #, c-format
 msgid " SYRTHES coupling %d: initializing MPI communication ... "
 msgstr " Couplage SYRTHES %d : initialisation de la communication MPI ..."
 
-#: src/base/cs_syr4_coupling.c:486
+#: src/base/cs_syr4_coupling.c:492
 msgid ""
 "\n"
 "Extracting coupled mesh             ..."
@@ -5522,17 +5642,17 @@ msgstr ""
 "\n"
 "Extraction du maillage couplé           ..."
 
-#: src/base/cs_syr4_coupling.c:494
+#: src/base/cs_syr4_coupling.c:500
 #, c-format
 msgid "SYRTHES_cells_%d"
 msgstr "Cellules_SYRTHES_%d"
 
-#: src/base/cs_syr4_coupling.c:515
+#: src/base/cs_syr4_coupling.c:521
 #, c-format
 msgid "SYRTHES_faces_%d"
 msgstr "Faces_SYRTHES_%d"
 
-#: src/base/cs_syr4_coupling.c:542
+#: src/base/cs_syr4_coupling.c:548
 #, c-format
 msgid ""
 " Selection criteria:\n"
@@ -5543,15 +5663,15 @@ msgstr ""
 " \"%s\"\n"
 " produit un maillage vide pour le couplage SYRTHES.\n"
 
-#: src/base/cs_syr4_coupling.c:557
+#: src/base/cs_syr4_coupling.c:563
 msgid "Projecting the extracted mesh to 2D ..."
 msgstr "Projection 2D du maillage extrait  ..."
 
-#: src/base/cs_syr4_coupling.c:565
+#: src/base/cs_syr4_coupling.c:571
 msgid "Error projecting the extracted mesh."
 msgstr "Erreur lors de la projection du maillage extrait."
 
-#: src/base/cs_syr4_coupling.c:592
+#: src/base/cs_syr4_coupling.c:598
 #, c-format
 msgid ""
 "\n"
@@ -5560,7 +5680,7 @@ msgstr ""
 "\n"
 "Maillage extrait composé de %llu éléments.\n"
 
-#: src/base/cs_syr4_coupling.c:654
+#: src/base/cs_syr4_coupling.c:663
 #, c-format
 msgid ""
 "Coupling with SYRTHES impossible:\n"
@@ -5571,7 +5691,7 @@ msgstr ""
 "%llu centres d'éléments du maillage \"%s\"\n"
 "non localisés sur le maillage SYRTHES."
 
-#: src/base/cs_syr4_coupling.c:849
+#: src/base/cs_syr4_coupling.c:858
 msgid ""
 "Coupling with SYRTHES impossible.\n"
 "No selection criteria for faces or cells to couple."
@@ -5579,7 +5699,7 @@ msgstr ""
 "Couplage avec SYRTHES impossible.\n"
 "Aucun critère de sélection pour les faces ou les cellules à coupler."
 
-#: src/base/cs_syr4_coupling.c:917
+#: src/base/cs_syr4_coupling.c:926
 msgid ""
 "\n"
 "Structures associated with SYRTHES 4 coupling freed.\n"
@@ -5587,7 +5707,7 @@ msgstr ""
 "\n"
 "Libération des structures associées au couplage avec SYRTHES 4.\n"
 
-#: src/base/cs_syr4_coupling.c:964
+#: src/base/cs_syr4_coupling.c:973
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5604,7 +5724,7 @@ msgstr ""
 "      Options SYRTHES      : \"%s\"\n"
 "========================================================\n"
 
-#: src/base/cs_syr4_coupling.c:1035
+#: src/base/cs_syr4_coupling.c:1044
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5621,7 +5741,7 @@ msgstr ""
 "      message attendu : cmd:iter:start\n"
 "========================================================\n"
 
-#: src/base/cs_syr4_coupling.c:1098
+#: src/base/cs_syr4_coupling.c:1107
 #, c-format
 msgid ""
 " Message received from SYRTHES: \"%s\"\n"
@@ -5630,7 +5750,7 @@ msgstr ""
 " Le message reçu de SYRTHES: \"%s\"\n"
 " indique une erreur ou est inattendu."
 
-#: src/base/cs_syr4_coupling.c:1103
+#: src/base/cs_syr4_coupling.c:1112
 #, c-format
 msgid ""
 "\n"
@@ -5641,7 +5761,7 @@ msgstr ""
 " ** Localisation du maillage pour le couplage SYRTHES \"%d\".\n"
 "\n"
 
-#: src/base/cs_syr_coupling.c:192
+#: src/base/cs_syr_coupling.c:198
 #, c-format
 msgid ""
 " SYRTHES coupling:\n"
@@ -5656,7 +5776,7 @@ msgstr ""
 "   numéro local :               %d\n"
 "\n"
 
-#: src/base/cs_syr_coupling.c:309
+#: src/base/cs_syr_coupling.c:315
 #, c-format
 msgid ""
 " SYRTHES coupling:\n"
@@ -5681,7 +5801,7 @@ msgstr ""
 "   nombre de rangs MPI :        %d\n"
 "\n"
 
-#: src/base/cs_syr_coupling.c:1063
+#: src/base/cs_syr_coupling.c:1069
 msgid ""
 "At least 1 SYRTHES coupling was defined for which\n"
 "no communication with a SYRTHES instance is possible."
@@ -5699,7 +5819,7 @@ msgstr ""
 "paroi.\n"
 "Vérifier l'existence et le nom du fichier suite: %s \n"
 
-#: src/base/cs_tpar1d.c:461 src/ctwr/cs_ctwr.c:672
+#: src/base/cs_tpar1d.c:461 src/ctwr/cs_ctwr.c:677
 msgid ""
 "Abort while reading the 1D-wall thermal module restart file.\n"
 "The number of boundary faces has been modified\n"
@@ -5896,7 +6016,7 @@ msgstr ""
 "paroi.\n"
 "Vérifier l''existence et le nom du fichier suite: %s \n"
 
-#: src/ctwr/cs_ctwr.c:477
+#: src/ctwr/cs_ctwr.c:482
 #, c-format
 msgid ""
 "Abort while opening the cooling tower module restart file in write mode.\n"
@@ -5905,7 +6025,7 @@ msgstr ""
 "Arret à l'ouverture en écriture du fichier suite aéroréfrigérants.\n"
 "Vérifier l''existence et le nom du fichier suite: %s \n"
 
-#: src/ctwr/cs_ctwr.c:655
+#: src/ctwr/cs_ctwr.c:660
 #, c-format
 msgid ""
 "Abort while opening the cooling tower AERO module restart file in read "
@@ -5915,8 +6035,8 @@ msgstr ""
 "Arret à l'ouverture en lecture du fichier suite aéroréfrigérants.\n"
 "Vérifier l'existence et le nom du fichier suite: %s \n"
 
-#: src/ctwr/cs_ctwr.c:722 src/ctwr/cs_ctwr.c:793 src/ctwr/cs_ctwr.c:861
-#: src/ctwr/cs_ctwr.c:891 src/ctwr/cs_ctwr.c:921
+#: src/ctwr/cs_ctwr.c:727 src/ctwr/cs_ctwr.c:798 src/ctwr/cs_ctwr.c:866
+#: src/ctwr/cs_ctwr.c:896 src/ctwr/cs_ctwr.c:926
 #, c-format
 msgid ""
 "Problem while reading section in the restart file\n"
@@ -5929,7 +6049,7 @@ msgstr ""
 "<%s>\n"
 "Le calcul ne sera pas executé.\n"
 
-#: src/ctwr/cs_ctwr.c:730
+#: src/ctwr/cs_ctwr.c:735
 #, c-format
 msgid ""
 "WARNING: ABORT WHILE READING THE RESTART FILE\n"
@@ -5941,7 +6061,7 @@ msgid ""
 "CURRENT:  %d \n"
 msgstr ""
 
-#: src/ctwr/cs_ctwr.c:740
+#: src/ctwr/cs_ctwr.c:745
 #, c-format
 msgid ""
 "WARNING: ABORT WHILE READING THE RESTART FILE\n"
@@ -5953,7 +6073,7 @@ msgid ""
 "CURRENT:  %d \n"
 msgstr ""
 
-#: src/ctwr/cs_ctwr.c:750
+#: src/ctwr/cs_ctwr.c:755
 #, c-format
 msgid ""
 "WARNING: ABORT WHILE READING THE RESTART FILE\n"
@@ -5986,7 +6106,7 @@ msgstr ""
 "au cas traité.\n"
 "Vérifier usctdz.\n"
 
-#: src/ctwr/cs_ctwr.c:801
+#: src/ctwr/cs_ctwr.c:806
 #, c-format
 msgid ""
 "WARNING: ABORT WHILE READING THE RESTART FILE\n"
@@ -5998,7 +6118,7 @@ msgid ""
 "CURRENT:  %f \n"
 msgstr ""
 
-#: src/ctwr/cs_ctwr.c:810
+#: src/ctwr/cs_ctwr.c:815
 #, c-format
 msgid ""
 "WARNING: ABORT WHILE READING THE RESTART FILE\n"
@@ -6010,7 +6130,7 @@ msgid ""
 "CURRENT:  %f \n"
 msgstr ""
 
-#: src/ctwr/cs_ctwr.c:819 src/ctwr/cs_ctwr.c:828
+#: src/ctwr/cs_ctwr.c:824 src/ctwr/cs_ctwr.c:833
 #, c-format
 msgid ""
 "WARNING: ABORT WHILE READING THE RESTART FILE\n"
@@ -6022,11 +6142,11 @@ msgid ""
 "CURRENT:  %f \n"
 msgstr ""
 
-#: src/ctwr/cs_ctwr.c:2627
+#: src/ctwr/cs_ctwr.c:2632
 msgid "T water"
 msgstr ""
 
-#: src/ctwr/cs_ctwr.c:2639
+#: src/ctwr/cs_ctwr.c:2644
 msgid "Flux water"
 msgstr ""
 
@@ -6038,11 +6158,11 @@ msgstr "    Mise à jour de la connectivité faces -> cellules\n"
 msgid "    Distant halo definition\n"
 msgstr "    Création du halo distant\n"
 
-#: src/ctwr/cs_ctwr_mesh.c:1198
+#: src/ctwr/cs_ctwr_mesh.c:1208
 msgid " Creating halos\n"
 msgstr ""
 
-#: src/ctwr/cs_ctwr_mesh.c:1203
+#: src/ctwr/cs_ctwr_mesh.c:1213
 msgid " Defining halos\n"
 msgstr ""
 
