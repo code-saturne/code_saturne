@@ -1,4 +1,12 @@
 * 21/05/2010 - David Monfort <david.monfort@edf.fr>
+  Rename the package in code_saturne instead of code-saturne (should have
+  tried the interface before committing...).
+  modified script:
+    configure.ac
+  modified routine:
+    gui/cs_gui.py
+
+* 21/05/2010 - David Monfort <david.monfort@edf.fr>
   Rename the package in code-saturne instead of ncs.
   modified script:
     configure.ac

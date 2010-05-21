@@ -68,7 +68,7 @@ if map(int, string.split(PYQT_VERSION_STR, ".")) < [4, 3, 0]:
 #-------------------------------------------------------------------------------
 
 try:
-    import ncs
+    import code_saturne
 except:
     pass
 
