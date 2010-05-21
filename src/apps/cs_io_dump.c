@@ -124,9 +124,9 @@ typedef struct {
    *   2: index id
    *   3: number  of values per location
    *   4: index of section name in names array
-   *   5: index of embedded data in data array + 1 if data is
+   *   5: index of type name in types array
+   *   6: index of embedded data in data array + 1 if data is
    *      embedded, 0 otherwise
-   *   6: datatype id in file
    *   7: associated file id (in case of multiple files)
    */
 
@@ -254,13 +254,24 @@ _usage(const char  *arg_0,
 {
   printf
     (_("\n"
-       "  Usage: %s [-n <level>] <file_name>\n\n"
-       "  Dump headers and optionnaly content of a Code_Saturne\n"
-       "  Preprocessor, Partitioner, or restart file.\n\n"
-       "  -n  <level>    number of first and last elements of each section\n"
-       "                 to output (default: print headers only).\n\n"
-       "  -h             this message.\n\n"),
-     arg_0);
+       "Usage: %s [options] <file_name>\n"
+       "   or: %s -d [options] <file_name_1> <file_name_2>\n\n"
+       "Dump headers and optionnaly content of a Code_Saturne Preprocessor,\n"
+       "Partitioner, or restart file, or compare two such files.\n\n"
+       "Options:\n\n"
+       "  -d, --diff        diff mode.\n\n"
+       "  -e, --extract     extract mode (extract full section data, with\n"
+       "                    no metadata).\n\n"
+       "  --f-format <fmt>  define format for floating-point numbers (default:\n"
+       "                    \"15.9e\" for floats, \"22.15e\" for doubles).\n"
+       "  --location <id>   only output section(s) with given location id.\n\n"
+       "  -n <level>        number of first and last elements of each section\n"
+       "                    to output (default: print headers only).\n\n"
+       "  --section <name>  only consider section matching given criteria.\n\n"
+       "  --threshold <val> in diff mode, real value above which a difference is\n"
+       "                    considered significant (default: 1e-30).\n\n"
+       "  -h, --help        this message.\n\n"),
+     arg_0, arg_0);
 
   exit(exit_code);
 }
@@ -649,17 +660,16 @@ _convert_size(unsigned char  buf[],
  * Open input file, testing magic string for type.
  *
  * parameters:
- *   filename     <-- file name
- *   header_size  --> header default size
- *   header_align --> header alignment
- *   body_align   --> body alignment
+ *   filename <-- file name
+ *   mode     <-- 0 for dump, 1 for extract, 2 for diff
  *
  * returns:
  *   File metadata structure
  *----------------------------------------------------------------------------*/
 
 static _cs_io_t
-_open_input(const char *filename)
+_open_input(const char  *filename,
+            int          mode)
 {
   unsigned int_endian;
   size_t alignments[3];
@@ -698,7 +708,8 @@ _open_input(const char *filename)
 
   /* Open file */
 
-  printf(_("\nOpening input file: \"%s\"\n\n"), filename) ;
+  if (mode != 1)
+    printf(_("\nOpening input file: \"%s\"\n\n"), filename) ;
 
   fflush(stdout);
 
@@ -724,7 +735,8 @@ _open_input(const char *filename)
   _file_read(header_buf, 1, 64, &inp);
 
   header_buf[64] = '\0';
-  printf(_("\n  File type: %s\n"), header_buf);
+  if (mode != 1)
+    printf(_("  File type: %s\n"), header_buf);
 
   _file_read(header_buf, 8, 3, &inp);
 
@@ -734,13 +746,14 @@ _open_input(const char *filename)
   inp.header_align = alignments[1];
   inp.body_align = alignments[2];
 
-  printf(_("\n"
-           "  Base header size: %d\n"
-           "  Header alignment: %d\n"
-           "  Body alignment:   %d\n"),
-         (int)(inp.header_size),
-         (int)(inp.header_align),
-         (int)(inp.body_align));
+  if (mode != 1)
+    printf(_("\n"
+             "  Base header size: %d\n"
+             "  Header alignment: %d\n"
+             "  Body alignment:   %d\n"),
+           (int)(inp.header_size),
+           (int)(inp.header_align),
+           (int)(inp.body_align));
 
   inp.buffer_size = inp.header_size;
   MEM_MALLOC(inp.buffer, inp.buffer_size, unsigned char);
@@ -754,16 +767,19 @@ _open_input(const char *filename)
  * Close input file
  *
  * parameters:
- *   f <-> pointer to file object
+ *   f    <-> pointer to file object
+ *   mode <-- 0 for dump, 1 for extract, 2 for diff
  *----------------------------------------------------------------------------*/
 
 static void
-_close_input(_cs_io_t *inp)
+_close_input(_cs_io_t  *inp,
+             int        mode)
 {
   if (inp != NULL) {
     if (inp->f != NULL) {
       int retval = 0;
-      printf(_("\nClosing input: \"%s\"\n\n"), inp->filename);
+      if (mode == 0)
+        printf(_("\nClosing input: \"%s\"\n\n"), inp->filename);
       retval = fclose(inp->f);
       inp->f = NULL;
       if (retval != 0)
@@ -781,26 +797,105 @@ _close_input(_cs_io_t *inp)
 }
 
 /*----------------------------------------------------------------------------
+ * Convert an argument to an integer and check its validity
+ *
+ * parameters:
+ *   arg_id  <-- index of argument in argv
+ *   argc    <-- number of command line arguments
+ *   argv    <-- array of command line arguments
+ *
+ * returns:
+ *   integer value
+ *----------------------------------------------------------------------------*/
+
+#if (__STDC_VERSION__ >= 199901L)
+static long long
+_arg_to_int(int    arg_id,
+            int    argc,
+            char  *argv[])
+{
+  char  *start = NULL;
+  char  *end = NULL;
+  long long  retval = 0;
+
+  if (arg_id < argc) {
+    start = argv[arg_id];
+    end = start + strlen(start);
+    retval = strtoll(start, &end, 0);
+    if (end != start + strlen(start))
+      _usage(argv[0], EXIT_FAILURE);
+  }
+  else
+    _usage(argv[0], EXIT_FAILURE);
+
+  return retval;
+}
+
+#else /* (__STDC_VERSION__ == 1989) */
+
+static long
+_arg_to_int(int    arg_id,
+            int    argc,
+            char  *argv[])
+{
+  char  *start = NULL;
+  char  *end = NULL;
+  long  retval = 0;
+
+  if (arg_id < argc) {
+    start = argv[arg_id];
+    end = start + strlen(start);
+    retval = strtol(start, &end, 0);
+    if (end != start + strlen(start)) *argerr = 1;
+  }
+  else
+    _usage(argv[0], EXIT_FAILURE);
+
+  return retval;
+}
+
+#endif /* (__STDC_VERSION__) */
+
+/*----------------------------------------------------------------------------
  * Read command line arguments.
  *
  * parameters:
  *   argc             <-- number of command line arguments
  *   argv             <-- array of command line arguments
+ *   mode             --> 0 for dump, 1 for extract, 2 for diff
  *   echo             --> echo (verbosity) level
- *   file_name_arg_id --> index of command line arguments defining file name
+ *   location_id      --> if >= 0 location id filter
+ *   sec_name_arg_id  --> if > 0, id of command line argument defining
+ *                        section name filter
+ *   f_fmt_arg_id     --> if > 0, id of command line argument defining format
+ *                        for output of floating-point values
+ *   threshold        --> threshold above which 2 floating-point values are
+ *                        considered different.
+ *   file_name_arg_id --> index of command line arguments defining file names
  *----------------------------------------------------------------------------*/
 
 static void
-_read_args(int               argc,
-           char            **argv,
-           size_t           *echo,
-           int              *file_name_arg_id)
+_read_args(int          argc,
+           char       **argv,
+           int         *mode,
+           size_t      *echo,
+           int         *location_id,
+           int         *sec_name_arg_id,
+           int         *f_fmt_arg_id,
+           double      *threshold,
+           int          file_name_arg_id[2])
 {
   int i = 1;
+  int n_files = 0;
 
   /* Initialize return arguments */
 
   *echo = 0;
+  *mode = 0;
+  *location_id = -1;
+  *sec_name_arg_id = 0;
+  *f_fmt_arg_id = 0;
+  *threshold = 1.e-30;
   *file_name_arg_id = 0;
 
   /* Parse and check command line */
@@ -810,32 +905,65 @@ _read_args(int               argc,
 
   while (i < argc) {
 
-    if (strcmp(argv[i], "-h") == 0)
+    if (strcmp(argv[i], "--f-format") == 0) {
+      i++;
+      if (i < argc)
+        *f_fmt_arg_id = i;
+      else
+        _usage(argv[0], EXIT_FAILURE);
+    }
+
+    else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--diff") == 0) {
+      if (*mode == 0)
+        *mode = 2;
+      else
+        _usage(argv[0], EXIT_SUCCESS);
+    }
+
+    else if (strcmp(argv[i], "-e") == 0 || strcmp(argv[i], "--extract") == 0) {
+      if (*mode == 0)
+        *mode = 1;
+      else
+        _usage(argv[0], EXIT_SUCCESS);
+    }
+
+    else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
       _usage(argv[0], EXIT_SUCCESS);
 
     else if (strcmp(argv[i], "-n") == 0) {
-
       i++;
+      *echo = _arg_to_int(i, argc, argv);
+    }
 
-      if (i >= argc)
+    else if (strcmp(argv[i], "--location") == 0) {
+      i++;
+      *location_id = _arg_to_int(i, argc, argv);
+    }
+
+    else if (strcmp(argv[i], "--section") == 0) {
+      i++;
+      if (i < argc)
+        *sec_name_arg_id = i;
+      else
         _usage(argv[0], EXIT_FAILURE);
+    }
 
-      else {
-
-#if (__STDC_VERSION__ >= 199901L)
-        *echo = atoll(argv[i]);
-#else
-        *echo = atol(argv[i]);
-#endif
-
+    else if (strcmp(argv[i], "--threshold") == 0) {
+      i++;
+      if (i < argc) {
+        char *end = argv[i] + strlen(argv[i]);
+        *threshold = strtod(argv[i], &end);
+        if (end == argv[i])
+          _usage(argv[0], EXIT_FAILURE);
       }
-
+      else
+        _usage(argv[0], EXIT_FAILURE);
     }
 
     else {
 
-      if (*file_name_arg_id == 0)
-        *file_name_arg_id = i;
+      if (n_files == 0 || (n_files == 1 && *mode == 2))
+        file_name_arg_id[n_files++] = i;
       else
         _usage(argv[0], EXIT_FAILURE);
 
@@ -844,15 +972,16 @@ _read_args(int               argc,
     i++;
   }
 
-  if (*file_name_arg_id == 0)
+  if ((*mode != 2 && n_files != 1) || (*mode == 2 && n_files != 2))
     _usage(argv[0], EXIT_FAILURE);
 
   /* At this point, command line seems correct */
 
-  printf(_("\n"
-           "  .----------------------------.\n"
-           "  |   Code_Saturne file dump   |\n"
-           "  `----------------------------'\n"));
+  if (*mode != 1)
+    printf(_("\n"
+             "  .----------------------------.\n"
+             "  |   Code_Saturne file dump   |\n"
+             "  `----------------------------'\n"));
 }
 
 /*----------------------------------------------------------------------------
@@ -866,13 +995,15 @@ _read_args(int               argc,
  *   n_values_shift <-- shift to second (end) series of values to echo
  *   buffer         <-- pointer to data
  *   type_name      <-- name of data type
+ *   f_fmt          <-- if != NULL, format for output of floating-point values
  *----------------------------------------------------------------------------*/
 
 static void
 _echo_values(size_t       n_values,
              size_t       n_values_shift,
              const void  *buffer,
-             const char   type_name[])
+             const char   type_name[],
+             const char  *f_fmt)
 {
   size_t i;
 
@@ -1006,20 +1137,82 @@ _echo_values(size_t       n_values,
 
   else if (type_name[0] == 'r' && type_name[1] == '4') {
     const float *_buffer = buffer;
-    for (i = 0; i < n_values; i++)
-      printf("    %10lu : %15.9e\n",
-             (unsigned long)(i + n_values_shift),
-             (double)(_buffer[i]));
+    if (f_fmt == NULL) {
+      for (i = 0; i < n_values; i++)
+        printf("    %10lu : %15.9e\n",
+               (unsigned long)(i + n_values_shift),
+               (double)(_buffer[i]));
+    }
+    else {
+      char format[64] = "    %10lu : %";
+      strncat(format, f_fmt, 48);
+      strcat(format, "\n");
+      for (i = 0; i < n_values; i++)
+        printf(format,
+               (unsigned long)(i + n_values_shift),
+               (double)(_buffer[i]));
+    }
   }
 
   else if (type_name[0] == 'r' && type_name[1] == '8') {
     const double *_buffer = buffer;
-    for (i = 0; i < n_values; i++)
-      printf("    %10lu : %22.15e\n",
-             (unsigned long)(i + n_values_shift),
-             _buffer[i]);
+    if (f_fmt == NULL) {
+      for (i = 0; i < n_values; i++)
+        printf("    %10lu : %22.15e\n",
+               (unsigned long)(i + n_values_shift),
+               _buffer[i]);
+    }
+    else {
+      char format[64] = "    %10lu : %";
+      strncat(format, f_fmt, 48);
+      strcat(format, "\n");
+      for (i = 0; i < n_values; i++)
+        printf(format,
+               (unsigned long)(i + n_values_shift),
+               _buffer[i]);
+    }
   }
 
+}
+
+/*----------------------------------------------------------------------------
+ * Determine a type's size based on its name.
+ *
+ * parameters:
+ *   type_name  <-- type name
+ *
+ * returns:
+ *   size of data type
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_type_size_from_name(const char  *type_name)
+{
+  size_t type_size = 0;
+
+  assert(type_name != NULL);
+
+  /* Check type name and compute size of data */
+
+  if (type_name[0] == 'c' && type_name[1] == ' ')
+    type_size = 1;
+
+  else if (   type_name[0] == 'i'
+           || type_name[0] == 'u'
+           || type_name[0] == 'r') {
+
+    if (type_name[1] == '4')
+      type_size = 4;
+    else if (type_name[1] == '8')
+      type_size = 8;
+  }
+
+  if (type_size == 0)
+    _error(__FILE__, __LINE__, 0,
+           _("Type \"%s\" is not known\n"
+             "Known types: \"c \", \"i4\", \"i8\", \"u4\", \"u8\", "
+             "\"r4\", \"r8\"."), type_name);
+  return type_size;
 }
 
 /*----------------------------------------------------------------------------
@@ -1035,7 +1228,6 @@ _echo_values(size_t       n_values,
 static size_t
 _read_section_header(_cs_io_t  *inp)
 {
-  int type_name_error = 0;
   size_t body_size = 0;
   size_t header_vals[6];
   unsigned int_endian = 0;
@@ -1085,7 +1277,7 @@ _read_section_header(_cs_io_t  *inp)
 
   inp->n_vals = header_vals[1];
   inp->location_id = header_vals[2];
-  inp->index_id = header_vals[3],
+  inp->index_id = header_vals[3];
   inp->n_loc_vals = header_vals[4];
   inp->type_size = 0;
   inp->data = NULL;
@@ -1099,36 +1291,9 @@ _read_section_header(_cs_io_t  *inp)
 
   if (inp->n_vals > 0) {
 
-    /* Check type name and compute size of data */
+    inp->type_size = _type_size_from_name(inp->type_name);
 
-    if (inp->type_name[0] == 'c') {
-      if (inp->type_name[1] != ' ')
-        type_name_error = 1;
-      else
-        inp->type_size = 1;
-    }
-    else if (   inp->type_name[0] == 'i'
-             || inp->type_name[0] == 'u'
-             || inp->type_name[0] == 'r') {
-
-      if (inp->type_name[1] == '4')
-        inp->type_size = 4;
-      else if (inp->type_name[1] == '8')
-        inp->type_size = 8;
-      else
-        type_name_error = 1;
-
-    }
-    else
-      type_name_error = 1;
-
-    if (type_name_error)
-      _error(__FILE__, __LINE__, 0,
-             _("Type \"%s\" is not known\n"
-               "Known types: \"c \", \"i4\", \"i8\", \"u4\", \"u8\", "
-               "\"r4\", \"r8\"."), inp->type_name);
-
-    else if (inp->data == NULL)
+    if (inp->data == NULL)
       body_size = inp->type_size*inp->n_vals;
 
     else if (int_endian == 1 && inp->type_size > 1)
@@ -1144,13 +1309,15 @@ _read_section_header(_cs_io_t  *inp)
  * If values are already embedded in the header, no actual reading is done
  *
  * parameters:
- *   inp  <-> pointer to input object
- *   echo <-- number of values to print
+ *   inp   <-> pointer to input object
+ *   echo  <-- number of values to print
+ *   f_fmt <-- if != NULL, format for output of floating-point values
  *----------------------------------------------------------------------------*/
 
 static void
-_read_section_values(_cs_io_t  *inp,
-                     size_t     echo)
+_read_section_values(_cs_io_t    *inp,
+                     size_t       echo,
+                     const char  *f_fmt)
 {
   size_t n_print = 0, n_skip = 0;
   unsigned char  *buffer = NULL;
@@ -1202,14 +1369,18 @@ _read_section_values(_cs_io_t  *inp,
     else
       printf(_("    elements:\n"));
 
-    _echo_values(n_print, 1, data, inp->type_name);
+    _echo_values(n_print,
+                 1,
+                 data,
+                 inp->type_name,
+                 f_fmt);
 
     if (n_skip > 0)
       printf("    ..........   ..........\n");
 
   }
 
-  /* Mode to tail of data and read if necessary */
+  /* Move to tail of data and read if necessary */
 
   if (n_skip > 0) {
 
@@ -1228,7 +1399,11 @@ _read_section_values(_cs_io_t  *inp,
       data = ((unsigned char *)inp->data) + ((n_print+n_skip)*inp->type_size);
 
     if (n_print > 0)
-      _echo_values(n_print, inp->n_vals - n_print + 1, data, inp->type_name);
+      _echo_values(n_print,
+                   inp->n_vals - n_print + 1,
+                   data,
+                   inp->type_name,
+                   f_fmt);
 
   }
 
@@ -1237,17 +1412,226 @@ _read_section_values(_cs_io_t  *inp,
 }
 
 /*----------------------------------------------------------------------------
- * Read section.
+ * Skip section values
+ *
+ * If values are already embedded in the header, no actual reading is done
  *
  * parameters:
- *   inp  <-> pointer to input object
- *   echo <-- number of values to print
+ *   inp   <-> pointer to input object
  *----------------------------------------------------------------------------*/
 
 static void
-_read_section(_cs_io_t  *inp,
-              int        echo)
+_skip_section_values(_cs_io_t    *inp)
 {
+  assert(inp->n_vals > 0);
+
+  /* Position read pointer if non-embedded data is present */
+
+  if (inp->data == NULL) {
+    long long offset = _file_tell(inp);
+    size_t ba = inp->body_align;
+    offset += (ba - (offset % ba)) % ba + inp->n_vals*inp->type_size;
+    _file_seek(inp, offset, SEEK_SET);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Extract section values and print associated info
+ *
+ * If values are already embedded in the header, no actual reading is done
+ *
+ * parameters:
+ *   inp   <-> pointer to input object
+ *   f_fmt <-- if != NULL, format for output of floating-point values
+ *----------------------------------------------------------------------------*/
+
+static void
+_extract_section_values(_cs_io_t    *inp,
+                        const char  *f_fmt)
+{
+  size_t i;
+  size_t n_vals = inp->n_vals;
+  void *data = NULL;
+  const char *type_name = inp->type_name;
+
+  /* Position read pointer if non-embedded data is present */
+
+  if (inp->data == NULL) {
+
+    _file_seek(inp, inp->offset, SEEK_SET);
+
+    /* Allocate buffer */
+
+    if (n_vals > 0) {
+      MEM_MALLOC(data, n_vals*inp->type_size, unsigned char);
+      _file_read(data, inp->type_size, n_vals, inp);
+    }
+  }
+
+  else if (n_vals > 0)
+    data = inp->data;
+
+  /* Print data */
+
+  if (n_vals > 0) {
+
+    /* Check type name */
+
+    if (type_name[0] == 'c') {
+      const char *_data = data;
+      for (i = 0; i < n_vals; i++)
+        printf("'%c'\n", _data[i]);
+    }
+
+#if (__STDC_VERSION__ >= 199901L)
+
+    else if (type_name[0] == 'i' && type_name[1] == '4') {
+      const int32_t *_data = data;
+      for (i = 0; i < n_vals; i++)
+        printf("%d\n", (int)(_data[i]));
+    }
+
+    else if (type_name[0] == 'i' && type_name[1] == '8') {
+      const int64_t *_data = data;
+      for (i = 0; i < n_vals; i++)
+        printf("%ld\n", (long)(_data[i]));
+    }
+
+    else if (type_name[0] == 'u' && type_name[1] == '4') {
+      const uint32_t *_data = data;
+      for (i = 0; i < n_vals; i++)
+        printf("%u\n", (unsigned)(_data[i]));
+    }
+
+    else if (type_name[0] == 'u' && type_name[1] == '8') {
+      const uint64_t *_data = data;
+      for (i = 0; i < n_vals; i++)
+        printf("%lu\n", (unsigned long)(_data[i]));
+    }
+
+#else /* (__STDC_VERSION__ < 199901L) */
+
+    else if (type_name[0] == 'i' && type_name[1] == '4') {
+      if (sizeof(int) == 4) {
+        const int *_data = data;
+        for (i = 0; i < n_vals; i++)
+          printf("%d\n",  _data[i]);
+      }
+      else if (sizeof(short) == 4) {
+        const short *_data = data;
+        for (i = 0; i < n_vals; i++)
+          printf("%d\n", (int)(_data[i]));
+      }
+      else
+        printf("    int32_t undefined"
+               " (porting error, C99 compiler needed)\n");
+    }
+
+    else if (type_name[0] == 'i' && type_name[1] == '8') {
+      if (sizeof(long) == 8) {
+        const long *_data = data;
+        for (i = 0; i < n_vals; i++)
+          printf("%ld\n", _data[i]);
+      }
+      else if (sizeof(long long) == 8) {
+        const long long *_data = data;
+        for (i = 0; i < n_vals; i++)
+          printf("%ld\n", (long)(_data[i]));
+      }
+      else
+        printf("    int64_t undefined"
+               " (porting error, C99 compiler needed)\n");
+    }
+
+    else if (type_name[0] == 'u' && type_name[1] == '4') {
+      if (sizeof(unsigned) == 4) {
+        const unsigned *_data = data;
+        for (i = 0; i < n_vals; i++)
+          printf("%u\n", _data[i]);
+      }
+      else if (sizeof(unsigned short) == 4) {
+        const unsigned short *_data = data;
+        for (i = 0; i < n_vals; i++)
+          printf("%u\n", (unsigned)(_data[i]));
+      }
+      else
+        printf("    uint32_t undefined"
+               " (porting error, C99 compiler needed)\n");
+    }
+
+    else if (type_name[0] == 'u' && type_name[1] == '8') {
+      if (sizeof(unsigned long) == 8) {
+        const unsigned long *_data = data;
+        for (i = 0; i < n_vals; i++)
+          printf("%lu\n", (unsigned long)(_data[i]));
+      }
+      else if (sizeof(unsigned long long) == 8) {
+        const unsigned long long *_data = data;
+        for (i = 0; i < n_vals; i++)
+          printf("%lu\n", (unsigned long)(_data[i]));
+      }
+      else
+        printf("    uint64_t undefined"
+               " (porting error, C99 compiler needed)\n");
+    }
+
+#endif /* (__STDC_VERSION__) */
+
+    else if (type_name[0] == 'r' && type_name[1] == '4') {
+      const float *_data = data;
+      if (f_fmt == NULL) {
+        for (i = 0; i < n_vals; i++)
+          printf("%15.9e\n", (double)(_data[i]));
+      }
+      else {
+        char format[64] = "%";
+        strncat(format, f_fmt, 48);
+        strcat(format, "\n");
+        for (i = 0; i < n_vals; i++)
+          printf(format, (double)(_data[i]));
+      }
+    }
+
+    else if (type_name[0] == 'r' && type_name[1] == '8') {
+      const double *_data = data;
+      if (f_fmt == NULL) {
+        for (i = 0; i < n_vals; i++)
+          printf("%22.15e\n", _data[i]);
+      }
+      else {
+        char format[64] = "%";
+        strncat(format, f_fmt, 48);
+        strcat(format, "\n");
+        for (i = 0; i < n_vals; i++)
+          printf(format, _data[i]);
+      }
+    }
+  }
+
+  if (inp->data == NULL)
+    MEM_FREE(data);
+}
+
+/*----------------------------------------------------------------------------
+ * Read section.
+ *
+ * parameters:
+ *   inp         <-> pointer to input object
+ *   echo        <-- number of values to print
+ *   location_id <-- if >= 0 location id filter
+ *   sec_name    <-- if != NULL, section name filter
+ *   f_fmt       <-- if != NULL, format for output of floating-point values
+ *----------------------------------------------------------------------------*/
+
+static void
+_read_section(_cs_io_t    *inp,
+              int          echo,
+              int          location_id,
+              const char  *sec_name,
+              const char  *f_fmt)
+{
+  int read_section = 0;
+
   assert(inp != NULL);
   assert(inp->f != NULL);
 
@@ -1255,23 +1639,1005 @@ _read_section(_cs_io_t  *inp,
 
   _read_section_header(inp);
 
-  printf(_("\n"
-           "  Section:                \"%s\"\n"
-           "    Number of values:      %lu\n"),
-         inp->name, (unsigned long)(inp->n_vals));
+  if (   (location_id < 0 || (unsigned)location_id == inp->location_id)
+      && (sec_name == NULL || !strcmp(sec_name, inp->name)))
+    read_section = 1;
 
-  if (inp->n_vals > 0)
-    printf(_("    Type:                 \"%s\"\n"), inp->type_name);
+  if (read_section) {
 
-  printf(_("      Location id:         %lu\n"
-           "      Index id:            %lu\n"
-           "      Values per location: %lu\n"),
-         (unsigned long)(inp->location_id),
-         (unsigned long)(inp->index_id),
-         (unsigned long)(inp->n_loc_vals));
+    printf(_("\n"
+             "  Section:                \"%s\"\n"
+             "    Number of values:      %lu\n"),
+           inp->name, (unsigned long)(inp->n_vals));
 
-  if (inp->n_vals > 0)
-    _read_section_values(inp, echo);
+    if (inp->n_vals > 0)
+      printf(_("    Type:                 \"%s\"\n"), inp->type_name);
+
+    printf(_("      Location id:         %lu\n"
+             "      Index id:            %lu\n"
+             "      Values per location: %lu\n"),
+           (unsigned long)(inp->location_id),
+           (unsigned long)(inp->index_id),
+           (unsigned long)(inp->n_loc_vals));
+  }
+
+  if (inp->n_vals > 0) {
+    if (read_section)
+      _read_section_values(inp, echo, f_fmt);
+    else
+      _skip_section_values(inp);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Update an index structure with info from the last header read
+ *
+ * Also sets the file position for the next read
+ *
+ * parameters:
+ *   inp    <-> input kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_index_and_shift(_cs_io_t  *inp)
+{
+  size_t id = 0;
+  size_t new_names_size = 0;
+  size_t new_types_size = 0;
+  size_t new_data_size = 0;
+
+  _cs_io_sec_index_t  *idx = inp->index;
+
+  if (idx == NULL)
+    return;
+
+  /* Reallocate if necessary */
+
+  if (idx->size + 1 == idx->max_size) {
+    if (idx->max_size == 0)
+      idx->max_size = 32;
+    else
+      idx->max_size *= 2;
+    MEM_REALLOC(idx->h_vals, idx->max_size*8, long long);
+    MEM_REALLOC(idx->offset, idx->max_size, long long);
+  };
+
+  new_names_size = idx->names_size + strlen(inp->name) + 1;
+  new_types_size = idx->types_size + strlen(inp->type_name) + 1;
+
+  if (inp->data != NULL)
+    new_data_size = idx->data_size + (inp->n_vals * inp->type_size);
+
+  if (new_names_size > idx->max_names_size) {
+    if (idx->max_names_size == 0)
+      idx->max_names_size = 128;
+    while (new_names_size > idx->max_names_size)
+      idx->max_names_size *= 2;
+    MEM_REALLOC(idx->names, idx->max_names_size, char);
+  }
+
+  if (new_types_size > idx->max_types_size) {
+    if (idx->max_types_size == 0)
+      idx->max_types_size = 128;
+    while (new_types_size > idx->max_types_size)
+      idx->max_types_size *= 2;
+    MEM_REALLOC(idx->types, idx->max_types_size, char);
+  }
+
+  if (new_data_size > idx->max_data_size) {
+    if (idx->max_data_size == 0)
+      idx->max_data_size = 128;
+    while (new_data_size > idx->max_data_size)
+      idx->max_data_size *= 2;
+    MEM_REALLOC(idx->data, idx->max_data_size, unsigned char);
+  }
+
+  /* Set values */
+
+  id = idx->size;
+
+  idx->h_vals[id*8]     = inp->n_vals;
+  idx->h_vals[id*8 + 1] = inp->location_id;
+  idx->h_vals[id*8 + 2] = inp->index_id;
+  idx->h_vals[id*8 + 3] = inp->n_loc_vals;
+  idx->h_vals[id*8 + 4] = idx->names_size;
+  idx->h_vals[id*8 + 5] = idx->types_size;
+  idx->h_vals[id*8 + 6] = 0;
+
+  strcpy(idx->names + idx->names_size, inp->name);
+  idx->names[new_names_size - 1] = '\0';
+  idx->names_size = new_names_size;
+
+  strcpy(idx->types + idx->types_size, inp->type_name);
+  idx->types[new_types_size - 1] = '\0';
+  idx->types_size = new_types_size;
+
+  if (inp->data == NULL) {
+    long long offset = _file_tell(inp);
+    long long data_shift = inp->n_vals * inp->type_size;
+    if (inp->body_align > 0) {
+      size_t ba = inp->body_align;
+      idx->offset[id] = offset + (ba - (offset % ba)) % ba;
+    }
+    else
+      idx->offset[id] = offset;
+    _file_seek(inp, idx->offset[id] + data_shift, SEEK_SET);
+  }
+  else {
+    idx->h_vals[id*8 + 6] = idx->data_size + 1;
+    memcpy(idx->data + idx->data_size,
+           inp->data,
+           new_data_size - idx->data_size);
+    idx->data_size = new_data_size;
+    idx->offset[id] = -1;
+  }
+
+  idx->size += 1;
+}
+
+/*----------------------------------------------------------------------------
+ * Create an index structure to a _cs_io_t structure.
+ *
+ * parameters:
+ *   inp        <-> pointer to cs_io_t structure
+ *   end_offset <-- file size
+ *----------------------------------------------------------------------------*/
+
+static void
+_create_index(_cs_io_t  *inp,
+             long long   end_offset)
+{
+  _cs_io_sec_index_t  *idx = NULL;
+
+  MEM_MALLOC(idx, 1, _cs_io_sec_index_t);
+
+  /* Set structure fields */
+
+  idx->size = 0;
+  idx->max_size = 32;
+
+  MEM_MALLOC(idx->h_vals, idx->max_size*8, long long);
+  MEM_MALLOC(idx->offset, idx->max_size, long long);
+
+  idx->max_names_size = 256;
+  idx->names_size = 0;
+
+  MEM_MALLOC(idx->names, idx->max_names_size, char);
+
+  idx->max_types_size = 64;
+  idx->types_size = 0;
+
+  MEM_MALLOC(idx->types, idx->max_names_size, char);
+
+  idx->max_data_size = 256;
+  idx->data_size = 0;
+
+  MEM_MALLOC(idx->data, idx->max_data_size, unsigned char);
+
+  /* Add structure */
+
+  inp->index = idx;
+
+  /* Read headers to build index index */
+
+  while (_file_tell(inp) + (long long)(inp->header_size) <= end_offset) {
+    _read_section_header(inp);
+    _update_index_and_shift(inp);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a cs_io_t structure's optional index structure.
+ *
+ * parameters:
+ *   inp <-> pointer to cs_io_t structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_destroy_index(_cs_io_t *inp)
+{
+  _cs_io_sec_index_t *idx = inp->index;
+
+  if (idx == NULL)
+    return;
+
+  MEM_FREE(idx->h_vals);
+  MEM_FREE(idx->offset);
+  MEM_FREE(idx->names);
+  MEM_FREE(idx->types);
+  MEM_FREE(idx->data);
+
+  MEM_FREE(inp->index);
+}
+
+/*----------------------------------------------------------------------------
+ * Ready cs_io_t structure to read a given indexed section
+ *
+ * parameters:
+ *   inp        <-> pointer to input object
+ *   section_id <-- section id
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_indexed_section(_cs_io_t  *inp,
+                     int        section_id)
+{
+  const _cs_io_sec_index_t *index = inp->index;
+  const long long *h_vals = index->h_vals + section_id*8;
+
+  inp->n_vals = h_vals[0];
+  inp->location_id = h_vals[1];
+  inp->index_id = h_vals[2];
+  inp->n_loc_vals = h_vals[3];
+  inp->type_size = 0;
+  inp->data = NULL;
+  if (h_vals[6] != 0)
+    inp->data = index->data + h_vals[6] - 1;
+  inp->name = index->names + h_vals[4];
+  inp->type_name = index->types + h_vals[5];
+  inp->offset = index->offset[section_id];
+  inp->type_size = _type_size_from_name(inp->type_name);
+}
+
+/*----------------------------------------------------------------------------
+ * Extract data from a cs_io_t structure whose index has been built
+ *
+ * parameters:
+ *   inp         <-> pointer to input object
+ *   location_id <-- if >= 0 location id filter
+ *   sec_name    <-- if != NULL, section name filter
+ *   f_fmt       <-- if != NULL, format for output of floating-point values
+ *----------------------------------------------------------------------------*/
+
+static void
+_find_and_extract_section(_cs_io_t    *inp,
+                          int          location_id,
+                          const char  *sec_name,
+                          const char  *f_fmt)
+{
+  size_t id;
+  int extract_id = -1;
+  long long extract_offset = -1;
+  _cs_io_sec_index_t *index = inp->index;
+
+  /* Find matching sections */
+
+  for (id = 0; id < index->size; id++) {
+
+    int match = 1;
+    const long long *h_vals = index->h_vals + id*8;
+    const char *_name = index->names + h_vals[4];
+    const int _location = h_vals[1];
+
+    if (sec_name != NULL && strcmp(sec_name, _name))
+      match = 0;
+    if (location_id >= 0 && location_id != _location)
+      match = 0;
+
+    if (match == 1) {
+      if (extract_id < 0) {
+        extract_id = id;
+        extract_offset = index->offset[id];
+      }
+      else
+        _error(__FILE__, __LINE__, 0,
+               _("File file \"%s\" contains multiple section:\n"
+                 "named \"%s\" with location id %d\n\n"),
+               inp->filename, _name, _location);
+    }
+  }
+
+  /* If section to extract found, output it */
+
+  if (extract_id > -1) {
+    _set_indexed_section(inp, extract_id);
+    _extract_section_values(inp, f_fmt);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Copy data to compare buffer
+ *
+ * This allows comparing arrays of similar but not identical types.
+ *
+ * Type name should already have been checked when this function is called,
+ * so no additional check is done here.
+ *
+ * parameters:
+ *   dest       --> pointer to comparable (destination) data
+ *   buffer     <-- pointer to data
+ *   type_named <-- name of data type
+ *   n_values   <-- number of values to echo
+ *----------------------------------------------------------------------------*/
+
+static void
+_copy_to_cmp(void        *dest,
+             const void  *buffer,
+             const char   type_name[],
+             size_t       n_values)
+{
+  size_t i;
+
+  /* Check type name */
+
+  if (type_name[0] == 'c')
+    memcpy(dest, buffer, n_values);
+
+#if (__STDC_VERSION__ >= 199901L)
+
+  else if (type_name[0] == 'i' && type_name[1] == '4') {
+    const int32_t *_buffer = buffer;
+    long long *_dest = dest;
+    for (i = 0; i < n_values; i++)
+      _dest[i] = _buffer[i];
+  }
+
+  else if (type_name[0] == 'i' && type_name[1] == '8') {
+    const int64_t *_buffer = buffer;
+    long long *_dest = dest;
+    for (i = 0; i < n_values; i++)
+      _dest[i] = _buffer[i];
+  }
+
+  else if (type_name[0] == 'u' && type_name[1] == '4') {
+    const uint32_t *_buffer = buffer;
+    long long *_dest = dest;
+    for (i = 0; i < n_values; i++)
+      _dest[i] = _buffer[i];
+  }
+
+  else if (type_name[0] == 'u' && type_name[1] == '8') {
+    const uint64_t *_buffer = buffer;
+    long long *_dest = dest;
+    for (i = 0; i < n_values; i++)
+      _dest[i] = _buffer[i];
+  }
+
+#else /* (__STDC_VERSION__ < 199901L) */
+
+  else if (type_name[0] == 'i' && type_name[1] == '4') {
+    if (sizeof(int) == 4) {
+      const int *_buffer = buffer;
+      long long *_dest = dest;
+      for (i = 0; i < n_values; i++)
+        _dest[i] = _buffer[i];
+    }
+    else if (sizeof(short) == 4) {
+      const short *_buffer = buffer;
+      long long *_dest = dest;
+      for (i = 0; i < n_values; i++)
+        _dest[i] = _buffer[i];
+    }
+    else
+      printf("    int32_t undefined"
+             " (porting error, C99 compiler needed)\n");
+  }
+
+  else if (type_name[0] == 'i' && type_name[1] == '8') {
+    if (sizeof(long) == 8) {
+      const long *_buffer = buffer;
+      long long *_dest = dest;
+      for (i = 0; i < n_values; i++)
+        _dest[i] = _buffer[i];
+    }
+    else if (sizeof(long long) == 8) {
+      const long long *_buffer = buffer;
+      long long *_dest = dest;
+      for (i = 0; i < n_values; i++)
+        _dest[i] = _buffer[i];
+    }
+    else
+      printf("    int64_t undefined"
+             " (porting error, C99 compiler needed)\n");
+  }
+
+  else if (type_name[0] == 'u' && type_name[1] == '4') {
+    if (sizeof(unsigned) == 4) {
+      const unsigned *_buffer = buffer;
+      long long *_dest = dest;
+      for (i = 0; i < n_values; i++)
+        _dest[i] = _buffer[i];
+    }
+    else if (sizeof(unsigned short) == 4) {
+      const unsigned short *_buffer = buffer;
+      long long *_dest = dest;
+      for (i = 0; i < n_values; i++)
+        _dest[i] = _buffer[i];
+    }
+    else
+      printf("    uint32_t undefined"
+             " (porting error, C99 compiler needed)\n");
+  }
+
+  else if (type_name[0] == 'u' && type_name[1] == '8') {
+    if (sizeof(unsigned long) == 8) {
+      const unsigned long *_buffer = buffer;
+      long long *_dest = dest;
+      for (i = 0; i < n_values; i++)
+        _dest[i] = _buffer[i];
+    }
+    else if (sizeof(unsigned long long) == 8) {
+      const unsigned long long *_buffer = buffer;
+      long long *_dest = dest;
+      for (i = 0; i < n_values; i++)
+        _dest[i] = _buffer[i];
+    }
+    else
+      printf("    uint64_t undefined"
+             " (porting error, C99 compiler needed)\n");
+  }
+
+#endif /* (__STDC_VERSION__) */
+
+  else if (type_name[0] == 'r' && type_name[1] == '4') {
+    const float *_buffer = buffer;
+    double *_dest = dest;
+    for (i = 0; i < n_values; i++)
+      _dest[i] = _buffer[i];
+  }
+
+  else if (type_name[0] == 'r' && type_name[1] == '8') {
+    const double *_buffer = buffer;
+    double *_dest = dest;
+    for (i = 0; i < n_values; i++)
+      _dest[i] = _buffer[i];
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Utility function to print header info for sections with differences.
+ *
+ * parameters:
+ *   inp1  <-- pointer to first input object
+ *   inp2  <-- pointer to second input object
+ *----------------------------------------------------------------------------*/
+
+static void
+_echo_diff_headers(const _cs_io_t  *inp1,
+                   const _cs_io_t  *inp2)
+{
+  if (strcmp(inp1->type_name, inp2->type_name))
+    printf(_("  \"%-32s\"; Location: %2lu Size: %llu\n"
+             "    Type: %-6s;  |  Type: %-6s; \n"),
+           inp1->name,  inp1->location_id,
+           (unsigned long long)inp1->n_vals,
+           inp1->type_name, inp2->type_name);
+  else
+    printf(_("  \"%-32s\"; Location: %2lu; Type: %-6s; Size: %llu\n"),
+           inp1->name,  inp1->location_id, inp1->type_name,
+           (unsigned long long)inp1->n_vals);
+}
+
+/*----------------------------------------------------------------------------
+ * Compare character data from 2 cs_io_t section buffers in different files
+ *
+ * parameters:
+ *   inp1        <-> pointer to first input object
+ *   inp2        <-> pointer to second input object
+ *   cmp1        <-- buffer with characters from first file
+ *   cmp1        <-- buffer with characters from second file
+ *   block_start <-- buffer start id in total array
+ *   block_size  <-- buffer size
+ *   n_echo      <-- number of values to echo
+ *   n_echo_cur  <-> number of values already echoed
+ *
+ * returns:
+ *   number of different values
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_compare_chars(_cs_io_t    *inp1,
+               _cs_io_t    *inp2,
+               const char   cmp1[],
+               const char   cmp2[],
+               size_t       block_start,
+               size_t       block_size,
+               size_t       n_echo,
+               long long   *n_echo_cur)
+{
+  size_t i;
+  size_t n_diffs = 0;
+
+  for (i = 0; i < block_size; i++) {
+    if (cmp1[i] != cmp2[i])
+      n_diffs++;
+  }
+
+  if (n_diffs > 0) {
+
+    if (*n_echo_cur < 0) {
+      _echo_diff_headers(inp1, inp2);
+      *n_echo_cur = 0;
+    }
+
+    for (i = 0; i < block_size && (size_t)(*n_echo_cur) < n_echo; i++) {
+      if (cmp1[i] != cmp2[i]) {
+        unsigned long long j = block_start + i + 1;
+        printf("    %12llu:  %c  | %c\n", j, cmp1[i], cmp2[i]);
+        *n_echo_cur += 1;
+      }
+    }
+  }
+
+  return n_diffs;
+}
+
+/*----------------------------------------------------------------------------
+ * Compare character data from 2 cs_io_t section buffers in different files
+ *
+ * parameters:
+ *   inp1        <-> pointer to first input object
+ *   inp2        <-> pointer to second input object
+ *   cmp1        <-- buffer with integers from first file
+ *   cmp1        <-- buffer with integers from second file
+ *   block_start <-- buffer start id in total array
+ *   block_size  <-- buffer size
+ *   n_echo      <-- number of values to echo
+ *   n_echo_cur  <-> number of values already echoed
+ *
+ * returns:
+ *   number of different values
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_compare_ints(_cs_io_t         *inp1,
+              _cs_io_t         *inp2,
+              const long long   cmp1[],
+              const long long   cmp2[],
+              size_t            block_start,
+              size_t            block_size,
+              size_t            n_echo,
+              long long        *n_echo_cur)
+{
+  size_t i;
+  size_t n_diffs = 0;
+
+  for (i = 0; i < block_size; i++) {
+    if (cmp1[i] != cmp2[i])
+      n_diffs++;
+  }
+
+  if (n_diffs > 0) {
+
+    if (*n_echo_cur < 0) {
+      _echo_diff_headers(inp1, inp2);
+      *n_echo_cur = 0;
+    }
+
+    for (i = 0; i < block_size && (size_t)(*n_echo_cur) < n_echo; i++) {
+      if (cmp1[i] != cmp2[i]) {
+        unsigned long long j = block_start + i + 1;
+        printf("    %12llu:  %lld  | %lld\n", j, cmp1[i], cmp2[i]);
+        *n_echo_cur += 1;
+      }
+    }
+  }
+
+  return n_diffs;
+}
+
+/*----------------------------------------------------------------------------
+ * Compare floating-point data from 2 cs_io_t section buffers in different
+ * files
+ *
+ * parameters:
+ *   inp1        <-> pointer to first input object
+ *   inp2        <-> pointer to second input object
+ *   cmp1        <-- buffer with integers from first file
+ *   cmp1        <-- buffer with integers from second file
+ *   f_fmt       <-- if != NULL, format for output of floating-point values
+ *   f_threshold <-- threshold above which 2 floating-point values are
+ *                   considered different.
+ *   block_start <-- buffer start id in total array
+ *   block_size  <-- buffer size
+ *   n_echo      <-- number of values to echo
+ *   n_echo_cur  <-> number of values already echoed
+ *   f_stats     <-> max, and total difference
+ *
+ * returns:
+ *   number of different values
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_compare_floats(_cs_io_t         *inp1,
+                _cs_io_t         *inp2,
+                const double      cmp1[],
+                const double      cmp2[],
+                const char       *f_fmt,
+                double            f_threshold,
+                size_t            block_start,
+                size_t            block_size,
+                size_t            n_echo,
+                long long        *n_echo_cur,
+                double            f_stats[2])
+{
+  size_t i;
+  size_t n_diffs = 0;
+
+  for (i = 0; i < block_size; i++) {
+    double delta = cmp1[i] - cmp2[i];
+    if (delta < 0.0)
+      delta = -delta;
+    if (delta > f_threshold) {
+      n_diffs++;
+      if (delta > f_stats[0])
+        f_stats[0] = delta;
+      f_stats[1] += delta;
+    }
+  }
+
+  if (n_diffs > 0) {
+
+    char fmt[128] = "    %12llu:  %22.15e  | %22.15e\n";
+
+    if (f_fmt != NULL) {
+      strcpy(fmt, "    %12llu:  %");
+      strcat(fmt, f_fmt);
+      strcat(fmt, "  |  %");
+      strcat(fmt, f_fmt);
+      strcat(fmt, "\n");
+    }
+
+    if (*n_echo_cur < 0) {
+      _echo_diff_headers(inp1, inp2);
+      *n_echo_cur = 0;
+    }
+
+    for (i = 0; i < block_size && (size_t)(*n_echo_cur) < n_echo; i++) {
+      double delta = cmp1[i] - cmp2[i];
+      if (delta < 0.0)
+        delta = -delta;
+      if (delta > f_threshold) {
+        unsigned long long j = block_start + i + 1;
+        printf(fmt, j, cmp1[i], cmp2[i]);
+        *n_echo_cur += 1;
+      }
+    }
+  }
+
+  return n_diffs;
+}
+
+/*----------------------------------------------------------------------------
+ * Compare data from 2 cs_io_t sections in different files
+ *
+ * This function is expected to be called for sections with identical
+ * names and locations.
+ *
+ * parameters:
+ *   inp1        <-> pointer to first input object
+ *   inp2        <-> pointer to second input object
+ *   id1         <-- id of section in first input
+ *   id2         <-- id of section in second input
+ *   f_fmt       <-- if != NULL, format for output of floating-point values
+ *   f_threshold <-- threshold above which 2 floating-point values are
+ *                   considered different.
+ *   n_echo      <-- maximum number of differences to output
+ *
+ * returns:
+ *   1 if data differs, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+static int
+_compare_sections(_cs_io_t    *inp1,
+                  _cs_io_t    *inp2,
+                  size_t       id1,
+                  size_t       id2,
+                  const char  *f_fmt,
+                  double       f_threshold,
+                  size_t       n_echo)
+{
+  char  compare_type1 = ' ', compare_type2 = ' ';
+  int retval = 0;
+  const char no_type[] = " ";
+  const _cs_io_sec_index_t  *index1 = inp1->index;
+  const _cs_io_sec_index_t  *index2 = inp2->index;
+  const long long *h_vals1 = index1->h_vals + id1*8;
+  const long long *h_vals2 = index2->h_vals + id2*8;
+  const char *type1 = no_type;
+  const char *type2 = no_type;
+  const unsigned long long n_vals1 = h_vals1[0];
+  const unsigned long long n_vals2 = h_vals2[0];
+  const char *name = index1->names + h_vals1[4];
+  const unsigned long location = h_vals1[1];
+
+  /* If both sections have zero elements, they are identical
+     (as their names have already been compared) */
+
+  if (n_vals1 == 0 && n_vals2 == 0)
+    return 0;
+
+  /* Determine "equivalent" types for comparison; to reduce combinations,
+     we will transform floats to doubles, and all integer
+     types to 64-bit signed integers */
+
+  if (n_vals1 > 0) {
+    type1 = index1->types + h_vals1[5];
+    compare_type1 = type1[0];
+    if (type1[0] == 'u')
+      compare_type1 = 'i';
+  }
+  if (n_vals2 > 0) {
+    type2 = index2->types + h_vals2[5];
+    compare_type2 = type2[0];
+    if (type2[0] == 'u')
+      compare_type2 = 'i';
+  }
+
+  /* If number differs or types are incompatible, sections differ */
+
+  if (n_vals1 != n_vals2 || compare_type1 != compare_type2) {
+    if (n_vals1 == n_vals2)
+      printf(_("  \"%-32s\"; Location: %2lu; Size: %llu\n"
+               "    Type: %-6s; |  Type: %-6s\n\n"),
+             name,  location, n_vals1, type1, type2);
+    else if (!strcmp(type1, type2))
+      printf(_("  \"%-32s\"; Location: %2lu; Type: %-6s\n"
+               "    Size: %llu  |  Size: %llu\n\n"),
+             name,  location, type1, n_vals1, n_vals2);
+    else
+      printf(_("  \"%-32s\"; Location: %2lu\n"
+               "    Type: %-6s; Size: %llu  |  Type: %-6s; Size: %llu\n\n"),
+             name,  location, type1, n_vals1, type2, n_vals2);
+    return 1;
+  }
+
+  /* If sections are comparable, their contents must be compared */
+
+  else {
+
+    unsigned long long n_diffs = 0;
+    unsigned long long n_read = 0;
+    long long n_echo_cur = -1;
+    size_t block_size = n_vals1;
+    size_t max_block_size = 2 << 16;
+    void *buf1 = NULL, *buf2 = NULL;
+    void *cmp1 = NULL, *cmp2 = NULL;
+    double f_stats[2] = {0.0, 0.0};
+    const size_t type_size1 = _type_size_from_name(type1);
+    const size_t type_size2 = _type_size_from_name(type2);
+
+    _set_indexed_section(inp1, id1);
+    _set_indexed_section(inp2, id2);
+
+    if (inp1->data == NULL && inp2->data == NULL && block_size > max_block_size)
+      block_size = block_size;
+
+    MEM_MALLOC(cmp1, block_size*8, unsigned char);
+    MEM_MALLOC(cmp2, block_size*8, unsigned char);
+
+    if (inp1->data == NULL) {
+      MEM_MALLOC(buf1, block_size*type_size1, unsigned char);
+      _file_seek(inp1, inp1->offset, SEEK_SET);
+    }
+    else
+      buf1 = inp1->data;
+
+    if (inp2->data == NULL) {
+      MEM_MALLOC(buf2, block_size*type_size2, unsigned char);
+      _file_seek(inp2, inp2->offset, SEEK_SET);
+    }
+    else
+      buf2 = inp2->data;
+
+    for (n_read = 0; n_read < n_vals1; n_read += block_size) {
+
+      if (n_read + block_size > n_vals1)
+        block_size = n_vals1 - n_read;
+
+      if (inp1->data == NULL)
+        _file_read(buf1, inp1->type_size, block_size, inp1);
+      if (inp2->data == NULL)
+        _file_read(buf2, inp2->type_size, block_size, inp2);
+
+      _copy_to_cmp(cmp1, buf1, type1, block_size);
+      _copy_to_cmp(cmp2, buf2, type2, block_size);
+
+      if (compare_type1 == 'c')
+        n_diffs += _compare_chars(inp1, inp2,
+                                  cmp1, cmp2,
+                                  n_read, block_size,
+                                  n_echo, &n_echo_cur);
+      else if (compare_type1 == 'i')
+        n_diffs += _compare_ints(inp1, inp2,
+                                 cmp1, cmp2,
+                                 n_read, block_size,
+                                 n_echo, &n_echo_cur);
+      else if (compare_type1 == 'r')
+        n_diffs += _compare_floats(inp1, inp2,
+                                   cmp1, cmp2,
+                                   f_fmt,
+                                   f_threshold,
+                                   n_read, block_size,
+                                   n_echo, &n_echo_cur,
+                                   f_stats);
+    }
+
+    if (n_diffs > 0) {
+      if (type1[0] == 'r')
+        printf(_("    Differences: %llu; Max: %g; Mean: %g\n\n"),
+               n_diffs, f_stats[0], f_stats[1]/n_diffs);
+      else
+        printf(_("    Differences: %llu\n\n"), n_diffs);
+      retval = 1;
+    }
+
+    MEM_FREE(cmp1);
+    MEM_FREE(cmp2);
+
+    if (buf1 != inp1->data)
+      MEM_FREE(buf1);
+    if (buf2 != inp2->data)
+      MEM_FREE(buf2);
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Compare data from 2 cs_io_t structures whose indexes have been built
+ *
+ * parameters:
+ *   index <-- pointer to first index
+ *   id    <-- id of section in index
+ *----------------------------------------------------------------------------*/
+
+static void
+_echo_indexed_header(const _cs_io_sec_index_t  *index,
+                     const size_t               id)
+{
+  const long long *h_vals = index->h_vals + id*8;
+  const char *name = index->names + h_vals[4];
+  const long long n_vals = h_vals[0];
+
+  if (n_vals > 0) {
+    const char *type = index->types + h_vals[5];
+    const unsigned long location = h_vals[1];
+    printf(_("  \"%-32s\"; Type: %-6s; Location: %2lu; Size: %llu\n"),
+           name,  type, location, n_vals);
+  }
+  else
+    printf(_("  \"%-32s\"\n"), name);
+}
+
+/*----------------------------------------------------------------------------
+ * Compare data from 2 cs_io_t structures whose indexes have been built
+ *
+ * parameters:
+ *   inp1        <-> pointer to first input object
+ *   inp2        <-> pointer to second input object
+ *   location_id <-- if >= 0 location id filter
+ *   sec_name    <-- if != NULL, section name filter
+ *   f_fmt       <-- if != NULL, format for output of floating-point values
+ *   f_threshold <-- threshold above which 2 floating-point values are
+ *                   considered different.
+ *   n_echo      <-- maximum number of differences to output
+ *
+ * returns:
+ *   0 if contents are identical, 1 if they differ
+ *----------------------------------------------------------------------------*/
+
+static int
+_compare_files(_cs_io_t    *inp1,
+               _cs_io_t    *inp2,
+               int          location_id,
+               const char  *sec_name,
+               const char  *f_fmt,
+               double       f_threshold,
+               size_t       n_echo)
+{
+  size_t i, j;
+  size_t n_diffs = 0;
+  int has_unmatched1 = 0, has_unmatched2 = 0;
+  int *compared1 = NULL, *compared2 = NULL;
+  _cs_io_sec_index_t *index1 = inp1->index;
+  _cs_io_sec_index_t *index2 = inp2->index;
+
+  int retval = 0;
+
+  /* Prepare marker on first file to flag sections with no match in
+     second file, and marker on second file to flag sections compared
+     during loop on first file. */
+
+  MEM_MALLOC(compared1, index1->size, int);
+  for (i = 0; i < index1->size; i++)
+    compared1[i] = 0;
+
+  MEM_MALLOC(compared2, index2->size, int);
+  for (i = 0; i < index2->size; i++)
+    compared2[i] = 0;
+
+  /* Find matching sections */
+
+  for (i = 0; i < index1->size; i++) {
+
+    int match_filter = 1;
+    const long long *h_vals1 = index1->h_vals + i*8;
+    const char *_name1 = index1->names + h_vals1[4];
+    const int _location1 = h_vals1[1];
+
+    if (sec_name != NULL && strcmp(sec_name, _name1))
+      match_filter = 0;
+    if (location_id >= 0 && location_id != _location1)
+      match_filter = 0;
+
+    /* Search for matching section in second file */
+
+    if (match_filter == 1) {
+
+      for (j = 0; j < index2->size; j++) {
+
+        const long long *h_vals2 = index2->h_vals + j*8;
+        const char *_name2 = index2->names + h_vals2[4];
+        const int _location2 = h_vals2[1];
+
+        /* If matching section is found, compare it */
+
+        if (!strcmp(_name1, _name2) && (_location1 == _location2)) {
+          n_diffs += _compare_sections(inp1, inp2, i, j,
+                                       f_fmt, f_threshold, n_echo);
+          compared1[i] = 1;
+          compared2[j] = 1;
+        }
+      }
+    }
+    else
+      compared1[i] = 1;
+  }
+
+  /* List unmatched sections from first file */
+
+  for (i = 0; i < index1->size; i++) {
+    if (!compared1[i])
+      has_unmatched1 = 1;
+  }
+
+  if (has_unmatched1) {
+
+    printf(_("Sections only found in file \"%s\":\n\n"), inp1->filename);
+
+    for (i = 0; i < index1->size; i++) {
+      if (!compared1[i])
+        _echo_indexed_header(index1, i);
+    }
+
+    printf("\n");
+  }
+
+  /* List unmatched sections from second file */
+
+  for (i = 0; i < index2->size; i++) {
+
+    const long long *h_vals2 = index2->h_vals + i*8;
+    const char *_name2 = index2->names + h_vals2[4];
+    const int _location2 = h_vals2[1];
+
+    if (   (sec_name != NULL && strcmp(sec_name, _name2))
+        || (location_id >= 0 && location_id != _location2))
+      compared2[i] = 1;
+
+    else if (!compared2[i])
+      has_unmatched2 = 1;
+  }
+
+  if (has_unmatched2) {
+
+    printf(_("Sections only found in file \"%s\":\n\n"), inp2->filename);
+
+    for (i = 0; i < index2->size; i++) {
+      if (!compared2[i])
+        _echo_indexed_header(index2, i);
+    }
+  }
+
+  MEM_FREE(compared1);
+  MEM_FREE(compared2);
+
+  if (n_diffs > 0 || has_unmatched1 || has_unmatched2)
+    retval = 1;
+
+  return retval;
 }
 
 /*============================================================================
@@ -1281,27 +2647,50 @@ _read_section(_cs_io_t  *inp,
 int
 main (int argc, char *argv[])
 {
-  int file_name_arg = 0;
+  int file_name_arg[2] = {0, 0};
   size_t echo = 0;
+  int mode = 0, location_id = -1, sec_name_arg_id = 0, f_fmt_arg_id = 0;
+  double f_threshold = 1.e-30;
+
   long long start_offset = 0, end_offset = 0;
   _cs_io_t inp;
 
+  int retval = EXIT_SUCCESS;
+
+  const char *sec_name = NULL, *f_fmt = NULL;
+
   if (getenv("LANG") != NULL)
-     setlocale(LC_ALL,"");
+    setlocale(LC_ALL,"");
   else
-     setlocale(LC_ALL,"C");
+    setlocale(LC_ALL,"C");
   setlocale(LC_NUMERIC,"C");
 
 #if defined(ENABLE_NLS)
-  bindtextdomain (PACKAGE, LOCALEDIR);
+  bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);
 #endif
 
   /* Parse command line arguments */
 
-  _read_args(argc, argv, &echo, &file_name_arg);
+  _read_args(argc,
+             argv,
+             &mode,
+             &echo,
+             &location_id,
+             &sec_name_arg_id,
+             &f_fmt_arg_id,
+             &f_threshold,
+             file_name_arg);
 
-  inp = _open_input(argv[file_name_arg]);
+  if (sec_name_arg_id > 0)
+    sec_name = argv[sec_name_arg_id];
+
+  if (f_fmt_arg_id > 0)
+    f_fmt = argv[f_fmt_arg_id];
+
+  /* Initialize return arguments */
+
+  inp = _open_input(argv[file_name_arg[0]], mode);
 
   /* Determine end of file;
      feof() may not work when using seeks,
@@ -1312,17 +2701,62 @@ main (int argc, char *argv[])
   end_offset = _file_tell(&inp);
   _file_seek(&inp, start_offset, SEEK_SET);
 
-  /* Read file sections (or portions thereof) */
+  /* Standard dump mode */
 
-  while (  _file_tell(&inp) + (long long)(inp.header_size)
-         <= end_offset)
-    _read_section(&inp, echo);
+  if (mode == 0) {
+
+    /* Read file sections (or portions thereof) */
+
+    while (  _file_tell(&inp) + (long long)(inp.header_size)
+           <= end_offset)
+      _read_section(&inp, echo, location_id, sec_name, f_fmt);
+
+  }
+
+  /* Extraction mode (build index to check for duplicates and find section) */
+
+  else if (mode == 1) {
+    _create_index(&inp, end_offset);
+    _find_and_extract_section(&inp, location_id, sec_name, f_fmt);
+    _destroy_index(&inp);
+  }
+
+  /* Diff mode */
+
+  else if (mode == 2) {
+
+    long long _start_offset = 0, _end_offset = 0;
+    _cs_io_t inp2 = _open_input(argv[file_name_arg[1]], mode);
+
+    /* Determine end of file as for first file */
+    _start_offset = _file_tell(&inp);
+    _file_seek(&inp2, 0, SEEK_END);
+    _end_offset = _file_tell(&inp2);
+    _file_seek(&inp2, _start_offset, SEEK_SET);
+
+    /* Create indexes for both files */
+
+    _create_index(&inp, end_offset);
+    _create_index(&inp2, _end_offset);
+
+    printf("\n");
+
+    retval = _compare_files(&inp, &inp2, location_id, sec_name,
+                            f_fmt, f_threshold, echo);
+
+    _destroy_index(&inp2);
+    _destroy_index(&inp);
+
+    printf("\n");
+
+    _close_input(&inp2, mode);
+  }
 
   /* Clean-up */
 
-  _close_input(&inp);
+  _close_input(&inp, mode);
 
-  exit(EXIT_SUCCESS);
+  exit(retval);
 }
 
 /*----------------------------------------------------------------------------*/

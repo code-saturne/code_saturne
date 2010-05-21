@@ -1,4 +1,9 @@
 * 21/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add diff capabilities to the I/O dump utility.
+  modified routine:
+    src/apps/cs_io_dump.c
+
+* 21/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a wrong integer type in the partitioner.
   modified routine:
     src/apps/cs_partition.c
