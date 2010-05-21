@@ -95,29 +95,29 @@ condition for
 the temperature. Refer to the comments in the routine or to the \CS user manual
 for more information on this routine.\\
 In our case, you need to identify the boundary faces of color 1. The command\\
-\texttt{call getfbr('1',nlelt,lstelt)}
-will return an integer \texttt{nlelt}, corresponding to the number of boundary faces of
-color 1, and an integer array \texttt{lstelt} containing the list of the \texttt{nlelt} boundary
+CALL GETFBR('1',NLELT,LSTELT)
+will return an integer NLELT, corresponding to the number of boundary faces of
+color 1, and an integer array LSTELT containing the list of the NLELT boundary
 faces of color 1. Note that the string '1' can be more complex and combine
 different colors, group references or geometrical criteria, with the same syntax
 as in the Graphical Interface.
 
-For each boundary face \texttt{ifac} in the list, the Dirichlet value is given in the
-multi-dimension array \texttt{rcodcl} as follows:
+For each boundary face IFAC in the list, the Dirichlet value is given in the
+multi-dimension array RCODCL as follows:
 \begin{verbatim}
-if (ttcabs.lt.3.8d0) then
-  do ielt = 1, nlelt
-    ifac = lstelt(ielt)
-    rcodcl(ifac,isca(1),1) = 20.d0 + 100.d0*ttcabs
-  enddo
-else
-  do ielt = 1, nlelt
-    ifac = lstelt(ielt)
-    rcodcl(ifac,isca(1),1) = 400.d0
-  enddo
-endif
+IF (TTCABS.LT.3.8D0) THEN
+  DO IELT = 1, NLELT
+    IFAC = LSTELT(IELT)
+    RCODCL(IFAC,ISCA(1),1) = 20.D0+100.D0*TTCABS
+  ENDDO
+ELSE
+  DO IELT = 1, NLELT
+    IFAC = LSTELT(IELT)
+    RCODCL(IFAC,ISCA(1),1) = 400.D0
+  ENDDO
+ENDIF
 \end{verbatim}
-\texttt{isca(1)} refers to the first scalar and \texttt{ttcabs} is the current physical time.
+ISCA(1) refers to the first scalar and TTCABS is the current physical time.
 
 See the example file in the directory \texttt{examples} for the complete
 {\itshape usclim.f90} file.
