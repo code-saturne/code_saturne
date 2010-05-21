@@ -73,6 +73,9 @@ AM_INIT_AUTOMAKE([-Wall])
 
 AM_MAINTAINER_MODE
 
+# Enable silent rules with "./configure --enable-silent-rules" or "make V=0"
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
+
 #------------------------------------------------------------------------------
 # Checks for programs.
 #------------------------------------------------------------------------------
