@@ -116,7 +116,6 @@ _arg_env_help(const char  *name)
   fprintf
     (e, _(" --solcom          stand-alone kernel with \"geomet\" mesh in\n"
           "                   SolCom format (obsolete)\n"));
-#if defined(HAVE_MPI)
   fprintf
     (e, _(" --mpi             use MPI for parallelism or coupling\n"
           "                   [appnum]: number of this application in\n"
@@ -127,7 +126,6 @@ _arg_env_help(const char  *name)
           "                     eo:  MPI-IO with explicit offsets\n"
           "                          (default if available)\n"
           "                     ip:  MPI-IO with individual file pointers\n"));
-#endif
   fprintf
     (e, _(" -q, --quality     mesh quality verification mode\n"));
   fprintf
@@ -144,16 +142,12 @@ _arg_env_help(const char  *name)
           "                     0: no redirection (if independant\n"
           "                        terminals, debugger type)\n"
           "                     1: output in \"listing_n<rang>\"\n"));
-#if defined(HAVE_LIBXML2)
   fprintf
     (e, _(" -p, --param       <file_name> parameter file\n"));
-#endif
 
-#if defined(HAVE_SOCKET)
   fprintf
     (e, _(" --syr-socket      enable sockets for SYRTHES 3 coupling\n"
           "                   <port_num> port number on rank 0\n"));
-#endif
 
   fprintf
     (e, _(" --version         print version number\n"));
@@ -300,6 +294,15 @@ cs_opts_define(int         argc,
         argerr = 1;
     }
 
+#else /* !defined(HAVE_MPI) */
+
+    else if ((strcmp(s, "--mpi") == 0) || (strcmp(s, "--mpi-io") == 0)) {
+      fprintf(stderr, _("%s was built without MPI support,\n"
+                        "so option \"%s\" may not be used.\n"),
+              argv[0], s);
+      cs_exit(EXIT_FAILURE);
+    }
+
 #endif /* defined(HAVE_MPI) */
 
     else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0)
@@ -339,12 +342,21 @@ cs_opts_define(int         argc,
       }
     }
 
-#if defined(HAVE_LIBXML2)
     else if (strcmp(s, "-p") == 0 || strcmp(s, "--param") == 0) {
-      s = argv[++arg_id];
-      argerr = cs_gui_load_file(s);
+      if (arg_id + 1 < argc) {
+        s = argv[++arg_id];
+#if defined(HAVE_LIBXML2)
+        argerr = cs_gui_load_file(s);
+#else
+        fprintf(stderr, _("%s was built without XML support,\n"
+                          "so parameter file \"%s\" may not be loaded.\n"),
+                argv[0], s);
+        cs_exit(EXIT_FAILURE);
+#endif /* defined(HAVE_LIBXML2) */
+      }
+      else
+        argerr = 1;
     }
-#endif
 
 #if defined(HAVE_SOCKET)
 
@@ -373,20 +385,34 @@ cs_opts_define(int         argc,
         argerr = 1;
     }
 
-#endif /* defined(HAVE_SOCKET) */
+#else /* !defined(HAVE_SOCKET) */
 
-#if defined(HAVE_DLOPEN)
+    else if (   strcmp(s, "--syr-socket") == 0
+             || (strncmp(s, socketoptbase, strlen(socketoptbase)) == 0)
+             || (strncmp(s, keyoptbase, strlen(keyoptbase)) == 0)) {
+      fprintf(stderr, _("%s was built without socket support,\n"
+                        "so option \"%s\" may not be used.\n"),
+              argv[0], s);
+      cs_exit(EXIT_FAILURE);
+    }
+
+#endif /* defined(HAVE_SOCKET) */
 
     /* Library loader options (do not appear in help as they
        are not destined to be used directly by a user) */
 
     else if (strncmp(s, moduleoptbase, strlen(moduleoptbase)) == 0) {
       const char *_s = s + strlen(moduleoptbase);
+#if defined(HAVE_DLOPEN)
       BFT_MALLOC(opts->yacs_module, strlen(_s) + 1, char);
       strcpy(opts->yacs_module, _s);
-    }
-
+#else
+      fprintf(stderr, _("%s was built without dynamic loader support,\n"
+                        "so module file \"%s\" may not be loaded.\n"),
+              argv[0], _s);
+      cs_exit(EXIT_FAILURE);
 #endif /* defined(HAVE_DLOPEN) */
+    }
 
     /* Version number */
 
