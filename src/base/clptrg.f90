@@ -251,7 +251,7 @@ double precision und0, deuxd0
 double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
-double precision distbf0,rugd,rugt,ydep,act,uiptfn,uiptfx
+double precision distbf0,rugd,rugt,ydep,act
 
 !===============================================================================
 
@@ -561,6 +561,8 @@ do ifac = 1, nfabor
 ! 2. VITESSES DE FROTTEMENT
 !==========================================================================
 
+   if (abs(utau).le.epzero) utau = epzero
+
 ! RUGD : rugosite de paroi pour les variables dynamiques
 !        seule la valeur stockee pour IU est utilisee
    rugd=rcodcl(ifac,iuiph,3)
@@ -690,8 +692,6 @@ do ifac = 1, nfabor
 
       if(uiptn.lt.-epzero) iuiptn = iuiptn + 1
 
-      uiptfx = max(uiptnf,uiptfx)
-      uiptfn = min(uiptnf,uiptfn)
       uetmax = max(uet,uetmax)
       uetmin = min(uet,uetmin)
       ukmax = max(uk,ukmax)

@@ -302,7 +302,9 @@ do ifac = 1, nfabor
         if (itypfb(ifac,iphas).eq.0) itypfb(ifac,iphas) = isolib
       else
         if (itypfb(ifac,iphas).eq.0) itypfb(ifac,iphas) = ientre
+      endif
 
+      if (itypfb(ifac,iphas).eq.ientre) then
 
         if (rcodcl(ifac,iu(iphas),1).gt.rinfin*0.5d0)             &
            rcodcl(ifac,iu(iphas),1) = xuent

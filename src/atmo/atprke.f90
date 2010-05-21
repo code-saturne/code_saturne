@@ -225,7 +225,7 @@ if (ippmod(iatmos).eq.1) then
   climgp = climgr(itpp)
   extrap = extrag(itpp)
 
-  iivar = 0
+  iivar = itpp
 
   iphydp = 0
   call grdcel                                                     &

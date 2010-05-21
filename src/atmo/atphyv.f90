@@ -250,6 +250,13 @@ idebia = idbia0
 idebra = idbra0
 
 
+! This routine computes the density and the thermodynamic temperature.
+! The computations require the pressure profile which is here taken from
+! the meteo file. If no meteo file is used, the user should
+! give the laws for RHO and T in usphyv.f90
+
+if (imeteo.eq.0) return
+
 !===============================================================================
 
 ! --- Boucle sur les phases : debut

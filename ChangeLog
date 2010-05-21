@@ -1,3 +1,17 @@
+* 21/05/2010 - Maya Milliez <maya.milliez@edf.fr>
+               Bertrand Carissimo <bertrand.carissimo@edf.fr>
+  Several little fixes and improvements for the atmospheric module.
+  modified routine:
+    src/atmo/atiniv.f90
+    src/atmo/atmcls.f90
+    src/atmo/atphyv.f90
+    src/atmo/atprke.f90
+    src/atmo/attycl.f90
+    src/base/clptrg.f90
+    src/base/turbke.f90
+    users/atmo/usatcl.f90
+    users/atmo/usati1.f90
+
 * 21/05/2010 - Pascal Nicolas <pascal.nicolas@incka.fr>
   Update the tutorial description.
   modified files:

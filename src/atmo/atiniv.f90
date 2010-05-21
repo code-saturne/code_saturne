@@ -229,12 +229,17 @@ endif
 ! 3. Dry atmosphere: default initialization of potential temperature
 !===============================================================================
 
-if (ippmod(iatmos).eq.1) then
-  ! The thermal scalar is potential temperature
-  iphas = 1
-  do iel = 1, ncel
-    rtp(iel,isca(iscalt(iphas))) = t0(iphas)
-  enddo
+! Only if the simulation is not a restart from another one
+if (isuite.eq.0) then
+
+  if (ippmod(iatmos).eq.1) then
+    ! The thermal scalar is potential temperature
+    iphas = 1
+    do iel = 1, ncel
+      rtp(iel,isca(iscalt(iphas))) = t0(iphas)
+    enddo
+  endif
+
 endif
 
 !===============================================================================
