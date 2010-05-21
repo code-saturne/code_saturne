@@ -1,3 +1,22 @@
+* 21/05/2010 - Pascal Nicolas <pascal.nicolas@incka.fr>
+  Update the tutorial description.
+  modified files:
+    doc/tutorial/case4.tex
+    doc/tutorial/graphics/V-11.png
+    doc/tutorial/graphics/V-12.png
+    doc/tutorial/graphics/V-14.png
+    doc/tutorial/graphics/V-15.png
+    doc/tutorial/graphics/V-16.png
+    doc/tutorial/graphics/V-17.png
+    doc/tutorial/graphics/V-3.png
+    doc/tutorial/graphics/V-5.png
+    doc/tutorial/graphics/V-6.png
+    doc/tutorial/graphics/V-7.png
+    doc/tutorial/graphics/V-9.png
+    doc/tutorial/tuto_case1.tex
+    doc/tutorial/tuto_case3.tex
+    doc/tutorial/tuto_case4.tex
+
 * 21/05/2010 - David Monfort <david.monfort@edf.fr>
   Enable silent rules with recent automake (>= 1.11.1). The default mode is
   verbose, the silent mode can be activated with --enable-silent-rules at

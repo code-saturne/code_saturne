@@ -196,27 +196,11 @@ In the present case, select {\itshape Temperature (Celsius degrees)}.
 \end{center}
 \end{figure}
 
-There are no radiative transfers in our case, so the item is ignored.
+Once the thermal scalar selected, additional items appear.
+There are no radiative transfers in our case, so this item can be ignored.
 
 \clearpage
-To initialize variables at the instant $t=0\ s$, go to the item {\itshape Initialization}.
-Here the velocity, the thermal scalar and the turbulence can be initialized. In
-this case, the default values can be kept: zero velocity, an initial temperature
-of 20\degresC\ and a turbulence level based on a reference velocity of $1\
-m.s^{-1}$. Specific zones can be defined with different initializations. In this
-case, only the default ``all cells'' is used.
-
-\begin{figure}[ht]
-\begin{center}
-\includegraphics[width=12cm]{V-11}
-\caption{Initialization of dynamic variables}
-\label{fig14_e1}
-\end{center}
-\end{figure}
-
-
-\clearpage
-The initial value for the thermal scalar also appears in the item
+To initialize the thermal scalar, go to the item
 {\itshape Definition and Initialization} under the heading
 {\itshape Additional scalars}, where more options concerning the scalars can be
 specified. The value of the initial value can be modified in any of the two
@@ -242,8 +226,6 @@ Click on the thermal scalar in the list, to change:
         \item its maximal value
 \end{itemize}
 In this case the temperature can vary between 0\degresC\ and 400\degresC.
-After entering the new values, click on {\itshape Modify} in order to validate
-these changes.
 
 \begin{figure}[ht]
 \begin{center}
@@ -317,6 +299,23 @@ default value.
 \end{center}
 \end{figure}
 
+\clearpage
+To initialize variables at the instant $t=0\ s$, go to the item {\itshape Initialization} under the heading {\itshape Volume conditions}.
+Here the velocity, the thermal scalar and the turbulence can be initialized. In
+this case, the default values can be kept: zero velocity, an initial temperature
+of 20\degresC\ (consistant with previous initialization) and a turbulence level based on a reference velocity of $1\
+m.s^{-1}$. Specific zones can be defined with different initializations. In this
+case, only the default ``all cells'' is used.
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[width=12cm]{V-11}
+\caption{Initialization of dynamic variables}
+\label{fig14_e1}
+\end{center}
+\end{figure}
+
+
 
 \clearpage
 Boundary conditions now need to be defined. Go to the item {\itshape Define
@@ -336,7 +335,7 @@ The following window opens (fig \ref{fig20_e1}).
 Each boundary must be defined. Click on {\itshape Add} to edit a new boundary. 
 The boundary faces will be grouped in
 user-defined zones, based on their color or on geometrical conditions. For each
-zone, a reference number, a label, a nature and a localization condition must be
+zone, a reference number, a label, a nature and a selection criteria must be
 assigned.
 The different natures that can be assigned are:\\
 \hspace*{1cm}$\bullet\ $wall\\
@@ -350,7 +349,7 @@ zone more easily. It usually corresponds to the nature of the zone.
 The {\itshape Zone} number can be any integer. It will be used by the code to
 identify the zone. No specific order or continuity in the numbering is needed.
 
-The {\itshape Localization} is used to define the faces that belong to the
+The {\itshape Selection criteria} is used to define the faces that belong to the
 zone. It can be a color number, a group reference, geometrical conditions, on a
 combination of them, related by ``or'' or ``and'' keywords.
 
@@ -369,7 +368,7 @@ pages. The settings will be as follows:\\
 \hspace*{1cm}$\bullet\ ${\itshape Label}: inlet\\
 \hspace*{1cm}$\bullet\ ${\itshape Zone}: 1\\
 \hspace*{1cm}$\bullet\ ${\itshape Nature}: inlet\\
-\hspace*{1cm}$\bullet\ ${\itshape Localization}: 1
+\hspace*{1cm}$\bullet\ ${\itshape Selection criteria}: 1
 
 Type all the information in the fields, the result diplays as figure \ref{fig20_e1}
 
