@@ -1520,7 +1520,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                         if (   cs_gui_strcmp(vars->model_value, "dry")
                             || cs_gui_strcmp(vars->model_value, "humid"))
                         {
-                            rcodcl[3 * (*nfabor * (vars->nvar)) + vars->rtp[2] * (*nfabor) + ifbr]
+                            rcodcl[2 * (*nfabor * (vars->nvar)) + vars->rtp[2] * (*nfabor) + ifbr]
                             = boundaries->rough[izone];
                         }
                      }
