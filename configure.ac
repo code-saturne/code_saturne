@@ -401,7 +401,7 @@ unset have_partitioner
 AC_ARG_WITH(prepro, [AS_HELP_STRING([--with-prepro=PATH],
                                     [specify prefix directory for the Preprocessor])])
 
-AC_PATH_PROG([ecs], [cs_preprocess],
+AC_PATH_PROG([ecs], [cs_preprocess$EXEEXT],
              [no],
              [$with_prepro/bin$PATH_SEPARATOR$PATH])
 

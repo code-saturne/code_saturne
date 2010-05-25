@@ -43,8 +43,10 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/time.h>
+
+#if defined(HAVE_SYS_RESOURCE_H)
 #include <sys/resource.h>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -62,7 +64,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute remaining time allocated to this process
+ * Compute remaining time allocated to this process when available
+ * (usually, architectures other than IBM Blue Gene or Cray XT)
  *
  * Fortran interface:
  *
@@ -79,15 +82,13 @@ BEGIN_C_DECLS
 void CS_PROCF (tremai, TREMAI) (double  *tps,
                                 int     *ret)
 {
+#if defined(HAVE_SYS_RESOURCE_H)
+
   struct rlimit ressources;
   struct rusage buf_time;
   struct rusage buf_time1;
 
   *tps = 3600.0 * 24.0 * 7; /* "unlimited" values by default */
-
-/* Architectures other than IBM Blue Gene or Cray XT */
-#if   !defined(__blrts__) && !defined(__bgp__) \
-   && !defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 
   if ((*ret = getrusage(RUSAGE_SELF, &buf_time)) < 0)
     fprintf(stderr, "getrusage(RUSAGE_SELF) error:\n%s\n", strerror(errno));
@@ -108,13 +109,12 @@ void CS_PROCF (tremai, TREMAI) (double  *tps,
     *ret = 1;
   }
 
-#else /* IBM Blue Gene or Cray XT */
+#else
 
   *ret = -1; /* getrusage(RUSAGE_SELF, ...) and getrlimit(RLIMIT_CPU, ...)
                 not available on this architecture */
 
 #endif
-
 }
 
 /*----------------------------------------------------------------------------*/

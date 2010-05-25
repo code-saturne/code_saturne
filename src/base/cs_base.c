@@ -280,7 +280,7 @@ _cs_base_err_vprintf(const char  *format,
         sprintf(err_file_name, "error_n%04d", cs_glob_rank_id + 1);
     }
 
-    stderr = freopen(err_file_name, "w", stderr);
+    freopen(err_file_name, "w", stderr);
 
     initialized = true;
   }

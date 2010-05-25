@@ -1,4 +1,13 @@
-* 22/05/2010 - David Monfort <david.monfort@edf.fr>
+* 25/05/2010 - David Monfort <david.monfort@edf.fr>
+  Minor fixes to alleviate cross-compilation issues with mingw32 compilers.
+  modified script:
+    configure.ac
+  modified routines:
+    src/base/cs_base.c
+    src/base/cs_opts.c
+    src/base/tremai.c
+
+* 25/05/2010 - David Monfort <david.monfort@edf.fr>
   Fix a wrong initizaliation for the thermal roughness (when using the
   graphical interface). Thanks to Maxime Nibart for reporting this bug.
   modified routine:
