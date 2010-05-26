@@ -1,3 +1,9 @@
+* 26/05/2010 - David Monfort <david.monfort@edf.fr>
+  Fix the wall treatment management in case of mobile mesh for rotating
+  machinery (or ALE formulation). The velocity was not correctly projected.
+  modified routine:
+    src/base/clptur.f90
+
 * 25/05/2010 - David Monfort <david.monfort@edf.fr>
   Minor fixes to alleviate cross-compilation issues with mingw32 compilers.
   modified script:
