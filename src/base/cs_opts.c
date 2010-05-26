@@ -234,13 +234,9 @@ cs_opts_define(int         argc,
   const char *s;
   int arg_id = 0, argerr = 0;
 
-#if defined(HAVE_DLOPEN)
   const char moduleoptbase[] = "--yacs-module=";
-#endif
-#if defined(HAVE_SOCKET)
   const char socketoptbase[] = "--proxy-socket=";
   const char keyoptbase[] = "--proxy-key=";
-#endif
 
   /* Default initialization */
 

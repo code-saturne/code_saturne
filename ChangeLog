@@ -1,3 +1,8 @@
+* 27/05/2010 - David Monfort <david.monfort@edf.fr>
+  Fix a bug introduced recently when disabling dlopen or sockets features.
+  modified routine:
+    src/base/cs_opts.c
+
 * 26/05/2010 - David Monfort <david.monfort@edf.fr>
   Fix the wall treatment management in case of mobile mesh for rotating
   machinery (or ALE formulation). The velocity was not correctly projected.
