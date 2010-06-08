@@ -115,22 +115,27 @@ idebra = idbra0
 
 do numcpl = 1, nbrcpl
 
-!       L'interpolation face/face doit être définie pour tous les couplages
-!       de manière identique.
+  ! L'interpolation face/face doit être définie pour tous les couplages
+  ! de manière identique.
 
   call mxicpl(numcpl, ifaccp, ifcpmx)
   !==========
 
   ifaccp = ifcpmx
 
-!       Si l'un des maillages est mobiles,
-!       on doit mettre à jour la localisation.
+  ! On vérifie si l'une des instances est en résolution en repère relatif
+
+  call mxicpl(numcpl, icorio, icormx(numcpl))
+  !==========
+
+  ! Si l'un des maillages est mobiles,
+  ! on doit mettre à jour la localisation.
 
   call mxicpl(numcpl, imobil, imobmx)
   !==========
 
-!       De la même manière, si l'on a une approche ALE sur l'un des
-!       maillages, on doit mettre à jour la localisation.
+  ! De la même manière, si l'on a une approche ALE sur l'un des
+  ! maillages, on doit mettre à jour la localisation.
 
   call mxicpl(numcpl, iale  , ialemx)
   !==========
@@ -141,11 +146,11 @@ do numcpl = 1, nbrcpl
     imajcp(numcpl) = 0
   endif
 
-!       Détermination du nombre de variables couplées entre les deux
-!       instances du couplage NUMCPL. Toutes les variables d'une instance
-!       sont couplées, SAUF dans le cas de l'ALE où la vitesse de maillage
-!       ne sera pas couplée.
-!       Il faudrait faire quelque en revanche pour les physiques particulières.
+  ! Détermination du nombre de variables couplées entre les deux
+  ! instances du couplage NUMCPL. Toutes les variables d'une instance
+  ! sont couplées, SAUF dans le cas de l'ALE où la vitesse de maillage
+  ! ne sera pas couplée.
+  ! Il faudrait faire quelque en revanche pour les physiques particulières.
 
   if (iale.eq.0) then
     nvarcp(numcpl) = nvar
@@ -153,18 +158,18 @@ do numcpl = 1, nbrcpl
     nvarcp(numcpl) = nvar - 3
   endif
 
-!       Nombre total de variable envoyées: max des variables de chaque
-!       exécutable
+  ! Nombre total de variable envoyées: max des variables de chaque
+  ! exécutable
 
   call mxicpl(numcpl, nvarcp(numcpl), nvcpmx)
   !==========
 
   nvarto(numcpl) = nvcpmx
 
-!       Cohérence des modèles de turbulence entre chaque instance de CS ;
-!       pour l'instant, on ne traite que les cas de couplage entre
-!       modeles RANS et laminaires, sauf pour le modele v2f (dans ce cas
-!       il n'y a que du couplage mono-modele)
+  ! Cohérence des modèles de turbulence entre chaque instance de CS ;
+  ! pour l'instant, on ne traite que les cas de couplage entre
+  ! modeles RANS et laminaires, sauf pour le modele v2f (dans ce cas
+  ! il n'y a que du couplage mono-modele)
 
   do iphas = 1, nphas
 

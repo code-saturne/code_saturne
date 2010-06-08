@@ -1,4 +1,14 @@
 * 08/06/2010 - David Monfort <david.monfort@edf.fr>
+  Miscellaneous fixes for code/code coupling.
+  modified routines:
+    include/base/cplsat.h
+    src/base/csc2cl.f90
+    src/base/cscini.f90
+    src/base/cscpfb.f90
+    src/base/cs_sat_coupling.c
+    users/base/ussatc.f90
+
+* 08/06/2010 - David Monfort <david.monfort@edf.fr>
   Missing initialization in memory handling.
   modified routine:
     src/base/memdis.f90

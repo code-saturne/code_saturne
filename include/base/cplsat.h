@@ -45,11 +45,12 @@ parameter(nbcpmx=10)
 
 ! ITURCP(NBCPMX,NPHSMX) : MODELE DE TURBULENCE DE L'INSTANCE DISTANTE
 ! IMAJCP(NBCPMX)        : INDICE DE MISE A JOUR DE LA LOCALISATION DU COUPLAGE
+! ICORMX(NBCPMX)        : INDICE DE PRESENCE DE CALCUL EN REPERE RELATIF
 ! NVARCP(NBCPMX)        : NOMBRE DE VARIABLE A ENVOYER/RECEVOIR
 ! NVARTO(NBCPMX)        : TAILLE DES TABLEAUX D'ECHANGE
 
 
-integer           iturcp(nbcpmx,nphsmx), imajcp(nbcpmx)
+integer           iturcp(nbcpmx,nphsmx), imajcp(nbcpmx), icormx(nbcpmx)
 integer           nvarcp(nbcpmx), nvarto(nbcpmx)
-common / icplcs / iturcp, imajcp, nvarcp, nvarto
+common / icplcs / iturcp, imajcp, icormx, nvarcp, nvarto
 

@@ -112,25 +112,25 @@ nbcsat = 2
 
 do ii = 1, nbcsat
 
-  ! Example: coupling  with instance named 'SATURNE_01'
+  ! Example: coupling  with instance number 1
   !    - coupled faces of color 3 or 4
   !    - all cells available as localization support for instance 'SATURNE_01'
 
   if (ii .eq. 1) then
 
-    namsat = 'SATURNE_01'
+    numsat = 1
 
     call defsat(numsat, namsat, 'all[]', ' ', ' ', '3 or 4', iwarns)
     !==========
 
-  ! Example: coupling  with instance named 'SATURNE_02'
+  ! Example: coupling  with instance number 3
   !    - coupled faces of group 'coupled_faces'
   !    - coupled cells (every cell overlapping the distant mesh)
   !    - all cells available as localization support for instance 'SATURNE_02'
 
-  else if (ii .eq. 1) then
+  else if (ii .eq. 2) then
 
-    namsat = 'SATURNE_02'
+    numsat = 3
 
     call defsat(numsat, namsat, 'all[]', ' ', 'all[]', 'coupled_faces', iwarns)
     !==========
