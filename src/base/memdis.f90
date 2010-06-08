@@ -124,6 +124,8 @@ idebra = idbra0
 
 !---> PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
 
+ifinia =       idebia
+
 iviscf =       idebra
 iviscb =       iviscf + nfac
 idam   =       iviscb + nfabor
