@@ -2642,29 +2642,52 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
                                               mesh->vertices[v2_id]);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        fvm_gnum_t  v1_gnum = (mesh->vertices[v1_num-1]).gnum;
-        fvm_gnum_t  v2_gnum = (mesh->vertices[v2_num-1]).gnum;
-        bft_printf("\n%6d: [%9u] = (%7d [%9u] - %7d [%9u] - len: %8.6e)\n",
-                   i, edges->gnum[i], v1_num, v1_gnum, v2_num, v2_gnum,
-                   edge_length);
-        if (inter_edges->vtx_glst == NULL) {
-          for (j = start, k = 0; j < end; j++, k++) {
-            int  vid = inter_edges->vtx_lst[j] - 1;
-            double  ds_tol = mesh->vertices[vid].tolerance/edge_length;
-            bft_printf("    %7d (%9u) - (%7d, s = %8.6e, ds_tol = %8.6e)\n",
-                       k+1, vid+1, mesh->vertices[vid].gnum,
-                       inter_edges->abs_lst[j], ds_tol);
+        if (param.verbosity > 3) {
+          int  vid;
+          double  ds_tol;
+          fvm_gnum_t  v1_gnum = (mesh->vertices[v1_num-1]).gnum;
+          fvm_gnum_t  v2_gnum = (mesh->vertices[v2_num-1]).gnum;
+
+          bft_printf("\n%6d: [%9u] = (%7d [%9u] - %7d [%9u] - len: %8.6e)\n",
+                     i, edges->gnum[i], v1_num, v1_gnum, v2_num, v2_gnum,
+                     edge_length);
+          bft_printf_flush();
+
+          if (inter_edges->vtx_glst == NULL) {
+
+            for (j = start, k = 0; j < end; j++, k++) {
+              vid = inter_edges->vtx_lst[j] - 1;
+              if (vid > mesh->n_vertices) {
+                cs_join_mesh_dump(mesh);
+                bft_printf("vid: %d - n_vertices: %d\n",
+                           vid, mesh->n_vertices);
+                bft_error(__FILE__, __LINE__, 0,
+                          _("  Vertex number out of bounds.\n"));
+              }
+              ds_tol = mesh->vertices[vid].tolerance/edge_length;
+              bft_printf("    %7d (%9u) - (%7d, s = %8.6e, ds_tol = %8.6e)\n",
+                         k+1, vid+1, mesh->vertices[vid].gnum,
+                         inter_edges->abs_lst[j], ds_tol);
+            }
           }
-        }
-        else {
-          for (j = start, k = 0; j < end; j++, k++) {
-            int  vid = inter_edges->vtx_lst[j] - 1;
-            double  ds_tol = mesh->vertices[vid].tolerance/edge_length;
+          else {
+
+            for (j = start, k = 0; j < end; j++, k++) {
+              vid = inter_edges->vtx_lst[j] - 1;
+              if (vid > mesh->n_vertices) {
+                cs_join_mesh_dump(mesh);
+                bft_printf("vid: %d - n_vertices: %d\n",
+                           vid, mesh->n_vertices);
+                bft_error(__FILE__, __LINE__, 0,
+                          _("  Vertex number out of bounds.\n"));
+              }
+            ds_tol = mesh->vertices[vid].tolerance/edge_length;
             bft_printf("   %9u - (%7d, s = %8.6e, ds_tol = %8.6e)\n",
                        k+1, inter_edges->vtx_glst[j],
                        inter_edges->abs_lst[j], ds_tol);
+            }
           }
-        }
+        } /* param.verbosity > 3 */
 #endif
 
         /* Build temporary lists */
@@ -2697,11 +2720,9 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
                                     edge_length);
 
         if (n_breaks > 0) {
-
           n_break_counter += 1;
           if (param.verbosity > 2)
             bft_printf(" Edge %8d: n_equiv. broken: %d\n", i+1, n_breaks);
-
         }
 
         n_max_breaks = CS_MAX(n_max_breaks, n_breaks);
@@ -3493,11 +3514,12 @@ cs_join_intersect_update_struct(int                      verbosity,
 
   } /* End of loop on edges */
 
-  if (verbosity > 1 && n_new_vertices > 0) {
+  if (n_new_vertices > 0) {
 
-    bft_printf(_("\n  Add %d new vertices in the %s mesh definition"
-                 " during update of the edge definition.\n"),
-               n_new_vertices, mesh->name);
+    if (verbosity > 1)
+      bft_printf(_("\n  Add %d new vertices in the %s mesh definition"
+                   " during update of the edge definition.\n"),
+                 n_new_vertices, mesh->name);
 
     BFT_REALLOC(mesh->vertices,
                 n_init_vertices + n_new_vertices,

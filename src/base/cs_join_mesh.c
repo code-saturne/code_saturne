@@ -1429,14 +1429,17 @@ cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
         for (j = 0; j < 3; j++)
           inout->coord[j] = in->coord[j];
         inout->tolerance = in->tolerance;
+        inout->state = in->state;
 
       }
       else {
+
         if (in->gnum < inout->gnum) {
           inout->gnum = in->gnum;
           for (j = 0; j < 3; j++)
             inout->coord[j] = in->coord[j];
           inout->tolerance = in->tolerance;
+          inout->state = in->state;
         }
 
       }
@@ -1470,18 +1473,25 @@ cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
     if (in->tolerance >= inout->tolerance) {
 
       if (in->tolerance > inout->tolerance) {
+
         inout->gnum = in->gnum;
         for (j = 0; j < 3; j++)
           inout->coord[j] = in->coord[j];
         inout->tolerance = in->tolerance;
+        inout->state = in->state;
+
       }
       else {
+
         if (in->gnum < inout->gnum) {
           inout->gnum = in->gnum;
           for (j = 0; j < 3; j++)
             inout->coord[j] = in->coord[j];
           inout->tolerance = in->tolerance;
+          inout->state = in->state;
+
         }
+
       }
 
     } /* in.tol >= inout.tol */
@@ -2504,9 +2514,8 @@ cs_join_mesh_face_order(cs_join_mesh_t  *mesh)
   BFT_MALLOC(gnum_buf, n_faces, fvm_gnum_t);
   BFT_MALLOC(selection, n_faces, cs_int_t);
 
-  for (i = 0; i < n_faces; i++) {
+  for (i = 0; i < n_faces; i++)
     gnum_buf[i] = mesh->face_gnum[i];
-  }
 
   prev = 0;
   n_new_faces = 0;

@@ -1,3 +1,15 @@
+* 08/06/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Miscellaneous fixes for the parallel joining algorithm.
+  modified routines:
+    include/base/cs_join_util.h
+    src/base/cs_join_intersect.c
+    src/base/cs_join_merge.c
+    src/base/cs_join_mesh.c
+    src/base/cs_join_perio.c
+    src/base/cs_join_split.c
+    src/base/cs_join_update.c
+    src/base/cs_join_util.c
+
 * 08/06/2010 - David Monfort <david.monfort@edf.fr>
   Miscellaneous fixes for code/code coupling.
   modified routines:

@@ -211,6 +211,47 @@ _cosine(double   v1[],
 }
 
 /*----------------------------------------------------------------------------
+ * Compute the bounding box related to a face in which reconstruction
+ * is allowed.
+ *
+ * parameters:
+ *  m      <--  pointer to a cs_join_mesh_t structure
+ *  fid    <--  face id
+ *  f_min  -->  min coordinates for bounding box
+ *  f_max  -->  max coordinates for bounding box
+ *---------------------------------------------------------------------------*/
+
+inline static void
+_face_bbox(const cs_join_mesh_t  *m,
+           int                    fid,
+           double                 f_min[],
+           double                 f_max[])
+{
+  int  i, k;
+
+  const double  eps = 1e-5;
+  const cs_join_vertex_t  *vertices = m->vertices;
+
+  for (i = m->face_vtx_idx[fid] - 1; i < m->face_vtx_idx[fid+1] - 1; i++) {
+
+    int  vid = m->face_vtx_lst[i] - 1;
+    double  tol = (1 + eps) * vertices[vid].tolerance;
+
+    for (k = 0; k < 3; k++) {
+
+      double  v_min = vertices[vid].coord[k] - tol;
+      double  v_max = vertices[vid].coord[k] + tol;
+
+      f_min[k] = CS_MIN(f_min[k], v_min);
+      f_max[k] = CS_MAX(f_max[k], v_max);
+
+    }
+
+  } /* End of loop on face vertices */
+
+}
+
+/*----------------------------------------------------------------------------
  * Locally renumber an indexed list of global elements according to an
  * ordering array.
  *
@@ -614,19 +655,413 @@ _dump_face_builder(cs_int_t               face_id,
 }
 
 /*----------------------------------------------------------------------------
+ * Step for building subfaces.
+ * Find the best face (in sense of coplanarity) among faces sharing the
+ * current edge to test.
+ *
+ * parameters:
+ *   param       <-- set of parameters for the joining operation
+ *   eid         <-- id of the current edge to test
+ *   fid         <-- fid of the current in the cs_join_mesh_t struct.
+ *   fnorm       <-- normal of the current face to rebuild
+ *   adj_fnorm   <-- normal of the best adj face (if found)
+ *   face_normal <-- normal for each face of the mesh
+ *   e2f_idx     <-- "edge -> face" connect. index
+ *   e2f_lst     <-- "edge -> face" connect. list
+ *
+ * returns:
+ *   true if an adjacent face was found else false
+ *---------------------------------------------------------------------------*/
+
+static cs_bool_t
+_find_best_adj_face(cs_join_param_t         param,
+                    cs_int_t                eid,
+                    cs_int_t                fid,
+                    double                  fnorm[3],
+                    double                  adj_fnorm[3],
+                    const double            face_normal[],
+                    const cs_int_t         *e2f_idx,
+                    const cs_int_t         *e2f_lst)
+{
+  cs_int_t  j, k, adj_fid;
+  double  dprod, dprod2, test_fnorm[3];
+
+  int  best_fid = -1;
+  double  max_plane = -DBL_MAX;
+  cs_bool_t  respect_plane = false;
+
+  const double  plane2 = param.plane_criteria;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+#define _DBGTST 1
+  cs_bool_t  tst_dbg = ( fid==492 || fid==1039 || fid==744 || fid==262 ||
+                         fid==546 || fid==1057 || fid==564 ? true : false);
+#else
+#define _DBGTST 0
+#endif
+
+  /*
+    if (f2f_connect == NULL)  What we already do...
+    else  To be implemented ....
+  */
+
+  /* Loop on faces sharing this edge */
+
+  for (j = e2f_idx[eid]; j < e2f_idx[eid+1]; j++) {
+
+    adj_fid = e2f_lst[j] - 1;
+
+    if (adj_fid != fid) {
+
+      for (k = 0; k < 3; k++)
+        test_fnorm[k] = face_normal[3*adj_fid+k];
+
+      dprod = _dot_product(test_fnorm, fnorm);
+      dprod2 = dprod * dprod;
+
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
+      if (tst_dbg)
+        bft_printf("\tAdjFace: %d dp: %10.8e dp2: %10.8e Vs plane2: %10.8e;"
+                   " AdjFNorm: [%g %g %g]; FNorm: [%g %g %g]\n",
+                   adj_fid+1, dprod, dprod2, plane2, test_fnorm[0],
+                   test_fnorm[1], test_fnorm[2], fnorm[0], fnorm[1], fnorm[2]);
+#endif
+
+      if (dprod2 > plane2) { /* A better face has been found */
+
+        respect_plane = true;
+        if (dprod2 > max_plane) {
+          best_fid = adj_fid;
+          max_plane = dprod2;
+          if (dprod > 0.0) {
+            for (k = 0; k < 3; k++)
+              adj_fnorm[k] = face_normal[3*best_fid+k];
+          }
+          else {
+            for (k = 0; k < 3; k++)
+              adj_fnorm[k] = -face_normal[3*best_fid+k];
+          }
+        }
+
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
+        if (tst_dbg)
+          bft_printf("\t-> Adj face OK (best: %d, max: %10.8e)\n",
+                     best_fid+1, max_plane);
+#endif
+
+      } /* dprod2 > plane2 */
+
+    }
+    else {  /* If adj_fid == fid => the best choice */
+
+      assert(adj_fid == fid);
+      respect_plane = true;
+
+      for (k = 0; k < 3; k++)
+        adj_fnorm[k] = fnorm[k];
+
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
+      if (tst_dbg) bft_printf("\t Adj face is current face\n");
+#endif
+
+      /* Anayway, it's the best choice  */
+      return respect_plane;
+
+    }
+
+  } /* End of loop on faces sharing this edge */
+
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
+  if (tst_dbg && respect_plane)
+    bft_printf("\tAdjFace: %d AdjFNorm: [%5.3e %5.3e %5.3e]\n",
+               best_fid+1, adj_fnorm[0], adj_fnorm[1], adj_fnorm[2]);
+#endif
+
+  return respect_plane;
+}
+
+/*----------------------------------------------------------------------------
+ * Step for building subfaces.
+ * Find the next edge and vertex numbers from a given edge.
+ *
+ * parameters:
+ *   param       <-- set of parameters for the joining operation
+ *   fid         <-- fid of the current in the cs_join_mesh_t struct.
+ *   vid1        <-- first vertex id of the current edge
+ *   vid2        <-- second vertex id of the current edge
+ *   face_normal <-- normal for each face of the mesh
+ *   work        <-- cs_join_mesh_t structure
+ *   e2f_idx     <-- "edge -> face" connect. index
+ *   e2f_lst     <-- "edge -> face" connect. list
+ *   next_edge   --> pointer to the next edge number found
+ *   next_vertex --> pointer to the next vertex number found
+ *
+ * returns:
+ *   an error code (enum: cs_join_split_error_t)
+ *---------------------------------------------------------------------------*/
+
+static cs_join_split_error_t
+_find_next(cs_join_param_t         param,
+           cs_int_t                fid,
+           cs_int_t                vid1,
+           cs_int_t                vid2,
+           cs_real_t               max_coord[3],
+           cs_real_t               min_coord[3],
+           const double            face_normal[],
+           const cs_join_mesh_t   *work,
+           const cs_join_edges_t  *edges,
+           const cs_int_t         *e2f_idx,
+           const cs_int_t         *e2f_lst,
+           cs_int_t               *next_edge,
+           cs_int_t               *next_vertex)
+{
+  cs_int_t  i, j, k;
+  double  norm, dprod, adj_fnorm[3], fnorm[3], v1v2[3], v2v3[3];
+
+  /* Look for the connected vertices and its associated edge */
+
+  cs_int_t  v2v_s = edges->vtx_idx[vid2];
+  cs_int_t  v2v_e = edges->vtx_idx[vid2+1];
+  cs_int_t  n_connect_vertices = v2v_e - v2v_s;
+
+  cs_int_t  *f2f_connect = NULL;   /* To be implemented ... */
+
+  const cs_join_vertex_t  *vertices = work->vertices;
+  const double  min_limit_cos = -1.1, max_limit_cos = 1.1;
+  const double  eps_dot_prod = 1e-8;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+#define _DBGTST 1
+  cs_bool_t  tst_dbg = ( fid==492 || fid==1039 || fid==744 || fid==262 ||
+                         fid==546 || fid==1057 || fid==564 ? true : false);
+#else
+#define _DBGTST 0
+#endif
+
+  if (f2f_connect != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("  face splitting with face -> face"
+                " connectivity is not yet implemented\n"));
+
+  for (j = 0; j < 3; j++)
+    fnorm[j] = face_normal[3*fid+j];
+
+  *next_edge = 0;
+  *next_vertex = 0; /* To enable a check at the end */
+
+  if (n_connect_vertices > 2) { /* Look for the edge which is
+                                   the most on the left */
+
+    cs_int_t  left_next_edge = -1, left_next_vertex = -1;
+    cs_int_t  right_next_edge = -1, right_next_vertex = -1;
+    cs_real_t  left_min_cos = max_limit_cos;
+    cs_real_t  right_max_cos = min_limit_cos;
+
+    for (k = 0; k < 3; k++)
+      v1v2[k] = vertices[vid2].coord[k]- vertices[vid1].coord[k];
+    norm = _norm(v1v2);
+    for (k = 0; k < 3; k++)
+      v1v2[k] /= norm;
+
+    /* Loop on connected vertices */
+
+    for (i = v2v_s; i < v2v_e; i++) {
+
+      cs_int_t  vid3 = edges->adj_vtx_lst[i]-1;
+
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
+      if (tst_dbg)
+        bft_printf("  Next vtx to test: << %9u >> (v2v_idx: %d)\n",
+                   vertices[vid3].gnum, i);
+#endif
+
+      if (vid3 != vid1) {
+
+        cs_bool_t  is_in_bbox = true;
+        cs_int_t  connect_eid = CS_ABS(edges->edge_lst[i]) - 1;
+
+        /* Test if the connected vertex is inside the face */
+
+        for (k = 0; k < 3; k++)
+          if (   vertices[vid3].coord[k] < min_coord[k]
+              || vertices[vid3].coord[k] > max_coord[k])
+            is_in_bbox = false;
+
+        if (is_in_bbox == true) {
+
+          cs_bool_t  respect_plane = _find_best_adj_face(param,
+                                                         connect_eid, fid,
+                                                         fnorm, adj_fnorm,
+                                                         face_normal,
+                                                         e2f_idx, e2f_lst);
+
+          if (respect_plane == true) {
+
+            /* Continue to build the new sub-face connectivity.
+               adj_edge_id is in the plane as edge_id
+
+               We look for the edge which is the most on the
+               left among all the adjacent edges.
+
+                                        V3   |
+                                         \   |   /
+                       adj. edge : E2 =>  \  |  /
+                                           \ | /      Left part
+                                            \|/
+               current edge : E1 => V1------V2------  ............
+                                            /|\
+                                           / | \      Right part
+                                          /  |  \
+                                         /   |   \
+
+               E2 is in the left part if :
+                 - angle A between E1 and E2 is in [0, Pi[
+                 - i.e. sin(A) >= 0
+                    ->   ->  ->            ->
+                 - (E1 X E2).n  >= 0 where n is the face normal vector
+
+                 Edge which is the most on the left is the one which has
+                 the minimal cos(A)
+
+                 If there is no edge in the left part, we choose the edge
+                 in the right part with the biggest cos(A) */
+
+            double  cprod[3], mean_normal[3], cosine;
+
+            for (k = 0; k < 3; k++) {
+              v2v3[k] = vertices[vid3].coord[k] - vertices[vid2].coord[k];
+              mean_normal[k] = 0.5 * (fnorm[k] + adj_fnorm[k]);
+            }
+
+            norm = _norm(v2v3);
+            for (k = 0; k < 3; k++)
+              v2v3[k] /= norm;
+
+            _cross_product(v1v2, v2v3, cprod);
+            dprod = _dot_product(cprod, mean_normal);
+            cosine = _cosine(v1v2, v2v3);
+
+            if (dprod >= -eps_dot_prod * _norm(cprod)) {
+
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
+              if (tst_dbg)
+                bft_printf("\tLeft choice >> cos: %10.8e / min_cos: %10.8e\n"
+                           "\t         and dprod: %10.8e / crit: %10.8e\n",
+                           cosine, left_min_cos, dprod,
+                           -eps_dot_prod*_norm(cprod));
+#endif
+              /* Left part. We choose the edge with the smallest cosine */
+              if (cosine < left_min_cos) {
+                left_min_cos = cosine;
+                left_next_vertex = vid3 + 1;
+                left_next_edge = edges->edge_lst[i];
+              }
+
+            }
+            else { /* In the right part. We choose the edge with
+                      the biggest cosine. */
+
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
+              if (tst_dbg)
+                bft_printf("\tRight choice >> cos: %10.8e / max_cos: %10.8e\n"
+                           "\t          and dprod: %10.8e / crit: %10.8e\n",
+                           cosine, right_max_cos, dprod,
+                           -eps_dot_prod*_norm(cprod));
+#endif
+
+              if (cosine > right_max_cos) {
+                right_max_cos = cosine;
+                right_next_vertex = vid3 + 1;
+                right_next_edge = edges->edge_lst[i];
+              }
+
+            } /* End if dot_prod < 0 */
+
+          } /* End if respect_plane = true */
+
+        } /* The connected vertex is inside the face bounding box */
+
+      } /* vid3 != vid1 */
+
+    } /* End of loop on connected vertices */
+
+    if (left_min_cos < max_limit_cos) {
+      *next_edge = left_next_edge;
+      *next_vertex = left_next_vertex;
+    }
+    else if (right_max_cos > min_limit_cos) {
+      *next_edge = right_next_edge;
+      *next_vertex = right_next_vertex;
+    }
+    else if (   left_min_cos  >= max_limit_cos
+             && right_max_cos <= min_limit_cos)
+      return OPEN_CYCLE_ERROR;
+
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
+    if (tst_dbg)
+      bft_printf(" [Result] >> next_vtx: %u; next_edge: %u\n",
+                 vertices[*next_vertex-1].gnum,
+                 edges->gnum[CS_ABS(*next_edge)-1]);
+#endif
+
+  } /* End if n_connect_vertices > 2 */
+
+  else if (n_connect_vertices == 2) {
+
+    /* Loop on connected vertices */
+
+    for (i = v2v_s; i < v2v_e; i++) {
+
+      cs_int_t  vid3 = edges->adj_vtx_lst[i]-1;
+
+      if (vid3 != vid1) {
+        *next_edge = edges->edge_lst[i];
+        *next_vertex = vid3 + 1;
+      }
+
+    } /* End of loop on connected vertices */
+
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
+    if (tst_dbg)
+      bft_printf(" [Result] >> next_vtx: %u; next_edge: %u (ONLY 2)\n",
+                 vertices[*next_vertex-1].gnum,
+                 edges->gnum[CS_ABS(*next_edge)-1]);
+#endif
+
+  }
+  else { /* No connection */
+
+    assert(n_connect_vertices < 2);
+
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Joining operation : split face %d\n"
+                " Problem in the connectivity. Could not find a "
+                "connection with the vertex %d\n"), fid, vid1+1);
+
+
+  } /* End of test on the number of vertices connected to vid2 */
+
+  assert(*next_edge != 0);
+  assert(*next_vertex != 0);
+
+  return NO_SPLIT_ERROR;
+
+}
+
+/*----------------------------------------------------------------------------
  * Split the current face into sub-faces under the "plane" tolerance
  * (check if two faces are coplanear).
  *
  * parameters:
- *   face_id       <-- face_id of the current in the cs_join_mesh_t struct.
+ *   fid       <-- fid of the current in the cs_join_mesh_t struct.
  *   block_id      <-- current id in face_builder_t structure
  *   plane         <-- tolerance parameter to check coplanearity
  *   max_subfaces  <-- maximum number of sub faces
  *   verbosity     <-- level of accuracy in information display
  *   face_normal   <-- normal for each face of the mesh
  *   work          <-- cs_join_mesh_t structure
- *   edge_face_idx <-- "edge -> face" connect. index
- *   edge_face_lst <-- "edge -> face" connect. list
+ *   e2f_idx <-- "edge -> face" connect. index
+ *   e2f_lst <-- "edge -> face" connect. list
  *   builder       <-> face_builder structure
  *   head_edges    <-> pointer to a resizable set structure
  *   subface_edges <-> pointer to a resizable set structure
@@ -638,80 +1073,51 @@ _dump_face_builder(cs_int_t               face_id,
  *---------------------------------------------------------------------------*/
 
 static cs_join_split_error_t
-_split_face(cs_int_t                face_id,
+_split_face(cs_int_t                fid,
             cs_int_t                block_id,
-            double                  plane,
-            int                     max_subfaces,
-            int                     verbosity,
+            cs_join_param_t         param,
             const cs_real_t         face_normal[],
             const cs_join_mesh_t   *work,
             const cs_join_edges_t  *edges,
-            const cs_int_t         *edge_face_idx,
-            const cs_int_t         *edge_face_lst,
+            const cs_int_t         *e2f_idx,
+            const cs_int_t         *e2f_lst,
             face_builder_t         *builder,
             cs_join_rset_t        **head_edges,
             cs_join_rset_t        **subface_edges,
             cs_join_rset_t        **ext_edges,
             cs_join_rset_t        **int_edges)
 {
-  cs_int_t  i, j, k, i1, i2, i_int, i_ext;
+  cs_int_t  j, k, i1, i2, i_int, i_ext;
   cs_int_t  first_vid, vid1, vid2;
   cs_int_t  subface_shift, connect_shift, connect_start;
   cs_int_t   next_vertex, next_edge;
-  cs_real_t  face_norm[3], v1v2_vect[3], connect_vect[3];
+  cs_join_split_error_t  status;
 
-  cs_real_t  min_max_d = 0.0;
   cs_int_t  n_subfaces = 0, head_edge_shift = 0;
-  cs_int_t  start_id = work->face_vtx_idx[face_id]-1;
-  cs_int_t  end_id = work->face_vtx_idx[face_id+1]-1;
-
   cs_real_t  max_coord[3] = {-DBL_MAX, -DBL_MAX, -DBL_MAX};
   cs_real_t  min_coord[3] = {DBL_MAX, DBL_MAX, DBL_MAX};
-
   cs_join_rset_t  *_head_edges = *head_edges;
   cs_join_rset_t  *_subface_edges = *subface_edges;
   cs_join_rset_t  *_ext_edges = *ext_edges;
   cs_join_rset_t  *_int_edges = *int_edges;
 
-  const cs_join_vertex_t  *vertices = work->vertices;
-  const cs_real_t  min_limit_cos = -1.1, max_limit_cos = 1.1;
-  const cs_real_t  plane2 = plane * plane;
-  const cs_real_t  eps_dot_prod = 1e-8;
+  const fvm_gnum_t  *fgnum = work->face_gnum;
+  const int  max_subfaces = param.max_sub_faces;
+  const int  verbosity = param.verbosity;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_bool_t  face_tst = ( face_id == 20758 || face_id == 30105 ||
-                          face_id == 20759 || face_id == 34385 ? true : false);
-  cs_bool_t  tst_dbg = (verbosity > 2 && face_tst ? true : false);
+#define _DBGTST 1
+  cs_bool_t  tst_dbg = ( fid==492 || fid==1039 || fid==744 || fid==262 ||
+                         fid==546 || fid==1057 || fid==564 ? true : false);
+  const cs_join_vertex_t  *vertices = work->vertices;
+#else
+#define _DBGTST 0
 #endif
 
-  /* To be implemented ... */
-  cs_int_t  *face_face_connect = NULL;
+  /* Bounding box:  min./max. coordinates of vertices allowed for
+     reconstruction */
 
-  /* Min./Max. coordinates of the current face */
-
-  for (i = start_id; i < end_id; i++) {
-
-    cs_int_t  vid = work->face_vtx_lst[i] - 1;
-
-    for (j = 0; j < 3; j++) {
-      min_coord[j] = CS_MIN(min_coord[j], vertices[vid].coord[j]);
-      max_coord[j] = CS_MAX(max_coord[j], vertices[vid].coord[j]);
-    }
-
-  }
-
-  for (j = 0; j < 3; j++)
-    min_max_d = CS_MAX(min_max_d, max_coord[j] - min_coord[j]);
-
-  for (j = 0; j < 3; j++) {
-    min_coord[j] -= 0.5 * min_max_d;
-    max_coord[j] += 0.5 * min_max_d;
-  }
-
-  /* Fill the current face normal */
-
-  for (j = 0; j < 3; j++)
-    face_norm[j] = face_normal[3*face_id+j];
+  _face_bbox(work, fid, min_coord, max_coord);
 
   /* Loop on head edges */
 
@@ -735,10 +1141,10 @@ _split_face(cs_int_t                face_id,
       cs_int_t  edge_num = head_edge_num;
       cs_int_t  edge_id = FVM_ABS(edge_num) - 1;
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
       if (tst_dbg)
-        bft_printf(" face_gnum: %u, head_shift: %d, edge_num: %d\n",
-                   work->face_gnum[face_id], head_edge_shift, edge_num);
+        bft_printf(" fnum: %d, fgnum: %u, head_shift: %d, edge_num: %d\n",
+                   fid+1, fgnum[fid], head_edge_shift, edge_num);
 #endif
 
       if (edge_num > 0) {
@@ -760,282 +1166,40 @@ _split_face(cs_int_t                face_id,
 
       first_vid = vid1;
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
       if (tst_dbg)
-        bft_printf("  v1: %u, v2: %u, first: %u\n", vertices[vid1].gnum,
-                   vertices[vid2].gnum, vertices[first_vid].gnum);
+        bft_printf(" Current edge (v1,v2): [%u,%u]\n",
+                   vertices[vid1].gnum, vertices[vid2].gnum);
 #endif
 
       while (vid2 != first_vid) {
 
-        /* Look for the connected vertices and its associated edge */
-
-        cs_int_t  v2v_start = edges->vtx_idx[vid2];
-        cs_int_t  v2v_end = edges->vtx_idx[vid2+1];
-        cs_int_t  n_connect_vertices = v2v_end - v2v_start;
-
-        next_edge = 0;
-        next_vertex = 0; /* To enable a check at the end */
-
-        if (n_connect_vertices > 2) { /* Look for the edge which is
-                                         the most on the left */
-
-          cs_int_t  left_next_edge = -1, left_next_vertex = -1;
-          cs_int_t  right_next_edge = -1, right_next_vertex = -1;
-          cs_real_t  left_min_cos = max_limit_cos;
-          cs_real_t  right_max_cos = min_limit_cos;
-
-          for (j = 0; j < 3; j++)
-            v1v2_vect[j] = vertices[vid2].coord[j]- vertices[vid1].coord[j];
-
-          /* Loop on connected vertices */
-
-          for (i = v2v_start; i < v2v_end; i++) {
-
-            cs_int_t  connect_vid = edges->adj_vtx_lst[i]-1;
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-            if (tst_dbg)
-              bft_printf("  (v2v_id: %d) Next vertex connected to v2 to test: %u\n",
-                         i, vertices[connect_vid].gnum);
-#endif
-
-            if (connect_vid != vid1) {
-
-              cs_bool_t  is_inside = true;
-              cs_int_t  connect_edge_id = CS_ABS(edges->edge_lst[i]) - 1;
-
-              /* Test if the connected vertex is inside the face */
-
-              for (k = 0; k < 3; k++)
-                if (  vertices[connect_vid].coord[k] < min_coord[k]
-                   || vertices[connect_vid].coord[k] > max_coord[k])
-                  is_inside = false;
-
-              if (is_inside == true) {
-
-                cs_bool_t  found = false;
-
-                for (k = 0; k < 3; k++)
-                  connect_vect[k] =  vertices[connect_vid].coord[k]
-                                   - vertices[vid2].coord[k];
-
-                /* Loop on faces sharing this edge */
-
-                for (j = edge_face_idx[connect_edge_id];
-                     (j < edge_face_idx[connect_edge_id+1] && found == false);
-                     j++) {
-
-                  cs_int_t  adj_face_id = edge_face_lst[j] - 1;
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-                  if (tst_dbg)
-                    bft_printf("\t Adj face (%u) through edge (%u)\n",
-                               work->face_gnum[adj_face_id],
-                               edges->gnum[connect_edge_id]);
-#endif
-
-                  if (adj_face_id != face_id) {
-
-                    cs_real_t  dprod, dprod2;
-                    cs_real_t  adj_face_norm[3];
-
-                    for (k = 0; k < 3; k++)
-                      adj_face_norm[k] = face_normal[3*adj_face_id+k];
-
-                    dprod = _dot_product(adj_face_norm, face_norm);
-                    dprod2 = dprod * dprod;
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-                    if (tst_dbg)
-                      bft_printf("\t dp: %g, dp2: %g Vs plane: %g -"
-                                 " AdjNorm: [%g %g %g] - Norm: [%g %g %g]\n",
-                                 dprod, dprod2, plane, adj_face_norm[0],
-                                 adj_face_norm[1], adj_face_norm[2],
-                                 face_norm[0], face_norm[1], face_norm[2]);
-#endif
-
-                    if (dprod2 > plane2) {
-
-                      if (face_face_connect == NULL) {
-                        found = true;
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-                        if (tst_dbg)
-                          bft_printf("\t -> Adj face is OK\n");
-#endif
-                      }
-                      else { /* To be implemented ... */
-
-                        assert(face_face_connect != NULL);
-                        bft_error(__FILE__, __LINE__, 0,
-                                  _("  face splitting with face -> face"
-                                    " connectivity is not yet implemented\n"));
-
-                        /* Check if adj_face_id+1 is in face-face connect. */
-                      }
-
-                    }
-
-                  } /* End if adj_face_id != face_id */
-                  else {
-
-                    assert(adj_face_id == face_id);
-                    found = true;
-
-                  }
-
-                } /* End of loop on faces sharing this edge */
-
-                if (found == true) {
-
-                  /* Continue to build the new sub-face connectivity.
-                     adj_edge_id is in the plane as edge_id
-
-                     We look for the edge which is the most on the
-                     left among all the adjacent edges.
-
-                                                 |
-                                             \   |   /
-                    adj. edge : E2 ==>        \  |  /
-                                               \ | /      Left part
-                                                \|/
-                    current edge : E1 ==> -->----o------  ............
-                                                /|\
-                                               / | \      Right part
-                                              /  |  \
-                                             /   |   \
-
-                    E2 is in the left part if :
-                     - angle A between E1 and E2 is in [0, Pi[
-                     - i.e. sin(A) >= 0
-                        ->   ->  ->            ->
-                     - (E1 X E2).n  >= 0 where n is the face normal vector
-
-                     Edge which is the most on the left is the one which has
-                     the minimal cos(A)
-
-                     If there is no edge in the left part, we choose the edge
-                     in the right part with the biggest cos(A)
-
-                  */
-
-                  cs_real_t  cprod[3], dprod, cosine;
-
-                  _cross_product(v1v2_vect, connect_vect, cprod);
-                  dprod = _dot_product(cprod, face_norm);
-                  cosine = _cosine(v1v2_vect, connect_vect);
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-                  if (tst_dbg)
-                    bft_printf("\t dot_prod: %g (DP>0=>min | DP<0=>max), cosine: %g\n",
-                               dprod, cosine);
-#endif
-
-                  if (dprod >= -eps_dot_prod * _norm(cprod) ) {
-                    /* Left part. We choose the edge with the smallest cosine */
-
-                    if (cosine < left_min_cos) {
-                      left_min_cos = cosine;
-                      left_next_vertex = connect_vid + 1;
-                      left_next_edge = edges->edge_lst[i];
-                    }
-
-                  } /* dprod > 0 */
-
-                  else { /* In the right part. We choose the edge with
-                            the biggest cosine. */
-
-                    if (cosine > right_max_cos) {
-                      right_max_cos = cosine;
-                      right_next_vertex = connect_vid + 1;
-                      right_next_edge = edges->edge_lst[i];
-                    }
-
-                  } /* End if dot_prod < 0 */
-
-                } /* End if found = true */
-
-              } /* The connected vertex is inside the face bounding box */
-
-            } /* connect_vid != vid1 */
-
-          } /* End of loop on connected vertices */
-
-          if (left_min_cos < max_limit_cos) {
-            next_edge = left_next_edge;
-            next_vertex = left_next_vertex;
-          }
-          else if (right_max_cos > min_limit_cos) {
-            next_edge = right_next_edge;
-            next_vertex = right_next_vertex;
-          }
-          else if (   left_min_cos  >= max_limit_cos
-                   && right_max_cos <= min_limit_cos) {
-
-            /* Set return pointers */
-
-            *head_edges = _head_edges;
-            *ext_edges = _ext_edges;
-            *int_edges = _int_edges;
-            *subface_edges = _subface_edges;
-
-            if (verbosity > 1)
-              bft_printf("\nWarning: open cycle for global face %u\n",
-                         work->face_gnum[face_id]);
-
-            return OPEN_CYCLE_ERROR; /* open cycle */
-
-          }
-
-          assert(next_edge != 0);
-          assert(next_vertex != 0);
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf(" Result: next_vertex: %u - next_edge: %u\n",
-                       vertices[next_vertex-1].gnum,
-                       edges->gnum[CS_ABS(next_edge)-1]);
-#endif
-
-        } /* End if n_connect_vertices > 2 */
-
-        else if (n_connect_vertices == 2) {
-
-          /* Loop on connected vertices */
-
-          for (i = v2v_start; i < v2v_end; i++) {
-
-            cs_int_t  connect_vid = edges->adj_vtx_lst[i]-1;
-
-            if (connect_vid != vid1) {
-              next_edge = edges->edge_lst[i];
-              next_vertex = connect_vid + 1;
-            }
-
-          } /* End of loop on connected vertices */
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf(" Result (connect only by 2):"
-                       " next_vertex: %u - next_edge: %u\n",
-                       vertices[next_vertex-1].gnum,
-                       edges->gnum[CS_ABS(next_edge)-1]);
-#endif
+        status = _find_next(param,
+                            fid,
+                            vid1, vid2,
+                            max_coord, min_coord,
+                            face_normal,
+                            work,
+                            edges,
+                            e2f_idx, e2f_lst,
+                            &next_edge, &next_vertex);
+
+        if (status == OPEN_CYCLE_ERROR) { /* Set return pointers */
+
+          *head_edges = _head_edges;
+          *ext_edges = _ext_edges;
+          *int_edges = _int_edges;
+          *subface_edges = _subface_edges;
+
+          if (verbosity > 2)
+            bft_printf(_(" Warning: open cycle for global face %u\n"),
+                       fgnum[fid]);
+
+          return OPEN_CYCLE_ERROR; /* open cycle */
 
         }
-        else {
 
-          assert(n_connect_vertices < 2);
-
-          bft_error(__FILE__, __LINE__, 0,
-                    _(" Joining operation : split face %d\n"
-                      " Problem in the connectivity. Could not find a "
-                      "connection with the vertex %d\n"),
-                    face_id, vid1+1);
-
-
-        } /* End of test on the number of vertices connected to vid2 */
+        assert(status == NO_SPLIT_ERROR);
 
         /* Add the next edge in the sub-face definition */
 
@@ -1045,7 +1209,6 @@ _split_face(cs_int_t                face_id,
         if (next_vertex != first_vid + 1) {
 
           /* Add the next vertex in the sub-face definition */
-
           cs_join_rset_resize(&(builder->subface_connect), connect_shift);
           builder->subface_connect->array[connect_shift++] = next_vertex;
 
@@ -1062,25 +1225,22 @@ _split_face(cs_int_t                face_id,
 
             cs_int_t e2 = CS_ABS(_subface_edges->array[i2]);
 
-            if (e1 == e2) {
-
-              /* Returns pointers */
+            if (e1 == e2) { /* Returns pointers */
 
               *head_edges = _head_edges;
               *ext_edges = _ext_edges;
               *int_edges = _int_edges;
               *subface_edges = _subface_edges;
 
-              if (verbosity > 1)
-                bft_printf("\nWarning: global face %u traversed twice.\n",
-                           work->face_gnum[face_id]);
+              if (verbosity > 2)
+                bft_printf(_(" Warning: global face %u scanned twice\n"),
+                           fgnum[fid]);
 
               return EDGE_TRAVERSED_TWICE_ERROR;  /* Face building problem */
 
             }
 
           }
-
         } /* End of loop on sub-face edges to check no-redundancy */
 
         /* Clean _head_edges if next_edge belongs to this list */
@@ -1106,33 +1266,30 @@ _split_face(cs_int_t                face_id,
           if (CS_ABS(next_edge) == CS_ABS(_ext_edges->array[i_ext]))
             break;
 
-        /* Test if next_edges is in the _int_edges list.
-             If not : store next_edge in the _int_edges list.
-             If yes : delete it.
-        */
-
         if (i_ext != 0 && i_ext == _ext_edges->n_elts) {
+
+          /* next_edge is not in _ext_edges
+             Test if next_edge is in the _int_edges list.
+               If not : store next_edge in the _int_edges list.
+               If yes : delete it. */
 
           for (i_int = 0; i_int < _int_edges->n_elts; i_int++)
             if (CS_ABS(next_edge) == CS_ABS(_int_edges->array[i_int]))
               break;
 
           if (i_int == _int_edges->n_elts) { /* Add next_edge to the list */
-
             cs_join_rset_resize(&_int_edges, _int_edges->n_elts);
             _int_edges->array[_int_edges->n_elts++] = next_edge;
-
           }
           else { /* Delete next_edge of the list */
 
             _int_edges->n_elts -= 1;
-
             for (k = i_int; k < _int_edges->n_elts; k++)
               _int_edges->array[k] = _int_edges->array[k+1];
 
           }
 
-        } /* Next_edge is an interior edge */
+        } /* Next_edge is not an ext_edges */
 
       } /* End of while vid2 != first_vid */
 
@@ -1150,23 +1307,21 @@ _split_face(cs_int_t                face_id,
       head_edge_shift++;
       n_subfaces++;
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
+#if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
       if (tst_dbg)
         bft_printf(" END OF BUILDING subface %d\n\n", n_subfaces);
 #endif
 
-      if (n_subfaces > max_subfaces) { /* Too many sub-faces */
-
-        /* Set return pointers */
+      if (n_subfaces > max_subfaces) { /* Set return pointers */
 
         *head_edges = _head_edges;
         *ext_edges = _ext_edges;
         *int_edges = _int_edges;
         *subface_edges = _subface_edges;
 
-        if (verbosity > 1)
-          bft_printf("\nWarning: loop limit exceeded for global face %u\n.",
-                     work->face_gnum[face_id]);
+        if (verbosity > 2)
+          bft_printf(_(" Warning: loop limit reached for global face %u\n"),
+                     fgnum[fid]);
 
         return LOOP_LIMIT_ERROR;
       }
@@ -1671,49 +1826,48 @@ cs_join_split_faces(cs_join_param_t          param,
                     cs_join_mesh_t         **work,
                     cs_join_gset_t         **old2new_history)
 {
-  cs_int_t  i, j, face_s, subface_s, block_id;
+  cs_int_t  fid, j, face_s, subface_s, block_id, vid;
+  fvm_gnum_t  vgnum;
   cs_join_split_error_t  code;
   cs_join_block_info_t  block_info;
 
-  cs_int_t  _n_problems = 0, n_face_problems = 0, n_max_face_vertices = 0;
-  cs_int_t  *edge_face_idx = NULL, *edge_face_lst = NULL;
+  cs_int_t  _n_problems = 0, n_face_problems = 0, n_max_face_vertices = 6;
+  cs_int_t  *e2f_idx = NULL, *e2f_lst = NULL;
   cs_join_gset_t  *_old2new_history = NULL;
   cs_join_rset_t  *open_cycle = NULL, *edge_traversed_twice = NULL;
   cs_join_rset_t  *loop_limit = NULL, *head_edges = NULL;
   cs_join_rset_t  *subface_edges = NULL, *ext_edges = NULL, *int_edges = NULL;
   face_builder_t  *builder = NULL;
-  cs_join_mesh_t  *_work = *work;
+  cs_join_mesh_t  *w = *work;
 
-  const double plane = cos(param.plane *acos(-1.0)/180.);
-
-  const cs_int_t  n_init_faces = _work->n_faces;
+  const cs_int_t  n_init_faces = w->n_faces;
   const int  n_ranks = cs_glob_n_ranks;
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
 
-  assert(_work != NULL);
+  assert(w != NULL);
   assert(edges != NULL);
 
   /* Use the cs_join_edges_t structure to build
      the "edge -> face" connectivity */
 
-  cs_join_mesh_get_edge_face_adj(_work, edges, &edge_face_idx, &edge_face_lst);
+  cs_join_mesh_get_edge_face_adj(w, edges, &e2f_idx, &e2f_lst);
 
   /* Define buffers to manage errors */
 
-  open_cycle = cs_join_rset_create(2);
-  edge_traversed_twice = cs_join_rset_create(2);
-  loop_limit = cs_join_rset_create(2);
+  open_cycle = cs_join_rset_create(3);
+  edge_traversed_twice = cs_join_rset_create(3);
+  loop_limit = cs_join_rset_create(3);
 
   /* Define buffers and structures to build the new faces */
 
-  head_edges = cs_join_rset_create(5);
-  subface_edges = cs_join_rset_create(5);
-  ext_edges = cs_join_rset_create(5);
-  int_edges = cs_join_rset_create(5);
+  head_edges = cs_join_rset_create(n_max_face_vertices);
+  subface_edges = cs_join_rset_create(n_max_face_vertices);
+  ext_edges = cs_join_rset_create(n_max_face_vertices);
+  int_edges = cs_join_rset_create(n_max_face_vertices);
 
   /* Compute block_size */
 
-  block_info = cs_join_get_block_info(_work->n_g_faces, n_ranks, local_rank);
+  block_info = cs_join_get_block_info(w->n_g_faces, n_ranks, local_rank);
 
   builder = _create_face_builder(block_info.local_size);
 
@@ -1724,19 +1878,16 @@ cs_join_split_faces(cs_join_param_t          param,
      Main loop on faces.
   */
 
-  for (i = 0, block_id = 0; i < n_init_faces; i++) {
+  for (fid = 0, block_id = 0; fid < n_init_faces; fid++) {
 
-    int  block_rank = (_work->face_gnum[i] - 1)/block_info.size;
+    int  block_rank = (w->face_gnum[fid] - 1)/block_info.size;
 
     if (block_rank == local_rank) { /* This face is a "main" face for the
                                        local rank */
 
-      cs_int_t  n_face_vertices =
-        _work->face_vtx_idx[i+1] - _work->face_vtx_idx[i];
+      int  n_face_vertices = w->face_vtx_idx[fid+1] - w->face_vtx_idx[fid];
 
-      /* Manage list size */
-
-      if (n_face_vertices > n_max_face_vertices) {
+      if (n_face_vertices > n_max_face_vertices) { /* Manage list size */
 
         n_max_face_vertices = n_face_vertices;
         cs_join_rset_resize(&head_edges, n_face_vertices);
@@ -1748,11 +1899,9 @@ cs_join_split_faces(cs_join_param_t          param,
 
       /* Fill head_edges and ext_edges */
 
-      _define_head_and_ext_edges(i,  /* face_id */
-                                 _work,
-                                 edges,
-                                 head_edges,
-                                 ext_edges,
+      _define_head_and_ext_edges(fid,
+                                 w, edges,
+                                 head_edges, ext_edges,
                                  0); /* No permutation */
 
       /* Store initial builder state in case of code > 0 */
@@ -1762,25 +1911,18 @@ cs_join_split_faces(cs_join_param_t          param,
 
       /* Split the current face into subfaces */
 
-      code = _split_face(i,       /* face_id */
-                         block_id,
-                         plane,
-                         param.max_sub_faces,
-                         param.verbosity,
+      code = _split_face(fid, block_id,
+                         param,
                          face_normal,
-                         _work,
-                         edges,
-                         edge_face_idx,
-                         edge_face_lst,
+                         w, edges,
+                         e2f_idx, e2f_lst,
                          builder,
-                         &head_edges,
-                         &subface_edges,
-                         &ext_edges,
-                         &int_edges);
+                         &head_edges, &subface_edges,
+                         &ext_edges, &int_edges);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
       if (param.verbosity > 1 && code != NO_SPLIT_ERROR) {
-        bft_printf(_("  Split face: %d with returned code: %d\n"), i+1, code);
+        bft_printf(_("  Split face %d >> returned code: %d\n"), fid+1, code);
         _dump_face_builder(block_id, builder);
       }
 #endif
@@ -1797,11 +1939,9 @@ cs_join_split_faces(cs_join_param_t          param,
 
           /* Fill head_edges and ext_edges */
 
-          _define_head_and_ext_edges(i, /* face_id */
-                                     _work,
-                                     edges,
-                                     head_edges,
-                                     ext_edges,
+          _define_head_and_ext_edges(fid,
+                                     w, edges,
+                                     head_edges, ext_edges,
                                      _n_problems); /* permutation */
 
           /* Retrieve initial builder state */
@@ -1812,21 +1952,14 @@ cs_join_split_faces(cs_join_param_t          param,
 
           /* Split the current face into subfaces */
 
-          code = _split_face(i,   /* face_id */
-                             block_id,
-                             plane,
-                             param.max_sub_faces,
-                             param.verbosity,
+          code = _split_face(fid, block_id,
+                             param,
                              face_normal,
-                             _work,
-                             edges,
-                             edge_face_idx,
-                             edge_face_lst,
+                             w, edges,
+                             e2f_idx, e2f_lst,
                              builder,
-                             &head_edges,
-                             &subface_edges,
-                             &ext_edges,
-                             &int_edges);
+                             &head_edges, &subface_edges,
+                             &ext_edges, &int_edges);
 
           _n_problems++;
 
@@ -1840,20 +1973,20 @@ cs_join_split_faces(cs_join_param_t          param,
 
           case OPEN_CYCLE_ERROR:
             cs_join_rset_resize(&open_cycle, open_cycle->n_elts);
-            open_cycle->array[open_cycle->n_elts] = i + 1;
+            open_cycle->array[open_cycle->n_elts] = fid + 1;
             open_cycle->n_elts += 1;
             break;
 
           case EDGE_TRAVERSED_TWICE_ERROR:
             cs_join_rset_resize(&edge_traversed_twice,
                                 edge_traversed_twice->n_elts);
-            edge_traversed_twice->array[edge_traversed_twice->n_elts] = i + 1;
+            edge_traversed_twice->array[edge_traversed_twice->n_elts] = fid + 1;
             edge_traversed_twice->n_elts += 1;
             break;
 
           case LOOP_LIMIT_ERROR:
             cs_join_rset_resize(&loop_limit, loop_limit->n_elts);
-            loop_limit->array[loop_limit->n_elts] = i + 1;
+            loop_limit->array[loop_limit->n_elts] = fid + 1;
             loop_limit->n_elts += 1;
             break;
 
@@ -1889,11 +2022,11 @@ cs_join_split_faces(cs_join_param_t          param,
 
           for (j = 0; j < n_face_vertices; j++)
             builder->subface_connect->array[subface_s + j]
-              = _work->face_vtx_lst[j + _work->face_vtx_idx[i] - 1];
+              = w->face_vtx_lst[j + w->face_vtx_idx[fid] - 1];
 
           if (param.verbosity > 1) {
-            bft_printf("\n Keep initial connectivity for face %d (%u):\n",
-                       i+1, _work->face_gnum[i]);
+            bft_printf("\n Keep initial connectivity for face %d [%u]:\n",
+                       fid+1, w->face_gnum[fid]);
             _dump_face_builder(block_id, builder);
           }
 
@@ -1972,21 +2105,27 @@ cs_join_split_faces(cs_join_param_t          param,
 
       if (n_g_open_cycles > 0)
         cs_join_post_faces_subset("OpenCycleErr",
-                                  _work,
+                                  w,
                                   open_cycle->n_elts,
                                   open_cycle->array);
 
       if (n_g_edges_twice > 0)
         cs_join_post_faces_subset("EdgeScannedTwiceErr",
-                                  _work,
+                                  w,
                                   edge_traversed_twice->n_elts,
                                   edge_traversed_twice->array);
 
-      if (n_g_loop_limit > 0)
+      if (n_g_loop_limit > 0) {
+        bft_printf(_(" At least one original face has been cut into more than"
+                     " %d subfaces\n. You can increase this parameter in"
+                     " usjoin() or usperi() by setting the advanced parameter"
+                     " maxsf.\n Be careful. It may produce mesh with"
+                     " a poor quality.\n"), param.max_sub_faces);
         cs_join_post_faces_subset("LoopLimitErr",
-                                  _work,
+                                  w,
                                   loop_limit->n_elts,
                                   loop_limit->array);
+      }
 
     } /* End of information display */
 
@@ -1994,8 +2133,8 @@ cs_join_split_faces(cs_join_param_t          param,
 
   /* Free vtx_struct structure */
 
-  BFT_FREE(edge_face_idx);
-  BFT_FREE(edge_face_lst);
+  BFT_FREE(e2f_idx);
+  BFT_FREE(e2f_lst);
 
   /* Delete error management lists */
 
@@ -2005,28 +2144,25 @@ cs_join_split_faces(cs_join_param_t          param,
 
   { /* Define a global number for each new sub-faces */
 
-    cs_int_t  n_subfaces = builder->face_index[builder->n_faces];
-    cs_int_t  sub_connect_size = builder->subface_index->array[n_subfaces];
+    int  n_subfaces = builder->face_index[builder->n_faces];
+    int  sub_connect_size = builder->subface_index->array[n_subfaces];
 
     /* Define subface_gconnect */
 
     BFT_MALLOC(builder->subface_gconnect, sub_connect_size, fvm_gnum_t);
 
-    for (i = 0; i < sub_connect_size; i++) {
-
-      cs_int_t  vid = builder->subface_connect->array[i] - 1;
-      fvm_gnum_t  vgnum = _work->vertices[vid].gnum;
-
-      builder->subface_gconnect[i] = vgnum;
-
+    for (j = 0; j < sub_connect_size; j++) {
+      vid = builder->subface_connect->array[j] - 1;
+      vgnum = w->vertices[vid].gnum;
+      builder->subface_gconnect[j] = vgnum;
     }
 
-    _get_subface_gnum(builder, _work);
+    _get_subface_gnum(builder, w);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     bft_printf("\nFINAL BUILDER STATE\n");
-    for (i = 0; i < builder->n_faces; i++)
-      _dump_face_builder(i, builder);
+    for (fid = 0; fid < builder->n_faces; fid++)
+      _dump_face_builder(fid, builder);
 #endif
 
     BFT_FREE(builder->subface_gconnect);
@@ -2051,16 +2187,15 @@ cs_join_split_faces(cs_join_param_t          param,
                        |                            | initial
                        |                            | face
                        `----------------------------'
-  */
 
-  /* Reduce the definition of the working mesh to the set of new
+     Reduce the definition of the working mesh to the set of new
      global face numbers built from the local block.
      For each new sub-face we maintain a relation between new and old
      face global number. Update also face state */
 
   _update_mesh_after_split(block_info,
                            builder,
-                           &_work,
+                           &w,
                            &_old2new_history);
 
   /* Free face_builder_t structure */
@@ -2069,7 +2204,7 @@ cs_join_split_faces(cs_join_param_t          param,
 
   /* Set return pointers */
 
-  *work = _work;
+  *work = w;
   *old2new_history = _old2new_history;
 }
 
