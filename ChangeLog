@@ -1,3 +1,8 @@
+* 08/06/2010 - David Monfort <david.monfort@edf.fr>
+  Missing header in previous commit.
+  modified routine:
+    src/base/clptrg.f90
+
 * 26/05/2010 - David Monfort <david.monfort@edf.fr>
   Same fix as the one below on clptur, now concerns the rough walls.
   modified routine:

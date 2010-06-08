@@ -181,6 +181,7 @@ include "ppppar.h"
 include "ppthch.h"
 include "ppincl.h"
 include "radiat.h"
+include "cplsat.h"
 
 !===============================================================================
 
