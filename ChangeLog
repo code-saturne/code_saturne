@@ -3,6 +3,12 @@
   modified script:
     bin/cs_exec_environment.py
 
+* 31/03/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add many comments to the Python runcase script.
+  Expose the VALGRIND option.
+  modified script:
+    bin/runcase.py.in
+
 * 22/03/2010 - David Monfort <david.monfort@edf.fr>
   Update the tutorial documentation and replace .jpg by .png files.
 

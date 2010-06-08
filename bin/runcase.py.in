@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009  EDF
+#   Copyright (C) 2009-2010  EDF
 #
 #   Code_Saturne is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -41,7 +41,7 @@
 #
 #-------------------------------------------------------------------------------
 #
-# Batch options for PBS or Torque (example: Chatou cluster)
+# Batch options for PBS or Torque (example: Clamart2 cluster)
 # ===============================
 #
 #PBS -l nodes=4:ppn=2
@@ -140,18 +140,58 @@ from cs_case import *
 
 casedir = 'CASEDIRNAME'
 
+# Meshes should be defined as a list, for example:
+#   MESHES = ['part1.des', 'part2.unv']
+
+# In case of badly oriented cells, the Preprocessor will try to
+# reorient cells if REORIENT is set to True.
+
 MESHES = None
 REORIENT = False
 
+# To join meshes with the Preprocessor, the JOIN variable should contain
+# the Preprocessor command line arguments for joining, for example:
+#   JOIN = '-j --color 3 4 6'
+# Otherwise, set JOIN = None.
+
+# Periodicity is an extension of joining, and works in a similar
+# fashion; for example (with 2 periodic directions):
+#   PERIODICITY = --perio --trans 10 0 0 --perio --trans 0 1 0
+# Otherwise, set PERIODICITY to None.
+
+# A variable may be defined over several lines, using the \ character,
+# for example:
+#   PERIODICITY="--perio --trans -10.2 0 0 --color 2                 \
+#                --perio --rota --angle 90 --dir 0 0 1 --invpt 0 0 0 \
+#                        --color 3 4
+
+# See the user documentation or run 'cs_preprocess --help' for details.
+
 JOIN = None
 PERIODICITY = None
+
+# Additional files.
+
+# If thermochemistry applies, the name of the thermochemistry data file
+# may be specified through THERMOCHEMISTRY_DATA. For example:
+#   THERMOCHEMISTRY_DATA='dp_FCP'
+# If meteorological profiles are used, the name of the meteo data file
+# may be specified through METEO_DATA. For example:
+#   METEO_DATA='meteo'
+
+# Additional input files found in the DATA subdirectory may be defined in
+# the USER_INPUT_FILES list. Similarly, additional output files to
+# retrieve can be defined in USER_OUTPUT_FILES, for example:
+#   USER_OUTPOUT_FILES = ['plot1.dat', 'plot2.dump']
+
+# By default, the corresponding values are set to None.
 
 THERMOCHEMISTRY_DATA = None
 METEO_DATA = None
 USER_INPUT_FILES = None
 USER_OUTPUT_FILES = None
 
-# Number of processors associated with resolution domain (auto if none)
+# Number of MPI processes associated with the whole calculation (auto if none).
 
 N_PROCS = None
 N_PROCS_MIN = 1
@@ -159,34 +199,84 @@ N_PROCS_MAX = None
 
 # Partition options (if separate run from resolution)
 
+# PARTITION_LIST defines the partitionings that will be built
+# if EXEC_SOLVER is set to False and EXEC_PARTITION to True (see below).
+# For example, PARTITION_LIST = (128, 256) will produce files
+# 'domain_number_128' and 'domain_number_256' in RESU/PARTITION_OUTPUT.
+
+# PARTITION_OPTS may contain other partitioner options, for example
+#   PARTITION_OPTS = '--scotch --no-perio'; by default, it is set to None.
+
 PARTITION_LIST = None
+PARTITION_OPTS = None
 
 # Solver options
 
+# when the GUI is used, the PARAMETERS variable should contain the name
+# of the XML parameters file, which should always be placed in the
+# DATA subdirectory (for example, PARAMETERS = 'case1.xml').
+
+# CHECK_ARGS allows activation of elementary mesh quality tests, as
+# well as basic linear algebra operations micro-benchmarks, and
+# may thus take the following values:
+#   '-q' (or '--quality') for mesh quality criteria and gradient tests for
+# a known function (sin(x+2y+3z)).
+#   '--benchmark' or '--benchmark --mpitrace' for basic linear algebra
+# operation benchmarks.
+
+# CUT_WARPED_FACES used to cut the faces whose warp angle is larger than a
+# given tolerance (in degrees), for example: CUT_WARPED_FACES = '--cwf 0.01'
+# Otherwise, it is set to None.
+
+# OUTPUT_ARGS allows setting the command-line argument for redirection of
+# the output, for example: OUTPUT_ARGS = '--logp 1'.
+# Otherwise, it is set to None.
+
 PARAMETERS = None
-SOLCOM = False
 CUT_WARPED_FACES = None
 CHECK_ARGS = None
 OUTPUT_ARGS = None
 
-# For SYRTHES couplings, 'MPI' or 'sockets' modes may be used
-
-SYR_COUPLING_MODE = 'MPI'
-SYR_ECHO_COMM = None
-
-# Optional list of hosts
+# Optional list of hosts (if not using a batch system).
 
 HOSTS_LIST = None
 
-# Operations to execute
+# Calculation stages to execute.
+# If EXEC_SOLVER is set to False, the Preprocessor's preprocessor_output file
+# is copied in RESU, and the Partitioner's output is copied in a
+# PARTITION_OUTPUT directory in RESU. Note also that when partitioning
+# with no solver execution, the number of processors required is not known
+# in advance, so the PARTITION_LIST variable above must also be defined.
 
 EXEC_PREPROCESS = True
 EXEC_PARTITION = True
 EXEC_SOLVER = True
 
+# The user may choose to use a mesh in the old .tlc or .slc format instead
+# of a preprocessed mesh by setting SOLCOM = True.
+# Note that this is deprecated, and incompatible with parallel execution.
+
+SOLCOM = False
+
 # Adaptation (not operational yet)
 
 HOMARD_PREFIX = None
+
+# CS_TMP_PREFIX variable allows the user to specify in which temporary
+# directory the calculation will run. If set to None, a default directory
+# will be used (architecture dependent). If a value is specified,
+# the temporary directory will be of the form:
+#  <CS_TMP_PREFIX>/tmp_Saturne/<STUDY>.<CASE>.<DATE>
+
+CS_TMP_PREFIX = None
+
+# VALGRIND enables running of the solver through Valgrind if this
+# memory-checking tool is available. In this case, it should
+# contain the corresponding command-line arguments, such as:
+#   VALGRIND='valgrind --tool=memcheck'
+# Otherwise, it should be set to None.
+
+VALGRIND = None
 
 #-------------------------------------------------------------------------------
 
@@ -194,6 +284,9 @@ def def_exec_prefix():
     """
     Define execution directory prefix.
     """
+
+    if CS_TMP_PREFIX != None:
+        return os.path.join(CS_TMP_PREFIX, "tmp_Saturne")
 
     exec_prefix = None
 
@@ -232,6 +325,7 @@ if __name__ == '__main__':
                join = JOIN,
                periodicity = PERIODICITY,
                partition_list = PARTITION_LIST,
+               partition_opts = PARTITION_OPTS,
                param = PARAMETERS,
                solcom = SOLCOM,
                cut_warped_faces = CUT_WARPED_FACES,
@@ -244,6 +338,9 @@ if __name__ == '__main__':
                n_procs = N_PROCS,
                n_procs_min = N_PROCS_MIN,
                n_procs_max = N_PROCS_MAX)
+
+    if VALGRIND != None:
+        d.valgrind = VALGRIND
 
     # Possible SYRTHES coupling
 
@@ -269,9 +366,9 @@ if __name__ == '__main__':
 
     suffix = None
 
-    mpi_env = None
-
     # Force MPI environment if mpi_environment != None
+
+    mpi_env = None
 
     # Syntax is as follows:
     #
