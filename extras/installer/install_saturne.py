@@ -22,7 +22,7 @@ import subprocess
 # Global variable
 #-------------------------------------------------------------------------------
 
-verbose = 'no'
+verbose = 'yes'
 
 #-------------------------------------------------------------------------------
 # Global methods
@@ -209,50 +209,6 @@ class Package:
         os.chdir(current_dir)
 
 #-------------------------------------------------------------------------------
-# Class definition for Metis library (to circumvent a difficult installation)
-#-------------------------------------------------------------------------------
-
-class MetisPackage(Package):
-
-    def install(self):
-
-        current_dir = os.getcwd()
-
-        if self.install_dir is not None: install_dir = self.install_dir
-        else: install_dir = '/usr'
-
-        os.chdir(self.source_dir)
-
-        run_command("make", "Compile", self.name, self.log_file)
-
-        # Install the package
-        incdir = os.path.join(install_dir, 'include')
-        bindir = os.path.join(install_dir, 'bin')
-        libdir = os.path.join(install_dir, 'lib')
-
-        if not os.path.isdir(incdir): os.makedirs(incdir)
-        if not os.path.isdir(bindir): os.makedirs(bindir)
-        if not os.path.isdir(libdir): os.makedirs(libdir)
-
-        for file in os.listdir(os.path.join(self.source_dir, "Lib")):
-            if file.find('.h') >= 0:
-                shutil.copy(os.path.join(self.source_dir, "Lib", file),
-                            os.path.join(incdir, file))
-
-        for file in ['graphchk','kmetis','mesh2dual','mesh2nodal','oemetis',
-                     'onmetis','partdmesh','partnmesh','pmetis']:
-            shutil.copy(os.path.join(self.source_dir, file),
-                        os.path.join(bindir, file))
-
-        for file in ['libmetis.a']:
-            shutil.copy(os.path.join(self.source_dir, file),
-                        os.path.join(libdir, file))
-
-        run_command("make clean", "Clean", self.name, self.log_file)
-
-        os.chdir(current_dir)
-
-#-------------------------------------------------------------------------------
 # Class definition for Code_Saturne setup
 #-------------------------------------------------------------------------------
 
@@ -264,12 +220,12 @@ class Setup:
         self.satlibs = ['bft', 'fvm', 'mei', 'ecs', 'ncs']
 
         # Optional libraries
-        self.optlibs = ['cgns', 'hdf5', 'med', 'metis', 'mpi', 'libxml2', 'swig']
+        self.optlibs = ['cgns', 'hdf5', 'med', 'mpi', 'libxml2', 'swig']
 
         self.libs = self.optlibs + self.satlibs
 
         # Code_Saturne version 
-        self.version='2.0-rc1'
+        self.version = '2.0-rc2'
 
         # Logging file
         self.log_file = sys.stdout
@@ -278,10 +234,10 @@ class Setup:
         self.download = 'yes'
 
         # Code_Saturne language (may be en/fr)
-        self.language='en'
+        self.language = 'en'
 
         # Code_Saturne installation with debugging symbols
-        self.debug='no'
+        self.debug = 'no'
 
         # Default compilers
         self.cc = None
@@ -296,6 +252,12 @@ class Setup:
 
         # BLAS library path
         self.blas = None
+
+        # Metis library path
+        self.metis = None
+
+        # Scotch library path
+        self.scotch = None
 
         # SYRTHES path
         self.syrthes = None
@@ -388,8 +350,8 @@ class Setup:
 
         p = self.packages['cgns']
         p.config_opts = "--enable-64bit --enable-lfs"
-        p.vpath_support=False
-        p.create_install_dirs=True
+        p.vpath_support = False
+        p.create_install_dirs = True
 
         # HDF5 library
 
@@ -417,34 +379,14 @@ class Setup:
         p = self.packages['med']
         p.config_opts = "--with-med_int=int"
 
-        # CCMIO library
-
-        self.packages['ccmio'] = \
-            Package(name="CCMIO",
-                    description="I/O library for Star-CCM files",
-                    package="libccmio",
-                    version="2.6.1",
-                    archive="libccmio-2.6.1.tar.gz",
-                    url="https://wci.llnl.gov/codes/visit/3rd_party/%s")
-
-        # Metis library
-
-        self.packages['metis'] = \
-            MetisPackage(name="Metis",
-                         description="Graph partitioner",
-                         package="metis",
-                         version="4.0.1",
-                         archive="metis-4.0.tar.gz",
-                         url="http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/%s")
-
         # MPI library
 
         self.packages['mpi'] = \
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.4.1",
-                    archive="openmpi-1.4.1.tar.gz",
+                    version="1.4.2",
+                    archive="openmpi-1.4.2.tar.gz",
                     url="http://www.open-mpi.org/software/ompi/v1.4/downloads/%s")
 
         # Libxml2 library (official url "ftp://xmlsoft.org/libxml2/%s")
@@ -483,7 +425,7 @@ class Setup:
         try:
             setupFile = file('setup', mode='r')
         except IOError:
-            sys.stderr.write('Error : opening setup file\n')
+            sys.stderr.write('Error: opening setup file\n')
             sys.exit(1)
 
         shutil.copy('setup','setup_ini')
@@ -492,11 +434,14 @@ class Setup:
 
             line = setupFile.readline()
             if line == '': break
-            if line[0] == '#': continue
 
+            # skip comments
+            if line[0] == '#': continue
             # splitlines necessary to get rid of carriage return on IRIX64
             line = line.splitlines()
             list = line[0].split()
+            # skip blank lines
+            if len(list) == 0: continue
 
             key = list[0]
             
@@ -513,6 +458,8 @@ class Setup:
                 elif key == 'disable_gui': self.disable_gui = list[1]
                 elif key == 'python': self.python = list[1]
                 elif key == 'blas': self.blas = list[1]
+                elif key == 'metis': self.metis = list[1]
+                elif key == 'scotch': self.scotch = list[1]
                 elif key == 'syrthes': self.syrthes = list[1]
                 else:
                     p = self.packages[key]
@@ -542,6 +489,16 @@ class Setup:
             self.blas = os.path.expanduser(self.blas)
             self.blas = os.path.expandvars(self.blas)
             self.blas = os.path.abspath(self.blas)
+
+        if self.metis is not None:
+            self.metis = os.path.expanduser(self.metis)
+            self.metis = os.path.expandvars(self.metis)
+            self.metis = os.path.abspath(self.metis)
+
+        if self.scotch is not None:
+            self.scotch = os.path.expanduser(self.scotch)
+            self.scotch = os.path.expandvars(self.scotch)
+            self.scotch = os.path.abspath(self.scotch)
 
         if self.syrthes is not None:
             self.syrthes = os.path.expanduser(self.syrthes)
@@ -693,6 +650,24 @@ Check the setup file and some utilities presence.
                              % self.blas)
             sys.exit(1)
             
+        # Looking for Metis path probided by the user
+        if self.metis is not None and not os.path.isdir(self.metis):
+            sys.stderr.write("\n*** Aborting installation:\n"
+                             "\'%s\' Metis directory is provided in the setup "
+                             "file but is not a directory.\n"
+                             "Please check your setup file.\n\n"
+                             % self.metis)
+            sys.exit(1)
+            
+        # Looking for Scotch path probided by the user
+        if self.scotch is not None and not os.path.isdir(self.scotch):
+            sys.stderr.write("\n*** Aborting installation:\n"
+                             "\'%s\' Scotch directory is provided in the setup "
+                             "file but is not a directory.\n"
+                             "Please check your setup file.\n\n"
+                             % self.scotch)
+            sys.exit(1)
+            
         # Looking for SYRTHES path probided by the user
         if self.syrthes is not None and not os.path.isdir(self.syrthes):
             sys.stderr.write("\n*** Aborting installation:\n"
@@ -714,8 +689,20 @@ Check the setup file and some utilities presence.
         # Looking for pdflatex for potential documentation compilation
         ret = run_test("pdflatex")
         if ret != 0:
+            self.packages['ncs'].installation_pdf = 'no'
             sys.stderr.write("\n*** Warning: "
                              "pdflatex utility cannot be found\n"
+                             "Code_Saturne documentation will not be "
+                             "installed\n")
+        else:
+            self.packages['ncs'].installation_pdf = 'yes'
+
+        # Looking for fig2dev for potential documentation compilation
+        ret = run_test("fig2dev")
+        if ret != 0:
+            self.packages['ncs'].installation_pdf = 'no'
+            sys.stderr.write("\n*** Warning: "
+                             "fig2dev utility cannot be found\n"
                              "Code_Saturne documentation will not be "
                              "installed\n")
         else:
@@ -766,7 +753,6 @@ Check the setup file and some utilities presence.
         hdf5 = self.packages['hdf5']
         med= self.packages['med']
         mpi = self.packages['mpi']
-        metis = self.packages['metis']
         libxml2 = self.packages['libxml2']
         swig = self.packages['swig']
 
@@ -843,12 +829,13 @@ Check the setup file and some utilities presence.
 
         # Metis
 
-        if metis.use == 'no':
-            ecs.config_opts = ecs.config_opts + " --without-metis"
-        else:
-            if metis.install_dir is not None:
-                ecs.config_opts = ecs.config_opts + \
-                    " --with-metis=" + metis.install_dir
+        if self.metis is not None:
+            ecs.config_opts = ecs.config_opts + " --with-metis=" + self.metis
+
+        # Scotch
+
+        if self.scotch is not None:
+            ecs.config_opts = ecs.config_opts + " --with-scotch=" + self.scotch
 
         # Libxml2
 
@@ -1004,6 +991,24 @@ python    %(python)s
 blas      %(blas)s
 #
 #--------------------------------------------------------
+# Metis is more rarely found in Linux distributions,
+# but may already be installed on massively parallel
+# machines and on clusters. For good parallel
+# performance, it is highly recommended.
+# For meshes larger than 15 million cells, Metis 5.0
+# beta is recommended, as Metis 4 may fail above
+# the 20-35 million cells.
+#
+# Scotch can be use as an alternative.
+#
+# If both are present, Metis will be the default.
+# If none are present, a space-filling-curve algorithm
+# will be used.
+#--------------------------------------------------------
+metis     %(metis)s
+scotch    %(scotch)s
+#
+#--------------------------------------------------------
 # SYRTHES installation path for an optional coupling.
 #
 # Only coupling with the SYRTHES thermal code version 3
@@ -1038,7 +1043,7 @@ syrthes   %(syrthes)s
 # CGNS        For CGNS file support
 #             (used by many meshers)
 #
-# Open MPI (or MPICH2) + Metis
+# Open MPI (or MPICH2)
 #
 #   For Linux workstations, MPI, HDF5, and even MED
 # packages may be available through the package manager.
@@ -1047,15 +1052,6 @@ syrthes   %(syrthes)s
 #
 #   For massively parallel architectures, it is
 # recommended to use the system's default MPI library.
-#
-#   Metis is more rarely found in Linux distributions,
-# but may already be installed on massively parallel
-# machines and on clusters. For good parallel
-# performance, it is highly recommended.
-# For meshes larger than 15 million cells, Metis 5.0
-# beta is recommended, as Metis 4 may fail above
-# the 20-35 million cells. But if Metis 5.0 is chosen,
-# its installation must be done manually.
 #
 #   Libxml2 is needed to read xml files output by the
 # Graphical User Interface, and swig is needed by the
@@ -1081,6 +1077,8 @@ syrthes   %(syrthes)s
         if self.mpicc is None: self.mpicc = ''
         if self.python is None: self.python = ''
         if self.blas is None: self.blas = ''
+        if self.metis is None: self.metis = ''
+        if self.scotch is None: self.scotch = ''
         if self.syrthes is None: self.syrthes = ''
 
         sf.write(setupMain
@@ -1090,6 +1088,7 @@ syrthes   %(syrthes)s
                      'cc':self.cc, 'fc':self.fc, 'mpicc':self.mpicc,
                      'disable_gui':self.disable_gui,
                      'python':self.python, 'blas':self.blas,
+                     'metis':self.metis, 'scotch': self.scotch,
                      'syrthes':self.syrthes })
 
         sf.write(setupLibSat)

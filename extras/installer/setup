@@ -33,17 +33,17 @@ arch
 #--------------------------------------------------------
 # C compiler
 #--------------------------------------------------------
-compC     
+compC
 #
 #--------------------------------------------------------
 # Fortran compiler
 #--------------------------------------------------------
-compF     
+compF
 #
 #--------------------------------------------------------
 # MPI wrapper for C compiler
 #--------------------------------------------------------
-mpiCompC  
+mpiCompC
 #
 #--------------------------------------------------------
 # Disable Graphical user Interface
@@ -77,7 +77,25 @@ python
 # For a fine-tuning of BLAS library support, it may
 # be necessary to install Code_Saturne Kernel manually.
 #--------------------------------------------------------
-blas      
+blas
+#
+#--------------------------------------------------------
+# Metis is more rarely found in Linux distributions,
+# but may already be installed on massively parallel
+# machines and on clusters. For good parallel
+# performance, it is highly recommended.
+# For meshes larger than 15 million cells, Metis 5.0
+# beta is recommended, as Metis 4 may fail above
+# the 20-35 million cells.
+#
+# Scotch can be use as an alternative.
+#
+# If both are present, Metis will be the default.
+# If none are present, a space-filling-curve algorithm
+# will be used.
+#--------------------------------------------------------
+metis
+scotch
 #
 #--------------------------------------------------------
 # SYRTHES installation path for an optional coupling.
@@ -115,7 +133,7 @@ ncs    None    yes  yes
 # CGNS        For CGNS file support
 #             (used by many meshers)
 #
-# Open MPI (or MPICH2) + Metis
+# Open MPI (or MPICH2)
 #
 #   For Linux workstations, MPI, HDF5, and even MED
 # packages may be available through the package manager.
@@ -124,15 +142,6 @@ ncs    None    yes  yes
 #
 #   For massively parallel architectures, it is
 # recommended to use the system's default MPI library.
-#
-#   Metis is more rarely found in Linux distributions,
-# but may already be installed on massively parallel
-# machines and on clusters. For good parallel
-# performance, it is highly recommended.
-# For meshes larger than 15 million cells, Metis 5.0
-# beta is recommended, as Metis 4 may fail above
-# the 20-35 million cells. But if Metis 5.0 is chosen,
-# its installation must be done manually.
 #
 #   Libxml2 is needed to read xml files output by the
 # Graphical User Interface, and swig is needed by the
@@ -144,7 +153,6 @@ ncs    None    yes  yes
 cgns       None    yes   yes
 hdf5       None    yes   yes
 med        None    yes   yes
-metis      None    yes   yes
 mpi        None    yes   yes
 libxml2    None    auto  no
 swig       None    auto  no
