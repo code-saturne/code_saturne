@@ -29,6 +29,24 @@
 #include "cs_config.h"
 #endif
 
+/*
+  Force LARGEFILE_SOURCE if largefiles enabled under 32-bit Linux or Blue Gene
+  (otherwise, we may encounter bugs with glibc 2.3 due to fseeko end ftello
+  not being correctly defined). Compiling with -D_GNU_SOURCE instead
+  of -D_POSIX_C_SOURCE=200112L seems to be another way to solve the problem.
+*/
+
+#if (SIZEOF_LONG < 8) && (_FILE_OFFSET_BITS == 64)
+# if defined(__linux__) || defined(__blrts__) || defined(__bgp__)
+#  if !defined(_POSIX_SOURCE)
+#    define _GNU_SOURCE 1
+#  endif
+#  if !defined(_GNU_SOURCE) && !defined(_LARGEFILE_SOURCE)
+#   define _LARGEFILE_SOURCE 1
+#  endif
+# endif
+#endif
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -44,7 +62,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_file.h>
 #include <bft_error.h>
 #include <bft_printf.h>
 
@@ -90,7 +107,7 @@ struct _fvm_file_t {
   int                n_ranks;      /* MPI rank */
   _Bool              swap_endian;  /* Swap big-endian and little-endian ? */
 
-  bft_file_t        *sh;           /* Serial file handle */
+  FILE              *sh;           /* Serial file handle */
 
 #if defined(HAVE_MPI)
   MPI_Comm           comm;         /* Associated MPI communicator */
@@ -115,25 +132,52 @@ static fvm_file_hints_t _default_semantics = FVM_FILE_INDIVIDUAL_POINTERS;
 static fvm_file_hints_t _default_semantics = 0;
 #endif
 
-/* Convert fvm_file_seek to bft_file_seek */
-
-static bft_file_seek_t _bft_seek[3] = {BFT_FILE_SEEK_SET,
-                                       BFT_FILE_SEEK_CUR,
-                                       BFT_FILE_SEEK_END};
-
-#if defined(HAVE_MPI_IO)
-
-/* Convert fvm_file_seek to MPI_File_seek */
-
-static int _mpi_seek[3] = {MPI_SEEK_SET,
-                           MPI_SEEK_CUR,
-                           MPI_SEEK_END};
-
-#endif /* defined(HAVE_MPI_IO) */
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Convert data from "little-endian" to "big-endian" or the reverse.
+ *
+ * The memory areas pointed to by src and dest should overlap either
+ * exactly or not at all.
+ *
+ * parameters:
+ *   dest <-- pointer to converted data location.
+ *   src  --> pointer to source data location.
+ *   size <-- size of each item of data in bytes.
+ *   ni   <-- number of data items.
+ *----------------------------------------------------------------------------*/
+
+static void
+_swap_endian(void        *dest,
+             const void  *src,
+             size_t       size,
+             size_t       ni)
+{
+  size_t   i, ib, shift;
+  unsigned char  tmpswap;
+
+  unsigned char  *pdest = (unsigned char *)dest;
+  const unsigned char  *psrc = (const unsigned char *)src;
+
+  for (i = 0; i < ni; i++) {
+
+    shift = i * size;
+
+    for (ib = 0; ib < (size / 2); ib++) {
+
+      tmpswap = *(psrc + shift + ib);
+      *(pdest + shift + ib) = *(psrc + shift + (size - 1) - ib);
+      *(pdest + shift + (size - 1) - ib) = tmpswap;
+
+    }
+
+  }
+
+  if (dest != src && size == 1)
+    memcpy(dest, src, ni);
+}
 
 /*----------------------------------------------------------------------------
  * Open a file using standard C IO.
@@ -143,15 +187,13 @@ static int _mpi_seek[3] = {MPI_SEEK_SET,
  *   mode <-- file acces mode: read, write, or append
  *
  * returns:
- *   0 in case of success, -1 in case of failure
+ *   0 in case of success, error number in case of failure
  *----------------------------------------------------------------------------*/
 
 static int
 _file_open(fvm_file_t       *f,
            fvm_file_mode_t   mode)
 {
-  bft_file_mode_t _mode;
-
   int retval = 0;
 
   assert(f != NULL);
@@ -165,20 +207,22 @@ _file_open(fvm_file_t       *f,
 
   switch (f->mode) {
   case FVM_FILE_MODE_APPEND:
-    _mode = BFT_FILE_MODE_APPEND;
+    f->sh = fopen(f->name, "a");
     break;
   case FVM_FILE_MODE_WRITE:
-    _mode = BFT_FILE_MODE_WRITE;
+    f->sh = fopen(f->name, "w");
     break;
   default:
     assert(f->mode == FVM_FILE_MODE_READ);
-    _mode = BFT_FILE_MODE_READ;
+    f->sh = fopen(f->name, "r");
   }
 
-  f->sh = bft_file_open(f->name, _mode, BFT_FILE_TYPE_BINARY);
-
-  if (f->sh == NULL)
-    retval = -1;
+  if (f->sh == NULL) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error opening file \"%s\":\n\n"
+                "  %s"), f->name, strerror(errno));
+    retval = errno;
+  }
 
   return retval;
 }
@@ -198,12 +242,249 @@ _file_close(fvm_file_t  *f)
 {
   int retval = 0;
 
-  f->sh = bft_file_free(f->sh);
-
   if (f->sh != NULL)
-    retval = -1;
+    retval = fclose(f->sh);
+
+  if (retval != 0) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error closing file \"%s\":\n\n"
+                "  %s"), f->name, strerror(errno));
+    retval = errno;
+  }
+  f->sh = NULL;
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Read data to a buffer using standard C IO.
+ *
+ * parameters:
+ *   f    <-- fvm_file_t descriptor
+ *   buf  --> pointer to location receiving data
+ *   size <-- size of each item of data in bytes
+ *   ni   <-- number of items to read
+ *
+ * returns:
+ *   the (local) number of items (not bytes) sucessfully read;
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_file_read(fvm_file_t  *f,
+           void        *buf,
+           size_t       size,
+           size_t       ni)
+{
+  size_t retval = 0;
+
+  assert(f->sh != NULL);
+
+  if (ni != 0)
+    retval = fread(buf, size, ni, f->sh);
+
+  /* In case of error, determine error type */
+
+  if (retval != ni) {
+    int err_num = ferror(f->sh);
+    if (err_num != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error reading file \"%s\":\n\n  %s"),
+                f->name, strerror(err_num));
+    else if (feof(f->sh) != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Premature end of file \"%s\""), f->name);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error reading file \"%s\""), f->name);
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Write data to a file using standard C IO.
+ *
+ * parameters:
+ *   f    <-- fvm_file_t descriptor
+ *   buf  --> pointer to location receiving data
+ *   size <-- size of each item of data in bytes
+ *   ni   <-- number of items to read
+ *
+ * returns:
+ *   the (local) number of items (not bytes) sucessfully read;
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_file_write(fvm_file_t  *f,
+            const void  *buf,
+            size_t       size,
+            size_t       ni)
+{
+  size_t retval = 0;
+
+  assert(f->sh != NULL);
+
+  if (ni != 0)
+    retval = fwrite(buf, size, ni, f->sh);
+
+  /* In case of error, determine error type */
+
+  if (retval != ni) {
+    int err_num = ferror(f->sh);
+    if (err_num != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error writing file \"%s\":\n\n  %s"),
+                f->name, strerror(err_num));
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error writing file \"%s\""), f->name);
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Sets a file's position indicator using standard C IO.
+ *
+ * This function may call the libc's fseek() or fseeko() function.
+ * The C 99 standard specifies that for a text file, the offset
+ * argument to fseek() should be zero or a value returned by an earlier
+ * successful call to ftell().
+ *
+ * A successful call to this function clears the end-of-file indicator for
+ * this file.
+ *
+ * parameters:
+ *   f      <-> file descriptor.
+ *   offset <-- add to position specified to whence to obtain new
+ *              position, measured in characters from the beginning of
+ *              the file.
+ *   whence <-- beginning if FVM_FILE_SEEK_SET, current if
+ *              FVM_FILE_SEEK_CUR, or end-of-file if FVM_FILE_SEEK_END.
+ *
+ * returns:
+ *   0 upon success, nonzero otherwise.
+ *----------------------------------------------------------------------------*/
+
+static int
+_file_seek(fvm_file_t       *f,
+           fvm_file_off_t    offset,
+           fvm_file_seek_t   whence)
+{
+  static int _stdio_seek[3] = {SEEK_SET, SEEK_CUR, SEEK_END};
+
+  int _whence = _stdio_seek[whence];
+  int retval = 0;
+
+  /* Convert fvm_file_seek to stdio values */
+
+  assert(f != NULL);
+
+  if (f->sh != NULL) {
+
+#if (SIZEOF_LONG < 8)
+
+    /* For 32-bit systems, large file support may be necessary */
+
+# if defined(HAVE_FSEEKO) && (_FILE_OFFSET_BITS == 64)
+
+    retval = fseeko(f->sh, (off_t)offset, _whence);
+
+    if (retval != 0)
+      bft_error(__FILE__, __LINE__, errno,
+                _("Error setting position in file \"%s\":\n\n  %s"),
+                f->name, strerror(errno));
+# else
+
+    /* Test if offset larger than allowed */
+
+    long _offset = offset;
+
+    if (_offset == offset) {
+      retval = fseek(f->sh, (long)offset, _whence);
+      if (retval != 0)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("Error setting position in file \"%s\":\n\n  %s"),
+                  f->name, strerror(errno));
+    }
+    else {
+      retval = -1;
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Error setting position in file \"%s\":\n\n  %s"),
+         f->name,
+         _("sizeof(off_t) > sizeof(long) but fseeko() not available"));
+    }
+
+# endif /* defined(HAVE_FSEEKO) && (_FILE_OFFSET_BITS == 64) */
+
+#else /* SIZEOF_LONG >= 8 */
+
+    /* For 64-bit systems, standard fseek should be enough */
+
+    retval = fseek(f->sh, (long)offset, _whence);
+    if (retval != 0)
+      bft_error(__FILE__, __LINE__, errno,
+                _("Error setting position in file \"%s\":\n\n  %s"),
+                f->name, strerror(errno));
+
+#endif /* SIZEOF_LONG */
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Obtain the current value of a file's position indicator.
+ *
+ * parameters:
+ *   f  <-- file descriptor.
+ *
+ * returns:
+ *   current value of the file's position indicator, or -1 in case of failure.
+ *----------------------------------------------------------------------------*/
+
+static fvm_file_off_t
+_file_tell(fvm_file_t  *f)
+{
+  fvm_file_off_t offset = 0;
+
+  assert(f != NULL);
+
+  if (f->sh != NULL) {
+
+    /* For 32-bit systems, large file support may be necessary */
+
+#if (SIZEOF_LONG < 8)
+
+# if defined(HAVE_FSEEKO) && (_FILE_OFFSET_BITS == 64)
+    offset = ftello(f->sh);
+# else
+    /*
+      Without ftello, ftell will fail above 2 Gigabytes, in which case
+      offset == -1 and errno == EOVERFLOW, but should work on smaller
+      files. We prefer not to be too strict about fseeko availability, as
+      the only 32-bit case without ftello we have encountered is Cygwin
+      (for which ftello requires additional non-default libraries), which
+      is expected to be used mainly for small cases.
+    */
+    offset = ftell(f->sh);
+# endif
+
+    /* For 64-bit systems, standard ftell should be enough */
+
+#else /* SIZEOF_LONG >= 8 */
+    offset = ftell(f->sh);
+#endif
+
+  }
+
+  if (offset < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error obtaining position in file \"%s\":\n\n  %s"),
+              f->name, strerror(errno));
+
+  return offset;
 }
 
 /*----------------------------------------------------------------------------
@@ -240,10 +521,10 @@ _file_read_block(fvm_file_t  *f,
   size_t retval = 0;
 
   if (f->rank == 0)
-    retval = bft_file_read(buf,
-                           size,
-                           (size_t)(global_num_end - global_num_start),
-                           f->sh);
+    retval = _file_read(f,
+                        buf,
+                        size,
+                        (size_t)(global_num_end - global_num_start));
 
 #if defined(HAVE_MPI)
 
@@ -291,7 +572,7 @@ _file_read_block(fvm_file_t  *f,
         /* Read data from file */
 
         counts[dist_rank]
-          = (int)bft_file_read(_buf, size, (size_t)counts[dist_rank], f->sh);
+          = (int)_file_read(f, _buf, size, (size_t)counts[dist_rank]);
 
         /* Send to corresponding rank */
 
@@ -361,10 +642,10 @@ _file_write_block(fvm_file_t  *f,
   size_t retval = 0;
 
   if (f->rank == 0)
-    retval = bft_file_write(buf,
-                            size,
-                            (size_t)(global_num_end - global_num_start),
-                            f->sh);
+    retval = _file_write(f,
+                         buf,
+                         size,
+                         (size_t)(global_num_end - global_num_start));
 
 #if defined(HAVE_MPI)
 
@@ -425,7 +706,7 @@ _file_write_block(fvm_file_t  *f,
         /* Write data to file */
 
         counts[dist_rank]
-          = (int)bft_file_write(_buf, size, (size_t)counts[dist_rank], f->sh);
+          = (int)_file_write(f, _buf, size, (size_t)counts[dist_rank]);
 
       } /* End of loop on distant ranks */
 
@@ -1038,10 +1319,7 @@ fvm_file_read_global(fvm_file_t  *f,
   size_t retval = 0;
 
   if ((f->semantics & FVM_FILE_NO_MPI_IO)&& f->rank == 0) {
-    retval = bft_file_read(buf,
-                           size,
-                           ni,
-                           f->sh);
+    retval = _file_read(f, buf, size, ni);
   }
 
 #if defined(HAVE_MPI)
@@ -1103,7 +1381,7 @@ fvm_file_read_global(fvm_file_t  *f,
 #endif /* defined(HAVE_MPI) */
 
   if (f->swap_endian == true && size > 1)
-    bft_file_swap_endian(buf, buf, size, retval);
+    _swap_endian(buf, buf, size, retval);
 
   return retval;
 }
@@ -1149,16 +1427,16 @@ fvm_file_write_global(fvm_file_t  *f,
     memcpy(copybuf, buf, size*ni);
 
     if (f->swap_endian == true && size > 1)
-      bft_file_swap_endian(copybuf, copybuf, size, ni);
+      _swap_endian(copybuf, copybuf, size, ni);
 
     _buf = copybuf;
   }
 
   if ((f->semantics & FVM_FILE_NO_MPI_IO) && f->sh != NULL) {
-    retval = bft_file_write(_buf,
-                            size,
-                            ni,
-                            f->sh);
+    retval = _file_write(f,
+                         _buf,
+                         size,
+                         ni);
   }
 
 #if defined(HAVE_MPI_IO)
@@ -1286,7 +1564,7 @@ fvm_file_read_block(fvm_file_t  *f,
 #endif /* defined(HAVE_MPI_IO) */
 
   if (f->swap_endian == true && size > 1)
-    bft_file_swap_endian(buf, buf, size, retval);
+    _swap_endian(buf, buf, size, retval);
 
   return retval;
 }
@@ -1362,10 +1640,10 @@ fvm_file_write_block(fvm_file_t  *f,
     const fvm_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
     const fvm_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
 
-    retval = bft_file_write(buf,
-                            size,
-                            (_global_num_end - _global_num_start),
-                            f->sh);
+    retval = _file_write(f,
+                         buf,
+                         size,
+                         (_global_num_end - _global_num_start));
   }
 
   return retval;
@@ -1417,10 +1695,10 @@ fvm_file_write_block_buffer(fvm_file_t  *f,
   /* Swap bytes prior to writing if necessary */
 
   if (f->swap_endian == true && size > 1)
-    bft_file_swap_endian(buf,
-                         buf,
-                         size,
-                         (_global_num_end - _global_num_start));
+    _swap_endian(buf,
+                 buf,
+                 size,
+                 (_global_num_end - _global_num_start));
 
   /* Write to file using chosen method */
 
@@ -1474,11 +1752,17 @@ fvm_file_seek(fvm_file_t       *f,
               fvm_file_off_t    offset,
               fvm_file_seek_t   whence)
 {
+  /* Convert fvm_file_seek to MPI_File_seek */
+
+#if defined(HAVE_MPI_IO)
+  static int _mpi_seek[3] = {MPI_SEEK_SET, MPI_SEEK_CUR, MPI_SEEK_END};
+#endif
+
   int retval = 0;
 
   if (f->semantics & FVM_FILE_NO_MPI_IO) {
     if (f->rank == 0)
-      retval = bft_file_seek(f->sh, (bft_file_off_t)offset, _bft_seek[whence]);
+      retval = _file_seek(f, offset, whence);
   }
 
 #if defined(HAVE_MPI_IO)
@@ -1539,7 +1823,7 @@ fvm_file_tell(fvm_file_t  *f)
   if (f->semantics & FVM_FILE_NO_MPI_IO) {
 
     if (f->rank == 0)
-      retval = bft_file_tell(f->sh);
+      retval = _file_tell(f);
 
 #if defined(HAVE_MPI)
     if (f->comm != MPI_COMM_NULL) {
@@ -1555,36 +1839,15 @@ fvm_file_tell(fvm_file_t  *f)
 
   else if (!(f->semantics & FVM_FILE_NO_MPI_IO)) {
 
-    int errcode = MPI_SUCCESS;
+    /*
+      Note that in case of individual file pointers, using
+      MPI_File_get_position() and MPI_File_get_byte_offset() should also
+      work, but fail after certain collective writes with some processes
+      writing zero values (at least on Open MPI 1.2.6), so we prefer to
+      keep track of the global offset (which we use to set views anyways).
+    */
 
-    if (f->semantics & FVM_FILE_EXPLICIT_OFFSETS)
-      retval = f->offset;
-
-    else { /* if (f->semantics & FVM_FILE_INDIVIDUAL_POINTERS) */
-#if 0
-      /* This should work, but fails after certain collective writes
-         with some processes writing zero values (at least on
-         Open MPI 1.2.6, using ROMIO). */
-      MPI_Offset offset, disp;
-      int64_t l_offset, g_offset;
-      MPI_Datatype offset_type = fvm_datatype_to_mpi[FVM_INT64];
-      errcode = MPI_File_get_position(f->fh, &offset);
-      if (errcode == MPI_SUCCESS)
-        errcode = MPI_File_get_byte_offset(f->fh, offset, &disp);
-      if (errcode == MPI_SUCCESS) {
-        l_offset = disp;
-        MPI_Allreduce(&l_offset, &g_offset, 1, offset_type, MPI_MAX, f->comm);
-        retval = g_offset;
-      }
-#else
-      /* Using individual pointers, we still keep track of the
-       * global offset (to set views), so use it here */
-      retval = f->offset;
-#endif
-    }
-
-    if (errcode != MPI_SUCCESS)
-      _mpi_io_error_message(f->name, errcode);
+    retval = f->offset;
   }
 
 #endif /* defined(HAVE_MPI_IO) */
@@ -1683,13 +1946,13 @@ fvm_file_dump(const fvm_file_t  *f)
              f->sh);
 
 #if defined(HAVE_MPI)
-  bft_printf("Associated communicator:  %lu\n",
-             (unsigned long)(f->comm));
+  bft_printf("Associated communicator:  %llu\n",
+             (unsigned long long)(f->comm));
 #if defined(HAVE_MPI_IO)
-  bft_printf("MPI file handle:          %lu\n"
-               "MPI file offset:          %lu\n",
-             (unsigned long)(f->fh),
-             (unsigned long)(f->offset));
+  bft_printf("MPI file handle:          %llu\n"
+               "MPI file offset:          %llu\n",
+             (unsigned long long)(f->fh),
+             (unsigned long long)(f->offset));
 #endif
 #endif
 

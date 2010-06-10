@@ -1,4 +1,9 @@
 * 10/06/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove bft_file dependency in fvm_file to improve error handling.
+  modified routine:
+    src/fvm/fvm_file.c
+
+* 10/06/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Comments correction in header.
   modified routines:
     src/base/caltri.f90
