@@ -1,3 +1,10 @@
+* 10/06/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Comments correction in header.
+  modified routines:
+    src/base/caltri.f90
+    src/fvm/fvm_periodicity.c
+    src/fvm/fvm_periodicity.h
+
 * 10/06/2010 - David Monfort <david.monfort@edf.fr>
   Improve the robustness of the Python installer.
   modified files:

@@ -1064,9 +1064,6 @@ fvm_periodicity_get_parent_ids(const fvm_periodicity_t  *this_periodicity,
  *   this_periodicity <-- pointer to periodicity structure
  *   tr_id            <-- id of transformation we are interested in
  *   component_ids    --> component ids, or -1 (size: 3)
- *
- * returns:
- *   periodicity transform's combination level, or -1 in case of error
  *---------------------------------------------------------------------------*/
 
 void

@@ -1320,8 +1320,6 @@ call tstsyr (ntmabs, ntcabs)
 
 !===============================================================================
 ! 19. SORTIE EVENTUELLE DU FICHIER SUITE
-!      (SAUF SI ON EST AU DERNIER PAS DE TEMPS :
-!       ON LE FERA APRES)
 !===============================================================================
 
 iisuit = 0
