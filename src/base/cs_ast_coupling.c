@@ -228,6 +228,7 @@ void CS_PROCF(astgeo, ASTGEO)
 
   }
 
+  ifs_mesh = fvm_nodal_destroy(ifs_mesh);
 
   /* TODO: Adapter l'algo parallel en sequentiel */
 
@@ -414,6 +415,8 @@ void CS_PROCF(astcin, ASTCIN)
 
   BFT_MALLOC(parent_num, n_nodes, cs_int_t);
   fvm_nodal_get_parent_num(mesh_ifs, 0, parent_num);
+
+  mesh_ifs = fvm_nodal_destroy(mesh_ifs);
 
   /* On remplit dans DEPALE les valeurs de deplacement aux noeuds
      couples a deplacement impose */
