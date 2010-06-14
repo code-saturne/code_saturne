@@ -89,17 +89,18 @@ if(1.eq.1) return
 ! 1. EXEMPLE D'OPTIONS DE CALCUL A MODIFIER
 !===============================================================================
 
-!     Pour chaque phase
+! Reading the meteo file
+
+imeteo = 1
+
+! Option for variable density and viscosity
+
+!   For each phase
 
 do iphas = 1, nphas
 
-! --> Masse volumique et viscosite
-
 irovar(iphas) = 0
 ivivar(iphas) = 0
-
-! ---> lecture du fichier meteo
-imeteo = 1
 
 enddo
 

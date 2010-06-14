@@ -542,7 +542,7 @@ if (igrake(iphas).eq.1 .and. ippmod(iatmos).ge.1) then
 
     call atprke                                                   &
     !==========
- ( idbia0 , idbra0 ,                                              &
+ ( idebia , idebra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &
    nscal  , nphas  ,                                              &

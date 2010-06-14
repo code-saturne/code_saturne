@@ -235,7 +235,7 @@ double precision uref2, d2s3
 double precision rhomoy, dh, ustar2
 double precision xintur
 double precision zref,xuref
-double precision ustar,rugd
+double precision ustar,rugd, rugt
 double precision zent,xuent,xvent
 double precision xkent, xeent
 double precision tpent
@@ -289,6 +289,7 @@ d2s3 = 2.d0/3.d0
 zref=10.d0
 xuref=10.d0
 rugd=0.1d0
+rugt=0.1d0
 
 !===============================================================================
 ! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
@@ -370,9 +371,9 @@ do ilelt = 1, nlelt
 
   ustar=xkappa*xuref/log((zref+rugd)/rugd)
   xuent=ustar/xkappa*log((zent+rugd)/rugd)
+  xvent = 0.d0
   xkent=ustar**2/sqrt(cmu)
   xeent=ustar**3/xkappa/(zent+rugd)
-
 
   do iphas = 1, nphas
 

@@ -275,7 +275,6 @@ actt = xkappa/log((distbf+rugt)/rugt)
 ! NB: rib =0 if thermal flux conditions are imposed and tpot1 not defined
 if (abs(utau).le.epzero.or.icodcl(ifac,isca(iscalt(iphas))).eq.3) then
  rib = 0.d0
- if (abs(utau).le.epzero) utau = epzero
 else
  rib = 2.d0*gredu*distbf*(tpotv2-tpotv1)/(tpotv1+tpotv2)/utau/utau
 endif
@@ -300,7 +299,7 @@ endif
   if (abs(fh).le.epzero) fh = epzero
 
   cfnnu = 1.d0/sqrt(fm)
-  cfnns = sqrt(fm)/fh
+  cfnns = fh/sqrt(fm)
   if ((1.d0-rib).gt.epzero)then
     cfnnk = sqrt(1.d0-rib)  ! +correction with turbulent Prandtl
     cfnne = (1.d0-rib)/sqrt(fm)
