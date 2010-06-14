@@ -37,6 +37,12 @@
   modified script:
     bin/cs_case_domain.py
 
+* 12/05/2010 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix a useless test on the number of directions in the radiative transfer
+  module when using the P1 model.
+  modified routine:
+    src/rayt/rayopt.f90
+
 * 05/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve Code_Saturne manuals launch from the main script.
   modified script:

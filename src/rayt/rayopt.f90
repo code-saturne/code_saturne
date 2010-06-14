@@ -417,9 +417,11 @@ if (iirayo.gt.0) then
 
 ! --> NDIREC
 !     Choix entre 32 et 128 directions (cf raysol)
-  if (ndirec.ne.32 .and. ndirec.ne.128 ) then
-    write(nfecra,4020) ndirec
-    iok = iok + 1
+  if (iirayo.eq.1) then
+    if (ndirec.ne.32 .and. ndirec.ne.128 ) then
+      write(nfecra,4020) ndirec
+      iok = iok + 1
+    endif
   endif
 
 ! --> IDIVER
