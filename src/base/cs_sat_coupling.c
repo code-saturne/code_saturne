@@ -1001,7 +1001,8 @@ void CS_PROCF (defloc, DEFLOC)
   int  indic_loc[2] = {0, 0};
 
   char coupled_mesh_name[64];
-  fvm_lnum_t *elt_list = NULL;
+  fvm_lnum_t *c_elt_list = NULL;
+  fvm_lnum_t *f_elt_list = NULL;
   cs_sat_coupling_t  *coupl = NULL;
   fvm_nodal_t  *support_fbr = NULL;
   cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
@@ -1027,41 +1028,21 @@ void CS_PROCF (defloc, DEFLOC)
 
   if (coupl->cell_sup_sel != NULL) {
 
-    sprintf(coupled_mesh_name, _("coupled_cells_%d"), *numcpl);
-
-    BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, fvm_lnum_t);
+    BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, fvm_lnum_t);
 
     cs_selector_get_cell_list(coupl->cell_sup_sel,
                               &(coupl->nbr_cel_sup),
-                              elt_list);
-
-    coupl->cells_sup = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
-                                                      coupled_mesh_name,
-                                                      coupl->nbr_cel_sup,
-                                                      elt_list);
-
-    BFT_FREE(elt_list);
+                              c_elt_list);
 
   }
 
   if (coupl->face_sup_sel != NULL) {
 
-    sprintf(coupled_mesh_name, _("coupled_faces_%d"), *numcpl);
-
-    BFT_MALLOC(elt_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
+    BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
 
     cs_selector_get_b_face_list(coupl->face_sup_sel,
                                 &(coupl->nbr_fbr_sup),
-                                elt_list);
-
-    coupl->faces_sup = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                                      coupled_mesh_name,
-                                                      0,
-                                                      coupl->nbr_fbr_sup,
-                                                      NULL,
-                                                      elt_list);
-
-    BFT_FREE(elt_list);
+                                f_elt_list);
 
   }
 
@@ -1076,6 +1057,33 @@ void CS_PROCF (defloc, DEFLOC)
     MPI_Allreduce (indic_loc, indic_glob, 2, MPI_INT, MPI_MAX,
                    cs_glob_mpi_comm);
 #endif
+
+  if (indic_glob[0] > 0) {
+
+    sprintf(coupled_mesh_name, _("coupled_cells_%d"), *numcpl);
+
+    coupl->cells_sup = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
+                                                      coupled_mesh_name,
+                                                      coupl->nbr_cel_sup,
+                                                      c_elt_list);
+
+  }
+
+  if (indic_glob[1] > 0) {
+
+    sprintf(coupled_mesh_name, _("coupled_faces_%d"), *numcpl);
+
+    coupl->faces_sup = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                      coupled_mesh_name,
+                                                      0,
+                                                      coupl->nbr_fbr_sup,
+                                                      NULL,
+                                                      f_elt_list);
+
+  }
+
+  if (coupl->cell_sup_sel != NULL) BFT_FREE(c_elt_list);
+  if (coupl->face_sup_sel != NULL) BFT_FREE(f_elt_list);
 
   /* Build and initialize associated locator */
 
@@ -1102,49 +1110,50 @@ void CS_PROCF (defloc, DEFLOC)
 
   if (coupl->cell_cpl_sel != NULL) {
 
-    BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, fvm_lnum_t);
+    BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, fvm_lnum_t);
 
     cs_selector_get_cell_list(coupl->cell_cpl_sel,
                               &nbr_cel_cpl,
-                              elt_list);
-
-    fvm_locator_set_nodal(coupl->localis_cel,
-                          coupl->cells_sup,
-                          1,
-                          3,
-                          nbr_cel_cpl,
-                          elt_list,
-                          mesh_quantities->cell_cen);
-
-    BFT_FREE(elt_list);
+                              c_elt_list);
 
   }
+
+  fvm_locator_set_nodal(coupl->localis_cel,
+                        coupl->cells_sup,
+                        1,
+                        3,
+                        nbr_cel_cpl,
+                        c_elt_list,
+                        mesh_quantities->cell_cen);
+
+  if (coupl->cell_cpl_sel != NULL) BFT_FREE(c_elt_list);
 
 
   if (coupl->face_cpl_sel != NULL) {
 
-    if (indic_glob[1] > 0)
-      support_fbr = coupl->faces_sup;
-    else
-      support_fbr = coupl->cells_sup;
-
-    BFT_MALLOC(elt_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
+    BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
 
     cs_selector_get_b_face_list(coupl->face_cpl_sel,
                                 &nbr_fbr_cpl,
-                                elt_list);
-
-    fvm_locator_set_nodal(coupl->localis_fbr,
-                          support_fbr,
-                          1,
-                          3,
-                          nbr_fbr_cpl,
-                          elt_list,
-                          mesh_quantities->b_face_cog);
-
-    BFT_FREE(elt_list);
+                                f_elt_list);
 
   }
+
+  if (indic_glob[1] > 0)
+    support_fbr = coupl->faces_sup;
+  else
+    support_fbr = coupl->cells_sup;
+
+  fvm_locator_set_nodal(coupl->localis_fbr,
+                        support_fbr,
+                        1,
+                        3,
+                        nbr_fbr_cpl,
+                        f_elt_list,
+                        mesh_quantities->b_face_cog);
+
+  if (coupl->face_cpl_sel != NULL) BFT_FREE(f_elt_list);
+
 
   /* Computed some quantities needed for a centred-like interpolation */
 

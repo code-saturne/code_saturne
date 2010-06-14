@@ -402,15 +402,15 @@ do ivar = 1, nvcp
 
 ! -- DECENTRE (SOLU ou UPWIND)
 
-        if(flumab.ge.0.d0) then
-          rcodcl(ifac,ivar,1) = xip
-        else
-          rcodcl(ifac,ivar,1) = xjp
-        endif
+!        if(flumab.ge.0.d0) then
+!          rcodcl(ifac,ivar,1) = xip
+!        else
+!          rcodcl(ifac,ivar,1) = xjp
+!        endif
 
 ! -- CENTRE
 
-!        rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip
+        rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip
 
       endif
 
