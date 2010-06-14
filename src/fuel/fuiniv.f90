@@ -220,6 +220,8 @@ ipass = ipass + 1
 idebia = idbia0
 idebra = idbra0
 
+d2s3 = 2.d0/3.d0
+
 !===============================================================================
 ! 2. INITIALISATION DES INCONNUES :
 !      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
