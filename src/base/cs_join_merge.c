@@ -99,9 +99,9 @@ BEGIN_C_DECLS
 
 enum {
 
-  CS_JOIN_MERGE_MAX_GLOB_ITERS = 25,  /* Max. number of glob. iter. for finding
+  CS_JOIN_MERGE_MAX_GLOB_ITERS = 50,  /* Max. number of glob. iter. for finding
                                          equivalent vertices */
-  CS_JOIN_MERGE_MAX_LOC_ITERS = 50    /* Max. number of loc. iter. for finding
+  CS_JOIN_MERGE_MAX_LOC_ITERS = 100   /* Max. number of loc. iter. for finding
                                          equivalent vertices */
 };
 
@@ -515,24 +515,26 @@ _is_spread_not_converged(cs_int_t          n_vertices,
  *  vertex is equal to the minimal global number.
  *
  * parameters:
- *  vtx_eset <-- structure dealing with vertices equivalences
- *  vtx_tag  <-> tag for each vertex
+ *  n_vertices <-- local number of vertices
+ *  vtx_eset   <-- structure dealing with vertices equivalences
+ *  vtx_tag    <-> tag for each vertex
  *---------------------------------------------------------------------------*/
 
 static void
-_spread_tag(const cs_join_eset_t  *vtx_eset,
+_spread_tag(cs_int_t               n_vertices,
+            const cs_join_eset_t  *vtx_eset,
             fvm_gnum_t             vtx_tag[])
 {
-  cs_int_t  i;
-
+  cs_int_t  i, v1_id, v2_id;
+  fvm_gnum_t  v1_gnum, v2_gnum;
   cs_int_t  *equiv_lst = vtx_eset->equiv_couple;
 
   for (i = 0; i < vtx_eset->n_equiv; i++) {
 
-    cs_int_t  v1_id = equiv_lst[2*i] - 1;
-    cs_int_t  v2_id = equiv_lst[2*i+1] - 1;
-    fvm_gnum_t  v1_gnum = vtx_tag[v1_id];
-    fvm_gnum_t  v2_gnum = vtx_tag[v2_id];
+    v1_id = equiv_lst[2*i] - 1, v2_id = equiv_lst[2*i+1] - 1;
+    assert(v1_id < n_vertices);
+    assert(v1_id < n_vertices);
+    v1_gnum = vtx_tag[v1_id], v2_gnum = vtx_tag[v2_id];
 
     if (v1_gnum != v2_gnum) {
 
@@ -567,7 +569,7 @@ _local_spread(const cs_join_eset_t  *vtx_eset,
 
   _loc_merge_counter++;
 
-  _spread_tag(vtx_eset, vtx_tag);
+  _spread_tag(n_vertices, vtx_eset, vtx_tag);
 
   while (_is_spread_not_converged(n_vertices, prev_vtx_tag, vtx_tag)) {
 
@@ -584,7 +586,7 @@ _local_spread(const cs_join_eset_t  *vtx_eset,
     for (i = 0; i < n_vertices; i++)
       prev_vtx_tag[i] = vtx_tag[i];
 
-    _spread_tag(vtx_eset, vtx_tag);
+    _spread_tag(n_vertices, vtx_eset, vtx_tag);
   }
 }
 

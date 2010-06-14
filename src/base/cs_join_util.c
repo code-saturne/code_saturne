@@ -39,6 +39,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <math.h>
 
 /*----------------------------------------------------------------------------
  * BFT library headers
@@ -111,6 +112,7 @@ _join_param_define(int      join_num,
                    int      perio_num,
                    int      verbosity)
 {
+  double  cplane;
   cs_join_param_t  param;
 
   param.num = join_num;
@@ -127,6 +129,8 @@ _join_param_define(int      join_num,
      the face splitting) */
 
   param.plane = plane;
+  cplane = cos(param.plane *acos(-1.0)/180.);
+  param.plane_criteria = cplane * cplane;
 
   /* Coef. used to modify the tolerance associated to each vertex BEFORE the
      merge operation.

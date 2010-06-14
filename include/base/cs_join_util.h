@@ -112,7 +112,8 @@ typedef struct {
   /* maximum angle between normals of two faces considered to
      be in the same plane (for face split) */
 
-  float  plane;
+  float  plane; /* in degree */
+  double plane_criteria; /* cos(plane in rad)*cos(plane in rad) */
 
   /* Coef. used to modify the tolerance associated to each vertex before the
      merge operation.

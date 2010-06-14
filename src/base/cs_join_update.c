@@ -2998,9 +2998,12 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
     BFT_MALLOC(new_fgnum, n_fb_faces, fvm_gnum_t);
 
   max_size = 0;
-  for (i = 0; i < mesh->n_b_faces; i++)
+  for (i = 0; i < n_ib_faces; i++)
     max_size = CS_MAX(max_size,
                       mesh->b_face_vtx_idx[i+1]-mesh->b_face_vtx_idx[i]);
+  for (i = 0; i < jmesh->n_faces; i++)
+    max_size = CS_MAX(max_size,
+                      jmesh->face_vtx_idx[i+1]-jmesh->face_vtx_idx[i]);
 
   BFT_MALLOC(gtmp, 2*(max_size+1), fvm_gnum_t);
   BFT_MALLOC(ltmp, max_size, cs_int_t);
@@ -4371,7 +4374,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
     mesh->b_face_vtx_idx[i] = mesh->b_face_vtx_idx[i-1] + 1;
   mesh->b_face_vtx_idx[0] = 1;
 
-  BFT_REALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_idx[mesh->n_b_faces],
+  BFT_REALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_idx[mesh->n_b_faces]-1,
               cs_int_t);
 
   /* Interior face treatment */
@@ -4432,7 +4435,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
     mesh->i_face_vtx_idx[i] = mesh->i_face_vtx_idx[i-1] + 1;
   mesh->i_face_vtx_idx[0] = 1;
 
-  BFT_REALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_idx[mesh->n_i_faces],
+  BFT_REALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_idx[mesh->n_i_faces]-1,
               cs_int_t);
 
   if (param.verbosity > 0) { /* Post-treat clean faces */
@@ -4443,7 +4446,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
     buf[0] = n_i_clean_faces;
     buf[1] = n_b_clean_faces;
 
- #if defined(HAVE_MPI)
+#if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {
       MPI_Allreduce(buf, gbuf, 2, FVM_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
 

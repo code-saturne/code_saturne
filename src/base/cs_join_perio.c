@@ -734,6 +734,9 @@ void CS_PROCF(defpr1, DEFPR1)
                              axis,
                              inv);
 
+  /* Add a tag to indicate the use of rotation */
+  cs_glob_mesh->have_rotation_perio = 1;
+
   if (_criteria != NULL)
     cs_base_string_f_to_c_free(&_criteria);
 }
@@ -828,6 +831,9 @@ void CS_PROCF(defpg1, DEFPG1)
                           *plane,
                           *verbosity,
                           (double (*)[4])matrix);
+
+  /* Add a tag to indicate the use of rotation */
+  cs_glob_mesh->have_rotation_perio = 1;
 
   if (_criteria != NULL)
     cs_base_string_f_to_c_free(&_criteria);
@@ -1367,10 +1373,9 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
   }
 
   n_new_vertices = 0;
-  for (i = 0; i < jmesh->n_vertices; i++) {
+  for (i = 0; i < jmesh->n_vertices; i++)
     if (vtag[i] > 0)
       n_new_vertices++;
-  }
 
   BFT_REALLOC(jmesh->vertices,
               jmesh->n_vertices + n_new_vertices,
