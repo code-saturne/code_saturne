@@ -317,10 +317,11 @@ the
 \label{prg_library}%
 Information about the content of the \CS base directories is given below. It
 is not of vital interest for the user, but given only as general
-information. Indeed, the case preparer command \texttt{cs~create} automatically extracts the
-necessary files and prepares the launch script without the user having to go
-directly into the \CS base directories (see \S\ref{prg_cscreate}).
-The \texttt{cs~info} command gives direct
+information. Indeed, the case preparer command \texttt{code\_saturne~create}
+automatically extracts the necessary files and prepares the launch script
+without the user having to go directly into the \CS base directories
+(see \S\ref{prg_cscreate}).
+The \texttt{code\_saturne~info} command gives direct
 access to the most needed information (especially the user and programmer's
 guides and the tutorial) without the user having to look for them in the \CS
 directories.
@@ -344,8 +345,8 @@ under subdirectories corresponding to each module:
 \texttt{mati} (Matisse module),
 \texttt{pprt} (general specific physics routines) and
 \texttt{rayt} (radiative heat transfer).
-The case preparer command \texttt{cs~create} copies all these files in the
-user directory \texttt{SRC/REFERENCE} during the case preparation.
+The case preparer command \texttt{code\_saturne~create} copies all these files
+in the user directory \texttt{SRC/REFERENCE} during the case preparation.
 
 The ``include'' files are available in the directory
 \texttt{include}, under similar subdirectories corresponding to each module:
@@ -369,15 +370,16 @@ prepare and run a standard case:
 \begin{list}{$\bullet$}{}
 
 \item Check the version of \CS set for use in the environment variables
-(\texttt{cs~info --version}). If it does not correspond to the desired version,
-update the \texttt{.profile} file to set the environment
+(\texttt{code\_saturne~info --version}). If it does not correspond to
+the desired version, update the \texttt{.profile} file to set the environment
 variables correctly. Log out of the session and
 log in again to take the modifications into account properly (cf.
 \S\ref{prg_environementCS}).
 
-\item Prepare the different directories using the \texttt{cs~create} command
-(see \S\ref{prg_cscreate}) and, when needed, add the directories \texttt{DATA\_SYR}
-and \texttt{SRC\_SYR} which are required to accomodate the \syrthes files.
+\item Prepare the different directories using the \texttt{code\_saturne~create}
+command (see \S\ref{prg_cscreate}) and, when needed, add the directories
+\texttt{DATA\_SYR} and \texttt{SRC\_SYR} which are required to accomodate the
+\syrthes files.
 
 \item Place the mesh(es) in the directory \texttt{MESH}. Make sure they are
 in a format compliant with \CS (see \S\ref{prg_maillages}). There can be
@@ -693,21 +695,21 @@ way whenever they wish.
 \subsection{Case preparer}
 %==================================
 \label{prg_cscreate}%
-The case preparer command \texttt{cs~create} automatically creates a
+The case preparer command \texttt{code\_saturne~create} automatically creates a
 study directory according to the typical architecture and copies and
 pre-fills an example of calculation launch script.
 
-The syntax of \texttt{cs~create} is as follows:
+The syntax of \texttt{code\_saturne~create} is as follows:
 
 \noindent
-\texttt{cs~create --study STUDY CASE\_NAME1 CASE\_NAME2...}\\
+\texttt{code\_saturne~create --study STUDY CASE\_NAME1 CASE\_NAME2...}\\
 creates a study directory \texttt{STUDY} with case subdirectories
 \texttt{CASE\_NAME1} and \texttt{CASE\_NAME2}...
 If no case name is given, a default case directory called \texttt{CASE1} is
 created.
 
 \noindent
-\texttt{cs~create --case DEBIT3 --case DEBIT4}\\
+\texttt{code\_saturne~create --case DEBIT3 --case DEBIT4}\\
 executed in the directory \texttt{STUDY} adds the case directories
 \texttt{DEBIT3} and \texttt{DEBIT4}.
 
@@ -715,18 +717,19 @@ An option \texttt{--nogui} is available for the use of \CS
 without Graphic Interface (see \S\ref{prg_gui}). This option must
 be either the first or the last argument and appear only once.
 
-In the directory \texttt{DATA}, the \texttt{cs~create} command places a
-subdirectory \texttt{THCH} containing examples of thermochemical data
+In the directory \texttt{DATA}, the \texttt{code\_saturne~create} command
+places a subdirectory \texttt{THCH} containing examples of thermochemical data
 files used for pulverised coal combustion,
 gas combustion or electric arc. The file to be used for the calculation must be
 copied directly in the \texttt{DATA} directory and its name must be referenced
 in the launch script in the variable THERMOCHEMISTRY\_DATA. All other files in
 the \texttt{DATA} or in the \texttt{THCH} will be ignored.\\
-The \texttt{cs~create} command also places in the directory \texttt{DATA}
-the launch script for the Graphical User Interface: \texttt{SaturneGUI}.
+The \texttt{code\_saturne~create} command also places in the directory
+\texttt{DATA} the launch script for the Graphical User Interface:
+\texttt{SaturneGUI}.
 
 
-In the directory \texttt{SRC}, the \texttt{cs~create} command creates a
+In the directory \texttt{SRC}, the \texttt{code\_saturne~create} command creates a
 subdirectory \texttt{REFERENCE} containing all the user subroutines,
 classified by module type:  \texttt{base},
 \texttt{cfbl}, \texttt{cogz}, \texttt{cplv}, \texttt{elec}, \texttt{fuel},
@@ -734,7 +737,7 @@ classified by module type:  \texttt{base},
 Only the user subroutines placed directly under
 the directory \texttt{SRC} will be considered. The others will be ignored.
 
-In the directory \texttt{SCRIPTS}, the \texttt{cs~create} command copies and
+In the directory \texttt{SCRIPTS}, the \texttt{code\_saturne~create} command copies and
 pre-fills an example of the launch script: \texttt{runcase}.
 The study, case and user name are filled
 automatically in the launch script, as are the paths leading to the
@@ -778,7 +781,6 @@ from the file suffix: %
 {\em``\texttt{.ccm}''} for STAR-CCM+,
 {\em``\texttt{.cgns}''} for CGNS,
 {\em``\texttt{.des}''} for \simail,
-{\em``\texttt{.hex}''} for IGG/Hexa,
 {\em``\texttt{.med}''} for \med,
 {\em``\texttt{.msh}''} for \gmsh,
 {\em``\texttt{.neu}''} for \gambit neutral,
@@ -848,7 +850,7 @@ the I-deas tool has not focused on the CFD (or even meshing) market since
 many years, it is handled (at least in part) by many tools, and may
 be considered as a major ``legacy'' format. It may contain many different
 datasets, relative to CAD, meshing, materials, calculation results,
-or part representation. Most of these datasets are ignored by CS,
+or part representation. Most of these datasets are ignored by \CS,
 and only those relative to vertex, element, group, and coordinate system
 definitions are handled.
 
@@ -1606,7 +1608,7 @@ command line options.
 %==================================
 \label{prg_runcase}%
 
-The case preparer command \texttt{cs~create} places an example of launch script,
+The case preparer command \texttt{code\_saturne~create} places an example of launch script,
 \texttt{runcase}, in the \texttt{SCRIPTS} directory. This script is quite general
 and known to work on every architecture \CS has been tested on. The beginning
 if the script contains the definition of certain parameters (environment
@@ -1641,10 +1643,10 @@ Kernel (see \ref{prg_optappelnoy})
 
 \begin{list}{$\bullet$}{}
 \item \texttt{STUDY}: name of the study directory (automatically set by
-\texttt{cs~create}, see \S\ref{prg_architecture})
+\texttt{code\_saturne~create}, see \S\ref{prg_architecture})
 
 \item \texttt{CASE}: name of the case directory (automatically set by
-\texttt{cs~create}, see \S\ref{prg_architecture})
+\texttt{code\_saturne~create}, see \S\ref{prg_architecture})
 
 \item \texttt{PARAM}: name of the Interface parameter file, if necessary (see
 \ref{prg_optappelnoy})
@@ -1746,23 +1748,23 @@ adaptation with the software Homard. This option is still under development and
 restricted to developpers use.
 
 \item \texttt{CASEDIR}: root directory of the calculation. This variable is
-automatically set by \texttt{cs~create} and should not be changed.
+automatically set by \texttt{code\_saturne~create} and should not be changed.
 
 \item \texttt{DATA}: DATA directory of the case (see \ref{prg_architecture}).
-This variable is automatically set by \texttt{cs~create} and should not be
+This variable is automatically set by \texttt{code\_saturne~create} and should not be
 changed.
 
 \item \texttt{RESU}: RESU directory of the case (see \ref{prg_architecture}).
-This variable is automatically set by \texttt{cs~create} and should not be
+This variable is automatically set by \texttt{code\_saturne~create} and should not be
 changed.
 
 \item \texttt{SRC}: SRC directory of the case (see \ref{prg_architecture}).
-This variable is automatically set by \texttt{cs~create} and should not be
+This variable is automatically set by \texttt{code\_saturne~create} and should not be
 changed.
 
 \item \texttt{SCRIPTS}: SCRIPTS directory of the case (see
 \ref{prg_architecture}). This variable is automatically set by
-\texttt{cs~create} and should not be changed.
+\texttt{code\_saturne~create} and should not be changed.
 
 \item \texttt{RESTART\_IN}: directory containing the files for calculation
 restart.
@@ -1771,7 +1773,7 @@ restart.
 
 \item \texttt{MESHDIR}: directory containing the mesh files (see
 \ref{prg_architecture}). This variable is automatically set by
-\texttt{cs~create} and should generally not be changed.
+\texttt{code\_saturne~create} and should generally not be changed.
 
 \item \texttt{DATA\_SYR}: directory for the \syrthes data. This directory has
 to be created by the user. It is advised to keep the location proposed
@@ -1906,20 +1908,20 @@ Prepare batch analysis), the PARAM section is filled automatically as are the
 other parameters specified through the Interface.
 
 
-\minititre{Note: option \texttt{--nogui} of the \texttt{cs~create} command}
+\minititre{Note: option \texttt{--nogui} of the \texttt{code\_saturne~create} command}
 When a calculation is using the Interface but, for some reason, some extra
 parameters need to be specified in the subroutine \texttt{usini1}, the latter
 must be placed in the directory \texttt{SRC}. But, while doing this, all the
 parameters appearing in \texttt{usini1} will also be taken into account. In
 order to prevent the user from having to respecify in \texttt{usini1} all that
-he has already specified through the Interface, \texttt{cs~create} automatically
+he has already specified through the Interface, \texttt{code\_saturne~create} automatically
 comments out the examples in \texttt{usini1} (\texttt{Cex} at the beginning of
 each line) while copying it in the directory \texttt{REFERENCE}. Therefore, the user
 only needs to uncomment the specific parts of \texttt{usini1} he wants to modify,
 and the rest of the examples will be ignored.\\
 On the contrary, if the Interface will not be used, then all the parameters in
 \texttt{usini1} have to be specified. In that case, using the \texttt{--nogui}
-option of \texttt{cs~create} will prevent it from commenting \texttt{usini1}
+option of \texttt{code\_saturne~create} will prevent it from commenting \texttt{usini1}
 out, thus saving the user the tedious task of uncommenting all the lines (and
 the risk of skipping some of them).
 
@@ -2127,7 +2129,7 @@ and does not detailed knowledge of the \pcs command line.
 Nonetheless, it may be useful to call the \pcs manually
 in certain situations, especially for frequent verification when
 building a mesh, so its use is described here. Verification
-may also be done using the \texttt{cs~check\_mesh} command,
+may also be done using the \texttt{code\_saturne~check\_mesh} command,
 which takes a subset of the same command-line arguments.
 
 The \pcs is controlled using command-line arguments, some of these
@@ -4249,7 +4251,7 @@ subroutine. In the case that a parameter is specified in the interface
  and in the user subroutine, it is the value in the user subroutine that
  is taken into acount. It is for that reason that all the examples of
  user subroutines are placed in the \texttt{REFERENCE} directory by the
- case preparer \texttt{cs~create}.
+ case preparer \texttt{code\_saturne~create}.
 
 
 
@@ -4408,11 +4410,11 @@ $\bullet\ $ When using the interface, only the
 supplementary parameters (which can not be defined in the interface)
 should appear in \texttt{usini1}. To spare the user the necessity to
 delete the other parameters appearing as examples in the subroutine, the
-utility program \texttt{cs~create} comments automatically all the
+utility program \texttt{code\_saturne~create} comments automatically all the
 example lines of \texttt{usini1} with a code \texttt{!ex}. The user
 needs then only to uncomment the lines which are useful in his
 case. This function of
-\texttt{cs~create} can be inactivated with
+\texttt{code\_saturne~create} can be deactivated with
 the option \texttt{--nogui} (useful if the user knows that he will not
 use the interface).
 
@@ -4444,7 +4446,7 @@ For more details about the treatment of boundary conditions, the user
 may refer to the theoretical and computer documentation \cite{theory} of
 the subroutine \texttt{condli} (for the wall conditions, see
 \texttt{clptur}) (to access to this document on a workstation, use
-\mbox{\texttt{cs~info --guide theory}}).
+\mbox{\texttt{code\_saturne~info --guide theory}}).
 
 From the user point of view, the boundary conditions are totally
 determined by three arrays\footnote{except with Lagrangian}:

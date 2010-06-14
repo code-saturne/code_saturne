@@ -1,5 +1,5 @@
 \programme{ Introduction}
-{\huge sub-routines : co**, cp**, fu** ...}
+{\huge sub-routines: co**, cp**, fu** ...}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -8,8 +8,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 From a CFD point of view combustion is a ({\small sometimes very})
-complicated way to determine $\rho$.\\ Models needs few extra fields
-of scalar with regular transport equations, some of them with a
+complicated way to determine $\rho$.\\ Models needs few extra scalar
+fields with regular transport equations, some of them with a
 reactive or interfacial source term.\\ Modelling of combustion is able
 to deal with gas phase combustion ({\small diffusion, premix, partial
 premix}), and with solid or liquid fuels.\\ Combustion of condensed
@@ -21,8 +21,8 @@ That is the reason why many modules are similar for gas, coal and fuel
 combustion modelling. Obviously, the thermodynamical description of
 gas species is similar in every version as close as possible to the
 JANAF rules.\\ All models are developped in both adiabatic and
-unadiabatic ({\small permeatic : heat loss, eg. by radiation})
-version, beyond the standard, the rule to call models is :
+unadiabatic ({\small permeatic: heat loss, eg. by radiation})
+version, beyond the standard, the rule to call models is:
 
 IPPMOD(index model)  =  -1     unused
 
@@ -59,7 +59,7 @@ realised ({\small without blast ...}) and the mixture is introduced in
 the boiler ({\small or combustor can}). In common industrial
 conditions the combustion is mainly limited by the mixing of fresh
 gases ({\small inert}) and burnt ones resulting in the inflammation of
-the first and their conversion to burnt ones ; so an assumption of
+the first and their conversion to burnt ones; so an assumption of
 chemistry much faster than mixing induces an intermittent regime. The
 gas flow is constituted of totally fresh and totally burnt gases
 ({\small the flamme containing the gases during their transformation
@@ -102,24 +102,24 @@ of different sizes. After its introduction in the boiler, coal
 particles undergoes drying, devolatilisation ({\small heating of coal
 turn it in a mixture of char and gases}), heterogenous combustion
 ({\small of char in carbon monoxide}) leaving ash particles.\\ Each of
-these phenomena are taken into account for some class of particles : a
+these phenomena are taken into account for some class of particles: a
 class is caracterised by a coal ({\small it is useful to burn mixture
 of coals with differents ranks or mixture of coal with biomasse ...})
 and an initial diameter. For each class, \CS computes the number and
 the mass of particles by unit mass of mixture.\\ The main assumption
-is to solve only one velocity ({\small and pressure}) field : it means
+is to solve only one velocity ({\small and pressure}) field: it means
 the discrepancy of velocity between coal particles and gases is
 assumed negligible.\\ Due to the radiation and heterogeneous
 combustion, temperature can be different for gas and different size
-particles : so the specific enthalpy of each particle class is
+particles: so the specific enthalpy of each particle class is
 solved.\\ The description of coal pyrolysis proposed by Kobayashi \&
 Ubhayakar \cite{4} is used, leading to two source terms for light and
 heavy volatile matters ({\small the moderate temperature reaction
 produces gases with low molecular mass, the high temperature reaction
 produces heavier gases and less char}) represented by two passive
-scalars : mixture fractions.  The description of the heterogeneous
+scalars: mixture fractions.  The description of the heterogeneous
 reaction ({\small which produce carbon monoxide}) produces a source
-term for the carbon : a mixture fraction who can't be greater than the
+term for the carbon: a mixture fraction who can't be greater than the
 results of stoechiometric oxidation of char by air ({\small carbon
 can't be free in gas phase, it is always linked in an oxide}).\\ The
 retained model for the gas phase combustion is the assumption of
@@ -142,12 +142,12 @@ energy. Environmental regulation turning it more difficult and less
 acceptable, a focus is needed on pollutant emission mainly sulphur
 oxide and particles ({\small condensation of sulphuric acid can
 aggregate soot}).\\ The description of fuel evaporation is done with
-respect to its heaviness : after a minimum temperature is reached, the
+respect to its heaviness: after a minimum temperature is reached, the
 gain of enthalpy is splitted between heating and evaporation. This way
 the evaporation takes place on a range of temperature ({\small which
 can be large}). The "total" evaporation is common for light ({\small
-domestic}) oil but impossible for heavy ones : at high temperature,
-during the last evaporation, a crakink reaction appears : so a
+domestic}) oil but impossible for heavy ones: at high temperature,
+during the last evaporation, a crakink reaction appears: so a
 particle similar to char leaves. The heterogeneous oxydation of this
 char particle is very similar to coal char ones.\\ Fuel injection is
 described ({\small 2006 version}) with only one class of particles
@@ -179,8 +179,8 @@ to be converted to SO2 during gas combustion}).
 Combust. Sci. Technol., 161, pp. 351-390, (2000)
 
 \bibitem{3}
-{\sc Ribert, G. ; Champion, M. and Plion, P.},\\
-{\em Modeling turbulent reactive flows with variable equivalence ratio : application to the calculation of a reactive shear layer},\\
+{\sc Ribert, G.; Champion, M. and Plion, P.},\\
+{\em Modeling turbulent reactive flows with variable equivalence ratio: application to the calculation of a reactive shear layer},\\
 Combust. Sci. Technol., 176, pp. 907-923, (2004)
 
 \bibitem{4}

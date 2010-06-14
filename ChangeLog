@@ -1,3 +1,35 @@
+* 21/05/2010 - Pascal Nicolas <pascal.nicolas@incka.fr>
+  Update the tutorial description.
+  modified files:
+    doc/tutorial/case4.tex
+    doc/tutorial/graphics/V-11.png
+    doc/tutorial/graphics/V-12.png
+    doc/tutorial/graphics/V-14.png
+    doc/tutorial/graphics/V-15.png
+    doc/tutorial/graphics/V-16.png
+    doc/tutorial/graphics/V-17.png
+    doc/tutorial/graphics/V-3.png
+    doc/tutorial/graphics/V-5.png
+    doc/tutorial/graphics/V-6.png
+    doc/tutorial/graphics/V-7.png
+    doc/tutorial/graphics/V-9.png
+    doc/tutorial/tuto_case1.tex
+    doc/tutorial/tuto_case3.tex
+    doc/tutorial/tuto_case4.tex
+
+* 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor update to the documentation (mostly English corrections).
+  modified files:
+    doc/theory/bilsc2.tex
+    doc/theory/combbase.tex
+    doc/theory/combfuel.tex
+    doc/theory/combgaz.tex
+    doc/theory/thermo.tex
+    doc/user/a1_autovalid.tex
+    doc/user/graphics/cs_components.fig
+    doc/user/saturne1.tex
+    doc/user/saturne2.tex
+
 * 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a valgrind warning for an uninitialized array in the quality tests.
   modified routine:
