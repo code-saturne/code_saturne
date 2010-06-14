@@ -25,7 +25,8 @@ properly. If this behaviour is not wanted, set the "download" variable
 to "no" in the setup script.
 
 It is possible to specify her/his own Python executable through the "python"
-variable, as well as BLAS libraries through the "blas" variable.
+variable, as well as BLAS libraries through the "blas" variable, or Metis and
+Scotch through similar variables.
 
 SYRTHES installation path (for coupling with the thermal code SYRTHES) will be
 provided with the "syrthes" variable.
@@ -45,7 +46,6 @@ the build directory, ...)
   order of install should be the following:
   - libxml2 (it is advised to use the distrib own package)
   - swig (it is advised to use the distrib own package)
-  - Metis
   - MPI
   - CGNS
   - HDF5
@@ -59,6 +59,8 @@ the build directory, ...)
   The following packages cannot be installed
   - Zlib
   - BLAS
+  - Metis
+  - Scotch
   - PyQT
   - Python
 
