@@ -1,7 +1,12 @@
-* 26/05/2010 - David Monfort <david.monfort@edf.fr>
+* 28/05/2010 - David Monfort <david.monfort@edf.fr>
   Same fix as the one below on clptur, now concerns the rough walls.
   modified routine:
     src/base/clptrg.f90
+
+* 28/05/2010 - David Monfort <david.monfort@edf.fr>
+  Don't use the type bool, use cs_bool_t instead (thanks to Charles Moulinec).
+  modified routine:
+    src/base/cs_join_set.c
 
 * 26/05/2010 - David Monfort <david.monfort@edf.fr>
   Fix the wall treatment management in case of mobile mesh for rotating

@@ -148,7 +148,7 @@ _order_local_test_s2(const fvm_lnum_t  number[],
 
   for (i = 1 ; i < n_elts ; i++) {
     size_t i_prev, k;
-    bool unordered = false;
+    cs_bool_t unordered = false;
     i_prev = i-1;
     for (k = 0; k < 2; k++) {
       if (number[i_prev*2 + k] < number[i*2 + k])
