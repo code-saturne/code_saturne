@@ -415,23 +415,23 @@ _print_cell_neighbor_info(const cs_mesh_t  *mesh)
 #endif
 
     for (i = 0, j = 1; i < n_steps - 1; i++, j++)
-      bft_printf("    %3d : [ %10d ; %10d [ = %10lu\n",
+      bft_printf("    %3d : [ %10d ; %10d [ = %10llu\n",
                  i+1,
                  (int)(n_min_neighbors + i*step),
                  (int)(n_min_neighbors + j*step),
-                 (unsigned long)(count[i]));
+                 (unsigned long long)(count[i]));
 
-    bft_printf("    %3d : [ %10d ; %10d ] = %10lu\n",
+    bft_printf("    %3d : [ %10d ; %10d ] = %10llu\n",
                n_steps,
                (int)(n_min_neighbors + (n_steps - 1)*step),
                n_max_neighbors,
-               (unsigned long)(count[n_steps - 1]));
+               (unsigned long long)(count[n_steps - 1]));
   }
 
   else { /* if (n_min_neighbors == n_max_neighbors) */
-    bft_printf("    %3d : [ %10d ; %10d ] = %10lu\n",
+    bft_printf("    %3d : [ %10d ; %10d ] = %10llu\n",
                1, n_min_neighbors, n_max_neighbors,
-               (unsigned long)mesh->n_g_cells);
+               (unsigned long long)mesh->n_g_cells);
 
   }
 
@@ -1487,15 +1487,15 @@ cs_mesh_print_info(const cs_mesh_t  *mesh,
                    const char       *name)
 {
   bft_printf(_(" %s\n"
-               "     Number of cells:          %lu\n"
-               "     Number of interior faces: %lu\n"
-               "     Number of boundary faces: %lu\n"
-               "     Number of vertices:       %lu\n"),
+               "     Number of cells:          %llu\n"
+               "     Number of interior faces: %llu\n"
+               "     Number of boundary faces: %llu\n"
+               "     Number of vertices:       %llu\n"),
              name,
-             (unsigned long)(mesh->n_g_cells),
-             (unsigned long)(mesh->n_g_i_faces),
-             (unsigned long)(mesh->n_g_b_faces),
-             (unsigned long)(mesh->n_g_vertices));
+             (unsigned long long)(mesh->n_g_cells),
+             (unsigned long long)(mesh->n_g_i_faces),
+             (unsigned long long)(mesh->n_g_b_faces),
+             (unsigned long long)(mesh->n_g_vertices));
 }
 
 /*----------------------------------------------------------------------------

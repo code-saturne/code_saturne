@@ -1157,8 +1157,8 @@ _echo_header(const char      *sec_name,
   /* Instructions */
 
   bft_printf(_("    section name:           \"%s\"\n"
-               "    number of elements:     %lu\n"),
-             sec_name, (unsigned long)n_elts);
+               "    number of elements:     %llu\n"),
+             sec_name, (unsigned long long)n_elts);
 
   if (n_elts > 0) {
 
@@ -1279,8 +1279,8 @@ _echo_data(size_t           echo,
         const fvm_lnum_t *_elts = elts;
 
         for (i = echo_start ; i < echo_end ; i++)
-          bft_printf("    %10lu : %12d\n",
-                     (unsigned long)(i + num_shift), *(_elts + i));
+          bft_printf("    %10llu : %12d\n",
+                     (unsigned long long)(i + num_shift), *(_elts + i));
       }
       break;
 
@@ -1290,9 +1290,9 @@ _echo_data(size_t           echo,
         const fvm_gnum_t *_elts = elts;
 
         for (i = echo_start ; i < echo_end ; i++)
-          bft_printf("    %10lu : %12lu\n",
-                     (unsigned long)(i + num_shift),
-                     (unsigned long)*(_elts + i));
+          bft_printf("    %10llu : %12llu\n",
+                     (unsigned long long)(i + num_shift),
+                     (unsigned long long)*(_elts + i));
       }
       break;
 
@@ -1302,8 +1302,8 @@ _echo_data(size_t           echo,
         const cs_real_t *_elts = elts;
 
         for (i = echo_start ; i < echo_end ; i++)
-          bft_printf("    %10lu : %12.5e\n",
-                     (unsigned long)(i + num_shift), *(_elts + i));
+          bft_printf("    %10llu : %12.5e\n",
+                     (unsigned long long)(i + num_shift), *(_elts + i));
       }
       break;
 
@@ -1313,11 +1313,11 @@ _echo_data(size_t           echo,
 
         for (i = echo_start ; i < echo_end ; i++) {
           if (*(_elts + i) != '\0')
-            bft_printf("    %10lu : '%c'\n",
-                       (unsigned long)(i + num_shift), *(_elts + i));
+            bft_printf("    %10llu : '%c'\n",
+                       (unsigned long long)(i + num_shift), *(_elts + i));
           else
-            bft_printf("    %10lu : '\\0'\n",
-                       (unsigned long)(i + num_shift));
+            bft_printf("    %10llu : '\\0'\n",
+                       (unsigned long long)(i + num_shift));
         }
       }
       break;
@@ -1809,8 +1809,8 @@ _write_padding(size_t    align,
 
       if (pad_size != n_written)
         bft_error(__FILE__, __LINE__, 0,
-                  _("Error writing %lu bytes to file \"%s\"."),
-                  (unsigned long)pad_size, fvm_file_get_name(outp->f));
+                  _("Error writing %llu bytes to file \"%s\"."),
+                  (unsigned long long)pad_size, fvm_file_get_name(outp->f));
     }
   }
 }
@@ -1986,8 +1986,8 @@ _write_header(const char      *sec_name,
 
   if (write_size != (fvm_file_off_t)n_written)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error writing %lu bytes to file \"%s\"."),
-              (unsigned long)write_size, fvm_file_get_name(outp->f));
+              _("Error writing %llu bytes to file \"%s\"."),
+              (unsigned long long)write_size, fvm_file_get_name(outp->f));
 
   if (outp->echo >= CS_IO_ECHO_HEADERS)
     _echo_header(sec_name, n_vals, elt_type);
@@ -2009,9 +2009,10 @@ _dump_index(const cs_io_sec_index_t  *idx)
 
   assert(idx != NULL);
 
-  bft_printf(_(" %lu indexed records:\n"
+  bft_printf(_(" %llu indexed records:\n"
                "   (name, n_vals, location_id, index_id, n_loc_vals, type, "
-               "embed, file_id, offset)\n\n"), (unsigned long)(idx->size));
+               "embed, file_id, offset)\n\n"),
+             (unsigned long long)(idx->size));
 
   for (ii = 0; ii < idx->size; ii++) {
 
@@ -2022,8 +2023,8 @@ _dump_index(const cs_io_sec_index_t  *idx)
     if (h_vals[5] > 0)
       embed = 'y';
 
-    bft_printf(_(" %40s %10lu %2u %2u %2u %6s %c %2u %ld\n"),
-               name, (unsigned long)(h_vals[0]),
+    bft_printf(_(" %40s %10llu %2u %2u %2u %6s %c %2u %ld\n"),
+               name, (unsigned long long)(h_vals[0]),
                (unsigned)(h_vals[1]), (unsigned)(h_vals[2]),
                (unsigned)(h_vals[3]), fvm_datatype_name[h_vals[6]],
                embed, (unsigned)(h_vals[7]),
@@ -2934,9 +2935,9 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
   if (   header->n_vals != 0 && header->n_vals != global_num_end
       && cs_io->echo > CS_IO_ECHO_HEADERS)
     bft_printf(_("    first element for next rank:\n"
-                 "    %10lu : %12d\n"),
-               (unsigned long)(global_num_end),
-               (unsigned long)retval[global_num_end - global_num_start]);
+                 "    %10llu : %12llu\n"),
+               (unsigned long long)(global_num_end),
+               (unsigned long long)retval[global_num_end - global_num_start]);
 
 #endif /* defined(HAVE_MPI) */
 
@@ -2998,8 +2999,8 @@ cs_io_write_global(const char      *sec_name,
 
     if (n_vals != n_written)
       bft_error(__FILE__, __LINE__, 0,
-                _("Error writing %lu bytes to file \"%s\"."),
-                (unsigned long)n_vals, fvm_file_get_name(outp->f));
+                _("Error writing %llu bytes to file \"%s\"."),
+                (unsigned long long)n_vals, fvm_file_get_name(outp->f));
 
   }
 
@@ -3085,8 +3086,8 @@ cs_io_write_block_buffer(const char      *sec_name,
 
   if (n_vals != n_written)
     bft_error(__FILE__, __LINE__, 0,
-              _("Error writing %lu bytes to file \"%s\"."),
-              (unsigned long)n_vals, fvm_file_get_name(outp->f));
+              _("Error writing %llu bytes to file \"%s\"."),
+              (unsigned long long)n_vals, fvm_file_get_name(outp->f));
 
   if (n_vals != 0 && outp->echo > CS_IO_ECHO_HEADERS)
     _echo_data(outp->echo, n_g_vals,

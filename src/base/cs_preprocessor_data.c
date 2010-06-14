@@ -403,11 +403,11 @@ _read_cell_rank(cs_mesh_t       *mesh,
         if (n_g_cells != mesh->n_g_cells)
           bft_error(__FILE__, __LINE__, 0,
                     _("The number of cells reported by file\n"
-                      "\"%s\" (%lu)\n"
-                      "does not correspond the those of the mesh (%lu)."),
+                      "\"%s\" (%llu)\n"
+                      "does not correspond the those of the mesh (%llu)."),
                     cs_io_get_name(rank_pp_in),
-                    (unsigned long)(n_g_cells),
-                    (unsigned long)(mesh->n_g_cells));
+                    (unsigned long long)(n_g_cells),
+                    (unsigned long long)(mesh->n_g_cells));
       }
 
     }

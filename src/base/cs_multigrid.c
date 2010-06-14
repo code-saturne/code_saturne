@@ -1720,9 +1720,9 @@ void CS_PROCF(clmlga, CLMLGA)
 
         bft_printf
           (_("                                  total       min        max\n"
-             "     number of cells:     %12lu %10d %10d\n"
+             "     number of cells:     %12llu %10d %10d\n"
              "     number of faces:                  %10d %10d\n"),
-           (unsigned long)n_g_cells, n_c_min, n_c_max, n_f_min, n_f_max);
+           (unsigned long long)n_g_cells, n_c_min, n_c_max, n_f_min, n_f_max);
       }
 
 #endif
@@ -1748,8 +1748,8 @@ void CS_PROCF(clmlga, CLMLGA)
   if (*iwarnp > 1)
     bft_printf
       (_("   number of coarse grids:           %d\n"
-         "   number of cells in coarsest grid: %lu\n\n"),
-       grid_lv, (unsigned long)n_g_cells);
+         "   number of cells in coarsest grid: %llu\n\n"),
+       grid_lv, (unsigned long long)n_g_cells);
 
   /* Prepare preprocessing info if necessary */
 
