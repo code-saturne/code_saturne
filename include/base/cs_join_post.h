@@ -116,9 +116,7 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
  *
  * parameters:
  *  n_old_i_faces   <--  initial number of interior faces
- *  n_new_i_faces   <--  number of interior faces added to the mesh definition
  *  n_old_b_faces   <--  initial number of border faces
- *  n_new_b_faces   <--  number of border faces added to the mesh definition
  *  n_g_new_b_faces <--  global number of new border faces
  *  n_select_faces  <--  number of selected faces
  *  mesh            <--  pointer to a cs_mesh_t structure
@@ -127,9 +125,7 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
 
 void
 cs_join_post_after_split(cs_int_t          n_old_i_faces,
-                         cs_int_t          n_new_i_faces,
                          cs_int_t          n_old_b_faces,
-                         cs_int_t          n_new_b_faces,
                          fvm_gnum_t        n_g_new_b_faces,
                          cs_int_t          n_select_faces,
                          const cs_mesh_t  *mesh,

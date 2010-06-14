@@ -341,6 +341,7 @@ _get_new_vertex(float                  curv_abs,
   /* New global number */
 
   new_vtx_data.gnum = gnum;
+  new_vtx_data.state = CS_JOIN_STATE_NEW;
 
   /* New tolerance */
 
@@ -844,13 +845,17 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (tst_dbg) {
     bft_printf("\n\np1e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p1e1.gnum, p1e1.coord[0], p1e1.coord[1], p1e1.coord[2], p1e1.tolerance);
+               p1e1.gnum, p1e1.coord[0], p1e1.coord[1], p1e1.coord[2],
+               p1e1.tolerance);
     bft_printf("p2e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p2e1.gnum, p2e1.coord[0], p2e1.coord[1], p2e1.coord[2], p2e1.tolerance);
+               p2e1.gnum, p2e1.coord[0], p2e1.coord[1], p2e1.coord[2],
+               p2e1.tolerance);
     bft_printf("p1e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p1e2.gnum, p1e2.coord[0], p1e2.coord[1], p1e2.coord[2], p1e2.tolerance);
+               p1e2.gnum, p1e2.coord[0], p1e2.coord[1], p1e2.coord[2],
+               p1e2.tolerance);
     bft_printf("p2e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n\n",
-               p2e2.gnum, p2e2.coord[0], p2e2.coord[1], p2e2.coord[2], p2e2.tolerance);
+               p2e2.gnum, p2e2.coord[0], p2e2.coord[1], p2e2.coord[2],
+               p2e2.tolerance);
     bft_printf("v0 : [ %10.8e %10.8e %10.8e]\n", v0[0], v0[1], v0[2]);
     bft_printf("v1 : [ %10.8e %10.8e %10.8e]\n", v1[0], v1[1], v1[2]);
     bft_printf("v2 : [ %10.8e %10.8e %10.8e]\n\n", v2[0], v2[1], v2[2]);
@@ -1514,13 +1519,17 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (tst_dbg) {
     bft_printf("\n\np1e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p1e1.gnum, p1e1.coord[0], p1e1.coord[1], p1e1.coord[2], p1e1.tolerance);
+               p1e1.gnum, p1e1.coord[0], p1e1.coord[1], p1e1.coord[2],
+               p1e1.tolerance);
     bft_printf("p2e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p2e1.gnum, p2e1.coord[0], p2e1.coord[1], p2e1.coord[2], p2e1.tolerance);
+               p2e1.gnum, p2e1.coord[0], p2e1.coord[1], p2e1.coord[2],
+               p2e1.tolerance);
     bft_printf("p1e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p1e2.gnum, p1e2.coord[0], p1e2.coord[1], p1e2.coord[2], p1e2.tolerance);
+               p1e2.gnum, p1e2.coord[0], p1e2.coord[1], p1e2.coord[2],
+               p1e2.tolerance);
     bft_printf("p2e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n\n",
-               p2e2.gnum, p2e2.coord[0], p2e2.coord[1], p2e2.coord[2], p2e2.tolerance);
+               p2e2.gnum, p2e2.coord[0], p2e2.coord[1], p2e2.coord[2],
+               p2e2.tolerance);
     bft_printf("v0 : [ %10.8e %10.8e %10.8e]\n", v0[0], v0[1], v0[2]);
     bft_printf("v1 : [ %10.8e %10.8e %10.8e]\n", v1[0], v1[1], v1[2]);
     bft_printf("v2 : [ %10.8e %10.8e %10.8e]\n\n", v2[0], v2[1], v2[2]);
@@ -2279,7 +2288,7 @@ cs_join_inter_set_create(cs_int_t  init_size)
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_inter_set_t structure.
  *
- * parameter:
+ * parameters:
  *   inter_set <-- a pointer to the inter_set_t structure to destroy
  *
  * returns:
@@ -3320,13 +3329,15 @@ cs_join_inter_edges_block_to_part(fvm_gnum_t                    n_g_edges,
  * Add future new vertices for the face definition in cs_join_mesh_t
  *
  * parameters:
+ *   verbosity   <-- verbosity level
  *   edges       <-- cs_join_edges_t structure
  *   mesh        <-> cs_join_mesh_t structure
  *   inter_edges <-> current cs_join_inter_edges_t struct. to work with
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_intersect_update_struct(const cs_join_edges_t   *edges,
+cs_join_intersect_update_struct(int                      verbosity,
+                                const cs_join_edges_t   *edges,
                                 cs_join_mesh_t          *mesh,
                                 cs_join_inter_edges_t  **inter_edges)
 {
@@ -3402,11 +3413,9 @@ cs_join_intersect_update_struct(const cs_join_edges_t   *edges,
       shift = new_inter_edges->index[o_id];
 
       for (j = _inter_edges->index[i]; j < _inter_edges->index[i+1]; j++) {
-
         new_inter_edges->vtx_glst[shift] = _inter_edges->vtx_glst[j];
         new_inter_edges->abs_lst[shift] = _inter_edges->abs_lst[j];
         shift++;
-
       }
 
     }
@@ -3484,9 +3493,10 @@ cs_join_intersect_update_struct(const cs_join_edges_t   *edges,
 
   } /* End of loop on edges */
 
-  if (n_new_vertices > 0) {
+  if (verbosity > 1 && n_new_vertices > 0) {
 
-    bft_printf(_("\n  Add %d new vertices in the %s mesh definition.\n"),
+    bft_printf(_("\n  Add %d new vertices in the %s mesh definition"
+                 " during update of the edge definition.\n"),
                n_new_vertices, mesh->name);
 
     BFT_REALLOC(mesh->vertices,
@@ -3572,13 +3582,15 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
   for (i = 0; i < edge_edge_vis->n_elts; i++) {
 
-    cs_int_t  e1_id = edge_edge_vis->g_elts[i] - 1;
+    int  e1 = edge_edge_vis->g_elts[i]; /* This is a local number */
 
     for (j = edge_edge_vis->index[i]; j < edge_edge_vis->index[i+1]; j++) {
 
-      cs_int_t  e2_id = edge_edge_vis->g_list[j] - 1;
+      int  e2 = edge_edge_vis->g_list[j]; /* This is a local number */
+      int  e1_id = (e1 < e2 ? e1 - 1 : e2 - 1);
+      int  e2_id = (e1 < e2 ? e2 - 1 : e1 - 1);
 
-      assert(e1_id != e2_id);
+      assert(e1 != e2);
 
       /* Get edge-edge intersection */
 
@@ -3785,11 +3797,32 @@ cs_join_intersect_faces(const cs_join_param_t   param,
 
   fvm_neighborhood_destroy(&face_neighborhood);
 
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  {
+    int  len;
+    FILE  *dbg_file = NULL;
+    char  *filename = NULL;
+
+    len = strlen("JoinDBG_FaceVis.dat")+1+2+4;
+    BFT_MALLOC(filename, len, char);
+    sprintf(filename, "Join%02dDBG_FaceVis%04d.dat",
+            param.num, CS_MAX(cs_glob_rank_id, 0));
+    dbg_file = fopen(filename, "w");
+
+    cs_join_gset_dump(dbg_file, face_visibility);
+
+    fflush(dbg_file);
+    BFT_FREE(filename);
+    fclose(dbg_file);
+  }
+#endif /* defined(DEBUG) && !defined(NDEBUG) */
+
   return face_visibility;
 }
 
 /*----------------------------------------------------------------------------
- * Transform face visibility into edge visibility.
+ * Transform face visibility into edge visibility (mesh->face_gnum must be
+ * ordered).
  *
  * parameters:
  *   mesh       <-- pointer to a cs_join_mesh_t structure
@@ -3981,13 +4014,13 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
   BFT_FREE(count);
   BFT_FREE(tmp);
 
+  /* Delete redundancies in g_elts, order g_elts and compact data */
+
+  cs_join_gset_merge_elts(edge_visib, 0); /* 0 = g_elts is not ordered */
+
   /* Delete redundancies in g_list */
 
   cs_join_gset_clean(edge_visib);
-
-  /* Delete redundancies in g_elts and compact data */
-
-  cs_join_gset_merge_elts(edge_visib, 0); /* g_elts is not ordered */
 
   cs_join_gset_compress(edge_visib);
 

@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2009 EDF S.A., France
+ *     Copyright (C) 2008-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -75,12 +75,212 @@
 BEGIN_C_DECLS
 
 /*============================================================================
+ * Static global variables
+ *===========================================================================*/
+
+int  cs_glob_join_count = 0;
+int  cs_glob_n_joinings = 0;
+cs_join_t  **cs_glob_join_array = NULL;
+
+/*============================================================================
  * Macro and type definitions
  *===========================================================================*/
 
 /*============================================================================
  * Private function definitions
  *===========================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Initialize a cs_join_param_t structure.
+ *
+ * parameters:
+ *   join_num      <-- number of the current joining operation
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   perio_num     <-- periodicity number (0 if not a periodic joining)
+ *   verbosity     <-- level of verbosity required
+ *
+ * returns:
+ *   a pointer to a cs_join_param_t structure
+ *---------------------------------------------------------------------------*/
+
+static cs_join_param_t
+_join_param_define(int      join_num,
+                   float    fraction,
+                   float    plane,
+                   int      perio_num,
+                   int      verbosity)
+{
+  cs_join_param_t  param;
+
+  param.num = join_num;
+  param.perio_num = perio_num;
+
+  /* geometric parameters */
+
+  /* parameter used to compute the tolerance associated to each vertex.
+     Also used for finding equivalent vertices during edge intersections */
+
+  param.fraction = fraction;
+
+  /* parameter used to judge if two faces are in the same plane (during
+     the face splitting) */
+
+  param.plane = plane;
+
+  /* Coef. used to modify the tolerance associated to each vertex BEFORE the
+     merge operation.
+     If coef = 0.0 => no vertex merge
+     If coef < 1.0 => reduce vertex merge
+     If coef = 1.0 => no change
+     If coef > 1.0 => increase vertex merge */
+
+  param.merge_tol_coef = 1.0;
+
+  /* Coef. used to compute a limit under which two vertices are merged
+     before the merge step.
+     Default value: 1e-3; Should be small. [1e-4, 1e-2] */
+
+   param.pre_merge_factor = 0.05;
+
+  /* Maximum number of equivalence breaks */
+
+   param.n_max_equiv_breaks = 500;
+
+   /* Tolerance computation mode: tcm
+      1: (default) tol = min. edge length related to a vertex * fraction
+      2: tolerance is computed like in mode 1 with in addition, the
+         multiplication by a coef. which is equal to the max sin(e1, e2)
+         where e1 and e2 are two edges sharing the same vertex V for which
+         we want to compute the tolerance
+     11: like 1 but only in taking into account only the selected faces
+     12: like 2 but only in taking into account only the selected faces
+   */
+
+   param.tcm = 1;
+
+   /* Intersection computation mode: icm
+      1: (default) Original algorithm. Try to clip intersection on extremity
+      2: New intersection algorithm. Avoid to clip intersection on extremity
+   */
+
+   param.icm = 1;
+
+   /* Maximum number of sub-faces for an initial selected face
+      Default value: 200 */
+
+   param.max_sub_faces = 200;
+
+   /* Deepest level reachable during tree building
+      Default value: 30  */
+
+   param.tree_max_level = 30;
+
+   /* Max. number of boxes which can be related to a leaf of the tree
+      if level != tree_max_level
+      Default value: 25  */
+
+   param.tree_n_max_boxes = 25;
+
+   /* Stop tree building if: n_linked_boxes > tree_max_box_ratio*n_init_boxes
+      Default value: 5.0 */
+
+   param.tree_max_box_ratio = 5.0;
+
+   /* Level of display */
+
+   param.verbosity = verbosity;
+
+   return param;
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize a structure for the synchronization of single
+ * elements
+ *
+ * returns:
+ *   a pointer to a new structure used for synchronizing single elements
+ *----------------------------------------------------------------------------*/
+
+static cs_join_sync_t *
+_create_join_sync(void)
+{
+  cs_join_sync_t  *sync = NULL;
+
+  BFT_MALLOC(sync, 1, cs_join_sync_t);
+
+  sync->n_elts = 0;
+  sync->n_ranks = 0;
+  sync->ranks = NULL;
+  sync->index = NULL;
+  sync->array = NULL;
+
+  return sync;
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a structure for the synchronization of single elements.
+ *
+ * parameters:
+ *   sync   <->  pointer to a structure used for synchronizing single elements
+ *----------------------------------------------------------------------------*/
+
+static void
+_destroy_join_sync(cs_join_sync_t   **sync)
+{
+  cs_join_sync_t  *_sync = *sync;
+
+  if (_sync->n_elts > 0)
+    BFT_FREE(_sync->array);
+  if (_sync->n_ranks > 0)
+    BFT_FREE(_sync->ranks);
+  BFT_FREE(_sync->index);
+
+  BFT_FREE(_sync);
+
+  *sync = _sync;
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a cs_join_select_t structure.
+ *
+ * parameters:
+ *   param       <-- user-defined joining parameters
+ *   join_select <-- pointer to pointer to structure to destroy
+ *---------------------------------------------------------------------------*/
+
+static void
+_join_select_destroy(cs_join_param_t     param,
+                     cs_join_select_t  **join_select)
+{
+  if (*join_select != NULL) {
+
+    cs_join_select_t *_js = *join_select;
+
+    BFT_FREE(_js->faces);
+    BFT_FREE(_js->compact_face_gnum);
+    BFT_FREE(_js->cell_gnum);
+    BFT_FREE(_js->compact_rank_index);
+    BFT_FREE(_js->vertices);
+    BFT_FREE(_js->b_adj_faces);
+    BFT_FREE(_js->i_adj_faces);
+
+    BFT_FREE(_js->b_face_state);
+    BFT_FREE(_js->i_face_state);
+
+    if (param.perio_num > 0)
+      BFT_FREE(_js->per_v_couples);
+
+    _destroy_join_sync(&(_js->s_vertices));
+    _destroy_join_sync(&(_js->c_vertices));
+    _destroy_join_sync(&(_js->s_edges));
+    _destroy_join_sync(&(_js->c_edges));
+
+    BFT_FREE(*join_select);
+    *join_select = NULL;
+
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Reduce numbering for the selected border faces.
@@ -146,112 +346,6 @@ _compact_face_gnum_selection(cs_int_t     n_select_faces,
 
   *reduce_gnum = _reduce_gnum;
   *reduce_gnum_index = _reduce_gnum_index;
-}
-
-/*----------------------------------------------------------------------------
- * Eliminate redundancies found between two lists of elements.
- * Delete elements in elts[] and keep elements in the reference list.
- *
- * parameters:
- *  n_elts      <->  number of elements in the list to clean
- *  elts        <->  list of elements in the list to clean
- *  n_ref_elts  <--  number of elements in the reference list
- *  ref_elts    <--  list of reference elements
- *---------------------------------------------------------------------------*/
-
-static void
-_clean_selection(cs_int_t   *n_elts,
-                 cs_int_t   *elts[],
-                 cs_int_t    n_ref_elts,
-                 cs_int_t    ref_elts[])
-{
-  cs_int_t  i = 0, j = 0;
-  cs_int_t  _n_elts = 0;
-  cs_int_t  *_elts = *elts;
-
-  while (i < *n_elts && j < n_ref_elts) {
-
-    if (_elts[i] < ref_elts[j])
-      _elts[_n_elts++] = _elts[i++];
-    else if (_elts[i] > ref_elts[j])
-      j++;
-    else
-      i++, j++;
-
-  }
-
-  for (;i < *n_elts; i++, _n_elts++)
-    _elts[_n_elts] = _elts[i];
-
-  BFT_REALLOC(_elts, _n_elts, cs_int_t);
-
-  *n_elts = _n_elts;
-  *elts = _elts;
-}
-
-/*----------------------------------------------------------------------------
- * Extract vertices involved in the current joining operation
- *
- * parameters:
- *   n_select_faces    <-- number of selected faces
- *   select_faces      <-- list of faces selected
- *   f2v_idx           <-- "face -> vertex" connect. index
- *   f2v_lst           <-- "face -> vertex" connect. list
- *   n_vertices        <-- number of vertices
- *   n_select_vertices <-> pointer to the number of selected vertices
- *   select_vertices   <-> pointer to the list of selected vertices
- *---------------------------------------------------------------------------*/
-
-static void
-_extract_vertices(cs_int_t         n_select_faces,
-                  const cs_int_t  *select_faces,
-                  const cs_int_t  *f2v_idx,
-                  const cs_int_t  *f2v_lst,
-                  cs_int_t         n_vertices,
-                  cs_int_t        *n_select_vertices,
-                  cs_int_t        *select_vertices[])
-{
-  int  i, j, face_id;
-
-  cs_int_t  _n_select_vertices = 0;
-  cs_int_t  *counter = NULL, *_select_vertices = NULL;
-
-  if (n_select_faces > 0) {
-
-    BFT_MALLOC(counter, n_vertices, cs_int_t);
-
-    for (i = 0; i < n_vertices; i++)
-      counter[i] = 0;
-
-    for (i = 0; i < n_select_faces; i++) {
-
-      face_id = select_faces[i] - 1;
-
-      for (j = f2v_idx[face_id] - 1; j < f2v_idx[face_id+1] - 1; j++)
-        counter[f2v_lst[j]-1] = 1;
-
-    }
-
-    for (i = 0; i < n_vertices; i++)
-      _n_select_vertices += counter[i];
-
-    BFT_MALLOC(_select_vertices, _n_select_vertices, cs_int_t);
-
-    _n_select_vertices = 0;
-    for (i = 0; i < n_vertices; i++)
-      if (counter[i] == 1)
-        _select_vertices[_n_select_vertices++] = i + 1;
-
-    assert(_n_select_vertices > 0);
-
-    BFT_FREE(counter);
-
-  } /* End if n_select_faces > 0 */
-
-  /* Return pointers */
-
-  *n_select_vertices = _n_select_vertices;
-  *select_vertices = _select_vertices;
 }
 
 /*----------------------------------------------------------------------------
@@ -384,53 +478,6 @@ _extract_contig_faces(cs_int_t          n_vertices,
 
   *n_contig_faces = _n_contig_faces;
   *contig_faces = _contig_faces;
-}
-
-/*----------------------------------------------------------------------------
- * Initialize a structure for the synchronization of single
- * elements
- *
- * returns:
- *   a pointer to a new structure used for synchronizing single elements
- *----------------------------------------------------------------------------*/
-
-static cs_join_sync_t *
-_create_join_sync(void)
-{
-  cs_join_sync_t  *sync = NULL;
-
-  BFT_MALLOC(sync, 1, cs_join_sync_t);
-
-  sync->n_elts = 0;
-  sync->n_ranks = 0;
-  sync->ranks = NULL;
-  sync->index = NULL;
-  sync->array = NULL;
-
-  return sync;
-}
-
-/*----------------------------------------------------------------------------
- * Destroy a structure for the synchronization of single elements.
- *
- * parameters:
- *   sync   <->  pointer to a structure used for synchronizing single elements
- *----------------------------------------------------------------------------*/
-
-static void
-_destroy_join_sync(cs_join_sync_t   **sync)
-{
-  cs_join_sync_t  *_sync = *sync;
-
-  if (_sync->n_elts > 0)
-    BFT_FREE(_sync->array);
-  if (_sync->n_ranks > 0)
-    BFT_FREE(_sync->ranks);
-  BFT_FREE(_sync->index);
-
-  BFT_FREE(_sync);
-
-  *sync = _sync;
 }
 
 #if defined(HAVE_MPI)
@@ -573,11 +620,11 @@ _add_single_vertices(fvm_interface_set_t    *interfaces,
 
     for (ii = 0; ii < n_entities; ii++) {
 
-      int vtx_id = local_num[ii] - 1;
+      int  vtx_id = local_num[ii] - 1;
 
       assert(vtx_id < var_size);
 
-      if (count[vtx_id] == 0 && recv_buf[ii] > 0) {
+      if (count[vtx_id] == 0 && recv_buf[ii] > 0) { /* Find a single vertex */
 
         if (last_found_rank != distant_rank) {
           last_found_rank = distant_rank;
@@ -593,7 +640,7 @@ _add_single_vertices(fvm_interface_set_t    *interfaces,
 
   }
 
-  if (n_max_elts > 0) {
+  if (n_max_elts > 0) { /* We have found single vertices */
 
     BFT_MALLOC(single->ranks, n_max_ranks, int);
     BFT_MALLOC(single->index, n_max_ranks + 1, int);
@@ -810,7 +857,7 @@ _add_coupled_vertices(fvm_interface_set_t    *interfaces,
 
     for (ii = 0; ii < n_entities; ii++) {
 
-      if (recv_buf[ii] == local_rank) {
+      if (recv_buf[ii] == local_rank) { /* Coupled vertex found */
         coupled->n_elts++;
         if (last_found_rank != distant_rank) {
           last_found_rank = distant_rank;
@@ -912,7 +959,7 @@ _get_missing_vertices(cs_int_t              n_vertices,
                       cs_join_select_t     *selection)
 {
   cs_int_t  i;
-  fvm_gnum_t  n_g_elts;
+  fvm_gnum_t  n_l_elts, n_g_elts;
 
   cs_int_t  *vtx_tag = NULL, *related_ranks = NULL;
 
@@ -938,7 +985,9 @@ _get_missing_vertices(cs_int_t              n_vertices,
                        related_ranks,
                        selection->s_vertices);
 
-  MPI_Allreduce(&(selection->s_vertices->n_elts), &n_g_elts, 1, FVM_MPI_GNUM,
+  n_l_elts = selection->s_vertices->n_elts;
+
+  MPI_Allreduce(&n_l_elts, &n_g_elts, 1, FVM_MPI_GNUM,
                 MPI_SUM, cs_glob_mpi_comm);
 
   if (n_g_elts > 0) {
@@ -1312,7 +1361,7 @@ _add_single_edges(fvm_interface_set_t   *ifs,
 
       for (j = 0; j < tmp_size; j++) {
 
-        if (edge_tag[j] == 0) {
+        if (edge_tag[j] == 0) { /* Not already treated */
           if (cs_search_binary(n_entities, tmp_edges[2*j], local_num) > -1) {
             if (cs_search_binary(n_entities, tmp_edges[2*j+1], local_num) > -1) {
 
@@ -1323,7 +1372,7 @@ _add_single_edges(fvm_interface_set_t   *ifs,
                 last_found_rank = distant_rank;
               }
 
-              edge_tag[j] = 1;
+              edge_tag[j] = 1; /* Tag as done */
               s_edges->array[2*shift] = tmp_edges[2*j];
               s_edges->array[2*shift+1] = tmp_edges[2*j+1];
               shift++;
@@ -1812,7 +1861,7 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
                    cs_int_t              i_face_cells[],
                    cs_join_select_t     *selection)
 {
-  fvm_gnum_t  n_g_elts;
+  fvm_gnum_t  n_l_elts, n_g_elts;
 
   cs_int_t  *sel_v2v_idx = NULL, *sel_v2v_lst = NULL;
 
@@ -1837,13 +1886,15 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
                     i_face_cells,
                     selection->s_edges);
 
-  MPI_Allreduce(&(selection->s_edges->n_elts), &n_g_elts, 1, FVM_MPI_GNUM,
+  n_l_elts = selection->s_edges->n_elts;
+
+  MPI_Allreduce(&n_l_elts, &n_g_elts, 1, FVM_MPI_GNUM,
                 MPI_SUM, cs_glob_mpi_comm);
 
   if (n_g_elts > 0) {
 
-    bft_printf("  Global number of single edges found:    %6lu\n",
-               (unsigned long)n_g_elts);
+    bft_printf("  Global number of single edges found:    %6llu\n",
+               (unsigned long long)n_g_elts);
     bft_printf_flush();
     selection->do_single_sync = true;
 
@@ -1910,285 +1961,514 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
 }
 #endif /* defined(HAVE_MPI) */
 
-/*----------------------------------------------------------------------------
- * Compute the cell center (= barycenter of the cell vertices) for the
- * selected cells.
- *
- * If selection = NULL, the whole mesh is selected.
- *
- * The caller is responsible for freeing the returned array.
- *
- * parameters:
- *   mesh           <-- pointer to a cs_mesh_t structure
- *   n_select_cells <-- number of cells in the selection
- *   selection      <-- list of selected cell number (size: n_cells)
- *                      cell "i" selected if selection[i] > 0
- *                      cell "i" not selected if selection[i] < 0
- *                      0 < selection[i] <= n_select_cells
- *
- * returns:
- *   array of cell centers (size: n_select_cells*3, interlaced)
- *---------------------------------------------------------------------------*/
-
-static cs_real_t *
-_cell_cen_vtx(const cs_mesh_t  *mesh,
-              cs_int_t          n_select_cells,
-              const cs_int_t    selection[])
-{
-  cs_int_t  i, j, k, coord, cid, cid1, cid2, fid, vid, shift, vtx_counter;
-  cs_real_t  denum;
-
-  cs_int_t  *v_tag = NULL, *counter = NULL;
-  cs_int_t  *f2v_idx = NULL, *f2v_lst = NULL, *c2f_idx = NULL, *c2f_lst = NULL;
-
-  cs_real_t  *cell_cen = NULL;
-
-  if (selection == NULL)
-    n_select_cells = mesh->n_cells;
-
-  if (n_select_cells == 0)
-    return NULL;
-
-  BFT_MALLOC(cell_cen, 3*n_select_cells, cs_real_t);
-
-  /* Extract "cell -> faces" connectivity for the selected faces */
-  /* Build c2f_idx */
-
-  BFT_MALLOC(c2f_idx, n_select_cells + 1, cs_int_t);
-
-  for (i = 0; i < n_select_cells + 1; i++)
-    c2f_idx[i] = 0;
-
-  for (i = 0; i < mesh->n_b_faces; i++) {
-
-    cid = mesh->b_face_cells[i] - 1;
-
-    if (selection != NULL)
-      cid = selection[cid];
-
-    if (cid > -1) /* selected cell */
-      c2f_idx[cid+1] += 1;
-
-  } /* End of loop on border faces */
-
-  for (i = 0; i < mesh->n_i_faces; i++) {
-
-    cid1 = mesh->i_face_cells[2*i  ] - 1;
-    cid2 = mesh->i_face_cells[2*i+1] - 1;
-
-    if (selection != NULL) {
-
-      if (cid1 > -1 && cid1 < mesh->n_cells)
-        cid1 = selection[cid1];
-      else
-        cid1 = -1;
-
-      if (cid2 > -1 && cid2 < mesh->n_cells)
-        cid2 = selection[cid2];
-      else
-        cid2 = -1;
-
-    }
-
-    if (cid1 > -1 && cid1 < mesh->n_cells) /* selected cell */
-      c2f_idx[cid1+1] += 1;
-    if (cid2 > -1 && cid2 < mesh->n_cells) /* selected cell */
-      c2f_idx[cid2+1] += 1;
-
-  } /* End of loop on interior faces */
-
-  c2f_idx[0] = 1;
-  for (i = 0; i < n_select_cells; i++)
-    c2f_idx[i+1] += c2f_idx[i];
-
-  /* Build c2f_lst */
-
-  BFT_MALLOC(c2f_lst, c2f_idx[n_select_cells]-1, cs_int_t);
-  BFT_MALLOC(counter, n_select_cells, cs_int_t);
-
-  for (i = 0; i < n_select_cells; i++)
-    counter[i] = 0;
-
-  for (i = 0; i < mesh->n_b_faces; i++) {
-
-    cid = mesh->b_face_cells[i] - 1;
-
-    if (selection != NULL)
-      cid = selection[cid];
-
-    if (cid > -1) { /* selected cell */
-      shift = c2f_idx[cid] - 1 + counter[cid];
-      c2f_lst[shift] = i+1;
-      counter[cid] += 1;
-    }
-
-  } /* End of loop on border faces */
-
-  for (i = 0; i < mesh->n_i_faces; i++) {
-
-    cid1 = mesh->i_face_cells[2*i  ] - 1;
-    cid2 = mesh->i_face_cells[2*i+1] - 1;
-
-    if (selection != NULL) {
-
-      if (cid1 > -1 && cid1 < mesh->n_cells)
-        cid1 = selection[cid1];
-      else
-        cid1 = -1;
-
-      if (cid2 > -1 && cid2 < mesh->n_cells)
-        cid2 = selection[cid2];
-      else
-        cid2 = -1;
-
-    }
-
-    if (cid1 > -1 && cid1 < mesh->n_cells) { /* selected cell */
-      shift = c2f_idx[cid1] - 1 + counter[cid1];
-      c2f_lst[shift] = i+1 + mesh->n_b_faces;
-      counter[cid1] += 1;
-    }
-
-    if (cid2 > -1 && cid2 < mesh->n_cells) { /* selected cell */
-      shift = c2f_idx[cid2] - 1 + counter[cid2];
-      c2f_lst[shift] = i+1 + mesh->n_b_faces;
-      counter[cid2] += 1;
-    }
-
-  } /* End of loop on interior faces */
-
-  /* Compute cell centers for the selected vertices */
-
-  for (i = 0; i < 3*n_select_cells; i++)
-    cell_cen[i] = 0.0;
-
-  BFT_MALLOC(v_tag, mesh->n_vertices, cs_int_t);
-
-  for (vid = 0; vid < mesh->n_vertices; vid++)
-    v_tag[vid] = -1;
-
-  /* Loop on selected cells */
-
-  for (i = 0; i < mesh->n_cells; i++) {
-
-    vtx_counter = 0;
-
-    if (selection != NULL)
-      cid = selection[i];
-    else
-      cid = i;
-
-    if (cid > -1) { /* Loop on faces of the cell */
-
-      for (j = c2f_idx[cid] - 1; j < c2f_idx[cid + 1] - 1; j++) {
-
-        cs_int_t  face_num = c2f_lst[j];
-
-        /* Interior or border face */
-
-        if (face_num > mesh->n_b_faces) {
-          fid = face_num - mesh->n_b_faces - 1;
-          f2v_idx = mesh->i_face_vtx_idx;
-          f2v_lst = mesh->i_face_vtx_lst;
-        }
-        else {
-          fid = face_num - 1;
-          f2v_idx = mesh->b_face_vtx_idx;
-          f2v_lst = mesh->b_face_vtx_lst;
-        }
-
-        /* Loop on vertices of the face */
-
-        for (k = f2v_idx[fid] - 1; k < f2v_idx[fid + 1] - 1; k++) {
-
-          vid = f2v_lst[k] - 1;
-
-          if (v_tag[vid] < cid) {
-            for (coord = 0; coord < 3; coord++)
-              cell_cen[3*cid + coord] += mesh->vtx_coord[3*vid + coord];
-            vtx_counter += 1;
-            v_tag[vid] = cid;
-          }
-
-        }
-
-      } /* End of loop on faces of the cell */
-
-      denum = 1/(double)vtx_counter;
-      for (coord = 0; coord < 3; coord++)
-        cell_cen[3*cid + coord] *= denum;
-
-    } /* End if cid >= 0 */
-
-  } /* End of loop on cells */
-
-  /* Free memory */
-
-  BFT_FREE(v_tag);
-  BFT_FREE(counter);
-  BFT_FREE(c2f_idx);
-  BFT_FREE(c2f_lst);
-
-  /* Return result */
-
-  return cell_cen;
-}
-
-/*----------------------------------------------------------------------------
- * Define the cell center for a selection of cells (those one which are
- * adjacent to the selected faces).
- *
- * parameters:
- *   n_select_faces  <-- number of border faces implied in the joining op.
- *   select_faces    <-- list of faces implied in the joining op.
- *   mesh            <-- pointer to cs_mesh_t structure
- *   cell_filter     --> selection array (size: mesh->n_cells)
- *   select_cell_cen --> cell center for the selected cells
- *---------------------------------------------------------------------------*/
-
-static void
-_get_select_cell_cen(cs_int_t          n_select_faces,
-                     const cs_int_t    select_faces[],
-                     const cs_mesh_t  *mesh,
-                     cs_int_t         *cell_filter[],
-                     cs_real_t        *select_cell_cen[])
-{
-  cs_int_t  i, cid, fid, tag;
-
-  cs_int_t  n_select_cells = 0;
-  cs_int_t  *_cell_filter = NULL;
-  cs_real_t  *_select_cell_cen = NULL;
-
-  BFT_MALLOC(_cell_filter, mesh->n_cells, cs_int_t);
-
-  for (i = 0; i < mesh->n_cells; i++)
-    _cell_filter[i] = -1;
-
-  for (i = 0; i < n_select_faces; i++) {
-    fid = select_faces[i] - 1;
-    cid = mesh->b_face_cells[fid] - 1;
-    _cell_filter[cid] = i + 1;
-  }
-
-  /* Order cell selection */
-
-  for (i = 0, tag = 0; i < mesh->n_cells; i++)
-    if (_cell_filter[i] > 0)
-      _cell_filter[i] = tag++;
-
-  n_select_cells = n_select_faces; /* Border faces: 1 Face -> 1 Cell */
-
-  _select_cell_cen = _cell_cen_vtx(mesh, n_select_cells, _cell_filter);
-
-  /* Returns pointers */
-
-  *cell_filter = _cell_filter;
-  *select_cell_cen = _select_cell_cen;
-}
-
 /*============================================================================
  * Public function definitions
  *===========================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Create and initialize a cs_join_t structure.
+ *
+ * parameters:
+ *   join_number  <-- number related to the joining operation
+ *   sel_criteria <-- boundary face selection criteria
+ *   fraction     <-- value of the fraction parameter
+ *   plane        <-- value of the plane parameter
+ *   perio_num    <-- periodicity number (0 if not a periodic joining)
+ *   verbosity    <-- level of verbosity required
+ *
+ * returns:
+ *   a pointer to a new allocated cs_join_t structure
+ *---------------------------------------------------------------------------*/
+
+cs_join_t *
+cs_join_create(int          join_number,
+               const char  *sel_criteria,
+               float        fraction,
+               float        plane,
+               int          perio_num,
+               int          verbosity)
+{
+  size_t  l;
+
+  cs_join_t  *join = NULL;
+
+  BFT_MALLOC(join, 1, cs_join_t);
+
+  join->selection = NULL;
+
+  join->param = _join_param_define(join_number,
+                                   fraction,
+                                   plane,
+                                   perio_num,
+                                   verbosity);
+
+  /* Copy the selection criteria for future use */
+
+  l = strlen(sel_criteria);
+  BFT_MALLOC(join->criteria, l + 1, char);
+  strcpy(join->criteria, sel_criteria);
+
+  return join;
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a cs_join_t structure.
+ *
+ * parameters:
+ *  join           <-> pointer to the cs_join_t structure to destroy
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_destroy(cs_join_t  **join)
+{
+  if (*join != NULL) {
+
+    cs_join_t  *_join = *join;
+
+    _join_select_destroy(_join->param, &_join->selection);
+
+    BFT_FREE(_join->criteria);
+
+    BFT_FREE(_join);
+    *join = NULL;
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Set advanced parameters to user-defined values.
+ *
+ * parameters:
+ *   join           <-> pointer a to cs_join_t struct. to update
+ *   mtf            <-- merge tolerance coefficient
+ *   pmf            <-- pre-merge factor
+ *   tcm            <-- tolerance computation mode
+ *   icm            <-- intersection computation mode
+ *   maxbrk         <-- max number of equivalences to break (merge step)
+ *   max_sub_faces  <-- max. possible number of sub-faces by splitting a face
+ *   tml            <-- tree max level
+ *   tmb            <-- tree max boxes
+ *   tmr            <-- tree max ratio
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_set_advanced_param(cs_join_t   *join,
+                           cs_real_t    mtf,
+                           cs_real_t    pmf,
+                           cs_int_t     tcm,
+                           cs_int_t     icm,
+                           cs_int_t     maxbrk,
+                           cs_int_t     max_sub_faces,
+                           cs_int_t     tml,
+                           cs_int_t     tmb,
+                           cs_real_t    tmr)
+{
+  /* Deepest level reachable during tree building */
+
+  if (tml < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tml parameter.\n"
+                "  It must be between > 0 and is here: %d\n"), tml);
+
+  join->param.tree_max_level = tml;
+
+  /* Max. number of boxes which can be related to a leaf of the tree
+     if level != tree_max_level */
+
+  if (tmb < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tmb parameter.\n"
+                "  It must be between > 0 and is here: %d\n"), tmb);
+
+  join->param.tree_n_max_boxes = tmb;
+
+  /* Stop tree building if:
+     n_linked_boxes > tree_max_box_ratio*n_init_boxes */
+
+  if (tmr <= 0.0 )
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tmr parameter.\n"
+                "  It must be between > 0.0 and is here: %f\n"), tmr);
+
+  join->param.tree_max_box_ratio = tmr;
+
+  /* Coef. used to modify the tolerance associated to each vertex BEFORE the
+     merge operation.
+     If coef = 0.0 => no vertex merge
+     If coef < 1.0 => reduce vertex merge
+     If coef = 1.0 => no change
+     If coef > 1.0 => increase vertex merge */
+
+  if (mtf < 0.0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the merge tolerance factor.\n"
+                "  It must be positive or nul and not: %f\n"), mtf);
+
+  join->param.merge_tol_coef = mtf;
+
+   /* Maximum number of equivalence breaks */
+
+  if (maxbrk < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the max. number of tolerance breaks.\n"
+                "  It must be between >= 0 and not: %d\n"), maxbrk);
+
+  join->param.n_max_equiv_breaks = maxbrk;
+
+  /* Pre-merge factor. This parameter is used to define a limit
+     under which two vertices are merged before the merge step.
+     Tolerance limit for the pre-merge = pmf * fraction
+     Default value: 0.10 */
+
+  join->param.pre_merge_factor = pmf;
+
+  /* Tolerance computation mode */
+
+  if ( (tcm)%10 < 1 || (tcm)%10 > 2)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the tcm parameter.\n"
+                "  It must be between 1, 2 or 11, 12 and here is: %d\n"), tcm);
+
+  join->param.tcm = tcm;
+
+  /* Intersection computation mode */
+
+  if (icm != 1 && icm != 2)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for icm parameter.\n"
+                "  It must be 1 or 2 and here is: %d\n"), icm);
+
+  join->param.icm = icm;
+
+  /* Maximum number of sub-faces */
+
+  if (max_sub_faces < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the maxsf parameter.\n"
+                "  It must be between > 0 and here is: %d\n"), max_sub_faces);
+
+  join->param.max_sub_faces = max_sub_faces;
+
+}
+
+/*----------------------------------------------------------------------------
+ * Create and initialize a cs_join_select_t structure.
+ *
+ * parameters:
+ *   selection_criteria <-- pointer to a cs_mesh_select_t structure
+ *   verbosity          <-- level of verbosity required
+ *
+ * returns:
+ *   pointer to a newly created cs_join_select_t structure
+ *---------------------------------------------------------------------------*/
+
+cs_join_select_t *
+cs_join_select_create(const char  *selection_criteria,
+                      int          verbosity)
+{
+  cs_int_t  i, fid, cid;
+
+  cs_int_t  *vtx_tag = NULL;
+  cs_join_select_t  *selection = NULL;
+  fvm_lnum_t  *order = NULL, *ordered_faces = NULL;
+  fvm_interface_set_t  *ifs = NULL;
+  cs_mesh_t  *mesh = cs_glob_mesh;
+
+  const int  n_ranks = cs_glob_n_ranks;
+
+  assert(mesh != NULL);
+
+  /* Initialize cs_join_select_t struct. */
+
+  BFT_MALLOC(selection, 1, cs_join_select_t);
+
+  selection->n_init_b_faces = mesh->n_b_faces;
+  selection->n_init_i_faces = mesh->n_i_faces;
+  selection->n_init_vertices = mesh->n_vertices;
+
+  selection->n_faces = 0;
+  selection->n_g_faces = 0;
+
+  selection->faces = NULL;
+  selection->compact_face_gnum = NULL;
+  selection->compact_rank_index = NULL;
+
+  selection->cell_gnum = NULL;
+
+  selection->n_vertices = 0;
+  selection->n_g_vertices = 0;
+  selection->vertices = NULL;
+
+  selection->n_b_adj_faces = 0;
+  selection->b_adj_faces = NULL;
+  selection->n_i_adj_faces = 0;
+  selection->i_adj_faces = NULL;
+
+  selection->b_face_state = NULL;
+  selection->i_face_state = NULL;
+
+  selection->n_couples = 0;
+  selection->per_v_couples = NULL;
+
+  /*
+     Single elements (Only possible in parallel. It appears
+     when the domain splitting has a poor quality and elements
+     on the joining interface are prisms or tetraedrals)
+     s = single / c = coupled
+  */
+
+  selection->do_single_sync = false;
+  selection->s_vertices = _create_join_sync();
+  selection->c_vertices = _create_join_sync();
+  selection->s_edges = _create_join_sync();
+  selection->c_edges = _create_join_sync();
+
+  /* Extract selected border faces */
+
+  BFT_MALLOC(selection->faces, mesh->n_b_faces, fvm_lnum_t);
+
+  cs_selector_get_b_face_list(selection_criteria,
+                              &(selection->n_faces),
+                              selection->faces);
+
+  BFT_MALLOC(order, selection->n_faces, fvm_lnum_t);
+  BFT_MALLOC(ordered_faces, selection->n_faces, fvm_lnum_t);
+
+  fvm_order_local_allocated(selection->faces, NULL, order, selection->n_faces);
+
+  for (i = 0; i < selection->n_faces; i++)
+    ordered_faces[i] = selection->faces[order[i]];
+
+  BFT_FREE(order);
+  BFT_FREE(selection->faces);
+  selection->faces = ordered_faces;
+
+  /* Define cell_gnum: global numbers of the related cells */
+
+  BFT_MALLOC(selection->cell_gnum, selection->n_faces, fvm_gnum_t);
+
+  if (n_ranks == 1) { /* Serial treatment */
+
+    selection->n_g_faces = selection->n_faces;
+
+    for (i = 0; i < selection->n_faces; i++) {
+      fid = selection->faces[i] - 1;
+      selection->cell_gnum[i] = mesh->b_face_cells[fid];
+    }
+
+  }
+
+#if defined(HAVE_MPI)
+  if (n_ranks > 1) { /* Parallel treatment */
+
+    fvm_gnum_t n_l_faces = selection->n_faces;
+
+    MPI_Allreduce(&n_l_faces, &(selection->n_g_faces),
+                  1, FVM_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
+
+    for (i = 0; i < selection->n_faces; i++) {
+      fid = selection->faces[i] - 1;
+      cid = mesh->b_face_cells[fid] - 1;
+      selection->cell_gnum[i] = mesh->global_cell_num[cid];
+    }
+
+  }
+#endif
+
+  if (verbosity > 0)
+    bft_printf(_("  Global number of boundary faces selected for joining: %10u\n"),
+               selection->n_g_faces);
+
+  /* Define a compact global numbering on selected border faces and
+     build an index on ranks on this compact numbering */
+
+  _compact_face_gnum_selection(selection->n_faces,
+                               &(selection->compact_face_gnum),
+                               &(selection->compact_rank_index));
+
+  assert(selection->n_g_faces == selection->compact_rank_index[n_ranks]);
+
+  /* Extract selected vertices from the selected border faces */
+
+  cs_join_extract_vertices(selection->n_faces,
+                           selection->faces,
+                           mesh->b_face_vtx_idx,
+                           mesh->b_face_vtx_lst,
+                           mesh->n_vertices,
+                           &(selection->n_vertices),
+                           &(selection->vertices));
+
+#if defined(HAVE_MPI)
+  if (n_ranks > 1) { /* Search for missing vertices */
+
+    assert(mesh->global_vtx_num != NULL);
+
+    ifs = fvm_interface_set_create(mesh->n_vertices,
+                                   NULL,
+                                   mesh->global_vtx_num,
+                                   NULL,
+                                   0,
+                                   NULL,
+                                   NULL,
+                                   NULL);
+
+    assert(ifs != NULL);
+
+    _get_missing_vertices(mesh->n_vertices,
+                          ifs,
+                          &vtx_tag,
+                          selection);
+
+  }
+#endif
+
+  /* Extract list of border faces contiguous to the selected vertices  */
+
+  _extract_contig_faces(mesh->n_vertices,
+                        selection,
+                        mesh->n_b_faces,
+                        mesh->b_face_vtx_idx,
+                        mesh->b_face_vtx_lst,
+                        &(selection->n_b_adj_faces),
+                        &(selection->b_adj_faces));
+
+  /* Remove border faces already defined in selection->faces */
+
+  cs_join_clean_selection(&(selection->n_b_adj_faces),
+                          &(selection->b_adj_faces),
+                          selection->n_faces,
+                          selection->faces);
+
+  /* Extract list of interior faces contiguous to the selected vertices */
+
+  _extract_contig_faces(mesh->n_vertices,
+                        selection,
+                        mesh->n_i_faces,
+                        mesh->i_face_vtx_idx,
+                        mesh->i_face_vtx_lst,
+                        &(selection->n_i_adj_faces),
+                        &(selection->i_adj_faces));
+
+   /* Check if there is no forgotten vertex in the selection.
+      Otherwise define structures to enable future synchronization.
+      Only possible in parallel. */
+
+#if defined(HAVE_MPI)
+  if (n_ranks > 1) {
+
+    _get_missing_edges(mesh->b_face_vtx_idx,
+                       mesh->b_face_vtx_lst,
+                       mesh->i_face_vtx_idx,
+                       mesh->i_face_vtx_lst,
+                       mesh->n_vertices,
+                       vtx_tag,
+                       ifs,
+                       mesh->i_face_cells,
+                       selection);
+
+    BFT_FREE(vtx_tag);
+    ifs = fvm_interface_set_destroy(ifs);
+
+  }
+#endif
+
+  /* Face state setting */
+
+  BFT_MALLOC(selection->b_face_state, mesh->n_b_faces, cs_join_state_t);
+  BFT_MALLOC(selection->i_face_state, mesh->n_i_faces, cs_join_state_t);
+
+  for (i = 0; i < mesh->n_b_faces; i++)
+    selection->b_face_state[i] = CS_JOIN_STATE_UNDEF;
+
+  for (i = 0; i < mesh->n_i_faces; i++)
+    selection->i_face_state[i] = CS_JOIN_STATE_UNDEF;
+
+  for (i = 0; i < selection->n_faces; i++)
+    selection->b_face_state[selection->faces[i]-1] = CS_JOIN_STATE_ORIGIN;
+
+  for (i = 0; i < selection->n_b_adj_faces; i++)
+    selection->b_face_state[selection->b_adj_faces[i]-1] = CS_JOIN_STATE_ORIGIN;
+
+  for (i = 0; i < selection->n_i_adj_faces; i++)
+    selection->i_face_state[selection->i_adj_faces[i]-1] = CS_JOIN_STATE_ORIGIN;
+
+  /* Display information according to the level of verbosity */
+
+  if (verbosity > 1) {
+
+    bft_printf(_("\n  Local information about selection structure:\n"));
+    bft_printf(_("    number of faces:               %8d\n"),
+               selection->n_faces);
+    bft_printf(_("    number of vertices:            %8d\n"),
+               selection->n_vertices);
+    bft_printf(_("    number of adj. border faces:   %8d\n"),
+               selection->n_b_adj_faces);
+    bft_printf(_("    number of adj. interior faces: %8d\n"),
+               selection->n_i_adj_faces);
+
+    if (selection->do_single_sync == true) {
+      bft_printf("\n Information on single/coupled elements:\n");
+      bft_printf("   Number of single vertices : %6d with %3d related ranks\n",
+                 selection->s_vertices->n_elts, selection->s_vertices->n_ranks);
+      bft_printf("   Number of coupled vertices: %6d with %3d related ranks\n",
+                 selection->c_vertices->n_elts, selection->c_vertices->n_ranks);
+      bft_printf("   Number of single edges    : %6d with %3d related ranks\n",
+                 selection->s_edges->n_elts, selection->s_edges->n_ranks);
+      bft_printf("   Number of coupled edges   : %6d with %3d related ranks\n",
+                 selection->c_edges->n_elts, selection->c_edges->n_ranks);
+    }
+
+    if (verbosity > 2) {
+      bft_printf("\n  Compact index on ranks for the selected faces:\n");
+      for (i = 0; i < n_ranks + 1; i++)
+        bft_printf(" %5d | %11u\n", i, selection->compact_rank_index[i]);
+      bft_printf("\n");
+    }
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Selected faces for the joining operation:\n"));
+  for (i = 0; i < selection->n_faces; i++)
+    bft_printf(" %9d | %9d | %10u | %10u\n",
+               i, selection->faces[i], selection->compact_face_gnum[i],
+               selection->cell_gnum[i]);
+  bft_printf("\n");
+#endif
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Select vertices for the joining operation:\n"));
+  for (i = 0; i < selection->n_vertices; i++)
+    bft_printf(" %9d | %9d\n", i, selection->vertices[i]);
+  bft_printf("\n");
+#endif
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Contiguous border faces for the joining operation:\n"));
+  for (i = 0; i < selection->n_b_adj_faces; i++)
+    bft_printf(" %9d | %9d\n", i, selection->b_adj_faces[i]);
+  bft_printf("\n");
+#endif
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(_("\n  Contiguous interior faces for the joining operation:\n"));
+  for (i = 0; i < selection->n_i_adj_faces; i++)
+    bft_printf(" %9d | %9d\n", i, selection->i_adj_faces[i]);
+  bft_printf("\n");
+#endif
+
+  } /* End if verbosity > 1 */
+
+  bft_printf_flush();
+
+  return  selection;
+}
 
 /*----------------------------------------------------------------------------
  * Define a set of parameters to control a contiguous distribution by block.
@@ -2247,419 +2527,109 @@ cs_join_get_block_info(fvm_gnum_t  n_g_elts,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize a cs_join_param_t structure.
+ * Extract vertices from a selection of faces.
  *
  * parameters:
- *   join_num      <-- number of the current joining operation
- *   fraction      <-- value of the fraction parameter
- *   plane         <-- value of the plane parameter
- *   verbosity     <-- level of verbosity required
- *
- * returns:
- *   a pointer to a cs_join_param_t structure
- *---------------------------------------------------------------------------*/
-
-cs_join_param_t
-cs_join_param_define(int      join_num,
-                     float    fraction,
-                     float    plane,
-                     int      verbosity)
-{
-  cs_join_param_t  param;
-
-  param.num = join_num;
-
-  /* geometric parameters */
-
-  /* parameter used to compute the tolerance associated to each vertex.
-     Also used for finding equivalent vertices during edge intersections */
-
-  param.fraction = fraction;
-
-  /* parameter used to judge if two faces are in the same plane (during
-     the face splitting) */
-
-  param.plane = plane;
-
-  /* Coef. used to modify the tolerance associated to each vertex BEFORE the
-     merge operation.
-     If coef = 0.0 => no vertex merge
-     If coef < 1.0 => reduce vertex merge
-     If coef = 1.0 => no change
-     If coef > 1.0 => increase vertex merge */
-
-  param.merge_tol_coef = 1.0;
-
-  /* Coef. used to compute a limit under which two vertices are merged
-     before the merge step.
-     Default value: 1e-3; Should be small. [1e-4, 1e-2] */
-
-   param.pre_merge_factor = 0.05;
-
-  /* Maximum number of equivalence breaks */
-
-   param.n_max_equiv_breaks = 500;
-
-   /* Tolerance computation mode: tcm
-      1: (default) tol = min. edge length related to a vertex * fraction
-      2: tolerance is computed like in mode 1 with in addition, the
-         multiplication by a coef. which is equal to the max sin(e1, e2)
-         where e1 and e2 are two edges sharing the same vertex V for which
-         we want to compute the tolerance
-     11: like 1 but only in taking into account only the selected faces
-     12: like 2 but only in taking into account only the selected faces
-   */
-
-   param.tcm = 1;
-
-   /* Intersection computation mode: icm
-      1: (default) Original algorithm. Try to clip intersection on extremity
-      2: New intersection algorithm. Avoid to clip intersection on extremity
-   */
-
-   param.icm = 1;
-
-   /* Maximum number of sub-faces for an initial selected face
-      Default value: 200 */
-
-   param.max_sub_faces = 200;
-
-   /* Deepest level reachable during tree building
-      Default value: 30  */
-
-   param.tree_max_level = 30;
-
-   /* Max. number of boxes which can be related to a leaf of the tree
-      if level != tree_max_level
-      Default value: 25  */
-
-   param.tree_n_max_boxes = 25;
-
-   /* Stop tree building if: n_linked_boxes > tree_max_box_ratio*n_init_boxes
-      Default value: 5.0 */
-
-   param.tree_max_box_ratio = 5.0;
-
-   /* Level of display */
-
-   param.verbosity = verbosity;
-
-   return param;
-}
-
-/*----------------------------------------------------------------------------
- * Create and initialize a cs_join_select_t structure.
- *
- * parameters:
- *   selection_criteria <-- pointer to a cs_mesh_select_t structure
- *   verbosity          <-- level of verbosity required
- *
- * returns:
- *   pointer to a newly created cs_join_select_t structure
- *---------------------------------------------------------------------------*/
-
-cs_join_select_t *
-cs_join_select_create(const char  *selection_criteria,
-                      int          verbosity)
-{
-  cs_int_t  i, fid, cid;
-
-  cs_int_t  *vtx_tag = NULL;
-  cs_join_select_t  *selection = NULL;
-  fvm_lnum_t  *order = NULL, *ordered_faces = NULL;
-  fvm_interface_set_t  *ifs = NULL;
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  const int  n_ranks = cs_glob_n_ranks;
-
-  assert(mesh != NULL);
-
-  /* Initialize cs_join_select_t struct. */
-
-  BFT_MALLOC(selection, 1, cs_join_select_t);
-
-  selection->n_faces = 0;
-  selection->n_g_faces = 0;
-
-  selection->faces = NULL;
-  selection->compact_face_gnum = NULL;
-  selection->compact_rank_index = NULL;
-
-  selection->cell_filter = NULL;
-  selection->cell_cen = NULL;
-  selection->cell_gnum = NULL;
-
-  selection->n_vertices = 0;
-  selection->n_g_vertices = 0;
-  selection->vertices = NULL;
-
-  selection->n_b_adj_faces = 0;
-  selection->b_adj_faces = NULL;
-  selection->n_i_adj_faces = 0;
-  selection->i_adj_faces = NULL;
-
-  /*
-     Single elements (Only possible in parallel. It appears
-     when the domain splitting has a poor quality and elements
-     on the joining interface are prisms or tetraedrals)
-     s = single / c = coupled
-  */
-
-  selection->do_single_sync = false;
-  selection->s_vertices = _create_join_sync();
-  selection->c_vertices = _create_join_sync();
-  selection->s_edges = _create_join_sync();
-  selection->c_edges = _create_join_sync();
-
-  /* Extract selected border faces */
-
-  BFT_MALLOC(selection->faces, mesh->n_b_faces, fvm_lnum_t);
-
-  cs_selector_get_b_face_list(selection_criteria,
-                              &(selection->n_faces),
-                              selection->faces);
-
-  BFT_MALLOC(order, selection->n_faces, fvm_lnum_t);
-  BFT_MALLOC(ordered_faces, selection->n_faces, fvm_lnum_t);
-
-  fvm_order_local_allocated(selection->faces, NULL, order, selection->n_faces);
-
-  for (i = 0; i < selection->n_faces; i++)
-    ordered_faces[i] = selection->faces[order[i]];
-
-  BFT_FREE(order);
-  BFT_FREE(selection->faces);
-  selection->faces = ordered_faces;
-
-  /* Define cell_gnum: global numbers of the related cells */
-
-  BFT_MALLOC(selection->cell_gnum, selection->n_faces, fvm_gnum_t);
-
-  if (n_ranks == 1) { /* Serial treatment */
-
-    selection->n_g_faces = selection->n_faces;
-
-    for (i = 0; i < selection->n_faces; i++) {
-      fid = selection->faces[i] - 1;
-      selection->cell_gnum[i] = mesh->b_face_cells[fid];
-    }
-
-  }
-
-#if defined(HAVE_MPI)
-  if (n_ranks > 1) { /* Parallel treatment */
-
-    MPI_Allreduce(&(selection->n_faces), &(selection->n_g_faces),
-                  1, FVM_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
-
-    for (i = 0; i < selection->n_faces; i++) {
-      fid = selection->faces[i] - 1;
-      cid = mesh->b_face_cells[fid] - 1;
-      selection->cell_gnum[i] = mesh->global_cell_num[cid];
-    }
-
-  }
-#endif
-
-  /* Define the cell center for a selection of cells (those one which are
-     adjacent to the selected faces).
-     This will be used to check the orientation of faces at the end of the
-     joining operation */
-
-  _get_select_cell_cen(selection->n_faces,
-                       selection->faces,
-                       mesh,
-                       &(selection->cell_filter),
-                       &(selection->cell_cen));
-
-  if (verbosity > 0)
-    bft_printf(_("  Number of boundary faces selected for joining: %10u\n"),
-               selection->n_g_faces);
-
-  /* Define a compact global numbering on selected border faces and
-     build an index on ranks on this compact numbering */
-
-  _compact_face_gnum_selection(selection->n_faces,
-                               &(selection->compact_face_gnum),
-                               &(selection->compact_rank_index));
-
-  assert(selection->n_g_faces == selection->compact_rank_index[n_ranks]);
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Selected faces for the joining operation:\n"));
-  for (i = 0; i < selection->n_faces; i++)
-    bft_printf(" %9d | %9d | %10u | %10u\n",
-               i, selection->faces[i], selection->compact_face_gnum[i],
-               selection->cell_gnum[i]);
-  bft_printf("\n");
-#endif
-
-  /* Extract selected vertices from the selected border faces */
-
-  _extract_vertices(selection->n_faces,
-                    selection->faces,
-                    mesh->b_face_vtx_idx,
-                    mesh->b_face_vtx_lst,
-                    mesh->n_vertices,
-                    &(selection->n_vertices),
-                    &(selection->vertices));
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Select vertices for the joining operation:\n"));
-  for (i = 0; i < selection->n_vertices; i++)
-    bft_printf(" %9d | %9d\n", i, selection->vertices[i]);
-  bft_printf("\n");
-#endif
-
-#if defined(HAVE_MPI)
-  if (n_ranks > 1) { /* Search for missing vertices */
-
-    assert(mesh->global_vtx_num != NULL);
-
-    ifs = fvm_interface_set_create(mesh->n_vertices,
-                                   NULL,
-                                   mesh->global_vtx_num,
-                                   NULL,
-                                   0,
-                                   NULL,
-                                   NULL,
-                                   NULL);
-
-    assert(ifs != NULL);
-
-    _get_missing_vertices(mesh->n_vertices,
-                          ifs,
-                          &vtx_tag,
-                          selection);
-
-  }
-#endif
-
-  /* Extract list of border faces contiguous to the selected vertices  */
-
-  _extract_contig_faces(mesh->n_vertices,
-                        selection,
-                        mesh->n_b_faces,
-                        mesh->b_face_vtx_idx,
-                        mesh->b_face_vtx_lst,
-                        &(selection->n_b_adj_faces),
-                        &(selection->b_adj_faces));
-
-  /* Remove border faces already defined in selection->faces */
-
-  _clean_selection(&(selection->n_b_adj_faces),
-                   &(selection->b_adj_faces),
-                   selection->n_faces,
-                   selection->faces);
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Contiguous border faces for the joining operation:\n"));
-  for (i = 0; i < selection->n_b_adj_faces; i++)
-    bft_printf(" %9d | %9d\n", i, selection->b_adj_faces[i]);
-  bft_printf("\n");
-#endif
-
-  /* Extract list of interior faces contiguous to the selected vertices */
-
-  _extract_contig_faces(mesh->n_vertices,
-                        selection,
-                        mesh->n_i_faces,
-                        mesh->i_face_vtx_idx,
-                        mesh->i_face_vtx_lst,
-                        &(selection->n_i_adj_faces),
-                        &(selection->i_adj_faces));
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Contiguous interior faces for the joining operation:\n"));
-  for (i = 0; i < selection->n_i_adj_faces; i++)
-    bft_printf(" %9d | %9d\n", i, selection->i_adj_faces[i]);
-  bft_printf("\n");
-#endif
-
-   /* Check if there is no forgotten vertex in the selection.
-      Otherwise define structures to enable future synchronization.
-      Only possible in parallel. */
-
-#if defined(HAVE_MPI)
-  if (n_ranks > 1) {
-
-    _get_missing_edges(mesh->b_face_vtx_idx,
-                       mesh->b_face_vtx_lst,
-                       mesh->i_face_vtx_idx,
-                       mesh->i_face_vtx_lst,
-                       mesh->n_vertices,
-                       vtx_tag,
-                       ifs,
-                       mesh->i_face_cells,
-                       selection);
-
-    BFT_FREE(vtx_tag);
-    ifs = fvm_interface_set_destroy(ifs);
-
-  }
-#endif
-
-  /* Display information according to the level of verbosity */
-
-  if (verbosity > 1) {
-
-    if (selection->do_single_sync == true) {
-      bft_printf("\n Information on single/coupled elements:\n");
-      bft_printf("   Number of single vertices : %6d with %3d related ranks\n",
-                 selection->s_vertices->n_elts, selection->s_vertices->n_ranks);
-      bft_printf("   Number of coupled vertices: %6d with %3d related ranks\n",
-                 selection->c_vertices->n_elts, selection->c_vertices->n_ranks);
-      bft_printf("   Number of single edges    : %6d with %3d related ranks\n",
-                 selection->s_edges->n_elts, selection->s_edges->n_ranks);
-      bft_printf("   Number of coupled edges   : %6d with %3d related ranks\n",
-                 selection->c_edges->n_elts, selection->c_edges->n_ranks);
-    }
-
-    if (verbosity > 2) {
-      bft_printf("\n  Compact index on ranks for the selected faces:\n");
-      for (i = 0; i < n_ranks + 1; i++)
-        bft_printf(" %5d | %11u\n", i, selection->compact_rank_index[i]);
-      bft_printf("\n");
-
-      bft_printf_flush();
-    }
-
-  } /* End if verbosity > 1 */
-
-  return  selection;
-}
-
-/*----------------------------------------------------------------------------
- * Destroy a cs_join_select_t structure.
- *
- * parameters:
- *   join_select <-- pointer to pointer to structure to destroy
+ *   n_select_faces    <-- number of selected faces
+ *   select_faces      <-- list of faces selected
+ *   f2v_idx           <-- "face -> vertex" connect. index
+ *   f2v_lst           <-- "face -> vertex" connect. list
+ *   n_vertices        <-- number of vertices
+ *   n_select_vertices <-> pointer to the number of selected vertices
+ *   select_vertices   <-> pointer to the list of selected vertices
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_select_destroy(cs_join_select_t  **join_select)
+cs_join_extract_vertices(cs_int_t         n_select_faces,
+                         const cs_int_t  *select_faces,
+                         const cs_int_t  *f2v_idx,
+                         const cs_int_t  *f2v_lst,
+                         cs_int_t         n_vertices,
+                         cs_int_t        *n_select_vertices,
+                         cs_int_t        *select_vertices[])
 {
-  if (*join_select != NULL) {
+  int  i, j, face_id;
 
-    cs_join_select_t *_js = *join_select;
+  cs_int_t  _n_select_vertices = 0;
+  cs_int_t  *counter = NULL, *_select_vertices = NULL;
 
-    BFT_FREE(_js->faces);
-    BFT_FREE(_js->compact_face_gnum);
-    BFT_FREE(_js->cell_filter);
-    BFT_FREE(_js->cell_cen);
-    BFT_FREE(_js->cell_gnum);
-    BFT_FREE(_js->compact_rank_index);
-    BFT_FREE(_js->vertices);
-    BFT_FREE(_js->b_adj_faces);
-    BFT_FREE(_js->i_adj_faces);
+  if (n_select_faces > 0) {
 
-    _destroy_join_sync(&(_js->s_vertices));
-    _destroy_join_sync(&(_js->c_vertices));
-    _destroy_join_sync(&(_js->s_edges));
-    _destroy_join_sync(&(_js->c_edges));
+    BFT_MALLOC(counter, n_vertices, cs_int_t);
 
-    BFT_FREE(*join_select);
+    for (i = 0; i < n_vertices; i++)
+      counter[i] = 0;
+
+    for (i = 0; i < n_select_faces; i++) {
+
+      face_id = select_faces[i] - 1;
+
+      for (j = f2v_idx[face_id] - 1; j < f2v_idx[face_id+1] - 1; j++)
+        counter[f2v_lst[j]-1] = 1;
+
+    }
+
+    for (i = 0; i < n_vertices; i++)
+      _n_select_vertices += counter[i];
+
+    BFT_MALLOC(_select_vertices, _n_select_vertices, cs_int_t);
+
+    _n_select_vertices = 0;
+    for (i = 0; i < n_vertices; i++)
+      if (counter[i] == 1)
+        _select_vertices[_n_select_vertices++] = i + 1;
+
+    assert(_n_select_vertices > 0);
+
+    BFT_FREE(counter);
+
+  } /* End if n_select_faces > 0 */
+
+  /* Return pointers */
+
+  *n_select_vertices = _n_select_vertices;
+  *select_vertices = _select_vertices;
+}
+
+/*----------------------------------------------------------------------------
+ * Eliminate redundancies found between two lists of elements.
+ * Delete elements in elts[] and keep elements in the reference list.
+ *
+ * parameters:
+ *  n_elts      <->  number of elements in the list to clean
+ *  elts        <->  list of elements in the list to clean
+ *  n_ref_elts  <--  number of elements in the reference list
+ *  ref_elts    <--  list of reference elements
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_clean_selection(cs_int_t   *n_elts,
+                        cs_int_t   *elts[],
+                        cs_int_t    n_ref_elts,
+                        cs_int_t    ref_elts[])
+{
+  cs_int_t  i = 0, j = 0;
+  cs_int_t  _n_elts = 0;
+  cs_int_t  *_elts = *elts;
+
+  while (i < *n_elts && j < n_ref_elts) {
+
+    if (_elts[i] < ref_elts[j])
+      _elts[_n_elts++] = _elts[i++];
+    else if (_elts[i] > ref_elts[j])
+      j++;
+    else
+      i++, j++;
+
   }
+
+  for (;i < *n_elts; i++, _n_elts++)
+    _elts[_n_elts] = _elts[i];
+
+  BFT_REALLOC(_elts, _n_elts, cs_int_t);
+
+  *n_elts = _n_elts;
+  *elts = _elts;
 }
 
 /*----------------------------------------------------------------------------

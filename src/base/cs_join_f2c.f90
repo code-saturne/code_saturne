@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -31,35 +31,33 @@ subroutine defjoi &
  ( numjoi, critjo, fract, plane, iwarnj )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! -------
 
-!     DEFINITION DE RECOLLEMENT DE MAILLAGES
+! Definition of mesh face joining.
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
+!    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! numjoi           ! e  ! <-- ! join number                                    !
+! numjoi           ! i  ! <-- ! join number                                    !
 ! critjo           ! a  ! <-- ! selection criteria for the border faces to     !
 !                  !    !     ! transform                                      !
 ! fract            ! r  ! <-- ! fraction parameter                             !
 ! plane            ! r  ! <-- ! face coplanarity parameter                     !
-! iwarnj           ! e  ! <-- ! level of display                               !
+! iwarnj           ! i  ! <-- ! verbosity level                                !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-! Common blocks
+!     DONNEES EN COMMON
 !===============================================================================
 
 !===============================================================================
@@ -70,7 +68,7 @@ character*(*)    critjo
 integer          iwarnj, numjoi
 double precision fract, plane
 
-! Variables locales
+! Local variables
 
 integer       lcritj
 

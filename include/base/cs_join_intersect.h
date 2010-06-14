@@ -3,7 +3,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2008-2009  EDF
+  Copyright (C) 2008-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -253,13 +253,15 @@ cs_join_inter_edges_block_to_part(fvm_gnum_t                    n_g_edges,
  * Add future new vertices for the face definition in cs_join_mesh_t
  *
  * parameters:
+ *   verbosity   <-- verbosity level
  *   edges       <-- cs_join_edges_t structure
  *   mesh        <-> cs_join_mesh_t structure
  *   inter_edges <-> current cs_join_inter_edges_t struct. to work with
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_intersect_update_struct(const cs_join_edges_t   *edges,
+cs_join_intersect_update_struct(int                      verbosity,
+                                const cs_join_edges_t   *edges,
                                 cs_join_mesh_t          *mesh,
                                 cs_join_inter_edges_t  **inter_edges);
 

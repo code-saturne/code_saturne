@@ -805,6 +805,8 @@ cs_mesh_builder_create(void)
   mesh_builder->per_face_lst = NULL;
   mesh_builder->per_rank_lst = NULL;
 
+  mesh_builder->face_ifs = NULL;
+
   return mesh_builder;
 }
 
@@ -913,6 +915,8 @@ cs_mesh_builder_destroy(cs_mesh_builder_t  *mesh_builder)
 
   if (cs_glob_n_ranks > 1)
     BFT_FREE(mesh_builder->per_rank_lst);
+
+  mesh_builder->face_ifs = fvm_interface_set_destroy(mesh_builder->face_ifs);
 
   BFT_FREE(mesh_builder);
 

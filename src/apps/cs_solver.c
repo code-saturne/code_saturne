@@ -247,9 +247,13 @@ cs_run(void)
 
   cs_post_init_main_writer();
 
-  /* Join meshes if necessary */
+  /* Define joining and periodicity parameters if requested */
 
   CS_PROCF (usjoin, USJOIN)();
+
+  CS_PROCF (usperi, USPERI)();
+
+  /* Join meshes / build periodicity links if necessary */
 
   cs_join_all();
 

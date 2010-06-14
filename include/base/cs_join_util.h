@@ -70,6 +70,18 @@ typedef enum {
 
 } cs_join_type_t;
 
+typedef enum {
+
+  CS_JOIN_STATE_UNDEF,
+  CS_JOIN_STATE_NEW,
+  CS_JOIN_STATE_ORIGIN,
+  CS_JOIN_STATE_PERIO,
+  CS_JOIN_STATE_MERGE,
+  CS_JOIN_STATE_PERIO_MERGE,
+  CS_JOIN_STATE_SPLIT
+
+} cs_join_state_t;
+
 /*----------------------------------------------------------------------------
  * Set of user parameters to control the join operation
  *----------------------------------------------------------------------------*/
@@ -77,6 +89,7 @@ typedef enum {
 typedef struct {
 
   int  num;        /* number associated to the current join operation */
+  int  perio_num;  /* periodicity number associated to the joining op. */
 
   /* Octree - Quadtree search algorithm */
   /* ---------------------------------- */
@@ -151,7 +164,11 @@ typedef struct {
 
 } cs_join_param_t;
 
-typedef struct { /* Structure used to synchronize single elements */
+/*----------------------------------------------------------------------------
+ * Set of variables to synchronize single elements
+ *---------------------------------------------------------------------------*/
+
+typedef struct {
 
   int      n_elts;
   int      n_ranks;
@@ -168,6 +185,10 @@ typedef struct { /* Structure used to synchronize single elements */
 
 typedef struct {
 
+  cs_int_t      n_init_b_faces;  /* Number of border faces before joining */
+  cs_int_t      n_init_i_faces;  /* Number of interior faces before joining */
+  cs_int_t      n_init_vertices; /* Number of vertices before joining */
+
   cs_int_t      n_faces;     /* Number of border faces selected
                                 for the joining operation */
   fvm_gnum_t    n_g_faces;   /* Global number of border faces selected
@@ -179,13 +200,8 @@ typedef struct {
   fvm_gnum_t   *compact_rank_index;   /* Distribution of the selected faces
                                          over the ranks */
 
-  cs_int_t     *cell_filter;     /* Size: n_cells
-                                    value = -1 if not implied
-                                    value >= 0 else */
-
-  cs_real_t    *cell_cen;        /* Cell center for cells implied */
   fvm_gnum_t   *cell_gnum;       /* Global cell numbering of the cells
-                                         holding the selected face */
+                                    bearing the selected face */
 
   cs_int_t      n_vertices;      /* Number of vertices selected
                                     for the joining operation */
@@ -199,6 +215,16 @@ typedef struct {
 
   cs_int_t     *b_adj_faces;
   cs_int_t     *i_adj_faces;
+
+  /* Keep the status of all faces of the related cs_mesh_t */
+
+  cs_join_state_t   *b_face_state;
+  cs_join_state_t   *i_face_state;
+
+  /* For periodicity handling: list of periodic vertex couples */
+
+  cs_int_t     n_couples;
+  fvm_gnum_t  *per_v_couples;
 
   /*
      Single elements (Only possible in parallel). It appears
@@ -215,6 +241,23 @@ typedef struct {
   cs_join_sync_t  *c_edges;
 
 } cs_join_select_t;
+
+/*----------------------------------------------------------------------------
+ * Highest level structure to manage the joining algorithm
+ *---------------------------------------------------------------------------*/
+
+typedef struct {
+
+  cs_join_param_t   param;       /* Set of parameters used to control
+                                    the joining operations */
+
+  cs_join_select_t  *selection;  /* Store entities implied in the joining
+                                    operation */
+
+  char              *criteria;   /* Criteria used to select border faces
+                                    implied in the joining operation */
+
+} cs_join_t;
 
 /*----------------------------------------------------------------------------
  * Structure used to store information about a block distribution
@@ -236,47 +279,78 @@ typedef struct {
 
 } cs_join_block_info_t;
 
+/*=============================================================================
+ * Global variables
+ *===========================================================================*/
+
+extern int  cs_glob_join_count;
+extern int  cs_glob_n_joinings;
+extern cs_join_t  **cs_glob_join_array;
+
 /*============================================================================
  * Public function definitions
  *===========================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define a set of parameters to control a contiguous distribution by block.
+ * Create and initialize a cs_join_t structure.
  *
  * parameters:
- *   n_g_elts   <-- global number of elements to treat
- *   n_ranks    <-- number of ranks in the MPI communicator related to the
- *                  cs_join_block_info_t structure to create
- *   local_rank <-- rank in the MPI communicator related to the
- *                  cs_join_block_info_t structure to create
+ *   join_number  <-- number related to the joining operation
+ *   sel_criteria <-- boundary face selection criteria
+ *   fraction     <-- edge fraction tolerance parameter
+ *   plane        <-- plane normal angle tolerance
+ *   perio_num    <-- periodicity number (0 if not a periodic joining)
+ *   verbosity    <-- verbosity level
  *
  * returns:
- *   a new defined cs_join_block_info_t structure
+ *   pointer to a newly allocated cs_join_t structure
  *---------------------------------------------------------------------------*/
 
-cs_join_block_info_t
-cs_join_get_block_info(fvm_gnum_t  n_g_elts,
-                       int         n_ranks,
-                       int         local_rank);
+cs_join_t *
+cs_join_create(int          join_number,
+               const char  *sel_criteria,
+               float        fraction,
+               float        plane,
+               int          perio_num,
+               int          verbosity);
 
 /*----------------------------------------------------------------------------
- * Initialize a cs_join_param_t structure.
+ * Destroy a cs_join_t structure.
  *
  * parameters:
- *   join_num      <-- num of the current joining operation
- *   fraction      <-- value of the fraction parameter
- *   plane         <-- value of the plane parameter
- *   verbosity     <-- level of verbosity required
- *
- * returns:
- *   a pointer to a cs_join_param_t structure
+ *  join <-> pointer to the cs_join_t structure to destroy
  *---------------------------------------------------------------------------*/
 
-cs_join_param_t
-cs_join_param_define(int      join_num,
-                     float    fraction,
-                     float    plane,
-                     int      verbosity);
+void
+cs_join_destroy(cs_join_t  **join);
+
+/*----------------------------------------------------------------------------
+ * Set advanced parameters to user-defined values.
+ *
+ * parameters:
+ *   join           <-> pointer a to cs_join_t struct. to update
+ *   mtf            <-- merge tolerance coefficient
+ *   pmf            <-- pre-merge factor
+ *   tcm            <-- tolerance computation mode
+ *   icm            <-- intersection computation mode
+ *   maxbrk         <-- max number of equivalences to break (merge step)
+ *   max_sub_faces  <-- max. possible number of sub-faces by splitting a face
+ *   tml            <-- tree max level
+ *   tmb            <-- tree max boxes
+ *   tmr            <-- tree max ratio
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_set_advanced_param(cs_join_t   *join,
+                           cs_real_t    mtf,
+                           cs_real_t    pmf,
+                           cs_int_t     tcm,
+                           cs_int_t     icm,
+                           cs_int_t     maxbrk,
+                           cs_int_t     max_sub_faces,
+                           cs_int_t     tml,
+                           cs_int_t     tmb,
+                           cs_real_t    tmr);
 
 /*----------------------------------------------------------------------------
  * Create and initialize a cs_join_select_t structure.
@@ -294,14 +368,62 @@ cs_join_select_create(const char  *selection_criteria,
                       int          verbosity);
 
 /*----------------------------------------------------------------------------
- * Destroy a cs_join_select_t structure.
+ * Define a set of parameters to control a contiguous distribution by block.
  *
  * parameters:
- *   join_select <-- pointer to pointer to structure to destroy
+ *   n_g_elts   <-- global number of elements to treat
+ *   n_ranks    <-- number of ranks in the MPI communicator related to the
+ *                  cs_join_block_info_t structure to create
+ *   local_rank <-- rank in the MPI communicator related to the
+ *                  cs_join_block_info_t structure to create
+ *
+ * returns:
+ *   a newly defined cs_join_block_info_t structure
+ *---------------------------------------------------------------------------*/
+
+cs_join_block_info_t
+cs_join_get_block_info(fvm_gnum_t  n_g_elts,
+                       int         n_ranks,
+                       int         local_rank);
+
+/*----------------------------------------------------------------------------
+ * Extract vertices from a selection of faces.
+ *
+ * parameters:
+ *   n_select_faces <-- number of selected faces
+ *   select_faces   <-- list of faces selected
+ *   f2v_idx        <-- "face -> vertex" connect. index
+ *   f2v_lst        <-- "face -> vertex" connect. list
+ *   n_vertices     <-- number of vertices
+ *   n_sel_vertices <-> pointer to the number of selected vertices
+ *   sel_vertices   <-> pointer to the list of selected vertices
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_select_destroy(cs_join_select_t  **join_select);
+cs_join_extract_vertices(cs_int_t         n_select_faces,
+                         const cs_int_t  *select_faces,
+                         const cs_int_t  *f2v_idx,
+                         const cs_int_t  *f2v_lst,
+                         cs_int_t         n_vertices,
+                         cs_int_t        *n_select_vertices,
+                         cs_int_t        *select_vertices[]);
+
+/*----------------------------------------------------------------------------
+ * Eliminate redundancies found between two lists of elements.
+ * Delete elements in elts[] and keep elements in the reference list.
+ *
+ * parameters:
+ *  n_elts     <-> number of elements in the list to clean
+ *  elts       <-> list of elements in the list to clean
+ *  n_ref_elts <-- number of elements in the reference list
+ *  ref_elts   <-- list of reference elements
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_clean_selection(cs_int_t  *n_elts,
+                        cs_int_t  *elts[],
+                        cs_int_t   n_ref_elts,
+                        cs_int_t   ref_elts[]);
 
 /*----------------------------------------------------------------------------
  * Build vertex -> vertex index for a selection of faces.

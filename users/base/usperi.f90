@@ -28,7 +28,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine usjoin &
+subroutine usperi &
 !================
 
  ( )
@@ -39,7 +39,7 @@ subroutine usjoin &
 
 !    User subroutine.
 
-! Define (conforming or non-conforming) mesh joinings.
+! Define (conforming or non-conforming) periodicity.
 
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
@@ -69,8 +69,7 @@ include "parall.h"
 
 ! Local variables
 
-integer          iutile, ii, nbjoin
-integer          iwarnj
+integer          nbperio, ii, iwarnp, iutile
 integer          tml, tmb, tcm, icm, maxsf, maxbrk
 double precision fract, plane, mtf, pmf, tmr
 
@@ -84,11 +83,7 @@ if(1.eq.1) return
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-! Get the number of joining operations already defined
-! (equal to zero at the moment)
-
-call numjoi(nbjoin)
-! ==========
+! Periodicity relies on joining operation
 
 ! ---------------
 ! Main parameters
@@ -104,18 +99,76 @@ fract = 0.10d0
 ! coplanar and may be joined if angle between their
 ! unit normals (in degree) does not exceed this parameter.
 
-plane = 25.0
+plane = 25.0d0
 
 ! associated verbosity level (debug level if >= 3)
 
-iwarnj = 1
+iwarnp = 1
 
+! -----------------------------------
+! Periodic transformation definitions
+! -----------------------------------
 
-! Joining definition
-
-nbjoin = nbjoin + 1
-call defjoi(nbjoin, '98 or 99', fract, plane, iwarnj)
+call numper(nbperio) ! Number of periodicities already defined
 !==========
+
+do ii = nbperio, nbperio + 3
+
+   ! Definition of a periodicity of translation
+   ! ------------------------------------------
+
+  if (ii .eq. nbperio + 1) then
+
+    call defptr(ii, '99', fract, plane, iwarnp, &  ! Main joining parameters
+    !==========
+                1.0d0, 0.0d0, 0.0d0)               ! Translation vector
+
+  endif
+
+  ! Definition of a periodicity of rotation
+  ! ---------------------------------------
+
+  if (ii .eq. nbperio + 2) then
+
+     ! Modify default value
+     fract = 0.20d0
+     iwarnp = 2
+
+     call defpro(ii, '3', fract, plane, iwarnp,  &  ! Main joining parameters
+     !==========
+                 1.0d0, 0.0d0, 0.0d0,            &  ! Axis of the rotation
+                 20d0,                           &  ! Rotation angle in degree
+                 0.0d0, 0.0d0, 0.0d0)               ! Invariant point
+
+     ! restore default value
+     fract = 0.10d0
+     iwarnp = 1
+
+  endif
+
+  ! Definition of a general transformation using a homogeneous matrix
+  ! -----------------------------------------------------------------
+
+  ! 4x4 matrix
+  !    _               _
+  !   | r11 r12 r13 tx  |  t(x,y,z) : translation vector
+  !   | r21 r22 r23 ty  |  r(i,j)   : rotation matrix
+  !   | r31 r32 r33 tz  |
+  !   |_  0   0   0  1 _|
+  !
+  ! Can be used for helecoidal transformation for instance
+
+  if (ii .eq. nbperio + 3) then
+
+    call defpge(ii, 'all[]', fract, plane, iwarnp,  &  ! Main joining parameters
+    !==========
+                1.0d0, 0.0d0, 0.0d0, 0.0d0,         &  ! 1st row: r11 r12 r13 tx
+                0.0d0, 1.0d0, 0.0d0, 0.0d0,         &  ! 2nd row: r21 r22 r23 ty
+                0.0d0, 0.0d0, 1.0d0, 0.0d0)            ! 3rd row: r31 r32 r33 tz
+
+  endif
+
+enddo
 
 
 ! -------------------
@@ -198,8 +251,8 @@ tmr = 5.0
 
 iutile = 0
 if (iutile.eq.1) then
-  ii = 1
-  call setajp(ii, mtf, pmf, tcm, icm, maxbrk, maxsf, tml, tmb, tmr)
+  ii = nbperio + 1
+  call setapp(ii, mtf, pmf, tcm, icm, maxbrk, maxsf, tml, tmb, tmr)
   !==========
 endif
 
