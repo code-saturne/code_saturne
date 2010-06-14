@@ -411,6 +411,29 @@ class mpi_environment:
 
         """
         Initialize for MPICH2 environment.
+
+        MPICH2 allows for 4 different process managers, all or some
+        of which may be built depending on installation options:
+
+        - HYDRA is the default starting with MPICH2-1.3, and is available
+          in MPICH2-1.2. It natively uses existing daemons on the system
+          such as ssh, SLURM, PBS, etc.
+
+        - MPD is the traditional process manager, which consists of a
+          ring of daemons. A hostsfile may be defined to start this
+          ring (a machinefile may still be used for mpiexec for
+          finer control, though we do not use it here).
+          We try to test if such a ring is already running, and
+          start and stop it if this is not the case.
+
+        - spmd may be used both on Windows and Linux. It consists
+          of independent daemons, so if a hostsfile is used, it
+          must be passed to mpiexec (we do not attempt to start
+          or stop the daemons here if this manager is used).
+
+        - gforker is a simple manager that creates all processes on
+          a single machine (the equivalent seem possible with HYDRA
+          using "mpiexec -bootstrap fork")
         """
 
         # Determine base executable paths
@@ -418,10 +441,10 @@ class mpi_environment:
         launcher_names = ['mpiexec', 'mpirun']
 
         for name in launcher_names:
-            for dir in p:
-                absname = os.path.join(dir, name)
+            for d in p:
+                absname = os.path.join(d, name)
                 if os.path.isfile(absname):
-                    if dir == mpi_lib.bindir:
+                    if d == mpi_lib.bindir:
                         self.mpiexec = absname
                     else:
                         self.mpiexec = name
@@ -429,22 +452,42 @@ class mpi_environment:
             if self.mpiexec != None:
                 break
 
-        for dir in p:
-            if os.path.isfile(os.path.join(dir, 'mpdboot')):
-                if dir == mpi_lib.bindir:
-                    self.mpiboot = os.path.join(dir, 'mpdboot')
-                    self.mpihalt = os.path.join(dir, 'mpdallexit')
-                else:
-                    self.mpiboot = 'mpdboot'
-                    self.mpihalt = 'mpdallexit'
-                break
+        # Try to determine if mpiexec is that of MPD or of another
+        # process manager, using the knowledge that MPD's mpiexec
+        # is a Python script, while other MPICH2 mpiexec's are binary.
+        # We could have a false positive if another wrapper is used,
+        # but we still need to find mpdboot.
 
-        # Note that the self.mpiboot and self.mpihalt commands may be
-        # too simplistic in certain cases. For example, it would be
-        # interesting to run mpdringtest first, and depending on its
-        # exit code (0 if ring is up, 255 if not up), run mpdboot.
-        # The same, mpdlistjobs could be run before mpdallexit to ensure
-        # that we do not kill an mpdring if another job is running.
+        mpd_setup = False
+        f = open(self.mpiexec, 'r')
+        if f.read(2) == '#!':
+            l = f.readline()
+            if l.find('python') > 0:
+                mpiexec_mpd = True
+        f.close()
+
+        # If we are using a root MPD, no need for setup
+
+        s = os.getenv('MPD_USE_ROOT_MPD')
+        if s != None and int(s) != 0:
+            mpd_setup = False
+
+        # If a setup seems necessary, check paths
+
+        if mpd_setup:
+            for d in p:
+                if os.path.isfile(os.path.join(d, 'mpdboot')):
+                    if d == mpi_lib.bindir:
+                        self.mpiboot = os.path.join(d, 'mpdboot')
+                        self.mpihalt = os.path.join(d, 'mpdallexit')
+                        mpdtrace = os.path.join(d, 'mpdtrace')
+                        mpdlistjobs = os.path.join(d, 'mpdlistjobs')
+                    else:
+                        self.mpiboot = 'mpdboot'
+                        self.mpihalt = 'mpdallexit'
+                        mpdtrace = 'mpdtrace'
+                        mpdlistjobs = 'mpdlistjobs'
+                break
 
         # Determine processor count and MPMD handling
 
@@ -473,16 +516,32 @@ class mpi_environment:
             elif resource_info.manager == 'PBS':
                 # Convert PBS to MPD format (based on MPICH2 documentation)
                 # before MPI boot.
-                self.gen_hostsfile = 'sort $PBS_NODEFILE | uniq -C ' \
-                    + '| awk \'{ printf("%s:%s", $2, $1); }\' > ./mpd.nodes'
-                self.del_hostsfile = 'rm -f ./mpd.nodes'
                 if self.mpiboot != None:
-                    self.mpiboot = pbs_to_mpd \
-                        + self.mpiboot + ' --file ./mpd.nodes\n'
+                    self.gen_hostsfile = 'sort $PBS_NODEFILE | uniq -C ' \
+                        + '| awk \'{ printf("%s:%s", $2, $1); }\' > ./mpd.nodes'
+                    self.del_hostsfile = 'rm -f ./mpd.nodes'
+                    self.mpiboot += ' --file ./mpd.nodes'
             else:
                 hostsfile = resource_info.get_hosts_file(self)
-                if hostsfile != None and self.mpiboot != None:
-                    self.mpiboot += ' --file ' + hostsfile
+                if hostsfile != None:
+                    if self.mpiboot != None:
+                        self.mpiboot += ' --file ' + hostsfile
+                    else:
+                        self.mpiexec += ' --machinefile ' + hostsfile
+
+        # Finalize mpiboot and mpihalt commands.
+        # We use 'mpdtrace' to determine if a ring is already running,
+        # and mpdlistjobs to determine if other jobs are still running.
+        # This means that a hostsfile will be ignored if an MPD ring
+        # is already running, but will avoid killing other running jobs.
+
+        if self.mpiboot != None:
+            self.mpiboot = \
+                mpdtrace + ' > /dev/null 2>&1\n' \
+                + 'if test $? != 0 ; then ' + self.mpiboot + ' ; fi'
+            self.mpihalt = \
+                'listjobs = `' + mpdlistjobs + ' | wc -l`\n' \
+                + 'if test $listjobs = 0 ; then ; ' + self.mpihalt + ' ; fi'
 
         # Info commands
 
@@ -504,10 +563,10 @@ class mpi_environment:
                           'mpirun']
 
         for name in launcher_names:
-            for dir in p:
-                absname = os.path.join(dir, name)
+            for d in p:
+                absname = os.path.join(d, name)
                 if os.path.isfile(absname):
-                    if dir == mpi_lib.bindir:
+                    if d == mpi_lib.bindir:
                         self.mpiexec = absname
                     else:
                         self.mpiexec = name
@@ -551,10 +610,10 @@ class mpi_environment:
                           'mpiexec', 'mpirun']
 
         for name in launcher_names:
-            for dir in p:
-                absname = os.path.join(dir, name)
+            for d in p:
+                absname = os.path.join(d, name)
                 if os.path.isfile(absname):
-                    if dir == mpi_lib.bindir:
+                    if d == mpi_lib.bindir:
                         self.mpiexec = absname
                     else:
                         self.mpiexec = name
@@ -580,7 +639,7 @@ class mpi_environment:
 
         if resource_info != None:
             if not resource_info.manager in ['SLURM', 'PBS']:
-                hostsfile = resource_info.get_hosts_file()
+                hostsfile = resource_info.get_hosts_file(self)
                 if hostsfile != None:
                     self.mpiexec += ' --machinefile ' + hostsfile
 
@@ -600,10 +659,10 @@ class mpi_environment:
         launcher_names = ['mpiexec.lam', 'mpirun.lam', 'mpiexec', 'mpirun']
 
         for name in launcher_names:
-            for dir in p:
-                absname = os.path.join(dir, name)
+            for d in p:
+                absname = os.path.join(d, name)
                 if os.path.isfile(absname):
-                    if dir == mpi_lib.bindir:
+                    if d == mpi_lib.bindir:
                         self.mpiexec = absname
                     else:
                         self.mpiexec = name
@@ -611,11 +670,11 @@ class mpi_environment:
             if self.mpiexec != None:
                 break
 
-        for dir in p:
-            if os.path.isfile(os.path.join(dir, 'lamboot')):
-                if dir == mpi_lib.bindir:
-                    self.mpiboot = os.path.join(dir, 'lamboot')
-                    self.mpihalt = os.path.join(dir, 'lamhalt')
+        for d in p:
+            if os.path.isfile(os.path.join(d, 'lamboot')):
+                if d == mpi_lib.bindir:
+                    self.mpiboot = os.path.join(d, 'lamboot')
+                    self.mpihalt = os.path.join(d, 'lamhalt')
                 else:
                     self.mpiboot = 'lamboot'
                     self.mpihalt = 'lamhalt'
@@ -645,6 +704,11 @@ class mpi_environment:
             if hostsfile != None and self.mpiboot != None:
                 self.mpiboot += ' ' + hostsfile
                 self.mpihalt += ' ' + hostsfile
+
+        # Finalize mpiboot and mpihalt commands
+
+        if self.mpiboot != None:
+            self.mpiboot += '|| exit $?'
 
         # Info commands
 
@@ -709,13 +773,11 @@ class mpi_environment:
         self.mpiexec = 'mpirun'
 
         if not os.path.isabs(self.mpiexec):
-            for dir in p:
-                absname = os.path.join(dir, self.mpiexec)
+            for d in p:
+                absname = os.path.join(d, self.mpiexec)
                 if os.path.isfile(absname):
-                    if dir == mpi_lib.bindir:
+                    if d == mpi_lib.bindir:
                         self.mpiexec = absname
-                    else:
-                        self.mpiexec = launcher_name
                     break
 
         # Determine processor count and MPMD handling
@@ -745,12 +807,11 @@ class mpi_environment:
 
         self.__init_mpich2__(p, resource_info)
 
-        # On a Bull Novascale machine using MPIBULL2 (based on
-        # MPICH2), mpdboot and mpdallexit commands exist, as well as mpiexec
-        # (which connects to the mpd ring), but the SLURM srun launcher or
-        # mpibull2-launch meta-launcher (which can integrate directly to
-        # several resource managers using prun, srun, orterun, or mprun)
-        # should be simpler to use.
+        # On a Bull Novascale machine using MPIBULL2 (based on MPICH2),
+        # mpdboot and mpdallexit commands and related mpiexec may be found,
+        # but the SLURM srun launcher or mpibull2-launch meta-launcher
+        # (which can integrate directly to several resource managers
+        # using prun, srun, orterun, or mprun) should be simpler to use.
 
         # The SLURM configuration is slightly different from that of MPICH2.
 

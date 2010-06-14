@@ -837,6 +837,19 @@ class case:
 
         s.write('#!/bin/sh\n\n')
 
+        # Add detection and handling of SALOME YACS module if run from
+        # this environment.
+
+        yacs_test = \
+"""
+# Detect and handle running under SALOME YACS module.
+YACS_ARG=
+if test "$SALOME_CONTAINERNAME" != "" -a "$CFDRUN_ROOT_DIR" != "" ; then
+  YACS_ARG="--yacs-module=${CFDRUN_ROOT_DIR}"/lib/salome/libCFD_RunExelib.so
+fi
+"""
+        s.write(yacs_test + '\n')
+
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')
@@ -851,11 +864,11 @@ class case:
 
         if mpi_env.gen_hostsfile != None:
             s.write('# Generate hostsfile.\n')
-            s.write(mpi_env.gen_hostsfile + '|| exit $?\n\n')
+            s.write(mpi_env.gen_hostsfile + ' || exit $?\n\n')
 
         if n_procs > 1 and mpi_env.mpiboot != None:
             s.write('# Boot MPI daemons.\n')
-            s.write(mpi_env.mpiboot + '|| exit $?\n\n')
+            s.write(mpi_env.mpiboot + ' || exit $?\n\n')
 
         # Start assembling command
 
@@ -882,11 +895,11 @@ class case:
             if len(self.syr_domains) == 0:
 
                 s_args = self.domains[0].solver_args()
+
                 s.write('cd ' + s_args[0] + '\n\n')
-
                 s.write('# Run solver.\n')
-
-                s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2] + ' $@\n')
+                s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2]
+                        + ' $YACS_ARGS' + ' $@\n')
 
             else: # coupling through sockets
 
@@ -948,7 +961,7 @@ class case:
 
         if n_procs > 1 and mpi_env.mpihalt != None:
             s.write('\n# Halt MPI daemons.\n')
-            s.write(mpi_env.mpihalt + '\n')
+            s.write(mpi_env.mpihalt + '\n\n')
 
         if mpi_env.del_hostsfile != None:
             s.write('# Remove hostsfile.\n')
@@ -1206,6 +1219,9 @@ class case:
         Run solver proper.
         """
 
+        if not self.exec_solver:
+            return 0
+
         if suffix != None:
             self.suffix = suffix
 
@@ -1229,12 +1245,10 @@ class case:
 
         # Maximum remaining time for PBS or similar batch system.
 
-        if self.exec_solver:
-
-            b = cs_exec_environment.batch_info()
-            max_time = b.get_remaining_time()
-            if max_time != None:
-                os.putenv('CS_MAXTIME', max_time)
+        b = cs_exec_environment.batch_info()
+        max_time = b.get_remaining_time()
+        if max_time != None:
+            os.putenv('CS_MAXTIME', max_time)
 
         # Now run the calculation
 
@@ -1296,7 +1310,7 @@ class case:
 
         os.chdir(self.exec_dir)
 
-        self.update_scripts_tmp(('failed', 'finished'), 'saving')
+        self.update_scripts_tmp(('ready', 'failed', 'finished'), 'saving')
 
         # Now save results
 
@@ -1356,7 +1370,7 @@ class case:
                 retcode = self.prepare_data(n_procs,
                                             hosts_list,
                                             mpi_environment)
-            if run_solver == True and run_solver == True:
+            if run_solver == True:
                 self.run_solver()
 
             if save_results == True:

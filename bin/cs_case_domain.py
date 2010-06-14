@@ -747,11 +747,12 @@ class domain(base_domain):
             self.copy_data_file(self.thermochemistry_data,
                                 'dp_thch',
                                 'thermochemistry')
-            self.copy_data_file(os.path.join(cs_config.dirs.pkgdatadir,
-                                             'data',
-                                             'thch',
-                                             'JANAF'),
-                                'JANAF')
+            if not os.path.isfile('JANAF'):
+                self.copy_data_file(os.path.join(cs_config.dirs.pkgdatadir,
+                                                 'data',
+                                                 'thch',
+                                                 'JANAF'),
+                                    'JANAF')
 
         if self.meteo_data != None:
             self.copy_data_file(self.meteo_data,
@@ -1034,7 +1035,7 @@ class domain(base_domain):
                 if f in dir_files:
                     user_files.append(f)
             if len(user_files) > 0:
-                self.copy_results_to_dir(restart_files, 'RES_USER')
+                self.copy_results_to_dir(user_files, 'RES_USER')
 
         # Parameter or similar data files
 
@@ -1224,7 +1225,6 @@ class syrthes_domain(base_domain):
 
             # Copy source files to execution directory
 
-
             if (self.exec_dir != self.result_dir):
                 exec_src = os.path.join(self.exec_dir, 'src_syrthes')
                 os.mkdir(exec_src)
@@ -1279,15 +1279,15 @@ class syrthes_domain(base_domain):
 
         if by_suffix == True:
             self.result_dir = os.path.join(self.case_dir, 'RESU', 'RESU_SYR')
-            self.result_suffix = name
+            self.result_dir += '.' + name
 
         else:
             self.result_dir = os.path.join(self.case_dir,
                                            'RESU',
                                            name,
                                            'RESU_SYR')
-            if (self.tag != None):
-                self.result_dir += '.' + self.tag
+        if (self.tag != None):
+            self.result_dir += '.' + self.tag
 
         if not os.path.isdir(self.result_dir):
             os.makedirs(self.result_dir)

@@ -17,6 +17,37 @@
     doc/tutorial/tuto_case3.tex
     doc/tutorial/tuto_case4.tex
 
+* 19/05/2010 - David Monfort <david.monfort@edf.fr>
+  Fix a bug in the user files results copy in the Python runcase.
+  modified script:
+    bin/cs_case_domain.py
+
+* 05/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve Code_Saturne manuals launch from the main script.
+  modified script:
+    bin/cs_info.py
+
+* 05/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve MPICH2 detection and some MPI shell commands.
+  modified scritps:
+    bin/cs_case.py
+    bin/cs_exec_environment.py
+
+* 16/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix YACS command line handling.
+  modified script:
+    bin/cs_case.py
+
+* 15/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix minor issue for SYRTHES coupling and JANAF file handling.
+  modified script:
+    bin/cs_case_domain.py
+
+* 15/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add YACS detection in the runcase script.
+  modified script:
+    bin/cs_case.py
+
 * 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor update to the documentation (mostly English corrections).
   modified files:
