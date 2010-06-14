@@ -1,4 +1,14 @@
 * 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Miscellaneous improvement for robustness.
+  modified routines:
+    src/base/cs_benchmark.c
+    src/base/cs_gui_boundary_conditions.c
+    src/base/cs_io.c
+    src/base/cs_matrix.c
+    src/base/cs_preprocessor_data.c
+    src/base/testel.f90
+
+* 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Cast all the printing in unsigned long long instead of unsigned long.
   modified routines:
     src/base/cs_base.c

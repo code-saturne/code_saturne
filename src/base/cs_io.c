@@ -605,7 +605,7 @@ _file_open(cs_io_t     *cs_io,
 
   /* Create interface file descriptor */
 
-#if defined(HAVE_MPI)
+#if defined(FVM_HAVE_MPI)
   cs_io->f = fvm_file_open(name, f_mode, hints, comm);
 #else
   cs_io->f = fvm_file_open(name, f_mode, hints);
@@ -804,7 +804,7 @@ _file_legacy_restart_open(cs_io_t    *inp,
 
   /* Create interface file descriptor */
 
-#if defined(HAVE_MPI)
+#if defined(FVM_HAVE_MPI)
   inp->f = fvm_file_open(name, FVM_FILE_MODE_READ, FVM_FILE_NO_MPI_IO, comm);
 #else
   inp->f = fvm_file_open(name, FVM_FILE_MODE_READ, 0);
@@ -1075,7 +1075,7 @@ _file_reopen_read(cs_io_t   *inp,
 
     inp->index->f[i] = fvm_file_free(inp->index->f[i]);
 
-#if defined(HAVE_MPI)
+#if defined(FVM_HAVE_MPI)
     inp->index->f[i] = fvm_file_open(tmpname, FVM_FILE_MODE_READ, hints, comm);
 #else
     inp->index->f[i] = fvm_file_open(tmpname, FVM_FILE_MODE_READ, hints);
@@ -1230,11 +1230,11 @@ _echo_data(size_t           echo,
            fvm_datatype_t   elt_type,
            const void      *elts)
 {
-  fvm_gnum_t  i;
   fvm_gnum_t  num_shift = 1;
   size_t  _n_elts = n_elts;
   fvm_file_off_t  echo_start = 0;
   fvm_file_off_t  echo_end = 0;
+  fvm_file_off_t  i;
   const char *_loc_glob[] = {N_(" (local)"), ""};
   const char *loc_glob = _loc_glob[1];
 
@@ -1583,7 +1583,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 
   assert(header->n_vals == inp->n_vals);
 
-  assert(global_num_end <= header->n_vals + 1);
+  assert(global_num_end <= (fvm_gnum_t)header->n_vals + 1);
 
   /* Choose global or block mode */
 
@@ -2528,6 +2528,10 @@ cs_io_read_header(cs_io_t             *inp,
                 fvm_file_get_name(inp->f), elt_type_name);
 
     header->elt_type = _type_read_to_elt_type(header->type_read);
+  }
+  else {
+    header->type_read = FVM_DATATYPE_NULL;
+    header->elt_type = FVM_DATATYPE_NULL;
   }
 
   /* Possible echo */

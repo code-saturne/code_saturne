@@ -937,7 +937,7 @@ _matrix_vector_test(int                    n_runs,
                     cs_real_t             *restrict x,
                     cs_real_t             *restrict y)
 {
-  cs_int_t ii, jj;
+  cs_int_t ii;
   double wt, cpu;
   int    run_id;
   long   n_ops, n_ops_glob;
@@ -984,8 +984,8 @@ _matrix_vector_test(int                    n_runs,
                               y);
     test_sum += y[n_cells-1];
 #if 0
-    for (jj = 0; jj < n_cells; jj++)
-      bft_printf("y[%d] = %12.4f\n", jj, y[jj]);
+    for (ii = 0; ii < n_cells; ii++)
+      bft_printf("y[%d] = %12.4f\n", ii, y[ii]);
 #endif
   }
 

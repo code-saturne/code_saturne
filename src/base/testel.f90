@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -282,9 +282,11 @@ call grdcel                                                       &
 ! On sort le gradient
 
 NAMEVR = 'Grad_RC'
-call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
-!==========
-            ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+if (ichrvl.eq.1) then
+  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+  !==========
+              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+endif
 
 ! Calcul de l'erreur absolue
 
@@ -300,9 +302,11 @@ enddo
 ! On sort l'erreur
 
 NAMEVR = 'Err_Grad_RC'
-call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
-!==========
-            ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+if (ichrvl.eq.1) then
+  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+  !==========
+              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+endif
 
 
 !  2.2 APPEL A GRDCEL AVEC IMRGRA = 1
@@ -334,9 +338,11 @@ call grdcel                                                       &
 ! On sort le gradient
 
 NAMEVR = 'Grad_LSQ'
-call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
-!==========
-            ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+if (ichrvl.eq.1) then
+  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+  !==========
+              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+endif
 
 ! Calcul de l'erreur absolue
 
@@ -352,9 +358,11 @@ enddo
 ! On sort l'erreur
 
 NAMEVR = 'Err_Grad_LSQ'
-call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
-!==========
-            ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+if (ichrvl.eq.1) then
+  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+  !==========
+              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+endif
 
 
 !  2.3 APPEL A GRDCEL AVEC IMRGRA = 2
@@ -385,9 +393,11 @@ call grdcel                                                       &
 ! On sort le gradient
 
 NAMEVR = 'Grad_LSQ_Ext'
-call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
-!==========
-            ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+if (ichrvl.eq.1) then
+  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+  !==========
+              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+endif
 
 ! Calcul de l'erreur absolue
 
@@ -403,9 +413,11 @@ enddo
 ! On sort l'erreur
 
 NAMEVR = 'Err_Grad_LSQ_Ext'
-call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
-!==========
-            ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+if (ichrvl.eq.1) then
+  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+  !==========
+              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+endif
 
 
 !  2.4 APPEL A GRDCEL AVEC IMRGRA = 4
@@ -436,9 +448,11 @@ call grdcel                                                       &
 ! On sort le gradient
 
 NAMEVR = 'Grad_LSQ_RC'
-call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
-!==========
-            ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+if (ichrvl.eq.1) then
+  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+  !==========
+              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+endif
 
 ! Calcul de l'erreur absolue
 
@@ -454,9 +468,11 @@ enddo
 ! On sort l'erreur
 
 NAMEVR = 'Err_Grad_LSQ_RC'
-call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
-!==========
-            ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+if (ichrvl.eq.1) then
+  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+  !==========
+              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+endif
 
 
 !  2.5 APPEL A GRDCEL AVEC IMRGRA = 3
@@ -492,9 +508,11 @@ call grdcel                                                       &
 ! On sort le gradient
 
 NAMEVR = 'Grad_LSQ_ExtRed'
-call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
-!==========
-            ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+if (ichrvl.eq.1) then
+  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+  !==========
+              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+endif
 
 ! Calcul de l'erreur absolue
 
@@ -510,10 +528,11 @@ enddo
 ! On sort l'erreur
 
 NAMEVR = 'Err_Grad_LSQ_ExtRed'
-call psteva(ipart , namevr, idimt, ientla, ivarpr,                &
-!==========
-            ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
-
+if (ichrvl.eq.1) then
+  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+  !==========
+              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+endif
 
 !----
 ! FIN
