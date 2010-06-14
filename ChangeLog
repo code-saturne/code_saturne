@@ -1,4 +1,10 @@
 * 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix some integer sizes in the reduced-neighborhood algorithm (only relevant
+  for big meshes).
+  modified routine:
+    src/base/cs_ext_neighborhood.c
+
+* 09/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Free temporary mesh structure in the Code_Aster coupling.
   modified routine:
     src/base/cs_ast_coupling.c
