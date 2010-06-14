@@ -1,3 +1,8 @@
+* 09/04/2010 - David Monfort <david.monfort@edf.fr>
+  Missing header in the cs_solver routine.
+  modified routine:
+    src/apps/cs_solver.c
+
 * 02/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Miscellaneous improvement for robustness.
   modified routines:
