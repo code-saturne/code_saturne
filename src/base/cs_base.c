@@ -315,7 +315,7 @@ _cs_base_err_vprintf(const char  *format,
         sprintf(nom_fic_err, "error_n%04d", cs_glob_rank_id + 1);
     }
 
-    stderr = freopen(nom_fic_err, "w", stderr);
+    freopen(nom_fic_err, "w", stderr);
 
     initialized = true;
   }

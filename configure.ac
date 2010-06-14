@@ -73,6 +73,9 @@ AM_INIT_AUTOMAKE([-Wall])
 
 AM_MAINTAINER_MODE
 
+# Enable silent rules with "./configure --enable-silent-rules" or "make V=0"
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
+
 #------------------------------------------------------------------------------
 # Checks for programs.
 #------------------------------------------------------------------------------
@@ -356,7 +359,7 @@ CS_AC_TEST_SYRTHES
 AC_ARG_WITH(prepro, [AS_HELP_STRING([--with-prepro=PATH],
                                     [specify prefix directory for the Preprocessor])])
 
-AC_PATH_PROG([ecs], [cs_preprocess],
+AC_PATH_PROG([ecs], [cs_preprocess$EXEEXT],
              [no],
              [$with_prepro/bin$PATH_SEPARATOR$PATH])
 
@@ -475,6 +478,7 @@ AM_CONDITIONAL(HAVE_GUI, [test "x$have_gui" = "xyes"])
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([sys/types.h sys/utsname.h sys/stat.h stddef.h])
+AC_CHECK_HEADERS([sys/resource.h])
 
 #------------------------------------------------------------------------------
 # Checks for library functions.

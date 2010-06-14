@@ -3,7 +3,7 @@
 # This file is part of the Code_Saturne Kernel, element of the
 # Code_Saturne CFD tool.
 #
-# Copyright (C) 2009 EDF S.A., France
+# Copyright (C) 2009-2010 EDF S.A., France
 #
 # The Code_Saturne Kernel is free software; you can redistribute it
 # and/or modify it under the terms of the GNU General Public License
@@ -454,7 +454,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cs_linker_set=yes
 
         # Default compiler flags
-        cflags_default="-Aa +e +DA2.0W"
+        cflags_default="-AC99 +e"
         cflags_default_opt="+O2"
         cflags_default_hot="+O3"
         cflags_default_dbg="-g"
@@ -462,11 +462,19 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cflags_default_omp="+Oopenmp" # most pragmas require +O3
 
         # Default linker flags
-        ldflags_default="+DA2.0W +FPVZOUD +U77"
+        ldflags_default="+FPVZOUD +U77"
         ldflags_default_opt="+O1"
         ldflags_default_dbg="-g"
         ldflags_default_prf="-fbexe"
         cflags_default_omp="+Oopenmp"
+
+        if test "$host_cpu" = "ia64" ; then
+          cflags_default="$cflags_default +DD64"
+          ldflags_default="$ldflags_default +DD64"
+        else
+          cflags_default="$cflags_default +DA2.0w"
+          ldflags_default="$ldflags_default +DA2.0w"
+        fi
 
       fi
       ;;

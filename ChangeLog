@@ -1,3 +1,11 @@
+* 25/05/2010 - David Monfort <david.monfort@edf.fr>
+  Minor fixes to alleviate cross-compilation issues with mingw32 compilers.
+  modified script:
+    configure.ac
+  modified routines:
+    src/base/cs_base.c
+    src/base/tremai.c
+
 * 21/05/2010 - Pascal Nicolas <pascal.nicolas@incka.fr>
   Update the tutorial description.
   modified files:
@@ -16,6 +24,13 @@
     doc/tutorial/tuto_case1.tex
     doc/tutorial/tuto_case3.tex
     doc/tutorial/tuto_case4.tex
+
+* 21/05/2010 - David Monfort <david.monfort@edf.fr>
+  Enable silent rules with recent automake (>= 1.11.1). The default mode is
+  verbose, the silent mode can be activated with --enable-silent-rules at
+  configure stage or make V=0 at compilation stage.
+  modified script:
+    configure.ac
 
 * 19/05/2010 - David Monfort <david.monfort@edf.fr>
   Fix a bug in the user files results copy in the Python runcase.
@@ -37,6 +52,11 @@
   Fix YACS command line handling.
   modified script:
     bin/cs_case.py
+
+* 15/04/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Handle the difference between HP-UX hppa and Itanium systems.
+  modified script:
+    config/cs_auto_flags.sh
 
 * 15/04/2010 - David Monfort <david.monfort@edf.fr>
   Fix an uninitialized variable in fioul combustion module.
