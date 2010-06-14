@@ -144,7 +144,9 @@ if ( (mod(ipwaf-1,nvisla).eq.0 .and. nfin.eq.0)   .or.            &
   npt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) npt = npt + 1
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) npt = npt + 1
+    endif
   enddo
 
 !-->Y a t-il encore des particules a visualiser ?
@@ -601,7 +603,6 @@ endif
 
  100  continue
 
-if (nfin.eq.1) then
 
   FICH = ' '
   fich = entet
@@ -778,7 +779,6 @@ if (nfin.eq.1) then
 
   close(impla1)
 
-endif
 
 return
 

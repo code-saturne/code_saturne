@@ -394,6 +394,10 @@ if (iihmpr.eq.1) then
     call cfname(3, nombrd(ii), len(nombrd(ii)), ii)
   enddo
 
+  do ii = 1, nbvis
+    liste(ii) = ii
+  enddo
+
 endif
 
 call uslag1

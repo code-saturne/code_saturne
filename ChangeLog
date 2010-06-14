@@ -6,6 +6,12 @@
     src/base/cs_base.c
     src/base/tremai.c
 
+* 21/05/2010 - Alexandre Douce <alexandre.douce@edf.fr>
+  Fix small bugs in post-processing management of the Lagrangian module.
+  modified routines:
+    src/lagr/enswaf.f90
+    src/lagr/lagopt.f90
+
 * 21/05/2010 - Maya Milliez <maya.milliez@edf.fr>
                Bertrand Carissimo <bertrand.carissimo@edf.fr>
   Several little fixes and improvements for the atmospheric module.
