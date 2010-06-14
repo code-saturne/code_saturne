@@ -33,6 +33,13 @@
     configure.ac
 
 * 19/05/2010 - David Monfort <david.monfort@edf.fr>
+  Revert a changeset regarding the turbulence relaxation (k/epsilon/omega) to
+  avoid stability issues in some calculations. This still needs to be
+  investigated in order to have a correct unsteadyness when needed.
+  modified routine:
+    src/base/modini.f90
+
+* 19/05/2010 - David Monfort <david.monfort@edf.fr>
   Fix a bug in the user files results copy in the Python runcase.
   modified script:
     bin/cs_case_domain.py
