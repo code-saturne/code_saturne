@@ -91,7 +91,6 @@
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
 #include "cs_gui.h"
-#include "cs_gui_mesh.h"
 #include "cs_io.h"
 #include "cs_join.h"
 #include "cs_mesh.h"
