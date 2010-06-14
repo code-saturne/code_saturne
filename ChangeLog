@@ -6,6 +6,12 @@
     src/base/cs_base.c
     src/base/tremai.c
 
+* 21/05/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve the cs_solver options management so that the error message is clearer
+  in case the code is not compiled with X feature support.
+  modified routine:
+    src/base/cs_opts.c
+
 * 21/05/2010 - Alexandre Douce <alexandre.douce@edf.fr>
   Fix small bugs in post-processing management of the Lagrangian module.
   modified routines:
