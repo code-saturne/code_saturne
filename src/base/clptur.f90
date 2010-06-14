@@ -416,7 +416,7 @@ do ifac = 1, nfabor
 !     Si on n'est pas en ALE, on force la vitesse de deplacement
 !       de la face a etre tangentielle (et on met a jour rcodcl
 !       pour une utilisation eventuelle)
-    if (iale.eq.0.or.imobil.eq.0) then
+    if (iale.eq.0.and.imobil.eq.0) then
       rcodsn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
       rcodcx = rcodcx -rcodsn*rnx
       rcodcy = rcodcy -rcodsn*rny
