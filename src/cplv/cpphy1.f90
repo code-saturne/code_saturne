@@ -372,7 +372,7 @@ call cpcym2                                                       &
 ! --> Clipping eventuel des fractions massiques
 
 do iel = 1, ncel
-  do ice = 1, ngaze
+  do ice = 1, (ngaze-2*ncharb)
     ipcyce = ipproc(iym1(ice))
     if ( abs(propce(iel,ipcyce)) .lt. epsicp )                    &
          propce(iel,ipcyce) = zero

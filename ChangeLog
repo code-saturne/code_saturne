@@ -1,3 +1,9 @@
+* 15/06/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix two issues in the coal combustion modelling.
+  modified routines:
+    src/cplv/cpphy1.f90
+    src/cplv/cpphyv.f90
+
 * 15/06/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Minor corrections and code cleaning.
   modified routine:
