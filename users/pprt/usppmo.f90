@@ -39,8 +39,9 @@ subroutine usppmo
 !    User subroutine.
 
 !    Define the use of a specific physics amongst the following:
-!      - combustion with gaz / coal / heavy fioul oil
+!      - combustion with gaz / coal / heavy fuel oil
 !      - compressible flows
+!      - electric arcs
 !      - atmospheric modelling
 !      - cooling towers modelling
 
@@ -193,8 +194,8 @@ ippmod(ieljou) = -1
 ! ==========
 
 !        if = -1   module not activated
-!        if = 0    electric potential
-!        if = 1    electric potential and vector potential (hence 3D modelling)
+!        if = 1    electric potential
+!        if = 2    electric potential and vector potential (hence 3D modelling)
 
 ippmod(ielarc) = -1
 
@@ -244,7 +245,6 @@ ippmod(icodeq) = -1
 ! ==========
 
 !        if = -1   module not activated
-!        if = 1    eletric potential
 
 ippmod(ielion) = -1
 
