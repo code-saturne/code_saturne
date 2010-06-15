@@ -423,7 +423,7 @@ enddo
 ntbcpi = 1
 ntbcpr = 15
 ntbmci = 0
-ntbmcr = 2 + 2*ncharb + 4
+ntbmcr = 2*ncharb + 8
 !  Ce sont en fait X1M, X2M,
 !                  F1M(ICHA) et F2M(ICHA) pour chaque charbon
 !                  ACHX1F1, ACHX2F2, ACOF1, ACOF2
