@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-05-21 19:00+0200\n"
-"PO-Revision-Date: 2010-04-09 15:28+0200\n"
+"POT-Creation-Date: 2010-06-14 19:11+0200\n"
+"PO-Revision-Date: 2010-06-14 19:23+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "MIME-Version: 1.0\n"
@@ -51,7 +51,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:307 src/base/cs_base.c:363
+#: src/apps/cs_io_dump.c:307 src/base/cs_base.c:363 src/bft/bft_error.c:169
 #, c-format
 msgid ""
 "\n"
@@ -60,7 +60,7 @@ msgstr ""
 "\n"
 "Erreur système : %s\n"
 
-#: src/apps/cs_io_dump.c:309 src/base/cs_base.c:365
+#: src/apps/cs_io_dump.c:309 src/base/cs_base.c:365 src/bft/bft_error.c:171
 #, c-format
 msgid ""
 "\n"
@@ -71,17 +71,18 @@ msgstr ""
 "%s:%d: Erreur fatale.\n"
 "\n"
 
-#: src/apps/cs_io_dump.c:357
+#: src/apps/cs_io_dump.c:357 src/bft/bft_mem.c:579 src/bft/bft_mem.c:738
+#: src/bft/bft_mem.c:992
 #, c-format
 msgid "Failure to allocate \"%s\" (%lu bytes)"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:396
+#: src/apps/cs_io_dump.c:396 src/bft/bft_mem.c:845
 #, c-format
 msgid "Failure to reallocate \"%s\" (%lu bytes)"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:473
+#: src/apps/cs_io_dump.c:473 src/bft/bft_file.c:1089 src/fvm/fvm_file.c:291
 #, c-format
 msgid ""
 "Error reading file \"%s\":\n"
@@ -92,18 +93,21 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/apps/cs_io_dump.c:477
+#: src/apps/cs_io_dump.c:477 src/fvm/fvm_file.c:295
 #, c-format
 msgid "Premature end of file \"%s\""
 msgstr ""
 
-#: src/apps/cs_io_dump.c:480
+#: src/apps/cs_io_dump.c:480 src/fvm/fvm_file.c:298
 #, c-format
 msgid "Error reading file \"%s\""
 msgstr "Erreur à la lecture du fichier \"%s\""
 
 #: src/apps/cs_io_dump.c:524 src/apps/cs_io_dump.c:536
-#: src/apps/cs_io_dump.c:543 src/apps/cs_io_dump.c:557
+#: src/apps/cs_io_dump.c:543 src/apps/cs_io_dump.c:557 src/bft/bft_file.c:895
+#: src/bft/bft_file.c:908 src/bft/bft_file.c:915 src/bft/bft_file.c:930
+#: src/fvm/fvm_file.c:395 src/fvm/fvm_file.c:407 src/fvm/fvm_file.c:414
+#: src/fvm/fvm_file.c:428
 #, c-format
 msgid ""
 "Error setting position in file \"%s\":\n"
@@ -111,11 +115,11 @@ msgid ""
 "  %s"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:545
+#: src/apps/cs_io_dump.c:545 src/bft/bft_file.c:917 src/fvm/fvm_file.c:416
 msgid "sizeof(off_t) > sizeof(long) but fseeko() not available"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:612
+#: src/apps/cs_io_dump.c:612 src/bft/bft_file.c:785 src/fvm/fvm_file.c:484
 #, c-format
 msgid ""
 "Error obtaining position in file \"%s\":\n"
@@ -139,7 +143,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:720
+#: src/apps/cs_io_dump.c:720 src/bft/bft_file.c:645 src/fvm/fvm_file.c:222
 #, c-format
 msgid ""
 "Error opening file \"%s\":\n"
@@ -158,11 +162,9 @@ msgid ""
 msgstr ""
 
 #: src/apps/cs_io_dump.c:739
-#, fuzzy, c-format
+#, c-format
 msgid "  File type: %s\n"
-msgstr ""
-"\n"
-"  Type de fichier : %s\n"
+msgstr "  Type de fichier : %s\n"
 
 #: src/apps/cs_io_dump.c:750
 #, c-format
@@ -185,7 +187,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:787
+#: src/apps/cs_io_dump.c:787 src/bft/bft_file.c:674 src/fvm/fvm_file.c:250
 #, c-format
 msgid ""
 "Error closing file \"%s\":\n"
@@ -318,18 +320,16 @@ msgid "  \"%-32s\"; Type: %-6s; Location: %2lu; Size: %llu\n"
 msgstr ""
 
 #: src/apps/cs_io_dump.c:2501
-#, fuzzy, c-format
+#, c-format
 msgid "  \"%-32s\"\n"
-msgstr "  \"%s\"\n"
+msgstr "  \"%-32s\"\n"
 
 #: src/apps/cs_io_dump.c:2598 src/apps/cs_io_dump.c:2626
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Sections only found in file \"%s\":\n"
 "\n"
 msgstr ""
-"\n"
-"  Section écrite sur \"%s\" :\n"
 
 #: src/apps/cs_partition.c:206
 #, c-format
@@ -2653,7 +2653,11 @@ msgid ""
 "  Vertex %d appears twice.\n"
 msgstr ""
 
-#: src/base/cs_join_intersect.c:2761
+#: src/base/cs_join_intersect.c:2665 src/base/cs_join_intersect.c:2682
+msgid "  Vertex number out of bounds.\n"
+msgstr ""
+
+#: src/base/cs_join_intersect.c:2782
 #, c-format
 msgid ""
 "\n"
@@ -2662,7 +2666,7 @@ msgstr ""
 "\n"
 "  Equivalences cassées pour %llu éléments.\n"
 
-#: src/base/cs_join_intersect.c:2767
+#: src/base/cs_join_intersect.c:2788
 #, c-format
 msgid ""
 "\n"
@@ -2671,13 +2675,13 @@ msgstr ""
 "\n"
 "  Nombre max d'équivalences cassées : %llu\n"
 
-#: src/base/cs_join_intersect.c:3388
+#: src/base/cs_join_intersect.c:3409
 #, c-format
 msgid ""
 "  The received edge global number (%u) is unknown on the current rank.\n"
 msgstr ""
 
-#: src/base/cs_join_intersect.c:3498
+#: src/base/cs_join_intersect.c:3520
 #, c-format
 msgid ""
 "\n"
@@ -2685,7 +2689,7 @@ msgid ""
 "definition.\n"
 msgstr ""
 
-#: src/base/cs_join_intersect.c:3682
+#: src/base/cs_join_intersect.c:3704
 #, c-format
 msgid ""
 "\n"
@@ -2698,14 +2702,14 @@ msgstr ""
 "    Intersections sommet-sommet :     %12lu\n"
 "    Autres intersections :            %12lu\n"
 
-#: src/base/cs_join_intersect.c:3689
+#: src/base/cs_join_intersect.c:3711
 #, c-format
 msgid ""
 "\n"
 "  Local number of edge-edge intersection warnings:%9d\n"
 msgstr ""
 
-#: src/base/cs_join_intersect.c:3691
+#: src/base/cs_join_intersect.c:3713
 #, c-format
 msgid ""
 "\n"
@@ -2714,7 +2718,7 @@ msgstr ""
 "\n"
 "  Nombre local d'équivalences entre sommets : %9d\n"
 
-#: src/base/cs_join_intersect.c:3701
+#: src/base/cs_join_intersect.c:3723
 #, c-format
 msgid ""
 "\n"
@@ -2736,7 +2740,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/base/cs_join_merge.c:578
+#: src/base/cs_join_merge.c:580
 #, c-format
 msgid ""
 "\n"
@@ -2746,7 +2750,7 @@ msgid ""
 "  Check the fraction parameter.\n"
 msgstr ""
 
-#: src/base/cs_join_merge.c:683
+#: src/base/cs_join_merge.c:685
 #, c-format
 msgid ""
 "\n"
@@ -2756,28 +2760,28 @@ msgid ""
 "  Check the fraction parameter.\n"
 msgstr ""
 
-#: src/base/cs_join_merge.c:976
+#: src/base/cs_join_merge.c:978
 #, c-format
 msgid ""
 "\n"
 "  Number of local iterations to converge on vertex equivalences: %3d\n"
 msgstr ""
 
-#: src/base/cs_join_merge.c:979
+#: src/base/cs_join_merge.c:981
 #, c-format
 msgid ""
 "  Number of global iterations to converge on vertex equivalences: %3d\n"
 "\n"
 msgstr ""
 
-#: src/base/cs_join_merge.c:1435
+#: src/base/cs_join_merge.c:1437
 #, c-format
 msgid ""
 "\n"
 "  Pre-merge for %llu global couple of elements.\n"
 msgstr ""
 
-#: src/base/cs_join_merge.c:1439
+#: src/base/cs_join_merge.c:1441
 #, c-format
 msgid ""
 "\n"
@@ -2786,12 +2790,12 @@ msgstr ""
 "\n"
 "  Nombre local de pre-fusion: %d\n"
 
-#: src/base/cs_join_merge.c:1942
+#: src/base/cs_join_merge.c:1944
 #, c-format
 msgid " Number of tolerance reductions:  %4d\n"
 msgstr " Nombre de réductions de tolérance : %4d\n"
 
-#: src/base/cs_join_merge.c:2046
+#: src/base/cs_join_merge.c:2048
 msgid ""
 "\n"
 "  No need to merge vertices.\n"
@@ -2799,7 +2803,7 @@ msgstr ""
 "\n"
 "  Pas besoin de fusionner des sommets.\n"
 
-#: src/base/cs_join_merge.c:2050
+#: src/base/cs_join_merge.c:2052
 #, c-format
 msgid ""
 "\n"
@@ -2808,21 +2812,21 @@ msgstr ""
 "\n"
 "  Taille max d'un ensemble de fusion de sommets : %llu\n"
 
-#: src/base/cs_join_merge.c:2118
+#: src/base/cs_join_merge.c:2120
 #, c-format
 msgid ""
 "\n"
 "  %3d loop(s) to get consistent subsets\n"
 msgstr ""
 
-#: src/base/cs_join_merge.c:2182
+#: src/base/cs_join_merge.c:2184
 #, c-format
 msgid ""
 "\n"
 "  Excessive transitivity for %llu set(s) of vertices.\n"
 msgstr ""
 
-#: src/base/cs_join_merge.c:2188
+#: src/base/cs_join_merge.c:2190
 #, c-format
 msgid ""
 "\n"
@@ -2831,12 +2835,12 @@ msgstr ""
 "\n"
 "  Nombre max d'itérations pour résoudre un excès de transitivité : %llu\n"
 
-#: src/base/cs_join_merge.c:2635
+#: src/base/cs_join_merge.c:2637
 #, c-format
 msgid "  Number of sub-elements to add to edge definition: %8d\n"
 msgstr ""
 
-#: src/base/cs_join_merge.c:3054
+#: src/base/cs_join_merge.c:3056
 #, c-format
 msgid ""
 "\n"
@@ -2845,7 +2849,7 @@ msgstr ""
 "\n"
 "  Nombre global de nouveaux sommets à créer : %10llu\n"
 
-#: src/base/cs_join_merge.c:3164
+#: src/base/cs_join_merge.c:3166
 #, c-format
 msgid ""
 "  Inconsistent value found in cs_join_vertex_t struct.:\n"
@@ -2853,7 +2857,7 @@ msgid ""
 "      %u - [%7.4le, %7.4le, %7.4le] - %lg\n"
 msgstr ""
 
-#: src/base/cs_join_merge.c:3223
+#: src/base/cs_join_merge.c:3225
 #, c-format
 msgid ""
 "\n"
@@ -2861,7 +2865,7 @@ msgid ""
 "                                          global: %9llu\n"
 msgstr ""
 
-#: src/base/cs_join_merge.c:3311
+#: src/base/cs_join_merge.c:3313
 #, c-format
 msgid ""
 "\n"
@@ -2934,7 +2938,7 @@ msgid ""
 " Edge number: %d (%u) - (%d, %d) in old numbering.\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:2044
+#: src/base/cs_join_mesh.c:2054
 msgid ""
 "\n"
 "  Local min/max. tolerance:\n"
@@ -2942,7 +2946,7 @@ msgid ""
 " Glob. Num. |  Tolerance  |              Coordinates\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:2068
+#: src/base/cs_join_mesh.c:2078
 msgid ""
 "\n"
 "  Global min/max. tolerance:\n"
@@ -2950,14 +2954,14 @@ msgid ""
 " Glob. Num. |  Tolerance  |              Coordinates\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3250
+#: src/base/cs_join_mesh.c:3259
 #, c-format
 msgid ""
 " The given vertex number: %d is not defined in the edge structure (edges-"
 ">vtx_idx).\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3262
+#: src/base/cs_join_mesh.c:3271
 #, c-format
 msgid ""
 " The given couple of vertex numbers :\n"
@@ -2966,7 +2970,7 @@ msgid ""
 " is not defined in the edge structure.\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3356
+#: src/base/cs_join_mesh.c:3365
 #, c-format
 msgid ""
 " Problem in mesh connectivity. Face: %llu\n"
@@ -2976,7 +2980,7 @@ msgid ""
 " Modify joining parameters to reduce merging (fraction & merge).\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3813 src/base/cs_join_mesh.c:3926
+#: src/base/cs_join_mesh.c:3822 src/base/cs_join_mesh.c:3935
 #, c-format
 msgid ""
 "\n"
@@ -2984,7 +2988,7 @@ msgid ""
 "  -- Dump a cs_join_mesh_t structure: (%p) --\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3818 src/base/cs_join_mesh.c:3931
+#: src/base/cs_join_mesh.c:3827 src/base/cs_join_mesh.c:3940
 #, c-format
 msgid ""
 "\n"
@@ -2992,29 +2996,29 @@ msgid ""
 "  -- Dump a cs_join_mesh_t structure: %s (%p) --\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3820
+#: src/base/cs_join_mesh.c:3829
 #, c-format
 msgid ""
 "\n"
 " mesh->n_faces:       %9d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3821 src/base/cs_join_mesh.c:3934
+#: src/base/cs_join_mesh.c:3830 src/base/cs_join_mesh.c:3943
 #, c-format
 msgid ""
 " mesh->n_g_faces:   %11u\n"
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3830
+#: src/base/cs_join_mesh.c:3839
 #, c-format
 msgid ""
 "\n"
 " face_id: %5d gnum: %9u n_vertices: %4d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3853 src/base/cs_join_mesh.c:3871
-#: src/base/cs_join_mesh.c:3987
+#: src/base/cs_join_mesh.c:3862 src/base/cs_join_mesh.c:3880
+#: src/base/cs_join_mesh.c:3996
 #, c-format
 msgid ""
 "  Incoherency found in the current mesh definition\n"
@@ -3022,7 +3026,7 @@ msgid ""
 "  Vertices: local (%d, %d), global (%u, %u) are defined twice\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3887 src/base/cs_join_mesh.c:4003
+#: src/base/cs_join_mesh.c:3896 src/base/cs_join_mesh.c:4012
 #, c-format
 msgid ""
 "\n"
@@ -3033,28 +3037,28 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3895 src/base/cs_join_mesh.c:4011
+#: src/base/cs_join_mesh.c:3904 src/base/cs_join_mesh.c:4020
 #, c-format
 msgid ""
 " Local Num | Global Num |  Tolerance  |        Coordinates\n"
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3933
+#: src/base/cs_join_mesh.c:3942
 #, c-format
 msgid ""
 "\n"
 " mesh->n_faces:     %11d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3943
+#: src/base/cs_join_mesh.c:3952
 #, c-format
 msgid ""
 "\n"
 " face_id: %9d gnum: %10llu n_vertices : %4d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3967
+#: src/base/cs_join_mesh.c:3976
 #, c-format
 msgid ""
 "  Incoherency found in the current mesh definition\n"
@@ -3062,35 +3066,35 @@ msgid ""
 "  Vertices: local (%d, %d), global (%llu, %llu) are defined twice\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4041
+#: src/base/cs_join_mesh.c:4050
 msgid ""
 "\n"
 "  Edge connectivity used in the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4042
+#: src/base/cs_join_mesh.c:4051
 #, c-format
 msgid "  Number of edges:      %8d\n"
 msgstr "  Nombre d'arêtes :     %8d\n"
 
-#: src/base/cs_join_mesh.c:4043
+#: src/base/cs_join_mesh.c:4052
 #, c-format
 msgid "  Number of vertices:   %8d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4052
+#: src/base/cs_join_mesh.c:4061
 #, c-format
 msgid "  Edge %6d  (%8u) <Vertex> [%8u %8u]\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4079
+#: src/base/cs_join_mesh.c:4088
 msgid ""
 "\n"
 "  Vertex -> Vertex connectivity :\n"
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4086
+#: src/base/cs_join_mesh.c:4095
 #, c-format
 msgid "  Vertex %6d (%7u) - %3d - "
 msgstr ""
@@ -3119,32 +3123,32 @@ msgstr "  Ajout de la périodicité %d (translation [%10.4e, %10.4e, %10.4e]).\n
 msgid "  Adding periodicity %d (rotation).\n"
 msgstr "  Ajout de la périodicité %d (rotation).\n"
 
-#: src/base/cs_join_perio.c:822
+#: src/base/cs_join_perio.c:825
 #, c-format
 msgid "  Adding periodicity %d (general formulation).\n"
 msgstr "  Ajout de la périodicité %d (formulation générale).\n"
 
-#: src/base/cs_join_perio.c:891
+#: src/base/cs_join_perio.c:897
 #, c-format
 msgid ""
 " Periodicity number %d is not defined\n"
 " %d periodicities are defined\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:1203
+#: src/base/cs_join_perio.c:1209
 #, c-format
 msgid ""
 "  Apply periodicity to the local join mesh structure\n"
 "  New number of faces to treat locally: %8d\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:1216 src/base/cs_join_util.c:2437
+#: src/base/cs_join_perio.c:1222 src/base/cs_join_util.c:2441
 msgid ""
 "\n"
 "  Selected faces for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:1507
+#: src/base/cs_join_perio.c:1512
 #, c-format
 msgid ""
 "  Vertex state (%d) is not consistent.\n"
@@ -3178,12 +3182,12 @@ msgstr ""
 msgid " Unexpected type (%s) to display in the current dump.\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:872
+#: src/base/cs_join_split.c:843
 msgid ""
 "  face splitting with face -> face connectivity is not yet implemented\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:1032
+#: src/base/cs_join_split.c:1037
 #, c-format
 msgid ""
 " Joining operation : split face %d\n"
@@ -3191,7 +3195,22 @@ msgid ""
 "d\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:1448
+#: src/base/cs_join_split.c:1195
+#, c-format
+msgid " Warning: open cycle for global face %u\n"
+msgstr ""
+
+#: src/base/cs_join_split.c:1236
+#, c-format
+msgid " Warning: global face %u scanned twice\n"
+msgstr ""
+
+#: src/base/cs_join_split.c:1323
+#, c-format
+msgid " Warning: loop limit reached for global face %u\n"
+msgstr ""
+
+#: src/base/cs_join_split.c:1603
 #, c-format
 msgid ""
 "\n"
@@ -3200,7 +3219,7 @@ msgstr ""
 "\n"
 "  Nombre global de faces après subdivision : %10u\n"
 
-#: src/base/cs_join_split.c:1502
+#: src/base/cs_join_split.c:1657
 #, c-format
 msgid ""
 " Inconsistent values between:\n"
@@ -3209,12 +3228,12 @@ msgid ""
 " These values should be equal.\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:1783
+#: src/base/cs_join_split.c:1925
 #, c-format
-msgid "  Split face: %d with returned code: %d\n"
+msgid "  Split face %d >> returned code: %d\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:1954
+#: src/base/cs_join_split.c:2087
 #, c-format
 msgid ""
 "\n"
@@ -3226,6 +3245,15 @@ msgid ""
 "\n"
 "    => Eventually modify joining parameters\n"
 "\n"
+msgstr ""
+
+#: src/base/cs_join_split.c:2119
+#, c-format
+msgid ""
+" At least one original face has been cut into more than %d subfaces\n"
+". You can increase this parameter in usjoin() or usperi() by setting the "
+"advanced parameter maxsf.\n"
+" Be careful. It may produce mesh with a poor quality.\n"
 msgstr ""
 
 #: src/base/cs_join_update.c:761
@@ -3258,38 +3286,38 @@ msgstr ""
 msgid "  Cannot achieve to reorient the current joined face.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3096 src/base/cs_join_update.c:3148
+#: src/base/cs_join_update.c:3099 src/base/cs_join_update.c:3151
 #, c-format
 msgid ""
 "  Cannot achieve to reorient the current joined face with face %d (selected "
 "face).\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3418
+#: src/base/cs_join_update.c:3421
 #, c-format
 msgid ""
 " Incoherency found before interior face orientation checking.\n"
 " Join face %d (%u) and related faces [%d, %d]\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3610
+#: src/base/cs_join_update.c:3613
 #, c-format
 msgid "  Delete %d local vertices not used in mesh definition.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4065
+#: src/base/cs_join_update.c:4068
 #, c-format
 msgid ""
 "  Warning: Face %d (%u) has more than two ancestors.\n"
 "  Old faces implied:"
 msgstr ""
 
-#: src/base/cs_join_update.c:4084
+#: src/base/cs_join_update.c:4087
 #, c-format
 msgid "  Warning: Face %d (%u) has no ancestor.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4095
+#: src/base/cs_join_update.c:4098
 #, c-format
 msgid ""
 "\n"
@@ -3298,14 +3326,14 @@ msgid ""
 "    Number of border faces to add  : %9d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4122
+#: src/base/cs_join_update.c:4125
 #, c-format
 msgid ""
 " There are %u undefined faces with no ancestor.\n"
 " Cannot continue the joining algorithm.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4130
+#: src/base/cs_join_update.c:4133
 #, c-format
 msgid ""
 "\n"
@@ -3313,34 +3341,34 @@ msgid ""
 "     Global number of border faces to add: %10llu\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4138
+#: src/base/cs_join_update.c:4141
 #, c-format
 msgid "     Global number of multiple border faces: %10llu\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4345
+#: src/base/cs_join_update.c:4348
 #, c-format
 msgid "  Clean border face %d. New number of vertices: %d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4367
+#: src/base/cs_join_update.c:4370
 #, c-format
 msgid ""
 "\n"
 "  Degenerate connectivity for %d final local boundary faces.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4406
+#: src/base/cs_join_update.c:4409
 #, c-format
 msgid "  Clean interior face %d. New number of vertices: %d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4428
+#: src/base/cs_join_update.c:4431
 #, c-format
 msgid "  Degenerate connectivity for %d final local interior faces.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4478
+#: src/base/cs_join_update.c:4481
 #, c-format
 msgid ""
 "\n"
@@ -3349,112 +3377,112 @@ msgid ""
 "    Global number of cleaned border faces:   %8u\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2070
+#: src/base/cs_join_util.c:2074
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tml parameter.\n"
 "  It must be between > 0 and is here: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2081
+#: src/base/cs_join_util.c:2085
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tmb parameter.\n"
 "  It must be between > 0 and is here: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2092
+#: src/base/cs_join_util.c:2096
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tmr parameter.\n"
 "  It must be between > 0.0 and is here: %f\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2107
+#: src/base/cs_join_util.c:2111
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the merge tolerance factor.\n"
 "  It must be positive or nul and not: %f\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2117
+#: src/base/cs_join_util.c:2121
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the max. number of tolerance breaks.\n"
 "  It must be between >= 0 and not: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2134
+#: src/base/cs_join_util.c:2138
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tcm parameter.\n"
 "  It must be between 1, 2 or 11, 12 and here is: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2144
+#: src/base/cs_join_util.c:2148
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for icm parameter.\n"
 "  It must be 1 or 2 and here is: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2154
+#: src/base/cs_join_util.c:2158
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the maxsf parameter.\n"
 "  It must be between > 0 and here is: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2287
+#: src/base/cs_join_util.c:2291
 #, c-format
 msgid "  Global number of boundary faces selected for joining: %10u\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2407
+#: src/base/cs_join_util.c:2411
 msgid ""
 "\n"
 "  Local information about selection structure:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2408
+#: src/base/cs_join_util.c:2412
 #, c-format
 msgid "    number of faces:               %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2410
+#: src/base/cs_join_util.c:2414
 #, c-format
 msgid "    number of vertices:            %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2412
+#: src/base/cs_join_util.c:2416
 #, c-format
 msgid "    number of adj. border faces:   %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2414
+#: src/base/cs_join_util.c:2418
 #, c-format
 msgid "    number of adj. interior faces: %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2446
+#: src/base/cs_join_util.c:2450
 msgid ""
 "\n"
 "  Select vertices for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2453
+#: src/base/cs_join_util.c:2457
 msgid ""
 "\n"
 "  Contiguous border faces for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2460
+#: src/base/cs_join_util.c:2464
 msgid ""
 "\n"
 "  Contiguous interior faces for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2678 src/base/cs_join_util.c:2694
+#: src/base/cs_join_util.c:2682 src/base/cs_join_util.c:2698
 #, c-format
 msgid ""
 "  Inconsistent mesh definition. Cannot build edges.\n"
@@ -5053,27 +5081,27 @@ msgstr ""
 "   nombre de rangs MPI :        %d\n"
 "\n"
 
-#: src/base/cs_sat_coupling.c:1019 src/base/cs_sat_coupling.c:1232
-#: src/base/cs_sat_coupling.c:1299 src/base/cs_sat_coupling.c:1374
-#: src/base/cs_sat_coupling.c:1435 src/base/cs_sat_coupling.c:1505
-#: src/base/cs_sat_coupling.c:1603 src/base/cs_sat_coupling.c:1682
-#: src/base/cs_sat_coupling.c:1773 src/base/cs_sat_coupling.c:1849
-#: src/base/cs_sat_coupling.c:1917
+#: src/base/cs_sat_coupling.c:1020 src/base/cs_sat_coupling.c:1241
+#: src/base/cs_sat_coupling.c:1308 src/base/cs_sat_coupling.c:1383
+#: src/base/cs_sat_coupling.c:1444 src/base/cs_sat_coupling.c:1514
+#: src/base/cs_sat_coupling.c:1612 src/base/cs_sat_coupling.c:1691
+#: src/base/cs_sat_coupling.c:1782 src/base/cs_sat_coupling.c:1858
+#: src/base/cs_sat_coupling.c:1926
 #, c-format
 msgid "Impossible coupling number %d; there are %d couplings"
 msgstr "Numéro de couplage %d impossible ;  on a %d couplages"
 
-#: src/base/cs_sat_coupling.c:1034
+#: src/base/cs_sat_coupling.c:1067
 #, c-format
 msgid "coupled_cells_%d"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1053
+#: src/base/cs_sat_coupling.c:1078
 #, c-format
 msgid "coupled_faces_%d"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1312
+#: src/base/cs_sat_coupling.c:1321
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELCPL()\n"
@@ -5084,7 +5112,7 @@ msgstr ""
 "On a indiqué NCECPL = %d et NFBCPL = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:1387
+#: src/base/cs_sat_coupling.c:1396
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELNCP()\n"
@@ -5095,7 +5123,7 @@ msgstr ""
 "On a indiqué NCENCP = %d et NFBNCP = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:1529
+#: src/base/cs_sat_coupling.c:1538
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for COOCPL()\n"
@@ -5106,13 +5134,13 @@ msgstr ""
 "On a indiqué ITYDIS = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#: src/base/cs_sat_coupling.c:1610
+#: src/base/cs_sat_coupling.c:1619
 msgid ""
 "The centred interpolation scheme is not available\n"
 "when coupling cells"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1621
+#: src/base/cs_sat_coupling.c:1630
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for PNDCPL().\n"
@@ -5123,7 +5151,7 @@ msgstr ""
 "On a indiqué ITYLOC = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#: src/base/cs_sat_coupling.c:1699
+#: src/base/cs_sat_coupling.c:1708
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -5134,7 +5162,7 @@ msgstr ""
 "On a indiqué ITYVAR = %d et NBRDIS = %d.\n"
 "On devrait avoir la valeur 0 ou %d pour NBRDIS."
 
-#: src/base/cs_sat_coupling.c:1706
+#: src/base/cs_sat_coupling.c:1715
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -5145,7 +5173,7 @@ msgstr ""
 "On a indiqué ITYVAR = %d et NBRLOC = %d.\n"
 "On devrait avoir la valeur 0 ou %d pour NBRLOC."
 
-#: src/base/cs_sat_coupling.c:2078
+#: src/base/cs_sat_coupling.c:2087
 msgid ""
 "At least 1 Code_Saturne coupling was defined for which\n"
 "no communication with a Code_Saturne instance is possible."
@@ -6016,6 +6044,299 @@ msgstr ""
 "paroi.\n"
 "Vérifier l''existence et le nom du fichier suite: %s \n"
 
+#: src/bft/bft_file.c:159
+#, c-format
+msgid ""
+"Error reading binary file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à la lecture du fichier binaire \"%s\" :\n"
+"\n"
+"  %s"
+
+#: src/bft/bft_file.c:162
+#, c-format
+msgid "Error: reading from closed file \"%s\""
+msgstr "Erreur à la lecture du fichier fermé \"%s\""
+
+#: src/bft/bft_file.c:164
+#, c-format
+msgid ""
+"Error writing binary file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à l'écriture du fichier binaire \"%s\" :\n"
+"\n"
+"  %s"
+
+#: src/bft/bft_file.c:167
+#, c-format
+msgid ""
+"Error reading Fortran binary file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à la lecture du fichier binaire Fortran \"%s\" :\n"
+"\n"
+"  %s"
+
+#: src/bft/bft_file.c:170
+#, c-format
+msgid ""
+"Error writing Fortran binary file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à l'écriture du fichier binaire Fortran \"%s\" :\n"
+"\n"
+"  %s"
+
+#: src/bft/bft_file.c:173
+msgid "A record is too large to be represented in this format (i.e. > 2GB)."
+msgstr ""
+
+#: src/bft/bft_file.c:265
+msgid "Premature end of file."
+msgstr ""
+
+#: src/bft/bft_file.c:311
+#, c-format
+msgid ""
+"Error reading line %d of text file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à la lecture de la ligne %d du fichier texte \"%s\" :\n"
+"\n"
+"  %s"
+
+#: src/bft/bft_file.c:315
+#, c-format
+msgid ""
+"Error reading text file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à la lecture du fichier texte \"%s\" :\n"
+"\n"
+"  %s"
+
+#: src/bft/bft_file.c:369
+#, c-format
+msgid ""
+"Error reading Fortran binary file \"%s\":\n"
+"\n"
+"  expected record size: %lu\n"
+"  read record size:     %lu\n"
+msgstr ""
+
+#: src/bft/bft_file.c:728
+#, c-format
+msgid ""
+"Error flushing file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+
+#: src/bft/bft_file.c:829
+#, c-format
+msgid ""
+"Error rewinding file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+
+#: src/bft/bft_file.c:878
+#, c-format
+msgid ""
+"Invalid offset argument \"%d\" setting position in file\n"
+"\"%s\""
+msgstr ""
+
+#: src/bft/bft_file.c:1085
+#, c-format
+msgid ""
+"Error reading line %d of file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à la lecture de la ligne %d du fichier \"%s\" :\n"
+"\n"
+"  %s"
+
+#: src/bft/bft_file.c:1102
+#, c-format
+msgid ""
+"Premature end of file \"%s\" at line %d\n"
+"\n"
+msgstr ""
+
+#: src/bft/bft_file.c:1106
+#, c-format
+msgid ""
+"Premature end of file \"%s\"\n"
+"\n"
+msgstr ""
+
+#: src/bft/bft_file.c:1146
+#, c-format
+msgid ""
+"Error writing to text file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à l'écriture du fichier texte \"%s\" :\n"
+"\n"
+"  %s"
+
+#: src/bft/bft_file.c:1154 src/bft/bft_file.c:1310
+#, c-format
+msgid "Error writing to closed file \"%s\")"
+msgstr "Erreur à l'écriture du fichier fermé \"%s\")"
+
+#: src/bft/bft_file.c:1456
+#, c-format
+msgid ""
+"Failure to create directory \"%s\":\n"
+"\n"
+"%s"
+msgstr ""
+
+#: src/bft/bft_file.c:1479
+msgid ""
+"  A similarly named file or directory exists and its status is\n"
+"  not available."
+msgstr ""
+
+#: src/bft/bft_file.c:1484 src/bft/bft_file.c:1497
+msgid "  A similarly named file exists and is not a directory."
+msgstr ""
+
+#: src/bft/bft_file.c:1538
+#, c-format
+msgid ""
+"Error querying information for file:\n"
+"%s."
+msgstr ""
+
+#: src/bft/bft_file.c:1583
+#, c-format
+msgid ""
+"Error querying information for directory:\n"
+"%s."
+msgstr ""
+
+#: src/bft/bft_mem.c:268
+#, c-format
+msgid ""
+"Memory allocation summary\n"
+"-------------------------\n"
+"\n"
+msgstr ""
+"Résumé de l'allocation mémoire\n"
+"------------------------------\n"
+"\n"
+
+#: src/bft/bft_mem.c:275
+#, c-format
+msgid "Theoretical current allocated memory:   %8lu.%lu %cB\n"
+msgstr ""
+
+#: src/bft/bft_mem.c:280
+#, c-format
+msgid "Theoretical maximum allocated memory:   %8lu.%lu %cB\n"
+msgstr ""
+
+#: src/bft/bft_mem.c:284
+#, c-format
+msgid ""
+"\n"
+"Number of allocations:   %lu\n"
+"          reallocations: %lu\n"
+"          frees:         %lu\n"
+"\n"
+msgstr ""
+
+#: src/bft/bft_mem.c:299
+#, c-format
+msgid "Maximum program memory measure:  %8lu kB\n"
+msgstr "Mémoire programme mesurée maximale :  %8lu kB\n"
+
+#: src/bft/bft_mem.c:308
+#, c-format
+msgid "Current program memory measure:   %8lu kB\n"
+msgstr "Mémoire programme mesurée courante :   %8lu kB\n"
+
+#: src/bft/bft_mem.c:411 src/bft/bft_mem.c:526
+#, c-format
+msgid ""
+"Adress [%10p] does not correspond to the beginning of an allocated block."
+msgstr ""
+
+#: src/bft/bft_mem.c:470
+msgid "Memory allocation failure"
+msgstr ""
+
+#: src/bft/bft_mem.c:568
+msgid "bft_mem_init() has already been called"
+msgstr ""
+
+#: src/bft/bft_mem.c:602
+#, c-format
+msgid "Failure to open memory log file \"%s\"\n"
+msgstr ""
+
+#: src/bft/bft_mem.c:612
+#, c-format
+msgid ""
+"       :     FILE NAME              : LINE  :  POINTER "
+"NAME                          : N BYTES   : (+- N BYTES) : TOTAL BYTES  : "
+"[    ADRESS]\n"
+"-------:----------------------------:-------:----------------------------------------:-----------:-----------------------------:--------------"
+msgstr ""
+
+#: src/bft/bft_mem.c:635
+msgid "bft_mem_end() called before bft_mem_init()"
+msgstr ""
+
+#: src/bft/bft_mem.c:664
+#, c-format
+msgid "Number of non freed pointers remaining: %lu\n"
+msgstr ""
+
+#: src/bft/bft_mem.c:985
+#, c-format
+msgid ""
+"Alignment %lu for \"%s\" not a power of 2\n"
+"or a multiple of sizeof(void *) = %lu"
+msgstr ""
+
+#: src/bft/bft_mem.c:1029
+msgid "No aligned allocation function available on this system"
+msgstr ""
+
+#: src/bft/bft_timer.c:322
+msgid "gettimeofday() function"
+msgstr ""
+
+#: src/bft/bft_timer.c:324
+msgid "Iso C time() function"
+msgstr ""
+
+#: src/bft/bft_timer.c:341
+msgid "getrusage() function"
+msgstr ""
+
+#: src/bft/bft_timer.c:343
+msgid "Posix times() function"
+msgstr ""
+
+#: src/bft/bft_timer.c:345
+msgid "Iso C clock() function"
+msgstr ""
+
 #: src/ctwr/cs_ctwr.c:482
 #, c-format
 msgid ""
@@ -6164,6 +6485,1013 @@ msgstr ""
 
 #: src/ctwr/cs_ctwr_mesh.c:1213
 msgid " Defining halos\n"
+msgstr ""
+
+#: src/fvm/fvm_block_to_part.c:265 src/fvm/fvm_block_to_part.c:719
+#: src/fvm/fvm_block_to_part.c:834
+#, c-format
+msgid ""
+"inconsistent sizes computed for a block to partition distributor\n"
+"(%llu expected, %llu determined)."
+msgstr ""
+
+#: src/fvm/fvm_box.c:788
+#, c-format
+msgid ""
+"Inconsistent box found (min > max):\n"
+"  global number:  %u\n"
+"  min       :  %10.4g\n"
+"  max       :  %10.4g\n"
+msgstr ""
+
+#: src/fvm/fvm_box_tree.c:863
+#, c-format
+msgid ""
+"Error adding a new node in box tree (%p).\n"
+"Max level reached. Current level: %u and Max level: %d\n"
+msgstr ""
+
+#: src/fvm/fvm_box_tree.c:1983
+#, c-format
+msgid "  Forbidden max_level value (%d) in the tree structure\n"
+msgstr ""
+
+#: src/fvm/fvm_box_tree.c:1988
+#, c-format
+msgid "  Forbidden threshold value (%d) in the tree structure\n"
+msgstr ""
+
+#: src/fvm/fvm_box_tree.c:1993
+#, c-format
+msgid "  Forbidden max_box_ratio value (%d) in the tree structure\n"
+msgstr ""
+
+#: src/fvm/fvm_convert_array.c:2059
+msgid ""
+"fvm_writer_convert_array() may not be used to convert float to int32, int64, "
+"uint32, or uint64"
+msgstr ""
+
+#: src/fvm/fvm_convert_array.c:2107
+msgid ""
+"fvm_writer_convert_array() may not be used to convert double to int32, "
+"int64, uint32, or uint64"
+msgstr ""
+
+#: src/fvm/fvm_convert_array.c:2122 src/fvm/fvm_convert_array.c:2200
+#: src/fvm/fvm_convert_array.c:2278 src/fvm/fvm_convert_array.c:2356
+#, c-format
+msgid ""
+"fvm_writer_convert_array() requires src_dim = 1 and dest_dim = 1 \n"
+"with integer source data (and not %d and %d)"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:69
+msgid "edges"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:70
+msgid "triangles"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:71
+msgid "quadrangles"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:72
+msgid "simple polygons"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:73
+msgid "tetrahedra"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:74
+msgid "pyramids"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:75
+msgid "prisms"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:76
+msgid "hexahedra"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:77
+msgid "simple polyhedra"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:81
+msgid "edge"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:82
+msgid "triangle"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:83
+msgid "quadrangle"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:84
+msgid "simple polygon"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:85
+msgid "tetrahedron"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:86
+msgid "pyramid"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:87
+msgid "prism"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:88
+msgid "hexahedron"
+msgstr ""
+
+#: src/fvm/fvm_defs.c:89
+msgid "simple polyhedron"
+msgstr ""
+
+#: src/fvm/fvm_file.c:336
+#, c-format
+msgid ""
+"Error writing file \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à l'écriture du fichier \"%s\" :\n"
+"\n"
+"  %s"
+
+#: src/fvm/fvm_file.c:340
+#, c-format
+msgid "Error writing file \"%s\""
+msgstr "Erreur à la lecture du fichier \"%s\""
+
+#: src/fvm/fvm_file.c:773
+#, c-format
+msgid ""
+"MPI IO error for file: %s\n"
+"Error type: %s"
+msgstr ""
+"Erreur MPI IO pour le fichier : %s\n"
+"Type d'erreur : %s"
+
+#: src/fvm/fvm_nodal_extract.c:1206
+#, c-format
+msgid ""
+"Elements of type : \"%s\" are not strided elements.\n"
+"Incorrect use with fvm_nodal_get_strided_connect()\n"
+"Associated nodal mesh : \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_nodal_extrude.c:253
+#, c-format
+msgid ""
+"Dimension of mesh \"%s\" section %d equals %d\n"
+"with mesh spatial dimension %d prior to extrusion\n"
+"when it should be smaller."
+msgstr ""
+
+#: src/fvm/fvm_nodal_extrude.c:368
+msgid "Extrusion of non strided sections not implemented yet."
+msgstr ""
+
+#: src/fvm/fvm_nodal_extrude.c:388
+msgid "Extrusion of vertices only to edges not implemented yet."
+msgstr ""
+
+#: src/fvm/fvm_nodal_from_desc.c:1470
+#, c-format
+msgid "Incoherent connectivity for cell %d\n"
+msgstr ""
+
+#: src/fvm/fvm_nodal_project.c:519
+#, c-format
+msgid ""
+"Projecting coordinates is not allowed for a mesh\n"
+"containing entities of dimension %d, as its\n"
+"spatial dimension would be reduced to %d"
+msgstr ""
+
+#: src/fvm/fvm_nodal_project.c:566
+#, c-format
+msgid ""
+"Projecting coordinates is only allowed for a mesh\n"
+"of initial spatial dimension %d"
+msgstr ""
+
+#: src/fvm/fvm_periodicity.c:148
+msgid "null"
+msgstr ""
+
+#: src/fvm/fvm_periodicity.c:149
+msgid "translation"
+msgstr ""
+
+#: src/fvm/fvm_periodicity.c:150
+msgid "rotation"
+msgstr ""
+
+#: src/fvm/fvm_periodicity.c:151
+msgid "mixed"
+msgstr ""
+
+#: src/fvm/fvm_periodicity.c:269
+#, c-format
+msgid ""
+"Periodicity transforms %d and %d\n"
+"(based on directions %d and %d)\n"
+"are not commutative and may not be combined\n"
+msgstr ""
+
+#: src/fvm/fvm_periodicity.c:283
+#, c-format
+msgid ""
+"Periodicity transforms %d and %d\n"
+"(based on directions %d, %d %d)\n"
+"are not commutative and may not be combined\n"
+msgstr ""
+
+#: src/fvm/fvm_point_location.c:2025
+#, c-format
+msgid "_compute_shapef: unhandled element type %s\n"
+msgstr ""
+
+#: src/fvm/fvm_point_location.c:3634
+msgid "Locating volume elements closest to points not handled yet"
+msgstr ""
+
+#: src/fvm/fvm_selector.c:948
+#, c-format
+msgid ""
+"Selection criteria:\n"
+"\"%s\"\n"
+"depends on coordinates, but the current selector\n"
+"has no associated coordinates."
+msgstr ""
+
+#: src/fvm/fvm_selector.c:956
+#, c-format
+msgid ""
+"Selection criteria:\n"
+"\"%s\"\n"
+"depends on normals, but the current selector\n"
+"has no associated normals."
+msgstr ""
+
+#: src/fvm/fvm_selector.c:963
+#, c-format
+msgid ""
+"Selection criteria:\n"
+"\"%s\"\n"
+"is associated with %d spatial dimensions, but\n"
+"geometric conditions are only currently implemented\n"
+"for 3 spatial dimension."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:760
+#, c-format
+msgid ""
+"Error tokenizing expression:\n"
+"%s\n"
+"Missing character after \\\n"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:766
+#, c-format
+msgid ""
+"Error tokenizing expression:\n"
+"%s\n"
+"Missing closing quote for subexpression:\n"
+"%s\n"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:923
+msgid "Trying to pop an entry from empty stack."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:962
+msgid "Querying a top value from empty stack."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1282
+#, c-format
+msgid ""
+"Error parsing expression:\n"
+"%s\n"
+"%s\n"
+"%s\n"
+"\n"
+"Valid (expected) syntax:\n"
+"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1291
+#, c-format
+msgid ""
+"Error parsing expression:\n"
+"%s\n"
+"%s\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1304
+#, c-format
+msgid ""
+"Error parsing expression:\n"
+"%s\n"
+"%s\n"
+"Valid (expected) syntax:\n"
+"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1312
+#, c-format
+msgid ""
+"Error parsing expression:\n"
+"%s\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1352 src/fvm/fvm_selector_postfix.c:2045
+#: src/fvm/fvm_selector_postfix.c:2140
+msgid "Operator needs a right operand."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1356
+msgid "Operator needs a left operand."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1359
+msgid "Operator should not have a left operand."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1631
+msgid ""
+"  normal[<x>, <y>, <z>, <epsilon>]\n"
+"  normal[<x>, <y>, <z>, epsilon = <epsilon>]"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1634
+msgid ""
+"  For ax + by + cz + d = 0 form:\n"
+"\n"
+"    plane[<a>, <b>, <c>, <d>, <epsilon>]\n"
+"    plane[<a>, <b>, <c>, <d>, epsilon = <epsilon>]\n"
+"    plane[<a>, <b>, <c>, <d>, inside]\n"
+"    plane[<a>, <b>, <c>, <d>, outside]\n"
+"\n"
+"  For {normal, point in plane} form:\n"
+"\n"
+"    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, <epsilon>]\n"
+"    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, epsilon = <epsilon>]\n"
+"    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, inside]\n"
+"    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, outside]"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1645
+msgid ""
+"  For x_min, y_min, z_min, x_max, y_max, z_max form:\n"
+"\n"
+"    box[<xmin>, <ymin>, <zmin>, <xmax>, <ymax>, <zmax>]\n"
+"\n"
+"  For xyz_0, dxyz_1, dxyz_2, dxyz_3 form:\n"
+"\n"
+"    box[<x0>, <y0>, <z0>, <dx1>, <dy1>, <dz1>\n"
+"        <dx2>, <dy2>, <dz2>, <dx3>, <dy3>, <dz3>]"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1651
+msgid "  cylinder[<x0>, <y0>, <z0>, <x1>, <y1>, <z1>, <radius>]"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1653
+msgid "  sphere[<xc>, <yc>, <zc>, <radius>]"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1667
+msgid "Missing or wrong argument separator."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1680
+msgid "Missing argument after separator."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1741
+msgid "This geometric function is not implemented."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1747
+msgid "Wrong number of floating-point arguments."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1766
+msgid ""
+"Expected syntax:\n"
+"  epsilon = <value>\n"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1789
+msgid "Unexpected argument(s)."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1886
+msgid "Missing closing ]."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1905
+msgid "Function arguments used with an unknown operator."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1910
+msgid "Operator does not accept function arguments."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1922
+msgid "Function requires 0 arguments."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1964
+msgid "range[] argument error"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:1965
+msgid ""
+"  range[<first>, <last>]\n"
+"  range[<first>, <last>, group]\n"
+"  range[<first>, <last>, attribute]"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:2113
+msgid ""
+"Operator needs a floating point operand\n"
+"on one side, x, y, or z on the other"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:2135
+msgid "Inconsistant interval specification."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:2179
+msgid "Operator needs a floating point operand"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:2277
+msgid "Expected operator instead of operand."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:2324 src/fvm/fvm_selector_postfix.c:2371
+msgid "Parenthesis mismatch"
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:2334
+msgid "Syntax error, probably due to misplaced operands."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:3012 src/fvm/fvm_selector_postfix.c:3140
+#: src/fvm/fvm_selector_postfix.c:3156
+msgid "Postfix evaluation error."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:3090
+msgid "Postfix error: range arguments of different or incorrect type."
+msgstr ""
+
+#: src/fvm/fvm_selector_postfix.c:3129
+#, c-format
+msgid "Operator %s not currently implemented."
+msgstr ""
+
+#: src/fvm/fvm_tesselation.c:922
+#, c-format
+msgid ""
+"Encoding of tesselation impossible:\n"
+"maximum number of vertices per polygon: %u\n"
+"maximum integer encoded on %d/3 = %d bits: %ld\n"
+msgstr ""
+
+#: src/fvm/fvm_tesselation.c:2199
+msgid ""
+"Incoherent connectivity for tesselation:\n"
+"Connectivity face_index or face_num non NULL,\n"
+"but element type != FVM_CELL_POLY"
+msgstr ""
+
+#: src/fvm/fvm_tesselation.c:2207
+msgid ""
+"Incoherent connectivity for tesselation:\n"
+"Connectivy vertex_index non NULL,\n"
+"but element type != FVM_FACE_POLY"
+msgstr ""
+
+#: src/fvm/fvm_tesselation.c:2328
+#, c-format
+msgid "Tesselation of element type %s not implemented."
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:298
+#, c-format
+msgid ""
+"cg_base_write() failed to create a new base:\n"
+"Associated writer: \"%s\"\n"
+"Associated mesh: \"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:384
+#, c-format
+msgid ""
+"cg_sol_write() failed to create a new solution node:\n"
+"Associated writer: \"%s\"\n"
+"Associated mesh: \"%s\"\n"
+"Solution name: \"%s\"\n"
+"Associated time value: %f \n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:432 src/fvm/fvm_to_cgns.c:2565
+#: src/fvm/fvm_to_ensight_case.c:222 src/fvm/fvm_to_med.c:3407
+#, c-format
+msgid ""
+"The time value associated with time step <%d> equals <%g>,\n"
+"but time value <%g> has already been associated with this time step.\n"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:641
+#, c-format
+msgid ""
+"cg_zone_write() failed to create a new zone:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:907
+#, c-format
+msgid ""
+"cg_coord_partial_write() failed to write coords:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:984
+#, c-format
+msgid ""
+"cg_coord_partial_write() failed to writeextra vertices coords:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:1111
+#, c-format
+msgid ""
+"cg_coord_partial write() failed to write coords:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated zone index: \"%i\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:1139
+#, c-format
+msgid ""
+"cg_coord_partial_write() failed to write extra vertices coords:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated zone index: \"%i\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:1248
+#, c-format
+msgid ""
+"cg_section_partial_write() failed to write elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:1322
+#, c-format
+msgid ""
+"cg_section_write() failed to write elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:1526 src/fvm/fvm_to_cgns.c:1652
+#, c-format
+msgid ""
+"cg_section_partial_write() failed to write tesselated elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:1814
+#, c-format
+msgid ""
+"cg_section_partial_write() failed to write polygonal elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:1906
+#, c-format
+msgid ""
+"cg_section_write() failed to write polygonal elements:\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"Associated section name: \"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2012 src/fvm/fvm_to_cgns.c:2119
+#, c-format
+msgid ""
+"cg_field_partial_write() failed to write field values:\n"
+"\"%s\"\n"
+"Associated writer: \"%s\"\n"
+"Associated base: \"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2177
+#, c-format
+msgid ""
+"cg_biter_write() failed to create a BaseIterativeData\n"
+"Associated writer:\"%s\" :\n"
+"Associated base:\"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2207
+#, c-format
+msgid ""
+"cg_array_write() failed to write TimeValues\n"
+"Associated writer:\"%s\" :\n"
+"Associated base:\"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2221
+#, c-format
+msgid ""
+"cg_array_write failed to write IterationValues\n"
+"Associated writer:\"%s\" :\n"
+"Associated base:\"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2239
+#, c-format
+msgid ""
+"cg_ziter_write() failed to create a ZoneIterativeData\n"
+"Associated writer:\"%s\" :\n"
+"Associated base:\"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2276
+#, c-format
+msgid ""
+"cg_array_write() failed to write FlowSolutionPointers\n"
+"Associated writer:\"%s\" :\n"
+"Associated base:\"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2291
+#, c-format
+msgid ""
+"cg_simulation_type_write() failed\n"
+"Associated writer:\"%s\" :\n"
+"Associated base:\"%s\"\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2359
+#, c-format
+msgid "No CGNS filename: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2460
+#, c-format
+msgid ""
+"cg_open() failed to open file \"%s\" : \n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2515
+#, c-format
+msgid ""
+"cg_close() failed to close file \"%s\" :\n"
+"%s"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2574 src/fvm/fvm_to_med.c:3416
+#, c-format
+msgid "The given time step value should be >= 0, and not %d\n"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:2583 src/fvm/fvm_to_med.c:3425
+#, c-format
+msgid "The given time step value should be >= %d, and not %d\n"
+msgstr ""
+
+#: src/fvm/fvm_to_cgns.c:3012 src/fvm/fvm_to_ensight.c:3230
+#: src/fvm/fvm_to_med.c:3869
+#, c-format
+msgid "Data of dimension %d not handled"
+msgstr ""
+
+#: src/fvm/fvm_to_ensight_case.c:231
+#, c-format
+msgid "The given time step value should be >= 0, and not %d.\n"
+msgstr ""
+
+#: src/fvm/fvm_to_ensight_case.c:236
+#, c-format
+msgid "The given time step value should be >= %d, and not %d.\n"
+msgstr ""
+
+#: src/fvm/fvm_to_ensight_case.c:924
+#, c-format
+msgid ""
+"A variable with the name \"%s\" has already been\n"
+"defined, with dimension %d and location type %d,\n"
+"which conflicts with the current definition with\n"
+"dimension %d and location type %d.\n"
+msgstr ""
+
+#: src/fvm/fvm_to_ensight_case.c:932
+#, c-format
+msgid ""
+"A transient variable with the name \"%s\" has already\n"
+"been defined, which conflicts with the current constant definition.\n"
+msgstr ""
+
+#: src/fvm/fvm_to_ensight_case.c:938
+#, c-format
+msgid ""
+"A constant variable with the name \"%s\" has already\n"
+"been defined, which conflicts with the current transient definition.\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:336
+#, c-format
+msgid ""
+"MEDmaaCr() failed to create a new med_mesh.\n"
+"Associated med_mesh name: \"%s\"\n"
+"Associated writer name: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:347
+#, c-format
+msgid ""
+"MEDdimEspaceCr() failed to set spacial dimension for a new med_mesh.\n"
+"Associated med_mesh name: \"%s\"\n"
+"Associated writer name: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:357
+msgid "FAMILY_0"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:376
+#, c-format
+msgid ""
+"MEDfamCr() failed to create family 0for a new med_mesh.\n"
+"Associated med_mesh name: \"%s\"\n"
+"Associated writer name: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:1073
+#, c-format
+msgid ""
+"MED field \"%s\" already defined\n"
+"for writer \"%s\" with %d components,\n"
+"but re-defined with %d components."
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:1081
+#, c-format
+msgid ""
+"MED field \"%s\" already defined\n"
+"for writer \"%s\" with datatype %d,\n"
+"but re-defined with datatype %d."
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:1163
+msgid "Incompatible datatype sizes between MPI, FVM and MED."
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:1342 src/fvm/fvm_to_med.c:1506
+#, c-format
+msgid ""
+"MEDcoordEcr() failed to write coords:\"%s\"\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:1808 src/fvm/fvm_to_med.c:1985
+#, c-format
+msgid ""
+"MEDconnEcr() failed to write strided connectivity:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+"Associated MED geometrical element: \"%i\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:1825 src/fvm/fvm_to_med.c:2002
+#: src/fvm/fvm_to_med.c:2203 src/fvm/fvm_to_med.c:2350
+#: src/fvm/fvm_to_med.c:2694 src/fvm/fvm_to_med.c:2873
+#, c-format
+msgid ""
+"MEDfamEcr() failed to write family numbers:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+"Associated MED geometrical element: \"%i\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:2187 src/fvm/fvm_to_med.c:2334
+#, c-format
+msgid ""
+"MEDpolygoneConnEcr() failed to write connectivity:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:2678 src/fvm/fvm_to_med.c:2857
+#, c-format
+msgid ""
+"MEDpolyedreConnEcr() failed to write connectivity:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:3226
+#, c-format
+msgid "No MED filename: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:3305
+#, c-format
+msgid ""
+"MEDouvrir() failed to open file: %s\n"
+"Associated writer: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:3353 src/fvm/fvm_to_med.c:3773
+#: src/fvm/fvm_to_med.c:4061
+#, c-format
+msgid "MEDfermer() failed to close file \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:3554 src/fvm/fvm_to_med.c:3851
+#, c-format
+msgid ""
+"MEDouvrir() failed to re-open file: %s\n"
+"Associated writer: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:3569
+msgid "Mesh name required to continue.\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:3621
+#, c-format
+msgid ""
+"MED must have a connectivity.\n"
+"Mesh: \"%s\"\n"
+"Writer: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:4006
+#, c-format
+msgid ""
+"MED must have entities.\n"
+"Mesh: \"%s\"\n"
+"Writer: \"%s\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_text.c:1113
+#, c-format
+msgid "Option: %*s\n"
+msgstr ""
+
+#: src/fvm/fvm_to_text.c:1229
+#, c-format
+msgid ""
+"\n"
+"Mesh name: %s\n"
+msgstr ""
+
+#: src/fvm/fvm_to_text.c:1233
+msgid ""
+"\n"
+"Unnamed mesh\n"
+msgstr ""
+
+#: src/fvm/fvm_to_text.c:1236
+#, c-format
+msgid ""
+"\n"
+"Mesh dimension:     %d\n"
+"Number of domains:  %d\n"
+"Number of sections:  %d\n"
+msgstr ""
+
+#: src/fvm/fvm_to_text.c:1242
+#, c-format
+msgid ""
+"\n"
+"Number of cells:               %d\n"
+"Number of faces:               %d\n"
+"Number of edges:               %d\n"
+"Number of vertices:            %d\n"
+msgstr ""
+"\n"
+"Nombre de cellules : %d\n"
+"Nombre de faces :    %d\n"
+"Nombre d'arêtes :    %d\n"
+"Nombre de sommets :  %d\n"
+
+#: src/fvm/fvm_to_text.c:1275
+msgid ""
+"\n"
+"Vertex coordinates:\n"
+"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_text.c:1355
+#, c-format
+msgid ""
+"\n"
+"Section: %s\n"
+"  Number of elements: %lu\n"
+"\n"
+msgstr ""
+
+#: src/fvm/fvm_trace.c:134
+#, c-format
+msgid ""
+"\n"
+"Memory use summary: %s\n"
+"\n"
+msgstr ""
+"\n"
+"Bilan de l'occupation mémoire : %s\n"
+"\n"
+
+#: src/fvm/fvm_trace.c:136
+#, c-format
+msgid ""
+"\n"
+"Memory use summary (call %d):\n"
+"\n"
+msgstr ""
+
+#: src/fvm/fvm_trace.c:200
+#, c-format
+msgid "  %s : %10.3f %cb min (rank %d),  %10.3f %cb max (rank %d)\n"
+msgstr ""
+
+#: src/fvm/fvm_trace.c:207
+#, c-format
+msgid "  %s : %12.3f %cb\n"
+msgstr ""
+
+#: src/fvm/fvm_writer.c:665
+#, c-format
+msgid "Format type \"%s\" required for case \"%s\" is unknown"
+msgstr ""
+
+#: src/fvm/fvm_writer.c:670
+#, c-format
+msgid "Format type \"%s\" required for case \"%s\" is not available"
+msgstr ""
+
+#: src/fvm/fvm_writer_helper.c:445 src/fvm/fvm_writer_helper.c:651
+#, c-format
+msgid ""
+"Output buffer too small:\n"
+"Current size = %lu, minimum size required = %lu."
 msgstr ""
 
 #: src/lagr/cs_lagr.c:202

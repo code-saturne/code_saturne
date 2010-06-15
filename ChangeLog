@@ -1,4 +1,10 @@
 * 15/06/2010 - David Monfort <david.monfort@edf.fr>
+  Update French dictionnary and POTFILES.in.
+  modified files:
+    po/POTFILES.in
+	po/fr.po
+
+* 15/06/2010 - David Monfort <david.monfort@edf.fr>
   Correct comments in specific physics definition.
   modified routine:
     users/pprt/usppmo.f90
