@@ -1,3 +1,8 @@
+* 15/06/2010 - David Monfort <david.monfort@edf.fr>
+  Fix a crash when asking for the check_mesh help.
+  modified script:
+    bin/cs_check_mesh.py
+
 * 15/06/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix two issues in the coal combustion modelling.
   modified routines:
