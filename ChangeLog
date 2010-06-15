@@ -1,4 +1,9 @@
 * 15/06/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  English translation.
+  modified routine:
+    users/base/usphyv.f90
+
+* 15/06/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Set the reference pressure to the atmospheric pressure.
   modified routine:
     users/base/usini1.f90
