@@ -1,4 +1,9 @@
 * 15/06/2010 - David Monfort <david.monfort@edf.fr>
+  Update version number to 2.0-rc2.
+  modified script:
+    configure.ac
+
+* 15/06/2010 - David Monfort <david.monfort@edf.fr>
   Properly set the version number of the different pre-requisites,
   especially Python.
   modified script:
