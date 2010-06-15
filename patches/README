@@ -5,3 +5,11 @@ This directory contains files fixing potential problems that could arise
 in some particular situations. These patches have not been fully validated
 and therefore are NOT SUPPORTED.
 
+* Problem of consistency between two runs with different number of processors
+  ---------------------------------------------------------------------------
+Due to the way the code rescale the pressure at the outlet (in the standard
+formulation), there can be some differences between two runs with different
+number of processors. This is caused by the face number chosen by the code to
+rescale the pressure profile.
+
+patch: typecl.90
