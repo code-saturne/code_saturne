@@ -1,3 +1,8 @@
+* 15/06/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Set the reference pressure to the atmospheric pressure.
+  modified routine:
+    users/base/usini1.f90
+
 * 15/06/2010 - David Monfort <david.monfort@edf.fr>
   Properly set the version number of the different pre-requisites,
   especially Python.
