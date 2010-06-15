@@ -1660,7 +1660,8 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
     = N_("Repeated inconsistency in the halo construction.\n"
          "Several local points have the same distant correspondant;\n"
          "this is probably due to a multiple-periodicity construction\n"
-         "side effect of the Preprocessor.\n"
+         "side effect of the Preprocessor or this is due to a poor quality\n"
+         "mesh generated during the joining step.\n"
          "Coordinates of the first impacted point: [%12.5e, %12.5e %12.5e].");
 
   _define_vtx_interface_idx(ifs,
@@ -1719,11 +1720,16 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
 
               if (n_added_vertices > 1) {
 
-                bft_printf("fac_num: %d (%u)\n", fac_id+1,
-                           mesh->global_i_face_num[fac_id]);
-                bft_printf("vtx_num: %d (%u) - n_added: %d\n",
-                           vtx_id+1, mesh->global_vtx_num[vtx_id],
-                           n_added_vertices);
+                if (cs_glob_n_ranks > 1)
+                  bft_printf("fac_num: %d (%u)\n"
+                             "vtx_num: %d (%u) - n_added: %d\n",
+                             fac_id+1, mesh->global_i_face_num[fac_id],
+                             vtx_id+1, mesh->global_vtx_num[vtx_id],
+                             n_added_vertices);
+                else
+                  bft_printf("fac_num: %d\n"
+                             "vtx_num: %d - n_added: %d\n",
+                             fac_id+1, vtx_id+1, n_added_vertices);
                 bft_printf_flush();
 
                 bft_error(__FILE__, __LINE__, 0, _(err_corresp),
@@ -2468,23 +2474,18 @@ _update_i_face_cells(cs_mesh_t    *mesh,
         for (i = start; i < end; i++) {
 
           gcell_id = s_gcell_ids[i];
-          //          bft_printf("gcell_id: %d -", gcell_id);
-
           for (j = cell_faces_idx[gcell_id] - 1;
                j < cell_faces_idx[gcell_id+1] - 1; j++) {
 
             face_id = CS_ABS(cell_faces_lst[j]) - mesh->n_b_faces - 1;
-            //            bft_printf(" %d", face_id);
             if (face_id > -1) {
               if (l2d_fids[face_id] > -1) {
                 shift++;
                 send_buffer[i] += 1;
-                //                bft_printf("(tag %d)",i);
               }
             }
 
           } /* End of loop cell -> face connectivity */
-          //          bft_printf("\n");
 
         } /* End of loop on standard neighborhood for this tr_id and rank */
 
@@ -2597,15 +2598,6 @@ _update_i_face_cells(cs_mesh_t    *mesh,
 
   BFT_REALLOC(send_buffer, send_shift[n_c_domains], cs_int_t);
   BFT_MALLOC(recv_buffer, recv_shift[n_c_domains], cs_int_t);
-
-#if 0
-  for (i = 0; i < n_c_domains + 1; i++)
-    bft_printf(" send_shift[%d] = %d\n", i, send_shift[i]);
-  for (i = 0; i < n_c_domains + 1; i++)
-    bft_printf(" recv_shift[%d] = %d\n", i, recv_shift[i]);
-  for (i = 0; i < halo->n_elts[CS_HALO_EXTENDED]; i++)
-    bft_printf("face_count[%d] = %d\n", i, gcell_face_count[i]);
-#endif
 
   /* Build send_buffer */
 
@@ -2764,15 +2756,6 @@ _update_i_face_cells(cs_mesh_t    *mesh,
 
         face_id = recv_buffer[shift++];
 
-#if 0
-        gcell_id = s_gcell_ids[i];
-        bft_printf("face_id: %d (%d, %d) - gcell_id: %d\n",
-                   face_id,
-                   mesh->i_face_cells[2*face_id],
-                   mesh->i_face_cells[2*face_id+1],
-                   gcell_id);
-#endif
-
         /* In case of periodicity, a ghost cell may appear several times
            in the same halo. So we can have a face->cell connect up-to-date
            when it is not the first pass */
@@ -2781,12 +2764,6 @@ _update_i_face_cells(cs_mesh_t    *mesh,
           mesh->i_face_cells[2*face_id] = mesh->n_cells + i + 1;
         else if (mesh->i_face_cells[2*face_id+1] == 0)
           mesh->i_face_cells[2*face_id+1] = mesh->n_cells + i + 1;
-
-#if 0
-        bft_printf("face_id: %d (%d, %d)\n", face_id,
-                   mesh->i_face_cells[2*face_id],
-                   mesh->i_face_cells[2*face_id+1]);
-#endif
 
       } /* End of loop on related faces */
 
