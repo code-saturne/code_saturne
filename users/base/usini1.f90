@@ -1312,7 +1312,7 @@ cp0(iphas)    = 1219.d0
 iphas = 1
 
 t0(iphas) = 1000.d0 + 273.15d0
-p0(iphas) = 1.013d5
+p0(iphas) = 1.01325d5
 ! We only specify XYZ0 if we explicitely fix Dirichlet conditions
 ! for the pressure.
 ! xyzp0(1,iphas) = 0.d0
