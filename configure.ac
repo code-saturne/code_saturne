@@ -450,7 +450,13 @@ unset cs_python_basename
 cs_python=${PYTHON}
 AC_SUBST(cs_python)
 
-AM_PATH_PYTHON([2.3])
+if test "x$have_gui" = xyes; then
+  cs_python_version="2.4"
+else
+  cs_python_version="2.3"
+fi
+
+AM_PATH_PYTHON([$cs_python_version])
 
 #------------------------------------------------------------------------------
 # Checks for PyQt support.

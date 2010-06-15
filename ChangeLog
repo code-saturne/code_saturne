@@ -1,4 +1,12 @@
 * 15/06/2010 - David Monfort <david.monfort@edf.fr>
+  Properly set the version number of the different pre-requisites,
+  especially Python.
+  modified script:
+    configure.ac
+  modified file:
+    COMPATIBILITY
+
+* 15/06/2010 - David Monfort <david.monfort@edf.fr>
   Update French dictionnary and POTFILES.in.
   modified files:
     po/POTFILES.in
