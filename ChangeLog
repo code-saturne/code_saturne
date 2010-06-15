@@ -1,3 +1,8 @@
+* 15/06/2010 - David Monfort <david.monfort@edf.fr>
+  Correct comments in specific physics definition.
+  modified routine:
+    users/pprt/usppmo.f90
+
 * 10/06/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove bft_file dependency in fvm_file to improve error handling.
   modified routine:
