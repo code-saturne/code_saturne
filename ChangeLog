@@ -3,6 +3,7 @@
   robustness of the output for visualizing with ParaView.
   Thanks to Stéphane Blanchet for reporting this issue.
   modified routine:
+    src/lagr/enslag.f90
     src/lagr/enswaf.f90
 
 * 15/06/2010 - David Monfort <david.monfort@edf.fr>
