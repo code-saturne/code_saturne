@@ -1,4 +1,9 @@
 * 21/06/2010 - David Monfort <david.monfort@edf.fr>
+  By-pass a possible bug with the flush Fortran 2003 statement on BG systems.
+  modified script:
+    config/cs_fortran.m4
+
+* 21/06/2010 - David Monfort <david.monfort@edf.fr>
   On BlueGene systems, RUSAGE_CHILDREN is not available.
   modified routine:
     src/base/tremai.c
