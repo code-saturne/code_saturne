@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------------------
 
-!                      Code_Saturne version 2.0.0-beta2
+!                      Code_Saturne version 2.0.0-rc1
 !                      --------------------------
 
 !     This file is part of the Code_Saturne Kernel, element of the
@@ -52,37 +52,42 @@ subroutine usclim &
 
 !    User subroutine.
 
-!    Fill boundary conditions arrays (icodcl, rcodcl)
-!    for unknown variables.
+!    Fill boundary conditions arrays (icodcl, rcodcl) for unknown variables.
 
 
 ! Introduction
 ! ============
 
-! Here we define boundary conditions on a per-face basis.
+! Here one defines boundary conditions on a per-face basis.
 
 ! Boundary faces may be identified using the 'getfbr' subroutine.
 
-!  getfbr(string, nelts, eltlst) :
-!  - string is a user-supplied character string containing
-!    selection criteria;
-!  - nelts is set by the subroutine. It is an integer value
-!    corresponding to the number of boundary faces verifying the
-!    selection criteria;
-!  - lstelt is set by the subroutine. It is an integer array of
-!    size nelts containing the list of boundary faces verifying
-!    the selection criteria.
+!  getfbr(string, nelts, eltlst):
+!  - string is a user-supplied character string containing selection criteria;
+!  - nelts is set by the subroutine. It is an integer value corresponding to
+!    the number of boundary faces verifying the selection criteria;
+!  - lstelt is set by the subroutine. It is an integer array of size nelts
+!    containing the list of boundary faces verifying the selection criteria.
 
 !  string may contain:
-!  - references to colors (ex.: 1, 8, 26, ...
+!  - references to colors (ex.: 1, 8, 26, ...)
 !  - references to groups (ex.: inlet, group1, ...)
 !  - geometric criteria (ex. x < 0.1, y >= 0.25, ...)
-!  These criteria may be combined using logical operators
-!  ('and', 'or') and parentheses.
-!  Example: '1 and (group2 or group3) and y < 1' will select boundary
-!  faces of color 1, belonging to groups 'group2' or 'group3' and
-!  with face center coordinate y less than 1.
+!  These criteria may be combined using logical operators ('and', 'or') and
+!  parentheses.
+!  Example: '1 and (group2 or group3) and y < 1' will select boundary faces
+!  of color 1, belonging to groups 'group2' or 'group3' and with face center
+!  coordinate y less than 1.
 
+!  Operators priority, from highest to lowest:
+!    '( )' > 'not' > 'and' > 'or' > 'xor'
+
+! Similarly, interior faces and cells can be identified using the 'getfac'
+! and 'getcel' subroutines (respectively). Their syntax are identical to
+! 'getfbr' syntax.
+
+! For a more thorough description of the criteria syntax, it can be referred
+! to the user guide.
 
 
 ! Boundary condition types
@@ -94,12 +99,11 @@ subroutine usclim &
 !    For "standard" boundary conditions:
 !    -----------------------------------
 
-!     (inlet, free outlet, wall, symmetry), we define a code
-!     in the 'itypfb' array (of dimensions number of boundary faces,
-!     number of phases). This code will then be used by a non-user
-!     subroutine to assign the following conditions (scalars in
-!     particular will receive the conditions of the phase to which
-!     they are assigned). Thus:
+!     (inlet, free outlet, wall, symmetry), one defines a code in the 'itypfb'
+!     array (of dimensions number of boundary faces, number of phases).
+!     This code will then be used by a non-user subroutine to assign the
+!     following conditions (scalars in particular will receive the conditions
+!     of the phase to which they are assigned). Thus:
 
 !     Code      |  Boundary type
 !     --------------------------
@@ -109,22 +113,20 @@ subroutine usclim &
 !      iparoi   |   Wall (smooth)
 !      iparug   |   Rough wall
 
-!     Integers ientre, isolib, isymet, iparoi, iparug
-!     are defined elsewhere (param.h). Their value is greater than
-!     or equal to 1 and less than or equal to ntypmx
-!     (value fixed in paramx.h)
+!     These integers are defined elsewhere (in paramx.h header).
+!     Their value is greater than or equal to 1 and less than or  equal to
+!     ntypmx (value fixed in paramx.h)
 
 
 !     In addition, some values must be defined:
 
 
-!     - Inlet (more precisely, inlet/outlet with prescribed flow, as
-!              the flow may be prescribed as an outflow):
+!     - Inlet (more precisely, inlet/outlet with prescribed flow, as the flow
+!              may be prescribed as an outflow):
 
-!       -> Dirichlet conditions on variables
-!         other than pressure are mandatory if the flow is incoming,
-!         optional if the flow is outgoing (the code assigns 0 flux
-!         if no Dirichlet is specified); thus,
+!       -> Dirichlet conditions on variables other than pressure are mandatory
+!         if the flow is incoming, optional if the flow is outgoing (the code
+!         assigns zero flux if no Dirichlet is specified); thus,
 !         at face 'ifac', for the variable 'ivar': rcodcl(ifac, ivar, 1)
 
 
@@ -134,17 +136,15 @@ subroutine usclim &
 !         at face ifac, rcodcl(ifac, iu, 1)
 !                       rcodcl(ifac, iv, 1)
 !                       rcodcl(ifac, iw, 1)
-!       -> Specific code and prescribed temperature value
-!         at wall, if applicable:
+!       -> Specific code and prescribed temperature value at wall if applicable:
 !         at face ifac, icodcl(ifac, ivar)    = 5
 !                       rcodcl(ifac, ivar, 1) = prescribed temperature
-!       -> Specific code and prescribed flux value
-!         at wall, if applicable:
+!       -> Specific code and prescribed flux value at wall if applicable:
 !         at face ifac, icodcl(ifac, ivar)    = 3
 !                       rcodcl(ifac, ivar, 3) = prescribed flux
-!                                        =
-!        Note that the default condition for scalars
-!         (other than k and epsilon) is homogeneous Neumann.
+
+!        Note that the default condition for scalars (other than k and epsilon)
+!        is homogeneous Neumann.
 
 
 !     - Rough wall: (= impermeable solid, with rough friction)
@@ -154,62 +154,60 @@ subroutine usclim &
 !                       rcodcl(ifac, iv, 1)
 !                       rcodcl(ifac, iw, 1)
 !       -> Value of the dynamic roughness height to specify in
-!                       rcodcl(ifac, iu, 3) (value for iv et iw not used)
-!       -> Specific code and prescribed temperature value
-!         at rough wall, if applicable:
+!                       rcodcl(ifac, iu, 3)
+!       -> Value of the scalar roughness height (if required) to specify in
+!                       rcodcl(ifac, iv, 3) (values for iw are not used)
+!       -> Specific code and prescribed temperature value at wall if applicable:
 !         at face ifac, icodcl(ifac, ivar)    = 6
 !                       rcodcl(ifac, ivar, 1) = prescribed temperature
-!                       rcodcl(ifac, ivar, 3) = dynamic roughness height
-!       -> Specific code and prescribed flux value
-!         at rough wall, if applicable:
+!       -> Specific code and prescribed flux value at rough wall, if applicable:
 !         at face ifac, icodcl(ifac, ivar)    = 3
 !                       rcodcl(ifac, ivar, 3) = prescribed flux
-!                                        =
-!        Note that the default condition for scalars
-!         (other than k and epsilon) is homogeneous Neumann.
 
-!     - Symmetry (= impermeable frictionless wall):
+!        Note that the default condition for scalars (other than k and epsilon)
+!        is homogeneous Neumann.
+
+!     - Symmetry (= slip wall):
 
 !       -> Nothing to specify
 
 
 !     - Free outlet (more precisely free inlet/outlet with prescribed pressure)
 
-!       -> Nothing to prescribe for pressure and velocity
-!          For scalars and turbulent values, a Dirichlet value may optionally
-!            be specified. The behavior is as follows:
+!       -> Nothing to prescribe for pressure and velocity. For scalars and
+!          turbulent values, a Dirichlet value may optionally be specified.
+!          The behavior is as follows:
 !              * pressure is always handled as a Dirichlet condition
 !              * if the mass flow is inflowing:
-!                  we retain the velocity at infinity
+!                  one retains the velocity at infinity
 !                  Dirichlet condition for scalars and turbulent values
-!                    (or zero flux if the user has not specified a
+!                   (or zero flux if the user has not specified a
 !                    Dirichlet value)
 !                if the mass flow is outflowing:
-!                  we prescribe zero flux on the velocity, the scalars,
+!                  one prescribes zero flux on the velocity, the scalars,
 !                  and turbulent values
 
-!       Note that the pressure will be reset to P0
-!           on the first free outlet face found
+!       Note that the pressure will be reset to p0 on the first free outlet
+!       face found
 
 
 !    For "non-standard" conditions:
 !    ------------------------------
 
-!     Other than (inlet, free outlet, wall, symmetry), we define
+!     Other than (inlet, free outlet, wall, symmetry), one defines
 !      - on one hand, for each face:
-!        -> an admissible 'itypfb' value
-!           (i.e. greater than or equal to 1 and less than or equal to
-!            ntypmx; see its value in paramx.h).
+!        -> an admissible 'itypfb' value (i.e. greater than or equal to 1 and
+!           less than or equal to ntypmx; see its value in paramx.h).
 !           The values predefined in paramx.h:
-!           'ientre', 'isolib', 'isymet', 'iparoi', 'iparug' are in
-!           this range, and it is preferable not to assign one of these
-!           integers to 'itypfb' randomly or in an inconsiderate manner.
-!           To avoid this, we may use 'iindef' if we wish to avoid
-!           checking values in paramx.h. 'iindef' is an admissible
-!           value to which no predefined boundary condition is attached.
-!           Note that the 'itypfb' array is reinitialized at each time
-!           step to the non-admissible value of 0. If we forget to
-!           modify 'typfb' for a given face, the code will stop.
+!           'ientre', 'isolib', 'isymet', 'iparoi', 'iparug' are in this range,
+!           and it is preferable not to assign one of these integers to 'itypfb'
+!           randomly or in an inconsiderate manner. To avoid this, one may use
+!           'iindef' if one wish to avoid checking values in paramx.h. 'iindef'
+!           is an admissible value to which no predefined boundary condition
+!           is attached.
+!           Note that the 'itypfb' array is reinitialized at each time step to
+!           the non-admissible value of 0. If one forgets to modify 'typfb' for
+!           a given face, the code will stop.
 
 !      - and on the other hand, for each face and each variable:
 !        -> a code             icodcl(ifac, ivar)
@@ -219,15 +217,15 @@ subroutine usclim &
 !     The value of 'icodcl' is taken from the following:
 !       1: Dirichlet      (usable for any variable)
 !       3: Neumann        (usable for any variable)
-!       4: Symmetry       (usable only for the velocity and
-!                          components of the Rij tensor)
+!       4: Symmetry       (usable only for the velocity and components of
+!                          the Rij tensor)
 !       5: Smooth wall    (usable for any variable except for pressure)
 !       6: Rough wall     (usable for any variable except for pressure)
 !       9: Free outlet    (usable only for velocity)
-!     The values of the 3 'rcodcl' components are
+!     The values of the 3 'rcodcl' components are:
 !      rcodcl(ifac, ivar, 1):
 !         Dirichlet for the variable          if icodcl(ifac, ivar) =  1
-!         wall value (sliding velocity, temp) if icodcl(ifac, ivar) =  5
+!         Wall value (sliding velocity, temp) if icodcl(ifac, ivar) =  5
 !         The dimension of rcodcl(ifac, ivar, 1) is that of the
 !           resolved variable: ex U (velocity in m/s),
 !                                 T (temperature in degrees)
@@ -251,120 +249,107 @@ subroutine usclim &
 !
 !      rcodcl(ifac, ivar, 3) if icodcl(ifac, ivar) <> 6:
 !        Flux density (< 0 if gain, n outwards-facing normal)
-!                         if icodcl(ifac, ivar)= 3
+!                            if icodcl(ifac, ivar)= 3
 !         For velocities U,                in kg/(m s2) = J:
 !           rcodcl(ifac, ivar, 3) =         -(viscl+visct) * (grad U).n
-!         For pressure P,                  en kg/(m2 s):
+!         For pressure P,                  in kg/(m2 s):
 !           rcodcl(ifac, ivar, 3) =                    -dt * (grad P).n
 !         For temperatures T,              in Watt/m2:
 !           rcodcl(ifac, ivar, 3) = -Cp*(viscls+visct/sigmas) * (grad T).n
 !         For enthalpies H,                in Watt/m2:
 !           rcodcl(ifac, ivar, 3) = -(viscls+visct/sigmas) * (grad H).n
-!         For other scalars F in :
+!         For other scalars F              in:
 !           rcodcl(ifac, ivar, 3) = -(viscls+visct/sigmas) * (grad F).n
 
 !      rcodcl(ifac, ivar, 3) if icodcl(ifac, ivar) = 6:
 !        Roughness for the rough wall law
 !         For velocities U, dynamic roughness
-!           rcodcl(ifac, ivar, 3) = rugd
+!           rcodcl(ifac, iu, 3) = roughd
 !         For other scalars, thermal roughness
-!           rcodcl(ifac, ivar, 3) = rugt
+!           rcodcl(ifac, iv, 3) = rought
 
 
-!      Note that if the user assigns a value to itypfb equal to
-!       ientre, isolib, isymet, iparoi, or iparug
-!       and does not modify icodcl (zero value by default),
-!       itypfb will define the boundary condition type.
+!      Note that if the user assigns a value to itypfb equal to ientre, isolib,
+!       isymet, iparoi, or iparug and does not modify icodcl (zero value by
+!       default), itypfb will define the boundary condition type.
 
-!      To the contrary, if the user prescribes
-!        icodcl(ifac, ivar) (nonzero),
-!        the values assigned to rcodcl will be used for the considered
-!        face and variable (if rcodcl values are not set, the default
-!        values will be used for the face and variable, so:
+!      To the contrary, if the user prescribes icodcl(ifac, ivar) (nonzero),
+!        the values assigned to rcodcl will be used for the considered face
+!        and variable (if rcodcl values are not set, the default values will
+!        be used for the face and variable, so:
 !                                 rcodcl(ifac, ivar, 1) = 0.d0
 !                                 rcodcl(ifac, ivar, 2) = rinfin
 !                                 rcodcl(ifac, ivar, 3) = 0.d0)
-!        Especially, we may have for example:
-!        -> set itypfb(ifac, iphas) = iparoi
-!        which prescribes default wall conditions for all variables at
-!        face ifac,
-!        -> and define IN ADDITION for variable ivar on this face
-!        specific conditions by specifying
-!        icodcl(ifac, ivar) and the 3 rcodcl values.
+!        Especially, one may have for example:
+!        -> set itypfb(ifac, iphas) = iparoi which prescribes default wall
+!        conditions for all variables at face ifac,
+!        -> and define IN ADDITION for variable ivar on this face specific
+!        conditions by specifying icodcl(ifac, ivar) and the 3 rcodcl values.
 
 
-!      The user may also assign to itypfb a value not equal to
-!       ientre, isolib, isymet, iparoi, iparug, iindef
-!       but greater than or equal to 1 and less than or equal to
-!       ntypmx (see values in param.h) to distinguish
-!       groups or colors in other subroutines which are specific
-!       to the case and in which itypfb is accessible.
-!       In this case though it will be necessary to
-!       prescribe boundary conditions by assigning values to
-!       icodcl and to the 3 rcodcl fields (as the value of itypfb
-!       will not be predefined in the code).
+!      The user may also assign to itypfb a value not equal to ientre, isolib,
+!       isymet, iparoi, iparug, iindef but greater than or equal to 1 and less
+!       than or equal to ntypmx (see values in param.h) to distinguish groups
+!       or colors in other subroutines which are specific to the case and in
+!       which itypfb is accessible.  In this case though it will be necessary
+!       to prescribe boundary conditions by assigning values to icodcl and to
+!       the 3 rcodcl fields (as the value of itypfb will not be predefined in
+!       the code).
 
 
 ! Consistency rules
 ! =================
 
-!       A few consistency rules between 'icodcl' codes for
-!         variables with non-standard boundary conditions:
+!       A few consistency rules between 'icodcl' codes for variables with
+!       non-standard boundary conditions:
 
 !           Codes for velocity components must be identical
 !           Codes for Rij components must be identical
 !           If code (velocity or Rij) = 4
-!             we must have code (velocity and Rij) = 4
+!             one must have code (velocity and Rij) = 4
 !           If code (velocity or turbulence) = 5
-!             we must have code (velocity and turbulence) = 5
+!             one must have code (velocity and turbulence) = 5
 !           If code (velocity or turbulence) = 6
-!             we must have code (velocity and turbulence) = 6
+!             one must have code (velocity and turbulence) = 6
 !           If scalar code (except pressure or fluctuations) = 5
-!             we must have velocity code = 5
+!             one must have velocity code = 5
 !           If scalar code (except pressure or fluctuations) = 6
-!             we must have velocity code = 6
+!             one must have velocity code = 6
 
 
 ! Remarks
 ! =======
 
-!       Caution: to prescribe a flux (nonzero) to Rij,
-!                the viscosity to take into account is viscl
-!                even if visct exists (visct=rho cmu k2/epsilon)
+!       Caution: to prescribe a flux (nonzero) to Rij, the viscosity to take
+!                into account is viscl even if visct exists
+!                (visct=rho cmu k2/epsilon)
 
-!       We have the ordering array for boundary faces from the
-!           previous time step (except for the fist time step,
-!           where 'itrifb' has not been set yet).
-!       The array of boundary face types 'itypfb' has been
-!           reset before entering the subroutine.
+!       One have the ordering array for boundary faces from the previous time
+!         step (except for the fist one, where 'itrifb' has not been set yet).
+!       The array of boundary face types 'itypfb' has been reset before
+!         entering the subroutine.
 
 
-!       Note how to access some variables:
+!       Note how to access some variables (for phase    'iphas'
+!                                              variable 'ivar'
+!                                              scalar   'iscal'):
 
-! Cell values
-!               Let         iel = ifabor(ifac)
+! Cell values  (let iel = ifabor(ifac))
 
-! * Density                         phase iphas, cell iel:
-!                  propce(iel, ipproc(irom(iphas)))
-! * Dynamic molecular viscosity     phase iphas, cell iel:
-!                  propce(iel, ipproc(iviscl(iphas)))
-! * Turbulent viscosity   dynamique phase iphas, cell iel:
-!                  propce(iel, ipproc(ivisct(iphas)))
-! * Specific heat                   phase iphas, cell iel:
-!                  propce(iel, ipproc(icp(iphasl))
-! * Diffusivity: lambda          scalaire iscal, cell iel:
-!                  propce(iel, ipproc(ivisls(iscal)))
+! * Density:                                 propce(iel, ipproc(irom(iphas)))
+! * Dynamic molecular viscosity:             propce(iel, ipproc(iviscl(iphas)))
+! * Turbulent viscosity:                     propce(iel, ipproc(ivisct(iphas)))
+! * Specific heat:                           propce(iel, ipproc(icp(iphas))
+! * Diffusivity(lambda):                     propce(iel, ipproc(ivisls(iscal)))
 
 ! Boundary face values
 
-! * Density                        phase iphas, boundary face ifac :
-!                  propfb(ifac, ipprob(irom(iphas)))
-! * Mass flow relative to variable ivar, boundary face ifac:
-!      (i.e. the mass flow used for convecting ivar)
-!                  propfb(ifac, pprob(ifluma(ivar )))
-! * For other values                  at boundary face ifac:
-!      take as an approximation the value in the adjacent cell iel
-!      i.e. as above with iel = ifabor(ifac).
+! * Density:                                 propfb(ifac, ipprob(irom(iphas)))
+! * Mass flux (for convecting 'ivar'):       propfb(ifac, ipprob(ifluma(ivar)))
+
+! * For other values: take as an approximation the value in the adjacent cell
+!                     i.e. as above with iel = ifabor(ifac).
+
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -395,12 +380,12 @@ subroutine usclim &
 ! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
 ! iprfml           ! ia ! <-- ! property numbers per family                    !
 !  (nfml, nprfml)  !    !     !                                                !
-! maxelt           !  e ! <-- ! max number of cells and faces (int/boundary)   !
+! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
 ! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
 ! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfac(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
 ! icodcl           ! ia ! --> ! boundary condition code                        !
 !  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
 !                  !    !     ! = 2  -> flux density                           !
@@ -409,19 +394,19 @@ subroutine usclim &
 !                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
-! itrifb(nfabor    ! ia ! <-- ! indirection for boundary faces ordering)       !
+! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 !  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
-! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
-! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! surfac           ! ra ! <-- ! interior faces surface vectors                 !
 !  (ndim, nfac)    !    !     !                                                !
 ! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfavor)  !    !     !                                                !
+!  (ndim, nfabor)  !    !     !                                                !
 ! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
 !  (ndim, nfac)    !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -431,14 +416,14 @@ subroutine usclim &
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
+!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! rcodcl           ! ra ! --> ! boundary condition values                      !
-!                  !    !     ! rcodcl(1) = Dirichlet value                    !
+!  (nfabor,nvar,3) !    !     ! rcodcl(1) = Dirichlet value                    !
 !                  !    !     ! rcodcl(2) = exterior exchange coefficient      !
 !                  !    !     !  (infinite if no exchange)                     !
 !                  !    !     ! rcodcl(3) = flux density value                 !
@@ -449,11 +434,10 @@ subroutine usclim &
 !                  !    !     ! for scalars    cp*(viscls+visct/sigmas)*gradt  !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! coefu            ! ra ! --- ! tab de trav                                    !
+! coefu            ! ra ! --- ! work array                                     !
 !  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! tab reel complementaire developemt             !
-! rdevel(nideve)   ! ra ! <-- ! real work array for temporary developpement    !
-! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
+! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -515,8 +499,8 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
-integer          ifac, ielt, ii, ivar, iphas
+integer          idebia, idebra, ielt
+integer          ifac, iel, ii, ivar, iphas
 integer          ilelt, nlelt
 double precision uref2, d2s3
 double precision rhomoy, dh, ustar2
@@ -538,26 +522,20 @@ d2s3 = 2.d0/3.d0
 !===============================================================================
 ! 2.  Assign boundary conditions to boundary faces here
 
-!     We may use selection criteria to filter boundary case subsets
+!     One may use selection criteria to filter boundary case subsets
 !       Loop on faces from a subset
 !         Set the boundary condition for each face
 !===============================================================================
 
-! --- Most types and values have been set using the GUI.
-
-! --- Set inlet values
-
-! Inlet type has already been assigned to boundary faces of color 1
-! through the GUI with a default velocity, but a time-varying value
-! is prescribed here and overrides the one given through the GUI.
-
+! --- For boundary faces of color 2 and x <= 0.01,
+!     assign an inlet for all phases
 call getfbr('1', nlelt, lstelt)
 !==========
 
-if (ttcabs .lt. 3.8d0) then
+if (ttcabs.lt.3.8d0) then
   do ielt = 1, nlelt
     ifac = lstelt(ielt)
-    rcodcl(ifac,isca(1),1) = 20.d0+100.d0*ttcabs
+    rcodcl(ifac,isca(1),1) = 20.d0 + 100.d0*ttcabs
   enddo
 else
   do ielt = 1, nlelt
