@@ -92,8 +92,12 @@ void CS_PROCF (tremai, TREMAI) (double  *tps,
 
   if ((*ret = getrusage(RUSAGE_SELF, &buf_time)) < 0)
     fprintf(stderr, "getrusage(RUSAGE_SELF) error:\n%s\n", strerror(errno));
+
+#if !defined(__bg__)
   else if ((*ret = getrusage(RUSAGE_CHILDREN, &buf_time1)) < 0)
     fprintf(stderr, "getrusage(RUSAGE_CHILDREN) error:\n%s\n", strerror(errno));
+#endif
+
   else if ((*ret = getrlimit(RLIMIT_CPU, &ressources)) < 0)
     fprintf(stderr, "getrlimit(RLIMIT_CPU) error:\n%s\n", strerror(errno));
 
