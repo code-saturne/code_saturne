@@ -1,3 +1,35 @@
+* 21/06/2010 - Pascal Nicolas <pascal.nicolas@incka.fr>
+               David Monfort <david.monfort@edf.fr>
+  Code_Saturne examples update, according to 2.0-rc2 version.
+  modified files:
+    examples/1-simple_junction/case1/case1.xml
+    examples/2-full_domain/case2/case2.xml
+    examples/2-full_domain/case3/case3.xml
+    examples/2-full_domain/case3/usclim.f90
+    examples/2-full_domain/case4/case4.xml
+    examples/2-full_domain/case4/usclim.f90
+    examples/2-full_domain/case4/usproj.f90
+    examples/3-stratified_junction/case5/case5.xml
+    examples/3-stratified_junction/case5/usdpst.f90
+    examples/3-stratified_junction/case5/usmpst.f90
+    examples/3-stratified_junction/case5/usvpst.f90
+  removed files:
+    examples/1-simple_junction/case1/runcase
+    examples/2-full_domain/case2/lance
+    examples/2-full_domain/case2/runcase
+    examples/2-full_domain/case3/runcase
+    examples/2-full_domain/case3/usphyv.f90
+    examples/2-full_domain/case4/runcase
+    examples/2-full_domain/case4/uskpdc.f90
+    examples/2-full_domain/case4/usphyv.f90
+    examples/3-stratified_junction/case5/runcase
+    examples/3-stratified_junction/case5/usphyv.f90
+
+* 21/06/2010 - David Monfort <david.monfort@edf.fr>
+  Minor correction for the tutorial documentation.
+  modified file:
+    doc/tutorial/tuto_case2.tex
+
 * 21/06/2010 - David Monfort <david.monfort@edf.fr>
   Missing initialization in memory handling.
   modified routine:

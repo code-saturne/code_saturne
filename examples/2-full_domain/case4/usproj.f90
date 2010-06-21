@@ -1,12 +1,12 @@
 !-------------------------------------------------------------------------------
 
-!                      Code_Saturne version 2.0.0-beta2
+!                      Code_Saturne version 2.0.0-rc1
 !                      --------------------------
 
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -47,184 +47,166 @@ subroutine usproj &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! MODIFICATION UTILISATEUR EN FIN DE PAS DE TEMPS
-!   TOUT EST POSSIBLE,
+!    User subroutine.
 
-
-! ON DONNE ICI PLUSIEURS EXEMPLES :
-
-!  - CALCUL DE BILAN THERMIQUE
-!    (au besoin, voir "ADAPTATION A UN SCALAIRE QUELCONQUE")
-
-!  - CALCUL DES EFFORTS GLOBAUX SUR UN SOUS-ENSEMBLE DE FACES
-
-!  - MODIFICATION ARBITRAIRE D'UNE VARIABLE DE CALCUL
-
-!  - EXTRACTION D'UN PROFIL 1D
-
-!  - IMPRESSION D'UN MOMENT
-
-!  - EXEMPLES D'UTILISATION DES ROUTINES DE PARALLELISME
-
-! CES EXEMPLES SONT DONNES EN SUPPOSANT UN CAS AVEC PERIODICITE
-!  (IPERIO    .GT.0) ET PARALLELISME (IRANGP.GE.0).
+!    Called at end of each time step, very general purpose
+!    (i.e. anything that does not have another dedicated user subroutine)
 
 
-! LE CALCUL DE BILAN THERMIQUE FOURNIT EN OUTRE UNE TRAME POUR
-!  PLUSIEURS CHOSES
-!  - CALCUL DE GRADIENT (AVEC LES PRECAUTIONS UTILES EN PARALLELE ET
-!    PERIODIQUE)
-!  - CALCUL DE GRANDEUR DEPENDANT DES VALEURS AUX CELLULES VOISINES
-!    D'UNE FACE (AVEC LES PRECAUTIONS A PRENDRE EN PARALLELE ET
-!    PERIODIQUE : VOIR L'ECHANGE DE DT ET DE CP)
-!  - CALCUL D'UNE SOMME SUR LES PROCESSEURS LORS D'UN CALCUL
-!    PARALLELE (PARSOM)
+! Several examples are given here:
+
+!  - compute a thermal balance
+!    (if needed, see note  below on adapting this to any scalar)
+
+!  - compute global efforts on a subset of faces
+
+!  - arbitrarily modify a calculation variable
+
+!  - extract a 1 d profile
+
+!  - print a moment
+
+!  - examples on using parallel utility functions
+
+! These examples are valid when using periodicity (iperio .gt. 0)
+! and in parallel (irangp .ge. 0).
+
+! The thermal balance compution also illustates a few other features,
+! including the required precautions in parallel or with periodicity):
+! - gradient calculation
+! - computation of a value depending on cells adjacent to a face
+!   (see synchronization of Dt and Cp)
+! - computation of a global sum in parallel (parsom)
 
 
-! IDENTIFICATION DES CELLULES/FACES DE BORD/FACES INTERNES
-! ========================================================
+! Cells, boundary faces and interior faces identification
+! =======================================================
 
-!  Les commandes GETCEL, GETFBR et GETFAC permettent d'identifier
-!  respectivement les cellules, faces ou faces de bord en fonction
-!  de differents criteres.
+! Cells, boundary faces and interior faces may be identified using
+! the subroutines 'getcel', 'getfbr' and 'getfac' (respectively).
 
-!  GETCEL(CHAINE,NLELT,LSTELT) :
-!  - CHAINE est une chaine de caractere fournie par l'utilisateur
-!    qui donne les criteres de selection
-!  - NLTELT est renvoye par la commande. C'est un entier qui
-!    correspond au nombre de cellules trouveees repondant au
-!    critere
-!  - LSTELT est renvoye par la commande. C'est un tableau d'entiers
-!    de taille NLTELT donnant la liste des cellules trouvees
-!    repondant au critere.
+!  getfbr(string, nelts, eltlst):
+!  - string is a user-supplied character string containing selection criteria;
+!  - nelts is set by the subroutine. It is an integer value corresponding to
+!    the number of boundary faces verifying the selection criteria;
+!  - lstelt is set by the subroutine. It is an integer array of size nelts
+!    containing the list of boundary faces verifying the selection criteria.
 
-!  CHAINE peut etre constitue de :
-!  - references de couleurs (ex. : 1, 8, 26, ...
-!  - references de groupes (ex. : entrees, groupe1, ...)
-!  - criteres geometriques (ex. X<0.1, Y>=0.25, ...)
-!  Ces criteres peuvent etre combines par des operateurs logiques
-!  (AND et OR) et des parentheses
-!  ex. : '1 AND (groupe2 OR groupe3) AND Y<1' permettra de recuperer
-!  les cellules de couleur 1, appartenant aux groupes 'groupe2'
-!  ou 'groupe3' et de coordonnee Y inferieure a 1.
+!  string may contain:
+!  - references to colors (ex.: 1, 8, 26, ...)
+!  - references to groups (ex.: inlet, group1, ...)
+!  - geometric criteria (ex. x < 0.1, y >= 0.25, ...)
+!  These criteria may be combined using logical operators ('and', 'or') and
+!  parentheses.
+!  Example: '1 and (group2 or group3) and y < 1' will select boundary faces
+!  of color 1, belonging to groups 'group2' or 'group3' and with face center
+!  coordinate y less than 1.
 
-!  La syntaxe des commandes GETFBR et GETFAC est identique.
+! Similarly, interior faces and cells can be identified using the 'getfac'
+! and 'getcel' subroutines (respectively). Their syntax are identical to
+! 'getfbr' syntax.
+
+! For a more thorough description of the criteria syntax, it can be referred
+! to the user guide.
 
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! ndim             ! e  ! <-- ! dimension de l'espace                          !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nfml             ! e  ! <-- ! nombre de familles d entites                   !
-! nprfml           ! e  ! <-- ! nombre de proprietese des familles             !
-! nnod             ! e  ! <-- ! nombre de sommets                              !
-! lndfac           ! e  ! <-- ! longueur du tableau nodfac (optionnel          !
-! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr (optionnel          !
-! ncelbr           ! e  ! <-- ! nombre d'elements ayant au moins une           !
-!                  !    !     ! face de bord                                   !
-! nvar             ! e  ! <-- ! nombre total de variables                      !
-! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! nphas            ! e  ! <-- ! nombre de phases                               !
-! nbpmax           ! e  ! <-- ! nombre max de particules autorise              !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
-! ifacel           ! te ! <-- ! elements voisins d'une face interne            !
-! (2, nfac)        !    !     !                                                !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
-! ifmfbr           ! te ! <-- ! numero de famille d'une face de bord           !
-! (nfabor)         !    !     !                                                !
-! ifmcel           ! te ! <-- ! numero de famille d'une cellule                !
-! (ncelet)         !    !     !                                                !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
-! nfml  ,nprfml    !    !     !                                                !
-! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
-! lstelt(maxelt) te ! --- ! tableau de travail                             !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfac+1)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (lndfac)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!  (nfabor+1)      !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (lndfbr  )     !    !     !  (optionnel)                                   !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
-! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
-! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! tr ! <-- ! vecteur surface des faces de bord              !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! tr ! <-- ! centre de gravite des faces internes           !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds (optionnel)              !
-! (ndim,nnod)      !    !     !                                                !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet          !    !     !                                                !
-! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
-! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
-! propce           ! tr ! <-- ! proprietes physiques au centre des             !
-! (ncelet,*)       !    !     !    cellules                                    !
-! propfa           ! tr ! <-- ! proprietes physiques au centre des             !
-!  (nfac,*)        !    !     !    faces internes                              !
-! propfb           ! tr ! <-- ! proprietes physiques au centre des             !
-!  (nfabor,*)      !    !     !    faces de bord                               !
-! coefa, coefb     ! tr ! <-- ! conditions aux limites aux                     !
-!  (nfabor,*)      !    !     !    faces de bord                               !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! statis           ! tr ! <-- ! moyennes statistiques                          !
-!(ncelet,nvlsta    !    !     !                                                !
-! stativ           ! tr ! <-- ! cumul pour les variances des                   !
-!(ncelet,          !    !     !    statistiques volumiques                     !
-!   nvlsta-1)      !    !     !                                                !
-! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
-!(ncelet,ntersl    !    !     !   lagrangien sur la phase porteuse             !
-! parbor           ! tr ! <-- ! infos sur interaction des particules           !
-!(nfabor,nvisbr    !    !     !   aux faces de bord                            !
-! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
-! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! ndim             ! i  ! <-- ! spatial dimension                              !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! nfml             ! i  ! <-- ! number of families (group classes)             !
+! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
+! nnod             ! i  ! <-- ! number of vertices                             !
+! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
+! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
+! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
+! nvar             ! i  ! <-- ! total number of variables                      !
+! nscal            ! i  ! <-- ! total number of scalars                        !
+! nphas            ! i  ! <-- ! number of phases                               !
+! nbpmax           ! i  ! <-- ! max. number of particles allowed               !
+! nvp              ! i  ! <-- ! number of particle-defined variables           !
+! nvep             ! i  ! <-- ! number of real particle properties             !
+! nivep            ! i  ! <-- ! number of integer particle properties          !
+! ntersl           ! i  ! <-- ! number of return coupling source terms         !
+! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
+! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
+! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
+! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
+! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
+! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
+! iprfml           ! ia ! <-- ! property numbers per family                    !
+!  (nfml, nprfml)  !    !     !                                                !
+! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
+! lstelt(maxelt)   ! ia ! --- ! work array                                     !
+! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
+! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
+! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! itepa            ! ia ! <-- ! integer particle attributes                    !
+!  (nbpmax, nivep) !    !     !   (containing cell, ...)                       !
+! idevel(nideve)   ! ia ! <-- ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
+! ia(*)            ! ia ! --- ! main integer work array                        !
+! xyzcen           ! ra ! <-- ! cell centers                                   !
+!  (ndim, ncelet)  !    !     !                                                !
+! surfac           ! ra ! <-- ! interior faces surface vectors                 !
+!  (ndim, nfac)    !    !     !                                                !
+! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
+!  (ndim, nfabor)  !    !     !                                                !
+! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
+!  (ndim, nfac)    !    !     !                                                !
+! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
+!  (ndim, nfabor)  !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
+!  (ndim, nnod)    !    !     !                                                !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
+! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
+! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
+! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
+! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
+! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
+! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
+!  (nfabor, *)     !    !     !                                                !
+! ettp, ettpa      ! ra ! <-- ! particle-defined variables                     !
+!  (nbpmax, nvp)   !    !     !  (at current and previous time steps)          !
+! tepa             ! ra ! <-- ! real particle properties                       !
+!  (nbpmax, nvep)  !    !     !  (statistical weight, ...                      !
+! statis           ! ra ! <-- ! statistic means                                !
+!  (ncelet, nvlsta)!    !     !                                                !
+! stativ(ncelet,   ! ra ! <-- ! accumulator for variance of volume statisitics !
+!        nvlsta -1)!    !     !                                                !
+! tslagr           ! ra ! <-- ! Lagrangian return coupling term                !
+!  (ncelet, ntersl)!    !     !  on carrier phase                              !
+! parbor           ! ra ! <-- ! particle interaction properties                !
+!  (nfabor, nvisbr)!    !     !  on boundary faces                             !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
+! rtuser(nrtuse)   ! ra ! <-- ! user-reserved real work array                  !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "dimfbr.h"
@@ -281,7 +263,7 @@ double precision tslagr(ncelet,ntersl)
 double precision parbor(nfabor,nvisbr)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
 integer          idebia, idebra
 integer          iel
@@ -293,7 +275,7 @@ double precision sum, sumvol
 
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! ---> Extra memory handling
@@ -339,4 +321,4 @@ if (ntcabs.eq.ntmabs .and. irangp.le.0) then
 endif
 
 return
-end
+end subroutine

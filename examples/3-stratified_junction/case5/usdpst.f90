@@ -1,12 +1,12 @@
 !-------------------------------------------------------------------------------
 
-!                      Code_Saturne version 2.0.0-beta1
+!                      Code_Saturne version 2.0.0-rc1
 !                      --------------------------
 
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2008 EDF S.A., France
+!     Copyright (C) 1998-2009 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -28,7 +28,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine  usdpst &
+subroutine usdpst &
 !=================
 
  ( idbia0 , idbra0 ,                                              &
@@ -43,78 +43,75 @@ subroutine  usdpst &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! ROUTINE UTILISATEUR POUR LOCALISER DES CELLULES, DES FACES
-! INTERNES ET/OU DES FACES DE BORD DEFINISSANT UN MAILLAGE DE
-! POST-TRAITEMENT.
+!    User subroutine.
+
+! Define additional post-processing writers and meshes.
+!
+! Post-processing writers allow outputs in different formats or with
+! different format options and output frequancy than the default writer.
+!
+! Post-processing meshes are defined as a subset of the main meshe's
+! cells or faces (interior and boundary).
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
+! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! ndim             ! e  ! <-- ! dimension de l'espace                          !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nfml             ! e  ! <-- ! nombre de familles d entites                   !
-! nprfml           ! e  ! <-- ! nombre de proprietese des familles             !
-! nnod             ! e  ! <-- ! nombre de sommets                              !
-! lndfac           ! e  ! <-- ! longueur du tableau nodfac (optionnel          !
-! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr (optionnel          !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
-! ifacel           ! te ! <-- ! elements voisins d'une face interne            !
-! (2, nfac)        !    !     !                                                !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
-! ifmfbr           ! te ! <-- ! numero de famille d'une face de bord           !
-! (nfabor)         !    !     !                                                !
-! ifmcel           ! te ! <-- ! numero de famille d'une cellule                !
-! (ncelet)         !    !     !                                                !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
-! (nfml,nprfml)    !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfac+1)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (lndfac)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!  (nfabor+1)      !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (lndfbr  )     !    !     !  (optionnel)                                   !
-! lstcel           ! te ! --- ! tableau de travail (liste des                  !
-! (ncelet)         !    !     !  cellules d'un maillage de sortie)             !
-! lstfac           ! te ! --- ! tableau de travail (liste des faces            !
-! (nfac)           !    !     !  internes d'un maillage de sortie)             !
-! lstfbr           ! te ! --- ! tableau de travail (liste des faces            !
-! (nfabor)         !    !     !  de bord d'un maillage de sortie)              !
-! ia(*)            ! te ! --- ! macro tableau entier                           !
-! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! tr ! <-- ! vecteur surface des faces de bord              !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! tr ! <-- ! centre de gravite des faces internes           !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds (optionnel)              !
-! (ndim,nnod)      !    !     !                                                !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet          !    !     !                                                !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
+! idbia0           ! i  ! <-- ! number of first free position in ia            !
+! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! ndim             ! i  ! <-- ! spatial dimension                              !
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! i  ! <-- ! number of cells                                !
+! nfac             ! i  ! <-- ! number of interior faces                       !
+! nfabor           ! i  ! <-- ! number of boundary faces                       !
+! nfml             ! i  ! <-- ! number of families (group classes)             !
+! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
+! nnod             ! i  ! <-- ! number of vertices                             !
+! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
+! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
+! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
+! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
+! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
+! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
+! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
+! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
+! iprfml           ! ia ! <-- ! property numbers per family                    !
+!  (nfml, nprfml)  !    !     !                                                !
+! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
+! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
+! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
+! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
+! lstcel(ncelet)   ! ia ! --- ! work array (list of cells)                     !
+! lstfac(nfac)     ! ia ! --- ! work array (list of interior faces)            !
+! lstfbr(nfabor)   ! ia ! --- ! work array (list of boundary faces)            !
+! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
+! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
+! ia(*)            ! ia ! --- ! main integer work array                        !
+! xyzcen           ! ra ! <-- ! cell centers                                   !
+!  (ndim, ncelet)  !    !     !                                                !
+! surfac           ! ra ! <-- ! interior faces surface vectors                 !
+!  (ndim, nfac)    !    !     !                                                !
+! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
+!  (ndim, nfabor)  !    !     !                                                !
+! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
+!  (ndim, nfac)    !    !     !                                                !
+! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
+!  (ndim, nfabor)  !    !     !                                                !
+! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
+!  (ndim, nnod)    !    !     !                                                !
+! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
+! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
+! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
+! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 implicit none
@@ -122,7 +119,7 @@ implicit none
 !===============================================================================
 
 !===============================================================================
-!     DONNEES EN COMMON
+! Common blocks
 !===============================================================================
 
 include "paramx.h"
@@ -157,9 +154,9 @@ double precision xyznod(ndim,nnod), volume(ncelet)
 double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
-! VARIABLES LOCALES
+! Local variables
 
-integer          indmod, icas, nbcas, ipart, nbpart, ipref
+integer          indmod, icas, nbcas, ipart, nbpart, ipref, icat
 integer          ntchrl
 
 integer          nlcel, nlfac , nlfbr
@@ -171,7 +168,6 @@ character*96     nomrep, optfmt
 
 double precision xfac  , yfac  , zfac
 
-
 !===============================================================================
 
 
@@ -179,118 +175,121 @@ double precision xfac  , yfac  , zfac
 nbcas  = 0
 nbpart = 0
 
-! Entiers "pointeurs" sur la premiere case libre de IA et RA
+! "pointeurs" to the first free positions in 'ia' and 'ra'
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-!     CREATION DES GESTIONNAIRES D'ECRITURE POUR LE POST TRAITEMENT
-!         (UN PAR CAS ET PAR FORMAT, A RENSEIGNER PAR L'UTILISATEUR)
+! Create output writers for post-processing
+! (one per case and per format, to be adapted by the user)
 !===============================================================================
 
-!     NOMBRE DE GESTIONNAIRES (case au sens EnSight, etude au sens MED,
-!                              ou racine d'une arborescence CGNS)
+! Number of writers (case in the EnSight sense, study in the MED sense,
+!                    or root of a CGNS tree)
 
 nbcas = 1
 
 do icas = 1, nbcas
 
-!       INITIALISATIONS DIVERSES
+  ! Miscellaneous initializations
 
   do ii = 1, len(nomcas)
-    NOMCAS (II:II) = ' '
+    nomcas (II:II) = ' '
   enddo
   do ii = 1, len(nomrep)
-    NOMREP (II:II) = ' '
+    nomrep (ii:ii) = ' '
   enddo
   do ii = 1, len(nomfmt)
-    NOMFMT (II:II) = ' '
+    nomfmt (ii:ii) = ' '
   enddo
   do ii = 1, len(optfmt)
-    OPTFMT (II:II) = ' '
+    optfmt (ii:ii) = ' '
   enddo
 
-!       DEFINITION UTILISATEUR :
+  ! User definition:
 
-!       NOMCAS et NOMREP indiquent respectivement le prefixe du nom
-!       des fichiers et le repertoire correspondant.
-!       Si NOMREP est de la forme xxxx.ensight ou xxxx.med, le lanceur le
-!       rapatriera automatiquement sous le nom XXXX.ENSIGHT.$DATE ou
-!       XXXX.MED.$DATE dans le repertoire RESU. Si NOMREP est d'une autre
-!       forme, il faudra gerer son rapatriement a la main.
+  ! 'nomcas' and 'nomrep' respectively define the file names prefix and
+  ! the corresponding directory path.
+  ! If 'nomrep' is a local name of the "xxxx.ensight" or "xxxx.med" form,
+  ! the script will automatically retreive the results to the 'RESU'
+  ! directory, under a name such as XXXX.ENSIGHT.$DATE or XXXX.MED.$DATE.
+  ! If 'nomrep' is of another form, it will have to be defined as a
+  ! generic user output dire or directory so as to be copied.
 
-!       NOMFMT permet de choisir le format de sortie
-!       ("EnSight Gold", "MED_fichier", ou "CGNS").
+  ! A user may also defined 'nomrep' as an absolute path, outside of the
+  ! execution directory, in which case the results are output directly
+  ! to that directory, and not managed by the script.
 
-!       OPTFMT permet de fournir des options specifiques au format de
-!       sortie (separees par des virgules) ;
-!         Pour EnSight : "text" ou "binary" (defaut),
-!         Pour EnSight, MED, ou CGNS :
-!                        "discard_polygons" pour supprimer les polygones,
-!                        "discard_polyhedra" pour supprimer les polyedres.
-!         Pour EnSight  ou MED :
-!                        "divide_polygons" pour découper les polygones,
-!                        "divide_polyhedra" pour découper les polyedres.
+  ! 'nomfmt' allows choosing the output format ("EnSight Gold",
+  ! "MED_fichier", or "CGNS").
 
-!       INDMOD indique si les maillages ecrits seront :
-!         0 : fixes,
-!         1 : deformables a topologie constante,
-!         2 : modifiables (pourront etre completement redefinis en
-!             cours de calcul via le sous-programme USMPST).
-!        10 : comme INDMOD = 0, avec champ de déplacement
-!        11 : comme INDMOD = 1, avec champ de déplacement
-!        12 : comme INDMOD = 2, avec champ de déplacement
+  ! 'optfmt' allows the addition of a list of comma-separated
+  ! format-specific output options:
+  ! - EnSight:
+  !      "text" ou "binary" (default),
+  ! - EnSight, MED, or CGNS:
+  !     "discard_polygons" to ignore polygons in output.
+  !     "discard_polyhedra" to ignore polyhedra in output.
+  ! - EnSight or MED :
+  !     "divide_polygons" to divide polygons into triangles
+  !     "divide_polyhedra" to divide polyhedra into tetrahedra and pyramids
 
-!       NTCHRL donne la frequence de sortie par defaut associee,
-!       (la sortie a un pas de temps donne pouvant etre forcee ou
-!       empechee via le sous-programme utilisateur USNPST).
+  ! 'indmod' indicates if the meshes output using this writer will be:
+  !     0: fixed,
+  !     1: deformables with constant topology constante,
+  !     2 : modifyable (may be redefined during the calculation through
+  !         the 'usmpst' user subroutine).
+  !     10: as indmod = 0, with a vertex displacement field
+  !     11: as indmod = 1, with a vertex displacement field
+  !     12: as indmod = 2, with a vertex displacement field
+
+  ! 'ntchrl' defines the default output frequency (output at a specific
+  ! time may still be forced or inhibited using the 'usnpst' user subroutine).
 
   if (icas .eq. 1) then
 
-    NOMCAS = 'chr'
-    NOMREP = 'TINF21.ensight'
-    NOMFMT = 'EnSight Gold'
-    OPTFMT = 'binary, discard_polygons'
+    nomcas = 'chr'
+    nomrep = 'tinf21.ensight'
+    nomfmt = 'EnSight Gold'
+    optfmt = 'binary, discard_polygons'
     indmod = 2
     ntchrl = 5
-
   endif
 
-!       DEFINITION EFFECTIVE
+  ! Create writer
 
-  call pstcwr (icas  , nomcas, nomrep, nomfmt, optfmt, &
+  call pstcwr (icas  , nomcas, nomrep, nomfmt, optfmt, indmod, ntchrl)
   !==========
-               indmod, ntchrl)
 
 enddo
 
-!===============================================================================
-!     NOMBRE DE MAILLAGES EXTRAITS POUR POST TRAITEMENT
-!         A RENSEIGNER PAR L'UTILISATEUR
-!===============================================================================
+! Define number of additional postprocessing output meshes
+!=========================================================
 
-!   NBPART est le nombre de "parts" qui seront generees
-!   (au sens EnSight ; les équivalents MED et CGNS sont le maillage
-!    et la base respectivement)
+! 'nbpart' is the number of parts which will be generated (in the EnSight
+! sense; the MED and CGNS equivalent terms are mesh and base respectively).
 
-!   Une "part" peut etre tout volume ou surface que l'on definira par
-!   l'identification des cellules ou faces du maillage
+! A "part" may be any volume or surface defined through a selection of the
+! main meshe's cells of faces.
 
+! Example:
+!
+! 4 "parts", correspondant respectivey to a mixed "interior faces"
+! / "exterior faces" extraction, an extraction containing only
+! interior faces, and 2 time-varying mesh pieces.
+
+! We will later add a 5th "part", which is an alias of the second.
 
 nbpart = 2
 
-!===============================================================================
-!     DEBUT DE LA BOUCLE SUR LES PARTS DEFINIES PAR L'UTILISATEUR
-!===============================================================================
+! Start of loop on user-defined parts
+!====================================
 
 do ipart = 1, nbpart
 
-
-!===============================================================================
-!       INITIALISATIONS DIVERSES
-!         PAS D'INTERVENTION UTILISATEUR REQUISE
-!===============================================================================
+  ! Miscellaneous initializations
+  !==============================
 
   nlcel = 0
   nlfac = 0
@@ -306,98 +305,80 @@ do ipart = 1, nbpart
   enddo
 
   do ii = 1, len(nommai)
-    NOMMAI(II:II) = ' '
+    nommai(ii:ii) = ' '
   enddo
 
-!===============================================================================
-!       REPERAGE DES CELLULES OU FACES INCLUSES DANS LE MAILLAGE
-!         A RENSEIGNER PAR L'UTILISATEUR
-!===============================================================================
+  ! Mark cells or faces included in the mesh (to be adapted by the user)
+  !=====================================================================
 
-!       Ce sous programme est appele avant la definition des
-!        conditions aux limites
+  ! Note that this subroutine is called before boundary conditions
+  ! are defined.
 
-
-!       POUR LA 1ere COUPE (PART 1) : coupe exemple
-
-!         Exemple : on selectionne
-!                   les faces internes sur le plan median
+  ! Part 1:
+  !   We select interior faces separating cells with color 2 from cells
+  !   with color 3, as well as boundary faces of color 4.
 
   if (ipart .eq. 1) then
 
-    NOMMAI = 'Coupe'
+    nommai = 'Cut 1'
 
-!         Pour les faces internes
+!         internal faces
 
     do ifac = 1, nfac
 
-!           Determination si la face appartient a la coupe
+!         look if the face belongs to the cut
 
       if (abs(cdgfac(2,ifac)).lt.1.d-4) then
         nlfac = nlfac+1
         lstfac(nlfac)= ifac
       endif
-
     enddo
+!
+!   Second cut (part 2) : cells at T < 21 degree
+!
+!   Example : ncelet is initialised, the choice of cells will be done in usmpst.f90
 
-
-
-
-!       POUR LA 2eme COUPE (PART 2) : cellules a T<21 degres
-
-!         Exemple : on initialise a NCELET, le choix
-!                   des cellules sera fait dans usmpst.F
-
-  else if (ipart .eq. 2) then
-
-    NOMMAI = 'celTinf21'
-
-!         Si NLCEL = NCELET, pas la peine de definir LSTCEL
-
-    nlcel = ncelet
-
+  elseif(ipart .eq. 2) then
+!
+        nommai = 'celTinf21'
+        nlcel = ncelet
+!
   endif
 
-!===============================================================================
-!       CREATION DES STRUCTURES CONSERVANT LES DONNEES DES PARTS
-!         PAS D'INTERVENTION UTILISATEUR REQUISE
-!===============================================================================
+  ! Create post-processing mesh
+  !============================
 
   call pstcma (ipart, nommai, nlcel, nlfac, nlfbr, lstcel, lstfac, lstfbr)
   !==========
 
-!===============================================================================
-!       IDENTIFICATION DU MAILLAGE EXTRAIT ET GESTION DE SORTIE
-!         A RENSEIGNER PAR L'UTILISATEUR
-!===============================================================================
+  ! Associate extracted mesh and writer (to be adapted by the user)
+  !================================================================
 
-  if (ipart .eq. 1) then
+  if ( ipart .eq. 1 ) then
 
-!         Le maillage 1 est associe a la sortie standard (ICAS=-1)
+    ! Associate post-processing mesh 1 with standard output (icas= -1).
     icas = -1
     call pstass(ipart, icas)
-    !==========
 
-  else if (ipart .eq. 2) then
+  elseif ( ipart .eq. 2 ) then
 
-!         Le maillage 2 est associe au cas cree ici (ICAS=1)
+    ! Associate post-processing mesh 2 with case created here (icas= 1) .
     icas = 1
     call pstass(ipart, icas)
     !==========
 
   endif
 
-!===============================================================================
-!     FIN   DE LA BOUCLE SUR LES PARTS DEFINIES PAR L'UTILISATEUR
-!===============================================================================
+  ! End of loop on user-defined parts
+  !==================================
 
 enddo
+
 
 return
 
 !===============================================================================
-!     FORMATS
+! Formats
 !===============================================================================
 
-end
-
+end subroutine
