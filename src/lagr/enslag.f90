@@ -680,7 +680,11 @@ if (nfin.eq.1) then
         write(impla1,1030) ra(iz+ii-1)
       enddo
       write(impla1,3006)
-      write(impla1,1010) ipt-1
+      if (ipt.eq.0) then
+        write(impla1,1010) 0
+      else
+        write(impla1,1010) ipt-1
+      endif
       do ii=1,ipt-1
         write(impla1,1020) ii,ii+1
       enddo

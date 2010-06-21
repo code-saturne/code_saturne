@@ -253,8 +253,6 @@ if (ivistp.eq.1) then
 !-->Ecriture
 
   WRITE(IMPLA1,'(A)') FICH(II1:II2+LPOS)
-  WRITE(IMPLA1,'(A)') 'part   1'
-  WRITE(IMPLA1,'(A)') 'point'
   WRITE(IMPLA1,'(6E12.5)') ( REAL(TRAV(NP,1)), NP=1,NPT )
   close(impla1)
 
@@ -290,8 +288,6 @@ if (iviste.eq.1) then
 !-->Ecriture
 
   WRITE(IMPLA1,'(A)') FICH(II1:II2+LPOS)
-  WRITE(IMPLA1,'(A)') 'part   1'
-  WRITE(IMPLA1,'(A)') 'point'
   WRITE(IMPLA1,'(6E12.5)') ( REAL(TRAV(NP,1)), NP=1,NPT )
   close(impla1)
 
@@ -327,8 +323,6 @@ if (ivisdm.eq.1) then
 !-->Ecriture
 
   WRITE(IMPLA1,'(A)') FICH(II1:II2+LPOS)
-  WRITE(IMPLA1,'(A)') 'part   1'
-  WRITE(IMPLA1,'(A)') 'point'
   WRITE(IMPLA1,'(6E12.5)') ( REAL(TRAV(NP,1)), NP=1,NPT )
   close(impla1)
 
@@ -364,8 +358,6 @@ if (ivismp.eq.1) then
 !-->Ecriture
 
   WRITE(IMPLA1,'(A)') FICH(II1:II2+LPOS)
-  WRITE(IMPLA1,'(A)') 'part   1'
-  WRITE(IMPLA1,'(A)') 'point'
   WRITE(IMPLA1,'(6E12.5)') ( REAL(TRAV(NP,1)), NP=1,NPT )
   close(impla1)
 
@@ -401,8 +393,6 @@ if (ivishp.eq.1) then
 !-->Ecriture
 
   WRITE(IMPLA1,'(A)') FICH(II1:II2+LPOS)
-  WRITE(IMPLA1,'(A)') 'part   1'
-  WRITE(IMPLA1,'(A)') 'point'
   WRITE(IMPLA1,'(6E12.5)') ( REAL(TRAV(NP,1)), NP=1,NPT )
   close(impla1)
 
@@ -438,8 +428,6 @@ if (ivisdk.eq.1) then
 !-->Ecriture
 
   WRITE(IMPLA1,'(A)') FICH(II1:II2+LPOS)
-  WRITE(IMPLA1,'(A)') 'part   1'
-  WRITE(IMPLA1,'(A)') 'point'
   WRITE(IMPLA1,'(6E12.5)') ( REAL(TRAV(NP,1)), NP=1,NPT )
   close(impla1)
 
@@ -475,8 +463,6 @@ if (ivisch.eq.1) then
 !-->Ecriture
 
   WRITE(IMPLA1,'(A)') FICH(II1:II2+LPOS)
-  WRITE(IMPLA1,'(A)') 'part   1'
-  WRITE(IMPLA1,'(A)') 'point'
   WRITE(IMPLA1,'(6E12.5)') ( REAL(TRAV(NP,1)), NP=1,NPT )
   close(impla1)
 
@@ -512,8 +498,6 @@ if (ivisck.eq.1) then
 !-->Ecriture
 
   WRITE(IMPLA1,'(A)') FICH(II1:II2+LPOS)
-  WRITE(IMPLA1,'(A)') 'part   1'
-  WRITE(IMPLA1,'(A)') 'point'
   WRITE(IMPLA1,'(6E12.5)') ( REAL(TRAV(NP,1)), NP=1,NPT )
   close(impla1)
 
@@ -551,8 +535,6 @@ if (ivisv1.eq.1) then
 !-->Ecriture
 
   WRITE(IMPLA1,'(A)') FICH(II1:II2+LPOS)
-  WRITE(IMPLA1,'(A)') 'part   1'
-  WRITE(IMPLA1,'(A)') 'point'
   WRITE(IMPLA1,'(6E12.5)') ( (REAL(TRAV(NP,NL)),NL=1,3),NP=1,NPT )
   close(impla1)
 
@@ -590,8 +572,6 @@ if (ivisv2.eq.1) then
 !-->Ecriture
 
   WRITE(IMPLA1,'(A)') FICH(II1:II2+LPOS)
-  WRITE(IMPLA1,'(A)') 'part   1'
-  WRITE(IMPLA1,'(A)') 'point'
   WRITE(IMPLA1,'(6E12.5)') ( (REAL(TRAV(NP,NL)),NL=1,3),NP=1,NPT )
   close(impla1)
 
@@ -644,7 +624,7 @@ endif
 !       WRITE(IMPLA1,'(A)') NAME(II1:II2)
 
   if (ivistp.eq.1) then
-    NAME = 'scalar per node :      1    temps_de_sejour  '
+    NAME = 'scalar per node:      1    temps_de_sejour  '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 2
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -656,7 +636,7 @@ endif
   endif
 
   if (iviste.eq.1) then
-    NAME = 'scalar per node :      1    temperature      '
+    NAME = 'scalar per node:      1    temperature      '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 6
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -668,7 +648,7 @@ endif
   endif
 
   if (ivisdm.eq.1) then
-    NAME = 'scalar per node :      1    diametre         '
+    NAME = 'scalar per node:      1    diametre         '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 9
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -680,7 +660,7 @@ endif
   endif
 
   if (ivismp.eq.1) then
-    NAME = 'scalar per node :      1    masse            '
+    NAME = 'scalar per node:      1    masse            '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 12
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -692,7 +672,7 @@ endif
   endif
 
   if (ivishp.eq.1) then
-    NAME = 'scalar per node :      1    tempch           '
+    NAME = 'scalar per node:      1    tempch           '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 11
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -704,7 +684,7 @@ endif
   endif
 
   if (ivisdk.eq.1) then
-    NAME = 'scalar per node :      1    dck              '
+    NAME = 'scalar per node:      1    dck              '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 14
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -716,7 +696,7 @@ endif
   endif
 
   if (ivisch.eq.1) then
-    NAME = 'scalar per node :      1    mch              '
+    NAME = 'scalar per node:      1    mch              '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 14
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -728,7 +708,7 @@ endif
   endif
 
   if (ivisck.eq.1) then
-    NAME = 'scalar per node :      1    mck              '
+    NAME = 'scalar per node:      1    mck              '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 14
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -740,7 +720,7 @@ endif
   endif
 
   if (ivisv1.eq.1) then
-    NAME = 'vector per node :      1    vitesse_fluide   '
+    NAME = 'vector per node:      1    vitesse_fluide   '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 3
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -752,7 +732,7 @@ endif
   endif
 
   if (ivisv2.eq.1) then
-    NAME = 'vector per node :      1    vitesse_partic   '
+    NAME = 'vector per node:      1    vitesse_partic   '
     call verlon (name,ii1,ii2,lpos)
     ii2 = ii2 + 3
     name(ii2+1:ii2+n2)=fich(n1:n2)
@@ -764,7 +744,7 @@ endif
   endif
 
   WRITE(IMPLA1,'(A)') 'TIME'
-  WRITE(IMPLA1,'(A)') 'time set:'
+  WRITE(IMPLA1,'(A)') 'time set:               1'
   FICH = ' '
   FICH = 'number of steps:'
   WRITE(NAME,'(I4)') ITLAG
@@ -775,7 +755,9 @@ endif
   WRITE(IMPLA1,'(A)') 'filename start number:  1'
   WRITE(IMPLA1,'(A)') 'filename increment:     1'
   WRITE(IMPLA1,'(A)') 'time values:'
-  WRITE(IMPLA1,'(6E12.5)') (TIMLAG(NL),NL=1,ITLAG)
+  do nl = 1, itlag
+    WRITE(IMPLA1,'(E12.5)') TIMLAG(NL)
+  enddo
 
   close(impla1)
 

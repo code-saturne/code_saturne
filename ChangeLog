@@ -1,3 +1,10 @@
+* 21/06/2010 - David Monfort <david.monfort@edf.fr>
+  Make the particles output compliant with EnSight 6 format and improve the
+  robustness of the output for visualizing with ParaView.
+  Thanks to Stéphane Blanchet for reporting this issue.
+  modified routine:
+    src/lagr/enswaf.f90
+
 * 15/06/2010 - David Monfort <david.monfort@edf.fr>
   Fix a crash when asking for the check_mesh help.
   modified script:
