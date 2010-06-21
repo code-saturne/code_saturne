@@ -1,4 +1,9 @@
 * 21/06/2010 - David Monfort <david.monfort@edf.fr>
+  On BlueGene systems, RUSAGE_CHILDREN is not available.
+  modified routine:
+    src/base/tremai.c
+
+* 21/06/2010 - David Monfort <david.monfort@edf.fr>
   Make the particles output compliant with EnSight 6 format and improve the
   robustness of the output for visualizing with ParaView.
   Thanks to Stéphane Blanchet for reporting this issue.
