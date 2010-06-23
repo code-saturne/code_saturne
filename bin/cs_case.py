@@ -574,7 +574,7 @@ class case:
                 s_args = d.solver_args(app_id=app_id)
                 if len(cmd) > 0:
                     cmd += ' : '
-                cmd += '-n ' + str(d.n_procs) + ' -cwd ' + s_args[0] \
+                cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
                     + ' ' + s_args[1] + s_args[2]
                 app_id += 1
 
@@ -582,7 +582,7 @@ class case:
             s_args = d.solver_args(app_id=app_id)
             if len(cmd) > 0:
                 cmd += ' : '
-            cmd += '-n ' + str(d.n_procs) + ' -cwd ' + s_args[0] \
+            cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
                 + ' ' + s_args[1] + s_args[2]
             app_id += 1
 
@@ -605,14 +605,14 @@ class case:
         for d in self.syr_domains:
             if d.coupling_mode == 'MPI':
                 s_args = d.solver_args(app_id=app_id)
-                cmd = '-n ' + str(d.n_procs) + ' -cwd ' + s_args[0] \
+                cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
                     + ' ' + s_args[1] + s_args[2] + '\n'
                 e.write(cmd)
                 app_id += 1
 
         for d in self.domains:
             s_args = d.solver_args(app_id=app_id)
-            cmd = '-n ' + str(d.n_procs) + ' -cwd ' + s_args[0] \
+            cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
                 + ' ' + s_args[1] + s_args[2] + '\n'
             e.write(cmd)
             app_id += 1

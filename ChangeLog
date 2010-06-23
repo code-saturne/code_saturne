@@ -1,3 +1,8 @@
+* 23/06/2010 - David Monfort <david.monfort@edf.fr>
+  Fix the working directory option for MPI MPMD parameters.
+  modified script:
+    bin/cs_case.py
+
 * 21/06/2010 - Pascal Nicolas <pascal.nicolas@incka.fr>
                David Monfort <david.monfort@edf.fr>
   Code_Saturne examples update, according to 2.0-rc2 version.
