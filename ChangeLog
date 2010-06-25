@@ -1,3 +1,9 @@
+* 25/06/2010 - David Monfort <david.monfort@edf.fr>
+  Little fixes and improvement for code/code coupling.
+  modified routines:
+    src/base/cscpfb.f90
+    src/base/cs_sat_coupling.c
+
 * 25/06/2010 - Benoit de Laage de Meux <benoit.de-laage-de-meux@edf.fr>
   Add a missing local variable definition (epsilon for the RHS sweep).
   modified routine:

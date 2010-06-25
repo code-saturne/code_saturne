@@ -999,7 +999,7 @@ void CS_PROCF (defloc, DEFLOC)
 )
 {
   cs_int_t  ind;
-  cs_int_t  nbr_fbr_cpl, nbr_cel_cpl;
+  cs_int_t  nbr_fbr_cpl = 0, nbr_cel_cpl = 0;
 
   int  indic_glob[2] = {0, 0};
   int  indic_loc[2] = {0, 0};
