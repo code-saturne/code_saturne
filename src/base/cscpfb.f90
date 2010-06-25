@@ -669,7 +669,8 @@ do iphas = 1, nphas
         yjjp = djppts(2,ipt)
         zjjp = djppts(3,ipt)
 
-        ra(itrav2 + ipt-1) = rtp(iel,iepiph)
+        ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
       enddo
 
@@ -965,18 +966,41 @@ do iphas = 1, nphas
       if (isou.eq.5) itrav = itrav5
       if (isou.eq.6) itrav = itrav6
 
-      do ipt = 1, nptdis
+      ! For a specific face to face coupling, geometric assumptions are made
 
-        iel = locpts(ipt)
+      if (ifaccp.eq.1) then
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+        do ipt = 1, nptdis
 
-        ra(itrav + ipt-1) = rtp(iel,ivar)                         &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+          iel = locpts(ipt)
 
-      enddo
+          xjjp = djppts(1,ipt)
+          yjjp = djppts(2,ipt)
+          zjjp = djppts(3,ipt)
+
+          ra(itrav + ipt-1) = rtp(iel,ivar)                         &
+            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+        enddo
+
+      ! For a generic coupling, no assumption can be made
+
+      else
+
+        do ipt = 1, nptdis
+
+          iel = locpts(ipt)
+
+          xjjp = djppts(1,ipt)
+          yjjp = djppts(2,ipt)
+          zjjp = djppts(3,ipt)
+
+          ra(itrav + ipt-1) = rtp(iel,ivar)                         &
+            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+        enddo
+
+      endif
 
     enddo
 
@@ -1032,18 +1056,41 @@ do iphas = 1, nphas
     rdevel , rtuser , ra     )
 
 
-    do ipt = 1, nptdis
+    ! For a specific face to face coupling, geometric assumptions are made
 
-      iel = locpts(ipt)
+    if (ifaccp.eq.1) then
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+      do ipt = 1, nptdis
 
-      ra(itrav7 + ipt-1) = rtp(iel,iepiph)                        &
-        + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+        iel = locpts(ipt)
 
-    enddo
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav7 + ipt-1) = rtp(iel,iepiph)                        &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav7 + ipt-1) = rtp(iel,iepiph)                        &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+   endif
 
 !=======================================================================
 !          3.2.2. Transfert de variable à "iso-modèle"
@@ -1201,19 +1248,41 @@ do iphas = 1, nphas
     rdevel , rtuser , ra     )
 
 
-    do ipt = 1, nptdis
+    ! For a specific face to face coupling, geometric assumptions are made
 
-      iel = locpts(ipt)
+    if (ifaccp.eq.1) then
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+      do ipt = 1, nptdis
 
-      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
-        + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+        iel = locpts(ipt)
 
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
 
-    enddo
+        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+   endif
 
 !         Préparation des données: interpolation de epsilon en J'
 
@@ -1267,18 +1336,41 @@ do iphas = 1, nphas
     rdevel , rtuser , ra     )
 
 
-    do ipt = 1, nptdis
+    ! For a specific face to face coupling, geometric assumptions are made
 
-      iel = locpts(ipt)
+    if (ifaccp.eq.1) then
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+      do ipt = 1, nptdis
 
-      ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
-        + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+        iel = locpts(ipt)
 
-    enddo
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    endif
 
 !         Préparation des données: interpolation de Phi en J'
 
@@ -1397,18 +1489,41 @@ do iphas = 1, nphas
     rdevel , rtuser , ra     )
 
 
-    do ipt = 1, nptdis
+    ! For a specific face to face coupling, geometric assumptions are made
 
-      iel = locpts(ipt)
+    if (ifaccp.eq.1) then
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+      do ipt = 1, nptdis
 
-      ra(itrav4 + ipt-1) = rtp(iel,ifbiph)                        &
-        + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+        iel = locpts(ipt)
 
-    enddo
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav4 + ipt-1) = rtp(iel,ifbiph)                        &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav4 + ipt-1) = rtp(iel,ifbiph)                        &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    endif
 
 !=======================================================================
 !          3.3.2. Transfert de variable à "iso-modèle"
@@ -1522,18 +1637,41 @@ do iphas = 1, nphas
     rdevel , rtuser , ra     )
 
 
-    do ipt = 1, nptdis
+    ! For a specific face to face coupling, geometric assumptions are made
 
-      iel = locpts(ipt)
+    if (ifaccp.eq.1) then
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+      do ipt = 1, nptdis
 
-      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
-        + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+        iel = locpts(ipt)
 
-    enddo
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    endif
 
 !         Préparation des données: interpolation de omega en J'
 
@@ -1586,18 +1724,41 @@ do iphas = 1, nphas
     w4     , w5     , w6     ,                                    &
     rdevel , rtuser , ra     )
 
-    do ipt = 1, nptdis
+    ! For a specific face to face coupling, geometric assumptions are made
 
-      iel = locpts(ipt)
+    if (ifaccp.eq.1) then
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+      do ipt = 1, nptdis
 
-      ra(itrav2 + ipt-1) = rtp(iel,iomiph)                        &
-        + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+        iel = locpts(ipt)
 
-    enddo
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav2 + ipt-1) = rtp(iel,iomiph)                        &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav2 + ipt-1) = rtp(iel,iomiph)                        &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    endif
 
 !=======================================================================
 !          3.4.2. Transfert de variable à "iso-modèle"
@@ -1860,7 +2021,7 @@ if (nscal.gt.0) then
 
 ! -- UPWIND
 
-        rvdis(ipt,ipos) = rtp(iel,ivar)
+!        rvdis(ipt,ipos) = rtp(iel,ivar)
 
 ! -- SOLU
 
@@ -1873,12 +2034,12 @@ if (nscal.gt.0) then
 
 ! -- CENTRE
 
-!        xjjp = djppts(1,ipt)
-!        yjjp = djppts(2,ipt)
-!        zjjp = djppts(3,ipt)
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
 
-!        rvdis(ipt,ipos) = rtp(iel,ivar) &
-!          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+        rvdis(ipt,ipos) = rtp(iel,ivar) &
+          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
       enddo
 
