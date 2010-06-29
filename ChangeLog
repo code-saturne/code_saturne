@@ -3,6 +3,11 @@
   modified script:
     extras/installer/install_saturne.py
 
+* 28/06/2010 - David Monfort <david.monfort@edf.fr>
+  Fix the version number output.
+  modified script:
+    bin/cs_info.py
+
 * 25/06/2010 - David Monfort <david.monfort@edf.fr>
   Little fixes and improvement for code/code coupling.
   modified routines:

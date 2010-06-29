@@ -83,11 +83,15 @@ def process_cmd_line(argv):
 
     (options, args) = parser.parse_args(argv)
 
+    if options.version:
+        print_version()
+        sys.exit(0)
+
     if len(args) > 0 or len(options.guides) == 0:
         parser.print_help()
         sys.exit(1)
 
-    return options.guides, options.pdf_reader, options.version
+    return options.guides, options.pdf_reader
 
 
 #-------------------------------------------------------------------------------
@@ -158,10 +162,7 @@ def main(argv):
     Main function.
     """
 
-    manuals, reader, version = process_cmd_line(argv)
-
-    if version:
-        print_version()
+    manuals, reader = process_cmd_line(argv)
 
     for m in manuals:
         launch_manual(reader, m)
