@@ -278,7 +278,7 @@ class Setup:
 
         url_cs = "http://research.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/%s"
 	# See below for kernel specific url
-        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/918391265/724961558/%s"
+        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/715855255/758348554/%s"
 
         # BFT library
 
@@ -286,8 +286,8 @@ class Setup:
             Package(name="BFT",
                     description="Basic Functions and Tools",
                     package="bft",
-                    version="1.1.2",
-                    archive="bft-112.tgz",
+                    version="1.1.3",
+                    archive="bft-113.tgz",
                     url=url_cs)
 
         # FVM library
@@ -296,8 +296,8 @@ class Setup:
             Package(name="FVM",
                     description="Finite Volume Mesh",
                     package="fvm",
-                    version="0.15.0",
-                    archive="fvm-0150.tgz",
+                    version="0.15.1",
+                    archive="fvm-0151.tgz",
                     url=url_cs)
 
         p = self.packages['fvm']
@@ -309,8 +309,8 @@ class Setup:
             Package(name="MEI",
                     description="Mathematical Expressions Interpreter",
                     package="mei",
-                    version="1.0.1",
-                    archive="mei-101.tgz",
+                    version="1.0.2",
+                    archive="mei-102.tgz",
                     url=url_cs)
 
         # Code_Saturne Preprocessor
@@ -319,20 +319,18 @@ class Setup:
             Package(name="ECS",
                     description="Code_Saturne Preprocessor",
                     package="ecs",
-                    version="2.0-rc1",
-                    archive="ecs-200rc1.tgz",
+                    version="2.0-rc2",
+                    archive="ecs-200rc2.tgz",
                     url=url_cs)
 
         # Code_Saturne Kernel
-
-        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/918391265/569282765/%s"
 
         self.packages['ncs'] = \
             Package(name="NCS",
                     description="Code_Saturne Kernel",
                     package="ncs",
-                    version="2.0-rc1",
-                    archive="ncs-200rc1.tgz",
+                    version="2.0-rc2",
+                    archive="ncs-200rc2.tgz",
                     url=url_cs)
 
         p = self.packages['ncs']

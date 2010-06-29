@@ -1,3 +1,8 @@
+* 29/06/2010 - David Monfort <david.monfort@edf.fr>
+  Update the installer according to the packages URLs.
+  modified script:
+    extras/installer/install_saturne.py
+
 * 25/06/2010 - David Monfort <david.monfort@edf.fr>
   Little fixes and improvement for code/code coupling.
   modified routines:
