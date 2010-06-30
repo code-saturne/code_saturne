@@ -277,8 +277,8 @@ class Setup:
         self.packages = {}
 
         url_cs = "http://research.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/%s"
-	# See below for kernel specific url
-        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/715855255/758348554/%s"
+        # See below for kernel specific url
+        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/715855256/45500713/%s"
 
         # BFT library
 
