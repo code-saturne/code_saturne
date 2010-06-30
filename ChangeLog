@@ -1,4 +1,5 @@
 * 30/06/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
   Fix an issue in MPICH2 detection with the Python runcase.
   modified script:
     bin/cs_exec_environment.py

@@ -456,7 +456,7 @@ class mpi_environment:
                     if f.read(2) == '#!':
                         l = f.readline()
                         if l.find('python') > 0:
-                            mpiexec_mpd = True
+                            mpd_setup = True
                     f.close()
                     # Set launcher name
                     if d == mpi_lib.bindir:
