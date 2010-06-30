@@ -438,12 +438,27 @@ class mpi_environment:
 
         # Determine base executable paths
 
+        # Also try to determine if mpiexec is that of MPD or of another
+        # process manager, using the knowledge that MPD's mpiexec
+        # is a Python script, while other MPICH2 mpiexec's are binary.
+        # We could have a false positive if another wrapper is used,
+        # but we still need to find mpdboot.
+
         launcher_names = ['mpiexec', 'mpirun']
+        mpd_setup = False
 
         for name in launcher_names:
             for d in p:
                 absname = os.path.join(d, name)
                 if os.path.isfile(absname):
+                    # Determine if the launcher is a Python script
+                    f = open(absname, 'r')
+                    if f.read(2) == '#!':
+                        l = f.readline()
+                        if l.find('python') > 0:
+                            mpiexec_mpd = True
+                    f.close()
+                    # Set launcher name
                     if d == mpi_lib.bindir:
                         self.mpiexec = absname
                     else:
@@ -451,20 +466,6 @@ class mpi_environment:
                     break
             if self.mpiexec != None:
                 break
-
-        # Try to determine if mpiexec is that of MPD or of another
-        # process manager, using the knowledge that MPD's mpiexec
-        # is a Python script, while other MPICH2 mpiexec's are binary.
-        # We could have a false positive if another wrapper is used,
-        # but we still need to find mpdboot.
-
-        mpd_setup = False
-        f = open(self.mpiexec, 'r')
-        if f.read(2) == '#!':
-            l = f.readline()
-            if l.find('python') > 0:
-                mpiexec_mpd = True
-        f.close()
 
         # If we are using a root MPD, no need for setup
 
