@@ -240,7 +240,8 @@ elif test "x$cs_gcc" = "xicc"; then
   cs_cc_compiler_known=yes
 
   # Default compiler flags
-  cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
+  cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
   cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
@@ -615,7 +616,8 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     cs_fc_compiler_known=yes
 
     # Default compiler flags
-    fcflags_default="-cpp -fpic -warn"
+    # (temporarily disable "unused variable" remark -- 7712)
+    fcflags_default="-cpp -fpic -warn -diag-disable 7712"
     fcflags_default_dbg="-g -O0 -traceback -check all -fpe0 -ftrapuv"
     fcflags_default_opt="-O2"
     fcflags_default_hot="-O3"

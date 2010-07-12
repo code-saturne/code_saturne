@@ -1,4 +1,9 @@
 * 12/07/2010 - David Monfort <david.monfort@edf.fr>
+  Disable some annoying remarks/warnings with Intel compilers.
+  modified script:
+    config/cs_auto_flags.sh
+
+* 12/07/2010 - David Monfort <david.monfort@edf.fr>
   Fix the configure.ac script due to a directory renaming.
   modified scrip:
     configure.ac
