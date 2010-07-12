@@ -354,8 +354,6 @@ class domain(base_domain):
                  n_procs_max = None,          # max. number of processes
                  meshes = None,               # name or names of mesh files
                  reorient = False,            # reorient badly-oriented meshes
-                 join = None,                 # command-line options
-                 periodicity = None,          # command-line options
                  partition_list = None,       # list of partitions
                  partition_opts = None,       # partitioner options
                  solcom = False,              # use old geomet mesh file input
@@ -391,9 +389,6 @@ class domain(base_domain):
         else:
             self.meshes = (meshes,)
         self.reorient = reorient
-
-        self.join = join
-        self.periodicity = periodicity
 
         # Partition options
 
@@ -791,11 +786,6 @@ class domain(base_domain):
 
         if self.reorient:
             cmd += ' --reorient'
-
-        if self.join != None:
-            cmd += ' ' + self.join
-        if self.periodicity != None:
-            cmd += ' ' + self.periodicity
 
         cmd += ' --log'
 

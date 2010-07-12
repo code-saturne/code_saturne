@@ -149,27 +149,6 @@ casedir = 'CASEDIRNAME'
 MESHES = None
 REORIENT = False
 
-# To join meshes with the Preprocessor, the JOIN variable should contain
-# the Preprocessor command line arguments for joining, for example:
-#   JOIN = '-j --color 3 4 6'
-# Otherwise, set JOIN = None.
-
-# Periodicity is an extension of joining, and works in a similar
-# fashion; for example (with 2 periodic directions):
-#   PERIODICITY = --perio --trans 10 0 0 --perio --trans 0 1 0
-# Otherwise, set PERIODICITY to None.
-
-# A variable may be defined over several lines, using the \ character,
-# for example:
-#   PERIODICITY="--perio --trans -10.2 0 0 --color 2                 \
-#                --perio --rota --angle 90 --dir 0 0 1 --invpt 0 0 0 \
-#                        --color 3 4
-
-# See the user documentation or run 'cs_preprocess --help' for details.
-
-JOIN = None
-PERIODICITY = None
-
 # Additional files.
 
 # If thermochemistry applies, the name of the thermochemistry data file
@@ -317,8 +296,6 @@ if __name__ == '__main__':
 
     d = domain(meshes = MESHES,
                reorient = REORIENT,
-               join = JOIN,
-               periodicity = PERIODICITY,
                partition_list = PARTITION_LIST,
                partition_opts = PARTITION_OPTS,
                param = PARAMETERS,

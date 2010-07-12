@@ -1,4 +1,10 @@
 * 12/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update the runacse script according to the up-to-date preprocessor.
+  modified scripts:
+    bin/cs_case_domain.py
+	bin/runcase.in
+
+* 12/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Update the admin tools with the new directories structure.
   Trailing blank removal.
   modified scripts:
