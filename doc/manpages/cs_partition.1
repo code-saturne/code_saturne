@@ -27,35 +27,25 @@
 cs_partition \- Compute domain partition(s) of Code_Saturne preprocessor output.
 .SH SYNOPSIS
 .B cs_partition
-.RI <n_ranks> [<n_ranks_2> ... <n_ranks_n>]
-.RI [options]
+.RI <n_ranks>
+.RI "[<n_ranks_2> ... <n_ranks_n>]"
+.RI [-no-perio]
+.RI [-no-write]
 .br
 .SH DESCRIPTION
 The
 .B cs_partition
 program takes the file named
 .B preprocessor_output
-created by the Code_Saturne preprocessor.
+created by the Code_Saturne preprocessor
 .B cs_preprocess
 and builds one or several "cells \-> domain" association files, named
 .B domain_number_p
 by using a graph splitting if linked with a METIS or SCOTCH library.
 .SH OPTIONS
 .B
-.IP --log
-Output redirection for rank -1 or 0. Differents possibilities are: 0
-for standard output and 1 for output in
-.B partition.log
-(default)
-.B
-.IP --logp
-Output redirection for rank > 0. Differents possibilities are: -1 to
-remove output (default), 0 for no redirection (if independant
-terminal, debugger type) and 1 for output in
-.B partition.log_<rank>
-.B
-.IP "--mpi"
-Use MPI for parallelism.
+.IP <n_ranks>
+Number of ranks of destination partition (> 1).
 .B
 .IP --metis
 Use METIS for partitioning (default if available).
@@ -72,7 +62,7 @@ Do not write output.
 .IP -h
 Print a usage message and exit.
 .SH ENVIRONMENT
-.IP CS_MEM_LOG
+.IP CS_PARTITION_MEM_LOG
 Name of memory operations trace file.
 .SH EXAMPLE
 cs_partition 32 64 -no-write
