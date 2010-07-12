@@ -289,7 +289,7 @@ AC_ARG_ENABLE(long-gnum,
   [ have_long_gnum=no ]
 )
 
-if test "x$ have_long_gnum" = "xyes"; then
+if test "x$have_long_gnum" = "xyes"; then
   AC_DEFINE([HAVE_LONG_GNUM],1,[Use 64-bit type if available for fvm_gnum_t.])
 fi
 
