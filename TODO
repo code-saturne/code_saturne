@@ -494,3 +494,11 @@ BONNES PRATIQUES (POUR MEMOIRE)
   and replace use of fvm_parall_counter() type functions
   by similar mpi_io_num functions so as to allow for
   subcommunicators.
+
+
+=========
+ Prepro
+=========
+- Renommer les champs en tables (delicat).
+  --> Rendrait le vocabulaire plus coherent avec les usages.
+

@@ -24,11 +24,15 @@ if HAVE_GUI
 GUI = gui
 endif
 
+if HAVE_PREPROCESSOR
+PREPRO = prepro
+endif
+
 if HAVE_INTERNAL_PLE
 PLE = libple
 endif
 
-SUBDIRS = $(PLE) src libsyrcs po doc $(GUI) tests
+SUBDIRS = $(PLE) $(PREPRO) src libsyrcs po doc $(GUI) tests
 
 MAINTAINERCLEANFILES = \
 $(top_srcdir)/Makefile.in \
@@ -51,8 +55,10 @@ sbin/backup \
 sbin/bootstrap \
 sbin/clean \
 sbin/rmb \
+$(ac_aux_dir)/cs_adf.m4 \
 $(ac_aux_dir)/cs_auto_flags.sh \
 $(ac_aux_dir)/cs_blas.m4 \
+$(ac_aux_dir)/cs_ccm.m4 \
 $(ac_aux_dir)/cs_cgns.m4 \
 $(ac_aux_dir)/cs_config_info.m4 \
 $(ac_aux_dir)/cs_fortran.m4 \
@@ -63,7 +69,8 @@ $(ac_aux_dir)/cs_metis.m4 \
 $(ac_aux_dir)/cs_mpi.m4 \
 $(ac_aux_dir)/cs_ple.m4 \
 $(ac_aux_dir)/cs_scotch.m4 \
-$(ac_aux_dir)/cs_syrthes.m4
+$(ac_aux_dir)/cs_syrthes.m4 \
+$(ac_aux_dir)/cs_zlib.m4
 
 # One adds two whole sub-directories and get rid of the .svn
 # directories with a dist-hook. The reason for this trick is that
@@ -96,7 +103,6 @@ edit = sed \
 	-e 's|@cs_python[@]|$(cs_python)|g' \
 	-e 's|@pythondir[@]|$(pythondir)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
-	-e 's|@ecs_bindir[@]|$(ecs_bindir)|g' \
 	-e 's|@syrthes_prefix[@]|$(syrthes_prefix)|g' \
 	-e 's|@mpi_type[@]|$(mpi_type)|g' \
 	-e 's|@mpi_bindir[@]|$(mpi_bindir)|g' \
@@ -177,7 +183,9 @@ dist_man_MANS = \
 doc/manpages/code_saturne.1 \
 doc/manpages/cs_check_syntax.1 \
 doc/manpages/cs_io_dump.1 $(CS_PARTITION_1) \
-doc/manpages/cs_solver.1
+doc/manpages/cs_preprocess.1 \
+doc/manpages/cs_solver.1 \
+doc/manpages/igghexa_to_med.1
 
 # Install bash completion script
 

@@ -426,7 +426,7 @@ class case:
         s_path = os.path.join(self.exec_dir, 'summary')
         s = open(s_path, 'w')
 
-        preprocessor = os.path.join(cs_config.dirs.ecs_bindir, 'cs_preprocess')
+        preprocessor = os.path.join(cs_config.dirs.bindir, 'cs_preprocess')
         partitioner = os.path.join(cs_config.dirs.bindir, 'cs_partition')
         if not os.path.isfile(partitioner):
             partitioner = ''
@@ -1110,7 +1110,7 @@ fi
             + ' Working directory (to be periodically cleaned):\n' \
             + '   ' +  str(self.exec_dir) + '\n\n' \
             + ' Kernel version:  ' + cs_config.package.version + '\n' \
-            + ' Preprocessor:    ' + os.path.join(cs_config.dirs.ecs_bindir,
+            + ' Preprocessor:    ' + os.path.join(cs_config.dirs.bindir,
                                                   'cs_preprocess') + '\n\n'
         sys.stdout.write(msg)
 

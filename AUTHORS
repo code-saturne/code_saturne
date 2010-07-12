@@ -105,3 +105,28 @@ contribution of each among the many people who have approached
 Code_Saturne. It is made as objective and accurate as possible.
 However, if you feel you have been misplaced in the list, or completely
 forgotten, please contact saturne-support@edf.fr so we can update it.
+
+
+
+Main Authors
+------------
+
+Didier Poizat
+Yvan Fournier	<yvan.fournier@edf.fr>
+
+Initial work by Didier Poizat (CS-SI) from 1999 to 2000, initial specs
+by Yvan Fournier (EDF) in 1999, continued developpement and maintenance
+by Yvan Fournier from 2000-2007.
+
+Contributors
+------------
+
+Periodicity:
+ David Monfort		 <david.monfort@edf.fr>
+
+Comet Design reader:
+  Eric Quemerai		 <eric.quemerai@incka.fr>
+ 
+Extended ghost cells:
+  Frédéric Archambeau	<frederic.archambeau@edf.fr>
+

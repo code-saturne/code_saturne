@@ -1,4 +1,141 @@
 * 12/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Migrate the preprocessor into Code_Saturne repository.
+  Major code refactoring to ease the maintenance.
+  added scripts:
+    config/cs_adf.m4
+    config/cs_ccm.m4
+    config/cs_zlib.m4
+    preprocessor/appli/Makefile.am
+    preprocessor/base/Makefile.am
+    preprocessor/Makefile.am
+    preprocessor/pre-post/Makefile.am
+    preprocessor/tools/Makefile.am
+    preprocessor/util/Makefile.am
+  added file:
+    doc/manpages/cs_preprocess.1
+  added routines:
+    extras/preprocessor
+    extras/preprocessor/mod_ideas.c
+    extras/preprocessor/mod_nopo.c
+    preprocessor
+    preprocessor/appli
+    preprocessor/appli/ecs_cmd.c
+    preprocessor/appli/ecs_cmd.h
+    preprocessor/appli/ecs_cmd_priv.h
+    preprocessor/appli/ecs_main.c
+    preprocessor/base
+    preprocessor/base/ecs_champ_att.c
+    preprocessor/base/ecs_champ_att.h
+    preprocessor/base/ecs_champ.c
+    preprocessor/base/ecs_champ_def.c
+    preprocessor/base/ecs_champ_def.h
+    preprocessor/base/ecs_champ.h
+    preprocessor/base/ecs_champ_priv.h
+    preprocessor/base/ecs_descr.c
+    preprocessor/base/ecs_descr_chaine.c
+    preprocessor/base/ecs_descr_chaine.h
+    preprocessor/base/ecs_descr.h
+    preprocessor/base/ecs_descr_priv.h
+    preprocessor/base/ecs_famille.c
+    preprocessor/base/ecs_famille_chaine.c
+    preprocessor/base/ecs_famille_chaine.h
+    preprocessor/base/ecs_famille.h
+    preprocessor/base/ecs_famille_priv.h
+    preprocessor/base/ecs_maillage.c
+    preprocessor/base/ecs_maillage.h
+    preprocessor/base/ecs_maillage_priv.h
+    preprocessor/pre-post
+    preprocessor/pre-post/ecs_cgns.c
+    preprocessor/pre-post/ecs_cgns.h
+    preprocessor/pre-post/ecs_champ_comm.c
+    preprocessor/pre-post/ecs_champ_comm.h
+    preprocessor/pre-post/ecs_champ_post.c
+    preprocessor/pre-post/ecs_champ_post_cgns.c
+    preprocessor/pre-post/ecs_champ_post_cgns.h
+    preprocessor/pre-post/ecs_champ_post_ens.c
+    preprocessor/pre-post/ecs_champ_post_ens.h
+    preprocessor/pre-post/ecs_champ_post.h
+    preprocessor/pre-post/ecs_champ_post_med.c
+    preprocessor/pre-post/ecs_champ_post_med.h
+    preprocessor/pre-post/ecs_maillage_ncs.c
+    preprocessor/pre-post/ecs_maillage_ncs.h
+    preprocessor/pre-post/ecs_maillage_post.c
+    preprocessor/pre-post/ecs_maillage_post.h
+    preprocessor/pre-post/ecs_maillage_pre.c
+    preprocessor/pre-post/ecs_maillage_pre.h
+    preprocessor/pre-post/ecs_med.c
+    preprocessor/pre-post/ecs_med.h
+    preprocessor/pre-post/ecs_med_priv.h
+    preprocessor/pre-post/ecs_post.c
+    preprocessor/pre-post/ecs_post_cgns.c
+    preprocessor/pre-post/ecs_post_cgns.h
+    preprocessor/pre-post/ecs_post_cgns_priv.h
+    preprocessor/pre-post/ecs_post_ens.c
+    preprocessor/pre-post/ecs_post_ens.h
+    preprocessor/pre-post/ecs_post_ens_priv.h
+    preprocessor/pre-post/ecs_post.h
+    preprocessor/pre-post/ecs_post_med.c
+    preprocessor/pre-post/ecs_post_med.h
+    preprocessor/pre-post/ecs_pre.c
+    preprocessor/pre-post/ecs_pre_ccm.c
+    preprocessor/pre-post/ecs_pre_ccm.h
+    preprocessor/pre-post/ecs_pre_cgns.c
+    preprocessor/pre-post/ecs_pre_cgns.h
+    preprocessor/pre-post/ecs_pre_comet.c
+    preprocessor/pre-post/ecs_pre_comet.h
+    preprocessor/pre-post/ecs_pre_ens.c
+    preprocessor/pre-post/ecs_pre_ens.h
+    preprocessor/pre-post/ecs_pre_gambit.c
+    preprocessor/pre-post/ecs_pre_gambit.h
+    preprocessor/pre-post/ecs_pre_gmsh.c
+    preprocessor/pre-post/ecs_pre_gmsh.h
+    preprocessor/pre-post/ecs_pre.h
+    preprocessor/pre-post/ecs_pre_ideas.c
+    preprocessor/pre-post/ecs_pre_ideas.h
+    preprocessor/pre-post/ecs_pre_med.c
+    preprocessor/pre-post/ecs_pre_med.h
+    preprocessor/pre-post/ecs_pre_meta.c
+    preprocessor/pre-post/ecs_pre_meta.h
+    preprocessor/pre-post/ecs_pre_nopo.c
+    preprocessor/pre-post/ecs_pre_nopo.h
+    preprocessor/tools
+    preprocessor/tools/igghexa_to_med.c
+    preprocessor/util
+    preprocessor/util/ecs_backtrace.c
+    preprocessor/util/ecs_backtrace.h
+    preprocessor/util/ecs_comm.c
+    preprocessor/util/ecs_comm.h
+    preprocessor/util/ecs_def.c
+    preprocessor/util/ecs_def.h
+    preprocessor/util/ecs_elt_typ_liste.h
+    preprocessor/util/ecs_fic.c
+    preprocessor/util/ecs_fic.h
+    preprocessor/util/ecs_file.c
+    preprocessor/util/ecs_file.h
+    preprocessor/util/ecs_mem.c
+    preprocessor/util/ecs_mem.h
+    preprocessor/util/ecs_mem_usage.c
+    preprocessor/util/ecs_mem_usage.h
+    preprocessor/util/ecs_tab.c
+    preprocessor/util/ecs_tab_glob.h
+    preprocessor/util/ecs_tab.h
+    preprocessor/util/ecs_timer.c
+    preprocessor/util/ecs_timer.h
+  modified scripts:
+    bin/cs_case_domain.py
+    bin/cs_case.py
+    bin/cs_check_mesh.py
+    bin/cs_config.py.in
+    configure.ac
+    Makefile.am
+  modified files:
+    AUTHORS
+    TODO
+    po/fr.po
+    po/POTFILES.in
+
+* 12/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct manpage for cs_partition.
   modified file:
     doc/manpages/cs_partition.1

@@ -293,6 +293,23 @@ if test "x$have_long_gnum" = "xyes"; then
   AC_DEFINE([HAVE_LONG_GNUM],1,[Use 64-bit type if available for fvm_gnum_t.])
 fi
 
+# Use long int for mesh reading ?
+AC_ARG_ENABLE(long-int,
+  [AS_HELP_STRING([--enable-long-int], [use long integers for connectivity])],
+  [
+    case "${enableval}" in
+      yes) long_int=yes ;;
+      no)  long_int=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-long-int]) ;;
+    esac
+  ],
+  [ long_int=no ]
+)
+
+if test "x$long_int" = "xno"; then
+  AC_DEFINE([USE_LONG_INT], [1], [Use long int for connectivity])
+fi
+
 # Check for Fortran 2003 flush feature
 CS_AC_TEST_FC_FLUSH
 
@@ -380,6 +397,9 @@ CS_AC_TEST_SCOTCH
 CS_AC_TEST_HDF5
 CS_AC_TEST_CGNS
 CS_AC_TEST_MED
+CS_AC_TEST_ADF
+CS_AC_TEST_CCM
+CS_AC_TEST_ZLIB
 CS_AC_TEST_SYRTHES
 
 have_partitioner=no
@@ -395,22 +415,21 @@ AM_CONDITIONAL(HAVE_PARTITIONER, test x$have_partitioner = xyes)
 unset have_partitioner
 
 #------------------------------------------------------------------------------
-# Checks for Code_Saturne preprocessor
+# Enables Code_Saturne preprocessor
 #------------------------------------------------------------------------------
 
-AC_ARG_WITH(prepro, [AS_HELP_STRING([--with-prepro=PATH],
-                                    [specify prefix directory for the Preprocessor])])
-
-AC_PATH_PROG([ecs], [cs_preprocess$EXEEXT],
-             [no],
-             [$with_prepro/bin$PATH_SEPARATOR$PATH])
-
-if test "x${ecs}" = "xno"; then
-  AC_MSG_FAILURE([cannot find Code_Saturne preprocessor])
-else
-  ecs_bindir=`dirname ${ecs}`
-  AC_SUBST(ecs_bindir)
-fi
+AC_ARG_ENABLE(prepro, [AS_HELP_STRING([--disable-prepro],
+                                      [disable the Preprocessor])],
+  [
+    case "${enableval}" in
+      yes) have_prepro=yes ;;
+      no)  have_prepro=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-prepro]) ;;
+    esac
+  ],
+  [ have_prepro=yes ]
+)
+AM_CONDITIONAL(HAVE_PREPROCESSOR, test x$have_prepro = xyes)
 
 #------------------------------------------------------------------------------
 # Enables Code_Saturne graphical user interface
@@ -536,7 +555,7 @@ AC_CHECK_HEADERS([sys/procfs.h sys/sysinfo.h sys/resource.h])
 # Checks for library functions.
 #------------------------------------------------------------------------------
 
-AC_CHECK_FUNCS([mkdir])
+AC_CHECK_FUNCS([mkdir chdir stat dup2])
 AC_CHECK_FUNCS([snprintf])
 AC_CHECK_FUNCS([getcwd sleep])
 AC_CHECK_FUNCS([getpwuid geteuid])
@@ -731,6 +750,9 @@ CS_AC_CONFIG_INFO_EXTRA([
 # OpenMP support:                                  "$cs_have_openmp"
 # BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas"
 # Libxml2 (XML Reader) support:                    "$have_libxml2"
+# Zlib (gzipped file) support:                     "$have_zlib"
+# ADF support:                                     "$have_adf"
+# CCM support:                                     "$have_ccm"
 # HDF5 (Hierarchical Data Format) support:         "$have_hdf5"
 # CGNS (CFD General Notation System) support:      "$have_cgns"
 # MED (Model for Exchange of Data) support:        "$have_med"
@@ -749,6 +771,9 @@ cs_config_comments=cs_config_comments_include
 # Main configuration
 
 AC_CONFIG_FILES([Makefile po/Makefile.in
+                 prepro/Makefile
+                 prepro/appli/Makefile prepro/base/Makefile prepro/tools/Makefile
+                 prepro/pre-post/Makefile prepro/util/Makefile
                  src/Makefile      src/apps/Makefile
                  src/bft/Makefile  src/fvm/Makefile  src/mei/Makefile
                  src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
@@ -798,6 +823,9 @@ echo "Configuration options:"
 echo " use debugging code: "$debug""
 echo " use malloc hooks: "$have_malloc_hooks""
 echo " use graphical user interface: "$have_gui""
+echo " use preprocessor: "$have_prepro""
+echo " use long integers: "$long_int""
+echo " Zlib (gzipped file) support: "$have_zlib""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 if (test x$cs_have_mpi = xyes) ; then
   echo "   MPI I/O support: "$cs_have_mpi_io""
@@ -814,6 +842,8 @@ echo " PT-SCOTCH (Parallel Graph Partitioning) support: "$have_ptscotch""
 if test x$have_ptscotch = xno ; then
   echo " SCOTCH (Graph Partitioning) support: "$have_scotch""
 fi
+echo " ADF support: "$have_adf""
+echo " CCM support: "$have_ccm""
 echo " HDF (Hierarchical Data Format) support: "$have_hdf5""
 echo " CGNS (CFD General Notation System) support: "$have_cgns""
 echo " MED (Model for Exchange of Data) support: "$have_med""

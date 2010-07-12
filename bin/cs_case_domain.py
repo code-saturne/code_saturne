@@ -778,7 +778,7 @@ class domain(base_domain):
 
         # Build command
 
-        cmd = os.path.join(cs_config.dirs.ecs_bindir, 'cs_preprocess')
+        cmd = os.path.join(cs_config.dirs.bindir, 'cs_preprocess')
         for m in self.meshes:
             if type(m) == str:
                 cmd += ' --mesh ' + m

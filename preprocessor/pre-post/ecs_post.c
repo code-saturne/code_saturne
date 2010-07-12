@@ -1,0 +1,174 @@
+/*============================================================================
+ *  Définitions des fonctions de base
+ *   réalisant les sorties pour post-traitement
+ *============================================================================*/
+
+/*
+  This file is part of the Code_Saturne Preprocessor, element of the
+  Code_Saturne CFD tool.
+
+  Copyright (C) 1999-2009 EDF S.A., France
+
+  contact: saturne-support@edf.fr
+
+  The Code_Saturne Preprocessor is free software; you can redistribute it
+  and/or modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2 of
+  the License, or (at your option) any later version.
+
+  The Code_Saturne Preprocessor is distributed in the hope that it will be
+  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with the Code_Saturne Preprocessor; if not, write to the
+  Free Software Foundation, Inc.,
+  51 Franklin St, Fifth Floor,
+  Boston, MA  02110-1301  USA
+*/
+
+
+/*============================================================================
+ *                                 Visibilité
+ *============================================================================*/
+
+#include "cs_config.h"
+
+
+/*----------------------------------------------------------------------------
+ *  Fichiers `include' librairie standard C
+ *----------------------------------------------------------------------------*/
+
+#include <assert.h>
+#include <string.h>
+
+
+/*----------------------------------------------------------------------------
+ *  Fichiers `include' visibles du  paquetage global "Utilitaire"
+ *----------------------------------------------------------------------------*/
+
+#include "ecs_def.h"
+#include "ecs_mem.h"
+
+
+/*----------------------------------------------------------------------------
+ *  Fichier  `include' du  paquetage courant associe au fichier courant
+ *----------------------------------------------------------------------------*/
+
+#include "ecs_post.h"
+#include "ecs_post_ens.h"
+#include "ecs_post_cgns.h"
+#include "ecs_post_med.h"
+
+
+/*============================================================================
+ *                              Fonctions privées
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ *  Fonction initialisant une structure `ecs_post_opts_t`
+ *----------------------------------------------------------------------------*/
+
+static void
+ecs_loc_post__init_opts(ecs_post_opt_t  *opts)
+{
+  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
+
+  assert(opts != NULL);
+
+  opts->no_poly = false;
+  opts->text = false;
+  opts->big_endian = false;
+  opts->color_to_group  = false;
+
+  opts->ecr_type[ECS_POST_TYPE_VOLUME] = true;
+  opts->ecr_type[ECS_POST_TYPE_INFO] = true;
+
+  opts->ecr_type[ECS_POST_TYPE_ERREUR] = true;
+}
+
+/*============================================================================
+ *                             Fonctions publiques
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ *  Fonction initialisant une structure `ecs_post_t`
+ *----------------------------------------------------------------------------*/
+
+ecs_post_t *
+ecs_post__cree_cas(const char  *nom_cas)
+{
+  ecs_post_t * cas;
+
+  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
+
+  assert(nom_cas != NULL);
+
+  ECS_MALLOC(cas, 1, ecs_post_t);
+
+  ECS_MALLOC(cas->nom_cas, strlen(nom_cas) + 1, char);
+  strcpy(cas->nom_cas, nom_cas);
+
+  cas->post_ens      = false;
+  cas->cas_ens       = NULL;
+  ecs_loc_post__init_opts(&(cas->opt_ens));
+
+#if defined(HAVE_CGNS)
+
+  cas->post_cgns      = false;
+  cas->cas_cgns       = NULL;
+  ecs_loc_post__init_opts(&(cas->opt_cgns));
+
+#endif /* HAVE_CGNS */
+
+#if defined(HAVE_MED)
+
+  cas->post_med      = false;
+  cas->cas_med       = NULL;
+  ecs_loc_post__init_opts(&(cas->opt_med));
+
+#endif /* HAVE_MED */
+
+  return cas;
+}
+
+/*----------------------------------------------------------------------------
+ *  Fonction détruisant une structure `ecs_post_t`
+ *----------------------------------------------------------------------------*/
+
+ecs_post_t *
+ecs_post__detruit_cas(ecs_post_t  *cas)
+{
+  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
+
+  if (cas == NULL)
+    return NULL;
+
+  if (cas->cas_ens != NULL)
+    ecs_post_ens__detruit_cas(cas->cas_ens);
+
+#if defined(HAVE_CGNS)
+
+  if (cas->cas_cgns != NULL)
+    ecs_post_cgns__detruit_cas(cas->cas_cgns);
+
+#endif
+
+#if defined(HAVE_MED)
+
+  if (cas->cas_med != NULL)
+    ecs_post_med__detruit_cas(cas->cas_med);
+
+#endif
+
+  ECS_FREE(cas->nom_cas);
+
+  ECS_FREE(cas);
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+
+

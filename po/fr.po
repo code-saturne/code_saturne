@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-06-14 19:11+0200\n"
+"POT-Creation-Date: 2010-07-12 00:32+0200\n"
 "PO-Revision-Date: 2010-06-14 19:23+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -52,6 +52,7 @@ msgid ""
 msgstr ""
 
 #: src/apps/cs_io_dump.c:307 src/base/cs_base.c:363 src/bft/bft_error.c:169
+#: prepro/util/ecs_def.c:307
 #, c-format
 msgid ""
 "\n"
@@ -61,6 +62,7 @@ msgstr ""
 "Erreur système : %s\n"
 
 #: src/apps/cs_io_dump.c:309 src/base/cs_base.c:365 src/bft/bft_error.c:171
+#: prepro/util/ecs_def.c:309
 #, c-format
 msgid ""
 "\n"
@@ -72,17 +74,18 @@ msgstr ""
 "\n"
 
 #: src/apps/cs_io_dump.c:357 src/bft/bft_mem.c:579 src/bft/bft_mem.c:738
-#: src/bft/bft_mem.c:992
+#: src/bft/bft_mem.c:992 prepro/util/ecs_mem.c:472 prepro/util/ecs_mem.c:633
 #, c-format
 msgid "Failure to allocate \"%s\" (%lu bytes)"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:396 src/bft/bft_mem.c:845
+#: src/apps/cs_io_dump.c:396 src/bft/bft_mem.c:845 prepro/util/ecs_mem.c:741
 #, c-format
 msgid "Failure to reallocate \"%s\" (%lu bytes)"
 msgstr ""
 
 #: src/apps/cs_io_dump.c:473 src/bft/bft_file.c:1089 src/fvm/fvm_file.c:291
+#: prepro/util/ecs_file.c:1294
 #, c-format
 msgid ""
 "Error reading file \"%s\":\n"
@@ -107,7 +110,9 @@ msgstr "Erreur à la lecture du fichier \"%s\""
 #: src/apps/cs_io_dump.c:543 src/apps/cs_io_dump.c:557 src/bft/bft_file.c:895
 #: src/bft/bft_file.c:908 src/bft/bft_file.c:915 src/bft/bft_file.c:930
 #: src/fvm/fvm_file.c:395 src/fvm/fvm_file.c:407 src/fvm/fvm_file.c:414
-#: src/fvm/fvm_file.c:428
+#: src/fvm/fvm_file.c:428 prepro/util/ecs_file.c:1079
+#: prepro/util/ecs_file.c:1092 prepro/util/ecs_file.c:1099
+#: prepro/util/ecs_file.c:1114 prepro/util/ecs_file.c:1128
 #, c-format
 msgid ""
 "Error setting position in file \"%s\":\n"
@@ -116,10 +121,12 @@ msgid ""
 msgstr ""
 
 #: src/apps/cs_io_dump.c:545 src/bft/bft_file.c:917 src/fvm/fvm_file.c:416
+#: prepro/util/ecs_file.c:1101
 msgid "sizeof(off_t) > sizeof(long) but fseeko() not available"
 msgstr ""
 
 #: src/apps/cs_io_dump.c:612 src/bft/bft_file.c:785 src/fvm/fvm_file.c:484
+#: prepro/util/ecs_file.c:960
 #, c-format
 msgid ""
 "Error obtaining position in file \"%s\":\n"
@@ -144,6 +151,7 @@ msgid ""
 msgstr ""
 
 #: src/apps/cs_io_dump.c:720 src/bft/bft_file.c:645 src/fvm/fvm_file.c:222
+#: prepro/util/ecs_file.c:768 prepro/util/ecs_file.c:774
 #, c-format
 msgid ""
 "Error opening file \"%s\":\n"
@@ -188,6 +196,8 @@ msgid ""
 msgstr ""
 
 #: src/apps/cs_io_dump.c:787 src/bft/bft_file.c:674 src/fvm/fvm_file.c:250
+#: prepro/util/ecs_file.c:805 prepro/util/ecs_file.c:818
+#: prepro/util/ecs_file.c:895
 #, c-format
 msgid ""
 "Error closing file \"%s\":\n"
@@ -734,7 +744,8 @@ msgstr ""
 "\n"
 "Pile d'appels :\n"
 
-#: src/base/cs_base.c:504
+#: src/base/cs_base.c:504 prepro/util/ecs_backtrace.c:427
+#, c-format
 msgid ""
 "End of stack\n"
 "\n"
@@ -742,7 +753,8 @@ msgstr ""
 "Fin de la pile\n"
 "\n"
 
-#: src/base/cs_base.c:522
+#: src/base/cs_base.c:522 prepro/util/ecs_def.c:128
+#, c-format
 msgid ""
 "SIGHUP signal (hang-up) intercepted.\n"
 "--> computation interrupted.\n"
@@ -750,7 +762,8 @@ msgstr ""
 "Signal SIGHUP (déconnexion) intercepté.\n"
 "--> calcul interrompu.\n"
 
-#: src/base/cs_base.c:528
+#: src/base/cs_base.c:528 prepro/util/ecs_def.c:134
+#, c-format
 msgid ""
 "SIGINT signal (Control+C or equivalent) received.\n"
 "--> computation interrupted by user.\n"
@@ -758,7 +771,8 @@ msgstr ""
 "Signal SIGINT (Control+C ou équivalent) reçu.\n"
 "--> calcul interrompu par l'utilisateur.\n"
 
-#: src/base/cs_base.c:533
+#: src/base/cs_base.c:533 prepro/util/ecs_def.c:139
+#, c-format
 msgid ""
 "SIGTERM signal (termination) received.\n"
 "--> computation interrupted by environment.\n"
@@ -870,7 +884,8 @@ msgstr "Consommation mémoire totale mesurée :     "
 msgid "Theoretical instrumented dynamic memory: "
 msgstr "Mémoire dynamique instrumentée théorique :"
 
-#: src/base/cs_base.c:1334
+#: src/base/cs_base.c:1334 prepro/appli/ecs_main.c:721
+#, c-format
 msgid ""
 "\n"
 "Memory use summary:\n"
@@ -1004,12 +1019,14 @@ msgstr "Rangs MPI :        "
 msgid "OpenMP threads:    "
 msgstr "Threads OpenMP:    "
 
-#: src/base/cs_base.c:1707
+#: src/base/cs_base.c:1707 prepro/appli/ecs_cmd.c:1635
 #, c-format
 msgid ""
 "It is impossible to redirect the standard output to file:\n"
 "%s"
 msgstr ""
+"Il est impossible de rediriger les sorties standard dans le fichier :\n"
+"%s"
 
 #: src/base/cs_base.c:1713
 #, c-format
@@ -3920,12 +3937,13 @@ msgstr ""
 "de la connectivité nodale (cs_mesh_connect_faces_to_nodal)."
 
 #: src/base/cs_mesh_halo.c:1660
-#, c-format
+#, fuzzy, c-format
 msgid ""
 "Repeated inconsistency in the halo construction.\n"
 "Several local points have the same distant correspondant;\n"
 "this is probably due to a multiple-periodicity construction\n"
-"side effect of the Preprocessor.\n"
+"side effect of the Preprocessor or this is due to a poor quality\n"
+"mesh generated during the joining step.\n"
 "Coordinates of the first impacted point: [%12.5e, %12.5e %12.5e]."
 msgstr ""
 "Incohérence repérée lors de la construction du halo.\n"
@@ -3934,19 +3952,19 @@ msgstr ""
 "de périodicités multiples par le Préprocesseur.\n"
 "Coordonnées du premier point impacté: [%12.5e, %12.5e %12.5e]."
 
-#: src/base/cs_mesh_halo.c:3131 src/ctwr/cs_ctwr_halo.c:1492
+#: src/base/cs_mesh_halo.c:3108 src/ctwr/cs_ctwr_halo.c:1492
 msgid "    Local halo definition\n"
 msgstr "    Définition du halo local\n"
 
-#: src/base/cs_mesh_halo.c:3143
+#: src/base/cs_mesh_halo.c:3120
 msgid "    Halo cleaning\n"
 msgstr "    Nettoyage des halos\n"
 
-#: src/base/cs_mesh_halo.c:3153
+#: src/base/cs_mesh_halo.c:3130
 msgid "    Distant halo creation\n"
 msgstr "    Création du halo distant\n"
 
-#: src/base/cs_mesh_halo.c:3192
+#: src/base/cs_mesh_halo.c:3169
 msgid "    Updating the faces -> cells connectivity\n"
 msgstr "    Mise à jour de la connectivité faces -> cellules\n"
 
@@ -6044,7 +6062,7 @@ msgstr ""
 "paroi.\n"
 "Vérifier l''existence et le nom du fichier suite: %s \n"
 
-#: src/bft/bft_file.c:159
+#: src/bft/bft_file.c:159 prepro/util/ecs_file.c:170
 #, c-format
 msgid ""
 "Error reading binary file \"%s\":\n"
@@ -6055,12 +6073,12 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:162
+#: src/bft/bft_file.c:162 prepro/util/ecs_file.c:173
 #, c-format
 msgid "Error: reading from closed file \"%s\""
 msgstr "Erreur à la lecture du fichier fermé \"%s\""
 
-#: src/bft/bft_file.c:164
+#: src/bft/bft_file.c:164 prepro/util/ecs_file.c:175
 #, c-format
 msgid ""
 "Error writing binary file \"%s\":\n"
@@ -6071,7 +6089,7 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:167
+#: src/bft/bft_file.c:167 prepro/util/ecs_file.c:178
 #, c-format
 msgid ""
 "Error reading Fortran binary file \"%s\":\n"
@@ -6082,7 +6100,7 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:170
+#: src/bft/bft_file.c:170 prepro/util/ecs_file.c:181
 #, c-format
 msgid ""
 "Error writing Fortran binary file \"%s\":\n"
@@ -6093,15 +6111,16 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:173
+#: src/bft/bft_file.c:173 prepro/util/ecs_file.c:184
 msgid "A record is too large to be represented in this format (i.e. > 2GB)."
 msgstr ""
 
-#: src/bft/bft_file.c:265
+#: src/bft/bft_file.c:265 prepro/util/ecs_file.c:230
+#: prepro/util/ecs_file.c:247
 msgid "Premature end of file."
 msgstr ""
 
-#: src/bft/bft_file.c:311
+#: src/bft/bft_file.c:311 prepro/util/ecs_file.c:355
 #, c-format
 msgid ""
 "Error reading line %d of text file \"%s\":\n"
@@ -6112,7 +6131,7 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:315
+#: src/bft/bft_file.c:315 prepro/util/ecs_file.c:359
 #, c-format
 msgid ""
 "Error reading text file \"%s\":\n"
@@ -6123,7 +6142,7 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:369
+#: src/bft/bft_file.c:369 prepro/util/ecs_file.c:433
 #, c-format
 msgid ""
 "Error reading Fortran binary file \"%s\":\n"
@@ -6132,7 +6151,7 @@ msgid ""
 "  read record size:     %lu\n"
 msgstr ""
 
-#: src/bft/bft_file.c:728
+#: src/bft/bft_file.c:728 prepro/util/ecs_file.c:881
 #, c-format
 msgid ""
 "Error flushing file \"%s\":\n"
@@ -6140,7 +6159,7 @@ msgid ""
 "  %s"
 msgstr ""
 
-#: src/bft/bft_file.c:829
+#: src/bft/bft_file.c:829 prepro/util/ecs_file.c:1004
 #, c-format
 msgid ""
 "Error rewinding file \"%s\":\n"
@@ -6148,14 +6167,14 @@ msgid ""
 "  %s"
 msgstr ""
 
-#: src/bft/bft_file.c:878
+#: src/bft/bft_file.c:878 prepro/util/ecs_file.c:1062
 #, c-format
 msgid ""
 "Invalid offset argument \"%d\" setting position in file\n"
 "\"%s\""
 msgstr ""
 
-#: src/bft/bft_file.c:1085
+#: src/bft/bft_file.c:1085 prepro/util/ecs_file.c:1290
 #, c-format
 msgid ""
 "Error reading line %d of file \"%s\":\n"
@@ -6166,21 +6185,21 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:1102
+#: src/bft/bft_file.c:1102 prepro/util/ecs_file.c:1314
 #, c-format
 msgid ""
 "Premature end of file \"%s\" at line %d\n"
 "\n"
 msgstr ""
 
-#: src/bft/bft_file.c:1106
+#: src/bft/bft_file.c:1106 prepro/util/ecs_file.c:1318
 #, c-format
 msgid ""
 "Premature end of file \"%s\"\n"
 "\n"
 msgstr ""
 
-#: src/bft/bft_file.c:1146
+#: src/bft/bft_file.c:1146 prepro/util/ecs_file.c:286
 #, c-format
 msgid ""
 "Error writing to text file \"%s\":\n"
@@ -6191,12 +6210,13 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:1154 src/bft/bft_file.c:1310
+#: src/bft/bft_file.c:1154 src/bft/bft_file.c:1310 prepro/util/ecs_file.c:303
+#: prepro/util/ecs_file.c:1476
 #, c-format
 msgid "Error writing to closed file \"%s\")"
 msgstr "Erreur à l'écriture du fichier fermé \"%s\")"
 
-#: src/bft/bft_file.c:1456
+#: src/bft/bft_file.c:1456 prepro/util/ecs_file.c:1622
 #, c-format
 msgid ""
 "Failure to create directory \"%s\":\n"
@@ -6204,31 +6224,32 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/bft/bft_file.c:1479
+#: src/bft/bft_file.c:1479 prepro/util/ecs_file.c:1645
 msgid ""
 "  A similarly named file or directory exists and its status is\n"
 "  not available."
 msgstr ""
 
-#: src/bft/bft_file.c:1484 src/bft/bft_file.c:1497
+#: src/bft/bft_file.c:1484 src/bft/bft_file.c:1497 prepro/util/ecs_file.c:1650
+#: prepro/util/ecs_file.c:1663
 msgid "  A similarly named file exists and is not a directory."
 msgstr ""
 
-#: src/bft/bft_file.c:1538
+#: src/bft/bft_file.c:1538 prepro/util/ecs_file.c:1704
 #, c-format
 msgid ""
 "Error querying information for file:\n"
 "%s."
 msgstr ""
 
-#: src/bft/bft_file.c:1583
+#: src/bft/bft_file.c:1583 prepro/util/ecs_file.c:1749
 #, c-format
 msgid ""
 "Error querying information for directory:\n"
 "%s."
 msgstr ""
 
-#: src/bft/bft_mem.c:268
+#: src/bft/bft_mem.c:268 prepro/util/ecs_mem.c:226
 #, c-format
 msgid ""
 "Memory allocation summary\n"
@@ -6239,17 +6260,17 @@ msgstr ""
 "------------------------------\n"
 "\n"
 
-#: src/bft/bft_mem.c:275
+#: src/bft/bft_mem.c:275 prepro/util/ecs_mem.c:233
 #, c-format
 msgid "Theoretical current allocated memory:   %8lu.%lu %cB\n"
 msgstr ""
 
-#: src/bft/bft_mem.c:280
+#: src/bft/bft_mem.c:280 prepro/util/ecs_mem.c:238
 #, c-format
 msgid "Theoretical maximum allocated memory:   %8lu.%lu %cB\n"
 msgstr ""
 
-#: src/bft/bft_mem.c:284
+#: src/bft/bft_mem.c:284 prepro/util/ecs_mem.c:242
 #, c-format
 msgid ""
 "\n"
@@ -6259,23 +6280,24 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/bft/bft_mem.c:299
+#: src/bft/bft_mem.c:299 prepro/util/ecs_mem.c:257
 #, c-format
 msgid "Maximum program memory measure:  %8lu kB\n"
 msgstr "Mémoire programme mesurée maximale :  %8lu kB\n"
 
-#: src/bft/bft_mem.c:308
+#: src/bft/bft_mem.c:308 prepro/util/ecs_mem.c:266
 #, c-format
 msgid "Current program memory measure:   %8lu kB\n"
 msgstr "Mémoire programme mesurée courante :   %8lu kB\n"
 
-#: src/bft/bft_mem.c:411 src/bft/bft_mem.c:526
+#: src/bft/bft_mem.c:411 src/bft/bft_mem.c:526 prepro/util/ecs_mem.c:298
+#: prepro/util/ecs_mem.c:416
 #, c-format
 msgid ""
 "Adress [%10p] does not correspond to the beginning of an allocated block."
 msgstr ""
 
-#: src/bft/bft_mem.c:470
+#: src/bft/bft_mem.c:470 prepro/util/ecs_mem.c:359
 msgid "Memory allocation failure"
 msgstr ""
 
@@ -6283,12 +6305,12 @@ msgstr ""
 msgid "bft_mem_init() has already been called"
 msgstr ""
 
-#: src/bft/bft_mem.c:602
+#: src/bft/bft_mem.c:602 prepro/util/ecs_mem.c:495
 #, c-format
 msgid "Failure to open memory log file \"%s\"\n"
 msgstr ""
 
-#: src/bft/bft_mem.c:612
+#: src/bft/bft_mem.c:612 prepro/util/ecs_mem.c:505
 #, c-format
 msgid ""
 "       :     FILE NAME              : LINE  :  POINTER "
@@ -6301,7 +6323,7 @@ msgstr ""
 msgid "bft_mem_end() called before bft_mem_init()"
 msgstr ""
 
-#: src/bft/bft_mem.c:664
+#: src/bft/bft_mem.c:664 prepro/util/ecs_mem.c:558
 #, c-format
 msgid "Number of non freed pointers remaining: %lu\n"
 msgstr ""
@@ -7507,3 +7529,3335 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
+
+#: prepro/appli/ecs_cmd.c:386 prepro/appli/ecs_cmd.c:389
+msgid "ECS   version"
+msgstr "ECS   version"
+
+#: prepro/appli/ecs_cmd.c:395
+#, c-format
+msgid "  STAR-CCM+ file format support\n"
+msgstr "  Support du format de fichiers STAR-CCM+\n"
+
+#: prepro/appli/ecs_cmd.c:405
+#, c-format
+msgid "  CGNS %d.%d.%d file format support\n"
+msgstr "  Support du format de fichiers CGNS %d.%d.%d\n"
+
+#: prepro/appli/ecs_cmd.c:408 prepro/appli/ecs_cmd.c:410
+#, c-format
+msgid "  CGNS %d.%d file format support\n"
+msgstr "  Support du format de fichiers CGNS %d.%d\n"
+
+#: prepro/appli/ecs_cmd.c:420
+#, c-format
+msgid "  MED %d.%d (HDF5 %d.%d.%d) file format support\n"
+msgstr "  Support du format de fichiers MED %d.%d (HDF5 %d.%d.%d)\n"
+
+#: prepro/appli/ecs_cmd.c:425
+#, c-format
+msgid "  MED %d.%d.%d (HDF5 %d.%d.%d) file format support\n"
+msgstr "  Support du format de fichiers MED %d.%d.%d (HDF5 %d.%d.%d)\n"
+
+#: prepro/appli/ecs_cmd.c:433
+#, c-format
+msgid "  Reading of compressed files ('.gz') with Zlib %s\n"
+msgstr "  Lecture de fichiers compressés ('.gz') avec Zlib %s\n"
+
+#: prepro/appli/ecs_cmd.c:437
+#, c-format
+msgid "    (compiled with Zlib %s)\n"
+msgstr ""
+
+#: prepro/appli/ecs_cmd.c:477
+#, c-format
+msgid ""
+"\n"
+"\n"
+"  .------------------------------.\n"
+"  |                              |\n"
+"  |   Code_Saturne Preprocessor  |\n"
+"  |                              |\n"
+"  `------------------------------'\n"
+msgstr ""
+"\n"
+"\n"
+"  .--------------------------------.\n"
+"  |                                |\n"
+"  |   Préprocesseur Code_Saturne   |\n"
+"  |                                |\n"
+"  `--------------------------------'\n"
+
+#: prepro/appli/ecs_cmd.c:522
+#, c-format
+msgid ""
+"\n"
+"\n"
+"USAGE :"
+msgstr ""
+"\n"
+"\n"
+"USAGE:"
+
+#: prepro/appli/ecs_cmd.c:527
+#, c-format
+msgid "  %s [<options>]"
+msgstr "  %s [<options>]"
+
+#: prepro/appli/ecs_cmd.c:530
+msgid "file"
+msgstr "fichier"
+
+#: prepro/appli/ecs_cmd.c:536
+#, c-format
+msgid ""
+"\n"
+"\n"
+"\n"
+"with :\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"\n"
+"avec :\n"
+"\n"
+
+#: prepro/appli/ecs_cmd.c:539 prepro/appli/ecs_cmd.c:544
+msgid "<file> [...]"
+msgstr "<fichier> [...]"
+
+#: prepro/appli/ecs_cmd.c:540
+msgid ": Preprocessor input mesh file"
+msgstr ": fichier de maillage en entrée du Préprocesseur"
+
+#: prepro/appli/ecs_cmd.c:541
+msgid "  (mesh file format determined"
+msgstr "  (format du fichier de maillage déterminé"
+
+#: prepro/appli/ecs_cmd.c:542
+msgid "   automatically by filename extension"
+msgstr "   automatiquement par l'extension du fichier"
+
+#: prepro/appli/ecs_cmd.c:543
+msgid "   or forced by \"-format\" sub-option)"
+msgstr "   ou forcé par sous-option \"-format\")"
+
+#: prepro/appli/ecs_cmd.c:544 prepro/appli/ecs_cmd.c:551
+#: prepro/appli/ecs_cmd.c:574 prepro/appli/ecs_cmd.c:585
+msgid ": same"
+msgstr ": idem"
+
+#: prepro/appli/ecs_cmd.c:550
+msgid ": simulate messages without file output"
+msgstr ": simulation de messages sans envoi réel"
+
+#: prepro/appli/ecs_cmd.c:560
+#, c-format
+msgid ""
+"\n"
+"general options:\n"
+"\n"
+msgstr ""
+"\n"
+"options générales :\n"
+"\n"
+
+#: prepro/appli/ecs_cmd.c:565
+msgid "<directory>"
+msgstr "<répertoire>"
+
+#: prepro/appli/ecs_cmd.c:565
+msgid ": working directory"
+msgstr ": répertoire d'exécution du cas"
+
+#: prepro/appli/ecs_cmd.c:566
+msgid "  (if different from current directory !)"
+msgstr "  (si différent du répertoire courant !)"
+
+#: prepro/appli/ecs_cmd.c:573
+msgid ": this help message"
+msgstr ": ce message d'aide"
+
+#: prepro/appli/ecs_cmd.c:580 prepro/appli/ecs_cmd.c:585
+#: prepro/appli/ecs_cmd.c:591
+msgid "[<file>]"
+msgstr "[<fichier>]"
+
+#: prepro/appli/ecs_cmd.c:581
+msgid ": command line completed by a file"
+msgstr ": ligne de commande complétée par un fichier"
+
+#: prepro/appli/ecs_cmd.c:583
+msgid "  (default file: standard input)"
+msgstr "  (fichier par défaut : entrée standard)"
+
+#: prepro/appli/ecs_cmd.c:592
+msgid ": redirect terminal output to a file"
+msgstr ": redirection des impressions dans un fichier"
+
+#: prepro/appli/ecs_cmd.c:594
+#, c-format
+msgid "  (default file: \"%s\")"
+msgstr "  (fichier par défaut  : \"%s\")"
+
+#: prepro/appli/ecs_cmd.c:602
+msgid ": if necessary, correct orientation of"
+msgstr ": correction si nécessaire de l'orientation des"
+
+#: prepro/appli/ecs_cmd.c:603
+msgid "  cells and faces"
+msgstr "  cellules et faces"
+
+#: prepro/appli/ecs_cmd.c:610
+msgid ": print version number"
+msgstr ": affichage du numéro de version"
+
+#: prepro/appli/ecs_cmd.c:616
+#, c-format
+msgid ""
+"\n"
+"\n"
+"POSTPROCESSING options:\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"options de POST-TRAITEMENT :\n"
+"\n"
+
+#: prepro/appli/ecs_cmd.c:620
+msgid "<name>"
+msgstr "<nom>"
+
+#: prepro/appli/ecs_cmd.c:621
+msgid ": case name (without this option,"
+msgstr ": nom du cas (en l'absence de cette option,"
+
+#: prepro/appli/ecs_cmd.c:624
+#, c-format
+msgid "  the default name is: \"%s\""
+msgstr "  le nom du par défaut est : \"%s\""
+
+#: prepro/appli/ecs_cmd.c:633 prepro/appli/ecs_cmd.c:642
+#: prepro/appli/ecs_cmd.c:651
+#, c-format
+msgid ": %s geometry output"
+msgstr ": sortie de la géometrie au format %s"
+
+#: prepro/appli/ecs_cmd.c:634 prepro/appli/ecs_cmd.c:643
+#: prepro/appli/ecs_cmd.c:652
+msgid "[<sub-options>]"
+msgstr "[<sous-options>]"
+
+#: prepro/appli/ecs_cmd.c:660
+#, c-format
+msgid ""
+"\n"
+"\n"
+"mesh selection sub-options\n"
+" (-m, -mesh):\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"sous-options de sélection de maillage\n"
+" (-m, -mesh) :\n"
+"\n"
+
+#: prepro/appli/ecs_cmd.c:664 prepro/appli/ecs_cmd.c:673
+#: prepro/appli/ecs_cmd.c:681
+msgid "<keyword>"
+msgstr "<mot clé>"
+
+#: prepro/appli/ecs_cmd.c:665
+msgid ": selection of mesh file format"
+msgstr ": sélection du format du fichier de maillage"
+
+#: prepro/appli/ecs_cmd.c:669
+msgid ": selection of mesh number in file"
+msgstr ": sélection du numéro de maillage dans le"
+
+#: prepro/appli/ecs_cmd.c:671
+msgid "  (if the format allows it)"
+msgstr "  fichier (si le format le permet)"
+
+#: prepro/appli/ecs_cmd.c:674
+msgid ": add groups of cells"
+msgstr ": ajoute des groupes de cellules"
+
+#: prepro/appli/ecs_cmd.c:675 prepro/appli/ecs_cmd.c:683
+msgid "   * based on sections: keyword \""
+msgstr "   * selon les sections : mot clé \""
+
+#: prepro/appli/ecs_cmd.c:677 prepro/appli/ecs_cmd.c:685
+msgid "   * based on zones:    keyword \""
+msgstr "   * selon les zones    : mot clé \""
+
+#: prepro/appli/ecs_cmd.c:679 prepro/appli/ecs_cmd.c:687
+msgid "  (based on format features/conventions)"
+msgstr "  (selon possibilités/conventions du format)"
+
+#: prepro/appli/ecs_cmd.c:682
+msgid ": add groups of faces"
+msgstr ": ajoute des groupes de faces"
+
+#: prepro/appli/ecs_cmd.c:690
+#, c-format
+msgid ""
+"\n"
+"\n"
+"available mesh formats\n"
+" (-m, -mesh; -format):\n"
+msgstr ""
+"\n"
+"\n"
+"formats de maillage disponibles\n"
+" (-m, -mesh; -format):\n"
+
+#: prepro/appli/ecs_cmd.c:692
+#, c-format
+msgid "                                  extension:    keyword:\n"
+msgstr "                                  extension :   mot-clé :\n"
+
+#: prepro/appli/ecs_cmd.c:715
+#, c-format
+msgid ""
+"\n"
+"\n"
+"postprocessing selection sub-options\n"
+" (%s):\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"sous-options de sélection de post traitement\n"
+" (%s) :\n"
+"\n"
+
+#: prepro/appli/ecs_cmd.c:720
+msgid ": discard polygonal faces (with more"
+msgstr ": supprime les faces polygonales (à plus"
+
+#: prepro/appli/ecs_cmd.c:721
+msgid "  than 4 edges) or polyhedra"
+msgstr "  de 4 arêtes) ou les polyèdres"
+
+#: prepro/appli/ecs_cmd.c:726
+msgid ": force text output (EnSight)"
+msgstr ": force l'écriture texte (EnSight)"
+
+#: prepro/appli/ecs_cmd.c:729
+msgid ": force binary output to big-endian (EnSight)"
+msgstr ": écriture big-endian si binaire (EnSight)"
+
+#: prepro/appli/ecs_cmd.c:734
+msgid ": transform colors to groups (MED)"
+msgstr ": transformation de couleurs en groupes (MED)"
+
+#: prepro/appli/ecs_cmd.c:739
+msgid ": activate output of main mesh"
+msgstr ": active l'écriture du maillage principal"
+
+#: prepro/appli/ecs_cmd.c:740 prepro/appli/ecs_cmd.c:746
+#, c-format
+msgid "  (by default if %s not given)"
+msgstr "  (par défaut si %s non précisé)"
+
+#: prepro/appli/ecs_cmd.c:745
+msgid ": activate output of information meshes"
+msgstr ": active l'écriture des maillages d'information"
+
+#: prepro/appli/ecs_cmd.c:754
+msgid "Environment variables"
+msgstr "Variables d'environnement"
+
+#: prepro/appli/ecs_cmd.c:756
+#, c-format
+msgid ""
+"  CS_PREPROCESS_MIN_EDGE_LEN    : length under which an edge is considered\n"
+"                                  degenerate (default: 1.e-15)\n"
+"\n"
+msgstr ""
+"  CS_PREPROCESS_MIN_EDGE_LEN    : longueur en dessous de laquelle une arête "
+"est\n"
+"                                  considérée comme dégénérée (défaut : 1.e-"
+"15)\n"
+"\n"
+
+#: prepro/appli/ecs_cmd.c:761
+#, c-format
+msgid ""
+"  CS_PREPROCESS_MEM_LOG         : name of memory operations trace file\n"
+"\n"
+msgstr ""
+"  CS_PREPROCESS_MEM_LOG         : nom du fichier de trace mémoire\n"
+"\n"
+
+#: prepro/appli/ecs_cmd.c:764
+#, c-format
+msgid ""
+"  CS_PREPROCESS_IGNORE_IDEAS_COO_SYS : ignore I-deas coordinate systems\n"
+"\n"
+msgstr ""
+"  CS_PREPROCESS_IGNORE_IDEAS_COO_SYS : ignore les systèmes de coordonnées I-"
+"deas\n"
+"\n"
+
+#: prepro/appli/ecs_cmd.c:785
+#, c-format
+msgid ""
+"Error in command line specification.\n"
+"\n"
+"Option \"%s\" is set at least twice."
+msgstr ""
+"Erreur dans la spécification de la ligne de commande.\n"
+"\n"
+"La même option \"%s\" est mentionnée au moins 2 fois."
+
+#: prepro/appli/ecs_cmd.c:806
+#, c-format
+msgid ""
+"Error in command line specification.\n"
+"\n"
+"Option \"%s\" requires an argument."
+msgstr ""
+"Erreur dans la spécification de la ligne de commande.\n"
+"\n"
+"L'option \"%s\" nécessite un argument."
+
+#: prepro/appli/ecs_cmd.c:838
+#, c-format
+msgid ""
+"Error in command line specification.\n"
+"\n"
+"Keyword \"%s\" of option \"%s\" is not recognized.\n"
+msgstr ""
+"Erreur dans la spécification de la ligne de commande.\n"
+"\n"
+"Le mot clé \"%s\" de l'option \"%s\" n'est pas reconnu.\n"
+
+#: prepro/appli/ecs_cmd.c:1248
+msgid ""
+"Case configuration\n"
+"------------------\n"
+msgstr ""
+"Configuration du cas\n"
+"--------------------\n"
+
+#: prepro/appli/ecs_cmd.c:1253
+msgid "Date"
+msgstr ""
+
+#: prepro/appli/ecs_cmd.c:1259
+msgid "System"
+msgstr "Système"
+
+#: prepro/appli/ecs_cmd.c:1265
+msgid "Machine"
+msgstr ""
+
+#: prepro/appli/ecs_cmd.c:1270
+msgid "Processor"
+msgstr "Processeur"
+
+#: prepro/appli/ecs_cmd.c:1275
+msgid "Memory"
+msgstr "Mémoire"
+
+#: prepro/appli/ecs_cmd.c:1281
+msgid "User"
+msgstr "Utilisateur"
+
+#: prepro/appli/ecs_cmd.c:1287
+msgid "Directory"
+msgstr "Répertoire"
+
+#: prepro/appli/ecs_cmd.c:1294
+msgid "Case name"
+msgstr "Nom du cas"
+
+#: prepro/appli/ecs_cmd.c:1298
+msgid "Mesh file"
+msgstr "Fichier de maillage"
+
+#: prepro/appli/ecs_cmd.c:1321
+msgid "The file does not exist."
+msgstr "Le fichier n'existe pas."
+
+#: prepro/appli/ecs_cmd.c:1328
+msgid "Read permission on this file is refused."
+msgstr "La permission de lecture sur le fichier est refusée."
+
+#: prepro/appli/ecs_cmd.c:1335
+msgid "The filename is too long (system limit)."
+msgstr "Le nom du fichier est trop long (limitation système)."
+
+#: prepro/appli/ecs_cmd.c:1369
+msgid "The file is not a regular file."
+msgstr "Le fichier n'est pas un fichier régulier."
+
+#: prepro/appli/ecs_cmd.c:1483
+#, c-format
+msgid ""
+"Failed to switch to directory :\n"
+"%s"
+msgstr ""
+"Impossible de se placer dans le répertoire :\n"
+"%s"
+
+#: prepro/appli/ecs_cmd.c:1497
+#, c-format
+msgid ""
+"Error in command line specification.\n"
+"\n"
+"Option \"%s\" is not available."
+msgstr ""
+"Erreur dans la spécification de la ligne de commande.\n"
+"\n"
+"L'option \"%s\" n'est pas disponible."
+
+#: prepro/appli/ecs_cmd.c:1658
+#, c-format
+msgid "Option \"%s\" is not recognized.\n"
+msgstr "L'option \"%s\" n'est pas reconnue.\n"
+
+#: prepro/appli/ecs_cmd.c:1710
+#, c-format
+msgid ""
+"Error in command line specification.\n"
+"\n"
+"Option \"%s\" must always be set, as the\n"
+"specification of an input mesh file is necessary."
+msgstr ""
+"Erreur dans la spécification de la ligne de commande.\n"
+"\n"
+"L'option \"%s\" doit être obligatoirement renseignée.\n"
+"La spécification du nom du fichier de maillage en entrée est nécessaire."
+
+#: prepro/appli/ecs_cmd.c:1725
+#, c-format
+msgid ""
+"Mesh file \"%s\" is not accessible.\n"
+"%s"
+msgstr ""
+"Le fichier de maillage \"%s\" n'est pas accessible.\n"
+"%s"
+
+#: prepro/appli/ecs_main.c:133
+#, c-format
+msgid "  Theoretical mesh size:       %15.3f %cb\n"
+msgstr "  Taille maillage théorique  : %15.3f %co\n"
+
+#: prepro/appli/ecs_main.c:141
+#, c-format
+msgid "  Theoretical current memory:  %15.3f %cb\n"
+msgstr "  Mémoire courante théorique : %15.3f %co\n"
+
+#: prepro/appli/ecs_main.c:149
+#, c-format
+msgid "  Theoretical peak memory:     %15.3f %cb\n"
+msgstr "  Pic mémoire théorique :      %15.3f %co\n"
+
+#: prepro/appli/ecs_main.c:161
+#, c-format
+msgid "  Total memory used:           %15.3f %cb\n"
+msgstr "  Mémoire totale consommée :   %15.3f %co\n"
+
+#: prepro/appli/ecs_main.c:239
+#, c-format
+msgid ""
+"\n"
+"Done reading mesh\n"
+"-----------------\n"
+msgstr ""
+"\n"
+"Fin lecture maillage\n"
+"--------------------\n"
+
+#: prepro/appli/ecs_main.c:242
+#, c-format
+msgid ""
+"\n"
+"Done reading and concatenating meshes\n"
+"-------------------------------------\n"
+msgstr ""
+"\n"
+"Fin lecture et concaténation des maillages\n"
+"------------------------------------------\n"
+
+#: prepro/appli/ecs_main.c:376
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Time and memory summary\n"
+"-----------------------\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"Bilan temps et mémoire\n"
+"----------------------\n"
+"\n"
+
+#: prepro/appli/ecs_main.c:392
+msgid "User CPU time                       (sec)"
+msgstr "Temps CPU utilisateur               (sec)"
+
+#: prepro/appli/ecs_main.c:399
+msgid "System CPU time                     (sec)"
+msgstr "Temps CPU système                   (sec)"
+
+#: prepro/appli/ecs_main.c:409
+msgid "Total CPU time                      (sec)"
+msgstr "Temps CPU total                     (sec)"
+
+#: prepro/appli/ecs_main.c:423
+msgid "Total time                          (sec)"
+msgstr "Temps     total                     (sec)"
+
+#: prepro/appli/ecs_main.c:432
+msgid "Total CPU time / Total time              "
+msgstr "Temps CPU total / Temps total            "
+
+#: prepro/appli/ecs_main.c:502
+#, c-format
+msgid ""
+"This program was built with type \"ecs_int_32_t\"\n"
+"of length %d bytes instead of 4. (porting error)\n"
+msgstr ""
+"Ce Programme a été compilé avec un type \"ecs_int_32_t\"\n"
+"de longueur %d octets au lieu de 4. (Erreur de portage)\n"
+
+#: prepro/appli/ecs_main.c:520 prepro/pre-post/ecs_post_cgns.c:299
+#: prepro/pre-post/ecs_post_ens.c:425 prepro/pre-post/ecs_post_ens.c:588
+#: prepro/pre-post/ecs_post_ens.c:682 prepro/pre-post/ecs_post_med.c:136
+msgid "Creating file:"
+msgstr "Création du fichier :"
+
+#: prepro/appli/ecs_main.c:569 prepro/base/ecs_maillage.c:1895
+#: prepro/pre-post/ecs_champ_post_ens.c:959
+msgid "Fluid Domain"
+msgstr "Domaine fluide"
+
+#: prepro/appli/ecs_main.c:577
+msgid "Orientation Error"
+msgstr "Erreur orientation"
+
+#: prepro/appli/ecs_main.c:583
+msgid "Orientation Corrected"
+msgstr "Correction orientation"
+
+#: prepro/appli/ecs_main.c:618
+#, c-format
+msgid ""
+"\n"
+"End of conversion to descending connectivity\n"
+"--------------------------------------------\n"
+msgstr ""
+"\n"
+"Fin de passage en connectivité descendante\n"
+"------------------------------------------\n"
+
+#: prepro/appli/ecs_main.c:634
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Defining families\n"
+"-----------------\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"Création des familles\n"
+"---------------------\n"
+"\n"
+
+#: prepro/appli/ecs_main.c:652
+#, c-format
+msgid ""
+"The mesh has face -> cell connectivity errors.\n"
+"We can go no further."
+msgstr ""
+"Le comporte des erreurs de connectivité face -> cellules.\n"
+"On ne peut pas aller plus loin."
+
+#: prepro/appli/ecs_main.c:663
+#, c-format
+msgid ""
+"The mesh does not contain volume elements.\n"
+"We can go no further."
+msgstr ""
+"Le maillage ne contient pas d'éléments volumiques.\n"
+"On ne peut pas aller plus loin."
+
+#: prepro/appli/ecs_main.c:729
+#, c-format
+msgid "  Total memory used:                         %15.3f %cb\n"
+msgstr "  Mémoire totale consommée :                 %15.3f %co\n"
+
+#: prepro/appli/ecs_main.c:736
+#, c-format
+msgid "  Theoretical instrumented dynamic memory:   %15.3f %cb\n"
+msgstr "  Mémoire dynamique instrumentée théorique : %15.3f %co\n"
+
+#: prepro/appli/ecs_main.c:749
+#, c-format
+msgid ""
+"\n"
+"\n"
+"  .-----------------------.\n"
+"  |                       |\n"
+"  |  Preprocessor finish  |\n"
+"  |                       |\n"
+"  `-----------------------'\n"
+"\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"  .--------------------------------.\n"
+"  |                                |\n"
+"  |  Fin normale du Préprocesseur  |\n"
+"  |                                |\n"
+"  `--------------------------------'\n"
+"\n"
+"\n"
+
+#: prepro/base/ecs_champ_def.c:199
+#, c-format
+msgid ""
+"\n"
+"Mesh verification:\n"
+"\n"
+"  %d faces modified due to merged vertices.\n"
+msgstr ""
+"\n"
+"Vérification de maillage :\n"
+"\n"
+"  %d faces modifiées par fusion de sommets.\n"
+
+#: prepro/base/ecs_champ_def.c:307
+#, c-format
+msgid ""
+"\n"
+"  Merging vertices:\n"
+msgstr ""
+"\n"
+"  Fusion des sommets :\n"
+
+#: prepro/base/ecs_champ_def.c:313
+#, c-format
+msgid "    Initial number of vertices        : %10d\n"
+msgstr "    Nombre de sommets initial         : %10d\n"
+
+#: prepro/base/ecs_champ_def.c:378
+#, c-format
+msgid "    Number of vertices after merging  : %10d\n"
+msgstr "    Nombre de sommets après fusion    : %10d\n"
+
+#: prepro/base/ecs_champ_def.c:410
+#, c-format
+msgid "    Number of modified vertices       : %10d\n"
+msgstr "    Nombre de sommets modifiés        : %10d\n"
+
+#: prepro/base/ecs_champ_def.c:1382 prepro/base/ecs_champ_def.c:1476
+msgid "Number of elements"
+msgstr "Nombre d'éléments"
+
+#: prepro/base/ecs_champ_def.c:2526
+#, c-format
+msgid ""
+"\n"
+"  Element orientation check.\n"
+"\n"
+msgstr ""
+"\n"
+"  Vérification de l'orientation des éléments.\n"
+"\n"
+
+#: prepro/base/ecs_champ_def.c:2672
+#, c-format
+msgid "%d elements of type %s had to be re-oriented\n"
+msgstr "%d éléments de type %s ont du être réorientés\n"
+
+#: prepro/base/ecs_champ_def.c:2679
+#, c-format
+msgid "%d elements of type %s were impossible to re-orient\n"
+msgstr "%d éléments de type %s n'ont pu être réorientés\n"
+
+#: prepro/base/ecs_champ_def.c:2685
+#, c-format
+msgid "%d elements of type %s are mis-oriented\n"
+msgstr "%d éléments de type %s sont mal orientés\n"
+
+#: prepro/base/ecs_champ_def.c:2809
+#, c-format
+msgid ""
+"\n"
+"Mesh verification:\n"
+"\n"
+"  %d vertices belong to edges of length less than %g\n"
+"  and will be merged; (this tolerance may be modified\n"
+"  using the ECS_DEF_LNG_ARE_MIN environment variable).\n"
+msgstr ""
+"\n"
+"Contrôle du maillage :\n"
+"\n"
+"  On compte %d sommets appartennant à des arêtes de longueur\n"
+"  inférieure à %g et qui seront fusionnés ; (cette tolérance\n"
+"  peut être modifiée par la variable d'environnement\n"
+"  ECS_DEF_LNG_ARE_MIN).\n"
+
+#: prepro/base/ecs_champ_def.c:2910
+#, c-format
+msgid ""
+"\n"
+"Mesh verification:\n"
+"\n"
+"  Removal of %d degenerate faces:\n"
+"    Initial number of faces           : %10d\n"
+"    Number of faces after processing  : %10d\n"
+msgstr ""
+"\n"
+"Contrôle du maillage :\n"
+"\n"
+"  On supprime %d faces dégénérées :\n"
+"    Nombre de faces initial           : %10d\n"
+"    Nombre de faces après traitement  : %10d\n"
+
+#: prepro/base/ecs_descr.c:372 prepro/base/ecs_descr.c:376
+#: prepro/base/ecs_famille_chaine.c:646 prepro/pre-post/ecs_maillage_pre.c:211
+#: prepro/pre-post/ecs_maillage_pre.c:219
+msgid "Color"
+msgstr "Couleur"
+
+#: prepro/base/ecs_descr.c:385 prepro/pre-post/ecs_pre_cgns.c:2865
+#: prepro/pre-post/ecs_pre_cgns.c:3195 prepro/pre-post/ecs_pre_gambit.c:1650
+#: prepro/pre-post/ecs_pre_ideas.c:1784
+msgid "Group"
+msgstr "Groupe"
+
+#: prepro/base/ecs_famille.c:276 prepro/base/ecs_famille.c:279
+#: prepro/base/ecs_famille_chaine.c:646
+#: prepro/pre-post/ecs_champ_post_cgns.c:210
+#: prepro/pre-post/ecs_maillage_ncs.c:609
+#: prepro/pre-post/ecs_maillage_ncs.c:612
+#: prepro/pre-post/ecs_maillage_ncs.c:614
+#: prepro/pre-post/ecs_maillage_pre.c:300
+#: prepro/pre-post/ecs_maillage_pre.c:310
+msgid "Family"
+msgstr "Famille"
+
+#: prepro/base/ecs_maillage.c:693
+#, c-format
+msgid ""
+"There are %lu faces of which one same side belongs\n"
+"to at least 2 cells --> bad connectivity."
+msgstr ""
+"On compte %lu faces dont un même côté appartient à\n"
+"2 cellules au moins --> mauvaise connectivité."
+
+#: prepro/base/ecs_maillage.c:700
+#, c-format
+msgid "There is/are %lu isolated face(s)\n"
+msgstr "On compte %lu face(s) isolée(s)\n"
+
+#: prepro/base/ecs_maillage.c:887
+msgid "Dump mesh structure to file"
+msgstr "Dump de la structure maillage dans le fichier"
+
+#: prepro/base/ecs_maillage.c:1572
+#, c-format
+msgid ""
+"\n"
+"  Domain coordinate extents:\n"
+"\n"
+msgstr ""
+"\n"
+"  Coordonnées minimales et maximales du domaine :\n"
+"\n"
+
+#: prepro/base/ecs_maillage.c:1846
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Main mesh properties\n"
+"--------------------\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"Données principales du maillage\n"
+"-------------------------------\n"
+"\n"
+
+#: prepro/base/ecs_maillage.c:1849
+#, c-format
+msgid ""
+"  Number of cells:                            %10d\n"
+"  Number of internal faces:                   %10d\n"
+msgstr ""
+"  Nombre de cellules :                        %10d\n"
+"  Nombre de faces internes :                  %10d\n"
+
+#: prepro/base/ecs_maillage.c:1855
+#, c-format
+msgid "  Number of boundary faces:                   %10d\n"
+msgstr "  Nombre de faces de bord :                   %10d\n"
+
+#: prepro/base/ecs_maillage.c:1860
+#, c-format
+msgid "  Number of vertices:                         %10d\n"
+msgstr "  Nombre de sommets :                         %10d\n"
+
+#: prepro/base/ecs_maillage.c:1884
+msgid "Connectivity Error Faces"
+msgstr "Faces erreur connectivite"
+
+#: prepro/base/ecs_maillage.c:1896
+msgid "connectivity_error"
+msgstr "erreur_connectivite"
+
+#: prepro/base/ecs_maillage.c:1910
+msgid "Isolated Faces"
+msgstr "Faces isolees"
+
+#: prepro/pre-post/ecs_champ_post.c:225
+msgid ""
+"Elements of the mesh to post-process have\n"
+"not been sorted by type."
+msgstr ""
+"Les éléments du maillage à post-traiter n'ont\n"
+"pas été triés selon leurs types."
+
+#: prepro/pre-post/ecs_champ_post.c:488
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error creating field \"%s\"\n"
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Erreur à la création du champ \"%s\"\n"
+
+#: prepro/pre-post/ecs_champ_post_cgns.c:131
+#, c-format
+msgid ""
+"CGNS: no mesh named \"%s\".\n"
+"is associated to file: \"%s\"\n"
+msgstr ""
+"CGNS : aucun maillage nommé \"%s\".\n"
+"n'est associé au fichier : \"%s\"\n"
+
+#: prepro/pre-post/ecs_champ_post_cgns.c:142
+#, c-format
+msgid ""
+"CGNS: error re-opening file \"%s\":\n"
+"%s"
+msgstr ""
+"CGNS : échec à la réouverture du fichier \"%s\" :\n"
+"%s"
+
+#: prepro/pre-post/ecs_champ_post_cgns.c:196
+#: prepro/pre-post/ecs_champ_post_cgns.c:564
+msgid "Mesh_values"
+msgstr "Grandeurs_maillage"
+
+#: prepro/pre-post/ecs_champ_post_cgns.c:201
+#: prepro/pre-post/ecs_champ_post_cgns.c:569
+#, c-format
+msgid ""
+"CGNS: error writing a solution node\n"
+"File name: \"%s\"; base : \"1\"\n"
+"%s"
+msgstr ""
+"CGNS : échec à l'écriture d'un noeud solution\n"
+"Nom du fichier : \"%s\" ; base : \"1\"\n"
+"%s"
+
+#: prepro/pre-post/ecs_champ_post_cgns.c:229
+#: prepro/pre-post/ecs_champ_post_cgns.c:602
+#, c-format
+msgid ""
+"CGNS: error writing field \"%s\"\n"
+"%s"
+msgstr ""
+"CGNS : échec à l'écriture du champ \"%s\"\n"
+"%s"
+
+#: prepro/pre-post/ecs_champ_post_cgns.c:328
+#: prepro/pre-post/ecs_post_cgns.c:310
+#, c-format
+msgid ""
+"CGNS: error writing file \"%s\":\n"
+"Name of mesh to write: \"%s\"\n"
+"%s"
+msgstr ""
+"CGNS : échec à l'écriture du fichier \"%s\":\n"
+"Nom du maillage à écrire : \"%s\"\n"
+"%s"
+
+#: prepro/pre-post/ecs_champ_post_cgns.c:356
+#, c-format
+msgid ""
+"CGNS: error writing coordinates\n"
+"Name of mesh to write: \"%s\"\n"
+"%s"
+msgstr ""
+"CGNS : échec à l'écriture des coordonnées\n"
+"Nom du maillage à écrire : \"%s\"\n"
+"%s"
+
+#: prepro/pre-post/ecs_champ_post_cgns.c:472
+#, c-format
+msgid ""
+"CGNS: in mesh: \"%s\",\n"
+"%d polyhedral cells are ignored.\n"
+msgstr ""
+"CGNS : dans le maillage : \"%s\",\n"
+"%d cellules polyèdriques sont ignorées.\n"
+
+#: prepro/pre-post/ecs_champ_post_ens.c:939
+msgid "Color "
+msgstr "Couleur "
+
+#: prepro/pre-post/ecs_champ_post_ens.c:950
+msgid "vol"
+msgstr "vol"
+
+#: prepro/pre-post/ecs_champ_post_ens.c:951
+msgid "surf"
+msgstr ""
+
+#: prepro/pre-post/ecs_champ_post_ens.c:952
+msgid "no attribute"
+msgstr "sans attribut"
+
+#: prepro/pre-post/ecs_champ_post_ens.c:953
+msgid ": "
+msgstr " : "
+
+#: prepro/pre-post/ecs_champ_post_med.c:288
+#: prepro/pre-post/ecs_champ_post_med.c:540
+#, c-format
+msgid ""
+"MED: no mesh named \"%s\".\n"
+"is associated with file: \"%s\"\n"
+msgstr ""
+"MED : aucun maillage nommé \"%s\".\n"
+"n'est associé au fichier : \"%s\"\n"
+
+#: prepro/pre-post/ecs_champ_post_med.c:484
+#: prepro/pre-post/ecs_champ_post_med.c:570
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Name   of family to write: \"%s\"\n"
+"Number of family to write: \"%d\""
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Nom    de la famille à écrire : \"%s\"\n"
+"Numéro de la famille à écrire : \"%d\""
+
+#: prepro/pre-post/ecs_champ_post_med.c:699
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing coordinates."
+msgstr ""
+"MED : erreur à l'écriture du fichier \"%s\".\n"
+"Erreur à l'écriture des coordonnées."
+
+#: prepro/pre-post/ecs_champ_post_med.c:828
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"The element geometric type has no MED equivalent.\n"
+"Element geometric type: \"%d\""
+msgstr ""
+"MED : erreur à l'écriture du fichier \"%s\".\n"
+"Le type géométrique de l'élément\n"
+"n'a pas d'équivalent pour MED.\n"
+"Type géometrique de l'élément : \"%d\""
+
+#: prepro/pre-post/ecs_champ_post_med.c:882
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing connectivity."
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Erreur à l'écriture de la connectivité."
+
+#: prepro/pre-post/ecs_champ_post_med.c:918
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing polygons connectivity."
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Erreur à l'écriture de la connectivité des polygones."
+
+#: prepro/pre-post/ecs_champ_post_med.c:1029
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing polyhedra connectivity."
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Erreur à l'écriture de la connectivité des polyèdres."
+
+#: prepro/pre-post/ecs_champ_post_med.c:1054
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing families."
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Erreur à l'écriture des familles."
+
+#: prepro/pre-post/ecs_champ_post_med.c:1127
+#, c-format
+msgid "Geometric type \"%d\" has no MED equivalent."
+msgstr "Le type géométrique \"%d\" n'a pas d'équivalent MED."
+
+#: prepro/pre-post/ecs_champ_post_med.c:1241
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing field \"%s\"."
+msgstr ""
+"MED : erreur à l'écriture du fichier \"%s\".\n"
+"Erreur a l'écriture du champ \"%s\"."
+
+#: prepro/pre-post/ecs_champ_post_med.c:1255
+#, c-format
+msgid ""
+"MED: error writing field \"%s\".\n"
+"Incompatibility between the number of elements to write (%d)\n"
+"and the dimensions of mesh \"%s\"."
+msgstr ""
+"MED : erreur à l'écriture du champ \"%s\".\n"
+"Incohérence entre les nombre d'élements à écrire (%d) et\n"
+"les dimensions su maillage \"%s\"."
+
+#: prepro/pre-post/ecs_maillage_ncs.c:258
+#: prepro/pre-post/ecs_maillage_ncs.c:264
+#: prepro/pre-post/ecs_maillage_pre.c:188
+#: prepro/pre-post/ecs_maillage_pre.c:259
+#: prepro/pre-post/ecs_maillage_pre.c:622
+#: prepro/pre-post/ecs_maillage_pre.c:629
+msgid "Number of cells"
+msgstr "Nombre de cellules"
+
+#: prepro/pre-post/ecs_maillage_ncs.c:259
+#: prepro/pre-post/ecs_maillage_ncs.c:270
+msgid "Number of internal faces"
+msgstr "Nombre de faces internes"
+
+#: prepro/pre-post/ecs_maillage_ncs.c:260
+#: prepro/pre-post/ecs_maillage_ncs.c:276
+msgid "Number of boundary faces"
+msgstr "Nombre de faces de bord"
+
+#: prepro/pre-post/ecs_maillage_ncs.c:537
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Definition of face and cell families\n"
+"------------------------------------\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"Définition des familles de faces et cellules\n"
+"--------------------------------------------\n"
+"\n"
+
+#: prepro/pre-post/ecs_maillage_ncs.c:549
+#, c-format
+msgid ""
+"%d faces from a total of %d have no color\n"
+"and belong to no group...\n"
+"A default family is assigned to those faces.\n"
+"\n"
+msgstr ""
+"%d faces sur un total de %d ne sont pas coloriées\n"
+"et n'appartiennent à aucun groupe ...\n"
+"On attribue à ces faces une famille par défaut.\n"
+"\n"
+
+#: prepro/pre-post/ecs_maillage_ncs.c:562
+#, c-format
+msgid ""
+"%d cells from a total of %d have no color\n"
+"and belong to no group...\n"
+"A default family is assigned to those cells.\n"
+"\n"
+msgstr ""
+"%d cellules sur un total de %d ne sont pas coloriées\n"
+"et n'appartiennent à aucun groupe ...\n"
+"On attribue à ces cellules une famille par défaut.\n"
+"\n"
+
+#: prepro/pre-post/ecs_maillage_ncs.c:613
+msgid "Default family"
+msgstr "Famille par défaut"
+
+#: prepro/pre-post/ecs_maillage_ncs.c:615
+msgid "(with no color nor group)"
+msgstr "(sans couleur ni groupe)"
+
+#: prepro/pre-post/ecs_maillage_ncs.c:634
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Definition of colors and groups based on families\n"
+"-------------------------------------------------\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"Définition des couleurs et groupes en fonction des familles\n"
+"-----------------------------------------------------------\n"
+"\n"
+
+#: prepro/pre-post/ecs_maillage_ncs.c:657
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Groups numbering\n"
+"----------------\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"Numérotation des groupes\n"
+"-------------------------\n"
+"\n"
+
+#: prepro/pre-post/ecs_maillage_ncs.c:662
+#, c-format
+msgid "  Group %3d : \"%s\"\n"
+msgstr "  Groupe %3d : \"%s\"\n"
+
+#: prepro/pre-post/ecs_maillage_ncs.c:882
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Write output for Kernel\n"
+"-----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Écriture des données pour le Noyau\n"
+"----------------------------------\n"
+
+#: prepro/pre-post/ecs_maillage_post.c:246
+#, c-format
+msgid ""
+"\n"
+"\n"
+"EnSight output of mesh: %s\n"
+"-----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Écriture pour EnSight du maillage : %s\n"
+"-----------------------------------\n"
+
+#: prepro/pre-post/ecs_maillage_post.c:267
+#, c-format
+msgid ""
+"\n"
+"\n"
+"CGNS file output of mesh: %s\n"
+"-------------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Écriture sur fichier CGNS du maillage : %s\n"
+"---------------------------------------\n"
+
+#: prepro/pre-post/ecs_maillage_post.c:288
+#, c-format
+msgid ""
+"\n"
+"\n"
+"MED file output of mesh: %s\n"
+"------------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Écriture sur fichier MED du maillage : %s\n"
+"--------------------------------------\n"
+
+#: prepro/pre-post/ecs_maillage_post.c:374
+#, c-format
+msgid ""
+"\n"
+"Creating mesh for output: %s\n"
+"-------------------------\n"
+"\n"
+msgstr ""
+"\n"
+"Création maillage pour sorties : %s\n"
+"--------------------------------\n"
+"\n"
+
+#: prepro/pre-post/ecs_maillage_pre.c:187
+#: prepro/pre-post/ecs_maillage_pre.c:258
+#: prepro/pre-post/ecs_maillage_pre.c:620
+#: prepro/pre-post/ecs_maillage_pre.c:638
+msgid "Number of faces"
+msgstr "Nombre de faces"
+
+#: prepro/pre-post/ecs_maillage_pre.c:352
+#: prepro/pre-post/ecs_maillage_pre.c:619
+#: prepro/pre-post/ecs_maillage_pre.c:647
+msgid "Number of vertices"
+msgstr "Nombre de sommets"
+
+#: prepro/pre-post/ecs_post_cgns.c:153 prepro/pre-post/ecs_post_cgns.c:196
+#, c-format
+msgid ""
+"CGNS: error closing file \"%s\"\n"
+"%s"
+msgstr ""
+"CGNS : échec à la fermeture du fichier \"%s\"\n"
+"%s"
+
+#: prepro/pre-post/ecs_post_cgns.c:239
+#, c-format
+msgid ""
+"A mesh named: %s\n"
+"is already defined in CGNS case: %s\n"
+msgstr ""
+"On a déjà défini un maillage de nom : %s\n"
+"dans le cas CGNS : %s\n"
+
+#: prepro/pre-post/ecs_post_cgns.c:293 prepro/pre-post/ecs_pre_cgns.c:377
+#, c-format
+msgid ""
+"CGNS: error opening file \"%s\":\n"
+"%s"
+msgstr ""
+"CGNS : échec à l'ouverture du fichier \"%s\" :\n"
+"%s"
+
+#: prepro/pre-post/ecs_post_cgns.c:316
+#, c-format
+msgid ""
+"CGNS: error writing file \"%s\":\n"
+"The returned base number is \"%d\" and not \"1\"."
+msgstr ""
+"CGNS : erreur à l'écriture du fichier \"%s\" :\n"
+"Le numéro de base renvoyé est \"%d\" et non \"1\"."
+
+#: prepro/pre-post/ecs_post_med.c:122 prepro/pre-post/ecs_pre_med.c:119
+#, c-format
+msgid "MED: error opening file \"%s\"."
+msgstr "MED : échec à l'ouverture du fichier \"%s\"."
+
+#: prepro/pre-post/ecs_post_med.c:159 prepro/pre-post/ecs_pre_med.c:143
+#, c-format
+msgid "MED: error closing file \"%s\"."
+msgstr "MED : échec à la fermeture du fichier \"%s\"."
+
+#: prepro/pre-post/ecs_post_med.c:225
+#, c-format
+msgid ""
+"A mesh named: %s\n"
+"is already defined in MED case: %s\n"
+msgstr ""
+"On a déjà défini un maillage de nom : %s\n"
+"dans le cas MED : %s\n"
+
+#: prepro/pre-post/ecs_post_med.c:275
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Name of mesh to create: \"%s\"\n"
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Nom du maillage à créer : \"%s\"\n"
+
+#: prepro/pre-post/ecs_post_med.c:285
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Mesh name: \"%s\"\n"
+"mesh dimension: \"%d\", space dimension: \"%d\""
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Nom du maillage : \"%s\"\n"
+"dimension du maillage : \"%d\" / de l'espace : \"%d\""
+
+#: prepro/pre-post/ecs_post_med.c:327
+#, c-format
+msgid "Field \"%s\" has already been defined in file \"%s\"\n"
+msgstr "Le champ \"%s\" a déjà été défini dans le fichier \"%s\"\n"
+
+#: prepro/pre-post/ecs_pre.c:155
+msgid "EnSight (6 or Gold)"
+msgstr "EnSight (6 ou Gold)"
+
+#: prepro/pre-post/ecs_pre.c:163
+msgid "GAMBIT Neutral"
+msgstr ""
+
+#: prepro/pre-post/ecs_pre.c:171
+msgid "GMSH"
+msgstr ""
+
+#: prepro/pre-post/ecs_pre.c:179
+msgid "I-deas universal"
+msgstr "I-deas Universel"
+
+#: prepro/pre-post/ecs_pre.c:207
+msgid "Meta-mesh file"
+msgstr "Méta-fichier de maillage"
+
+#: prepro/pre-post/ecs_pre.c:329
+#, c-format
+msgid ""
+"Error in file format specification.\n"
+"\n"
+"Mesh file type \"%s\" is not recognized.\n"
+"Impossible to determine the format of mesh file\n"
+"\"%s\"."
+msgstr ""
+"Erreur dans la spécification du format de fichier.\n"
+"\n"
+"Le type de maillage \"%s\" n'est pas reconnu.\n"
+"Impossible de déterminer le format du fichier de maillage\n"
+"\"%s\"."
+
+#: prepro/pre-post/ecs_pre.c:339
+#, c-format
+msgid ""
+"\n"
+"Warning\n"
+"=======\n"
+"The file extension for \"%s\"\n"
+"does not correspond with the mesh file format defined by\n"
+"keyword \"%s\". The keyword has priority.\n"
+"\n"
+msgstr ""
+"\n"
+"Avertissement\n"
+"=============\n"
+"L'extension du fichier \"%s\"\n"
+"ne correspond pas au format défini par le mot clé \"%s\".\n"
+"Le mot clé est prioritaire.\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre.c:352
+#, c-format
+msgid ""
+"Mesh file \"%s\" does not have\n"
+"a known extension. A keyword is required to determine\n"
+"the format in this case."
+msgstr ""
+"Le fichier de maillage \"%s\"\n"
+"n'a pas une extension connue. Un mot clé est nécessaire\n"
+"pour déterminer le format dans ce cas."
+
+#: prepro/pre-post/ecs_pre.c:359
+#, c-format
+msgid ""
+"File format \"%s\" support not available in this\n"
+"installation (file \"%s\"). "
+msgstr ""
+"Le format de fichier \"%s\" n'est pas disponible dans cette\n"
+"installation (fichier \"%s\"). "
+
+#: prepro/pre-post/ecs_pre.c:450
+msgid "Unknown mesh file format."
+msgstr "Format de fichier de maillage non reconnu."
+
+#: prepro/pre-post/ecs_pre.c:457
+#, c-format
+msgid ""
+"\n"
+"  Wall-clock time: %f s; CPU time: %f s\n"
+"\n"
+msgstr ""
+"\n"
+"  Temps écoulé : %f s ; temps CPU : %f s\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_ccm.c:153
+#, c-format
+msgid ""
+"\n"
+"  Vertex coordinates set: %s\n"
+msgstr ""
+"\n"
+"  Jeu de coordonnées des sommets : %s\n"
+
+#: prepro/pre-post/ecs_pre_ccm.c:162
+#, c-format
+msgid "Error %d reading vertex information in STAR-CCM+ file."
+msgstr "Erreur %d à l'interrogation des sommets dans un fichier STAR-CCM+"
+
+#: prepro/pre-post/ecs_pre_ccm.c:274
+#, c-format
+msgid "  Face-based topology: %s\n"
+msgstr "  Topologie basée sur les faces : %s\n"
+
+#: prepro/pre-post/ecs_pre_ccm.c:289 prepro/pre-post/ecs_pre_ccm.c:395
+#, c-format
+msgid "    Faces: %s\n"
+msgstr "    Faces : %s\n"
+
+#: prepro/pre-post/ecs_pre_ccm.c:304
+#, c-format
+msgid "Error %d reading faces information in STAR-CCM+ file."
+msgstr "Erreur %d à l'interrogation des faces dans un fichier STAR-CCM+"
+
+#: prepro/pre-post/ecs_pre_ccm.c:314
+#, c-format
+msgid "Error %d reading internal faces in STAR-CCM+ file."
+msgstr "Erreur %d à la lecture des faces intérieures dans un fichier STAR-CCM+"
+
+#: prepro/pre-post/ecs_pre_ccm.c:322
+#, c-format
+msgid "Error %d reading face->cell connectivity in STAR-CCM+ file."
+msgstr ""
+"Erreur %d à la lecture de la connectivité faces->cellules\n"
+"dans un fichier STAR-CCM+"
+
+#: prepro/pre-post/ecs_pre_ccm.c:336
+#, c-format
+msgid "Error %d reading map in STAR-CCM+ file."
+msgstr "Erreur %d à la lecture d'une numérotation dans un fichier STAR-CCM+"
+
+#: prepro/pre-post/ecs_pre_ccm.c:895
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Reading mesh from file in STAR-CCM+ format\n"
+"----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Lecture du fichier de maillage au format STAR-CCM+\n"
+"------------------------------\n"
+
+#: prepro/pre-post/ecs_pre_ccm.c:899
+#, c-format
+msgid ""
+"  Mesh file: %s\n"
+"\n"
+"\n"
+"  STAR-CCM+ format version: %1d.%1d.%1d\n"
+"  Title: %s\n"
+"\n"
+msgstr ""
+"  Fichier de maillage : %s\n"
+"\n"
+"\n"
+"  Version du format STAR-CCM+ : %1d.%1d.%1d\n"
+"  Titre : %s\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_ccm.c:924
+#, c-format
+msgid "  Available meshes:\n"
+msgstr "  Maillages disponibles :\n"
+
+#: prepro/pre-post/ecs_pre_ccm.c:939
+#, c-format
+msgid "Error %d reading state name in STAR-CCM+ file."
+msgstr "Erreur %d à la lecture d'un état dans un fichier STAR-CCM+."
+
+#: prepro/pre-post/ecs_pre_ccm.c:953 prepro/pre-post/ecs_pre_med.c:1504
+#, c-format
+msgid ""
+"\n"
+"  No mesh was specified; the first is read.\n"
+"\n"
+msgstr ""
+"\n"
+"  On n'a pas précisé de maillage ; on lit le premier\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_ccm.c:957 prepro/pre-post/ecs_pre_med.c:1506
+#, c-format
+msgid ""
+"\n"
+"  Mesh number %d was specified.\n"
+"\n"
+msgstr ""
+"\n"
+"  On a demandé le maillage numéro %d\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_ccm.c:962 prepro/pre-post/ecs_pre_med.c:1515
+#, c-format
+msgid ""
+"The specified mesh number (%d) is greater than\n"
+"the number of meshes defined (%d) in file\n"
+"%s.\n"
+msgstr ""
+"Le numéro de maillage demandé (%d) est supérieur\n"
+"au nombre de maillages définis (%d) dans le fichier\n"
+"%s.\n"
+
+#: prepro/pre-post/ecs_pre_ccm.c:967
+#, c-format
+msgid "The specified mesh number (%d) is negative."
+msgstr "Le numéro de maillage demandé (%d) est négatif."
+
+#: prepro/pre-post/ecs_pre_ccm.c:977
+#, c-format
+msgid "Error %d reading entity description in STAR-CCM+ file."
+msgstr "Erreur %d à la lecture d'une description dans un fichier STAR-CCM+."
+
+#: prepro/pre-post/ecs_pre_ccm.c:993
+#, c-format
+msgid "Error %d reading processor information in STAR-CCM+ file."
+msgstr ""
+"Erreur %d à la lecture de données processeur dans un fichier STAR-CCM+."
+
+#: prepro/pre-post/ecs_pre_ccm.c:1000
+#, c-format
+msgid ""
+"Error %d reading vertices and topology information\n"
+"in STAR-CCM+ file."
+msgstr ""
+"Erreur %d à la lecture d'informations sur les sommets et la topologie\n"
+"dans un fichier STAR-CCM+ file."
+
+#: prepro/pre-post/ecs_pre_cgns.c:385 prepro/pre-post/ecs_pre_cgns.c:393
+#: prepro/pre-post/ecs_pre_cgns.c:624 prepro/pre-post/ecs_pre_cgns.c:652
+#: prepro/pre-post/ecs_pre_cgns.c:811 prepro/pre-post/ecs_pre_cgns.c:951
+#: prepro/pre-post/ecs_pre_cgns.c:1097 prepro/pre-post/ecs_pre_cgns.c:1287
+#: prepro/pre-post/ecs_pre_cgns.c:2127 prepro/pre-post/ecs_pre_cgns.c:3381
+#: prepro/pre-post/ecs_pre_cgns.c:3394
+#, c-format
+msgid ""
+"CGNS error:\n"
+"%s"
+msgstr ""
+"erreur CGNS :\n"
+"%s"
+
+#: prepro/pre-post/ecs_pre_cgns.c:388
+#, c-format
+msgid ""
+"\n"
+"  The file contains multiple bases:\n"
+msgstr ""
+"\n"
+"  Le fichier contient plusieurs bases :\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:394
+#, c-format
+msgid "    Base %2d: %s\n"
+msgstr "    Base %2d : %s\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:397
+#, c-format
+msgid ""
+"\n"
+"  No base was requested; the first one is used\n"
+"\n"
+msgstr ""
+"\n"
+"  On n'a pas précisé de base ; on lit la première\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:400
+#, c-format
+msgid ""
+"\n"
+"  Base number %d was requested\n"
+"\n"
+msgstr ""
+"\n"
+"  On a demandé la base numéro %d\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:404
+msgid "no CGNS base in file.\n"
+msgstr "aucune base CGNS dans le fichier.\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:409
+#, c-format
+msgid ""
+"The mesh number requested (%d) is higher than\n"
+"the number of bases defined (%d) in file\n"
+"%s.\n"
+msgstr ""
+"Le numéro de maillage demandé (%d) est supérieur\n"
+"au nombre de bases définies (%d) dans le fichier\n"
+"%s.\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:439
+#, c-format
+msgid ""
+"CGNS: error closing file \"%s\":\n"
+"%s"
+msgstr ""
+"CGNS : échec à la fermeture du fichier \"%s\" :\n"
+"%s"
+
+#: prepro/pre-post/ecs_pre_cgns.c:546
+msgid "cartesian"
+msgstr "cartésiennes"
+
+#: prepro/pre-post/ecs_pre_cgns.c:547
+msgid "cylindrical"
+msgstr "cylindriques"
+
+#: prepro/pre-post/ecs_pre_cgns.c:548
+msgid "spherical"
+msgstr "sphériques"
+
+#: prepro/pre-post/ecs_pre_cgns.c:670
+#, c-format
+msgid ""
+"\n"
+"    Zone %d: \"%s\"; type \"%s\"\n"
+msgstr ""
+"\n"
+"    Zone %d : \"%s\" ; type \"%s\"\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:678
+#, c-format
+msgid ""
+"\n"
+"      %d (%d x %d) vertices; %d (%d x %d) cells\n"
+msgstr ""
+"\n"
+"      %d (%d x %d) sommets ; %d (%d x %d) cellules\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:688
+#, c-format
+msgid ""
+"\n"
+"      %d (%d x %d x %d) vertices; %d (%d x %d x %d) cells\n"
+msgstr ""
+"\n"
+"      %d (%d x %d x %d) sommets ; %d (%d x %d x %d) cellules\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:699
+#, c-format
+msgid ""
+"\n"
+"      %d vertices; %d cells\n"
+msgstr ""
+"\n"
+"      %d sommets ; %d cellules\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:711
+#, c-format
+msgid "      (%s coordinates, \"%s\" precision, unit \"%s\")\n"
+msgstr "      (coordonnées %s, précision \"%s\", unité \"%s\")\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:717
+#, c-format
+msgid "      %d time-varying coordinates (the first are used)\n"
+msgstr "      %d coordonnées temporelles (on prend les premières)\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:815
+#, c-format
+msgid ""
+"      Section %2d: \"%s\";\n"
+"                   (indices %d to %d, type \"%s\")\n"
+msgstr ""
+"      Section %2d : \"%s\" ;\n"
+"                   (indices %d à %d, type \"%s\")\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:840
+#, c-format
+msgid ""
+"The CGNS mesh read contains multizone (\"one to one\")\n"
+"vertex equivalences which are not automatically handled\n"
+"by the Preprocessor.\n"
+"-> Use an appropriate joining option\n"
+msgstr ""
+"Le maillage CGNS lu comporte des équivalences de sommets\n"
+"multizones (\"one to one\") qui ne sont pas prises en compte\n"
+"automatiquement par le Préprocesseur.\n"
+"-> Utilisez un recollement conforme approprié\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:848
+#, c-format
+msgid ""
+"The CGNS mesh read contains non-conforming (\"abutting\")\n"
+"connectivity information which is not automatically handled\n"
+"by the Preprocessor.\n"
+"-> Use an appropriate joining option\n"
+msgstr ""
+"Le maillage CGNS lu comporte des informations de voisinage\n"
+"non conforme (\"abutting\") qui ne sont pas prises en compte\n"
+"automatiquement par le Préprocesseur.\n"
+"-> Utilisez un recollement conforme approprié\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:856
+#, c-format
+msgid ""
+"The CGNS mesh read contains (\"overset\") connectivity\n"
+"information which is not handled by the Preprocessor.\n"
+msgstr ""
+"Le maillage CGNS lu comporte des informations de voisinage\n"
+"multizone par recouvrement ( \"overset\") qui ne sont pas\n"
+"pris en compte par le Préprocesseur.\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:957
+#, c-format
+msgid "  CGNS boundary condition information:\n"
+msgstr "  Conditions aux limites CGNS indiquées :\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:982
+#, c-format
+msgid ""
+"\n"
+"    Zone %d\n"
+msgstr ""
+"\n"
+"    Zone %d\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:1028
+#, c-format
+msgid "      BC %2d: \"%s\" (\"%s\")\n"
+msgstr "      CL %2d : \"%s\" (\"%s\")\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:1037
+#, c-format
+msgid "      BC %2d: \"%s\" (\"%s\" on \"%s\")\n"
+msgstr "      CL %2d : \"%s\" (\"%s\" sur \"%s\")\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:1299
+#, c-format
+msgid ""
+"Cylindrical or spherical coordinates with unknown\n"
+"or undefined angle unit (-> radians are considered)\n"
+msgstr ""
+"Coordonnées cylindriques ou sphériques avec unité\n"
+"d'angle non définie ou inconnue (-> on suppose des radians)\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:3350
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Reading mesh from file in CGNS format\n"
+"----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Lecture du fichier de maillage au format CGNS\n"
+"------------------------------\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:3354 prepro/pre-post/ecs_pre_gambit.c:1757
+#: prepro/pre-post/ecs_pre_gmsh.c:937 prepro/pre-post/ecs_pre_ideas.c:1873
+#: prepro/pre-post/ecs_pre_med.c:1473 prepro/pre-post/ecs_pre_nopo.c:1020
+#, c-format
+msgid ""
+"  Mesh file: %s\n"
+"\n"
+"\n"
+msgstr ""
+"  Fichier de maillage : %s\n"
+"\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:3369
+#, c-format
+msgid "  CGNS version       : %3.1f\n"
+msgstr "  Version CGNS       : %3.1f\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:3375
+msgid "  Title              : "
+msgstr "  Titre              : "
+
+#: prepro/pre-post/ecs_pre_cgns.c:3383
+#, c-format
+msgid "  Base name          : %s\n"
+msgstr "  Nom de la base     : %s\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:3384
+#, c-format
+msgid "  Physical dimension : %d\n"
+msgstr "  Dimension physique : %d\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:3385
+#, c-format
+msgid "  Cell dimension     : %d\n"
+msgstr "  Dimension cellule  : %d\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:3395
+#, c-format
+msgid "  Number of zones    : %d\n"
+msgstr "  Nombre de zones    : %d\n"
+
+#: prepro/pre-post/ecs_pre_cgns.c:3399
+#, c-format
+msgid "Mesh entities are of dimension: %d\n"
+msgstr "Les entités de maillage sont de dimension : %d\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:233
+#, c-format
+msgid ""
+"\n"
+"    Reading a vertices section\n"
+msgstr ""
+"\n"
+"    Lecture d'une section sommets\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:234 prepro/pre-post/ecs_pre_comet.c:337
+#, c-format
+msgid "         %10d vertices "
+msgstr "         %10d sommets "
+
+#: prepro/pre-post/ecs_pre_comet.c:235 prepro/pre-post/ecs_pre_comet.c:338
+#: prepro/pre-post/ecs_pre_comet.c:462 prepro/pre-post/ecs_pre_comet.c:636
+#: prepro/pre-post/ecs_pre_comet.c:796
+#, c-format
+msgid ""
+"of color %4d\n"
+"\n"
+msgstr ""
+"de couleur%4d\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:335
+#, c-format
+msgid ""
+"\n"
+"    Reading vertices with double precision\n"
+msgstr ""
+"\n"
+"    Lecture de sommets en double précision\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:460
+#, c-format
+msgid ""
+"\n"
+"    Reading an internal faces section\n"
+msgstr ""
+"\n"
+"    Lecture d'une section faces internes\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:461
+#, c-format
+msgid "         %10d faces "
+msgstr "         %10d faces "
+
+#: prepro/pre-post/ecs_pre_comet.c:634
+#, c-format
+msgid ""
+"\n"
+"    Reading a boundary faces section\n"
+msgstr ""
+"\n"
+"    Lecture d'une section faces de bord\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:635
+#, c-format
+msgid "         %10d boundary faces "
+msgstr "         %10d faces de bord "
+
+#: prepro/pre-post/ecs_pre_comet.c:794
+#, c-format
+msgid ""
+"\n"
+"    Reading a cells section\n"
+msgstr ""
+"\n"
+"    Lecture d'une section cellules\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:795
+#, c-format
+msgid "         %10d cells "
+msgstr "         %10d cellules "
+
+#: prepro/pre-post/ecs_pre_comet.c:858
+#, c-format
+msgid ""
+"\n"
+"    Reading a Shell section\n"
+msgstr ""
+"\n"
+"    Lecture d'une section Shell\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:859 prepro/pre-post/ecs_pre_comet.c:904
+#: prepro/pre-post/ecs_pre_comet.c:952 prepro/pre-post/ecs_pre_comet.c:990
+#, c-format
+msgid ""
+"\n"
+"    Caution: reading this type of section has not been validated\n"
+msgstr ""
+"\n"
+"    Attention : La lecture de ce type de section n'a pas été validée\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:903
+#, c-format
+msgid ""
+"\n"
+"    Reading a Map section\n"
+msgstr ""
+"\n"
+"    Lecture d'une section Map\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:951
+#, c-format
+msgid ""
+"\n"
+"    Reading an Interface section\n"
+msgstr ""
+"\n"
+"    Lecture d'une section Interface\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:989
+#, c-format
+msgid ""
+"\n"
+"    Reading a Scalar section\n"
+msgstr ""
+"\n"
+"    Lecture d'une section Scalaire\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:1443
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Reading mesh from file in pro-STAR/STAR4 format\n"
+"----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Lecture du fichier de maillage au format pro-STAR/STAR4\n"
+"------------------------------\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:1447
+#, c-format
+msgid "  \"ngeom\" file: %s\n"
+msgstr "  Fichier \"ngeom\" : %s\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:1479
+#, c-format
+msgid ""
+"\n"
+"  Header: %s\n"
+msgstr ""
+"\n"
+"  En-tête : %s\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:1488
+#, c-format
+msgid ""
+"\n"
+"  Version number: %10d\n"
+msgstr ""
+"\n"
+"  Numero de version : %10d\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:1566
+#, c-format
+msgid ""
+"\n"
+"       Finished reading the usable part of the file\n"
+"\n"
+msgstr ""
+"\n"
+"       Fin de lecture de la partie exploitable du fichier\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_comet.c:1571
+#, c-format
+msgid ""
+"\n"
+"\n"
+"       unknown section type %2d\n"
+"          Premature end of reading\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"       type de section %2d inconnu\n"
+"          Arrêt prématuré de la lecture\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_ens.c:185
+#, c-format
+msgid ""
+"EnSight: file \"%s\" seems to be\n"
+"of Fortran binary type but its header is of the wrong\n"
+"size or it is of an unknown Fortran binary variant."
+msgstr ""
+"EnSight : fichier \"%s\" apparamment\n"
+"de type binaire Fortran mais entête mal dimensionnée\n"
+"ou de variante binaire Fortran inconnue."
+
+#: prepro/pre-post/ecs_pre_ens.c:634 prepro/pre-post/ecs_pre_ens.c:728
+#: prepro/pre-post/ecs_pre_ens.c:1768
+#, c-format
+msgid ""
+"EnSight: field \"%s\" encountered where\n"
+"\"coordinates\" was expected."
+msgstr ""
+"EnSight : rubriqe \"%s\" alors que l'on attendait\n"
+"\"coordinates\"."
+
+#: prepro/pre-post/ecs_pre_ens.c:641
+#, c-format
+msgid "    %10d nodes\n"
+msgstr "    %10d noeuds\n"
+
+#: prepro/pre-post/ecs_pre_ens.c:754
+#, c-format
+msgid ""
+"EnSight: no node defined in file\n"
+"\"%s\"."
+msgstr ""
+"EnSight : Aucun noeud défini dans le fichier\n"
+"\"%s\"."
+
+#: prepro/pre-post/ecs_pre_ens.c:802
+#, c-format
+msgid ""
+"EnSight: error reading file \"%s\".\n"
+"The current \"part\" contains ghost cells,\n"
+"not currently handled."
+msgstr ""
+"EnSight : erreur à la lecture du fichier \"%s\".\n"
+"La \"part\" en cours contient des cellules fantômes,\n"
+"non traitées pour l'instant."
+
+#: prepro/pre-post/ecs_pre_ens.c:845
+#, c-format
+msgid ""
+"EnSight: error reading file \"%s\".\n"
+"The current \"part\" contains a section of type:\n"
+"\"%s\"\n"
+"not currently handled."
+msgstr ""
+"EnSight : erreur à la lecture du fichier \"%s\".\n"
+"La \"part\" en cours contient une section de type :\n"
+"\"%s\"\n"
+"non gérée pour l'instant."
+
+#: prepro/pre-post/ecs_pre_ens.c:938 prepro/pre-post/ecs_pre_ens.c:1113
+#, c-format
+msgid "    %10d %-10s elements\n"
+msgstr "    %10d éléments %-10s\n"
+
+#: prepro/pre-post/ecs_pre_ens.c:1268
+msgid ""
+"EnSight: error merging node groups.\n"
+"At least one of the groups has no \"id\", and they\n"
+"should not be merged (internal logic problem)."
+msgstr ""
+"EnSight : erreur à la fusion de groupes de noeuds.\n"
+"Au moins un des groupes n'a pas d'\"id\", et on ne\n"
+"devrait pas les fusionner (pb. logique interne)."
+
+#: prepro/pre-post/ecs_pre_ens.c:1844
+#, c-format
+msgid ""
+"EnSight: positionning (seek) error\n"
+"in file \"%s\"."
+msgstr ""
+"EnSight : Problème de positionnement\n"
+"dans le fichier \"%s\"."
+
+#: prepro/pre-post/ecs_pre_ens.c:1913 prepro/pre-post/ecs_pre_ens.c:2224
+#, c-format
+msgid ""
+"\n"
+"  Description:\n"
+"\n"
+"  %s\n"
+msgstr ""
+"\n"
+"  Description :\n"
+"\n"
+"  %s\n"
+
+#: prepro/pre-post/ecs_pre_ens.c:1933 prepro/pre-post/ecs_pre_ens.c:2244
+msgid "EnSight: \"node id\" field missing or badly placed."
+msgstr "EnSight : rubriqe \"node id\" manquante ou mal placée)."
+
+#: prepro/pre-post/ecs_pre_ens.c:1956 prepro/pre-post/ecs_pre_ens.c:2268
+msgid "EnSight: \"element id\" field missing or badly placed"
+msgstr "EnSight : rubriqe \"element id\" manquante ou mal placée."
+
+#: prepro/pre-post/ecs_pre_ens.c:1985
+#, c-format
+msgid ""
+"EnSight: \"%s\" field encountered where\n"
+"\"extents\" or \"part\" was expected."
+msgstr ""
+"EnSight : rubriqe \"%s\" alors que l'on attendait\n"
+"\"extents\" ou \"part\"."
+
+#: prepro/pre-post/ecs_pre_ens.c:1990 prepro/pre-post/ecs_pre_ens.c:2300
+#, c-format
+msgid ""
+"File \"%s\"\n"
+"defines no \"part\" (i.e. mesh)."
+msgstr ""
+"Le fichier \"%s\"\n"
+"ne définit aucun \"part\" (i.e. maillage)."
+
+#: prepro/pre-post/ecs_pre_ens.c:2015
+#, c-format
+msgid ""
+"EnSight: file \"%s\" seems to be\n"
+"of C binary type but the number of the first \"part\"\n"
+"is < 0 ou > 1000 and provokes the failure of the automatic\n"
+"\"big-endian/little-endian\" detection."
+msgstr ""
+"EnSight : fichier \"%s\" apparamment\n"
+"de type binaire C mais le numéro de la première \"part\"\n"
+"est < 0 ou > 1000 et fausse la détection automatique\n"
+"\"big-endian/little-endian\"."
+
+#: prepro/pre-post/ecs_pre_ens.c:2039
+#, c-format
+msgid ""
+"  xmin = %12.5e; xmax = %12.5e\n"
+"  ymin = %12.5e; ymax = %12.5e\n"
+"  zmin = %12.5e; zmax = %12.5e\n"
+"\n"
+msgstr ""
+"  xmin = %12.5e ; xmax = %12.5e\n"
+"  ymin = %12.5e ; ymax = %12.5e\n"
+"  zmin = %12.5e ; zmax = %12.5e\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_ens.c:2048
+#, c-format
+msgid ""
+"  Remark: no vertex ids given\n"
+"  --> impossible to merge EnSight \"parts\",\n"
+"      so the following \"parts\" are ignored.\n"
+"\n"
+msgstr ""
+"  Remarque : pas d'id de sommets précisés\n"
+"  --> impossibilité de fusionner les \"parts\" EnSight,\n"
+"      donc \"parts\" suivantes ignorées.\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_ens.c:2055 prepro/pre-post/ecs_pre_ens.c:2329
+#, c-format
+msgid "  part %2d (ignored): "
+msgstr "  part %2d (ignoré) : "
+
+#: prepro/pre-post/ecs_pre_ens.c:2059 prepro/pre-post/ecs_pre_ens.c:2333
+#, c-format
+msgid "  part %2d: "
+msgstr "  part %2d : "
+
+#: prepro/pre-post/ecs_pre_ens.c:2137 prepro/pre-post/ecs_pre_ens.c:2387
+#, c-format
+msgid ""
+"EnSight: file \"%s\" does not contain a\n"
+"\"part\" with the required number (%d)."
+msgstr ""
+"EnSight : le fichier \"%s\" ne contient pas\n"
+"de \"part\" du numéro demandé (%d)."
+
+#: prepro/pre-post/ecs_pre_ens.c:2142 prepro/pre-post/ecs_pre_ens.c:2392
+#, c-format
+msgid "EnSight: file \"%s\" does not contain any \"part\"."
+msgstr "EnSight : le fichier \"%s\" ne contient pas de \"part\"."
+
+#: prepro/pre-post/ecs_pre_ens.c:2306
+#, c-format
+msgid ""
+"EnSight: \"%s\" field encountered where\n"
+"\"part\" was expected."
+msgstr ""
+"EnSight : rubriqe \"%s\" alors que l'on attendait\n"
+"\"part\"."
+
+#: prepro/pre-post/ecs_pre_ens.c:2458
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Reading mesh from file in EnSight format\n"
+"----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Lecture du fichier de maillage au format EnSight\n"
+"------------------------------\n"
+
+#: prepro/pre-post/ecs_pre_ens.c:2462
+#, c-format
+msgid "  \"case\" file: %s\n"
+msgstr "  Fichier \"case\" : %s\n"
+
+#: prepro/pre-post/ecs_pre_ens.c:2509
+#, c-format
+msgid ""
+"File \"%s\" does not seem to be a valid\n"
+"EnSight 6 or Gold case file."
+msgstr ""
+"Le fichier \"%s\" ne semble pas être un fichier\n"
+"case EnSight 6 ou Gold valide"
+
+#: prepro/pre-post/ecs_pre_ens.c:2542
+#, c-format
+msgid ""
+"The \"%s\" case file does not seem to\n"
+"indicate a geometry file"
+msgstr ""
+"Le fichier case \"%s\" ne semble pas\n"
+"indiquer de fichier géométrique"
+
+#: prepro/pre-post/ecs_pre_ens.c:2553
+#, c-format
+msgid ""
+"The \"%s\" case file seems to indicate the\n"
+"series of geometric files named:\n"
+"\"%s\".\n"
+"A single file must be chosen."
+msgstr ""
+"Le fichier case \"%s\" semble indiquer la\n"
+"série de fichier géométriques de nom :\n"
+"\"%s\".\n"
+"On doit choisir un fichier unique."
+
+#: prepro/pre-post/ecs_pre_ens.c:2580
+#, c-format
+msgid ""
+"  \"geo\"  file: %s\n"
+"\n"
+msgstr ""
+"  Fichier \"geo\"  : %s\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:317
+#, c-format
+msgid ""
+"Error reading line %d of file \"%s\";\n"
+"An end of section (ENDOFSECTION) was expected."
+msgstr ""
+"Erreur à la lecture de la ligne %d du fichier \"%s\" ;\n"
+"On s'attendait à une fin de section (ENDOFSECTION)."
+
+#: prepro/pre-post/ecs_pre_gambit.c:382
+#, c-format
+msgid ""
+"Format error for file \"%s\":\n"
+"This file does not seem to be in GAMBIT neutral format\n"
+"(line 2 does not start with \"** GAMBIT NEUTRAL FILE\")."
+msgstr ""
+"Erreur de format du fichier \"%s\" :\n"
+"Ce fichier ne semble pas être au format GAMBIT neutral\n"
+"(la ligne 2 ne commence pas par \"** GAMBIT NEUTRAL FILE\")."
+
+#: prepro/pre-post/ecs_pre_gambit.c:404
+#, c-format
+msgid "  Title        : %.80s\n"
+msgstr "  Titre        : %.80s\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:416
+#, c-format
+msgid "  Created with : %s %s\n"
+msgstr "  Créé avec : %s %s\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:430
+#, c-format
+msgid "  Date         : %s\n"
+msgstr "  Date      : %s\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:451 prepro/pre-post/ecs_pre_ideas.c:686
+#: prepro/pre-post/ecs_pre_ideas.c:863 prepro/pre-post/ecs_pre_ideas.c:883
+#: prepro/pre-post/ecs_pre_ideas.c:1076 prepro/pre-post/ecs_pre_ideas.c:1177
+#: prepro/pre-post/ecs_pre_ideas.c:1186 prepro/pre-post/ecs_pre_ideas.c:1619
+#: prepro/pre-post/ecs_pre_ideas.c:1683 prepro/pre-post/ecs_pre_ideas.c:1943
+#: prepro/pre-post/ecs_pre_ideas.c:2072
+#, c-format
+msgid "Error reading line %d of file \"%s\"."
+msgstr "Erreur à la lecture de la ligne %d du fichier \"%s\"."
+
+#: prepro/pre-post/ecs_pre_gambit.c:454
+#, c-format
+msgid ""
+"  Initial data: %10d points\n"
+"                %10d elements\n"
+"                %10d groups\n"
+"                %10d boundary conditions\n"
+"                spatial dimension: %d\n"
+"                velocity components: %d\n"
+"\n"
+msgstr ""
+"  Données initiales : %10d points\n"
+"                      %10d éléments\n"
+"                      %10d groupes\n"
+"                      %10d conditions aux limites\n"
+"                      dimension spatiale : %d\n"
+"                      composants vitesse : %d\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:523
+#, c-format
+msgid ""
+"Error reading line %d of file \"%s\"\n"
+"while decoding point %d (of %d)."
+msgstr ""
+"Erreur à la lecture de la ligne %d du fichier \"%s\"\n"
+"lors du décodage du point %d (sur %d)."
+
+#: prepro/pre-post/ecs_pre_gambit.c:549
+#, c-format
+msgid "The mesh is 2d."
+msgstr "Le maillage est surfacique plan."
+
+#: prepro/pre-post/ecs_pre_gambit.c:644
+#, c-format
+msgid ""
+"Error reading line %d of file \"%s\"\n"
+"while decoding element %ld (of %ld)."
+msgstr ""
+"Erreur à la lecture de la ligne %d du fichier \"%s\"\n"
+"lors du décodage de l'élément %ld (sur %ld)."
+
+#: prepro/pre-post/ecs_pre_gambit.c:665
+#, c-format
+msgid ""
+"Error reading a GAMBIT mesh file:\n"
+"at line %d of file \"%s\".\n"
+"Type identifier <%d> for element <%d> is not recognized."
+msgstr ""
+"Erreur à la lecture du fichier de maillage GAMBIT :\n"
+"à la ligne %d du fichier \"%s\".\n"
+"L'identificateur <%d> du type de l'élément <%d> n'est pas reconnu."
+
+#: prepro/pre-post/ecs_pre_gambit.c:853
+#, c-format
+msgid ""
+"Error reading line %d of file \"%s\"\n"
+"while defining a group."
+msgstr ""
+"Erreur à la lecture de la ligne %d du fichier \"%s\"\n"
+"lors de la définition d'un groupe."
+
+#: prepro/pre-post/ecs_pre_gambit.c:879
+#, c-format
+msgid ""
+"\n"
+"  Group %10d: \"%s\"\n"
+"                      type:       %s\n"
+"                      elements:   %d\n"
+"                      indicators: %d\n"
+"\n"
+msgstr ""
+"\n"
+"  Groupe %10d : \"%s\"\n"
+"                      type :        %s\n"
+"                      éléments :    %d\n"
+"                      indicateurs : %d\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:1053
+#, c-format
+msgid ""
+"Error reading line %d of file \"%s\"\n"
+"while defining a boundary condition."
+msgstr ""
+"Erreur à la lecture de la ligne %d du fichier \"%s\"\n"
+"lors de la définition d'une condition aux limites."
+
+#: prepro/pre-post/ecs_pre_gambit.c:1073
+#, c-format
+msgid ""
+"\n"
+"  Boundary condition: \"%s\"\n"
+"                          type:    %s\n"
+"                          entities: %d\n"
+"                          values:   %d\n"
+msgstr ""
+"\n"
+"  Condition aux limites : \"%s\"\n"
+"                          type :    %s\n"
+"                          entités : %d\n"
+"                          valeurs : %d\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:1087
+#, c-format
+msgid "                          code1:   %d (%s)\n"
+msgstr "                          code1 :   %d (%s)\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:1093
+#, c-format
+msgid "                          code%1d:   %d\n"
+msgstr "                          code%1d :   %d\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:1753
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Reading mesh from file in GAMBIT neutral format\n"
+"----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Lecture du fichier de maillage au format GAMBIT neutral\n"
+"------------------------------\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:1877
+#, c-format
+msgid ""
+"Error reading a GAMBIT mesh file:\n"
+"at line %d of file \"%s\".\n"
+"The number of groups to read is larger\n"
+"than that defined by the header (%d).n"
+msgstr ""
+"Erreur à la lecture du fichier de maillage GAMBIT :\n"
+"à la ligne %d du fichier \"%s\".\n"
+"Le nombre de groupes à lire est supérieur à celui\n"
+"défini après l'entête (%d).n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:1902
+#, c-format
+msgid ""
+"Error reading a GAMBIT mesh file:\n"
+"at line %d of file \"%s\".\n"
+"The number of boundary conditions to read is larger\n"
+"than that defined by the header (%d).n"
+msgstr ""
+"Erreur à la lecture du fichier de maillage GAMBIT :\n"
+"à la ligne %d du fichier \"%s\".\n"
+"Le nombre de conditions aux limites à lire est\n"
+"supérieur à celui défini après l'entête (%d).n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:1924
+#, c-format
+msgid ""
+"File \"%s\"\n"
+",contains a \"FACE CONNECTIVITY\" section\n"
+"indicating non-conforming faces which are not\n"
+"automatically handled by the Preprocessor.\n"
+"-> Use an appropriate joining option.\n"
+msgstr ""
+"Le fichier \"%s\"\n"
+",contient une section \"FACE CONNECTIVITY\"\n"
+"indiquant des faces non conformes qui ne sont pas prises\n"
+"en compte automatiquement par le Préprocesseur.\n"
+"-> Utilisez un recollement conforme approprié\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:1942
+#, c-format
+msgid ""
+"Line %d of file \"%s\"\n"
+",section: \"%s\" is unknown.\n"
+msgstr ""
+"Ligne %d du fichier \"%s\"\n"
+",la rubrique : \"%s\" est inconnue.\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:1957
+#, c-format
+msgid ""
+"Line %d of file \"%s\",\n"
+"processing is finished but the end of the file\n"
+"has not been reached.\n"
+"\n"
+msgstr ""
+"Ligne %d du fichier \"%s\",\n"
+"le traitement est terminé mais la fin du fichier\n"
+"n'a pas été atteinte.\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_gambit.c:1967
+#, c-format
+msgid ""
+"Error reading file \"%s\":\n"
+"Section \"NODAL COORDINATES\" was not found."
+msgstr ""
+"Erreur à la lecture du fichier \"%s\" :\n"
+"La section \"NODAL COORDINATES\" n'a pas été trouvée."
+
+#: prepro/pre-post/ecs_pre_gambit.c:1973
+#, c-format
+msgid ""
+"Error reading file \"%s\":\n"
+"Section \"ELEMENTS/CELLS\" was not found."
+msgstr ""
+"Erreur à la lecture du fichier \"%s\" :\n"
+"La section \"ELEMENTS/CELLS\" n'a pas été trouvée."
+
+#: prepro/pre-post/ecs_pre_gambit.c:1986
+#, c-format
+msgid ""
+"  Building mesh structure:\n"
+"\n"
+msgstr ""
+"  Construction de  la structure de maillage :\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_gmsh.c:252
+#, c-format
+msgid ""
+"The Gmsh version specification of file\n"
+"\"%s\" is invalid or unreadable.)"
+msgstr ""
+"La spécification de version du format Gmsh du fichier\n"
+"\"%s\" est invalide ou illisible.)"
+
+#: prepro/pre-post/ecs_pre_gmsh.c:257
+#, c-format
+msgid ""
+"The Gmsh type specification of file\n"
+"\"%s\" is neither 0 (text file) nor 1 (binary file).\n"
+"This case is currently not handled."
+msgstr ""
+"La spécification de type du format Gmsh du fichier\n"
+"\"%s\" est différente de 0 (fichier texte) ou 1 (binaire).\n"
+"On ne sait pas actuellement traiter ce cas."
+
+#: prepro/pre-post/ecs_pre_gmsh.c:261
+#, c-format
+msgid ""
+"  Gmsh format version:     %2.1f\n"
+"  Size given for real numbers: %d\n"
+"\n"
+msgstr ""
+"  Version de format Gmsh : %2.1f\n"
+"  Taille indiquée pour les réels : %d\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_gmsh.c:287
+#, c-format
+msgid ""
+"The Gmsh format version specification end for file\n"
+"\"%s\" is not present at the expected place.)"
+msgstr ""
+"La fin de spécification de version du format Gmsh du fichier\n"
+"\"%s\" n'est pas présente à l'emplacement attendu.)"
+
+#: prepro/pre-post/ecs_pre_gmsh.c:352
+#, c-format
+msgid ""
+"Error decoding line %ld of file\n"
+"\"%s\" :\n"
+"The description of point <%ld> was expected in the form \"label x y z\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld du fichier\n"
+"\"%s\" :\n"
+"On attendait la description du point <%ld> sous la forme \"label x y z\"."
+
+#: prepro/pre-post/ecs_pre_gmsh.c:399
+#, c-format
+msgid ""
+"The end of the points list specification of file\n"
+"\"%s\" is not present at the expected place.)"
+msgstr ""
+"La fin de spécification de la liste des noeuds du fichier\n"
+"\"%s\" n'est pas présente à l'emplacement attendu.)"
+
+#: prepro/pre-post/ecs_pre_gmsh.c:561
+#, c-format
+msgid ""
+"Error reading a Gmsh mesh file:\n"
+"at line %ld of file \"%s\".\n"
+"Type identifier <%d> for element <%ld> is not recognized."
+msgstr ""
+"Erreur à la lecture du fichier de maillage Gmsh :\n"
+"à la ligne %ld du fichier \"%s\".\n"
+"L'identificateur <%d> du type de l'élément <%ld> n'est pas reconnu."
+
+#: prepro/pre-post/ecs_pre_gmsh.c:714
+#, c-format
+msgid ""
+"Error decoding line %ld (corresponding to element <%ld>) of file\n"
+"\"%s\"."
+msgstr ""
+"Erreur au décodage de la ligne %ld (correspondant à l'élément <%ld>) du "
+"fichier\n"
+"\"%s\"."
+
+#: prepro/pre-post/ecs_pre_gmsh.c:738
+#, c-format
+msgid ""
+"Error reading a Gmsh mesh file:\n"
+"Type identifier <%d> is not recognized."
+msgstr ""
+"Erreur à la lecture du fichier de maillage Gmsh :\n"
+"L'identificateur de type d'élément <%d> n'est pas reconnu."
+
+#: prepro/pre-post/ecs_pre_gmsh.c:841
+#, c-format
+msgid "  %ld elements of type \"point\" ignored\n"
+msgstr "  %ld éléments de type \"point\" ont été ignorés\n"
+
+#: prepro/pre-post/ecs_pre_gmsh.c:844
+#, c-format
+msgid "  %ld elements of type \"edge\" ignored\n"
+msgstr "  %ld éléments de type \"arête\" ont été ignorés\n"
+
+#: prepro/pre-post/ecs_pre_gmsh.c:856
+#, c-format
+msgid ""
+"The end of the elements list specification of file\n"
+"\"%s\" is not present at the expected place.)"
+msgstr ""
+"La fin de spécification de la liste des éléments du fichier\n"
+"\"%s\" n'est pas présente à l'emplacement attendu.)"
+
+#: prepro/pre-post/ecs_pre_gmsh.c:933
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Reading mesh from file in Gmsh format\n"
+"----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Lecture du fichier de maillage au format Gmsh\n"
+"------------------------------\n"
+
+#: prepro/pre-post/ecs_pre_gmsh.c:985
+#, c-format
+msgid ""
+"Error reading file\n"
+"\"%s\" :\n"
+"Nodes are defined in the \"ParametricNodes\" variant, which\n"
+"is not handled (and not documented as of Gmsh 2.4.0)."
+msgstr ""
+
+#: prepro/pre-post/ecs_pre_gmsh.c:1025
+#, c-format
+msgid "Error reading line %ld of file \"%s\"."
+msgstr "Erreur à la lecture de la ligne %ld du fichier \"%s\"."
+
+#: prepro/pre-post/ecs_pre_gmsh.c:1035
+#, c-format
+msgid ""
+"Error reading a Gmsh mesh file:\n"
+"at line %ld of file \"%s\".\n"
+"The points definition was not found."
+msgstr ""
+"Erreur à la lecture du fichier de maillage Gmsh :\n"
+"à la ligne %ld du fichier \"%s\".\n"
+"La définition des points n'a pas été trouvée."
+
+#: prepro/pre-post/ecs_pre_gmsh.c:1042
+#, c-format
+msgid ""
+"Error reading a Gmsh mesh file:\n"
+"at line %ld of file \"%s\".\n"
+"The elements definition was not found."
+msgstr ""
+"Erreur à la lecture du fichier de maillage Gmsh :\n"
+"à la ligne %ld du fichier \"%s\".\n"
+"La définition des éléments n'a pas été trouvée."
+
+#: prepro/pre-post/ecs_pre_ideas.c:759
+#, c-format
+msgid ""
+"    %d cylindrical system(s) and %d spherical system(s) not converted;\n"
+msgstr ""
+"    %d systèmes(s) cylindriques(s) et %d systèmes(s) sphériques(s) non "
+"convertis ;\n"
+
+#: prepro/pre-post/ecs_pre_ideas.c:763
+#, c-format
+msgid ""
+"    probable problems depending on I-deas construction and export\n"
+"\n"
+msgstr ""
+"    problèmes probables selon construction et export I-deas\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_ideas.c:772
+#, c-format
+msgid "  Ignored coordinate systems:\n"
+msgstr "  Systèmes de coordonnées ignorés :\n"
+
+#: prepro/pre-post/ecs_pre_ideas.c:773
+#, c-format
+msgid "    %d non-identity transformation(s) ignored:\n"
+msgstr "    %d transformation(s) non-identité ignorée(s) :\n"
+
+#: prepro/pre-post/ecs_pre_ideas.c:1094
+#, c-format
+msgid ""
+"Error reading an I-deas universal file:\n"
+"at line %d of file \"%s\".\n"
+"Type identifier <%d> of element <%d> not recognized."
+msgstr ""
+"Erreur à la lecture du fichier de maillage I-deas :\n"
+"à la ligne %d du fichier \"%s\".\n"
+"L'identificateur <%d>\n"
+"du type de l'élément <%d> n'est pas reconnu."
+
+#: prepro/pre-post/ecs_pre_ideas.c:1102
+#, c-format
+msgid ""
+"Error reading an I-deas universal file:\n"
+"at line %d of file \"%s\".\n"
+"Type identifier <%d> of element <%d> recognized but not handled."
+msgstr ""
+"Erreur à la lecture du fichier de maillage I-deas :\n"
+"à la ligne %d du fichier \"%s\".\n"
+"L'identificateur <%d>\n"
+"du type de l'élément <%d> est reconnu mais non géré."
+
+#: prepro/pre-post/ecs_pre_ideas.c:1869
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Reading mesh from file in I-deas universal format\n"
+"----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Lecture du fichier de maillage au format universel I-deas\n"
+"------------------------------\n"
+
+#: prepro/pre-post/ecs_pre_ideas.c:2024
+#, c-format
+msgid ""
+"Error reading an I-deas universal file:\n"
+"at line %d of file \"%s\".\n"
+"Node and element datasets must be read\n"
+"before the groups dataset."
+msgstr ""
+"Erreur à la lecture du fichier de maillage I-deas :\n"
+"à la ligne %d du fichier \"%s\".\n"
+"Les datasets sur les noeuds et les elements doivent être lus\n"
+"avant le dataset sur les groupes."
+
+#: prepro/pre-post/ecs_pre_ideas.c:2081
+#, c-format
+msgid ""
+"Error reading an I-deas universal file:\n"
+"at line %d of file \"%s\".\n"
+"Dataset \"%d\" containing the nodes definition has not been found."
+msgstr ""
+"Erreur à la lecture du fichier de maillage I-deas :\n"
+"à la ligne %d du fichier \"%s\".\n"
+"Le dataset \"%d\" contenant la définition des noeuds n'a pas été trouvé."
+
+#: prepro/pre-post/ecs_pre_ideas.c:2090
+#, c-format
+msgid ""
+"Error reading an I-deas universal file:\n"
+"at line %d of file \"%s\".\n"
+"Dataset \"%d\" containing the elements definition has not been found."
+msgstr ""
+"Erreur à la lecture du fichier de maillage I-deas :\n"
+"à la ligne %d du fichier \"%s\".\n"
+"Le dataset \"%d\" contenant la définition des éléments n'a pas été trouvé."
+
+#: prepro/pre-post/ecs_pre_med.c:333
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"Number of vertices of entity read: \"%d\"."
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"Nombre de noeuds de l'entité lus : \"%d\"."
+
+#: prepro/pre-post/ecs_pre_med.c:365
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"Error reading coordinates."
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"Erreur à la lecture des coordonnées."
+
+#: prepro/pre-post/ecs_pre_med.c:543 prepro/pre-post/ecs_pre_med.c:655
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"Number of elements of entity read: \"%d\"."
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"Nombre d'éléments de l'entité lus : \"%d\"."
+
+#: prepro/pre-post/ecs_pre_med.c:550
+#, c-format
+msgid ""
+"The MED mesh contains %d elements of type %s\n"
+"which are ignored by the Preprocessor.\n"
+"\n"
+msgstr ""
+"Le maillage MED comporte %d éléments de type %s\n"
+"qui sont ignorés par le Préprocesseur.\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_med.c:565 prepro/pre-post/ecs_pre_med.c:585
+#: prepro/pre-post/ecs_pre_med.c:1070
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"Error reading equivalence information."
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"Erreur à la lecture d'une équivalence."
+
+#: prepro/pre-post/ecs_pre_med.c:720
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"Error reading connectivity."
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"Erreur à la lecture de la connectivité."
+
+#: prepro/pre-post/ecs_pre_med.c:779
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"(polygons information)."
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"(information sur les polygones)."
+
+#: prepro/pre-post/ecs_pre_med.c:803
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"(polygons connectivity)."
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"(connectivité des polygones)."
+
+#: prepro/pre-post/ecs_pre_med.c:851
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"(polyhedra information)."
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"(information sur les polyèdres)."
+
+#: prepro/pre-post/ecs_pre_med.c:884
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"(polyhedra connectivity)."
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"(connectivité des polyèdres)."
+
+#: prepro/pre-post/ecs_pre_med.c:891
+#, c-format
+msgid ""
+"MED: inconsistency in polyhedra connectivity;\n"
+"number of polyhedra: %d\n"
+"the cells->faces end index (%d) should be equal to\n"
+"the size of the faces->vertices index array (%d)\n"
+msgstr ""
+"MED : incohérence dans la connectivité des polyèdres ;\n"
+"nombre de polyèdres : %d\n"
+"indice de fin cellules->faces (%d) devrait être égal\n"
+"à la taille du tableau d'indices faces->sommets (%d)\n"
+
+#: prepro/pre-post/ecs_pre_med.c:977
+#, c-format
+msgid ""
+"While reading file \"%s\",\n"
+"%d repeated references to the same vertices\n"
+"and %d degenerate faces were encountered\n"
+"in the definition of %d polyhedra.\n"
+msgstr ""
+"Lors de la lecture du fichier \"%s\",\n"
+"on a rencontré %d références répétées à des\n"
+"mêmes sommets et %d faces dégénérées lors de\n"
+"la définition de %d polyèdres.\n"
+
+#: prepro/pre-post/ecs_pre_med.c:1014
+#, c-format
+msgid ""
+"MED: erreur reading file \"%s\".\n"
+"(families)."
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"(familles)."
+
+#: prepro/pre-post/ecs_pre_med.c:1169
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"Number of families read: \"%d\""
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"Nombre de familles lues : \"%d\""
+
+#: prepro/pre-post/ecs_pre_med.c:1204
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"Number of attributes read: \"%d\""
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"Nombre d'attributs lus : \"%d\""
+
+#: prepro/pre-post/ecs_pre_med.c:1221
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"Number of groups read: \"%d\""
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"Nombre de groupes lus : \"%d\""
+
+#: prepro/pre-post/ecs_pre_med.c:1266
+#, c-format
+msgid "  Family %2d is described by no attribute or group.\n"
+msgstr "  La famille %2d n'est décrite par aucun attribut ou groupe\n"
+
+#: prepro/pre-post/ecs_pre_med.c:1469
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Reading mesh from file in MED (EDF/CEA) format\n"
+"----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Lecture du fichier de maillage au format MED (EDF/CEA)\n"
+"------------------------------\n"
+
+#: prepro/pre-post/ecs_pre_med.c:1486 prepro/pre-post/ecs_pre_med.c:1499
+#, c-format
+msgid "MED: error reading file \"%s\"."
+msgstr "MED : erreur à la lecture du fichier \"%s\"."
+
+#: prepro/pre-post/ecs_pre_med.c:1490
+#, c-format
+msgid ""
+"\n"
+"  The file contains multiple meshes:\n"
+msgstr ""
+"\n"
+"  Le fichier contient plusieurs maillages :\n"
+
+#: prepro/pre-post/ecs_pre_med.c:1501
+#, c-format
+msgid "    Mesh %2d: %s\n"
+msgstr "    Maillage %2d : %s\n"
+
+#: prepro/pre-post/ecs_pre_med.c:1510
+msgid "No mesh in file.\n"
+msgstr "Aucun maillage dans le fichier.\n"
+
+#: prepro/pre-post/ecs_pre_med.c:1530
+#, c-format
+msgid ""
+"MED: error reading file \"%s\".\n"
+"Name of mesh read : \"%s\"\n"
+"Dimension read    : \"%d\""
+msgstr ""
+"MED : erreur à la lecture du fichier \"%s\".\n"
+"Nom du maillage lu : \"%s\"\n"
+"Dimension lue      : \"%d\""
+
+#: prepro/pre-post/ecs_pre_med.c:1542
+#, c-format
+msgid ""
+"  Mesh name: %s\n"
+"\n"
+msgstr ""
+"  Nom du maillage : %s\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_meta.c:142
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Reading mesh based on meta-mesh file\n"
+"------------------------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Lecture du méta-fichier de maillage\n"
+"-----------------------------------\n"
+
+#: prepro/pre-post/ecs_pre_meta.c:146
+#, c-format
+msgid ""
+"  Meta-mesh file: %s\n"
+"\n"
+"\n"
+msgstr ""
+"  Méta-fichier de maillage : %s\n"
+"\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_meta.c:429
+#, c-format
+msgid ""
+"Error in mesh options specification on line %d of file \"%s\"\n"
+"\n"
+"\"%s\" should use a syntax of the form:\n"
+"opt1 = value1, opt2 = value2, ..."
+msgstr ""
+"Erreur dans les options de maillage ligne %d du fichier \"%s\"\n"
+"\n"
+"\"%s\" devrait avoir une syntaxe de la forme :\n"
+"opt2 = valeur1, opt2 = valeur2, ..."
+
+#: prepro/pre-post/ecs_pre_nopo.c:746 prepro/pre-post/ecs_pre_nopo.c:843
+#, c-format
+msgid ""
+"Error reading NOPO file\n"
+"\"%s\".size of record \"%s\" is %d words\n"
+"but %d were expected."
+msgstr ""
+"Erreur à la lecture du fichier NOPO\n"
+"\"%s\".la dimension de l'enregistrement \"%s\" est de %d mots\n"
+"alors que l'on en attendait %d."
+
+#: prepro/pre-post/ecs_pre_nopo.c:858
+msgid ""
+"This function has been compiled with a \"float\" type of size other than 4.\n"
+"(Porting error making conversion of single-precision\n"
+"NOPO coordinates to standard Code_Saturne Preprocessor\n"
+"coordinates impossible)."
+msgstr ""
+"Ce sous-programme a été compilé avec un type \"float\"\n"
+"de taille différente de 4. (Erreur de portage bloquante pour\n"
+"la conversion des coordonnées simple précision NOPO en\n"
+"coordonnées standard Préprocesseur Code_Saturne)."
+
+#: prepro/pre-post/ecs_pre_nopo.c:906
+msgid ""
+"This function has been compiled with a \"double\" type of size other than "
+"8.\n"
+"(Porting error making conversion of double-precision\n"
+"NOPO coordinates to standard Code_Saturne Preprocessor\n"
+"coordinates impossible)."
+msgstr ""
+"Ce sous-programme a été compilé avec un type \"double\"\n"
+"de taille différente de 8. (Erreur de portage bloquante pour\n"
+"la conversion des coordonnées double précision NOPO en\n"
+"coordonnées standard Préprocesseur Code_Saturne)."
+
+#: prepro/pre-post/ecs_pre_nopo.c:1016
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Reading mesh from file in NOPO (Simail) format\n"
+"----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Lecture du fichier de maillage au format NOPO (Simail)\n"
+"------------------------------\n"
+
+#: prepro/pre-post/ecs_pre_nopo.c:1052
+#, c-format
+msgid ""
+"Format error for file \"%s\" :\n"
+"This file does not seem to be in NOPO format\n"
+"(the header length is not 56 (32-bit) or 208 (64-bit))."
+msgstr ""
+"Erreur de format du fichier \"%s\" :\n"
+"Ce fichier ne semble pas être au format NOPO\n"
+"(la longueur de l'entête est différente de 56 (32-bit) ou 208 (64-bit))."
+
+#: prepro/pre-post/ecs_pre_nopo.c:1106 prepro/pre-post/ecs_pre_nopo.c:1174
+#, c-format
+msgid ""
+"Format error for file \"%s\" :\n"
+"The reserved descriptor values are not those expected;\n"
+"this file is probably not a NOPO/Simail file."
+msgstr ""
+"Erreur de format du fichier \"%s\" :\n"
+"Les valeurs réservées du descripteur ne correspondent\n"
+"pas aux valeurs attendues ;\n"
+"ce fichier n'est probablement pas un fichier NOPO/Simail."
+
+#: prepro/pre-post/ecs_pre_nopo.c:1211
+#, c-format
+msgid "  Title     : %.80s\n"
+msgstr "  Titre     : %.80s\n"
+
+#: prepro/pre-post/ecs_pre_nopo.c:1212
+#, c-format
+msgid "  Date      : %2.2s/%2.2s/%4.4s\n"
+msgstr "  Date      : %2.2s/%2.2s/%4.4s\n"
+
+#: prepro/pre-post/ecs_pre_nopo.c:1215
+#, c-format
+msgid "  Creator   : %24.24s\n"
+msgstr "  Créateur  : %24.24s\n"
+
+#: prepro/pre-post/ecs_pre_nopo.c:1219
+#, c-format
+msgid ""
+"Format error for file \"%s\" :\n"
+"String 'NOPO' does not appear in header;\n"
+"this file is probably not a NOPO/Simail file."
+msgstr ""
+"Erreur de format du fichier \"%s\" :\n"
+"Les caractères 'NOPO' n'apparaissent pas dans l'entête ;\n"
+"ce fichier n'est probablement pas un fichier NOPO/Simail"
+
+#: prepro/pre-post/ecs_pre_nopo.c:1262
+#, c-format
+msgid ""
+"  Type      : %d bit\n"
+"  Dimension : %d\n"
+"\n"
+msgstr ""
+"  Type      : %d bit\n"
+"  Dimension : %d\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_nopo.c:1314
+#, c-format
+msgid ""
+"  Initial data: %10d points\n"
+"                %10d nodes\n"
+"                %10d point elements\n"
+"                %10d segments\n"
+"                %10d triangles\n"
+"                %10d quadrangles\n"
+msgstr ""
+"  Données initiales : %10d points\n"
+"                      %10d noeuds\n"
+"                      %10d éléments points\n"
+"                      %10d segments\n"
+"                      %10d triangles\n"
+"                      %10d quadrangles\n"
+
+#: prepro/pre-post/ecs_pre_nopo.c:1325
+#, c-format
+msgid ""
+"                %10d tetrahedra\n"
+"                %10d pentahedra\n"
+"                %10d hexahedra\n"
+"\n"
+msgstr ""
+"                      %10d tétraèdres\n"
+"                      %10d pentaèdres\n"
+"                      %10d hexaèdres\n"
+"\n"
+
+#: prepro/pre-post/ecs_pre_nopo.c:1332
+#, c-format
+msgid ""
+"Error reading NOPO file:\n"
+"\"%s\";\n"
+"The coordinate system is cylindrical or spherical,\n"
+"and this case is not currently handled"
+msgstr ""
+"Erreur à la lecture du fichier NOPO :\n"
+"\"%s\" ;\n"
+"Le système de coordonnés est cylindrique ou sphérique, ce\n"
+"qui n'est pas prévu dans la version actuelle"
+
+#: prepro/util/ecs_backtrace.c:400
+#, c-format
+msgid ""
+"\n"
+"Call stack \n"
+msgstr ""
+"\n"
+"Pile d'appels\n"
+
+#: prepro/util/ecs_comm.c:251
+#, c-format
+msgid "  Wrote: \"%s\"%s; Type: \"%s\"%s; Size: %lu\n"
+msgstr "  Écrit : \"%s\"%s; Type : \"%s\"%s; Taille : %lu\n"
+
+#: prepro/util/ecs_comm.c:256
+#, c-format
+msgid "  Wrote: \"%s\"\n"
+msgstr "  Écrit : \"%s\"\n"
+
+#: prepro/util/ecs_comm.c:296
+#, c-format
+msgid "  Opening file: %s\n"
+msgstr "  Ouverture du fichier : %s\n"
+
+#: prepro/util/ecs_comm.c:324
+#, c-format
+msgid "  Closing file: %s\n"
+msgstr "  Fermeture du fichier : %s\n"
+
+#: prepro/util/ecs_def.c:144
+#, c-format
+msgid "SIGFPE signal (floating-point exception) intercepted !\n"
+msgstr "Signal SIGFPE (exception en virgule flottante) intercepté !\n"
+
+#: prepro/util/ecs_def.c:149
+#, c-format
+msgid "SIGSEGV signal (access to forbidden memory area)  intercepted !\n"
+msgstr "Signal SIGSEGV (accès à une zone mémoire interdite) intercepté !\n"
+
+#: prepro/util/ecs_def.c:155
+#, c-format
+msgid "SIGXCPU signal (CPU time limit exceeded) intercepted.\n"
+msgstr "Signal SIGXCPU (temps CPU limite atteint) intercepté.\n"
+
+#: prepro/util/ecs_def.c:161
+#, c-format
+msgid "Signal %d intercepted !\n"
+msgstr "Signal %d intercepté !\n"
+
+#: prepro/util/ecs_def.c:264
+msgid "Abnormal end"
+msgstr "Fin anormale"
+
+#: prepro/util/ecs_def.c:282
+#, c-format
+msgid ""
+"\n"
+"Warning\n"
+"=======\n"
+msgstr ""
+"\n"
+"Avertissement\n"
+"=============\n"
+
+#: prepro/util/ecs_def.c:302
+#, c-format
+msgid ""
+"\n"
+"Error in preprocessor execution\n"
+"===============================\n"
+msgstr ""
+"\n"
+"Erreur a l'exécution du préprocesseur\n"
+"=====================================\n"
+
+#: prepro/util/ecs_file.c:296
+#, c-format
+msgid ""
+"ECS library formatted output to gzipped file not implemented\n"
+"\n"
+"(file: \"%s\")"
+msgstr ""
+
+#: prepro/util/ecs_file.c:1806
+msgid "unknown"
+msgstr ""
+
+#: prepro/util/ecs_mem.c:460
+msgid "ecs_mem_init() has already been called"
+msgstr ""
+
+#: prepro/util/ecs_mem.c:529
+msgid "ecs_mem_end() called before ecs_mem_init()"
+msgstr ""
