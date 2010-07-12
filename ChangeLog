@@ -1,4 +1,15 @@
 * 12/07/2010 - David Monfort <david.monfort@edf.fr>
+  Again... other Makefile.am and gettext files to patch.
+  modified scripts:
+    preprocessor/appli/Makefile.am
+    preprocessor/base/Makefile.am
+    preprocessor/pre-post/Makefile.am
+    preprocessor/tools/Makefile.am
+  modified files:
+	po/fr.po
+	po/POTFILES.in
+
+* 12/07/2010 - David Monfort <david.monfort@edf.fr>
   Fix the Makefile.am script due to a directory renaming...
   modified script:
     Makefile.am

@@ -21,7 +21,7 @@
 
 # Main part
 
-AM_CPPFLAGS = -I$(top_srcdir)/prepro/pre-post -I$(top_srcdir)/prepro/util
+AM_CPPFLAGS = -I$(top_srcdir)/preprocessor/pre-post -I$(top_srcdir)/preprocessor/util
 AM_CFLAGS =
 AM_LDFLAGS =
 

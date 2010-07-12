@@ -21,7 +21,7 @@
 
 # Main part
 
-AM_CPPFLAGS = -I$(top_srcdir)/prepro/util
+AM_CPPFLAGS = -I$(top_srcdir)/preprocessor/util
 AM_CFLAGS =
 AM_LDFLAGS =
 
@@ -41,9 +41,9 @@ igghexa_to_med_CPPFLAGS = $(AM_CPPFLAGS) \
 @HDF5_CPPFLAGS@ @MED_CPPFLAGS@
 igghexa_to_med_SOURCES = igghexa_to_med.c
 igghexa_to_med_LDADD = \
-$(top_builddir)/prepro/pre-post/libprepostecs.la \
-$(top_builddir)/prepro/base/libbaseecs.la \
-$(top_builddir)/prepro/util/libutilecs.la $(LTLIBINTL) \
+$(top_builddir)/preprocessor/pre-post/libprepostecs.la \
+$(top_builddir)/preprocessor/base/libbaseecs.la \
+$(top_builddir)/preprocessor/util/libutilecs.la $(LTLIBINTL) \
 @HDF5_LDFLAGS@ @HDF5_LIBS@ @MED_LDFLAGS@ @MED_LIBS@ \
 @CGNS_LDFLAGS@ @CGNS_LIBS@ \
 -lm

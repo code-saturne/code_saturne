@@ -21,7 +21,7 @@
 
 # Main part
 
-AM_CPPFLAGS = -I$(top_srcdir)/prepro/base -I$(top_srcdir)/prepro/util \
+AM_CPPFLAGS = -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/util \
 @HDF5_CPPFLAGS@ @CCM_CPPFLAGS@ @MED_CPPFLAGS@ @CGNS_CPPFLAGS@
 AM_CFLAGS =
 AM_LDFLAGS = \

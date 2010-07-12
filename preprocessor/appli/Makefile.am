@@ -21,7 +21,7 @@
 
 # Main part
 
-AM_CPPFLAGS = -I$(top_srcdir)/prepro/base -I$(top_srcdir)/prepro/pre-post -I$(top_srcdir)/prepro/util
+AM_CPPFLAGS = -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/pre-post -I$(top_srcdir)/preprocessor/util
 AM_CFLAGS =
 AM_LDFLAGS =
 
@@ -37,9 +37,9 @@ ecs_cmd.c \
 ecs_main.c
 
 cs_preprocess_LDADD = \
-$(top_builddir)/prepro/pre-post/libprepostecs.la \
-$(top_builddir)/prepro/base/libbaseecs.la \
-$(top_builddir)/prepro/util/libutilecs.la $(LTLIBINTL) \
+$(top_builddir)/preprocessor/pre-post/libprepostecs.la \
+$(top_builddir)/preprocessor/base/libbaseecs.la \
+$(top_builddir)/preprocessor/util/libutilecs.la $(LTLIBINTL) \
 @HDF5_LDFLAGS@ @HDF5_LIBS@ @ADF_LDFLAGS@ @ADF_LIBS@ \
 @CCM_LDFLAGS@ @CCM_LIBS@ @MED_LDFLAGS@ @MED_LIBS@ \
 @CGNS_LDFLAGS@ @CGNS_LIBS@ \
