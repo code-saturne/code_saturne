@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -218,7 +218,6 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          idimte, itenso
 integer          idtva0, ivar  , iconvp, idiffp
 integer          ndircp, ireslp
 integer          iescap, iflmb0, imaspe, iphydp
@@ -292,17 +291,9 @@ enddo
 
 !     Calcul du gradient
 
-if(irangp.ge.0) call parcom (distpa)
-                !==========
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(distpa)
   !==========
-( idimte , itenso ,                                               &
-  distpa , distpa , distpa ,                                      &
-  distpa , distpa , distpa ,                                      &
-  distpa , distpa , distpa )
 endif
 
 inc    = 1
@@ -376,26 +367,11 @@ do ifac = 1, nfabor
 enddo
 
 
-!     Parallelisme en preparation du calcul du flux
+!     Parallelisme et periodicite en preparation du calcul du flux
 
-if(irangp.ge.0) then
-  call parcom (qx)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synvec(qx, qy, qz)
   !==========
-  call parcom (qy)
-  !==========
-  call parcom (qz)
-  !==========
-endif
-
-if(iperio.eq.1) then
-  idimte = 1
-  itenso = 0
-  call percom                                                     &
-  !==========
-( idimte , itenso ,                                               &
-  qx , qx , qx ,                                                  &
-  qy , qy , qy ,                                                  &
-  qz , qz , qz )
 endif
 
 
@@ -631,17 +607,9 @@ do ntcont = 1, ntcmxy
 
   if(ntcont.gt.1.or.ipass.gt.1) then
 
-    if(irangp.ge.0) call parcom (rtpdp)
-                              !==========
-    if(iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtpdp)
       !==========
-      ( idimte , itenso ,                                         &
-        rtpdp, rtpdp, rtpdp,                                      &
-        rtpdp, rtpdp, rtpdp,                                      &
-        rtpdp, rtpdp, rtpdp)
     endif
 
   endif

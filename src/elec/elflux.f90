@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -194,7 +194,7 @@ integer          ipcdc1, ipcdc2, ipcdc3
 integer          ipcdi1, ipcdi2, ipcdi3
 integer          inc   , iccocg, nswrgp, imligp, iwarnp
 integer          ivar0 , iclimv
-integer          iphydp, idimte, itenso, ivar  , modntl
+integer          iphydp, ivar  , modntl
 
 double precision epsrgp, climgp, extrap, vrmin, vrmax, var
 
@@ -266,25 +266,11 @@ if(iappel.eq.1) then
   climgp = climgr(ivar)
   extrap = extrag(ivar)
 
-! En periodique et parallele, echange avant calcul du gradient
-!     C'est indispensable car on vient de calculer IVAR
-
-!    Parallele
-  if(irangp.ge.0) then
-    call parcom(rtp(1,ivar))
+  ! En periodique et parallele, echange avant calcul du gradient
+  !     C'est indispensable car on vient de calculer IVAR
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,ivar))
     !==========
-  endif
-
-!    Periodique
-  if(iperio.eq.1) then
-    idimte = 0
-    itenso = 0
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                        &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                        &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
   endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -461,25 +447,11 @@ if(iappel.eq.1) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-! En periodique et parallele, echange avant calcul du gradient
-!     C'est indispensable car on vient de calculer IVAR
-
-!    Parallele
-    if(irangp.ge.0) then
-      call parcom(rtp(1,ivar))
+    ! En periodique et parallele, echange avant calcul du gradient
+    !     C'est indispensable car on vient de calculer IVAR
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,ivar))
       !==========
-    endif
-
-!    Periodique
-    if(iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-  ( idimte , itenso ,                                             &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                        &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                        &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
     endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -688,25 +660,11 @@ if (iappel.eq.2) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-! En periodique et parallele, echange avant calcul du gradient
-!     C'est indispensable car on vient de calculer IVAR
-
-!    Parallele
-    if(irangp.ge.0) then
-      call parcom(rtp(1,ivar))
+    ! En periodique et parallele, echange avant calcul du gradient
+    !     C'est indispensable car on vient de calculer IVAR
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,ivar))
       !==========
-    endif
-
-!    Periodique
-    if(iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-  ( idimte , itenso ,                                             &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                        &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                        &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
     endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -759,25 +717,11 @@ if (iappel.eq.2) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-! En periodique et parallele, echange avant calcul du gradient
-!     C'est indispensable car on vient de calculer IVAR
-
-!    Parallele
-    if(irangp.ge.0) then
-      call parcom(rtp(1,ivar))
+    ! En periodique et parallele, echange avant calcul du gradient
+    !     C'est indispensable car on vient de calculer IVAR
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,ivar))
       !==========
-    endif
-
-!    Periodique
-    if(iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-    !==========
-  ( idimte , itenso ,                                             &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                        &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                        &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
     endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -830,25 +774,11 @@ if (iappel.eq.2) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-! En periodique et parallele, echange avant calcul du gradient
-!     C'est indispensable car on vient de calculer IVAR
-
-!    Parallele
-    if(irangp.ge.0) then
-      call parcom(rtp(1,ivar))
+    ! En periodique et parallele, echange avant calcul du gradient
+    !     C'est indispensable car on vient de calculer IVAR
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,ivar))
       !==========
-    endif
-
-!    Periodique
-    if(iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-  ( idimte , itenso ,                                             &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                        &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                        &
-    rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
     endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable

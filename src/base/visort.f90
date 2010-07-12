@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -161,34 +161,16 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 ! Local variables
 
 integer          ifac, ii, jj
-integer          idimte, itenso
 double precision viscxi, viscxj, viscyi, viscyj, visczi, visczj
 double precision sx2, sy2, sz2, dist, pond, surfn
 
 !===============================================================================
 
-! ---> TRAITEMENT DU PARALLELISME
+! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-if(irangp.ge.0) then
-  call parcom (w1)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call syndia(w1, w2, w3)
   !==========
-  call parcom (w2)
-  !==========
-  call parcom (w3)
-  !==========
-endif
-
-! ---> TRAITEMENT DE LA PERIODICITE
-
-if(iperio.eq.1) then
-  idimte = 21
-  itenso = 0
-  call percom                                                     &
-  !==========
-  ( idimte , itenso ,                                             &
-    w1     , w1     , w1    ,                                     &
-    w2     , w2     , w2    ,                                     &
-    w3     , w3     , w3    )
 endif
 
 

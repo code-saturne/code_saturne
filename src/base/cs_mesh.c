@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -679,6 +679,108 @@ cs_int_t CS_PROCF (numgrp, NUMGRP)
   }
 
   return -9999;
+}
+
+/*----------------------------------------------------------------------------
+ * Update a scalar array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine synsca(var)
+ * *****************
+ *
+ * var   : <-> : scalar array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synsca, SYNSCA)
+(
+ cs_real_t  var[]
+)
+{
+  cs_mesh_sync_var_scal(var);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine synvec(var)
+ * *****************
+ *
+ * var1   : <-> : vector component 1 array
+ * var2   : <-> : vector component 2 array
+ * var3   : <-> : vector component 3 array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synvec, SYNVEC)
+(
+ cs_real_t  var1[],
+ cs_real_t  var2[],
+ cs_real_t  var3[]
+)
+{
+  cs_mesh_sync_var_vect(var1, var2, var3);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a diagonal tensor array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine syndia(var)
+ * *****************
+ *
+ * var11   : <-> : diagonal tensor component 11 array
+ * var22   : <-> : diagonal tensor component 22 array
+ * var33   : <-> : diagonal tensor component 33 array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(syndia, SYNDIA)
+(
+ cs_real_t  var11[],
+ cs_real_t  var22[],
+ cs_real_t  var33[]
+)
+{
+  cs_mesh_sync_var_diag(var11, var22, var33);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a tensor array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine synten(var)
+ * *****************
+ *
+ * var11   : <-> : tensor component 11 array
+ * var12   : <-> : tensor component 12 array
+ * var13   : <-> : tensor component 13 array
+ * var21   : <-> : tensor component 21 array
+ * var22   : <-> : tensor component 22 array
+ * var23   : <-> : tensor component 23 array
+ * var31   : <-> : tensor component 31 array
+ * var32   : <-> : tensor component 32 array
+ * var33   : <-> : tensor component 33 array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synten, SYNTEN)
+(
+ cs_real_t  var11[],
+ cs_real_t  var12[],
+ cs_real_t  var13[],
+ cs_real_t  var21[],
+ cs_real_t  var22[],
+ cs_real_t  var23[],
+ cs_real_t  var31[],
+ cs_real_t  var32[],
+ cs_real_t  var33[]
+)
+{
+  cs_mesh_sync_var_tens(var11, var12, var13,
+                        var21, var22, var23,
+                        var31, var32, var33);
 }
 
 /*=============================================================================
@@ -1472,6 +1574,134 @@ cs_mesh_init_selectors(void)
                           cs_glob_mesh_quantities->i_face_cog,
                           cs_glob_mesh_quantities->i_face_normal);
 
+}
+
+/*----------------------------------------------------------------------------
+ * Update a scalar array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var  <->  scalar array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_scal(cs_real_t  *var)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo == NULL) return;
+
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var);
+
+  if (cs_glob_mesh->n_init_perio > 0)
+    cs_perio_sync_var_scal(halo,
+                           CS_HALO_STANDARD,
+                           CS_PERIO_ROTA_COPY,
+                           var);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var1  <->  vector component 1 array
+ *   var2  <->  vector component 2 array
+ *   var3  <->  vector component 3 array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_vect(cs_real_t  *var1,
+                      cs_real_t  *var2,
+                      cs_real_t  *var3)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo == NULL) return;
+
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var1);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var2);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var3);
+
+  if (cs_glob_mesh->n_init_perio > 0)
+    cs_perio_sync_var_vect(halo,
+                           CS_HALO_STANDARD,
+                           CS_PERIO_ROTA_COPY,
+                           var1, var2, var3);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a diagonal tensor array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var11  <->  diagonal tensor component 11 array
+ *   var22  <->  diagonal tensor component 22 array
+ *   var33  <->  diagonal tensor component 33 array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_diag(cs_real_t  *var11,
+                      cs_real_t  *var22,
+                      cs_real_t  *var33)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo == NULL) return;
+
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var11);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var22);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var33);
+
+  if (cs_glob_mesh->n_init_perio > 0)
+    cs_perio_sync_var_diag(halo,
+                           CS_HALO_STANDARD,
+                           var11, var22, var33);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a tensor array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var11  <->  tensor component 11 array
+ *   var12  <->  tensor component 12 array
+ *   var13  <->  tensor component 13 array
+ *   var21  <->  tensor component 21 array
+ *   var22  <->  tensor component 22 array
+ *   var23  <->  tensor component 23 array
+ *   var31  <->  tensor component 31 array
+ *   var32  <->  tensor component 32 array
+ *   var33  <->  tensor component 33 array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_tens(cs_real_t  *var11,
+                      cs_real_t  *var12,
+                      cs_real_t  *var13,
+                      cs_real_t  *var21,
+                      cs_real_t  *var22,
+                      cs_real_t  *var23,
+                      cs_real_t  *var31,
+                      cs_real_t  *var32,
+                      cs_real_t  *var33)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo == NULL) return;
+
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var11);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var12);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var13);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var21);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var22);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var23);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var31);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var32);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, var33);
+
+  if (cs_glob_mesh->n_init_perio > 0)
+    cs_perio_sync_var_tens(halo,
+                           CS_HALO_STANDARD,
+                           var11, var12, var13,
+                           var21, var22, var33,
+                           var31, var32, var33);
 }
 
 /*----------------------------------------------------------------------------

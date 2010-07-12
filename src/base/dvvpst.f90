@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -218,7 +218,7 @@ integer          ipp   , idimt , ii    , kk   , iel
 integer          ivarl , iip   , iph
 integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          iscal , ipcvsl, ipcvst, iflmab
-integer          idimte, itenso, ientla, ivarpr
+integer          ientla, ivarpr
 integer          iyplbp
 integer          ipccp , ipcrom
 
@@ -707,11 +707,8 @@ else if  (numtyp .eq. -2) then
 !          temperature des cellules periodiques correspondantes
 
 !      Pour cela, il est necessaire d'appeler les routines de
-!        communication PARCOM (parallelisme) et PERCOM (periodicite)
-!        pour echanger les valeurs de temperature avant de calculer le
-!        gradient. L'appel a ces routines doit etre fait dans cet ordre
-!        PARCOM puis PERCOM (pour les cas ou parallelisme et periodicite
-!        coexistent).
+!        de synchronisation des halos pour echanger les valeurs de temperature
+!        avant de calculer le gradient.
 !      En effet, on se situe ici a la fin du pas de temps n. Or,
 !        les variables RTP ne seront echangees qu'en debut du pas de
 !        temps n+1. Ici, seules les variables RTPA (obtenues a la fin
@@ -721,28 +718,11 @@ else if  (numtyp .eq. -2) then
 !        appels (les tests sur IPERIO et IRANGP assurent la generalite)
 
 
-!          Echange pour le parallelisme
+!          Echange pour le parallelisme et la periodicite
 
-        if(irangp.ge.0) then
-
-          call parcom (rtp(1,ivar))
+        if (irangp.ge.0.or.iperio.eq.1) then
+          call synsca(rtp(1,ivar))
           !==========
-
-        endif
-
-!          Echange pour la periodicite
-
-        if(iperio.eq.1) then
-
-          idimte = 0
-          itenso = 0
-          call percom                                             &
-          !==========
-      ( idimte , itenso ,                                         &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
-
         endif
 
 

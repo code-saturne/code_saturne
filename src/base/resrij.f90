@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -235,7 +235,6 @@ integer          nswrgp, imligp, iwarnp, iphydp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          idimte, itenso
 integer          iptsta
 integer          isoluc
 integer          maxelt, ils
@@ -727,11 +726,10 @@ endif
 !        en (grad(Rij).n)n
 !     (W1,W2,W3) contient toujours le gradient de la variable traitee
 
-!     Attention en periodicite on percom-ise le gradient comme si c'etait
+!     Attention en periodicite on traite le gradient comme si c'etait
 !       un vecteur (alors que dans grdcel on l'a fait comme si c'etait
 !       un tenseur ...).
-!     A modifier eventuellement. Pour le moment on conserve donc
-!       PERCOM et PARCOM.
+!     A modifier eventuellement.
 
 if (idifre(iphas).eq.1) then
 
@@ -743,45 +741,16 @@ if (idifre(iphas).eq.1) then
     w6(iel) = cstrij*rtpa(iel,ir33ip)
   enddo
 
-! --->  TRAITEMENT DU PARALLELISME
+! --->  TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
+!        (il reste des doutes sur la periodicite)
 
-  if(irangp.ge.0) then
-    call parcom (w1)
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(w1, w2, w3)
     !==========
-    call parcom (w2)
-    !==========
-    call parcom (w3)
-    !==========
-    call parcom (w4)
-    !==========
-    call parcom (w5)
-    !==========
-    call parcom (w6)
+    call syndia(w4, w5, w6)
     !==========
   endif
 
-! -->   TRAITEMENT DE LA PERIODICITE
-! ->    IL RESTE DES DOUTES LA-DESSUS
-  if(iperio.eq.1) then
-    idimte = 1
-    itenso = 0
-    call percom                                                   &
-    !==========
-    ( idimte , itenso ,                                           &
-      w1     , w1     , w1    ,                                   &
-      w2     , w2     , w2    ,                                   &
-      w3     , w3     , w3    )
-
-    idimte = 21
-    itenso = 0
-    call percom                                                   &
-    !==========
-    ( idimte , itenso ,                                           &
-      w4     , w4     , w4    ,                                   &
-      w5     , w5     , w5    ,                                   &
-      w6     , w6     , w6    )
-
-  endif
 
   do ifac = 1, nfac
 

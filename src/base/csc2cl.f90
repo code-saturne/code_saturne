@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -234,9 +234,9 @@ idebia = idbia0
 idebra = idbra0
 
 
-!================================================================================
+!===============================================================================
 ! 1.  TRADUCTION DU COUPLAGE EN TERMES DE CONDITIONS AUX LIMITES
-!================================================================================
+!===============================================================================
 
 ! On rappelle que les variables sont reçues dans l'ordre de VARPOS ;
 ! il suffit dont de boucler sur les variables.
@@ -244,9 +244,8 @@ idebra = idbra0
 do ivar = 1, nvcp
 
 !   --- Calcul du gradient de la variable si celle-ci est interpolée
-!         Les échanges pour le parallélisme et la pédiocité (PARCOM
-!         et PERCOM) ont déjà été fait dans CSCPFB.
-!         Inutile de les refaire.
+!         Les échanges pour le parallélisme et la périodicité
+!         ont déjà été fait dans CSCPFB. Inutile de les refaire.
 
   inc    = 1
   iccocg = 1

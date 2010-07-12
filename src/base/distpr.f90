@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -197,7 +197,7 @@ integer          idebia, idebra
 integer          ndircp, iconvp, idiffp, isym
 integer          ipol  , ireslp, ipp
 integer          niterf, icycle, ncymxp, nitmfp
-integer          iinvpe, idimte, itenso
+integer          iinvpe
 integer          isqrt , iel   , ifac  , iphas
 integer          inc   , iccocg, iphydp, ivar
 integer          isweep, nittot, idtva0
@@ -358,21 +358,9 @@ do isweep = 0, nswrsy
 
 !    - Echange pour le parallelisme
 
-  if(irangp.ge.0) then
-    call parcom (rtpdp)
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtpdp)
     !==========
-  endif
-
-!    - Echange pour la periodicite
-  if(iperio.eq.1) then
-    idimte = 0
-    itenso = 0
-    call percom                                                   &
-    !==========
-      ( idimte , itenso ,                                         &
-        rtpdp  , rtpdp  , rtpdp  ,                                &
-        rtpdp  , rtpdp  , rtpdp  ,                                &
-        rtpdp  , rtpdp  , rtpdp  )
   endif
 
   if(isweep.lt.nswrsy) then
@@ -415,28 +403,15 @@ enddo
 
 !===============================================================================
 ! 5. CALCUL DE LA DISTANCE A LA PAROI
-!===============================================================================v
+!===============================================================================
 
-!    - Echange pour le parallelisme
+!    - Echange pour le parallelisme et pour la periodicite
 
-if(irangp.ge.0) then
-  call parcom (rtpdp)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(rtpdp)
   !==========
 endif
 
-!    - Echange pour la periodicite
-
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
-      ( idimte , itenso ,                                         &
-        rtpdp  , rtpdp  , rtpdp  ,                                &
-        rtpdp  , rtpdp  , rtpdp  ,                                &
-        rtpdp  , rtpdp  , rtpdp  )
-
-endif
 
 !    - Calcul du gradient
 

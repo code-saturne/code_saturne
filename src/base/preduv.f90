@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -270,7 +270,6 @@ integer          ipcrom, ipcroa, ipcroo , ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          idimte, itenso
 integer          iesprp, iestop
 integer          iptsna
 integer          iflmb0, nswrp , imaspe, iismph, ipbrom
@@ -397,23 +396,9 @@ if (iappel.eq.1.and.iphydr.eq.1) then
     enddo
   endif
 
-  if(irangp.ge.0) then
-    call parcom (dfrcxt(1,1,iphas))
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(dfrcxt(1,1,iphas), dfrcxt(1,2,iphas), dfrcxt(1,3,iphas))
     !==========
-    call parcom (dfrcxt(1,2,iphas))
-    !==========
-    call parcom (dfrcxt(1,3,iphas))
-    !==========
-  endif
-  if(iperio.eq.1) then
-    idimte = 1
-    itenso = 0
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    dfrcxt(1,1,iphas),dfrcxt(1,1,iphas),dfrcxt(1,1,iphas),        &
-    dfrcxt(1,2,iphas),dfrcxt(1,2,iphas),dfrcxt(1,2,iphas),        &
-    dfrcxt(1,3,iphas),dfrcxt(1,3,iphas),dfrcxt(1,3,iphas))
   endif
 
 endif
@@ -513,23 +498,9 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
     trav(iel,3) = w3(iel)*dtsrom
   enddo
 
-  if(irangp.ge.0) then
-    call parcom (trav(1,1))
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(trav(1,1), trav(1,2), trav(1,3))
     !==========
-    call parcom (trav(1,2))
-    !==========
-    call parcom (trav(1,3))
-    !==========
-  endif
-  if(iperio.eq.1) then
-    idimte = 1
-    itenso = 0
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    trav(1,1),trav(1,1),trav(1,1),                                &
-    trav(1,2),trav(1,2),trav(1,2),                                &
-    trav(1,3),trav(1,3),trav(1,3))
   endif
 
 !     Calcul de rho dt/rho*grad P.n aux faces
@@ -1873,23 +1844,9 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
 
 !     Calcul de div(rho u*)
 
-  if(irangp.ge.0) then
-    call parcom (rtp(1,iuiph))
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph))
     !==========
-    call parcom (rtp(1,iviph))
-    !==========
-    call parcom (rtp(1,iwiph))
-    !==========
-  endif
-  if(iperio.eq.1) then
-    idimte = 1
-    itenso = 0
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    rtp(1,iuiph),rtp(1,iuiph),rtp(1,iuiph),                       &
-    rtp(1,iviph),rtp(1,iviph),rtp(1,iviph),                       &
-    rtp(1,iwiph),rtp(1,iwiph),rtp(1,iwiph))
   endif
 
 !       Pour gagner du temps, on ne reconstruit pas.

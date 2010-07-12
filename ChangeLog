@@ -1,4 +1,55 @@
 * 12/07/2010 - David Monfort <david.monfort@edf.fr>
+  Add a new API for halo synchronization. Four new functions are available for
+  scalars, vectors, diagonal tensor and 9x9 tensor. The old API
+  "parcom/percom" remains available.
+  modified routines:
+    include/base/cs_mesh.h
+    src/base/clvolc.f90
+    src/base/csc2cl.f90
+    src/base/cscpce.f90
+    src/base/cscpfb.f90
+    src/base/cs_mesh.c
+    src/base/distpr.f90
+    src/base/distyp.f90
+    src/base/dvvpst.f90
+    src/base/inimas.f90
+    src/base/itrgrp.f90
+    src/base/itrmas.f90
+    src/base/navsto.f90
+    src/base/phyvar.f90
+    src/base/preduv.f90
+    src/base/reseps.f90
+    src/base/resolp.f90
+    src/base/resrij.f90
+    src/base/rijech.f90
+    src/base/vectds.f90
+    src/base/viscfa.f90
+    src/base/visdyn.f90
+    src/base/visort.f90
+    src/base/vissec.f90
+    src/cfbl/cfdivs.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfmsfl.f90
+    src/cfbl/cfmsgs.f90
+    src/cfbl/cfmsvl.f90
+    src/cfbl/cfqdmv.f90
+    src/cogz/d3pini.f90
+    src/cogz/ebuini.f90
+    src/cogz/lwcini.f90
+    src/cogz/lwctss.f90
+    src/cplv/cpltsv.f90
+    src/cplv/cptsvc.f90
+    src/elec/elflux.f90
+    src/fuel/futsvc.f90
+    src/lagr/diverv.f90
+    src/lagr/laggra.f90
+    src/lagr/lagpoi.f90
+    src/rayt/raydom.f90
+    src/rayt/raypun.f90
+    users/base/usproj.f90
+    users/base/usvpst.f90
+
+* 12/07/2010 - David Monfort <david.monfort@edf.fr>
   Prepare routines for Python 3 support (print function, module import,
   exception handling).
   modified routines:

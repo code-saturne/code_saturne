@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -240,7 +240,6 @@ integer          ncymap, nitmgp
 integer          inum
 integer          idtva0, ivar0
 integer          inc, iccocg, iphydp
-integer          idimte , itenso
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision aa, aaa, aaaa, relaxp, thetap
 
@@ -381,23 +380,9 @@ call codits                                                       &
 !===============================================================================
 
 !    En periodique et parallele, echange avant calcul du gradient
-
-!    Parallele
-if (irangp.ge.0) then
-  call parcom (theta4)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(theta4)
   !==========
-endif
-
-!    Periodique
-if (iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
-  ( idimte , itenso ,                                             &
-    theta4 , theta4 , theta4 ,                                    &
-    theta4 , theta4 , theta4 ,                                    &
-    theta4 , theta4 , theta4)
 endif
 
 !     Calcul de la densite du flux radiatif QX, QY, QZ

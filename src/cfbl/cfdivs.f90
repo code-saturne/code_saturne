@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -216,7 +216,7 @@ integer          iuiph, iviph, iwiph
 integer          iclvar
 integer          nswrgp, imligp, iwarnp
 integer          ipcvis, ipcvst, ipcvsv
-integer          idimte, itenso, iphydp
+integer          iphydp
 double precision epsrgp, climgp, extrap
 double precision vecfac, visttt
 
@@ -260,35 +260,14 @@ endif
 !      cellules halo (calcul sur le halo, exceptionnellement).
 !    Pour le parallelisme, on s'aligne sur la sequence ainsi definie.
 
-! ---> TRAITEMENT DU PARALLELISME
+! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-if(irangp.ge.0) then
-  call parcom (vistot)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(vistot)
   !==========
-  if(ipcvsv.gt.0) then
-    call parcom (propce(1,ipcvsv))
+  if (ipcvsv.gt.0) then
+    call synsca(propce(1,ipcvsv))
     !==========
-  endif
-endif
-
-! ---> TRAITEMENT DE LA PERIODICITE
-
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
-( idimte , itenso ,                                               &
-  vistot , vistot , vistot ,                                      &
-  vistot , vistot , vistot ,                                      &
-  vistot , vistot , vistot )
-  if(ipcvsv.gt.0) then
-    call percom                                                   &
-    !==========
-( idimte , itenso ,                                               &
-  propce(1,ipcvsv) , propce(1,ipcvsv) , propce(1,ipcvsv) ,        &
-  propce(1,ipcvsv) , propce(1,ipcvsv) , propce(1,ipcvsv) ,        &
-  propce(1,ipcvsv) , propce(1,ipcvsv) , propce(1,ipcvsv) )
   endif
 endif
 

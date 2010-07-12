@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -212,7 +212,6 @@ integer          iirom , iiromb
 integer          ivar0 , imvis1, iccfth, imodif, isou
 integer          imaspe, iflmb0, iismph
 integer          icliup, iclivp, icliwp, iclvar
-integer          idimte, itenso
 integer          iuiph , iviph , iwiph
 integer          itsqdm, iiun  , iextts
 integer          maxelt, ils
@@ -628,20 +627,9 @@ call uscfth                                                       &
    rdevel , rtuser , ra     )
 
 ! --- Communication de l'entropie
-if(irangp.ge.0) then
-  call parcom (w1)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(w1)
   !==========
-endif
-
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
- ( idimte , itenso ,                                              &
-   w1     , w1     , w1     ,                                     &
-   w1     , w1     , w1     ,                                     &
-   w1     , w1     , w1     )
 endif
 
 ! --- Calcul de dt*Beta/Rho au centre des cellules et affectation a W2

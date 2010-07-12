@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -252,7 +252,7 @@ integer          iismph
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
 integer          iinvpe, imaspe, indhyd
-integer          idimte, itenso, iesdep
+integer          iesdep
 integer          idtsca
 integer          iagmax, nagmax, npstmg
 double precision residu, phydr0
@@ -376,31 +376,13 @@ if(irnpnw.ne.1) then
     trav(iel,3) = rtp(iel,iwiph) +dtsrom*trav(iel,3)
   enddo
 
-! ---> TRAITEMENT DU PARALLELISME
+! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-  if(irangp.ge.0) then
-    call parcom (trav(1,1))
-     !==========
-    call parcom (trav(1,2))
-     !==========
-    call parcom (trav(1,3))
-     !==========
-  endif
-
-! ON IMPOSE LA PERIODICITE SUR TRAV
-
-  if(iperio.eq.1) then
-
-    idimte = 1
-    itenso = 0
-    call percom                                                   &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(trav(1,1), trav(1,2), trav(1,3))
     !==========
-  ( idimte , itenso ,                                             &
-    trav(1,1) , trav(1,1) , trav(1,1) ,                           &
-    trav(1,2) , trav(1,2) , trav(1,2) ,                           &
-    trav(1,3) , trav(1,3) , trav(1,3) )
-
   endif
+
 
 ! ON NE RECONSTRUIT PAS POUR GAGNER DU TEMPS
 !   EPSRGR N'EST DONC PAS UTILISE
@@ -510,8 +492,7 @@ if (iphydr.eq.1) then
 
 
 !     Il serait necessaire de communiquer pour periodicite et parallelisme
-!      avec PARCOM et PERCOM sur le vecteur
-!      DFRCHY(IEL,1) DFRCHY(IEL,2) DFRCHY(IEL,3)
+!      sur le vecteur DFRCHY(IEL,1) DFRCHY(IEL,2) DFRCHY(IEL,3)
 !     On peut economiser la communication tant que DFRCHY ne depend que de
 !      RHO et RHO n-1 qui ont ete communiques auparavant.
 !     Exceptionnellement, on fait donc le calcul sur NCELET.
@@ -693,31 +674,13 @@ else
   enddo
 endif
 
-! ---> TRAITEMENT DU PARALLELISME
+! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-if(irangp.ge.0) then
-  call parcom (trav(1,1))
-  !==========
-  call parcom (trav(1,2))
-  !==========
-  call parcom (trav(1,3))
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synvec(trav(1,1), trav(1,2), trav(1,3))
   !==========
 endif
 
-! ON IMPOSE LA PERIODICITE SUR TRAV
-
-if(iperio.eq.1) then
-
-  idimte = 1
-  itenso = 0
-  call percom                                                     &
-  !==========
-  ( idimte , itenso ,                                             &
-    trav(1,1) , trav(1,1) , trav(1,1) ,                           &
-    trav(1,2) , trav(1,2) , trav(1,2) ,                           &
-    trav(1,3) , trav(1,3) , trav(1,3) )
-
-endif
 
 init   = 1
 inc    = 1

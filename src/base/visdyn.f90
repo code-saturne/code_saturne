@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -204,7 +204,6 @@ integer          iuiph, iviph, iwiph
 integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvst, iphydp
 integer          iclipc
-integer          idimte, itenso
 double precision coef, radeux, deux, delta, deltaf
 double precision s11, s22, s33, s11f, s22f, s33f
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
@@ -569,26 +568,11 @@ do iel = 1, ncel
 
 enddo
 
-if(irangp.ge.0) then
-  call parcom(w1)
-  call parcom(w2)
-endif
-
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(w1)
   !==========
-  ( idimte , itenso ,                                             &
-    w1     , w1     , w1    ,                                     &
-    w1     , w1     , w1    ,                                     &
-    w1     , w1     , w1             )
-  call percom                                                     &
+  call synsca(w2)
   !==========
-  ( idimte , itenso ,                                             &
-    w2     , w2     , w2    ,                                     &
-    w2     , w2     , w2    ,                                     &
-    w2     , w2     , w2             )
 endif
 
 !     Par defaut on fait une moyenne locale du numerateur et du

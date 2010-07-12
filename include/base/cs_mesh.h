@@ -231,6 +231,94 @@ cs_int_t CS_PROCF (numgrp, NUMGRP)
                                    by many Fortran compilers) */
 );
 
+/*----------------------------------------------------------------------------
+ * Update a scalar array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine synsca(var)
+ * *****************
+ *
+ * var   : <-> : scalar array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synsca, SYNSCA)
+(
+ cs_real_t  var[]
+);
+
+/*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine synvec(var)
+ * *****************
+ *
+ * var1   : <-> : vector component 1 array
+ * var2   : <-> : vector component 2 array
+ * var3   : <-> : vector component 3 array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synvec, SYNVEC)
+(
+ cs_real_t  var1[],
+ cs_real_t  var2[],
+ cs_real_t  var3[]
+);
+
+/*----------------------------------------------------------------------------
+ * Update a diagonal tensor array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine syndia(var)
+ * *****************
+ *
+ * var11   : <-> : diagonal tensor component 11 array
+ * var22   : <-> : diagonal tensor component 22 array
+ * var33   : <-> : diagonal tensor component 33 array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(syndia, SYNDIA)
+(
+ cs_real_t  var11[],
+ cs_real_t  var22[],
+ cs_real_t  var33[]
+);
+
+/*----------------------------------------------------------------------------
+ * Update a tensor array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine synten(var)
+ * *****************
+ *
+ * var11   : <-> : tensor component 11 array
+ * var12   : <-> : tensor component 12 array
+ * var13   : <-> : tensor component 13 array
+ * var21   : <-> : tensor component 21 array
+ * var22   : <-> : tensor component 22 array
+ * var23   : <-> : tensor component 23 array
+ * var31   : <-> : tensor component 31 array
+ * var32   : <-> : tensor component 32 array
+ * var33   : <-> : tensor component 33 array
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synten, SYNTEN)
+(
+ cs_real_t  var11[],
+ cs_real_t  var12[],
+ cs_real_t  var13[],
+ cs_real_t  var21[],
+ cs_real_t  var22[],
+ cs_real_t  var23[],
+ cs_real_t  var31[],
+ cs_real_t  var32[],
+ cs_real_t  var33[]
+);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -339,6 +427,70 @@ cs_mesh_init_halo(cs_mesh_t  *mesh);
 
 cs_int_t
 cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
+ * Update a scalar array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var  <->  scalar array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_scal(cs_real_t  *var);
+
+/*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var1  <->  vector component 1 array
+ *   var2  <->  vector component 2 array
+ *   var3  <->  vector component 3 array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_vect(cs_real_t  *var1,
+                      cs_real_t  *var2,
+                      cs_real_t  *var3);
+
+/*----------------------------------------------------------------------------
+ * Update a diagonal tensor array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var11  <->  diagonal tensor component 11 array
+ *   var22  <->  diagonal tensor component 22 array
+ *   var33  <->  diagonal tensor component 33 array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_diag(cs_real_t  *var11,
+                      cs_real_t  *var22,
+                      cs_real_t  *var33);
+
+/*----------------------------------------------------------------------------
+ * Update a tensor array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var11  <->  tensor component 11 array
+ *   var12  <->  tensor component 12 array
+ *   var13  <->  tensor component 13 array
+ *   var21  <->  tensor component 21 array
+ *   var22  <->  tensor component 22 array
+ *   var23  <->  tensor component 23 array
+ *   var31  <->  tensor component 31 array
+ *   var32  <->  tensor component 32 array
+ *   var33  <->  tensor component 33 array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_tens(cs_real_t  *var11,
+                      cs_real_t  *var12,
+                      cs_real_t  *var13,
+                      cs_real_t  *var21,
+                      cs_real_t  *var22,
+                      cs_real_t  *var23,
+                      cs_real_t  *var31,
+                      cs_real_t  *var32,
+                      cs_real_t  *var33);
 
 /*----------------------------------------------------------------------------
  * Define group classes for a mesh based on its family definitions.

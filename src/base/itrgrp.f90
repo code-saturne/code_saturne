@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -182,7 +182,6 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 integer          idebia, idebra
 integer          ifac, ii, jj, iij, iii, ivar
-integer          idimte, itenso
 double precision pfac,pip
 double precision dpxf  , dpyf  , dpzf  , flumas, flumab
 double precision dijpfx, dijpfy, dijpfz
@@ -212,23 +211,13 @@ elseif(init.ne.0) then
   call csexit (1)
 endif
 
-! ---> TRAITEMENT DU PARALLELISME
+! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-if(irangp.ge.0) call parcom (pvar)
-                !==========
-
-! ---> TRAITEMENT DE LA PERIODICITE
-
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(pvar)
   !==========
-  ( idimte , itenso ,                                             &
-    pvar   , pvar   , pvar  ,                                     &
-    pvar   , pvar   , pvar  ,                                     &
-    pvar   , pvar   , pvar  )
 endif
+
 
 !===============================================================================
 ! 2.  INCREMENT DU FLUX DE MASSE SS TECHNIQUE DE RECONSTRUCTION
@@ -298,28 +287,11 @@ if( nswrgp.gt.1 ) then
    dpdxa  , dpdya  , dpdza  ,                                     &
    rdevel , rtuser , ra     )
 
-! ---> TRAITEMENT DU PARALLELISME
+! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-if(irangp.ge.0) then
-  call parcom (viselx)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synvec(viselx, visely, viselz)
   !==========
-  call parcom (visely)
-  !==========
-  call parcom (viselz)
-  !==========
-endif
-
-! ---> TRAITEMENT DE LA PERIODICITE
-
-if(iperio.eq.1) then
-  idimte = 1
-  itenso = 0
-  call percom                                                     &
-  !==========
-  ( idimte , itenso ,                                             &
-    viselx , viselx , viselx ,                                    &
-    visely , visely , visely ,                                    &
-    viselz , viselz , viselz )
 endif
 
 !     FLUX DE MASSE SUR LES FACETTES FLUIDES

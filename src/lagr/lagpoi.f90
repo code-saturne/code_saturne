@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -224,7 +224,7 @@ integer          icoefap , icoefbp
 integer          ivar0
 integer          inc, iccocg
 integer          nswrgp , imligp , iwarnp
-integer          idimte , itenso , iphydp
+integer          iphydp
 double precision epsrgp , climgp , extrap
 
 !===============================================================================
@@ -337,23 +337,9 @@ extrap = 0.d0
 
 
 ! En periodique et parallele, echange avant calcul du gradient
-
-!    Parallele
-if(irangp.ge.0) then
-  call parcom(ra(iphil))
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(ra(iphil))
   !==========
-endif
-
-!    Periodique
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
-  ( idimte , itenso ,                                             &
-    ra(iphil) , ra(iphil) , ra(iphil) ,                           &
-    ra(iphil) , ra(iphil) , ra(iphil) ,                           &
-    ra(iphil) , ra(iphil) , ra(iphil)  )
 endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable

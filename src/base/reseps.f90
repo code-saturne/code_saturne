@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -234,7 +234,6 @@ integer          nswrgp, imligp, iwarnp, iphydp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          idimte, itenso
 integer          iptsta
 integer          maxelt, ils
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
@@ -652,7 +651,7 @@ if (iturb(iphas).eq.30) then
 !        en (grad(eps).n)n
 !     (W1,W2,W3) contient toujours le gradient de la variable traitee
 
-!     La parcom/percom-isation du gradient de epsilon a ete faite dans
+!     La synchronisation des halos du gradient de epsilon a ete faite dans
 !       grdcel. Pas utile de recommencer.
 
   if (idifre(iphas).eq.1) then
@@ -665,31 +664,13 @@ if (iturb(iphas).eq.30) then
       w6(iel)=csteps*rtpa(iel,ir33ip)
     enddo
 
-! --->  TRAITEMENT DU PARALLELISME (MEMES DOUTES QUE PERIODICITE ?)
+! --->  TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-    if(irangp.ge.0) then
-      call parcom (w4)
-      !==========
-      call parcom (w5)
-      !==========
-      call parcom (w6)
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call syndia(w4, w5, w6)
       !==========
     endif
 
-! -->   TRAITEMENT DE LA PERIODICITE
-    if(iperio.eq.1) then
-
-      idimte = 21
-      itenso = 0
-
-      call percom                                                 &
-      !==========
-    ( idimte , itenso ,                                           &
-      w4     , w4     , w4    ,                                   &
-      w5     , w5     , w5    ,                                   &
-      w6     , w6     , w6    )
-
-    endif
 
     do ifac = 1, nfac
 

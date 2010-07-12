@@ -205,7 +205,6 @@ integer          ikiph  , ieiph , iomgip , iphydp
 integer          ir11ip , ir22ip, ir33ip
 integer          inc    , iccocg , nswrgp , imligp , iwarnp
 integer          ifinra , icoefa , icoefb
-integer          idimte , itenso
 
 double precision xk     , xe     , rhovst
 double precision epsrgp , climgp , extrap
@@ -336,24 +335,10 @@ if ( itytur(iphas).eq.2 .or. itytur(iphas).eq.3                   &
     endif
   enddo
 
-! En periodique et parallele, echange avant calcul du gradient
-
-!    Parallele
-  if(irangp.ge.0) then
-    call parcom(w7)
+  ! En periodique et parallele, echange avant calcul du gradient
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(w7)
     !==========
-  endif
-
-!    Periodique
-  if(iperio.eq.1) then
-    idimte = 0
-    itenso = 0
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    w7     , w7     , w7     ,                                    &
-    w7     , w7     , w7     ,                                    &
-    w7     , w7     , w7     )
   endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable

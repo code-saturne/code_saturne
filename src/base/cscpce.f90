@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -127,7 +127,7 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 integer          idebia , idebra , ifinia , ifinra
 integer          ipt    , iel
 integer          inc    , iccocg , iphydp , iclvar, nswrgp
-integer          iwarnp , imligp , idimte , itenso
+integer          iwarnp , imligp
 
 double precision epsrgp , climgp , extrap
 double precision dx     , dy     , dz
@@ -137,21 +137,9 @@ double precision dx     , dy     , dz
 idebia = idbia0
 idebra = idbra0
 
-
-if(irangp.ge.0) then
-  call parcom(rtpa(1,ivar))
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(rtpa(1,ivar))
   !==========
-endif
-
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                  &
-  !==========
- ( idimte, itenso ,                                            &
-   rtpa(1,ivar), rtpa(1,ivar), rtpa(1,ivar) ,                  &
-   rtpa(1,ivar), rtpa(1,ivar), rtpa(1,ivar) ,                  &
-   rtpa(1,ivar), rtpa(1,ivar), rtpa(1,ivar) )
 endif
 
 inc    = 1

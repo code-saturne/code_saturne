@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -138,7 +138,7 @@ integer          ir11ip , ir22ip , ir33ip , ir12ip , ir13ip , ir23ip
 integer          itravx , itravy , itravz
 integer          igradx , igrady , igradz
 integer          inc    , iccocg , iphydp , iclvar, nswrgp
-integer          iwarnp , imligp , idimte , itenso
+integer          iwarnp , imligp
 integer          ipos
 integer          itytu0
 
@@ -228,20 +228,9 @@ do iphas = 1, nphas
 
 ! --- Calcul du gradient de la pression pour interpolation
 
-    if (irangp.ge.0) then
-      call parcom ( rtp(1,ipriph) )
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,ipriph))
       !==========
-    endif
-
-    if (iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-    ( idimte , itenso ,                                           &
-      rtp(1,ipriph) , rtp(1,ipriph) , rtp(1,ipriph) ,             &
-      rtp(1,ipriph) , rtp(1,ipriph) , rtp(1,ipriph) ,             &
-      rtp(1,ipriph) , rtp(1,ipriph) , rtp(1,ipriph) )
     endif
 
     inc    = 1
@@ -356,25 +345,9 @@ do iphas = 1, nphas
 
 ! --- Calcul du gradient de la vitesse pour interpolation
 
-  if (irangp.ge.0) then
-    do isou = 1, 3
-      if(isou.eq.1) ivar = iuiph
-      if(isou.eq.2) ivar = iviph
-      if(isou.eq.3) ivar = iwiph
-        call parcom ( rtp(1,ivar) )
-        !==========
-    enddo
-  endif
-
-  if (iperio.eq.1) then
-    idimte = 1
-    itenso = 0
-    call percom                                                   &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph))
     !==========
-  ( idimte , itenso ,                                             &
-    rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph),                     &
-    rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph),                     &
-    rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph))
   endif
 
   do isou = 1, 3
@@ -521,20 +494,9 @@ do iphas = 1, nphas
 !         Préparation des données: interpolation de k en J'
 
     ikiph  = ik(iphas)
-    if (irangp.ge.0) then
-      call parcom ( rtp(1,ikiph) )
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,ikiph))
       !==========
-    endif
-
-    if (iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-    ( idimte , itenso ,                                           &
-      rtp(1,ikiph) , rtp(1,ikiph) , rtp(1,ikiph) ,                &
-      rtp(1,ikiph) , rtp(1,ikiph) , rtp(1,ikiph) ,                &
-      rtp(1,ikiph) , rtp(1,ikiph) , rtp(1,ikiph) )
     endif
 
     inc    = 1
@@ -609,20 +571,9 @@ do iphas = 1, nphas
 
     iepiph  = iep(iphas)
 
-    if (irangp.ge.0) then
-      call parcom ( rtp(1,iepiph) )
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,iepiph))
       !==========
-    endif
-
-    if (iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-    ( idimte , itenso ,                                           &
-      rtp(1,iepiph) , rtp(1,iepiph) , rtp(1,iepiph) ,             &
-      rtp(1,iepiph) , rtp(1,iepiph) , rtp(1,iepiph) ,             &
-      rtp(1,iepiph) , rtp(1,iepiph) , rtp(1,iepiph) )
     endif
 
     inc    = 1
@@ -744,7 +695,7 @@ do iphas = 1, nphas
       iviph = iv(iphas)
       iwiph = iw(iphas)
 
-!           Les appels a PARCOM et PERCOM ont deja ete fait plus haut
+!           La synchronisation des halos a deja ete faite plus haut
 
       do isou = 1, 3
 
@@ -888,36 +839,13 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation des Rij en J'
 
-    if (irangp.ge.0) then
-      do isou = 1, 6
-        if (isou.eq.1) ivar = ir11(iphas)
-        if (isou.eq.2) ivar = ir22(iphas)
-        if (isou.eq.3) ivar = ir33(iphas)
-        if (isou.eq.4) ivar = ir12(iphas)
-        if (isou.eq.5) ivar = ir13(iphas)
-        if (isou.eq.6) ivar = ir23(iphas)
-        call parcom ( rtp(1,ivar) )
-        !==========
-      enddo
-    endif
-
-    if (iperio.eq.1) then
-      idimte = 2
-      itenso = 0
-      ir11ip = ir11(iphas)
-      ir22ip = ir22(iphas)
-      ir33ip = ir33(iphas)
-      ir12ip = ir12(iphas)
-      ir13ip = ir13(iphas)
-      ir23ip = ir23(iphas)
-      call percom                                               &
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synten &
       !==========
-    ( idimte , itenso ,                                         &
-      rtp(1,ir11ip), rtp(1,ir12ip), rtp(1,ir13ip),              &
-      rtp(1,ir12ip), rtp(1,ir22ip), rtp(1,ir23ip),              &
-      rtp(1,ir13ip), rtp(1,ir23ip), rtp(1,ir33ip) )
+    ( rtp(1,ir11(iphas)), rtp(1,ir12(iphas)), rtp(1,ir13(iphas)),  &
+      rtp(1,ir12(iphas)), rtp(1,ir22(iphas)), rtp(1,ir23(iphas)),  &
+      rtp(1,ir13(iphas)), rtp(1,ir23(iphas)), rtp(1,ir33(iphas)) )
     endif
-
 
     do isou = 1, 6
 
@@ -1008,20 +936,9 @@ do iphas = 1, nphas
 
     iepiph  = iep(iphas)
 
-    if (irangp.ge.0) then
-      call parcom ( rtp(1,iepiph) )
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,iepiph))
       !==========
-    endif
-
-    if (iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-    ( idimte , itenso ,                                           &
-      rtp(1,iepiph) , rtp(1,iepiph) , rtp(1,iepiph) ,             &
-      rtp(1,iepiph) , rtp(1,iepiph) , rtp(1,iepiph) ,             &
-      rtp(1,iepiph) , rtp(1,iepiph) , rtp(1,iepiph) )
     endif
 
     inc    = 1
@@ -1200,20 +1117,10 @@ do iphas = 1, nphas
 !         Préparation des données: interpolation de k en J'
 
     ikiph  = ik(iphas)
-    if (irangp.ge.0) then
-      call parcom ( rtp(1,ikiph) )
-      !==========
-    endif
 
-    if (iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,ikiph))
       !==========
-    ( idimte , itenso ,                                           &
-      rtp(1,ikiph) , rtp(1,ikiph) , rtp(1,ikiph) ,                &
-      rtp(1,ikiph) , rtp(1,ikiph) , rtp(1,ikiph) ,                &
-      rtp(1,ikiph) , rtp(1,ikiph) , rtp(1,ikiph) )
     endif
 
     inc    = 1
@@ -1288,20 +1195,9 @@ do iphas = 1, nphas
 
     iepiph  = iep(iphas)
 
-    if (irangp.ge.0) then
-      call parcom ( rtp(1,iepiph) )
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,iepiph))
       !==========
-    endif
-
-    if (iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-    ( idimte , itenso ,                                           &
-      rtp(1,iepiph) , rtp(1,iepiph) , rtp(1,iepiph) ,             &
-      rtp(1,iepiph) , rtp(1,iepiph) , rtp(1,iepiph) ,             &
-      rtp(1,iepiph) , rtp(1,iepiph) , rtp(1,iepiph) )
     endif
 
     inc    = 1
@@ -1376,20 +1272,9 @@ do iphas = 1, nphas
 
     iphiph = iphi(iphas)
 
-    if (irangp.ge.0) then
-      call parcom ( rtp(1,iphiph) )
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,iphiph))
       !==========
-    endif
-
-    if (iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-    ( idimte , itenso ,                                           &
-      rtp(1,iphiph) , rtp(1,iphiph) , rtp(1,iphiph) ,             &
-      rtp(1,iphiph) , rtp(1,iphiph) , rtp(1,iphiph) ,             &
-      rtp(1,iphiph) , rtp(1,iphiph) , rtp(1,iphiph) )
     endif
 
     inc    = 1
@@ -1441,20 +1326,9 @@ do iphas = 1, nphas
 
     ifbiph = ifb(iphas)
 
-    if (irangp.ge.0) then
-      call parcom ( rtp(1,ifbiph) )
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,ifbiph))
       !==========
-    endif
-
-    if (iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-    ( idimte , itenso ,                                           &
-      rtp(1,ifbiph) , rtp(1,ifbiph) , rtp(1,ifbiph) ,             &
-      rtp(1,ifbiph) , rtp(1,ifbiph) , rtp(1,ifbiph) ,             &
-      rtp(1,ifbiph) , rtp(1,ifbiph) , rtp(1,ifbiph) )
     endif
 
     inc    = 1
@@ -1589,20 +1463,10 @@ do iphas = 1, nphas
 !         Préparation des données: interpolation de k en J'
 
     ikiph  = ik(iphas)
-    if (irangp.ge.0) then
-      call parcom ( rtp(1,ikiph) )
-      !==========
-    endif
 
-    if (iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,ikiph))
       !==========
-    ( idimte , itenso ,                                           &
-      rtp(1,ikiph) , rtp(1,ikiph) , rtp(1,ikiph) ,                &
-      rtp(1,ikiph) , rtp(1,ikiph) , rtp(1,ikiph) ,                &
-      rtp(1,ikiph) , rtp(1,ikiph) , rtp(1,ikiph) )
     endif
 
     inc    = 1
@@ -1677,20 +1541,9 @@ do iphas = 1, nphas
 
     iomiph  = iomg(iphas)
 
-    if (irangp.ge.0) then
-      call parcom ( rtp(1,iomiph) )
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,iomiph))
       !==========
-    endif
-
-    if (iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-    ( idimte , itenso ,                                           &
-      rtp(1,iomiph) , rtp(1,iomiph) , rtp(1,iomiph) ,             &
-      rtp(1,iomiph) , rtp(1,iomiph) , rtp(1,iomiph) ,             &
-      rtp(1,iomiph) , rtp(1,iomiph) , rtp(1,iomiph) )
     endif
 
     inc    = 1
@@ -1960,20 +1813,9 @@ if (nscal.gt.0) then
 
 ! --- Calcul du gradient du scalaire pour interpolation
 
-    if (irangp.ge.0) then
-      call parcom ( rtp(1,ivar) )
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,ivar))
       !==========
-    endif
-
-    if (iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
-      !==========
-    ( idimte , itenso ,                                           &
-      rtp(1,ivar) , rtp(1,ivar) , rtp(1,ivar) ,                   &
-      rtp(1,ivar) , rtp(1,ivar) , rtp(1,ivar) ,                   &
-      rtp(1,ivar) , rtp(1,ivar) , rtp(1,ivar) )
     endif
 
     inc    = 1

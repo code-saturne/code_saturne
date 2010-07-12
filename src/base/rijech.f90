@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -190,7 +190,7 @@ integer          ifacpt, iel   , ii    , jj    , kk    , mm
 integer          irkm  , irki  , irkj  , iskm  , iski  , iskj
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          ieiph , ipcrom, ipcroo
-integer          ifac  , idimte, itenso
+integer          ifac
 integer          inc   , iccocg, iphydp, ivar0 , iityph
 
 double precision cmu075, distxn, d2s3  , trrij , xk
@@ -271,17 +271,9 @@ elseif(abs(icdpar).eq.1) then
 
 !       Calcul du gradient
 
-  if(irangp.ge.0) call parcom (ra(idipar))
-                  !==========
-  if(iperio.eq.1) then
-    idimte = 0
-    itenso = 0
-    call percom                                                   &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(ra(idipar))
     !==========
-   ( idimte , itenso ,                                            &
-     ra(idipar), ra(idipar), ra(idipar),                          &
-     ra(idipar), ra(idipar), ra(idipar),                          &
-     ra(idipar), ra(idipar), ra(idipar))
   endif
 
   inc    = 1

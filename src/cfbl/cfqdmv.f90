@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -250,7 +250,6 @@ integer          ipcrom, ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          idimte, itenso
 integer          idiaex, iterns
 integer          iifru
 integer          maxelt, ils
@@ -351,23 +350,9 @@ if (iphydr.eq.1) then
     enddo
   endif
 
-  if(irangp.ge.0) then
-    call parcom (dfrcxt(1,1,iphas))
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(dfrcxt(1,1,iphas), dfrcxt(1,2,iphas), dfrcxt(1,3,iphas))
     !==========
-    call parcom (dfrcxt(1,2,iphas))
-    !==========
-    call parcom (dfrcxt(1,3,iphas))
-    !==========
-  endif
-  if(iperio.eq.1) then
-    idimte = 1
-    itenso = 0
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    dfrcxt(1,1,iphas),dfrcxt(1,1,iphas),dfrcxt(1,1,iphas),        &
-    dfrcxt(1,2,iphas),dfrcxt(1,2,iphas),dfrcxt(1,2,iphas),        &
-    dfrcxt(1,3,iphas),dfrcxt(1,3,iphas),dfrcxt(1,3,iphas))
   endif
 
 endif

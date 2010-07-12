@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -208,7 +208,7 @@ character*32     namevr
 integer          ntindp
 integer          iel, ifac, iloc, iphas, ivar, iclt
 integer          idimt, ii , jj
-integer          idimte, itenso, ientla, ivarpr
+integer          ientla, ivarpr
 integer          imom1, imom2, ipcmo1, ipcmo2, idtcm
 double precision pond
 double precision rvoid(1)
@@ -525,23 +525,11 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
   ! Compute variable values on interior faces.
   ! In this example, we use a simple linear interpolation.
   ! For parallel calculations, if neighbors are used, they must be synchronized
-  ! first. This also applies for periodicity. When both are used, parallel
-  ! synchronization must always be done before periodic synchronization.
+  ! first. This also applies for periodicity.
 
-  if(irangp.ge.0) then
-    call parcom (rtp(1,iu(iphas)))
-    call parcom (rtp(1,iv(iphas)))
-    call parcom (rtp(1,iw(iphas)))
-  endif
-
-  if(iperio.eq.1) then
-    idimte = 1
-    itenso = 0
-    call percom(idimte, itenso,                                        &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(rtp(1,iu(iphas)), rtp(1,iv(iphas)), rtp(1,iw(iphas)))
     !==========
-                rtp(1,iu(iphas)), rtp(1,iu(iphas)), rtp(1,iu(iphas)),  &
-                rtp(1,iv(iphas)), rtp(1,iv(iphas)), rtp(1,iv(iphas)),  &
-                rtp(1,iw(iphas)), rtp(1,iw(iphas)), rtp(1,iw(iphas)))
   endif
 
   do iloc = 1, nfacps
@@ -608,20 +596,11 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
   ! Compute variable values on interior faces.
   ! In this example, we use a simple linear interpolation.
   ! For parallel calculations, if neighbors are used, they must be synchronized
-  ! first. This also applies for periodicity. When both are used, parallel
-  ! synchronization must always be done before periodic synchronization.
+  ! first. This also applies for periodicity.
 
-  if(irangp.ge.0) then
-    call parcom (rtp(1,ivar))
-  endif
-  if(iperio.eq.1) then
-    idimte = 0
-    itenso = 0
-    call percom(idimte, itenso,                         &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,ivar))
     !==========
-                rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),  &
-                rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),  &
-                rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
   endif
 
   do iloc = 1, nfacps
@@ -857,23 +836,11 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
   ! Compute variable values on interior faces.
   ! In this example, we use a simple linear interpolation.
   ! For parallel calculations, if neighbors are used, they must be synchronized
-  ! first. This also applies for periodicity. When both are used, parallel
-  ! synchronization must always be done before periodic synchronization.
+  ! first. This also applies for periodicity.
 
-  if(irangp.ge.0) then
-    call parcom (rtp(1,iu(iphas)))
-    call parcom (rtp(1,iv(iphas)))
-    call parcom (rtp(1,iw(iphas)))
-  endif
-
-  if(iperio.eq.1) then
-    idimte = 1
-    itenso = 0
-    call percom(idimte, itenso,                                        &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(rtp(1,iu(iphas)), rtp(1,iv(iphas)), rtp(1,iw(iphas)))
     !==========
-                rtp(1,iu(iphas)), rtp(1,iu(iphas)), rtp(1,iu(iphas)),  &
-                rtp(1,iv(iphas)), rtp(1,iv(iphas)), rtp(1,iv(iphas)),  &
-                rtp(1,iw(iphas)), rtp(1,iw(iphas)), rtp(1,iw(iphas)))
   endif
 
   do iloc = 1, nfacps
@@ -938,8 +905,12 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
   ! Compute variable values on interior faces.
   ! In this example, we use a simple linear interpolation.
   ! For parallel calculations, if neighbors are used, they must be synchronized
-  ! first. This also applies for periodicity. When both are used, parallel
-  ! synchronization must always be done before periodic synchronization.
+  ! first. This also applies for periodicity.
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,ivar))
+    !==========
+  endif
 
   do iloc = 1, nfacps
 

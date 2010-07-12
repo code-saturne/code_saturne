@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -199,7 +199,7 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 character*80     chaine
 integer          idebia, idebra
 integer          iel, mode, igg, iphas, izone
-integer          iscal, ivar, ii, idimte, itenso
+integer          iscal, ivar, ii
 double precision hinit, coefg(ngazgm), hair, tinitk
 double precision sommqf, sommqt, sommq, tentm, fmelm
 double precision valmax, valmin, xkent, xeent, d2s3
@@ -382,97 +382,27 @@ if ( isuite.eq.0 ) then
 ! ----- En periodique et en parallele,
 !       il faut echanger ces initialisations (qui sont en fait dans RTPA)
 
-!     Parallele
-    if(irangp.ge.0) then
-      call parcom(rtp(1,isca(iyfm)))
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,isca(iyfm)))
       !==========
-      call parcom(rtp(1,isca(iyfp2m  )))
+      call synsca(rtp(1,isca(iyfp2m)))
         !==========
-      call parcom(rtp(1,isca(ifm)))
+      call synsca(rtp(1,isca(ifm)))
       !==========
-      call parcom(rtp(1,isca(ifp2m  )))
+      call synsca(rtp(1,isca(ifp2m)))
       !==========
 
       if ( ippmod(icolwc).ge.2) then
-        call parcom(rtp(1,isca(icoyfp  )))
+        call synsca(rtp(1,isca(icoyfp)))
         !==========
       endif
 
       if (ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.       &
           ippmod(icolwc).eq.5 ) then
-        call parcom(rtp(1,isca(ihm  )))
+        call synsca(rtp(1,isca(ihm)))
         !==========
       endif
 
-    endif
-
-!     Periodique
-    if(iperio.eq.1) then
-
-      idimte = 0
-      itenso = 0
-      ivar   = isca(iyfm)
-      call percom                                                 &
-      !==========
-      ( idimte , itenso ,                                         &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
-
-      idimte = 0
-      itenso = 0
-      ivar   = isca(iyfp2m)
-      call percom                                                 &
-      !==========
-      ( idimte , itenso ,                                         &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
-
-      idimte = 0
-      itenso = 0
-      ivar   = isca(ifm)
-      call percom                                                 &
-      !==========
-      ( idimte , itenso ,                                         &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
-
-      idimte = 0
-      itenso = 0
-      ivar   = isca(ifp2m)
-      call percom                                                 &
-      !==========
-      ( idimte , itenso ,                                         &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
-
-      if ( ippmod(icolwc).ge.2) then
-        idimte = 0
-        itenso = 0
-        ivar   = isca(icoyfp)
-        call percom                                               &
-        !==========
-      ( idimte , itenso ,                                         &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
-      endif
-
-      if ( ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3           &
-                               .or. ippmod(icolwc).eq.5 ) then
-        idimte = 0
-        itenso = 0
-        ivar   = isca(ihm)
-        call percom                                               &
-        !==========
-      ( idimte , itenso ,                                         &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),                    &
-        rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
-      endif
     endif
 
 

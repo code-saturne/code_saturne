@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -228,7 +228,7 @@ integer          iwb    , inc    , iccocg , icoefa , icoefb
 integer          ivar0  , iphydp , iij , ii , jj
 integer          iccfth , imodif
 integer          iel1  , iel2, iifru, iifbe
-integer          idimte, itenso , iterns
+integer          iterns
 integer          maxelt, ils, idbia1
 double precision flux
 double precision dijpfx, dijpfy, dijpfz, pond  , pip   , pjp
@@ -474,23 +474,9 @@ endif
 !      ENDDO
 
 ! En periodique et parallele, echange avant calcul du gradient
-
-!    Parallele
-!      IF(IRANGP.GE.0) THEN
-!        CALL PARCOM(W7)
+!      IF (IRANGP.GE.0.OR.IPERIO.EQ.1) THEN
+!        CALL SYNSCA(W7)
   !==========
-!      ENDIF
-
-!    Periodique
-!      IF(IPERIO.EQ.1) THEN
-!        IDIMTE = 0
-!        ITENSO = 0
-!        CALL PERCOM
-  !==========
-!     &( IDIMTE , ITENSO ,
-!     &  W7     , W7     , W7     ,
-!     &  W7     , W7     , W7     ,
-!     &  W7     , W7     , W7     )
 !      ENDIF
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -564,23 +550,9 @@ endif
 
 !     En periodique et parallele, echange avant utilisation
 !       des valeurs aux faces
-
-!    Parallele
-if(irangp.ge.0) then
-  call parcom(w9)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(w9)
   !==========
-endif
-
-!    Periodique
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
-( idimte , itenso ,                                               &
-  w9     , w9     , w9     ,                                      &
-  w9     , w9     , w9     ,                                      &
-  w9     , w9     , w9     )
 endif
 
 !     Faces internes
@@ -766,23 +738,9 @@ do ifac = 1, nfabor
 enddo
 
 ! En periodique et parallele, echange avant calcul du gradient
-
-!    Parallele
-if(irangp.ge.0) then
-  call parcom(w7)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(w7)
   !==========
-endif
-
-!    Periodique
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
-( idimte , itenso ,                                               &
-  w7     , w7     , w7     ,                                      &
-  w7     , w7     , w7     ,                                      &
-  w7     , w7     , w7     )
 endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -1051,42 +1009,13 @@ endif
 ! 7. COMMUNICATION DE LA PRESSION, DE L'ENERGIE ET DE LA TEMPERATURE
 !===============================================================================
 
-if(irangp.ge.0) then
-  call parcom (rtp(1,ipr(iphas)))
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(rtp(1,ipr(iphas)))
   !==========
-  call parcom (rtp(1,ivar))
+  call synsca(rtp(1,ivar))
   !==========
-  call parcom (rtp(1,isca(itempk(iphas))))
+  call synsca(rtp(1,isca(itempk(iphas))))
   !==========
-endif
-
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
- ( idimte , itenso ,                                              &
-   rtp(1,ipr(iphas)), rtp(1,ipr(iphas)), rtp(1,ipr(iphas)),       &
-   rtp(1,ipr(iphas)), rtp(1,ipr(iphas)), rtp(1,ipr(iphas)),       &
-   rtp(1,ipr(iphas)), rtp(1,ipr(iphas)), rtp(1,ipr(iphas)))
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
- ( idimte , itenso ,                                              &
-   rtp(1,ivar)     , rtp(1,ivar)     , rtp(1,ivar),               &
-   rtp(1,ivar)     , rtp(1,ivar)     , rtp(1,ivar),               &
-   rtp(1,ivar)     , rtp(1,ivar)     , rtp(1,ivar) )
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
- ( idimte , itenso ,                                              &
-   rtp(1,isca(itempk(iphas))) , rtp(1,isca(itempk(iphas))) ,      &
-   rtp(1,isca(itempk(iphas))) , rtp(1,isca(itempk(iphas))) ,      &
-   rtp(1,isca(itempk(iphas))) , rtp(1,isca(itempk(iphas))) ,      &
-   rtp(1,isca(itempk(iphas))) , rtp(1,isca(itempk(iphas))) ,      &
-   rtp(1,isca(itempk(iphas))) )
 endif
 
 

@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -237,7 +237,6 @@ double precision epsrsp
 double precision sclnor
 
 integer          iccfth, imodif
-integer          idimte, itenso
 integer          iij
 integer          iwfabg, iwfbbg
 double precision dijpfx, dijpfy, dijpfz, pond
@@ -647,20 +646,9 @@ endif
 ! 6. COMMUNICATION DE RHO
 !===============================================================================
 
-if(irangp.ge.0) then
-  call parcom (rtp(1,ivar))
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(rtp(1,ivar))
   !==========
-endif
-
-if(iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
-  !==========
- ( idimte , itenso ,                                              &
-   rtp(1,ivar)     , rtp(1,ivar)     , rtp(1,ivar),               &
-   rtp(1,ivar)     , rtp(1,ivar)     , rtp(1,ivar),               &
-   rtp(1,ivar)     , rtp(1,ivar)     , rtp(1,ivar) )
 endif
 
 !     On ne remplit pas PROPCE et PROPFB ici, car on veut disposer de
@@ -752,20 +740,9 @@ if(igrdpp(iphas).gt.0) then
 ! 9. COMMUNICATION DE LA PRESSION
 !===============================================================================
 
-  if(irangp.ge.0) then
-    call parcom (rtp(1,ipr(iphas)))
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,ipr(iphas)))
     !==========
-  endif
-
-  if(iperio.eq.1) then
-    idimte = 0
-    itenso = 0
-    call percom                                                   &
-    !==========
- ( idimte , itenso ,                                              &
-   rtp(1,ipr(iphas)), rtp(1,ipr(iphas)), rtp(1,ipr(iphas)),       &
-   rtp(1,ipr(iphas)), rtp(1,ipr(iphas)), rtp(1,ipr(iphas)),       &
-   rtp(1,ipr(iphas)), rtp(1,ipr(iphas)), rtp(1,ipr(iphas)))
   endif
 
 endif

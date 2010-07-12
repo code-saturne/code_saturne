@@ -226,7 +226,7 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 integer          idebia, idebra
 integer          ifac, ii, jj, iel, iof, iii
-integer          idimte, itenso, iappel, iphydp
+integer          iappel, iphydp
 double precision pfac,pip,uxfac,uyfac,uzfac
 double precision dofx,dofy,dofz,pond
 double precision diipbx, diipby, diipbz
@@ -262,28 +262,11 @@ do iel = 1, ncel
   qdmz(iel) = rom(iel)*uz(iel)
 enddo
 
-! ---> TRAITEMENT DU PARALLELISME
+! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-if(irangp.ge.0) then
-  call parcom (qdmx)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synvec(qdmx, qdmy, qdmz)
   !==========
-  call parcom (qdmy)
-  !==========
-  call parcom (qdmz)
-  !==========
-endif
-
-! ---> PERIODICITE SUR QDM
-
-if(iperio.eq.1) then
-  idimte = 1
-  itenso = 0
-  call percom                                                     &
-  !==========
-  ( idimte , itenso ,                                             &
-    qdmx   , qdmx   , qdmx  ,                                     &
-    qdmy   , qdmy   , qdmy  ,                                     &
-    qdmz   , qdmz   , qdmz  )
 endif
 
 do ifac =1, nfabor

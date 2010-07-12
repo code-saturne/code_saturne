@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -187,7 +187,7 @@ integer          nphmx , nn
 integer          ibrom(nphsmx) , ipcrom, ipbrom, ipcvst
 integer          ikiph , ieiph , ir11ip, ir22ip, ir33ip
 integer          ipccp , ipcvis, iphiph, ipcvma
-integer          idimte, itenso, iclipc
+integer          iclipc
 double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision varmn(4), varmx(4), tt, ttmin, ttke, vistot
 
@@ -1006,20 +1006,9 @@ do iphas = 1, nphas
 
   ipcrom = ipproc(irom(iphas))
 
-  if(irangp.ge.0) then
-    call parcom (propce(1,ipcrom))
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(propce(1,ipcrom))
     !==========
-  endif
-
-  if(iperio.eq.1) then
-    idimte = 0
-    itenso = 0
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    propce(1,ipcrom),propce(1,ipcrom),propce(1,ipcrom),           &
-    propce(1,ipcrom),propce(1,ipcrom),propce(1,ipcrom),           &
-    propce(1,ipcrom),propce(1,ipcrom),propce(1,ipcrom) )
   endif
 
 enddo

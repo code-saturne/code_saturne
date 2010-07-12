@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -233,7 +233,7 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 integer          idebia, idebra
 integer          ivar, iel, iphas, idirac, ivar0
-integer          iphydp , itenso , idimte
+integer          iphydp
 integer          inc , iccocg
 integer          ipcvst
 integer          ipcrom, ii
@@ -330,24 +330,10 @@ if ( ivar.eq.isca(icoyfp)) then
     w10(iel) = rtpa(iel,ii)
   enddo
 
-! En periodique et parallele, echange avant calcul du gradient
-
-!    Parallele
-  if(irangp.ge.0) then
-    call parcom(w10)
+  ! En periodique et parallele, echange avant calcul du gradient
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(w10)
     !==========
-  endif
-
-!    Periodique
-  if(iperio.eq.1) then
-    idimte = 0
-    itenso = 0
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    w10     , w10     , w10     ,                                 &
-    w10     , w10     , w10     ,                                 &
-    w10     , w10     , w10     )
   endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -386,24 +372,10 @@ if ( ivar.eq.isca(icoyfp)) then
     w11(iel) = rtpa(iel,ii)
   enddo
 
-! En periodique et parallele, echange avant calcul du gradient
-
-!    Parallele
-  if(irangp.ge.0) then
-    call parcom(w11)
+  ! En periodique et parallele, echange avant calcul du gradient
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(w11)
     !==========
-  endif
-
-!    Periodique
-  if(iperio.eq.1) then
-    idimte = 0
-    itenso = 0
-    call percom                                                   &
-    !==========
-  ( idimte , itenso ,                                             &
-    w11     , w11     , w11     ,                                 &
-    w11     , w11     , w11     ,                                 &
-    w11     , w11     , w11     )
   endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable

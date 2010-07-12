@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -102,33 +102,15 @@ double precision ra(*)
 ! Local variables
 
 integer          ifac, iel1, iel2
-integer          idimte, itenso
 double precision valfx, valfy, valfz
 
 !===============================================================================
 
-! ---> TRAITEMENT DU PARALLELISME
+! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-if(irangp.ge.0) then
-  call parcom (vectx)
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synvec(vectx, vecty, vectz)
   !==========
-  call parcom (vecty)
-  !==========
-  call parcom (vectz)
-  !==========
-endif
-
-! ---> TRAITEMENT DE LA PERIODICITE
-
-if(iperio.eq.1) then
-  idimte = 1
-  itenso = 0
-  call percom                                                     &
-  !==========
-  ( idimte , itenso ,                                             &
-    vectx  , vectx  , vectx ,                                     &
-    vecty  , vecty  , vecty ,                                     &
-    vectz  , vectz  , vectz )
 endif
 
 

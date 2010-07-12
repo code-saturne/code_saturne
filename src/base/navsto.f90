@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -238,7 +238,6 @@ integer          icluma, iclvma, iclwma
 integer          iflmas, iflmab, ipcrom, ipbrom
 integer          iflms1, iflmb1, iflmb0, iismph
 integer          nswrgp, imligp, iwarnp, imaspe
-integer          idimte, itenso
 integer          nbrval, iappel, iescop, idtsca
 integer          iflint, iflbrd, icocgv, ifinra
 integer          ndircp, icpt  , iecrw
@@ -315,33 +314,11 @@ if(nterup.gt.1) then
 ! On assure la periodicite ou le parallelisme de UVWK et la pression
 ! (cette derniere vaut la pression a l'iteration precedente)
     if(iterns.gt.1) then
-      if(irangp.ge.0) then
-        call parcom (uvwk(1,1,iphas))
+      if (irangp.ge.0.or.iperio.eq.1) then
+        call synvec(uvwk(1,1,iphas), uvwk(1,2,iphas), uvwk(1,3,iphas))
         !==========
-        call parcom (uvwk(1,2,iphas))
+        call synsca(rtpa(1,ipriph))
         !==========
-        call parcom (uvwk(1,3,iphas))
-        !==========
-        call parcom (rtpa(1,ipriph))
-        !==========
-      endif
-      if(iperio.eq.1) then
-        idimte = 1
-        itenso = 0
-        call percom                                               &
-        !==========
-      ( idimte , itenso ,                                         &
-        uvwk(1,1,iphas),uvwk(1,1,iphas),uvwk(1,1,iphas),          &
-        uvwk(1,2,iphas),uvwk(1,2,iphas),uvwk(1,2,iphas),          &
-        uvwk(1,3,iphas),uvwk(1,3,iphas),uvwk(1,3,iphas))
-        idimte = 0
-        itenso = 0
-        call percom                                               &
-        !==========
-      ( idimte , itenso ,                                         &
-        rtpa(1,ipriph),rtpa(1,ipriph),rtpa(1,ipriph),             &
-        rtpa(1,ipriph),rtpa(1,ipriph),rtpa(1,ipriph),             &
-        rtpa(1,ipriph),rtpa(1,ipriph),rtpa(1,ipriph))
       endif
     endif
 
@@ -867,22 +844,11 @@ do iphas = 1, nphas
       enddo
     endif
 
-! --->    TRAITEMENT DU PARALLELISME
+! --->    TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-    if(irangp.ge.0) call parcom (drtp)
-                              !==========
-
-! ---> TRAITEMENT DE LA PERIODICITE
-
-    if(iperio.eq.1) then
-      idimte = 0
-      itenso = 0
-      call percom                                                 &
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(drtp)
       !==========
-      ( idimte , itenso ,                                         &
-        drtp   , drtp   , drtp  ,                                 &
-        drtp   , drtp   , drtp  ,                                 &
-        drtp   , drtp   , drtp  )
     endif
 
 
@@ -973,23 +939,9 @@ do iphas = 1, nphas
         frcxt(iel,3,iphas) = frcxt(iel,3,iphas)                   &
              + dfrcxt(iel,3,iphas)
       enddo
-      if(irangp.ge.0) then
-        call parcom (frcxt(1,1,iphas))
+      if (irangp.ge.0.or.iperio.eq.1) then
+        call synvec(frcxt(1,1,iphas), frcxt(1,2,iphas), frcxt(1,3,iphas))
         !==========
-        call parcom (frcxt(1,2,iphas))
-        !==========
-        call parcom (frcxt(1,3,iphas))
-        !==========
-      endif
-      if(iperio.eq.1) then
-        idimte = 1
-        itenso = 0
-        call percom                                               &
-        !==========
-  ( idimte , itenso ,                                             &
-    frcxt(1,1,iphas),frcxt(1,1,iphas),frcxt(1,1,iphas),           &
-    frcxt(1,2,iphas),frcxt(1,2,iphas),frcxt(1,2,iphas),           &
-    frcxt(1,3,iphas),frcxt(1,3,iphas),frcxt(1,3,iphas) )
       endif
 !     mise a jour des Dirichlets de pression en sortie dans COEFA
       iclipr = iclrtp(ipriph,icoef)
@@ -1210,24 +1162,9 @@ do iphas = 1, nphas
 
 ! --- Vitesse
 
-    if(irangp.ge.0) then
-      call parcom (rtp(1,iuiph ))
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synvec(rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph))
       !==========
-      call parcom (rtp(1,iviph ))
-      !==========
-      call parcom (rtp(1,iwiph ))
-      !==========
-    endif
-
-    if(iperio.eq.1) then
-      idimte = 1
-      itenso = 0
-      call percom                                                 &
-      !==========
-         ( idimte , itenso ,                                      &
-           rtp(1,iuiph), rtp(1,iuiph), rtp(1,iuiph),              &
-           rtp(1,iviph), rtp(1,iviph), rtp(1,iviph),              &
-           rtp(1,iwiph), rtp(1,iwiph), rtp(1,iwiph))
     endif
 
 
@@ -1235,20 +1172,9 @@ do iphas = 1, nphas
 
     if(iescal(iestot,iphas).gt.0) then
 
-      if(irangp.ge.0) then
-        call parcom (rtp(1,ipriph))
+      if (irangp.ge.0.or.iperio.eq.1) then
+        call synsca(rtp(1,ipriph))
         !==========
-      endif
-
-      if(iperio.eq.1) then
-        idimte = 0
-        itenso = 0
-        call percom                                               &
-        !==========
-           ( idimte , itenso ,                                    &
-           rtp(1,ipriph), rtp(1,ipriph), rtp(1,ipriph),           &
-           rtp(1,ipriph), rtp(1,ipriph), rtp(1,ipriph),           &
-           rtp(1,ipriph), rtp(1,ipriph), rtp(1,ipriph))
       endif
 
     endif

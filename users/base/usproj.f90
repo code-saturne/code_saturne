@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -276,7 +276,7 @@ integer          inc    , iccocg
 integer          nswrgp , imligp , iphydp , iwarnp
 integer          iutile , iphas  , iclvar , iii
 integer          ipcrom , ipcvst , iflmas , iflmab , ipccp, ipcvsl
-integer          idimte , itenso , iscal
+integer          iscal
 integer          ii     , nbr    , irangv , irang1 , npoint
 integer          imom   , ipcmom , idtcm
 integer          itab(3), iun
@@ -494,54 +494,24 @@ if (inpdt0.eq.0) then
   !   the value of these variables in matching periodic cells.
 
   ! To ensure that these values are up to date, it is necessary to use
-  ! the synchronization routines 'parcom' (parallel synchronization)
-  ! and 'percom' (periodic synchronization) to update parallel ghost
-  ! values for Cp and Dt before computing the gradient. 'parcom'
-  ! must always be called before 'percom' if both parallelism and
-  ! periodicity are used.
-  !
+  ! the synchronization routines to update parallel and periodic ghost
+  ! values for Cp and Dt before computing the gradient.
+
   ! If the calculation is neither parallel nor periodic, the calls may be
   ! kept, as tests on iperio and irangp ensure generality).
 
-  ! Parallel update
+  ! Parallel and periodic update
 
-  if (irangp.ge.0) then
+  if (irangp.ge.0.or.iperio.eq.1) then
 
     ! update Dt
-    call parcom(dt)
+    call synsca(dt)
     !==========
 
     ! update Cp if variable (otherwise cp0(iphas) is used)
     if (ipccp.gt.0) then
-      call parcom (propce(1,ipccp))
+      call synsca(propce(1,ipccp))
       !==========
-    endif
-
-  endif
-
-  ! - Periodic update
-
-  if (iperio.eq.1) then
-
-    idimte = 0
-    itenso = 0
-
-    ! update Dt
-    call percom                      &
-    !==========
-      ( idimte , itenso ,            &
-        dt     , dt     , dt     ,   &
-        dt     , dt     , dt     ,   &
-        dt     , dt     , dt     )
-
-    ! update Cp if variable (otherwise cp0(iphas) is used)
-    if (ipccp.gt.0) then
-      call percom                                             &
-      !==========
-        ( idimte, itenso,                                     &
-          propce(1,ipccp), propce(1,ipccp), propce(1,ipccp),  &
-          propce(1,ipccp), propce(1,ipccp), propce(1,ipccp),  &
-          propce(1,ipccp), propce(1,ipccp), propce(1,ipccp))
     endif
 
   endif
@@ -594,37 +564,17 @@ if (inpdt0.eq.0) then
     !   periodic cells.
 
     ! To ensure that these values are up to date, it is necessary to use
-    ! the synchronization routines 'parcom' (parallel synchronization)
-    ! and 'percom' (periodic synchronization) to update parallel ghost
-    ! values for the temperature before computing the gradient. 'parcom'
-    ! must always be called before 'percom' if both parallelism and
-    ! periodicity are used.
-    !
+    ! the synchronization routines to update parallel and periodic ghost
+    ! values for the temperature before computing the gradient.
+
     ! If the calculation is neither parallel nor periodic, the calls may be
     ! kept, as tests on iperio and irangp ensure generality).
 
-    ! - Parallel update
+    ! - Parallel and periodic update
 
-    if (irangp.ge.0) then
-
-      call parcom (rtp(1,ivar))
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(rtp(1,ivar))
       !==========
-
-    endif
-
-    ! - Periodic update
-
-    if (iperio.eq.1) then
-
-      idimte = 0
-      itenso = 0
-      call percom                                 &
-      !==========
-        ( idimte , itenso ,                       &
-          rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),  &
-          rtp(1,ivar), rtp(1,ivar), rtp(1,ivar),  &
-          rtp(1,ivar), rtp(1,ivar), rtp(1,ivar))
-
     endif
 
 

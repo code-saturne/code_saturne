@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -79,7 +79,7 @@ integer ncelet, ncel
 double precision volmin, volmax, voltot
 double precision volume(ncelet)
 
-integer iel, idimte, itenso
+integer iel
 
 integer          ipass
 data             ipass /0/
@@ -113,8 +113,6 @@ enddo
 !       PARCVE est fait directement dans la routine CFLITR (ce qui d'ailleurs
 !       pourrait etre optimise)
 if (irangp.ge.0) then
-  call parcom(volume)
-  !==========
   call parmin (volmin)
   !==========
   call parmax (volmax)
@@ -122,18 +120,9 @@ if (irangp.ge.0) then
   call parsom (voltot)
   !==========
 endif
-if(iperio.eq.1) then
-
-  idimte = 0
-  itenso = 0
-
-  call percom                                                     &
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(volume)
   !==========
-       ( idimte , itenso ,                                        &
-         volume , volume , volume ,                               &
-         volume , volume , volume ,                               &
-         volume , volume , volume )
-
 endif
 
 !     En ALE, on passe plusieurs fois ici.

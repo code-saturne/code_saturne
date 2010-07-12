@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -184,7 +184,7 @@ integer          idebia, idebra
 integer          inc , iccocg , ipriph , iclipr
 integer          iuiph , iviph , iwiph
 integer          ipcliu , ipcliv , ipcliw
-integer          iromf  , idimte , itenso
+integer          iromf
 integer          iel    , iphydp , iphas
 double precision unsrho
 
@@ -230,22 +230,11 @@ iclipr = iclrtp(ipriph,icoef)
 ! Calcul du gradient de pression
 
 
-! ---> TRAITEMENT DU PARALLELISME
+! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-if (irangp.ge.0) call parcom (rtp(1,ipriph))
-                 !==========
-
-! ---> TRAITEMENT DE LA PERIODICITE
-
-if (iperio.eq.1) then
-  idimte = 0
-  itenso = 0
-  call percom                                                     &
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(rtp(1,ipriph))
   !==========
-  (idimte , itenso ,                                              &
-   rtp(1,ipriph)  , rtp(1,ipriph) , rtp(1,ipriph) ,               &
-   rtp(1,ipriph)  , rtp(1,ipriph) , rtp(1,ipriph) ,               &
-   rtp(1,ipriph)  , rtp(1,ipriph) , rtp(1,ipriph)  )
 endif
 
 call grdcel                                                       &
@@ -298,28 +287,11 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
   ipcliv = iclrtp(iviph,icoef)
   ipcliw = iclrtp(iwiph,icoef)
 
-! ---> TRAITEMENT DU PARALLELISME
+! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
-  if(irangp.ge.0) then
-    call parcom (rtp(1,iuiph))
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvec(rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph))
     !==========
-    call parcom (rtp(1,iviph))
-    !==========
-    call parcom (rtp(1,iwiph))
-    !==========
-  endif
-
-! ---> TRAITEMENT DE LA PERIODICITE
-
-  if(iperio.eq.1) then
-    idimte = 1
-    itenso = 0
-    call percom                                                   &
-    !==========
-    (idimte , itenso ,                                            &
-     rtp(1,iuiph),rtp(1,iuiph),rtp(1,iuiph),                      &
-     rtp(1,iviph),rtp(1,iviph),rtp(1,iviph),                      &
-     rtp(1,iwiph),rtp(1,iwiph),rtp(1,iwiph) )
   endif
 
 !     COMPOSANTE X
