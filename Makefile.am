@@ -184,8 +184,7 @@ doc/manpages/code_saturne.1 \
 doc/manpages/cs_check_syntax.1 \
 doc/manpages/cs_io_dump.1 $(CS_PARTITION_1) \
 doc/manpages/cs_preprocess.1 \
-doc/manpages/cs_solver.1 \
-doc/manpages/igghexa_to_med.1
+doc/manpages/cs_solver.1
 
 # Install bash completion script
 
