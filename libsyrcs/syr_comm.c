@@ -154,9 +154,9 @@ static char  syr_glob_comm_err_socket[]
 
 static void
 _swap_endian(void          *dest,
-	     const void    *src,
-	     const size_t   size,
-	     const size_t   ni)
+             const void    *src,
+             const size_t   size,
+             const size_t   ni)
 {
   size_t   i, ib, shift;
   unsigned char  tmpswap;
@@ -926,9 +926,9 @@ _comm_sock_connect(syr_comm_t  *comm,
 
   if (comm->swap_endian == 1)
     _swap_endian((char *)&(sock_addr.sin_port),
-		 (char *)&(sock_addr.sin_port),
-		 sizeof(sock_addr.sin_port),
-		 1);
+                 (char *)&(sock_addr.sin_port),
+                 sizeof(sock_addr.sin_port),
+                 1);
 
   if ( connect(comm->socket[proc_id],
                (struct sockaddr *)&sock_addr, sock_len) < 0)

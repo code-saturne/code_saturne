@@ -46,8 +46,9 @@ tar cvf $ARCHNAME $PREFIX_BASE/ChangeLog $PREFIX_BASE/ABOUT-NLS $PREFIX_BASE/AUT
                   $PREFIX_BASE/bin $PREFIX_BASE/data $PREFIX_BASE/doc \
                   $PREFIX_BASE/examples $PREFIX_BASE/extras \
                   $PREFIX_BASE/gui $PREFIX_BASE/include \
-                  $PREFIX_BASE/libsyrcs $PREFIX_BASE/patches \
-                  $PREFIX_BASE/po $PREFIX_BASE/sbin $PREFIX_BASE/src \
+                  $PREFIX_BASE/libple $PREFIX_BASE/libsyrcs $PREFIX_BASE/preprocessor \
+                  $PREFIX_BASE/patches $PREFIX_BASE/po $PREFIX_BASE/sbin \
+                  $PREFIX_BASE/src $PREFIX_BASE/tests \
                   $PREFIX_BASE/users
 
 gzip $ARCHNAME

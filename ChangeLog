@@ -1,4 +1,11 @@
 * 12/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update the admin tools with the new directories structure.
+  Trailing blank removal.
+  modified scripts:
+    sbin/backup
+	sbin/rmb
+
+* 12/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Make the CCM files reader able to read both 2.6.1 and later versions.
   modified routine:
     preprocessor/pre-post/ecs_pre_ccm.c
