@@ -55,8 +55,8 @@ from PyQt4.QtGui  import *
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, setGreenColor
-from StartRestartForm import Ui_StartRestartForm
-from StartRestartAdvancedDialogForm import Ui_StartRestartAdvancedDialogForm
+from Pages.StartRestartForm import Ui_StartRestartForm
+from Pages.StartRestartAdvancedDialogForm import Ui_StartRestartAdvancedDialogForm
 from Pages.StartRestartModel import StartRestartModel
 
 #-------------------------------------------------------------------------------

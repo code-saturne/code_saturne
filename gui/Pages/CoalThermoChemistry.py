@@ -1083,7 +1083,7 @@ class CoalThermoChemistryModel:
         if not RegExpr.match(line):
             msg = "Reading file error: " + filePath
             msg = msg + "\nNo string 'THERMOCHIMIE' in the first line\n"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         line = ThermoChFile.readline()
         value = self.__readIntValue(line, "currentSpeciesNb", filePath)
@@ -1099,14 +1099,14 @@ class CoalThermoChemistryModel:
         if not RegExpr.match(line):
             msg =  "Reading file error: " + filePath
             msg = msg + "\nNo string 'ESPECES COURANTES' in the first line\n"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         line = ThermoChFile.readline()
         try:
             self.species.setCurrentSpeciesList(line.split())
         except:
             msg = "Reading file error: " + filePath + " bad list of current species"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         line = ThermoChFile.readline()
         value = self.__readFloatValue(line, "MinTempTab", filePath)
@@ -1135,7 +1135,7 @@ class CoalThermoChemistryModel:
             except:
                 msg = "Reading file error: " + filePath
                 msg = msg + "\nElementarySpeciesMolarMassesList or CurrentSpeciesCompositionList reading\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         self.species.setElementarySpeciesList(["C","H","O","N"])
         self.species.setElementarySpeciesMolarMassesList(ElementarySpeciesMolarMassesList)
         self.species.setCurrentSpeciesCompositionList(CurrentSpeciesCompositionList)
@@ -1145,7 +1145,7 @@ class CoalThermoChemistryModel:
         RegExpr = re.compile("^RAYONNEMENT")
         if not RegExpr.match(line):
             msg = "Reading file error: " + filePath + "\nNo string 'RAYONNEMENT'\n"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         #line = ThermoChFile.readline()
         #value = self.__readIntValue(line, "RadiativTransfer", filePath)
@@ -1160,7 +1160,7 @@ class CoalThermoChemistryModel:
         RegExpr = re.compile("^CARACTERISTIQUES CHARBONS")
         if not RegExpr.match(line):
             msg = "Reading file error: " + filePath + "\nNo string 'CARACTERISTIQUES CHARBONS'\n"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         line = ThermoChFile.readline()
         value = self.__readIntValue(line, "CoalNumber", filePath)
@@ -1186,7 +1186,7 @@ class CoalThermoChemistryModel:
 
         except:
             msg = "Reading file error: " + filePath + "\nbad value for InitDiameterClassesList\n"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         line = ThermoChFile.readline()
         values = self.__readFloatCoalValues(line, "CDryCompositionList", filePath)
@@ -1218,7 +1218,7 @@ class CoalThermoChemistryModel:
         RegExpr = re.compile("^Coke")
         if not RegExpr.match(line):
             msg = "_reading file error: " + filePath + "\nNo string 'Coke'\n"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         line = ThermoChFile.readline()
         values = self.__readFloatCoalValues(line, "CDryCompositionCokeList", filePath)
@@ -1241,7 +1241,7 @@ class CoalThermoChemistryModel:
         RegExpr = re.compile("^Cendres")
         if not RegExpr.match(line):
             msg = "Reading file error: " + filePath + "\nNo string 'Cendres'\n"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         line = ThermoChFile.readline()
         values = self.__readFloatCoalValues(line, "ashesRatioList", filePath)
@@ -1265,7 +1265,7 @@ class CoalThermoChemistryModel:
         if not RegExpr.match(line):
             msg =  "Reading file error: " + filePath + \
                    "\nNo string 'Parametres de devolatilisation (modele de Kobayashi)'\n"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         line = ThermoChFile.readline()
         intValues, floatValues = self.__readIntFloatCoalValues(line, "IY1CH", filePath)
@@ -1299,7 +1299,7 @@ class CoalThermoChemistryModel:
         if not RegExpr.match(line):
             msg = "Reading file error: " + filePath + \
                    "\nNo string '^Parametres de combustion heterogene O2 (modele a sphere retrecissante)'\n"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         line = ThermoChFile.readline()
         values = self.__readFloatCoalValues(line, "AHETCH_O2", filePath)
@@ -1318,7 +1318,7 @@ class CoalThermoChemistryModel:
         if not RegExpr.match(line):
             msg = "Reading file error: " + filePath + \
                    "\nNo string 'Parametres de combustion heterogene CO2 (modele a sphere retrecissante)'\n"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         line = ThermoChFile.readline()
         values = self.__readFloatCoalValues(line, "AHETCH_CO2", filePath)
@@ -1337,7 +1337,7 @@ class CoalThermoChemistryModel:
         if not RegExpr.match(line):
             msg = "Reading file error: " + filePath + \
                    "\nNo string 'CARACTERISTIQUES OXYDANTS (O2,N2,H2O,CO2)'\n"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         line = ThermoChFile.readline()
         value = self.__readIntValue(line, "oxydantNumber", filePath)
@@ -1373,7 +1373,7 @@ class CoalThermoChemistryModel:
             ThermoChFile = open(filePath, "w")
         except :
             msg = "Openning file error: " + filePath
-            raise ValueError, msg
+            raise ValueError(msg)
         #
         # writing
         ThermoChFile.write("THERMOCHIMIE\n")
@@ -1613,7 +1613,7 @@ class CoalThermoChemistryModel:
         except:
             msg = "Reading file error: " + filePath + "\n"\
                   "bad value for " + valueName
-            raise ValueError, msg
+            raise ValueError(msg)
         return value
 
 
@@ -1624,7 +1624,7 @@ class CoalThermoChemistryModel:
         except:
             msg = "Reading file error: " + filePath + "\n" \
                   "bad value for " + valueName
-            raise ValueError, msg
+            raise ValueError(msg)
         return value
 
 
@@ -1638,7 +1638,7 @@ class CoalThermoChemistryModel:
         except:
             msg = "Reading file error: " + filePath + "\n"\
                   "bad value for "+ valueName
-            raise ValueError, msg
+            raise ValueError(msg)
         return value
 
 
@@ -1651,7 +1651,7 @@ class CoalThermoChemistryModel:
                 value.append(int(strList[coal]))
         except:
             msg =  "Reading file error: " + filePath + " bad value for "+ valueName
-            raise ValueError, msg
+            raise ValueError(msg)
         return value
 
 
@@ -1666,7 +1666,7 @@ class CoalThermoChemistryModel:
                 floatValue.append(float(strList[coal+1]))
         except:
             msg = "Reading file error: " + filePath + " bad value for "+ valueName
-            raise ValueError, msg
+            raise ValueError(msg)
         return intValue, floatValue
 
 
@@ -1694,7 +1694,7 @@ class CoalThermoChemistryModel:
                 values.append(float(strList[oxy]))
         except:
             msg = "Reading file error: " + filePath + "\nbad value for " + valueName
-            raise ValueError, msg
+            raise ValueError(msg)
         return values
 
 #-------------------------------------------------------------------------------

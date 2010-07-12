@@ -117,7 +117,7 @@ class LagrangianModel(Model):
         """
         Return a tuple with the lagrangian status allowed.
         """
-        from TurbulenceModel import TurbulenceModel
+        from Pages.TurbulenceModel import TurbulenceModel
         model = TurbulenceModel(self.case).getTurbulenceModel()
         del TurbulenceModel
         if model not in ('off',
@@ -155,8 +155,8 @@ class LagrangianModel(Model):
 
         # WARNING: the 'coal_lagr' model is deprecated.
 #        if status == 'off':
-#            import CoalCombustionModel
-#            coal = CoalCombustionModel.CoalCombustionModel(self.case).getCoalCombustionModel()
+#            import Pages.CoalCombustionModel
+#            coal = Pages.CoalCombustionModel.CoalCombustionModel(self.case).getCoalCombustionModel()
 #            # WARNING: the 'coal_lagr' model is deprecated.
 #            if coal == 'coal_lagr':
 #                CoalCombustionModel.CoalCombustionModel(self.case).setCoalCombustion('off')
@@ -813,7 +813,7 @@ class LagrangianTestCase(ModelTest):
 
     def checklagrangianStatus(self):
         """Check whether the lagrangianStatus could be get."""
-        from TurbulenceModel import TurbulenceModel
+        from Pages.TurbulenceModel import TurbulenceModel
         mdl = LagrangianModel(self.case)
         TurbulenceModel(self.case).setTurbulenceModel('LES_Smagorinsky')
 
@@ -1232,7 +1232,7 @@ def suite():
 
 
 def runTest():
-    print os.path.basename(__file__)
+    print(os.path.basename(__file__))
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

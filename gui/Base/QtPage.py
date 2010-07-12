@@ -54,8 +54,8 @@ from PyQt4 import QtGui, QtCore
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Toolbox import GuiParam
-from Common import LABEL_LENGTH_MAX
+from Base.Toolbox import GuiParam
+from Base.Common import LABEL_LENGTH_MAX
 
 #-------------------------------------------------------------------------------
 # log config
@@ -284,7 +284,7 @@ class IntValidator(QtGui.QIntValidator):
         self.__max = max
 
         if type(min) != int or type(max) != int:
-            raise ValueError, "The given parameters are not integers (warning: long are not allowed)."
+            raise ValueError("The given parameters are not integers (warning: long are not allowed).")
         self.setBottom(min)
         self.setTop(max)
 
@@ -308,7 +308,7 @@ class IntValidator(QtGui.QIntValidator):
 
     def setExclusiveMin(self, b=True):
         if type(b) != bool:
-            raise ValueError, "The given parameter is not a boolean."
+            raise ValueError("The given parameter is not a boolean.")
         self.exclusiveMin = b
 
         msg = ""
@@ -324,7 +324,7 @@ class IntValidator(QtGui.QIntValidator):
 
     def setExclusiveMax(self, b=True):
         if type(b) != bool:
-            raise ValueError, "The given parameter is not a boolean."
+            raise ValueError("The given parameter is not a boolean.")
         self.exclusiveMax = b
 
         msg = ""
@@ -340,7 +340,7 @@ class IntValidator(QtGui.QIntValidator):
 
     def setExclusiveValues(self, l):
         if type(l) != list and type(l) != tuple:
-            raise ValueError, "The given parameter is not a list or a tuple."
+            raise ValueError("The given parameter is not a list or a tuple.")
         self.exclusiveValues = l
 
         msg = ""
@@ -353,7 +353,7 @@ class IntValidator(QtGui.QIntValidator):
 
     def setFixup(self, v):
         if type(v) != int:
-            raise ValueError, "The given parameter is not an integer."
+            raise ValueError("The given parameter is not an integer.")
         self.default = v
         self.fix = True
 
@@ -422,7 +422,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
         self.setNotation(self.ScientificNotation)
 
         if type(min) != float or type(max) != float:
-            raise ValueError, "The given parameters are not floats."
+            raise ValueError("The given parameters are not floats.")
         self.setBottom(min)
         self.setTop(max)
 
@@ -445,7 +445,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
 
     def setExclusiveMin(self, b=True):
         if type(b) != bool:
-            raise ValueError, "The given parameter is not a boolean."
+            raise ValueError("The given parameter is not a boolean.")
         self.exclusiveMin = b
 
         msg = ""
@@ -461,7 +461,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
 
     def setExclusiveMax(self, b=True):
         if type(b) != bool:
-            raise ValueError, "The given parameter is not a boolean."
+            raise ValueError("The given parameter is not a boolean.")
         self.exclusiveMax = b
 
         msg = ""
@@ -477,7 +477,7 @@ class DoubleValidator(QtGui.QDoubleValidator):
 
     def setFixup(self, v):
         if type(v) != float:
-            raise ValueError, "The given parameter is not a float."
+            raise ValueError("The given parameter is not a float.")
         self.default = v
         self.fix = True
 

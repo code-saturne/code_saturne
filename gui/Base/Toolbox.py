@@ -45,7 +45,7 @@ import os, sys, logging
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Common import *
+from Base.Common import *
 
 #-------------------------------------------------------------------------------
 # Global GUI parameters
@@ -307,7 +307,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
 
     else:
         msg = tr("Warning: the corresponding Page %s doesn't exist!") % page_name
-        print msg
+        print(msg)
         # So we display the Welcome Page!
         import Pages.WelcomeView as Page
         thisPage = Page.WelcomeView()

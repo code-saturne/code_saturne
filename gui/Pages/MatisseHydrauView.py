@@ -53,7 +53,7 @@ from Base.Toolbox import GuiParam
 from MatisseHydrauForm import Ui_MatisseHydrauForm
 import Base.QtPage as QtPage
 import Pages.MatisseTypeModel as MatisseType
-from MatisseHydrauModel import MatisseHydrauModel
+from Pages.MatisseHydrauModel import MatisseHydrauModel
 
 #-------------------------------------------------------------------------------
 # log config

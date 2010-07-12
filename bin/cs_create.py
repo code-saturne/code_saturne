@@ -406,18 +406,18 @@ class Study:
         Dump the structure of a study.
         """
 
-        print
-        print "Name  of the study:", self.name
-        print "Names of the cases:", self.cases
+        print()
+        print("Name  of the study:", self.name)
+        print("Names of the cases:", self.cases)
         if self.copy is not None:
-            print "Copy from case:", self.copy
-        print "Use the GUI:", self.use_gui
-        print "Copy references:", self.use_ref
+            print("Copy from case:", self.copy)
+        print("Use the GUI:", self.use_gui)
+        print("Copy references:", self.use_ref)
         if self.n_sat > 1:
-            print "Number of Code_Saturne instances:", self.n_sat
+            print("Number of Code_Saturne instances:", self.n_sat)
         if self.n_syr > 0:
-            print "Number of SYRTHES instances:", self.n_syr
-        print
+            print("Number of SYRTHES instances:", self.n_syr)
+        print()
 
 
 #-------------------------------------------------------------------------------

@@ -50,7 +50,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from NumericalParamGlobalForm import Ui_NumericalParamGlobalForm
+from Pages.NumericalParamGlobalForm import Ui_NumericalParamGlobalForm
 import Base.QtPage as QtPage
 from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
 

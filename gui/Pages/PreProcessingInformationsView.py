@@ -114,11 +114,11 @@ class Informations:
 
         self.chain = chain
         if self.chain not in ('faces', 'cells'):
-            raise ValueError, "Informations class is called with a wrong parameter 'chain'"
+            raise ValueError("Informations class is called with a wrong parameter 'chain'")
 
         lines = self.readFile(file)
         if not lines:
-            raise ValueError, "Code_Saturne Preprocessor listing language unknown."
+            raise ValueError("Code_Saturne Preprocessor listing language unknown.")
 
         refList, groupList = self.getListes(lines)
 

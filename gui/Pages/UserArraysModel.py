@@ -343,7 +343,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "UserArraysTestCase"
+    print("UserArraysTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

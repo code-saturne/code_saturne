@@ -49,8 +49,8 @@ import unittest
 #-------------------------------------------------------------------------------
 
 
-from Common import *
-import Toolbox
+from Base.Common import *
+from Base import Toolbox
 
 
 #-------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ class Model:
         """This method verifies that the string type is str"""
         if type(string) != str:
             msg = "There is an error : " + str(string) + " is not a string\n"
-            raise ValueError, msg
+            raise ValueError(msg)
         return True
 
 
@@ -74,7 +74,7 @@ class Model:
         """This method verifies that list is not empty"""
         if type(liste) != list:
             msg = "There is an error: " + string.join(liste) + " is not a list\n"
-            raise ValueError, msg
+            raise ValueError(msg)
         return True
 
 
@@ -82,7 +82,7 @@ class Model:
         """This method verifies that ival is a int value"""
         if type(ival) != int:
             msg = "There is an error: this value " + str(ival) + " is not an integer\n"
-            raise ValueError, msg
+            raise ValueError(msg)
         return True
 
 
@@ -91,7 +91,7 @@ class Model:
         if self.isInt(ival):
             if ival < 0:
                 msg = "There is an error: this value " + str(ival) + " must not be negative\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         return True
 
 
@@ -111,7 +111,7 @@ class Model:
             if ival1 != ival2:
                 msg = "There is an error: this value " + str(ival1) + "\n"\
                       "must be equal to " + str(ival2) + "\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         return True
 
 ##    def isStrictBetweenInt(self, ival,  imin, imax):
@@ -140,7 +140,7 @@ class Model:
             if ival not in list:
                 msg = "There is an error: this value " + str(ival) + "\n"\
                       "is not in list " + list + "\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         return True
 
 
@@ -148,7 +148,7 @@ class Model:
         """This method verifies that val is a float value > 0"""
         if type(val) != float and type(val) != int:
             msg = "There is an error: this value " + str(val) + " is not a float value\n"
-            raise ValueError, msg
+            raise ValueError(msg)
         return True
 
 
@@ -157,7 +157,7 @@ class Model:
         if self.isFloat(val):
             if val < 0:
                 msg = "There is an error: this value " + str(val) + " must not be negative\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         return True
 
 
@@ -167,7 +167,7 @@ class Model:
             if val <= 0:
                 msg = "There is an error: this value " + str(val) + "\n"\
                       "must not be neither negative neither 0\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         return True
 
 
@@ -177,7 +177,7 @@ class Model:
             if val1 > (val2 + 1e-6) or val1 < (val2 - 1e-6):
                 msg = "There is an error: this value " + str(val1) + "\n"\
                       "must be equal to " + str(val2) + "\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         return True
 
 
@@ -187,7 +187,7 @@ class Model:
             if val <= min:
                 msg = "There is an error: this value " + str(val) + "\n"\
                       "must be greater than " + str(min) + "\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         return True
 
 
@@ -197,7 +197,7 @@ class Model:
             if val < min:
                 msg = "There is an error: this value " + str(val) + "\n"\
                       "must be greater or equal than " + str(min) + "\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         return True
 
 
@@ -207,7 +207,7 @@ class Model:
             if val >= max:
                 msg = "There is an error: this value " + str(val) + "\n"\
                       "must be lower than " + str(max) + "\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         return True
 
 
@@ -217,7 +217,7 @@ class Model:
             if val > max:
                 msg = "There is an error: this value " + str(val) + "\n"\
                       "must be lower or equal than " + str(max) + "\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         return True
 
 
@@ -227,7 +227,7 @@ class Model:
             if val not in list:
                 msg = "There is an error: this float value " + str(val) + "\n"\
                       "is not in list " + str(list) + "\n"
-                raise ValueError, msg
+                raise ValueError(msg)
         return True
 
 
@@ -236,7 +236,7 @@ class Model:
         if val not in list:
             msg = "There is an error: this value " + str(val) + "\n"\
                   "is not in list " + str(list) + "\n"
-            raise ValueError, msg
+            raise ValueError(msg)
         return True
 
 
@@ -245,7 +245,7 @@ class Model:
         if val in list:
             msg = "There is an error: this value " + str(val) + "\n"\
                   "should be not in list " + str(list) + "\n"
-            raise ValueError, msg
+            raise ValueError(msg)
         return True
 
 
@@ -254,7 +254,7 @@ class Model:
         if status not in ['on', 'off']:
             msg = "There is an error: this status " + str(status) + "\n"\
                   "is not in list " + str(list) + "\n"
-            raise ValueError, msg
+            raise ValueError(msg)
         return True
 
 
@@ -361,8 +361,8 @@ class Variables:
 ##            elif tag == "enthalpy":
 ##                s1.xmlSetData('initial_value', self.defaultInitialValues()[tag])
 ##            else:
-##                print "Error in setNewThermalScalar:"
-##                print "the given tag is %s" % (tag)
+##                print("Error in setNewThermalScalar:")
+##                print("the given tag is %s" % (tag))
 ##                exit(0)
 ##
 ##            s1.xmlSetData('min_value', SMGRAND)
@@ -462,8 +462,8 @@ class Variables:
 ##            elif tag == "thermal_conductivity":
 ##                value = self.defaultInitialValues()[tag]
 ##            else:
-##                print "Error in setNewFluidProperty:"
-##                print "the given tag is %s" % (tag)
+##                print("Error in setNewFluidProperty:")
+##                print("the given tag is %s" % (tag))
 ##                exit(0)
 
 ##            p1.xmlSetData('initial_value', value)
@@ -573,7 +573,7 @@ def suite1():
     return testSuite
 
 def runTest():
-    print "ModelTestCase"
+    print("ModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite1())
 ##    runner.run(suite2())
@@ -694,7 +694,7 @@ def runTest():
 ##    return testSuite
 ##
 ##def runTest():
-##    print "VariablesTestCase"
+##    print("VariablesTestCase")
 ##    runner = unittest.TextTestRunner()
 ##    runner.run(suite())
 ##

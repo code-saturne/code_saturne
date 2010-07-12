@@ -54,7 +54,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 
-from LagrangianOutputForm import Ui_LagrangianOutputForm
+from Pages.LagrangianOutputForm import Ui_LagrangianOutputForm
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from Pages.LagrangianOutputModel import LagrangianOutputModel

@@ -50,7 +50,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from MatisseThermicForm import Ui_MatisseThermicForm
+from Pages.MatisseThermicForm import Ui_MatisseThermicForm
 import Base.QtPage as QtPage
 from Pages.MatisseThermicModel import MatisseThermicModel
 

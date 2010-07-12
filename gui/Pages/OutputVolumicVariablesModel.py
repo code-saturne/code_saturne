@@ -110,7 +110,7 @@ class OutputVolumicVariablesModel(Model):
                 if not name: name = node['label']
                 if not node['label']:
                     msg = "xml node named "+ name +" has no label"
-                    raise ValueError, msg
+                    raise ValueError(msg)
                 self.dicoLabelName[name] = node['label']
                 self.list_name.append(name)
 
@@ -473,13 +473,13 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
 ##        properties of pulverized coal
 ##        """
 ##        mdl = OutputVolumicVariablesModel(self.case)
-##        from CoalCombustionModel import CoalCombustionModel
+##        from Pages.CoalCombustionModel import CoalCombustionModel
 ##        CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
 ##        del CoalCombustionModel
 ##        mdl.getPuCoalScalProper()
 ##        node = mdl.node_models.xmlGetNode('pulverized_coal', 'model')
-##        print node
-##        print mdl.getPuCoalScalProper()
+##        print(node)
+##        print(mdl.getPuCoalScalProper())
 
     def checkSetVariableLabel(self):
         """
@@ -507,7 +507,7 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         Check whether the OutputVolumicVariablesModel class could be
         set and get status for printing listing
         """
-        from ThermalScalarModel import ThermalScalarModel
+        from Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
 
@@ -533,7 +533,7 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         Check whether the OutputVolumicVariablesModel class could be
         set and get status for printing
         """
-        from ThermalScalarModel import ThermalScalarModel
+        from Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
 
@@ -600,7 +600,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "OutputVolumicVariablesModelTestCase"
+    print("OutputVolumicVariablesModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

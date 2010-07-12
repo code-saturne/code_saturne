@@ -60,7 +60,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from LocalizationForm import Ui_LocalizationForm
+from Pages.LocalizationForm import Ui_LocalizationForm
 from Base.Common import LABEL_LENGTH_MAX
 from Base.QtPage import IntValidator, RegExpValidator
 from Pages.PreProcessingInformationsView import Informations, preprocessorFile
@@ -117,7 +117,7 @@ class LabelDelegate(QItemDelegate):
                 default['regexp'] = self.regExp
                 log.debug("setModelData-> default = %s" % default)
 
-                from VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+                from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()
@@ -469,7 +469,7 @@ class StandardItemModelLocalization(QStandardItemModel):
                     item = string.join([self.dicoM2V[key] for key in self.dicoM2V.keys() if data[key] == "on"], "\n")
 #                    item = ""
 #                    for key in dico.keys():
-#                        print key
+#                        print(key)
 #                        if dico[key] == "on":
 #                            item += key + "\n"
                     return QVariant(item)
@@ -771,7 +771,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         graphical selection in the VTK viwver, or in the ObjectBrowser.
         """
         if self.case['salome']:
-            from SalomeHandler import BoundaryGroup, VolumeGroup
+            from Pages.SalomeHandler import BoundaryGroup, VolumeGroup
 
             log.debug("slotAddFromSalome: zoneType -> %s" % self.zoneType)
             if self.zoneType == 'VolumicZone':

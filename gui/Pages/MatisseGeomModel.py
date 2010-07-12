@@ -130,7 +130,7 @@ class MatisseGeomModel:
         elif tag in self.compute_geom_vars :
             self.node_geom_compute.xmlSetData(tag, val)
         else :
-            print tag + ": unknown parameter"
+            print(tag + ": unknown parameter")
             sys.exit(1)
         self.updateMeshAndProbes()
 
@@ -143,7 +143,7 @@ class MatisseGeomModel:
         elif tag in self.compute_geom_vars :
             val = self.node_geom_compute.xmlGetInt(tag)
         else :
-            print tag + ": unknown parameter"
+            print(tag + ": unknown parameter")
             sys.exit(1)
 
         if val == "" or val == None:
@@ -166,7 +166,7 @@ class MatisseGeomModel:
         elif tag in self.compute_geom_vars :
             val = self.node_geom_compute.xmlGetDouble(tag)
         else :
-            print tag + ": unknown parameter"
+            print(tag + ": unknown parameter")
             sys.exit(1)
 
         if val == "" or val == None:
@@ -221,7 +221,7 @@ class MatisseGeomModel:
         """
         #
         # copy of default mesh
-        print "Not available in the current version."
+        print("Not available in the current version.")
         sys.exit(1)
 
         # TODO: To be adapated, once GUI and Kernel are mergerd
@@ -236,7 +236,7 @@ class MatisseGeomModel:
             geomFile = 'emm.geom'
             desFile  = 'emm.des'
         else:
-            print self.matisseType + ": matisseType unknown"
+            print(self.matisseType + ": matisseType unknown")
             sys.exit(1)
 
         geomFileInitName = defaultMeshDir + '/' + geomFile
@@ -384,7 +384,7 @@ def suite():
 
 
 def runTest():
-    print "MatisseGeomTestCase - A FAIRE**************"
+    print("MatisseGeomTestCase - A FAIRE**************")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

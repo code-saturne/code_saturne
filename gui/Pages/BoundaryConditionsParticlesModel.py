@@ -264,7 +264,7 @@ class LagrangianBoundariesModel(Model):
         Return the number of particles in a class.
         """
         value = self.node_class.xmlGetInt('number')
-        print "getNumberOfParticulesInClassValue value = ", value
+        print("getNumberOfParticulesInClassValue value = ", value)
         if value == None:
             value = self.defaultParticlesBoundaryValues()['number']
             self.setNumberOfParticulesInZoneValue(label, iclass,value)
@@ -745,7 +745,7 @@ def suite():
 
 
 def runTest():
-    print "LagrangianBoundariesTestCase A COMPLETER *********."
+    print("LagrangianBoundariesTestCase A COMPLETER *********.")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

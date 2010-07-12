@@ -59,7 +59,7 @@ from Base.QtPage import ComboModel, DoubleValidator
 import Pages.CoalThermoChemistry as CoalThermoChemistry
 from Pages.Boundary import Boundary
 from Pages.LocalizationModel import LocalizationModel
-from CoalCombustionModel import CoalCombustionModel
+from Pages.CoalCombustionModel import CoalCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config

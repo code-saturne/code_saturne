@@ -226,7 +226,7 @@ class MatisseMeshRunning :
                 geomFile = desFile.split(".")[0]+'.geom'
                 datFile = desFile.split(".")[0]+'.dat'
             except:
-                print "MatisseMeshRunning: see the node mesh"
+                print("MatisseMeshRunning: see the node mesh")
                 sys.exit(1)
 
             #
@@ -271,7 +271,7 @@ class MatisseMeshRunning :
                     self.ok = False
 
         else :
-            print "MatisseMeshRunning: see meshes_list"
+            print("MatisseMeshRunning: see meshes_list")
             sys.exit(1)
 
 #-------------------------------------------------------------------------------
@@ -364,10 +364,10 @@ def suite2():
 def runTest():
     runner = unittest.TextTestRunner()
 
-    print "MatisseInitTestCase: - A FAIRE************"
+    print("MatisseInitTestCase: - A FAIRE************")
     runner.run(suite1())
 
-    print "MatisseThermUpdateTestCase: - A FAIRE************"
+    print("MatisseThermUpdateTestCase: - A FAIRE************")
     runner.run(suite2())
 
 

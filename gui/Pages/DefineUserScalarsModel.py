@@ -223,7 +223,7 @@ class DefineUserScalarsModel(Variables, Model):
         """Public method.
         Input boundaries conditions for a scalar node. Method also used by ThermalScalarModel
         """
-        from Boundary import Boundary
+        from Pages.Boundary import Boundary
 
         for node in self.node_bc.xmlGetChildNodeList('inlet'):
             model = Boundary('inlet', node['label'], self.case)
@@ -691,7 +691,7 @@ class UserScalarTestCase(ModelTest):
         model = DefineUserScalarsModel(self.case)
         zone = '1'
         model.addUserScalar(zone, 'usersca1')
-        from ThermalScalarModel import ThermalScalarModel
+        from Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
 
@@ -926,7 +926,7 @@ class UserScalarTestCase(ModelTest):
         zone = '1'
         model.addUserScalar(zone, 'premier')
 
-        from ThermalScalarModel import ThermalScalarModel
+        from Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
 
@@ -984,7 +984,7 @@ def suite():
 
 def runTest():
     """unittest function"""
-    print "UserScalarTestTestCase"
+    print("UserScalarTestTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

@@ -104,7 +104,7 @@ def print_version():
     Print Code_Saturne version.
     """
 
-    print "Code_Saturne version: %s" % cs_config.package.version
+    print("Code_Saturne version: %s" % cs_config.package.version)
 
 
 #-------------------------------------------------------------------------------
@@ -128,7 +128,7 @@ def launch_manual(reader, m):
     manual = os.path.join(cs_config.dirs.pdfdir, m) + '.pdf'
 
     if not os.path.isfile(manual):
-        print "File %s not found." % manual
+        print("File %s not found." % manual)
         return
 
     # First:  use the reader specified by the user, if any

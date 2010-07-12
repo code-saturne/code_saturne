@@ -50,7 +50,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from CurrentSpeciesForm import Ui_CurrentSpeciesForm
+from Pages.CurrentSpeciesForm import Ui_CurrentSpeciesForm
 from Pages.CurrentSpeciesModel import CurrentSpeciesModel
 
 #-------------------------------------------------------------------------------

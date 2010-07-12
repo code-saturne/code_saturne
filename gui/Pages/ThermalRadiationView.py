@@ -52,8 +52,8 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from ThermalRadiationForm import Ui_ThermalRadiationForm
-from ThermalRadiationAdvancedDialogForm import Ui_ThermalRadiationAdvancedDialogForm
+from Pages.ThermalRadiationForm import Ui_ThermalRadiationForm
+from Pages.ThermalRadiationAdvancedDialogForm import Ui_ThermalRadiationAdvancedDialogForm
 import Base.QtPage as QtPage
 from Pages.ThermalRadiationModel import ThermalRadiationModel
 from Pages.OutputControlModel import OutputControlModel

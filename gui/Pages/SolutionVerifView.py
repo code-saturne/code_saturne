@@ -56,10 +56,10 @@ from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel
 from Base.XMLengine import Case
 from Base.XMLinitialize import XMLinit
-from SolutionVerifForm import Ui_SolutionVerifForm
-from MeshQualityCriteriaLogDialogForm import Ui_MeshQualityCriteriaLogDialogForm
+from Pages.SolutionVerifForm import Ui_SolutionVerifForm
+from Pages.MeshQualityCriteriaLogDialogForm import Ui_MeshQualityCriteriaLogDialogForm
 from Pages.SolutionDomainModel import SolutionDomainModel
-from OutputControlModel import OutputControlModel
+from Pages.OutputControlModel import OutputControlModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -138,7 +138,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                 out = cStringIO.StringIO()
                 f = open('PREPROCESSOR.case')
                 for line in f:
-                    print >> out, line.replace('chr', 'preprocessor'),
+                    out.write(line.replace('chr', 'preprocessor') + '\n'),
                 f.close()
                 out2 = open('PREPROCESSOR.case', 'w')
                 out2.write(out.getvalue())
@@ -190,7 +190,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                 out = cStringIO.StringIO()
                 f = open('QUALITY.case')
                 for line in f:
-                    print >> out, line.replace('chr', 'quality'),
+                    out.write(line.replace('chr', 'quality') + '\n')
                 f.close()
                 out2 = open('QUALITY.case', 'w')
                 out2.write(out.getvalue())

@@ -52,7 +52,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from ReferenceValuesForm import Ui_ReferenceValuesForm
+from Pages.ReferenceValuesForm import Ui_ReferenceValuesForm
 import Base.QtPage as QtPage
 from Pages.ReferenceValuesModel import ReferenceValuesModel
 

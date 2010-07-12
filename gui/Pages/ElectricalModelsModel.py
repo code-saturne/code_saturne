@@ -48,7 +48,7 @@ import sys, unittest
 from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
-from ThermalRadiationModel import ThermalRadiationModel
+from Pages.ThermalRadiationModel import ThermalRadiationModel
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 
 #-------------------------------------------------------------------------------
@@ -182,7 +182,7 @@ def suite():
 
 
 def runTest():
-    print "ElectricalTestCase - A FAIRE**************"
+    print("ElectricalTestCase - A FAIRE**************")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

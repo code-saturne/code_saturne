@@ -826,7 +826,7 @@ class mpi_environment:
             elif resource_info.manager != None:
                 err_str = 'Resource manager type ' + resource_info.manager \
                     + ' options not handled yet for MPIBULL2.'
-                raise ValueError, err_str
+                raise ValueError(err_str)
 
         # Info commands
 
@@ -920,18 +920,18 @@ if __name__ == '__main__':
 
     mpi_env = mpi_environment()
 
-    print 'mpi_env.bindir =        ', mpi_env.bindir
-    print 'mpi_env.mpiexec =       ', mpi_env.mpiexec
-    print 'mpi_env.mpiexec_args =  ', mpi_env.mpiexec_args
-    print 'mpi_env.mpiexec_exe =   ', mpi_env.mpiexec_exe
-    print 'mpi_env.mpiexec_n =     ', mpi_env.mpiexec_n
-    print 'mpi_env.gen_hostsfile = ', mpi_env.gen_hostsfile
-    print 'mpi_env.del_hostsfile = ', mpi_env.del_hostsfile
-    print 'mpi_env.mpiboot =       ', mpi_env.mpiboot
-    print 'mpi_env.mpihalt =       ', mpi_env.mpihalt
-    print 'mpi_env.info_cmds =     ', mpi_env.info_cmds
-    print 'mpi_env.mpmd =          ', mpi_env.mpmd
-    print 'mpi_env.type =          ', mpi_env.type
+    print('mpi_env.bindir =        ', mpi_env.bindir)
+    print('mpi_env.mpiexec =       ', mpi_env.mpiexec)
+    print('mpi_env.mpiexec_args =  ', mpi_env.mpiexec_args)
+    print('mpi_env.mpiexec_exe =   ', mpi_env.mpiexec_exe)
+    print('mpi_env.mpiexec_n =     ', mpi_env.mpiexec_n)
+    print('mpi_env.gen_hostsfile = ', mpi_env.gen_hostsfile)
+    print('mpi_env.del_hostsfile = ', mpi_env.del_hostsfile)
+    print('mpi_env.mpiboot =       ', mpi_env.mpiboot)
+    print('mpi_env.mpihalt =       ', mpi_env.mpihalt)
+    print('mpi_env.info_cmds =     ', mpi_env.info_cmds)
+    print('mpi_env.mpmd =          ', mpi_env.mpmd)
+    print('mpi_env.type =          ', mpi_env.type)
 
-    print mpi_env.info()
+    print(mpi_env.info())
 

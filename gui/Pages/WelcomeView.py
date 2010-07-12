@@ -41,7 +41,7 @@ from PyQt4 import QtGui
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from WelcomeForm import Ui_WelcomeForm
+from Pages.WelcomeForm import Ui_WelcomeForm
 
 #-------------------------------------------------------------------------------
 # This class defines the welcome page

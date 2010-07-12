@@ -51,8 +51,8 @@ import sys, unittest
 #-------------------------------------------------------------------------------
 
 
-from XMLvariables import Variables
-import Toolbox
+from Base.XMLvariables import Variables
+from Base import Toolbox
 
 
 #-------------------------------------------------------------------------------
@@ -232,7 +232,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "XMLmodelTestCase to be completed..."
+    print("XMLmodelTestCase to be completed...")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

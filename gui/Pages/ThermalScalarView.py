@@ -52,9 +52,9 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from ThermalScalarForm import Ui_ThermalScalarForm
+from Pages.ThermalScalarForm import Ui_ThermalScalarForm
 import Base.QtPage as QtPage
-from ThermalScalarModel import ThermalScalarModel
+from Pages.ThermalScalarModel import ThermalScalarModel
 
 #-------------------------------------------------------------------------------
 # log config

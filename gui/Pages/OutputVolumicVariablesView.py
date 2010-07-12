@@ -52,7 +52,7 @@ from PyQt4.QtGui  import *
 from Base.Common import LABEL_LENGTH_MAX
 from Base.Toolbox import GuiParam
 from Base.QtPage import RegExpValidator
-from OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
+from Pages.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
 from Pages.OutputControlModel import OutputControlModel
 from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 from Pages.TimeStepModel import TimeStepModel
@@ -194,7 +194,7 @@ class LabelDelegate(QItemDelegate):
                 default['regexp'] = self.regExp
                 log.debug("setModelData-> default = %s" % default)
 
-                from VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+                from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()
@@ -395,7 +395,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
         elif index.column() == 3:
             probes = str(value.toString())
             self.dataProbe[row] = probes
-            #print probes
+            #print(probes)
             self.mdl.updateProbes(self.dataLabel[row], probes)
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)

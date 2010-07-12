@@ -259,7 +259,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "SteadyManagementTestCase"
+    print("SteadyManagementTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

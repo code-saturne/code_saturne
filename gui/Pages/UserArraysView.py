@@ -52,7 +52,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from UserArraysForm import Ui_UserArraysForm
+from Pages.UserArraysForm import Ui_UserArraysForm
 import Base.QtPage as QtPage
 from Pages.UserArraysModel import UserArraysModel
 

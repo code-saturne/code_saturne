@@ -52,7 +52,7 @@ from PyQt4.QtGui  import *
 
 from Base.Toolbox import GuiParam
 
-from MatisseCustomForm import Ui_MatisseCustomForm
+from Pages.MatisseCustomForm import Ui_MatisseCustomForm
 import Base.QtPage as QtPage
 
 import Pages.MatisseTypeModel as MatisseType
@@ -192,7 +192,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
 
             n = len(llabel)
             if ((n != len(lbmin)) or (n != len(lbmax))):
-                print "XML format error : bad definition of <area> "
+                print("XML format error : bad definition of <area> ")
                 sys.exit(1)
 
             for area in range(0,len(llabel)):
@@ -212,7 +212,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
 
             n = len(llabel)
             if ((n != len(lbmin)) or (n != len(lbmax)) or (n != len(lval))):
-                print "XML format error : bad definition of <area> "
+                print("XML format error : bad definition of <area> ")
                 sys.exit(1)
 
             # Default values
@@ -540,7 +540,7 @@ class StandardItemModelMatisseCustom(QStandardItemModel):
 ##             # Delete boundary region from the Hlist
 ##             #
 ##             if not cancel :
-##                 print "Entry is in Hlist but not in XML"
+##                 print("Entry is in Hlist but not in XML")
 ##                 sys.exit(1)
 ##             else :
 ## #

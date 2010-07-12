@@ -80,7 +80,7 @@ class MatisseTypeModel:
         Input storage matisse type
         """
         if matisse_type not in self.matisseTypes :
-            print "MatisseTypeModel: error with the storage concept list"
+            print("MatisseTypeModel: error with the storage concept list")
             sys.exit(1)
 
         if matisse_type == 'djw' :
@@ -97,7 +97,7 @@ class MatisseTypeModel:
         """
         if self.node_alveo['status'] == 'on' :
             if self.node_type['label'] != 'vault':
-                print "MatisseTypeModel: error with the storage concept input"
+                print("MatisseTypeModel: error with the storage concept input")
                 sys.exit(1)
             matisse_type = 'djw'
         else :
@@ -153,7 +153,7 @@ def suite():
 
 
 def runTest():
-    print "MatisseTypeTestCase - A FAIRE*****"
+    print("MatisseTypeTestCase - A FAIRE*****")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

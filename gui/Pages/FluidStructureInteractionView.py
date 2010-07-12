@@ -67,7 +67,7 @@ from Pages.Boundary                       import Boundary
 from Pages.FluidStructureInteractionAdvancedOptionsDialogForm import \
 Ui_FluidStructureInteractionAdvancedOptionsDialogForm
 
-from QMeiEditorView import QMeiEditorView
+from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config

@@ -51,8 +51,8 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from LagrangianForm import Ui_LagrangianForm
-from LagrangianAdvancedOptionsDialogForm import Ui_LagrangianAdvancedOptionsDialogForm
+from Pages.LagrangianForm import Ui_LagrangianForm
+from Pages.LagrangianAdvancedOptionsDialogForm import Ui_LagrangianAdvancedOptionsDialogForm
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from Pages.LagrangianModel import LagrangianModel

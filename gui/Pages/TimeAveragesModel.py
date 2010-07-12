@@ -118,7 +118,7 @@ class TimeAveragesModel(Model):
                 name = node['name']
                 label = node['label']
                 if not label:
-                    raise ValueError, "Node has no label"
+                    raise ValueError("Node has no label")
 
                 if not (node['support'] and node['support'] == "boundary"):
                     if name != 'local_time_step':
@@ -368,7 +368,7 @@ def suite():
 
 
 def runTest():
-    print __file__
+    print(__file__)
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

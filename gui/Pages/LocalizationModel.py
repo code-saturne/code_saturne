@@ -71,7 +71,7 @@ class Zone(object):
         elif typeZone == 'VolumicZone':
             return VolumicZone.__new__(VolumicZone, label, codeNumber, localization)
         else:
-            raise ValueError, "Unknown type zone"
+            raise ValueError("Unknown type zone")
 
 
     def __init__(self, typeZone , label = None, codeNumber = None, localization = None, nature = None):
@@ -258,7 +258,7 @@ class LocalizationModel(object):
         elif typeZone == 'VolumicZone':
             return VolumicZone.__new__(VolumicLocalizationModel, case)
         else:
-            raise ValueError, "Unknown type zone"
+            raise ValueError("Unknown type zone")
 
 
     def __init__(self, typeZone, case):
@@ -1013,7 +1013,7 @@ def suite1():
 
 
 def runTest1():
-    print __file__
+    print(__file__)
     runner = unittest.TextTestRunner()
     runner.run(suite1())
 
@@ -1150,7 +1150,7 @@ def suite2():
 
 
 def runTest2():
-    print __file__
+    print(__file__)
     runner = unittest.TextTestRunner()
     runner.run(suite2())
 

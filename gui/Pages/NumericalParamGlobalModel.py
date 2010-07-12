@@ -424,7 +424,7 @@ def suite():
 
 
 def runTest():
-    print "NumericalParamGlobalModelTestCase"
+    print("NumericalParamGlobalModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

@@ -54,7 +54,7 @@ from PyQt4.QtGui  import *
 
 from Base.QtPage import RegExpValidator, DoubleValidator
 from Base.Toolbox import GuiParam
-from FacesSelectionForm import Ui_FacesSelectionForm
+from Pages.FacesSelectionForm import Ui_FacesSelectionForm
 from Pages.SolutionDomainModel import SolutionDomainModel
 
 #-------------------------------------------------------------------------------

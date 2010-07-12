@@ -105,7 +105,7 @@ class BodyForcesModel(Model):
         if self.getGravity('gravity_x') == 0.0 and \
            self.getGravity('gravity_y') == 0.0 and \
            self.getGravity('gravity_z') == 0.0:
-            from TimeStepModel import TimeStepModel
+            from Pages.TimeStepModel import TimeStepModel
             TimeStepModel(self.case).RemoveThermalTimeStepNode()
             del TimeStepModel
 
@@ -184,7 +184,7 @@ def suite():
 
 
 def runTest():
-    print "BodyForcesTestCase"
+    print("BodyForcesTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

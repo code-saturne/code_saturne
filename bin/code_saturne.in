@@ -49,7 +49,7 @@ Topics:
 Options:
   -h, --help  show this help message and exit"""
 
-    print usage % {'prog':sys.argv[0]}
+    print(usage % {'prog':sys.argv[0]})
 
 def check_consistency(argv):
     import cs_check_consistency

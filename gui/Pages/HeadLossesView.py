@@ -53,7 +53,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from HeadLossesForm import Ui_HeadLossesForm
+from Pages.HeadLossesForm import Ui_HeadLossesForm
 from Pages.LocalizationModel import LocalizationModel, Zone
 import Base.QtPage as QtPage
 from Base.QtPage import DoubleValidator, ComboModel

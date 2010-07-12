@@ -44,10 +44,10 @@ import os, sys, string, types, re
 #-------------------------------------------------------------------------------
 
 import Base.Toolbox as Tool
-from SolutionDomainModel import SolutionDomainModel
-from CoalCombustionModel import CoalCombustionModel
-from AtmosphericFlowsModel import AtmosphericFlowsModel
-from ProfilesModel import ProfilesModel
+from Pages.SolutionDomainModel import SolutionDomainModel
+from Pages.CoalCombustionModel import CoalCombustionModel
+from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from Pages.ProfilesModel import ProfilesModel
 from Base.XMLvariables import Variables, Model
 
 #-------------------------------------------------------------------------------
@@ -560,9 +560,9 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'METEO_DATA':None}
         for k in mdl.dicoValues.keys():
             if mdl.dicoValues[k] != dico[k]:
-                print "\nwarning for key: ", k
-                print "  read value in the script:", mdl.dicoValues[k]
-                print "  reference value:", dico[k]
+                print("\nwarning for key: ", k)
+                print("  read value in the script:", mdl.dicoValues[k])
+                print("  reference value:", dico[k])
             assert  mdl.dicoValues[k] == dico[k], 'could not read the batch script file'
         assert  mdl.dicoValues == dico, 'could not read batch script file'
 
@@ -594,9 +594,9 @@ class BatchRunningModelTestCase(unittest.TestCase):
 
         for k in dico_PBS.keys():
             if mdl.dicoValues[k] != dico_PBS[k] :
-                print "\nwarning for key: ", k
-                print "  read value in the script:", mdl.dicoValues[k]
-                print "  reference value:", dico_PBS[k]
+                print("\nwarning for key: ", k)
+                print("  read value in the script:", mdl.dicoValues[k])
+                print("  reference value:", dico_PBS[k])
             assert  mdl.dicoValues[k] == dico_PBS[k], 'could not read the batch script file'
 
 
@@ -633,7 +633,7 @@ def suite():
 
 
 def runTest():
-    print "BatchRunningModelTestCase"
+    print("BatchRunningModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

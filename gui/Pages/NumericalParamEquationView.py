@@ -52,7 +52,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from NumericalParamEquationForm import Ui_NumericalParamEquationForm
+from Pages.NumericalParamEquationForm import Ui_NumericalParamEquationForm
 from Pages.NumericalParamEquationModel import NumericalParamEquatModel
 from Pages.TurbulenceModel import TurbulenceModel
 from Pages.SteadyManagementModel import SteadyManagementModel

@@ -51,9 +51,9 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLmodel import ModelTest
 from Base.XMLvariables import Variables, Model
-from DefineUserScalarsModel import DefineUserScalarsModel
-from ThermalRadiationModel import ThermalRadiationModel
-from ConjugateHeatTransferModel import ConjugateHeatTransferModel
+from Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from Pages.ThermalRadiationModel import ThermalRadiationModel
+from Pages.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
 #-------------------------------------------------------------------------------
 # Thermal scalar model class
@@ -125,7 +125,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         Private method : remove node 'thermal_time_step' in time_parameters
         we call function from TimeStepModel
         """
-        from TimeStepModel import TimeStepModel
+        from Pages.TimeStepModel import TimeStepModel
         TimeStepModel(self.case).RemoveThermalTimeStepNode()
         del TimeStepModel
 
@@ -239,7 +239,7 @@ def suite():
 
 
 def runTest():
-    print "ThermalScalarTestCase"
+    print("ThermalScalarTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

@@ -60,9 +60,9 @@ from PyQt4.QtGui  import *
 from Base.Toolbox import GuiParam
 from OutputControlForm import Ui_OutputControlForm
 import Base.QtPage as QtPage
-from OutputControlModel import OutputControlModel
-from ConjugateHeatTransferModel import ConjugateHeatTransferModel
-from MobileMeshModel import MobileMeshModel
+from Pages.OutputControlModel import OutputControlModel
+from Pages.ConjugateHeatTransferModel import ConjugateHeatTransferModel
+from Pages.MobileMeshModel import MobileMeshModel
 
 #-------------------------------------------------------------------------------
 # log config

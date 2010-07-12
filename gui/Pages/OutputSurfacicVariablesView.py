@@ -50,7 +50,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from OutputSurfacicVariablesForm import Ui_OutputSurfacicVariablesForm
+from Pages.OutputSurfacicVariablesForm import Ui_OutputSurfacicVariablesForm
 import Base.QtPage as QtPage
 from Pages.OutputSurfacicVariablesModel import OutputSurfacicVariablesModel
 from Pages.OutputVolumicVariablesView import LabelDelegate

@@ -93,7 +93,7 @@ class MatisseRangeDescriptionModel :
             if bmin: self.list_height_area[num].xmlSetData('min',bmin)
             if bmax: self.list_height_area[num].xmlSetData('max',bmax)
         else :
-            print areatype, " : Unknown area type"
+            print(areatype, " : Unknown area type")
             sys.exit(1)
 
 
@@ -107,7 +107,7 @@ class MatisseRangeDescriptionModel :
         elif areatype == 'height' :
             node = self.node_height.xmlAddChild('area', label=label)
         else :
-            print areatype + " : Unknown area type"
+            print(areatype + " : Unknown area type")
             sys.exit(1)
 
         node.xmlAddChild('min').xmlSetTextNode(bmin)
@@ -118,7 +118,7 @@ class MatisseRangeDescriptionModel :
         elif areatype == 'height' :
             self.list_height_area.append(node)
         else :
-            print areatype + " : Unknown area type"
+            print(areatype + " : Unknown area type")
             sys.exit(1)
 
 
@@ -135,7 +135,7 @@ class MatisseRangeDescriptionModel :
             bmin = self.list_height_area[num].xmlGetString('min')
             bmax = self.list_height_area[num].xmlGetString('max')
         else :
-            print "GetArea" + areatype + " : Unknown area type"
+            print("GetArea" + areatype + " : Unknown area type")
             sys.exit(1)
 
         return label, bmin, bmax
@@ -154,7 +154,7 @@ class MatisseRangeDescriptionModel :
         elif areatype == 'height' :
             nodes_nb = len(self.list_height_area)
         else :
-            print "GetAreas '" + areatype +  "' : Unknown area type"
+            print("GetAreas '" + areatype +  "' : Unknown area type")
             sys.exit(1)
 
         for i in range(0,nodes_nb) :
@@ -175,7 +175,7 @@ class MatisseRangeDescriptionModel :
         elif areatype == 'height' :
             node = self.list_height_area.pop(num)
         else :
-            print "EraseErea" + areatype, " : Unknown area type"
+            print("EraseErea" + areatype, " : Unknown area type")
             sys.exit(1)
 
         node.xmlRemoveChild('min')
@@ -219,7 +219,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "MatisseRangeDescriptionModelTestCase - A FAIRE**************"
+    print("MatisseRangeDescriptionModelTestCase - A FAIRE**************")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

@@ -66,7 +66,7 @@ class Boundary(object) :
         if nature == 'inlet':
             return InletBoundary.__new__(InletBoundary, label, case)
         elif nature == 'coal_inlet':
-            from CoalCombustionModel import CoalCombustionModel
+            from Pages.CoalCombustionModel import CoalCombustionModel
             Model().isNotInList(CoalCombustionModel(case).getCoalCombustionModel(), ("off",))
             return CoalInletBoundary.__new__(CoalInletBoundary, label, case)
         elif nature == 'outlet':
@@ -76,7 +76,7 @@ class Boundary(object) :
         elif nature == 'wall':
             return WallBoundary.__new__(WallBoundary, label, case)
         elif nature == 'radiative_wall':
-            from ThermalRadiationModel import ThermalRadiationModel
+            from Pages.ThermalRadiationModel import ThermalRadiationModel
             Model().isNotInList(ThermalRadiationModel(case).getRadiativeModel(), ("off",))
             return RadiativeWallBoundary.__new__(RadiativeWallBoundary, label, case)
         elif nature == 'mobile_boundary':
@@ -86,7 +86,7 @@ class Boundary(object) :
         elif nature == 'meteo_inlet' or nature == 'meteo_outlet':
             return MeteoBoundary.__new__(MeteoBoundary, label, case)
         else :
-            raise ValueError, "Unknown boundary nature: " + nature
+            raise ValueError("Unknown boundary nature: " + nature)
 
 
     def __init__(self, nature, label, case) :
@@ -200,7 +200,7 @@ class InletBoundary(Boundary):
         for label in self.sca_model.getScalarLabelsList():
             self.getScalar(label)
 
-        from CoalCombustionModel import CoalCombustionModel
+        from Pages.CoalCombustionModel import CoalCombustionModel
         if CoalCombustionModel(self._case).getCoalCombustionModel() =="off":
             self.boundNode.xmlRemoveChild('coal')
             self.boundNode.xmlRemoveChild('temperature')
@@ -597,7 +597,7 @@ class CoalInletBoundary(InletBoundary) :
 
 
     def __updateCoalInfo(self):
-        from CoalThermoChemistry import CoalThermoChemistryModel
+        from Pages.CoalThermoChemistry import CoalThermoChemistryModel
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP", self._case)
         self.coalNumber = coalThermoChModel.getCoals().getCoalNumber()
         log.debug("__updateCoalInfo coalNumber: %i " % self.coalNumber)
@@ -670,7 +670,7 @@ class CoalInletBoundary(InletBoundary) :
         dico['flow'] = 1.0
         dico['ratio'] = 0.0
         dico['oxydant'] = 1
-        from ReferenceValuesModel import ReferenceValuesModel
+        from Pages.ReferenceValuesModel import ReferenceValuesModel
         dico['temperature'] = ReferenceValuesModel(self._case).getTemperature()
 
         return dico
@@ -953,7 +953,7 @@ class OutletBoundary(Boundary) :
         Default values
         """
         dico = {}
-        from ReferenceValuesModel import ReferenceValuesModel
+        from Pages.ReferenceValuesModel import ReferenceValuesModel
         dico['reference_pressure'] = ReferenceValuesModel(self._case).getPressure()
         dico['scalarChoice'] = 'neumann'
         dico['scalar'] = 0.
@@ -2503,7 +2503,7 @@ def suite():
 
 
 def runTest():
-    print "InletBoundaryTestCase"
+    print("InletBoundaryTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 
@@ -2521,7 +2521,7 @@ class CoalInletBoundaryTestCase(ModelTest):
         """
         Check whether the CoalInletBoundary class could be instantiated
         """
-        from CoalCombustionModel import CoalCombustionModel
+        from Pages.CoalCombustionModel import CoalCombustionModel
         CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
         model = None
         model = Boundary("coal_inlet", "entree1", self.case)
@@ -2530,7 +2530,7 @@ class CoalInletBoundaryTestCase(ModelTest):
 
     def checkSetAndgetInletType(self):
         """Check whether the type of inlet coal could be set and get for coal inlet boundary."""
-        from CoalCombustionModel import CoalCombustionModel
+        from Pages.CoalCombustionModel import CoalCombustionModel
         CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
 
         model = Boundary("inlet", "charb1", self.case)
@@ -2583,7 +2583,7 @@ class CoalInletBoundaryTestCase(ModelTest):
 
     def checkSetAndGetOxydantAndCoalTemperature(self):
         """Check whether the temperature of oxydant and coal could be set and get for coal inlet boundary."""
-        from CoalCombustionModel import CoalCombustionModel
+        from Pages.CoalCombustionModel import CoalCombustionModel
         CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
 
         model = Boundary("inlet", "charb1", self.case)
@@ -2623,7 +2623,7 @@ class CoalInletBoundaryTestCase(ModelTest):
 
     def checkSetAndGetCoalFlow(self):
         """Check whether the flow of inlet coal could be set and get for coal inlet boundary."""
-        from CoalCombustionModel import CoalCombustionModel
+        from Pages.CoalCombustionModel import CoalCombustionModel
         CoalCombustionModel(self.case).setCoalCombustionModel('coal_homo')
 
         model = Boundary("inlet", "charb1", self.case)
@@ -2660,13 +2660,13 @@ class CoalInletBoundaryTestCase(ModelTest):
     def checkSetAndGetCoalRatios(self):
         """Check whether the ratio of classes could be set and get for coal inlet boundary."""
         os.remove("dp_FCP")
-        from CoalCombustionModel import CoalCombustionModel
+        from Pages.CoalCombustionModel import CoalCombustionModel
         m = CoalCombustionModel(self.case)
         m.setCoalCombustionModel('coal_homo')
 
         # creation du fichier dp_FCP avec 2 charbons et 3 classes
         self.case['data_path'] = "."
-        from CoalThermoChemistry import CoalThermoChemistryModel, Coal
+        from Pages.CoalThermoChemistry import CoalThermoChemistryModel, Coal
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP", self.case)
         m.createCoalModelScalarsAndProperties(coalThermoChModel)
         coalThermoChModel.save()
@@ -2729,13 +2729,13 @@ class CoalInletBoundaryTestCase(ModelTest):
     def checkDeleteCoalAndClassesRatios(self):
         """Check whether coal or classes could be deleted for coal inlet boundary."""
         os.remove("dp_FCP")
-        from CoalCombustionModel import CoalCombustionModel
+        from Pages.CoalCombustionModel import CoalCombustionModel
         m = CoalCombustionModel(self.case)
         m.setCoalCombustionModel('coal_homo')
 
         # creation du fichier dp_FCP avec 3 charbons et 6 classes
         self.case['data_path'] = "."
-        from CoalThermoChemistry import CoalThermoChemistryModel, Coal
+        from Pages.CoalThermoChemistry import CoalThermoChemistryModel, Coal
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP", self.case)
         m.createCoalModelScalarsAndProperties(coalThermoChModel)
         coalThermoChModel.save()
@@ -2865,7 +2865,7 @@ def suite2():
 
 
 def runTest2():
-    print "CoalInletBoundaryTestCase"
+    print("CoalInletBoundaryTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite2())
 
@@ -3078,7 +3078,7 @@ def suite3():
 
 
 def runTest3():
-    print "WallBoundaryTestCase"
+    print("WallBoundaryTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite3())
 
@@ -3096,7 +3096,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
         """
         Check whether the RadiativeWallBoundary class could be instantiated RadiativeWallBoundary
         """
-        from ThermalRadiationModel import ThermalRadiationModel
+        from Pages.ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
 
         model = None
@@ -3106,7 +3106,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
 
     def checkSetAndgetRadiativeChoice(self):
         """Check whether the type of condition could be set and get for radiative wall boundary."""
-        from ThermalRadiationModel import ThermalRadiationModel
+        from Pages.ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
 
         model = Boundary("wall", "mur", self.case)
@@ -3140,7 +3140,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
 
     def checkSetAndGetEmissivity(self):
         """Check whether the emissivity could be set and get for radiative wall boundary."""
-        from ThermalRadiationModel import ThermalRadiationModel
+        from Pages.ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
 
         model = Boundary("wall", "mur", self.case)
@@ -3175,7 +3175,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
 
     def checkSetAndGetThermalConductivity(self):
         """Check whether the thermal conductivity could be set and get for radiative wall boundary."""
-        from ThermalRadiationModel import ThermalRadiationModel
+        from Pages.ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
 
         model = Boundary("wall", "mur", self.case)
@@ -3210,7 +3210,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
 
     def checkSetAndGetThickness(self):
         """Check whether the thickness could be set and get for radiative wall boundary."""
-        from ThermalRadiationModel import ThermalRadiationModel
+        from Pages.ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
 
         model = Boundary("wall", "mur", self.case)
@@ -3248,7 +3248,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
         Check whether the external and internal temperature profile
         could be set and get for radiative wall boundary.
         """
-        from ThermalRadiationModel import ThermalRadiationModel
+        from Pages.ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
 
         model = Boundary("wall", "mur", self.case)
@@ -3291,7 +3291,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
         Check whether the output radiative zone could be set and get for
         radiative wall boundary.
         """
-        from ThermalRadiationModel import ThermalRadiationModel
+        from Pages.ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
 
         model = Boundary("wall", "mur", self.case)
@@ -3326,7 +3326,7 @@ class RadiativeWallBoundaryTestCase(ModelTest):
 
     def checkSetAndGetFlux(self):
         """Check whether the flux could be set and get for radiative wall boundary."""
-        from ThermalRadiationModel import ThermalRadiationModel
+        from Pages.ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
 
         model = Boundary("wall", "mur", self.case)
@@ -3362,7 +3362,7 @@ def suite4():
 
 
 def runTest4():
-    print "RadiativeWallBoundaryTestCase"
+    print("RadiativeWallBoundaryTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite4())
 
@@ -3440,7 +3440,7 @@ def suite5():
 
 
 def runTest5():
-    print "OutletBoundaryTestCase"
+    print("OutletBoundaryTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite5())
 
@@ -3510,7 +3510,7 @@ def suite6():
 
 
 def runTest6():
-    print "MobilWallBoundaryTestCase"
+    print("MobilWallBoundaryTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite6())
 
@@ -3700,7 +3700,7 @@ def suite7():
 
 
 def runTest7():
-    print "CouplingMobilWallBoundaryTestCase"
+    print("CouplingMobilWallBoundaryTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite7())
 

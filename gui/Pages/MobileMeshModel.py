@@ -429,7 +429,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "MobileMeshTestCase"
+    print("MobileMeshTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

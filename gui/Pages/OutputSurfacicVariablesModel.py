@@ -130,7 +130,7 @@ class OutputSurfacicVariablesModel(Model):
                     name = node['label']
                 if not node['label']:
                     msg = "xml node named "+ name +" has no label"
-                    raise ValueError, msg
+                    raise ValueError(msg)
                 self.dicoLabelName[name] = node['label']
                 self.list_name.append(name)
 
@@ -247,7 +247,7 @@ def suite():
 
 
 def runTest():
-    print "OutputSurfacicVariablesTestCase"
+    print("OutputSurfacicVariablesTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

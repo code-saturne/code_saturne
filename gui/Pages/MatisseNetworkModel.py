@@ -109,7 +109,7 @@ class MatisseNetworkModel:
             if bmin: self.list_row_area[num].xmlSetData('min',bmin)
             if bmax: self.list_row_area[num].xmlSetData('max',bmax)
         else :
-            print areatype, ": Unknown area type"
+            print(areatype, ": Unknown area type")
             sys.exit(1)
 
 
@@ -123,7 +123,7 @@ class MatisseNetworkModel:
         elif areatype == 'row':
             node = self.node_row.xmlAddChild('area', label=label)
         else :
-            print areatype + ": Unknown area type"
+            print(areatype + ": Unknown area type")
             sys.exit(1)
 
         node.xmlAddChild('min').xmlSetTextNode(bmin)
@@ -134,7 +134,7 @@ class MatisseNetworkModel:
         elif areatype == 'row':
             self.list_row_area.append(node)
         else :
-            print areatype + ": Unknown area type"
+            print(areatype + ": Unknown area type")
             sys.exit(1)
 
 
@@ -155,7 +155,7 @@ class MatisseNetworkModel:
             bmin = self.list_height_area[num].xmlGetString('min')
             bmax = self.list_height_area[num].xmlGetString('max')
         else :
-            print "GetArea" + areatype + " : Unknown area type"
+            print("GetArea" + areatype + " : Unknown area type")
             sys.exit(1)
 
         return label, bmin, bmax
@@ -174,7 +174,7 @@ class MatisseNetworkModel:
         elif areatype == 'row':
             nodes_nb = len(self.list_row_area)
         else :
-            print "GetAreas '" + areatype +  "': Unknown area type"
+            print("GetAreas '" + areatype +  "': Unknown area type")
             sys.exit(1)
 
         for i in range(0,nodes_nb):
@@ -195,7 +195,7 @@ class MatisseNetworkModel:
         elif areatype == 'row':
             node = self.list_row_area.pop(num)
         else :
-            print "EraseErea" + areatype, " : Unknown area type"
+            print("EraseErea" + areatype, " : Unknown area type")
             sys.exit(1)
 
         node.xmlRemoveChild('min')
@@ -263,7 +263,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "MatisseNetworkModelTestCase - A FAIRE**************"
+    print("MatisseNetworkModelTestCase - A FAIRE**************")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

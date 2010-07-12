@@ -49,7 +49,7 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
-from OutputControlModel import OutputControlModel
+from Pages.OutputControlModel import OutputControlModel
 
 #-------------------------------------------------------------------------------
 # Conjugate Heat Transfer model class
@@ -335,7 +335,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "ConjugateHeatTransferModelTestCase"
+    print("ConjugateHeatTransferModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

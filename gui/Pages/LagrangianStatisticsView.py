@@ -56,7 +56,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 
-from LagrangianStatisticsForm import Ui_LagrangianStatisticsForm
+from Pages.LagrangianStatisticsForm import Ui_LagrangianStatisticsForm
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, DoubleValidator
 from Pages.LagrangianStatisticsModel import LagrangianStatisticsModel

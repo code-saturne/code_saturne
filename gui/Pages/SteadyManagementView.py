@@ -52,7 +52,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from SteadyManagementForm import Ui_SteadyManagementForm
+from Pages.SteadyManagementForm import Ui_SteadyManagementForm
 import Base.QtPage as QtPage
 from Base.XMLvariables import Variables
 from Pages.SteadyManagementModel import SteadyManagementModel

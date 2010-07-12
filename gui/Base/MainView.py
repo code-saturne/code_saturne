@@ -57,14 +57,14 @@ from PyQt4.QtGui  import *
 # Application modules
 #-------------------------------------------------------------------------------
 
-from MainForm import Ui_MainForm
-from IdView import IdView
-from BrowserView import BrowserView
-import XMLengine
-from XMLinitialize import *
-from XMLmodel import *
-from Toolbox import GuiParam, displaySelectedPage
-from Common import XML_DOC_VERSION
+from Base.MainForm import Ui_MainForm
+from Base.IdView import IdView
+from Base.BrowserView import BrowserView
+from Base import XMLengine
+from Base.XMLinitialize import *
+from Base.XMLmodel import *
+from Base.Toolbox import GuiParam, displaySelectedPage
+from Base.Common import XML_DOC_VERSION
 
 try:
     import Pages
@@ -668,7 +668,7 @@ class MainView(QMainWindow, Ui_MainForm):
         print the case (xml file) on the current terminal
         """
         if hasattr(self, 'case'):
-            print self.case
+            print(self.case)
 
 
     def updateStudyId(self):

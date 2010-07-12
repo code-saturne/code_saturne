@@ -49,7 +49,7 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
-from NumericalParamGlobalModel import NumericalParamGlobalModel
+from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
 
 #-------------------------------------------------------------------------------
 # Turbulence model class
@@ -218,7 +218,7 @@ class TurbulenceModel(Variables, Model):
             self.setNewProperty(self.node_turb, 'smagorinsky_constant')
             self.__removeVariablesAndProperties([], 'turb_viscosity')
 
-            from TimeStepModel import TimeStepModel
+            from Pages.TimeStepModel import TimeStepModel
             TimeStepModel(self.case).setTimePassing(0)
             del TimeStepModel
 
@@ -256,7 +256,7 @@ class TurbulenceModel(Variables, Model):
         """
         Put boundaries conditions if it's necessary
         """
-        from Boundary import Boundary
+        from Pages.Boundary import Boundary
         for nodbc in self.node_bc.xmlGetChildNodeList('inlet'):
             model = Boundary('inlet', nodbc['label'], self.case)
             model.getTurbulenceChoice()
@@ -373,7 +373,7 @@ class TurbulenceModelTestCase(ModelTest):
 
     def checkTurbulenceModelsList(self):
         """Check whether the TurbulenceModelList could be get"""
-        from LagrangianModel import LagrangianModel
+        from Pages.LagrangianModel import LagrangianModel
         LagrangianModel(self.case).setLagrangianStatus('on')
         del LagrangianModel
         mdl = TurbulenceModel(self.case)
@@ -606,7 +606,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "TurbulenceModelTestCase"
+    print("TurbulenceModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

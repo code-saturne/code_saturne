@@ -52,11 +52,11 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox   import GuiParam
-from MobileMeshForm  import Ui_MobileMeshForm
+from Pages.MobileMeshForm  import Ui_MobileMeshForm
 from Base.QtPage    import setGreenColor, IntValidator,  ComboModel
-from MobileMeshModel import MobileMeshModel
+from Pages.MobileMeshModel import MobileMeshModel
 
-from QMeiEditorView import QMeiEditorView
+from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config

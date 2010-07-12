@@ -73,14 +73,14 @@ def process_cmd_line(argv):
         param = os.path.expandvars(param)
         param = os.path.abspath(param)
         if not os.path.isfile(param):
-            print >> sys.stderr, "Error: cannot access parameter file %s" % param
+            sys.stderr.write("Error: cannot access parameter file %s\n" % param)
             sys.exit(1)
 
     src_dir = os.path.expanduser(options.src_dir)
     src_dir = os.path.expandvars(src_dir)
     src_dir = os.path.abspath(src_dir)
     if not os.path.isdir(src_dir):
-        print  >> sys.stderr, "Error: %s is not a directory" % src_dir
+        sys.stderr.write("Error: %s is not a directory\n" % src_dir)
         sys.exit(1)
 
     return options.nproc, param, src_dir
@@ -152,9 +152,9 @@ def check_consistency(param, src_dir, n_procs):
     if isPresent(moduleFile['base']):
         for mod in modules:
             if moduleCheck[mod] and isPresent(moduleFile[mod]):
-                print >> sys.stderr, errorMsg % {'f1':moduleFile[mod],
-                                                 'f2':moduleFile['base'],
-                                                 'mod':moduleName[mod]}
+                sys.stderr.write(errorMsg % {'f1':moduleFile[mod],
+                                             'f2':moduleFile['base'],
+                                             'mod':moduleName[mod]})
                 return 1
 
 
@@ -165,7 +165,7 @@ def check_consistency(param, src_dir, n_procs):
 
     for mod in modules[1:]:
         if isPresent(moduleFile[mod]):
-            print >> sys.stdout, moduleMsg % {'mod':moduleName[mod]}
+            print(moduleMsg % {'mod':moduleName[mod]})
             moduleUse[mod] = True
 
 
@@ -179,7 +179,7 @@ def check_consistency(param, src_dir, n_procs):
         if n_procs > 1:
             for mod in ['ctwr','lagr']:
                 if moduleUse[mod]:
-                    print >> sys.stderr, errorMsg % {'mod':moduleName[mod]}
+                    sys.stderr.write(errorMsg % {'mod':moduleName[mod]})
                     return 1
 
     return 0

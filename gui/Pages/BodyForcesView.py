@@ -52,7 +52,7 @@ from PyQt4.QtGui  import *
 from Base.Toolbox import GuiParam
 from BodyForcesForm import Ui_BodyForcesForm
 import Base.QtPage as QtPage
-from BodyForcesModel import BodyForcesModel
+from Pages.BodyForcesModel import BodyForcesModel
 
 #-------------------------------------------------------------------------------
 # log config

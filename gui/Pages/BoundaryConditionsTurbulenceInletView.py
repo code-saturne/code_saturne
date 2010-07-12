@@ -50,7 +50,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Pages.BoundaryConditionsTurbulenceInletForm import Ui_BoundaryConditionsTurbulenceInletForm
-from TurbulenceModel import TurbulenceModel
+from Pages.TurbulenceModel import TurbulenceModel
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import DoubleValidator, ComboModel

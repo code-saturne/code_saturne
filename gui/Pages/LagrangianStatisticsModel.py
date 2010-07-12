@@ -460,7 +460,7 @@ def suite():
 
 
 def runTest():
-    print "LagrangianStatisticsTestCase A COMPLETER *********."
+    print("LagrangianStatisticsTestCase A COMPLETER *********.")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

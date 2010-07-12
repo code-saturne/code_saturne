@@ -143,16 +143,16 @@ class Species:
 
 
     def addElementarySpecie(self, name, molarMass):
-        print "Not yet implemented"
+        print("Not yet implemented")
 
 
     def cancelElementarySpecie(self, number):
-        print "Not yet implemented"
+        print("Not yet implemented")
 
 
     def addCurrentSpecie(self, name, composition):
-        print "Not yet implemented"
+        print("Not yet implemented")
 
 
     def cancelElementarySpecie(self, number):
-        print "Not yet implemented"
+        print("Not yet implemented")

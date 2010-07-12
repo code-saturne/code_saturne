@@ -54,11 +54,11 @@ from PyQt4.QtGui  import *
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
-from FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
-from FluidCharacteristicsModel import FluidCharacteristicsModel
-from DefineUserScalarsModel import DefineUserScalarsModel
+from Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
+from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 
-from QMeiEditorView import QMeiEditorView
+from Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config

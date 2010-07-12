@@ -434,7 +434,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "HeadLossesModelTestCase"
+    print("HeadLossesModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

@@ -53,10 +53,10 @@ from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from Pages.NumericalParamEquationModel import NumericalParamEquatModel
-from ThermalRadiationModel import ThermalRadiationModel
-from ConjugateHeatTransferModel import ConjugateHeatTransferModel
-from LocalizationModel import LocalizationModel
-from Boundary import Boundary
+from Pages.ThermalRadiationModel import ThermalRadiationModel
+from Pages.ConjugateHeatTransferModel import ConjugateHeatTransferModel
+from Pages.LocalizationModel import LocalizationModel
+from Pages.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 # Coal combustion model class
@@ -793,7 +793,7 @@ class CoalCombustionModelTestCase(ModelTest):
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
 
-        from CoalThermoChemistry import CoalThermoChemistryModel, Coal
+        from Pages.CoalThermoChemistry import CoalThermoChemistryModel, Coal
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP",self.case)
         coalThermoChModel.getCoals().addCoal(Coal())
         del CoalThermoChemistryModel
@@ -869,7 +869,7 @@ class CoalCombustionModelTestCase(ModelTest):
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
 
-        from CoalThermoChemistry import CoalThermoChemistryModel, Coal
+        from Pages.CoalThermoChemistry import CoalThermoChemistryModel, Coal
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP",self.case)
         coalThermoChModel.getCoals().addCoal(Coal())
         model.createCoalModelScalarsAndProperties(coalThermoChModel)
@@ -986,7 +986,7 @@ class CoalCombustionModelTestCase(ModelTest):
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
 
-        from CoalThermoChemistry import CoalThermoChemistryModel, Coal
+        from Pages.CoalThermoChemistry import CoalThermoChemistryModel, Coal
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP",self.case)
         coalThermoChModel.getCoals().addCoal(Coal())
         model.createCoalModelScalarsAndProperties(coalThermoChModel)
@@ -1086,7 +1086,7 @@ class CoalCombustionModelTestCase(ModelTest):
         model = CoalCombustionModel(self.case)
         model.setCoalCombustionModel('coal_homo')
 
-        from CoalThermoChemistry import CoalThermoChemistryModel, Coal
+        from Pages.CoalThermoChemistry import CoalThermoChemistryModel, Coal
         coalThermoChModel = CoalThermoChemistryModel("dp_FCP",self.case)
         coalThermoChModel.getCoals().addCoal(Coal())
         model.createCoalModelScalarsAndProperties(coalThermoChModel)
@@ -1190,7 +1190,7 @@ def suite():
 
 
 def runTest():
-    print "CoalCombustionModelTestCase"
+    print("CoalCombustionModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

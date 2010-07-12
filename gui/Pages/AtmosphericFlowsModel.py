@@ -46,7 +46,7 @@ import unittest
 
 from Base.XMLvariables import Model
 from Base.XMLmodel     import  ModelTest
-from FluidCharacteristicsModel import FluidCharacteristicsModel
+from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 
 #-------------------------------------------------------------------------------
 # Atmospheric flows model class
@@ -332,7 +332,7 @@ def runTest():
     """
     run test
     """
-    print "AtmosphericFlowsTestCase"
+    print("AtmosphericFlowsTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

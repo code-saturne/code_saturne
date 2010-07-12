@@ -57,16 +57,16 @@ from AnalysisFeaturesForm import Ui_AnalysisFeaturesForm
 
 import Base.QtPage as QtPage
 
-from TurbulenceModel import TurbulenceModel
-from ThermalScalarModel import ThermalScalarModel
-from LagrangianModel import LagrangianModel
-from GasCombustionModel import GasCombustionModel
-from CoalCombustionModel import CoalCombustionModel
-from ElectricalModelsModel import ElectricalModel
-from DefineUserScalarsModel import DefineUserScalarsModel
-from ThermalRadiationModel import ThermalRadiationModel
-from SteadyManagementModel import SteadyManagementModel
-from AtmosphericFlowsModel import AtmosphericFlowsModel
+from Pages.TurbulenceModel import TurbulenceModel
+from Pages.ThermalScalarModel import ThermalScalarModel
+from Pages.LagrangianModel import LagrangianModel
+from Pages.GasCombustionModel import GasCombustionModel
+from Pages.CoalCombustionModel import CoalCombustionModel
+from Pages.ElectricalModelsModel import ElectricalModel
+from Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from Pages.ThermalRadiationModel import ThermalRadiationModel
+from Pages.SteadyManagementModel import SteadyManagementModel
+from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 
 #-------------------------------------------------------------------------------
 # log config

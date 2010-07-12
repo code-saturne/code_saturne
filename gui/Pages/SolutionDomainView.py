@@ -53,11 +53,11 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from SolutionDomainForm import Ui_SolutionDomainForm
-from SolutionDomainMeshFormatDialogForm import Ui_SolutionDomainMeshFormatDialogForm
+from Pages.SolutionDomainForm import Ui_SolutionDomainForm
+from Pages.SolutionDomainMeshFormatDialogForm import Ui_SolutionDomainMeshFormatDialogForm
 from Pages.SolutionDomainModel import SolutionDomainModel
 from Pages.SolutionDomainModel import MeshModel
-from FacesSelectionView import StandardItemModelFaces
+from Pages.FacesSelectionView import StandardItemModelFaces
 from Base.QtPage import ComboModel, DoubleValidator
 
 #-------------------------------------------------------------------------------

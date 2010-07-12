@@ -380,7 +380,7 @@ class OutputControlModel(Model):
 
             # update the attribute "choice" of the probes markup for variables
 
-            from OutputVolumicVariablesModel import OutputVolumicVariablesModel
+            from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
             listNodeVolum = OutputVolumicVariablesModel(self.case).listNodeVolum
             del OutputVolumicVariablesModel
             for nodeList in listNodeVolum:
@@ -634,7 +634,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "OutputControlModelTestCase"
+    print("OutputControlModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

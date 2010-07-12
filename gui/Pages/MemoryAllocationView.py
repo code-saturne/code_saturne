@@ -52,7 +52,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from MemoryAllocationForm import Ui_MemoryAllocationForm
+from Pages.MemoryAllocationForm import Ui_MemoryAllocationForm
 import Base.QtPage as QtPage
 from Pages.MemoryAllocationModel import MemoryAllocationModel
 

@@ -235,7 +235,7 @@ class StandardItemModelGeom(QStandardItemModel):
             elif variable[2] == 'int':
                 val = self.model.getMatisseGeomIntVar(variable[0])
             else :
-                print variable[2]+": unknown type"
+                print(variable[2]+": unknown type")
                 sys.exit(1)
             var = self.variables[i][1]
             var = val

@@ -50,7 +50,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from TimeStepForm import Ui_TimeStepForm
+from Pages.TimeStepForm import Ui_TimeStepForm
 import Base.QtPage as QtPage
 from Pages.TimeStepModel import TimeStepModel, TimeStepMatisseModel
 
@@ -129,7 +129,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         idtvar = self.mdl.getTimePassing()
         self.modelTimeOptions.setItem(str_model=str(idtvar))
 
-        from TurbulenceModel import TurbulenceModel
+        from Pages.TurbulenceModel import TurbulenceModel
         model = TurbulenceModel(self.case).getTurbulenceModel()
         del TurbulenceModel
 

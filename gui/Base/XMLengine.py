@@ -59,7 +59,7 @@ from xml.dom.minidom import Document, parse, parseString, Node
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Toolbox import GuiParam
+from Base.Toolbox import GuiParam
 
 #-------------------------------------------------------------------------------
 # log config
@@ -107,8 +107,8 @@ class Dico:
     def _errorExit(self, msg):
         """
         """
-        print 'CASE DICO ERROR'
-        raise ValueError, msg
+        print('CASE DICO ERROR')
+        raise ValueError(msg)
 
 
     def __setitem__(self, key, name):
@@ -125,7 +125,7 @@ class Dico:
                       "The application will finish.\n" \
                       "Please contact the development team."
 
-                print self._errorExit(msg)
+                print(self._errorExit(msg))
 
 
     def __getitem__(self, key):
@@ -145,7 +145,7 @@ class Dico:
         """
         if hasattr(self, 'data'):
             for i in self.data.keys():
-                print "%s -> %s" % (i, self.data[i])
+                print("%s -> %s" % (i, self.data[i]))
 
 
 #-------------------------------------------------------------------------------
@@ -181,8 +181,8 @@ class XMLElement:
     def _errorExit(self, msg):
         """
         """
-        print 'XML ERROR'
-        raise ValueError, msg
+        print('XML ERROR')
+        raise ValueError(msg)
 
 
     def toString(self):
@@ -1169,7 +1169,7 @@ class Case(Dico, XMLDocument):
         except IOError:
             msg = "Error: unable to save the XML document file." ,
             "(XMLengine module, Case class, xmlSaveDocument method)"
-            print msg
+            print(msg)
 
 ##  def xmlSaveDocument(self):
 ##      """
@@ -1185,7 +1185,7 @@ class Case(Dico, XMLDocument):
 ##      except IOError:
 ##          msg = "Error: unable to save the XML document file." ,
 ##          "(XMLengine module, Case class, xmlSaveDocument method)"
-##          print msg
+##          print(msg)
 
 #-------------------------------------------------------------------------------
 # XMLengine test case
@@ -1474,7 +1474,7 @@ class XMLengineTestCase(unittest.TestCase):
 
     def checkXmlNodeFromString(self):
         """"Check whether two XML nodes could be compared."""
-        print '\n'
+        print('\n')
         n1 = self.xmlNodeFromString(u'<fruits taste="ok" color="red"><a>toto</a><c a="2é"/></fruits>')
         n2 = XMLDocument().parseString(u'<fruits color="red" taste="ok"><c a="2é"/><a>toto</a></fruits>').root()
         assert n1 == n2, 'This two node are not identical'
@@ -1569,7 +1569,7 @@ def suite():
 
 def runTest():
     """unittest function"""
-    print "XMLengineTestCase to be completed..."
+    print("XMLengineTestCase to be completed...")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 
@@ -1606,9 +1606,9 @@ class XMLchek:
     def __call__(self, filename):
         try:
             self.parsefile(filename)
-            print "%s is well-formed" % filename
+            print("%s is well-formed" % filename)
         except Exception, e:
-            print "%s is NOT well-formed! %s" % (filename, e)
+            print("%s is NOT well-formed! %s" % (filename, e))
             sys.exit(0)
 
     def parsefile(self, file):
@@ -1731,7 +1731,7 @@ class XMLchek:
 ##    table.add("field", name="counter", type="int")
 ##    table.add("field", name="name", type="varchar")
 ##    table.add("field", name="info", type="text")
-##    print doc
+##    print(doc)
 ##
 ##    # Simulate reading a XML file
 ##    ndoc = XMLDocument()
@@ -1739,14 +1739,14 @@ class XMLchek:
 ##    root = ndoc.getAll("database")
 ##    if root:
 ##        db = root[0]
-##        print "Database:", db["name"]
+##        print("Database:", db["name"])
 ##        for table in db.getAll("table"):
-##            print "  Table:", table["name"]
+##            print("  Table:", table["name"])
 ##            for field in db.getAll("field"):
-##                print "    Field:", field["name"], "- Type:", field["type"]
+##                print("    Field:", field["name"], "- Type:", field["type"])
 ##
 ##    # It's object oriented
-##    print XMLDocument("notice").add("text",format="plain").addText("Some text")
+##    print(XMLDocument("notice").add("text",format="plain").addText("Some text"))
 #
 #-------------------------------------------------------------------------------
 # Testing part
@@ -1758,42 +1758,42 @@ if __name__ == "__main__":
     sys.exit(0)
 
 
-    print "------------------------------------------------------"
-    print "    Lightweight XML constructor and reader testing"
-    print "------------------------------------------------------\n"
+    print("------------------------------------------------------")
+    print("    Lightweight XML constructor and reader testing")
+    print("------------------------------------------------------\n")
 
     # Example of dumping a database structure
     #
     xmldoc = XMLDocument("", "", "database", name="testdb")
-    print "XMLDocument:\n", xmldoc
+    print("XMLDocument:\n", xmldoc)
 
     table = xmldoc.xmlAddChild("table", name="test")
     table.xmlAddChild("field", name="counter", type="int")
     table.xmlAddChild("field", name="name", type="varchar")
     table.xmlAddChild("field", name="info", type="text")
-    print "table:\n", table
+    print("table:\n", table)
 
-    print "name:", table.xmlGetAttribute("name")
+    print("name:", table.xmlGetAttribute("name"))
     table.xmlDelAttribute("name")
     table.xmlCreateAttribute(truc="super", toto="méga")
     table.xmlCreateAttribute(name="atchoum")
     for field in table.xmlGetNodeList("field", "name", "type", type="text"):
-        print "field:", field.toString()
-    print "truc:", table.xmlGetAttribute("truc")
+        print("field:", field.toString())
+    print("truc:", table.xmlGetAttribute("truc"))
     #table.xmlGetAttribute("tru") # Uncomment this line for testing
     l = table.xmlGetNodeList("camion", "jacky", moquette="moche")
     if not l:
         l = table.xmlAddChild("camion", jacky="", moquette="moche")
-        print "child:", l.toString()
+        print("child:", l.toString())
     l = table.xmlInitNodeList("camion", "jacky", moquette="bêlle")[0]
-    print "child:", l.toString()
+    print("child:", l.toString())
 
     l.xmlSetData("camion", "rétro")
     l.xmlSetData("camion", "chèvre")
     for i in table.xmlGetNodeList("camion"):
-        print "List camion :", i.toString(), "\n"
+        print("List camion :", i.toString(), "\n")
     for i in table.xmlGetChildNodeList("camion"):
-        print "Child camion:", i.toString(), "\n"
+        print("Child camion:", i.toString(), "\n")
 
     table.xmlAddComment("Ceci est un commentaire")
     table.xmlInitNodeList('scalar', 'roue', 'box', auto='yes', type='model')
@@ -1810,66 +1810,66 @@ if __name__ == "__main__":
 
     chaise = xmldoc.xmlAddChild("chaise", name="test")
     p = chaise.xmlSetData("pieds", 4)
-    print p[0].toString()
-    print chaise.xmlGetStringList("pieds")
-    print chaise.xmlGetIntList("pieds")
-    print chaise.xmlGetString("pieds")
-    print chaise.xmlGetInt("pieds")
-    print chaise.xmlGetDouble("pieds")
-    print p[0].xmlGetTextNode()
+    print(p[0].toString())
+    print(chaise.xmlGetStringList("pieds"))
+    print(chaise.xmlGetIntList("pieds"))
+    print(chaise.xmlGetString("pieds"))
+    print(chaise.xmlGetInt("pieds"))
+    print(chaise.xmlGetDouble("pieds"))
+    print(p[0].xmlGetTextNode())
 
-    print xmldoc
+    print(xmldoc)
 
     # Direct acces to node's methods
-    #print dir(xmldoc.doc.documentElement)
-    #print _encode(xmldoc.doc.documentElement.toxml())
-    #print _encode(xmldoc.doc.documentElement.childNodes[0].childNodes[2].attributes.get("name").value)
-    #print _encode(xmldoc.doc.firstChild.firstChild.childNodes[1].attributes.items())
-    #print dir(xmldoc.doc.firstChild.firstChild.childNodes[1].attributes)
+    #print(dir(xmldoc.doc.documentElement))
+    #print(_encode(xmldoc.doc.documentElement.toxml()))
+    #print(_encode(xmldoc.doc.documentElement.childNodes[0].childNodes[2].attributes.get("name").value))
+    #print(_encode(xmldoc.doc.firstChild.firstChild.childNodes[1].attributes.items()))
+    #print(dir(xmldoc.doc.firstChild.firstChild.childNodes[1].attributes))
 
     # Simulate reading a XML file
     ndoc = XMLDocument("", "")
-    print "XML DOC:", ndoc.toString()
+    print("XML DOC:", ndoc.toString())
     ndoc.parseString(str(xmldoc))
-    print "XML DOC:", ndoc.toString()
+    print("XML DOC:", ndoc.toString())
     root = ndoc.xmlGetNodeList("database")
     if root:
         db = root[0]
-        print "Database:", db.xmlGetAttribute("name")
+        print("Database:", db.xmlGetAttribute("name"))
         for table in db.xmlGetNodeList("table"):
-            print "  Table:", table.xmlGetAttribute("name")
+            print("  Table:", table.xmlGetAttribute("name"))
             for field in table.xmlGetNodeList("field"):
-                print "    Field:", field.xmlGetAttribute("name"), \
-                      "- Type:", field.xmlGetAttribute("type")
+                print("    Field:", field.xmlGetAttribute("name"), \
+                      "- Type:", field.xmlGetAttribute("type"))
 
 
     ndoc.parseString('<?xml version="2.0" encoding="utf-8" ?><foo><baré/></foo>')
-    print "1 XML DOC:\n", ndoc
+    print("1 XML DOC:\n", ndoc)
 
     ndoc.parse("../misc/foo.txt")
-    print "2 XML DOC:\n", ndoc
+    print("2 XML DOC:\n", ndoc)
 
 
-    print "------------------------------------------------------"
-    print "        Case class testing"
-    print "------------------------------------------------------\n"
+    print("------------------------------------------------------")
+    print("        Case class testing")
+    print("------------------------------------------------------\n")
 
     case = Case()
     case['new'] = 'toto'
-    print "case:", case['new']
+    print("case:", case['new'])
     models = case.xmlGetNodeList('thermophysical_models')[0]
     models = case.xmlInitNodeList('thermophysical_models')[0]
-    #print "models :", dir(models)
+    #print("models :", dir(models))
     variables = models.xmlGetNodeList('variable')
     for var in variables:
         name = var['name']
-        print var.toString(), name
+        print(var.toString(), name)
         var['label'] = name
         #var.xmlSetAttribute(label='truc')
 
-    #print case
+    #print(case)
     #case.xmlRemoveChild('variable')
-    #print case
+    #print(case)
 
 
 #-------------------------------------------------------------------------------

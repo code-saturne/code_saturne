@@ -56,7 +56,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from QMeiEditorForm import Ui_QMeiDialog
+from Pages.QMeiEditorForm import Ui_QMeiDialog
 
 from Base.Common import cs_check_syntax
 

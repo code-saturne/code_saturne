@@ -191,7 +191,7 @@ def suite():
 
 
 def runTest():
-    print "IdentityAndPathesModelTestCase"
+    print("IdentityAndPathesModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

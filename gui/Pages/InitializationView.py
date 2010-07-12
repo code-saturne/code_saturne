@@ -49,16 +49,16 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from InitializationForm import Ui_InitializationForm
+from Pages.InitializationForm import Ui_InitializationForm
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import IntValidator, DoubleValidator, ComboModel
-from TurbulenceModel import TurbulenceModel
-from ThermalScalarModel import ThermalScalarModel
-from GasCombustionModel import GasCombustionModel
-from DefineUserScalarsModel import DefineUserScalarsModel
+from Pages.TurbulenceModel import TurbulenceModel
+from Pages.ThermalScalarModel import ThermalScalarModel
+from Pages.GasCombustionModel import GasCombustionModel
+from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
-from InitializationModel import InitializationModel
+from Pages.InitializationModel import InitializationModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -591,7 +591,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if self.sender().validator().state == QValidator.Acceptable:
             min = self.th_sca.getScalarMinValue(self.th_sca_label)
             max = self.th_sca.getScalarMaxValue(self.th_sca_label)
-            from DefineUserScalarsView import StandardItemModelScalars
+            from Pages.DefineUserScalarsView import StandardItemModelScalars
             if StandardItemModelScalars(self.parent, self.th_sca,
                 self.zone).checkInitMinMax(self.th_sca_label, v, min, max):
                 self.th_sca.setScalarInitialValue(self.zone, self.th_sca_label, v)

@@ -239,7 +239,7 @@ class SolutionDomainModel(MeshModel, Model):
         if key:
             if not self.case['batchScript'][key]: return
 
-            from BatchRunningModel import BatchRunningModel
+            from Pages.BatchRunningModel import BatchRunningModel
             batch = BatchRunningModel(self.case)
             batch.initializeBatchScriptFile()
             batch.updateBatchScriptFile(keyword)
@@ -1728,7 +1728,7 @@ def suite2():
     return testSuite
 
 def runTest():
-    print __file__
+    print(__file__)
     runner = unittest.TextTestRunner()
     runner.run(suite1())
     runner.run(suite2())

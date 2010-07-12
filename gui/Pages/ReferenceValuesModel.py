@@ -52,7 +52,7 @@ from Base.XMLmodel import ModelTest
 from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.GasCombustionModel import GasCombustionModel
 from Pages.ElectricalModelsModel import ElectricalModel
-from AtmosphericFlowsModel import AtmosphericFlowsModel
+from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 
 #-------------------------------------------------------------------------------
 # Reference values model class
@@ -283,7 +283,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "ReferenceValuesTestCase"
+    print("ReferenceValuesTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

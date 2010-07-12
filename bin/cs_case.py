@@ -225,7 +225,7 @@ class case:
                 + '   You may either allocate more processes or try to\n' \
                 + '   oversubscribe by forcing the number of processes\n' \
                 + '   in the toplevel script.'
-            raise RunCaseError, err_str
+            raise RunCaseError(err_str)
 
         # Otherwise, rebalance process counts.
 
@@ -375,7 +375,7 @@ class case:
                     '\nWorking directory: ' + self.exec_dir \
                     + ' already exists.\n' \
                     + 'Calculation will not be run.\n'
-                raise RunCaseError, err_str
+                raise RunCaseError(err_str)
 
             else:
                 os.makedirs(self.exec_dir)
@@ -386,7 +386,7 @@ class case:
                 '\nWorking/results directory: ' + self.exec_dir \
                 + ' not empty.\n' \
                 + 'Calculation will not be run.\n'
-            raise RunCaseError, err_str
+            raise RunCaseError(err_str)
 
         # Set execution directory
 
@@ -787,7 +787,7 @@ class case:
         sys.stdout.write('\n')
 
         if retcode != 0:
-            raise RunCaseError, ' Error generating MPMD launcher.\n'
+            raise RunCaseError(' Error generating MPMD launcher.\n')
 
         return o_path
 
@@ -949,7 +949,7 @@ fi
                 e_path = self.generate_solver_execve_launcher(n_procs, mpi_env)
 
             else:
-                raise RunCaseError, ' No allowed MPI MPMD mode defined.\n'
+                raise RunCaseError(' No allowed MPI MPMD mode defined.\n')
 
             s.write(mpi_cmd + e_path + '\n')
 
@@ -1056,12 +1056,12 @@ fi
                 if d.coupling_mode != coupling_mode:
                     err_str = 'This script can only handle SYRTHES couplings ' \
                         + 'using the same coupling mode.\n'
-                    raise RunCaseError, err_str
+                    raise RunCaseError(err_str)
             for d in self.domains:
                 if d.solcom != False:
                     err_str = 'SYRTHES coupling is not compatible ' \
                         + 'with SOLCOM-type meshes.'
-                    raise RunCaseError, err_str
+                    raise RunCaseError(err_str)
 
         # Now that all domains are defined, set result copy mode
 
@@ -1124,7 +1124,7 @@ fi
 
             for d in self.domains:
                 if d.check_model_consistency() != 0:
-                    raise RunCaseError, 'Incompatible model options.'
+                    raise RunCaseError('Incompatible model options.')
                 if d.needs_compile() == True:
                     need_compile = True
 

@@ -348,7 +348,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "MemoryAllocationTestCase"
+    print("MemoryAllocationTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

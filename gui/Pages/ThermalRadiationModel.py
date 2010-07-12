@@ -845,7 +845,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "ThermalRadiationTestCase"
+    print("ThermalRadiationTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

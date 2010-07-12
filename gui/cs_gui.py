@@ -38,8 +38,8 @@ import os, sys, string
 from optparse import OptionParser
 
 if not hasattr(sys, 'version_info') or sys.version_info <= (2, 4, 0, 'final'):
-    raise SystemExit, "Graphical users interface of Code_Saturne "\
-                      "requires python 2.4 or later."
+    raise SystemExit("Graphical users interface of Code_Saturne "\
+                     "requires python 2.4 or later.")
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -49,19 +49,19 @@ try:
     from PyQt4.QtCore import *
     from PyQt4.QtGui  import *
 except ImportError:
-    print "\n  Error: Unable to import PyQt4.QtCore or PyQt4.QtGui modules."
-    print "  Please check your PyQt4 installation.\n"
+    print("\n  Error: Unable to import PyQt4.QtCore or PyQt4.QtGui modules.")
+    print("  Please check your PyQt4 installation.\n")
     sys.exit(0)
 
 
 if map(int, string.split(QT_VERSION_STR, ".")) < [4, 3, 0]:
-    raise SystemExit, "Graphical users interface of Code_Saturne "\
-                      "requires Qt 4.3 or later (found %s)." % QT_VERSION_STR
+    raise SystemExit("Graphical users interface of Code_Saturne "\
+                     "requires Qt 4.3 or later (found %s)." % QT_VERSION_STR)
 
 
 if map(int, string.split(PYQT_VERSION_STR, ".")) < [4, 3, 0]:
-    raise SystemExit, "Graphical users interface of Code_Saturne "\
-                      "requires PyQt 4.3 or later (found %s)." % PYQT_VERSION_STR
+    raise SystemExit("Graphical users interface of Code_Saturne "\
+                     "requires PyQt 4.3 or later (found %s)." % PYQT_VERSION_STR)
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -186,8 +186,8 @@ def main(argv):
             app.processEvents()
             app.restoreOverrideCursor()
     except:
-        print "\n  Unable to display a Qt window."
-        print "  Please check your display environment.\n"
+        print("\n  Unable to display a Qt window.")
+        print("  Please check your display environment.\n")
         sys.exit(0)
 
     sys.exit(app.exec_())

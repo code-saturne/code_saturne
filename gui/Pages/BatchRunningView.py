@@ -54,14 +54,14 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from BatchRunningForm import Ui_BatchRunningForm
-from BatchRunningUserFilesDialogForm import Ui_BatchRunningUserFilesDialogForm
-from BatchRunningPBSJobManagementDialogForm import Ui_BatchRunningPBSJobManagementDialogForm
-from BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedOptionsDialogForm
+from Pages.BatchRunningForm import Ui_BatchRunningForm
+from Pages.BatchRunningUserFilesDialogForm import Ui_BatchRunningUserFilesDialogForm
+from Pages.BatchRunningPBSJobManagementDialogForm import Ui_BatchRunningPBSJobManagementDialogForm
+from Pages.BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedOptionsDialogForm
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
-from BatchRunningModel import RuncaseModel, BatchRunningModel
+from Pages.BatchRunningModel import RuncaseModel, BatchRunningModel
 from Pages.LocalizationModel import LocalizationModel, Zone
 
 #-------------------------------------------------------------------------------
@@ -1041,7 +1041,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             pass
 
         if self.case['salome']:
-            import  SalomeHandler
+            from Pages import  SalomeHandler
             SalomeHandler.runSolver(self.case, script)
         else:
             os.system(cmd)
@@ -1154,7 +1154,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 if key in self.case['batchScript']:
                     self.case['batchScript'][key] = launcher
                 else:
-                    print "Warning: slotSearchBatchScriptFile\n Error with key:", key
+                    print("Warning: slotSearchBatchScriptFile\n Error with key:", key)
                 self.displayBatchScriptInfo()
             else:
                 title = self.tr("Warning")

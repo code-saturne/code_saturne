@@ -50,8 +50,8 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from MatisseTypeForm import Ui_MatisseTypeForm
-from MatisseTypeModel import MatisseTypeModel
+from Pages.MatisseTypeForm import Ui_MatisseTypeForm
+from Pages.MatisseTypeModel import MatisseTypeModel
 import Base.QtPage as QtPage
 
 #-------------------------------------------------------------------------------

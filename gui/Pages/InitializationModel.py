@@ -50,13 +50,13 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLmodel import XMLmodel, ModelTest
 from Base.XMLvariables import Model
-from TurbulenceModel import TurbulenceModel
-from ThermalScalarModel import ThermalScalarModel
-from GasCombustionModel import GasCombustionModel
-from CoalCombustionModel import CoalCombustionModel
-from ElectricalModelsModel import ElectricalModel
-from DefineUserScalarsModel import DefineUserScalarsModel
-from LocalizationModel import LocalizationModel
+from Pages.TurbulenceModel import TurbulenceModel
+from Pages.ThermalScalarModel import ThermalScalarModel
+from Pages.GasCombustionModel import GasCombustionModel
+from Pages.CoalCombustionModel import CoalCombustionModel
+from Pages.ElectricalModelsModel import ElectricalModel
+from Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from Pages.LocalizationModel import LocalizationModel
 
 #-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class
@@ -195,7 +195,7 @@ class InitializationModel(Model):
         node = self.node_veloce.xmlGetNode('variable', name=var_name)
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         n = node.xmlInitChildNode('initial_value', zone=zone)
         if var_init == 0:
@@ -216,7 +216,7 @@ class InitializationModel(Model):
             node = self.node_veloce.xmlGetNode('variable', name=var_name)
             if not node:
                 msg = "There is an error: this node " + str(node) + "should be existed"
-                raise ValueError, msg
+                raise ValueError(msg)
             v = node.xmlGetDouble('initial_value', zone=zone)
             if v == None:
                 v = self.__defaultValues()['velocity']
@@ -265,7 +265,7 @@ class InitializationModel(Model):
         node_init = self.node_turb.xmlGetNode('initialization')
         if not node_init:
             msg = "There is an error: this node " + str(node_init) + "should be existed"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         self.isInList(node_init['choice'], ('reference_velocity','reference_velocity_length'))
 
@@ -281,7 +281,7 @@ class InitializationModel(Model):
                                               choice='reference_velocity')
         if not node_init:
             msg = "There is an error: this node " + str(node_init) + "should be existed"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         v = node_init.xmlGetDouble('reference_velocity')
         if v == None:
@@ -302,7 +302,7 @@ class InitializationModel(Model):
                                                choice='reference_velocity_length')
         if not node_init:
             msg = "There is an error: this node " + str(node_init) + "should be existed"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         node_init.xmlSetData('reference_length', length)
 
@@ -316,7 +316,7 @@ class InitializationModel(Model):
                                                choice='reference_velocity_length')
         if not node_init:
             msg = "There is an error: this node " + str(node_init) + "should be existed"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         v = node_init.xmlGetDouble('reference_velocity')
         if v == None:
@@ -343,7 +343,7 @@ class InitializationModel(Model):
         node = self.node_turb.xmlGetNode('variable', name=var_name)
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         node.xmlInitNode('initial_value', zone=zone)
         node.xmlSetData('initial_value', var_init, zone=zone)
@@ -360,7 +360,7 @@ class InitializationModel(Model):
         node = self.node_turb.xmlGetNode('variable', name=var_name)
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         init = node.xmlGetDouble('initial_value', zone=zone)
         if init == None:
@@ -396,7 +396,7 @@ class InitializationModel(Model):
             node = self.node_veloce.xmlGetNode('variable', name=var_name)
             if not node:
                 msg = "There is an error: this node " + str(node) + "should be existed"
-                raise ValueError, msg
+                raise ValueError(msg)
             label_list.append(node['label'])
 
         return label_list
@@ -561,7 +561,7 @@ def suite():
 
 
 def runTest():
-    print "InitializationTestCase - OK !!!!"
+    print("InitializationTestCase - OK !!!!")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

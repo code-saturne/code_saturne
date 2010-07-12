@@ -74,7 +74,7 @@ class Constantes:
         try:
             return self.__dict__[attr]
         except(KeyError):
-            raise AttributeError, 'A instance has no attribute %s' % attr
+            raise AttributeError('A instance has no attribute %s' % attr)
 
 
     def __setattr__(self, attr, value):
@@ -82,7 +82,7 @@ class Constantes:
         Set an attributs
         """
         if attr in self.__dict__.keys():
-            raise Exception, "Cannot reassign constant %s" % attr
+            raise Exception("Cannot reassign constant %s" % attr)
         else:
             self.__dict__[attr] = value
 
@@ -434,7 +434,7 @@ def runTest():
     """
     run test
     """
-    print "FluidStructureInteractionTestCase"
+    print("FluidStructureInteractionTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

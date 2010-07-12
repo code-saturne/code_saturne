@@ -57,10 +57,10 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from DefineUserScalarsForm import Ui_DefineUserScalarsForm
+from Pages.DefineUserScalarsForm import Ui_DefineUserScalarsForm
 
-from LocalizationModel import LocalizationModel
-from DefineUserScalarsModel import DefineUserScalarsModel
+from Pages.LocalizationModel import LocalizationModel
+from Pages.DefineUserScalarsModel import DefineUserScalarsModel
 
 from Base.Common import LABEL_LENGTH_MAX
 from Base.Toolbox import GuiParam
@@ -119,7 +119,7 @@ class LabelDelegate(QItemDelegate):
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
 
-                from VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+                from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()

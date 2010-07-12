@@ -51,7 +51,7 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
-from OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 
 #-------------------------------------------------------------------------------
 # Time Step Model class
@@ -98,14 +98,14 @@ class TimeStepModel(Model):
         Is the current case adapted for IPTLRO ?
         """
         thermal_case = 0
-        from FluidCharacteristicsModel import FluidCharacteristicsModel
+        from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
         n_atmo, n_joul, n_thermo, n_gas, n_coal = FluidCharacteristicsModel(self.case).getThermoPhysicalModel()
 
         if n_atmo != 'off' or n_joul != 'off' or  n_thermo != 'off' or  n_gas != 'off' or  n_coal != 'off':
            thermal_case = 1
 
         # gravity
-        from BodyForcesModel import BodyForcesModel
+        from Pages.BodyForcesModel import BodyForcesModel
         mdl = BodyForcesModel(self.case)
         gx = mdl.getGravity('gravity_x')
         gy = mdl.getGravity('gravity_y')
@@ -132,7 +132,7 @@ class TimeStepModel(Model):
             v = self.defaultValues()[tag]
             self.setTimePassing(v)
 
-        from TurbulenceModel import TurbulenceModel
+        from Pages.TurbulenceModel import TurbulenceModel
         model = TurbulenceModel(self.case).getTurbulenceModel()
         del TurbulenceModel
         if model in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
@@ -299,7 +299,7 @@ class TimeStepModel(Model):
         """
         if self.getTimePassing() == 0:
             msg = "No option : " + tag + " in this case"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         v = self.node_time.xmlGetChildDouble(tag)
         if v == None:
@@ -314,7 +314,7 @@ class TimeStepModel(Model):
         """
         if self.getTimePassing() == 0:
             msg = "No option : " + tag + " in this case"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         if tag == 'time_step_min_factor':
             self.isPositiveFloat(val)
@@ -328,7 +328,7 @@ class TimeStepModel(Model):
         Get status of thermal_time_step for node "time_parameters"
         """
         if not self.thermalCase():
-            raise ValueError, "TimeStepModel: no thermal model in this case"
+            raise ValueError("TimeStepModel: no thermal model in this case")
 
         node = self.node_time.xmlInitChildNode('thermal_time_step', 'status')
         s = node['status']
@@ -344,7 +344,7 @@ class TimeStepModel(Model):
         """
 
         if not self.thermalCase():
-            raise ValueError, "TimeStepModel: no thermal model in this case"
+            raise ValueError("TimeStepModel: no thermal model in this case")
 
         self.isOnOff(status)
         node = self.node_time.xmlInitChildNode('thermal_time_step', 'status')
@@ -570,13 +570,13 @@ class TimeStepModelTestCase(ModelTest):
     def checkSetandGetThermalTimeStep(self):
         """Check whether the TimeStepModel class could be set and get thermal time step"""
         mdl = TimeStepModel(self.case)
-        from ThermalScalarModel import ThermalScalarModel
+        from Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
-        from FluidCharacteristicsModel import FluidCharacteristicsModel
+        from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
         FluidCharacteristicsModel(self.case).setPropertyMode('density','variable')
         del FluidCharacteristicsModel
-        from BodyForcesModel import BodyForcesModel
+        from Pages.BodyForcesModel import BodyForcesModel
         BodyForcesModel(self.case).setGravity('gravity_x', 9.81)
         del BodyForcesModel
         mdl.setThermalTimeStep('on')
@@ -613,13 +613,13 @@ class TimeStepModelTestCase(ModelTest):
     def checkRemoveThermalTimeStepNode(self):
         """Check whether the TimeStepModel class could be removed thermal time step node"""
         mdl = TimeStepModel(self.case)
-        from ThermalScalarModel import ThermalScalarModel
+        from Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
-        from FluidCharacteristicsModel import FluidCharacteristicsModel
+        from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
         FluidCharacteristicsModel(self.case).setPropertyMode('density','variable')
         del FluidCharacteristicsModel
-        from BodyForcesModel import BodyForcesModel
+        from Pages.BodyForcesModel import BodyForcesModel
         BodyForcesModel(self.case).setGravity('gravity_x', 9.81)
         del BodyForcesModel
         mdl.setThermalTimeStep('on')
@@ -639,7 +639,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "TimeStepModelTestCase"
+    print("TimeStepModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 
@@ -673,7 +673,7 @@ def suite2():
     return testSuite
 
 def runTest2():
-    print "TimeStepMatisseModelTestCase"
+    print("TimeStepMatisseModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite2())
 

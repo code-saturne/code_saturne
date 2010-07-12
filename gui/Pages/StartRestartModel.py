@@ -326,7 +326,7 @@ def suite():
 
 
 def runTest():
-    print "StartRestartTestCase"
+    print("StartRestartTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

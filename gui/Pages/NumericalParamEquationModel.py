@@ -193,10 +193,10 @@ class NumericalParamEquatModel(Model):
             for n in node:
                 if n['label'] == label:
                     if n['name'] == 'pressure':
-                        raise ValueError, "This method does not run with pressure"
+                        raise ValueError("This method does not run with pressure")
                     else:
                         return n
-        raise ValueError, "This label does not exist: " + label
+        raise ValueError("This label does not exist: " + label)
 
 
     def _getSolveurLabelNode(self, label):
@@ -205,7 +205,7 @@ class NumericalParamEquatModel(Model):
             for n in node:
                 if n['label'] == label:
                     return n
-        raise ValueError, "This label does not exist: " + label
+        raise ValueError("This label does not exist: " + label)
 
 
     def _isPressure(self, node):
@@ -423,7 +423,7 @@ class NumericalParamEquatModel(Model):
                 value = self._defaultValues()['time_step_factor']
             return value
         else:
-            raise ValueError, "This method runs only with scalar label"
+            raise ValueError("This method runs only with scalar label")
 
 
     def setScalarTimeStepFactor(self, label, value):
@@ -436,7 +436,7 @@ class NumericalParamEquatModel(Model):
             else:
                 node.xmlRemoveChild('time_step_factor')
         else:
-            raise ValueError, "This method runs only with scalar label"
+            raise ValueError("This method runs only with scalar label")
 
 
 #-------------------------------------------------------------------------------
@@ -669,7 +669,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "NumericalParamEquatTestCase"
+    print("NumericalParamEquatTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

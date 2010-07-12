@@ -152,7 +152,7 @@ class MatisseThermicModel:
             if bmax: self.list_height_area[num].xmlSetData('max',bmax)
             if val: self.list_height_area[num].xmlSetData('value',val)
         else :
-            print areatype, " : Unknown area type"
+            print(areatype, " : Unknown area type")
             sys.exit(1)
 
 
@@ -178,7 +178,7 @@ class MatisseThermicModel:
             else :
                 node = self.node_height.xmlAddChild('area', label=dlabel)
         else :
-            print areatype + " : Unknown area type"
+            print(areatype + " : Unknown area type")
             sys.exit(1)
 
         nmin = node.xmlAddChild('min')
@@ -205,7 +205,7 @@ class MatisseThermicModel:
         elif areatype == 'height' :
             self.list_height_area.append(node)
         else :
-            print areatype + " : Unknown area type"
+            print(areatype + " : Unknown area type")
             sys.exit(1)
 
 
@@ -225,7 +225,7 @@ class MatisseThermicModel:
         elif areatype == 'height' :
             dmax = modelgeom.getMatisseGeomDoubleVar('nchest')
         else :
-            print "DefaultArea" + areatype + " : Unknown area type"
+            print("DefaultArea" + areatype + " : Unknown area type")
             sys.exit(1)
 
         return dlabel, dmin, dmax, dval
@@ -251,7 +251,7 @@ class MatisseThermicModel:
             bmax = self.list_height_area[num].xmlGetString('max')
             val = self.list_height_area[num].xmlGetString('value')
         else :
-            print "GetArea" + areatype + " : Unknown area type"
+            print("GetArea" + areatype + " : Unknown area type")
             sys.exit(1)
 
         return label, bmin, bmax, val
@@ -273,7 +273,7 @@ class MatisseThermicModel:
         elif areatype == 'height' :
             nodes_nb = len(self.list_height_area)
         else :
-            print "GetAreas '" + areatype +  "' : Unknown area type"
+            print("GetAreas '" + areatype +  "' : Unknown area type")
             sys.exit(1)
 
         for i in range(0,nodes_nb) :
@@ -297,7 +297,7 @@ class MatisseThermicModel:
         elif areatype == 'height' :
             node = self.list_height_area.pop(num)
         else :
-            print "EraseErea" + areatype, " : Unknown area type"
+            print("EraseErea" + areatype, " : Unknown area type")
             sys.exit(1)
 
         node.xmlRemoveChild('min')
@@ -395,7 +395,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print "MatisseThermicModelTestCase - A FAIRE**************"
+    print("MatisseThermicModelTestCase - A FAIRE**************")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

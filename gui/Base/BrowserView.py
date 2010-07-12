@@ -48,8 +48,8 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from BrowserForm import Ui_BrowserForm
-from Toolbox import GuiParam, displaySelectedPage
+from Base.BrowserForm import Ui_BrowserForm
+from Base.Toolbox import GuiParam, displaySelectedPage
 
 #-------------------------------------------------------------------------------
 # log config
@@ -286,7 +286,7 @@ class TreeModel(QAbstractItemModel):
                 if value == v:
                     result.append(index)
             else:
-                raise ValueError, "This flags is not implemented"
+                raise ValueError("This flags is not implemented")
 
             if self.hasChildren(index):
                 result += self.match(self.index(0, index.column(), index), role, value, hits, flags)

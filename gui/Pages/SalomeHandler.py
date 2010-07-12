@@ -109,7 +109,7 @@ def BoundaryGroup():
     Import groups of faces.
     """
     if aSMESH_SO == None and aGEOM_SO == None:
-        raise ValueError,  "Component SMESH and GEOM not found"
+        raise ValueError("Component SMESH and GEOM not found")
 
     local = ""
     if sg.SelectedCount() > 0:
@@ -165,7 +165,7 @@ def VolumeGroup():
     Import groups of solid.
     """
     if aSMESH_SO == None and aGEOM_SO == None:
-        raise ValueError,  "Component SMESH and GEOM not found"
+        raise ValueError("Component SMESH and GEOM not found")
 
     local = ""
     if sg.SelectedCount() > 0:
@@ -262,6 +262,6 @@ def runSolver(case, cmd):
                                   cmd,
                                   case['scripts_path'])
     else:
-        raise ValueError,  "More than one RESU directory found!"
+        raise ValueError("More than one RESU directory found!")
 
 #-------------------------------------------------------------------------------

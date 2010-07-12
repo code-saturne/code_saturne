@@ -50,7 +50,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from MatisseNetworkForm import Ui_MatisseNetworkForm
+from Pages.MatisseNetworkForm import Ui_MatisseNetworkForm
 import Base.QtPage as QtPage
 import Pages.MatisseTypeModel as MatisseType
 import Pages.MatisseGeomModel as MatisseGeom

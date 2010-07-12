@@ -49,9 +49,10 @@ import sys, unittest
 #-------------------------------------------------------------------------------
 
 
-from Common import XML_DOC_VERSION
-from XMLvariables import Variables
-import Toolbox
+from Base.Common import XML_DOC_VERSION
+from Base.XMLvariables import Variables
+from Base import Toolbox
+
 from Pages.LocalizationModel import Zone, LocalizationModel
 from Pages.MobileMeshModel import MobileMeshModel
 from Pages.TurbulenceModel import TurbulenceModel
@@ -85,7 +86,7 @@ class XMLinit(Variables):
             msg = "The version of the loaded case is to old: %s.\n"\
                   "The minimum version required is: %s." % \
                   (self.root['version'], XML_DOC_VERSION)
-            raise ValueError, msg
+            raise ValueError(msg)
 
         # Verify that all Heading exist only once in the XMLDocument.
         # Create the missing heading.
@@ -157,8 +158,8 @@ class XMLinit(Variables):
     def _errorExit(self, msg):
         """
         """
-        print 'XML ERROR'
-        raise ValueError, msg
+        print('XML ERROR')
+        raise ValueError(msg)
 
 
     def initHeading(self):
@@ -213,7 +214,7 @@ class XMLinitTestCase(unittest.TestCase):
         """
         This method is executed before all "check" methods.
         """
-        import XMLengine
+        from Base import XMLengine
         Toolbox.GuiParam.lang = 'en'
         self.doc = XMLengine.XMLDocument("")
         self.case = XMLengine.Case(None)
@@ -311,7 +312,7 @@ class XMLinitTestCase(unittest.TestCase):
         '</Code_Saturne_GUI>'
 
         XMLinit(self.case)
-##        print self.case.root()
+##        print(self.case.root())
 
         assert self.case.root() == self.xmlNodeFromString(doc), \
                'Could not use the constructor of the XMLinit class'
@@ -323,7 +324,7 @@ def suite():
 
 
 def runTest():
-    print "XMLinitTestCase to be completed..."
+    print("XMLinitTestCase to be completed...")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

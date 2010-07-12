@@ -53,8 +53,8 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from TurbulenceForm import Ui_TurbulenceForm
-from TurbulenceAdvancedOptionsDialogForm import Ui_TurbulenceAdvancedOptionsDialogForm
+from Pages.TurbulenceForm import Ui_TurbulenceForm
+from Pages.TurbulenceAdvancedOptionsDialogForm import Ui_TurbulenceAdvancedOptionsDialogForm
 import Base.QtPage as QtPage
 from Pages.TurbulenceModel import TurbulenceModel
 

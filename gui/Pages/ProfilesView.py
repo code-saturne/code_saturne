@@ -54,7 +54,7 @@ from PyQt4.QtGui  import *
 
 from Base.Common import LABEL_LENGTH_MAX
 from Base.Toolbox import GuiParam
-from ProfilesForm import Ui_ProfilesForm
+from Pages.ProfilesForm import Ui_ProfilesForm
 from Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
 from Pages.ProfilesModel import ProfilesModel
 
@@ -184,11 +184,11 @@ class DragListView(QListView):
 #
 #    def dragLeaveEvent(self,event):
 #        event.accept()
-#        print "1 drag leave"
+#        print("1 drag leave")
 #
 #    def dropEvent(self,event):
 #        event.acceptProposedAction()
-#        print "1 drag drop"
+#        print("1 drag drop")
 
 
 #    def mouseMoveEvent(self, event):
@@ -235,7 +235,7 @@ class DropListView(QListView):
 
 #    def dragEnterEvent(self,event):
 #        if event.mimeData().hasFormat("application/x-ics"):
-#            print "1"
+#            print("1")
 #            if event.source() in self.children():
 #                event.setDropAction(Qt.MoveAction)
 #                event.accept()
@@ -243,10 +243,10 @@ class DropListView(QListView):
 #                event.acceptProposedAction()
 #
 #        elif event.mimeData().hasText():
-#            print "2"
+#            print("2")
 #            event.acceptProposedAction()
 #        else:
-#            print "3"
+#            print("3")
 #            event.ignore()
 
 #    def dragMoveEvent(self,event):
@@ -254,7 +254,7 @@ class DropListView(QListView):
 #
 #    def dragLeaveEvent(self,event):
 #        event.accept()
-#        print "2 drag leave"
+#        print("2 drag leave")
 
 #    def dropEvent(self,event):
 #        if event.mimeData().hasText():
@@ -373,7 +373,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             default['list'] = self.mdl.getProfilesLabelsList()
             rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
             default['regexp'] = QRegExp(rx)
-            from VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+            from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
             dialog = VerifyExistenceLabelDialogView(self, default)
             if dialog.exec_():
                 result = dialog.get_result()

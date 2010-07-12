@@ -50,7 +50,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from Base.Toolbox import GuiParam
-from MatisseRangeDescriptionForm import Ui_MatisseRangeDescriptionForm
+from Pages.MatisseRangeDescriptionForm import Ui_MatisseRangeDescriptionForm
 import Base.QtPage as QtPage
 
 import Pages.MatisseGeomModel as MatisseGeom

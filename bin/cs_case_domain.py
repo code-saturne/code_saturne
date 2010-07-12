@@ -230,7 +230,7 @@ class base_domain:
                 err_str = \
                     'File: ', name, '\n' \
                     'can not be accessed.'
-            raise RunCaseError, err_str
+            raise RunCaseError(err_str)
 
     #---------------------------------------------------------------------------
 
@@ -430,7 +430,7 @@ class domain(base_domain):
                 err_str = '\n' \
                     ' Parallel run ' + self.for_domain_str() \
                     + 'impossible with solcom=', self.solcom, '.\n,'
-                raise RunCaseError, err_str
+                raise RunCaseError(err_str)
 
     #---------------------------------------------------------------------------
 
@@ -467,28 +467,28 @@ class domain(base_domain):
             return
         elif target == None:
             err_str = 'No target for link: ' + link
-            raise RunCaseError, err_str
+            raise RunCaseError(err_str)
         elif link == None:
             if self.exec_dir != None:
                 link = os.path.join(self.exec_dir,
                                     os.path.basename(target))
             else:
                 err_str = 'No path name given for link to: ' + target
-                raise RunCaseError, err_str
+                raise RunCaseError(err_str)
 
         if not os.path.exists(target):
             err_str = 'File: ' + target + ' does not exist.'
-            raise RunCaseError, err_str
+            raise RunCaseError(err_str)
 
         elif check_type == 'file':
             if not os.path.isfile(target):
                 err_str = target + ' is not a regular file.'
-                raise RunCaseError, err_str
+                raise RunCaseError(err_str)
 
         elif check_type == 'dir':
             if not os.path.isdir(target):
                 err_str = target + ' is not a directory.'
-                raise RunCaseError, err_str
+                raise RunCaseError(err_str)
 
         try:
             os.symlink(target, link)
@@ -601,7 +601,7 @@ class domain(base_domain):
                 self.solver_path = os.path.join(self.exec_dir,
                                                 solver_base_name)
             else:
-                raise RunCaseError, 'Compile or link error.'
+                raise RunCaseError('Compile or link error.')
 
     #---------------------------------------------------------------------------
 
@@ -650,7 +650,7 @@ class domain(base_domain):
                     self.symlink(mesh_path, link_path)
                 except Exception:
                     err_str = 'Model file name not found in ' + mesh_path
-                    raise RunCaseError, err_str
+                    raise RunCaseError(err_str)
 
     #---------------------------------------------------------------------------
 
@@ -671,7 +671,7 @@ class domain(base_domain):
                          'file')
         else:
             err_str = 'Error: no path name given for link to: ' + target
-            raise RunCaseError, err_str
+            raise RunCaseError(err_str)
 
     #---------------------------------------------------------------------------
 
@@ -716,7 +716,7 @@ class domain(base_domain):
 
                 if not os.path.isdir(self.restart_input_dir):
                     err_str = self.restart_input_dir + ' is not a directory.'
-                    raise RunCaseError, err_str
+                    raise RunCaseError(err_str)
 
                 rename = {'suiava':'suiamo',
                           'suiavx':'suiamx',
@@ -852,7 +852,7 @@ class domain(base_domain):
                 'The list of required partitionings is not set.\n' \
                 'It should contain the number of processors for which a\n' \
                 'partition is required, or a list of such numbers.\n'
-            raise RunCaseError, err_str
+            raise RunCaseError(err_str)
 
         if self.exec_solver and self.n_procs != None:
             p = str(self.n_procs)
@@ -1153,7 +1153,7 @@ class syrthes_domain(base_domain):
             err_str = \
                 'SYRTHES3 coupling mode "' + coupling_mode + '" unknown.\n' \
                 + 'Allowed modes: ' + str(coupling_modes) + '.\n'
-            raise RunCaseError, err_str
+            raise RunCaseError(err_str)
 
         # Coupling mode
         self.coupling_mode = coupling_mode
@@ -1234,7 +1234,7 @@ class syrthes_domain(base_domain):
         self.copy_result(log_name)
 
         if retval != 0:
-            raise RunCaseError, 'Compile or link error.'
+            raise RunCaseError('Compile or link error.')
 
         self.solver_path = os.path.join(self.exec_dir, 'syrthes')
 

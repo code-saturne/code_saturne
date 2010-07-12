@@ -102,6 +102,6 @@ def suite():
     return testSuite
 
 def runTest():
-    print "CurrentSpeciesModelTestCase - A FAIRE**************"
+    print("CurrentSpeciesModelTestCase - A FAIRE**************")
     runner = unittest.TextTestRunner()
     runner.run(suite())

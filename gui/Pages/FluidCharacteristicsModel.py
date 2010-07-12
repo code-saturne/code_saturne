@@ -121,7 +121,7 @@ class FluidCharacteristicsModel(Variables, Model):
                     nodeThermal = node
 
         if len(modelList) > 1:
-            raise ValueError, "Erreur de model thermique dans le fichier XML"
+            raise ValueError("Erreur de model thermique dans le fichier XML")
         elif modelList == []:
             modelList.append('off')
             nodeThermal = None
@@ -265,7 +265,7 @@ class FluidCharacteristicsModel(Variables, Model):
             node.xmlInitNode('postprocessing_recording')['status'] = 'off'
 
             if tag == 'density':
-                from TimeStepModel import TimeStepModel
+                from Pages.TimeStepModel import TimeStepModel
                 TimeStepModel(self.case).RemoveThermalTimeStepNode()
                 del TimeStepModel
         else:
@@ -443,7 +443,7 @@ def suite():
 
 
 def runTest():
-    print __file__
+    print(__file__)
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

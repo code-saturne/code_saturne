@@ -50,7 +50,7 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from BoundaryConditionsForm import Ui_BoundaryConditionsForm
+from Pages.BoundaryConditionsForm import Ui_BoundaryConditionsForm
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import DoubleValidator, ComboModel

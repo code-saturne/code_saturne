@@ -58,7 +58,7 @@ from PyQt4.QtGui  import *
 
 from Base.Common import LABEL_LENGTH_MAX
 from Base.Toolbox import GuiParam
-from ConjugateHeatTransferForm import Ui_ConjugateHeatTransferForm
+from Pages.ConjugateHeatTransferForm import Ui_ConjugateHeatTransferForm
 from Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
 from Pages.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 

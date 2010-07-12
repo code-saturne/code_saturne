@@ -56,7 +56,7 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 
-from LagrangianBoundariesForm import Ui_LagrangianBoundariesForm
+from Pages.LagrangianBoundariesForm import Ui_LagrangianBoundariesForm
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import IntValidator, DoubleValidator, ComboModel
