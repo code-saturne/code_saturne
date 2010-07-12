@@ -1,3 +1,8 @@
+* 12/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Make the CCM files reader able to read both 2.6.1 and later versions.
+  modified routine:
+    preprocessor/pre-post/ecs_pre_ccm.c
+
 * 12/07/2010 - David Monfort <david.monfort@edf.fr>
   Again... other Makefile.am and gettext files to patch.
   modified scripts:

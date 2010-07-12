@@ -47,7 +47,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_def.h"
-#include "ecs_chaine_glob.h"
 #include "ecs_elt_typ_liste.h"
 #include "ecs_mem.h"
 #include "ecs_tab.h"
@@ -78,6 +77,7 @@ extern "C" {
 #endif
 
 #include <libccmio/ccmio.h>
+#include <libccmio/ccmioversion.h>
 
 #ifdef __cplusplus
 }
@@ -87,6 +87,9 @@ extern "C" {
  * Local Macro Definitions
  *============================================================================*/
 
+#if (kCCMIOVersion == 20601)
+typedef CCMIOSize CCMIOSize_t;
+#endif
 
 /*=============================================================================
  * Local Type Definitions
@@ -97,7 +100,7 @@ extern "C" {
 typedef struct {
   size_t           n_nodes; /* Number of vertices */
   ecs_int_t       *id;      /* Vertex labels */
-  ecs_real_t      *coord;   /* Coordinates (interlaced) */
+  ecs_coord_t     *coord;   /* Coordinates (interlaced) */
 } _nodes_t;
 
 
@@ -137,7 +140,12 @@ _read_vertices(CCMIOID   vertices,
   float scale;
   double *verts_coo;
   CCMIOID map_id;
+#if (kCCMIOVersion == 20601)
+  int dims = 1;
+  CCMIOSize n_vertices = 0, size;
+#else
   CCMIOSize_t dims = 1, n_vertices = 0, size;
+#endif
   int *map_data;
   CCMIOError err = kCCMIONoErr;
 
@@ -174,7 +182,7 @@ _read_vertices(CCMIOID   vertices,
   /* Transfer to local node structure */
 
   ECS_MALLOC(nodes->id, nodes->n_nodes, ecs_int_t);
-  ECS_MALLOC(nodes->coord, 3*nodes->n_nodes, ecs_real_t);
+  ECS_MALLOC(nodes->coord, 3*nodes->n_nodes, ecs_coord_t);
 
   for (i = 0; i < n_vertices; i++) {
 
@@ -373,14 +381,18 @@ _read_mesh(CCMIOID   vertices,
   /* Read the boundary faces */
 
   {
-    CCMIOSize_t index = 0;
+#if (kCCMIOVersion == 20601)
+    int _index = 0;
+#else
+    CCMIOSize_t _index = 0;
+#endif
     int i_beg = 0;
     int i_beg_c = 0;
 
     b_faces->n_faces = 0;
     b_faces->taille_connect = 0;
 
-    while (   CCMIONextEntity(NULL, topology, kCCMIOBoundaryFaces, &index, &id)
+    while (   CCMIONextEntity(NULL, topology, kCCMIOBoundaryFaces, &_index, &id)
            == kCCMIONoErr) {
 
       int boundary_id;
@@ -441,7 +453,7 @@ _read_mesh(CCMIOID   vertices,
         ECS_REALLOC(b_faces->icoul, b_faces->n_faces, ecs_int_t);
       }
 
-      for (i = 0, pos = 0, cpt = 0; i < n_faces; i++) {
+      for (i = 0, pos = 0, cpt = 0; i < (size_t)n_faces; i++) {
 
         b_faces->nbr_n[i_beg + i] = face_nverts[pos];
         b_faces->icel1[i_beg + i] = face_cells[i];
@@ -582,7 +594,6 @@ ecs_pre_ccm__prepa_mail(_nodes_t    *noeuds,
   ecs_size_t * cpt_elt_coul_ent   [ECS_N_ENTMAIL];
   ecs_size_t * elt_pos_som_ent    [ECS_N_ENTMAIL]; /* Vertex positions */
   ecs_int_t  * elt_val_som_ent    [ECS_N_ENTMAIL]; /* Vertex numbers */
-  ecs_int_t  * elt_val_fam_ent    [ECS_N_ENTMAIL]; /* Element families */
   ecs_int_t  * elt_val_color_ent  [ECS_N_ENTMAIL]; /* Element colors */
 
   size_t ifac;
@@ -621,7 +632,6 @@ ecs_pre_ccm__prepa_mail(_nodes_t    *noeuds,
 
     elt_pos_som_ent    [ient] = NULL;
     elt_val_som_ent    [ient] = NULL;
-    elt_val_fam_ent    [ient] = NULL;
     elt_val_color_ent  [ient] = NULL;
 
     cpt_coul_ent       [ient] = 0;
@@ -816,7 +826,7 @@ ecs_pre_ccm__prepa_mail(_nodes_t    *noeuds,
                              cpt_elt_ent,
                              elt_pos_som_ent,
                              elt_val_som_ent,
-                             elt_val_fam_ent,
+                             NULL,
                              elt_val_color_ent,
                              cpt_coul_ent,
                              val_coul_ent,
@@ -849,9 +859,13 @@ ecs_pre_ccm__lit_maillage(const char  *nom_fic_maillage,
   CCMIOID root, state, processor, vertices, topology;
   CCMIOError err;
 
+#if (kCCMIOVersion == 20601)
   int i = 0;
-
   unsigned int size;
+#else
+  CCMIOSize_t i = 0;
+  CCMIOSize_t size = 0;
+#endif
 
   _nodes_t *nodes;
   _faces_t *liste_faces_bord;
