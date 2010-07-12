@@ -1,4 +1,9 @@
 * 12/07/2010 - David Monfort <david.monfort@edf.fr>
+  Fix the configure.ac script due to a directory renaming.
+  modified scrip:
+    configure.ac
+
+* 12/07/2010 - David Monfort <david.monfort@edf.fr>
   Remove the igghexa_to_med.1 entry in the Makefile.am.
   modified script:
     Makefile.am

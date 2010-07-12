@@ -771,9 +771,10 @@ cs_config_comments=cs_config_comments_include
 # Main configuration
 
 AC_CONFIG_FILES([Makefile po/Makefile.in
-                 prepro/Makefile
-                 prepro/appli/Makefile prepro/base/Makefile prepro/tools/Makefile
-                 prepro/pre-post/Makefile prepro/util/Makefile
+                 preprocessor/Makefile
+                 preprocessor/appli/Makefile preprocessor/base/Makefile
+                 preprocessor/pre-post/Makefile preprocessor/util/Makefile
+                 preprocessor/tools/Makefile
                  src/Makefile      src/apps/Makefile
                  src/bft/Makefile  src/fvm/Makefile  src/mei/Makefile
                  src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
