@@ -25,7 +25,7 @@ GUI = gui
 endif
 
 if HAVE_PREPROCESSOR
-PREPRO = prepro
+PREPRO = preprocessor
 endif
 
 if HAVE_INTERNAL_PLE
