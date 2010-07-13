@@ -156,3 +156,4 @@ class Species:
 
     def cancelElementarySpecie(self, number):
         print("Not yet implemented")
+

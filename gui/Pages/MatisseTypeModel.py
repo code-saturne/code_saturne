@@ -153,7 +153,7 @@ def suite():
 
 
 def runTest():
-    print("MatisseTypeTestCase - A FAIRE*****")
+    print("MatisseTypeTestCase - TODO*****")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

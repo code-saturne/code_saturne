@@ -364,10 +364,10 @@ def suite2():
 def runTest():
     runner = unittest.TextTestRunner()
 
-    print("MatisseInitTestCase: - A FAIRE************")
+    print("MatisseInitTestCase: - TODO************")
     runner.run(suite1())
 
-    print("MatisseThermUpdateTestCase: - A FAIRE************")
+    print("MatisseThermUpdateTestCase: - TODO************")
     runner.run(suite2())
 
 

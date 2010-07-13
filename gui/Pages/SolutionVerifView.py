@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2010 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -265,7 +265,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         fileName = QFileDialog.getSaveFileName(self,
                                                self.tr("Save File As"),
                                                self.case['resu_path'],
-                                               self.tr("Mesh quality criteria listing (listpre.*);;All files (*)"))
+                                               self.tr("Mesh quality criteria log (listpre.*);;All files (*)"))
         if fileName.isEmpty(): return
         try:
             logFile = open(str(fileName), 'w')

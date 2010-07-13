@@ -1,3 +1,39 @@
+* 13/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Code and comments cleaning.
+  modified routines:
+    bin/cs_case_domain.py
+    bin/cs_case.py
+    bin/cs_check_consistency.py
+    bin/cs_check_mesh.py
+    bin/cs_create.py
+    bin/runcase.in
+    gui/Base/BrowserView.py
+    gui/Base/Toolbox.py
+    gui/Pages/BoundaryConditionsParticlesModel.py
+    gui/Pages/CommonCombustion.py
+    gui/Pages/ConjugateHeatTransferView.py
+    gui/Pages/CurrentSpeciesModel.py
+    gui/Pages/ElectricalModelsModel.py
+    gui/Pages/GasCombustionModel.py
+    gui/Pages/IdentityAndPathesModel.py
+    gui/Pages/LagrangianBoundariesModel.py
+    gui/Pages/LagrangianOutputModel.py
+    gui/Pages/LagrangianStatisticsModel.py
+    gui/Pages/MatisseGeomModel.py
+    gui/Pages/MatisseGeomView.py
+    gui/Pages/MatisseHydrauModel.py
+    gui/Pages/MatisseModel.py
+    gui/Pages/MatisseNetworkModel.py
+    gui/Pages/MatisseRangeDescriptionModel.py
+    gui/Pages/MatisseThermicModel.py
+    gui/Pages/MatisseTypeModel.py
+    gui/Pages/MemoryAllocationModel.py
+    gui/Pages/MobileMeshModel.py
+    gui/Pages/NumericalParamGlobalModel.py
+    gui/Pages/OutputSurfacicVariablesModel.py
+    gui/Pages/SolutionVerifView.py
+    gui/Pages/UserArraysModel.py
+
 * 13/07/2010 - David Monfort <david.monfort@edf.fr>
   Fix a wrong structure item for file handle on some systems.
   modified routine:

@@ -384,7 +384,7 @@ def suite():
 
 
 def runTest():
-    print("MatisseGeomTestCase - A FAIRE**************")
+    print("MatisseGeomTestCase - TODO**************")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

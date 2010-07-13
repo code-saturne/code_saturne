@@ -263,7 +263,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print("MatisseNetworkModelTestCase - A FAIRE**************")
+    print("MatisseNetworkModelTestCase - TODO**************")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

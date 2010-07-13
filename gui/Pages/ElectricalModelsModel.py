@@ -182,7 +182,7 @@ def suite():
 
 
 def runTest():
-    print("ElectricalTestCase - A FAIRE**************")
+    print("ElectricalTestCase - TODO**************")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

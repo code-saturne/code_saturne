@@ -285,7 +285,7 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         self.connect(self.pushButtonAdd,    SIGNAL("clicked()"), self.slotAddSyrthes)
         self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.slotDeleteSyrthes)
 
-        # Insert list of Syrthes coupling for view
+        # Insert list of Syrthes couplings for view
         for c in self.__model.getSyrthesCouplingList():
             [syrthes_name, app_num, proj_axis, location] = c
             self.modelSyrthes.addItem(syrthes_name, app_num, proj_axis, location)

@@ -395,7 +395,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print("MatisseThermicModelTestCase - A FAIRE**************")
+    print("MatisseThermicModelTestCase - TODO**************")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 

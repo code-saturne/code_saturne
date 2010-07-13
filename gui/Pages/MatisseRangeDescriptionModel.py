@@ -219,7 +219,7 @@ def suite():
     return testSuite
 
 def runTest():
-    print("MatisseRangeDescriptionModelTestCase - A FAIRE**************")
+    print("MatisseRangeDescriptionModelTestCase - TODO**************")
     runner = unittest.TextTestRunner()
     runner.run(suite())
 
