@@ -23,11 +23,11 @@
 	</solution_domain>
 	<thermophysical_models>
 		<velocity_pressure>
-			<variable label="Pression" name="pressure">
+			<variable label="Pressure" name="pressure">
 				<reference_pressure>101325</reference_pressure>
 				<listing_printing status="off"/>
 			</variable>
-			<variable label="VitesseX" name="velocity_U">
+			<variable label="VelocityX" name="velocity_U">
 				<blending_factor>1</blending_factor>
 				<probes choice="5">
 					<probe_recording name="1"/>
@@ -37,10 +37,10 @@
 					<probe_recording name="8"/>
 				</probes>
 			</variable>
-			<variable label="VitesseY" name="velocity_V">
+			<variable label="VelocityY" name="velocity_V">
 				<blending_factor>1</blending_factor>
 			</variable>
-			<variable label="VitesseZ" name="velocity_W">
+			<variable label="VelocityZ" name="velocity_W">
 				<blending_factor>1</blending_factor>
 			</variable>
 			<property label="total_pressure" name="total_pressure">
@@ -52,19 +52,19 @@
 		</velocity_pressure>
 		<ale_method status="off"/>
 		<turbulence model="k-epsilon">
-			<variable label="EnerTurb" name="turb_k">
+			<variable label="TurbEnergy" name="turb_k">
 				<listing_printing status="off"/>
 			</variable>
 			<variable label="Dissip" name="turb_eps">
 				<listing_printing status="off"/>
 			</variable>
-			<property label="ViscTurb" name="turb_viscosity"/>
+			<property label="TurbVisc" name="turb_viscosity"/>
 			<initialization choice="reference_velocity">
 				<reference_velocity>1</reference_velocity>
 			</initialization>
 		</turbulence>
 		<thermal_scalar model="temperature_celsius">
-			<property label="Flux_thermique_entrant" name="input_thermal_flux" support="boundary"/>
+			<property label="Input_thermal_flux" name="input_thermal_flux" support="boundary"/>
 		</thermal_scalar>
 		<radiative_transfer model="off">
 			<restart status="off"/>
@@ -107,21 +107,21 @@
 	</numerical_parameters>
 	<physical_properties>
 		<fluid_properties>
-			<property choice="user_law" label="MasseVol" name="density">
+			<property choice="user_law" label="Density" name="density">
 				<initial_value>725.735</initial_value>
 				<formula>rho = TempC*(-4.0668e-3*TempC -5.0754e-2) + 1000.9;</formula>
 			</property>
-			<property choice="constant" label="ViscLam" name="molecular_viscosity">
+			<property choice="constant" label="Molecular_visc" name="molecular_viscosity">
 				<listing_printing status="off"/>
 				<postprocessing_recording status="off"/>
 				<initial_value>8.951e-05</initial_value>
 			</property>
-			<property choice="constant" label="ChSpec" name="specific_heat">
+			<property choice="constant" label="Sp_heat" name="specific_heat">
 				<listing_printing status="off"/>
 				<postprocessing_recording status="off"/>
 				<initial_value>5483</initial_value>
 			</property>
-			<property choice="constant" label="CondTherm" name="thermal_conductivity">
+			<property choice="constant" label="Th_cond" name="thermal_conductivity">
 				<listing_printing status="off"/>
 				<postprocessing_recording status="off"/>
 				<initial_value>0.02495</initial_value>
