@@ -27,11 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <bft_file.h>
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
-
 #include "ple_config_defs.h"
 #include "ple_defs.h"
 
@@ -64,13 +59,16 @@ main (int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   if (rank < 2)
-    app_id = 0;
+    app_id = ple_coupling_mpi_name_to_id(MPI_COMM_WORLD, "Code_A");
   else if (rank < 3)
-    app_id = 1;
+    app_id = ple_coupling_mpi_name_to_id(MPI_COMM_WORLD, "Code_B:case_b");
   else if (rank < 6)
-    app_id = 2;
+    app_id = ple_coupling_mpi_name_to_id(MPI_COMM_WORLD, "Code_C");
   else
-    app_id = 3;
+    app_id = ple_coupling_mpi_name_to_id(MPI_COMM_WORLD, "Code_D;case_d");
+
+  if (app_id < 0)
+    app_id = 0;
 
   MPI_Comm_split(MPI_COMM_WORLD, app_id, rank, &app_comm);
 

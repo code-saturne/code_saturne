@@ -1,4 +1,8 @@
+2010-06-28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Added ple_coupling_mpi_name_to_id() function.
+
 2010-02-15  Yvan Fournier <yvan.fournier@edf.fr>
 
-	* Initial version based on simplifiacation of FVM library.
+	* Initial version based on simplification of FVM library.
 

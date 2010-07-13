@@ -84,6 +84,31 @@ typedef struct {
 #if defined(PLE_HAVE_MPI)
 
 /*----------------------------------------------------------------------------
+ * This function builds a group id within a communicator based on its name.
+ *
+ * If multiple groups are present, ids are number from 0 to n_groups - 1,
+ * based on the odering of group names. If all processes have the same
+ * group name, the returned value is -1.
+ *
+ * The returned id may typically be used as a "color" argument for
+ * MPI_Comm_split().
+ *
+ * As this function requires communication between applications, it
+ * is a collective function in comm.
+ *
+ * parameters:
+ *   comm       <-- MPI communicator.
+ *   group_name <-- name associated with current group
+ *
+ * returns:
+ *   id associated with local name.
+ *----------------------------------------------------------------------------*/
+
+int
+ple_coupling_mpi_name_to_id(MPI_Comm     comm,
+                            const char  *group_name);
+
+/*----------------------------------------------------------------------------
  * Discover other applications in the same MPI_COMM_WORLD.
  *
  * The application communicator app_comm is usually obtained from
