@@ -1,8 +1,3 @@
-* 13/07/2010 - David Monfort <david.monfort@edf.fr>
-  Use AS_HELP_STRING everywhere needed.
-  modified script:
-    configure.ac
-
 * 13/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Code and comments cleaning.
   modified routines:
