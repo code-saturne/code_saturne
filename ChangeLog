@@ -1,3 +1,8 @@
+* 13/07/2010 - David Monfort <david.monfort@edf.fr>
+  Fix a wrong structure item for file handle on some systems.
+  modified routine:
+    preprocessor/util/ecs_file.c
+
 * 12/07/2010 - David Monfort <david.monfort@edf.fr>
   Add a new API for halo synchronization. Four new functions are available for
   scalars, vectors, diagonal tensor and 9x9 tensor. The old API
