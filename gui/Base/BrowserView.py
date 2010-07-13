@@ -430,7 +430,7 @@ Thermophysical models
     Atmospheric flows
 Additional scalars
     Definition and initialization
-    Physical properties
+    Physicals properties
 Physical properties
     Reference values
     Fluid properties

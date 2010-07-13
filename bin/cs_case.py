@@ -109,8 +109,6 @@ class case:
                 d.set_tag(d_tag)
                 d.set_case_dir(self.case_dir)
 
-        # Syrthes coupling
-
         if syr_domains == None:
             self.syr_domains = ()
         elif type(syr_domains) == tuple or  type(syr_domains) == list:
@@ -1095,7 +1093,7 @@ fi
         if mpi_environment != None:
             exec_env.mpi_env = mpi_environment
 
-        # Compute number of processors
+        # Compute number of procesors
 
         n_procs_tot = self.distribute_procs(exec_env.resources.n_procs)
 

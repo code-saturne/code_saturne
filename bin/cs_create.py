@@ -356,10 +356,12 @@ class Study:
                                              'usr'),
                                 users_syr)
 
+
         # Results directory (only one for all instances)
 
         resu = 'RESU'
         os.mkdir(resu)
+
 
         # Script directory (only one for all instances)
 

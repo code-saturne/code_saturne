@@ -200,7 +200,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.DefineUserScalarsView as Page
         thisPage = Page.DefineUserScalarsView(root, case, stbar)
 
-    elif page_name == tr("Physical properties"):
+    elif page_name == tr("Physicals properties"):
         import Pages.UserScalarPropertiesView as Page
         thisPage = Page.UserScalarPropertiesView(root, case, stbar)
 

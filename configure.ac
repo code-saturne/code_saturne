@@ -56,8 +56,6 @@ m4_define([cs_version_extra], [-rc1])
 m4_define([cs_version_string],
           [cs_major_version.cs_minor_version.cs_release_version@&t@cs_version_extra])
 
-CS_GET_VERSION
-
 AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr])
 AC_CONFIG_SRCDIR([src/apps/cs_solver.c])
 
@@ -77,9 +75,6 @@ AM_MAINTAINER_MODE
 
 # Enable silent rules with "./configure --enable-silent-rules" or "make V=0"
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
-
-# Remember the configure command line
-CONFIG_CMD=`echo "$0 $ac_configure_args"`
 
 #------------------------------------------------------------------------------
 # Checks for programs.
@@ -107,7 +102,7 @@ AC_FC_LIBRARY_LDFLAGS
 # Debug or production compilation mode (debug by default) ?
 
 AC_ARG_ENABLE(debug,
-  [AS_HELP_STRING([--enable-debug], [enable debugging (reduces optimization)])],
+  [  --enable-debug          enable debugging (reduces optimization)],
   [
     case "${enableval}" in
       yes) debug=true ;;
@@ -121,7 +116,7 @@ AC_ARG_ENABLE(debug,
 # Optionally deactivate automatic determination of flags on known systems
 
 AC_ARG_ENABLE(auto-flags,
-  [AS_HELP_STRING([--disable-auto-flags], [do not define *FLAGS on known systems])],
+  [  --disable-auto-flags    do not define *FLAGS on known systems],
   [
     case "${enableval}" in
       yes) auto_flags=true ;;
@@ -135,7 +130,7 @@ AC_ARG_ENABLE(auto-flags,
 # Optionally activate French translation of Fortran logs (compile-time)
 
 AC_ARG_ENABLE(french,
-  [AS_HELP_STRING([--enable-french], [enable French translation of Fortran logs])],
+  [  --enable-french         enable French translation of Fortran logs],
   [
     case "${enableval}" in
       yes) french=true ;;
@@ -333,7 +328,7 @@ CS_AC_TEST_FC_FLUSH
 cs_have_openmp=no
 
 AC_ARG_ENABLE(openmp,
-  [AS_HELP_STRING([--disable-openmp], [disable OpenMP support])],
+  [  --disable-openmp      disable OpenMP support],
   [
     case "${enableval}" in
       yes) cs_have_openmp=yes ;;
@@ -591,7 +586,7 @@ AC_CHECK_SIZEOF([off_t])
 have_socket=no
 
 AC_ARG_ENABLE(sockets,
-  [AS_HELP_STRING([--disable-sockets], [disable communications through IP sockets])],
+  [  --disable-sockets       disable communications through IP sockets],
   [
     case "${enableval}" in
       yes) have_socket=yes ;;
@@ -611,7 +606,7 @@ fi
 have_dlloader=no
 
 AC_ARG_ENABLE(dlloader,
-  [AS_HELP_STRING([--disable-dlloader], [disable dynamic shared library loading])],
+  [  --disable-dlloader      disable dynamic shared library loading],
   [
     case "${enableval}" in
       yes) have_dlloader=yes ;;
@@ -648,7 +643,7 @@ fi
 have_malloc_hooks=no
 
 AC_ARG_ENABLE(malloc_hooks,
-  [AS_HELP_STRING([--disable-malloc-hooks], [Do not use malloc hooks when available])],
+  [  --disable-malloc-hooks  Do not use malloc hooks when available],
   [
     case "${enableval}" in
       yes) malloc_hooks=true ;;
