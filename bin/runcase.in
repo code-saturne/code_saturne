@@ -327,7 +327,7 @@ if __name__ == '__main__':
     case = case(casedir,
                 d,
                 sd,
-                results_by_suffix = True,
+                results_by_suffix = False,
                 exec_preprocess = EXEC_PREPROCESS,
                 exec_partition = EXEC_PARTITION,
                 exec_solver = EXEC_SOLVER)

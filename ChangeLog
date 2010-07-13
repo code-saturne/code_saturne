@@ -1,3 +1,8 @@
+* 13/07/2010 - David Monfort <david.monfort@edf.fr>
+  Change the default behaviour for copying the result files (without suffix).
+  modified script:
+    bin/runcase.in
+
 * 13/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix missing macro definition in the MPI detection (MPI_IO and MPI_ONE_SIDED).
   modified script:
