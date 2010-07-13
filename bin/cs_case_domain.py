@@ -585,7 +585,7 @@ class domain(base_domain):
             retval = cs_compile.compile_and_link(copy_dir,
                                                  self.exec_dir,
                                                  self.lib_add,
-                                                 False,
+                                                 keep_going=True,
                                                  stdout=log,
                                                  stderr=log)
 

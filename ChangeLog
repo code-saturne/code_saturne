@@ -1,3 +1,10 @@
+* 13/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add an option to the compile script to continue the compilation in case of
+  errors. This option is disabled by default and enabled in the runcase script.
+  modified scripts:
+    bin/cs_case_domain.py
+    bin/cs_compile.py
+
 * 13/07/2010 - David Monfort <david.monfort@edf.fr>
   Use AS_HELP_STRING everywhere needed.
   modified script:

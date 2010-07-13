@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009  EDF
+#   Copyright (C) 2009-2010  EDF
 #
 #   The Code_Saturne Preprocessor is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -54,6 +54,10 @@ def process_cmd_line(argv):
                       action="store_true",
                       help="force link, even with no source files")
 
+    parser.add_option("-k", "--keep-going", dest="keep_going",
+                      action="store_true",
+                      help="continue even if errors are encountered")
+
     parser.add_option("-s", "--source", dest="src_dir", type="string",
                       metavar="<src_dir>",
                       help="choose source file directory")
@@ -72,6 +76,7 @@ def process_cmd_line(argv):
 
     parser.set_defaults(test_mode=False)
     parser.set_defaults(force_link=False)
+    parser.set_defaults(keep_going=False)
     parser.set_defaults(src_dir=os.getcwd())
     parser.set_defaults(dest_dir=os.getcwd())
     parser.set_defaults(opt_libs="")
@@ -98,7 +103,7 @@ def process_cmd_line(argv):
         sys.stderr.write('Error: ' + dest_dir + ' is not a directory')
         sys.exit(1)
 
-    return options.test_mode, options.force_link, \
+    return options.test_mode, options.force_link, options.keep_going, \
            src_dir, dest_dir, options.opt_libs, options.link_syrthes
 
 #-------------------------------------------------------------------------------
@@ -124,7 +129,8 @@ def so_dirs_path(flags):
 
 #-------------------------------------------------------------------------------
 
-def compile_and_link(srcdir, destdir, optlibs, force_link,
+def compile_and_link(srcdir, destdir, optlibs,
+                     force_link = False, keep_going = False,
                      stdout = sys.stdout, stderr = sys.stderr):
     """
     Compilation and link function.
@@ -150,6 +156,8 @@ def compile_and_link(srcdir, destdir, optlibs, force_link,
     f_files = fnmatch.filter(dir_files, '*.[fF]90')
 
     for f in c_files:
+        if (retval != 0 and not keep_going):
+            break
         cmd = build.cc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
@@ -162,6 +170,8 @@ def compile_and_link(srcdir, destdir, optlibs, force_link,
             retval = 1
 
     for f in f_files:
+        if (retval != 0 and not keep_going):
+            break
         cmd = build.fc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
@@ -285,7 +295,8 @@ def main(argv):
     Main function.
     """
 
-    test_mode, force_link, src_dir, dest_dir, opt_libs, link_syrthes = process_cmd_line(argv)
+    test_mode, force_link, keep_going, \
+        src_dir, dest_dir, opt_libs, link_syrthes = process_cmd_line(argv)
 
     if test_mode == True:
         dest_dir = None
@@ -293,7 +304,8 @@ def main(argv):
     if link_syrthes == True:
         retcode = compile_and_link_syrthes(src_dir, dest_dir)
     else:
-        retcode = compile_and_link(src_dir, dest_dir, opt_libs, force_link)
+        retcode = compile_and_link(src_dir, dest_dir, opt_libs,
+                                   force_link, keep_going)
 
     sys.exit(retcode)
 
