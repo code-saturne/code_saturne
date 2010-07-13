@@ -1,4 +1,9 @@
 * 13/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix missing macro definition in the MPI detection (MPI_IO and MPI_ONE_SIDED).
+  modified script:
+    config/cs_mpi.m4
+
+* 13/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Translate variable and property names in the example Xml files.
   modified files:
     examples/1-simple_junction/case1/case1.xml

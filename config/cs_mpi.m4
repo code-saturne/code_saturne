@@ -215,14 +215,16 @@ if test "x$with_mpi" != "xno" ; then
       AC_MSG_CHECKING([for MPI I/O])
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                      [[ MPI_File_close((void *)0); ]])],
-                     [cs_have_mpi_io=yes],
+                     [AC_DEFINE([HAVE_MPI_IO], 1, [MPI-IO support])
+                      cs_have_mpi_io=yes],
                      [cs_have_mpi_io=no])
       AC_MSG_RESULT($cs_have_mpi_io)
     fi
     AC_MSG_CHECKING([for MPI2 one-sided communication])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                    [[ MPI_Win_free((void *)0); ]])],
-                   [cs_have_mpi_one_sided=yes],
+                   [AC_DEFINE([HAVE_MPI_ONE_SIDED], 1, [MPI one-sided communication])
+                    cs_have_mpi_one_sided=yes],
                    [cs_have_mpi_one_sided=no])
     AC_MSG_RESULT($cs_have_mpi_one_sided)
     # Try to detect MPI variants as this may be useful for the run scripts to
@@ -298,10 +300,6 @@ if test "x$with_mpi" != "xno" ; then
   unset saved_LIBS
 
 fi
-
-AM_CONDITIONAL(HAVE_MPI, test x$cs_have_mpi = xyes)
-AM_CONDITIONAL(HAVE_MPI_IO, test x$cs_have_mpi_io = xyes)
-AM_CONDITIONAL(HAVE_MPI_ONE_SIDED, test x$cs_have_mpi_one_sided = xyes)
 
 AC_SUBST(MPI_CPPFLAGS)
 AC_SUBST(MPI_LDFLAGS)
