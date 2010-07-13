@@ -147,6 +147,7 @@ def check_consistency(param, src_dir, n_procs):
      When %(f1)s is used, %(f2)s must not be
       (%(mod)s module)
       Boundary conditions are defined in %(f1)s.
+
     """
 
     if isPresent(moduleFile['base']):
@@ -161,11 +162,12 @@ def check_consistency(param, src_dir, n_procs):
     # Test on the module used (standard module is not considered here)
     moduleMsg = """
      Use the %(mod)s module
+
     """
 
     for mod in modules[1:]:
         if isPresent(moduleFile[mod]):
-            print(moduleMsg % {'mod':moduleName[mod]})
+            sys.stdout.write(moduleMsg % {'mod':moduleName[mod]})
             moduleUse[mod] = True
 
 
@@ -173,6 +175,7 @@ def check_consistency(param, src_dir, n_procs):
     errorMsg = """
      The %(mod)s module is incompatible with
      parallel runs as of the current version.
+
     """
 
     if n_procs != None:

@@ -81,7 +81,6 @@ def run_check(opts):
     subst_name('preprocessor')
     os.chdir(cur_dir)
 
-
     retval = 0
 
     cmd = os.path.join(cs_config.dirs.bindir, 'cs_solver')

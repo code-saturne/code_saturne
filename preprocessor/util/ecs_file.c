@@ -1086,7 +1086,7 @@ ecs_file_seek(ecs_file_t             *f,
     long _offset = offset;
 
     if (_offset == offset) {
-      retval = fseek(f->sh, (long)offset, _whence);
+      retval = fseek(f->ptr, (long)offset, _whence);
       if (retval != 0)
         ecs_error(__FILE__, __LINE__, errno,
                   _("Error setting position in file \"%s\":\n\n  %s"),

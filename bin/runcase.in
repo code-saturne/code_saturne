@@ -56,11 +56,6 @@
 #  walltime : wall clock time (hh:mm:ss)
 #  mem      : memory
 #
-# WARNING: when coupling with SYRTHES, 1 processor will be reserved for each
-#          instance of SYRTHES. The Kernel will be executed on the remaining
-#          processors, so make sure to reserve a sufficiently high number
-#          of processors.
-#
 #-------------------------------------------------------------------------------
 #
 # Batch options for Sun Grid Engine (example: University of Manchester MACE)
@@ -172,6 +167,10 @@ USER_OUTPUT_FILES = None
 
 # Number of MPI processes associated with the whole calculation (auto if none).
 
+# Warning: when coupling with SYRTHES or Code_Saturne, each calculation domain
+#          will use distinct sets of processors, so make sure to reserve a
+#          sufficiently high number of processors when using resource manager.
+
 N_PROCS = None
 N_PROCS_MIN = 1
 N_PROCS_MAX = None
@@ -260,7 +259,7 @@ def def_exec_prefix():
     """
 
     if CS_TMP_PREFIX != None:
-        return os.path.join(CS_TMP_PREFIX, "tmp_Saturne")
+        return os.path.join(CS_TMP_PREFIX, 'tmp_Saturne')
 
     exec_prefix = None
 

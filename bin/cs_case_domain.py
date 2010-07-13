@@ -15,11 +15,6 @@
 #   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
 #
-#   The Code_Saturne Preprocessor is distributed in the hope that it will be
-#   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-#   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
-#
 #   You should have received a copy of the GNU General Public Licence
 #   along with the Code_Saturne Preprocessor; if not, write to the
 #   Free Software Foundation, Inc.,
@@ -365,7 +360,7 @@ class domain(base_domain):
                  user_input_files = None,     # file name or names
                  user_output_files = None,    # file or directory name or names
                  lib_add = None,              # linker command-line options
-                 adaptation = None):           # HOMARD adaptation script
+                 adaptation = None):          # HOMARD adaptation script
 
         base_domain.__init__(self, n_procs, n_procs_min, n_procs_max)
 
@@ -1307,7 +1302,7 @@ class syrthes_domain(base_domain):
             if 'host_port' in kw:
                 args += ' --comm-socket ' + any_to_str(kw['host_port'])
 
-        # handled direclty
+        # handled directly
 
         # Adjust for Valgrind if used
 
