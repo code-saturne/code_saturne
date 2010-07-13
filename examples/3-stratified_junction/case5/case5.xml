@@ -14,16 +14,16 @@
 	</solution_domain>
 	<thermophysical_models>
 		<velocity_pressure>
-			<variable label="Pression" name="pressure">
+			<variable label="Pressure" name="pressure">
 				<reference_pressure>101325</reference_pressure>
 			</variable>
-			<variable label="VitesseX" name="velocity_U">
+			<variable label="VelocityX" name="velocity_U">
 				<blending_factor>1</blending_factor>
 			</variable>
-			<variable label="VitesseY" name="velocity_V">
+			<variable label="VelocityY" name="velocity_V">
 				<blending_factor>1</blending_factor>
 			</variable>
-			<variable label="VitesseZ" name="velocity_W">
+			<variable label="VelocityZ" name="velocity_W">
 				<blending_factor>1</blending_factor>
 			</variable>
 			<property label="total_pressure" name="total_pressure"/>
@@ -33,15 +33,15 @@
 		</velocity_pressure>
 		<ale_method status="off"/>
 		<turbulence model="k-epsilon">
-			<variable label="EnerTurb" name="turb_k"/>
+			<variable label="TurbEnergy" name="turb_k"/>
 			<variable label="Dissip" name="turb_eps"/>
-			<property label="ViscTurb" name="turb_viscosity"/>
+			<property label="TurbVisc" name="turb_viscosity"/>
 			<initialization choice="reference_velocity">
 				<reference_velocity>0.03183</reference_velocity>
 			</initialization>
 		</turbulence>
 		<thermal_scalar model="temperature_celsius">
-			<property label="Flux_thermique_entrant" name="input_thermal_flux" support="boundary"/>
+			<property label="Input_thermal_flux" name="input_thermal_flux" support="boundary"/>
 		</thermal_scalar>
 		<radiative_transfer model="off">
 			<restart status="off"/>
@@ -68,20 +68,20 @@
 	</numerical_parameters>
 	<physical_properties>
 		<fluid_properties>
-			<property choice="user_law" label="MasseVol" name="density">
+			<property choice="user_law" label="Density" name="density">
 				<initial_value>998.671</initial_value>
 				<formula>rho = TempC*(-4.0668e-3*TempC -5.0754e-2) + 1000.9;</formula>
 			</property>
-			<property choice="user_law" label="ViscLam" name="molecular_viscosity">
+			<property choice="user_law" label="Molecular_visc" name="molecular_viscosity">
 				<initial_value>0.001445</initial_value>
 				<formula>mu = TempC*(TempC*(-3.4016e-9*TempC + 6.2332e-7) -4.5577e-5) + 1.6935e-3;</formula>
 			</property>
-			<property choice="constant" label="ChSpec" name="specific_heat">
+			<property choice="constant" label="Sp_heat" name="specific_heat">
 				<listing_printing status="off"/>
 				<postprocessing_recording status="off"/>
 				<initial_value>4182.88</initial_value>
 			</property>
-			<property choice="constant" label="CondTherm" name="thermal_conductivity">
+			<property choice="constant" label="Th_cond" name="thermal_conductivity">
 				<listing_printing status="off"/>
 				<postprocessing_recording status="off"/>
 				<initial_value>0.601498</initial_value>
@@ -182,11 +182,11 @@
 			<time_step_ref>1</time_step_ref>
 			<iterations>100</iterations>
 			<time_passing>1</time_passing>
-			<property label="NbCourant" name="courant_number"/>
-			<property label="NbFourier" name="fourier_number"/>
+			<property label="CFL_number" name="courant_number"/>
+			<property label="Fourier_number" name="fourier_number"/>
 			<thermal_time_step status="on"/>
 			<zero_time_step status="off"/>
-			<property label="pdtlocal" name="local_time_step">
+			<property label="local_dt" name="local_time_step">
 				<postprocessing_recording status="off"/>
 				<probes choice="0"/>
 			</property>

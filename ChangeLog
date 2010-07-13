@@ -1,3 +1,12 @@
+* 13/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Translate variable and property names in the example Xml files.
+  modified files:
+    examples/1-simple_junction/case1/case1.xml
+    examples/2-full_domain/case2/case2.xml
+    examples/2-full_domain/case3/case3.xml
+    examples/2-full_domain/case4/case4.xml
+    examples/3-stratified_junction/case5/case5.xml
+
 * 07/07/2010 - David Monfort <david.monfort@edf.fr>
   Fix LES WALE model handling when it is set up in the GUI.
   modified routine:
