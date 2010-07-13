@@ -23,6 +23,10 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -97,7 +101,7 @@ main (int argc, char *argv[])
   fvm_file_t *f = NULL;
 
 
-#if defined(FVM_HAVE_MPI_IO)
+#if defined(HAVE_MPI_IO)
   const int n_hints = 3;
   const int hints[3] = {FVM_FILE_NO_MPI_IO,
                         FVM_FILE_EXPLICIT_OFFSETS,
@@ -107,7 +111,7 @@ main (int argc, char *argv[])
   const int hints[1] = {FVM_FILE_NO_MPI_IO};
 #endif
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   MPI_Status status;
   int sync = 1;
@@ -139,7 +143,7 @@ main (int argc, char *argv[])
   block_start_2 = 1;
   block_end_2 = 16;
 
-#endif /* (FVM_HAVE_MPI) */
+#endif /* (HAVE_MPI) */
 
   if (size > 1)
     sprintf(mem_trace_name, "fvm_file_test_mem.%d", rank);
@@ -163,7 +167,7 @@ main (int argc, char *argv[])
     /* Read and seek/set tests */
     /*-------------------------*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 
     f = fvm_file_open("file_test_data",
                       FVM_FILE_MODE_READ,
@@ -176,7 +180,7 @@ main (int argc, char *argv[])
                       FVM_FILE_MODE_READ,
                       hints[test_id]);
 
-#endif /* (FVM_HAVE_MPI) */
+#endif /* (HAVE_MPI) */
 
     fvm_file_set_big_endian(f);
 
@@ -193,7 +197,7 @@ main (int argc, char *argv[])
     retval = fvm_file_read_block(f, ibuf, sizeof(int), 1,
                                  block_start, block_end);
 
-#if defined(FVM_HAVE_MPI) /* Serialize dump */
+#if defined(HAVE_MPI) /* Serialize dump */
     if (rank > 0)
       MPI_Recv(&sync, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, &status);
 #endif
@@ -202,7 +206,7 @@ main (int argc, char *argv[])
     for (i = block_start; i < block_end; i++)
       bft_printf("  ival[%d] = %d\n", (int)i, (int)(ibuf[i-block_start]));
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
     if (rank < size - 1)
       MPI_Send(&sync, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
 #endif
@@ -214,7 +218,7 @@ main (int argc, char *argv[])
 
     off2 = fvm_file_tell(f);
 
-#if defined(FVM_HAVE_MPI) /* Serialize dump */
+#if defined(HAVE_MPI) /* Serialize dump */
     if (rank > 0)
       MPI_Recv(&sync, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, &status);
 #endif
@@ -230,12 +234,12 @@ main (int argc, char *argv[])
                  (dbuf[(i-block_start_2)*2+1]));
     }
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
     if (rank < size - 1)
       MPI_Send(&sync, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
 #endif
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     bft_printf("barrier passed by rank %d\n", rank);
@@ -251,7 +255,7 @@ main (int argc, char *argv[])
     retval = fvm_file_read_block(f, dbuf, sizeof(double), 1,
                                  block_start, block_end);
 
-#if defined(FVM_HAVE_MPI) /* Serialize dump */
+#if defined(HAVE_MPI) /* Serialize dump */
     if (rank > 0)
       MPI_Recv(&sync, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, &status);
 #endif
@@ -260,7 +264,7 @@ main (int argc, char *argv[])
     for (i = block_start; i < block_end; i++)
       bft_printf("  dval[%d] = %f\n", (int)i, (dbuf[i-block_start]));
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
     if (rank < size - 1)
       MPI_Send(&sync, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
 #endif
@@ -276,7 +280,7 @@ main (int argc, char *argv[])
     /* Write tests */
     /*-------------*/
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 
     f = fvm_file_open(output_file_name,
                       FVM_FILE_MODE_WRITE,
@@ -289,7 +293,7 @@ main (int argc, char *argv[])
                       FVM_FILE_MODE_WRITE,
                       hints[test_id]);
 
-#endif /* (FVM_HAVE_MPI) */
+#endif /* (HAVE_MPI) */
 
     fvm_file_set_big_endian(f);
 
@@ -336,7 +340,7 @@ main (int argc, char *argv[])
 
   bft_mem_end();
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   MPI_Finalize();
 

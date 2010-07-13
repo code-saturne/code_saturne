@@ -32,16 +32,39 @@ bft_mem_usage_test \
 bft_mem_test \
 bft_printf_test
 
-CPPFLAGS_BFT = -I$(top_srcdir)/src/bft
-LDFLAGS_BFT  =
-LDADD_BFT    = $(top_builddir)/src/libbft.la
+CPPFLAGS_BFT_TESTS = -I$(top_srcdir)/src/bft
+LDFLAGS_BFT_TESTS =
+LDADD_BFT_TESTS = $(top_builddir)/src/bft/libbft.la
 
-bft_test_SOURCES = bft_test.c
-bft_backtrace_test_SOURCES = bft_backtrace_test.c
-bft_error_test_SOURCES = bft_error_test.c
-bft_mem_usage_test_SOURCES = bft_mem_usage_test.c
-bft_mem_test_SOURCES = bft_mem_test.c
-bft_printf_test_SOURCES = bft_printf_test.c
+bft_test_SOURCES  = bft_test.c
+bft_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
+bft_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
+bft_test_LDADD    = $(LDADD_BFT_TESTS)
+
+bft_backtrace_test_SOURCES  = bft_backtrace_test.c
+bft_backtrace_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
+bft_backtrace_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
+bft_backtrace_test_LDADD    = $(LDADD_BFT_TESTS)
+
+bft_error_test_SOURCES  = bft_error_test.c
+bft_error_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
+bft_error_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
+bft_error_test_LDADD    = $(LDADD_BFT_TESTS)
+
+bft_mem_usage_test_SOURCES  = bft_mem_usage_test.c
+bft_mem_usage_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
+bft_mem_usage_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
+bft_mem_usage_test_LDADD    = $(LDADD_BFT_TESTS)
+
+bft_mem_test_SOURCES  = bft_mem_test.c
+bft_mem_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
+bft_mem_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
+bft_mem_test_LDADD    = $(LDADD_BFT_TESTS)
+
+bft_printf_test_SOURCES  = bft_printf_test.c
+bft_printf_test_CPPFLAGS = $(CPPFLAGS_BFT_TESTS)
+bft_printf_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
+bft_printf_test_LDADD    = $(LDADD_BFT_TESTS)
 
 # FVM tests
 
@@ -52,10 +75,12 @@ fvm_selector_test \
 fvm_selector_postfix_test \
 fvm_sizes_test
 
-CPPFLAGS_FVM_TESTS = -I$(top_srcdir)/src/fvm @BFT_CPPFLAGS@ @MPI_CPPFLAGS@
-LDFLAGS_FVM_TESTS = @BFT_LDFLAGS@ @CGNS_LDFLAGS@ @MED_LDFLAGS@ @HDF5_LDFLAGS@ @MPI_LDFLAGS@
+CPPFLAGS_FVM_TESTS = -I$(top_srcdir)/src/bft -I$(top_srcdir)/src/fvm \
+        @MPI_CPPFLAGS@
+LDFLAGS_FVM_TESTS = @CGNS_LDFLAGS@ @MED_LDFLAGS@ @HDF5_LDFLAGS@ @MPI_LDFLAGS@
 LDADD_FVM_TESTS = $(top_builddir)/src/fvm/libfvm.la \
-@BFT_LIBS@  @CGNS_LIBS@ @MED_LIBS@ @HDF5_LIBS@ @MPI_LIBS@
+        $(top_builddir)/src/bft/libbft.la \
+        @CGNS_LIBS@ @MED_LIBS@ @HDF5_LIBS@ @MPI_LIBS@
 
 fvm_file_test_SOURCES  = fvm_file_test.c
 fvm_file_test_CPPFLAGS = $(CPPFLAGS_FVM_TESTS)
@@ -88,10 +113,10 @@ check_PROGRAMS += \
 mei_test
 
 mei_test_SOURCES = mei_test_main.c mei_test_graph.c
-mei_test_CPPFLAGS = -I$(top_srcdir)/src/mei @BFT_CPPFLAGS@
-mei_test_LDFLAGS = @BFT_LDFLAGS@
+mei_test_CPPFLAGS = -I$(top_srcdir)/src/bft -I$(top_srcdir)/src/mei
+mei_test_LDFLAGS =
 mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
-        @BFT_LIBS@ -lm
+        $(top_builddir)/src/bft/libbft.la -lm
 
 # Uncomment for tests execution at "make check"
 #TESTS=$(check_PROGRAMS)

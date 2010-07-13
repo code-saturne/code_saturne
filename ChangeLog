@@ -1,4 +1,15 @@
 * 13/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update the tests compilation according to the new directory structure.
+  modified script:
+    tests/Makefile.am
+  modified routine:
+    tests/fvm_file_test.c
+    tests/fvm_interface_test.c
+    tests/fvm_selector_postfix_test.c
+    tests/fvm_selector_test.c
+    tests/fvm_sizes_test.c
+
+* 13/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add an option to the compile script to continue the compilation in case of
   errors. This option is disabled by default and enabled in the runcase script.
   modified scripts:

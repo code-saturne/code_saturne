@@ -23,6 +23,10 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#if defined(HAVE_CONFIG_H)
+#include "cs_config.h"
+#endif
+
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -185,7 +189,7 @@ static int _bft_printf_proxy
   if (f == NULL) {
     char filename[64];
     int rank = 0;
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
     sprintf (filename, "fvm_interface_test_out.%d", rank);
@@ -207,7 +211,7 @@ main (int argc, char *argv[])
   fvm_interface_set_t *ifset = NULL;
   fvm_periodicity_t *perio = NULL;
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   int ii;
 
@@ -277,7 +281,7 @@ main (int argc, char *argv[])
 
   bft_printf_proxy_set(_bft_printf_proxy);
 
-#endif /* (FVM_HAVE_MPI) */
+#endif /* (HAVE_MPI) */
 
   /* Now build interface with periodicity */
 
@@ -294,25 +298,25 @@ main (int argc, char *argv[])
                        3, /* n_periodic_lists */
                        perio);
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   /* Serialize dump of interfaces */
 
   if (rank > 0)
     MPI_Recv(&sync, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, &status);
 
-#endif /* (FVM_HAVE_MPI) */
+#endif /* (HAVE_MPI) */
 
   bft_printf("Periodic Interface on rank %d:\n\n", rank);
 
   fvm_interface_set_dump(ifset);
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   if (rank < size - 1)
     MPI_Send(&sync, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
 
-#endif /* (FVM_HAVE_MPI) */
+#endif /* (HAVE_MPI) */
 
   /* We are finished */
 
@@ -321,7 +325,7 @@ main (int argc, char *argv[])
 
   bft_mem_end();
 
-#if defined(FVM_HAVE_MPI)
+#if defined(HAVE_MPI)
 
   MPI_Finalize();
 
