@@ -3,7 +3,7 @@
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
 %
-%     Copyright (C) 1998-2009 EDF S.A., France
+%     Copyright (C) 1998-2010 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
 %
@@ -763,7 +763,6 @@ each other. The following formats are currently supported by \CS:
 
 \item \hyperref[fmtdesc:des]{\simail (NOPO)}
 \item \hyperref[fmtdesc:unv]{\ideas universal}
-\item \hyperref[fmtdesc:igghexa]{NUMECA IGG/Hexa}
 \item \hyperref[fmtdesc:med]{\med}
 \item \hyperref[fmtdesc:cgns]{CGNS}
 \item \hyperref[fmtdesc:ensight6]{\ensight 6}
@@ -1097,52 +1096,6 @@ Documentation:     & included documentation, also available at:
 \hline
 \end{tabular}
 
-\subsubsubsection{IGG/Hexa (NUMECA)%
-\label{fmtdesc:igghexa}}
-
-This format is quite peculiar in the sense that it defines a hierarchical mesh
-built exclusively of hexahedra, of quadrangular faces, and of edges, in which
-edges may be split in 2, faces in 2 or 4, and cells in 2, 4, or 8. Two
-neighboring elements are thus not always conforming. The \pcs only keeps the
-finest mesh level, and uses the hierarchical information so as to
-automatically build the appropriate conformal joining. CAD face
-information is transformed into color numbers.
-
-\noindent
-\parbox[t]{.15\linewidth}{{\bf Remark}:}
-\parbox[t]{.85\linewidth}{
-  The reader is based on the IGG/Hexa format as it was defined at the end of
-  2001. Since that time, the mesher seems to have been renamed $HEXPRESS^{TM}$, and
-  we do not have any recent documentation or test file. For this reason,
-  support for this format is not directly included in the main \pcs executable,
-  but requires conversion using the \texttt{igghexa\_to\_med} tool.
-}
-
-\smallskip \noindent
-\begin{tabular}[top]{|p{4.5cm}%
-                     |>{\PreserveBackslash\raggedright\hspace{0pt}}p{10.5cm}|}
-\hline
-Default extension: & {\tt .hex}\\
-\hline
-File type:         & portable binary by default
-                     (4-byte integers, 8-byte IEEE double-precision reals,
-                     big-endian), or text\\
-\hline
-Surface elements:  & quadrangles\\
-\hline
-Volume elements:   & hexahedra\\
-\hline
-Zone selection:    & no volume selection, CAD surface numbers interpreted as
-                     colors\\
-\hline
-Compatibility:     & unknown (at least files from late 2001 are readable)\\
-\hline
-Documentation:     & elements provided by NUMECA (\href{http://www.numeca.be}
-                                                       {http://www.numeca.be})
-                     in 2001.\\
-\hline
-\end{tabular}
-
 %==================================
 \subsubsection{Formats supported for input or output\label{cha:formats_inout}}
 %==================================
@@ -1257,8 +1210,8 @@ Documentation:     & online documentation. Download link at \url{http://files.op
 \label{fmtdesc:cgns}
 
 Promoted especially by NASA, Boeing, and ICEM~CFD (as well as ONERA in France),
-this format(\emph{CFD General Notation System}) is quite well established in
-the world of CFD. The concept is similar to that of \med, with a bigger
+this format(\emph{CFD General Notation System}) is very well established in
+the CFD community. The concept is similar to that of \med, with a bigger
 emphasis on normalization of variable names or calculation information, and
 even richer possibilities. The opposite of \med, the first version of this format
 was limited to multibloc structured meshes, unstructured meshes having been
@@ -1268,7 +1221,7 @@ Slightly older than \med, this library was free from the start, with a good
 English documentation, and is thus much better known. It is more focused
 on CFD, where \med is more generic. A certain number of tools accompany
 the CGNS distribution, including a mesh visualizer (which does not handle
-polygonale faces although the format defines them), and an interpolation
+polygonal faces although the format defines them), and an interpolation
 tool.
 
 We should be able to read almost any mesh written in this format, though
@@ -1307,18 +1260,17 @@ also defining volume fields on these faces. More recent versions of the
 documentation make it clear that a field must be defined on all elements
 of maximum dimension in a zone, not on all elements.} 
 
-Though many tools support CGNS, that support is often quite dissapointing,
-at least for unstructured meshes. Thus, some editors seem to use
-different means to mark zones to associate with boundary conditions than
-the ones recommended in the CGNS documentation, and some behaviors
-are worse: for example, under \ensightg 8, whenever a mesh
+Though many tools support CGNS, some do it better than others.
+Thus, some tools seem to use different means to mark zones to associate
+with boundary conditions than the ones recommended in the CGNS documentation,
+and some behaviors are worse: for example, under \ensightg 8, whenever a mesh
 contains multiple element types, variables are assigned to the wrong cells.
 Regarding support of polygons (\emph{ngons} in the CGNS standard), even the
 verification tools published alongside the CGNS library are unable
 to handle them, and report errors in valid files containing such elements.
 VisIt 1.11.1 reports an error when a mesh contains such faces, while
 \ensightg 8 ignores them. CGNS 3 should improve this situation,
-allowing for polyhedra, but it is still in beta stage as of August 2009.
+allowing for polyhedra, but it is still in beta stage as of July 2010.
 
 \smallskip \noindent
 \begin{tabular}[top]{|p{4.5cm}%
@@ -1326,7 +1278,7 @@ allowing for polyhedra, but it is still in beta stage as of August 2009.
 \hline
 Default extension: & {\tt .cgns}\\
 \hline
-File type:         & portable binary (uses the ADF library specific to CGNS, or HDF5)\\
+File type:         & portable binary (uses its own ADF library, or HDF5)\\
 \hline
 Surface elements:  & triangles, quadrangles, simple polygons\\
 \hline
@@ -1619,23 +1571,22 @@ The Graphical User Interface allows to fill in the major
 parameters of the script without having to edit the file.
 
 Below is a list of the different variables and parameters that might be modified
-for a calculation, in their order of apparition in the script:
+for a calculation, in their order of appearance in the script:
 \begin{list}{$\bullet$}{}
 \item LSF headers: definition of the headers for an LSF batch system, as can be
-found on the machines of the CCRT (Platine). The data expected are
+found on the machines of the CCRT (Platine). The definitions expected are
 the number of processors reserved (\texttt{\#BSUB -n}), the CPU time limit
 (\texttt{\#BSUB -W}), the name of the standard output file (\texttt{\#BSUB -o}),
 the name of the standard error file (\texttt{\#BSUB -e}) and the name of
 the job (\texttt{\#BSUB -J}).
 
-\item PBS headers: definition of the headers for a PBS batch system, as can be
-found on the machines of the Chatou cluster. The data expected are the number of
-nodes reserved (\texttt{nodes}), the number of processors per node
+\item PBS headers: definition of the headers for a PBS batch system.
+The data expected are the number of nodes reserved (\texttt{nodes}),
+the number of processors per node
 (\texttt{ppn}), the total CPU time (\texttt{walltime}), the memory reserved
 (\texttt{mem}), and the name of the job (\texttt{\#PBS -N}).
 
-\item Manchester headers: definition of the headers for the batch system
-specific to the cluster of the University of Manchester
+\item Sun Grid Engine headers: definition of the headers for the SGE batch system.
 
 \item \texttt{SOLCOM}: a value of 1 will pass the \texttt{-solcom} option to the
 Kernel (see \ref{prg_optappelnoy})
@@ -4296,8 +4247,8 @@ Several examples of possible selections are given here:
   faces of color 4,
 \item \verb+call getfac('not(4)', nlelt, lstelt)+ to select internal
   faces which have a different color from 4,
-\item \verb+call getfac('4 to 8', nlelt, lstelt)+ to internal faces
-with color between 4 and 8 internal faces,
+\item \verb+call getfac('range[4, 8, attribute]', nlelt, lstelt)+ to select
+  internal faces with color between 4 and 8,
 \item \verb+call getcel('1 or 2', nlelt, lstelt)+ to select cells
   with colors 1 or 2,
 \item \verb+call getfbr('1 and y > 0', nlelt, lstelt)+ to select boundary

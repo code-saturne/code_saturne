@@ -1,4 +1,10 @@
 * 19/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Documentation updates: CGNS and IggHexa description, getfac example
+  correction, batch parameter references to obsolete clusters removed.
+  modified files:
+    doc/user/saturne1.tex
+
+* 19/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct typos in preprocessor help.
   modified files:
     preprocessor/appli/ecs_cmd.c
