@@ -658,7 +658,7 @@ static void ecs_loc_cmd__aff_aide
   /*---------------------------------------*/
 
   printf(_("\n\nmesh selection sub-options\n"
-           " (-m, -mesh):\n\n"));
+           " (-m, --mesh):\n\n"));
 
 
   _fct_prt(ECS_CMD_OPTION_FMT_MESH_FILE, _("<keyword>"),
@@ -688,7 +688,7 @@ static void ecs_loc_cmd__aff_aide
 
 
   printf(_("\n\navailable mesh formats\n"
-           " (-m, -mesh; -format):\n"));
+           " (-m, --mesh; --format):\n"));
   printf(_("                                  extension:    keyword:\n"));
 
 

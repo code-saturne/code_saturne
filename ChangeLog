@@ -1,4 +1,9 @@
 * 19/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct typos in preprocessor help.
+  modified files:
+    preprocessor/appli/ecs_cmd.c
+
+* 19/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve detection of UTF-8 output mode on some environments.
   modified files:
     preprocessor/util/ecs_def.c
