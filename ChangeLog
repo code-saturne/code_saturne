@@ -1,4 +1,12 @@
 * 19/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added missing preprocessor debug and optimization flags.
+  modified files:
+    preprocessor/appli/Makefile.am
+    preprocessor/base/Makefile.am
+    preprocessor/pre-post/Makefile.am
+    preprocessor/util/Makefile.am
+
+* 19/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix corrupt preprocessor output.
   modified file:
     preprocessor/pre-post/ecs_maillage_ncs.c
