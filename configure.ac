@@ -56,8 +56,6 @@ m4_define([cs_version_extra], [-rc1])
 m4_define([cs_version_string],
           [cs_major_version.cs_minor_version.cs_release_version@&t@cs_version_extra])
 
-CS_GET_VERSION
-
 AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr])
 AC_CONFIG_SRCDIR([src/apps/cs_solver.c])
 
@@ -77,9 +75,6 @@ AM_MAINTAINER_MODE
 
 # Enable silent rules with "./configure --enable-silent-rules" or "make V=0"
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
-
-# Remember the configure command line
-CONFIG_CMD=`echo "$0 $ac_configure_args"`
 
 #------------------------------------------------------------------------------
 # Checks for programs.
@@ -311,7 +306,7 @@ AC_ARG_ENABLE(long-int,
   [ long_int=no ]
 )
 
-if test "x$long_int" = "xyes"; then
+if test "x$long_int" = "xno"; then
   AC_DEFINE([USE_LONG_INT], [1], [Use long int for connectivity])
 fi
 

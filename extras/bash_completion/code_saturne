@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -100,8 +100,8 @@ _code_saturne() {
                 -s|--study)    COMPREPLY=( ); return 0;;
                 --nsat|--nsyr) COMPREPLY=( ); return 0;;
                 --copy-from)   _filedir -d; return 0;;
-                *) cmdOpts="-s --study -c --case -n --nogui --noref --copy-from \
-                     --new-runcase --nsat --nsyr -q --quiet -v --verbose";;
+                *) cmdOpts="-s --study -c --case --nogui --noref --copy-from \
+                     --nsat --nsyr -q --quiet -v --verbose";;
             esac
             ;;
         gui)
@@ -222,7 +222,7 @@ _cs_solver() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    options="--solcom --mpi --mpi-io -q --quality --benchmark --cwf \
+    options="--solcom --mpi --mpi-io -q --quality --benchmark \
              --log --logp -p --param --syr-socket"
 
     local versOpts="--version"
