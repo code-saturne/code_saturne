@@ -1,4 +1,9 @@
 * 19/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct occasional error when updating faces after merging vertices.
+  modified files:
+    preprocessor/base/ecs_champ_def.c
+
+* 19/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Added missing preprocessor debug and optimization flags.
   modified files:
     preprocessor/appli/Makefile.am

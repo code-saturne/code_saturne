@@ -168,7 +168,7 @@ _champ_def__maj_fac_som(ecs_champ_t          *champ_def_fac,
 
     nbr_som_fac = ipos_fin - ipos_deb;
 
-    num_som_prev = champ_def_fac->val[ipos_deb + nbr_som_fac - 1] -1;
+    num_som_prev = champ_def_fac->val[ipos_deb + nbr_som_fac - 1];
 
     for (ind_som = 0; ind_som < nbr_som_fac; ind_som++) {
 
@@ -2809,7 +2809,7 @@ ecs_champ_def__nettoie_som_fac(size_t        *n_vertices,
     printf(_("\nMesh verification:\n\n"
              "  %d vertices belong to edges of length less than %g\n"
              "  and will be merged; (this tolerance may be modified\n"
-             "  using the ECS_DEF_LNG_ARE_MIN environment variable).\n"),
+             "  using the CS_PREPROCESS_MIN_EDGE_LEN environment variable).\n"),
            (int)cpt_fusion, lng_are_min);
 
     tab_som_old_new = _champ_def__fusion_som(n_vertices,
