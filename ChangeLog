@@ -1,4 +1,9 @@
 * 19/07/2010 - David Monfort <david.monfort@edf.fr>
+  Use the right path to find the preprocessor.
+  modified routine:
+    gui/Pages/SolutionVerifView.py
+
+* 19/07/2010 - David Monfort <david.monfort@edf.fr>
   Fix the default setting of the --enable-long-int option.
   modified script:
     configure.ac

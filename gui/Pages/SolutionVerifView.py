@@ -89,7 +89,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         self.pushButton.setEnabled(False)
 
         self.cs = os.path.join(cs_config.dirs.bindir, "cs_solver")
-        self.ecs = os.path.join(cs_config.dirs.bindir, "cs_preprocess")
+        self.ecs = os.path.join(cs_config.dirs.ecs_bindir, "cs_preprocess")
 
         self.case = case
         self.case2 = case2
