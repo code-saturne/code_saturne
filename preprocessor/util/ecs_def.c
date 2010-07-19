@@ -185,7 +185,8 @@ ecs_loc_def__strlen(const char  *chaine)
     char *lang = getenv("LANG");
     mode_utf8 = 0;
     if (lang != NULL) {
-      if (strcmp(lang + strlen(lang) - 5, "UTF-8") == 0)
+      if (   strcmp(lang + strlen(lang) - 5, "UTF-8") == 0
+          || strcmp(lang + strlen(lang) - 4, "utf8") == 0)
         mode_utf8 = 1;
     }
   }
