@@ -4925,7 +4925,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
             propce[ipccp * (*ncelet) + iel] = mei_tree_lookup(ev_cp, "cp");
         }
 
-        mei_tree_destroy(ev_rho);
+        mei_tree_destroy(ev_cp);
     }
 
     /* law for thermal conductivity */
