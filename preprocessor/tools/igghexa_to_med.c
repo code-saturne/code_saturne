@@ -68,6 +68,26 @@ extern "C" {
 }
 #endif
 
+/* NOTES:
+
+   This converter is based on elements provided by NUMECA International
+   http://www.numeca.be in 2001.
+
+   Current NUMECA International meshing tools such as Autogrid or HEXPRESS
+   can export meshes to the CGNS format, so use of the IggHexa format
+   in Code_Saturne is obsoleted.
+
+   This converter is thus only of use for legacy mesh files.
+
+   This format defines a hierarchical mesh built exclusively of hexahedra,
+   of quadrangular faces, and of edges, in which edges may be split in 2,
+   faces in 2 or 4, and cells in 2, 4, or 8. Two neighboring elements are
+   thus not always conforming. We only retain the finest mesh level, and
+   uses the hierarchical information so as to automatically build the
+   appropriate conformal joining information. CAD face information is
+   transformed into MED attributes.
+ */
+
 /*============================================================================
  * Definitions that may not always be provided directly by the system
  *============================================================================*/
