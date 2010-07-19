@@ -306,7 +306,7 @@ AC_ARG_ENABLE(long-int,
   [ long_int=no ]
 )
 
-if test "x$long_int" = "xno"; then
+if test "x$long_int" = "xyes"; then
   AC_DEFINE([USE_LONG_INT], [1], [Use long int for connectivity])
 fi
 
