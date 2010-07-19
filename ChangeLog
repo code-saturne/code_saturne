@@ -1,3 +1,8 @@
+* 19/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix corrupt preprocessor output.
+  modified file:
+    preprocessor/pre-post/ecs_maillage_ncs.c
+
 * 19/07/2010 - David Monfort <david.monfort@edf.fr>
   Use the right path to find the preprocessor.
   modified routine:

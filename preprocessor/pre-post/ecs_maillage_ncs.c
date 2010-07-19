@@ -1078,7 +1078,7 @@ ecs_maillage_ncs__ecr(bool             simulate,
 
   /* Écriture des positions des sommets des faces */
 
-  ecs_champ_comm__ecr_pos(maillage->champ_def[ECS_ENTMAIL_CEL],
+  ecs_champ_comm__ecr_pos(maillage->champ_def[ECS_ENTMAIL_FAC],
                           "face_vertices_index",
                           2, 1,
                           comm);
@@ -1093,11 +1093,8 @@ ecs_maillage_ncs__ecr(bool             simulate,
   /* Écriture des coordonnées des sommets */
 
   ecs_comm_write_section("vertex_coords",
-                         maillage->n_vertices,
-                         3,
-                         0,
-                         3,
-                         false,
+                         maillage->n_vertices*3,
+                         3, 0, 3, false,
                          maillage->vertex_coords,
                          ECS_TYPE_ecs_coord_t,
                          comm);
