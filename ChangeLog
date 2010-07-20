@@ -1,4 +1,9 @@
 * 20/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct crash when reading GAMBIT file with ignored bar sections.
+  modified files:
+    preprocessor/pre_post/ecs_pre_gambit.c
+
+* 20/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct crash when reading CGNS file with ignored bar sections,
   prepare for prefixing by CG_ of CGNS3 types.
   modified files:

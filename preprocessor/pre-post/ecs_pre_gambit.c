@@ -713,7 +713,7 @@ ecs_loc_pre_gambit__lit_elements(ecs_file_t  *fic_maillage,
 
     ind_ent = ecs_maillage_pre__ret_typ_geo(type_elt_gambit->ecs_typ);
 
-    if (ind_ent != ECS_N_ENTMAIL) {
+    if (ind_ent != ECS_ENTMAIL_NONE) {
 
       if (cpt_elt_ent[ind_ent] == 0) {
 
@@ -1583,10 +1583,9 @@ ecs_loc_pre_gambit__cree_groupes(ecs_maillage_t  *maillage,
       }
 
       else
-        ind_ent = ECS_N_ENTMAIL;
+        ind_ent = ECS_ENTMAIL_NONE;
 
-      if (   ind_ent != ECS_N_ENTMAIL
-          && ent_val_grp[ind_ent] != NULL) {
+      if (ind_ent != ECS_ENTMAIL_NONE  && ent_val_grp[ind_ent] != NULL) {
 
         /* Stockage des valeurs lues avant transfert dans maillage */
 
