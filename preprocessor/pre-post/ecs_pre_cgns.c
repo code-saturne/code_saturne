@@ -127,6 +127,12 @@ extern "C" {
 #define CG_OK  ALL_OK
 #endif
 
+#if defined(CGNS_SCOPE_ENUMS)
+#define CS_CG_ENUM( e ) CG_ ## e
+#else
+#define CS_CG_ENUM( e ) e
+#endif
+
 
 /*============================================================================
  * Définitions de structures locales
@@ -152,8 +158,8 @@ typedef struct {
 typedef struct {
   int              ind_nom;                         /* Numéro de nom associé  */
   int              num_zone;                        /* Num zone associée      */
-  GridLocation_t   support;                         /* Support associé        */
-  PointSetType_t   ptset_type;                      /* Type de liste          */
+  CS_CG_ENUM(GridLocation_t)   support;             /* Support associé        */
+  CS_CG_ENUM(PointSetType_t)   ptset_type;          /* Type de liste          */
   int              npnts;                           /* Nombre de points       */
   int             *pnts;                            /* Liste de points        */
 } ecs_loc_cgns_boco_t;
@@ -164,7 +170,7 @@ typedef struct {
 typedef struct {
 
   char           nom[ECS_CGNS_TAILLE_NOM + 1];      /* Nom de la section      */
-  ElementType_t  type;                              /* Type élément           */
+  CS_CG_ENUM(ElementType_t)  type;                  /* Type élément           */
   int            num_elt_deb;                       /* Numéro premier élement */
   int            num_elt_fin;                       /* Numéro dernier élement */
   int            nbr_brd;                           /* Nbr. éléments de bord  */
@@ -179,7 +185,7 @@ typedef struct {
 typedef struct {
 
   char            nom[ECS_CGNS_TAILLE_NOM + 1];   /* Nom de la zone          */
-  ZoneType_t      type;                           /* Type de la zone         */
+  CS_CG_ENUM(ZoneType_t)      type;               /* Type de la zone         */
   int             nbr_som;                        /* Nombre de sommets       */
   int             nbr_cel;                        /* Nombre de cellules      */
   int             taille[3*3];                    /* Indices maximaux pour
@@ -189,7 +195,7 @@ typedef struct {
   int             num_som_deb;                    /* Numéro premier sommet   */
   int             num_elt_deb;                    /* Numéro premier élement  */
   int             num_elt_fin;                    /* Numéro dernier élement  */
-  AngleUnits_t    angle;                          /* Unités angles           */
+  CS_CG_ENUM(AngleUnits_t)    angle;              /* Unités angles           */
   ecs_loc_cgns_section_t  *tab_sections;          /* Descriptions sections   */
   bool            trait_renum;                    /* Utilisation de renum ?  */
   int            *renum;                          /* Numéro CGNS -> ECS      */
@@ -201,10 +207,10 @@ typedef struct {
 
 typedef struct {
 
-  ElementType_t   cgns_type;   /* Type CGNS de l'élément         */
-  ecs_elt_typ_t   ecs_type;    /* Type ECS  de l'élément         */
-  ecs_int_t       nbr_som;     /* Nombre de sommets associés     */
-  ecs_int_t       num_som[ECS_CGNS_NBR_MAX_SOM];  /* Sommets ECS */
+  CS_CG_ENUM(ElementType_t)   cgns_type;   /* Type CGNS de l'élément         */
+  ecs_elt_typ_t               ecs_type;    /* Type ECS  de l'élément         */
+  ecs_int_t                   nbr_som;     /* Nombre de sommets associés     */
+  ecs_int_t                   num_som[ECS_CGNS_NBR_MAX_SOM];  /* Sommets ECS */
 
 } ecs_cgns_elt_t;
 
@@ -219,121 +225,121 @@ typedef struct {
 static const ecs_cgns_elt_t
 ecs_cgns_elt_liste_c[ECS_CGNS_NBR_TYP_ELT] = {
   {                                /* 1 */
-    NODE,
+    CS_CG_ENUM(NODE),
     ECS_ELT_TYP_NUL,
     1,
     { 0 }
   },
   {                                /* 2 */
-    BAR_2,
+    CS_CG_ENUM(BAR_2),
     ECS_ELT_TYP_NUL,
     2,
     { 0 }
   },
   {                                /* 3 */
-    BAR_3,
+    CS_CG_ENUM(BAR_3),
     ECS_ELT_TYP_NUL,
     3,
     { 0 }
   },
   {                                /* 4 */
-    TRI_3,
+    CS_CG_ENUM(TRI_3),
     ECS_ELT_TYP_FAC_TRIA,
     3,
     { 1, 2, 3 }
   },
   {                                /* 5 */
-    TRI_6,
+    CS_CG_ENUM(TRI_6),
     ECS_ELT_TYP_FAC_TRIA,
     6,
     { 1, 2, 3 }
   },
   {                                /* 6 */
-    QUAD_4,
+    CS_CG_ENUM(QUAD_4),
     ECS_ELT_TYP_FAC_QUAD,
     4,
     { 1, 2, 3, 4 }
   },
   {                                /* 7 */
-    QUAD_8,
+    CS_CG_ENUM(QUAD_8),
     ECS_ELT_TYP_FAC_QUAD,
     8,
     { 1, 2, 3, 4 }
   },
   {                                /* 8 */
-    QUAD_9,
+    CS_CG_ENUM(QUAD_9),
     ECS_ELT_TYP_FAC_QUAD,
     9,
     { 1, 2, 3, 4 }
   },
   {                                /* 9 */
-    TETRA_4,
+    CS_CG_ENUM(TETRA_4),
     ECS_ELT_TYP_CEL_TETRA,
     4,
     { 1, 2, 3, 4 }
   },
   {                               /* 10 */
-    TETRA_10,
+    CS_CG_ENUM(TETRA_10),
     ECS_ELT_TYP_CEL_TETRA,
     10,
     { 1, 2, 3, 4 }
   },
   {                               /* 11 */
-    PYRA_5,
+    CS_CG_ENUM(PYRA_5),
     ECS_ELT_TYP_CEL_PYRAM,
     5,
     { 1, 2, 3, 4, 5 }
   },
   {                               /* 12 */
-    PYRA_14,
+    CS_CG_ENUM(PYRA_14),
     ECS_ELT_TYP_CEL_PYRAM,
     14,
     { 1, 2, 3, 4, 5 }
   },
   {                               /* 13 */
-    PENTA_6,
+    CS_CG_ENUM(PENTA_6),
     ECS_ELT_TYP_CEL_PRISM,
     6,
     { 1, 2, 3, 4, 5, 6 }
   },
   {                               /* 14 */
-    PENTA_15,
+    CS_CG_ENUM(PENTA_15),
     ECS_ELT_TYP_CEL_PRISM,
     15,
     { 1, 2, 3, 4, 5, 6 }
   },
   {                               /* 15 */
-    PENTA_18,
+    CS_CG_ENUM(PENTA_18),
     ECS_ELT_TYP_CEL_PRISM,
     18,
     { 1, 2, 3, 4, 5, 6 }
   },
   {                               /* 16 */
-    HEXA_8,
+    CS_CG_ENUM(HEXA_8),
     ECS_ELT_TYP_CEL_HEXA,
     8,
     { 1, 2, 3, 4, 5, 6, 7, 8 },
   },
   {                               /* 17 */
-    HEXA_20,
+    CS_CG_ENUM(HEXA_20),
     ECS_ELT_TYP_CEL_HEXA,
     20,
     { 1, 2, 3, 4, 5, 6, 7, 8 },
   },
   {                               /* 18 */
-    HEXA_27,
+    CS_CG_ENUM(HEXA_27),
     ECS_ELT_TYP_CEL_HEXA,
     27,
     { 1, 2, 3, 4, 5, 6, 7, 8 },
   },
   {                               /* 19 */
-    MIXED,
+    CS_CG_ENUM(MIXED),
     ECS_ELT_TYP_NUL,
     0,
     { 0 },
   },
   {                               /* 20 */
-    NGON_n,
+    CS_CG_ENUM(NGON_n),
     ECS_ELT_TYP_FAC_POLY,
     0,
     { 0 }
@@ -370,7 +376,7 @@ ecs_loc_pre_cgns__cree(const char  *nom_fichier,
   ECS_MALLOC(base->nom_fic, strlen(nom_fichier) + 1, char);
   strcpy(base->nom_fic, nom_fichier);
 
-  ret = cg_open(base->nom_fic, MODE_READ, &(base->num_fic));
+  ret = cg_open(base->nom_fic, CS_CG_ENUM(MODE_READ), &(base->num_fic));
 
   if (ret < 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -381,8 +387,13 @@ ecs_loc_pre_cgns__cree(const char  *nom_fichier,
   /* Vérification du nombre de bases (affichage nom si plusieurs) */
 
   if (cg_nbases(base->num_fic, &nbases) != 0)
-    ecs_error(__FILE__, __LINE__, 0,
-              _("CGNS error:\n%s"), cg_get_error());
+    ecs_error
+      (__FILE__, __LINE__, 0,
+       _("CGNS error:\n%s\n\n"
+         "This may be due to a CGNS library supporting only ADF (legacy)\n"
+         "or HDF5 (future default) and the file not matching. In this case,\n"
+         "running the adf2hdf of hdf2adf converters may solve the issue."),
+       cg_get_error());
 
   if (nbases > 1) {
     printf(_("\n  The file contains multiple bases:\n"));
@@ -575,13 +586,13 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
   int         num_zone;
   int         ngrids;
 
-  MassUnits_t         mass;
-  LengthUnits_t       length;
-  TimeUnits_t         time;
-  TemperatureUnits_t  temperature;
-  AngleUnits_t        angle;
+  CS_CG_ENUM(MassUnits_t)         mass;
+  CS_CG_ENUM(LengthUnits_t)       length;
+  CS_CG_ENUM(TimeUnits_t)         time;
+  CS_CG_ENUM(TemperatureUnits_t)  temperature;
+  CS_CG_ENUM(AngleUnits_t)        angle;
 
-  DataType_t  type_coord_lu;
+  CS_CG_ENUM(DataType_t)  type_coord_lu;
 
   int         ret = 0;
 
@@ -653,7 +664,7 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
 
     /* Type d'unité (information optionnelle) */
 
-    length = LengthUnitsNull;
+    length = CS_CG_ENUM(LengthUnitsNull);
     ret = cg_goto(num_fic, num_base, "Zone_t", num_zone,
                   "GridCoordinates_t", 1, "end");
     if (ret == CG_OK)
@@ -670,7 +681,8 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
     printf(_("\n    Zone %d: \"%s\"; type \"%s\"\n"),
            num_zone, ptr_zone->nom, ZoneTypeName[ptr_zone->type]);
 
-    if (ptr_zone->type == Structured && base_maillage->dim_entite > 1) {
+    if (   ptr_zone->type == CS_CG_ENUM(Structured)
+        && base_maillage->dim_entite > 1) {
       if (base_maillage->dim_entite == 2) {
         nbr_som_loc = ptr_zone->taille[0] * ptr_zone->taille[1];
         nbr_cel_loc = ptr_zone->taille[2] * ptr_zone->taille[3];
@@ -733,14 +745,14 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
 
       char nom_tmp_aux [ECS_CGNS_TAILLE_NOM + 1];
 
-      GridLocation_t         location;
-      GridConnectivityType_t connect_type;
-      PointSetType_t         ptset_type;
-      int                    npnts;
-      ZoneType_t             donor_zonetype;
-      PointSetType_t         donor_ptset_type;
-      DataType_t             donor_datatype;
-      int                    ndata_donor;
+      CS_CG_ENUM(GridLocation_t)         location;
+      CS_CG_ENUM(GridConnectivityType_t) connect_type;
+      CS_CG_ENUM(PointSetType_t)         ptset_type;
+      int                                npnts;
+      CS_CG_ENUM(ZoneType_t)             donor_zonetype;
+      CS_CG_ENUM(PointSetType_t)         donor_ptset_type;
+      CS_CG_ENUM(DataType_t)             donor_datatype;
+      int                                ndata_donor;
 
       for (ind_conn = 0; ind_conn < nconns; ind_conn++) {
 
@@ -753,13 +765,13 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
         if (ret == CG_OK) {
 
           switch (connect_type) {
-          case Overset:
+          case CS_CG_ENUM(Overset):
             connect_overset = true;
             break;
-          case Abutting:
+          case CS_CG_ENUM(Abutting):
             connect_abutt = true;
             break;
-          case Abutting1to1:
+          case CS_CG_ENUM(Abutting1to1):
             connect_1to1 = true;
             break;
           default:
@@ -775,7 +787,7 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
     ptr_zone->nbr_sections = 0;
     ptr_zone->tab_sections = NULL;
 
-    if (ptr_zone->type == Structured) {
+    if (ptr_zone->type == CS_CG_ENUM(Structured)) {
 
       ptr_zone->num_elt_deb = 1;
       ptr_zone->num_elt_fin = ptr_zone->nbr_cel;
@@ -905,13 +917,13 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
   int         nbocos;
   int         npnts;
 
-  BCType_t        bocotype;
-  GridLocation_t  GridLocation;
-  PointSetType_t  ptset_type;
-  int             NormalIndex[3];
-  int             NormalListFlag;
-  DataType_t      NormalDataType;
-  int             ndataset;
+  CS_CG_ENUM(BCType_t)        bocotype;
+  CS_CG_ENUM(GridLocation_t)  GridLocation;
+  CS_CG_ENUM(PointSetType_t)  ptset_type;
+  int                         NormalIndex[3];
+  int                         NormalListFlag;
+  CS_CG_ENUM(DataType_t)      NormalDataType;
+  int                         ndataset;
 
   void        *normales;
 
@@ -998,7 +1010,7 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
 
         /* Informations sur support et impression */
 
-        GridLocation = Vertex;
+        GridLocation = CS_CG_ENUM(Vertex);
 
         ret = cg_goto(num_fic, num_base, "Zone_t", num_zone,
                       "ZoneBC_t", 1, "BC_t", num_boco, "end");
@@ -1012,18 +1024,18 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
             strcpy(nom_tmp, nom_fam);
           }
 
-          if (ptr_zone->type != Structured) {
+          if (ptr_zone->type != CS_CG_ENUM(Structured)) {
 
             ret = cg_gridlocation_read(&GridLocation);
 
             if (ret != CG_OK)
-              GridLocation = Vertex;
+              GridLocation = CS_CG_ENUM(Vertex);
 
           }
 
         }
 
-        if (ptr_zone->type == Structured) {
+        if (ptr_zone->type == CS_CG_ENUM(Structured)) {
 
           printf(_("      BC %2d: \"%s\" (\"%s\")\n"),
                  num_boco, nom_tmp, BCTypeName[bocotype]);
@@ -1031,14 +1043,15 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
         }
         else {
 
-          if (ptset_type == ElementList || ptset_type == ElementRange)
-            GridLocation = FaceCenter;
+          if (   ptset_type == CS_CG_ENUM(ElementList)
+              || ptset_type == CS_CG_ENUM(ElementRange))
+            GridLocation = CS_CG_ENUM(FaceCenter);
 
           printf(_("      BC %2d: \"%s\" (\"%s\" on \"%s\")\n"),
                  num_boco, nom_tmp, BCTypeName[bocotype],
                  GridLocationName[GridLocation]);
 
-          if (GridLocation != Vertex)
+          if (GridLocation != CS_CG_ENUM(Vertex))
             ptr_zone->trait_renum = true;
 
         }
@@ -1062,13 +1075,14 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
 
         /* Lecture listes */
 
-        if (ptset_type == PointRange || ptset_type == ElementRange)
+        if (   ptset_type == CS_CG_ENUM(PointRange)
+            || ptset_type == CS_CG_ENUM(ElementRange))
           ECS_MALLOC((tab_boco_loc[ind_boco_glob]).pnts, npnts * 3, int);
         else
           ECS_MALLOC((tab_boco_loc[ind_boco_glob]).pnts, npnts, int);
 
         if (NormalListFlag > 0) {
-          if (NormalDataType == RealSingle)
+          if (NormalDataType == CS_CG_ENUM(RealSingle))
             ECS_MALLOC(normales, NormalListFlag, float);
           else
             ECS_MALLOC(normales, NormalListFlag, double);
@@ -1162,7 +1176,7 @@ ecs_loc_pre_cgns__lit_som(ecs_maillage_t             *maillage,
 
   int        *ind_som_deb;
 
-  DataType_t  type_coord;
+  CS_CG_ENUM(DataType_t)  type_coord;
 
   int         ret = 0;
 
@@ -1176,9 +1190,9 @@ ecs_loc_pre_cgns__lit_som(ecs_maillage_t             *maillage,
   phys_dim = base_maillage->dim_espace;
 
   if (sizeof(ecs_coord_t) == sizeof(float))
-    type_coord = RealSingle;
+    type_coord = CS_CG_ENUM(RealSingle);
   else if (sizeof(ecs_coord_t) == sizeof(double))
-    type_coord = RealDouble;
+    type_coord = CS_CG_ENUM(RealDouble);
   else
     assert (   (sizeof(ecs_coord_t) == sizeof(float))
             || (sizeof(ecs_coord_t) == sizeof(double)));
@@ -1219,7 +1233,7 @@ ecs_loc_pre_cgns__lit_som(ecs_maillage_t             *maillage,
 
     /* Cas structuré */
 
-    if (ptr_zone->type == Structured) {
+    if (ptr_zone->type == CS_CG_ENUM(Structured)) {
       irmin[0] = 1;
       irmin[1] = 1;
       irmax[0] = ptr_zone->taille[0];
@@ -1232,7 +1246,7 @@ ecs_loc_pre_cgns__lit_som(ecs_maillage_t             *maillage,
 
     /* Cas non structuré */
 
-    else if (ptr_zone->type == Unstructured) {
+    else if (ptr_zone->type == CS_CG_ENUM(Unstructured)) {
       irmin[0] = 1;
       irmin[1] = 1;
       irmax[0] = ptr_zone->taille[0];
@@ -1289,9 +1303,9 @@ ecs_loc_pre_cgns__lit_som(ecs_maillage_t             *maillage,
     /* Conversion en coordonnées Cartésiennes si nécessaire */
 
     if (coo_type > 0) {
-      if (ptr_zone->angle == Degree)
+      if (ptr_zone->angle == CS_CG_ENUM(Degree))
         cnv_angle = 4 * atan(1) / 180.0;
-      else if (ptr_zone->angle == Radian)
+      else if (ptr_zone->angle == CS_CG_ENUM(Radian))
         cnv_angle = 1.0;
       else {
         cnv_angle = 1.0;
@@ -1373,7 +1387,7 @@ static void
 ecs_loc_pre_cgns__marque_som(const ecs_loc_cgns_base_t  *base_maillage,
                              int                         num_marque,
                              ecs_loc_cgns_zone_t        *ptr_zone,
-                             PointSetType_t              ptset_type,
+                             CS_CG_ENUM(PointSetType_t)  ptset_type,
                              int                         npnts,
                              int                        *pnts,
                              ecs_int_t                  *indic_som)
@@ -1413,11 +1427,11 @@ ecs_loc_pre_cgns__marque_som(const ecs_loc_cgns_base_t  *base_maillage,
 
   /* Points définis par leur étendue */
 
-  if (ptset_type == PointRange) {
+  if (ptset_type == CS_CG_ENUM(PointRange)) {
 
     /* Cas structuré */
 
-    if (ptr_zone->type == Structured) {
+    if (ptr_zone->type == CS_CG_ENUM(Structured)) {
 
       if (ient_max == ECS_ENTMAIL_FAC) {
 
@@ -1574,7 +1588,7 @@ ecs_loc_pre__cgns__cree_ent_inf_som(const ecs_loc_cgns_base_t  *base_maillage,
 
     ptr_boco = tab_boco + ind_boco;
 
-    if (ptr_boco->support == Vertex)
+    if (ptr_boco->support == CS_CG_ENUM(Vertex))
       boco_som = true;
 
   }
@@ -1601,7 +1615,7 @@ ecs_loc_pre__cgns__cree_ent_inf_som(const ecs_loc_cgns_base_t  *base_maillage,
 
     num_boco = ptr_boco->ind_nom + 1;
 
-    if (ptr_boco->support == Vertex) {
+    if (ptr_boco->support == CS_CG_ENUM(Vertex)) {
 
       ptr_zone = tab_zone + ptr_boco->num_zone - 1;
 
@@ -1798,7 +1812,7 @@ ecs_loc_pre__cgns__cree_ent_inf_som(const ecs_loc_cgns_base_t  *base_maillage,
 
     ptr_boco = tab_boco + ind_boco;
 
-    if (ptr_boco->ind_nom > -1 && ptr_boco->support == Vertex) {
+    if (ptr_boco->ind_nom > -1 && ptr_boco->support == CS_CG_ENUM(Vertex)) {
 
       num_boco = ptr_boco->ind_nom + 1;
 
@@ -1825,7 +1839,7 @@ ecs_loc_pre__cgns__cree_ent_inf_som(const ecs_loc_cgns_base_t  *base_maillage,
         if (ptr_boco->ind_nom + 1 != num_boco)
           continue;
 
-        if (ptr_boco->support == Vertex) {
+        if (ptr_boco->support == CS_CG_ENUM(Vertex)) {
 
           ptr_zone = tab_zone + ptr_boco->num_zone - 1;
 
@@ -1842,7 +1856,7 @@ ecs_loc_pre__cgns__cree_ent_inf_som(const ecs_loc_cgns_base_t  *base_maillage,
           if (ind_boco_sub > ind_boco)
             ptr_boco->ind_nom = - 1;
 
-          ptr_boco->ptset_type = PointSetTypeNull;
+          ptr_boco->ptset_type = CS_CG_ENUM(PointSetTypeNull);
           ptr_boco->npnts = 0;
           ECS_FREE(ptr_boco->pnts);
 
@@ -2149,7 +2163,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
     /* Cas d'une zone structurée */
 
-    if (ptr_zone->type == Structured) {
+    if (ptr_zone->type == CS_CG_ENUM(Structured)) {
 
       nbr_elt_loc   = ptr_zone->nbr_cel;
       nbr_elt_zone += nbr_elt_loc;
@@ -2167,7 +2181,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
     /* Cas d'une zone non structurée */
 
-    else if (ptr_zone->type == Unstructured) {
+    else if (ptr_zone->type == CS_CG_ENUM(Unstructured)) {
 
       for (ind_section = 0;
            ind_section < ptr_zone->nbr_sections;
@@ -2179,21 +2193,21 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
         nbr_elt_loc   = ptr_section->num_elt_fin - ptr_section->num_elt_deb + 1;
         nbr_elt_zone += nbr_elt_loc;
 
-        if (ptr_section->type != MIXED) {
+        if (ptr_section->type != CS_CG_ENUM(MIXED)) {
 
-          if (ptr_section->type < NGON_n) {
+          if (ptr_section->type < CS_CG_ENUM(NGON_n)) {
             ecs_typ     = ecs_cgns_elt_liste_c[  ptr_section->type
-                                               - NODE].ecs_type;
+                                               - CS_CG_ENUM(NODE)].ecs_type;
             nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
           }
           else {
             ecs_typ     = ECS_ELT_TYP_FAC_POLY;
-            nbr_som_elt = ptr_section->type - NGON_n;
+            nbr_som_elt = ptr_section->type - CS_CG_ENUM(NGON_n);
           }
 
           ient = ecs_maillage_pre__ret_typ_geo(ecs_typ);
 
-          if (ient < ECS_N_ENTMAIL) {
+          if (ient != ECS_ENTMAIL_NONE) {
             cpt_elt_ent[ient] += nbr_elt_loc;
             cpt_val_ent[ient] += nbr_elt_loc * nbr_som_elt;
           }
@@ -2206,15 +2220,16 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           while (cpt_elt_loc < nbr_elt_loc) {
 
-            ind_type    = *ptr_ele - NODE;
-            if (ind_type < NGON_n - NODE) {
+            ind_type    = *ptr_ele - CS_CG_ENUM(NODE);
+            if (ind_type < CS_CG_ENUM(NGON_n) - CS_CG_ENUM(NODE)) {
               ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
               nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
-              ptr_ele += ecs_cgns_elt_liste_c[*ptr_ele - NODE].nbr_som + 1;
+              ptr_ele += ecs_cgns_elt_liste_c[*ptr_ele
+                                              - CS_CG_ENUM(NODE)].nbr_som + 1;
             }
             else {
               ecs_typ     = ECS_ELT_TYP_FAC_POLY;
-              nbr_som_elt = *ptr_ele - NGON_n;
+              nbr_som_elt = *ptr_ele - CS_CG_ENUM(NGON_n);
               ptr_ele += nbr_som_elt + 1;
             }
 
@@ -2227,7 +2242,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
             */
 
             if (ecs_typ == ECS_ELT_TYP_NUL)
-              ient = ECS_N_ENTMAIL;
+              ient = ECS_ENTMAIL_NONE;
             else if (ecs_typ < ECS_ELT_TYP_CEL_TETRA)
               ient = ECS_ENTMAIL_FAC;
             else if (ecs_typ < ECS_ELT_TYP_FAC_POLY)
@@ -2237,9 +2252,9 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
             else if (ecs_typ == ECS_ELT_TYP_CEL_POLY)
               ient = ECS_ENTMAIL_CEL;
             else
-              ient = ECS_N_ENTMAIL;
+              ient = ECS_ENTMAIL_NONE;
 
-            if (ient < ECS_N_ENTMAIL) {
+            if (ient != ECS_ENTMAIL_NONE) {
               cpt_elt_ent[ient] += 1;
               cpt_val_ent[ient] += nbr_som_elt;
             }
@@ -2318,7 +2333,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
     /* Cas d'une zone structurée */
 
-    if (ptr_zone->type == Structured) {
+    if (ptr_zone->type == CS_CG_ENUM(Structured)) {
 
       nbr_elt_loc = ptr_zone->nbr_cel;
       cpt_elt_loc = 0;
@@ -2402,7 +2417,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
     /* Cas d'une zone non structurée */
 
-    else if (ptr_zone->type == Unstructured) {
+    else if (ptr_zone->type == CS_CG_ENUM(Unstructured)) {
 
       for (ind_section = 0;
            ind_section < ptr_zone->nbr_sections;
@@ -2416,16 +2431,16 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
         ptr_ele = ptr_section->elems;
 
-        if (ptr_section->type != MIXED) {
+        if (ptr_section->type != CS_CG_ENUM(MIXED)) {
 
-          ind_type    = ptr_section->type - NODE;
-          if (ind_type < NGON_n - NODE) {
+          ind_type    = ptr_section->type - CS_CG_ENUM(NODE);
+          if (ind_type < CS_CG_ENUM(NGON_n) - CS_CG_ENUM(NODE)) {
             ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
             nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
           }
           else {
             ecs_typ     = ECS_ELT_TYP_FAC_POLY;
-            nbr_som_elt = ptr_section->type - NGON_n;
+            nbr_som_elt = ptr_section->type - CS_CG_ENUM(NGON_n);
           }
 
           ient = ecs_maillage_pre__ret_typ_geo(ecs_typ);
@@ -2434,16 +2449,16 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
         while (cpt_elt_loc < nbr_elt_loc) {
 
-          if (ptr_section->type == MIXED) {
+          if (ptr_section->type == CS_CG_ENUM(MIXED)) {
 
-            ind_type    = *ptr_ele - NODE;
-            if (ind_type < NGON_n - NODE) {
+            ind_type    = *ptr_ele - CS_CG_ENUM(NODE);
+            if (ind_type < CS_CG_ENUM(NGON_n) - CS_CG_ENUM(NODE)) {
               ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
               nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
             }
             else {
               ecs_typ     = ECS_ELT_TYP_FAC_POLY;
-              nbr_som_elt = *ptr_ele - NGON_n;
+              nbr_som_elt = *ptr_ele - CS_CG_ENUM(NGON_n);
             }
 
             ptr_ele += 1;
@@ -2455,7 +2470,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
             */
 
             if (ecs_typ == ECS_ELT_TYP_NUL)
-              ient = ECS_N_ENTMAIL;
+              ient = ECS_ENTMAIL_NONE;
             else if (ecs_typ < ECS_ELT_TYP_CEL_TETRA)
               ient = ECS_ENTMAIL_FAC;
             else if (ecs_typ < ECS_ELT_TYP_FAC_POLY)
@@ -2465,11 +2480,11 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
             else if (ecs_typ == ECS_ELT_TYP_CEL_POLY)
               ient = ECS_ENTMAIL_CEL;
             else
-              ient = ECS_N_ENTMAIL;
+              ient = ECS_ENTMAIL_NONE;
 
           }
 
-          if (ient < ECS_N_ENTMAIL) {
+          if (ient != ECS_ENTMAIL_NONE) {
 
             ind_pos = cpt_elt_ent[ient];
             ind_val = elt_pos_som_ent[ient][ind_pos] - 1;
@@ -2477,7 +2492,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
               =  elt_pos_som_ent[ient][ind_pos] + nbr_som_elt;
 
             for (ind_som = 0; ind_som < nbr_som_elt; ind_som++) {
-              if (ind_type < NGON_n - NODE)
+              if (ind_type < CS_CG_ENUM(NGON_n) - CS_CG_ENUM(NODE))
                 elt_val_som_ent[ient][ind_val++]
                   = *(ptr_ele
                       + ecs_cgns_elt_liste_c[ind_type].num_som[ind_som] - 1)
@@ -2487,7 +2502,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
                   = *(ptr_ele + ind_som) + num_som_deb - 1;
             }
 
-            if (ind_type < NGON_n - NODE)
+            if (ind_type < CS_CG_ENUM(NGON_n) - CS_CG_ENUM(NODE))
               ptr_ele += ecs_cgns_elt_liste_c[ind_type].nbr_som;
             else
               ptr_ele += nbr_som_elt;
@@ -2744,14 +2759,14 @@ ecs_loc_pre_cgns__cree_grps_boco(const ecs_loc_cgns_base_t  *base_maillage,
       /* Traitement selon le support */
       /*-----------------------------*/
 
-      if (ptr_boco->support == FaceCenter) {
+      if (ptr_boco->support == CS_CG_ENUM(FaceCenter)) {
 
         ptr_zone = tab_zone + ptr_boco->num_zone - 1;
 
         /* Liste définie par numéro de début et fin */
 
-        if (   ptr_boco->ptset_type == PointRange
-            || ptr_boco->ptset_type == ElementRange) {
+        if (   ptr_boco->ptset_type == CS_CG_ENUM(PointRange)
+            || ptr_boco->ptset_type == CS_CG_ENUM(ElementRange)) {
 
           for (ind = ptr_boco->pnts[0]; ind <= ptr_boco->pnts[1]; ind++) {
 
@@ -2990,7 +3005,7 @@ ecs_loc_pre_cgns__cree_grps_zs(const ecs_loc_cgns_base_t  *base_maillage,
 
     for (ind_zone = 0; ind_zone < nzones; ind_zone++) {
       ptr_zone = tab_zone + ind_zone;
-      if (ptr_zone->type == Unstructured)
+      if (ptr_zone->type == CS_CG_ENUM(Unstructured))
         cpt_section += ptr_zone->nbr_sections;
     }
 
@@ -3003,7 +3018,7 @@ ecs_loc_pre_cgns__cree_grps_zs(const ecs_loc_cgns_base_t  *base_maillage,
 
       ptr_zone = tab_zone + ind_zone;
 
-      if (ptr_zone->type == Unstructured) {
+      if (ptr_zone->type == CS_CG_ENUM(Unstructured)) {
 
         for (ind_section = 0;
              ind_section < ptr_zone->nbr_sections;
@@ -3311,7 +3326,7 @@ ecs_pre_cgns__lit_maillage(const char   *nom_fic_maillage,
   int               nbr_nom_boco;
   int               nbr_boco_tot;
 
-  ecs_int_t         nbr_boco_som;
+  ecs_int_t         nbr_boco_som = 0;
   ecs_int_t        *ind_nom_boco_som;
   ecs_int_t        *nbr_sselt_boco_som;
   ecs_int_t       **tab_sselt_boco_som;

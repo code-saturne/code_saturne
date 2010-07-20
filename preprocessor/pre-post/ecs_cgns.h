@@ -87,6 +87,12 @@ extern "C" {
 #define ECS_CGNS_NBR_TYP_ELT                               20
 #define ECS_CGNS_NBR_MAX_SOM                                8
 
+#if defined(CGNS_SCOPE_ENUMS)
+#define CS_CG_ENUM( e ) CG_ ## e
+#else
+#define CS_CG_ENUM( e ) e
+#endif
+
 /*============================================================================
  * Définitions de types
  *============================================================================*/
@@ -100,10 +106,14 @@ typedef struct _ecs_cgns_t ecs_cgns_t;
 
 typedef struct {
 
-  ElementType_t   cgns_type;   /* Type CGNS de l'élément */
-  ecs_elt_typ_t   ecs_type;    /* Type ECS  de l'élément */
-  ecs_int_t       nbr_som ;    /* Nombre de sommets associés */
-  ecs_int_t       num_som[ECS_CGNS_NBR_MAX_SOM] ; /* Sommets ECS */
+#if defined(CGNS_SCOPE_ENUMS)
+  CG_ElementType_t  cgns_type;   /* Type CGNS de l'élément */
+#else
+  ElementType_t     cgns_type;   /* Type CGNS de l'élément */
+#endif
+  ecs_elt_typ_t     ecs_type;    /* Type ECS  de l'élément */
+  ecs_int_t         nbr_som ;    /* Nombre de sommets associés */
+  ecs_int_t         num_som[ECS_CGNS_NBR_MAX_SOM] ; /* Sommets ECS */
 
 } ecs_cgns_elt_t;
 

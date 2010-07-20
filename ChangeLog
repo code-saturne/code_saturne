@@ -1,3 +1,13 @@
+* 20/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct crash when reading CGNS file with ignored bar sections,
+  prepare for prefixing by CG_ of CGNS3 types.
+  modified files:
+    preprocessor/pre_post/ecs_champ_post_cgns.c
+    preprocessor/pre_post/ecs_cgns.c
+    preprocessor/pre_post/ecs_post_cgns.c
+    preprocessor/pre_post/ecs_cgns.h
+    preprocessor/pre_post/ecs_pre_cgns.c
+
 * 19/07/2010 - David Monfort <david.monfort@edf.fr>
   Correct free memory when using MEI for a variable specific heat.
   modified routine:

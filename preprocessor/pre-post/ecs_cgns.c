@@ -79,122 +79,123 @@ extern "C" {
 
 const ecs_cgns_elt_t
 ecs_cgns_elt_liste_c[ECS_CGNS_NBR_TYP_ELT] = {
-  {                                /* 1 */
-    NODE,
+  {
+                               /* 1 */
+    CS_CG_ENUM(NODE),
     ECS_ELT_TYP_NUL,
     1,
     { 0 }
   },
   {                                /* 2 */
-    BAR_2,
+    CS_CG_ENUM(BAR_2),
     ECS_ELT_TYP_NUL,
     2,
     { 0 }
   },
   {                                /* 3 */
-    BAR_3,
+    CS_CG_ENUM(BAR_3),
     ECS_ELT_TYP_NUL,
     3,
     { 0 }
   },
   {                                /* 4 */
-    TRI_3,
+    CS_CG_ENUM(TRI_3),
     ECS_ELT_TYP_FAC_TRIA,
     3,
     { 1, 2, 3 }
   },
   {                                /* 5 */
-    TRI_6,
+    CS_CG_ENUM(TRI_6),
     ECS_ELT_TYP_FAC_TRIA,
     6,
     { 1, 2, 3 }
   },
   {                                /* 6 */
-    QUAD_4,
+    CS_CG_ENUM(QUAD_4),
     ECS_ELT_TYP_FAC_QUAD,
     4,
     { 1, 2, 3, 4 }
   },
   {                                /* 7 */
-    QUAD_8,
+    CS_CG_ENUM(QUAD_8),
     ECS_ELT_TYP_FAC_QUAD,
     8,
     { 1, 2, 3, 4 }
   },
   {                                /* 8 */
-    QUAD_9,
+    CS_CG_ENUM(QUAD_9),
     ECS_ELT_TYP_FAC_QUAD,
     9,
     { 1, 2, 3, 4 }
   },
   {                                /* 9 */
-    TETRA_4,
+    CS_CG_ENUM(TETRA_4),
     ECS_ELT_TYP_CEL_TETRA,
     4,
     { 1, 2, 3, 4 }
   },
   {                               /* 10 */
-    TETRA_10,
+    CS_CG_ENUM(TETRA_10),
     ECS_ELT_TYP_CEL_TETRA,
     10,
     { 1, 2, 3, 4 }
   },
   {                               /* 11 */
-    PYRA_5,
+    CS_CG_ENUM(PYRA_5),
     ECS_ELT_TYP_CEL_PYRAM,
     5,
     { 1, 2, 3, 4, 5 }
   },
   {                               /* 12 */
-    PYRA_14,
+    CS_CG_ENUM(PYRA_14),
     ECS_ELT_TYP_CEL_PYRAM,
     14,
     { 1, 2, 3, 4, 5 }
   },
   {                               /* 13 */
-    PENTA_6,
+    CS_CG_ENUM(PENTA_6),
     ECS_ELT_TYP_CEL_PRISM,
     6,
     { 1, 2, 3, 4, 5, 6 }
   },
   {                               /* 14 */
-    PENTA_15,
+    CS_CG_ENUM(PENTA_15),
     ECS_ELT_TYP_CEL_PRISM,
     15,
     { 1, 2, 3, 4, 5, 6 }
   },
   {                               /* 15 */
-    PENTA_18,
+    CS_CG_ENUM(PENTA_18),
     ECS_ELT_TYP_CEL_PRISM,
     18,
     { 1, 2, 3, 4, 5, 6 }
   },
   {                               /* 16 */
-    HEXA_8,
+    CS_CG_ENUM(HEXA_8),
     ECS_ELT_TYP_CEL_HEXA,
     8,
     { 1, 2, 3, 4, 5, 6, 7, 8 },
   },
   {                               /* 17 */
-    HEXA_20,
+    CS_CG_ENUM(HEXA_20),
     ECS_ELT_TYP_CEL_HEXA,
     20,
     { 1, 2, 3, 4, 5, 6, 7, 8 },
   },
   {                               /* 18 */
-    HEXA_27,
+    CS_CG_ENUM(HEXA_27),
     ECS_ELT_TYP_CEL_HEXA,
     27,
     { 1, 2, 3, 4, 5, 6, 7, 8 },
   },
   {                               /* 19 */
-    MIXED,
+    CS_CG_ENUM(MIXED),
     ECS_ELT_TYP_NUL,
     0,
     { 0 },
   },
   {                               /* 20 */
-    NGON_n,
+    CS_CG_ENUM(NGON_n),
     ECS_ELT_TYP_FAC_POLY,
     0,
     { 0 }

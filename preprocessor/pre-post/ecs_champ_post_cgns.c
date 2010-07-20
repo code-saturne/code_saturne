@@ -81,6 +81,7 @@
  *  Fichier  `include' du  paquetage courant associé au fichier courant
  *---------------------------------------------------------------------------*/
 
+#include "ecs_cgns.h"
 #include "ecs_post_cgns.h"
 #include "ecs_champ_post_cgns.h"
 
@@ -136,8 +137,13 @@ ecs_loc_champ_post_cgns__base(const ecs_post_cgns_t  *cas_cgns,
 
   if (base_cgns->fic_ouvert == false) {
 
+#if defined(CGNS_SCOPE_ENUMS)
+    if (cg_open(base_cgns->nom_fic, CG_MODE_MODIFY, &(base_cgns->num_fic))
+        != CG_OK)
+#else
     if (cg_open(base_cgns->nom_fic, MODE_MODIFY, &(base_cgns->num_fic))
         != CG_OK)
+#endif
       ecs_error(__FILE__, __LINE__, 0,
                 _("CGNS: error re-opening file \"%s\":\n%s"),
                 base_cgns->nom_fic, cg_get_error());
@@ -166,7 +172,7 @@ _champ_post_cgns__ecr_fam(const int        *elt_fam,
 
   char  nom_champ_cgns[ECS_CGNS_TAILLE_NOM + 1];
 
-  DataType_t  type_val_cgns;
+  CS_CG_ENUM(DataType_t)  type_val_cgns;
 
   int  num_sol;
   int  num_champ;
@@ -194,7 +200,7 @@ _champ_post_cgns__ecr_fam(const int        *elt_fam,
                      1,
                      1,
                      _("Mesh_values"),
-                     CellCenter,
+                     CS_CG_ENUM(CellCenter),
                      &num_sol) != CG_OK)
 
       ecs_error(__FILE__, __LINE__, 0,
@@ -213,7 +219,7 @@ _champ_post_cgns__ecr_fam(const int        *elt_fam,
   /* Écriture du champ */
   /*-------------------*/
 
-  type_val_cgns = Integer;
+  type_val_cgns = CS_CG_ENUM(Integer);
 
   ret_cgns = cg_field_write(base_cgns->num_fic,
                             1,
@@ -320,7 +326,7 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
                            1,
                            "Zone 1",
                            isize,
-                           Unstructured,
+                           CS_CG_ENUM(Unstructured),
                            &num_zone);
 
   if (ret_cgns != CG_OK)
@@ -346,7 +352,7 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
     ret_cgns = cg_coord_write(base_cgns->num_fic,
                               1,
                               1,
-                              RealDouble,
+                              CS_CG_ENUM(RealDouble),
                               nom_coord[icoo],
                               coo_temp,
                               &num_coord);
@@ -379,13 +385,13 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
     type_cgns[ind_typ] = -2;
 
   type_cgns[ECS_ELT_TYP_NUL] = -1;
-  type_cgns[ECS_ELT_TYP_FAC_TRIA] = TRI_3;
-  type_cgns[ECS_ELT_TYP_FAC_QUAD] = QUAD_4;
-  type_cgns[ECS_ELT_TYP_CEL_TETRA] = TETRA_4;
-  type_cgns[ECS_ELT_TYP_CEL_PYRAM] = PYRA_5;
-  type_cgns[ECS_ELT_TYP_CEL_PRISM] = PENTA_6;
-  type_cgns[ECS_ELT_TYP_CEL_HEXA] = HEXA_8;
-  type_cgns[ECS_ELT_TYP_FAC_POLY] = NGON_n;
+  type_cgns[ECS_ELT_TYP_FAC_TRIA] = CS_CG_ENUM(TRI_3);
+  type_cgns[ECS_ELT_TYP_FAC_QUAD] = CS_CG_ENUM(QUAD_4);
+  type_cgns[ECS_ELT_TYP_CEL_TETRA] = CS_CG_ENUM(TETRA_4);
+  type_cgns[ECS_ELT_TYP_CEL_PYRAM] = CS_CG_ENUM(PYRA_5);
+  type_cgns[ECS_ELT_TYP_CEL_PRISM] = CS_CG_ENUM(PENTA_6);
+  type_cgns[ECS_ELT_TYP_CEL_HEXA] = CS_CG_ENUM(HEXA_8);
+  type_cgns[ECS_ELT_TYP_FAC_POLY] = CS_CG_ENUM(NGON_n);
   type_cgns[ECS_ELT_TYP_CEL_POLY] = - 1;
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -437,13 +443,14 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
 
       if (cas_cgns->no_poly == false) {
 
-        type_cgns_loc = MIXED;
+        type_cgns_loc = CS_CG_ENUM(MIXED);
 
         ECS_MALLOC(def_elt, nbr_val + cpt_elt_fin - cpt_elt, int);
 
         for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
 
-          def_elt[ind++] = def_pos_tab[ielt + 1] - def_pos_tab[ielt] + NGON_n;
+          def_elt[ind++]
+            = def_pos_tab[ielt + 1] - def_pos_tab[ielt] + CS_CG_ENUM(NGON_n);
 
           for (ival = def_pos_tab[ielt    ] - 1;
                ival < def_pos_tab[ielt + 1] - 1;
@@ -534,7 +541,7 @@ ecs_champ_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
 
   char               nom_champ_cgns[ECS_CGNS_TAILLE_NOM + 1];
 
-  DataType_t         type_val_cgns;
+  CS_CG_ENUM(DataType_t)  type_val_cgns;
 
   int                num_sol;
   int                num_champ;
@@ -562,7 +569,7 @@ ecs_champ_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
                      1,
                      1,
                      _("Mesh_values"),
-                     CellCenter,
+                     CS_CG_ENUM(CellCenter),
                      &num_sol) != CG_OK)
 
       ecs_error(__FILE__, __LINE__, 0,
@@ -584,7 +591,7 @@ ecs_champ_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
 
   assert(sizeof(ecs_int_t) == sizeof(int));
 
-  type_val_cgns = Integer;
+  type_val_cgns = CS_CG_ENUM(Integer);
 
   if (tab_val->nbr > 0) {
 
