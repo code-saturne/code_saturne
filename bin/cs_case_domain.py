@@ -739,14 +739,7 @@ class domain(base_domain):
 
         cmd = os.path.join(cs_config.dirs.bindir, 'cs_preprocess')
         for m in self.meshes:
-            if type(m) == str:
-                cmd += ' --mesh ' + m
-            elif type(m) == tuple:
-                cmd += ' --mesh ' + m[0]
-                if m[1] != None:
-                    cmd += ' --num ' + m[1]
-                if m[2] != None:
-                    cmd += ' --format ' + m[2]
+            cmd += ' --mesh ' + m
 
         if self.reorient:
             cmd += ' --reorient'
