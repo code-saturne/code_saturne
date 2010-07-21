@@ -2181,6 +2181,18 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
   *nfml = 0;
   *nprfml = 0;
 
+  if (mesh->n_init_perio > 0)
+    *iperio = 1;
+  if (mesh->have_rotation_perio > 0)
+    *iperot = 1;
+
+  /* Periodicities can be added before reading the preprocessor_output and
+     defined as a joining, but we don't want the n_init_perio to be set
+     before reading the preprocessor_output. It will be redefined later, either
+     while reading the preprocessor_output file or in the joining algorithm */
+
+  mesh->n_init_perio = 0;
+
   mr = _mesh_reader_create();
 
   _cs_glob_mesh_reader = mr;

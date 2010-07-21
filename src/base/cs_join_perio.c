@@ -944,6 +944,9 @@ cs_join_perio_add_translation(int            perio_num,
 
   cs_glob_n_join_perio++;
 
+  /* Temporarily increment the number of periodicy in the mesh structure */
+  cs_glob_mesh->n_init_perio++;
+
   tr_id =
     fvm_periodicity_add_translation(cs_glob_join_perio_builder->periodicity,
                                     cs_glob_n_join_perio,
@@ -995,6 +998,9 @@ cs_join_perio_add_rotation(int            perio_num,
 
   cs_glob_n_join_perio++;
 
+  /* Temporarily increment the number of periodicy in the mesh structure */
+  cs_glob_mesh->n_init_perio++;
+
   /* Add a tag to indicate the use of rotation */
   cs_glob_mesh->have_rotation_perio = 1;
 
@@ -1043,6 +1049,9 @@ cs_join_perio_add_mixed(int            perio_num,
     _increment_perio_builder(cs_glob_join_perio_builder);
 
   cs_glob_n_join_perio++;
+
+  /* Temporarily increment the number of periodicy in the mesh structure */
+  cs_glob_mesh->n_init_perio++;
 
   /* Add a tag to indicate the use of rotation */
   cs_glob_mesh->have_rotation_perio = 1;
