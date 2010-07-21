@@ -135,8 +135,19 @@ from cs_case import *
 
 casedir = 'CASEDIRNAME'
 
+# A case-specific mesh database can be defined through the MESHDIR variable.
+
+MESHDIR = None
+
 # Meshes should be defined as a list, for example:
-#   MESHES = ['part1.des', 'part2.unv']
+#   MESHES = ['part1.des', 'part2.unv', '~/meshdatabase/part3.unv']
+
+# The mesh name can be given as an absolute path name, if not it will be
+# searched in the following directories, in the order:
+#   - the   case mesh database directory, MESHDIR (if defined)
+#   - the  study mesh database directory, MESH directory (if present)
+#   - the   user mesh database directory, see ~/.code_saturne.cfg
+#   - the global mesh database directory, see $prefix/etc/code_saturne.cfg
 
 # In case of badly oriented cells, the Preprocessor will try to
 # reorient cells if REORIENT is set to True.
@@ -288,6 +299,7 @@ if __name__ == '__main__':
     # Values in case and associated domain set from global variables
 
     d = domain(meshes = MESHES,
+               mesh_dir = MESHDIR,
                reorient = REORIENT,
                partition_list = PARTITION_LIST,
                partition_opts = PARTITION_OPTS,

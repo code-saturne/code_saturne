@@ -21,6 +21,7 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
+import ConfigParser
 import datetime
 import fnmatch
 import os
@@ -152,8 +153,6 @@ class base_domain:
         if (self.tag != None):
             self.data_dir += '.' + self.tag
             self.src_dir += '.' + self.tag
-
-        self.mesh_dir = os.path.join(study_dir, 'MESH')
 
     #---------------------------------------------------------------------------
 
@@ -348,6 +347,7 @@ class domain(base_domain):
                  n_procs_min = None,          # min. number of processes
                  n_procs_max = None,          # max. number of processes
                  meshes = None,               # name or names of mesh files
+                 mesh_dir = None,             # mesh database directory
                  reorient = False,            # reorient badly-oriented meshes
                  partition_list = None,       # list of partitions
                  partition_opts = None,       # partitioner options
@@ -377,6 +377,9 @@ class domain(base_domain):
                                         solver_base_name)
 
         # Preprocessor options
+
+        if mesh_dir is not None:
+            self.mesh_dir = os.path.expanduser(mesh_dir)
 
         if type(meshes) == tuple or type(meshes) == list:
             self.meshes = meshes
@@ -590,14 +593,54 @@ class domain(base_domain):
         if self.exec_preprocess == False:
             return
 
+        # Study directory
+        study_dir = os.path.split(self.case_dir)[0]
+
+        # User config file
+        u_cfg = ConfigParser.ConfigParser()
+        u_cfg.read(os.path.expanduser('~/.code_saturne.cfg'))
+
+        # Global config file
+        g_cfg = ConfigParser.ConfigParser()
+        g_cfg.read(os.path.join(cs_config.dirs.sysconfdir, 'code_saturne.cfg'))
+        
+        # A mesh can be found in different mesh database directories
+        # (case, study, user, global -- in this order)
+        mesh_dirs = []
+        if self.mesh_dir is not None:
+            mesh_dirs.append(self.mesh_dir)
+        if os.path.isdir(os.path.join(study_dir, 'MESH')):
+            mesh_dirs.append(os.path.join(study_dir, 'MESH'))
+        if u_cfg.has_option('run', 'meshdir'):
+            mesh_dirs.append(u_cfg.get('run', 'meshdir'))
+        if g_cfg.has_option('run', 'meshdir'):
+            mesh_dirs.append(g_cfg.get('run', 'meshdir'))
+
+        # Symlink the different meshes
         for mesh in self.meshes:
 
-            base_name = os.path.basename(mesh)
+            if mesh is None:
+                err_str = 'Preprocessing stage is asked but no mesh is given'
+                raise RunCaseError(err_str)
 
-            if base_name == mesh:
-                mesh_path = os.path.join(self.mesh_dir, base_name)
-            else:
+            mesh = os.path.expanduser(mesh)
+
+            if os.path.isabs(mesh):
                 mesh_path = mesh
+            elif len(mesh_dirs) > 0:
+                for mesh_dir in mesh_dirs:
+                    mesh_path = os.path.join(mesh_dir, mesh)
+                    if os.path.isfile(mesh_path):
+                        break
+            else:
+                err_str = 'No mesh directory given'
+                raise RunCaseError(err_str)
+
+            if not os.path.isfile(mesh_path):
+                err_str = 'Mesh file ' + mesh + ' not found'
+                raise RunCaseError(err_str)
+
+            base_name = os.path.basename(mesh_path)
 
             link_path = os.path.join(self.exec_dir, base_name)
             self.symlink(mesh_path, link_path)
@@ -739,7 +782,7 @@ class domain(base_domain):
 
         cmd = os.path.join(cs_config.dirs.bindir, 'cs_preprocess')
         for m in self.meshes:
-            cmd += ' --mesh ' + m
+            cmd += ' --mesh ' + os.path.basename(m)
 
         if self.reorient:
             cmd += ' --reorient'

@@ -51,6 +51,7 @@ class dirs:
     pkgdatadir = "@pkgdatadir@"
     docdir = "@docdir@"
     pdfdir = "@pdfdir@"
+    sysconfdir = "@sysconfdir@"
     syrthes_prefix = "@syrthes_prefix@"
 
 # Optional MPI library info

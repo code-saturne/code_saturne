@@ -100,6 +100,7 @@ edit = sed \
 	-e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
 	-e 's|@docdir[@]|$(docdir)|g' \
 	-e 's|@pdfdir[@]|$(pdfdir)|g' \
+	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
 	-e 's|@cs_python[@]|$(cs_python)|g' \
 	-e 's|@pythondir[@]|$(pythondir)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
