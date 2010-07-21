@@ -21,6 +21,7 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
+import ConfigParser
 import datetime
 import os
 import os.path
@@ -1360,8 +1361,29 @@ fi
         Main script.
         """
 
+        tmpdir = None
+
         if exec_prefix != None:
-            self.exec_prefix = exec_prefix
+            tmpdir = exec_prefix
+        else:
+            # Read the possible config files
+
+            if sys.platform == 'win32' or sys.platform == 'win64':
+                username = os.getenv('USERNAME')
+            else:
+                username = os.getenv('USER')
+
+            config = ConfigParser.ConfigParser({'user':username})
+            config.read([os.path.expanduser('~/.code_saturne.cfg'),
+                         os.path.join(cs_config.dirs.sysconfdir,
+                                      'code_saturne.cfg')])
+
+            if config.has_option('run', 'tmpdir'):
+                tmpdir = os.path.expanduser(config.get('run', 'tmpdir'))
+                tmpdir = os.path.expandvars(tmpdir)
+
+        if tmpdir != None:
+            self.exec_prefix = os.path.join(tmpdir, 'tmp_Saturne')
 
         if suffix != None:
             self.suffix = suffix

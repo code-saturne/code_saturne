@@ -1,4 +1,10 @@
 * 21/07/2010 - David Monfort <david.monfort@edf.fr>
+  Add an option to handle the temporary directory from the config file.
+  modified scripts:
+    bin/cs_case.py
+    bin/runcase.in
+
+* 21/07/2010 - David Monfort <david.monfort@edf.fr>
   Fix issues when running simulations with periodicity (iperio not defined).
   modified routines:
     src/apps/cs_solver.c

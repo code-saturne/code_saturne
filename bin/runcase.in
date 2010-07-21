@@ -258,42 +258,6 @@ VALGRIND = None
 
 #-------------------------------------------------------------------------------
 
-def def_exec_prefix():
-    """
-    Define execution directory prefix.
-    """
-
-    if CS_TMP_PREFIX != None:
-        return os.path.join(CS_TMP_PREFIX, 'tmp_Saturne')
-
-    exec_prefix = None
-
-    # Preferential base working directories
-
-    if sys.platform == 'win32' or sys.platform == 'win64':
-        user = os.getenv('USERNAME')
-    else:
-        user = os.getenv('USER')
-
-        exec_prefix_prefs = [os.getenv('SCRATCHDIR'),
-                             os.path.join('/scratch', user),
-                             os.path.join('/local00/users', user),
-                             os.path.join('/local01/users', user)]
-
-    if os.getenv('TMPDIR') != '/tmp':
-        exec_prefix_prefs.append(os.getenv('TMPDIR'))
-
-    exec_prefix_prefs.append(os.getenv('HOME'))
-
-    for prefix in exec_prefix_prefs:
-        if prefix != None and os.path.isdir(prefix):
-            exec_prefix = os.path.join(prefix, 'tmp_Saturne')
-            break
-
-    return exec_prefix
-
-#-------------------------------------------------------------------------------
-
 if __name__ == '__main__':
 
     # Values in case and associated domain set from global variables
@@ -372,7 +336,7 @@ if __name__ == '__main__':
     case.run(n_procs=None,
              hosts_list=HOSTS_LIST,
              mpi_environment=mpi_env,
-             exec_prefix=def_exec_prefix(),
+             exec_prefix=CS_TMP_PREFIX,
              suffix=suffix,
              prepare_data=True,
              run_solver=True,
