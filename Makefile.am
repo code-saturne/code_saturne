@@ -192,6 +192,11 @@ bashcompletiondir = ${sysconfdir}/bash_completion.d
 bashcompletion_DATA = \
 extras/bash_completion/code_saturne
 
+# Install global option file
+
+sysconf_DATA = \
+extras/code_saturne.cfg
+
 # Finish user files installation
 # - tag with the package version number
 # - remove the test preventing from using a source file
