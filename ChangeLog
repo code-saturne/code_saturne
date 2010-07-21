@@ -1,3 +1,8 @@
+* 21/07/2010 - David Monfort <david.monfort@edf.fr>
+  Remove useless localedir definition (now handled by autoconf).
+  modified script:
+    configure.ac
+
 * 20/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct crash when reading GAMBIT file with ignored bar sections.
   modified files:

@@ -713,15 +713,7 @@ fi
 # Internationalization
 #------------------------------------------------------------------------------
 
-if test "${prefix}" = "NONE"; then
-  localedir="/usr/local/share/locale"
-else
-  localedir="${prefix}/share/locale"
-fi
 AC_DEFINE_UNQUOTED(LOCALEDIR, "${localedir}", LOCALEDIR)
-
-# Set of available languages now in po/LINGUAS.
-
 AM_GNU_GETTEXT([external])
 
 #------------------------------------------------------------------------------
