@@ -203,6 +203,15 @@ cs_run(void)
   cs_glob_mesh_builder = cs_mesh_builder_create();
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
 
+  /* Define joining and periodicity parameters if requested
+     Must be done before initi1 for the sake of verification */
+
+  cs_gui_mesh_define_joinings();
+  CS_PROCF (usjoin, USJOIN)();
+
+  cs_gui_mesh_define_periodicities();
+  CS_PROCF (usperi, USPERI)();
+
   /* Call main calculation initialization function or help */
 
   _verif = (opts.verif == true || opts.benchmark > 0) ? 1 : 0;
@@ -245,14 +254,6 @@ cs_run(void)
   /* Initialize main post-processing */
 
   cs_post_init_main_writer();
-
-  /* Define joining and periodicity parameters if requested */
-
-  cs_gui_mesh_define_joinings();
-  CS_PROCF (usjoin, USJOIN)();
-
-  cs_gui_mesh_define_periodicities();
-  CS_PROCF (usperi, USPERI)();
 
   /* Join meshes / build periodicity links if necessary */
 

@@ -3423,17 +3423,6 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
   cs_mesh_t  *mesh = cs_glob_mesh;
   _mesh_reader_t *mr = NULL;
 
-  /* Initialize reading of Preprocessor output */
-
-  _cs_glob_mesh_reader = _mesh_reader_create();
-
-  mr = _cs_glob_mesh_reader;
-
-  for (file_id = 0; file_id < _n_files; file_id++)
-    _read_dimensions(_file_names[file_id],
-                     mesh,
-                     mr);
-
   /* Initialize parameter values */
 
   *ndim = 3;
@@ -3445,11 +3434,34 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
   if (mesh->have_rotation_perio > 0)
     *iperot = 1;
 
+  /* Periodicities can be added before reading the preprocessor_output and
+     defined as a joining, but we don't want the n_init_perio to be set
+     before reading the preprocessor_output. It will be redefined later, either
+     while reading the preprocessor_output file or in the joining algorithm */
+
+  mesh->n_init_perio = 0;
+
+  /* Initialize reading of Preprocessor output */
+
+  _cs_glob_mesh_reader = _mesh_reader_create();
+
+  mr = _cs_glob_mesh_reader;
+
+  for (file_id = 0; file_id < _n_files; file_id++)
+    _read_dimensions(_file_names[file_id],
+                     mesh,
+                     mr);
+
   /* Return values */
 
   *ndim = mesh->dim;
   *nfml = mesh->n_families;
   *nprfml = mesh->n_max_family_items;
+
+  if (mesh->n_init_perio > 0)
+    *iperio = 1;
+  if (mesh->have_rotation_perio > 0)
+    *iperot = 1;
 
   mesh->n_domains = cs_glob_n_ranks;
   mesh->domain_num = cs_glob_rank_id + 1;
