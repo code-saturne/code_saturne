@@ -351,7 +351,6 @@ class domain(base_domain):
                  reorient = False,            # reorient badly-oriented meshes
                  partition_list = None,       # list of partitions
                  partition_opts = None,       # partitioner options
-                 solcom = False,              # use old geomet mesh file input
                  mode_args = None,            # --quality or --benchmark ?
                  logging_args = None,         # command-line options for logging
                  param = None,                # XML parameters file
@@ -392,7 +391,6 @@ class domain(base_domain):
 
         # Solver options
 
-        self.solcom = solcom
         self.mode_args = mode_args
 
         self.logging_args = logging_args
@@ -416,16 +414,6 @@ class domain(base_domain):
         self.exec_preprocess = True
         self.exec_partition = True
         self.exec_solver = True
-
-        # Other precautions.
-
-        if self.solcom == True:
-            self.n_procs_max = 1
-            if self.n_procs > self.n_procs_max:
-                err_str = '\n' \
-                    ' Parallel run ' + self.for_domain_str() \
-                    + 'impossible with solcom=', self.solcom, '.\n,'
-                raise RunCaseError(err_str)
 
     #---------------------------------------------------------------------------
 
@@ -489,22 +477,6 @@ class domain(base_domain):
             os.symlink(target, link)
         except AttributeError:
             shutil.copy2(target, link)
-
-    #---------------------------------------------------------------------------
-
-    def link_solcom_mesh(self):
-        """
-        Link SolCom mesh file to the execution directory
-        """
-
-        mesh = self.meshes[0]
-        base_name = os.path.basename(mesh)
-        if base_name == mesh:
-            mesh_path = os.path.join(self.mesh_dir, base_name)
-        else:
-            mesh_path = mesh
-            link_path = os.path.join(self.exec_dir, 'geomet')
-        self.symlink(mesh_path, link_path)
 
     #---------------------------------------------------------------------------
 
@@ -655,7 +627,7 @@ class domain(base_domain):
         required both for the partitioner and the solver.
         """
 
-        if self.exec_preprocess or self.solcom:
+        if self.exec_preprocess:
             return
         elif not (self.exec_partition or self.exec_solver):
             return
@@ -677,9 +649,6 @@ class domain(base_domain):
 
         if self.exec_solver == False:
             return
-
-        if self.solcom:
-            self.link_solcom_mesh()
 
         if self.n_procs < 2:
             self.exec_partition = False
@@ -901,9 +870,6 @@ class domain(base_domain):
 
         if self.logging_args != None:
             args += ' ' + self.logging_args
-
-        if self.solcom:
-            args += ' --solcom'
 
         if self.mode_args != None:
             args += ' ' + self.mode_args

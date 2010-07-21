@@ -1,4 +1,17 @@
 * 21/07/2010 - David Monfort <david.monfort@edf.fr>
+  Remove the SOLCOM option from the runcase script (kept in the solver).
+  modified scripts:
+    bin/cs_case_domain.py
+    bin/runcase.in
+
+* 21/07/2010 - David Monfort <david.monfort@edf.fr>
+  Add a configuration file for Code_Saturne installation and use.
+  added file:
+    extras/code_saturne.cfg
+  modified script:
+    configure.ac
+
+* 21/07/2010 - David Monfort <david.monfort@edf.fr>
   Remove useless localedir definition (now handled by autoconf).
   modified script:
     configure.ac

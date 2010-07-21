@@ -225,12 +225,6 @@ EXEC_PREPROCESS = True
 EXEC_PARTITION = True
 EXEC_SOLVER = True
 
-# The user may choose to use a mesh in the old .tlc or .slc format instead
-# of a preprocessed mesh by setting SOLCOM = True.
-# Note that this is deprecated, and incompatible with parallel execution.
-
-SOLCOM = False
-
 # Adaptation (not operational yet)
 
 HOMARD_PREFIX = None
@@ -298,7 +292,6 @@ if __name__ == '__main__':
                partition_list = PARTITION_LIST,
                partition_opts = PARTITION_OPTS,
                param = PARAMETERS,
-               solcom = SOLCOM,
                mode_args = CHECK_ARGS,
                logging_args = OUTPUT_ARGS,
                thermochemistry_data = THERMOCHEMISTRY_DATA,
