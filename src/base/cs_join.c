@@ -1441,6 +1441,7 @@ cs_join_add(int     join_number,
                                                           0, /* No perio. */
                                                           verbosity);
 
+  cs_glob_join_count++; // Store number of joining (without periodic ones)
   cs_glob_n_joinings++;
 }
 
@@ -1671,9 +1672,6 @@ cs_join_all(void)
   } /* End of loop on joinings */
 
   /* Destroy all remaining structures relative to joining operation */
-
-  cs_glob_join_count += cs_glob_n_joinings;
-  cs_glob_n_joinings = 0;
 
   BFT_FREE(cs_glob_join_array);
 

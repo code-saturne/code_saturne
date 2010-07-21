@@ -1,3 +1,9 @@
+* 21/07/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix the periodicities definition when using the graphical interface.
+  modified routines:
+    src/base/cs_join.c
+    src/base/cs_join_perio.c
+
 * 19/07/2010 - David Monfort <david.monfort@edf.fr>
   Correct free memory when using MEI for a variable specific heat.
   modified routine:
