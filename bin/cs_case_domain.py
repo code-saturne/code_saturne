@@ -603,7 +603,7 @@ class domain(base_domain):
         # Global config file
         g_cfg = ConfigParser.ConfigParser()
         g_cfg.read(os.path.join(cs_config.dirs.sysconfdir, 'code_saturne.cfg'))
-        
+
         # A mesh can be found in different mesh database directories
         # (case, study, user, global -- in this order)
         mesh_dirs = []
