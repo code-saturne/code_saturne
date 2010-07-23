@@ -1673,7 +1673,10 @@ _read_input(const char   *path,
   fvm_gnum_t n_g_per_face_couples = 0;
   fvm_gnum_t *g_per_face_couples = NULL;
 
+#if defined(HAVE_MPI)
   fvm_block_to_part_t *d = NULL;
+#endif
+
   cs_io_t *inp = NULL;
 
   const char *read_type_name[2] = {N_("Read:   "),
@@ -1691,10 +1694,10 @@ _read_input(const char   *path,
                                     CS_IO_ECHO_OPEN_CLOSE,
                                     cs_glob_mpi_comm);
 #else
-  fh = cs_io_initialize_with_index(path,
-                                   "Face-based mesh definition, R0",
-                                   cs_glob_io_hints,
-                                   CS_IO_ECHO_OPEN_CLOSE);
+  inp = cs_io_initialize_with_index(path,
+				    "Face-based mesh definition, R0",
+				    cs_glob_io_hints,
+				    CS_IO_ECHO_OPEN_CLOSE);
 #endif
 
   bft_printf("\n");
