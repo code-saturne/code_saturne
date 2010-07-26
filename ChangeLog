@@ -1,3 +1,8 @@
+* 26/07/2010 - David Monfort <david.monfort@edf.fr>
+  Add a space to the valgrind command to avoid potential issues.
+  modified script:
+    bin/cs_case_domain.py
+
 * 26/07/2010 - Maya Milliez <maya.milliez@edf.fr>
   English translation.
   modified routine:
