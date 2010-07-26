@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-07-12 17:18+0200\n"
-"PO-Revision-Date: 2010-06-14 19:23+0200\n"
+"POT-Creation-Date: 2010-07-26 12:00+0200\n"
+"PO-Revision-Date: 2010-07-26 12:04+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "MIME-Version: 1.0\n"
@@ -52,7 +52,7 @@ msgid ""
 msgstr ""
 
 #: src/apps/cs_io_dump.c:307 src/base/cs_base.c:363 src/bft/bft_error.c:169
-#: preprocessor/util/ecs_def.c:307
+#: preprocessor/util/ecs_def.c:308
 #, c-format
 msgid ""
 "\n"
@@ -62,7 +62,7 @@ msgstr ""
 "Erreur système : %s\n"
 
 #: src/apps/cs_io_dump.c:309 src/base/cs_base.c:365 src/bft/bft_error.c:171
-#: preprocessor/util/ecs_def.c:309
+#: preprocessor/util/ecs_def.c:310
 #, c-format
 msgid ""
 "\n"
@@ -560,15 +560,15 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1679
+#: src/apps/cs_partition.c:1682
 msgid "Read:   "
 msgstr ""
 
-#: src/apps/cs_partition.c:1680
+#: src/apps/cs_partition.c:1683
 msgid "Ignored:"
 msgstr ""
 
-#: src/apps/cs_partition.c:1682 src/base/cs_preprocessor_data.c:2660
+#: src/apps/cs_partition.c:1685 src/base/cs_preprocessor_data.c:2660
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
@@ -577,36 +577,36 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendue ou de taille incorrecte"
 
-#: src/apps/cs_partition.c:1788
+#: src/apps/cs_partition.c:1791
 #, c-format
 msgid "  %s \"%-32s\"; Type: %-6s; Size: %llu\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:1795
+#: src/apps/cs_partition.c:1798
 #, c-format
 msgid "  %s \"%-32s\"\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2059
+#: src/apps/cs_partition.c:2062
 msgid ""
 " .------------------------------.\n"
 " |   Code_Saturne Partitioner   |\n"
 " `------------------------------'\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2071
+#: src/apps/cs_partition.c:2074
 msgid ""
 "\n"
 "  External library:\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2073
+#: src/apps/cs_partition.c:2076
 msgid ""
 "\n"
 "  External libraries:\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2241
+#: src/apps/cs_partition.c:2244
 msgid ""
 "\n"
 " .------------------------.\n"
@@ -615,7 +615,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_solver.c:299
+#: src/apps/cs_solver.c:300
 #, c-format
 msgid ""
 "\n"
@@ -624,7 +624,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/apps/cs_solver.c:305
+#: src/apps/cs_solver.c:306
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -632,11 +632,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:361
+#: src/apps/cs_solver.c:362
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:375
+#: src/apps/cs_solver.c:376
 #, c-format
 msgid ""
 "\n"
@@ -645,7 +645,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:391
+#: src/apps/cs_solver.c:392
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -653,7 +653,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:413
+#: src/apps/cs_solver.c:414
 #, c-format
 msgid ""
 "\n"
@@ -668,7 +668,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:423
+#: src/apps/cs_solver.c:424
 #, c-format
 msgid ""
 "\n"
@@ -681,7 +681,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:429
+#: src/apps/cs_solver.c:430
 #, c-format
 msgid ""
 "\n"
@@ -696,7 +696,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:491
+#: src/apps/cs_solver.c:492
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -2436,7 +2436,7 @@ msgid ""
 "  It must be between [0, 90] and is here: %f\n"
 msgstr ""
 
-#: src/base/cs_join.c:1485
+#: src/base/cs_join.c:1486
 #, c-format
 msgid ""
 "\n"
@@ -2449,19 +2449,19 @@ msgstr ""
 "  Recollement numéro %d :\n"
 "\n"
 
-#: src/base/cs_join.c:1489
+#: src/base/cs_join.c:1490
 #, c-format
 msgid ""
 "\n"
 "  Joining for periodicity: %d\n"
 msgstr ""
 
-#: src/base/cs_join.c:1491
+#: src/base/cs_join.c:1492
 #, c-format
 msgid "  Selection criteria: \"%s\"\n"
 msgstr "  Critère de sélection : \"%s\"\n"
 
-#: src/base/cs_join.c:1494
+#: src/base/cs_join.c:1495
 #, c-format
 msgid ""
 "\n"
@@ -2476,7 +2476,7 @@ msgstr ""
 "    Angle maximum entre plans de faces recollées :      %8.5f\n"
 "\n"
 
-#: src/base/cs_join.c:1500
+#: src/base/cs_join.c:1501
 #, c-format
 msgid ""
 "  Advanced joining parameters:\n"
@@ -2493,18 +2493,18 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/base/cs_join.c:1521
+#: src/base/cs_join.c:1522
 msgid " Before joining"
 msgstr " Avant recollement"
 
-#: src/base/cs_join.c:1558
+#: src/base/cs_join.c:1559
 #, c-format
 msgid ""
 "\n"
 "  Number of faces to treat locally: %10d\n"
 msgstr ""
 
-#: src/base/cs_join.c:1640
+#: src/base/cs_join.c:1641
 msgid ""
 "\n"
 "Stop joining algorithm: no face selected...\n"
@@ -2512,11 +2512,11 @@ msgstr ""
 "\n"
 "Arrêt du recollement: aucune face sélectionnée...\n"
 
-#: src/base/cs_join.c:1648
+#: src/base/cs_join.c:1649
 msgid " After joining"
 msgstr " Après recollement"
 
-#: src/base/cs_join.c:1655
+#: src/base/cs_join.c:1656
 #, c-format
 msgid ""
 "\n"
@@ -2529,7 +2529,7 @@ msgstr ""
 "    temps écoulé :              %10.3g\n"
 "    temps CPU :                 %10.3g\n"
 
-#: src/base/cs_join.c:1686
+#: src/base/cs_join.c:1684
 #, c-format
 msgid ""
 "\n"
@@ -3142,32 +3142,32 @@ msgstr "  Ajout de la périodicité %d (translation [%10.4e, %10.4e, %10.4e]).\n
 msgid "  Adding periodicity %d (rotation).\n"
 msgstr "  Ajout de la périodicité %d (rotation).\n"
 
-#: src/base/cs_join_perio.c:825
+#: src/base/cs_join_perio.c:822
 #, c-format
 msgid "  Adding periodicity %d (general formulation).\n"
 msgstr "  Ajout de la périodicité %d (formulation générale).\n"
 
-#: src/base/cs_join_perio.c:897
+#: src/base/cs_join_perio.c:891
 #, c-format
 msgid ""
 " Periodicity number %d is not defined\n"
 " %d periodicities are defined\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:1209
+#: src/base/cs_join_perio.c:1218
 #, c-format
 msgid ""
 "  Apply periodicity to the local join mesh structure\n"
 "  New number of faces to treat locally: %8d\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:1222 src/base/cs_join_util.c:2441
+#: src/base/cs_join_perio.c:1231 src/base/cs_join_util.c:2441
 msgid ""
 "\n"
 "  Selected faces for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:1512
+#: src/base/cs_join_perio.c:1521
 #, c-format
 msgid ""
 "  Vertex state (%d) is not consistent.\n"
@@ -3733,7 +3733,7 @@ msgstr ""
 "rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:1065
+#: src/base/cs_mesh.c:1167
 #, c-format
 msgid ""
 "\n"
@@ -3748,7 +3748,7 @@ msgstr ""
 "                       Y : %14.7e %14.7e\n"
 "                       Z : %14.7e %14.7e\n"
 
-#: src/base/cs_mesh.c:1097
+#: src/base/cs_mesh.c:1199
 msgid ""
 "\n"
 " Global definition of the number of elements (cells, vertices, faces...)\n"
@@ -3756,7 +3756,7 @@ msgstr ""
 "\n"
 " Définition globale du nombre d'éléments (cellules, sommets, faces...)\n"
 
-#: src/base/cs_mesh.c:1183
+#: src/base/cs_mesh.c:1285
 msgid ""
 "\n"
 " Halo construction with extended neighborhood\n"
@@ -3768,11 +3768,11 @@ msgstr ""
 " ==========================================\n"
 "\n"
 
-#: src/base/cs_mesh.c:1190
+#: src/base/cs_mesh.c:1292
 msgid " Periodicities combination\n"
 msgstr " Composition des périodicités\n"
 
-#: src/base/cs_mesh.c:1199
+#: src/base/cs_mesh.c:1301
 msgid ""
 "\n"
 " Halo construction with standard neighborhood\n"
@@ -3784,27 +3784,27 @@ msgstr ""
 " ============================================\n"
 "\n"
 
-#: src/base/cs_mesh.c:1227
+#: src/base/cs_mesh.c:1329
 msgid " Definition of periodic couples\n"
 msgstr " Définition des couples périodiques\n"
 
-#: src/base/cs_mesh.c:1249
+#: src/base/cs_mesh.c:1351
 msgid " Interface creation\n"
 msgstr " Création de l'interface\n"
 
-#: src/base/cs_mesh.c:1282
+#: src/base/cs_mesh.c:1384
 msgid " Halo creation\n"
 msgstr " Création des halos\n"
 
-#: src/base/cs_mesh.c:1287
+#: src/base/cs_mesh.c:1389
 msgid " Halo definition\n"
 msgstr " Définition des halos\n"
 
-#: src/base/cs_mesh.c:1311
+#: src/base/cs_mesh.c:1413
 msgid " Extended neighborhood structures definition\n"
 msgstr " Définition des structures pour le voisinage étendu\n"
 
-#: src/base/cs_mesh.c:1338
+#: src/base/cs_mesh.c:1440
 #, c-format
 msgid ""
 "\n"
@@ -3813,7 +3813,7 @@ msgstr ""
 "\n"
 " Création de la connectivité étendue (%.3g s)\n"
 
-#: src/base/cs_mesh.c:1489
+#: src/base/cs_mesh.c:1719
 #, c-format
 msgid ""
 " %s\n"
@@ -3939,7 +3939,7 @@ msgstr ""
 "de la connectivité nodale (cs_mesh_connect_faces_to_nodal)."
 
 #: src/base/cs_mesh_halo.c:1660
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Repeated inconsistency in the halo construction.\n"
 "Several local points have the same distant correspondant;\n"
@@ -3951,7 +3951,8 @@ msgstr ""
 "Incohérence repérée lors de la construction du halo.\n"
 "Plusieurs points locaux ont le même correspondant distant ;\n"
 "ceci est probablement dû à un effet de bord de la construction\n"
-"de périodicités multiples par le Préprocesseur.\n"
+"de périodicités multiples par le Préprocesseur ou à un maillage\n"
+"de mauvaise qualité généré durant l'étape de recollement.\n"
 "Coordonnées du premier point impacté: [%12.5e, %12.5e %12.5e]."
 
 #: src/base/cs_mesh_halo.c:3108 src/ctwr/cs_ctwr_halo.c:1492
@@ -4794,7 +4795,7 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendu."
 
-#: src/base/cs_preprocessor_data.c:3497
+#: src/base/cs_preprocessor_data.c:3509
 #, c-format
 msgid ""
 "The algorithm selection indicator for domain partitioning\n"
@@ -7758,13 +7759,13 @@ msgid ""
 "\n"
 "\n"
 "mesh selection sub-options\n"
-" (-m, -mesh):\n"
+" (-m, --mesh):\n"
 "\n"
 msgstr ""
 "\n"
 "\n"
 "sous-options de sélection de maillage\n"
-" (-m, -mesh) :\n"
+" (-m, --mesh) :\n"
 "\n"
 
 #: preprocessor/appli/ecs_cmd.c:664 preprocessor/appli/ecs_cmd.c:673
@@ -7810,12 +7811,12 @@ msgid ""
 "\n"
 "\n"
 "available mesh formats\n"
-" (-m, -mesh; -format):\n"
+" (-m, --mesh; --format):\n"
 msgstr ""
 "\n"
 "\n"
 "formats de maillage disponibles\n"
-" (-m, -mesh; -format):\n"
+" (-m, --mesh; -format):\n"
 
 #: preprocessor/appli/ecs_cmd.c:692
 #, c-format
@@ -8132,7 +8133,7 @@ msgstr ""
 "Ce Programme a été compilé avec un type \"ecs_int_32_t\"\n"
 "de longueur %d octets au lieu de 4. (Erreur de portage)\n"
 
-#: preprocessor/appli/ecs_main.c:520 preprocessor/pre-post/ecs_post_cgns.c:299
+#: preprocessor/appli/ecs_main.c:520 preprocessor/pre-post/ecs_post_cgns.c:301
 #: preprocessor/pre-post/ecs_post_ens.c:425
 #: preprocessor/pre-post/ecs_post_ens.c:588
 #: preprocessor/pre-post/ecs_post_ens.c:682
@@ -8306,7 +8307,7 @@ msgid ""
 "\n"
 "  %d vertices belong to edges of length less than %g\n"
 "  and will be merged; (this tolerance may be modified\n"
-"  using the ECS_DEF_LNG_ARE_MIN environment variable).\n"
+"  using the CS_PREPROCESS_MIN_EDGE_LEN environment variable).\n"
 msgstr ""
 "\n"
 "Contrôle du maillage :\n"
@@ -8314,7 +8315,7 @@ msgstr ""
 "  On compte %d sommets appartennant à des arêtes de longueur\n"
 "  inférieure à %g et qui seront fusionnés ; (cette tolérance\n"
 "  peut être modifiée par la variable d'environnement\n"
-"  ECS_DEF_LNG_ARE_MIN).\n"
+"  CS_PREPROCESS_MIN_EDGE_LEN).\n"
 
 #: preprocessor/base/ecs_champ_def.c:2910
 #, c-format
@@ -8340,16 +8341,16 @@ msgstr ""
 msgid "Color"
 msgstr "Couleur"
 
-#: preprocessor/base/ecs_descr.c:385 preprocessor/pre-post/ecs_pre_cgns.c:2865
-#: preprocessor/pre-post/ecs_pre_cgns.c:3195
-#: preprocessor/pre-post/ecs_pre_gambit.c:1650
+#: preprocessor/base/ecs_descr.c:385 preprocessor/pre-post/ecs_pre_cgns.c:2880
+#: preprocessor/pre-post/ecs_pre_cgns.c:3210
+#: preprocessor/pre-post/ecs_pre_gambit.c:1649
 #: preprocessor/pre-post/ecs_pre_ideas.c:1784
 msgid "Group"
 msgstr "Groupe"
 
 #: preprocessor/base/ecs_famille.c:276 preprocessor/base/ecs_famille.c:279
 #: preprocessor/base/ecs_famille_chaine.c:646
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:210
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:216
 #: preprocessor/pre-post/ecs_maillage_ncs.c:609
 #: preprocessor/pre-post/ecs_maillage_ncs.c:612
 #: preprocessor/pre-post/ecs_maillage_ncs.c:614
@@ -8450,7 +8451,7 @@ msgstr ""
 "MED : erreur a l'écriture du fichier \"%s\".\n"
 "Erreur à la création du champ \"%s\"\n"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:131
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:132
 #, c-format
 msgid ""
 "CGNS: no mesh named \"%s\".\n"
@@ -8459,7 +8460,7 @@ msgstr ""
 "CGNS : aucun maillage nommé \"%s\".\n"
 "n'est associé au fichier : \"%s\"\n"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:142
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:148
 #, c-format
 msgid ""
 "CGNS: error re-opening file \"%s\":\n"
@@ -8468,13 +8469,13 @@ msgstr ""
 "CGNS : échec à la réouverture du fichier \"%s\" :\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:196
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:564
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:202
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:571
 msgid "Mesh_values"
 msgstr "Grandeurs_maillage"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:201
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:569
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:207
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:576
 #, c-format
 msgid ""
 "CGNS: error writing a solution node\n"
@@ -8485,8 +8486,8 @@ msgstr ""
 "Nom du fichier : \"%s\" ; base : \"1\"\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:229
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:602
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:235
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:609
 #, c-format
 msgid ""
 "CGNS: error writing field \"%s\"\n"
@@ -8495,8 +8496,8 @@ msgstr ""
 "CGNS : échec à l'écriture du champ \"%s\"\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:328
-#: preprocessor/pre-post/ecs_post_cgns.c:310
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:334
+#: preprocessor/pre-post/ecs_post_cgns.c:312
 #, c-format
 msgid ""
 "CGNS: error writing file \"%s\":\n"
@@ -8507,7 +8508,7 @@ msgstr ""
 "Nom du maillage à écrire : \"%s\"\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:356
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:362
 #, c-format
 msgid ""
 "CGNS: error writing coordinates\n"
@@ -8518,7 +8519,7 @@ msgstr ""
 "Nom du maillage à écrire : \"%s\"\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:472
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:479
 #, c-format
 msgid ""
 "CGNS: in mesh: \"%s\",\n"
@@ -8832,8 +8833,8 @@ msgstr "Nombre de faces"
 msgid "Number of vertices"
 msgstr "Nombre de sommets"
 
-#: preprocessor/pre-post/ecs_post_cgns.c:153
-#: preprocessor/pre-post/ecs_post_cgns.c:196
+#: preprocessor/pre-post/ecs_post_cgns.c:154
+#: preprocessor/pre-post/ecs_post_cgns.c:197
 #, c-format
 msgid ""
 "CGNS: error closing file \"%s\"\n"
@@ -8842,7 +8843,7 @@ msgstr ""
 "CGNS : échec à la fermeture du fichier \"%s\"\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_post_cgns.c:239
+#: preprocessor/pre-post/ecs_post_cgns.c:240
 #, c-format
 msgid ""
 "A mesh named: %s\n"
@@ -8851,8 +8852,8 @@ msgstr ""
 "On a déjà défini un maillage de nom : %s\n"
 "dans le cas CGNS : %s\n"
 
-#: preprocessor/pre-post/ecs_post_cgns.c:293
-#: preprocessor/pre-post/ecs_pre_cgns.c:377
+#: preprocessor/pre-post/ecs_post_cgns.c:295
+#: preprocessor/pre-post/ecs_pre_cgns.c:383
 #, c-format
 msgid ""
 "CGNS: error opening file \"%s\":\n"
@@ -8861,7 +8862,7 @@ msgstr ""
 "CGNS : échec à l'ouverture du fichier \"%s\" :\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_post_cgns.c:316
+#: preprocessor/pre-post/ecs_post_cgns.c:318
 #, c-format
 msgid ""
 "CGNS: error writing file \"%s\":\n"
@@ -9005,7 +9006,7 @@ msgstr ""
 "  Temps écoulé : %f s ; temps CPU : %f s\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:153
+#: preprocessor/pre-post/ecs_pre_ccm.c:161
 #, c-format
 msgid ""
 "\n"
@@ -9014,45 +9015,45 @@ msgstr ""
 "\n"
 "  Jeu de coordonnées des sommets : %s\n"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:162
+#: preprocessor/pre-post/ecs_pre_ccm.c:170
 #, c-format
 msgid "Error %d reading vertex information in STAR-CCM+ file."
 msgstr "Erreur %d à l'interrogation des sommets dans un fichier STAR-CCM+"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:274
+#: preprocessor/pre-post/ecs_pre_ccm.c:282
 #, c-format
 msgid "  Face-based topology: %s\n"
 msgstr "  Topologie basée sur les faces : %s\n"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:289
-#: preprocessor/pre-post/ecs_pre_ccm.c:395
+#: preprocessor/pre-post/ecs_pre_ccm.c:297
+#: preprocessor/pre-post/ecs_pre_ccm.c:407
 #, c-format
 msgid "    Faces: %s\n"
 msgstr "    Faces : %s\n"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:304
+#: preprocessor/pre-post/ecs_pre_ccm.c:312
 #, c-format
 msgid "Error %d reading faces information in STAR-CCM+ file."
 msgstr "Erreur %d à l'interrogation des faces dans un fichier STAR-CCM+"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:314
+#: preprocessor/pre-post/ecs_pre_ccm.c:322
 #, c-format
 msgid "Error %d reading internal faces in STAR-CCM+ file."
 msgstr "Erreur %d à la lecture des faces intérieures dans un fichier STAR-CCM+"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:322
+#: preprocessor/pre-post/ecs_pre_ccm.c:330
 #, c-format
 msgid "Error %d reading face->cell connectivity in STAR-CCM+ file."
 msgstr ""
 "Erreur %d à la lecture de la connectivité faces->cellules\n"
 "dans un fichier STAR-CCM+"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:336
+#: preprocessor/pre-post/ecs_pre_ccm.c:344
 #, c-format
 msgid "Error %d reading map in STAR-CCM+ file."
 msgstr "Erreur %d à la lecture d'une numérotation dans un fichier STAR-CCM+"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:895
+#: preprocessor/pre-post/ecs_pre_ccm.c:909
 #, c-format
 msgid ""
 "\n"
@@ -9065,7 +9066,7 @@ msgstr ""
 "Lecture du fichier de maillage au format STAR-CCM+\n"
 "------------------------------\n"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:899
+#: preprocessor/pre-post/ecs_pre_ccm.c:913
 #, c-format
 msgid ""
 "  Mesh file: %s\n"
@@ -9082,17 +9083,17 @@ msgstr ""
 "  Titre : %s\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:924
+#: preprocessor/pre-post/ecs_pre_ccm.c:938
 #, c-format
 msgid "  Available meshes:\n"
 msgstr "  Maillages disponibles :\n"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:939
+#: preprocessor/pre-post/ecs_pre_ccm.c:953
 #, c-format
 msgid "Error %d reading state name in STAR-CCM+ file."
 msgstr "Erreur %d à la lecture d'un état dans un fichier STAR-CCM+."
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:953
+#: preprocessor/pre-post/ecs_pre_ccm.c:967
 #: preprocessor/pre-post/ecs_pre_med.c:1504
 #, c-format
 msgid ""
@@ -9104,7 +9105,7 @@ msgstr ""
 "  On n'a pas précisé de maillage ; on lit le premier\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:957
+#: preprocessor/pre-post/ecs_pre_ccm.c:971
 #: preprocessor/pre-post/ecs_pre_med.c:1506
 #, c-format
 msgid ""
@@ -9116,7 +9117,7 @@ msgstr ""
 "  On a demandé le maillage numéro %d\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:962
+#: preprocessor/pre-post/ecs_pre_ccm.c:976
 #: preprocessor/pre-post/ecs_pre_med.c:1515
 #, c-format
 msgid ""
@@ -9128,23 +9129,23 @@ msgstr ""
 "au nombre de maillages définis (%d) dans le fichier\n"
 "%s.\n"
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:967
+#: preprocessor/pre-post/ecs_pre_ccm.c:981
 #, c-format
 msgid "The specified mesh number (%d) is negative."
 msgstr "Le numéro de maillage demandé (%d) est négatif."
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:977
+#: preprocessor/pre-post/ecs_pre_ccm.c:991
 #, c-format
 msgid "Error %d reading entity description in STAR-CCM+ file."
 msgstr "Erreur %d à la lecture d'une description dans un fichier STAR-CCM+."
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:993
+#: preprocessor/pre-post/ecs_pre_ccm.c:1007
 #, c-format
 msgid "Error %d reading processor information in STAR-CCM+ file."
 msgstr ""
 "Erreur %d à la lecture de données processeur dans un fichier STAR-CCM+."
 
-#: preprocessor/pre-post/ecs_pre_ccm.c:1000
+#: preprocessor/pre-post/ecs_pre_ccm.c:1014
 #, c-format
 msgid ""
 "Error %d reading vertices and topology information\n"
@@ -9153,26 +9154,18 @@ msgstr ""
 "Erreur %d à la lecture d'informations sur les sommets et la topologie\n"
 "dans un fichier STAR-CCM+ file."
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:385
-#: preprocessor/pre-post/ecs_pre_cgns.c:393
-#: preprocessor/pre-post/ecs_pre_cgns.c:624
-#: preprocessor/pre-post/ecs_pre_cgns.c:652
-#: preprocessor/pre-post/ecs_pre_cgns.c:811
-#: preprocessor/pre-post/ecs_pre_cgns.c:951
-#: preprocessor/pre-post/ecs_pre_cgns.c:1097
-#: preprocessor/pre-post/ecs_pre_cgns.c:1287
-#: preprocessor/pre-post/ecs_pre_cgns.c:2127
-#: preprocessor/pre-post/ecs_pre_cgns.c:3381
-#: preprocessor/pre-post/ecs_pre_cgns.c:3394
+#: preprocessor/pre-post/ecs_pre_cgns.c:392
 #, c-format
 msgid ""
 "CGNS error:\n"
-"%s"
+"%s\n"
+"\n"
+"This may be due to a CGNS library supporting only ADF (legacy)\n"
+"or HDF5 (future default) and the file not matching. In this case,\n"
+"running the adf2hdf of hdf2adf converters may solve the issue."
 msgstr ""
-"erreur CGNS :\n"
-"%s"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:388
+#: preprocessor/pre-post/ecs_pre_cgns.c:399
 #, c-format
 msgid ""
 "\n"
@@ -9181,12 +9174,30 @@ msgstr ""
 "\n"
 "  Le fichier contient plusieurs bases :\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:394
+#: preprocessor/pre-post/ecs_pre_cgns.c:404
+#: preprocessor/pre-post/ecs_pre_cgns.c:635
+#: preprocessor/pre-post/ecs_pre_cgns.c:663
+#: preprocessor/pre-post/ecs_pre_cgns.c:823
+#: preprocessor/pre-post/ecs_pre_cgns.c:963
+#: preprocessor/pre-post/ecs_pre_cgns.c:1111
+#: preprocessor/pre-post/ecs_pre_cgns.c:1301
+#: preprocessor/pre-post/ecs_pre_cgns.c:2141
+#: preprocessor/pre-post/ecs_pre_cgns.c:3396
+#: preprocessor/pre-post/ecs_pre_cgns.c:3409
+#, c-format
+msgid ""
+"CGNS error:\n"
+"%s"
+msgstr ""
+"erreur CGNS :\n"
+"%s"
+
+#: preprocessor/pre-post/ecs_pre_cgns.c:405
 #, c-format
 msgid "    Base %2d: %s\n"
 msgstr "    Base %2d : %s\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:397
+#: preprocessor/pre-post/ecs_pre_cgns.c:408
 #, c-format
 msgid ""
 "\n"
@@ -9197,7 +9208,7 @@ msgstr ""
 "  On n'a pas précisé de base ; on lit la première\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:400
+#: preprocessor/pre-post/ecs_pre_cgns.c:411
 #, c-format
 msgid ""
 "\n"
@@ -9208,11 +9219,11 @@ msgstr ""
 "  On a demandé la base numéro %d\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:404
+#: preprocessor/pre-post/ecs_pre_cgns.c:415
 msgid "no CGNS base in file.\n"
 msgstr "aucune base CGNS dans le fichier.\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:409
+#: preprocessor/pre-post/ecs_pre_cgns.c:420
 #, c-format
 msgid ""
 "The mesh number requested (%d) is higher than\n"
@@ -9223,7 +9234,7 @@ msgstr ""
 "au nombre de bases définies (%d) dans le fichier\n"
 "%s.\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:439
+#: preprocessor/pre-post/ecs_pre_cgns.c:450
 #, c-format
 msgid ""
 "CGNS: error closing file \"%s\":\n"
@@ -9232,19 +9243,19 @@ msgstr ""
 "CGNS : échec à la fermeture du fichier \"%s\" :\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:546
+#: preprocessor/pre-post/ecs_pre_cgns.c:557
 msgid "cartesian"
 msgstr "cartésiennes"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:547
+#: preprocessor/pre-post/ecs_pre_cgns.c:558
 msgid "cylindrical"
 msgstr "cylindriques"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:548
+#: preprocessor/pre-post/ecs_pre_cgns.c:559
 msgid "spherical"
 msgstr "sphériques"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:670
+#: preprocessor/pre-post/ecs_pre_cgns.c:681
 #, c-format
 msgid ""
 "\n"
@@ -9253,7 +9264,7 @@ msgstr ""
 "\n"
 "    Zone %d : \"%s\" ; type \"%s\"\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:678
+#: preprocessor/pre-post/ecs_pre_cgns.c:690
 #, c-format
 msgid ""
 "\n"
@@ -9262,7 +9273,7 @@ msgstr ""
 "\n"
 "      %d (%d x %d) sommets ; %d (%d x %d) cellules\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:688
+#: preprocessor/pre-post/ecs_pre_cgns.c:700
 #, c-format
 msgid ""
 "\n"
@@ -9271,7 +9282,7 @@ msgstr ""
 "\n"
 "      %d (%d x %d x %d) sommets ; %d (%d x %d x %d) cellules\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:699
+#: preprocessor/pre-post/ecs_pre_cgns.c:711
 #, c-format
 msgid ""
 "\n"
@@ -9280,17 +9291,17 @@ msgstr ""
 "\n"
 "      %d sommets ; %d cellules\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:711
+#: preprocessor/pre-post/ecs_pre_cgns.c:723
 #, c-format
 msgid "      (%s coordinates, \"%s\" precision, unit \"%s\")\n"
 msgstr "      (coordonnées %s, précision \"%s\", unité \"%s\")\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:717
+#: preprocessor/pre-post/ecs_pre_cgns.c:729
 #, c-format
 msgid "      %d time-varying coordinates (the first are used)\n"
 msgstr "      %d coordonnées temporelles (on prend les premières)\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:815
+#: preprocessor/pre-post/ecs_pre_cgns.c:827
 #, c-format
 msgid ""
 "      Section %2d: \"%s\";\n"
@@ -9299,7 +9310,7 @@ msgstr ""
 "      Section %2d : \"%s\" ;\n"
 "                   (indices %d à %d, type \"%s\")\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:840
+#: preprocessor/pre-post/ecs_pre_cgns.c:852
 #, c-format
 msgid ""
 "The CGNS mesh read contains multizone (\"one to one\")\n"
@@ -9312,7 +9323,7 @@ msgstr ""
 "automatiquement par le Préprocesseur.\n"
 "-> Utilisez un recollement conforme approprié\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:848
+#: preprocessor/pre-post/ecs_pre_cgns.c:860
 #, c-format
 msgid ""
 "The CGNS mesh read contains non-conforming (\"abutting\")\n"
@@ -9325,7 +9336,7 @@ msgstr ""
 "automatiquement par le Préprocesseur.\n"
 "-> Utilisez un recollement conforme approprié\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:856
+#: preprocessor/pre-post/ecs_pre_cgns.c:868
 #, c-format
 msgid ""
 "The CGNS mesh read contains (\"overset\") connectivity\n"
@@ -9335,12 +9346,12 @@ msgstr ""
 "multizone par recouvrement ( \"overset\") qui ne sont pas\n"
 "pris en compte par le Préprocesseur.\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:957
+#: preprocessor/pre-post/ecs_pre_cgns.c:969
 #, c-format
 msgid "  CGNS boundary condition information:\n"
 msgstr "  Conditions aux limites CGNS indiquées :\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:982
+#: preprocessor/pre-post/ecs_pre_cgns.c:994
 #, c-format
 msgid ""
 "\n"
@@ -9349,17 +9360,17 @@ msgstr ""
 "\n"
 "    Zone %d\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:1028
+#: preprocessor/pre-post/ecs_pre_cgns.c:1040
 #, c-format
 msgid "      BC %2d: \"%s\" (\"%s\")\n"
 msgstr "      CL %2d : \"%s\" (\"%s\")\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:1037
+#: preprocessor/pre-post/ecs_pre_cgns.c:1050
 #, c-format
 msgid "      BC %2d: \"%s\" (\"%s\" on \"%s\")\n"
 msgstr "      CL %2d : \"%s\" (\"%s\" sur \"%s\")\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:1299
+#: preprocessor/pre-post/ecs_pre_cgns.c:1313
 #, c-format
 msgid ""
 "Cylindrical or spherical coordinates with unknown\n"
@@ -9368,7 +9379,7 @@ msgstr ""
 "Coordonnées cylindriques ou sphériques avec unité\n"
 "d'angle non définie ou inconnue (-> on suppose des radians)\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3350
+#: preprocessor/pre-post/ecs_pre_cgns.c:3365
 #, c-format
 msgid ""
 "\n"
@@ -9381,8 +9392,8 @@ msgstr ""
 "Lecture du fichier de maillage au format CGNS\n"
 "------------------------------\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3354
-#: preprocessor/pre-post/ecs_pre_gambit.c:1757
+#: preprocessor/pre-post/ecs_pre_cgns.c:3369
+#: preprocessor/pre-post/ecs_pre_gambit.c:1756
 #: preprocessor/pre-post/ecs_pre_gmsh.c:937
 #: preprocessor/pre-post/ecs_pre_ideas.c:1873
 #: preprocessor/pre-post/ecs_pre_med.c:1473
@@ -9397,36 +9408,36 @@ msgstr ""
 "\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3369
+#: preprocessor/pre-post/ecs_pre_cgns.c:3384
 #, c-format
 msgid "  CGNS version       : %3.1f\n"
 msgstr "  Version CGNS       : %3.1f\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3375
+#: preprocessor/pre-post/ecs_pre_cgns.c:3390
 msgid "  Title              : "
 msgstr "  Titre              : "
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3383
+#: preprocessor/pre-post/ecs_pre_cgns.c:3398
 #, c-format
 msgid "  Base name          : %s\n"
 msgstr "  Nom de la base     : %s\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3384
+#: preprocessor/pre-post/ecs_pre_cgns.c:3399
 #, c-format
 msgid "  Physical dimension : %d\n"
 msgstr "  Dimension physique : %d\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3385
+#: preprocessor/pre-post/ecs_pre_cgns.c:3400
 #, c-format
 msgid "  Cell dimension     : %d\n"
 msgstr "  Dimension cellule  : %d\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3395
+#: preprocessor/pre-post/ecs_pre_cgns.c:3410
 #, c-format
 msgid "  Number of zones    : %d\n"
 msgstr "  Nombre de zones    : %d\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3399
+#: preprocessor/pre-post/ecs_pre_cgns.c:3414
 #, c-format
 msgid "Mesh entities are of dimension: %d\n"
 msgstr "Les entités de maillage sont de dimension : %d\n"
@@ -10045,7 +10056,7 @@ msgstr "                          code1 :   %d (%s)\n"
 msgid "                          code%1d:   %d\n"
 msgstr "                          code%1d :   %d\n"
 
-#: preprocessor/pre-post/ecs_pre_gambit.c:1753
+#: preprocessor/pre-post/ecs_pre_gambit.c:1752
 #, c-format
 msgid ""
 "\n"
@@ -10058,7 +10069,7 @@ msgstr ""
 "Lecture du fichier de maillage au format GAMBIT neutral\n"
 "------------------------------\n"
 
-#: preprocessor/pre-post/ecs_pre_gambit.c:1877
+#: preprocessor/pre-post/ecs_pre_gambit.c:1876
 #, c-format
 msgid ""
 "Error reading a GAMBIT mesh file:\n"
@@ -10071,7 +10082,7 @@ msgstr ""
 "Le nombre de groupes à lire est supérieur à celui\n"
 "défini après l'entête (%d).n"
 
-#: preprocessor/pre-post/ecs_pre_gambit.c:1902
+#: preprocessor/pre-post/ecs_pre_gambit.c:1901
 #, c-format
 msgid ""
 "Error reading a GAMBIT mesh file:\n"
@@ -10084,7 +10095,7 @@ msgstr ""
 "Le nombre de conditions aux limites à lire est\n"
 "supérieur à celui défini après l'entête (%d).n"
 
-#: preprocessor/pre-post/ecs_pre_gambit.c:1924
+#: preprocessor/pre-post/ecs_pre_gambit.c:1923
 #, c-format
 msgid ""
 "File \"%s\"\n"
@@ -10099,7 +10110,7 @@ msgstr ""
 "en compte automatiquement par le Préprocesseur.\n"
 "-> Utilisez un recollement conforme approprié\n"
 
-#: preprocessor/pre-post/ecs_pre_gambit.c:1942
+#: preprocessor/pre-post/ecs_pre_gambit.c:1941
 #, c-format
 msgid ""
 "Line %d of file \"%s\"\n"
@@ -10108,7 +10119,7 @@ msgstr ""
 "Ligne %d du fichier \"%s\"\n"
 ",la rubrique : \"%s\" est inconnue.\n"
 
-#: preprocessor/pre-post/ecs_pre_gambit.c:1957
+#: preprocessor/pre-post/ecs_pre_gambit.c:1956
 #, c-format
 msgid ""
 "Line %d of file \"%s\",\n"
@@ -10121,7 +10132,7 @@ msgstr ""
 "n'a pas été atteinte.\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre_gambit.c:1967
+#: preprocessor/pre-post/ecs_pre_gambit.c:1966
 #, c-format
 msgid ""
 "Error reading file \"%s\":\n"
@@ -10130,7 +10141,7 @@ msgstr ""
 "Erreur à la lecture du fichier \"%s\" :\n"
 "La section \"NODAL COORDINATES\" n'a pas été trouvée."
 
-#: preprocessor/pre-post/ecs_pre_gambit.c:1973
+#: preprocessor/pre-post/ecs_pre_gambit.c:1972
 #, c-format
 msgid ""
 "Error reading file \"%s\":\n"
@@ -10139,7 +10150,7 @@ msgstr ""
 "Erreur à la lecture du fichier \"%s\" :\n"
 "La section \"ELEMENTS/CELLS\" n'a pas été trouvée."
 
-#: preprocessor/pre-post/ecs_pre_gambit.c:1986
+#: preprocessor/pre-post/ecs_pre_gambit.c:1985
 #, c-format
 msgid ""
 "  Building mesh structure:\n"
@@ -10864,11 +10875,11 @@ msgstr "Signal SIGXCPU (temps CPU limite atteint) intercepté.\n"
 msgid "Signal %d intercepted !\n"
 msgstr "Signal %d intercepté !\n"
 
-#: preprocessor/util/ecs_def.c:264
+#: preprocessor/util/ecs_def.c:265
 msgid "Abnormal end"
 msgstr "Fin anormale"
 
-#: preprocessor/util/ecs_def.c:282
+#: preprocessor/util/ecs_def.c:283
 #, c-format
 msgid ""
 "\n"
@@ -10879,7 +10890,7 @@ msgstr ""
 "Avertissement\n"
 "=============\n"
 
-#: preprocessor/util/ecs_def.c:302
+#: preprocessor/util/ecs_def.c:303
 #, c-format
 msgid ""
 "\n"
