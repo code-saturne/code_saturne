@@ -1019,7 +1019,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         key = self.case['computer']
 
         script = os.path.join(self.case['scripts_path'], self.case['batchScript'][key])
-        batch1 = os.path.join(self.case['scripts_path'], "batch")
+        batch1 = os.path.join(self.case['scripts_path'], "batch.log")
         batch2 = batch1 + '~'
 
         if key == 'station':

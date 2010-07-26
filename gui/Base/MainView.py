@@ -751,7 +751,7 @@ class MainView(QMainWindow, Ui_MainForm):
                     if v:
                         self.case['computer'] = k
                         mdl = BatchRunningModel(self.case)
-                        mdl.updateBatchScriptFile('PARAM')
+                        mdl.updateBatchScriptFile('PARAMETERS')
             else:
                 msg = self.tr("Saving aborted")
                 self.statusbar.showMessage(msg, 2000)

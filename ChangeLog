@@ -1,3 +1,10 @@
+* 26/07/2010 - David Monfort <david.monfort@edf.fr>
+  Minor corrections and changes in the graphical interface code.
+  modified routines:
+    gui/Pages/BatchRunningView.py
+    gui/Pages/BatchRunningModel.py
+    gui/Base/MainView.py
+
 * 23/07/2010 - David Monfort <david.monfort@edf.fr>
   Fix two issues preventing the partitioner to be compiled without MPI
   support.

@@ -122,7 +122,6 @@ class BatchRunningModel(Model):
         self.dicoValues['N_PROCS'] = None
         self.dicoValues['PARTITION_LIST'] = None
         self.dicoValues['PARAMETERS'] = None
-        self.dicoValues['SOLCOM'] = False
         self.dicoValues['CHECK_ARGS'] = None
         self.dicoValues['OUTPUT_ARGS'] = None
         self.dicoValues['HOSTS_LIST'] = None
@@ -395,8 +394,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         self.case['batchScript'] = {'pbs': 'lance_PBS', 'lsf': 'lance_LSF', 'station': 'lance_test'}
         self.case['backupBatchScript'] = {'pbs': 'yes', 'lsf': 'yes', 'station': 'yes'}
         lance_test = "# test \n"\
-        "#SOLCOM=6\n"\
-        "SOLCOM=False\n"\
         "PARAMETERS='NEW.xml'\n"\
         "N_PROCS=2\n"\
         "HOSTS_LIST=None\n"\
@@ -540,7 +537,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'PBS_nodes': '1',
         'MESHES': ['mail1.des', 'mail2.des', 'mail3.des'],
         'PBS_JOB_NAME': '',
-        'SOLCOM': False,
         'USER_OUTPUT_FILES': ['titi'],
         'PARAMETERS': 'NEW.xml',
         'N_PROCS': 2,
@@ -582,7 +578,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'PBS_nodes': '16',
         'MESHES': ['mail1.des', 'mail2.des', 'mail3.des'],
         'PBS_JOB_NAME': 'super_toto',
-        'SOLCOM': False,
         'PARAMETERS': 'NEW.xml',
         'N_PROCS': None,
         'USER_INPUT_FILES': None,
