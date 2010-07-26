@@ -1,24 +1,24 @@
 #-------------------------------------------------------------------------------
 #
-# Batch options for LSF (example: CCRT's Platine)
-# =====================
+# Batch options for MOAB (example: CCRT's Platine or Titane)
+# ======================
 #
-#BSUB -n 2
-#BSUB -W 00:05
-#BSUB -o nameandcaseo.%J
-#BSUB -e nameandcasee.%J
-#BSUB -J nameandcase
+#MSUB -n 2
+#MSUB -T 300
+#MSUB -o nameandcaseo.%J
+#MSUB -e nameandcasee.%J
+#MSUB -r nameandcase
 #
 #  -n : number of processors
-#  -W : walltime as hh:mm
+#  -T : walltime in seconds
 #  -o : output file name
 #  -e : error file name
-#  -J : job name
+#  -r : job name
 #
 #-------------------------------------------------------------------------------
 
-# Change to submission drectory
-cd $LS_SUBCWD
+# Change to submission directory
+cd $BRIDGE_MSUB_PWD
 
 # Launch runcase script
 ./runcase

@@ -403,12 +403,9 @@ class Study:
             shutil.copy(os.path.join(datadir, 'batch', batchfile),
                         os.path.join(scripts, 'batch'))
 
-            kwd1 = re.compile('nameandcase')
-            kwd2 = re.compile('CASEDIRNAME')
+            kwd = re.compile('nameandcase')
 
-            repbase = os.getcwd()
-            studyname     = string.lower(self.name)
-            studycasename = studyname + string.lower(casename)
+            studycasename = string.lower(self.name) + string.lower(casename)
             # In the cluster, names are limited to 15 caracters
             studycasename = studycasename[:15]
 
@@ -419,8 +416,7 @@ class Study:
             fdt = open(batchfile_tmp,'w')
 
             for line in fd:
-                line = re.sub(kwd1, studycasename, line)
-                line = re.sub(kwd2, repbase, line)
+                line = re.sub(kwd, repbase, line)
                 fdt.write(line)
 
             fd.close()

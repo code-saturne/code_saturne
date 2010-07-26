@@ -30,8 +30,8 @@
 #
 #-------------------------------------------------------------------------------
 
-# Case directory
-casedir=CASEDIRNAME
+# Change to submission drectory
+cd $LOADL_STEP_INITDIR
 
 # Launch runcase script
-$casedir/SCRIPTS/runcase
+./runcase

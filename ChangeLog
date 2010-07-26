@@ -1,4 +1,16 @@
 * 26/07/2010 - David Monfort <david.monfort@edf.fr>
+  Add a MOAB batch submission file and use environment variable for all.
+  modified file:
+    extras/batch/batch.MOAB
+  modified files:
+    extras/batch/batch.LL
+    extras/batch/batch.LSF
+    extras/batch/batch.PBS
+    extras/batch/batch.SGE
+  modified script:
+    bin/cs_create.py
+
+* 26/07/2010 - David Monfort <david.monfort@edf.fr>
   Update cs_solver completion and add cs_io_dump completion.
   modified file:
     extra/bash_completion/code_saturne

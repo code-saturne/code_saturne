@@ -17,8 +17,8 @@
 #
 #-------------------------------------------------------------------------------
 
-# Case directory
-casedir=CASEDIRNAME
+# Change to submission directory
+cd $PBS_O_WORKDIR
 
 # Launch runcase script
-$casedir/SCRIPTS/runcase
+./runcase
