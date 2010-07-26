@@ -41,6 +41,7 @@ and the following classes:
 import os, sys, pwd, shutil, stat
 import types, string, re, fnmatch
 from optparse import OptionParser
+import ConfigParser
 
 import cs_config
 
@@ -369,16 +370,9 @@ class Study:
         shutil.copy(os.path.join(datadir, 'runcase'), scripts)
         runcase = os.path.join(scripts, 'runcase')
 
-        kwd1 = re.compile('nameandcase')
-        kwd2 = re.compile('STUDYNAME')
-        kwd3 = re.compile('CASENAME')
-        kwd4 = re.compile('CASEDIRNAME')
+        kwd = re.compile('CASEDIRNAME')
 
         repbase = os.getcwd()
-        studyname     = string.lower(self.name)
-        studycasename = studyname + string.lower(casename)
-        # In the cluster, names are limited to 15 caracters
-        studycasename = studycasename[:15]
 
         runcase_tmp = runcase + '.tmp'
 
@@ -386,10 +380,7 @@ class Study:
         fdt = open(runcase_tmp,'w')
 
         for line in fd:
-            line = re.sub(kwd1, studycasename, line)
-            line = re.sub(kwd2, self.name, line)
-            line = re.sub(kwd3, casename, line)
-            line = re.sub(kwd4, repbase, line)
+            line = re.sub(kwd, repbase, line)
             fdt.write(line)
 
         fd.close()
@@ -397,6 +388,43 @@ class Study:
 
         shutil.move(runcase_tmp, runcase)
         make_executable(runcase)
+
+        # On clusters, also copy the batch card (if defined)
+
+        config = ConfigParser.ConfigParser()
+        config.read([os.path.expanduser('~/.code_saturne.cfg'),
+                     os.path.join(cs_config.dirs.sysconfdir,
+                                  'code_saturne.cfg')])
+
+        if config.has_option('install', 'batch'):
+
+            batchfile = 'batch.' + config.get('install', 'batch')
+
+            shutil.copy(os.path.join(datadir, 'batch', batchfile),
+                        os.path.join(scripts, 'batch'))
+
+            kwd = re.compile('nameandcase')
+
+            repbase = os.getcwd()
+            studyname     = string.lower(self.name)
+            studycasename = studyname + string.lower(casename)
+            # In the cluster, names are limited to 15 caracters
+            studycasename = studycasename[:15]
+
+            batchfile = os.path.join(scripts, 'batch')
+            batchfile_tmp = batchfile + '.tmp'
+
+            fd  = open(batchfile, 'r')
+            fdt = open(batchfile_tmp,'w')
+
+            for line in fd:
+                line = re.sub(kwd, repbase, line)
+                fdt.write(line)
+
+            fd.close()
+            fdt.close()
+
+            shutil.move(batchfile_tmp, batchfile)
 
 
     def dump(self):

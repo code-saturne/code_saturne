@@ -1,3 +1,8 @@
+* 26/07/2010 - Maya Milliez <maya.milliez@edf.fr>
+  English translation.
+  modified routine:
+    users/base/usatcl.f90
+
 * 26/07/2010 - David Monfort <david.monfort@edf.fr>
   Minor corrections and changes in the graphical interface code.
   modified routines:

@@ -56,6 +56,8 @@ m4_define([cs_version_extra], [-rc1])
 m4_define([cs_version_string],
           [cs_major_version.cs_minor_version.cs_release_version@&t@cs_version_extra])
 
+CS_GET_VERSION
+
 AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr])
 AC_CONFIG_SRCDIR([src/apps/cs_solver.c])
 
@@ -76,6 +78,9 @@ AM_MAINTAINER_MODE
 # Enable silent rules with "./configure --enable-silent-rules" or "make V=0"
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 
+# Remember the configure command line
+CONFIG_CMD=`echo "$0 $ac_configure_args"`
+
 #------------------------------------------------------------------------------
 # Checks for programs.
 #------------------------------------------------------------------------------
@@ -90,7 +95,14 @@ user_LDFLAGS=$LDFLAGS
 user_LIBS=$LIBS
 
 AC_PROG_CC
+#if test "x$ac_cv_prog_ac_ct_CC" = x; then
+#  AC_MSG_ERROR([no C compiler found, please install one])
+#fi
+
 AC_PROG_FC
+#if test "x$ac_cv_prog_ac_ct_FC" = x; then
+#  AC_MSG_ERROR([no Fortran 90 compiler found, please install one])
+#fi
 
 AC_PROG_INSTALL
 AC_PROG_LN_S

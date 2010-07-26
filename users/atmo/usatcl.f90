@@ -47,12 +47,14 @@ subroutine usatcl &
    rdevel , rtuser , ra     )
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-!    ROUTINE UTILISATEUR POUR LA VERSION PART. ATMOSPHERIQUE
-!    REMPLISSAGE DU TABLEAU DE CONDITIONS AUX LIMITES
-!    (ICODCL,RCODCL) POUR LES VARIABLES INCONNUES
+!    User subroutine for the atmospheric module.
+
+!    Fill boundary conditions arrays (icodcl, rcodcl) for unknown variables.
+
+!    (similar to usclim.f90)
 
 
 ! Introduction
@@ -121,8 +123,7 @@ subroutine usatcl &
 !  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
+! izfppp(nfabor)   ! te ! --> ! boundary face zone number                      !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -245,9 +246,10 @@ double precision tpent
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
 
 if(iihmpr.eq.1) then
@@ -257,27 +259,27 @@ else
   call csexit (1)
 endif
 
- 9000 format(                                                           &
+ 9000 format(                                                     &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in definition of boundary conditions',/,   &
+'@    =======',/,                                                 &
+'@      for the atmospheric module                          ',/,  &
+'@     The user subroutine ''usatcl'' must be completed.',/,      &
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES COND. LIM.      ',/,&
-'@    =========                                               ',/,&
-'@     MODULE ECOULEMENTS ATMOSPHERIQUES                      ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR usatcl DOIT ETRE COMPLETE',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',/)
+
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 
 
 !===============================================================================
-! 1.  INITIALISATIONS
-
+! 1.  Initialization
 !===============================================================================
 
 idebia = idbia0
@@ -292,82 +294,81 @@ rugd=0.1d0
 rugt=0.1d0
 
 !===============================================================================
-! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR LES FACES DE BORD
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LA CONDITION LIMITE
+! 2.  Assign boundary conditions to boundary faces here
 
-!          IMPOSER ICI LES CONDITIONS LIMITES SUR LES FACES DE BORD
-
+!     One may use selection criteria to filter boundary case subsets
+!       Loop on faces from a subset
+!         Set the boundary condition for each face
 !===============================================================================
 
+! --- For boundary faces of color 11,
+!       assign an inlet boundary condition for all phases prescribed from the meteo profile
+!       with automatic choice between inlet/ outlet according to the meteo profile
 
-! --- On impose en couleur 11 une condition basee sur le profil meteo
-!       avec choix automatique entre entree et sortie a partir du profil
-
-CALL GETFBR('11',NLELT,LSTELT)
-
-!   - Numero de zone (on numerote de 1 a n)
+call getfbr('11',nlelt,lstelt)
+!==========
+!   - Zone number (from 1 to n)
 izone = 1
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!     - Reperage de la zone a laquelle appartient la face
+!     - Zone to which the face belongs
   izfppp(ifac) = izone
 
-!     - On indique que les conditions a la limite seront tirees
-!         du profil meteo
+!     - Boundary conditions are prescribed from the meteo profile
   iprofm(izone) = 1
 
 enddo
 
-! --- On impose en couleur 21 une condition d'entree avec des valeurs
-!       tirees du profil meteo
 
-CALL GETFBR('21',NLELT,LSTELT)
+! ---For boundary faces of color 21,
+!     assign an inlet boundary condition for all phases prescribed from the meteo profile
 
-!   - Numero de zone (on numerote de 1 a n)
+call getfbr('21',nlelt,lstelt)
+!==========
+!   -  Zone number (from 1 to n)
 izone = 2
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!     - Reperage de la zone a laquelle appartient la face
+!     - Zone to which the face belongs
   izfppp(ifac) = izone
 
-!     - On indique que les conditions a la limite seront tirees
-!         du profil meteo
+!     - Boundary conditions are prescribed from the meteo profile
   iprofm(izone) = 1
 
-!     - On force les faces a etre des faces d'entree
+!     - Assign inlet boundary conditions
   do iphas = 1, nphas
     itypfb(ifac,iphas) = ientre
   enddo
 
 enddo
 
-! --- On impose en couleur 31 une condition d'entree avec des valeurs
-!       tirees du profil meteo, sauf pour les variables dynamiques sur
-!       lesquelles on impose un profil analytique rugueux
+! --- For boundary faces of color 31,
+!       assign an inlet boundary condition for all phases prescribed from the meteo profile
+!       except for dynamical variables which are prescribed with a rough log law.
 
-CALL GETFBR('31',NLELT,LSTELT)
+call getfbr('31',nlelt,lstelt)
+!==========
 
-!   - Numero de zone (on numerote de 1 a n)
+!   - Zone number (from 1 to n)
 izone = 3
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!     - Reperage de la zone a laquelle appartient la face
+!     - Zone to which the face belongs
   izfppp(ifac) = izone
 
-!     - On indique que les conditions a la limite seront tirees
-!         du profil meteo
+!     - Boundary conditions are prescribed from the meteo profile
   iprofm(izone) = 1
+
+!     - Dynamical variables are prescribed with a rough log law
 
   ustar=xkappa*xuref/log((zref+rugd)/rugd)
   xuent=ustar/xkappa*log((zent+rugd)/rugd)
@@ -383,7 +384,7 @@ do ilelt = 1, nlelt
     rcodcl(ifac,iv(iphas),1) = xvent
     rcodcl(ifac,iw(iphas),1) = 0.d0
 
-!     ITYTUR est un indicateur qui vaut ITURB/10
+    ! itytur is a flag equal to iturb/10
     if    (itytur(iphas).eq.2) then
 
       rcodcl(ifac,ik(iphas),1)  = xkent
@@ -417,88 +418,87 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- On impose en couleur 12 une sortie pour toutes les phases
-CALL GETFBR('12',NLELT,LSTELT)
+! --- Prescribe at boundary faces of color '12' an outlet for all phases
+call getfbr('12', nlelt, lstelt)
 !==========
 
-!   - Numero de zone (on numerote de 1 a n)
+!   - Zone number (from 1 to n)
 izone = 4
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!     - Reperage de la zone a laquelle appartient la face
+!     - Zone to which the zone belongs
   izfppp(ifac) = izone
 
-!          SORTIE : FLUX NUL VITESSE ET TEMPERATURE, PRESSION IMPOSEE
-!            Noter que la pression sera recalee a P0
-!                sur la premiere face de sortie libre (ISOLIB)
+  ! Outlet: zero flux for velocity and temperature, prescribed pressure
+  !         Note that the pressure will be set to P0 at the first
+  !         free outlet face (isolib)
 
   do iphas = 1, nphas
     itypfb(ifac,iphas)   = isolib
-
   enddo
 
 enddo
 
-! --- On impose en couleur 15 une paroi rugueuse pour toutes les phases
-CALL GETFBR('15',NLELT,LSTELT)
+! --- Prescribe at boundary faces of color 15 a rough wall for all phases
+call getfbr('15', nlelt, lstelt)
 !==========
 
-!   - Numero de zone (on numerote de 1 a n)
+!   - Zone number (from 1 to n)
 izone = 5
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!          PAROI : DEBIT NUL (FLUX NUL POUR LA PRESSION)
-!                  FROTTEMENT RUGUEUX POUR LES VITESSES (+GRANDEURS TURB)
-!                  FLUX NUL SUR LES SCALAIRES
+  ! Wall: zero flow (zero flux for pressure)
+  !       rough friction for velocities (+ turbulent variables)
+  !       zero flux for scalars
 
-!     - Reperage de la zone a laquelle appartient la face
+!     - Zone to which the zone belongs
   izfppp(ifac) = izone
 
   do iphas = 1, nphas
     itypfb(ifac,iphas)   = iparug
 
-    ! Rugosite pour la vitesse
+!     Roughness for velocity: rugd
     rcodcl(ifac,iu(iphas),3) = rugd
-    ! Rugosite pour les scalaires
-    !rcodcl(ifac,iv(iphas),3) = rugt
+
+!     Roughness for scalars (if required):
+!   rcodcl(ifac,iv(iphas),3) = rugd
+
+
+    if(iscalt(iphas).ne.-1) then
+
+    ! If temperature prescribed to 20 with a rough wall law (scalar ii=1)
+    ! (with thermal roughness specified in rcodcl(ifac,iv(iphas),3)) :
+    ! ii = 1
+    ! icodcl(ifac, isca(ii))    = 6
+    ! rcodcl(ifac, isca(ii),1)  = 293.15d0
+
+    ! If flux prescribed to 4.d0 (scalar ii=2):
+    ! ii = 2
+    ! icodcl(ifac, isca(ii))    = 3
+    ! rcodcl(ifac, isca(ii), 3) = 4.D0
+
+    endif
   enddo
-
-  if(nscal.gt.0) then
-
-! SI TEMPERATURE IMPOSEE A 20 AVEC LOI DE PAROI RUGUEUSE (SCALAIRE II=1)
-!    AVEC RUGOSITE DE 1cm
-!            II = 1
-!            ICODCL(IFAC,ISCA(II))   = 6
-!            RCODCL(IFAC,ISCA(II),1) = 20.D0
-!            RCODCL(IFAC,IV(II),3) = 0.001D0
-
-! SI FLUX IMPOSE A 4.D0 (SCALAIRE II=2)
-!            II = 2
-!            ICODCL(IFAC,ISCA(II))   = 3
-!            RCODCL(IFAC,ISCA(II),3) = 4.D0
-
-  endif
-
 enddo
 
-! --- On impose en couleur 4 une symetrie pour toutes les phases
-CALL GETFBR('4',NLELT,LSTELT)
+! --- Prescribe at boundary faces of color 4 a symmetry for all phases
+call getfbr('4', nlelt, lstelt)
 !==========
 
-!   - Numero de zone (on numerote de 1 a n)
+!   - Zone number (from 1 to n)
 izone = 6
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!     - Reperage de la zone a laquelle appartient la face
+!     - Zone to which the zone belongs
   izfppp(ifac) = izone
 
   do iphas = 1, nphas
@@ -509,11 +509,11 @@ do ilelt = 1, nlelt
 enddo
 
 !----
-! FORMATS
+! Formats
 !----
 
 !----
-! FIN
+! End
 !----
 
 return
