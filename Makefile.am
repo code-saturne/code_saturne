@@ -174,6 +174,15 @@ data/thch/dp_transfo \
 data/thch/JANAF \
 data/thch/meteo
 
+# Install batch cards for cluster management
+
+batchdir = ${pkgdatadir}/batch
+batch_DATA = \
+extras/batch/batch.LL \
+extras/batch/batch.LSF \
+extras/batch/batch.PBS \
+extras/batch/batch.SGE
+
 # Install man pages
 
 if HAVE_PARTITIONER

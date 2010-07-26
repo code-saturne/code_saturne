@@ -1,0 +1,24 @@
+#-------------------------------------------------------------------------------
+#
+# Batch options for LSF (example: CCRT's platine)
+# =====================
+#
+#BSUB -n 2
+#BSUB -W 00:05
+#BSUB -o nameandcaseo.%J
+#BSUB -e nameandcasee.%J
+#BSUB -J nameandcase
+#
+#  -n : number of processors
+#  -W : walltime as hh:mm
+#  -o : output file name
+#  -e : error file name
+#  -J : job name
+#
+#-------------------------------------------------------------------------------
+
+# Case directory
+casedir=CASEDIRNAME
+
+# Launch runcase script
+$casedir/SCRIPTS/runcase

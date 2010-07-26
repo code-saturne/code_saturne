@@ -1,4 +1,17 @@
 * 26/07/2010 - David Monfort <david.monfort@edf.fr>
+  Add a batch card management through the config file.
+  added files:
+    extras/batch
+    extras/batch/batch.LL
+    extras/batch/batch.LSF
+    extras/batch/batch.PBS
+    extras/batch/batch.SGE
+  modified scripts:
+    bin/cs_create.py
+    bin/runcase.in
+    Makefile.am
+
+* 26/07/2010 - David Monfort <david.monfort@edf.fr>
   Add a space to the valgrind command to avoid potential issues.
   modified script:
     bin/cs_case_domain.py
