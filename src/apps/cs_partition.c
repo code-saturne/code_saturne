@@ -1695,9 +1695,9 @@ _read_input(const char   *path,
                                     cs_glob_mpi_comm);
 #else
   inp = cs_io_initialize_with_index(path,
-				    "Face-based mesh definition, R0",
-				    cs_glob_io_hints,
-				    CS_IO_ECHO_OPEN_CLOSE);
+                                    "Face-based mesh definition, R0",
+                                    cs_glob_io_hints,
+                                    CS_IO_ECHO_OPEN_CLOSE);
 #endif
 
   bft_printf("\n");
