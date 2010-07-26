@@ -1,4 +1,9 @@
 * 26/07/2010 - David Monfort <david.monfort@edf.fr>
+  Update cs_solver completion and add cs_io_dump completion.
+  modified file:
+    extra/bash_completion/code_saturne
+
+* 26/07/2010 - David Monfort <david.monfort@edf.fr>
   Update French dictionnary.
   modified file:
     po/fr.po
