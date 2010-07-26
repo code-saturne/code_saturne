@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-06-14 18:55+0200\n"
+"POT-Creation-Date: 2010-07-21 19:14+0200\n"
 "PO-Revision-Date: 2010-01-11 12:50+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: src/apps/cs_solver.c:296
+#: src/apps/cs_solver.c:297
 #, c-format
 msgid ""
 "\n"
@@ -27,7 +27,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/apps/cs_solver.c:302
+#: src/apps/cs_solver.c:303
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -35,11 +35,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:358
+#: src/apps/cs_solver.c:359
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:372
+#: src/apps/cs_solver.c:373
 #, c-format
 msgid ""
 "\n"
@@ -48,7 +48,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:388
+#: src/apps/cs_solver.c:389
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -56,7 +56,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:410
+#: src/apps/cs_solver.c:411
 #, c-format
 msgid ""
 "\n"
@@ -71,7 +71,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:420
+#: src/apps/cs_solver.c:421
 #, c-format
 msgid ""
 "\n"
@@ -84,7 +84,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:426
+#: src/apps/cs_solver.c:427
 #, c-format
 msgid ""
 "\n"
@@ -99,7 +99,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:488
+#: src/apps/cs_solver.c:489
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -1012,16 +1012,16 @@ msgstr ""
 msgid "Invalid number of coal-> dp_FCP: %i xml: %i\n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:577 src/base/cs_gui.c:4809
-#: src/base/cs_gui.c:4857 src/base/cs_gui.c:4905 src/base/cs_gui.c:4953
-#: src/base/cs_gui.c:5027 src/base/cs_gui_mobile_mesh.c:281
+#: src/base/cs_gui_boundary_conditions.c:577 src/base/cs_gui.c:4812
+#: src/base/cs_gui.c:4860 src/base/cs_gui.c:4908 src/base/cs_gui.c:4956
+#: src/base/cs_gui.c:5030 src/base/cs_gui_mobile_mesh.c:281
 #, c-format
 msgid "Error: can not interprete expression: %s\n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:583 src/base/cs_gui.c:4813
-#: src/base/cs_gui.c:4861 src/base/cs_gui.c:4909 src/base/cs_gui.c:4957
-#: src/base/cs_gui.c:5031 src/base/cs_gui_mobile_mesh.c:291
+#: src/base/cs_gui_boundary_conditions.c:583 src/base/cs_gui.c:4816
+#: src/base/cs_gui.c:4864 src/base/cs_gui.c:4912 src/base/cs_gui.c:4960
+#: src/base/cs_gui.c:5034 src/base/cs_gui_mobile_mesh.c:291
 #, c-format
 msgid "Error: can not find the required symbol: %s\n"
 msgstr ""
@@ -1165,49 +1165,49 @@ msgid ""
 " label not found"
 msgstr ""
 
-#: src/base/cs_gui.c:2630
+#: src/base/cs_gui.c:2633
 #, c-format
 msgid "Invalid turbulence model: %s.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:2740
+#: src/base/cs_gui.c:2743
 #, c-format
 msgid "Scalar: %i and its variance: %i are the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3102
+#: src/base/cs_gui.c:3105
 #, c-format
 msgid ""
 "The kernel variables number %i and the calculated one by the GUI %i are not "
 "the same.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3550
+#: src/base/cs_gui.c:3553
 msgid "Specific heat value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3571
+#: src/base/cs_gui.c:3574
 msgid "mass molar value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3579
+#: src/base/cs_gui.c:3582
 msgid "Density value is zero or not found in the xml file.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:3835 src/base/cs_gui_radiative_transfer.c:744
+#: src/base/cs_gui.c:3838 src/base/cs_gui_radiative_transfer.c:744
 #: src/base/cs_gui_specific_physics.c:532
 #, c-format
 msgid "number of properties is not correct: %i instead of: %i\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4212 src/base/cs_gui_particles.c:782
+#: src/base/cs_gui.c:4215 src/base/cs_gui_particles.c:782
 #: src/base/cs_gui_particles.c:788 src/base/cs_gui_particles.c:794
 #: src/base/cs_gui_radiative_transfer.c:845
 #, c-format
 msgid "Name of variable %i was never set.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4293 src/base/cs_selector.c:315
+#: src/base/cs_gui.c:4296 src/base/cs_selector.c:315
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -1220,7 +1220,7 @@ msgstr ""
 "\"%s\"\n"
 " ne correspond à aucune cellule.\n"
 
-#: src/base/cs_gui.c:5211 src/base/cs_gui_util.c:159
+#: src/base/cs_gui.c:5214 src/base/cs_gui_util.c:159
 #, c-format
 msgid "Unable to open the file: %s\n"
 msgstr ""
@@ -1819,7 +1819,7 @@ msgid ""
 "  It must be between [0, 90] and is here: %f\n"
 msgstr ""
 
-#: src/base/cs_join.c:1485
+#: src/base/cs_join.c:1486
 #, c-format
 msgid ""
 "\n"
@@ -1832,19 +1832,19 @@ msgstr ""
 "  Recollement numéro %d :\n"
 "\n"
 
-#: src/base/cs_join.c:1489
+#: src/base/cs_join.c:1490
 #, c-format
 msgid ""
 "\n"
 "  Joining for periodicity: %d\n"
 msgstr ""
 
-#: src/base/cs_join.c:1491
+#: src/base/cs_join.c:1492
 #, c-format
 msgid "  Selection criteria: \"%s\"\n"
 msgstr "  Critère de sélection : \"%s\"\n"
 
-#: src/base/cs_join.c:1494
+#: src/base/cs_join.c:1495
 #, c-format
 msgid ""
 "\n"
@@ -1859,7 +1859,7 @@ msgstr ""
 "    Angle maximum entre plans de faces recollées :      %8.5f\n"
 "\n"
 
-#: src/base/cs_join.c:1500
+#: src/base/cs_join.c:1501
 #, c-format
 msgid ""
 "  Advanced joining parameters:\n"
@@ -1876,18 +1876,18 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/base/cs_join.c:1521
+#: src/base/cs_join.c:1522
 msgid " Before joining"
 msgstr " Avant recollement"
 
-#: src/base/cs_join.c:1558
+#: src/base/cs_join.c:1559
 #, c-format
 msgid ""
 "\n"
 "  Number of faces to treat locally: %10d\n"
 msgstr ""
 
-#: src/base/cs_join.c:1640
+#: src/base/cs_join.c:1641
 msgid ""
 "\n"
 "Stop joining algorithm: no face selected...\n"
@@ -1895,11 +1895,11 @@ msgstr ""
 "\n"
 "Arrêt du recollement: aucune face sélectionnée...\n"
 
-#: src/base/cs_join.c:1648
+#: src/base/cs_join.c:1649
 msgid " After joining"
 msgstr " Après recollement"
 
-#: src/base/cs_join.c:1655
+#: src/base/cs_join.c:1656
 #, c-format
 msgid ""
 "\n"
@@ -1912,7 +1912,7 @@ msgstr ""
 "    temps écoulé :              %10.3g\n"
 "    temps CPU :                 %10.3g\n"
 
-#: src/base/cs_join.c:1686
+#: src/base/cs_join.c:1684
 #, c-format
 msgid ""
 "\n"
@@ -2525,32 +2525,32 @@ msgstr "  Ajout de la périodicité %d (translation [%10.4e, %10.4e, %10.4e]).\n
 msgid "  Adding periodicity %d (rotation).\n"
 msgstr "  Ajout de la périodicité %d (rotation).\n"
 
-#: src/base/cs_join_perio.c:825
+#: src/base/cs_join_perio.c:822
 #, c-format
 msgid "  Adding periodicity %d (general formulation).\n"
 msgstr "  Ajout de la périodicité %d (formulation générale).\n"
 
-#: src/base/cs_join_perio.c:897
+#: src/base/cs_join_perio.c:891
 #, c-format
 msgid ""
 " Periodicity number %d is not defined\n"
 " %d periodicities are defined\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:1209
+#: src/base/cs_join_perio.c:1218
 #, c-format
 msgid ""
 "  Apply periodicity to the local join mesh structure\n"
 "  New number of faces to treat locally: %8d\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:1222 src/base/cs_join_util.c:2441
+#: src/base/cs_join_perio.c:1231 src/base/cs_join_util.c:2441
 msgid ""
 "\n"
 "  Selected faces for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:1512
+#: src/base/cs_join_perio.c:1521
 #, c-format
 msgid ""
 "  Vertex state (%d) is not consistent.\n"
@@ -4260,7 +4260,7 @@ msgstr ""
 "Le nombre de cellules pour le rang %d est nul.\n"
 "(rapport nombre de cellules / nombre de processeurs trop faible)."
 
-#: src/base/cs_preprocessor_data.c:2470
+#: src/base/cs_preprocessor_data.c:2482
 #, c-format
 msgid ""
 "The algorithm selection indicator for domain partitioning\n"
@@ -4275,7 +4275,7 @@ msgstr ""
 "  2: partition basée sur une courbe fractale\n"
 "et non %d."
 
-#: src/base/cs_preprocessor_data.c:2515
+#: src/base/cs_preprocessor_data.c:2527
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
