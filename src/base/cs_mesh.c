@@ -282,8 +282,6 @@ _print_halo_info(const cs_mesh_t  *mesh,
                  double            halo_time,
                  double            ext_neighborhood_time)
 {
-  cs_halo_t  *halo = mesh->halo;
-
   /* Summary of the computional times */
 
   bft_printf(_("\n Halo creation times summary\n\n"));
@@ -443,7 +441,1144 @@ _print_cell_neighbor_info(const cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
- * Write a summary about mesh features in listing
+ * Compare periodic couples in global numbering form (qsort function).
+ *
+ * parameters:
+ *   x <-> pointer to first couple
+ *   y <-> pointer to second couple
+ *
+ * returns:
+ *   lexicographical
+ *----------------------------------------------------------------------------*/
+
+static int _compare_couples(const void *x, const void *y)
+{
+  int retval = 1;
+
+  const fvm_gnum_t *c0 = x;
+  const fvm_gnum_t *c1 = y;
+
+  if (c0[0] < c1[0])
+    retval = -1;
+
+  else if (c0[0] == c1[0]) {
+    if (c0[1] < c1[1])
+      retval = -1;
+    else if (c0[1] == c1[1])
+      retval = 0;
+  }
+
+  return retval;
+}
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Define parameters for building an vertices interface set structure on
+ * a given mesh.
+ *
+ * This version is used for distributed parallel mode.
+ *
+ * parameters:
+ *   mesh              <-- pointer to mesh structure
+ *   face_ifs          <-- pointer to face interface structure describing
+ *                         periodic face couples
+ *   p_n_perio_couples --> pointer to the number of periodic couples
+ *   p_perio_couples   --> pointer to the periodic couple list
+ *----------------------------------------------------------------------------*/
+
+static void
+_define_perio_vtx_couples_g(const cs_mesh_t             *mesh,
+                            const fvm_interface_set_t   *face_ifs,
+                            fvm_lnum_t                  *p_n_perio_couples[],
+                            fvm_gnum_t                 **p_perio_couples[])
+{
+  fvm_lnum_t  *n_perio_couples = NULL;
+  fvm_gnum_t  **perio_couples = NULL;
+
+  int i, j;
+  fvm_lnum_t k, l;
+
+  int perio_count = 0;
+  fvm_lnum_t  *send_index = NULL, *recv_index = NULL;
+  fvm_gnum_t  *send_num = NULL, *recv_num = NULL;
+  int  *tr_id = NULL;
+
+  const int n_perio = mesh->n_init_perio;
+  const int n_interfaces = fvm_interface_set_size(face_ifs);
+  const fvm_gnum_t *vtx_gnum = mesh->global_vtx_num;
+
+  /* List direct and reverse transforms */
+
+  BFT_MALLOC(n_perio_couples, n_perio, fvm_lnum_t);
+  BFT_MALLOC(perio_couples, n_perio, fvm_gnum_t *);
+
+  for (i = 0; i < n_perio; i++) {
+    n_perio_couples[i] = 0;
+    perio_couples[i] = NULL;
+  }
+
+  BFT_MALLOC(tr_id, n_perio*2, int);
+
+  for (i = 0; i < n_perio*2; i++) {
+    int rev_id = fvm_periodicity_get_reverse_id(mesh->periodicity, i);
+    if (i < rev_id) {
+      int parent_ids[2];
+      fvm_periodicity_get_parent_ids(mesh->periodicity, i, parent_ids);
+      if (parent_ids[0] < 0 && parent_ids[1] < 0) {
+        tr_id[perio_count*2] = i + 1;
+        tr_id[perio_count*2 + 1] = rev_id + 1;
+        perio_count++;
+      }
+    }
+  }
+  assert(perio_count == n_perio);
+
+  /* Count maximum vertex couples and build exchange index;
+     count only couples in direct periodicity direction, as the number
+     of faces in positive and reverse direction should match */
+
+  BFT_MALLOC(send_index, n_interfaces + 1, fvm_lnum_t);
+  BFT_MALLOC(recv_index, n_interfaces + 1, fvm_lnum_t);
+  send_index[0] = 0;
+  recv_index[0] = 0;
+
+  for (i = 0; i < n_interfaces; i++) {
+
+    fvm_lnum_t send_size = 0;
+    fvm_lnum_t recv_size = 0;
+
+    const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
+    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+
+    for (j = 0; j < n_perio; j++) {
+
+      const fvm_lnum_t tr_start = tr_index[tr_id[j*2]];
+      const fvm_lnum_t tr_end = tr_index[tr_id[j*2] + 1];
+      const fvm_lnum_t rev_start = tr_index[tr_id[j*2+1]];
+      const fvm_lnum_t rev_end = tr_index[tr_id[j*2+1] + 1];
+
+      for (k = rev_start; k < rev_end; k++) {
+        fvm_lnum_t l_id = loc_num[k] - 1;
+        send_size += (  mesh->i_face_vtx_idx[l_id+1]
+                      - mesh->i_face_vtx_idx[l_id]);
+      }
+      for (k = tr_start; k < tr_end; k++) {
+        fvm_lnum_t l_id = loc_num[k] - 1;
+        fvm_lnum_t n_vtx = (  mesh->i_face_vtx_idx[l_id+1]
+                            - mesh->i_face_vtx_idx[l_id]);
+        recv_size += n_vtx;
+        n_perio_couples[j] += n_vtx;
+      }
+    }
+
+    send_index[i+1] = send_index[i] + send_size;
+    recv_index[i+1] = recv_index[i] + recv_size;
+  }
+
+  BFT_MALLOC(send_num, send_index[n_interfaces], fvm_gnum_t);
+  BFT_MALLOC(recv_num, recv_index[n_interfaces], fvm_gnum_t);
+
+  /* Prepare send buffer (send reverse transformation values) */
+
+  for (i = 0, j = 0; i < n_interfaces; i++) {
+
+    const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
+    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+
+    for (j = 0, l = send_index[i]; j < n_perio; j++) {
+
+      const fvm_lnum_t start_id = tr_index[tr_id[j*2+1]];
+      const fvm_lnum_t end_id = tr_index[tr_id[j*2+1] + 1];
+
+      for (k = start_id; k < end_id; k++) {
+        fvm_lnum_t v_id;
+        fvm_lnum_t f_id = loc_num[k] - 1;
+        for (v_id = mesh->i_face_vtx_idx[f_id];
+             v_id < mesh->i_face_vtx_idx[f_id + 1];
+             v_id++)
+          send_num[l++] = vtx_gnum[mesh->i_face_vtx_lst[v_id - 1] - 1];
+      }
+    }
+  }
+
+  /* Exchange global vertex numbers */
+
+  {
+    MPI_Request  *request = NULL;
+    MPI_Status  *status  = NULL;
+
+    int request_count = 0;
+
+    BFT_MALLOC(request, n_interfaces*2, MPI_Request);
+    BFT_MALLOC(status, n_interfaces*2, MPI_Status);
+
+    for (i = 0; i < n_interfaces; i++) {
+      const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
+      int distant_rank = fvm_interface_rank(face_if);
+      MPI_Irecv(recv_num + recv_index[i],
+                recv_index[i+1] - recv_index[i],
+                FVM_MPI_GNUM,
+                distant_rank,
+                distant_rank,
+                cs_glob_mpi_comm,
+                &(request[request_count++]));
+    }
+
+    for (i = 0; i < n_interfaces; i++) {
+      const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
+      int distant_rank = fvm_interface_rank(face_if);
+      MPI_Isend(send_num + send_index[i],
+                send_index[i+1] - send_index[i],
+                FVM_MPI_GNUM,
+                distant_rank,
+                (int)cs_glob_rank_id,
+                cs_glob_mpi_comm,
+                &(request[request_count++]));
+    }
+
+    MPI_Waitall(request_count, request, status);
+
+    BFT_FREE(request);
+    BFT_FREE(status);
+  }
+
+  BFT_FREE(send_num);
+  BFT_FREE(send_index);
+
+  for (i = 0; i < n_perio; i++)
+    BFT_MALLOC(perio_couples[i], n_perio_couples[i]*2, fvm_gnum_t);
+
+  /* Reset couples count */
+
+  for (i = 0; i < n_perio; i++)
+    n_perio_couples[i] = 0;
+
+  /* Now fill couples */
+
+  for (i = 0, j = 0; i < n_interfaces; i++) {
+
+    const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
+    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+
+    for (j = 0, l = recv_index[i]; j < n_perio; j++) {
+
+      fvm_lnum_t nc = n_perio_couples[j]*2;
+      const fvm_lnum_t start_id = tr_index[tr_id[j*2]];
+      const fvm_lnum_t end_id = tr_index[tr_id[j*2] + 1];
+
+      for (k = start_id; k < end_id; k++) {
+        fvm_lnum_t v_id;
+        fvm_lnum_t f_id = loc_num[k] - 1;
+        for (v_id = mesh->i_face_vtx_idx[f_id];
+             v_id < mesh->i_face_vtx_idx[f_id + 1];
+             v_id++) {
+          perio_couples[j][nc++] = vtx_gnum[mesh->i_face_vtx_lst[v_id - 1] - 1];
+          perio_couples[j][nc++] = recv_num[l++];
+        }
+      }
+      n_perio_couples[j] = nc/2;
+    }
+  }
+
+  BFT_FREE(recv_num);
+  BFT_FREE(recv_index);
+  BFT_FREE(tr_id);
+
+  /* Set return values */
+
+  *p_n_perio_couples = n_perio_couples;
+  *p_perio_couples = perio_couples;
+}
+
+#endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------
+ * Define parameters for building an vertices interface set structure on
+ * a given mesh.
+ *
+ * This version is used for single-process mode.
+ *
+ * parameters:
+ *   mesh              <-- pointer to mesh structure
+ *   face_ifs          <-- pointer to face interface structure describing
+ *                         periodic face couples
+ *   p_n_perio_couples --> pointer to the number of periodic couples
+ *   p_perio_couples   --> pointer to the periodic couple list
+ *----------------------------------------------------------------------------*/
+
+static void
+_define_perio_vtx_couples_l(const cs_mesh_t             *mesh,
+                            const fvm_interface_set_t   *face_ifs,
+                            fvm_lnum_t                  *p_n_perio_couples[],
+                            fvm_gnum_t                 **p_perio_couples[])
+{
+  fvm_lnum_t  *n_perio_couples = NULL;
+  fvm_gnum_t  **perio_couples = NULL;
+
+  int i, j;
+  fvm_lnum_t k;
+
+  int perio_count = 0;
+  int  *tr_id = NULL;
+
+  const int n_perio = mesh->n_init_perio;
+  const int n_interfaces = fvm_interface_set_size(face_ifs);
+  const fvm_gnum_t *vtx_gnum = mesh->global_vtx_num;
+
+  /* List direct and reverse transforms */
+
+  BFT_MALLOC(n_perio_couples, n_perio, fvm_lnum_t);
+  BFT_MALLOC(perio_couples, n_perio, fvm_gnum_t *);
+
+  for (i = 0; i < n_perio; i++) {
+    n_perio_couples[i] = 0;
+    perio_couples[i] = NULL;
+  }
+
+  BFT_MALLOC(tr_id, n_perio*2, int);
+
+  for (i = 0; i < n_perio*2; i++) {
+    int rev_id = fvm_periodicity_get_reverse_id(mesh->periodicity, i);
+    if (i < rev_id) {
+      int parent_ids[2];
+      fvm_periodicity_get_parent_ids(mesh->periodicity, i, parent_ids);
+      if (parent_ids[0] < 0 && parent_ids[1] < 0) {
+        tr_id[perio_count*2] = i + 1;
+        tr_id[perio_count*2 + 1] = rev_id + 1;
+        perio_count++;
+      }
+    }
+  }
+  assert(perio_count == n_perio);
+
+  /* Count maximum vertex couples and build exchange index;
+     count only couples in direct periodicity direction, as the number
+     of faces in positive and reverse direction should match */
+
+  for (i = 0; i < n_interfaces; i++) {
+
+    const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
+    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+
+    for (j = 0; j < n_perio; j++) {
+
+      const fvm_lnum_t tr_start = tr_index[tr_id[j*2]];
+      const fvm_lnum_t tr_end = tr_index[tr_id[j*2] + 1];
+
+      for (k = tr_start; k < tr_end; k++) {
+        fvm_lnum_t l_id = loc_num[k] - 1;
+        n_perio_couples[j] += (  mesh->i_face_vtx_idx[l_id+1]
+                               - mesh->i_face_vtx_idx[l_id]);
+      }
+    }
+  }
+
+  for (i = 0; i < n_perio; i++)
+    BFT_MALLOC(perio_couples[i], n_perio_couples[i]*2, fvm_gnum_t);
+
+  /* Reset couples count */
+
+  for (i = 0; i < n_perio; i++)
+    n_perio_couples[i] = 0;
+
+  /* Now fill couples */
+
+  for (i = 0, j = 0; i < n_interfaces; i++) {
+
+    const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
+    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    const fvm_lnum_t *dist_num = fvm_interface_get_distant_num(face_if);
+
+    for (j = 0; j < n_perio; j++) {
+
+      fvm_lnum_t nc = n_perio_couples[j]*2;
+
+      const fvm_lnum_t tr_start = tr_index[tr_id[j*2]];
+      const fvm_lnum_t tr_end = tr_index[tr_id[j*2] + 1];
+
+      for (k = tr_start; k < tr_end; k++) {
+        fvm_lnum_t v_id;
+        fvm_lnum_t f1_id = loc_num[k] - 1;
+        fvm_lnum_t f2_id = dist_num[k] - 1;
+        fvm_lnum_t n_vtx = (  mesh->i_face_vtx_idx[f1_id+1]
+                            - mesh->i_face_vtx_idx[f1_id]);
+        fvm_lnum_t v1_start = mesh->i_face_vtx_idx[f1_id] - 1;
+        fvm_lnum_t v2_start = mesh->i_face_vtx_idx[f2_id] - 1;
+
+        if (vtx_gnum != NULL) {
+          for (v_id = 0; v_id < n_vtx; v_id++) {
+            perio_couples[j][nc++]
+              = vtx_gnum[mesh->i_face_vtx_lst[v1_start + v_id] - 1];
+            perio_couples[j][nc++]
+              = vtx_gnum[mesh->i_face_vtx_lst[v2_start + v_id] - 1];
+          }
+        }
+        else {
+          for (v_id = 0; v_id < n_vtx; v_id++) {
+            perio_couples[j][nc++] = mesh->i_face_vtx_lst[v1_start + v_id];
+            perio_couples[j][nc++] = mesh->i_face_vtx_lst[v2_start + v_id];
+          }
+        }
+      }
+      n_perio_couples[j] = nc/2;
+    }
+  }
+
+  BFT_FREE(tr_id);
+
+  /* Set return values */
+
+  *p_n_perio_couples = n_perio_couples;
+  *p_perio_couples = perio_couples;
+}
+
+/*----------------------------------------------------------------------------
+ * Define parameters for building an vertices interface set structure on
+ * a given mesh.
+ *
+ * parameters:
+ *   mesh              <-- pointer to mesh structure
+ *   face_ifs          <-- pointer to face interface structure describing
+ *                         periodic face couples
+ *   p_n_perio_couples --> pointer to the number of periodic couples
+ *   p_perio_couples   --> pointer to the periodic couple list
+ *----------------------------------------------------------------------------*/
+
+static void
+_define_perio_vtx_couples(const cs_mesh_t             *mesh,
+                          const fvm_interface_set_t   *face_ifs,
+                          fvm_lnum_t                  *p_n_perio_couples[],
+                          fvm_gnum_t                 **p_perio_couples[])
+{
+  fvm_lnum_t  *n_perio_couples = NULL;
+  fvm_gnum_t  **perio_couples = NULL;
+
+  int i;
+  fvm_lnum_t k, l;
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1)
+    _define_perio_vtx_couples_g(mesh,
+                                face_ifs,
+                                p_n_perio_couples,
+                                p_perio_couples);
+
+#endif /* defined(HAVE_MPI) */
+
+  if (cs_glob_n_ranks == 1)
+    _define_perio_vtx_couples_l(mesh,
+                                face_ifs,
+                                p_n_perio_couples,
+                                p_perio_couples);
+
+  /* Finally, remove duplicate couples */
+
+  n_perio_couples = *p_n_perio_couples;
+  perio_couples = *p_perio_couples;
+
+  for (i = 0; i < mesh->n_init_perio; i++) {
+
+    if (n_perio_couples[i] > 1) {
+
+      fvm_lnum_t nc = n_perio_couples[i];
+      fvm_gnum_t *pc = perio_couples[i];
+
+      qsort(pc, nc, sizeof(fvm_gnum_t) * 2, &_compare_couples);
+
+      for (k = 1, l = 0; k < nc; k++) {
+        if ((pc[k*2] != pc[l*2]) && (pc[k*2+1] != pc[l*2+1])) {
+          l += 1;
+          pc[l*2] = pc[k*2];
+          pc[l*2+1] = pc[k*2+1];
+        }
+      }
+      n_perio_couples[i] = l+1;
+
+      BFT_REALLOC(perio_couples[i], n_perio_couples[i]*2, fvm_gnum_t);
+    }
+  }
+
+  *p_n_perio_couples = n_perio_couples;
+  *p_perio_couples = perio_couples;
+}
+
+/*----------------------------------------------------------------------------
+ * Assign a periodicity number and optionnaly a rank id to halo elements.
+ *
+ * parameters:
+ *   mesh           <-- pointer to mesh structure
+ *   halo_perio_num --> periodicity number associated with each halo cell,
+ *                      signed for direct/reverse transform.
+ *                      (size: mesh->n_ghost_cells)
+ *   halo_rank_id   --> halo local rank id associated with each halo cell,
+ *                      or NULL (size: mesh->n_ghost_cells)
+ *
+ * returns:
+ *   the number of base periodicities defined
+ *----------------------------------------------------------------------------*/
+
+static int
+_get_halo_perio_num(const cs_mesh_t  *mesh,
+                    int               halo_perio_num[],
+                    int               halo_rank_id[])
+{
+  int         i, rank_id;
+  fvm_lnum_t  j;
+
+  int n_perio = 0;
+
+  int *tr_id = NULL;
+
+  const cs_halo_t  *halo = mesh->halo;
+  const fvm_periodicity_t  *periodicity = mesh->periodicity;
+
+  /* Initialization */
+
+  assert(halo != NULL);
+  assert(periodicity != NULL);
+
+  /* List direct and non-combined transforms */
+
+  BFT_MALLOC(tr_id, halo->n_transforms, int);
+  for (i = 0; i < halo->n_transforms; i++)
+    tr_id[i] = -1;
+
+  n_perio = 0;
+
+  for (i = 0; i < halo->n_transforms; i++) {
+    int rev_id = fvm_periodicity_get_reverse_id(periodicity, i);
+    if (i < rev_id) {
+      int parent_ids[2];
+      fvm_periodicity_get_parent_ids(periodicity, i, parent_ids);
+      if (parent_ids[0] < 0 && parent_ids[1] < 0) {
+        tr_id[n_perio*2] = i;
+        tr_id[n_perio*2+1] = rev_id;
+        n_perio++;
+      }
+    }
+  }
+  assert(n_perio == mesh->n_init_perio);
+
+  BFT_REALLOC(tr_id, n_perio*2, int);
+  assert(n_perio == mesh->n_init_perio);
+
+  /* Initialize halo values */
+
+  for (j = 0; j < mesh->n_ghost_cells; j++)
+    halo_perio_num[j] = 0;
+
+  if (halo_rank_id != NULL) {
+    for (j = 0; j < mesh->n_ghost_cells; j++)
+      halo_rank_id[j] = -1;
+  }
+
+  /* For each periodic face couple, we have 2 global ghost cells: one for
+     the direct periodicity, one for the reverse. To match couples only
+     once, we ignore the reverse periodicity, leaving exactly 1 ghost cell
+     per couple (which may belong to multiple periodic faces). */
+
+  /* Mark ghost cells with their periodicity number */
+
+  for (i = 0; i < n_perio; i++) {
+
+    fvm_lnum_t shift, start, end;
+
+    /* Direct periodicity */
+
+    shift = 4 * halo->n_c_domains * tr_id[i*2];
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      start = halo->perio_lst[shift + 4*rank_id];
+      end = start + halo->perio_lst[shift + 4*rank_id + 1];
+
+      for (j = start; j < end; j++)
+        halo_perio_num[j] = i + 1;
+
+      if (halo_rank_id != NULL) {
+        for (j = start; j < end; j++)
+          halo_rank_id[j] = rank_id;
+      }
+    }
+
+    /* Reverse periodicity */
+
+    shift = 4 * halo->n_c_domains * tr_id[i*2 + 1];
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      start = halo->perio_lst[shift + 4*rank_id];
+      end = start + halo->perio_lst[shift + 4*rank_id + 1];
+
+      for (j = start; j < end; j++)
+        halo_perio_num[j] = -(i + 1);
+
+      if (halo_rank_id != NULL) {
+        for (j = start; j < end; j++)
+          halo_rank_id[j] = rank_id;
+      }
+    }
+  }
+
+  BFT_FREE(tr_id);
+
+  return n_perio;
+}
+
+/*----------------------------------------------------------------------------
+ * Build a cell -> face search structure for local cells with a periodic
+ * face in the direct peridicity direction.
+ *
+ * The caller is responsible for freeing the arrays allocated and returned
+ * by this function once they are no longer needed.
+ *
+ * parameters:
+ *   mesh           <-- pointer to mesh structure
+ *   halo_perio_num <-- periodicity number of ghost cells
+ *   cell_face_idx  --> index (0 to n-1) of face ids for a given cell
+ *   cell_face      --> face ids (0 to n-1) for a given cell
+ *----------------------------------------------------------------------------*/
+
+static void
+_build_cell_face_perio_match(const cs_mesh_t    *mesh,
+                             const int          *halo_perio_num,
+                             fvm_lnum_t        **cell_face_idx,
+                             fvm_lnum_t        **cell_face)
+{
+  fvm_lnum_t  i;
+
+  fvm_lnum_t *_cell_face_count, *_cell_face_idx, *_cell_face;
+
+  /* Build cell -> face indexed search array containing only faces
+     adjacent to the halo. */
+
+  BFT_MALLOC(_cell_face_count, mesh->n_cells_with_ghosts, fvm_lnum_t);
+  BFT_MALLOC(_cell_face_idx, mesh->n_cells_with_ghosts + 1, fvm_lnum_t);
+
+  for (i = 0; i < mesh->n_cells_with_ghosts; i++)
+    _cell_face_count[i] = 0;
+
+  for (i = 0; i < mesh->n_i_faces; i++) {
+    const fvm_lnum_t c_id0 = mesh->i_face_cells[i*2] - 1;
+    const fvm_lnum_t c_id1 = mesh->i_face_cells[i*2+1] - 1;
+    if (c_id0 < mesh->n_cells && c_id1 >= mesh->n_cells) {
+      if (halo_perio_num[c_id1 - mesh->n_cells] < 0)
+        _cell_face_count[c_id0] += 1;
+    }
+    else if (c_id1 < mesh->n_cells && c_id0 >= mesh->n_cells) {
+      if (halo_perio_num[c_id0 - mesh->n_cells] < 0)
+      _cell_face_count[c_id1] += 1;
+    }
+  }
+
+  _cell_face_idx[0] = 0;
+  for (i = 0; i < mesh->n_cells_with_ghosts; i++) {
+    _cell_face_idx[i+1] = _cell_face_idx[i] + _cell_face_count[i];
+    _cell_face_count[i] = 0;
+  }
+
+  BFT_MALLOC(_cell_face, _cell_face_idx[mesh->n_cells_with_ghosts], fvm_lnum_t);
+
+  for (i = 0; i < mesh->n_i_faces; i++) {
+    const fvm_lnum_t c_id0 = mesh->i_face_cells[i*2] - 1;
+    const fvm_lnum_t c_id1 = mesh->i_face_cells[i*2+1] - 1;
+    if (c_id0 < mesh->n_cells && c_id1 >= mesh->n_cells) {
+      if (halo_perio_num[c_id1 - mesh->n_cells] < 0) {
+        _cell_face[_cell_face_idx[c_id0] + _cell_face_count[c_id0]] = i;
+        _cell_face_count[c_id0] += 1;
+      }
+    }
+    else if (c_id1 < mesh->n_cells && c_id0 >= mesh->n_cells) {
+      if (halo_perio_num[c_id0 - mesh->n_cells] < 0) {
+        _cell_face[_cell_face_idx[c_id1] + _cell_face_count[c_id1]] = i;
+        _cell_face_count[c_id1] += 1;
+      }
+    }
+  }
+
+  BFT_FREE(_cell_face_count);
+
+  *cell_face_idx = _cell_face_idx;
+  *cell_face = _cell_face;
+}
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Get global lists of periodic faces.
+ *
+ * The caller is responsible for freeing the arrays allocated and returned
+ * by this function once they are no longer needed.
+ *
+ * parameters:
+ *   mesh                 <-- pointer to mesh structure
+ *   n_perio_face_couples --> local number of periodic couples per
+ *                          periodicity (size: mesh->n_init_perio)
+ *   perio_face_couples   --> arrays of global periodic couple face numbers,
+ *                            for each periodicity
+ *----------------------------------------------------------------------------*/
+
+static void
+_get_perio_faces_g(const cs_mesh_t    *mesh,
+                   fvm_lnum_t        **n_perio_face_couples,
+                   fvm_gnum_t       ***perio_face_couples)
+{
+  int         i, rank_id, perio_num;
+  fvm_lnum_t  j, k, l;
+  fvm_lnum_t  dest_c_id, src_c_id;
+
+  int         n_perio = 0;
+  fvm_lnum_t  recv_size = 0;
+  fvm_lnum_t *loc_cell_num = NULL;
+  fvm_lnum_t *recv_count = NULL, *recv_idx = NULL;
+  fvm_lnum_t *send_count = NULL, *send_idx = NULL;
+  fvm_lnum_t *cell_face_idx, *cell_face;
+  fvm_gnum_t *recv_vals = NULL, *send_vals = NULL;
+
+  int *halo_perio_num = NULL;
+  int *halo_rank_id = NULL;
+
+  fvm_lnum_t    *_n_perio_face_couples = NULL;
+  fvm_gnum_t    **_perio_face_couples = NULL;
+
+  int           request_count = 0;
+  MPI_Request  *halo_request = NULL;
+  MPI_Status   *halo_status = NULL;
+
+  const cs_halo_t  *halo = mesh->halo;
+  const fvm_periodicity_t  *periodicity = mesh->periodicity;
+
+  /* Initialization */
+
+  BFT_MALLOC(_n_perio_face_couples, mesh->n_init_perio, fvm_lnum_t);
+  BFT_MALLOC(_perio_face_couples, mesh->n_init_perio, fvm_gnum_t *);
+
+  for (i = 0; i < mesh->n_init_perio; i++) {
+    _n_perio_face_couples[i] = 0;
+    _perio_face_couples[i] = NULL;
+  }
+
+  assert(halo != NULL);
+  assert(periodicity != NULL);
+
+  /* Mark ghost cells with their periodicity number and halo rank id */
+
+  BFT_MALLOC(halo_perio_num, mesh->n_ghost_cells, int);
+  BFT_MALLOC(halo_rank_id, mesh->n_ghost_cells, int);
+
+  n_perio = _get_halo_perio_num(mesh, halo_perio_num, halo_rank_id);
+
+  /* Exchange local cell numbers, so that cell-face reverse matching
+     is made easier later */
+
+  BFT_MALLOC(loc_cell_num, mesh->n_cells_with_ghosts, fvm_lnum_t);
+  for (j = 0; j < mesh->n_cells; j++)
+    loc_cell_num[j] = j+1;
+  for (j = mesh->n_cells; j < mesh->n_cells_with_ghosts; j++)
+    loc_cell_num[j] = 0;
+
+  cs_halo_sync_num(halo, CS_HALO_STANDARD, loc_cell_num);
+
+  /* Now compute send and receive counts and build indexes */
+
+  BFT_MALLOC(send_count, halo->n_c_domains, fvm_lnum_t);
+  BFT_MALLOC(recv_count, halo->n_c_domains, fvm_lnum_t);
+  BFT_MALLOC(send_idx, halo->n_c_domains + 1, fvm_lnum_t);
+  BFT_MALLOC(recv_idx, halo->n_c_domains + 1, fvm_lnum_t);
+
+  for (i = 0; i < halo->n_c_domains; i++) {
+    send_count[i] = 0;
+    recv_count[i] = 0;
+  }
+
+  for (j = 0; j < mesh->n_i_faces; j++) {
+    const fvm_lnum_t h_id0 = mesh->i_face_cells[j*2] - mesh->n_cells - 1;
+    const fvm_lnum_t h_id1 = mesh->i_face_cells[j*2+1] - mesh->n_cells - 1;
+    if (h_id0 >= 0) {
+      perio_num = halo_perio_num[h_id0];
+      if (perio_num > 0)
+        send_count[halo_rank_id[h_id0]] += 1;
+      else if (perio_num < 0)
+        recv_count[halo_rank_id[h_id0]] += 1;
+    }
+    else if (h_id1 >= 0) {
+      perio_num = halo_perio_num[h_id1];
+      if (perio_num > 0)
+        send_count[halo_rank_id[h_id1]] += 1;
+      else if (perio_num < 0)
+        recv_count[halo_rank_id[h_id1] ]+= 1;
+    }
+  }
+
+  send_idx[0] = 0;
+  recv_idx[0] = 0;
+  for (i = 0; i < halo->n_c_domains; i++) {
+    send_idx[i+1] = send_idx[i] + send_count[i];
+    recv_idx[i+1] = recv_idx[i] + recv_count[i];
+    send_count[i] = 0;
+  }
+
+  /* Assemble the tuples to send; a tuple contains:
+     destination cell id (cell matched by direct periodicity),
+     source cell (cell matched by reverse periodicity),
+     periodicity number,
+     global face number (2nd face in a couple). */
+
+  BFT_MALLOC(send_vals, send_idx[halo->n_c_domains]*4, fvm_gnum_t);
+
+  for (j = 0; j < mesh->n_i_faces; j++) {
+
+    const fvm_lnum_t c_id0 = mesh->i_face_cells[j*2] - 1;
+    const fvm_lnum_t c_id1 = mesh->i_face_cells[j*2+1] - 1;
+
+    dest_c_id = -1;
+    if (c_id0 >= mesh->n_cells) {
+      perio_num = halo_perio_num[c_id0  - mesh->n_cells];
+      if (perio_num > 0) {
+        dest_c_id = c_id1;
+        src_c_id = c_id0;
+        rank_id = halo_rank_id[c_id0  - mesh->n_cells];
+      }
+    }
+    else if (c_id1 >= mesh->n_cells) {
+      perio_num = halo_perio_num[c_id1 - mesh->n_cells];
+      if (perio_num > 0) {
+        dest_c_id = c_id0;
+        src_c_id = c_id1;
+        rank_id = halo_rank_id[c_id1  - mesh->n_cells];
+      }
+    }
+    if (dest_c_id != -1) {
+      k = send_idx[rank_id] + send_count[rank_id];
+      send_vals[k*4] = loc_cell_num[dest_c_id];
+      send_vals[k*4+1] = loc_cell_num[src_c_id];
+      send_vals[k*4+2] = perio_num;
+      send_vals[k*4+3] = mesh->global_i_face_num[j];
+      send_count[rank_id] += 1;
+    }
+  }
+
+  BFT_FREE(halo_rank_id);
+
+  /* Now exchange face matching data */
+
+  BFT_MALLOC(halo_request, halo->n_c_domains*2, MPI_Request);
+  BFT_MALLOC(halo_status, halo->n_c_domains*2, MPI_Status);
+
+  BFT_MALLOC(recv_vals, recv_idx[halo->n_c_domains]*4, fvm_gnum_t);
+
+  /* Receive data from distant ranks */
+
+  for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+    if (recv_count[rank_id] > 0)
+      MPI_Irecv(recv_vals + (recv_idx[rank_id]*4),
+                recv_count[rank_id]*4,
+                FVM_MPI_GNUM,
+                halo->c_domain_rank[rank_id],
+                halo->c_domain_rank[rank_id],
+                cs_glob_mpi_comm,
+                &(halo_request[request_count++]));
+  }
+
+  /* Send data to distant ranks */
+
+  for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+    if (send_count[rank_id] > 0)
+      MPI_Isend(send_vals + (send_idx[rank_id]*4),
+                send_count[rank_id]*4,
+                FVM_MPI_GNUM,
+                halo->c_domain_rank[rank_id],
+                cs_glob_rank_id,
+                cs_glob_mpi_comm,
+                &(halo_request[request_count++]));
+  }
+
+  /* Wait for all exchanges */
+
+  MPI_Waitall(request_count, halo_request, halo_status);
+
+  BFT_FREE(halo_request);
+  BFT_FREE(halo_status);
+
+  BFT_FREE(send_vals);
+  BFT_FREE(send_count);
+  BFT_FREE(send_idx);
+
+  recv_size = recv_idx[halo->n_c_domains];
+
+  BFT_FREE(recv_count);
+  BFT_FREE(recv_idx);
+
+  /* Count periodic face couples */
+
+  for (j = 0; j < recv_size; j++) {
+    perio_num = recv_vals[j*4+2];
+    assert(perio_num > 0);
+    _n_perio_face_couples[perio_num - 1] += 1;
+  }
+
+  /* Allocate periodic couple lists */
+
+  for (i = 0; i < mesh->n_init_perio; i++) {
+    BFT_MALLOC(_perio_face_couples[i],
+               _n_perio_face_couples[i]*2,
+               fvm_gnum_t);
+    _n_perio_face_couples[i] = 0;
+  }
+
+  /* Build cell -> face indexed search array containing only faces
+     adjacent to the halo. */
+
+  _build_cell_face_perio_match(mesh,
+                               halo_perio_num,
+                               &cell_face_idx,
+                               &cell_face);
+
+  BFT_FREE(halo_perio_num);
+
+  /* Now match faces; faces already matched are marked so as not to be
+     re-matched, in case faces have been split and multiple faces thus share
+     the same cells (in which case we assume that subfaces are locally ordered
+     identically). */
+
+  for (j = 0; j <  recv_size; j++) {
+
+    fvm_lnum_t dest_c_num = recv_vals[j*4];
+    fvm_lnum_t src_c_num = recv_vals[j*4+1];
+    int perio_id = recv_vals[j*4+2] - 1;
+    fvm_gnum_t perio_face_gnum = recv_vals[j*4+3];
+
+    for (k = cell_face_idx[src_c_num-1]; k < cell_face_idx[src_c_num]; k++) {
+
+      l = cell_face[k]; /* Face _id */
+
+      if (l > -1) {
+        fvm_lnum_t loc_c_num, dist_c_id;
+        if (mesh->i_face_cells[l*2] < mesh->i_face_cells[l*2+1]) {
+          loc_c_num = mesh->i_face_cells[l*2];
+          dist_c_id = mesh->i_face_cells[l*2+1] - 1;
+        }
+        else {
+          loc_c_num = mesh->i_face_cells[l*2+1];
+          dist_c_id = mesh->i_face_cells[l*2] - 1;
+        }
+        assert(loc_c_num <= mesh->n_cells && dist_c_id >= mesh->n_cells);
+
+        /* If we have a match, update periodic couples */
+
+        if (src_c_num == loc_c_num && dest_c_num == loc_cell_num[dist_c_id]) {
+          fvm_lnum_t couple_id = _n_perio_face_couples[perio_id];
+          cell_face[k] = -1; /* Mark as used */
+          _perio_face_couples[perio_id][couple_id*2]
+            = mesh->global_i_face_num[l];
+          _perio_face_couples[perio_id][couple_id*2 + 1] = perio_face_gnum;
+          _n_perio_face_couples[perio_id] += 1;
+        }
+      }
+    }
+  }
+
+  BFT_FREE(cell_face_idx);
+  BFT_FREE(cell_face);
+  BFT_FREE(recv_vals);
+  BFT_FREE(loc_cell_num);
+
+  /* Set return values */
+
+  *n_perio_face_couples = _n_perio_face_couples;
+  *perio_face_couples = _perio_face_couples;
+}
+
+#endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------
+ * Get global lists of periodic faces.
+ *
+ * This version is used for serial mode.
+ *
+ * The caller is responsible for freeing the arrays allocated and returned
+ * by this function once they are no longer needed.
+ *
+ * parameters:
+ *   mesh                 <-- pointer to mesh structure
+ *   n_perio_face_couples --> global number of periodic couples per
+ *                            periodicity (size: mesh->n_init_perio)
+ *   perio_face_couples   --> arrays of global periodic couple face numbers,
+ *                            for each periodicity
+ *----------------------------------------------------------------------------*/
+
+static void
+_get_perio_faces_l(const cs_mesh_t    *mesh,
+                   fvm_lnum_t        **n_perio_face_couples,
+                   fvm_gnum_t       ***perio_face_couples)
+{
+  int         i, perio_num;
+  fvm_lnum_t  j, k, l;
+  fvm_lnum_t  dest_c_id, src_c_id;
+
+  int         n_perio = 0;
+  fvm_lnum_t *loc_cell_num = NULL;
+  fvm_lnum_t *cell_face_idx, *cell_face;
+
+  int *halo_perio_num = NULL;
+
+  fvm_lnum_t   *_n_perio_face_couples = NULL;
+  fvm_gnum_t  **_perio_face_couples = NULL;
+
+  const cs_halo_t  *halo = mesh->halo;
+
+  /* Initialization */
+
+  BFT_MALLOC(_n_perio_face_couples, mesh->n_init_perio, fvm_lnum_t);
+  BFT_MALLOC(_perio_face_couples, mesh->n_init_perio, fvm_gnum_t *);
+
+  for (i = 0; i < mesh->n_init_perio; i++) {
+    _n_perio_face_couples[i] = 0;
+    _perio_face_couples[i] = NULL;
+  }
+
+  assert(halo != NULL);
+  assert(halo->n_c_domains == 1);
+
+  /* Mark ghost cells with their periodicity number and halo rank id */
+
+  BFT_MALLOC(halo_perio_num, mesh->n_ghost_cells, int);
+
+  n_perio = _get_halo_perio_num(mesh, halo_perio_num, NULL);
+
+  /* Exchange local cell numbers, so that cell-face reverse matching
+     is made easier later */
+
+  BFT_MALLOC(loc_cell_num, mesh->n_cells_with_ghosts, fvm_lnum_t);
+  for (j = 0; j < mesh->n_cells; j++)
+    loc_cell_num[j] = j+1;
+  for (j = mesh->n_cells; j < mesh->n_cells_with_ghosts; j++)
+    loc_cell_num[j] = 0;
+
+  cs_halo_sync_num(halo, CS_HALO_STANDARD, loc_cell_num);
+
+  /* Now compute number of periodic couples */
+
+  for (j = 0; j < mesh->n_i_faces; j++) {
+    const fvm_lnum_t h_id0 = mesh->i_face_cells[j*2] - mesh->n_cells - 1;
+    const fvm_lnum_t h_id1 = mesh->i_face_cells[j*2+1] - mesh->n_cells - 1;
+    if (h_id0 >= 0) {
+      if (halo_perio_num[h_id0] > 0)
+        _n_perio_face_couples[halo_perio_num[h_id0] - 1] += 1;
+    }
+    else if (h_id1 >= 0) {
+      if (halo_perio_num[h_id1] > 0)
+        _n_perio_face_couples[halo_perio_num[h_id1] - 1] += 1;
+    }
+  }
+
+  /* Allocate periodic couple lists */
+
+  for (i = 0; i < mesh->n_init_perio; i++) {
+    BFT_MALLOC(_perio_face_couples[i],
+               _n_perio_face_couples[i]*2,
+               fvm_gnum_t);
+    _n_perio_face_couples[i] = 0;
+  }
+
+  /* Build cell -> face indexed search array containing only faces
+     adjacent to the halo. */
+
+  _build_cell_face_perio_match(mesh,
+                               halo_perio_num,
+                               &cell_face_idx,
+                               &cell_face);
+
+  /* Now match faces; faces already matched are marked so as not to be
+     re-matched, in case faces have been split and multiple faces thus share
+     the same cells (in which case we assume that subfaces are locally ordered
+     identically). */
+
+  for (j = 0; j < mesh->n_i_faces; j++) {
+
+    const fvm_lnum_t c_id0 = mesh->i_face_cells[j*2] - 1;
+    const fvm_lnum_t c_id1 = mesh->i_face_cells[j*2+1] - 1;
+
+    dest_c_id = -1;
+    if (c_id0 >= mesh->n_cells) {
+      perio_num = halo_perio_num[c_id0  - mesh->n_cells];
+      if (perio_num > 0) {
+        dest_c_id = c_id1;
+        src_c_id = c_id0;
+      }
+    }
+    else if (c_id1 >= mesh->n_cells) {
+      perio_num = halo_perio_num[c_id1 - mesh->n_cells];
+      if (perio_num > 0) {
+        dest_c_id = c_id0;
+        src_c_id = c_id1;
+      }
+    }
+    if (dest_c_id != -1) {
+
+      fvm_lnum_t dest_c_num = loc_cell_num[dest_c_id];
+      fvm_lnum_t src_c_num = loc_cell_num[src_c_id];
+
+      for (k = cell_face_idx[src_c_num-1]; k < cell_face_idx[src_c_num]; k++) {
+
+        l = cell_face[k]; /* Face _id */
+
+        if (l > -1) {
+          fvm_lnum_t loc_c_num, dist_c_id;
+          if (mesh->i_face_cells[l*2] < mesh->i_face_cells[l*2+1]) {
+            loc_c_num = mesh->i_face_cells[l*2];
+            dist_c_id = mesh->i_face_cells[l*2+1] - 1;
+          }
+          else {
+            loc_c_num = mesh->i_face_cells[l*2+1];
+            dist_c_id = mesh->i_face_cells[l*2] - 1;
+          }
+          assert(loc_c_num <= mesh->n_cells && dist_c_id >= mesh->n_cells);
+
+          /* If we have a match, update periodic couples */
+
+          if (src_c_num == loc_c_num && dest_c_num == loc_cell_num[dist_c_id]) {
+            int perio_id = perio_num - 1;
+            fvm_lnum_t couple_id = _n_perio_face_couples[perio_id];
+            cell_face[k] = -1; /* Mark as used */
+            _perio_face_couples[perio_id][couple_id*2] = l+1;
+            _perio_face_couples[perio_id][couple_id*2 + 1] = j+1;
+            _n_perio_face_couples[perio_id] += 1;
+          }
+        }
+      }
+    }
+  }
+
+  if (mesh->global_i_face_num != NULL) {
+    for (i = 0; i < mesh->n_init_perio; i++) {
+      for (j = 0; j < _n_perio_face_couples[i]*2; j++)
+        _perio_face_couples[i][j]
+          = mesh->global_i_face_num[_perio_face_couples[i][j] - 1];
+    }
+  }
+
+  BFT_FREE(halo_perio_num);
+
+  BFT_FREE(cell_face_idx);
+  BFT_FREE(cell_face);
+  BFT_FREE(loc_cell_num);
+
+  /* Set return values */
+
+  *n_perio_face_couples = _n_perio_face_couples;
+  *perio_face_couples = _perio_face_couples;
+}
+
+/*----------------------------------------------------------------------------
+ * Write a summary about mesh features in log file
  *
  * parameters:
  *   mesh                   <-- pointer to cs_mesh_t structure
@@ -899,17 +2034,15 @@ cs_mesh_create(void)
 cs_mesh_builder_t *
 cs_mesh_builder_create(void)
 {
-  cs_mesh_builder_t  *mesh_builder = NULL;
+  cs_mesh_builder_t  *mb = NULL;
 
-  BFT_MALLOC(mesh_builder, 1, cs_mesh_builder_t);
+  BFT_MALLOC(mb, 1, cs_mesh_builder_t);
 
-  mesh_builder->per_face_idx = NULL;
-  mesh_builder->per_face_lst = NULL;
-  mesh_builder->per_rank_lst = NULL;
+  mb->n_perio = 0;
+  mb->n_perio_couples = NULL;
+  mb->perio_couples = NULL;
 
-  mesh_builder->face_ifs = NULL;
-
-  return mesh_builder;
+  return mb;
 }
 
 /*----------------------------------------------------------------------------
@@ -1002,27 +2135,26 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
 /*----------------------------------------------------------------------------
  * Destroy a mesh builder structure
  *
- * mesh_builder     <->  pointer to a mesh structure
- *
- * returns:
- *  NULL pointer
+ * mesh_builder <->  pointer to a mesh structure
  *----------------------------------------------------------------------------*/
 
-cs_mesh_builder_t *
-cs_mesh_builder_destroy(cs_mesh_builder_t  *mesh_builder)
+void
+cs_mesh_builder_destroy(cs_mesh_builder_t  **mesh_builder)
 {
+  if (mesh_builder != NULL) {
 
-  BFT_FREE(mesh_builder->per_face_idx);
-  BFT_FREE(mesh_builder->per_face_lst);
+    int i;
+    cs_mesh_builder_t *_mb = *mesh_builder;
 
-  if (cs_glob_n_ranks > 1)
-    BFT_FREE(mesh_builder->per_rank_lst);
+    if (_mb->perio_couples != NULL) {
+      for (i = 0; i < _mb->n_perio; i++)
+        BFT_FREE(_mb->perio_couples[i]);
+    }
+    BFT_FREE(_mb->perio_couples);
+    BFT_FREE(_mb->n_perio_couples);
 
-  mesh_builder->face_ifs = fvm_interface_set_destroy(mesh_builder->face_ifs);
-
-  BFT_FREE(mesh_builder);
-
-  return mesh_builder;
+    BFT_FREE(*mesh_builder);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1104,7 +2236,6 @@ cs_mesh_order_vertices(cs_mesh_t  *const mesh)
 
   BFT_FREE(tmp_num);
   BFT_FREE(vertex_renum);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1246,24 +2377,29 @@ cs_mesh_init_parall(cs_mesh_t  *mesh)
  *
  * parameters:
  *   mesh  <->  pointer to mesh structure
+ *   mb    <->  pointer to mesh builder (in case of periodicity)
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_init_halo(cs_mesh_t  *mesh)
+cs_mesh_init_halo(cs_mesh_t          *mesh,
+                  cs_mesh_builder_t  *mb)
 {
-  int  n_periodic_lists, ivoset;
+  int  ivoset;
   fvm_lnum_t  i;
   double  t1, t2;
   double  halo_time = 0, interface_time = 0, ext_neighborhood_time = 0;
 
-  int  *periodic_num = NULL;
-  cs_int_t  *gcell_vtx_idx = NULL, *gcell_vtx_lst = NULL;
+  int  *perio_num = NULL;
+  fvm_lnum_t  *gcell_vtx_idx = NULL, *gcell_vtx_lst = NULL;
   fvm_lnum_t  *n_periodic_couples = NULL;
+  fvm_gnum_t  *g_i_face_num = NULL;
   fvm_gnum_t  *g_vertex_num = NULL;
   fvm_gnum_t  **periodic_couples = NULL;
 
+  fvm_interface_set_t  *face_interfaces = NULL;
   fvm_interface_set_t  *vertex_interfaces = NULL;
 
+  const fvm_lnum_t  n_i_faces = mesh->n_i_faces;
   const fvm_lnum_t  n_vertices = mesh->n_vertices;
 
   /* Choose the type of halo to build according to Fortran options.
@@ -1288,11 +2424,8 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
       mesh->halo_type = CS_HALO_EXTENDED;
 
       if (mesh->n_init_perio > 1) {
-
-        bft_printf(_(" Periodicities combination\n"));
-
+        bft_printf(_(" Composing periodicities\n"));
         fvm_periodicity_combine(mesh->periodicity, 0);
-
       }
 
     }
@@ -1302,42 +2435,78 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
                    " ============================================\n\n"));
 
       mesh->halo_type = CS_HALO_STANDARD;
-
     }
+
+    /* Build periodic numbering */
+
+    if (mesh->n_init_perio > 0) {
+      BFT_MALLOC(perio_num, mesh->n_init_perio, int);
+      for (i = 0; i < mesh->n_init_perio; i++)
+        perio_num[i] = i+1;
+    }
+
+    bft_printf(_(" Face interfaces creation\n"));
 
     /* Build purely parallel fvm_interface_set structure */
 
-    if (mesh->n_domains == 1) {
+    g_i_face_num = mesh->global_i_face_num;
+    g_vertex_num = mesh->global_vtx_num;
 
+    if (g_i_face_num == NULL) {
+      BFT_MALLOC(g_i_face_num, n_i_faces, fvm_gnum_t);
+      for (i = 0; i < n_i_faces; i++)
+        g_i_face_num[i] = (fvm_gnum_t)i+1;
+    }
+
+    if (mb != NULL) {
+      face_interfaces = fvm_interface_set_create(n_i_faces,
+                                                 NULL,
+                                                 g_i_face_num,
+                                                 mesh->periodicity,
+                                                 mesh->n_init_perio,
+                                                 perio_num,
+                                                 mb->n_perio_couples,
+                      (const fvm_gnum_t **const)(mb->perio_couples));
+      for (i = 0; i < mb->n_perio; i++)
+        BFT_FREE(mb->perio_couples[i]);
+      BFT_FREE(mb->perio_couples);
+      BFT_FREE(mb->n_perio_couples);
+      mb->n_perio = 0;
+    }
+    else
+      face_interfaces = fvm_interface_set_create(n_i_faces,
+                                                 NULL,
+                                                 g_i_face_num,
+                                                 mesh->periodicity,
+                                                 0,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL);
+
+    if (mesh->global_i_face_num != g_i_face_num)
+      BFT_FREE(g_i_face_num);
+
+    if (g_vertex_num == NULL) {
       BFT_MALLOC(g_vertex_num, n_vertices, fvm_gnum_t);
-
       for (i = 0; i < n_vertices; i++)
         g_vertex_num[i] = (fvm_gnum_t)i+1;
-
-    }
-    else {
-
-      assert(mesh->global_vtx_num != NULL);
-      g_vertex_num = mesh->global_vtx_num;
-
     }
 
     if (mesh->n_init_perio > 0) {
 
       mesh->n_transforms = fvm_periodicity_get_n_transforms(mesh->periodicity);
 
-      bft_printf(_(" Definition of periodic couples\n"));
-      bft_printf_flush();
+      bft_printf(_(" Definition of periodic vertices\n"));
 
-      cs_perio_define_couples(&n_periodic_lists,
-                              &periodic_num,
-                              &n_periodic_couples,
-                              &periodic_couples);
+      _define_perio_vtx_couples(mesh,
+                                face_interfaces,
+                                &n_periodic_couples,
+                                &periodic_couples);
 
-#if 0 /* For debugging purpose */
-      for (i = 0; i < n_periodic_lists; i++) {
+#if 0 /* For debugging purposes */
+      for (i = 0; i < mesh->n_init_perio; i++) {
         cs_int_t  j;
-        bft_printf("\n\n  Periodicity number: %d\n", periodic_num[i]);
+        bft_printf("\n\n  Periodicity number: %d\n", perio_num[i]);
         bft_printf("  Number of couples : %d\n", n_periodic_couples[i]);
         for (j = 0; j < n_periodic_couples[i]; j++)
           bft_printf("%12d --> %12d\n",
@@ -1348,21 +2517,21 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
 
     }
 
-    bft_printf(_(" Interface creation\n"));
-    bft_printf_flush();
+    bft_printf(_(" Vertex interfaces creation\n"));
 
     vertex_interfaces = fvm_interface_set_create(n_vertices,
                                                  NULL,
                                                  g_vertex_num,
                                                  mesh->periodicity,
-                                                 n_periodic_lists,
-                                                 periodic_num,
+                                                 mesh->n_init_perio,
+                                                 perio_num,
                                                  n_periodic_couples,
                        (const fvm_gnum_t **const)periodic_couples);
 
-    if (mesh->n_domains == 1)
+    if (mesh->global_vtx_num != g_vertex_num)
       BFT_FREE(g_vertex_num);
-    BFT_FREE(periodic_num);
+
+    BFT_FREE(perio_num);
     BFT_FREE(n_periodic_couples);
 
     for (i = 0; i < mesh->n_init_perio; i++)
@@ -1370,7 +2539,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
     BFT_FREE(periodic_couples);
 
 #if 0 /* For debugging purposes */
-    bft_printf("Dump de l'interface complete et finale\n");
+    bft_printf("Dump final vertices interface:\n");
     fvm_interface_set_dump(vertex_interfaces);
 #endif
 
@@ -1390,6 +2559,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
     bft_printf_flush();
 
     cs_mesh_halo_define(mesh,
+                        face_interfaces,
                         vertex_interfaces,
                         &gcell_vtx_idx,
                         &gcell_vtx_lst);
@@ -1398,6 +2568,7 @@ cs_mesh_init_halo(cs_mesh_t  *mesh)
       cs_perio_update_buffer(mesh->halo);
 
     fvm_interface_set_destroy(vertex_interfaces);
+    fvm_interface_set_destroy(face_interfaces);
 
     t2 = bft_timer_wtime();
     halo_time = t2-t1;
@@ -1702,6 +2873,60 @@ cs_mesh_sync_var_tens(cs_real_t  *var11,
                            var11, var12, var13,
                            var21, var22, var33,
                            var31, var32, var33);
+}
+
+/*----------------------------------------------------------------------------
+ * Get global lists of periodic face couples.
+ *
+ * In parallel, each face couple may appear on only one rank.
+ *
+ * The caller is responsible for freeing the arrays allocated and returned
+ * by this function once they are no onger needed.
+ *
+ * parameters:
+ *   mesh                 <-- pointer to mesh structure
+ *   n_perio_face_couples --> global number of periodic couples per
+ *                            periodicity (size: mesh->n_init_perio)
+ *   perio_face_couples   --> arrays of global periodic couple face numbers,
+ *                            for each periodicity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_get_perio_faces(const cs_mesh_t    *mesh,
+                        fvm_lnum_t        **n_perio_face_couples,
+                        fvm_gnum_t       ***perio_face_couples)
+{
+  assert (mesh != NULL);
+
+  if (mesh->halo == NULL)
+    return;
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1)
+    _get_perio_faces_g(mesh,
+                       n_perio_face_couples,
+                       perio_face_couples);
+
+#endif /* defined(HAVE_MPI) */
+
+  if (cs_glob_n_ranks == 1)
+    _get_perio_faces_l(mesh,
+                       n_perio_face_couples,
+                       perio_face_couples);
+
+  /* Ensure couples are sorted (not normally necessary, but safe) */
+
+  if (n_perio_face_couples != NULL) {
+    int i;
+    for (i = 0; i < mesh->n_init_perio; i++) {
+      if ((*n_perio_face_couples)[i] > 1)
+        qsort((*perio_face_couples)[i],
+              (*n_perio_face_couples)[i],
+              sizeof(fvm_gnum_t) * 2,
+              &_compare_couples);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------

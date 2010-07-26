@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2009 EDF S.A., France
+ *     Copyright (C) 2008-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -71,7 +71,7 @@ BEGIN_C_DECLS
  * SUBROUTINE NUMJOI
  * *****************
  *
- * INTEGER        numjoi       : --> : number of joining op. already defined
+ * INTEGER        numjoi       : --> : number of joining ops. already defined
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(numjoi, NUMJOI)
@@ -87,7 +87,7 @@ void CS_PROCF(numjoi, NUMJOI)
  * SUBROUTINE DEFJO1
  * *****************
  *
- * INTEGER        numjoi           : <-- : number related to the joining op.
+ * INTEGER        join_num         : --> : number related to the joining op.
  * CHARACTER*     joining_criteria : <-- : boundary face selection criteria,
  * REAL           fraction         : <-- : parameter for merging vertices
  * REAL           plane            : <-- : parameter for splitting faces
@@ -97,7 +97,7 @@ void CS_PROCF(numjoi, NUMJOI)
 
 void CS_PROCF(defjo1, DEFJO1)
 (
- cs_int_t    *numjoi,
+ cs_int_t    *join_num,
  const char  *joining_criteria,
  cs_real_t   *fraction,
  cs_real_t   *plane,
@@ -149,17 +149,17 @@ void CS_PROCF(setajp, SETAJP)
  * Add a cs_join_t structure to the list of pending joinings.
  *
  * parameters:
- *   join_number  <-- number related to the joining operation
  *   sel_criteria <-- boundary face selection criteria
  *   fraction     <-- value of the fraction parameter
  *   plane        <-- value of the plane parameter
- *   perio_num    <-- periodicity number (0 if not a periodic joining)
  *   verbosity    <-- level of verbosity required
+ *
+ * returns:
+ *   number (1 to n) associated with new joining
  *---------------------------------------------------------------------------*/
 
-void
-cs_join_add(int     join_number,
-            char   *sel_criteria,
+int
+cs_join_add(char   *sel_criteria,
             float   fraction,
             float   plane,
             int     verbosity);

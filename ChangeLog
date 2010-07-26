@@ -1,3 +1,42 @@
+* 26/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Refactoring of the periodic faces creation in preparation of the
+  preprocessor_output writing from the solver. Moreover it should now be
+  compatible with the warped-faces cutting.
+  The joining numbering (along with periodicity numbering) is also handled
+  differently to take into account possible periodicity definition in a
+  preprocessor_output file.
+  modified routines:
+    include/base/cs_join.h
+    include/base/cs_join_perio.h
+    include/base/cs_join_update.h
+    include/base/cs_join_util.h
+    include/base/cs_mesh.h
+    include/base/cs_mesh_halo.h
+    include/base/cs_perio.h
+    src/apps/cs_solver.c
+    src/base/cs_gui_mesh.c
+    src/base/cs_halo.c
+    src/base/cs_join.c
+    src/base/cs_join_f2c.f90
+    src/base/cs_join_merge.c
+    src/base/cs_join_mesh.c
+    src/base/cs_join_perio.c
+    src/base/cs_join_perio_f2c.f90
+    src/base/cs_join_split.c
+    src/base/cs_join_update.c
+    src/base/cs_join_util.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_halo.c
+    src/base/cs_mesh_warping.c
+    src/base/cs_parall.c
+    src/base/cs_perio.c
+    src/base/cs_preprocessor_data.c
+    src/base/iniini.f90
+    src/fvm/fvm_interface.c
+    src/fvm/fvm_interface.h
+    users/base/usjoin.f90
+    users/base/usperi.f90
+
 * 26/07/2010 - David Monfort <david.monfort@edf.fr>
   The checkpoint files are now created in a specific directory. Likewise, the
   restart files are read from a specific directory.

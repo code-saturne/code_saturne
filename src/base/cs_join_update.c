@@ -59,6 +59,7 @@
 #include <fvm_io_num.h>
 #include <fvm_order.h>
 #include <fvm_parall.h>
+#include <fvm_periodicity.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -2312,7 +2313,7 @@ _exchange_cell_gnum(const cs_join_gset_t     *n2o_hist,
 
   /* Get the related global cell number for each received face */
 
-  if (join_param.perio_num > 0) {
+  if (join_param.perio_type != FVM_PERIODICITY_NULL) {
 
     for (rank = 0; rank < n_ranks; rank++) {
 
@@ -2409,7 +2410,7 @@ _get_linked_cell_gnum(const cs_join_select_t  *join_select,
 
   if (n_ranks == 1) {
 
-    if (join_param.perio_num > 0) { /* Periodic case */
+    if (join_param.perio_type != FVM_PERIODICITY_NULL) { /* Periodic case */
 
       for (i = 0; i < n2o_face_hist->n_elts; i++) {
 
@@ -3063,7 +3064,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
         assert(rank_start <= compact_old_fgnum);
         assert(compact_old_fgnum < rank_end);
 
-        if (join_param.perio_num > 0) {
+        if (join_param.perio_type != FVM_PERIODICITY_NULL) {
           fid = (compact_old_fgnum - rank_start)/2;
           fid = join_select->faces[fid] - 1;
         }
@@ -3122,7 +3123,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
             /* Initial selected border face must be in the selection */
 
-            if (join_param.perio_num > 0) {
+            if (join_param.perio_type != FVM_PERIODICITY_NULL) {
               fid = (compact_old_fgnum - rank_start)/2;
               fid = join_select->faces[fid] - 1;
             }
@@ -3361,7 +3362,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
 
         if (rank_start <= compact_fgnum && compact_fgnum < rank_end) {
 
-          if (join_param.perio_num > 0) {
+          if (join_param.perio_type != FVM_PERIODICITY_NULL) {
 
             id = (compact_fgnum - rank_start)/2;
             if (compact_fgnum % 2 == 0) /* Periodic face */
@@ -3416,7 +3417,8 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
       if (fnum[0] > 0 || fnum[1] > 0)
         _reorient(i+1, cgnum, fnum, mesh, jmesh, ltmp, gtmp, dtmp);
       else
-        if (join_param.perio_num == 0 || cs_glob_n_ranks == 1)
+        if (   join_param.perio_type == FVM_PERIODICITY_NULL
+            || cs_glob_n_ranks == 1)
           bft_error(__FILE__, __LINE__, 0,
                     _(" Incoherency found before interior face orientation"
                       " checking.\n"
@@ -4019,6 +4021,7 @@ cs_join_update_mesh_after_merge(cs_join_param_t        join_param,
  *   n2o_face_hist   <-- relation between faces before/after the joining
  *   join_mesh       <-> pointer to the local cs_join_mesh_t structure
  *   mesh            <-> pointer of pointer to cs_mesh_t structure
+ *   mesh_builder    <-> pointer of pointer to cs_mesh__builder_t structure
  *---------------------------------------------------------------------------*/
 
 void
@@ -4026,7 +4029,8 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                                 const cs_join_select_t  *join_select,
                                 const cs_join_gset_t    *n2o_face_hist,
                                 cs_join_mesh_t          *join_mesh,
-                                cs_mesh_t               *mesh)
+                                cs_mesh_t               *mesh,
+                                cs_mesh_builder_t       *mesh_builder)
 {
   int  i, j, n_matches, default_family;
 
@@ -4214,12 +4218,13 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                         n2o_face_hist,
                         mesh);
 
-  if (join_param.perio_num > 0)
+  if (join_param.perio_type != FVM_PERIODICITY_NULL)
     cs_join_perio_split_update(join_param,
                                n_old_i_faces,
                                new_face_type,
                                join_mesh,
-                               mesh);
+                               mesh,
+                               mesh_builder);
 
   /* Delete unused vertices and define a compact global vertex numbering */
 

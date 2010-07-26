@@ -95,28 +95,43 @@ cs_join_t  **cs_glob_join_array = NULL;
  * Initialize a cs_join_param_t structure.
  *
  * parameters:
- *   join_num      <-- number of the current joining operation
- *   fraction      <-- value of the fraction parameter
- *   plane         <-- value of the plane parameter
- *   perio_num     <-- periodicity number (0 if not a periodic joining)
- *   verbosity     <-- level of verbosity required
+ *   join_num     <-- number of the current joining operation
+ *   fraction     <-- value of the fraction parameter
+ *   plane        <-- value of the plane parameter
+ *   perio_type   <-- periodicity type (FVM_PERIODICITY_NULL if not periodic)
+ *   perio_matrix <-- periodicity transformation matrix
+ *   verbosity    <-- level of verbosity required
  *
  * returns:
  *   a pointer to a cs_join_param_t structure
  *---------------------------------------------------------------------------*/
 
 static cs_join_param_t
-_join_param_define(int      join_num,
-                   float    fraction,
-                   float    plane,
-                   int      perio_num,
-                   int      verbosity)
+_join_param_define(int                      join_num,
+                   float                    fraction,
+                   float                    plane,
+                   fvm_periodicity_type_t   perio_type,
+                   double                   perio_matrix[3][4],
+                   int                      verbosity)
 {
   double  cplane;
   cs_join_param_t  param;
 
   param.num = join_num;
-  param.perio_num = perio_num;
+
+  /* Possible periodicity information */
+
+  param.perio_type = perio_type;
+
+  if (param.perio_type == FVM_PERIODICITY_NULL) {
+    int i, j;
+    for (i = 0; i < 3; i++) {
+      for (j = 0; j < 4; j++)
+        param.perio_matrix[i][j] = 0.;
+    }
+  }
+  else
+    memcpy(param.perio_matrix, perio_matrix, sizeof(double)*12);
 
   /* geometric parameters */
 
@@ -272,7 +287,7 @@ _join_select_destroy(cs_join_param_t     param,
     BFT_FREE(_js->b_face_state);
     BFT_FREE(_js->i_face_state);
 
-    if (param.perio_num > 0)
+    if (param.perio_type != FVM_PERIODICITY_NULL)
       BFT_FREE(_js->per_v_couples);
 
     _destroy_join_sync(&(_js->s_vertices));
@@ -1977,7 +1992,8 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
  *   sel_criteria <-- boundary face selection criteria
  *   fraction     <-- value of the fraction parameter
  *   plane        <-- value of the plane parameter
- *   perio_num    <-- periodicity number (0 if not a periodic joining)
+ *   perio_type   <-- periodicity type (FVM_PERIODICITY_NULL if not periodic)
+ *   perio_matrix <-- periodicity transformation matrix
  *   verbosity    <-- level of verbosity required
  *
  * returns:
@@ -1985,16 +2001,35 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
  *---------------------------------------------------------------------------*/
 
 cs_join_t *
-cs_join_create(int          join_number,
-               const char  *sel_criteria,
-               float        fraction,
-               float        plane,
-               int          perio_num,
-               int          verbosity)
+cs_join_create(int                      join_number,
+               const char              *sel_criteria,
+               float                    fraction,
+               float                    plane,
+               fvm_periodicity_type_t   perio_type,
+               double                   perio_matrix[3][4],
+               int                      verbosity)
 {
   size_t  l;
 
   cs_join_t  *join = NULL;
+
+  /* Check main parameter values */
+
+  if (fraction < 0.0 || fraction >= 1.0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the fraction parameter.\n"
+                "  It must be between [0.0, 1.0[ and is here: %f\n"),
+              fraction);
+
+  if (plane < 0.0 || plane >= 90.0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Mesh joining:"
+                "  Forbidden value for the plane parameter.\n"
+                "  It must be between [0, 90] and is here: %f\n"),
+              plane);
+
+  /* Initialize structure */
 
   BFT_MALLOC(join, 1, cs_join_t);
 
@@ -2003,7 +2038,8 @@ cs_join_create(int          join_number,
   join->param = _join_param_define(join_number,
                                    fraction,
                                    plane,
-                                   perio_num,
+                                   perio_type,
+                                   perio_matrix,
                                    verbosity);
 
   /* Copy the selection criteria for future use */

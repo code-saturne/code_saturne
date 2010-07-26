@@ -1224,7 +1224,7 @@ CS_PROCF (parfbg, PARFBG)(cs_int_t   *lnum,
  * parameters:
  *   interfaces --> pointer to a fvm_interface_set_t structure
  *   var_size   --> number of elements in var buffer
- *   stride     --> number of values (no interlaced) by entity
+ *   stride     --> number of values (non interleaved) by entity
  *   var        <-> variable buffer
  *----------------------------------------------------------------------------*/
 
@@ -1238,10 +1238,11 @@ cs_parall_interface_sr(fvm_interface_set_t  *interfaces,
 
   int  request_count;
   int  distant_rank, n_interfaces;
-  cs_int_t  id, ii, jj;
-  cs_int_t  total_size;
+  fvm_lnum_t  id, ii, jj;
+  fvm_lnum_t  total_size;
 
-  cs_int_t  count_size = 0;
+  fvm_lnum_t  count_size = 0;
+  fvm_lnum_t  tr_index_size = 0;
   fvm_lnum_t  n_entities = 0;
   cs_real_t  *buf = NULL, *send_buf = NULL, *recv_buf = NULL;
 
@@ -1254,6 +1255,11 @@ cs_parall_interface_sr(fvm_interface_set_t  *interfaces,
   /* Initialize and allocate */
 
   n_interfaces = fvm_interface_set_size(interfaces);
+
+  /* Note: in the case of periodicity, transform 0 of the interface
+     is used for non-periodic sections, and by construction,
+     for each periodicity i, transform i*2 + 1 is used for the
+     direct periodicity and transform i*2 + 2 for its reverse. */
 
   for (id = 0; id < n_interfaces; id++) {
     count_size
@@ -1307,12 +1313,40 @@ cs_parall_interface_sr(fvm_interface_set_t  *interfaces,
     distant_rank   = fvm_interface_rank(interface);
     n_entities = fvm_interface_size(interface);
     local_num = fvm_interface_get_local_num(interface);
-
+    tr_index_size = fvm_interface_get_tr_index_size(interface);
     send_buf = buf + (count_size * stride);
 
-    for (ii = 0 ; ii < n_entities ; ii++) {
-      for (jj = 0 ; jj < stride ; jj++)
-        send_buf[ii*stride + jj] = var[jj*var_size + (local_num[ii] - 1)];
+    if (tr_index_size != 0) {
+
+      int perio_id;
+      fvm_lnum_t kk = 0;
+      const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(interface);
+      const int n_perio = (tr_index_size -2) / 2;
+
+      for (ii = tr_index[0]; ii < tr_index[1]; ii++) {
+        for (jj = 0 ; jj < stride ; jj++)
+          send_buf[kk++] = var[jj*var_size + (local_num[ii] - 1)];
+      }
+
+      for (perio_id = 0; perio_id < n_perio; perio_id++) {
+        for (ii = tr_index[perio_id*2+2]; ii < tr_index[perio_id*2+3]; ii++) {
+          for (jj = 0 ; jj < stride ; jj++)
+            send_buf[kk++] = var[jj*var_size + (local_num[ii] - 1)];
+        }
+        for (ii = tr_index[perio_id*2+1]; ii < tr_index[perio_id*2+2]; ii++) {
+          for (jj = 0 ; jj < stride ; jj++)
+            send_buf[kk++] = var[jj*var_size + (local_num[ii] - 1)];
+        }
+      }
+
+      assert(kk == n_entities*stride);
+    }
+    else { /* if (tr_index_size == 0) */
+
+      for (ii = 0 ; ii < n_entities ; ii++) {
+        for (jj = 0 ; jj < stride ; jj++)
+          send_buf[ii*stride + jj] = var[jj*var_size + (local_num[ii] - 1)];
+      }
     }
 
     MPI_Isend(send_buf,

@@ -47,6 +47,7 @@
  *---------------------------------------------------------------------------*/
 
 #include <fvm_defs.h>
+#include <fvm_periodicity.h>
 
 /*----------------------------------------------------------------------------
  * Local library headers
@@ -88,8 +89,11 @@ typedef enum {
 
 typedef struct {
 
-  int  num;        /* number associated to the current join operation */
-  int  perio_num;  /* periodicity number associated to the joining op. */
+  int  num;         /* number associated to the current join operation */
+  int  perio_type;  /* FVM_PERIODICITY_NULL for non-periodic joinings,
+                       periodicity type for periodic joinings. */
+
+  double perio_matrix[3][4];  /* Periodicity matrix for periodic joinings */
 
   /* Octree - Quadtree search algorithm */
   /* ---------------------------------- */
@@ -98,8 +102,9 @@ typedef struct {
   int    tree_n_max_boxes;   /* Max. number of boxes which can be related to
                                a leaf of the tree if level != tree_max_level */
 
-  float  tree_max_box_ratio; /* Stop tree building if:
-                                n_linked_boxes > tree_max_box_ratio*n_init_boxes */
+  float  tree_max_box_ratio; /* Stop building tree when:
+                                (  n_linked_boxes
+                                 > tree_max_box_ratio * n_init_boxes) */
 
   /* Geometric parameters */
   /* -------------------- */
@@ -155,7 +160,7 @@ typedef struct {
 
   int  max_sub_faces;
 
-  /* Level of display:
+  /* Verbosity:
        O : no information printed
        1 : general information printed
        2 : more information printed
@@ -298,22 +303,24 @@ extern cs_join_t  **cs_glob_join_array;
  * parameters:
  *   join_number  <-- number related to the joining operation
  *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- edge fraction tolerance parameter
- *   plane        <-- plane normal angle tolerance
- *   perio_num    <-- periodicity number (0 if not a periodic joining)
- *   verbosity    <-- verbosity level
+ *   fraction     <-- value of the fraction parameter
+ *   plane        <-- value of the plane parameter
+ *   perio_type   <-- periodicity type (FVM_PERIODICITY_NULL if not periodic)
+ *   perio_matrix <-- periodicity transformation matrix
+ *   verbosity    <-- level of verbosity required
  *
  * returns:
- *   pointer to a newly allocated cs_join_t structure
+ *   a pointer to a new allocated cs_join_t structure
  *---------------------------------------------------------------------------*/
 
 cs_join_t *
-cs_join_create(int          join_number,
-               const char  *sel_criteria,
-               float        fraction,
-               float        plane,
-               int          perio_num,
-               int          verbosity);
+cs_join_create(int                      join_number,
+               const char              *sel_criteria,
+               float                    fraction,
+               float                    plane,
+               fvm_periodicity_type_t   perio_type,
+               double                   perio_matrix[3][4],
+               int                      verbosity);
 
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_t structure.

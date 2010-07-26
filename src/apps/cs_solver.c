@@ -261,7 +261,7 @@ cs_run(void)
 
   /* Initialize ghost cells and other parallelism-related structures */
 
-  cs_mesh_init_halo(cs_glob_mesh);
+  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder);
   cs_mesh_init_parall(cs_glob_mesh);
 
   /* Possible geometry modification */
@@ -363,7 +363,7 @@ cs_run(void)
 
   /* Destroy the temporary structure used to build the main mesh */
 
-  cs_glob_mesh_builder = cs_mesh_builder_destroy(cs_glob_mesh_builder);
+  cs_mesh_builder_destroy(&cs_glob_mesh_builder);
 
   /* Compute geometric quantities related to the mesh */
 

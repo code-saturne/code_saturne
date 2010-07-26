@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -66,11 +66,11 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_PERIO_ROTA_COPY         , /* Copy halo (for scalar)                      */
-  CS_PERIO_ROTA_RESET        , /* Reset halo in case of rotation              */
-  CS_PERIO_ROTA_IGNORE         /* Ignore halo in case of rotation             */
+  CS_PERIO_ROTA_COPY,          /* Copy halo (for scalar) */
+  CS_PERIO_ROTA_RESET,         /* Reset halo in case of rotation */
+  CS_PERIO_ROTA_IGNORE         /* Ignore halo in case of rotation */
 
-} cs_perio_rota_t ;
+} cs_perio_rota_t;
 
 /*============================================================================
  *  Public function header for Fortran API
@@ -608,25 +608,6 @@ size_t
 cs_perio_restore_rotation_halo(const cs_halo_t   *halo,
                                cs_halo_type_t     op_type,
                                cs_real_t          var[]);
-
-/*----------------------------------------------------------------------------
- * Define parameters for building an interface set structure on the main mesh.
- *
- * parameters:
- *   p_n_periodic_lists   <-> pointer to the number of periodic lists (may
- *                            be local)
- *   p_periodic_num       <-> pointer to the periodicity number (1 to n)
- *                            associated with each periodic list (primary
- *                            periodicities only)
- *   p_n_periodic_couples <-> pointer to the number of periodic couples
- *   p_periodic_couples   <-> pointer to the periodic couple list
- *----------------------------------------------------------------------------*/
-
-void
-cs_perio_define_couples(int         *p_n_periodic_lists,
-                        int         *p_periodic_num[],
-                        fvm_lnum_t  *p_n_periodic_couples[],
-                        fvm_gnum_t  **p_periodic_couples[]);
 
 /*----------------------------------------------------------------------------*/
 

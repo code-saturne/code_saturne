@@ -491,9 +491,11 @@ else if (ifoenv .eq. 1) then
 !        On initialise les dimensions a 0 avant la lecture, certaines
 !          rubriques etant optionnelles.
 
-   call ledevi                                                    &
+   call ledevi(ndim, nfml, nprfml, iperio, iperot)
    !==========
-   ( ndim   , nfml   , nprfml , iperio , iperot )
+
+   call tstjpe(iperio, iperot)
+   !==========
 
 endif
 

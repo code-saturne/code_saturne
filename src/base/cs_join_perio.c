@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2009 EDF S.A., France
+ *     Copyright (C) 2008-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -61,6 +61,8 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
+#include "cs_mesh.h"
+
 #include "cs_search.h"
 #include "cs_join_mesh.h"
 #include "cs_join_post.h"
@@ -80,174 +82,57 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *===========================================================================*/
 
-typedef struct _cs_join_perio_builder_t {
-
-  int   n_perio;   /* Number of initial periodicity
-                      No composition of periodicity taken into account */
-
-  fvm_periodicity_t   *periodicity;   /* Structure keeping periodicity
-                                         information like matrix of
-                                         the transformation */
-
-  int   *n_perio_couples;             /* Local number of periodic face
-                                         couples for each periodicity */
-  fvm_gnum_t  **perio_couples;        /* List of global numbering of
-                                         periodic faces. */
-
-} cs_join_perio_builder_t;
-
 /*============================================================================
  * Global variables
  *===========================================================================*/
 
-int  cs_glob_n_join_perio = 0; /* Number of periodicity defined through
-                                  a joining operation */
-
 /*============================================================================
  * Static global variables
  *===========================================================================*/
-
-static cs_join_perio_builder_t  *cs_glob_join_perio_builder = NULL;
 
 /*============================================================================
  * Private function definitions
  *===========================================================================*/
 
 /*----------------------------------------------------------------------------
- * Create and initialize a cs_join_perio_builder_t structure.
- *
- * returns:
- *  a pointer to a new allocated cs_join_perio_builder_t
- *---------------------------------------------------------------------------*/
-
-static cs_join_perio_builder_t *
-_create_perio_builder(void)
-{
-  cs_join_perio_builder_t  *perio_builder = NULL;
-
-  BFT_MALLOC(perio_builder, 1, cs_join_perio_builder_t);
-
-  perio_builder->n_perio = 1;
-
-  perio_builder->periodicity = fvm_periodicity_create(0.001);
-
-  BFT_MALLOC(perio_builder->n_perio_couples, 1, int);
-  BFT_MALLOC(perio_builder->perio_couples, 1, fvm_gnum_t *);
-
-  perio_builder->n_perio_couples[0] = 0;
-  perio_builder->perio_couples[0] = NULL;
-
-  return perio_builder;
-}
-
-/*----------------------------------------------------------------------------
- * Free a cs_join_perio_builder_t structure.
- * builder->periodicity is not freed here because it's transfered to a
- * cs_mesh_t structure.
- *
- * parameters:
- *   builder     <-> a pointer to a cs_join_perio_builder_t struct. to free
- *---------------------------------------------------------------------------*/
-
-static void
-_delete_perio_builder(cs_join_perio_builder_t   **builder)
-{
-  int  i;
-
-  cs_join_perio_builder_t  *_bdr = *builder;
-
-  if (_bdr == NULL)
-    return;
-
-  for (i = 0; i < _bdr->n_perio; i++)
-    BFT_FREE(_bdr->perio_couples[i]);
-  BFT_FREE(_bdr->perio_couples);
-  BFT_FREE(_bdr->n_perio_couples);
-
-  BFT_FREE(_bdr);
-
-  *builder = NULL;
-}
-
-/*----------------------------------------------------------------------------
- * Update a cs_join_perio_builder_t structure. Add a new periodicity.
- *
- * parameters:
- *   builder     <-> a pointer to a cs_join_perio_builder_t structure
- *---------------------------------------------------------------------------*/
-
-static void
-_increment_perio_builder(cs_join_perio_builder_t   *builder)
-{
-  assert(builder != NULL);
-
-  builder->n_perio += 1;
-
-  BFT_REALLOC(builder->n_perio_couples, builder->n_perio, int);
-  BFT_REALLOC(builder->perio_couples, builder->n_perio, fvm_gnum_t *);
-
-  builder->n_perio_couples[builder->n_perio - 1] = 0;
-  builder->perio_couples[builder->n_perio - 1] = NULL;
-}
-
-/*----------------------------------------------------------------------------
  * Add a new periodic cs_join_t structure.
  *
  * parameters:
- *   join_number  <-- number related to the joining operation
+ *   perio_type   <-- periodicity number
+ *   perio_matrix <-- periodicity transformation matrix
  *   sel_criteria <-- boundary face selection criteria
  *   fraction     <-- value of the fraction parameter
  *   plane        <-- value of the plane parameter
- *   perio_num    <-- periodicity number
  *   verbosity    <-- level of verbosity required
  *
  * returns:
- *   a pointer to a new allocated cs_join_t structure
+ *   the global joining number associated with the periodic joining
  *---------------------------------------------------------------------------*/
 
-static void
-_add_perio_join(int           join_number,
-                const char   *criteria,
-                float         fraction,
-                float         plane,
-                int           perio_num,
-                int           verbosity)
+static int
+_add_perio_join(fvm_periodicity_type_t  perio_type,
+                double                  matrix[3][4],
+                const char             *criteria,
+                float                   fraction,
+                float                   plane,
+                int                     verbosity)
 {
-  /* Check parameters value */
-
-  if (fraction < 0.0 || fraction >= 1.0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the fraction parameter.\n"
-                "  It must be between [0.0, 1.0[ and is here: %f\n"),
-              fraction);
-
-  if (plane < 0.0 || plane >= 90.0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the plane parameter.\n"
-                "  It must be between [0, 90] and is here: %f\n"),
-              plane);
-
-  if (perio_num < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the periodicity number.\n"
-                "  It must be between > 0 and is here: %d\n"),
-              perio_num);
-
    /* Allocate and initialize a cs_join_t structure */
 
   BFT_REALLOC(cs_glob_join_array, cs_glob_n_joinings + 1, cs_join_t *);
 
-  cs_glob_join_array[cs_glob_n_joinings] = cs_join_create(join_number,
-                                                          criteria,
-                                                          fraction,
-                                                          plane,
-                                                          perio_num,
-                                                          verbosity);
+  cs_glob_join_array[cs_glob_n_joinings]
+    = cs_join_create(cs_glob_n_joinings + 1,
+                     criteria,
+                     fraction,
+                     plane,
+                     perio_type,
+                     matrix,
+                     verbosity);
 
   cs_glob_n_joinings++;
+
+  return cs_glob_n_joinings;
 }
 
 /*----------------------------------------------------------------------------
@@ -318,174 +203,6 @@ _redistribute_mesh(cs_join_param_t         param,
   *p_work_mesh = work_mesh;
 
 }
-
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Complete mesh builder definition for periodic faces.
- * Algorithm similar to the one in the file cs_preprocessor_data.c.
- * Face relation are defined in local numbering.
- *
- * parameters:
- *   n_init_perio <-- number of initial periodicities defined
- *   mb           <-> mesh builder structure to update
- *   face_ifs     <-- face interface set structure
- *---------------------------------------------------------------------------*/
-
-static void
-_extract_perio_couples(int                   n_init_perio,
-                       cs_mesh_builder_t    *mb,
-                       fvm_interface_set_t  *face_ifs)
-{
-  int  i, j, k, l;
-
-  fvm_lnum_t  *per_face_count = NULL;
-  fvm_lnum_t  *if_index = NULL;
-  fvm_lnum_t  *send_num = NULL, *recv_num = NULL;
-
-  const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
-  const int  n_interfaces = fvm_interface_set_size(face_ifs);
-  const fvm_lnum_t  tr_index_size = n_init_perio*2 + 2;
-
-  /* Define interface index only for the periodic data */
-
-  BFT_MALLOC(if_index, n_interfaces + 1, fvm_lnum_t);
-
-  if_index[0] = 0;
-  for (j = 0; j < n_interfaces; j++) {
-    const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, j);
-    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
-    if_index[j+1] = if_index[j] + tr_index[tr_index_size - 1]-tr_index[1];
-  }
-
-  /* Define send_num and recv_num */
-
-  BFT_MALLOC(send_num, if_index[n_interfaces], fvm_lnum_t);
-  BFT_MALLOC(recv_num, if_index[n_interfaces], fvm_lnum_t);
-
-  for (j = 0; j < n_interfaces; j++) {
-
-    const fvm_lnum_t start_id = if_index[j];
-    const fvm_lnum_t end_id = if_index[j+1];
-    const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, j);
-    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
-    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
-    const int distant_rank = fvm_interface_rank(face_if);
-
-    for (k = start_id, l = tr_index[1]; k < end_id; k++, l++)
-      send_num[k] = loc_num[l];
-
-    if (distant_rank == local_rank) {
-      const fvm_lnum_t *dist_num = fvm_interface_get_distant_num(face_if);
-      for (k = start_id, l = tr_index[1]; k < end_id; k++, l++)
-        recv_num[k] = dist_num[l];
-    }
-  }
-
-  {   /* Exchange local face numbers */
-
-    MPI_Request  *request = NULL;
-    MPI_Status  *status  = NULL;
-
-    int request_count = 0;
-
-    BFT_MALLOC(request, n_interfaces*2, MPI_Request);
-    BFT_MALLOC(status, n_interfaces*2, MPI_Status);
-
-    for (j = 0; j < n_interfaces; j++) {
-      const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, j);
-      int distant_rank = fvm_interface_rank(face_if);
-
-      if (distant_rank != local_rank)
-        MPI_Irecv(recv_num + if_index[j],
-                  if_index[j+1] - if_index[j],
-                  FVM_MPI_LNUM,
-                  distant_rank,
-                  distant_rank,
-                  cs_glob_mpi_comm,
-                  &(request[request_count++]));
-    }
-
-    for (j = 0; j < n_interfaces; j++) {
-      const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, j);
-      int distant_rank = fvm_interface_rank(face_if);
-
-      if (distant_rank != local_rank)
-        MPI_Isend(send_num + if_index[j],
-                  if_index[j+1] - if_index[j],
-                  FVM_MPI_LNUM,
-                  distant_rank,
-                  (int)local_rank,
-                  cs_glob_mpi_comm,
-                  &(request[request_count++]));
-    }
-
-    MPI_Waitall(request_count, request, status);
-
-    BFT_FREE(request);
-    BFT_FREE(status);
-  }
-
-  /* Copy interface information to mesh builder */
-
-  BFT_MALLOC(per_face_count, n_init_perio, fvm_lnum_t);
-  for (i = 0; i < n_init_perio; i++)
-    per_face_count[i] = 0;
-
-  for (j = 0; j < n_interfaces; j++) {
-
-    fvm_lnum_t  tr_shift = 0;
-    const fvm_interface_t  *face_if = fvm_interface_set_get(face_ifs, j);
-    const int  distant_rank = fvm_interface_rank(face_if);
-    const fvm_lnum_t  *tr_index = fvm_interface_get_tr_index(face_if);
-
-    for (i = 1; i < tr_index_size - 1; i++) {
-
-      fvm_lnum_t n_elts = tr_index[i+1] - tr_index[i];
-
-      if ((distant_rank != local_rank) || (i%2 == 1)) {
-
-        fvm_lnum_t  send_shift, recv_shift;
-
-        int  perio_id = (i-1)/2;
-        int  perio_sgn = (i%2)*2 - 1; /* 1 for odd, -1 for even */
-        fvm_lnum_t  n_dir_elts = tr_index[2*perio_id+2]-tr_index[2*perio_id+1];
-        fvm_lnum_t  n_rev_elts = tr_index[2*perio_id+3]-tr_index[2*perio_id+2];
-
-        send_shift = if_index[j] + tr_shift;
-        if (distant_rank != local_rank) {
-          if (perio_sgn > 0)
-            recv_shift = if_index[j] + n_rev_elts + tr_shift;
-          else
-            recv_shift = if_index[j] - n_dir_elts + tr_shift;
-        }
-        else /* if (i%2 == 1) */
-          recv_shift = send_shift;
-
-        for (k = 0; k < n_elts; k++) {
-          l = mb->per_face_idx[perio_id] + per_face_count[perio_id];
-          mb->per_face_lst[l*2]     = send_num[send_shift + k]*perio_sgn;
-          mb->per_face_lst[l*2 + 1] = recv_num[recv_shift + k];
-          mb->per_rank_lst[l] = distant_rank + 1;
-          per_face_count[perio_id] += 1;
-        }
-      }
-
-      tr_shift += n_elts;
-
-    } /* End of loop on tr_index */
-
-  } /* End of loop on interfaces */
-
-
-  BFT_FREE(per_face_count);
-  BFT_FREE(recv_num);
-  BFT_FREE(send_num);
-  BFT_FREE(if_index);
-
-}
-
-#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
  * Delete interior faces temporary added for periodicity operation.
@@ -587,7 +304,7 @@ _perio_face_clean(cs_join_param_t      param,
  * SUBROUTINE NUMPER
  * *****************
  *
- * INTEGER   numper      : --> : number of periodicities  op. already defined
+ * INTEGER   numper      : --> : number of periodicity  ops. already defined
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(numper, NUMPER)
@@ -595,9 +312,8 @@ void CS_PROCF(numper, NUMPER)
  cs_int_t    *numper
 )
 {
-  *numper = cs_glob_n_join_perio;
-
-  return;
+  if (cs_glob_mesh != NULL)
+    *numper = cs_glob_mesh->n_init_perio;
 }
 
 /*----------------------------------------------------------------------------
@@ -608,7 +324,7 @@ void CS_PROCF(numper, NUMPER)
  * SUBROUTINE DEFPT1
  * *****************
  *
- * INTEGER        numper    : <-- : number related to the periodic op.
+ * INTEGER        join_num  : --> : joining operation number
  * CHARACTER*     criteria  : <-- : boundary face selection criteria
  * REAL           fraction  : <-- : parameter for merging vertices
  * REAL           plane     : <-- : parameter for splitting faces
@@ -621,7 +337,7 @@ void CS_PROCF(numper, NUMPER)
 
 void CS_PROCF(defpt1, DEFPT1)
 (
- cs_int_t    *numper,
+ cs_int_t    *join_num,
  const char  *criteria,
  cs_real_t   *fraction,
  cs_real_t   *plane,
@@ -637,8 +353,6 @@ void CS_PROCF(defpt1, DEFPT1)
 
   char *_criteria = NULL;
 
-  assert(CS_ABS(*tx) > 0.0 || CS_ABS(*ty) > 0.0 || CS_ABS(*tz) > 0.0);
-
   trans[0] = *tx;
   trans[1] = *ty;
   trans[2] = *tz;
@@ -648,16 +362,11 @@ void CS_PROCF(defpt1, DEFPT1)
   if (_criteria != NULL && strlen(_criteria) == 0)
     cs_base_string_f_to_c_free(&_criteria);
 
-  bft_printf(_("  Adding periodicity %d "
-               "(translation [%10.4e, %10.4e, %10.4e]).\n"),
-             cs_glob_n_join_perio, trans[0], trans[1], trans[2]);
-
-  cs_join_perio_add_translation(*numper,
-                                _criteria,
-                                *fraction,
-                                *plane,
-                                *verbosity,
-                                trans);
+  *join_num = cs_join_perio_add_translation(_criteria,
+                                            *fraction,
+                                            *plane,
+                                            *verbosity,
+                                            trans);
 
   if (_criteria != NULL)
     cs_base_string_f_to_c_free(&_criteria);
@@ -671,7 +380,7 @@ void CS_PROCF(defpt1, DEFPT1)
  * SUBROUTINE DEFPR1
  * *****************
  *
- * INTEGER        numper    : <-- : number related to the periodic op.
+ * INTEGER        join_num  : --> : joining operation number
  * CHARACTER*     criteria  : <-- : boundary face selection criteria
  * REAL           fraction  : <-- : parameter for merging vertices
  * REAL           plane     : <-- : parameter for splitting faces
@@ -688,7 +397,7 @@ void CS_PROCF(defpt1, DEFPT1)
 
 void CS_PROCF(defpr1, DEFPR1)
 (
- cs_int_t    *numper,
+ cs_int_t    *join_num,
  const char  *criteria,
  cs_real_t   *fraction,
  cs_real_t   *plane,
@@ -707,9 +416,6 @@ void CS_PROCF(defpr1, DEFPR1)
   double  axis[3], inv[3];
   char  *_criteria = NULL;
 
-  assert(CS_ABS(*ax) > 0.0 || CS_ABS(*ay) > 0.0 || CS_ABS(*az) > 0.0);
-  assert(CS_ABS(*theta) > 0.0);
-
   axis[0] = *ax;
   axis[1] = *ay;
   axis[2] = *az;
@@ -723,16 +429,13 @@ void CS_PROCF(defpr1, DEFPR1)
   if (_criteria != NULL && strlen(_criteria) == 0)
     cs_base_string_f_to_c_free(&_criteria);
 
-  bft_printf(_("  Adding periodicity %d (rotation).\n"), cs_glob_n_join_perio);
-
-  cs_join_perio_add_rotation(*numper,
-                             _criteria,
-                             *fraction,
-                             *plane,
-                             *verbosity,
-                             *theta,
-                             axis,
-                             inv);
+  *join_num = cs_join_perio_add_rotation(_criteria,
+                                         *fraction,
+                                         *plane,
+                                         *verbosity,
+                                         *theta,
+                                         axis,
+                                         inv);
 
   if (_criteria != NULL)
     cs_base_string_f_to_c_free(&_criteria);
@@ -751,7 +454,7 @@ void CS_PROCF(defpr1, DEFPR1)
  * SUBROUTINE DEFPG1
  * *****************
  *
- * INTEGER        numper    : <-- : number related to the periodic op.
+ * INTEGER        join_num  : --> : joining operation number
  * CHARACTER*     criteria  : <-- : boundary face selection criteria
  * REAL           fraction  : <-- : parameter for merging vertices
  * REAL           plane     : <-- : parameter for splitting faces
@@ -773,7 +476,7 @@ void CS_PROCF(defpr1, DEFPR1)
 
 void CS_PROCF(defpg1, DEFPG1)
 (
- cs_int_t    *numper,
+ cs_int_t    *join_num,
  const char  *criteria,
  cs_real_t   *fraction,
  cs_real_t   *plane,
@@ -819,92 +522,43 @@ void CS_PROCF(defpg1, DEFPG1)
   if (_criteria != NULL && strlen(_criteria) == 0)
     cs_base_string_f_to_c_free(&_criteria);
 
-  bft_printf(_("  Adding periodicity %d (general formulation).\n"),
-             cs_glob_n_join_perio);
-
-  cs_join_perio_add_mixed(*numper,
-                          _criteria,
-                          *fraction,
-                          *plane,
-                          *verbosity,
-                          (double (*)[4])matrix);
+  *join_num = cs_join_perio_add_mixed(_criteria,
+                                      *fraction,
+                                      *plane,
+                                      *verbosity,
+                                      (double (*)[4])matrix);
 
   if (_criteria != NULL)
     cs_base_string_f_to_c_free(&_criteria);
 }
 
 /*----------------------------------------------------------------------------
- * Set advanced parameters for the joining algorithm in case of periodicity
+ * Check if periodic joining operations are queued
  *
  * Fortran Interface:
  *
- * SUBROUTINE SETAPP
+ * SUBROUTINE TSTJPE
  * *****************
  *
- * INTEGER      perio_num         : <-- : perio number
- * REAL         mtf               : <-- : merge tolerance coefficient
- * REAL         pmf               : <-- : pre-merge factor
- * INTEGER      tcm               : <-- : tolerance computation mode
- * INTEGER      icm               : <-- : intersection computation mode
- * INTEGER      maxbrk            : <-- : max number of equiv. breaks
- * INTEGER      max_sub_faces     : <-- : max. possible number of sub-faces
- *                                        by splitting a selected face
- * INTEGER      tml               : <-- : tree max level
- * INTEGER      tmb               : <-- : tree max boxes
- * REAL         tmr               : <-- : tree max ratio
+ * INTEGER        iperio    : <-> : do we have periodicity ?
+ * INTEGER        iperot    : <-> : do we have periodicity of rotation ?
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(setapp, SETAPP)
+void CS_PROCF(tstjpe, tstjpe)
 (
- cs_int_t    *perio_num,
- cs_real_t   *mtf,
- cs_real_t   *pmf,
- cs_int_t    *tcm,
- cs_int_t    *icm,
- cs_int_t    *maxbrk,
- cs_int_t    *max_sub_faces,
- cs_int_t    *tml,
- cs_int_t    *tmb,
- cs_real_t   *tmr
+ cs_int_t    *iperio,
+ cs_int_t    *iperot
 )
 {
-  int  i, join_id = -1;
-
-  cs_join_t  *join = NULL;
-
-  assert(*perio_num > 0);
-
-  /* Look for the joining structure related to "perio_num" */
+  int i;
 
   for (i = 0; i < cs_glob_n_joinings; i++) {
-
-    join = cs_glob_join_array[i];
-    if (*perio_num == join->param.perio_num) {
-      join_id = i;
-      break;
-    }
-
+    cs_join_param_t param = (cs_glob_join_array[i])->param;
+    if (param.perio_type > FVM_PERIODICITY_NULL)
+      *iperio = 1;
+    if (param.perio_type > FVM_PERIODICITY_TRANSLATION)
+      *iperot = 1;
   }
-
-  if (join_id < 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Periodicity number %d is not defined\n"
-                " %d periodicities are defined\n"),
-              *perio_num, cs_glob_n_join_perio);
-
-  assert(join != NULL);
-
-  cs_join_set_advanced_param(join,
-                             *mtf,
-                             *pmf,
-                             *tcm,
-                             *icm,
-                             *maxbrk,
-                             *max_sub_faces,
-                             *tml,
-                             *tmb,
-                             *tmr);
-
 }
 
 /*============================================================================
@@ -915,49 +569,46 @@ void CS_PROCF(setapp, SETAPP)
  * Define a translational periodicity
  *
  * parameters:
- *   perio_num    <-- number related to the periodicity
  *   sel_criteria <-- boundary face selection criteria
  *   fraction     <-- value of the fraction parameter
  *   plane        <-- value of the plane parameter
  *   verbosity    <-- level of verbosity required
  *   trans        <-- translation vector
+ *
+ * returns:
+ *   joining number (1 to n) associated with new periodicity
  *----------------------------------------------------------------------------*/
 
-void
-cs_join_perio_add_translation(int            perio_num,
-                              const char    *sel_criteria,
+int
+cs_join_perio_add_translation(const char    *sel_criteria,
                               double         fraction,
                               double         plane,
                               int            verbosity,
                               const double   trans[3])
 {
-  cs_int_t  tr_id;
+  double  matrix[3][4];
+  fvm_periodicity_t *tmp_perio = fvm_periodicity_create(0.001);
+
+  int join_num = 0;
 
   assert((trans[0]*trans[0] + trans[1]*trans[1] + trans[2]*trans[2]) > 0.0);
 
-  if (cs_glob_n_join_perio == 0) {
-    assert(cs_glob_join_perio_builder == NULL);
-    cs_glob_join_perio_builder = _create_perio_builder();
-  }
-  else
-    _increment_perio_builder(cs_glob_join_perio_builder);
+  /* Use temporary periodicity structure to convert parameters to matrix */
 
-  cs_glob_n_join_perio++;
+  fvm_periodicity_add_translation(tmp_perio, 1, trans);
 
-  /* Temporarily increment the number of periodicy in the mesh structure */
-  cs_glob_mesh->n_init_perio++;
+  fvm_periodicity_get_matrix(tmp_perio, 0, matrix);
 
-  tr_id =
-    fvm_periodicity_add_translation(cs_glob_join_perio_builder->periodicity,
-                                    cs_glob_n_join_perio,
-                                    trans);
+  join_num = _add_perio_join(FVM_PERIODICITY_TRANSLATION,
+                             matrix,
+                             sel_criteria,
+                             fraction,
+                             plane,
+                             verbosity);
 
-  _add_perio_join(perio_num + cs_glob_join_count,
-                  sel_criteria,
-                  fraction,
-                  plane,
-                  cs_glob_n_join_perio,
-                  verbosity);
+  tmp_perio = fvm_periodicity_destroy(tmp_perio);
+
+  return join_num;
 }
 
 /*----------------------------------------------------------------------------
@@ -972,11 +623,13 @@ cs_join_perio_add_translation(int            perio_num,
  *   theta        <-- rotation angle (in degrees)
  *   axis         <-- axis vector
  *   invariant    <-- invariant point coordinates
+ *
+ * returns:
+ *   joining number (1 to n) associated with new periodicity
  *----------------------------------------------------------------------------*/
 
-void
-cs_join_perio_add_rotation(int            perio_num,
-                           const char    *sel_criteria,
+int
+cs_join_perio_add_rotation(const char    *sel_criteria,
                            double         fraction,
                            double         plane,
                            int            verbosity,
@@ -984,39 +637,37 @@ cs_join_perio_add_rotation(int            perio_num,
                            const double   axis[3],
                            const double   invariant[3])
 {
-  cs_int_t  tr_id;
+  double  matrix[3][4];
+  fvm_periodicity_t *tmp_perio = fvm_periodicity_create(0.001);
+
+  int join_num = 0;
 
   assert(theta*theta > 0.0);
   assert((axis[0]*axis[0] + axis[1]*axis[1] + axis[2]*axis[2]) > 0.0);
 
-  if (cs_glob_n_join_perio == 0) {
-    assert(cs_glob_join_perio_builder == NULL);
-    cs_glob_join_perio_builder = _create_perio_builder();
-  }
-  else
-    _increment_perio_builder(cs_glob_join_perio_builder);
+  /* Use temporary periodicity structure to convert parameters to matrix */
 
-  cs_glob_n_join_perio++;
+  fvm_periodicity_add_rotation(tmp_perio,
+                               1,
+                               theta,
+                               axis,
+                               invariant);
 
-  /* Temporarily increment the number of periodicy in the mesh structure */
-  cs_glob_mesh->n_init_perio++;
+  fvm_periodicity_get_matrix(tmp_perio, 0, matrix);
+
+  join_num = _add_perio_join(FVM_PERIODICITY_ROTATION,
+                             matrix,
+                             sel_criteria,
+                             fraction,
+                             plane,
+                             verbosity);
+
+  tmp_perio = fvm_periodicity_destroy(tmp_perio);
 
   /* Add a tag to indicate the use of rotation */
   cs_glob_mesh->have_rotation_perio = 1;
 
-  tr_id =
-    fvm_periodicity_add_rotation(cs_glob_join_perio_builder->periodicity,
-                                 cs_glob_n_join_perio,
-                                 theta,
-                                 axis,
-                                 invariant);
-
-  _add_perio_join(perio_num + cs_glob_join_count,
-                  sel_criteria,
-                  fraction,
-                  plane,
-                  cs_glob_n_join_perio,
-                  verbosity);
+  return join_num;
 }
 
 /*----------------------------------------------------------------------------
@@ -1029,45 +680,95 @@ cs_join_perio_add_rotation(int            perio_num,
  *   plane        <-- value of the plane parameter
  *   verbosity    <-- level of verbosity required
  *   matrix       <-- transformation matrix
+ *
+ * returns:
+ *   joining number (1 to n) associated with new periodicity
  *----------------------------------------------------------------------------*/
 
-void
-cs_join_perio_add_mixed(int            perio_num,
-                        const char    *sel_criteria,
+int
+cs_join_perio_add_mixed(const char    *sel_criteria,
                         double         fraction,
                         double         plane,
                         int            verbosity,
                         double         matrix[3][4])
 {
-  cs_int_t  tr_id;
+  int join_num = 0;
 
-  if (cs_glob_n_join_perio == 0) {
-    assert(cs_glob_join_perio_builder == NULL);
-    cs_glob_join_perio_builder = _create_perio_builder();
-  }
-  else
-    _increment_perio_builder(cs_glob_join_perio_builder);
-
-  cs_glob_n_join_perio++;
-
-  /* Temporarily increment the number of periodicy in the mesh structure */
-  cs_glob_mesh->n_init_perio++;
+  join_num = _add_perio_join(FVM_PERIODICITY_MIXED,
+                             matrix,
+                             sel_criteria,
+                             fraction,
+                             plane,
+                             verbosity);
 
   /* Add a tag to indicate the use of rotation */
   cs_glob_mesh->have_rotation_perio = 1;
 
-  tr_id =
-    fvm_periodicity_add_by_matrix(cs_glob_join_perio_builder->periodicity,
-                                  cs_glob_n_join_perio,
-                                  FVM_PERIODICITY_MIXED,
-                                  matrix);
+  return join_num;
+}
 
-  _add_perio_join(perio_num + cs_glob_join_count,
-                  sel_criteria,
-                  fraction,
-                  plane,
-                  cs_glob_n_join_perio,
-                  verbosity);
+/*----------------------------------------------------------------------------
+ * Add periodicity information to mesh and create or update mesh builder
+ * for a new periodic joining.
+ *
+ * parameters:
+ *   this_join <-- high level join structure
+ *   mesh      <-> pointer to a cs_mesh_t structure
+ *   builder   <-> pointer to a cs_mesh_builder_t structure pointer
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_perio_init(cs_join_t           *this_join,
+                   cs_mesh_t           *mesh,
+                   cs_mesh_builder_t  **builder)
+{
+  cs_join_param_t  param = this_join->param;
+  fvm_periodicity_t  *periodicity = NULL;
+  cs_mesh_builder_t  *_builder;
+
+  int  perio_id = - 1;
+
+  assert(mesh != NULL);
+
+  /* Update mesh periodicity information */
+
+  if (mesh->periodicity == NULL)
+    mesh->periodicity = fvm_periodicity_create(0.001);
+
+  periodicity = mesh->periodicity;
+
+  mesh->n_init_perio += 1;
+  if (param.perio_type > FVM_PERIODICITY_TRANSLATION)
+    mesh->have_rotation_perio = 1;
+
+  perio_id = fvm_periodicity_get_n_transforms(periodicity)/2;
+
+  fvm_periodicity_add_by_matrix(periodicity,
+                                perio_id + 1,
+                                param.perio_type,
+                                param.perio_matrix);
+
+  assert(mesh->n_init_perio == perio_id + 1);
+
+  /* Update builder */
+
+  if (*builder != NULL)
+    _builder = *builder;
+
+  else {
+    _builder = cs_mesh_builder_create();
+    *builder = _builder;
+  }
+
+  _builder->n_perio += 1;
+
+  assert(mesh->n_init_perio == _builder->n_perio);
+
+  BFT_REALLOC(_builder->n_perio_couples, mesh->n_init_perio, fvm_lnum_t);
+  BFT_REALLOC(_builder->perio_couples, mesh->n_init_perio, fvm_gnum_t *);
+
+  _builder->n_perio_couples[mesh->n_init_perio - 1] = 0;
+  _builder->perio_couples[mesh->n_init_perio - 1] = NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -1078,7 +779,7 @@ cs_join_perio_add_mixed(int            perio_num,
  * parameters:
  *   this_join <-- high level join structure
  *   jmesh     <-> local join mesh struct. to duplicate and transform
- *   mesh      <-- pointer to a cs_mesh_t struct.
+ *   mesh      <-- pointer to a cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
@@ -1091,14 +792,19 @@ cs_join_perio_apply(cs_join_t          *this_join,
 
   cs_join_param_t  param = this_join->param;
   cs_join_select_t  *select = this_join->selection;
-  fvm_periodicity_t  *periodicity = cs_glob_join_perio_builder->periodicity;
+  fvm_periodicity_t  *periodicity = mesh->periodicity;
 
+  int  perio_id = - 1;
   const int  n_ranks = cs_glob_n_ranks;
-  const int  perio_id = param.perio_num - 1;
   const int  n_init_vertices = jmesh->n_vertices;
   const int  n_init_faces = jmesh->n_faces;
 
+  /* Get mesh periodicity information */
+
+  perio_id = fvm_periodicity_get_n_transforms(mesh->periodicity)/2 - 1;
   assert(perio_id > -1);
+
+  fvm_periodicity_get_matrix(mesh->periodicity, 2*perio_id+1, matrix);
 
   /* Retrieve related transformation */
 
@@ -1246,6 +952,7 @@ cs_join_perio_apply(cs_join_t          *this_join,
  * parameters:
  *   this_join          <-- pointer to a high level join structure
  *   jmesh              <-> local join mesh struct. to duplicate and transform
+ *   mesh               <-- pointer to a cs_mesh_t structure
  *   p_work_jmesh       <-> distributed join mesh struct. on which operations
  *                          take place
  *   p_work_edges       <-> join edges struct. related to work_jmesh
@@ -1257,6 +964,7 @@ cs_join_perio_apply(cs_join_t          *this_join,
 void
 cs_join_perio_merge_back(cs_join_t          *this_join,
                          cs_join_mesh_t     *jmesh,
+                         const cs_mesh_t    *mesh,
                          cs_join_mesh_t    **p_work_jmesh,
                          cs_join_edges_t   **p_work_edges,
                          fvm_gnum_t          init_max_vtx_gnum,
@@ -1277,17 +985,16 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
   cs_join_edges_t  *work_edges = *p_work_edges;
   cs_join_param_t  param = this_join->param;
   cs_join_select_t  *select = this_join->selection;
-  cs_join_perio_builder_t  *builder = cs_glob_join_perio_builder;
 
+  int  perio_id = - 1;
   const int  n_ranks = cs_glob_n_ranks;
-  const int  perio_id = param.perio_num - 1;
-
-  assert(perio_id > -1);
-  assert(builder != NULL);
 
   /* Retrieve related back transformation */
 
-  fvm_periodicity_get_matrix(builder->periodicity, 2*perio_id+1, matrix);
+  perio_id = fvm_periodicity_get_n_transforms(mesh->periodicity)/2 - 1;
+  assert(perio_id > -1);
+
+  fvm_periodicity_get_matrix(mesh->periodicity, 2*perio_id+1, matrix);
 
   BFT_MALLOC(linked_id, jmesh->n_vertices, cs_int_t);
   BFT_MALLOC(gnum, jmesh->n_vertices, fvm_gnum_t);
@@ -1624,6 +1331,7 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
  *   this_join  <-- pointer to a high level join structure
  *   jmesh      <-> local join mesh struct. to duplicate and transform
  *   mesh       <-- pointer to a cs_mesh_t structure
+ *   builder    <-- pointer to a cs_mesh_builder_t structure
  *   o2n_hist   <-- old global face -> new local face numbering
  *   p_n2o_hist <-- new global face -> old local face numbering
  *---------------------------------------------------------------------------*/
@@ -1632,30 +1340,31 @@ void
 cs_join_perio_split_back(cs_join_t          *this_join,
                          cs_join_mesh_t     *jmesh,
                          cs_mesh_t          *mesh,
+                         cs_mesh_builder_t  *builder,
                          cs_join_gset_t     *o2n_hist,
                          cs_join_gset_t    **p_n2o_hist)
 {
   int  i, j, k, shift, vid, fid, start, end, perio_start, perio_end;
   int  n_final_faces, n1_faces, n2_faces;
   int  shift1, shift2, shift3, shift4;
-  int  n_sub_ori, n_sub_per, n_contrib, n_couples;
+  fvm_lnum_t  n_sub_ori, n_sub_per, n_contrib, n_couples;
   fvm_gnum_t  n2_g_faces;
 
-  int  n_vertices_to_add = 0, n_g_vertices_to_add = 0;
-  cs_int_t  *new_f2v_idx = NULL, *new_f2v_lst = NULL;
-  cs_int_t  *linked_id = NULL, *f_tag = NULL;
+  fvm_lnum_t  n_vertices_to_add = 0, n_g_vertices_to_add = 0;
+  fvm_lnum_t  *new_f2v_idx = NULL, *new_f2v_lst = NULL;
+  fvm_lnum_t  *linked_id = NULL, *f_tag = NULL;
   fvm_gnum_t  *gnum = NULL, *f2_gnum = NULL, *new_fgnum = NULL;
   cs_join_gset_t  *new_history = NULL, *n2o_hist = *p_n2o_hist;
 
-  cs_join_param_t  param = this_join->param;
   cs_join_select_t  *select = this_join->selection;
-  cs_join_perio_builder_t  *builder = cs_glob_join_perio_builder;
 
+  int  perio_id = - 1;
   const int  n_ranks = cs_glob_n_ranks;
-  const int  perio_id = param.perio_num - 1;
 
-  assert(perio_id > -1);
   assert(builder != NULL);
+
+  perio_id = fvm_periodicity_get_n_transforms(mesh->periodicity)/2 - 1;
+  assert(perio_id > -1);
 
   /* Detect periodic face to delete and associate a tag for each new face */
 
@@ -1947,7 +1656,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
     /* Retrieve related back transformation */
 
-    fvm_periodicity_get_matrix(builder->periodicity, 2*perio_id+1, matrix);
+    fvm_periodicity_get_matrix(mesh->periodicity, 2*perio_id+1, matrix);
 
     n_vertices_to_add = 0;
     for (i1 = 0; i1 < jmesh->n_vertices; i1++) {
@@ -2188,18 +1897,19 @@ cs_join_perio_split_back(cs_join_t          *this_join,
 
 /*----------------------------------------------------------------------------
  * Define a list of coupled faces by periodicty in global numbering.
+ *
  * For parallel runs:
  *  - remove isolated periodic faces in the mesh definition
  *  - define a consistent face connectivity in order to prepare the building
  *    of periodic vertex couples
  *
- *
  * parameters:
- *   param      <-- set of parameters for the joining operation
- *   n_ii_faces <-- initial local number of interior faces
- *   face_type  <-- type of faces in join mesh (interior or border ...)
- *   jmesh      <-- pointer on a cs_join_mesh_t struct.
- *   mesh       <-> pointer on a cs_mesh_t struct.
+ *   param        <-- set of parameters for the joining operation
+ *   n_ii_faces   <-- initial local number of interior faces
+ *   face_type    <-- type of faces in join mesh (interior or border ...)
+ *   jmesh        <-- pointer to a cs_join_mesh_t structure
+ *   mesh         <-> pointer to a cs_mesh_t structure
+ *   mesh_builder <-> pointer to a cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
@@ -2207,19 +1917,21 @@ cs_join_perio_split_update(cs_join_param_t             param,
                            cs_int_t                    n_ii_faces,
                            const cs_join_face_type_t   face_type[],
                            const cs_join_mesh_t       *jmesh,
-                           cs_mesh_t                  *mesh)
+                           cs_mesh_t                  *mesh,
+                           cs_mesh_builder_t          *mesh_builder)
 {
   int  i, shift;
 
   fvm_gnum_t  *o2n_num = NULL;
-  cs_join_perio_builder_t  *builder = cs_glob_join_perio_builder;
 
+  int  perio_id = - 1;
   const int  n_j_faces = jmesh->n_faces;
   const int  n_ranks = cs_glob_n_ranks;
-  const int  perio_id = param.perio_num - 1;
 
+  assert(mesh_builder != NULL);
+
+  perio_id = fvm_periodicity_get_n_transforms(mesh->periodicity)/2 - 1;
   assert(perio_id > -1);
-  assert(builder != NULL);
 
   /* Initialize o2n_num */
 
@@ -2247,16 +1959,16 @@ cs_join_perio_split_update(cs_join_param_t             param,
 
   /* Apply new numbering */
 
-  for (i = 0; i < builder->n_perio_couples[perio_id]; i++) {
+  for (i = 0; i < mesh_builder->n_perio_couples[perio_id]; i++) {
 
-    fvm_gnum_t  old1 = builder->perio_couples[perio_id][2*i] - 1;
-    fvm_gnum_t  old2 = builder->perio_couples[perio_id][2*i+1] - 1;
+    fvm_gnum_t  old1 = mesh_builder->perio_couples[perio_id][2*i] - 1;
+    fvm_gnum_t  old2 = mesh_builder->perio_couples[perio_id][2*i+1] - 1;
 
     assert(o2n_num[old1] > 0);
     assert(o2n_num[old2] > 0);
 
-    builder->perio_couples[perio_id][2*i] = o2n_num[old1];
-    builder->perio_couples[perio_id][2*i+1] = o2n_num[old2];
+    mesh_builder->perio_couples[perio_id][2*i] = o2n_num[old1];
+    mesh_builder->perio_couples[perio_id][2*i+1] = o2n_num[old2];
 
   }
 
@@ -2264,150 +1976,6 @@ cs_join_perio_split_update(cs_join_param_t             param,
 
   if (n_ranks > 1) /* Remove isolated periodic face for the current mesh */
     _perio_face_clean(param, mesh);
-
-}
-
-/*----------------------------------------------------------------------------
- * Use periodic face couples in cs_glob_join_perio_builder to define
- * cs_glob_mesh_builder.
- * Free all elements which can be freed.
- * Transfer data to cs_glob_mesh and cs_glob_mesh_builder.
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_perio_transfer_builder(void)
-{
-  int  i, j, k;
-
-  cs_join_perio_builder_t  *p_builder = cs_glob_join_perio_builder;
-  cs_mesh_builder_t  *m_builder = cs_glob_mesh_builder;
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  const int  n_perio = cs_glob_n_join_perio;
-  const int  n_ranks = cs_glob_n_ranks;
-
-  /* Periodicity is either defined by a joining operation, either defined
-     by a preprocessor command. One cannot use the way together */
-
-  assert(m_builder != NULL);
-  assert(m_builder->per_face_idx == NULL);
-  assert(m_builder->per_face_lst == NULL);
-  assert(m_builder->per_rank_lst == NULL);
-  assert(p_builder != NULL);
-  assert(mesh != NULL);
-  assert(n_perio == p_builder->n_perio);
-  assert(mesh->periodicity == NULL); /* No periodicity already defined by
-                                        the preprocessor */
-
-  /* Transfer data to mesh structure */
-
-  mesh->n_init_perio = n_perio;
-  mesh->periodicity = p_builder->periodicity;
-
-  /* Define mesh builder */
-
-  BFT_MALLOC(m_builder->per_face_idx, n_perio + 1, cs_int_t);
-
-  m_builder->per_face_idx[0] = 0;
-  for (i = 0; i < n_perio; i++)
-    m_builder->per_face_idx[i+1] =  m_builder->per_face_idx[i]
-                                  + p_builder->n_perio_couples[i];
-
-  BFT_MALLOC(m_builder->per_face_lst, 2*m_builder->per_face_idx[n_perio],
-             cs_int_t);
-
-  if (n_ranks == 1) {
-
-    for (i = 0, k = 0; i < n_perio; i++) {
-      for (j = 0; j < p_builder->n_perio_couples[i]; j++, k++) {
-        m_builder->per_face_lst[2*k] = p_builder->perio_couples[i][2*j];
-        m_builder->per_face_lst[2*k+1] = p_builder->perio_couples[i][2*j+1];
-      }
-    }
-
-  }
-  else { /* Parallel run: n_ranks > 1 */
-
-    fvm_interface_set_t *face_ifs = NULL;
-    fvm_lnum_t  *periodicity_num = NULL;
-
-    BFT_MALLOC(periodicity_num, n_perio, fvm_lnum_t);
-    BFT_MALLOC(m_builder->per_rank_lst, m_builder->per_face_idx[n_perio],
-               cs_int_t);
-
-    for (i = 0; i < n_perio; i++)
-      periodicity_num[i] = i+1;
-
-    face_ifs = fvm_interface_set_create(mesh->n_i_faces,
-                                        NULL,
-                                        mesh->global_i_face_num,
-                                        mesh->periodicity,
-                                        n_perio,
-                                        periodicity_num,
-                                        p_builder->n_perio_couples,
-              (const fvm_gnum_t **const)p_builder->perio_couples);
-
-#if defined(HAVE_MPI) /* Algo. similar to the one in cs_preprocessor_data.c */
-    _extract_perio_couples(n_perio, m_builder, face_ifs);
-#endif
-
-    /* Keep face interface to build the future i_face_cells connect. */
-
-    m_builder->face_ifs = face_ifs;
-
-    /* Free memory */
-
-    BFT_FREE(periodicity_num);
-
-  }
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
- {
-   int  perio_id;
-
-   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
-
-   bft_printf("\n  Dump periodic data built from the joining algorithm\n");
-
-   for (perio_id = 0; perio_id < n_perio; perio_id++) {
-
-     int  start_id = m_builder->per_face_idx[perio_id];
-     int  end_id = m_builder->per_face_idx[perio_id+1];
-
-     bft_printf("\n  Perio id: %4d - Number of elements: %7d "
-                "(start: %7d - end: %7d)\n",
-                perio_id, end_id-start_id, start_id, end_id);
-     bft_printf("   id    | 1st face | 2nd face | associated rank\n");
-
-     for (i = start_id; i < end_id; i++) {
-       if (cs_glob_n_ranks > 1) {
-
-         int  f1_id = CS_ABS(m_builder->per_face_lst[2*i]) -1;
-         int  f2_id = CS_ABS(m_builder->per_face_lst[2*i+1]) -1;
-
-         bft_printf("%8d | %8d (%9u) | %8d (%9u) | %5d\n",
-                    i, m_builder->per_face_lst[2*i],
-                    cs_glob_mesh->global_i_face_num[f1_id],
-                    m_builder->per_face_lst[2*i+1],
-                    (m_builder->per_rank_lst[i]-1 == local_rank ?
-                     cs_glob_mesh->global_i_face_num[f2_id] : 0),
-                    m_builder->per_rank_lst[i]-1);
-
-       }
-       else
-         bft_printf("%8d | %10d | %10d | %6d\n",
-                    i, m_builder->per_face_lst[2*i],
-                    m_builder->per_face_lst[2*i+1],
-                    local_rank);
-     }
-     bft_printf_flush();
-
-   }
-
- }
-#endif
-
-  _delete_perio_builder(&p_builder);
 
 }
 

@@ -41,7 +41,7 @@ subroutine defjoi &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! numjoi           ! i  ! <-- ! join number                                    !
+! numjoi           ! i  ! --> ! joining operation number                       !
 ! critjo           ! a  ! <-- ! selection criteria for the border faces to     !
 !                  !    !     ! transform                                      !
 ! fract            ! r  ! <-- ! fraction parameter                             !
@@ -65,7 +65,7 @@ implicit none
 ! Arguments
 
 character*(*)    critjo
-integer          iwarnj, numjoi
+integer          numjoi, iwarnj
 double precision fract, plane
 
 ! Local variables

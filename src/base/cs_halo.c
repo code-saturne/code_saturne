@@ -944,14 +944,16 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
 
 #if defined(HAVE_MPI)
 
-  const size_t send_buffer_size =   halo->n_elts[sync_mode]
-                                  * sizeof(cs_real_t) * stride;
+  if (cs_glob_n_ranks > 1) {
+    const size_t send_buffer_size =   halo->n_elts[sync_mode]
+                                    * sizeof(cs_real_t) * stride;
 
-  if (send_buffer_size > _cs_glob_halo_send_buffer_size) {
-    _cs_glob_halo_send_buffer_size =  send_buffer_size;
-    BFT_REALLOC(_cs_glob_halo_send_buffer,
-                _cs_glob_halo_send_buffer_size,
-                char);
+    if (send_buffer_size > _cs_glob_halo_send_buffer_size) {
+      _cs_glob_halo_send_buffer_size =  send_buffer_size;
+      BFT_REALLOC(_cs_glob_halo_send_buffer,
+                  _cs_glob_halo_send_buffer_size,
+                  char);
+    }
   }
 
 #endif /* defined(HAVE_MPI) */

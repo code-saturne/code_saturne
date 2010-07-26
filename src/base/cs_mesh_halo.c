@@ -122,13 +122,13 @@ typedef struct _vtx_lookup_table {
  * is linked.
  *
  * parameters:
- *   vtx_lookup  -->  pointer to a vtx_lookup_table_t structure
- *   ifs         -->  pointer to a fvm_interface_set_t structure
+ *   vtx_lookup  <--  pointer to a vtx_lookup_table_t structure
+ *   ifs         <--  pointer to a fvm_interface_set_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_fill_vtx_lookup(vtx_lookup_table_t   *vtx_lookup,
-                 fvm_interface_set_t  *ifs)
+_fill_vtx_lookup(vtx_lookup_table_t         *vtx_lookup,
+                 const fvm_interface_set_t  *ifs)
 {
   cs_int_t  i, vtx_id, rank_id, shift;
 
@@ -173,13 +173,13 @@ _fill_vtx_lookup(vtx_lookup_table_t   *vtx_lookup,
  * 0 otherwise the list gets the number of the transformation (+ or -)
  *
  * parameters:
- *   vtx_look_up  -->  pointer to a vtx_lookup_table_t structure
- *   ifs          -->  pointer to a fvm_interface_set_t structure
+ *   vtx_look_up  <--  pointer to a vtx_lookup_table_t structure
+ *   ifs          <--  pointer to a fvm_interface_set_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_fill_vtx_lookup_with_perio(vtx_lookup_table_t   *vtx_lookup,
-                            fvm_interface_set_t  *ifs)
+_fill_vtx_lookup_with_perio(vtx_lookup_table_t         *vtx_lookup,
+                            const fvm_interface_set_t  *ifs)
 {
   cs_int_t  i, tr_id, vtx_id, rank_id, shift;
 
@@ -242,16 +242,16 @@ _fill_vtx_lookup_with_perio(vtx_lookup_table_t   *vtx_lookup,
  * Create a vtx_look_up_table_t structure
  *
  * parameters:
- *   n_vertices  -->  number of vertices of the table.
- *   ifs         -->  pointer to a fvm_interface_set_t structure
+ *   n_vertices  <--  number of vertices of the table.
+ *   ifs         <--  pointer to a fvm_interface_set_t structure
  *
  * returns:
  *   A pointer to the created vtx_lookup_table_t structure
  *---------------------------------------------------------------------------*/
 
 static vtx_lookup_table_t *
-_vtx_lookup_create(cs_int_t              n_vertices,
-                   fvm_interface_set_t  *ifs)
+_vtx_lookup_create(cs_int_t                    n_vertices,
+                   const fvm_interface_set_t  *ifs)
 {
   cs_int_t  i, rank_id, tmp_id, interface_size;
 
@@ -383,35 +383,32 @@ _vtx_lookup_create(cs_int_t              n_vertices,
  * Destroy a vtx_lookup structure.
  *
  * parameters:
- *   vtx_lookup -->  pointer to a vtx_lookup_table_t structure
- *
- * returns:
- *   A NULL pointer
+ *   vtx_lookup <--  pointer to a vtx_lookup_table_t structure
  *---------------------------------------------------------------------------*/
 
 static void
-_vtx_lookup_destroy(vtx_lookup_table_t  *vtx_lookup)
+_vtx_lookup_destroy(vtx_lookup_table_t  **vtx_lookup)
 {
+  vtx_lookup_table_t  *vl = *vtx_lookup;
 
-  BFT_FREE(vtx_lookup->if_ranks);
-  BFT_FREE(vtx_lookup->rank_ids);
-  BFT_FREE(vtx_lookup->index);
-  BFT_FREE(vtx_lookup->rank_list);
+  BFT_FREE(vl->if_ranks);
+  BFT_FREE(vl->rank_ids);
+  BFT_FREE(vl->index);
+  BFT_FREE(vl->rank_list);
 
-  if (vtx_lookup->type_list != NULL)
-    BFT_FREE(vtx_lookup->type_list);
+  if (vl->type_list != NULL)
+    BFT_FREE(vl->type_list);
 
-  BFT_FREE(vtx_lookup);
-
+  BFT_FREE(*vtx_lookup);
 }
 
 /*---------------------------------------------------------------------------
  * Set checker for this vertex_id according to vtx_lookup features.
  *
  * parameters:
- *   vtx_id       -->  vertex id to deal with
+ *   vtx_id       <--  vertex id to deal with
  *   vtx_checker  <->  put a tag in the implied categories
- *   vtx_lookup   -->  pointer to a vtx_lookup_table_t structure
+ *   vtx_lookup   <--  pointer to a vtx_lookup_table_t structure
  *---------------------------------------------------------------------------*/
 
 static void
@@ -500,8 +497,8 @@ _update_face_checker(cs_int_t          n_face_vertices,
  * according to face_checker values.
  *
  * parameters:
- *   mesh         --> pointer to a mesh structure
- *   face_checker --> halo type in each categories for cell's faces
+ *   mesh         <-- pointer to a mesh structure
+ *   face_checker <-- halo type in each categories for cell's faces
  *---------------------------------------------------------------------------*/
 
 static void
@@ -650,9 +647,9 @@ _build_halo_index(cs_mesh_t  *mesh)
  * Fill ghost cells list (member of cs_halo_t structure)
  *
  * parameters:
- *   mesh          -->  pointer to a mesh structure.
- *   face_checker  -->  halo type of each face of the cell.
- *   cell_id       -->  numbering of the treated cell.
+ *   mesh          <--  pointer to a mesh structure.
+ *   face_checker  <--  halo type of each face of the cell.
+ *   cell_id       <--  numbering of the treated cell.
  *   counter       <->  counter on each categories.
  *---------------------------------------------------------------------------*/
 
@@ -786,17 +783,17 @@ _test_loop_continues(cs_mesh_t   *mesh,
  * Second one for filling the ghost cells list.
  *
  * parameters:
- *   mesh           --> pointer to cs_mesh_t structure
- *   interface_set  --> pointer to fvm_interface_set_t structure
- *   cell_faces_idx --> "cell -> faces" connectivity index
- *   cell_faces_lst --> "cell -> faces" connectivity list
+ *   mesh           <-- pointer to cs_mesh_t structure
+ *   vertex_ifs  <-- pointer to fvm_vertex_ifs_t structure
+ *   cell_faces_idx <-- "cell -> faces" connectivity index
+ *   cell_faces_lst <-- "cell -> faces" connectivity list
  *---------------------------------------------------------------------------*/
 
 static void
-_fill_send_halo(cs_mesh_t            *mesh,
-                fvm_interface_set_t  *interface_set,
-                cs_int_t             *cell_faces_idx,
-                cs_int_t             *cell_faces_lst)
+_fill_send_halo(cs_mesh_t                  *mesh,
+                const fvm_interface_set_t  *vertex_ifs,
+                cs_int_t                   *cell_faces_idx,
+                cs_int_t                   *cell_faces_lst)
 {
   cs_int_t  i, cell_id, i_fac, i_vtx;
   cs_int_t  fac_id, vtx_id, fac_num;
@@ -826,7 +823,7 @@ _fill_send_halo(cs_mesh_t            *mesh,
   /* Create a lookup table to accelerate search in
      fvm_interface_set structure */
 
-  vtx_lookup = _vtx_lookup_create(n_vertices, interface_set);
+  vtx_lookup = _vtx_lookup_create(n_vertices, vertex_ifs);
 
   n_categories = vtx_lookup->n_categories;
 
@@ -996,7 +993,7 @@ _fill_send_halo(cs_mesh_t            *mesh,
 
   /* Destroy the lookup table strcuture */
 
-  _vtx_lookup_destroy(vtx_lookup);
+  _vtx_lookup_destroy(&vtx_lookup);
 
   /* Complete halo definition */
 
@@ -1016,25 +1013,25 @@ _fill_send_halo(cs_mesh_t            *mesh,
 }
 
 /*---------------------------------------------------------------------------
- * Define a buffer on vertices where vertex belonging to the interface_set
+ * Define a buffer on vertices where vertex belonging to the vertex_ifs
  * are tagged with 1 else 0.
  *
  * parameters:
- *   n_vertices    --> size of the buffer
- *   interface_set --> pointer to a fvm_interface_set_t structure
+ *   n_vertices    <-- size of the buffer
+ *   vertex_ifs    <-- pointer to a fvm_interface_set_t structure
  *   p_vertex_tag  <-> pointer to the tagged buffer
  *---------------------------------------------------------------------------*/
 
 static void
 _get_vertex_tag(cs_int_t                    n_vertices,
-                const fvm_interface_set_t  *interface_set,
+                const fvm_interface_set_t  *vertex_ifs,
                 cs_int_t                   *p_vertex_tag[])
 {
   cs_int_t  i, j, rank_id;
 
   cs_int_t  *vertex_tag = NULL;
 
-  const int  ifs_size = fvm_interface_set_size(interface_set);
+  const int  ifs_size = fvm_interface_set_size(vertex_ifs);
 
   BFT_MALLOC(vertex_tag, n_vertices, cs_int_t);
 
@@ -1043,7 +1040,7 @@ _get_vertex_tag(cs_int_t                    n_vertices,
 
   for (rank_id = 0; rank_id < ifs_size; rank_id++) {
 
-    const fvm_interface_t  *interface = fvm_interface_set_get(interface_set, rank_id);
+    const fvm_interface_t  *interface = fvm_interface_set_get(vertex_ifs, rank_id);
     const fvm_lnum_t  *local_num = fvm_interface_get_local_num(interface);
     const fvm_lnum_t  if_size = fvm_interface_size(interface);
 
@@ -1060,12 +1057,12 @@ _get_vertex_tag(cs_int_t                    n_vertices,
  * Compute the number of purely parallel ghost cells for a specific rank.
  *
  * parameters:
- *   mesh      --> pointer to cs_mesh_t structure
- *   rank      --> rank on which we want to know the number of purely
+ *   mesh      <-- pointer to cs_mesh_t structure
+ *   rank      <-- rank on which we want to know the number of purely
  *                 parallel elements.
- *   type      --> standard or extended
- *   index     --> index on halo's elements
- *   perio_lst --> periodic details on halo
+ *   type      <-- standard or extended
+ *   index     <-- index on halo's elements
+ *   perio_lst <-- periodic details on halo
  *
  * returns:
  *  Number of purely parallel elements in the halo.
@@ -1111,7 +1108,7 @@ _get_n_par_ghost_cells(const cs_mesh_t  *mesh,
  * frontier ranks. Fill the halo structure from these data.
  *
  * parameters:
- *   mesh --> pointer to a cs_mesh_t structure
+ *   mesh <-- pointer to a cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 static void
@@ -1349,14 +1346,14 @@ _fill_halo(cs_mesh_t  *mesh)
  * This is done to avoid a reallocation for each rank and transformation.
  *
  * parameters:
- *   ifs --> pointer to a fvm_interface_set_t structure
+ *   ifs <-- pointer to a fvm_interface_set_t structure
  *
  * returns:
  *  max buffer size
  *---------------------------------------------------------------------------*/
 
 static cs_int_t
-_get_list_buffer_size(fvm_interface_set_t  *ifs)
+_get_list_buffer_size(const fvm_interface_set_t  *ifs)
 {
   cs_int_t  i, j, tr_index_size;
 
@@ -1392,18 +1389,18 @@ _get_list_buffer_size(fvm_interface_set_t  *ifs)
  * and this transformation.
  *
  * parameters:
- *   ifs                --> pointer to fvm_interface_set_t structure
- *   rank_id            --> rank number to work with
- *   tr_id              --> transformation id to work with
+ *   ifs                <-- pointer to fvm_interface_set_t structure
+ *   rank_id            <-- rank number to work with
+ *   tr_id              <-- transformation id to work with
  *   vtx_interface_idx  <-> index on vertices which match the criterions
  *---------------------------------------------------------------------------*/
 
 static void
-_define_vtx_interface_idx(fvm_interface_set_t  *ifs,
-                          cs_int_t              rank_id,
-                          cs_int_t              tr_id,
-                          cs_int_t              n_vertices,
-                          cs_int_t             *vtx_interface_idx)
+_define_vtx_interface_idx(const fvm_interface_set_t  *ifs,
+                          cs_int_t                    rank_id,
+                          cs_int_t                    tr_id,
+                          cs_int_t                    n_vertices,
+                          cs_int_t                   *vtx_interface_idx)
 {
   cs_int_t  i, j, id;
 
@@ -1454,21 +1451,21 @@ _define_vtx_interface_idx(fvm_interface_set_t  *ifs,
  * to local vertices (same rank and same transformation).
  *
  * parameters:
- *   ifs               --> pointer to fvm_interface_set_t structure
- *   rank_id           --> rank number to work with
- *   tr_id             --> transformation id to work with
- *   n_vertices        --> number of vertices
+ *   ifs               <-- pointer to fvm_interface_set_t structure
+ *   rank_id           <-- rank number to work with
+ *   tr_id             <-- transformation id to work with
+ *   n_vertices        <-- number of vertices
  *   dist_num_lst      <-> list of distant vertex numbers matching criteria
  *   vtx_interface_idx <-> index on vertices matching criteria
  *---------------------------------------------------------------------------*/
 
 static void
-_define_dist_num_lst(fvm_interface_set_t  *ifs,
-                     cs_int_t              rank_id,
-                     cs_int_t              tr_id,
-                     cs_int_t              n_vertices,
-                     cs_int_t             *dist_num_lst,
-                     cs_int_t             *vtx_interface_idx)
+_define_dist_num_lst(const fvm_interface_set_t  *ifs,
+                     int                         rank_id,
+                     int                         tr_id,
+                     cs_int_t                    n_vertices,
+                     cs_int_t                   *dist_num_lst,
+                     cs_int_t                   *vtx_interface_idx)
 {
   cs_int_t  i, j, id, shift;
 
@@ -1535,14 +1532,14 @@ _define_dist_num_lst(fvm_interface_set_t  *ifs,
  * elements according to its rank, its periodicity and its type.
  *
  * parameters:
- *   mesh        --> pointer to cs_mesh_t structure
- *   index       --> index on halo's elements
- *   perio_lst   --> periodic details on halo
- *   rank_id     --> rank number to work with
- *   tr_id       --> transformation id to work with
- *   type_id     --> standard or extended
- *   p_start_idx <-- pointer on start index
- *   p_end_idx   <-- pointer on end index
+ *   mesh        <-- pointer to cs_mesh_t structure
+ *   index       <-- index on halo's elements
+ *   perio_lst   <-- periodic details on halo
+ *   rank_id     <-- rank number to work with
+ *   tr_id       <-- transformation id to work with
+ *   type_id     <-- standard or extended
+ *   p_start_idx --> pointer on start index
+ *   p_end_idx   --> pointer on end index
  *---------------------------------------------------------------------------*/
 
 static void
@@ -1622,12 +1619,12 @@ _get_start_end_idx(const cs_mesh_t    *mesh,
  * This will be use to define "ghost cell to distant vertices" index.
  *
  * parameters:
- *   mesh               --> pointer to cs_mesh_t structure
- *   ifs                --> pointer to fvm_interface_set_t structure
- *   rank_id            --> rank number to work with
- *   tr_id              --> transformation id to work with
- *   cell_faces_idx     --> "cell -> faces" connectivity index
- *   cell_faces_lst     --> "cell -> faces" connectivity list
+ *   mesh               <-- pointer to cs_mesh_t structure
+ *   ifs                <-- pointer to fvm_interface_set_t structure
+ *   rank_id            <-- rank number to work with
+ *   tr_id              <-- transformation id to work with
+ *   cell_faces_idx     <-- "cell -> faces" connectivity index
+ *   cell_faces_lst     <-- "cell -> faces" connectivity list
  *   vtx_interface_idx  <-> index on vertices which match the criterions
  *   vtx_tag            <-> tag array on vertices
  *   gcell_dist_vtx_idx <-> "ghost cell -> distant vertices" connectivity index
@@ -1635,9 +1632,9 @@ _get_start_end_idx(const cs_mesh_t    *mesh,
 
 static void
 _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
-                                      fvm_interface_set_t  *ifs,
-                                      cs_int_t              rank_id,
-                                      cs_int_t              tr_id,
+                                      const fvm_interface_set_t  *ifs,
+                                      int                   rank_id,
+                                      int                   tr_id,
                                       cs_int_t             *cell_faces_idx,
                                       cs_int_t             *cell_faces_lst,
                                       cs_int_t             *vtx_interface_idx,
@@ -1659,9 +1656,8 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
   const char err_corresp[]
     = N_("Repeated inconsistency in the halo construction.\n"
          "Several local points have the same distant correspondant;\n"
-         "this is probably due to a multiple-periodicity construction\n"
-         "side effect of the Preprocessor or this is due to a poor quality\n"
-         "mesh generated during the joining step.\n"
+         "this is probably a side effect of a poor quality joining\n"
+         "or periodicity.\n"
          "Coordinates of the first impacted point: [%12.5e, %12.5e %12.5e].");
 
   _define_vtx_interface_idx(ifs,
@@ -1764,12 +1760,12 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
  * Fill the "ghost cells to distant vertices" connectivity.
  *
  * parameters:
- *   mesh               --> pointer to cs_mesh_t structure
- *   ifs                --> pointer to fvm_interface_set_t structure
- *   rank_id            --> rank number to work with
- *   tr_id              --> transformation id to work with
- *   cell_faces_idx     --> "cell -> faces" connectivity index
- *   cell_faces_lst     --> "cell -> faces" connectivity list
+ *   mesh               <-- pointer to cs_mesh_t structure
+ *   ifs                <-- pointer to fvm_interface_set_t structure
+ *   rank_id            <-- rank number to work with
+ *   tr_id              <-- transformation id to work with
+ *   cell_faces_idx     <-- "cell -> faces" connectivity index
+ *   cell_faces_lst     <-- "cell -> faces" connectivity list
  *   vtx_interface_idx  <-> index on vertices matching criteria
  *   dist_num_lst       <-> list of distant vertex numbers matching criteria
  *   counter            <-> counter on vertices
@@ -1780,7 +1776,7 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
 
 static void
 _fill_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
-                                     fvm_interface_set_t  *ifs,
+                                     const fvm_interface_set_t  *ifs,
                                      cs_int_t              rank_id,
                                      cs_int_t              tr_id,
                                      cs_int_t             *cell_faces_idx,
@@ -1889,17 +1885,17 @@ _fill_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
  * send_halo cells.
  *
  * parameters:
- *   mesh                 --> pointer to cs_mesh_t structure
- *   interface_set        --> pointer to fvm_interface_set_t structure
- *   cell_faces_idx       --> "cell -> faces" connectivity index
- *   cell_faces_lst       --> "cell -> faces" connectivity list
- *   p_gcell_dist_vtx_idx <-- "ghost cell -> distant vertices" connect. index
- *   p_gcell_dist_vtx_lst <-- "ghost cell -> distant vertices" connect. list
+ *   mesh                 <-- pointer to cs_mesh_t structure
+ *   interface_set        <-- pointer to fvm_interface_set_t structure
+ *   cell_faces_idx       <-- "cell -> faces" connectivity index
+ *   cell_faces_lst       <-- "cell -> faces" connectivity list
+ *   p_gcell_dist_vtx_idx --> "ghost cell -> distant vertices" connect. index
+ *   p_gcell_dist_vtx_lst --> "ghost cell -> distant vertices" connect. list
  *---------------------------------------------------------------------------*/
 
 static void
 _create_send_gcell_vtx_connect(cs_mesh_t            *mesh,
-                               fvm_interface_set_t  *interface_set,
+                               const fvm_interface_set_t  *interface_set,
                                cs_int_t             *cell_faces_idx,
                                cs_int_t             *cell_faces_lst,
                                cs_int_t             *p_gcell_dist_vtx_idx[],
@@ -2011,11 +2007,11 @@ _create_send_gcell_vtx_connect(cs_mesh_t            *mesh,
  * ranks and receive the same kind of connectivity from distant ranks.
  *
  * parameters:
- *   mesh                     -->  pointer to cs_mesh_t structure
- *   send_gcell_dist_vtx_idx  <--  "ghost cell -> distant vertices" index
- *   send_gcell_dist_vtx_lst  <--  "ghost cell -> distant vertices" list
- *   p_gcell_dist_vtx_idx     -->  "ghost cell -> distant vertices" index
- *   p_gcell_dist_vtx_lst     -->  "ghost cell -> distant vertices" list
+ *   mesh                     <--  pointer to cs_mesh_t structure
+ *   send_gcell_dist_vtx_idx  -->  "ghost cell -> distant vertices" index
+ *   send_gcell_dist_vtx_lst  -->  "ghost cell -> distant vertices" list
+ *   p_gcell_dist_vtx_idx     <--  "ghost cell -> distant vertices" index
+ *   p_gcell_dist_vtx_lst     <--  "ghost cell -> distant vertices" list
  *---------------------------------------------------------------------------*/
 
 static void
@@ -2208,107 +2204,14 @@ _check_i_face_cells(cs_mesh_t  *mesh)
 }
 
 /*---------------------------------------------------------------------------
- * Return a fvm_interface_set_t structure on faces.
- *
- * parameters:
- *   mesh  -->  pointer to cs_mesh_t structure
- *
- * returns:
- * a pointer to a fvm_interface_set_t structure on faces.
- *---------------------------------------------------------------------------*/
-
-static fvm_interface_set_t *
-_get_face_ifs(cs_mesh_t       *mesh)
-{
-  int  i, j, k;
-
-  cs_mesh_builder_t  *mb = cs_glob_mesh_builder;
-  fvm_interface_set_t  *face_ifs = NULL;
-
-  const int  n_init_perio = mesh->n_init_perio;
-  const int  n_ranks = cs_glob_n_ranks;
-
-  if (mb->face_ifs != NULL)
-    face_ifs = mb->face_ifs;
-
-  else {
-
-    assert(n_ranks == 1 || n_init_perio == 0);
-
-    if (n_ranks > 1 && n_init_perio == 0)
-      face_ifs = fvm_interface_set_create(mesh->n_i_faces,
-                                          NULL,
-                                          mesh->global_i_face_num,
-                                          NULL,
-                                          0,
-                                          NULL,
-                                          NULL,
-                                          NULL);
-
-    else if (n_ranks == 1 && n_init_perio > 0) {
-
-      fvm_lnum_t  *periodicity_num = NULL;
-      fvm_lnum_t  *n_perio_couples = NULL;
-      fvm_gnum_t  **perio_couples = NULL;
-
-      BFT_MALLOC(periodicity_num, n_init_perio, fvm_lnum_t);
-      BFT_MALLOC(n_perio_couples, n_init_perio, fvm_lnum_t);
-      BFT_MALLOC(perio_couples, n_init_perio, fvm_gnum_t *);
-
-      for (i = 0; i < n_init_perio; i++) {
-
-        periodicity_num[i] = i+1;
-        n_perio_couples[i] = mb->per_face_idx[i+1] - mb->per_face_idx[i];
-
-        BFT_MALLOC(perio_couples[i], 2*n_perio_couples[i], fvm_gnum_t);
-
-        for (k = 0, j = mb->per_face_idx[i];
-             j < mb->per_face_idx[i+1]; j++, k++) {
-          perio_couples[i][2*k] = mb->per_face_lst[2*j];
-          perio_couples[i][2*k+1] = mb->per_face_lst[2*j+1];
-        }
-
-      }
-
-      face_ifs = fvm_interface_set_create(mesh->n_i_faces,
-                                          NULL,
-                                          NULL,
-                                          mesh->periodicity,
-                                          n_init_perio,
-                                          periodicity_num,
-                                          n_perio_couples,
-                (const fvm_gnum_t **const)perio_couples);
-
-      BFT_FREE(periodicity_num);
-      BFT_FREE(n_perio_couples);
-
-      for (i = 0; i < n_init_perio; i++)
-        BFT_FREE(perio_couples[i]);
-      BFT_FREE(perio_couples);
-
-    }
-
-  }
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  fvm_interface_set_dump(face_ifs);
-#endif
-
-  mb->face_ifs = face_ifs;
-
-  return face_ifs;
-
-}
-
-/*---------------------------------------------------------------------------
  * Tag local face by its distant face id and reset previous tag
  *
  * parameters:
- *   prev      -->  previous start index
- *   start     -->  start index in lnum and dnum
- *   end       -->  end index in lnum and dnum
- *   lnum      -->  local_num array in fvm_interface_t struct.
- *   dnum      -->  distant_num array in fvm_interface_t struct.
+ *   prev      <--  previous start index
+ *   start     <--  start index in lnum and dnum
+ *   end       <--  end index in lnum and dnum
+ *   lnum      <--  local_num array in fvm_interface_t struct.
+ *   dnum      <--  distant_num array in fvm_interface_t struct.
  *   l2d_fids  <->  tag on local faces
  *---------------------------------------------------------------------------*/
 
@@ -2338,21 +2241,22 @@ _tag_interface_faces(int                prev,
  *
  * parameters:
  *   mesh            <->  pointer to cs_mesh_t structure
- *   cell_faces_idx  -->  "cell -> faces" connectivity index
- *   cell_faces_lst  -->  "cell -> faces" connectivity list
+ *   face_ifs        <--  faces interface
+ *   cell_faces_idx  <--  "cell -> faces" connectivity index
+ *   cell_faces_lst  <--  "cell -> faces" connectivity list
  *---------------------------------------------------------------------------*/
 
 static void
-_update_i_face_cells(cs_mesh_t    *mesh,
-                     cs_int_t     *cell_faces_idx,
-                     cs_int_t     *cell_faces_lst)
+_update_i_face_cells(cs_mesh_t                  *mesh,
+                     const fvm_interface_set_t  *face_ifs,
+                     cs_int_t                   *cell_faces_idx,
+                     cs_int_t                   *cell_faces_lst)
 {
   int  i, j, gcell_id, face_id, if_id, rank, shift, index_end;
   int  tr_id, start, end, length, n_interfaces, mpi_count, distant_rank;
 
   int  local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
   cs_halo_t  *halo = mesh->halo;
-  fvm_interface_set_t  *face_ifs = NULL;
   cs_int_t  *gcell_face_count = NULL, *l2d_fids = NULL;
   cs_int_t  *send_buffer = NULL, *recv_buffer = NULL, *buffer = NULL;
   cs_int_t  *send_shift = NULL, *recv_shift = NULL, *halo2ifs_rank = NULL;
@@ -2382,7 +2286,6 @@ _update_i_face_cells(cs_mesh_t    *mesh,
 
   /* Get an interface set struct. on faces */
 
-  face_ifs = _get_face_ifs(mesh);
   assert(face_ifs != NULL);
   n_interfaces = fvm_interface_set_size(face_ifs);
 
@@ -2791,7 +2694,6 @@ _update_i_face_cells(cs_mesh_t    *mesh,
   /* Sanity check */
 
   _check_i_face_cells(mesh);
-
 }
 
 #if 0 /* TODO: check algorithm (deadlock on BG/L on one test case) */
@@ -2803,7 +2705,7 @@ _update_i_face_cells(cs_mesh_t    *mesh,
  * and the halo is standard.
  *
  * parameters:
- *   mesh -->  pointer to a mesh structure
+ *   mesh <--  pointer to a mesh structure
  *---------------------------------------------------------------------------*/
 
 static void
@@ -2895,17 +2797,17 @@ _clean_halo(cs_mesh_t  *mesh)
  * ghost cells according to halo type building option.
  *
  * parameters:
- *   mesh             --> pointer to cs_mesh_t structure.
- *   interface_set    --> pointer to fvm_interface_set structure.
- *   p_cell_faces_idx <-- pointer to the connectivity index
- *   p_cell_faces_lst <-- pointer to the connectivity list
+ *   mesh             <-- pointer to cs_mesh_t structure.
+ *   interface_set    <-- pointer to fvm_interface_set structure.
+ *   p_cell_faces_idx --> pointer to the connectivity index
+ *   p_cell_faces_lst --> pointer to the connectivity list
  *----------------------------------------------------------------------------*/
 
 static void
-_create_gcell_faces_connect(cs_mesh_t            *mesh,
-                            fvm_interface_set_t  *interface_set,
-                            cs_int_t             *p_cell_faces_idx[],
-                            cs_int_t             *p_cell_faces_lst[])
+_create_gcell_faces_connect(cs_mesh_t                  *mesh,
+                            const fvm_interface_set_t  *vertex_ifs,
+                            cs_int_t                   *p_cell_faces_idx[],
+                            cs_int_t                   *p_cell_faces_lst[])
 {
   cs_int_t  i, fac_id, i_vtx, id1, id2, shift, vtx_id;
 
@@ -2924,7 +2826,7 @@ _create_gcell_faces_connect(cs_mesh_t            *mesh,
   *p_cell_faces_idx = cell_faces_idx;
   *p_cell_faces_lst = cell_faces_lst;
 
-  if (interface_set == NULL)
+  if (vertex_ifs == NULL)
     return;
 
   BFT_MALLOC(cell_faces_idx, n_cells+1, cs_int_t);
@@ -2941,7 +2843,7 @@ _create_gcell_faces_connect(cs_mesh_t            *mesh,
 
   assert(sizeof(cs_int_t) == sizeof(fvm_lnum_t));
 
-  _get_vertex_tag(mesh->n_vertices, interface_set, &vtx_tag);
+  _get_vertex_tag(mesh->n_vertices, vertex_ifs, &vtx_tag);
 
   for (fac_id = 0; fac_id < n_i_faces; fac_id++) {
 
@@ -3077,17 +2979,19 @@ _create_gcell_faces_connect(cs_mesh_t            *mesh,
  * Define halo structures for internal and distant ghost cells.
  *
  * parameters:
- *   mesh             -->  pointer to cs_mesh_t structure
- *   interface_set    -->  pointer to fvm_interface_set_t structure.
- *   p_gcell_vtx_idx  <--  pointer to the connectivity index
- *   p_gcell_vtx_lst  <--  pointer to the connectivity list
+ *   mesh             <--  pointer to cs_mesh_t structure
+ *   face_ifs         <--  pointer to faces interfaces
+ *   vertex_ifs       <--  pointer to vertex interfaces
+ *   p_gcell_vtx_idx  -->  pointer to the connectivity index
+ *   p_gcell_vtx_lst  -->  pointer to the connectivity list
  *---------------------------------------------------------------------------*/
 
 void
-cs_mesh_halo_define(cs_mesh_t            *mesh,
-                    fvm_interface_set_t  *interface_set,
-                    cs_int_t             *p_gcell_vtx_idx[],
-                    cs_int_t             *p_gcell_vtx_lst[])
+cs_mesh_halo_define(cs_mesh_t                  *mesh,
+                    const fvm_interface_set_t  *face_ifs,
+                    const fvm_interface_set_t  *vertex_ifs,
+                    cs_int_t                   *p_gcell_vtx_idx[],
+                    cs_int_t                   *p_gcell_vtx_lst[])
 {
   cs_int_t  *send_gcell_vtx_idx = NULL, *send_gcell_vtx_lst = NULL;
   cs_int_t  *gcell_vtx_idx = NULL, *gcell_vtx_lst = NULL;
@@ -3099,7 +3003,7 @@ cs_mesh_halo_define(cs_mesh_t            *mesh,
   /*  Define cell -> internal faces connectivity for ghost cells */
 
   _create_gcell_faces_connect(mesh,
-                              interface_set,
+                              vertex_ifs,
                               &gcell_faces_idx,
                               &gcell_faces_lst);
 
@@ -3109,7 +3013,7 @@ cs_mesh_halo_define(cs_mesh_t            *mesh,
   bft_printf_flush();
 
   _fill_send_halo(mesh,
-                  interface_set,
+                  vertex_ifs,
                   gcell_faces_idx,
                   gcell_faces_lst);
 
@@ -3145,7 +3049,7 @@ cs_mesh_halo_define(cs_mesh_t            *mesh,
        Receive ghost cells connectivity for halo cells. */
 
     _create_send_gcell_vtx_connect(mesh,
-                                   interface_set,
+                                   vertex_ifs,
                                    gcell_faces_idx,
                                    gcell_faces_lst,
                                    &send_gcell_vtx_idx,
@@ -3169,7 +3073,7 @@ cs_mesh_halo_define(cs_mesh_t            *mesh,
     bft_printf(_("    Updating the faces -> cells connectivity\n"));
     bft_printf_flush();
 
-    _update_i_face_cells(mesh, gcell_faces_idx, gcell_faces_lst);
+    _update_i_face_cells(mesh, face_ifs, gcell_faces_idx, gcell_faces_lst);
 
   }
 

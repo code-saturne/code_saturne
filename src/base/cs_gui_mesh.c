@@ -409,8 +409,7 @@ cs_gui_mesh_define_joinings(void)
     double plane = atof(plane_s);
     int verbosity = atoi(verbosity_s);
 
-    cs_join_add(join_id + 1,
-                selector_s,
+    cs_join_add(selector_s,
                 fraction,
                 plane,
                 verbosity);
@@ -485,8 +484,7 @@ cs_gui_mesh_define_periodicities(void)
 
     if (!strcmp(modes[perio_id], "translation")) {
       _get_periodicity_translation(perio_id+1, trans);
-      cs_join_perio_add_translation(perio_id + 1,
-                                    selector_s,
+      cs_join_perio_add_translation(selector_s,
                                     fraction,
                                     plane,
                                     verbosity,
@@ -495,8 +493,7 @@ cs_gui_mesh_define_periodicities(void)
 
     else if (!strcmp(modes[perio_id], "rotation")) {
       _get_periodicity_rotation(perio_id+1, &angle, axis, invariant);
-      cs_join_perio_add_rotation(perio_id + 1,
-                                 selector_s,
+      cs_join_perio_add_rotation(selector_s,
                                  fraction,
                                  plane,
                                  verbosity,
@@ -507,8 +504,7 @@ cs_gui_mesh_define_periodicities(void)
 
     else if (!strcmp(modes[perio_id], "mixed")) {
       _get_periodicity_mixed(perio_id+1, matrix);
-      cs_join_perio_add_mixed(perio_id + 1,
-                              selector_s,
+      cs_join_perio_add_mixed(selector_s,
                               fraction,
                               plane,
                               verbosity,

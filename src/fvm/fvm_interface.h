@@ -11,7 +11,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2006-2007  EDF
+  Copyright (C) 2006-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -271,6 +271,21 @@ fvm_interface_set_get(const fvm_interface_set_t  *this_interface_set,
 
 const fvm_periodicity_t *
 fvm_interface_set_periodicity(const fvm_interface_set_t  *this_interface_set);
+
+/*----------------------------------------------------------------------------
+ * Apply renumbering of entities referenced by an interface set.
+ *
+ * For any given entity i, a negative old_to_new[i] value means that that
+ * entity does not appear anymore in the new numbering.
+ *
+ * parameters:
+ *   this_interface_set <-> pointer to interface set structure
+ *   old_to_new         <-- renumbering array (0 to n-1 numbering)
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_interface_set_renumber(fvm_interface_set_t  *this_interface_set,
+                           const fvm_lnum_t      old_to_new[]);
 
 /*----------------------------------------------------------------------------
  * Dump printout of an interface list.

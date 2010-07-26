@@ -113,8 +113,7 @@ iwarnj = 1
 
 ! Joining definition
 
-nbjoin = nbjoin + 1
-call defjoi(nbjoin, '98 or 99', fract, plane, iwarnj)
+call defjoi(ii, '98 or 99', fract, plane, iwarnj)
 !==========
 
 
@@ -193,12 +192,8 @@ tmr = 5.0
 
 ! Advanced parameters setup
 
-! Each ii'th call to the advanced parameters setup routine stands
-! the joining number in their order of definition.
-
 iutile = 0
 if (iutile.eq.1) then
-  ii = 1
   call setajp(ii, mtf, pmf, tcm, icm, maxbrk, maxsf, tml, tmb, tmr)
   !==========
 endif

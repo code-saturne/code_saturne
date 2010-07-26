@@ -57,6 +57,7 @@
  *---------------------------------------------------------------------------*/
 
 #include <fvm_parall.h>
+#include <fvm_periodicity.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -349,7 +350,7 @@ _get_work_struct(cs_join_param_t         param,
  *
  * parameters:
  *   this_join          <-- pointer to a cs_join_t structure
- *   mesh               <-- pointer of pointer to cs_mesh_t structure
+ *   mesh               <-> pointer of pointer to cs_mesh_t structure
  *   p_loc_jmesh        --> local cs_join_mesh_t structure based on local face
  *                          selection
  *   p_work_jmesh       --> distributed and balanced cs_join_mesh_t structure
@@ -361,7 +362,7 @@ _get_work_struct(cs_join_param_t         param,
 
 static void
 _build_join_structures(cs_join_t            *this_join,
-                       const cs_mesh_t      *mesh,
+                       cs_mesh_t            *mesh,
                        cs_join_mesh_t     **p_loc_jmesh,
                        cs_join_mesh_t     **p_work_jmesh,
                        cs_join_edges_t    **p_work_join_edges,
@@ -403,7 +404,7 @@ _build_join_structures(cs_join_t            *this_join,
                                               mesh->vtx_coord,
                                               mesh->global_vtx_num);
 
-  if (param.perio_num > 0)
+  if (param.perio_type != FVM_PERIODICITY_NULL)
     cs_join_perio_apply(this_join, loc_jmesh, mesh);
 
   if (param.verbosity > 0)
@@ -703,7 +704,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
-  if (param.perio_num > 0)
+  if (param.perio_type != FVM_PERIODICITY_NULL)
     BFT_MALLOC(new_local_gnum, mesh->n_vertices + select->n_vertices,
                fvm_gnum_t);
   else
@@ -722,7 +723,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
     send_count[rank] += 1;
   }
 
-  if (param.perio_num > 0) {
+  if (param.perio_type != FVM_PERIODICITY_NULL) {
 
     for (i = 0; i < select->n_vertices; i++) {
       rank = (select->per_v_couples[2*i+1] - 1)/block_info.size;
@@ -761,7 +762,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   }
 
-  if (param.perio_num > 0) {
+  if (param.perio_type != FVM_PERIODICITY_NULL) {
 
     for (i = 0; i < select->n_vertices; i++) {
       rank = (select->per_v_couples[2*i+1] - 1)/block_info.size;
@@ -803,7 +804,7 @@ _get_local_o2n_vtx_gnum(cs_join_param_t    param,
 
   }
 
-  if (param.perio_num > 0) {
+  if (param.perio_type != FVM_PERIODICITY_NULL) {
 
     for (i = 0; i < select->n_vertices; i++) {
       rank = (select->per_v_couples[2*i+1] - 1)/block_info.size;
@@ -889,7 +890,7 @@ _prepare_update_after_merge(cs_join_t          *this_join,
 
     }
 
-    if (param.perio_num > 0) { /* Update per_v_couples */
+    if (param.perio_type != FVM_PERIODICITY_NULL) { /* Update per_v_couples */
 
       assert(selection->n_vertices == selection->n_couples);
 
@@ -916,7 +917,7 @@ _prepare_update_after_merge(cs_join_t          *this_join,
                             init_max_vtx_gnum,
                             &o2n_vtx_gnum);
 
-    if (param.perio_num > 0) {
+    if (param.perio_type != FVM_PERIODICITY_NULL) {
 
       for (i = 0; i < selection->n_vertices; i++) {
         select_id = selection->vertices[i] - 1;
@@ -932,9 +933,10 @@ _prepare_update_after_merge(cs_join_t          *this_join,
   }
 #endif
 
-  if (param.perio_num > 0)
+  if (param.perio_type != FVM_PERIODICITY_NULL)
     cs_join_perio_merge_back(this_join,
                              local_jmesh,
+                             mesh,
                              &work_jmesh,
                              &work_edges,
                              init_max_vtx_gnum,
@@ -1113,6 +1115,7 @@ _merge_vertices(cs_join_t                *this_join,
  *  this_join          <-- pointer to a cs_join_t structure
  *  local_jmesh        <-> pointer to a local cs_join_mesh_t structure
  *  mesh               <-- pointer to a cs_mesh_t structure
+ *  mesh_builder       <-- pointer to a cs_mesh_builder_t structure
  *  p_history          <-> pointer to the history of face splitting
  *                         in: old -> new face links
  *                         out: new -> old face links
@@ -1121,6 +1124,7 @@ static void
 _prepare_update_after_split(cs_join_t          *this_join,
                             cs_join_mesh_t     *local_jmesh,
                             cs_mesh_t          *mesh,
+                            cs_mesh_builder_t  *mesh_builder,
                             cs_join_gset_t    **p_history)
 {
   cs_join_param_t  param = this_join->param;
@@ -1155,10 +1159,11 @@ _prepare_update_after_split(cs_join_t          *this_join,
 
   /* Build an array keeping relation between old/new global vertex num. */
 
-  if (param.perio_num > 0)
+  if (param.perio_type != FVM_PERIODICITY_NULL)
     cs_join_perio_split_back(this_join,
                              local_jmesh,
                              mesh,
+                             mesh_builder,
                              o2n_hist,
                              &n2o_hist);
 
@@ -1180,7 +1185,8 @@ _prepare_update_after_split(cs_join_t          *this_join,
  *                            related rank
  *  p_work_jmesh         <->  pointer to a cs_join_mesh_t structure
  *  local_jmesh          <--  pointer to a cs_join_mesh_t structure
- *  p_mesh               <->  pointer to cs_mesh_t struct.
+ *  mesh                 <->  pointer to cs_mesh_t structure
+ *  mesh_builder         <->  pointer to cs_mesh_builder structure
  *---------------------------------------------------------------------------*/
 
 static void
@@ -1189,11 +1195,11 @@ _split_faces(cs_join_t           *this_join,
              fvm_coord_t         *work_face_normal,
              cs_join_mesh_t     **p_work_jmesh,
              cs_join_mesh_t      *local_jmesh,
-             cs_mesh_t          **p_mesh)
+             cs_mesh_t           *mesh,
+             cs_mesh_builder_t   *mesh_builder)
 {
   double  clock_start, clock_end, cpu_start, cpu_end;
 
-  cs_mesh_t  *mesh = *p_mesh;
   cs_join_gset_t  *history = NULL;
   cs_join_param_t  param = this_join->param;
   cs_join_select_t  *selection = this_join->selection;
@@ -1219,6 +1225,7 @@ _split_faces(cs_join_t           *this_join,
   _prepare_update_after_split(this_join,
                               local_jmesh,
                               mesh,
+                              mesh_builder,
                               &history); /* in: old->new, out: new -> old */
 
   /* Update cs_mesh_t structure after the face splitting */
@@ -1227,7 +1234,8 @@ _split_faces(cs_join_t           *this_join,
                                   selection,
                                   history, /* new -> old */
                                   local_jmesh,
-                                  mesh);
+                                  mesh,
+                                  mesh_builder);
 
   clock_end = bft_timer_wtime();
   cpu_end = bft_timer_cpu_time();
@@ -1250,7 +1258,6 @@ _split_faces(cs_join_t           *this_join,
   /* Free memory */
 
   cs_join_gset_destroy(&history);
-
 }
 
 /*============================================================================
@@ -1286,7 +1293,7 @@ void CS_PROCF(numjoi, NUMJOI)
  * SUBROUTINE DEFJO1
  * *****************
  *
- * INTEGER        numjoi           : <-- : number related to the joining op.
+ * INTEGER        numjoi           : --> : number related to the joining op.
  * CHARACTER*     joining_criteria : <-- : boundary face selection criteria,
  * REAL           fraction         : <-- : parameter for merging vertices
  * REAL           plane            : <-- : parameter for splitting faces
@@ -1313,11 +1320,10 @@ void CS_PROCF(defjo1, DEFJO1)
   if (_joining_criteria != NULL && strlen(_joining_criteria) == 0)
     cs_base_string_f_to_c_free(&_joining_criteria);
 
-  cs_join_add(*numjoi,
-              _joining_criteria,
-              *fraction,
-              *plane,
-              *verbosity);
+  *numjoi = cs_join_add(_joining_criteria,
+                        *fraction,
+                        *plane,
+                        *verbosity);
 
   if (_joining_criteria != NULL)
     cs_base_string_f_to_c_free(&_joining_criteria);
@@ -1375,7 +1381,7 @@ void CS_PROCF(setajp, SETAJP)
 
   if (join_id < 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("  Join number %d is not defined.\n"), *join_num);
+              _("  Joining number %d is not defined.\n"), *join_num);
 
   assert(join != NULL);
 
@@ -1400,49 +1406,38 @@ void CS_PROCF(setajp, SETAJP)
  * Add a cs_join_t structure to the list of pending joinings.
  *
  * parameters:
- *   join_number  <-- number related to the joining operation
  *   sel_criteria <-- boundary face selection criteria
  *   fraction     <-- value of the fraction parameter
  *   plane        <-- value of the plane parameter
  *   verbosity    <-- level of verbosity required
+ *
+ * returns:
+ *   number (1 to n) associated with new joining
  *---------------------------------------------------------------------------*/
 
-void
-cs_join_add(int     join_number,
-            char   *sel_criteria,
+int
+cs_join_add(char   *sel_criteria,
             float   fraction,
             float   plane,
             int     verbosity)
 {
-  /* Check parameters value */
-
-  if (fraction < 0.0 || fraction >= 1.0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the fraction parameter.\n"
-                "  It must be between [0.0, 1.0[ and is here: %f\n"),
-              fraction);
-
-  if (plane < 0.0 || plane >= 90.0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the plane parameter.\n"
-                "  It must be between [0, 90] and is here: %f\n"),
-              plane);
-
   /* Allocate and initialize a cs_join_t structure */
 
   BFT_REALLOC(cs_glob_join_array, cs_glob_n_joinings + 1, cs_join_t *);
 
-  cs_glob_join_array[cs_glob_n_joinings] = cs_join_create(join_number,
-                                                          sel_criteria,
-                                                          fraction,
-                                                          plane,
-                                                          0, /* No perio. */
-                                                          verbosity);
+  cs_glob_join_array[cs_glob_n_joinings]
+    = cs_join_create(cs_glob_n_joinings + 1,
+                     sel_criteria,
+                     fraction,
+                     plane,
+                     FVM_PERIODICITY_NULL,
+                     NULL,
+                     verbosity);
 
   cs_glob_join_count++; // Store number of joining (without periodic ones)
   cs_glob_n_joinings++;
+
+  return cs_glob_n_joinings;
 }
 
 /*----------------------------------------------------------------------------
@@ -1452,11 +1447,12 @@ cs_join_add(int     join_number,
 void
 cs_join_all(void)
 {
-  cs_int_t  join_id;
+  int  join_id;
   double  clock_start, clock_end, cpu_start, cpu_end;
   double  full_clock_start, full_clock_end, full_cpu_start, full_cpu_end;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
+  cs_mesh_builder_t  *mesh_builder = cs_glob_mesh_builder;
 
   if (cs_glob_n_joinings < 1)
     return;
@@ -1481,13 +1477,23 @@ cs_join_all(void)
     clock_start = bft_timer_wtime();  /* Start timer */
     cpu_start = bft_timer_cpu_time();
 
-    /* Print information into listing file */
+    /* Print information into log file */
 
     bft_printf(_("\n -------------------------------------------------------\n"
                  "  Joining number %d:\n\n"), join_param.num);
 
-    if (join_param.perio_num > 0)
-      bft_printf(_("\n  Joining for periodicity: %d\n"), join_param.perio_num);
+    if (join_param.perio_type != FVM_PERIODICITY_NULL) {
+      const double m[3][4];
+      memcpy(m, join_param.perio_matrix, sizeof(double)*12);
+      bft_printf(_("  Periodicity type: %s\n"),
+                 _(fvm_periodicity_type_name[join_param.perio_type]));
+      bft_printf(_("  Transformation matrix:  %12.5g %12.5g %12.5g %12.5g\n"
+                   "                          %12.5g %12.5g %12.5g %12.5g\n"
+                   "                          %12.5g %12.5g %12.5g %12.5g\n\n"),
+                 m[0][0], m[0][1], m[0][2], m[0][3],
+                 m[1][0], m[1][1], m[1][2], m[1][3],
+                 m[2][0], m[2][1], m[2][2], m[2][3]);
+    }
 
     bft_printf(_("  Selection criteria: \"%s\"\n"), this_join->criteria);
 
@@ -1547,6 +1553,14 @@ cs_join_all(void)
       cs_join_eset_t  *vtx_eset = NULL;
       cs_join_inter_edges_t  *inter_edges = NULL;
 
+      if (join_param.perio_type != FVM_PERIODICITY_NULL) {
+
+        cs_join_perio_init(this_join, mesh, &mesh_builder);
+
+        if (cs_glob_mesh_builder == NULL)
+          cs_glob_mesh_builder = mesh_builder;
+      }
+
       _build_join_structures(this_join,
                              mesh,
                              &local_jmesh,
@@ -1576,7 +1590,7 @@ cs_join_all(void)
       n_iwm_vertices = work_jmesh->n_vertices;
 
       init_max_vtx_gnum = mesh->n_g_vertices;
-      if (join_param.perio_num > 0)
+      if (join_param.perio_type != FVM_PERIODICITY_NULL)
         init_max_vtx_gnum += this_join->selection->n_g_vertices;
 
       _intersect_edges(this_join,
@@ -1622,7 +1636,8 @@ cs_join_all(void)
                    work_face_normal,
                    &work_jmesh,
                    local_jmesh,
-                   &mesh);
+                   mesh,
+                   mesh_builder);
 
       /* Free memory */
 
@@ -1674,9 +1689,6 @@ cs_join_all(void)
   /* Destroy all remaining structures relative to joining operation */
 
   BFT_FREE(cs_glob_join_array);
-
-  if (cs_glob_n_join_perio > 0)
-    cs_join_perio_transfer_builder();
 
   full_clock_end = bft_timer_wtime();
   full_cpu_end = bft_timer_cpu_time();

@@ -57,17 +57,19 @@ BEGIN_C_DECLS
  * Define halo structures for internal and distant ghost cells.
  *
  * parameters:
- *   mesh             -->  pointer to cs_mesh_t structure
- *   interface_set    -->  pointer to fvm_interface_set_t structure.
- *   p_gcell_vtx_idx  <--  pointer to the connectivity index
- *   p_gcell_vtx_lst  <--  pointer to the connectivity list
+ *   mesh             <--  pointer to cs_mesh_t structure
+ *   face_ifs         <--  pointer to faces interfaces
+ *   vertex_ifs       <--  pointer to vertex interfaces
+ *   p_gcell_vtx_idx  -->  pointer to the connectivity index
+ *   p_gcell_vtx_lst  -->  pointer to the connectivity list
  *---------------------------------------------------------------------------*/
 
 void
-cs_mesh_halo_define(cs_mesh_t            *mesh,
-                    fvm_interface_set_t  *interface_set,
-                    cs_int_t             *p_gcell_vtx_idx[],
-                    cs_int_t             *p_gcell_vtx_lst[]);
+cs_mesh_halo_define(cs_mesh_t                  *mesh,
+                    const fvm_interface_set_t  *face_ifs,
+                    const fvm_interface_set_t  *vertex_ifs,
+                    cs_int_t                   *p_gcell_vtx_idx[],
+                    cs_int_t                   *p_gcell_vtx_lst[]);
 
 /*----------------------------------------------------------------------------*/
 

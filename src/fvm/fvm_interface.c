@@ -8,7 +8,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2006-2007  EDF
+  Copyright (C) 2006-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,7 @@
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
+#include <bft_error.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
 
@@ -951,7 +952,6 @@ _fvm_interface_add_global_equiv(fvm_interface_set_t  *this_interface_set,
 
   MPI_Alltoallv(global_num, send_count, send_shift, FVM_MPI_GNUM,
                 recv_global_num, recv_count, recv_shift, FVM_MPI_GNUM, comm);
-
 
   /* We also need to send the corresponding local numbers */
 
@@ -2908,7 +2908,6 @@ _combine_periodic_couples_sp(const fvm_periodicity_t   *periodicity,
  *                           each periodic list
  *   periodic_couples    <-- array indicating periodic couples (using
  *                           global numberings) for each list
- *   comm                <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
 
 static void
@@ -3007,6 +3006,190 @@ _add_global_equiv_periodic_sp(fvm_interface_set_t      *this_interface_set,
 
   BFT_FREE(n_ent_tr);
   BFT_FREE(couples);
+}
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Apply renumbering of entities referenced by an interface set.
+ *
+ * For any given entity i, a negative old_to_new[i] value means that that
+ * entity does not appear anymore in the new numbering.
+ *
+ * parameters:
+ *   this_interface_set <-> pointer to interface set structure
+ *   old_to_new         <-- renumbering array (0 to n-1 numbering)
+ *   comm               <-- associated MPI communicator
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_renumber(fvm_interface_set_t  *this_interface_set,
+              const fvm_lnum_t      old_to_new[],
+              MPI_Comm              comm)
+{
+  int i;
+  int local_rank = 0;
+  int n_interfaces = 0;
+  int n_tr = 0;
+  int request_count = 0;
+  int *rev_tr_id = NULL;
+  fvm_lnum_t *if_index = NULL;
+  fvm_lnum_t *tr_send_buf = NULL;
+  MPI_Request  *request = NULL;
+  MPI_Status  *status  = NULL;
+
+  assert(this_interface_set != NULL);
+  assert(old_to_new != NULL);
+
+  n_interfaces = this_interface_set->size;
+
+  /* Additionnal arrays for differently ordered sections and their
+     arrays are needed in case of periodic transforms */
+
+  if (this_interface_set->periodicity != NULL) {
+
+    const fvm_periodicity_t *p = this_interface_set->periodicity;
+    n_tr = fvm_periodicity_get_n_transforms(p);
+
+    BFT_MALLOC(rev_tr_id, n_tr + 1, int);
+    rev_tr_id[0] = 0;
+    for (i = 0; i < n_tr; i++)
+      rev_tr_id[i+1] = fvm_periodicity_get_reverse_id(p, i) + 1;
+
+    BFT_MALLOC(if_index, n_interfaces + 1, fvm_lnum_t);
+    if_index[0] = 0;
+    for (i = 0; i < n_interfaces; i++) {
+      const fvm_interface_t *_if = this_interface_set->interfaces[i];
+      if_index[i+1] = if_index[i] + _if->size;
+    }
+
+    BFT_MALLOC(tr_send_buf, if_index[n_interfaces], fvm_lnum_t);
+  }
+
+  MPI_Comm_rank(comm, &local_rank);
+
+  /* Update numbering */
+
+  for (i = 0; i < n_interfaces; i++) {
+
+    fvm_lnum_t j;
+    fvm_interface_t *_if = this_interface_set->interfaces[i];
+
+    fvm_lnum_t *loc_num = _if->local_num;
+    fvm_lnum_t *dist_num = _if->distant_num;
+
+    for (j = 0; j < _if->size; j++)
+      loc_num[j] = old_to_new[loc_num[j] - 1] + 1;
+
+    if (local_rank == _if->rank) {
+      for (j = 0; j < _if->size; j++)
+        dist_num[j] = old_to_new[dist_num[j] - 1] + 1;
+    }
+  }
+
+  /* Exchange distant face numbers */
+
+  BFT_MALLOC(request, n_interfaces*2, MPI_Request);
+  BFT_MALLOC(status, n_interfaces*2, MPI_Status);
+
+  for (i = 0; i < n_interfaces; i++) {
+
+    fvm_interface_t *_if = this_interface_set->interfaces[i];
+    const int distant_rank = _if->rank;
+
+    if (distant_rank != local_rank)
+      MPI_Irecv(_if->distant_num,
+                _if->size,
+                FVM_MPI_LNUM,
+                distant_rank,
+                distant_rank,
+                comm,
+                &(request[request_count++]));
+  }
+
+  for (i = 0; i < n_interfaces; i++) {
+
+    fvm_interface_t *_if = this_interface_set->interfaces[i];
+    fvm_lnum_t *send_buf = _if->local_num;
+    const int distant_rank = _if->rank;
+
+    if (distant_rank != local_rank) {
+
+      if (rev_tr_id != NULL) {
+        int j;
+        fvm_lnum_t k, l;
+        send_buf = tr_send_buf + if_index[i];
+        assert(_if->tr_index_size == n_tr + 2);
+        for (j = 0, l = 0; j < _if->tr_index_size - 1; j++) {
+          for (k = _if->tr_index[rev_tr_id[j]];
+               k < _if->tr_index[rev_tr_id[j] + 1];
+               k++)
+            send_buf[l++] = _if->local_num[k];
+        }
+      }
+
+      MPI_Isend(send_buf,
+                _if->size,
+                FVM_MPI_LNUM,
+                distant_rank,
+                local_rank,
+                comm,
+                &(request[request_count++]));
+    }
+  }
+
+  MPI_Waitall(request_count, request, status);
+
+  BFT_FREE(request);
+  BFT_FREE(status);
+
+  if (this_interface_set->periodicity != NULL) {
+    BFT_FREE(rev_tr_id);
+    BFT_FREE(if_index);
+    BFT_FREE(tr_send_buf);
+  }
+}
+
+#endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------
+ * Apply renumbering of entities referenced by an interface set.
+ *
+ * This simplified algorithm is intended for single-process mode.
+ *
+ * For any given entity i, a negative old_to_new[i] value means that that
+ * entity does not appear anymore in the new numbering.
+ *
+ * parameters:
+ *   this_interface_set <-> pointer to interface set structure
+ *   old_to_new         <-- renumbering array (0 to n-1 numbering)
+ *   comm               <-- associated MPI communicator
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_renumber_sp(fvm_interface_set_t  *this_interface_set,
+                 const fvm_lnum_t      old_to_new[])
+{
+  int i;
+
+  assert(this_interface_set != NULL);
+  assert(old_to_new != NULL);
+
+  /* Update numbering */
+
+  for (i = 0; i < this_interface_set->size; i++) {
+
+    fvm_lnum_t j;
+    fvm_interface_t *_if = this_interface_set->interfaces[i];
+
+    fvm_lnum_t *loc_num = _if->local_num;
+    fvm_lnum_t *dist_num = _if->distant_num;
+
+    for (j = 0; j < _if->size; j++) {
+      loc_num[j] = old_to_new[loc_num[j] - 1] + 1;
+      dist_num[j] = old_to_new[dist_num[j] - 1] + 1;
+    }
+  }
 }
 
 /*=============================================================================
@@ -3211,10 +3394,13 @@ fvm_interface_set_create(fvm_lnum_t                n_ent,
 
   /* Initial checks */
 
-  assert(   fvm_order_local_test(parent_entity_number,
-                                 global_number,
-                                 n_ent) == true
-         || global_number == NULL);
+  if (   fvm_order_local_test(parent_entity_number,
+                              global_number,
+                              n_ent) == false
+      && global_number != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Trying to build an interface with unordered elements\n"
+                "not currently handled."));
 
   if (   (fvm_parall_get_size() < 2)
       && (periodicity == NULL || n_periodic_lists == 0))
@@ -3386,6 +3572,105 @@ fvm_interface_set_periodicity(const fvm_interface_set_t  *this_interface_set)
     retval = this_interface_set->periodicity;
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Apply renumbering of entities referenced by an interface set.
+ *
+ * For any given entity i, a negative old_to_new[i] value means that that
+ * entity does not appear anymore in the new numbering.
+ *
+ * parameters:
+ *   this_interface_set <-> pointer to interface set structure
+ *   old_to_new         <-- renumbering array (0 to n-1 numbering)
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_interface_set_renumber(fvm_interface_set_t  *this_interface_set,
+                           const fvm_lnum_t      old_to_new[])
+{
+  int i;
+  int n_interfaces = 0;
+
+  assert(this_interface_set != NULL);
+  assert(old_to_new != NULL);
+
+#if defined(HAVE_MPI)
+
+  if (fvm_parall_get_size() > 1)
+    _set_renumber(this_interface_set,
+                  old_to_new,
+                  fvm_parall_get_mpi_comm());
+
+#endif /* defined(HAVE_MPI) */
+
+  if (fvm_parall_get_size() == 1)
+    _set_renumber_sp(this_interface_set,
+                     old_to_new);
+
+  /* Remove references to entities not appearing anymore */
+
+  for (i = 0; i < this_interface_set->size; i++) {
+
+    fvm_lnum_t j, k;
+    fvm_interface_t *_if = this_interface_set->interfaces[i];
+
+    fvm_lnum_t *loc_num = _if->local_num;
+    fvm_lnum_t *dist_num = _if->distant_num;
+
+    if (_if->tr_index_size == 0) {
+      for (j = 0, k = 0; j < _if->size; j++) {
+        if (loc_num[j] > -1 && dist_num[j] > -1) {
+          loc_num[k] = loc_num[j];
+          dist_num[k] = dist_num[j];
+          k += 1;
+        }
+      }
+    }
+    else {
+      int tr_id;
+      fvm_lnum_t end_id = _if->tr_index[0];
+      k = 0;
+      for (tr_id = 0; tr_id < _if->tr_index_size - 1; tr_id++) {
+        fvm_lnum_t start_id = end_id;
+        end_id = _if->tr_index[tr_id + 1];
+        for (j = start_id; j < end_id; j++) {
+          if (loc_num[j] > -1 && dist_num[j] > -1) {
+            loc_num[k] = loc_num[j];
+            dist_num[k] = dist_num[j];
+            k += 1;
+          }
+        }
+        _if->tr_index[tr_id + 1] = k;
+      }
+    }
+
+    if (k < _if->size) {
+      if (k > 0) {
+        _if->size = k;
+        BFT_REALLOC(_if->local_num, k, fvm_lnum_t);
+        BFT_REALLOC(_if->distant_num, k, fvm_lnum_t);
+      }
+      else {
+        BFT_FREE(_if->local_num);
+        BFT_FREE(_if->distant_num);
+        BFT_FREE(this_interface_set->interfaces[i]);
+      }
+    }
+  }
+
+  for (i = 0, n_interfaces = 0; i < this_interface_set->size; i++) {
+    if (this_interface_set->interfaces[i] != NULL)
+      this_interface_set->interfaces[n_interfaces++]
+        = this_interface_set->interfaces[i];
+  }
+
+  if (n_interfaces < this_interface_set->size) {
+    BFT_REALLOC(this_interface_set->interfaces,
+                n_interfaces,
+                fvm_interface_t *);
+    this_interface_set->size = n_interfaces;
+  }
 }
 
 /*----------------------------------------------------------------------------

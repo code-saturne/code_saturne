@@ -59,6 +59,7 @@
 #include <fvm_order.h>
 #include <fvm_io_num.h>
 #include <fvm_parall.h>
+#include <fvm_periodicity.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -2255,7 +2256,7 @@ cs_join_split_update_struct(const cs_join_param_t   param,
 
     MPI_Comm  mpi_comm = fvm_parall_get_mpi_comm();
 
-    if (param.perio_num > 0) {
+    if (param.perio_type != FVM_PERIODICITY_NULL) {
 
       n_g_init_faces *= 2;
 

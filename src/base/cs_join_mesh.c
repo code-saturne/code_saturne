@@ -456,7 +456,7 @@ _get_local_tolerance(cs_join_param_t  param,
   }
   else
     bft_error(__FILE__, __LINE__, 0,
-              _("  Tolerance computation mode (%d) is not defined\n"));
+              "  Tolerance computation mode (%d) is not defined\n");
 
 }
 
@@ -735,9 +735,9 @@ _define_vertices(cs_join_param_t        param,
   for (i = 0; i < selection->n_vertices; i++)
     if (vertices[i].tolerance > (DBL_MAX - 1.))
       bft_error(__FILE__, __LINE__, 0,
-                _("Incompatible value for the \"vertex tolerance\" item\n"
-                  "Value must be lower than DBL_MAX and current value is : %f"
-                  " (global numbering : %u)\n"),
+                "Incompatible value for the \"vertex tolerance\" item\n"
+                "Value must be lower than DBL_MAX and current value is : %f"
+                " (global numbering : %u)\n",
                 vertices[i].tolerance, vertices[i].gnum);
 #endif
 
@@ -3937,10 +3937,11 @@ cs_join_mesh_dump_file(FILE                  *file,
     return;
   }
 
-  fprintf(file,_("\n\n  -- Dump a cs_join_mesh_t structure: %s (%p) --\n"),
+  fprintf(file, _("\n\n  -- Dump a cs_join_mesh_t structure: %s (%p) --\n"),
           mesh->name, (const void *)mesh);
-  fprintf(file,_("\n mesh->n_faces:     %11d\n"), mesh->n_faces);
-  fprintf(file,_(" mesh->n_g_faces:   %11u\n\n"), mesh->n_g_faces);
+  fprintf(file, _("\n mesh->n_faces:     %11d\n"), mesh->n_faces);
+  fprintf(file, _(" mesh->n_g_faces:   %11llu\n\n"),
+          (unsigned long long)mesh->n_g_faces);
 
   if (mesh->face_vtx_idx != NULL) {
 
@@ -3994,12 +3995,13 @@ cs_join_mesh_dump_file(FILE                  *file,
         if (vtx_id1 == vtx_id2) {
           fprintf(file,
                   _("  Incoherency found in the current mesh definition\n"
-                    "  Face number: %d (global: %u)\n"
-                    "  Vertices: local (%d, %d), global (%u, %u)"
+                    "  Face number: %d (global: %llu)\n"
+                    "  Vertices: local (%d, %d), global (%llu, %llu)"
                     " are defined twice\n"),
-                  i+1, mesh->face_gnum[i], vtx_id1+1, vtx_id2+1,
-                  (mesh->vertices[vtx_id1]).gnum,
-                  (mesh->vertices[vtx_id2]).gnum);
+                  i+1, (unsigned long long)(mesh->face_gnum[i]),
+                  vtx_id1+1, vtx_id2+1,
+                  (unsigned long long)((mesh->vertices[vtx_id1]).gnum),
+                  (unsigned long long)((mesh->vertices[vtx_id2]).gnum));
           fflush(file);
           assert(0);
         }
@@ -4012,8 +4014,9 @@ cs_join_mesh_dump_file(FILE                  *file,
   fprintf(file,_("\n Dump vertex data\n"
                  "   mesh->vertices     :  %p\n"
                  "   mesh->n_vertices   : %11d\n"
-                 "   mesh->n_g_vertices : %11u\n\n"),
-          (const void *)mesh->vertices, mesh->n_vertices, mesh->n_g_vertices);
+                 "   mesh->n_g_vertices : %11llu\n\n"),
+          (const void *)mesh->vertices, mesh->n_vertices,
+          (unsigned long long)mesh->n_g_vertices);
 
   if (mesh->n_vertices > 0) {
 

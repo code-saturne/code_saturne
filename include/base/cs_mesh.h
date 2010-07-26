@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -167,31 +167,21 @@ typedef struct {
   fvm_selector_t *select_i_faces;     /* Internal faces selection object */
   fvm_selector_t *select_b_faces;     /* Border faces selection object */
 
-} cs_mesh_t ;
+} cs_mesh_t;
 
-/* Structure used for building mesh structure */
-/* ------------------------------------------ */
+/* Auxiliary and temporary structure used to build mesh */
+/* ---------------------------------------------------- */
 
 typedef struct {
 
-  /* Periodic features */
+  int           n_perio;              /* Number of periodicities */
 
-  cs_int_t   *per_face_idx;    /* Index on periodicity for per_face_lst */
+  fvm_lnum_t   *n_perio_couples;      /* Local number of periodic face
+                                         couples for each periodicity */
+  fvm_gnum_t  **perio_couples;        /* List of global numbering of
+                                         periodic faces. */
 
-  cs_int_t   *per_face_lst;    /* Periodic faces list. For each couple,
-                                  we have the local face number on local rank
-                                  and the local face number on distant rank */
-
-  cs_int_t   *per_rank_lst;    /* Remote ranks list. For each couple,
-                                  we have the distant rank number. Exist
-                                  only in case of parallelism. */
-
-  fvm_interface_set_t   *face_ifs;  /* Build while reading the
-                                       preprocessor_data or while joining
-                                       periodic faces in parallel.
-                                       Otherwise NULL */
-
-} cs_mesh_builder_t ;
+} cs_mesh_builder_t;
 
 /*============================================================================
  * Static global variables
@@ -358,14 +348,11 @@ cs_mesh_destroy(cs_mesh_t  *mesh);
 /*----------------------------------------------------------------------------
  * Destroy a mesh builder structure
  *
- * mesh_builder     <->  pointer to a mesh structure
- *
- * returns:
- *  NULL pointer
+ * mesh_builder <->  pointer to a mesh structure
  *----------------------------------------------------------------------------*/
 
-cs_mesh_builder_t *
-cs_mesh_builder_destroy(cs_mesh_builder_t  *mesh_builder);
+void
+cs_mesh_builder_destroy(cs_mesh_builder_t  **mesh_builder);
 
 /*----------------------------------------------------------------------------
  * Renumber vertices.
@@ -410,10 +397,12 @@ cs_mesh_init_parall(cs_mesh_t  *mesh);
  *
  * parameters:
  *   mesh  <->  pointer to mesh structure
+ *   mb    <->  pointer to mesh builder (in case of periodicity)
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_init_halo(cs_mesh_t  *mesh);
+cs_mesh_init_halo(cs_mesh_t          *mesh,
+                  cs_mesh_builder_t  *mb);
 
 /*----------------------------------------------------------------------------
  * Get the global number of ghost cells.
@@ -510,6 +499,27 @@ cs_mesh_init_group_classes(cs_mesh_t  *mesh);
 
 void
 cs_mesh_init_selectors(void);
+
+/*----------------------------------------------------------------------------
+ * Get global lists of periodic face couples.
+ *
+ * In parallel, each face couple may appear on only one rank.
+ *
+ * The caller is responsible for freeing the arrays allocated and returned
+ * by this function once they are no onger needed.
+ *
+ * parameters:
+ *   mesh                 <-- pointer to mesh structure
+ *   n_perio_face_couples --> global number of periodic couples per
+ *                            periodicity (size: mesh->n_init_perio)
+ *   perio_face_couples   --> arrays of global periodic couple face numbers,
+ *                            for each periodicity
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_get_perio_faces(const cs_mesh_t    *mesh,
+                        fvm_lnum_t        **n_perio_face_couples,
+                        fvm_gnum_t       ***perio_face_couples);
 
 /*----------------------------------------------------------------------------
  * Print information on a mesh structure.

@@ -1438,7 +1438,7 @@ _pre_merge(cs_join_param_t     param,
                (unsigned long long)n_g_counter);
 
     if (param.verbosity > 1) {
-      bft_printf(_("\n  Local number of pre-merge: %d\n"),
+      bft_printf(_("\n  Local number of pre-merges: %d\n"),
                  n_local_pre_merge);
     }
   }

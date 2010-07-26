@@ -41,7 +41,7 @@ subroutine defptr &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! numper           ! i  ! <-- ! periodicity number                             !
+! numper           ! i  ! --> ! periodicity number                             !
 ! crit             ! a  ! <-- ! selection criteria for the border faces to     !
 !                  !    !     ! transform                                      !
 ! fract            ! r  ! <-- ! fraction parameter                             !
@@ -68,7 +68,7 @@ implicit none
 ! Arguments
 
 character*(*)    crit
-integer          iwarnj, numper
+integer          numper, iwarnj
 double precision fract, plane
 double precision tx, ty, tz
 
@@ -105,7 +105,7 @@ subroutine defpro &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! numper           ! i  ! <-- ! periodicity number                             !
+! numper           ! i  ! --> ! periodicity number                             !
 ! crit             ! a  ! <-- ! selection criteria for the border faces to     !
 !                  !    !     ! transform                                      !
 ! fract            ! r  ! <-- ! fraction parameter                             !
@@ -136,7 +136,7 @@ implicit none
 ! Arguments
 
 character*(*)    crit
-integer          iwarnj, numper
+integer          numper, iwarnj
 double precision fract, plane
 double precision ax, ay, az, theta, ix, iy, iz
 
@@ -161,9 +161,9 @@ end subroutine
 subroutine defpge &
 !================
 
- ( numper, crit, fract, plane, iwarnj, &
-   r11, r12, r13, tx,                  &
-   r21, r22, r23, ty,                  &
+ ( numper, crit, fract, plane, iwarnj,   &
+   r11, r12, r13, tx,                    &
+   r21, r22, r23, ty,                    &
    r31, r32, r33, tz )
 
 !===============================================================================
@@ -177,7 +177,7 @@ subroutine defpge &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! numper           ! i  ! <-- ! periodicity number                             !
+! numper           ! i  ! --> ! periodicity number                             !
 ! crit             ! a  ! <-- ! selection criteria for the border faces to     !
 !                  !    !     ! transform                                      !
 ! fract            ! r  ! <-- ! fraction parameter                             !
@@ -214,7 +214,7 @@ implicit none
 ! Arguments
 
 character*(*)    crit
-integer          iwarnj, numper
+integer          numper, iwarnj
 double precision fract, plane
 double precision r11, r12, r13, r21, r22, r23, r31, r32, r33, tx, ty, tz
 

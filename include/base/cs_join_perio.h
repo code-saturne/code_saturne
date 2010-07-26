@@ -90,7 +90,7 @@ void CS_PROCF(numper, NUMPER)
  * SUBROUTINE DEFPT1
  * *****************
  *
- * INTEGER        numper    : <-- : number related to the periodic op.
+ * INTEGER        join_num  : --> : joining operation number
  * CHARACTER*     criteria  : <-- : boundary face selection criteria
  * REAL           fraction  : <-- : parameter for merging vertices
  * REAL           plane     : <-- : parameter for splitting faces
@@ -103,7 +103,7 @@ void CS_PROCF(numper, NUMPER)
 
 void CS_PROCF(defpt1, DEFPT1)
 (
- cs_int_t    *numper,
+ cs_int_t    *join_num,
  const char  *criteria,
  cs_real_t   *fraction,
  cs_real_t   *plane,
@@ -123,24 +123,24 @@ void CS_PROCF(defpt1, DEFPT1)
  * SUBROUTINE DEFPR1
  * *****************
  *
- * INTEGER        numper    : <-- : number related to the periodic op.
- * CHARACTER*     criteria : <-- : boundary face selection criteria
+ * INTEGER        join_num  : --> : joining operation number
+ * CHARACTER*     criteria  : <-- : boundary face selection criteria
  * REAL           fraction  : <-- : parameter for merging vertices
  * REAL           plane     : <-- : parameter for splitting faces
  * INTEGER        verbosity : <-- : verbosity level
- * REAL           ax       : <-- : X coordinate of the rotation axis
- * REAL           ay       : <-- : Y coordinate of the rotation axis
- * REAL           az       : <-- : Z coordinate of the rotation axis
- * REAL           theta    : <-- : angle of the rotation (radian)
- * REAL           ix       : <-- : X coordinate of the invariant point
- * REAL           iy       : <-- : Y coordinate of the invariant point
- * REAL           iz       : <-- : Z coordinate of the invariant point
- * INTEGER        crit_len : <-- : length of criteria string
+ * REAL           ax        : <-- : X coordinate of the rotation axis
+ * REAL           ay        : <-- : Y coordinate of the rotation axis
+ * REAL           az        : <-- : Z coordinate of the rotation axis
+ * REAL           theta     : <-- : angle of the rotation (radian)
+ * REAL           ix        : <-- : X coordinate of the invariant point
+ * REAL           iy        : <-- : Y coordinate of the invariant point
+ * REAL           iz        : <-- : Z coordinate of the invariant point
+ * INTEGER        crit_len  : <-- : length of criteria string
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(defpr1, DEFPR1)
 (
- cs_int_t    *numper,
+ cs_int_t    *join_num,
  const char  *criteria,
  cs_real_t   *fraction,
  cs_real_t   *plane,
@@ -169,7 +169,7 @@ void CS_PROCF(defpr1, DEFPR1)
  * SUBROUTINE DEFPG1
  * *****************
  *
- * INTEGER        numper    : <-- : number related to the periodic op.
+ * INTEGER        join_num  : --> : joining operation number
  * CHARACTER*     criteria  : <-- : boundary face selection criteria
  * REAL           fraction  : <-- : parameter for merging vertices
  * REAL           plane     : <-- : parameter for splitting faces
@@ -191,7 +191,7 @@ void CS_PROCF(defpr1, DEFPR1)
 
 void CS_PROCF(defpg1, DEFPG1)
 (
- cs_int_t    *numper,
+ cs_int_t    *join_num,
  const char  *criteria,
  cs_real_t   *fraction,
  cs_real_t   *plane,
@@ -213,38 +213,21 @@ void CS_PROCF(defpg1, DEFPG1)
 );
 
 /*----------------------------------------------------------------------------
- * Set advanced parameters for the joining algorithm in case of periodicity
+ * Check if periodic joining operations are queued.
  *
  * Fortran Interface:
  *
- * SUBROUTINE SETAPP
+ * SUBROUTINE TSTJPE
  * *****************
  *
- * INTEGER      perio_num         : <-- : perio number
- * REAL         mtf               : <-- : merge tolerance coefficient
- * REAL         pmf               : <-- : pre-merge factor
- * INTEGER      tcm               : <-- : tolerance computation mode
- * INTEGER      icm               : <-- : intersection computation mode
- * INTEGER      maxbrk            : <-- : max number of equiv. breaks
- * INTEGER      max_sub_faces     : <-- : max. possible number of sub-faces
- *                                        by splitting a selected face
- * INTEGER      tml               : <-- : tree max level
- * INTEGER      tmb               : <-- : tree max boxes
- * REAL         tmr               : <-- : tree max ratio
+ * INTEGER        iperio    : <-> : do we have periodicity ?
+ * INTEGER        iperot    : <-> : do we have periodicity of rotation ?
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(setapp, SETAPP)
+void CS_PROCF(tstjpe, tstjpe)
 (
- cs_int_t    *perio_num,
- cs_real_t   *mtf,
- cs_real_t   *pmf,
- cs_int_t    *tcm,
- cs_int_t    *icm,
- cs_int_t    *maxbrk,
- cs_int_t    *max_sub_faces,
- cs_int_t    *tml,
- cs_int_t    *tmb,
- cs_real_t   *tmr
+ cs_int_t    *iperio,
+ cs_int_t    *iperot
 );
 
 /*=============================================================================
@@ -255,17 +238,18 @@ void CS_PROCF(setapp, SETAPP)
  * Define a translational periodicity
  *
  * parameters:
- *   perio_num    <-- number related to the periodicity
  *   sel_criteria <-- boundary face selection criteria
  *   fraction     <-- value of the fraction parameter
  *   plane        <-- value of the plane parameter
  *   verbosity    <-- level of verbosity required
  *   trans        <-- translation vector
+ *
+ * returns:
+ *   number (1 to n) associated with new periodicity
  *----------------------------------------------------------------------------*/
 
-void
-cs_join_perio_add_translation(int            perio_num,
-                              const char    *sel_criteria,
+int
+cs_join_perio_add_translation(const char    *sel_criteria,
                               double         fraction,
                               double         plane,
                               int            verbosity,
@@ -275,7 +259,6 @@ cs_join_perio_add_translation(int            perio_num,
  * Define a rotational periodicity
  *
  * parameters:
- *   perio_num    <-- number related to the periodicity
  *   sel_criteria <-- boundary face selection criteria
  *   fraction     <-- value of the fraction parameter
  *   plane        <-- value of the plane parameter
@@ -283,11 +266,13 @@ cs_join_perio_add_translation(int            perio_num,
  *   theta        <-- rotation angle (in degrees)
  *   axis         <-- axis vector
  *   invariant    <-- invariant point coordinates
+ *
+ * returns:
+ *   joining number (1 to n) associated with new periodicity
  *----------------------------------------------------------------------------*/
 
-void
-cs_join_perio_add_rotation(int            perio_num,
-                           const char    *sel_criteria,
+int
+cs_join_perio_add_rotation(const char    *sel_criteria,
                            double         fraction,
                            double         plane,
                            int            verbosity,
@@ -299,21 +284,37 @@ cs_join_perio_add_rotation(int            perio_num,
  * Define a periodicity using a matrix
  *
  * parameters:
- *   perio_num    <-- number related to the periodicity
  *   sel_criteria <-- boundary face selection criteria
  *   fraction     <-- value of the fraction parameter
  *   plane        <-- value of the plane parameter
  *   verbosity    <-- level of verbosity required
  *   matrix       <-- transformation matrix
+ *
+ * returns:
+ *   joining number (1 to n) associated with new periodicity
  *----------------------------------------------------------------------------*/
 
-void
-cs_join_perio_add_mixed(int            perio_num,
-                        const char    *sel_criteria,
+int
+cs_join_perio_add_mixed(const char    *sel_criteria,
                         double         fraction,
                         double         plane,
                         int            verbosity,
                         double         matrix[3][4]);
+
+/*----------------------------------------------------------------------------
+ * Add periodicity information to mesh and create or update mesh builder
+ * for a new periodic joining.
+ *
+ * parameters:
+ *   this_join <-- high level join structure
+ *   mesh      <-> pointer to a cs_mesh_t structure
+ *   builder   <-> pointer to a cs_mesh_builder_t structure pointer
+ *---------------------------------------------------------------------------*/
+
+void
+cs_join_perio_init(cs_join_t           *this_join,
+                   cs_mesh_t           *mesh,
+                   cs_mesh_builder_t  **builder);
 
 /*----------------------------------------------------------------------------
  * Duplicate and apply transformation to the selected faces and also to
@@ -321,9 +322,9 @@ cs_join_perio_add_mixed(int            perio_num,
  * new periodic faces and create a periodic vertex couple list.
  *
  * parameters:
- *   this_join    <--  high level join structure
- *   jmesh        <->  local join mesh struct. to duplicate and transform
- *   mesh         <--  pointer to a cs_mesh_t struct.
+ *   this_join <-- high level join structure
+ *   jmesh     <-> local join mesh struct. to duplicate and transform
+ *   mesh      <-- pointer to a cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
@@ -339,6 +340,7 @@ cs_join_perio_apply(cs_join_t          *this_join,
  * parameters:
  *   this_join          <-- pointer to a high level join structure
  *   jmesh              <-> local join mesh struct. to duplicate and transform
+ *   mesh               <-- pointer to a cs_mesh_t structure
  *   p_work_jmesh       <-> distributed join mesh struct. on which operations
  *                          take place
  *   p_work_edges       <-> join edges struct. related to work_jmesh
@@ -350,6 +352,7 @@ cs_join_perio_apply(cs_join_t          *this_join,
 void
 cs_join_perio_merge_back(cs_join_t          *this_join,
                          cs_join_mesh_t     *jmesh,
+                         const cs_mesh_t    *mesh,
                          cs_join_mesh_t    **p_work_jmesh,
                          cs_join_edges_t   **p_work_edges,
                          fvm_gnum_t          init_max_vtx_gnum,
@@ -361,17 +364,19 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
  * Define a new n2o_hist.
  *
  * parameters:
- *   this_join     <-- pointer to a high level join structure
- *   jmesh         <-> local join mesh struct. to duplicate and transform
- *   mesh          <-- pointer to a cs_mesh_t structure
- *   o2n_hist      <-- old global face -> new local face numbering
- *   p_n2o_hist    <-- new global face -> old local face numbering
+ *   this_join  <-- pointer to a high level join structure
+ *   jmesh      <-> local join mesh struct. to duplicate and transform
+ *   mesh       <-- pointer to a cs_mesh_t structure
+ *   builder    <-- pointer to a cs_mesh_builder_t structure
+ *   o2n_hist   <-- old global face -> new local face numbering
+ *   p_n2o_hist <-- new global face -> old local face numbering
  *---------------------------------------------------------------------------*/
 
 void
 cs_join_perio_split_back(cs_join_t          *this_join,
                          cs_join_mesh_t     *jmesh,
                          cs_mesh_t          *mesh,
+                         cs_mesh_builder_t  *builder,
                          cs_join_gset_t     *o2n_hist,
                          cs_join_gset_t    **p_n2o_hist);
 
@@ -383,13 +388,13 @@ cs_join_perio_split_back(cs_join_t          *this_join,
  *  - define a consistent face connectivity in order to prepare the building
  *    of periodic vertex couples
  *
- *
  * parameters:
  *   param        <-- set of parameters for the joining operation
  *   n_ii_faces   <-- initial local number of interior faces
  *   face_type    <-- type of faces in join mesh (interior or border ...)
- *   jmesh        <-- pointer on a cs_join_mesh_t struct.
- *   mesh         <-> pointer on a cs_mesh_t struct.
+ *   jmesh        <-- pointer to a cs_join_mesh_t structure
+ *   mesh         <-> pointer to a cs_mesh_t structure
+ *   mesh_builder <-> pointer to a cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
@@ -397,7 +402,8 @@ cs_join_perio_split_update(cs_join_param_t             param,
                            cs_int_t                    n_ii_faces,
                            const cs_join_face_type_t   face_type[],
                            const cs_join_mesh_t       *jmesh,
-                           cs_mesh_t                  *mesh);
+                           cs_mesh_t                  *mesh,
+                           cs_mesh_builder_t          *mesh_builder);
 
 /*----------------------------------------------------------------------------
  * Use periodic face couples in cs_glob_join_perio_builder to define

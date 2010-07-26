@@ -69,7 +69,7 @@ include "parall.h"
 
 ! Local variables
 
-integer          nbperio, ii, iwarnp, iutile
+integer          nbperio, ii, jj, iwarnp, iutile
 integer          tml, tmb, tcm, icm, maxsf, maxbrk
 double precision fract, plane, mtf, pmf, tmr
 
@@ -112,14 +112,14 @@ iwarnp = 1
 call numper(nbperio) ! Number of periodicities already defined
 !==========
 
-do ii = nbperio, nbperio + 3
+do ii = 1, 3
 
    ! Definition of a periodicity of translation
    ! ------------------------------------------
 
-  if (ii .eq. nbperio + 1) then
+  if (ii .eq. 1) then
 
-    call defptr(ii, '99', fract, plane, iwarnp, &  ! Main joining parameters
+    call defptr(jj, '99', fract, plane, iwarnp, &  ! Main joining parameters
     !==========
                 1.0d0, 0.0d0, 0.0d0)               ! Translation vector
 
@@ -128,13 +128,13 @@ do ii = nbperio, nbperio + 3
   ! Definition of a periodicity of rotation
   ! ---------------------------------------
 
-  if (ii .eq. nbperio + 2) then
+  if (ii .eq. 2) then
 
      ! Modify default value
      fract = 0.20d0
      iwarnp = 2
 
-     call defpro(ii, '3', fract, plane, iwarnp,  &  ! Main joining parameters
+     call defpro(jj, '3', fract, plane, iwarnp,  &  ! Main joining parameters
      !==========
                  1.0d0, 0.0d0, 0.0d0,            &  ! Axis of the rotation
                  20d0,                           &  ! Rotation angle in degree
@@ -158,9 +158,9 @@ do ii = nbperio, nbperio + 3
   !
   ! Can be used for helecoidal transformation for instance
 
-  if (ii .eq. nbperio + 3) then
+  if (ii .eq. 3) then
 
-    call defpge(ii, 'all[]', fract, plane, iwarnp,  &  ! Main joining parameters
+    call defpge(jj, 'all[]', fract, plane, iwarnp,  &  ! Main joining parameters
     !==========
                 1.0d0, 0.0d0, 0.0d0, 0.0d0,         &  ! 1st row: r11 r12 r13 tx
                 0.0d0, 1.0d0, 0.0d0, 0.0d0,         &  ! 2nd row: r21 r22 r23 ty
@@ -168,93 +168,88 @@ do ii = nbperio, nbperio + 3
 
   endif
 
+  ! -------------------
+  ! Advanced parameters
+  ! -------------------
+
+  ! Use advanced parameters in case of problem during the joining step
+  ! or to get a better mesh quality
+
+  ! Merge tolerance factor
+  ! Used to locally modify the tolerance associated to each
+  ! vertex BEFORE the merge step.
+  !   = 0 => no vertex merge;
+  !   < 1 => vertex merge is more strict. It may increase the number
+  !          of tolerance reduction and so define smaller subset of
+  !          vertices to merge together but it can drive to loose
+  !          intersections;
+  !   = 1 => no change;
+  !   > 1 => vertex merge is less strict. The subset of vertices able
+  !          to be merged together is greater.
+
+  mtf = 1.00d0
+
+  ! Pre-merge factor. This parameter is used to define a limit
+  ! under which two vertices are merged before the merge step.
+  ! Tolerance limit for the pre-merge = pmf * fraction
+
+  pmf = 0.10d0
+
+  ! Tolerance computation mode: tcm
+  !
+  !   1: (default) tol = min. edge length related to a vertex * fraction
+  !   2: tolerance is computed like in mode 1 with in addition, the
+  !      multiplication by a coef. which is equal to the max sin(e1, e2)
+  !      where e1 and e2 are two edges sharing the same vertex V for which
+  !      we want to compute the tolerance
+  !  11: as 1 but taking into account only the selected faces
+  !  12: as 2 but taking into account only the selected faces
+
+  tcm = 1
+
+  ! Intersection computation mode: icm
+  !  1: (default) Original algorithm. Try to clip intersection on extremity
+  !  2: New intersection algorithm. Avoid to clip intersection on extremity
+
+  icm = 1
+
+  ! Maximum number of equivalence breaks which is
+  ! enabled during the merge step
+
+  maxbrk = 500
+
+  ! Maximum number of sub-faces when splitting a selected face
+
+  maxsf = 100
+
+  ! tml, tmb and tmr are parameters of the searching algorithm for
+  ! face intersections between selected faces (octree structure).
+  ! Useful if there is a memory limitation.
+
+  ! Tree Max Level: deepest level reachable during the tree building
+
+  tml = 30
+
+  ! Tree Max. Boxes: max. number of bounding boxes (BB) which can be
+  ! linked to a leaf of the tree (not necessary true for the deepest level)
+
+  tmb = 25
+
+  ! Tree Max. Ratio: stop to build the tree structure when
+  ! number of bounding boxes > tmr * number of faces to locate
+  ! Efficient parameter to reduce memory consumption.
+
+  tmr = 5.0
+
+  ! Advanced joining parameters setup
+
+  iutile = 0
+  if (iutile.eq.1) then
+     call setajp(jj, mtf, pmf, tcm, icm, maxbrk, maxsf, tml, tmb, tmr)
+     !==========
+  endif
+
 enddo
-
-
-! -------------------
-! Advanced parameters
-! -------------------
-
-! Use advanced parameters in case of problem during the joining step
-! or to get a better mesh quality
-
-! Merge tolerance factor
-! Used to locally modify the tolerance associated to each
-! vertex BEFORE the merge step.
-!   = 0 => no vertex merge;
-!   < 1 => vertex merge is more strict. It may increase the number
-!          of tolerance reduction and so define smaller subset of
-!          vertices to merge together but it can drive to loose
-!          intersections;
-!   = 1 => no change;
-!   > 1 => vertex merge is less strict. The subset of vertices able
-!          to be merged together is greater.
-
-mtf = 1.00d0
-
-! Pre-merge factor. This parameter is used to define a limit
-! under which two vertices are merged before the merge step.
-! Tolerance limit for the pre-merge = pmf * fraction
-
-pmf = 0.10d0
-
-! Tolerance computation mode: tcm
-!
-!   1: (default) tol = min. edge length related to a vertex * fraction
-!   2: tolerance is computed like in mode 1 with in addition, the
-!      multiplication by a coef. which is equal to the max sin(e1, e2)
-!      where e1 and e2 are two edges sharing the same vertex V for which
-!      we want to compute the tolerance
-!  11: as 1 but taking into account only the selected faces
-!  12: as 2 but taking into account only the selected faces
-
-tcm = 1
-
-! Intersection computation mode: icm
-!  1: (default) Original algorithm. Try to clip intersection on extremity
-!  2: New intersection algorithm. Avoid to clip intersection on extremity
-
-icm = 1
-
-! Maximum number of equivalence breaks which is
-! enabled during the merge step
-
-maxbrk = 500
-
-! Maximum number of sub-faces when splitting a selected face
-
-maxsf = 100
-
-! tml, tmb and tmr are parameters of the searching algorithm for
-! face intersections between selected faces (octree structure).
-! Useful if there is a memory limitation.
-
-! Tree Max Level: deepest level reachable during the tree building
-
-tml = 30
-
-! Tree Max. Boxes: max. number of bounding boxes (BB) which can be
-! linked to a leaf of the tree (not necessary true for the deepest level)
-
-tmb = 25
-
-! Tree Max. Ratio: stop to build the tree structure when
-! number of bounding boxes > tmr * number of faces to locate
-! Efficient parameter to reduce memory consumption.
-
-tmr = 5.0
-
-! Advanced parameters setup
-
-! Each ii'th call to the advanced parameters setup routine stands
-! the joining number in their order of definition.
-
-iutile = 0
-if (iutile.eq.1) then
-  ii = nbperio + 1
-  call setapp(ii, mtf, pmf, tcm, icm, maxbrk, maxsf, tml, tmb, tmr)
-  !==========
-endif
 
 return
 end subroutine
