@@ -103,6 +103,8 @@ double precision temps(nvomax,nnent)      , tpslim(nvomax,nnent)
 
 !     VARIABLES LOCALES
 
+character        ficsui*32
+
 integer          ii, ient
 integer          ipass
 data             ipass /0/
@@ -182,7 +184,8 @@ enddo
 ! car on accede deja a l'unite IMPMVO(=IMPDVO) dans VORINI.
 ! Seul le premier processeur ecrit (test avant l'appel à VORTEX)
 
-open(unit=impvvo,file=ficvvo)
+ficsui = 'checkpoint/vortex'
+open(unit=impvvo,file=ficsui)
 rewind(impvvo)
 do ient = 1, nnent
   write(impvvo,100) ient

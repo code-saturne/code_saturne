@@ -113,6 +113,7 @@ double precision propfb(nfabor,*)
 
 character        rubriq*64
 character        cphase(nphsmx)*2
+character        ficsui*32
 integer          idebia, idebra
 integer          iok
 
@@ -142,10 +143,11 @@ if (isuird.eq.1) then
 
 !     (ILECEC=1:lecture)
     ilecec = 1
-    call opnsui(ficamr,len(ficamr),ilecec,impamr,ierror)
+    ficsui = 'radiative_transfer'
+    call opnsui(ficsui,len(ficsui),ilecec,impamr,ierror)
     !==========
     if (ierror.ne.0) then
-      write(nfecra,9011) ficamr
+      write(nfecra,9011) ficsui
       call csexit (1)
     endif
 
@@ -164,7 +166,7 @@ if (isuird.eq.1) then
                 ivers,ierror)
 
     if (ierror.ne.0) then
-      write(nfecra,9200)ficamr
+      write(nfecra,9200)ficsui
       call csexit (1)
     endif
 
@@ -251,7 +253,7 @@ if (isuird.eq.1) then
     call clssui(impamr,ierror)
 
     if (ierror.ne.0) then
-      write(nfecra,8011) ficamr
+      write(nfecra,8011) ficsui
     endif
 
     write(nfecra,6099)

@@ -106,6 +106,8 @@ double precision drand(1), phidat, xx, yy, zz
 double precision uu, vv, ww
 double precision u_vor, ek_vor, ee_vor
 
+character        ficsui*32
+
 integer          ilect
 data             ilect /0/
 save             ilect
@@ -291,7 +293,8 @@ endif
 if(isuivo.eq.1) then
 
   if(ient.eq.1) then
-    open(unit=impmvo,file=ficmvo)
+    ficsui = 'restart/vortex'
+    open(unit=impmvo,file=ficsui)
     rewind(impmvo)
   endif
 

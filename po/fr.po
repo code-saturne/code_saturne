@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-07-26 12:00+0200\n"
+"POT-Creation-Date: 2010-07-26 17:52+0200\n"
 "PO-Revision-Date: 2010-07-26 12:04+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4958,7 +4958,15 @@ msgstr ""
 "Infomation sur le fichier suite numéro <%d> indisponible\n"
 "(fichier déjà fermé ou numéro invalide)."
 
-#: src/base/cs_restart.c:1372
+#: src/base/cs_restart.c:1254
+msgid "The checkpoint directory cannot be created"
+msgstr ""
+
+#: src/base/cs_restart.c:1275
+msgid "The restart directory cannot be found"
+msgstr ""
+
+#: src/base/cs_restart.c:1420
 #, c-format
 msgid ""
 "The size of location \"%s\" associated with\n"
@@ -4969,7 +4977,7 @@ msgstr ""
 "\"%s\" vaut %llu et ne correspond pas\n"
 "à celle du maillage en cours (%llu).\n"
 
-#: src/base/cs_restart.c:1433
+#: src/base/cs_restart.c:1481
 #, c-format
 msgid ""
 "The restart file \"%s\" references no\n"
@@ -4978,7 +4986,7 @@ msgstr ""
 "\"Le fichier suite \\\"%s\\\" ne contient \\n\"\n"
 "\" aucun support de nom \\\"%s\\\".\""
 
-#: src/base/cs_restart.c:1493
+#: src/base/cs_restart.c:1541
 #, c-format
 msgid ""
 "  Location: %s\n"
@@ -4987,51 +4995,51 @@ msgstr ""
 "  Support : %s\n"
 "    (numéro : %03d, n_glob_ents : %llu)\n"
 
-#: src/base/cs_restart.c:1503
+#: src/base/cs_restart.c:1551
 msgid "  General information associated with the restart file:\n"
 msgstr "  Informations générales associées au fichier suite :\n"
 
-#: src/base/cs_restart.c:1562
+#: src/base/cs_restart.c:1610
 #, c-format
 msgid "  %s: location id %d for \"%s\" does not exist.\n"
 msgstr ""
 
-#: src/base/cs_restart.c:1569
+#: src/base/cs_restart.c:1617
 #, c-format
 msgid "  %s: location id %d for \"%s\" has size %llu, but %llu is expected.\n"
 msgstr ""
 
-#: src/base/cs_restart.c:1591
+#: src/base/cs_restart.c:1639
 #, c-format
 msgid "  %s: section \"%s\" not present.\n"
 msgstr ""
 
-#: src/base/cs_restart.c:1618
+#: src/base/cs_restart.c:1666
 #, c-format
 msgid "  %s: section \"%s\" at location id %d but not at %d.\n"
 msgstr ""
 
-#: src/base/cs_restart.c:1628
+#: src/base/cs_restart.c:1676
 #, c-format
 msgid "  %s: section \"%s\" has %d values per location and  not %d.\n"
 msgstr ""
 
-#: src/base/cs_restart.c:1635
+#: src/base/cs_restart.c:1683
 #, c-format
 msgid "  %s: section \"%s\" has %d values and not %d.\n"
 msgstr ""
 
-#: src/base/cs_restart.c:1645
+#: src/base/cs_restart.c:1693
 #, c-format
 msgid "  %s: section \"%s\" is not of integer type.\n"
 msgstr ""
 
-#: src/base/cs_restart.c:1658
+#: src/base/cs_restart.c:1706
 #, c-format
 msgid "  %s: section \"%s\" is not of floating-point type.\n"
 msgstr ""
 
-#: src/base/cs_restart.c:1842
+#: src/base/cs_restart.c:1890
 #, c-format
 msgid ""
 "\n"

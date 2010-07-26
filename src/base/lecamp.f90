@@ -115,6 +115,7 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 character        rubriq*64,rubrik*64,car4*4
 character        cindfp*2
 character        cphase(nphsmx)*2
+character        ficsui*32
 
 integer          idebia, idebra
 integer          iel
@@ -180,10 +181,11 @@ endif
 
 !  ---> Ouverture du fichier (ILECEC = 1 : lecture)
 ilecec = 1
-call opnsui(ficamo,len(ficamo),ilecec,impamo,ierror)
+ficsui = 'main'
+call opnsui(ficsui,len(ficsui),ilecec,impamo,ierror)
 !==========
 if (ierror.ne.0) then
-  write(nfecra,9100) ficamo
+  write(nfecra,9100) ficsui
   call csexit (1)
 endif
 
@@ -206,7 +208,7 @@ call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,ivers,   &
             ierror)
 
 if (ierror.ne.0) then
-  write(nfecra,9200)ficamo
+  write(nfecra,9200)ficsui
   call csexit (1)
 endif
 
@@ -1063,7 +1065,7 @@ call clssui(impamo,ierror)
 !==========
 
 if (ierror.ne.0) then
-  write(nfecra,8711) ficamo
+  write(nfecra,8711) ficsui
 endif
 
 write(nfecra,1799)

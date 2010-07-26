@@ -175,6 +175,8 @@ integer          maxelt , ils
 double precision titer1, titer2
 double precision tecrf1, tecrf2
 
+character        ficsui*32
+
 
 !===============================================================================
 
@@ -654,9 +656,10 @@ if (nfpt1t.gt.0) then
 
   if (isuit1.eq.1) then
 
+    ficsui = '1dwall_module'
     call lect1d                                                   &
     !==========
- ( ficmt1     , len(ficmt1), nfpt1d     , nfpt1t    ,             &
+ ( ficsui     , len(ficsui), nfpt1d     , nfpt1t    ,             &
    nmxt1d     , nfabor     , ia(inppt1) , ia(iifpt1) , ra(ieppt1),&
    ra(irgpt1) , ra(itppt1))
 
@@ -1361,14 +1364,16 @@ if (iisuit.eq.1) then
    rdevel , rtuser , ra     )
 
   if (nfpt1t.gt.0) then
+    ficsui = '1dwall_module'
     call ecrt1d                                                   &
     !==========
- ( ficvt1   , len(ficvt1), nfpt1d   ,  nmxt1d  ,                  &
+ ( ficsui   , len(ficsui), nfpt1d   ,  nmxt1d  ,                  &
    nfabor   , ra(itppt1) , ia(iifpt1))
   endif
 
   if (ippmod(iaeros).ge.0) then
-     call ecrctw ( ficvct , len(ficvct) )
+     ficsui = 'cooling_towers'
+     call ecrctw ( ficsui , len(ficsui) )
      !==========
   endif
 

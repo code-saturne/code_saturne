@@ -177,6 +177,7 @@ double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
 character        rubriq*64
 character        cphase(nphsmx)*2
+character        ficsui*32
 integer          idebia , idebra
 integer          ifinia , ifinra
 integer          itrav1 , ip
@@ -203,7 +204,8 @@ idebra = idbra0
 write(nfecra,6010)
 
 ilecec = 2
-call opnsui(ficavr, len(ficavr), ilecec, impavr, ierror)
+ficsui = 'radiative_transfer'
+call opnsui(ficsui, len(ficsui), ilecec, impavr, ierror)
 !==========
 if (ierror.ne.0) then
   write(nfecra,9020)
@@ -323,7 +325,7 @@ write(nfecra,6013)
 call clssui(impavr,ierror)
 
 if (ierror.ne.0) then
-  write(nfecra,8011) ficavr
+  write(nfecra,8011) ficsui
 endif
 
 write(nfecra,6014)

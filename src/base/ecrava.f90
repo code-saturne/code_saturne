@@ -146,6 +146,7 @@ character        cflu  (nvarmx)*4 , cmom (nbmomx)*4
 character        nomflu(nvarmx)*18, nomrtp(nvarmx)*20
 character        nomcli(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
+character        ficsui*32
 integer          idebia, idebra
 integer          ivar  , iphas , iscal , imom
 integer          idecal, iclapc, icha  , icla
@@ -279,10 +280,11 @@ write(nfecra,1000)
 
 ilecec = 2
 
-call opnsui(ficava, len(ficava), ilecec, impava, ierror)
+ficsui = 'main'
+call opnsui(ficsui, len(ficsui), ilecec, impava, ierror)
 !==========
 if (ierror.ne.0) then
-  write(nfecra,8000) ficava
+  write(nfecra,8000) ficsui
   return
 endif
 
@@ -541,7 +543,7 @@ endif
 call clssui(impava,ierror)
 
 if (ierror.ne.0) then
-  write(nfecra,8010) ficava
+  write(nfecra,8010) ficsui
 endif
 
 write(nfecra,1200)
@@ -559,10 +561,11 @@ if (iecaux.eq.1) then
   write(nfecra,2000)
 
   ilecec = 2
-  call opnsui(ficavx, len(ficavx), ilecec, impavx, ierror)
+  ficsui = 'auxiliary'
+  call opnsui(ficsui, len(ficsui), ilecec, impavx, ierror)
   !==========
   if (ierror.ne.0) then
-    write(nfecra,8001) ficavx
+    write(nfecra,8001) ficsui
     return
   endif
 
@@ -2313,7 +2316,7 @@ nberro=nberro+ierror
   call clssui(impavx,ierror)
 
   if (ierror.ne.0) then
-    write(nfecra,8011) ficavx
+    write(nfecra,8011) ficsui
   endif
 
   write(nfecra,1200)

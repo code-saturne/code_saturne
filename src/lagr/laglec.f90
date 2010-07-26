@@ -149,6 +149,7 @@ double precision ra(*)
 character        rubriq*64 , car4*4, car8*8, kar8*8
 character        nomnvl(nvplmx)*60 , nomtsl(nvplmx)*60
 character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
+character        ficsui*32
 integer          idebia , idebra
 integer          ncelok , nfaiok , nfabok , nsomok
 integer          ierror , irtyp  , itysup , nbval
@@ -244,10 +245,11 @@ write(nfecra,6000)
 
 !     (ILECEC=1:lecture)
 ilecec = 1
-call opnsui(ficaml,len(ficaml),ilecec,impaml,ierror)
+ficsui = 'lagrangian'
+call opnsui(ficsui,len(ficsui),ilecec,impaml,ierror)
 !==========
 if(ierror.ne.0) then
-  write(nfecra,9010) ficaml, ficaml
+  write(nfecra,9010) ficsui, ficsui
   call csexit (1)
 endif
 
@@ -637,10 +639,11 @@ if (isuist.eq.1) then
 
 !     (ILECEC=1:lecture)
   ilecec = 1
-  call opnsui(ficmls,len(ficmls),ilecec,impmls,ierror)
+  ficsui = 'lagrangian_stats'
+  call opnsui(ficsui,len(ficsui),ilecec,impmls,ierror)
   !==========
   if(ierror.ne.0) then
-    write(nfecra,9010) ficmls, ficmls
+    write(nfecra,9010) ficsui, ficsui
     call csexit (1)
   endif
 

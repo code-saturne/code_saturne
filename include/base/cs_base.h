@@ -108,6 +108,10 @@
 
 #endif
 
+/* Directory name separator: '/' for Unix/Linux, '\' for Windows, ':' for Mac */
+
+#define CS_DIR_SEPARATOR '/'
+
 /*
  * Macro for handling of different symbol names (underscored or not,
  * lowercase or uppercase) between C and Fortran, for link resolution.

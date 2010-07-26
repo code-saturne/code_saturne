@@ -160,6 +160,7 @@ character        cindfc*2,cindfl*4
 character        cphase(nphsmx)*2
 character        nomflu(nvarmx)*18,nomcli(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
+character        ficsui*32
 integer          iel   , ifac, ii, istr
 integer          iphas , ivar  , iscal , jphas , isco
 integer          idecal, iclapc, icha  , icla
@@ -242,10 +243,11 @@ endif
 
 !  ---> Ouverture du fichier (ILECEC = 1 : lecture)
 ilecec = 1
-call opnsui(ficamx,len(ficamx),ilecec,impamx,ierror)
+ficsui = 'auxiliary'
+call opnsui(ficsui,len(ficsui),ilecec,impamx,ierror)
 !==========
 if (ierror.ne.0) then
-  write(nfecra,9000) ficamx
+  write(nfecra,9000) ficsui
   call csexit (1)
 endif
 
@@ -268,7 +270,7 @@ call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,ivers,   &
             ierror)
 
 if (ierror.ne.0) then
-  write(nfecra,9100)ficamx
+  write(nfecra,9100)ficsui
   call csexit (1)
 endif
 
@@ -2581,7 +2583,7 @@ endif
 call clssui(impamx,ierror)
 
 if (ierror.ne.0) then
-   write(nfecra,8900) ficamx
+   write(nfecra,8900) ficsui
 endif
 
 write(nfecra,1200)

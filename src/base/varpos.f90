@@ -87,6 +87,7 @@ integer       nmodpp
 
 
 character     rubriq*64, cmoy4*4, cindfm*4
+character     ficsui*32
 integer       ivar  , ipp   , iscal , iphas , iprop , iprofl
 integer       ii    , jj    , kk    , ll
 integer       iok   , ippok , ipppst
@@ -1622,10 +1623,11 @@ if(ipass.eq.4) then
 !     Ouverture
 !        (ILECEC=1:lecture)
     ilecec = 1
-    call opnsui(ficamx,len(ficamx),ilecec,impamx,ierror)
+    ficsui = 'auxiliary'
+    call opnsui(ficsui,len(ficsui),ilecec,impamx,ierror)
     !==========
     if (ierror.ne.0) then
-      write(nfecra,8300) ficamx
+      write(nfecra,8300) ficsui
       call csexit (1)
     endif
 
@@ -1643,7 +1645,7 @@ if(ipass.eq.4) then
                 ivers,ierror)
 
     if (ierror.ne.0) then
-      write(nfecra,8301)ficamx
+      write(nfecra,8301)ficsui
       call csexit (1)
     endif
 
@@ -1798,7 +1800,7 @@ if(ipass.eq.4) then
     call clssui(impamx,ierror)
 
     if (ierror.ne.0) then
-      write(nfecra,8390) ficamx
+      write(nfecra,8390) ficsui
     endif
 
   endif

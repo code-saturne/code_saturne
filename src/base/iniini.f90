@@ -134,34 +134,13 @@ enddo
 impgeo = 10
 FICGEO = 'geomet'
 
-! ---> Fichier amont
-
-FICAMO = 'suiamo'
-FICAMX = 'suiamx'
-
-!    Module thermique 1D en paroi
-FICMT1 = 't1damo'
-
-!    Module aerorefrigerants
-FICMCT = 'ctwamo'
-
 !    Methode des vortex : on utilise la meme unite
 !                  Pour le fichier de donnees, on specifie l'unite ici, mais le
 !                  nom est laisse dans usvort. On utilise 20 et pas 11
 !                  car en cas d'entree multiple, les deux fichiers doivent etre
 !                  ouverts en meme temps dans VORINI
 impmvo = 11
-FICMVO = 'voramo'
 impdvo = 20
-
-!    Rayonnement
-FICAMR = 'rayamo'
-
-!    Lagrangien
-!      Fichier suite calcul
-FICAML = 'lagamo'
-!      Fichier suite statistique
-FICMLS = 'lasamo'
 
 ! ---> Fichier stop
 
@@ -176,33 +155,12 @@ FICSTP = 'ficstp'
 !              0    : par defaut (4 fois par calcul)
 !              > 0  : periode
 
-
-FICAVA = 'suiava'
-FICAVX = 'suiavx'
-
 ntsuit = 0
-
-!    Module thermique 1D en paroi
-FICVT1 = 't1dava'
-
-!    Module aerorefrigerants
-FICVCT = 'ctwava'
 
 !    Methode des vortex : on utilise la meme unite
 !                  et le format ascii obligatoirement
 !                  (pas de detection automatique, fichiers de taille faible)
 impvvo = 20
-FICVVO = 'vorava'
-
-!    Rayonnement : on utilise la meme unite (pour le moment)
-!                  et le meme format (voir modini)
-FICAVR = 'rayava'
-
-!    Lagrangien
-!      Fichier suite calcul
-FICAVL = 'lagava'
-!      Fichier suite statistique
-FICVLS = 'lasava'
 
 !    Fichier listing Lagrangien
 

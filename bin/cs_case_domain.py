@@ -435,7 +435,7 @@ class domain(base_domain):
 
         base_domain.set_case_dir(self, case_dir)
 
-        self.restart_input_dir = os.path.join(self.data_dir, 'RESTART')
+        self.restart_input_dir = os.path.join(self.data_dir, 'restart')
         self.preprocess_output_in = os.path.join(self.data_dir,
                                                  'preprocessor_output')
         self.partition_output_in = os.path.join(self.data_dir,
@@ -724,22 +724,9 @@ class domain(base_domain):
                 if not os.path.isdir(self.restart_input_dir):
                     err_str = self.restart_input_dir + ' is not a directory.'
                     raise RunCaseError(err_str)
-
-                rename = {'suiava':'suiamo',
-                          'suiavx':'suiamx',
-                          'vorava':'voramo',
-                          't1dava':'t1damo',
-                          'rayava':'rayamo',
-                          'lagava':'lagamo',
-                          'lasava':'lasamo',
-                          'ctwava':'ctwamo'}
-
-                l = os.listdir(self.restart_input_dir)
-                for f in l:
-                    if f in rename:
-                        self.symlink(os.path.join(self.restart_input_dir, f),
-                                     os.path.join(self.exec_dir, rename[f]),
-                                     'file')
+                else:
+                    self.symlink(self.restart_input_dir,
+                                 os.path.join(self.exec_dir, 'restart'))
 
         # Data for specific physics
 
@@ -996,17 +983,10 @@ class domain(base_domain):
         for f in log_files:
             self.copy_result(f)
 
-        # Copy restart files second (in case of full disk,
+        # Copy checkpoint files second (in case of full disk,
         # increases chances of being able to continue).
 
-        restart_files = []
-        for f in ['suiava', 'suiavx', 't1dava', 'vorava', 'rayava']:
-            if f in dir_files:
-                restart_files.append(f)
-        restart_files.extend(fnmatch.filter(dir_files, 'lagava*'))
-        restart_files.extend(fnmatch.filter(dir_files, 'lasava*'))
-
-        self.copy_results_to_dir(restart_files, 'RESTART')
+        self.copy_result('checkpoint')
 
         # User files
 

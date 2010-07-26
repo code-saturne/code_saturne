@@ -43,52 +43,25 @@ common / ageotl / ficgeo
 integer                   impgeo
 common / igeotl /         impgeo
 
-! --- FICHIER SUITE AMONT
-!     -------------------
-!     FICAMO        --> fichier suite de base
-!     FICAMX        --> fichier suite auxiliaire
-!     FICMT1        --> fichier suite module thermique 1D
-!     FICMCT        --> fichier suite module aerorefrigerants
-!     FICMVO,IMPMVO --> fichier suite methode des vortex (ASCII
-!                       obligatoirement, structure specifique)
-!     IMPDVO        --> fichier de donnees de la methode des vortex
-!                       (nom FICDAT laisse a l'utilisateur dans usvort)
+! --- FICHIER METHODE DES VORTEX
 
-character*13      ficamo,ficamx,ficmt1,ficmct,ficmvo
-common / afamon / ficamo,ficamx,ficmt1,ficmct,ficmvo
+!     IMPMVO --> fichier suite methode des vortex (ASCII
+!                obligatoirement, structure specifique)
+!     IMPVVO --> fichier suite methode des vortex (ASCII
+!                obligatoirement, structure specifique)
+!     IMPDVO --> fichier de donnees de la methode des vortex
+!                (nom FICDAT laisse a l'utilisateur dans usvort)
 
-integer                   impmvo, impdvo
-common / ifamon /         impmvo, impdvo
+integer            impmvo, impvvo, impdvo
+common / ifamon /  impmvo, impvvo, impdvo
 
-! --- FICHIERS SUITE AVAL
-!     -------------------
-!     FICAVA        --> fichier suite de base
-!     FICAVX        --> fichier suite auxiliaire
-!     FICVT1        --> fichier suite module thermique 1D
-!     FICVCT        --> fichier suite module aerorefrigerants
-!     FICVVO,IMPVVO --> fichier suite methode des vortex (ASCII
-!                       obligatoirement, structure specifique)
+character*13      ficdat
+common / afaval / ficdat
 
+! ---  FREQUENCE DE SAUVEGARDE
 
-character*13      ficava,ficavx,ficvt1,ficvct,ficvvo
-common / afaval / ficava,ficavx,ficvt1,ficvct,ficvvo
-
-integer           ntsuit, impvvo
-common / ifaval / ntsuit, impvvo
-
-! --- FICHIER SUITE AMONT RAYONNEMENT
-
-character*13      ficamr
-common / afamrd / ficamr
-
-! --- FICHIER SUITE AVAL RAYONNEMENT
-
-character*13      ficavr
-common / afavrd / ficavr
-
-integer                   ntsuir
-common / ifavrd /         ntsuir
-
+integer           ntsuit
+common / ifafrq / ntsuit
 
 ! --- FICHIER NSTOP
 

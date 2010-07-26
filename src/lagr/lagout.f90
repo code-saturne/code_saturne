@@ -231,6 +231,7 @@ double precision ra(*)
 character        rubriq*64 , car4*4
 character        nomnvl(nvplmx)*60 , nomtsl(nvplmx)*60
 character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
+character        ficsui*32
 integer          idebia , idebra
 integer          ifinia , ifinra
 integer          ierror , irtyp  , itysup , nbval
@@ -260,10 +261,11 @@ iphas = ilphas
 write(nfecra,6010)
 
 ilecec = 2
-call opnsui(ficavl, len(ficavl), ilecec, impavl, ierror)
+ficsui = 'lagrangian'
+call opnsui(ficsui, len(ficsui), ilecec, impavl, ierror)
 !==========
 if (ierror.ne.0) then
-  write(nfecra,9010) ficavl
+  write(nfecra,9010) ficsui
   goto 9998
 endif
 
@@ -556,10 +558,11 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
   write(nfecra,7010)
 
   ilecec = 2
-  call opnsui(ficvls, len(ficvls), ilecec, impvls, ierror)
+  ficsui = 'lagrangian_stats'
+  call opnsui(ficsui, len(ficsui), ilecec, impvls, ierror)
   !==========
   if (ierror.ne.0) then
-    write(nfecra,9510) ficvls
+    write(nfecra,9510) ficsui
     goto 9999
   endif
 

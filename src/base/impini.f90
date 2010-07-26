@@ -2415,173 +2415,7 @@ write(nfecra,9900)
 #endif
 
 !===============================================================================
-! 9. FICHIERS
-!===============================================================================
-
-! --- Fichiers
-
-write(nfecra,7600)
-write(nfecra,7610)ficgeo,ficamo,ficamx,ficstp,                    &
-                  impgeo,impstp
-write(nfecra,7611)ficava,ficavx
-write(nfecra,7612)ficfpp,ficamr,ficjnf,ficavr,                    &
-                  impfpp,       impjnf
-write(nfecra,7613)ficaml, ficmls, ficavl, ficvls, ficlal,         &
-                  implal, impli1, impli2
-
-! Autres fichiers lagrangien
-write(nfecra,7615) impla1,impla2,impla3,impla4,impla5(1),         &
-                   impla5(2),impla5(3),impla5(4),                 &
-                   impla5(5),impla5(6),impla5(7),                 &
-                   impla5(8),impla5(9),impla5(10),                &
-                   impla5(11),impla5(12),impla5(13),              &
-                   impla5(14),impla5(15)
-
-! Fichiers hist
-write(nfecra,7620)(imphis(ii),ii=1,2     )
-
-write(nfecra,7630) nushmx
-write(nfecra,7631)(ficush(ii),ii=1,nushmx)
-write(nfecra,7632)(impush(ii),ii=1,nushmx)
-
-
-! Fichiers utilisateurs
-write(nfecra,7640) nusrmx
-write(nfecra,7631)(ficusr(ii),ii=1,nusrmx)
-write(nfecra,7632)(impusr(ii),ii=1,nusrmx)
-
-write(nfecra,7650) ifoenv
-
-write(nfecra,9900)
-
-
-#if defined(_CS_LANG_FR)
-
- 7600 format(                                                           &
-                                                                /,&
-' ** FICHIERS'                                                 ,/,&
-'    --------'                                                 ,/)
- 7610 format(                                                           &
-' --- Fichiers standard'                                       ,/,&
-                                                                /,&
-'         GEOMETRIE AMONT PPAL  AMONT AUX       STOP'          ,/,&
-'Nom    ',     4(5X,A6)                                        ,/,&
-'Unite  ',     I11,        11X,       11X,       I11           ,/)
- 7611 format(                                                           &
-'         AVAL PPAL   AVAL AUX'                                ,/,&
-'Nom    ',     2(5X,A6)                                        ,/)
- 7612 format(                                                           &
-' --- Fichiers rayonnement'                                    ,/,&
-                                                                /,&
-'         DONNEES    AMONT    JANAF     AVAL'                  ,/,&
-'Nom    ',     4(3X,A6)                                        ,/,&
-'Unite  ',     I9,   9X,     I9                                ,/)
- 7613 format(                                                           &
-' --- Fichiers Lagrangiens'                                    ,/,&
-                                                                /,&
-'         ---- AMONT ----    ---- AVAL -----    ---- POST ----',/,&
-'         CALCUL    STAT.    CALCUL    STAT.    LISTING  HISTO',/,&
-'Nom   ',     2(3X,A6),  1X,      2(3X,A6),   4X,       A6     ,/,&
-'Unite ',         18X ,  1X,           18X,   6X,     3 I4     ,/)
- 7615 format(                                                           &
-' --- Autres fichiers pour le module Lagrangien'               ,/,&
-                                                                /,&
-'Unite  ',     5I9                                             ,/,&
-'       ',     5I9                                             ,/,&
-'       ',     5I9                                             ,/,&
-'       ',     4I9                                             ,/)
-
- 7620 format(                                                           &
-' --- Fichiers developpeurs pour historiques'                  ,/,&
-'                IMPHIS(1)         IMPHIS(2)'                  ,/,&
-'Unite  ',     2(9X,I9)                                        ,/)
- 7630 format(                                                           &
-' --- Fichiers utilisateurs pour historiques'                  ,/,&
-'                 ',I10   ,' fichiers'                         ,/,&
-' Nom et unite'                                                  )
- 7631 format(                                                           &
-               6(3x,a6)                                          )
- 7632 format(                                                           &
-               6i9                                               )
- 7640 format(                                                           &
-                                                                /,&
-' --- Fichiers utilisateurs libres'                            ,/,&
-'                 ',I10   ,' fichiers'                         ,/,&
-' Nom et unite'                                                  )
- 7650 format(                                                           &
-                                                                /,&
-' --- Fichiers preprocesseur'                                  ,/,&
-'   Format : 1=Lecture du fichier preprocessor_output'         ,/,&
-'            0=Solveur autonome'                               ,/,&
-                                                                /,&
-' Format ',I10                                                 ,/)
-
-#else
-
- 7600 format(                                                           &
-                                                                /,&
-' ** FILES'                                                    ,/,&
-'    -----'                                                    ,/)
- 7610 format(                                                           &
-' --- Standard files'                                          ,/,&
-                                                                /,&
-'         GEOMETRY  MAIN RESTART  AUX RESTART   STOP'          ,/,&
-'Name   ',     4(5X,A6)                                        ,/,&
-'Unit   ',     I11,        11X,       11X,       I11           ,/)
- 7611 format(                                                           &
-'         MAIN CHECKPOINT  AUX CHECKPOINT'                     ,/,&
-'Name   ',     2(5X,A6)                                        ,/)
- 7612 format(                                                           &
-' --- Radiative files'                                         ,/,&
-                                                                /,&
-'         DATA       RESTART  JANAF   CHECKPOINT'              ,/,&
-'Name   ',     4(3X,A6)                                        ,/,&
-'Unit   ',     I9,   9X,     I9                                ,/)
- 7613 format(                                                           &
-' --- Lagrangian files'                                        ,/,&
-                                                                /,&
-'         --- RESTART ---    -- CHECKPOINT -    ---- POST ----',/,&
-'         CALCUL.   STAT.    CALCUL.   STAT.    LOG      HIST.',/,&
-'Name  ',     2(3X,A6),  1X,      2(3X,A6),   4X,       A6     ,/,&
-'Unit  ',         18X ,  1X,           18X,   6X,     3 I4     ,/)
- 7615 format(                                                           &
-' --- Other files for Lagrangian module'                       ,/,&
-                                                                /,&
-'Unit   ',     5I9                                             ,/,&
-'       ',     5I9                                             ,/,&
-'       ',     5I9                                             ,/,&
-'       ',     4I9                                             ,/)
-
- 7620 format(                                                           &
-' --- Developper files for probe history'                      ,/,&
-'                IMPHIS(1)         IMPHIS(2)'                  ,/,&
-'Unit   ',     2(9X,I9)                                        ,/)
- 7630 format(                                                           &
-' --- User files for probe history'                            ,/,&
-'                 ',I10   ,' files'                            ,/,&
-' Name and unit'                                                 )
- 7631 format(                                                           &
-               6(3x,a6)                                          )
- 7632 format(                                                           &
-               6i9                                               )
- 7640 format(                                                           &
-                                                                /,&
-' --- Free user files'                                         ,/,&
-'                 ',I10   ,' files'                            ,/,&
-' Name and unit'                                                 )
- 7650 format(                                                           &
-                                                                /,&
-' --- Preprocessor files'                                      ,/,&
-'   Format: 1=Read preprocessor_output file'                   ,/,&
-'           0=Standalone solver'                               ,/,&
-                                                                /,&
-' Format ',I10                                                 ,/)
-
-#endif
-
-
-!===============================================================================
-! 10. COUPLAGES
+! 9. COUPLAGES
 !===============================================================================
 
 
@@ -2654,7 +2488,7 @@ endif
 #endif
 
 !===============================================================================
-! 11. Lagrangien
+! 10. Lagrangien
 !===============================================================================
 
 ! --- Lagrangien
@@ -2933,7 +2767,7 @@ endif
 #endif
 
 !===============================================================================
-! 12. METHODE ALE
+! 11. METHODE ALE
 !===============================================================================
 ! --- Activation de la methode ALE
 
@@ -2968,7 +2802,7 @@ write(nfecra,9900)
 #endif
 
 !===============================================================================
-! 13. FIN
+! 12. FIN
 !===============================================================================
 
 return

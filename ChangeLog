@@ -1,4 +1,33 @@
 * 26/07/2010 - David Monfort <david.monfort@edf.fr>
+  The checkpoint files are now created in a specific directory. Likewise, the
+  restart files are read from a specific directory.
+  Moreover, the filenames cannot be changed by the user anymore (it was
+  already breaking the scripts anyway).
+  modified file:
+    po/fr.po
+  modified script:
+    bin/cs_case_domain.py
+  modified routines:
+    gui/Pages/StartRestartView.py
+    include/base/cs_base.h
+    include/base/entsor.h
+    src/base/caltri.f90
+    src/base/cregeo.f90
+    src/base/cs_restart.c
+    src/base/ecrava.f90
+    src/base/impini.f90
+    src/base/iniini.f90
+    src/base/lecamp.f90
+    src/base/lecamx.f90
+    src/base/varpos.f90
+    src/base/vorini.f90
+    src/base/vortex.f90
+    src/lagr/laglec.f90
+    src/lagr/lagout.f90
+    src/rayt/raylec.f90
+    src/rayt/rayout.f90
+
+* 26/07/2010 - David Monfort <david.monfort@edf.fr>
   Add a MOAB batch submission file and use environment variable for all.
   modified file:
     extras/batch/batch.MOAB

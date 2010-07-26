@@ -151,6 +151,8 @@ integer          ilcel  , ilfaci , ilfacb
 integer          maxelt , ils
 integer          ifinia , ifinra , nbrsyr , nbzech
 
+character        ficsui*32
+
 !===============================================================================
 ! 1. INITIALISATION DE LA MEMOIRE EN LOCAL POUR LES TAB DE TRAV
 !===============================================================================
@@ -242,7 +244,8 @@ if (ippmod(iaeros).ge.0) then
   endif
 
   if (ippmod(iaeros).ge.0.and.isuict.eq.1) then
-     call lecctw ( ficmct , len(ficmct) )
+     ficsui = 'cooling_towers'
+     call lecctw ( ficsui , len(ficsui) )
      !==========
   endif
 

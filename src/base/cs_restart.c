@@ -1224,19 +1224,67 @@ cs_restart_create(const char         *name,
 {
   cs_restart_t  * restart;
 
+  char  *path = NULL;
   double timing[2];
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   timing[0] = bft_timer_wtime();
 
+  /* Create 'checkpoint' directory or read from 'restart' directory */
+
+  if (mode == CS_RESTART_MODE_WRITE) {
+
+    const char  dir[] = "checkpoint";
+    size_t  ldir, lname;
+
+    ldir = strlen(dir);
+    lname = strlen(name);
+
+    if (bft_file_mkdir_default(dir) == 0) {
+      BFT_MALLOC(path, ldir + lname + 2, char);
+      strcpy(path, dir);
+      path[ldir] = CS_DIR_SEPARATOR;
+      path[ldir+1] = '\0';
+      strcat(path, name);
+      path[ldir+lname+1] = '\0';
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("The checkpoint directory cannot be created"));
+
+  }
+  else if (mode == CS_RESTART_MODE_READ) {
+
+    const char dir[] = "restart";
+    size_t  ldir, lname;
+
+    ldir = strlen(dir);
+    lname = strlen(name);
+
+    if (bft_file_isdir(dir) == 1) {
+      BFT_MALLOC(path, ldir + lname + 2, char);
+      strcpy(path, dir);
+      path[ldir] = CS_DIR_SEPARATOR;
+      path[ldir+1] = '\0';
+      strcat(path, name);
+      path[ldir+lname+1] = '\0';
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("The restart directory cannot be found"));
+
+  }
+
   /* Allocate and initialize base structure */
 
   BFT_MALLOC(restart, 1, cs_restart_t);
 
-  BFT_MALLOC(restart->name, strlen(name) + 1, char);
+  BFT_MALLOC(restart->name, strlen(path) + 1, char);
 
-  strcpy(restart->name, name);
+  strcpy(restart->name, path);
+
+  BFT_FREE(path);
 
   /* Initialize other fields */
 

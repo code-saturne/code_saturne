@@ -231,8 +231,8 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
 
         # Widget initialization
 
-        if 'RESTART' in os.listdir(self.case['data_path']):
-            p = os.path.join(self.case['data_path'], 'RESTART')
+        if 'restart' in os.listdir(self.case['data_path']):
+            p = os.path.join(self.case['data_path'], 'restart')
             if not os.path.exists(p):
                 title = self.tr("WARNING")
                 msg   = self.tr("Invalid link in %s!" % self.case['data_path'])
@@ -257,20 +257,20 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         """
         Search restart file (directory) in list of directories
         """
-        title    = self.tr("Selection of the restart directory RESTART")
+        title    = self.tr("Selection of the restart directory")
         default  = self.case['resu_path']
         dir_path = QFileDialog.getExistingDirectory(self, title, default, QFileDialog.ShowDirsOnly)
 
         if dir_path:
             dir_path = os.path.abspath(str(dir_path))
             dir_name = os.path.basename(dir_path)
-            if os.path.dirname(dir_path) == self.case['data_path'] and dir_name == 'RESTART':
+            if os.path.dirname(dir_path) == self.case['data_path'] and dir_name == 'restart':
                 setGreenColor(self.toolButton, False)
                 self.slotStartRestart()
                 return
 
             log.debug("slotSearchRestartDirectory-> %s" % dir_name)
-            link = os.path.join(self.case['data_path'], 'RESTART')
+            link = os.path.join(self.case['data_path'], 'restart')
 
             # a link already exists
             if os.path.islink(link):
@@ -289,10 +289,10 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
                 else:
                     self.model.setRestartDirectory(os.path.basename(exist_name))
 
-            # a RESTART directory exists
+            # a restart directory exists
             elif os.path.isdir(link):
                 title = self.tr("WARNING")
-                msg   = self.tr("The directory RESTART is already in DATA.\n\n" \
+                msg   = self.tr("The directory restart is already in DATA.\n\n" \
                                 "Replace with the new directory?")
                 ans = QMessageBox.question(self, title, msg, QMessageBox.Yes, QMessageBox.No)
                 if ans == QMessageBox.Yes:
@@ -300,7 +300,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
                     os.symlink(dir_path, link)
                     self.model.setRestartDirectory(dir_name)
                 else:
-                    self.model.setRestartDirectory('RESTART')
+                    self.model.setRestartDirectory('restart')
 
             # create a new link
             else:
@@ -322,10 +322,10 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.radioButtonYes.setChecked(True)
             self.radioButtonNo.setChecked(False)
 
-            if 'RESTART' in os.listdir(self.case['data_path']):
-                p = os.path.join(self.case['data_path'], 'RESTART')
+            if 'restart' in os.listdir(self.case['data_path']):
+                p = os.path.join(self.case['data_path'], 'restart')
                 if os.path.isdir(p) and not os.path.islink(p):
-                    self.model.setRestartDirectory('RESTART')
+                    self.model.setRestartDirectory('restart')
                 elif os.path.isdir(p) and os.path.islink(p):
                     self.model.setRestartDirectory(os.path.basename(os.readlink(p)))
 
