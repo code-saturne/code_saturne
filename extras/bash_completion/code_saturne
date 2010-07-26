@@ -100,7 +100,7 @@ _code_saturne() {
                 -s|--study)    COMPREPLY=( ); return 0;;
                 --nsat|--nsyr) COMPREPLY=( ); return 0;;
                 --copy-from)   _filedir -d; return 0;;
-                *) cmdOpts="-s --study -c --case -n --nogui --noref --copy-from \
+                *) cmdOpts="-s --study -c --case --nogui --noref --copy-from \
                      --nsat --nsyr -q --quiet -v --verbose";;
             esac
             ;;
@@ -242,12 +242,10 @@ _cs_solver() {
     fi
 
     case "${prev}" in
-        --benchmark)  COMPREPLY=( $(compgen -W "--mpitrace" -- ${cur}) ); return 0;;
+        --cwf|--syr-socket) COMPREPLY=( ); return 0;;
         --log)  COMPREPLY=( $(compgen -W "0 1" -- ${cur}) ); return 0;;
         --logp) COMPREPLY=( $(compgen -W "-1 0 1" -- ${cur}) ); return 0;;
-        --mpi-io) COMPREPLY=( $(compgen -W "off eo ip" -- ${cur}) ); return 0;;
         -p|--param) _filedir; return 0;;
-        --syr-socket) COMPREPLY=( ); return 0;;
     esac
 
     # Take out options already given
@@ -283,135 +281,3 @@ _cs_solver() {
 
 }
 complete -F _cs_solver cs_solver
-
-# -------------------------------------------------
-
-_cs_partition() {
-
-    local cur prev options i
-
-    COMPREPLY=()
-
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-
-    options="--no-perio --no-write --metis --scotch \
-             --mpi --mpi-io --log --logp"
-
-    local versOpts="--version"
-    local helpOpts="-h --help"
-
-    local allOpts="${helpOpts} ${versOpts} ${options}"
-
-
-    if [[ ${COMP_CWORD} -eq 1 ]]; then
-        COMPREPLY=( $(compgen -W "${allOpts}" -- ${cur}) )
-        return 0
-    fi
-
-    # Certain tokens preclude further activity
-    if [[ ${prev} == @(-h|--help|-v|--version) ]]; then
-        return 0
-    fi
-
-    case "${prev}" in
-        --log)  COMPREPLY=( $(compgen -W "0 1" -- ${cur}) ); return 0;;
-        --logp) COMPREPLY=( $(compgen -W "-1 0 1" -- ${cur}) ); return 0;;
-        --mpi-io) COMPREPLY=( $(compgen -W "off eo ip" -- ${cur}) ); return 0;;
-    esac
-
-    # Take out options already given
-    for (( i=1; i<=$COMP_CWORD-1; ++i ))
-    do
-        opt=${COMP_WORDS[$i]}
-
-        local optBase
-
-        # Remove leading dashes and arguments
-        case $opt in
-            --*)    optBase=${opt/=*/} ;;
-            -*)     optBase=${opt:0:2} ;;
-        esac
-
-        options=" $options "
-        options=${options/ ${optBase} / }
-
-    done
-
-    COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
-
-}
-complete -F _cs_partition cs_partition
-
-# -------------------------------------------------
-
-_cs_io_dump() {
-
-    local cur prev options i
-
-    COMPREPLY=()
-
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-
-    options="-d --diff -e --extract --f-format --location \
-             -n --section --threshold"
-
-    local versOpts="--version"
-    local helpOpts="-h --help"
-
-    local allOpts="${helpOpts} ${versOpts} ${options}"
-
-
-    if [[ ${COMP_CWORD} -eq 1 ]]; then
-        COMPREPLY=( $(compgen -W "${allOpts}" -- ${cur}) )
-        return 0
-    fi
-
-    # Certain tokens preclude further activity
-    if [[ ${prev} == @(-h|--help|-v|--version) ]]; then
-        return 0
-    fi
-
-    # Take out options already given
-    for (( i=1; i<=$COMP_CWORD-1; ++i ))
-    do
-        opt=${COMP_WORDS[$i]}
-
-        local optBase
-
-        # Remove leading dashes and arguments
-        case $opt in
-            --*)    optBase=${opt/=*/} ;;
-            -*)     optBase=${opt:0:2} ;;
-        esac
-
-        options=" $options "
-        options=${options/ ${optBase} / }
-
-        # Take out alternatives and mutually exclusives
-        case $optBase in
-            -d)         options=${options/ --diff / }
-                        options=${options/ --extract / }
-                        options=${options/ -e / } ;;
-            --diff)     options=${options/ -d / }
-                        options=${options/ -e / }
-                        options=${options/ --extract / } ;;
-            -e)         options=${options/ --extract / }
-                        options=${options/ --diff / }
-                        options=${options/ -d / } 
-                        options=${options/ -n / }
-                        options=${options/ --threshold / } ;;
-            --extract)  options=${options/ -e / }
-                        options=${options/ -d / }
-                        options=${options/ --diff / }
-                        options=${options/ -n / }
-                        options=${options/ --threshold / } ;;
-        esac
-
-    done
-
-    COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
-
-}
-complete -F _cs_io_dump cs_io_dump

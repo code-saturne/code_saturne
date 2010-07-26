@@ -922,7 +922,7 @@ class domain(base_domain):
 
         if self.valgrind != None:
             args = self.solver_path + ' ' + args
-            exec_path = self.valgrind + ' '
+            exec_path = self.valgrind
 
         return wd, exec_path, args
 

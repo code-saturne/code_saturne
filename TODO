@@ -502,8 +502,3 @@ BONNES PRATIQUES (POUR MEMOIRE)
 - Renommer les champs en tables (delicat).
   --> Rendrait le vocabulaire plus coherent avec les usages.
 
-fusionner les _DIR_SEPARATOR
-
-installation deplacable:
-- /usr/bin/env python (en supposant que la version de python est la bonne)
-- utilisation de $ORIGIN dans les librairies dynamiques
