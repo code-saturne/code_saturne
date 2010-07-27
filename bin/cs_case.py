@@ -1156,11 +1156,6 @@ fi
                     err_str = 'This script can only handle SYRTHES couplings ' \
                         + 'using the same coupling mode.\n'
                     raise RunCaseError(err_str)
-            for d in self.domains:
-                if d.solcom != False:
-                    err_str = 'SYRTHES coupling is not compatible ' \
-                        + 'with SOLCOM-type meshes.'
-                    raise RunCaseError(err_str)
 
         # Now that all domains are defined, set result copy mode
 
