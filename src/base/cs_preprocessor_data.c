@@ -2549,13 +2549,15 @@ _data_range(cs_io_sec_header_t  *header,
  * parameters:
  *   file_id <-- id of file handled by mesh builder
  *   mesh    <-> pointer to mesh structure
- *   mr       <-> pointer to mesh reader structure
+ *   mr      <-> pointer to mesh reader structure
+ *   echo    <-- echo (verbosity) level
  *----------------------------------------------------------------------------*/
 
 static void
 _read_data(int              file_id,
            cs_mesh_t       *mesh,
-           _mesh_reader_t  *mr)
+           _mesh_reader_t  *mr,
+           long             echo)
 {
   cs_int_t  perio_id, perio_type;
   cs_io_sec_header_t  header;
@@ -2565,7 +2567,6 @@ _read_data(int              file_id,
   cs_int_t  perio_num = -1;
   cs_bool_t  end_read = false;
   cs_bool_t  data_read = false;
-  long  echo = CS_IO_ECHO_OPEN_CLOSE;
   cs_io_t  *pp_in = NULL;
 
   int gc_id_shift = mr->gc_id_shift[file_id];
@@ -3467,7 +3468,7 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
   _set_block_ranges(mesh, mr);
 
   for (file_id = 0; file_id < mr->n_files; file_id++)
-    _read_data(file_id, mesh, mr);
+    _read_data(file_id, mesh, mr, echo);
 
   /* Read cell rank data if available */
 
