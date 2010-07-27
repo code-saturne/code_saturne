@@ -2095,8 +2095,10 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
 
   /* Free halo structure */
 
-  if (mesh == cs_glob_mesh)
+  if (mesh == cs_glob_mesh) {
     cs_perio_free_buffer();
+    cs_halo_free_buffer();
+  }
 
   mesh->halo = cs_halo_destroy(mesh->halo);
 

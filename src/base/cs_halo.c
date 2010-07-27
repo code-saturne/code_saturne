@@ -644,6 +644,17 @@ cs_halo_update_buffers(const cs_halo_t *halo)
 }
 
 /*----------------------------------------------------------------------------
+ * Free global halo backup buffer.
+ *---------------------------------------------------------------------------*/
+
+void
+cs_halo_free_buffer(void)
+{
+  if (_cs_glob_halo_rot_backup != NULL)
+    BFT_FREE(_cs_glob_halo_rot_backup);
+}
+
+/*----------------------------------------------------------------------------
  * Apply cell renumbering to a halo
  *
  * parameters:

@@ -1,3 +1,10 @@
+* 27/07/2010 - David Monfort <david.monfort@edf.fr>
+  Free temporary buffer for saved-halo in case of rotation.
+  modified routines:
+    include/base/cs_halo.h
+    src/base/cs_halo.c
+    src/base/cs_mesh.c
+
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove useless gettext call.
   modified routines:
