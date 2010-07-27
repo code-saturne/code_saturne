@@ -1,4 +1,9 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update the memory summary to the different kiB units.
+  modified routine:
+    src/base/cs_base.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Code and comment cleaning.
   modified routines:
     src/base/cs_grid.c

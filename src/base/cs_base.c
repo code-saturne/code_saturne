@@ -1380,7 +1380,7 @@ cs_base_mem_finalize(void)
 #endif
 
   int   ind_val[2] = {1, 1};
-  char  unite[]    = {'k', 'm', 'g', 't', 'p'};
+  const char  unit[8] = {'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'};
 
   const char  * type_bil[] = {N_("Total memory used:                       "),
                               N_("Theoretical instrumented dynamic memory: ")};
@@ -1432,17 +1432,17 @@ cs_base_mem_finalize(void)
     if (ind_val[ind_bil] == 1) {
 
       for (itot = 0;
-           valreal[ind_bil] > 1024. && unite[itot] != 'p';
+           valreal[ind_bil] > 1024. && itot < 8;
            itot++)
         valreal[ind_bil] /= 1024.;
 #if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
         for (imin = 0;
-             val_min[ind_bil].val > 1024. && unite[imin] != 'p';
+             val_min[ind_bil].val > 1024. && imin < 8;
              imin++)
           val_min[ind_bil].val /= 1024.;
         for (imax = 0;
-             val_max[ind_bil].val > 1024. && unite[imax] != 'p';
+             val_max[ind_bil].val > 1024. && imax < 8;
              imax++)
           val_max[ind_bil].val /= 1024.;
       }
@@ -1450,17 +1450,17 @@ cs_base_mem_finalize(void)
 
       /* Print to log file */
 
-      bft_printf(_("  %s %12.3f %cb\n"),
-                 _(type_bil[ind_bil]), valreal[ind_bil], unite[itot]);
+      bft_printf(_("  %s %12.3f %ciB\n"),
+                 _(type_bil[ind_bil]), valreal[ind_bil], unit[itot]);
 
 #if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
         bft_printf(_("                             "
-                     "local minimum: %12.3f %cb  (rank %d)\n"),
-                   val_min[ind_bil].val, unite[imin], val_min[ind_bil].rank);
+                     "local minimum: %12.3f %ciB  (rank %d)\n"),
+                   val_min[ind_bil].val, unit[imin], val_min[ind_bil].rank);
         bft_printf(_("                             "
-                     "local maximum: %12.3f %cb  (rank %d)\n"),
-                   val_max[ind_bil].val, unite[imax], val_max[ind_bil].rank);
+                     "local maximum: %12.3f %ciB  (rank %d)\n"),
+                   val_max[ind_bil].val, unit[imax], val_max[ind_bil].rank);
       }
 #endif
     }
@@ -1493,7 +1493,7 @@ cs_base_mem_finalize(void)
 #endif
 
     for (ind_bil = 0; ind_bil < 2; ind_bil++) {
-      for (itot = 0; wk_size[ind_bil] > 1024. && unite[itot] != 'p'; itot++)
+      for (itot = 0; wk_size[ind_bil] > 1024. && itot < 8; itot++)
         wk_size[ind_bil] /= 1024.;
       wk_unit[ind_bil] = itot;
     }
@@ -1502,12 +1502,12 @@ cs_base_mem_finalize(void)
                  "  Fortran work arrays memory use:\n"
                  "   %-12llu integers needed (maximum reached in %s)\n"
                  "   %-12llu reals    needed (maximum reached in %s)\n\n"
-                 "   Local maximum work memory requested %12.3f %cb\n"
-                 "                                  used %12.3f %cb\n"),
+                 "   Local maximum work memory requested %12.3f %ciB\n"
+                 "                                  used %12.3f %ciB\n"),
                (unsigned long long)_cs_glob_mem_ia_peak, _cs_glob_srt_ia_peak,
                (unsigned long long)_cs_glob_mem_ra_peak, _cs_glob_srt_ra_peak,
-               wk_size[0], unite[wk_unit[0]],
-               wk_size[1], unite[wk_unit[1]]);
+               wk_size[0], unit[wk_unit[0]],
+               wk_size[1], unit[wk_unit[1]]);
 
   }
 
