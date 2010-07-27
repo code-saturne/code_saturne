@@ -50,54 +50,55 @@ BEGIN_C_DECLS
  * Type definition
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Gradient types
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_GRADIENT_ITER,        /* Iterative method */
+  CS_GRADIENT_LSQ_STD,     /* Least-square method */
+  CS_GRADIENT_LSQ_EXT,     /* Least-square method with extended neighborhood  */
+  CS_GRADIENT_LSQ_EXT_RED, /* Least-square method with reduced extended neig. */
+  CS_GRADIENT_LSQ_ITER,    /* LSQ followed with iterative */
+  CS_GRADIENT_N_TYPES
+
+} cs_gradient_type_t;
+
+/*============================================================================
+ *  Global variables
+ *============================================================================*/
+
+/* Short names for gradient types */
+
+extern const char *cs_gradient_type_name[];
+
 /*============================================================================
  * Public function prototypes for Fortran API
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Encapsulation of the call to GRADMC (Fortran routine for the computation of
- * gradients by the least squares method). Add data for taking into account
- * the extended neighborhood.
- *
- * Fortran Interface :
- *
- * SUBROUTINE CGRDMC
- * *****************
- *
- *   ( NCELET , NCEL   , NFAC   , NFABOR , NCELBR ,
- *     INC    , ICCOCG , NSWRGP , IDIMTE , ITENSO , IPHYDP , IMRGRA ,
- *     IWARNP , NFECRA , EPSRGP , EXTRAP ,
- *     IFACEL , IFABOR , IA(IICELB) , IA(IISYMP) ,
- *     VOLUME , SURFAC , SURFBO , RA(ISRFBN) , RA(IPOND)   ,
- *     RA(IDIST)   , RA(IDISTB) ,
- *                   RA(IDIJPF) , RA(IDIIPB)  ,
- *     FEXTX  , FEXTY  , FEXTZ  ,
- *     XYZCEN , CDGFAC , CDGFBO , COEFAP , COEFBP , PVAR   ,
- *     RA(ICOCGB)  , RA(ICOCG)  ,
- *     DPDX   , DPDY   , DPDZ   ,
- *     DPDXA  , DPDYA  , DPDZA  )
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cgrdmc, CGRDMC)
+void CS_PROCF (cgdcel, CGDCEL)
 (
  const cs_int_t   *const ncelet,      /* --> number of extended cells         */
  const cs_int_t   *const ncel,        /* --> number of cells                  */
  const cs_int_t   *const nfac,        /* --> number of internal faces         */
  const cs_int_t   *const nfabor,      /* --> number of boundary faces         */
  const cs_int_t   *const ncelbr,      /* --> number of cells on boundary      */
+ const cs_int_t   *const ivar,
+ const cs_int_t   *const imrgra,      /* --> gradient computation mode        */
  const cs_int_t   *const inc,         /* --> 0 or 1: increment or not         */
  const cs_int_t   *const iccocg,      /* --> 1 or 0: recompute COCG or not    */
  const cs_int_t   *const nswrgp,      /* --> >1: with reconstruction          */
  const cs_int_t   *const idimte,      /* --> 0, 1, 2: scalar, vector, tensor  */
  const cs_int_t   *const itenso,      /* --> for rotational periodicity       */
  const cs_int_t   *const iphydp,      /* --> use hydrosatatic pressure        */
- const cs_int_t   *const imrgra,      /* --> gradient computation mode        */
  const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
  const cs_int_t   *const nfecra,      /* --> standard output unit             */
+ const cs_int_t   *const imligp,      /* --> type of clipping                 */
  const cs_real_t  *const epsrgp,      /* --> precision for iterative gradient
                                              calculation                      */
  const cs_real_t  *const extrap,      /* --> extrapolate gradient at boundary */
+ const cs_real_t  *const climgp,      /* --> clipping coefficient             */
  const cs_int_t          ifacel[],    /* --> interior face->cell connectivity */
  const cs_int_t          ifabor[],    /* --> boundary face->cell connectivity */
  const cs_int_t          icelbr[],    /* --> list of cells on boundary        */
@@ -111,6 +112,7 @@ void CS_PROCF (cgrdmc, CGRDMC)
  const cs_real_t         distbr[],    /* --> boundary faces I' to J' distance */
  const cs_real_t         dijpf[],     /* --> interior faces I'J' vector       */
  const cs_real_t         diipb[],     /* --> boundary faces II' vector        */
+ const cs_real_t         dofij[],
        cs_real_t         fextx[],     /* --> components of the exterior force */
        cs_real_t         fexty[],     /*     generating the hydrostatic       */
        cs_real_t         fextz[],     /*     pressure                         */
@@ -124,6 +126,10 @@ void CS_PROCF (cgrdmc, CGRDMC)
                                              on boundary's internal faces     */
        cs_real_t         cocg[],      /* <-> contribution to COCG of cells
                                              on boundary's boundary faces     */
+       cs_real_t         cocib[],     /* <-> contribution to COCG of cells
+                                             on boundary's internal faces     */
+       cs_real_t         coci[],      /* <-> contribution to COCG of cells
+                                             on boundary's boundary faces     */
        cs_real_t         dpdx[],      /* <-- gradient x component             */
        cs_real_t         dpdy[],      /* <-- gradient y component             */
        cs_real_t         dpdz[],      /* <-- gradient z component             */
@@ -132,43 +138,23 @@ void CS_PROCF (cgrdmc, CGRDMC)
        cs_real_t         bz[]         /* --- local work array                 */
 );
 
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
- * Clip the gradient if necessary. This function deals with the standard or
- * extended neighborhood.
- *
- * Fortran Interface :
- *
- * SUBROUTINE CLMGRD
- * *****************
- *
- *    & ( IMRGRA , IMLIGP , IWARNP , CLIMGP ,
- *    &   VAR    , DPDX   , DPDY   , DPDZ   )
- *
- * parameters:
- *   imrgra         --> type of computation for the gradient
- *   imligp         --> type of clipping for the computation of the gradient
- *   idimte         --> dimension of the variable
- *                      0: scalar, 1: vector, 2: tensor
- *   itenso         --> only for periodicity when there is a rotation
- *   iwarnp         --> output level
- *   itenso         --> for rotational periodicity
- *   climgp         --> clipping coefficient for the computation of the gradient
- *   var            --> variable
- *   dpdx           --> X component of the pressure gradient
- *   dpdy           --> Y component of the pressure gradient
- *   dpdz           --> Z component of the pressure gradient
+ * Initialize gradient computation API.
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
-                          const cs_int_t   *imligp,
-                          const cs_int_t   *iwarnp,
-                          const cs_int_t   *itenso,
-                          const cs_real_t  *climgp,
-                          cs_real_t         var[],
-                          cs_real_t         dpdx[],
-                          cs_real_t         dpdy[],
-                          cs_real_t         dpdz[]);
+cs_gradient_initialize(void);
+
+/*----------------------------------------------------------------------------
+ * Finalize gradient computation API.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gradient_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 

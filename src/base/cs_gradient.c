@@ -56,6 +56,7 @@
 #include <bft_error.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
+#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -79,176 +80,212 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Local Macro definitions
+ * Local structure definitions
  *============================================================================*/
 
-/*============================================================================
- * Type definitions
- *============================================================================*/
+/* Basic per gradient compuation options and logging */
+/*---------------------------------------------------*/
+
+typedef struct _cs_gradient_info_t {
+
+  char                *name;               /* System name */
+  cs_gradient_type_t   type;               /* Gradient type */
+
+  unsigned             n_calls;            /* Number of times system solved */
+
+  double               wt_tot;             /* Total wall-clock time used */
+  double               cpu_tot;            /* Total (local) CPU used */
+
+} cs_gradient_info_t;
 
 /*============================================================================
- * Static global variables
+ *  Global variables
  *============================================================================*/
+
+static int cs_glob_gradient_n_systems = 0;      /* Current number of systems */
+static int cs_glob_gradient_n_max_systems = 0;  /* Max. number of sytems for
+                                                   cs_glob_gradient_systems. */
+
+/* System info array */
+static cs_gradient_info_t **cs_glob_gradient_systems = NULL;
+
+/* Short names for gradient computation types */
+
+const char *cs_gradient_type_name[] = {N_("Iterative reconstruction"),
+                                       N_("Least-squares (standard)"),
+                                       N_("Least-squares (extended)"),
+                                       N_("Least-squares (partially extended)"),
+                                       N_("Least-squares then iterative")};
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
-
 /*----------------------------------------------------------------------------
- * Encapsulation of the call to GRADMC (Fortran routine for the computation of
- * gradients by the least squares method). Add data for taking into account
- * the extended neighborhood.
+ * Return pointer to new gradient computation info structure.
  *
- * Fortran Interface :
+ * parameters:
+ *   name --> system name
+ *   type --> resolution method
  *
- * SUBROUTINE CGRDMC
- * *****************
- *
- *   ( NCELET , NCEL   , NFAC   , NFABOR , NCELBR ,
- *     INC    , ICCOCG , NSWRGP , IDIMTE , ITENSO , IPHYDP , IMRGRA ,
- *     IWARNP , NFECRA , EPSRGP , EXTRAP ,
- *     IFACEL , IFABOR , IA(IICELB) , IA(IISYMP) ,
- *     VOLUME , SURFAC , SURFBO , RA(ISRFBN) , RA(IPOND)   ,
- *     RA(IDIST)   , RA(IDISTB) ,
- *                   RA(IDIJPF) , RA(IDIIPB)  ,
- *     FEXTX  , FEXTY  , FEXTZ  ,
- *     XYZCEN , CDGFAC , CDGFBO , COEFAP , COEFBP , PVAR   ,
- *     RA(ICOCGB)  , RA(ICOCG)  ,
- *     DPDX   , DPDY   , DPDZ   ,
- *     DPDXA  , DPDYA  , DPDZA  )
- *
+ * returns:
+ *   pointer to newly created linear system info structure
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cgrdmc, CGRDMC)
-(
- const cs_int_t   *const ncelet,      /* --> number of extended cells         */
- const cs_int_t   *const ncel,        /* --> number of cells                  */
- const cs_int_t   *const nfac,        /* --> number of internal faces         */
- const cs_int_t   *const nfabor,      /* --> number of boundary faces         */
- const cs_int_t   *const ncelbr,      /* --> number of cells on boundary      */
- const cs_int_t   *const inc,         /* --> 0 or 1: increment or not         */
- const cs_int_t   *const iccocg,      /* --> 1 or 0: recompute COCG or not    */
- const cs_int_t   *const nswrgp,      /* --> >1: with reconstruction          */
- const cs_int_t   *const idimte,      /* --> 0, 1, 2: scalar, vector, tensor  */
- const cs_int_t   *const itenso,      /* --> for rotational periodicity       */
- const cs_int_t   *const iphydp,      /* --> use hydrosatatic pressure        */
- const cs_int_t   *const imrgra,      /* --> gradient computation mode        */
- const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
- const cs_int_t   *const nfecra,      /* --> standard output unit             */
- const cs_real_t  *const epsrgp,      /* --> precision for iterative gradient
-                                             calculation                      */
- const cs_real_t  *const extrap,      /* --> extrapolate gradient at boundary */
- const cs_int_t          ifacel[],    /* --> interior face->cell connectivity */
- const cs_int_t          ifabor[],    /* --> boundary face->cell connectivity */
- const cs_int_t          icelbr[],    /* --> list of cells on boundary        */
- const cs_int_t          isympa[],    /* --> indicator for symmetry faces     */
- const cs_real_t         volume[],    /* --> cell volumes                     */
- const cs_real_t         surfac[],    /* --> surfaces of internal faces       */
- const cs_real_t         surfbo[],    /* --> surfaces of boundary faces       */
- const cs_real_t         surfbn[],    /* --> norm of surfbo                   */
- const cs_real_t         pond[],      /* --> interior faces geometric weight  */
- const cs_real_t         dist[],      /* --> interior faces I' to J' distance */
- const cs_real_t         distbr[],    /* --> boundary faces I' to J' distance */
- const cs_real_t         dijpf[],     /* --> interior faces I'J' vector       */
- const cs_real_t         diipb[],     /* --> boundary faces II' vector        */
-       cs_real_t         fextx[],     /* --> components of the exterior force */
-       cs_real_t         fexty[],     /*     generating the hydrostatic       */
-       cs_real_t         fextz[],     /*     pressure                         */
- const cs_real_t         xyzcen[],    /* --> cell centers                     */
- const cs_real_t         cdgfac[],    /* --> interior face centers of gravity */
- const cs_real_t         cdgfbo[],    /* --> boundary face centers of gravity */
- const cs_real_t         coefap[],    /* --> boundary condition term          */
- const cs_real_t         coefbp[],    /* --> boundary condition term          */
-       cs_real_t         pvar[],      /* --> gradient's base variable         */
-       cs_real_t         cocgb[],     /* <-> contribution to COCG of cells
-                                             on boundary's internal faces     */
-       cs_real_t         cocg[],      /* <-> contribution to COCG of cells
-                                             on boundary's boundary faces     */
-       cs_real_t         dpdx[],      /* <-- gradient x component             */
-       cs_real_t         dpdy[],      /* <-- gradient y component             */
-       cs_real_t         dpdz[],      /* <-- gradient z component             */
-       cs_real_t         bx[],        /* --- local work array                 */
-       cs_real_t         by[],        /* --- local work array                 */
-       cs_real_t         bz[]         /* --- local work array                 */
-)
+static cs_gradient_info_t *
+_gradient_info_create(const char          *name,
+                      cs_gradient_type_t   type)
 {
-  cs_int_t  *ipcvse = NULL;
-  cs_int_t  *ielvse = NULL;
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_info_t *new_info = NULL;
 
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_halo_t  *halo = mesh->halo;
+  BFT_MALLOC(new_info, 1, cs_gradient_info_t);
+  BFT_MALLOC(new_info->name, strlen(name) + 1, char);
 
-  if (*imrgra == 2 || *imrgra ==  3)
-    halo_type = CS_HALO_EXTENDED;
+  strcpy(new_info->name, name);
+  new_info->type = type;
 
-  /* Synchronize variable */
+  new_info->n_calls = 0;
 
-  if (halo != NULL) {
+  new_info->wt_tot = 0.0;
+  new_info->cpu_tot = 0.0;
 
-    if (*itenso == 2)
-      cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, pvar);
-    else
-      cs_halo_sync_var(halo, halo_type, pvar);
+  return new_info;
+}
 
-    /* TODO: check if fext* components are all up to date, in which
-     *       case we need no special treatment for *itenso = 2 */
+/*----------------------------------------------------------------------------
+ * Destroy gradient computationw info structure.
+ *
+ * parameters:
+ *   this_info <-> pointer to linear system info structure pointer
+ *----------------------------------------------------------------------------*/
 
-    if (*iphydp != 0) {
+static void
+_gradient_info_destroy(cs_gradient_info_t  **this_info)
+{
+  if (*this_info != NULL) {
+    BFT_FREE((*this_info)->name);
+    BFT_FREE(*this_info);
+  }
+}
 
-      if (*itenso == 2){
-        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fextx);
-        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fexty);
-        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fextz);
-      }
-      else {
-        cs_halo_sync_var(halo, halo_type, fextx);
-        cs_halo_sync_var(halo, halo_type, fexty);
-        cs_halo_sync_var(halo, halo_type, fextz);
-        cs_perio_sync_var_vect(halo, halo_type, CS_PERIO_ROTA_COPY,
-                               fextx, fexty, fextz);
-      }
-    }
+/*----------------------------------------------------------------------------
+ * Output information regarding gradient computation.
+ *
+ * parameters:
+ *   this_info <-> pointer to linear system info structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_gradient_info_dump(cs_gradient_info_t *this_info)
+{
+  int n_calls = this_info->n_calls;
+
+  bft_printf(_("\n"
+               "Summary of gradient computations pour \"%s\" (%s):\n\n"
+               "  Number of calls:                  %d\n"
+               "  Total elapsed time:               %12.3f\n"),
+             this_info->name, cs_gradient_type_name[this_info->type],
+             n_calls, this_info->wt_tot);
+
+#if defined(_CS_HAVE_MPI)
+
+  if (cs_glob_base_nbr > 1) {
+
+    double cpu_min, cpu_max, cpu_tot;
+    double cpu_loc = this_info->cpu_tot;
+
+    MPI_Allreduce(&cpu_loc, &cpu_min, 1, MPI_DOUBLE, MPI_MIN,
+                  cs_glob_base_mpi_comm);
+    MPI_Allreduce(&cpu_loc, &cpu_max, 1, MPI_DOUBLE, MPI_MAX,
+                  cs_glob_base_mpi_comm);
+    MPI_Allreduce(&cpu_loc, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
+                  cs_glob_base_mpi_comm);
+
+    bft_printf(_("  Min local total CPU time:         %12.3f\n"
+                 "  Max local total CPU time:         %12.3f\n"
+                 "  Total CPU time:                   %12.3f\n"),
+               cpu_min, cpu_max, cpu_tot);
 
   }
 
-  /* "cell -> cells" connectivity for the extended neighborhood */
+#endif
 
-  ipcvse = mesh->cell_cells_idx;
-  ielvse = mesh->cell_cells_lst;
+  if (cs_glob_n_ranks == 1)
+    bft_printf(_("  Total CPU time:                   %12.3f\n"),
+               this_info->cpu_tot);
+}
 
-  /* Compute gradient */
+/*----------------------------------------------------------------------------
+ * Return pointer to gradient computation info.
+ *
+ * If this system did not previously exist, it is added to the list of
+ * "known" systems.
+ *
+ * parameters:
+ *   name --> system name
+ *   type --> resolution method
+ *----------------------------------------------------------------------------*/
 
-  CS_PROCF(gradmc, GRADMC)
-    (ncelet, ncel  , nfac  , nfabor, ncelbr,
-     inc   , iccocg, nswrgp, idimte, itenso, iphydp, imrgra,
-     iwarnp, nfecra, epsrgp, extrap,
-     ifacel, ifabor, icelbr, ipcvse, ielvse, isympa,
-     volume, surfac, surfbo, surfbn, pond  ,
-     dist  , distbr, dijpf , diipb ,
-     fextx , fexty , fextz , xyzcen,
-     cdgfac, cdgfbo, coefap, coefbp, pvar  ,
-     cocgb , cocg  ,
-     dpdx  , dpdy  , dpdz  ,
-     bx    , by    , bz    );
+static cs_gradient_info_t *
+_find_or_add_system(const char          *name,
+                    cs_gradient_type_t   type)
+{
+  int ii, start_id, end_id, mid_id;
+  int cmp_ret = 1;
 
+  /* Use binary search to find system */
+
+  start_id = 0;
+  end_id = cs_glob_gradient_n_systems - 1;
+  mid_id = start_id + ((end_id -start_id) / 2);
+
+  while (start_id <= end_id) {
+    cmp_ret = strcmp((cs_glob_gradient_systems[mid_id])->name, name);
+    if (cmp_ret == 0)
+      cmp_ret = (cs_glob_gradient_systems[mid_id])->type - type;
+    if (cmp_ret < 0)
+      start_id = mid_id + 1;
+    else if (cmp_ret > 0)
+      end_id = mid_id - 1;
+    else
+      break;
+    mid_id = start_id + ((end_id -start_id) / 2);
+  }
+
+  /* If found, return */
+
+  if (cmp_ret == 0)
+    return cs_glob_gradient_systems[mid_id];
+
+  /* Reallocate global array if necessary */
+
+  if (cs_glob_gradient_n_systems >= cs_glob_gradient_n_max_systems) {
+
+    if (cs_glob_gradient_n_max_systems == 0)
+      cs_glob_gradient_n_max_systems = 10;
+    else
+      cs_glob_gradient_n_max_systems *= 2;
+    BFT_REALLOC(cs_glob_gradient_systems,
+                cs_glob_gradient_n_max_systems,
+                cs_gradient_info_t*);
+
+  }
+
+  /* Insert in sorted list */
+
+  for (ii = cs_glob_gradient_n_systems; ii > mid_id; ii--)
+    cs_glob_gradient_systems[ii] = cs_glob_gradient_systems[ii - 1];
+
+  cs_glob_gradient_systems[mid_id] = _gradient_info_create(name,
+                                                           type);
+  cs_glob_gradient_n_systems += 1;
+
+  return cs_glob_gradient_systems[mid_id];
 }
 
 /*----------------------------------------------------------------------------
  * Clip the gradient if necessary. This function deals with the standard or
  * extended neighborhood.
- *
- * Fortran Interface :
- *
- * SUBROUTINE CLMGRD
- * *****************
- *
- *    & ( IMRGRA , IMLIGP , IWARNP , CLIMGP ,
- *    &   VAR    , DPDX   , DPDY   , DPDZ   )
  *
  * parameters:
  *   imrgra         --> type of computation for the gradient
@@ -262,16 +299,16 @@ void CS_PROCF (cgrdmc, CGRDMC)
  *   dpdz           --> Z component of the pressure gradient
  *----------------------------------------------------------------------------*/
 
-void
-CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
-                          const cs_int_t   *imligp,
-                          const cs_int_t   *iwarnp,
-                          const cs_int_t   *itenso,
-                          const cs_real_t  *climgp,
-                          cs_real_t         var[],
-                          cs_real_t         dpdx[],
-                          cs_real_t         dpdy[],
-                          cs_real_t         dpdz[])
+static void
+_gradient_clipping(const cs_int_t   *imrgra,
+                   const cs_int_t   *imligp,
+                   const cs_int_t   *iwarnp,
+                   const cs_int_t   *itenso,
+                   const cs_real_t  *climgp,
+                   cs_real_t         var[],
+                   cs_real_t         dpdx[],
+                   cs_real_t         dpdy[],
+                   cs_real_t         dpdz[])
 {
   cs_int_t  i, i1, i2, j, k;
   cs_real_t  dist[3];
@@ -628,7 +665,277 @@ CS_PROCF (clmgrd, CLMGRD)(const cs_int_t   *imrgra,
   }
 
   BFT_FREE(buf);
+}
 
+/*============================================================================
+ * Public function definitions for Fortran API
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ *
+ * Fortran Interface :
+ *
+ * SUBROUTINE CGDCEL
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cgdcel, CGDCEL)
+(
+ const cs_int_t   *const ncelet,      /* --> number of extended cells         */
+ const cs_int_t   *const ncel,        /* --> number of cells                  */
+ const cs_int_t   *const nfac,        /* --> number of internal faces         */
+ const cs_int_t   *const nfabor,      /* --> number of boundary faces         */
+ const cs_int_t   *const ncelbr,      /* --> number of cells on boundary      */
+ const cs_int_t   *const ivar,
+ const cs_int_t   *const imrgra,      /* --> gradient computation mode        */
+ const cs_int_t   *const inc,         /* --> 0 or 1: increment or not         */
+ const cs_int_t   *const iccocg,      /* --> 1 or 0: recompute COCG or not    */
+ const cs_int_t   *const nswrgp,      /* --> >1: with reconstruction          */
+ const cs_int_t   *const idimte,      /* --> 0, 1, 2: scalar, vector, tensor  */
+ const cs_int_t   *const itenso,      /* --> for rotational periodicity       */
+ const cs_int_t   *const iphydp,      /* --> use hydrosatatic pressure        */
+ const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
+ const cs_int_t   *const nfecra,      /* --> standard output unit             */
+ const cs_int_t   *const imligp,      /* --> type of clipping                 */
+ const cs_real_t  *const epsrgp,      /* --> precision for iterative gradient
+                                             calculation                      */
+ const cs_real_t  *const extrap,      /* --> extrapolate gradient at boundary */
+ const cs_real_t  *const climgp,      /* --> clipping coefficient             */
+ const cs_int_t          ifacel[],
+ const cs_int_t          ifabor[],
+ const cs_int_t          icelbr[],    /* --> list of cells on boundary        */
+ const cs_int_t          isympa[],    /* --> indicator for symmetry faces     */
+ const cs_real_t         volume[],
+ const cs_real_t         surfac[],
+ const cs_real_t         surfbo[],
+ const cs_real_t         surfbn[],
+ const cs_real_t         pond[],      /* --> interior faces geometric weight  */
+ const cs_real_t         dist[],      /* --> interior faces I' to J' distance */
+ const cs_real_t         distbr[],    /* --> boundary faces I' to J' distance */
+ const cs_real_t         dijpf[],     /* --> interior faces I'J' vector       */
+ const cs_real_t         diipb[],     /* --> boundary faces II' vector        */
+ const cs_real_t         dofij[],
+       cs_real_t         fextx[],     /* --> components of the exterior force */
+       cs_real_t         fexty[],     /*     generating the hydrostatic       */
+       cs_real_t         fextz[],     /*     pressure                         */
+ const cs_real_t         xyzcen[],
+ const cs_real_t         cdgfac[],
+ const cs_real_t         cdgfbo[],
+ const cs_real_t         coefap[],    /* --> boundary condition term          */
+ const cs_real_t         coefbp[],    /* --> boundary condition term          */
+       cs_real_t         pvar[],      /* --> gradient's base variable         */
+       cs_real_t         cocgb[],     /* <-> contribution to COCG of cells
+                                             on boundary's internal faces     */
+       cs_real_t         cocg[],      /* <-> contribution to COCG of cells
+                                             on boundary's boundary faces     */
+       cs_real_t         cocib[],     /* <-> contribution to COCG of cells
+                                             on boundary's internal faces     */
+       cs_real_t         coci[],      /* <-> contribution to COCG of cells
+                                             on boundary's boundary faces     */
+       cs_real_t         dpdx[],      /* <-- gradient x component             */
+       cs_real_t         dpdy[],      /* <-- gradient y component             */
+       cs_real_t         dpdz[],      /* <-- gradient z component             */
+       cs_real_t         bx[],        /* --- local work array                 */
+       cs_real_t         by[],        /* --- local work array                 */
+       cs_real_t         bz[]         /* --- local work array                 */
+)
+{
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_halo_t  *halo = mesh->halo;
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+
+  cs_gradient_info_t *gradient_info = NULL;
+  double  wt_start = 0.0, wt_stop = 0.0;
+  double  cpu_start = 0.0, cpu_stop = 0.0;
+
+  char *var_name = NULL;
+
+  cs_int_t  *ipcvse = NULL;
+  cs_int_t  *ielvse = NULL;
+
+  cs_bool_t update_stats = true;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_N_TYPES;
+
+
+  switch (*imrgra) {
+  case 0: gradient_type = CS_GRADIENT_ITER; break;
+  case 1: gradient_type = CS_GRADIENT_LSQ_STD; break;
+  case 2: gradient_type = CS_GRADIENT_LSQ_EXT; break;
+  case 3: gradient_type = CS_GRADIENT_LSQ_EXT_RED; break;
+  case 4: gradient_type = CS_GRADIENT_LSQ_ITER; break;
+  default: break;
+  }
+
+  BFT_MALLOC(var_name, 7, char);
+  sprintf(var_name, "Var. %1d", *ivar);
+
+  if (update_stats == true) {
+    wt_start =bft_timer_wtime();
+    cpu_start =bft_timer_cpu_time();
+    gradient_info = _find_or_add_system(var_name, gradient_type);
+  }
+
+  if (*imrgra == 2 || *imrgra ==  3)
+    halo_type = CS_HALO_EXTENDED;
+
+  /* Synchronize variable */
+
+  if (*imrgra != 0 && halo != NULL) {
+
+    if (*itenso == 2)
+      cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, pvar);
+    else
+      cs_halo_sync_var(halo, halo_type, pvar);
+
+    /* TODO: check if fext* components are all up to date, in which
+     *       case we need no special treatment for *itenso = 2 */
+
+    if (*iphydp != 0) {
+
+      if (*itenso == 2){
+        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fextx);
+        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fexty);
+        cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, fextz);
+      }
+      else {
+        cs_halo_sync_var(halo, halo_type, fextx);
+        cs_halo_sync_var(halo, halo_type, fexty);
+        cs_halo_sync_var(halo, halo_type, fextz);
+        cs_perio_sync_var_vect(halo, halo_type, CS_PERIO_ROTA_COPY,
+                               fextx, fexty, fextz);
+      }
+    }
+
+  }
+
+  /* "cell -> cells" connectivity for the extended neighborhood */
+
+  ipcvse = mesh->cell_cells_idx;
+  ielvse = mesh->cell_cells_lst;
+
+  /* Compute gradient */
+
+  if (*imrgra == 0) {
+
+    CS_PROCF (gradrc, GRADRC)
+      (ncelet, ncel  , nfac  , nfabor, ncelbr,
+       imrgra, inc   , iccocg, nswrgp, idimte, itenso, iphydp,
+       iwarnp, nfecra, epsrgp, extrap,
+       ifacel, ifabor, icelbr, ivar  ,
+       volume, surfac, surfbo, pond  , xyzcen, cdgfac, cdgfbo,
+       dijpf , diipb , dofij , fextx , fexty , fextz ,
+       coefap, coefbp, pvar  ,
+       cocgb , cocg  ,
+       dpdx  , dpdy  , dpdz  ,
+       bx    , by    , bz    );
+
+  }
+  else if (*imrgra == 1 || *imrgra == 2 || *imrgra == 3) {
+
+    CS_PROCF(gradmc, GRADMC)
+      (ncelet, ncel  , nfac  , nfabor, ncelbr,
+       inc   , iccocg, nswrgp, idimte, itenso, iphydp, imrgra,
+       iwarnp, nfecra, epsrgp, extrap,
+       ifacel, ifabor, icelbr, ipcvse, ielvse, isympa,
+       volume, surfac, surfbo, surfbn, pond  ,
+       dist  , distbr, dijpf , diipb ,
+       fextx , fexty , fextz , xyzcen,
+       cdgfac, cdgfbo, coefap, coefbp, pvar  ,
+       cocgb , cocg  ,
+       dpdx  , dpdy  , dpdz  ,
+       bx    , by    , bz    );
+
+  }
+  else if (*imrgra == 4) {
+
+    const cs_int_t  _imlini = 1;
+    const cs_real_t _climin = 1.5;
+
+    CS_PROCF(gradmc, GRADMC)
+      (ncelet, ncel  , nfac  , nfabor, ncelbr,
+       inc   , iccocg, nswrgp, idimte, itenso, iphydp, imrgra,
+       iwarnp, nfecra, epsrgp, extrap,
+       ifacel, ifabor, icelbr, ipcvse, ielvse, isympa,
+       volume, surfac, surfbo, surfbn, pond  ,
+       dist  , distbr, dijpf , diipb ,
+       fextx , fexty , fextz , xyzcen,
+       cdgfac, cdgfbo, coefap, coefbp, pvar  ,
+       cocgb , cocg  ,
+       dpdx  , dpdy  , dpdz  ,
+       bx    , by    , bz    );
+
+    _gradient_clipping(imrgra, &_imlini, iwarnp, itenso, &_climin,
+                       pvar  , dpdx    , dpdy  , dpdz  );
+
+    CS_PROCF (gradrc, GRADRC)
+      (ncelet, ncel  , nfac  , nfabor, ncelbr,
+       imrgra, inc   , iccocg, nswrgp, idimte, itenso, iphydp,
+       iwarnp, nfecra, epsrgp, extrap,
+       ifacel, ifabor, icelbr, ivar  ,
+       volume, surfac, surfbo, pond  , xyzcen, cdgfac, cdgfbo,
+       dijpf , diipb , dofij , fextx , fexty , fextz ,
+       coefap, coefbp, pvar  ,
+       cocib , coci  ,
+       dpdx  , dpdy  , dpdz  ,
+       bx    , by    , bz    );
+
+  }
+
+  _gradient_clipping(imrgra, imligp, iwarnp, itenso, climgp,
+                     pvar  , dpdx  , dpdy  , dpdz  );
+
+  if (update_stats == true) {
+
+    wt_stop =bft_timer_wtime();
+    cpu_stop =bft_timer_cpu_time();
+
+    gradient_info->n_calls += 1;
+
+    gradient_info->wt_tot += (wt_stop - wt_start);
+    gradient_info->cpu_tot += (cpu_stop - cpu_start);
+
+  }
+
+  BFT_FREE(var_name);
+}
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Initialize gradient computation API.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gradient_initialize(void)
+{
+  cs_mesh_t  *mesh = cs_glob_mesh;
+
+  assert(mesh != NULL);
+}
+
+/*----------------------------------------------------------------------------
+ * Finalize gradient computation API.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gradient_finalize(void)
+{
+  int ii;
+
+  /* Free system info */
+
+  for (ii = 0; ii < cs_glob_gradient_n_systems; ii++) {
+    _gradient_info_dump(cs_glob_gradient_systems[ii]);
+    _gradient_info_destroy(&(cs_glob_gradient_systems[ii]));
+  }
+
+  BFT_FREE(cs_glob_gradient_systems);
+
+  cs_glob_gradient_n_systems = 0;
+  cs_glob_gradient_n_max_systems = 0;
 }
 
 /*----------------------------------------------------------------------------*/

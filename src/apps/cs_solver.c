@@ -86,6 +86,7 @@
 #include "cs_calcium.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
+#include "cs_gradient.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
 #include "cs_io.h"
@@ -441,6 +442,10 @@ cs_run(void)
     BFT_MALLOC(idevel, nideve, cs_int_t);
     BFT_MALLOC(rdevel, nrdeve, cs_real_t);
 
+    /* Initialize gradient computation */
+
+    cs_gradient_initialize();
+
     /* Initialize sparse linear systems resolution */
 
     cs_sles_initialize();
@@ -475,6 +480,10 @@ cs_run(void)
 
     cs_multigrid_finalize();
     cs_sles_finalize();
+
+    /* Finalize gradient computation */
+
+    cs_gradient_finalize();
 
     /* Free working arrays */
 

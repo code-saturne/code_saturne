@@ -241,7 +241,7 @@ if(iperio.eq.1) then
 
 !       On recupere d'abord certains pointeurs necessaires a PERING
 
-  call pergra                                                     &
+    call pergra                                                   &
     !==========
   ( nphsmx , nphas  ,                                             &
     iiu    , iiv    , iiw    ,                                    &
@@ -262,94 +262,21 @@ endif
 ! 1. CALCUL DU GRADIENT
 !===============================================================================
 
-!     CALCUL VOLUME FINIS PUIS ITERATIONS DE RECONSTRUCTION
-if (imrgra.eq.0) then
 
-  call gradrc                                                     &
-  !==========
- ( ncelet , ncel   , nfac   , nfabor , ncelbr ,                   &
+call cgdcel                                                       &
+!==========
+ ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivar   ,          &
    imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
-   iwarnp , nfecra , epsrgp , extrap ,                            &
-   ifacel , ifabor , ia(iicelb) , ivar ,                          &
-   volume , surfac , surfbo , ra(ipond), xyzcen , cdgfac , cdgfbo,&
-   ra(idijpf) , ra(idiipb) , ra(idofij) , fextx , fexty , fextz  ,&
-   coefap , coefbp , pvar   ,                                     &
+   iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
+   ifacel , ifabor , ia(iicelb) , ia(iisymp) ,                    &
+   volume , surfac , surfbo , ra(isrfbn) , ra(ipond),             &
+   ra(idist) , ra(idistb) , ra(idijpf) , ra(idiipb) , ra(idofij) ,&
+   fextx  , fexty  , fextz  ,                                     &
+   xyzcen , cdgfac , cdgfbo, coefap , coefbp , pvar   ,           &
    ra(icocgb) , ra(icocg)   ,                                     &
-   dpdx   , dpdy   , dpdz   ,                                     &
-   dpdxa  , dpdya  , dpdza  )
-
-!     MOINDRES CARRES
-elseif(imrgra.eq.1.or.imrgra.eq.2.or.imrgra.eq.3) then
-
- call cgrdmc                                                      &
-  !==========
- ( ncelet , ncel   , nfac   , nfabor , ncelbr ,                   &
-   inc    , iccocg , nswrgp , idimte , itenso , iphydp , imrgra , &
-   iwarnp , nfecra , epsrgp , extrap ,                            &
-   ifacel , ifabor , ia(iicelb) , ia(iisymp) ,                    &
-   volume , surfac , surfbo , ra(isrfbn) , ra(ipond)   ,          &
-   ra(idist)   , ra(idistb) ,                                     &
-                 ra(idijpf) , ra(idiipb)  ,                       &
-   fextx  , fexty  , fextz  ,                                     &
-   xyzcen , cdgfac , cdgfbo , coefap , coefbp , pvar   ,          &
-   ra(icocgb)  , ra(icocg)  ,                                     &
-   dpdx   , dpdy   , dpdz   ,                                     &
-   dpdxa  , dpdya  , dpdza  )
-
-!     MOINDRES CARRES PUIS ITERATIONS DE RECONSTRUCTION
-elseif(imrgra.eq.4) then
-
- call cgrdmc                                                      &
-  !==========
- ( ncelet , ncel   , nfac   , nfabor , ncelbr ,                   &
-   inc    , iccocg , nswrgp , idimte , itenso , iphydp , imrgra , &
-   iwarnp , nfecra , epsrgp , extrap ,                            &
-   ifacel , ifabor , ia(iicelb) , ia(iisymp) ,                    &
-   volume , surfac , surfbo , ra(isrfbn) , ra(ipond)   ,          &
-   ra(idist)   , ra(idistb) ,                                     &
-                 ra(idijpf) , ra(idiipb)  ,                       &
-   fextx  , fexty  , fextz  ,                                     &
-   xyzcen , cdgfac , cdgfbo , coefap , coefbp , pvar   ,          &
-   ra(icocgb)  , ra(icocg)  ,                                     &
-   dpdx   , dpdy   , dpdz   ,                                     &
-   dpdxa  , dpdya  , dpdza  )
-
-! on force la limitation de la solution initiale avec les options par defaut
-! pour toutes les variables, quel que soit le choix de l'utilisateur sur la
-! limitation du gradient final
-
-  imlini = 1
-  climin = 1.5d0
-
-  call clmgrd                                                     &
-  !==========
- ( imrgra , imlini , iwarnp , itenso , climin ,                   &
-   pvar   , dpdx   , dpdy   , dpdz   )
-
-  call gradrc                                                     &
-  !==========
- ( ncelet , ncel   , nfac   , nfabor , ncelbr ,                   &
-   imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
-   iwarnp , nfecra , epsrgp , extrap ,                            &
-   ifacel , ifabor , ia(iicelb) , ivar ,                          &
-   volume , surfac , surfbo , ra(ipond), xyzcen , cdgfac , cdgfbo,&
-   ra(idijpf) , ra(idiipb) , ra(idofij) , fextx , fexty , fextz  ,&
-   coefap , coefbp , pvar   ,                                     &
    ra(icocib) , ra(icoci)   ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
    dpdxa  , dpdya  , dpdza  )
-
-endif
-
-
-!===============================================================================
-! 2. LIMITATION DU GRADIENT (EVENTUELLE)
-!===============================================================================
-
-call clmgrd                                                       &
-!==========
- ( imrgra , imligp , iwarnp , itenso , climgp ,                   &
-   pvar   , dpdx   , dpdy   , dpdz   )
 
 
 return
