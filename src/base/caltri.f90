@@ -1341,7 +1341,7 @@ if(ntcabs.lt.ntmabs) then
   endif
   if (itrale.eq.0) iisuit = 0
   if (iwarn0.gt.0 .and. iisuit.eq.1) write(nfecra,3020)ntcabs,ttcabs
-else if(ntcabs.eq.ntmabs) then
+else if(ntcabs.eq.ntmabs .and. ntsuit.gt.-2) then
   iisuit = 1
   if(iwarn0.gt.0) write(nfecra,3021)ntcabs,ttcabs
 endif

@@ -109,11 +109,6 @@ endif
 
 ! --- Suite, Chrono, Historiques, Listing
 
-if(ntsuit.lt.-1) then
-  WRITE(NFECRA,1200) 'NTSUIT (Periode   Sortie Suite  )',NTSUIT
-  iok = iok + 1
-endif
-
 if(ntchr.ne.-1.and.ntchr.le.0) then
   WRITE(NFECRA,1210) 'NTCHR  (Periode   Sortie Chrono.)',NTCHR
   iok = iok + 1
