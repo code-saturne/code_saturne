@@ -258,7 +258,7 @@ impsth(1) = 32
 !     Les fichiers d'ecriture ne sont pas ouverts en meme temps
 impsth(2) = imphis(2)
 
-emphis = './'
+emphis = 'monitoring/'
 prehis = 'probes_'
 exthis = 'dat'
 

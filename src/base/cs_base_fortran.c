@@ -47,6 +47,7 @@
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
+#include <bft_file.h>
 #include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
@@ -173,6 +174,39 @@ _close_log_files(void)
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Create a directory, or check it exists.
+ *
+ * Fortran interface
+ *
+ * SUBROUTINE CSMKDR (DIRNAM, DIRLEN)
+ * *****************
+ *
+ * CHARACTER*       DIRNAM      : --> : Directory name
+ * INTEGER          DIRLEN      : --> : Directory name length
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csmkdr, CSMKDR)
+(
+ const char       *dirnam,
+ const cs_int_t   *dirlen
+)
+{
+  char    *bufname;
+
+  /* Handle name for C API */
+
+  bufname = cs_base_string_f_to_c_create(dirnam, *dirlen);
+
+  if (bft_file_mkdir_default(bufname) == 1)
+    bft_error(__FILE__, __LINE__, 0,
+	      _("The directory %s cannot be created"), bufname);
+
+  /* Free memory if necessary */
+
+  cs_base_string_f_to_c_free(&bufname);
+}
 
 /*============================================================================
  * Public function definitions

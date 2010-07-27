@@ -139,12 +139,11 @@ if (ipass.eq.1) then
 endif
 
 !===============================================================================
-! 2. OUVERTURE DU FICHIER DE STOCKAGE hist.tmp
+! 2. OUVERTURE DU FICHIER DE STOCKAGE hist.tmp ET DU REPERTOIRE
 !===============================================================================
 
 if(ipass.eq.1 .and. irangp.le.0) then
-  nomfic = ' '
-  nomfic = emphis
+  nomfic = './'
   call verlon (nomfic,ii1,ii2,lpos)
   !==========
 
@@ -153,6 +152,9 @@ if(ipass.eq.1 .and. irangp.le.0) then
   open (unit=imphis(1), file=nomfic(ii1:ii2), &
         status='unknown', form='unformatted', &
         access='sequential')
+
+  call csmkdr(emphis,len(emphis))
+  !==========
 endif
 
 !===============================================================================

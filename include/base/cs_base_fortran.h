@@ -58,6 +58,24 @@ BEGIN_C_DECLS
  *  Public function prototypes for Fortran API
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Create a directory, or check it exists.
+ *
+ * Fortran interface
+ *
+ * SUBROUTINE CSMKDR (DIRNAM, DIRLEN)
+ * *****************
+ *
+ * CHARACTER*       DIRNAM      : --> : Directory name
+ * INTEGER          DIRLEN      : --> : Directory name length
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csmkdr, CSMKDR)
+(
+ const char       *dirnam,
+ const cs_int_t   *dirlen
+);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

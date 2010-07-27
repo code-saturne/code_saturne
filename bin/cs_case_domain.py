@@ -1011,10 +1011,10 @@ class domain(base_domain):
 
         # Plot history (including user history) files
 
-        history_files = fnmatch.filter(dir_files, '*.dat')
-        history_files.extend(fnmatch.filter(dir_files, 'ush*'))
+        self.copy_result('monitoring')
+        history_files = fnmatch.filter(dir_files, 'ush*')
         if len(history_files) > 0:
-            self.copy_results_to_dir(history_files, 'HIST')
+            self.copy_results_to_dir(history_files, 'monitoring')
 
         post_list = fnmatch.filter(dir_files, '*.ensight')
         post_list.extend(fnmatch.filter(dir_files, '*.med'))
