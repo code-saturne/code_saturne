@@ -89,10 +89,10 @@ typedef union {
  */
 
 struct item {
-  char        *key;  /*!< Pointeur sur la chaîne */
+  char        *key;  /*!< Pointeur to string */
   mei_flag_t   type; /*!< Constant, variable, function,... */
   data_t      *data; /*!< Data of the current bucket */
-  struct item *next; /*!< Pointeur sur l'element suivant */
+  struct item *next; /*!< Pointer to next element */
 };
 
 /*!
@@ -100,10 +100,11 @@ struct item {
  */
 
 struct HashTable {
-  int           n_inter; /*!< number of interpreter associated to the current table of symbol */
-  int           record;  /*!< number of bucket of the hash table*/
+  int           n_inter; /*!< number of interpreters associated with
+                           the current table of symbols */
+  int           record;  /*!< number of buckets of the hash table*/
   int           length;  /*!< length of the hash table */
-  struct item **table;   /*!< 'table' is a list of pointer on 'item' */
+  struct item **table;   /*!< 'table' is a list of pointers on 'item' */
 };
 
 /*!
@@ -130,19 +131,19 @@ void mei_hash_table_create(hash_table_t *const htable, const int modulo);
  *----------------------------------------------------------------------------*/
 
 
-void mei_hash_table_init(hash_table_t *const htable);
+void mei_hash_table_init(hash_table_t *htable);
 
 
-void mei_hash_table_dump(hash_table_t *const htable);
+void mei_hash_table_dump(hash_table_t *htable);
 
 
 void mei_hash_table_item_print(struct item *item);
 
 
-void mei_hash_table_free(hash_table_t *const htable);
+void mei_hash_table_free(hash_table_t *htable);
 
 
-struct item * mei_hash_table_lookup(hash_table_t *const htable, const char *const key);
+struct item * mei_hash_table_lookup(hash_table_t *htable, const char *key);
 
 
 void mei_hash_table_insert(hash_table_t *const htable,
@@ -155,7 +156,7 @@ void mei_hash_table_insert(hash_table_t *const htable,
                            const func4_t f4);
 
 
-struct item* mei_hash_table_find(hash_table_t *const htable, const char *const key);
+struct item* mei_hash_table_find(hash_table_t *htable, const char *key);
 
 /*----------------------------------------------------------------------------*/
 

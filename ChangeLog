@@ -1,4 +1,10 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Code and comment cleaning, English translation.
+  modified routines:
+    src/mei/mei_hash_table.c
+    src/mei/mei_hash_table.h
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add the debug and optimized flags for the C compiler.
   modified scripts:
     src/bft/Makefile.am

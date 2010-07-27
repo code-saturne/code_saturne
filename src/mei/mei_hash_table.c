@@ -63,7 +63,7 @@ extern "C" {
  * \brief Hash function.
  *
  * \param [in] s key
- * \param [in] modulo interne parameter for hash table
+ * \param [in] modulo internal parameter for hash table
  *
  * \return value associated to the key s
  */
@@ -91,13 +91,13 @@ _new_item(const char *const key)
 {
   struct item* new;
 
-  // Allocation de l'item proprement dit
+  /* Allocate item proper */
   BFT_MALLOC(new, 1, struct item);
   if (new == NULL)
     bft_error(__FILE__, __LINE__, 0,
               "Error in memory allocation\n");
 
-  // Allocation de la mémoire pour stocker la chaîne
+  /* Allocate memory for string */
   BFT_MALLOC(new->key, strlen(key)+1, char);
   if (new->key == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -120,7 +120,6 @@ _new_item(const char *const key)
 /*----------------------------------------------------------------------------
  *  Fonction qui alloue une table de hachage
  *----------------------------------------------------------------------------*/
-
 
 /* Initialize the hash table to the size (modulo) asked for.
  * Allocates space for the correct number of pointers and sets them to NULL.
@@ -154,18 +153,13 @@ mei_hash_table_create(hash_table_t *const htable, const int modulo)
 
 
 /*----------------------------------------------------------------------------
- *  Fonction qui insert un element dans la table de hachage
+ * Insert an element in a hash table
+ *
+ * If the element is already present in the hash table, the pointer
+ * to it is returned. Otherwise, a new element is added, and a pointer
+ * to that element is added.
  *----------------------------------------------------------------------------*/
 
-
-// Recherche et insertion d'une chaîne dans une table
-// Recherche une chaîne dans une table.  Si la chaîne
-// est déjà présente dans la table, cette fonction
-// retourne le pointeur qui la contient.  Sinon, la
-// chaîne est mise dans la table et la fonction retourne
-// le pointeur sur la cellule qui a été crée.
-// Dans les deux cas, la fonction retourne un pointeur
-// sur la cellule qui contient la chaîne.
 struct item*
 mei_hash_table_find(hash_table_t *const htable, const char *const key)
 {
@@ -173,7 +167,7 @@ mei_hash_table_find(hash_table_t *const htable, const char *const key)
   struct item* l;
   struct item* p;
 
-  /* Liste où doit se trouver la chaîne */
+  /* List where the string is to be found */
   v = _hash(key, htable->length);
   l = htable->table[v];
 
@@ -206,7 +200,7 @@ mei_hash_table_insert(hash_table_t *const htable,
 
   if (item == NULL) {
 
-    /* La chaine n'a pas été trouvée. On crée un nouvel item pour l'insérer */
+    /* The string was not found. Create a new item to insert it */
     item = _new_item(key);
 
     item->type = type;
@@ -229,8 +223,7 @@ mei_hash_table_insert(hash_table_t *const htable,
 
     htable->record++;
 
-    /* Insertion d'une cellule dans une liste */
-    /* L'insertion est faite en tête de liste */
+    /* Insert a cell at the head of a list */
     v = _hash(key, htable->length);
     item->next = htable->table[v];
     htable->table[v]= item;
@@ -401,7 +394,7 @@ mei_hash_table_dump(hash_table_t *const htable)
   int i;
   for (i = 0; i < htable->length; i++) {
     if (htable->table[i] != NULL) {
-      printf("Entrée %d \n", i);
+      printf("Entry %d \n", i);
       mei_hash_table_item_print(htable->table[i]);
     }
   }
