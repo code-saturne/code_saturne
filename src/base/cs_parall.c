@@ -1224,7 +1224,7 @@ CS_PROCF (parfbg, PARFBG)(cs_int_t   *lnum,
  * parameters:
  *   interfaces --> pointer to a fvm_interface_set_t structure
  *   var_size   --> number of elements in var buffer
- *   stride     --> number of values (non interleaved) by entity
+ *   stride     --> number of values (non interlaced) by entity
  *   var        <-> variable buffer
  *----------------------------------------------------------------------------*/
 
