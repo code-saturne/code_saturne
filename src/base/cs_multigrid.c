@@ -133,6 +133,8 @@ typedef struct _cs_multigrid_info_t {
   unsigned             n_levels[3];         /* Number of grid levels:
                                                [last, min, max] */
 
+  unsigned long long   coarse_size[3];      /* Coarse grid size */
+
   unsigned             n_iterations[3][4];  /* Number of iterations for
                                                system resolution:
                                                  [last, min, max]
@@ -218,6 +220,7 @@ _multigrid_info_init(cs_multigrid_info_t *info,
 
   for (i = 0; i < 3; i++) {
     info->n_levels[i] = 0;
+    info->coarse_size[i] = 0;
     for (j = 0; j < 4; j++)
       info->n_iterations[i][j] = 0;
   }
@@ -258,11 +261,13 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
 {
   unsigned long long n_builds_denom = CS_MAX(this_info->n_builds, 1);
   unsigned long long n_solves_denom = CS_MAX(this_info->n_solves, 1);
+  unsigned long long c_size_mean = this_info->coarse_size[0];
   int n_builds = this_info->n_builds;
   int n_solves = this_info->n_solves;
   int n_lv_min = this_info->n_levels[1];
   int n_lv_max = this_info->n_levels[2];
-  int n_lv_mean = (int)(this_info->n_levels_tot / n_builds_denom);
+  unsigned long long c_size_min = this_info->coarse_size[0];
+  unsigned long long c_size_max = this_info->coarse_size[1];
   int n_it_f_min = this_info->n_iterations[1][0];
   int n_it_f_max = this_info->n_iterations[2][0];
   int n_it_c_min = this_info->n_iterations[1][1];
@@ -271,6 +276,8 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
   int n_it_t_max = this_info->n_iterations[2][2];
   int n_it_e_min = this_info->n_iterations[1][3];
   int n_it_e_max = this_info->n_iterations[2][3];
+  unsigned long long n_lv_mean
+    = (unsigned long long)(this_info->coarse_size[2] / n_builds_denom);
   int n_it_f_mean = (int)(this_info->n_iterations_tot[0] / n_solves_denom);
   int n_it_c_mean = (int)(this_info->n_iterations_tot[1] / n_solves_denom);
   int n_it_t_mean = (int)(this_info->n_iterations_tot[2] / n_solves_denom);
@@ -303,6 +310,10 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
                "    minimum:                        %d\n"
                "    maximum:                        %d\n"
                "    mean:                           %d\n"
+               "  Coarse grid size (n cells):\n"
+               "    minimum:                        %llu\n"
+               "    maximum:                        %llu\n"
+               "    mean:                           %llu\n"
                "  Number of iterations:\n"
                "    on finest grid:\n"
                "      minimum:                      %d\n"
@@ -323,6 +334,7 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
                "  Associated times (construction, resolution)\n"
                "    total elapsed:                  %12.3f  %12.3f\n"),
              n_builds, n_solves, n_lv_min, n_lv_max, n_lv_mean,
+             c_size_min, c_size_max, c_size_mean,
              n_it_f_min, n_it_f_max, n_it_f_mean,
              n_it_c_min, n_it_c_max, n_it_c_mean,
              n_it_t_min, n_it_t_max, n_it_t_mean,
@@ -1606,6 +1618,7 @@ void CS_PROCF(clmlga, CLMLGA)
 
   cs_int_t grid_lv = 0;
   cs_multigrid_t *mg = NULL;
+  cs_multigrid_info_t *mg_info = NULL;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
@@ -1625,6 +1638,7 @@ void CS_PROCF(clmlga, CLMLGA)
   var_name = cs_base_string_f_to_c_create(cname, *lname);
 
   mg = _find_or_add_system(var_name);
+  mg_info = &(mg->info);
 
   if (*iwarnp > 1)
     bft_printf(_("\n Construction of grid hierarchy for \"%s\"\n"),
@@ -1741,6 +1755,10 @@ void CS_PROCF(clmlga, CLMLGA)
   }
 
   cs_base_string_f_to_c_free(&var_name);
+
+  mg_info->coarse_size[0] = CS_MIN(n_g_cells, mg_info->coarse_size[1]);
+  mg_info->coarse_size[1] = CS_MAX(n_g_cells, mg_info->coarse_size[1]);
+  mg_info->coarse_size[2] += n_g_cells;
 
   /* Print final info */
 
