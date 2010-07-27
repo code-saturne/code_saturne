@@ -1,4 +1,9 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Split an error message into two clearer ones.
+  modified routine:
+    src/base/cs_preprocessor_data.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Don't read the mesh dimension anymore (assuming it is always 3).
   modified routine:
     src/base/cs_preprocessor_data.c

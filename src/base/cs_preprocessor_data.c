@@ -2503,11 +2503,19 @@ _data_range(cs_io_sec_header_t  *header,
   *n_vals = (gnum_range[1] - gnum_range[0]) * n_location_vals;
   *n_vals_cur = 0;
 
-  if (   *n_g_elts_cur + n_g_elts_read > n_g_elts
-      || header->n_location_vals != n_location_vals)
+  if (*n_g_elts_cur + n_g_elts_read > n_g_elts)
     bft_error(__FILE__, __LINE__, 0,
               _("Section of type <%s> on <%s>\n"
-                "of incorrect size or number of values per location."),
+                "has incorrect size (current: %llu, read: %llu, total: %llu."),
+              header->sec_name, cs_io_get_name(pp_in),
+              (unsigned long long)(*n_g_elts_cur),
+              (unsigned long long)n_g_elts_read,
+              (unsigned long long)n_g_elts);
+
+  else if (header->n_location_vals != n_location_vals)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Section of type <%s> on <%s>\n"
+                "has incorrect number of values per location."),
               header->sec_name, cs_io_get_name(pp_in));
 
   else {
@@ -2831,11 +2839,20 @@ _read_data(int              file_id,
         n_vals = header.n_vals;
         n_g_face_connect_size  = n_vals;
 
-        if (   n_vals + mr->n_g_faces_connect_read > mr->n_g_face_connect_size
-            || header.n_location_vals != 1)
-          bft_error(__FILE__, __LINE__, 0,
+        if (n_vals + mr->n_g_faces_connect_read > mr->n_g_face_connect_size)
+          bft_error
+            (__FILE__, __LINE__, 0,
              _("Section of type <%s> on <%s>\n"
-               "of incorrect size or number of values per location."),
+               "has incorrect size (current: %llu, read: %llu, total: %llu."),
+             header.sec_name, cs_io_get_name(pp_in),
+             (unsigned long long)n_vals,
+             (unsigned long long)mr->n_g_faces_connect_read,
+             (unsigned long long)mr->n_g_face_connect_size);
+
+        else if (header.n_location_vals != 1)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Section of type <%s> on <%s>\n"
+                      "has incorrect number of values per location."),
                     header.sec_name, cs_io_get_name(pp_in));
 
         n_vals_cur = face_vtx_range[1] - face_vtx_range[0];
