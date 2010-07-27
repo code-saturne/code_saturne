@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-07-26 17:52+0200\n"
-"PO-Revision-Date: 2010-07-26 12:04+0200\n"
+"POT-Creation-Date: 2010-07-27 12:16+0200\n"
+"PO-Revision-Date: 2010-07-27 12:22+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "MIME-Version: 1.0\n"
@@ -568,7 +568,7 @@ msgstr ""
 msgid "Ignored:"
 msgstr ""
 
-#: src/apps/cs_partition.c:1685 src/base/cs_preprocessor_data.c:2660
+#: src/apps/cs_partition.c:1685 src/base/cs_preprocessor_data.c:2593
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
@@ -615,7 +615,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_solver.c:300
+#: src/apps/cs_solver.c:301
 #, c-format
 msgid ""
 "\n"
@@ -624,7 +624,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/apps/cs_solver.c:306
+#: src/apps/cs_solver.c:307
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -632,11 +632,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:362
+#: src/apps/cs_solver.c:363
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:376
+#: src/apps/cs_solver.c:377
 #, c-format
 msgid ""
 "\n"
@@ -645,7 +645,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:392
+#: src/apps/cs_solver.c:393
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -653,7 +653,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:414
+#: src/apps/cs_solver.c:415
 #, c-format
 msgid ""
 "\n"
@@ -668,7 +668,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:424
+#: src/apps/cs_solver.c:425
 #, c-format
 msgid ""
 "\n"
@@ -681,7 +681,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:430
+#: src/apps/cs_solver.c:431
 #, c-format
 msgid ""
 "\n"
@@ -696,7 +696,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:492
+#: src/apps/cs_solver.c:501
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -1048,7 +1048,7 @@ msgstr ""
 "\n"
 "Code_Saturne : %s:%d : Avertissement\n"
 
-#: src/base/cs_base_fortran.c:130
+#: src/base/cs_base_fortran.c:131
 #, c-format
 msgid ""
 "Fatal error: bft_printf() called on a message of size %d\n"
@@ -1056,6 +1056,11 @@ msgid ""
 msgstr ""
 "Erreur fatale: bft_printf() appellé sur message de taille %d\n"
 "alors que le tampon d'impression est de taille %d."
+
+#: src/base/cs_base_fortran.c:204
+#, c-format
+msgid "The directory %s cannot be created"
+msgstr ""
 
 #: src/base/cs_benchmark.c:164
 #, c-format
@@ -1610,7 +1615,58 @@ msgstr ""
 " Taille de la connectivité cellules-cellules filtrée :  %12llu\n"
 " %llu connexions supprimées, soit un ratio de %4.2g %% utilisées\n"
 
-#: src/base/cs_gradient.c:598
+#: src/base/cs_gradient.c:114
+msgid "Iterative reconstruction"
+msgstr ""
+
+#: src/base/cs_gradient.c:115
+msgid "Least-squares (standard)"
+msgstr ""
+
+#: src/base/cs_gradient.c:116
+msgid "Least-squares (extended)"
+msgstr ""
+
+#: src/base/cs_gradient.c:117
+msgid "Least-squares (partially extended)"
+msgstr ""
+
+#: src/base/cs_gradient.c:118
+msgid "Least-squares then iterative"
+msgstr ""
+
+#: src/base/cs_gradient.c:183
+#, c-format
+msgid ""
+"\n"
+"Summary of gradient computations pour \"%s\" (%s):\n"
+"\n"
+"  Number of calls:                  %d\n"
+"  Total elapsed time:               %12.3f\n"
+msgstr ""
+"\n"
+"Bilan des calcul de gradient pour \"%s\" (%s) :\n"
+"\n"
+"  Nombre d'appels :                 %d\n"
+"  Temps écoulé cumulé :             %12.3f\n"
+
+#: src/base/cs_gradient.c:204 src/base/cs_sles.c:275
+#, c-format
+msgid ""
+"  Min local total CPU time:         %12.3f\n"
+"  Max local total CPU time:         %12.3f\n"
+"  Total CPU time:                   %12.3f\n"
+msgstr ""
+"  Temps CPU cumulé local min :      %12.3f\n"
+"  Temps CPU cumulé local max :      %12.3f\n"
+"  Temps CPU cumulé total :          %12.3f\n"
+
+#: src/base/cs_gradient.c:214 src/base/cs_sles.c:285
+#, c-format
+msgid "  Total CPU time:                   %12.3f\n"
+msgstr "  Temps CPU cumulé :                %12.3f\n"
+
+#: src/base/cs_gradient.c:635
 #, c-format
 msgid ""
 " GRADIENT LIMITATION in %10d cells\n"
@@ -1861,11 +1917,11 @@ msgstr ""
 msgid "Missing 'value' markup for xpath : %s\n"
 msgstr ""
 
-#: src/base/cs_gui_mesh.c:468
+#: src/base/cs_gui_mesh.c:467
 msgid "Number of periodicities (%d) and modes (%) do not match."
 msgstr ""
 
-#: src/base/cs_gui_mesh.c:520
+#: src/base/cs_gui_mesh.c:516
 #, c-format
 msgid "Periodicity mode \"%s\" unknown."
 msgstr ""
@@ -2317,13 +2373,13 @@ msgstr ""
 "  niveau d'impression :         %ld\n"
 "\n"
 
-#: src/base/cs_join.c:209
+#: src/base/cs_join.c:210
 msgid ""
 "\n"
 "  Element selection successfully done.\n"
 msgstr ""
 
-#: src/base/cs_join.c:288
+#: src/base/cs_join.c:289
 #, c-format
 msgid ""
 "\n"
@@ -2336,7 +2392,7 @@ msgstr ""
 "      temps écoulé :              %10.3g\n"
 "      temps CPU :                 %10.3g\n"
 
-#: src/base/cs_join.c:417
+#: src/base/cs_join.c:418
 #, c-format
 msgid ""
 "\n"
@@ -2349,7 +2405,7 @@ msgstr ""
 "        temps écoulé :              %10.3g\n"
 "        temps CPU :                 %10.3g\n"
 
-#: src/base/cs_join.c:459
+#: src/base/cs_join.c:460
 #, c-format
 msgid ""
 "\n"
@@ -2362,7 +2418,7 @@ msgstr ""
 "      temps écoulé :              %10.3g\n"
 "      temps CPU :                 %10.3g\n"
 
-#: src/base/cs_join.c:566
+#: src/base/cs_join.c:567
 msgid ""
 "\n"
 "  Joining operation is conforming.\n"
@@ -2370,7 +2426,7 @@ msgstr ""
 "\n"
 "  L'opération de recollement est conforme.\n"
 
-#: src/base/cs_join.c:576
+#: src/base/cs_join.c:577
 msgid ""
 "\n"
 "  Joining operation is non-conforming.\n"
@@ -2378,7 +2434,7 @@ msgstr ""
 "\n"
 "  L'opération de recollement est non-conforme.\n"
 
-#: src/base/cs_join.c:649
+#: src/base/cs_join.c:650
 #, c-format
 msgid ""
 "\n"
@@ -2391,7 +2447,7 @@ msgstr ""
 "    temps écoulé :              %10.3g\n"
 "    temps CPU :                 %10.3g\n"
 
-#: src/base/cs_join.c:1089
+#: src/base/cs_join.c:1091
 #, c-format
 msgid ""
 "\n"
@@ -2404,7 +2460,7 @@ msgstr ""
 "    temps écoulé :              %10.3g\n"
 "    temps CPU :                 %10.3g\n"
 
-#: src/base/cs_join.c:1238
+#: src/base/cs_join.c:1246
 #, c-format
 msgid ""
 "\n"
@@ -2417,26 +2473,12 @@ msgstr ""
 "    temps écoulé :              %10.3g\n"
 "    temps CPU :                 %10.3g\n"
 
-#: src/base/cs_join.c:1378
+#: src/base/cs_join.c:1384
 #, c-format
-msgid "  Join number %d is not defined.\n"
+msgid "  Joining number %d is not defined.\n"
 msgstr "  Le recollement numéro %d n'est pas défini.\n"
 
-#: src/base/cs_join.c:1421 src/base/cs_join_perio.c:220
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the fraction parameter.\n"
-"  It must be between [0.0, 1.0[ and is here: %f\n"
-msgstr ""
-
-#: src/base/cs_join.c:1428 src/base/cs_join_perio.c:227
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the plane parameter.\n"
-"  It must be between [0, 90] and is here: %f\n"
-msgstr ""
-
-#: src/base/cs_join.c:1486
+#: src/base/cs_join.c:1482
 #, c-format
 msgid ""
 "\n"
@@ -2449,19 +2491,30 @@ msgstr ""
 "  Recollement numéro %d :\n"
 "\n"
 
+#: src/base/cs_join.c:1488
+#, c-format
+msgid "  Periodicity type: %s\n"
+msgstr "  Type de périodicité : %s\n"
+
 #: src/base/cs_join.c:1490
 #, c-format
 msgid ""
+"  Transformation matrix:  %12.5g %12.5g %12.5g %12.5g\n"
+"                          %12.5g %12.5g %12.5g %12.5g\n"
+"                          %12.5g %12.5g %12.5g %12.5g\n"
 "\n"
-"  Joining for periodicity: %d\n"
 msgstr ""
+"  Matrice de transformation :  %12.5g %12.5g %12.5g %12.5g\n"
+"                               %12.5g %12.5g %12.5g %12.5g\n"
+"                               %12.5g %12.5g %12.5g %12.5g\n"
+"\n"
 
-#: src/base/cs_join.c:1492
+#: src/base/cs_join.c:1498
 #, c-format
 msgid "  Selection criteria: \"%s\"\n"
 msgstr "  Critère de sélection : \"%s\"\n"
 
-#: src/base/cs_join.c:1495
+#: src/base/cs_join.c:1501
 #, c-format
 msgid ""
 "\n"
@@ -2476,7 +2529,7 @@ msgstr ""
 "    Angle maximum entre plans de faces recollées :      %8.5f\n"
 "\n"
 
-#: src/base/cs_join.c:1501
+#: src/base/cs_join.c:1507
 #, c-format
 msgid ""
 "  Advanced joining parameters:\n"
@@ -2493,18 +2546,18 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/base/cs_join.c:1522
+#: src/base/cs_join.c:1528
 msgid " Before joining"
 msgstr " Avant recollement"
 
-#: src/base/cs_join.c:1559
+#: src/base/cs_join.c:1573
 #, c-format
 msgid ""
 "\n"
 "  Number of faces to treat locally: %10d\n"
 msgstr ""
 
-#: src/base/cs_join.c:1641
+#: src/base/cs_join.c:1656
 msgid ""
 "\n"
 "Stop joining algorithm: no face selected...\n"
@@ -2512,11 +2565,11 @@ msgstr ""
 "\n"
 "Arrêt du recollement: aucune face sélectionnée...\n"
 
-#: src/base/cs_join.c:1649
+#: src/base/cs_join.c:1664
 msgid " After joining"
 msgstr " Après recollement"
 
-#: src/base/cs_join.c:1656
+#: src/base/cs_join.c:1671
 #, c-format
 msgid ""
 "\n"
@@ -2529,7 +2582,7 @@ msgstr ""
 "    temps écoulé :              %10.3g\n"
 "    temps CPU :                 %10.3g\n"
 
-#: src/base/cs_join.c:1684
+#: src/base/cs_join.c:1696
 #, c-format
 msgid ""
 "\n"
@@ -2804,7 +2857,7 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"  Local number of pre-merge: %d\n"
+"  Local number of pre-merges: %d\n"
 msgstr ""
 "\n"
 "  Nombre local de pre-fusion: %d\n"
@@ -2896,19 +2949,6 @@ msgstr ""
 "          Fusion des sommets (seulement)\n"
 "              temps écoulé :         %10.3g\n"
 "              temps CPU :            %10.3g\n"
-
-#: src/base/cs_join_mesh.c:459
-#, c-format
-msgid "  Tolerance computation mode (%d) is not defined\n"
-msgstr ""
-
-#: src/base/cs_join_mesh.c:738
-#, c-format
-msgid ""
-"Incompatible value for the \"vertex tolerance\" item\n"
-"Value must be lower than DBL_MAX and current value is : %f (global "
-"numbering : %u)\n"
-msgstr ""
 
 #: src/base/cs_join_mesh.c:764
 #, c-format
@@ -3022,7 +3062,7 @@ msgid ""
 " mesh->n_faces:       %9d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3830 src/base/cs_join_mesh.c:3943
+#: src/base/cs_join_mesh.c:3830
 #, c-format
 msgid ""
 " mesh->n_g_faces:   %11u\n"
@@ -3037,7 +3077,6 @@ msgid ""
 msgstr ""
 
 #: src/base/cs_join_mesh.c:3862 src/base/cs_join_mesh.c:3880
-#: src/base/cs_join_mesh.c:3996
 #, c-format
 msgid ""
 "  Incoherency found in the current mesh definition\n"
@@ -3045,7 +3084,7 @@ msgid ""
 "  Vertices: local (%d, %d), global (%u, %u) are defined twice\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3896 src/base/cs_join_mesh.c:4012
+#: src/base/cs_join_mesh.c:3896
 #, c-format
 msgid ""
 "\n"
@@ -3056,7 +3095,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3904 src/base/cs_join_mesh.c:4020
+#: src/base/cs_join_mesh.c:3904 src/base/cs_join_mesh.c:4023
 #, c-format
 msgid ""
 " Local Num | Global Num |  Tolerance  |        Coordinates\n"
@@ -3070,14 +3109,21 @@ msgid ""
 " mesh->n_faces:     %11d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3952
+#: src/base/cs_join_mesh.c:3943
+#, c-format
+msgid ""
+" mesh->n_g_faces:   %11llu\n"
+"\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:3953
 #, c-format
 msgid ""
 "\n"
 " face_id: %9d gnum: %10llu n_vertices : %4d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3976
+#: src/base/cs_join_mesh.c:3977 src/base/cs_join_mesh.c:3997
 #, c-format
 msgid ""
 "  Incoherency found in the current mesh definition\n"
@@ -3085,89 +3131,71 @@ msgid ""
 "  Vertices: local (%d, %d), global (%llu, %llu) are defined twice\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4050
+#: src/base/cs_join_mesh.c:4014
+#, c-format
+msgid ""
+"\n"
+" Dump vertex data\n"
+"   mesh->vertices     :  %p\n"
+"   mesh->n_vertices   : %11d\n"
+"   mesh->n_g_vertices : %11llu\n"
+"\n"
+msgstr ""
+
+#: src/base/cs_join_mesh.c:4053
 msgid ""
 "\n"
 "  Edge connectivity used in the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4051
+#: src/base/cs_join_mesh.c:4054
 #, c-format
 msgid "  Number of edges:      %8d\n"
 msgstr "  Nombre d'arêtes :     %8d\n"
 
-#: src/base/cs_join_mesh.c:4052
+#: src/base/cs_join_mesh.c:4055
 #, c-format
 msgid "  Number of vertices:   %8d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4061
+#: src/base/cs_join_mesh.c:4064
 #, c-format
 msgid "  Edge %6d  (%8u) <Vertex> [%8u %8u]\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4088
+#: src/base/cs_join_mesh.c:4091
 msgid ""
 "\n"
 "  Vertex -> Vertex connectivity :\n"
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4095
+#: src/base/cs_join_mesh.c:4098
 #, c-format
 msgid "  Vertex %6d (%7u) - %3d - "
 msgstr ""
 
-#: src/base/cs_join_perio.c:234
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the periodicity number.\n"
-"  It must be between > 0 and is here: %d\n"
-msgstr ""
-
-#: src/base/cs_join_perio.c:529
+#: src/base/cs_join_perio.c:246
 #, c-format
 msgid ""
 "\n"
 "  Delete %d interior periodic faces locally\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:651
-#, c-format
-msgid "  Adding periodicity %d (translation [%10.4e, %10.4e, %10.4e]).\n"
-msgstr "  Ajout de la périodicité %d (translation [%10.4e, %10.4e, %10.4e]).\n"
-
-#: src/base/cs_join_perio.c:726
-#, c-format
-msgid "  Adding periodicity %d (rotation).\n"
-msgstr "  Ajout de la périodicité %d (rotation).\n"
-
-#: src/base/cs_join_perio.c:822
-#, c-format
-msgid "  Adding periodicity %d (general formulation).\n"
-msgstr "  Ajout de la périodicité %d (formulation générale).\n"
-
-#: src/base/cs_join_perio.c:891
-#, c-format
-msgid ""
-" Periodicity number %d is not defined\n"
-" %d periodicities are defined\n"
-msgstr ""
-
-#: src/base/cs_join_perio.c:1218
+#: src/base/cs_join_perio.c:924
 #, c-format
 msgid ""
 "  Apply periodicity to the local join mesh structure\n"
 "  New number of faces to treat locally: %8d\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:1231 src/base/cs_join_util.c:2441
+#: src/base/cs_join_perio.c:937 src/base/cs_join_util.c:2477
 msgid ""
 "\n"
 "  Selected faces for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:1521
+#: src/base/cs_join_perio.c:1228
 #, c-format
 msgid ""
 "  Vertex state (%d) is not consistent.\n"
@@ -3201,12 +3229,12 @@ msgstr ""
 msgid " Unexpected type (%s) to display in the current dump.\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:843
+#: src/base/cs_join_split.c:844
 msgid ""
 "  face splitting with face -> face connectivity is not yet implemented\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:1037
+#: src/base/cs_join_split.c:1038
 #, c-format
 msgid ""
 " Joining operation : split face %d\n"
@@ -3214,22 +3242,22 @@ msgid ""
 "d\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:1195
+#: src/base/cs_join_split.c:1196
 #, c-format
 msgid " Warning: open cycle for global face %u\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:1236
+#: src/base/cs_join_split.c:1237
 #, c-format
 msgid " Warning: global face %u scanned twice\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:1323
+#: src/base/cs_join_split.c:1324
 #, c-format
 msgid " Warning: loop limit reached for global face %u\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:1603
+#: src/base/cs_join_split.c:1604
 #, c-format
 msgid ""
 "\n"
@@ -3238,7 +3266,7 @@ msgstr ""
 "\n"
 "  Nombre global de faces après subdivision : %10u\n"
 
-#: src/base/cs_join_split.c:1657
+#: src/base/cs_join_split.c:1658
 #, c-format
 msgid ""
 " Inconsistent values between:\n"
@@ -3247,12 +3275,12 @@ msgid ""
 " These values should be equal.\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:1925
+#: src/base/cs_join_split.c:1926
 #, c-format
 msgid "  Split face %d >> returned code: %d\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:2087
+#: src/base/cs_join_split.c:2088
 #, c-format
 msgid ""
 "\n"
@@ -3266,7 +3294,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/base/cs_join_split.c:2119
+#: src/base/cs_join_split.c:2120
 #, c-format
 msgid ""
 " At least one original face has been cut into more than %d subfaces\n"
@@ -3275,12 +3303,12 @@ msgid ""
 " Be careful. It may produce mesh with a poor quality.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:761
+#: src/base/cs_join_update.c:762
 #, c-format
 msgid "  Add %d new vertices from the single elements sync.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:1536
+#: src/base/cs_join_update.c:1537
 #, c-format
 msgid ""
 "  Cannot find the first corresponding vertex between the face connectivity "
@@ -3288,7 +3316,7 @@ msgid ""
 "  Current global face number: %u\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:1698
+#: src/base/cs_join_update.c:1699
 #, c-format
 msgid ""
 "  Face %d (%u): Edge with two different descriptions: (%d, %d) [%u, %u]\n"
@@ -3296,47 +3324,47 @@ msgid ""
 "  Impossible to continue the mesh update after the merge operation.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:2486
+#: src/base/cs_join_update.c:2487
 #, c-format
 msgid "  Join Face connectivity %d (%u): "
 msgstr ""
 
-#: src/base/cs_join_update.c:2517
+#: src/base/cs_join_update.c:2518
 msgid "  Cannot achieve to reorient the current joined face.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3099 src/base/cs_join_update.c:3151
+#: src/base/cs_join_update.c:3100 src/base/cs_join_update.c:3152
 #, c-format
 msgid ""
 "  Cannot achieve to reorient the current joined face with face %d (selected "
 "face).\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3421
+#: src/base/cs_join_update.c:3423
 #, c-format
 msgid ""
 " Incoherency found before interior face orientation checking.\n"
 " Join face %d (%u) and related faces [%d, %d]\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3613
+#: src/base/cs_join_update.c:3615
 #, c-format
 msgid "  Delete %d local vertices not used in mesh definition.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4068
+#: src/base/cs_join_update.c:4072
 #, c-format
 msgid ""
 "  Warning: Face %d (%u) has more than two ancestors.\n"
 "  Old faces implied:"
 msgstr ""
 
-#: src/base/cs_join_update.c:4087
+#: src/base/cs_join_update.c:4091
 #, c-format
 msgid "  Warning: Face %d (%u) has no ancestor.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4098
+#: src/base/cs_join_update.c:4102
 #, c-format
 msgid ""
 "\n"
@@ -3345,14 +3373,14 @@ msgid ""
 "    Number of border faces to add  : %9d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4125
+#: src/base/cs_join_update.c:4129
 #, c-format
 msgid ""
 " There are %u undefined faces with no ancestor.\n"
 " Cannot continue the joining algorithm.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4133
+#: src/base/cs_join_update.c:4137
 #, c-format
 msgid ""
 "\n"
@@ -3360,34 +3388,34 @@ msgid ""
 "     Global number of border faces to add: %10llu\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4141
+#: src/base/cs_join_update.c:4145
 #, c-format
 msgid "     Global number of multiple border faces: %10llu\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4348
+#: src/base/cs_join_update.c:4353
 #, c-format
 msgid "  Clean border face %d. New number of vertices: %d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4370
+#: src/base/cs_join_update.c:4375
 #, c-format
 msgid ""
 "\n"
 "  Degenerate connectivity for %d final local boundary faces.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4409
+#: src/base/cs_join_update.c:4414
 #, c-format
 msgid "  Clean interior face %d. New number of vertices: %d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4431
+#: src/base/cs_join_update.c:4436
 #, c-format
 msgid "  Degenerate connectivity for %d final local interior faces.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4481
+#: src/base/cs_join_update.c:4486
 #, c-format
 msgid ""
 "\n"
@@ -3396,112 +3424,126 @@ msgid ""
 "    Global number of cleaned border faces:   %8u\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2074
+#: src/base/cs_join_util.c:2020
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the fraction parameter.\n"
+"  It must be between [0.0, 1.0[ and is here: %f\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:2027
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the plane parameter.\n"
+"  It must be between [0, 90] and is here: %f\n"
+msgstr ""
+
+#: src/base/cs_join_util.c:2110
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tml parameter.\n"
 "  It must be between > 0 and is here: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2085
+#: src/base/cs_join_util.c:2121
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tmb parameter.\n"
 "  It must be between > 0 and is here: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2096
+#: src/base/cs_join_util.c:2132
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tmr parameter.\n"
 "  It must be between > 0.0 and is here: %f\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2111
+#: src/base/cs_join_util.c:2147
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the merge tolerance factor.\n"
 "  It must be positive or nul and not: %f\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2121
+#: src/base/cs_join_util.c:2157
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the max. number of tolerance breaks.\n"
 "  It must be between >= 0 and not: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2138
+#: src/base/cs_join_util.c:2174
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tcm parameter.\n"
 "  It must be between 1, 2 or 11, 12 and here is: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2148
+#: src/base/cs_join_util.c:2184
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for icm parameter.\n"
 "  It must be 1 or 2 and here is: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2158
+#: src/base/cs_join_util.c:2194
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the maxsf parameter.\n"
 "  It must be between > 0 and here is: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2291
+#: src/base/cs_join_util.c:2327
 #, c-format
 msgid "  Global number of boundary faces selected for joining: %10u\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2411
+#: src/base/cs_join_util.c:2447
 msgid ""
 "\n"
 "  Local information about selection structure:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2412
+#: src/base/cs_join_util.c:2448
 #, c-format
 msgid "    number of faces:               %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2414
+#: src/base/cs_join_util.c:2450
 #, c-format
 msgid "    number of vertices:            %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2416
+#: src/base/cs_join_util.c:2452
 #, c-format
 msgid "    number of adj. border faces:   %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2418
+#: src/base/cs_join_util.c:2454
 #, c-format
 msgid "    number of adj. interior faces: %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2450
+#: src/base/cs_join_util.c:2486
 msgid ""
 "\n"
 "  Select vertices for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2457
+#: src/base/cs_join_util.c:2493
 msgid ""
 "\n"
 "  Contiguous border faces for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2464
+#: src/base/cs_join_util.c:2500
 msgid ""
 "\n"
 "  Contiguous interior faces for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2682 src/base/cs_join_util.c:2698
+#: src/base/cs_join_util.c:2718 src/base/cs_join_util.c:2734
 #, c-format
 msgid ""
 "  Inconsistent mesh definition. Cannot build edges.\n"
@@ -3559,12 +3601,12 @@ msgstr " Synchronisation des familles des cellules\n"
 msgid "    no value\n"
 msgstr "    aucune valeur\n"
 
-#: src/base/cs_mesh.c:217 src/base/cs_mesh.c:375
+#: src/base/cs_mesh.c:217 src/base/cs_mesh.c:373
 #, c-format
 msgid "    minimum value =         %10d\n"
 msgstr "    valeur minimale =       %10d\n"
 
-#: src/base/cs_mesh.c:218 src/base/cs_mesh.c:376
+#: src/base/cs_mesh.c:218 src/base/cs_mesh.c:374
 #, c-format
 msgid ""
 "    maximum value =         %10d\n"
@@ -3573,7 +3615,7 @@ msgstr ""
 "    valeur maximale =       %10d\n"
 "\n"
 
-#: src/base/cs_mesh.c:289
+#: src/base/cs_mesh.c:287
 msgid ""
 "\n"
 " Halo creation times summary\n"
@@ -3583,17 +3625,17 @@ msgstr ""
 " Bilan des temps pour la création du halo\n"
 "\n"
 
-#: src/base/cs_mesh.c:292
+#: src/base/cs_mesh.c:290
 #, c-format
 msgid "     Interface creation:                       %.3g s\n"
 msgstr "     Création de l'interface :                  %.3g s\n"
 
-#: src/base/cs_mesh.c:296
+#: src/base/cs_mesh.c:294
 #, c-format
 msgid "     Extended connectivity creation:            %.3g s\n"
 msgstr "     Création de la connectivité étendue :      %.3g s\n"
 
-#: src/base/cs_mesh.c:299
+#: src/base/cs_mesh.c:297
 #, c-format
 msgid ""
 "     Halo creation:                             %.3g s\n"
@@ -3602,7 +3644,7 @@ msgstr ""
 "     Création du halo :                         %.3g s\n"
 "\n"
 
-#: src/base/cs_mesh.c:303
+#: src/base/cs_mesh.c:301
 #, c-format
 msgid ""
 "     Total time for halo creation:              %.3g s\n"
@@ -3611,7 +3653,7 @@ msgstr ""
 "     Temps total de création du halo :          %.3g s\n"
 "\n"
 
-#: src/base/cs_mesh.c:373
+#: src/base/cs_mesh.c:371
 msgid ""
 "\n"
 " Histogram of the number of interior faces per cell:\n"
@@ -3621,7 +3663,7 @@ msgstr ""
 " Histogramme du nombre de faces internes par cellule :\n"
 "\n"
 
-#: src/base/cs_mesh.c:470
+#: src/base/cs_mesh.c:1605
 msgid ""
 "\n"
 " Histogram of the number of cells per rank:\n"
@@ -3631,12 +3673,12 @@ msgstr ""
 " Histogramme de la distribution du nombre de cellules sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:478
+#: src/base/cs_mesh.c:1613
 #, c-format
 msgid " Number of cells:                                      %d\n"
 msgstr " Nombre de cellules :                                  %d\n"
 
-#: src/base/cs_mesh.c:491
+#: src/base/cs_mesh.c:1626
 msgid ""
 "\n"
 " Histogram of the number of standard + halo cells per rank:\n"
@@ -3647,7 +3689,7 @@ msgstr ""
 " standard + halo sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:500
+#: src/base/cs_mesh.c:1635
 #, c-format
 msgid ""
 " Number of cells + halo cells:                         %d\n"
@@ -3656,7 +3698,7 @@ msgstr ""
 " Nombre de cellules + cellules halo :                  %d\n"
 "\n"
 
-#: src/base/cs_mesh.c:520
+#: src/base/cs_mesh.c:1655
 msgid ""
 "\n"
 " Histogram of the number of ghost cells per rank:\n"
@@ -3666,7 +3708,7 @@ msgstr ""
 " Histogramme de la distribution des cellules fantômes sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:532
+#: src/base/cs_mesh.c:1667
 msgid ""
 "\n"
 " Histogram of the number of ghost cells\n"
@@ -3678,7 +3720,7 @@ msgstr ""
 " dans le voisinage standard sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:542
+#: src/base/cs_mesh.c:1677
 #, c-format
 msgid ""
 "\n"
@@ -3687,12 +3729,12 @@ msgstr ""
 "\n"
 " Nombre de cellules fantômes :                  %10d\n"
 
-#: src/base/cs_mesh.c:545
+#: src/base/cs_mesh.c:1680
 #, c-format
 msgid "   in the standard neighborhood:              %10d\n"
 msgstr "   dans le voisinage standard :               %10d\n"
 
-#: src/base/cs_mesh.c:564
+#: src/base/cs_mesh.c:1699
 msgid ""
 "\n"
 " Histogram of the number of interior faces per rank:\n"
@@ -3702,12 +3744,12 @@ msgstr ""
 " Histogramme de la distribution du nombre de faces interne sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:572
+#: src/base/cs_mesh.c:1707
 #, c-format
 msgid " Number of interior faces:                             %d\n"
 msgstr " Nombre de faces internes :                            %d\n"
 
-#: src/base/cs_mesh.c:588
+#: src/base/cs_mesh.c:1723
 msgid ""
 "\n"
 " Histogram of the number of boundary faces per rank:\n"
@@ -3717,12 +3759,12 @@ msgstr ""
 " Histogramme de la distribution du nombre de faces de bord sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:596
+#: src/base/cs_mesh.c:1731
 #, c-format
 msgid " Number of boundary faces:                             %d\n"
 msgstr " Nombre de faces de bord :                             %d\n"
 
-#: src/base/cs_mesh.c:617
+#: src/base/cs_mesh.c:1752
 msgid ""
 "\n"
 " Histogram of the number of neighboring domains per rank:\n"
@@ -3733,7 +3775,7 @@ msgstr ""
 "rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:1167
+#: src/base/cs_mesh.c:2298
 #, c-format
 msgid ""
 "\n"
@@ -3748,7 +3790,7 @@ msgstr ""
 "                       Y : %14.7e %14.7e\n"
 "                       Z : %14.7e %14.7e\n"
 
-#: src/base/cs_mesh.c:1199
+#: src/base/cs_mesh.c:2330
 msgid ""
 "\n"
 " Global definition of the number of elements (cells, vertices, faces...)\n"
@@ -3756,7 +3798,7 @@ msgstr ""
 "\n"
 " Définition globale du nombre d'éléments (cellules, sommets, faces...)\n"
 
-#: src/base/cs_mesh.c:1285
+#: src/base/cs_mesh.c:2421
 msgid ""
 "\n"
 " Halo construction with extended neighborhood\n"
@@ -3768,11 +3810,11 @@ msgstr ""
 " ==========================================\n"
 "\n"
 
-#: src/base/cs_mesh.c:1292
-msgid " Periodicities combination\n"
-msgstr " Composition des périodicités\n"
+#: src/base/cs_mesh.c:2427
+msgid " Composing periodicities\n"
+msgstr ""
 
-#: src/base/cs_mesh.c:1301
+#: src/base/cs_mesh.c:2434
 msgid ""
 "\n"
 " Halo construction with standard neighborhood\n"
@@ -3784,27 +3826,31 @@ msgstr ""
 " ============================================\n"
 "\n"
 
-#: src/base/cs_mesh.c:1329
-msgid " Definition of periodic couples\n"
-msgstr " Définition des couples périodiques\n"
+#: src/base/cs_mesh.c:2448
+msgid " Face interfaces creation\n"
+msgstr " Création de l'interface pour les faces\n"
 
-#: src/base/cs_mesh.c:1351
-msgid " Interface creation\n"
-msgstr " Création de l'interface\n"
+#: src/base/cs_mesh.c:2499
+msgid " Definition of periodic vertices\n"
+msgstr " Définition des sommets périodiques\n"
 
-#: src/base/cs_mesh.c:1384
+#: src/base/cs_mesh.c:2520
+msgid " Vertex interfaces creation\n"
+msgstr " Création de l'interface pour les sommets\n"
+
+#: src/base/cs_mesh.c:2553
 msgid " Halo creation\n"
 msgstr " Création des halos\n"
 
-#: src/base/cs_mesh.c:1389
+#: src/base/cs_mesh.c:2558
 msgid " Halo definition\n"
 msgstr " Définition des halos\n"
 
-#: src/base/cs_mesh.c:1413
+#: src/base/cs_mesh.c:2584
 msgid " Extended neighborhood structures definition\n"
 msgstr " Définition des structures pour le voisinage étendu\n"
 
-#: src/base/cs_mesh.c:1440
+#: src/base/cs_mesh.c:2611
 #, c-format
 msgid ""
 "\n"
@@ -3813,7 +3859,7 @@ msgstr ""
 "\n"
 " Création de la connectivité étendue (%.3g s)\n"
 
-#: src/base/cs_mesh.c:1719
+#: src/base/cs_mesh.c:2944
 #, c-format
 msgid ""
 " %s\n"
@@ -3938,36 +3984,35 @@ msgstr ""
 "faces->sommets, indispensable à la reconstruction\n"
 "de la connectivité nodale (cs_mesh_connect_faces_to_nodal)."
 
-#: src/base/cs_mesh_halo.c:1660
+#: src/base/cs_mesh_halo.c:1657
 #, c-format
 msgid ""
 "Repeated inconsistency in the halo construction.\n"
 "Several local points have the same distant correspondant;\n"
-"this is probably due to a multiple-periodicity construction\n"
-"side effect of the Preprocessor or this is due to a poor quality\n"
-"mesh generated during the joining step.\n"
+"this is probably a side effect of a poor quality joining\n"
+"or periodicity.\n"
 "Coordinates of the first impacted point: [%12.5e, %12.5e %12.5e]."
 msgstr ""
 "Incohérence repérée lors de la construction du halo.\n"
 "Plusieurs points locaux ont le même correspondant distant ;\n"
-"ceci est probablement dû à un effet de bord de la construction\n"
-"de périodicités multiples par le Préprocesseur ou à un maillage\n"
-"de mauvaise qualité généré durant l'étape de recollement.\n"
+"ceci est probablement dû à un effet de bord d'un maillage\n"
+"de mauvaise qualité généré durant l'étape de recollement ou\n"
+"de périodicité.\n"
 "Coordonnées du premier point impacté: [%12.5e, %12.5e %12.5e]."
 
-#: src/base/cs_mesh_halo.c:3108 src/ctwr/cs_ctwr_halo.c:1492
+#: src/base/cs_mesh_halo.c:3012 src/ctwr/cs_ctwr_halo.c:1492
 msgid "    Local halo definition\n"
 msgstr "    Définition du halo local\n"
 
-#: src/base/cs_mesh_halo.c:3120
+#: src/base/cs_mesh_halo.c:3024
 msgid "    Halo cleaning\n"
 msgstr "    Nettoyage des halos\n"
 
-#: src/base/cs_mesh_halo.c:3130
+#: src/base/cs_mesh_halo.c:3034
 msgid "    Distant halo creation\n"
 msgstr "    Création du halo distant\n"
 
-#: src/base/cs_mesh_halo.c:3169
+#: src/base/cs_mesh_halo.c:3073
 msgid "    Updating the faces -> cells connectivity\n"
 msgstr "    Mise à jour de la connectivité faces -> cellules\n"
 
@@ -4100,7 +4145,7 @@ msgstr ""
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
-#: src/base/cs_mesh_warping.c:1035
+#: src/base/cs_mesh_warping.c:1230
 msgid ""
 "The faces have been renumbered before cutting.\n"
 "This case should not arise, because the mesh entities\n"
@@ -4110,12 +4155,12 @@ msgstr ""
 "Ce cas ne devrait pas se produire, car on devrait découper\n"
 "les entités de maillage avant de les renuméroter."
 
-#: src/base/cs_mesh_warping.c:1043
+#: src/base/cs_mesh_warping.c:1238
 #, c-format
 msgid "\t%12d global faces before cutting\n"
 msgstr "\t%12d faces globales avant découpage\n"
 
-#: src/base/cs_mesh_warping.c:1063
+#: src/base/cs_mesh_warping.c:1258
 #, c-format
 msgid ""
 "\t%12d global faces after cutting\n"
@@ -4124,19 +4169,19 @@ msgstr ""
 "\t%12d faces globales après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1109
+#: src/base/cs_mesh_warping.c:1304
 msgid "Warped faces to cut"
 msgstr "Faces gauche a decouper"
 
-#: src/base/cs_mesh_warping.c:1130
+#: src/base/cs_mesh_warping.c:1325
 msgid "Face warping"
 msgstr "Gauchissement des faces"
 
-#: src/base/cs_mesh_warping.c:1170
+#: src/base/cs_mesh_warping.c:1364
 msgid "Warped faces after cutting"
 msgstr "Faces gauche apres decoupage"
 
-#: src/base/cs_mesh_warping.c:1252
+#: src/base/cs_mesh_warping.c:1444
 #, c-format
 msgid ""
 "\n"
@@ -4144,7 +4189,7 @@ msgid ""
 " Cutting of warped faces requested\n"
 " ---------------------------------\n"
 "\n"
-" Maximum allowed angle (rad):\t%7.4f\n"
+" Maximum allowed angle (deg): %7.4f\n"
 "\n"
 msgstr ""
 "\n"
@@ -4152,10 +4197,10 @@ msgstr ""
 " Découpage des faces gauche demandé\n"
 " ----------------------------------\n"
 "\n"
-" Angle maximal autorisé (rad) :\t%7.4f\n"
+" Angle maximal autorisé (deg) : %7.4f\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1315
+#: src/base/cs_mesh_warping.c:1507
 msgid ""
 "\n"
 " No face to cut. Verify the criterion if necessary.\n"
@@ -4163,7 +4208,7 @@ msgstr ""
 "\n"
 " Aucune face à découper. Revoir le critère si nécessaire.\n"
 
-#: src/base/cs_mesh_warping.c:1362
+#: src/base/cs_mesh_warping.c:1545
 #, c-format
 msgid ""
 " Interior faces:\n"
@@ -4180,7 +4225,7 @@ msgstr ""
 "\t%12d faces localement après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1369 src/base/cs_mesh_warping.c:1409
+#: src/base/cs_mesh_warping.c:1552 src/base/cs_mesh_warping.c:1590
 #, c-format
 msgid ""
 " Size of the new face -> vertices connectivity: %12d\n"
@@ -4189,7 +4234,7 @@ msgstr ""
 " Taille de la nouvelle connectivité face -> sommets :%12d\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1402
+#: src/base/cs_mesh_warping.c:1583
 #, c-format
 msgid ""
 " Boundary faces:\n"
@@ -4538,7 +4583,7 @@ msgid ""
 "so module file \"%s\" may not be loaded.\n"
 msgstr ""
 
-#: src/base/cs_perio.c:344
+#: src/base/cs_perio.c:640
 #, c-format
 msgid ""
 "The %d periodic transformations of the halo do not comply\n"
@@ -4547,11 +4592,11 @@ msgstr ""
 "Les %d transformations périodiques du halo ne correspondent\n"
 "pas à celles du maillage principal (au nombre de %d).\n"
 
-#: src/base/cs_perio.c:651 src/base/cs_perio.c:793
+#: src/base/cs_perio.c:950 src/base/cs_perio.c:1092
 msgid "IDIMTE and/or ITENSO have incoherent values"
 msgstr "IDIMTE et/ou ITENSO ont des valeurs incohérentes"
 
-#: src/base/cs_perio.c:2527
+#: src/base/cs_perio.c:2827
 #, c-format
 msgid ""
 "Attempt to restore halo rotation elements on the\n"
@@ -4699,17 +4744,7 @@ msgstr "Bord"
 msgid "Calculation domain"
 msgstr "Domaine de calcul"
 
-#: src/base/cs_preprocessor_data.c:301
-#, c-format
-msgid " Adding periodicity %d (translation [%10.4e, %10.4e, %10.4e]).\n"
-msgstr " Ajout de la périodicité %d (translation [%10.4e, %10.4e, %10.4e]).\n"
-
-#: src/base/cs_preprocessor_data.c:306
-#, c-format
-msgid " Adding periodicity %d (rotation).\n"
-msgstr " Ajout de la périodicité %d (rotation).\n"
-
-#: src/base/cs_preprocessor_data.c:389 src/base/cs_preprocessor_data.c:2177
+#: src/base/cs_preprocessor_data.c:384 src/base/cs_preprocessor_data.c:2110
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
@@ -4718,20 +4753,20 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendue ou de taille incorrecte"
 
-#: src/base/cs_preprocessor_data.c:406
+#: src/base/cs_preprocessor_data.c:401
 #, c-format
 msgid " No \"%s\" file available;\n"
 msgstr ""
 
-#: src/base/cs_preprocessor_data.c:408
+#: src/base/cs_preprocessor_data.c:403
 msgid "   an unoptimized domain partitioning will be used.\n"
 msgstr "   un découpage de domaines non optimisé sera utilisé.\n"
 
-#: src/base/cs_preprocessor_data.c:410
+#: src/base/cs_preprocessor_data.c:405
 msgid "   domain partitioning will use a space-filling curve.\n"
 msgstr "   le partitionnement sera basé sur une courbe fractale.\n"
 
-#: src/base/cs_preprocessor_data.c:456
+#: src/base/cs_preprocessor_data.c:451
 #, c-format
 msgid ""
 "The number of cells reported by file\n"
@@ -4742,7 +4777,7 @@ msgstr ""
 "\"%s\" (%llu)\n"
 "ne correspond pas au maillage courant (%llu)."
 
-#: src/base/cs_preprocessor_data.c:477
+#: src/base/cs_preprocessor_data.c:472
 #, c-format
 msgid ""
 "The number of ranks reported by file\n"
@@ -4753,12 +4788,12 @@ msgstr ""
 "\"%s\" (%d)\n"
 "ne correspond pas au nombre de rangs courant (%d)."
 
-#: src/base/cs_preprocessor_data.c:512
+#: src/base/cs_preprocessor_data.c:507
 #, c-format
 msgid "Section of type <%s> on <%s> is unexpected."
 msgstr "Section de type <%s> sur <%s> inattendu."
 
-#: src/base/cs_preprocessor_data.c:1577 src/base/cs_preprocessor_data.c:1833
+#: src/base/cs_preprocessor_data.c:1519 src/base/cs_preprocessor_data.c:1775
 #, c-format
 msgid ""
 "Number of cells on rank %d is zero.\n"
@@ -4767,26 +4802,26 @@ msgstr ""
 "Le nombre de cellules pour le rang %d est nul.\n"
 "(rapport nombre de cellules / nombre de processeurs trop faible)."
 
-#: src/base/cs_preprocessor_data.c:2202
+#: src/base/cs_preprocessor_data.c:2135
 #, c-format
 msgid " Reading metadata from file: \"%s\"\n"
 msgstr ""
 
-#: src/base/cs_preprocessor_data.c:2270
+#: src/base/cs_preprocessor_data.c:2203
 #, c-format
 msgid ""
 "Mesh defined by file \"%s\"\n"
 "of dimension %d, while only 3 is handled."
 msgstr ""
 
-#: src/base/cs_preprocessor_data.c:2592 src/base/cs_preprocessor_data.c:2920
+#: src/base/cs_preprocessor_data.c:2525 src/base/cs_preprocessor_data.c:2853
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
 "of incorrect size or number of values per location."
 msgstr ""
 
-#: src/base/cs_preprocessor_data.c:2735
+#: src/base/cs_preprocessor_data.c:2668
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
@@ -4795,7 +4830,7 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendu."
 
-#: src/base/cs_preprocessor_data.c:3509
+#: src/base/cs_preprocessor_data.c:3430
 #, c-format
 msgid ""
 "The algorithm selection indicator for domain partitioning\n"
@@ -5255,22 +5290,6 @@ msgstr ""
 "  Nombre d'itérations maximal :     %d\n"
 "  Nombre d'itérations moyen :       %d\n"
 "  Temps écoulé cumulé :             %12.3f\n"
-
-#: src/base/cs_sles.c:275
-#, c-format
-msgid ""
-"  Min local total CPU time:         %12.3f\n"
-"  Max local total CPU time:         %12.3f\n"
-"  Total CPU time:                   %12.3f\n"
-msgstr ""
-"  Temps CPU cumulé local min :      %12.3f\n"
-"  Temps CPU cumulé local max :      %12.3f\n"
-"  Temps CPU cumulé total :          %12.3f\n"
-
-#: src/base/cs_sles.c:285
-#, c-format
-msgid "  Total CPU time:                   %12.3f\n"
-msgstr "  Temps CPU cumulé :                %12.3f\n"
 
 #: src/base/cs_sles.c:394
 msgid "  n_iter     res_abs     res_nor\n"
@@ -6675,6 +6694,12 @@ msgid ""
 msgstr ""
 "Erreur MPI IO pour le fichier : %s\n"
 "Type d'erreur : %s"
+
+#: src/fvm/fvm_interface.c:3402
+msgid ""
+"Trying to build an interface with unordered elements\n"
+"not currently handled."
+msgstr ""
 
 #: src/fvm/fvm_nodal_extract.c:1206
 #, c-format

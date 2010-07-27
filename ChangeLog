@@ -1,4 +1,9 @@
 * 27/07/2010 - David Monfort <david.monfort@edf.fr>
+  Update French dictionnary.
+  modified file:
+    po/fr.po
+
+* 27/07/2010 - David Monfort <david.monfort@edf.fr>
   Instrumentation of the gradient computation. Also add a first
   implementation of a pure C interface fo the gradients.
   modified routines:
