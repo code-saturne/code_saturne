@@ -536,7 +536,7 @@ cs_run(void)
 
   /* CPU times and memory management finalization */
 
-  cs_restart_print_stats();
+  cs_io_log_finalize();
 
   cs_base_time_summary();
   cs_base_mem_finalize();
@@ -630,6 +630,10 @@ main(int    argc,
   /* MPI-IO options */
 
   cs_io_set_defaults(opts.mpi_io_mode);
+
+  /* I/O operations initialization */
+
+  cs_io_log_initialize();
 
   /* In case of use with SALOME, optional connection with CFD_Proxy
      launcher or load and start of YACS module */

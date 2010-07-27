@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -63,6 +63,7 @@
 #include <bft_error.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
+#include <bft_timer.h>
 
 #include <fvm_file.h>
 
@@ -75,6 +76,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_map.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -89,6 +91,21 @@ BEGIN_C_DECLS
 /*============================================================================
  * Local types and structures
  *============================================================================*/
+
+/* Basic per linear system options and logging */
+/*---------------------------------------------*/
+
+typedef struct {
+
+  unsigned             n_opens;            /* Number of times file opened */
+
+  double               wtimes[3];          /* Wall-clock time for headers,
+                                              data, and open time */
+
+  unsigned long long   data_size[2];       /* Cumulative header and data
+                                              size */
+
+} cs_io_log_t;
 
 /* Structure used to index cs_io_file contents when reading */
 /*----------------------------------------------------------*/
@@ -169,6 +186,8 @@ struct _cs_io_t {
   /* Other flags */
 
   long                echo;           /* Data echo level (verbosity) */
+  int                 log_id;         /* Id of log entry, or -1 */
+  double              start_time;     /* Wall-clock time at open */
 
 #if defined(HAVE_MPI)
   MPI_Comm            comm;           /* Assigned communicator */
@@ -200,6 +219,13 @@ int  cs_glob_io_hints = FVM_FILE_EXPLICIT_OFFSETS;
 #else
 int  cs_glob_io_hints = 0;
 #endif
+
+/* Logging */
+
+static int _cs_io_map_size[2] = {0, 0};
+static int _cs_io_map_size_max[2] = {0, 0};
+static cs_map_name_to_id_t  *_cs_io_map[2] = {NULL, NULL};
+static cs_io_log_t  *_cs_io_log[2] = {NULL, NULL};
 
 /*============================================================================
  * Private function definitions
@@ -376,9 +402,11 @@ _cs_io_create(cs_io_mode_t   mode,
   cs_io->type_name = NULL;
   cs_io->data = NULL;
 
-  /* Verbosity */
+  /* Verbosity and logging */
 
   cs_io->echo = echo;
+  cs_io->log_id = -1;
+  cs_io->start_time = 0;
 
 #if defined(HAVE_MPI)
   cs_io->comm = MPI_COMM_NULL;
@@ -607,6 +635,41 @@ _file_open(cs_io_t     *cs_io,
     return;
   }
 
+  /* Start logging if active */
+
+  if (_cs_io_map[cs_io->mode] != NULL) {
+
+    int mode = cs_io->mode;
+    int i = cs_map_name_to_id(_cs_io_map[mode], name);
+    cs_io_log_t *l = NULL;
+
+    if (i >= _cs_io_map_size_max[mode]) {
+      _cs_io_map_size_max[mode] *= 2;
+      BFT_REALLOC(_cs_io_log[mode], _cs_io_map_size_max[mode], cs_io_log_t);
+    }
+    cs_io->log_id = i;
+
+    l = _cs_io_log[mode] + i;
+
+    if (i >= _cs_io_map_size[mode]) {
+
+      /* Add new log entry */
+
+      int j;
+
+      l->n_opens = 1;
+      for (j = 0; j < 3; j++)
+        l->wtimes[j] = 0.0;
+      for (j = 0; j < 2; j++)
+        l->data_size[j] = 0;
+
+      _cs_io_map_size[mode] += 1;
+    }
+    else
+      l->n_opens += 1;
+  }
+
+  cs_io->start_time = bft_timer_wtime();
 
   /* Create interface file descriptor */
 
@@ -1114,6 +1177,12 @@ _file_close(cs_io_t  *cs_io)
 {
   if (cs_io->f != NULL)
     cs_io->f = fvm_file_free(cs_io->f);
+
+  if (cs_io->log_id > -1) {
+    double t_end = bft_timer_wtime();
+    cs_io_log_t *log = _cs_io_log[cs_io->mode] + cs_io->log_id;
+    log->wtimes[2] = t_end - cs_io->start_time;
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1581,8 +1650,10 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
                  void                      *elts,
                  cs_io_t                   *inp)
 {
+  double t_start = 0.;
   size_t  type_size = 0;
   fvm_file_off_t  n_vals = inp->n_vals;
+  cs_io_log_t  *log = NULL;
   cs_bool_t  convert_type = false;
   void  *_elts = NULL;
   void  *_buf = NULL;
@@ -1593,6 +1664,11 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
   assert(header->n_vals == inp->n_vals);
 
   assert(global_num_end <= (fvm_gnum_t)header->n_vals + 1);
+
+  if (inp->log_id > -1) {
+    log = _cs_io_log[inp->mode] + inp->log_id;
+    t_start = bft_timer_wtime();
+  }
 
   /* Choose global or block mode */
 
@@ -1648,18 +1724,25 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 
     /* Read local or global values */
 
-    if (global_num_start > 0 && global_num_end > 0)
+    if (global_num_start > 0 && global_num_end > 0) {
       fvm_file_read_block(inp->f,
                           _buf,
                           type_size,
                           stride,
                           global_num_start,
                           global_num_end);
-    else if (n_vals > 0)
+      if (log != NULL)
+        log->data_size[1] += (global_num_end - global_num_start)*type_size;
+    }
+
+    else if (n_vals > 0) {
       fvm_file_read_global(inp->f,
                            _buf,
                            type_size,
                            n_vals);
+      if (log != NULL)
+        log->data_size[0] += n_vals*type_size;
+    }
 
   }
 
@@ -1700,6 +1783,12 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 
   if (n_vals != 0 && header->elt_type == FVM_CHAR)
     ((char *)_elts)[header->n_vals] = '\0';
+
+  if (log != NULL) {
+    double t_end = bft_timer_wtime();
+    int t_id = (global_num_start > 0 && global_num_end > 0) ? 1 : 0;
+    log->wtimes[t_id] += t_end - t_start;
+  }
 
   /* Optional echo */
 
@@ -1852,11 +1941,13 @@ _write_header(const char      *sec_name,
               const void      *elts,
               cs_io_t         *outp)
 {
-  size_t name_size = 0, name_pad_size = 0;
+  double t_start = 0.;
   fvm_file_off_t write_size = 0;
   fvm_file_off_t data_size = n_vals * fvm_datatype_size[elt_type];
   fvm_file_off_t header_vals[6];
+  size_t name_size = 0, name_pad_size = 0;
   size_t n_written = 0;
+  cs_io_log_t  *log = NULL;
 
   cs_bool_t embed = false;
 
@@ -1864,6 +1955,11 @@ _write_header(const char      *sec_name,
 
   if (outp->echo >= CS_IO_ECHO_HEADERS)
     _echo_pre(outp);
+
+  if (outp->log_id > -1) {
+    log = _cs_io_log[outp->mode] + outp->log_id;
+    t_start = bft_timer_wtime();
+  }
 
   _write_padding(outp->header_align, outp); /* Pad if necessary */
 
@@ -1994,6 +2090,12 @@ _write_header(const char      *sec_name,
     bft_error(__FILE__, __LINE__, 0,
               _("Error writing %llu bytes to file \"%s\"."),
               (unsigned long long)write_size, fvm_file_get_name(outp->f));
+
+  if (log != NULL) {
+    double t_end = bft_timer_wtime();
+    log->wtimes[0] += t_end - t_start;
+    log->data_size[0] += write_size;
+  }
 
   if (outp->echo >= CS_IO_ECHO_HEADERS)
     _echo_header(sec_name, n_vals, elt_type);
@@ -2366,15 +2468,22 @@ int
 cs_io_read_header(cs_io_t             *inp,
                   cs_io_sec_header_t  *header)
 {
+  double t_start = 0.;
   int type_name_error = 0;
   fvm_file_off_t body_size = 0;
   fvm_file_off_t header_vals[6];
-  size_t n_read = 0;
+  cs_io_log_t  *log = NULL;
+  size_t n_read = 0, n_add = 0;
 
   assert(inp != NULL);
 
   if (inp->echo >= CS_IO_ECHO_HEADERS)
     _echo_pre(inp);
+
+  if (inp->log_id > -1) {
+    log = _cs_io_log[inp->mode] + inp->log_id;
+    t_start = bft_timer_wtime();
+  }
 
   /* Position read pointer if necessary */
   /*------------------------------------*/
@@ -2408,7 +2517,7 @@ cs_io_read_header(cs_io_t             *inp,
 
   if (header_vals[0] > (fvm_file_off_t)(inp->header_size)) {
 
-    size_t n_add = header_vals[0] - inp->header_size;
+    n_add = header_vals[0] - inp->header_size;
 
     if (header_vals[0] > (fvm_file_off_t)(inp->buffer_size)) {
       while (header_vals[0] > (fvm_file_off_t)(inp->buffer_size))
@@ -2541,6 +2650,12 @@ cs_io_read_header(cs_io_t             *inp,
   }
 
   /* Possible echo */
+
+  if (log != NULL) {
+    double t_end = bft_timer_wtime();
+    log->wtimes[0] += t_end - t_start;
+    log->data_size[0] += (inp->header_size + n_add);
+  }
 
   if (inp->echo >= CS_IO_ECHO_HEADERS)
     _echo_header(header->sec_name,
@@ -3001,7 +3116,14 @@ cs_io_write_global(const char      *sec_name,
 
   if (n_vals > 0 && embed == false) {
 
+    double t_start = 0.;
+    cs_io_log_t  *log = NULL;
     size_t n_written = 0;
+
+    if (outp->log_id > -1) {
+      log = _cs_io_log[outp->mode] + outp->log_id;
+      t_start = bft_timer_wtime();
+    }
 
     _write_padding(outp->body_align, outp);
 
@@ -3015,6 +3137,11 @@ cs_io_write_global(const char      *sec_name,
                 _("Error writing %llu bytes to file \"%s\"."),
                 (unsigned long long)n_vals, fvm_file_get_name(outp->f));
 
+    if (log != NULL) {
+      double t_end = bft_timer_wtime();
+      log->wtimes[0] += t_end - t_start;
+      log->data_size[0] += n_written*fvm_datatype_size[elt_type];
+    }
   }
 
   if (n_vals != 0 && outp->echo > CS_IO_ECHO_HEADERS)
@@ -3036,11 +3163,11 @@ cs_io_write_global(const char      *sec_name,
  * total number of values read equals
  * (global_num_end - global_num_start) * header->n_location_vals.
  *
- * This function is intended to be used mainly data that is already of
+ * This function is intended to be used mainly on data that is already of
  * copy of original data (such as data that has been redistributed across
  * processors just for the sake of output), or that is to be deleted after
  * writing, so it may modify the values in its input buffer (notably to
- * convert from little-endian to big-endian of vice-versa if necessary).
+ * convert from little-endian to big-endian or vice-versa if necessary).
  *
  * parameters:
  *   section_name     <-- section name
@@ -3068,10 +3195,12 @@ cs_io_write_block_buffer(const char      *sec_name,
                          void            *elts,
                          cs_io_t         *outp)
 {
+  double t_start = 0.;
   size_t n_written = 0;
   size_t n_g_vals = n_g_elts;
   size_t n_vals = global_num_end - global_num_start;
   size_t stride = 1;
+  cs_io_log_t  *log = NULL;
 
   if (n_location_vals > 1) {
     stride = n_location_vals;
@@ -3088,6 +3217,11 @@ cs_io_write_block_buffer(const char      *sec_name,
                 NULL,
                 outp);
 
+  if (outp->log_id > -1) {
+    log = _cs_io_log[outp->mode] + outp->log_id;
+    t_start = bft_timer_wtime();
+  }
+
   _write_padding(outp->body_align, outp);
 
   n_written = fvm_file_write_block_buffer(outp->f,
@@ -3101,6 +3235,12 @@ cs_io_write_block_buffer(const char      *sec_name,
     bft_error(__FILE__, __LINE__, 0,
               _("Error writing %llu bytes to file \"%s\"."),
               (unsigned long long)n_vals, fvm_file_get_name(outp->f));
+
+  if (log != NULL) {
+    double t_end = bft_timer_wtime();
+    log->wtimes[1] += t_end - t_start;
+    log->data_size[1] += n_written*fvm_datatype_size[elt_type];
+  }
 
   if (n_vals != 0 && outp->echo > CS_IO_ECHO_HEADERS)
     _echo_data(outp->echo, n_g_vals,
@@ -3205,6 +3345,119 @@ cs_io_set_defaults(int  mpi_io_mode)
 #endif
 
   fvm_file_set_default_semantics(cs_glob_io_hints);
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize performance logging for cs_io_t structures.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_log_initialize(void)
+{
+  int i = 0;
+
+  for (i = 0; i < 2; i++) {
+    _cs_io_map_size[i] = 0;
+    _cs_io_map_size_max[i] = 1;
+    _cs_io_map[i] = cs_map_name_to_id_create();
+    BFT_MALLOC(_cs_io_log[i], _cs_io_map_size_max[i], cs_io_log_t);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Finalize performance logging for cs_io_t structures.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_log_finalize(void)
+{
+  int i;
+
+  const char  unit[8] = {'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'};
+
+  for (i = 0; i < 2; i++) {
+
+    size_t j;
+    size_t map_size = cs_map_name_to_id_size(_cs_io_map[i]);
+
+    /* Print info */
+
+    if (map_size > 0) {
+      if (i == 0)
+        bft_printf(_("\nCode_Saturne IO files read:\n\n"));
+      else
+        bft_printf(_("\nCode_Saturne IO files written:\n\n"));
+    }
+
+    for (j = 0; j < map_size; j++) {
+
+      const char *key = cs_map_name_to_id_key(_cs_io_map[i], j);
+      cs_io_log_t *log = (  _cs_io_log[i]
+                          + cs_map_name_to_id(_cs_io_map[i], key));
+
+#if defined(HAVE_MPI)
+
+      if (cs_glob_n_ranks > 1) {
+
+        int k, l;
+        double _wtimes[3];
+        double _data_size[2];
+        memcpy(_wtimes, log->wtimes, 3*sizeof(double));
+        int _data_mult[2] = {0, 0};
+        unsigned long long data_size_loc = log->data_size[1];
+
+        MPI_Allreduce(_wtimes, log->wtimes, 3, MPI_DOUBLE, MPI_MAX,
+                      cs_glob_mpi_comm);
+#if defined(MPI_UNSIGNED_LONG_LONG)
+        MPI_Allreduce(&data_size_loc, log->data_size + 1, 1,
+                      MPI_UNSIGNED_LONG_LONG, MPI_SUM, cs_glob_mpi_comm);
+#elif defined(MPI_LONG_LONG)
+        MPI_Allreduce(&data_size_loc, log->data_size + 1, 1,
+                      MPI_LONG_LONG, MPI_SUM, cs_glob_mpi_comm);
+#endif
+        for (k = 0; k < 2; k++) {
+          _data_size[k] = (double)(log->data_size[k]) / 1024.;
+          for (l = 0; _data_size[k] > 1024. && l < 8; l++)
+            _data_size[k] /= 1024.;
+          _data_mult[k] = l;
+        }
+
+        bft_printf(_("  %s\n"
+                     "    global: %12.5f s, %12.3f %ciB\n"
+                     "    local:  %12.5f s, %12.3f %ciB\n"
+                     "    open:   %12.5f s, %u open(s)\n"),
+                   key,
+                   log->wtimes[0], _data_size[0], unit[_data_mult[0]],
+                   log->wtimes[1], _data_size[1], unit[_data_mult[1]],
+                   log->wtimes[2], log->n_opens);
+      }
+#endif
+
+      if (cs_glob_n_ranks == 1) {
+
+        int k = 0;
+        double _data_size =   (double)(log->data_size[0] + log->data_size[1])
+                            / 1024.;
+
+        for (k = 0; _data_size > 1024. && k < 8; k++)
+          _data_size /= 1024.;
+
+        bft_printf(_("  %s\n"
+                     "    data: %12.5f s, %12.3f %ciB\n"
+                     "    open: %12.5f s, %u open(s)\n"),
+                   key,
+                   log->wtimes[0] + log->wtimes[1], _data_size, unit[k],
+                   log->wtimes[2], log->n_opens);
+      }
+    }
+
+    /* Free structures */
+
+    _cs_io_map_size[i] = 0;
+    _cs_io_map_size_max[i] = 0;
+    cs_map_name_to_id_destroy(&(_cs_io_map[i]));
+    BFT_FREE(_cs_io_log[i]);
+  }
 }
 
 /*----------------------------------------------------------------------------

@@ -470,11 +470,11 @@ cs_io_write_global(const char      *sec_name,
  * total number of values read equals
  * (global_num_end - global_num_start) * header->n_location_vals.
  *
- * This function is intended to be used mainly data that is already of
+ * This function is intended to be used mainly on data that is already of
  * copy of original data (such as data that has been redistributed across
  * processors just for the sake of output), or that is to be deleted after
  * writing, so it may modify the values in its input buffer (notably to
- * convert from little-endian to big-endian of vice-versa if necessary).
+ * convert from little-endian to big-endian or vice-versa if necessary).
  *
  * parameters:
  *   section_name     <-- section name
@@ -551,6 +551,20 @@ cs_io_defaults_info(void);
 
 void
 cs_io_set_defaults(int  mpi_io_mode);
+
+/*----------------------------------------------------------------------------
+ * Initialize performance logging for cs_io_t structures.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_log_initialize(void);
+
+/*----------------------------------------------------------------------------
+ * Finalize performance logging for cs_io_t structures.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_log_finalize(void);
 
 /*----------------------------------------------------------------------------
  * Dump a kernel IO file handle's metadata.
