@@ -21,7 +21,7 @@
 #------------------------------------------------------------------------------
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/bft
-AM_CFLAGS =
+AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 AM_LDFLAGS =
 
 include_HEADERS = \

@@ -1,4 +1,11 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add the debug and optimized flags for the C compiler.
+  modified scripts:
+    src/bft/Makefile.am
+    src/fvm/Makefile.am
+    src/mei/Makefile.am
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor correction in an error message.
   modified file:
     po/fr.po

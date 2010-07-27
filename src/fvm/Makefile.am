@@ -22,7 +22,7 @@
 # Main part
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/bft @MPI_CPPFLAGS@
-AM_CFLAGS =
+AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 AM_LDFLAGS = @CGNS_LDFLAGS@ @MED_LDFLAGS@ @HDF5_LDFLAGS@ @MPI_LDFLAGS@
 
 # Conditionally compiled extensions
