@@ -201,7 +201,7 @@ void CS_PROCF (csmkdr, CSMKDR)
 
   if (bft_file_mkdir_default(bufname) == 1)
     bft_error(__FILE__, __LINE__, 0,
-	      _("The directory %s cannot be created"), bufname);
+              _("The directory %s cannot be created"), bufname);
 
   /* Free memory if necessary */
 

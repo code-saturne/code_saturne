@@ -555,6 +555,102 @@ class case:
 
     #---------------------------------------------------------------------------
 
+    def generate_partition_script(self, d, exec_env):
+        """
+        Generate partitioning script.
+        """
+
+        # If n_procs not already given by environment, determine it
+
+        n_procs = exec_env.resources.n_procs
+        mpi_env = exec_env.mpi_env
+
+        if n_procs != None:
+            if n_procs < d.partition_n_procs:
+                ' Error:\n' \
+                    '   The current partitioning scheme requires at least ' \
+                    + str(n_procs_min) + 'processes,\n' \
+                    + '   while the execution environment provides only ' \
+                    + str(n_procs) + '.\n' \
+                    + '   You may either allocate more processes or try to\n' \
+                    + '   oversubscribe by forcing the number of processes\n' \
+                    + '   in the toplevel script.'
+                raise RunCaseError(err_str)
+
+        # Initialize simple command script
+
+        s_path = os.path.join(d.exec_dir, 'partition.sh')
+
+        s = open(s_path, 'w')
+
+        s.write('#!/bin/sh\n\n')
+
+        # Add MPI directories to PATH if in nonstandard path
+
+        s.write('# Export paths here if necessary or recommended.\n')
+        if len(cs_config.mpi_lib.bindir) > 0:
+            s.write('export PATH='+ cs_config.mpi_lib.bindir + ':$PATH\n')
+        if len(cs_config.mpi_lib.libdir) > 0:
+            s.write('export LD_LIBRARY_PATH='+ cs_config.mpi_lib.libdir \
+                        + ':$LD_LIBRARY_PATH\n')
+        s.write('\n')
+
+        # Boot MPI daemons if necessary
+
+        if mpi_env.gen_hostsfile != None:
+            s.write('# Generate hostsfile.\n')
+            s.write(mpi_env.gen_hostsfile + ' || exit $?\n\n')
+
+        if n_procs > 1 and mpi_env.mpiboot != None:
+            s.write('# Boot MPI daemons.\n')
+            s.write(mpi_env.mpiboot + ' || exit $?\n\n')
+
+        # Start assembling command
+
+        mpi_cmd = ''
+        mpi_cmd_exe = ''
+        mpi_cmd_args = ''
+        if d.partition_n_procs > 1 and mpi_env.mpiexec != None:
+            mpi_cmd = mpi_env.mpiexec
+            if mpi_env.mpiexec_n != None:
+                mpi_cmd += mpi_env.mpiexec_n + str(n_procs)
+            mpi_cmd += ' '
+            if mpi_env.mpiexec_exe != None:
+                mpi_cmd += mpi_env.mpiexec_exe + ' '
+            if mpi_env.mpiexec_args != None:
+                mpi_cmd_args = mpi_env.mpiexec_args + ' '
+
+        p_args = d.partitioner_args()
+
+        s.write('cd ' + p_args[0] + '\n\n')
+        s.write('# Run partitioner.\n')
+        s.write(mpi_cmd + p_args[1] + mpi_cmd_args + p_args[2] + ' $@\n')
+
+        # Obtain return value (or sum thereof)
+
+        s.write('\nCS_RET=$?\n')
+
+        # Halt MPI daemons if necessary
+
+        if n_procs > 1 and mpi_env.mpihalt != None:
+            s.write('\n# Halt MPI daemons.\n')
+            s.write(mpi_env.mpihalt + '\n\n')
+
+        if mpi_env.del_hostsfile != None:
+            s.write('# Remove hostsfile.\n')
+            s.write(mpi_env.del_hostsfile + '\n\n')
+
+        s.write('\nexit $CS_RET\n\n')
+        s.close()
+
+        oldmode = (os.stat(s_path)).st_mode
+        newmode = oldmode | (stat.S_IXUSR)
+        os.chmod(s_path, newmode)
+
+        return s_path
+
+    #---------------------------------------------------------------------------
+
     def solver_script_path(self):
         """
         Determine name of solver script file.
@@ -1183,7 +1279,11 @@ fi
 
         if self.exec_partition:
             for d in self.domains:
-                d.run_partitioner()
+                d.check_partitioner()
+                if d.partition_n_procs > 1:
+                    p_path = self.generate_partition_script(d, exec_env)
+                else:
+                    d.run_partitioner()
                 if len(d.error) > 0:
                     self.error = d.error
 
@@ -1215,8 +1315,88 @@ fi
 
     #---------------------------------------------------------------------------
 
-    def run_solver(self,
-                   suffix = None):
+    def run_partitioner(self, suffix = None):
+
+        """
+        Run partitioner.
+        """
+
+        if not self.exec_partition:
+            return 0
+
+        # Check if parallel partitioning is required
+
+        n_partitionings = 0
+
+        for d in self.domains:
+            d.check_partitioner()
+            if d.partition_n_procs > 1:
+                n_partitionings += 1
+
+        if n_partitionings == 0:
+            return 0
+
+        # Now prepare for parallel partitionings
+
+        retcode = 0
+
+        if suffix != None:
+            self.suffix = suffix
+
+        if self.exec_dir == None:
+            self.define_exec_dir(self.suffix)
+            self.set_exec_dir(self.exec_dir)
+
+        os.chdir(self.exec_dir)
+
+        # Indicate status using temporary file for SALOME.
+
+        self.update_scripts_tmp('ready', 'partitioning')
+
+        sys.stdout.write('\n'
+                         ' **********************\n'
+                         '  Parallel partitioning\n'
+                         ' **********************\n\n')
+
+        # Now run the partitionings
+
+        for d in self.domains:
+
+            d.check_partitioner()
+            if d.partition_n_procs > 1:
+
+                s_path = os.path.join(d.exec_dir, 'partition.sh')
+                retcode = cs_exec_environment.run_command(s_path)
+
+                if retcode != 0:
+
+                    err_str = \
+                        'Partitioner script:\n' + s_path \
+                        + '\nexited with status ' + str(retcode) + '\n' \
+                        + 'Check the partition.log file for details.\n\n'
+                    sys.stderr.write(err_str)
+
+                    # Update error codes
+
+                    d.error = 'partition'
+                    self.error = d.error
+
+                    break
+
+        # Indicate status using temporary file for SALOME.
+
+        if len(self.error) == 0:
+            status = 'ready'
+        else:
+            status = 'failed'
+
+        self.update_scripts_tmp('partitioning', 'status')
+
+        return retcode
+
+    #---------------------------------------------------------------------------
+
+    def run_solver(self, suffix = None):
 
         """
         Run solver proper.
@@ -1394,6 +1574,8 @@ fi
                 retcode = self.prepare_data(n_procs,
                                             hosts_list,
                                             mpi_environment)
+                if retcode == 0:
+                    self.run_partitioner()
             if run_solver == True:
                 self.run_solver()
 

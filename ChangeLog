@@ -1,4 +1,11 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add the parallel partitioning capability to the user script.
+  modified scripts:
+    bin/cs_case_domain.py
+    bin/cs_case.py
+    bin/runcase.in
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove igghexa_to_med.c file from the POTFILES.in list.
   modified file:
     po/POTFILES.in

@@ -188,7 +188,8 @@ if __name__ == '__main__':
                user_output_files = USER_OUTPUT_FILES,
                n_procs = N_PROCS,
                n_procs_min = N_PROCS_MIN,
-               n_procs_max = N_PROCS_MAX)
+               n_procs_max = N_PROCS_MAX,
+               n_procs_partition = None)
 
     if VALGRIND != None:
         d.valgrind = VALGRIND

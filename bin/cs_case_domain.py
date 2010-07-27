@@ -346,6 +346,7 @@ class domain(base_domain):
                  n_procs = None,              # recommended number of processes
                  n_procs_min = None,          # min. number of processes
                  n_procs_max = None,          # max. number of processes
+                 n_procs_partition = None,    # n. processes for partitioner
                  meshes = None,               # name or names of mesh files
                  mesh_dir = None,             # mesh database directory
                  reorient = False,            # reorient badly-oriented meshes
@@ -389,6 +390,7 @@ class domain(base_domain):
 
         # Partition options
 
+        self.partition_n_procs = n_procs_partition
         self.partition_list = partition_list
         self.partition_opts = partition_opts
 
@@ -802,9 +804,9 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def run_partitioner(self):
+    def check_partitioner(self):
         """
-        Runs the partitioner in the execution directory
+        Tests if the partitioner is available and partitioning is defined.
         """
 
         partitioner = os.path.join(cs_config.dirs.bindir, 'cs_partition')
@@ -814,12 +816,28 @@ class domain(base_domain):
                     'Warning: ' + partitioner + ' not found.\n\n' \
                     'The partitioner may not have been installed' \
                     '  (this is the case if neither METIS nor SCOTCH ' \
-                    ' are avaialable).\n\n' \
-                    'Unoptimized partitioning will be used, so ' \
-                    'parallel performance may be degraded.\n\n'
+                    ' are available).\n\n' \
+                    'Partitioning by a space-filling curve will be used.\n\n'
                 sys.stderr.write(w_str)
             self.exec_partition = False
+            self.partition_n_procs = None
 
+        if self.partition_list == None and not self.exec_solver:
+            err_str = \
+                'Unable to run the partitioner:\n' \
+                'The list of required partitionings is not set.\n' \
+                'It should contain the number of processors for which a\n' \
+                'partition is required, or a list of such numbers.\n'
+            raise RunCaseError(err_str)
+
+    #---------------------------------------------------------------------------
+
+    def run_partitioner(self):
+        """
+        Runs the partitioner in the execution directory
+        """
+
+        self.check_partitioner()
         if self.exec_partition == False:
             return
 
@@ -833,22 +851,12 @@ class domain(base_domain):
         if self.partition_list != None:
             cmd += ' ' + any_to_str(self.partition_list)
 
-        elif not self.exec_solver:
-            err_str = \
-                'Error running the partitioner.\n' \
-                'The list of required partitionings is not set.\n' \
-                'It should contain the number of processors for which a\n' \
-                'partition is required, or a list of such numbers.\n'
-            raise RunCaseError(err_str)
-
         if self.exec_solver and self.n_procs != None:
-            p = str(self.n_procs)
+            np = self.n_procs
             if self.partition_list == None:
-                cmd += ' ' + p
-            elif self.n_procs > 1 and not p in self.partition_list:
-                cmd += ' ' + p
-
-        cmd += ' > partition.log'
+                cmd += ' ' + str(np)
+            elif np > 1 and not np in self.partition_list:
+                cmd += ' ' + str(np)
 
         # Run command
 
@@ -872,6 +880,46 @@ class domain(base_domain):
             os.chdir(cur_dir)
 
         return retcode
+
+    #---------------------------------------------------------------------------
+
+    def partitioner_args(self):
+        """
+        Returns a tuple indicating the partitioner's working directory,
+        executable path, and associated command-line arguments.
+        """
+        # Working directory and executable path
+
+        wd = self.exec_dir
+        exec_path = os.path.join(cs_config.dirs.bindir, 'cs_partition')
+
+        # Build kernel command-line arguments
+
+        args = ''
+
+        if self.partition_n_procs > 1:
+            args += ' --mpi'
+
+        if self.partition_opts != None:
+            args += ' ' + self.partition_opts
+
+        if self.partition_list != None:
+            args += ' ' + any_to_str(self.partition_list)
+
+        if self.exec_solver and self.n_procs != None:
+            np = self.n_procs
+            if self.partition_list == None:
+                args += ' ' + str(np)
+            elif np > 1 and not np in self.partition_list:
+                args += ' ' + str(np)
+
+        # Adjust for Valgrind if used
+
+        if self.valgrind != None:
+            args = self.solver_path + ' ' + args
+            exec_path = self.valgrind
+
+        return wd, exec_path, args
 
     #---------------------------------------------------------------------------
 
