@@ -224,8 +224,11 @@ cs_run(void)
      may have the option of assigning a name to this instance. */
 
 #if defined(HAVE_MPI)
-  cs_coupling_discover_mpi_apps(app_num, NULL);
+  cs_coupling_discover_mpi_apps(app_num, opts.app_name);
 #endif
+
+  if (opts.app_name != NULL)
+    BFT_FREE(opts.app_name);
 
   /* Initialize SYRTHES couplings and communication if necessary */
 

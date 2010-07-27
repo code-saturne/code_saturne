@@ -138,15 +138,15 @@ syr_mpi_exit_force(void);
  * Recover rank information on a given application number
  *
  * parameters:
- *   app_num   <-- application number
+ *   app_name  <-- application name
  *   root_rank --> associated root rank
  *   n_ranks   --> number of associated ranks
  *----------------------------------------------------------------------------*/
 
 void
-syr_mpi_appinfo(int    app_num,
-                int   *root_rank,
-                int   *n_ranks);
+syr_mpi_appinfo(const char  *app_name,
+                int         *root_rank,
+                int         *n_ranks);
 
 #endif /* HAVE_MPI */
 

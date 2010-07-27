@@ -42,6 +42,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(HAVE_GETCWD)
+#include <unistd.h>
+#include <errno.h>
+#endif
+
 #if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
@@ -222,64 +227,72 @@ _mpi_test_and_initialize(int    *argc,
 }
 
 /*----------------------------------------------------------------------------
- * First analysis of the command line to determine if we require MPI,
- * and initialization if necessary
+ * First analysis of the command line to determine an application name.
+ *
+ * If no name is defined by the command line, a name is determined based
+ * on the working directory.
+ *
+ * The caller is responsible for freeing the returned string.
  *
  * parameters:
  *   argc  <-- number of command line arguments
  *   argv  <-- array of command line arguments
  *
  * returns:
- *   -1 if MPI is not needed, or application number in MPI_COMM_WORLD of
- *   processes associated with this instance of Code_Saturne
+ *   pointer to character string with application name
  *----------------------------------------------------------------------------*/
 
-static int
-_mpi_app_num(int    argc,
-             char  *argv[])
+static char *
+_app_name(int    argc,
+          char  *argv[])
 {
-  char *s;
-
-  int arg_id = 0, flag = 0;
-  int appnum = -1;
+  char *app_name = NULL;
+  int arg_id = 0;
 
   /* Loop on command line arguments */
 
   arg_id = 0;
 
   while (++arg_id < argc) {
-
-    s = argv[arg_id];
-
-    if (strcmp(s, "-app-num") == 0) {
-      int _appnum = 0;
+    char *s = argv[arg_id];
+    if (strcmp(s, "--app-name") == 0) {
       if (arg_id + 1 < argc) {
-        if (sscanf(argv[arg_id + 1], "%d", &_appnum) == 1)
-          appnum = _appnum;
+        PLE_MALLOC(app_name, strlen(argv[arg_id + 1]) + 1, char);
+        strcpy(app_name, argv[arg_id + 1]);
       }
     }
-
   }
 
-  /*
-    If appnum was not given through the command line but we
-    are running under MPI-2, appnum may be available through
-    the MPI_APPNUM attribute.
-  */
+  /* Use execution directory if name is unavailable */
 
-#if defined(MPI_VERSION) && (MPI_VERSION >= 2)
-  if (appnum < 0) {
-    void *attp = NULL;
-    MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &attp, &flag);
-    if (flag != 0)
-      appnum = *(int *)attp;
-  }
+  if (app_name == NULL) {
+
+#if defined(HAVE_GETCWD)
+
+    int i;
+    int buf_size = 128;
+    char *wd = NULL, *buf = NULL;
+
+    while (wd == NULL) {
+      buf_size *= 2;
+      PLE_REALLOC(buf, buf_size, char);
+      wd = getcwd(buf, buf_size);
+      if (wd == NULL && errno != ERANGE)
+        ple_error(__FILE__, __LINE__, errno,
+                  "Erreur d'interrogation du repertoire d'execution.\n");
+    }
+    for (i = strlen(buf) - 1; i > 0 && buf[i-1] != '/'; i--);
+    PLE_MALLOC(app_name, strlen(buf + i) + 1, char);
+    strcpy(app_name, buf + i);
+    PLE_FREE(buf);
+
+#else
+    ple_error(__FILE__, __LINE__, 0,
+              "Nom d'instance SYRTHES (option --app-name) non fourni.\n");
 #endif
+  }
 
-  if (appnum < 0)
-    appnum = 0;
-
-  return appnum;
+  return app_name;
 }
 
 #endif /* HAVE_MPI */
@@ -310,8 +323,8 @@ syr_mpi_initialize(int    *argc,
 {
   int mpi_init_flag, rank;
   MPI_Comm  mpi_comm_syr = MPI_COMM_NULL;
-  int app_num = -1, app_num_max = -1;
-  int ierror = 0;
+  char *app_name = NULL;
+  int app_num = -1;
 
   /* Initialize MPI */
 
@@ -321,37 +334,39 @@ syr_mpi_initialize(int    *argc,
   if (!mpi_init_flag)
     return;
 
-  app_num = _mpi_app_num(*argc, *argv);
+  app_name = _app_name(*argc, *argv);
+
+  app_num = ple_coupling_mpi_name_to_id(MPI_COMM_WORLD, app_name);
 
   /*
     Split MPI_COMM_WORLD to separate different coupled applications
     (collective operation, like all MPI communicator creation operations).
 
-    We suppose the color argument to MPI_Comm_split is equal to the
-    application number, given through the command line or through
-    mpiexec and passed here as an argument.
+    app_num is equal to -1 if all applications have the same instance
+    name, in which case no communicator split is necessary.
   */
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  MPI_Allreduce(&app_num, &app_num_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-
-  if (app_num_max > 0)
-    ierror = MPI_Comm_split(MPI_COMM_WORLD, app_num, rank, &mpi_comm_syr);
+  if (app_num > -1) {
+    int ierror = MPI_Comm_split(MPI_COMM_WORLD, app_num, rank, &mpi_comm_syr);
+    if (ierror != 0)
+      ple_error(__FILE__, __LINE__, 0,
+                "Erreur a la creation d'un communicateur local a SYRTHES.");
+  }
   else
-    ierror = 1;
-
-  if (ierror != 0)
     ple_error(__FILE__, __LINE__, 0,
-              "Erreur a la creation d'un communicateur local a SYRTHES.\n");
+              "Une seule application SYRTHES presente dans MPI_COMM_WORLD.");
 
   /* Discover other applications in the same MPI root communicator
      (and participate in correspondig communication). */
 
   syr_glob_coupling_world = ple_coupling_mpi_world_create(app_num,
                                                           "SYRTHES 3.4",
-                                                          NULL,
+                                                          app_name,
                                                           mpi_comm_syr);
+
+  PLE_FREE(app_name);
 
   /* mpi_comm_syr is not used anymore */
 
@@ -407,15 +422,15 @@ syr_mpi_exit_force(void)
  * Recover rank information on a given application number
  *
  * parameters:
- *   app_num   <-- application number
+ *   app_name  <-- application name
  *   root_rank --> associated root rank
  *   n_ranks   --> number of associated ranks
  *----------------------------------------------------------------------------*/
 
 void
-syr_mpi_appinfo(int    app_num,
-                int   *root_rank,
-                int   *n_ranks)
+syr_mpi_appinfo(const char  *app_name,
+                int         *root_rank,
+                int         *n_ranks)
 {
   int n_apps = 0;
 
@@ -433,18 +448,17 @@ syr_mpi_appinfo(int    app_num,
       const ple_coupling_mpi_world_info_t
         ai = ple_coupling_mpi_world_get_info(syr_glob_coupling_world, i);
 
-      if (ai.app_num == app_num) {
+      if (!strcmp(ai.app_name, app_name)) {
 
         *root_rank = ai.root_rank;
         *n_ranks = ai.n_ranks;
 
         printf("  Couplage CFD:\n"
-               "    Numero d'application MPI :  %d\n"
                "   type d'application :        \"%s\"\n"
                "   nom de l'instance :         \"%s\"\n"
                "   rang racine MPI :           %d\n"
                "   nombre de rangs MPI :       %d\n\n",
-               ai.app_num, ai.app_type, ai.app_name,
+               ai.app_type, ai.app_name,
                ai.root_rank, ai.n_ranks);
 
         break;
@@ -454,7 +468,7 @@ syr_mpi_appinfo(int    app_num,
 
   if (*root_rank < 0)
     ple_error(__FILE__, __LINE__, 0,
-              "Application MPI numero %d non trouvee.", app_num);
+              "Application MPI \"%s\" non trouvee.", app_name);
 }
 
 #endif /* defined (HAVE_MPI) */

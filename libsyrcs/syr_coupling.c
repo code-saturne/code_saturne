@@ -99,7 +99,6 @@ typedef struct {
 
 struct _syr_coupling_t {
 
-  int           syr_id;       /* Id of current Syrthes instance (usually 1) */
   int           comm_echo;    /* Optional echo to standard output */
 
   syr_comm_t   *comm;         /* Communicator */
@@ -213,9 +212,8 @@ _syr_coupling_scatter_var(const syr_coupling_t  *coupling,
  * Initialize syr_coupling_t structure
  *
  * arguments:
- *   syr_num     <-- Id of Syrthes instance (usually 1)
  *   coupling_id <-- Id of Syrthes coupling (0 to n-1)
- *   cs_appnum   <-- Application number of Code_Saturne MPI process, or -1
+ *   cs_app_name <-- Application name of Code_Saturne MPI process
  *   sock_str    <-- hostname:socknum of first coupled
  *                   Code_Saturne process, or NULL
  *   comm_type   <-- Type of comunication used
@@ -223,9 +221,8 @@ _syr_coupling_scatter_var(const syr_coupling_t  *coupling,
  *----------------------------------------------------------------------------*/
 
 syr_coupling_t  *
-syr_coupling_initialize(int               syr_num,
-                        int               coupling_id,
-                        int               cs_appnum,
+syr_coupling_initialize(int               coupling_id,
+                        const char       *cs_app_name,
                         const char       *sock_str,
                         syr_comm_type_t   comm_type,
                         int               comm_echo)
@@ -240,14 +237,13 @@ syr_coupling_initialize(int               syr_num,
 
   /* Default initialization */
 
-  coupling->syr_id = syr_num;
   coupling->comm_echo = comm_echo;
 
   coupling->cs_rank = NULL;
 
 #ifdef HAVE_MPI
-  if (cs_appnum > -1)
-    syr_mpi_appinfo(cs_appnum, &root_rank, &n_ranks);
+  if (cs_app_name != NULL)
+    syr_mpi_appinfo(cs_app_name, &root_rank, &n_ranks);
 #endif
 
   /* Initialize communicator */
@@ -735,7 +731,6 @@ syr_coupling_supervise(syr_coupling_t  *coupling,
 
   int msg_size = 0;
 
-  const int syr_id = coupling->syr_id;
   const int comm_echo = coupling->comm_echo;
   const syr_comm_t *comm = coupling->comm;
 
@@ -773,9 +768,9 @@ syr_coupling_supervise(syr_coupling_t  *coupling,
   if (   !strncmp("EOF", sec_name, strlen("EOF"))
       || !strncmp("cmd:stop", sec_name, strlen("cmd:stop"))) {
 
-    printf("\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
-           "\tx  Couplage %2d arrete par Code_Saturne  x\n"
-           "\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n", syr_id);
+    printf("\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+           "\tx  Couplage arrete par Code_Saturne  x\n"
+           "\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
     fflush(stdout);
 
     *is_end = 1;

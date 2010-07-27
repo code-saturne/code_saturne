@@ -131,40 +131,81 @@ syr_cs_loc_aidelc(char  *nom,
   FILE *e = stderr;
 
 #ifdef HAVE_MPI
-  char opt_mpi[]  = "              [-comm-mpi <n1> <n2> ...]\n";
+  char opt_mpi[]  = "              [--comm-mpi <a1> <a2> ...]\n";
 #else
   char opt_mpi[]  = "";
 #endif
 
 #ifdef HAVE_SOCKET
   char opt_sock[]
-    = "              [-comm-socket <machine1:port> <machine2:port> ...]\n";
+    = "              [--comm-socket <machine1:port> <machine2:port> ...]\n";
 #else
   char opt_sock[] = "";
 #endif
 
-  fprintf(e,
-          "\nUtilisation : %s\n%s%s"
-          "              [-app_num n] [-echo-comm <n>] [-h]\n",
-          nom, opt_sock, opt_mpi);
+  fprintf
+    (e,
+     "\nUtilisation : %s\n%s%s"
+     "              [--app_name nom] [--echo-comm <n>] [-h]\n",
+     nom, opt_sock, opt_mpi);
 
   if (niveau == 2) {
-    fprintf(e, "\nOptions de la ligne de commandes :\n\n");
-    fprintf(e, " -app-num     : numero d'application SYRTHES (defaut: 0)\n");
+    fprintf
+      (e,
+       "\nOptions de la ligne de commandes :\n\n");
+    fprintf
+      (e,
+       " --app-name <nom> : nom d'application SYRTHES (defaut:\n"
+       "                    nom du repertoire d'execution)\n");
 #ifdef HAVE_MPI
-    fprintf(e, " -comm-mpi    : communication par MPI\n");
-    fprintf(e, "                n : numero d'application Code_Saturne\n");
+    fprintf
+      (e,
+       " --comm-mpi :       communication par MPI\n"
+       "                    <a1 a2 ...> : noms d'applications couplees\n");
 #endif
 #ifdef HAVE_SOCKET
-    fprintf(e, " -comm-socket <machine:port> : communication par sockets IP\n");
+    fprintf
+      (e,
+       " --comm-socket <machine:port> : communication par sockets IP\n");
 #endif
-    fprintf(e, " -echo-comm   : echo de la communication ;\n");
-    fprintf(e, "                -1 : erreur seulement (defaut)\n");
-    fprintf(e, "                 0 : impression des entetes des messages\n");
-    fprintf(e, "                 n : impression des entetes des messages ainsi\n");
-    fprintf(e, "                     que des n premiers et derniers elements\n");
-    fprintf(e, " -h           : appel de l'aide (cet affichage)\n\n");
+    fprintf
+      (e,
+       " --echo-comm <n> :  echo de la communication ;\n"
+       "                    -1 : erreur seulement (defaut)\n"
+       "                     0 : impression des entetes des messages\n"
+       "                     n : impression des entetes des messages ainsi\n"
+       "                         que des n premiers et derniers elements\n");
+    fprintf
+      (e,
+       " -h, --help :       appel de l'aide (cet affichage)\n");
+    fprintf(e, "\n");
   }
+}
+
+/*----------------------------------------------------------------------------*
+ * Check presence of string argument
+ *
+ * parameters:
+ *   numarg <-- number of argument to convert
+ *   argc   <-- number of arguments in command line
+ *   argv   <-- array of command-line arguments
+ *   argerr <-- error code
+ *----------------------------------------------------------------------------*/
+
+static char *
+syr_cs_loc_argstr(int   numarg,
+                  int   argc,
+                  char *argv[],
+                  int  *argerr)
+{
+  char *retval = NULL;
+
+  if (numarg < argc)
+    retval = argv[numarg];
+  else
+    *argerr = 2;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*
@@ -194,7 +235,7 @@ syr_cs_loc_argint(int   numarg,
     if (argfin != argdeb + strlen(argdeb)) *argerr = 1;
   }
   else {
-    *argerr = 1;
+    *argerr = 2;
   }
 
   return valint;
@@ -248,13 +289,14 @@ main(int argc,
 
   syr_coupling_t **syrcoupl = NULL;
 
-  int nbr_cas_sat = 0;       /* number of Code_Saturne - SYRTHES couplings */
-  int *app_sat = NULL;       /* application numbers of coupled Code_Saturne
-                                instances in the global communicator */
-  int num_syr = -1;          /* number of this SYRTHES application */
-  int echo_comm = -1;        /* Communication verbosity */
+  int nbr_cas_sat = 0;           /* number of Code_Saturne - SYRTHES couplings */
+  int echo_comm = -1;            /* Communication verbosity */
   syr_comm_type_t type_comm = SYR_COMM_TYPE_NULL; /* Communication type */
-  char **sock_str = NULL;    /* strings for server sockets description */
+  char **app_sat = NULL;         /* application names of coupled Code_Saturne
+                                    instances in the global communicator */
+  char **sock_str = NULL;        /* strings for server sockets description */
+
+  const char *app_name = NULL;   /* name of this SYRTHES application */
 
   /* Initialize error handler */
 
@@ -283,22 +325,17 @@ main(int argc,
 
     s = argv[numarg];
 
-    if (strcmp(s, "-app-num") == 0) {
-      num_syr = (int)syr_cs_loc_argint(++numarg, argc, argv, &argerr);
-      if (num_syr < 0)
-        argerr = 2;
-    }
+    if (strcmp(s, "--app-name") == 0)
+      app_name = syr_cs_loc_argstr(++numarg, argc, argv, &argerr);
 
 #ifdef HAVE_MPI
-    else if (strcmp(s, "-comm-mpi") == 0) {
+    else if (strcmp(s, "--comm-mpi") == 0) {
       type_comm = SYR_COMM_TYPE_MPI;
 
-      while (   numarg + 1 < argc
-             && *(argv[numarg + 1]) != '-') {
-        PLE_REALLOC(app_sat, nbr_cas_sat + 1, int);
+      while (numarg + 1 < argc && *(argv[numarg + 1]) != '-') {
+        PLE_REALLOC(app_sat, nbr_cas_sat + 1, char *);
         PLE_REALLOC(sock_str, nbr_cas_sat + 1, char *);
-        app_sat[nbr_cas_sat]
-          = (int)syr_cs_loc_argint(++numarg, argc, argv, &argerr);
+        app_sat[nbr_cas_sat] = syr_cs_loc_argstr(++numarg, argc, argv, &argerr);
         sock_str[nbr_cas_sat] = NULL;
         nbr_cas_sat++;
       }
@@ -306,13 +343,13 @@ main(int argc,
     }
 #endif
 #ifdef HAVE_SOCKET
-    else if (strcmp(s, "-comm-socket") == 0) {
+    else if (strcmp(s, "--comm-socket") == 0) {
       type_comm = SYR_COMM_TYPE_SOCKET;
 
       while (numarg + 1 < argc && *(argv[numarg + 1]) != '-') {
-        PLE_REALLOC(app_sat, nbr_cas_sat + 1, int);
+        PLE_REALLOC(app_sat, nbr_cas_sat + 1, char *);
         PLE_REALLOC(sock_str, nbr_cas_sat + 1, char *);
-        app_sat[nbr_cas_sat] = -1;
+        app_sat[nbr_cas_sat] = NULL;
         PLE_MALLOC(sock_str[nbr_cas_sat], strlen(argv[numarg + 1]) + 1, char);
         strcpy(sock_str[nbr_cas_sat], argv[++numarg]);
         nbr_cas_sat++;
@@ -320,11 +357,11 @@ main(int argc,
 
     }
 #endif
-    else if (strcmp(s, "-echo-comm") == 0 || strcmp(s, "-ec") == 0) {
+    else if (strcmp(s, "--echo-comm") == 0 || strcmp(s, "-ec") == 0) {
       if (numarg + 1 < argc && *(argv[numarg + 1]) != '-')
         echo_comm = (int)syr_cs_loc_argint(++numarg, argc, argv, &argerr);
     }
-    else if (strcmp(s, "-h") == 0) {
+    else if (strcmp(s, "-h") == 0 || strcmp(s, "--help") == 0) {
       syr_cs_loc_aidelc(argv[0], 2);
       syr_exit(EXIT_SUCCESS);
     }
@@ -335,7 +372,6 @@ main(int argc,
   /* Final default initializations */
 
   if (echo_comm < -1) argerr = 2;
-  if (num_syr < 0) num_syr = 0;
 
   /* Print help if necessary */
 
@@ -359,8 +395,7 @@ main(int argc,
 
   for (i_cas_sat = 0; i_cas_sat < nbr_cas_sat; i_cas_sat++) {
 
-    syrcoupl[i_cas_sat] = syr_coupling_initialize(num_syr,
-                                                  i_cas_sat,
+    syrcoupl[i_cas_sat] = syr_coupling_initialize(i_cas_sat,
                                                   app_sat[i_cas_sat],
                                                   sock_str[i_cas_sat],
                                                   type_comm,

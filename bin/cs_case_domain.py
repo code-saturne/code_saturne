@@ -946,7 +946,7 @@ class domain(base_domain):
             args += ' ' + self.mode_args
 
         if 'app_id' in kw:
-            args += ' --mpi ' + str(kw['app_id'])
+            args += ' --mpi --app-name ' + os.path.basename(self.case_dir)
         elif self.n_procs > 1:
             args += ' --mpi'
 
@@ -1137,7 +1137,9 @@ class syrthes_domain(base_domain):
                  syrthes_env = 'syrthes.env',  # SYRTHES environment file
                  echo_comm = None,             # coupling verbosity
                  coupling_mode = 'MPI',        # 'MPI' or 'sockets'
-                 coupled_app_ids = 1):         # coupled aplication ids
+                 coupled_apps = None):         # coupled domain names
+                                               # if n_domains > 1
+
 
         base_domain.__init__(self, 1, 1, 1)
 
@@ -1151,7 +1153,7 @@ class syrthes_domain(base_domain):
 
         self.set_coupling_mode(coupling_mode)
 
-        self.coupled_app_ids = coupled_app_ids
+        self.coupled_apps = coupled_apps
 
     #---------------------------------------------------------------------------
 
@@ -1320,13 +1322,8 @@ class syrthes_domain(base_domain):
             syr_cmd += ' > listsyr 2>&1\n'
 
         if self.coupling_mode == 'MPI':
-
-            if 'app_id' in kw:
-                args += ' -app-num ' + str(kw['app_id'])
-            else:
-                args += ' -app-num 0' # Default
-
-            args += ' -comm-mpi ' + any_to_str(self.coupled_app_ids)
+            args += ' --app-name ' + os.path.basename(self.case_dir)
+            args += ' --comm-mpi ' + any_to_str(self.coupled_apps)
 
         elif self.coupling_mode == 'sockets':
             if 'host_port' in kw:

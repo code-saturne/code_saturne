@@ -1,4 +1,18 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Final changeset to handle the code coupling through appnames.
+  modified scripts:
+    bin/cs_case_domain.py
+    bin/runcase.in
+  modified routines:
+    libsyrcs/syr_comm.c
+    libsyrcs/syr_coupling.c
+    libsyrcs/syr_coupling.h
+    libsyrcs/syr_cs.c
+    libsyrcs/syr_defs.c
+    libsyrcs/syr_defs.h
+    src/apps/cs_solver.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a wrong "else if" clause on the size of cs_int_t.
   modified routine:
     src/base/cs_post.c

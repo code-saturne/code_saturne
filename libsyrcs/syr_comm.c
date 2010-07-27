@@ -1319,7 +1319,6 @@ syr_comm_get_n_section_elements(const syr_comm_t *comm)
  return comm->n_sec_elts;
 }
 
-
 /*--------------------------------------------------------------------------
  * Write a section to the communication interface.
  *

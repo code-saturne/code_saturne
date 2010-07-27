@@ -200,7 +200,8 @@ if __name__ == '__main__':
         sd = syrthes_domain(syrthes_env = 'syrthes.env',  # SYRTHES paths file
                             echo_comm = None,             # coupling verbosity
                             coupling_mode = 'MPI',        # 'MPI' or 'sockets'
-                            coupled_app_ids = 1)          # coupled app. ids
+                            coupled_apps = None)          # coupled domain names
+                                                          # if n_domains > 1
     else:
         sd = None
 
