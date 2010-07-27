@@ -2660,7 +2660,7 @@ cs_io_read_header(cs_io_t             *inp,
   if (inp->echo >= CS_IO_ECHO_HEADERS)
     _echo_header(header->sec_name,
                  header->n_vals,
-                 header->elt_type);
+                 header->type_read);
 
   return 0;
 }

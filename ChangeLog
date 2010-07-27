@@ -1,4 +1,9 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a minor bug when echoing I/O structures.
+  modified routine:
+    src/base/cs_io.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve the instrumentation of the multigrid (size of the coarse grid).
   modified routine:
     src/base/cs_multigrid.c
