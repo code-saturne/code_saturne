@@ -1,4 +1,12 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a map helper to have a correspondance between names and ids.
+  added routines:
+    include/base/cs_map.h
+    src/base/cs_map.c
+  modified script:
+    src/base/Makefile.am
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correctly free memory when reading an XML file.
   modified routines:
     include/base/cs_gui_particles.h
