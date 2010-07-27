@@ -1226,24 +1226,24 @@ fvm_to_text_export_nodal(void               *const this_writer_p,
   if (rank == 0) {
 
     if (mesh->name != NULL)
-      bft_file_printf(f, _("\n"
-                           "Mesh name: %s\n"),
+      bft_file_printf(f, "\n"
+                         "Mesh name: %s\n",
                       mesh->name);
     else
-      bft_file_printf(f, _("\n"
-                           "Unnamed mesh\n"));
+      bft_file_printf(f, "\n"
+                         "Unnamed mesh\n");
 
-    bft_file_printf(f, _("\n"
-                         "Mesh dimension:     %d\n"
-                         "Number of domains:  %d\n"
-                         "Number of sections:  %d\n"),
+    bft_file_printf(f, "\n"
+                       "Mesh dimension:     %d\n"
+                       "Number of domains:  %d\n"
+                       "Number of sections:  %d\n",
                     mesh->dim, mesh->n_doms, mesh->n_sections);
 
-    bft_file_printf(f, _("\n"
-                         "Number of cells:               %d\n"
-                         "Number of faces:               %d\n"
-                         "Number of edges:               %d\n"
-                         "Number of vertices:            %d\n"),
+    bft_file_printf(f, "\n"
+                       "Number of cells:               %d\n"
+                       "Number of faces:               %d\n"
+                       "Number of edges:               %d\n"
+                       "Number of vertices:            %d\n",
                     n_g_cells,
                     n_g_faces,
                     n_g_edges,
@@ -1272,7 +1272,7 @@ fvm_to_text_export_nodal(void               *const this_writer_p,
       local_coords = mesh->vertex_coords;
 
     if (rank == 0)
-      bft_file_printf(f, _("\nVertex coordinates:\n\n"));
+      bft_file_printf(f, "\nVertex coordinates:\n\n");
 
     /* loop on slices in parallel mode, use whole array in serial mode */
 
@@ -1352,9 +1352,9 @@ fvm_to_text_export_nodal(void               *const this_writer_p,
     const fvm_nodal_section_t  *const  section = mesh->sections[section_id];
 
     if (rank == 0)
-      bft_file_printf(f, _("\nSection: %s\n"
-                           "  Number of elements: %lu\n\n"),
-                      _(fvm_elements_type_name[section->type]),
+      bft_file_printf(f, "\nSection: %s\n"
+                         "  Number of elements: %lu\n\n",
+                      fvm_elements_type_name[section->type],
                       (unsigned long long)(n_g_elements_section[section_id]));
 
     /* Output for strided (regular) element types */

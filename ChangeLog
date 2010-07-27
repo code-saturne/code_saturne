@@ -1,4 +1,10 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove useless gettext call.
+  modified routines:
+    src/bft/bft_mem.c
+    src/fvm/fvm_to_text.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add two part-to-block functions in preparation to MPI-I/O writing.
   modified routines:
     src/fvm/fvm_part_to_block.c

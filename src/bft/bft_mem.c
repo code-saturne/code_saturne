@@ -609,12 +609,12 @@ bft_mem_init(const char *log_file_name)
   if (_bft_mem_global_file != NULL) {
 
     fprintf(_bft_mem_global_file,
-            _("       :     FILE NAME              : LINE  :"
-              "  POINTER NAME                          : N BYTES   :"
-              " (+- N BYTES) : TOTAL BYTES  : [    ADRESS]\n"
-              "-------:----------------------------:-------:"
-              "----------------------------------------:-----------:"
-              "-----------------------------:--------------"));
+            "       :     FILE NAME              : LINE  :"
+            "  POINTER NAME                          : N BYTES   :"
+            " (+- N BYTES) : TOTAL BYTES  : [    ADRESS]\n"
+            "-------:----------------------------:-------:"
+            "----------------------------------------:-----------:"
+            "-----------------------------:--------------");
 
   }
 
