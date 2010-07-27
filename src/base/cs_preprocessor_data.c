@@ -2190,22 +2190,6 @@ _read_dimensions(const char      *filename,
 
     /* Receive dimensions from the pre-processor */
 
-    else if (strncmp(header.sec_name, "ndim",
-                     CS_IO_NAME_LEN) == 0) {
-      int _dim = 3;
-      if (dim_read != true || header.n_vals != 1)
-        bft_error(__FILE__, __LINE__, 0,
-                  _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
-      else {
-        cs_io_read_global(&header, &_dim, pp_in);
-        if (_dim != 3)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Mesh defined by file \"%s\"\n"
-                    "of dimension %d, while only 3 is handled."),
-                  cs_io_get_name(pp_in), 3);
-      }
-
-    }
     else if (strncmp(header.sec_name, "n_cells",
                      CS_IO_NAME_LEN) == 0) {
 
