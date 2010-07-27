@@ -377,7 +377,7 @@ call usipgl                                                       &
    icwfps,  cwfthr )
 
 if (ialgce.ne.-999) call algcen(ialgce)
-if (cwfthr.ge.0.d0) call setcwf(cwfthr)
+if (cwfthr.ge.0.d0) call setcwf(icwfps, cwfthr)
 
 ! --- Parametres de la methode ALE
 

@@ -1,4 +1,9 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Missing modification in the mesh builder changeset (periodicity).
+  modified routine:
+    src/base/iniusi.f90
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add the possibility to suppress the writing of the checkpoint files.
   modified file:
     doc/user/saturne2.tex
