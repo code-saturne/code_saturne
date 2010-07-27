@@ -1,4 +1,13 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correctly free memory when reading an XML file.
+  modified routines:
+    include/base/cs_gui_particles.h
+    src/apps/cs_solver.c
+    src/base/cs_gui.c
+    src/base/cs_gui_particles.c
+    src/base/cs_gui_specific_physics.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Update the memory summary to the different kiB units.
   modified routine:
     src/base/cs_base.c

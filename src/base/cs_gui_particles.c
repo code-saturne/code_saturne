@@ -1648,6 +1648,38 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
 #endif
 }
 
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*-----------------------------------------------------------------------------
+ * Free global GUI structures related to particles.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_particles_free(void)
+{
+  int i;
+
+  for (i = 0; i < _last_mean_var; i++)
+    BFT_FREE(_array_mean_varname[i]);
+  BFT_FREE(_array_mean_varname);
+  _max_mean_vars = 0;
+  _last_mean_var = 0;
+
+  for (i = 0; i < _last_variance_var; i++)
+    BFT_FREE(_array_variance_varname[i]);
+  BFT_FREE(_array_variance_varname);
+  _max_variance_vars = 0;
+  _last_variance_var = 0;
+
+  for (i = 0; i < _last_boundary_var; i++)
+    BFT_FREE(_array_boundary_varname[i]);
+  BFT_FREE(_array_boundary_varname);
+  _max_boundary_vars = 0;
+  _last_boundary_var = 0;
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

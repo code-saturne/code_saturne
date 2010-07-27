@@ -4773,6 +4773,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     int i, j, iel;
     double tmp;
 
+    int user_law = 0;
     int ipcrom = ipproc[ irom  [iphas] -1 ] -1;
     int ipcvis = ipproc[ iviscl[iphas] -1 ] -1;
     int ipccp  = ipproc[ icp   [iphas] -1 ] -1;
@@ -4780,7 +4781,16 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     /* law for density */
 
-    if (irovar[iphas] == 1 && cs_gui_strcmp(_properties_choice("density"), "user_law"))
+    user_law = 0;
+    if (irovar[iphas] == 1)
+    {
+        char *prop_choice = _properties_choice("density");
+        if (cs_gui_strcmp(prop_choice, "user_law"))
+            user_law = 1;
+        BFT_FREE(prop_choice);
+    }
+
+    if (user_law)
     {
         /* search the formula for the law */
 
@@ -4828,7 +4838,16 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     /* law for molecular viscosity */
 
-    if (ivivar[iphas] == 1 && cs_gui_strcmp(_properties_choice("molecular_viscosity"), "user_law"))
+    user_law = 0;
+    if (ivivar[iphas] == 1)
+    {
+        char *prop_choice = _properties_choice("molecular_viscosity");
+        if (cs_gui_strcmp(prop_choice, "user_law"))
+            user_law = 1;
+        BFT_FREE(prop_choice);
+    }
+
+    if (user_law)
     {
         /* search the formula for the law */
 
@@ -4876,7 +4895,16 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     /* law for specific heat */
 
-    if (icp[iphas] > 0 && cs_gui_strcmp(_properties_choice("specific_heat"), "user_law"))
+    user_law = 0;
+    if (icp[iphas] == 1)
+    {
+        char *prop_choice = _properties_choice("specific_heat");
+        if (cs_gui_strcmp(prop_choice, "user_law"))
+            user_law = 1;
+        BFT_FREE(prop_choice);
+    }
+
+    if (user_law)
     {
         /* search the formula for the law */
 
@@ -4924,7 +4952,16 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     /* law for thermal conductivity */
 
-    if (ivisls[iscalt[iphas] -1] > 0 && cs_gui_strcmp(_properties_choice("thermal_conductivity"), "user_law"))
+    user_law = 0;
+    if (ivisls[iscalt[iphas] -1] > 0)
+    {
+        char *prop_choice = _properties_choice("thermal_conductivity");
+        if (cs_gui_strcmp(prop_choice, "user_law"))
+            user_law = 1;
+        BFT_FREE(prop_choice);
+    }
+
+    if (user_law)
     {
         /* search the formula for the law */
 
@@ -4993,8 +5030,16 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     {
         char *name = _scalar_diffusion_coefficient_name(j);
 
-        if (j != iscalt[iphas] -1 && iscavr[j] <= 0 && ivisls[j] > 0 &&
-            cs_gui_strcmp(_properties_choice(name), "user_law"))
+        user_law = 0;
+        if (j != iscalt[iphas] -1 && iscavr[j] <= 0 && ivisls[j] > 0)
+        {
+            char *prop_choice = _properties_choice("name");
+            if (cs_gui_strcmp(prop_choice, "user_law"))
+                user_law = 1;
+            BFT_FREE(prop_choice);
+        }
+
+        if (user_law)
         {
             ipcvsl = ipproc[ ivisls[j] -1 ] -1;
 

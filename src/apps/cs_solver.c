@@ -89,6 +89,7 @@
 #include "cs_gradient.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
+#include "cs_gui_particles.h"
 #include "cs_io.h"
 #include "cs_join.h"
 #include "cs_mesh.h"
@@ -519,6 +520,10 @@ cs_run(void)
   /* Free post processing related structures */
 
   cs_post_finalize();
+
+  /* Free GUI-related data */
+
+  cs_gui_particles_free();
 
   /* Free main mesh */
 

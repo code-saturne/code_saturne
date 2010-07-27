@@ -936,7 +936,6 @@ int
 cs_gui_get_activ_thermophysical_model(void)
 {
     int i, isactiv = 0;
-    char *value = NULL;
 
     cs_var_t  *vars = cs_glob_var;
 
@@ -959,7 +958,7 @@ cs_gui_get_activ_thermophysical_model(void)
 
     for (i = 0; i < name_nbr; i++)
     {
-        value = cs_gui_get_thermophysical_model(name[i]);
+        char *value = cs_gui_get_thermophysical_model(name[i]);
 
         if (value && !cs_gui_strcmp(value, "off"))
         {
@@ -972,9 +971,9 @@ cs_gui_get_activ_thermophysical_model(void)
             isactiv = 1;
             break;
         }
-    }
 
-    BFT_FREE(value);
+        BFT_FREE(value);
+    }
 
     return isactiv;
 }
