@@ -1,3 +1,8 @@
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove igghexa_to_med.c file from the POTFILES.in list.
+  modified file:
+    po/POTFILES.in
+
 * 27/07/2010 - David Monfort <david.monfort@edf.fr>
   Update French dictionnary.
   modified file:
