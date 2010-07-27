@@ -102,6 +102,7 @@ $(top_srcdir)/include/base/cs_join_set.h \
 $(top_srcdir)/include/base/cs_join_split.h \
 $(top_srcdir)/include/base/cs_join_update.h \
 $(top_srcdir)/include/base/cs_join_util.h \
+$(top_srcdir)/include/base/cs_map.h \
 $(top_srcdir)/include/base/cs_matrix.h \
 $(top_srcdir)/include/base/cs_mesh_coherency.h \
 $(top_srcdir)/include/base/cs_mesh_connect.h \
@@ -190,7 +191,8 @@ libcshot_la_LDFLAGS = -no-undefined
 
 libcscore_la_SOURCES = \
 cs_base.c \
-cs_io.c
+cs_io.c \
+cs_map.c
 libcscore_la_LDFLAGS = -no-undefined
 
 ###
