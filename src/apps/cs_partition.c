@@ -228,28 +228,22 @@ _arg_env_help(const char  *name)
   bft_printf
     (_(" --scotch          use SCOTCH for partitioning.\n"));
 #endif
-#if defined(HAVE_MPI)
-  bft_printf
-    (_(" --mpi             use MPI for parallelism or coupling\n"
-       "                   [appnum]: number of this application in\n"
-       "                             case of code coupling (default: 0)\n"));
   bft_printf
     (_(" --mpi-io          <mode> set parallel I/O behavior\n"
        "                     off: do not use MPI-IO\n"
        "                     eo:  MPI-IO with explicit offsets\n"
        "                          (default if available)\n"
        "                     ip:  MPI-IO with individual file pointers\n"));
-#endif
   bft_printf
     (_(" --log             output redirection for rank -1 or 0:\n"
        "                     0: standard output\n"
-       "                     1: output in \"listing\" (default)\n"));
+       "                     1: output in \"partition.log\" (default)\n"));
   bft_printf
     (_(" --logp            output redirection for rank > 0:\n"
        "                    -1: remove output (default)\n"
        "                     0: no redirection (if independant\n"
        "                        terminals, debugger type)\n"
-       "                     1: output in \"listing_n<rang>\"\n"));
+       "                     1: output in \"partition_n<rank>.log\"\n"));
   bft_printf
     (_(" -v, --version     print version number\n"));
   bft_printf
@@ -351,14 +345,6 @@ _define_options(int     argc,
 
 #if defined(HAVE_MPI)
 
-    else if (strcmp(s, "--mpi") == 0) {
-      int tmperr = 0;
-      (void)_arg_to_int(arg_id + 1, argc, argv, &tmperr);
-      if (tmperr == 0) {
-        arg_id++;
-      }
-    }
-
     else if (strcmp(s, "--mpi-io") == 0) {
       if (arg_id + 1 < argc) {
         const char *s_n = argv[arg_id + 1];
@@ -375,6 +361,15 @@ _define_options(int     argc,
       }
       else
         argerr = 1;
+    }
+
+#else /* !defined(HAVE_MPI) */
+
+    else if (strcmp(s, "--mpi-io") == 0) {
+      fprintf(stderr, _("%s was built without MPI support,\n"
+                        "so option \"%s\" may not be used.\n"),
+              argv[0], s);
+      cs_exit(EXIT_FAILURE);
     }
 
 #endif /* defined(HAVE_MPI) */
@@ -410,14 +405,36 @@ _define_options(int     argc,
       *no_perio = 1;
 
 #if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
+
     else if (strcmp(argv[arg_id], "--metis") == 0)
       *alg_opt = 1;
-#endif
+
+#else /* !defined(HAVE_METIS) && ! defined(HAVE_PARMETIS) */
+
+    else if (strcmp(s, "--metis") == 0) {
+      fprintf(stderr, _("%s was built without METIS or ParMETIS support,\n"
+                        "so option \"%s\" may not be used.\n"),
+              argv[0], s);
+      cs_exit(EXIT_FAILURE);
+    }
+
+#endif /* defined(HAVE_METIS) || defined(HAVE_PARMETIS) */
 
 #if defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
+
     else if (strcmp(argv[arg_id], "--scotch") == 0)
       *alg_opt = 2;
-#endif
+
+#else /* !defined(HAVE_SCOTCH) && ! defined(HAVE_PTSCOTCH) */
+
+    else if (strcmp(s, "--scotch") == 0) {
+      fprintf(stderr, _("%s was built without SCOTCH or PT-SCOTCH support,\n"
+                        "so option \"%s\" may not be used.\n"),
+              argv[0], s);
+      cs_exit(EXIT_FAILURE);
+    }
+
+#endif /* defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH) */
 
     else {
       _n_ranks = atoi(argv[arg_id]);
