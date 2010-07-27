@@ -1,4 +1,12 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a --log-name option to the SYRTHES wrapper.
+  modified scripts:
+    bin/cs_case_domain.py
+    bin/cs_case.py
+  modified routine:
+    libsyrcs/syr_cs.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Final changeset to handle the code coupling through appnames.
   modified scripts:
     bin/cs_case_domain.py

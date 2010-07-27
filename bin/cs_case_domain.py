@@ -1143,6 +1143,8 @@ class syrthes_domain(base_domain):
 
         base_domain.__init__(self, 1, 1, 1)
 
+        self.log_file = 'syrthes.log'
+
         # Names, directories, and files in case structure
         self.data_dir = None
         self.result_dir = None
@@ -1318,8 +1320,7 @@ class syrthes_domain(base_domain):
 
         args = ''
         if self.echo_comm != None:
-            args += ' -echo-comm ' + str(self.echo_comm)
-            syr_cmd += ' > listsyr 2>&1\n'
+            args += ' --echo-comm ' + str(self.echo_comm)
 
         if self.coupling_mode == 'MPI':
             args += ' --app-name ' + os.path.basename(self.case_dir)

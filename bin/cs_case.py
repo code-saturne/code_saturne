@@ -751,7 +751,7 @@ class case:
             e.write(test_pf + str(nr) + test_sf)
             s_args = d.solver_args(app_id=app_id)
             e.write('  cd ' + s_args[0] + '\n')
-            e.write('  ' + s_args[1] + s_args[2] + ' $@ > listsyr 2>&1\n')
+            e.write('  ' + s_args[1] + s_args[2] + ' $@ > ' + d.syrthes.log + ' 2>&1\n')
             if app_id == 0:
                 test_pf = 'el' + test_pf
             app_id += 1
@@ -1453,7 +1453,7 @@ fi
                 err_str = \
                     'Error running the coupled calculation.\n\n' \
                     'Either Code_Saturne or SYRTHES may have failed.\n\n' \
-                    'Check Code_Saturne log (listing) and SYRTHES log (listsyr)\n' \
+                    'Check Code_Saturne log (listing) and SYRTHES log (syrthes.log)\n' \
                     'for details, as well as error* files.\n\n'
             else:
                 err_str = \

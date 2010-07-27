@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -178,6 +179,10 @@ syr_cs_loc_aidelc(char  *nom,
     fprintf
       (e,
        " -h, --help :       appel de l'aide (cet affichage)\n");
+    fprintf
+      (e,
+       " --log <f> :        redirection de la sortie standard vers\n"
+       "                    le fichier f\n");
     fprintf(e, "\n");
   }
 }
@@ -296,6 +301,7 @@ main(int argc,
                                     instances in the global communicator */
   char **sock_str = NULL;        /* strings for server sockets description */
 
+  char *log_name = NULL;         /* name of log file (default: log to stdout) */
   const char *app_name = NULL;   /* name of this SYRTHES application */
 
   /* Initialize error handler */
@@ -361,6 +367,8 @@ main(int argc,
       if (numarg + 1 < argc && *(argv[numarg + 1]) != '-')
         echo_comm = (int)syr_cs_loc_argint(++numarg, argc, argv, &argerr);
     }
+    else if (strcmp(s, "--log") == 0)
+      log_name = syr_cs_loc_argstr(++numarg, argc, argv, &argerr);
     else if (strcmp(s, "-h") == 0 || strcmp(s, "--help") == 0) {
       syr_cs_loc_aidelc(argv[0], 2);
       syr_exit(EXIT_SUCCESS);
@@ -379,6 +387,14 @@ main(int argc,
     syr_cs_loc_aidelc(argv[0], argerr);
     ple_error(__FILE__, __LINE__, 0,
               "Erreur lors de la lecture de la ligne de commande.\n");
+  }
+
+  /* Redirect output if necessary */
+
+  if (log_name != NULL) {
+    FILE *log_ptr = freopen(log_name, "w", stdout);
+    if (log_ptr != NULL)
+      dup2(fileno(log_ptr), fileno(stderr));
   }
 
   /* ----------------------------------------*/
