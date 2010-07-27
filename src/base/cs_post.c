@@ -755,7 +755,7 @@ _cs_post_write_domain(fvm_writer_t       *writer,
 
   if (sizeof(cs_int_t) == 4)
     datatype = FVM_INT32;
-  else if (sizeof(cs_real_t) == 8)
+  else if (sizeof(cs_int_t) == 8)
     datatype = FVM_INT64;
 
   var_ptr[0] = domain;
