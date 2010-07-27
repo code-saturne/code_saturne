@@ -229,6 +229,8 @@ _arg_env_help(const char  *name)
     (_(" --scotch          use SCOTCH for partitioning.\n"));
 #endif
   bft_printf
+    (_(" --mpi             use MPI for parallelism or coupling\n"));
+  bft_printf
     (_(" --mpi-io          <mode> set parallel I/O behavior\n"
        "                     off: do not use MPI-IO\n"
        "                     eo:  MPI-IO with explicit offsets\n"
@@ -345,6 +347,9 @@ _define_options(int     argc,
 
 #if defined(HAVE_MPI)
 
+    else if (strcmp(s, "--mpi") == 0) {
+    }
+
     else if (strcmp(s, "--mpi-io") == 0) {
       if (arg_id + 1 < argc) {
         const char *s_n = argv[arg_id + 1];
@@ -365,7 +370,7 @@ _define_options(int     argc,
 
 #else /* !defined(HAVE_MPI) */
 
-    else if (strcmp(s, "--mpi-io") == 0) {
+    else if (strcmp(s, "--mpi") == 0 || strcmp(s, "--mpi-io") == 0) {
       fprintf(stderr, _("%s was built without MPI support,\n"
                         "so option \"%s\" may not be used.\n"),
               argv[0], s);
