@@ -1226,10 +1226,10 @@ cs_grid_get_matrix(const cs_grid_t   *g,
  *----------------------------------------------------------------------------*/
 
 cs_grid_t *
-cs_grid_coarsen(const cs_grid_t  *f,
-                int               verbosity,
-                int               agglomeration_limit,
-                int              *max_agglomeration)
+cs_grid_coarsen(const cs_grid_t   *f,
+                int                verbosity,
+                int                agglomeration_limit,
+                int               *max_agglomeration)
 {
   cs_int_t iappel, iusmgr;
   cs_int_t igr;

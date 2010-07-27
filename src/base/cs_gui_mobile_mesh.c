@@ -275,7 +275,7 @@ cs_gui_init_mei_tree(char         *formula,
     /* try to build the interpreter */
     if (mei_tree_builder(tree))
         bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interprete expression: %s\n"), tree->string);
+                      _("Error: can not interpret expression: %s\n"), tree->string);
 
     /* Check for symbols */
     for (i = 0; i < symbol_nbr; ++i)

@@ -1,4 +1,21 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Code and comment cleaning.
+  modified routines:
+    src/base/cs_grid.c
+    src/base/cs_gui_boundary_conditions.c
+    src/base/cs_gui.c
+    src/base/cs_gui_mobile_mesh.c
+    src/base/cs_multigrid.c
+    src/base/cs_post_f2c.f90
+    src/base/ecrava.f90
+    src/base/gradrc.f90
+    src/fvm/fvm_block_to_part.c
+    src/fvm/fvm_block_to_part.h
+    src/fvm/fvm_periodicity.h
+    src/lagr/enslag.f90
+    src/lagr/lagout.f90
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a --log-name option to the SYRTHES wrapper.
   modified scripts:
     bin/cs_case_domain.py

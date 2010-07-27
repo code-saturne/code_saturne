@@ -260,10 +260,10 @@ fvm_block_to_part_copy_array(fvm_block_to_part_t   *d,
  * This is useful for distribution of entity connectivity information.
  *
  * arguments:
- *   d          <-- block to partition distributor
- *   send_index <-- local index in block distribution
- *   recv_index --> local index in general partition distribution
- *                  (size: n_part_entities + 1)
+ *   d           <-- block to partition distributor
+ *   block_index <-- local index in block distribution
+ *   part_index  --> local index in general partition distribution
+ *                   (size: n_part_entities + 1)
  *----------------------------------------------------------------------------*/
 
 void
@@ -279,19 +279,19 @@ fvm_block_to_part_copy_index(fvm_block_to_part_t  *d,
  *   datatype    <-- type of data considered
  *   block_index <-- local index in block distribution
  *   block_val   <-- values in block distribution
- *                   (size: send_index[n_block_ents])
+ *                   (size: block_index[n_block_ents])
  *   part_index  --> local index in general distribution
  *   part_val    --> numbers in general  distribution
- *                   (size: recv_index[n_part_ents])
+ *                   (size: part_index[n_part_ents])
  *----------------------------------------------------------------------------*/
 
 void
 fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
                                fvm_datatype_t         datatype,
-                               const fvm_lnum_t      *send_index,
-                               const void            *send_val,
-                               const fvm_lnum_t      *recv_index,
-                               void                  *recv_val);
+                               const fvm_lnum_t      *block_index,
+                               const void            *block_val,
+                               const fvm_lnum_t      *part_index,
+                               void                  *part_val);
 
 #endif /* defined(HAVE_MPI) */
 

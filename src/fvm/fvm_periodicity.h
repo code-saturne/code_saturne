@@ -163,7 +163,7 @@ fvm_periodicity_get_tr_level_idx(const fvm_periodicity_t  *this_periodicity,
  *
  * parameters:
  *   this_periodicity <-- pointer to the periodicity structure
- *   external_num     <-- external number (1 to n) assocoated with direction
+ *   external_num     <-- external number (1 to n) associated with direction
  *   type             <-- transformation type (translation or rotation)
  *   matrix           <-- transformation matrix (3x4 matrix, 3 first rows
  *                        of a homogeneous coordinates transformation

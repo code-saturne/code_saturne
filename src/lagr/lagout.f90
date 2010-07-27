@@ -948,7 +948,7 @@ if (iensi2.eq.1) then
   ifinia = idebia
   itrav1 = idebra
   ifinra = itrav1 + 3*nbpmax
-  CALL RASIZE ('LAGOUT',IFINRA)
+  call rasize ('lagout',ifinra)
   !==========
 
   call enswaf                                                     &

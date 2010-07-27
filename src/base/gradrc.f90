@@ -96,13 +96,13 @@ subroutine gradrc &
 ! ifabor(nfabor    ! te ! <-- ! no de l'elt voisin d'une face de bord          !
 ! icelbr           ! te ! <-- ! numero global des elements ayant au            !
 ! (ncelbr)         !    !     !  moins une face de bord                        !
-! volume(ncelet    ! tr ! <-- ! volume des elements                            !
-! surfac(3,nfac    ! tr ! <-- ! surf vectorielle des surfaces interne          !
+! volume(ncelet)   ! tr ! <-- ! volume des elements                            !
+! surfac(3,nfac)   ! tr ! <-- ! surf vectorielle des surfaces interne          !
 ! surfbo           ! tr ! <-- ! surf vectorielle des surfaces de bord          !
 !   (3,nfabor)     !    !     !                                                !
 ! pond(nfac)       ! tr ! <-- ! ponderation geometrique (entre 0 et 1          !
 ! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
-! (3,ncelet        !    !     !                                                !
+! (3,ncelet)       !    !     !                                                !
 ! cdgfac           ! tr ! <-- ! centre de gravite des faces internes           !
 ! (3,nfac)         !    !     !                                                !
 ! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
@@ -124,8 +124,8 @@ subroutine gradrc &
 ! dpdx dpdy        ! tr ! <-- ! gradient de pvar                               !
 ! dpdz (ncelet     ! tr !     !   (halo rempli pour la periodicite)            !
 ! bx,y,z(ncelet    ! tr ! --- ! tableau de travail pour le grad de p           !
-! dofij            ! tr ! --> ! vecteur of pour les faces internes             !
-! (ndim,nfac  )    !    !     ! o : intersection de ij et la face              !
+! dofij(3,nfac)    ! tr ! --> ! vecteur of pour les faces internes             !
+!                  !    !     ! o : intersection de ij et la face              !
 !                  !    !     ! f : centre de la face                          !
 ! ra(*)            ! tr ! --- ! tableau de travail pour les reels              !
 !__________________!____!_____!________________________________________________!

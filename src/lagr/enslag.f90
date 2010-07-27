@@ -72,12 +72,12 @@ subroutine enslag &
 ! iforce           ! e  ! <-- ! force l'ecriture si = numero de la             !
 !                  !    !     !   particule courante                           !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
+! (nbpmax, nivep   !    !     !   (cellule de la particule, ...)               !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules                               !
+!  (nbpmax, nvp)   !    !     !   aux particules                               !
 !                  !    !     !   etape courante ou precedente                 !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
+! (nbpmax, nvep)   !    !     !   (poids statistiques, ...)                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -105,8 +105,8 @@ include "lagran.h"
 integer          idbia0 , idbra0
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          nfin   , iforce
-integer          itepa(nbpmax,nivep)
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
+integer          itepa(nbpmax, nivep)
+double precision ettp(nbpmax, nvp) , tepa(nbpmax, nvep)
 double precision ra(*)
 
 ! Local variables
@@ -118,7 +118,7 @@ integer          numl
 integer          nume(nliste)
 integer          ii1 , ii2 , lpos , nlmax , ios
 integer          npt , ipt , lmax
-integer          ix,iy,iz,ii
+integer          ix, iy, iz, ii
 integer          iu1l , iv1l  , iw1l
 integer          iu2l , iv2l  , iw2l
 integer          itpl , idml  , itel  , impl
@@ -162,11 +162,10 @@ nlmax = 0
 
 if (ipass.eq.1) then
 
-  OPEN (IMPLA3,FILE='SCRATCH3.lag',                               &
-        STATUS='UNKNOWN',FORM='UNFORMATTED',                      &
-        ACCESS='SEQUENTIAL')
+  open(impla3, file='scratch3.lag',                               &
+       status='unknown', form='unformatted', access='sequential')
 
-  do nl = 1,nbvis
+  do nl = 1, nbvis
     nplist(nl) = 0
     list0(nl) = liste(nl)
   enddo
@@ -178,77 +177,74 @@ endif
 !    POUR CHAQUE PARTICULE A VISUALISER SUIVANT LA FREQUENCE
 !===============================================================================
 
-if ((mod(ipass-1,nvisla).eq.0 .or. iforce.gt.0)                   &
-   .and. nfin.eq.0) then
+if ((mod(ipass-1, nvisla).eq.0 .or. iforce.gt.0) .and. nfin.eq.0) then
 
-
-  do nl = 1,nbvis
+  do nl = 1, nbvis
 
     np = liste(nl)
 
-    if ( (np.ge.1 .and. iforce.eq.0 ) .or.                        &
-                       (iforce.eq.np)      ) then
+    if ((np.ge.1 .and. iforce.eq.0) .or. (iforce.eq.np)) then
 
-! sortie du domaine ?
-      if (itepa(np,jisor).gt.0) then
+      ! sortie du domaine ?
+      if (itepa(np, jisor).gt.0) then
 
-!--->incrementation du nombre d'enregistrement pour la particule NP :
+        !--->incrementation du nombre d'enregistrement pour la particule NP :
         nplist(nl) = nplist(nl)+1
 
         if (nplist(nl).gt.nlmax) nlmax = nplist(nl)
 
-!--->numero de liste :
+        !--->numero de liste :
         write(impla3) nl
 
-!--->coordonnees de la particule NP :
-        write(impla3) ettp(np,jxp), ettp(np,jyp), ettp(np,jzp)
+        !--->coordonnees de la particule NP :
+        write(impla3) ettp(np, jxp), ettp(np, jyp), ettp(np, jzp)
 
-!--->vitesse du fluide vu :
+        !--->vitesse du fluide vu :
         if (ivisv1.eq.1) then
-          write(impla3) ettp(np,juf), ettp(np,jvf), ettp(np,jwf)
+          write(impla3) ettp(np, juf), ettp(np, jvf), ettp(np, jwf)
         endif
 
-!--->vitesse de la particule :
+        !--->vitesse de la particule :
         if (ivisv2.eq.1) then
-          write(impla3) ettp(np,jup), ettp(np,jvp), ettp(np,jwp)
+          write(impla3) ettp(np, jup), ettp(np, jvp), ettp(np, jwp)
         endif
 
-!--->temps de sejour :
+        !--->temps de sejour :
         if (ivistp.eq.1) then
-          write(impla3) tepa(np,jrtsp)
+          write(impla3) tepa(np, jrtsp)
         endif
 
-!--->diametre :
+        !--->diametre :
         if (ivisdm.eq.1) then
-            write(impla3) ettp(np,jdp)
+            write(impla3) ettp(np, jdp)
         endif
 
-!--->masse :
+        !--->masse :
         if (ivismp.eq.1) then
-          write(impla3) ettp(np,jmp)
+          write(impla3) ettp(np, jmp)
         endif
 
-!--->temperature :
+        !--->temperature :
         if (iviste.eq.1) then
-          write(impla3) ettp(np,jtp)
+          write(impla3) ettp(np, jtp)
         endif
 
-!--->Specifique charbon :
-!        Temperature
+        !--->Specifique charbon :
+        ! Temperature
         if (ivishp.eq.1) then
-          write(impla3) ettp(np,jhp)
+          write(impla3) ettp(np, jhp)
         endif
-!        Diametre du coeur retrecisant
+        ! Diametre du coeur retrecisant
         if (ivisdk.eq.1) then
-          write(impla3) tepa(np,jrdck)
+          write(impla3) tepa(np, jrdck)
         endif
-!        Masse charbon reactif
+        ! Masse charbon reactif
         if (ivisch.eq.1) then
-          write(impla3) ettp(np,jmch)
+          write(impla3) ettp(np, jmch)
         endif
-!        Masse de coke
+        ! Masse de coke
         if (ivisck.eq.1) then
-          write(impla3) ettp(np,jmck)
+          write(impla3) ettp(np, jmck)
         endif
 
       endif
@@ -256,7 +252,6 @@ if ((mod(ipass-1,nvisla).eq.0 .or. iforce.gt.0)                   &
     endif
 
   enddo
-
 
 endif
 
@@ -269,67 +264,67 @@ if (nfin.eq.1) then
   NAME = ' '
   NAME = 'trajectoire'
 
-!  0) ouverture du fichier .ensight.CASE :
+  !  0) ouverture du fichier .ensight.CASE :
 
   fich = name
-  call verlon ( fich, ii1, ii2, lpos )
-  FICH(II2+1:II2+14) = '.ensight.CASE'
+  call verlon(fich, ii1, ii2, lpos)
+  fich(ii2+1:ii2+14) = '.ensight.CASE'
   ii2 = ii2 + 14
-  open ( unit=impla2, file=fich (ii1:ii2),                        &
-         STATUS='UNKNOWN', FORM='FORMATTED',                      &
-         ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
-  rewind ( unit=impla2,err=99 )
+  open(unit=impla2, file=fich (ii1:ii2),                        &
+       status='unknown', form='formatted', access='sequential', &
+       iostat=ios, err=99)
+  rewind(unit=impla2, err=99)
 
   rewind(impla2)
-  write(impla2,5010)
-  write(impla2,5011)
-  write(impla2,5012)
+  write(impla2, 5010)
+  write(impla2, 5011)
+  write(impla2, 5012)
 
-!  1) ouverture du fichier .ensight.geom + entete fichier case(suite)
+  !  1) ouverture du fichier .ensight.geom + entete fichier case(suite)
 
   fich = name
-  call verlon ( fich, ii1, ii2, lpos )
-  FICH(II2+1:II2+13) = '.ensight.geom'
+  call verlon(fich, ii1, ii2, lpos)
+  fich(ii2+1:ii2+13) = '.ensight.geom'
   ii2 = ii2 + 13
 
-  write(impla2,5013) fich (ii1:ii2)
-  write(impla2,5014)
+  write(impla2, 5013) fich (ii1:ii2)
+  write(impla2, 5014)
 
-  open ( unit=impla1, file=fich (ii1:ii2),                        &
-         STATUS='UNKNOWN', FORM='FORMATTED',                      &
-         ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
+  open(unit=impla1, file=fich (ii1:ii2),                        &
+       status='unknown', form='formatted', access='sequential', &
+       iostat=ios, err=99)
 
-  rewind ( unit=impla1,err=99 )
+  rewind(unit=impla1, err=99)
 
-!  2) ouverture du fichier .vitflu + entete fichier case(suite)
+  !  2) ouverture du fichier .vitflu + entete fichier case(suite)
 
   if (ivisv1.eq.1) then
     fich = name
-    call verlon ( fich, ii1, ii2, lpos )
-    FICH(II2+1:II2+7) = '.vitflu'
+    call verlon(fich, ii1, ii2, lpos)
+    fich(ii2+1:ii2+7) = '.vitflu'
     ii2 = ii2 + 7
-    open ( unit=impla5(1), file=fich (ii1:ii2),                   &
-           STATUS='UNKNOWN', FORM='FORMATTED',                    &
-           ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
-    rewind ( unit=impla5(1),err=99 )
+    open(unit=impla5(1), file=fich (ii1:ii2),                    &
+        status='unknown', form='formatted', access='sequential', &
+        iostat=ios, err=99)
+    rewind(unit=impla5(1), err=99)
 
-    write(impla2,5015) fich (ii1:ii2)
+    write(impla2, 5015) fich (ii1:ii2)
 
   endif
 
-!  3) ouverture du fichier .vitpar + entete fichier case(suite)
+  !  3) ouverture du fichier .vitpar + entete fichier case(suite)
 
   if (ivisv2.eq.1) then
     fich = name
-    call verlon ( fich, ii1, ii2, lpos )
-    FICH(II2+1:II2+7) = '.vitpar'
+    call verlon(fich, ii1, ii2, lpos)
+    fich(ii2+1:ii2+7) = '.vitpar'
     ii2 = ii2 + 7
-    open ( unit=impla5(2), file=fich (ii1:ii2),                   &
-           STATUS='UNKNOWN', FORM='FORMATTED',                    &
-           ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
-    rewind ( unit=impla5(2),err=99 )
+    open(unit=impla5(2), file=fich (ii1:ii2),                    &
+         status='unknown', form='formatted', access='sequential', &
+         iostat=ios, err=99)
+    rewind(unit=impla5(2), err=99)
 
-    write(impla2,5016) fich (ii1:ii2)
+    write(impla2, 5016) fich (ii1:ii2)
 
   endif
 
@@ -337,15 +332,15 @@ if (nfin.eq.1) then
 
   if (ivistp.eq.1) then
     fich = name
-    call verlon ( fich, ii1, ii2, lpos )
-    FICH(II2+1:II2+7) = '.tpssej'
+    call verlon(fich, ii1, ii2, lpos)
+    fich(ii2+1:ii2+7) = '.tpssej'
     ii2 = ii2 + 7
-    open ( unit=impla5(3), file=fich (ii1:ii2),                   &
-           STATUS='UNKNOWN', FORM='FORMATTED',                    &
-           ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
-    rewind ( unit=impla5(3),err=99 )
+    open(unit=impla5(3), file=fich (ii1:ii2),                     &
+         status='unknown', form='formatted', access='sequential', &
+         iostat=ios, err=99)
+    rewind(unit=impla5(3), err=99)
 
-    write(impla2,5017) fich (ii1:ii2)
+    write(impla2, 5017) fich (ii1:ii2)
 
   endif
 
@@ -353,15 +348,15 @@ if (nfin.eq.1) then
 
   if (ivisdm.eq.1) then
     fich = name
-    call verlon ( fich, ii1, ii2, lpos )
-    FICH(II2+1:II2+7) = '.diamet'
+    call verlon(fich, ii1, ii2, lpos)
+    fich(ii2+1:ii2+7) = '.diamet'
     ii2 = ii2 + 7
-    open ( unit=impla5(4), file=fich (ii1:ii2),                   &
-           STATUS='UNKNOWN', FORM='FORMATTED',                    &
-           ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
-    rewind ( unit=impla5(4),err=99 )
+    open(unit=impla5(4), file=fich (ii1:ii2),                     &
+         status='unknown', form='formatted', access='sequential', &
+         iostat=ios, err=99)
+    rewind(unit=impla5(4), err=99)
 
-    write(impla2,5018) fich (ii1:ii2)
+    write(impla2, 5018) fich (ii1:ii2)
 
   endif
 
@@ -369,15 +364,15 @@ if (nfin.eq.1) then
 
   if (ivismp.eq.1) then
     fich = name
-    call verlon ( fich, ii1, ii2, lpos )
-    FICH(II2+1:II2+7) = '.masse'
+    call verlon(fich, ii1, ii2, lpos)
+    fich(ii2+1:ii2+7) = '.masse'
     ii2 = ii2 + 7
-    open ( unit=impla5(5), file=fich (ii1:ii2),                   &
-           STATUS='UNKNOWN', FORM='FORMATTED',                    &
-           ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
-    rewind ( unit=impla5(5),err=99 )
+    open(unit=impla5(5), file=fich (ii1:ii2),                     &
+         status='unknown', form='formatted', access='sequential', &
+         iostat=ios, err=99)
+    rewind(unit=impla5(5), err=99)
 
-    write(impla2,5019) fich (ii1:ii2)
+    write(impla2, 5019) fich (ii1:ii2)
 
   endif
 
@@ -385,15 +380,15 @@ if (nfin.eq.1) then
 
   if (iviste.eq.1) then
     fich = name
-    call verlon ( fich, ii1, ii2, lpos )
-    FICH(II2+1:II2+7) = '.temper'
+    call verlon(fich, ii1, ii2, lpos)
+    fich(ii2+1:ii2+7) = '.temper'
     ii2 = ii2 + 7
-    open ( unit=impla5(6), file=fich (ii1:ii2),                   &
-           STATUS='UNKNOWN', FORM='FORMATTED',                    &
-           ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
-    rewind ( unit=impla5(6),err=99 )
+    open(unit=impla5(6), file=fich (ii1:ii2),                     &
+         status='unknown', form='formatted', access='sequential', &
+         iostat=ios, err=99)
+    rewind(unit=impla5(6), err=99)
 
-    write(impla2,5020) fich (ii1:ii2)
+    write(impla2, 5020) fich (ii1:ii2)
 
   endif
 
@@ -401,15 +396,15 @@ if (nfin.eq.1) then
 
   if (ivishp.eq.1) then
     fich = name
-    call verlon ( fich, ii1, ii2, lpos )
-    FICH(II2+1:II2+7) = '.tempch'
+    call verlon(fich, ii1, ii2, lpos)
+    fich(ii2+1:ii2+7) = '.tempch'
     ii2 = ii2 + 7
-    open ( unit=impla5(7), file=fich (ii1:ii2),                   &
-           STATUS='UNKNOWN', FORM='FORMATTED',                    &
-           ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
-    rewind ( unit=impla5(7),err=99 )
+    open(unit=impla5(7), file=fich (ii1:ii2),                     &
+         status='unknown', form='formatted', access='sequential', &
+         iostat=ios, err=99)
+    rewind(unit=impla5(7), err=99)
 
-    write(impla2,5021) fich (ii1:ii2)
+    write(impla2, 5021) fich (ii1:ii2)
 
   endif
 
@@ -417,15 +412,15 @@ if (nfin.eq.1) then
 
   if (ivisdk.eq.1) then
     fich = name
-    call verlon ( fich, ii1, ii2, lpos )
-    FICH(II2+1:II2+7) = '.dck'
+    call verlon(fich, ii1, ii2, lpos)
+    fich(ii2+1:ii2+7) = '.dck'
     ii2 = ii2 + 7
-    open ( unit=impla5(8), file=fich (ii1:ii2),                   &
-           STATUS='UNKNOWN', FORM='FORMATTED',                    &
-           ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
-    rewind ( unit=impla5(8),err=99 )
+    open(unit=impla5(8), file=fich (ii1:ii2),                     &
+         status='unknown', form='formatted', access='sequential', &
+         iostat=ios, err=99)
+    rewind(unit=impla5(8), err=99)
 
-    write(impla2,5022) fich (ii1:ii2)
+    write(impla2, 5022) fich (ii1:ii2)
 
   endif
 
@@ -433,15 +428,15 @@ if (nfin.eq.1) then
 
   if (ivisch.eq.1) then
     fich = name
-    call verlon ( fich, ii1, ii2, lpos )
-    FICH(II2+1:II2+7) = '.mch'
+    call verlon(fich, ii1, ii2, lpos)
+    fich(ii2+1:ii2+7) = '.mch'
     ii2 = ii2 + 7
-    open ( unit=impla5(9), file=fich (ii1:ii2),                   &
-           STATUS='UNKNOWN', FORM='FORMATTED',                    &
-           ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
-    rewind ( unit=impla5(9),err=99 )
+    open(unit=impla5(9), file=fich (ii1:ii2),                     &
+         status='unknown', form='formatted', access='sequential', &
+         iostat=ios, err=99)
+    rewind(unit=impla5(9), err=99)
 
-    write(impla2,5023) fich (ii1:ii2)
+    write(impla2, 5023) fich (ii1:ii2)
 
   endif
 
@@ -449,15 +444,15 @@ if (nfin.eq.1) then
 
   if (ivisck.eq.1) then
     fich = name
-    call verlon ( fich, ii1, ii2, lpos )
-    FICH(II2+1:II2+7) = '.mck'
+    call verlon(fich, ii1, ii2, lpos)
+    fich(ii2+1:ii2+7) = '.mck'
     ii2 = ii2 + 7
-    open ( unit=impla5(10), file=fich (ii1:ii2),                  &
-           STATUS='UNKNOWN', FORM='FORMATTED',                    &
-           ACCESS='SEQUENTIAL', IOSTAT=IOS, ERR=99 )
-    rewind ( unit=impla5(10),err=99 )
+    open(unit=impla5(10), file=fich (ii1:ii2),                    &
+         status='unknown', form='formatted', access='sequential', &
+         iostat=ios, err=99)
+    rewind(unit=impla5(10), err=99)
 
-    write(impla2,5024) fich (ii1:ii2)
+    write(impla2, 5024) fich (ii1:ii2)
 
   endif
 
@@ -472,9 +467,9 @@ if (nfin.eq.1) then
   npt = 0
   nlmax = 0
   lmax = 0
-  do nl = 1,nbvis
+  do nl = 1, nbvis
     npt = npt + nplist(nl)
-    lmax = max(lmax,nplist(nl))
+    lmax = max(lmax, nplist(nl))
     if (nplist(nl).gt.nlmax) nlmax = nplist(nl)
     nume(nl) = 0
   enddo
@@ -532,83 +527,83 @@ if (nfin.eq.1) then
     ifinra = imckl +lmax
   endif
 
-  CALL RASIZE('ENSLAG',IFINRA)
+  call rasize('enslag', ifinra)
   !==========
 
 ! 3) ON REMPLIT LES ENTETES DES FICHIERS : geo + variable
 
   rewind(impla1)
 
-  write(impla1,3000)
-  write(impla1,3001)
-  write(impla1,3002)
-  write(impla1,3003)
+  write(impla1, 3000)
+  write(impla1, 3001)
+  write(impla1, 3002)
+  write(impla1, 3003)
 
   if (ivisv1.eq.1) then
     rewind(impla5(1))
-    write(impla5(1),4000)
+    write(impla5(1), 4000)
   endif
 
   if (ivisv2.eq.1) then
     rewind(impla5(2))
-    write(impla5(2),4001)
+    write(impla5(2), 4001)
   endif
 
   if (ivistp.eq.1) then
     rewind(impla5(3))
-    write(impla5(3),4002)
+    write(impla5(3), 4002)
   endif
 
   if (ivisdm.eq.1) then
     rewind(impla5(4))
-    write(impla5(4),4003)
+    write(impla5(4), 4003)
   endif
 
   if (ivismp.eq.1) then
     rewind(impla5(5))
-    write(impla5(5),4004)
+    write(impla5(5), 4004)
   endif
 
   if (iviste.eq.1) then
     rewind(impla5(6))
-    write(impla5(6),4005)
+    write(impla5(6), 4005)
   endif
 
   if (ivishp.eq.1) then
     rewind(impla5(7))
-    write(impla5(7),4006)
+    write(impla5(7), 4006)
   endif
 
   if (ivisdk.eq.1) then
     rewind(impla5(8))
-    write(impla5(8),4007)
+    write(impla5(8), 4007)
   endif
 
   if (ivisch.eq.1) then
     rewind(impla5(9))
-    write(impla5(9),4008)
+    write(impla5(9), 4008)
  endif
 
   if (ivisck.eq.1) then
     rewind(impla5(10))
-    write(impla5(10),4009)
+    write(impla5(10), 4009)
   endif
 
-  do nl = 1,nbvis
+  do nl = 1, nbvis
 
     np = liste(nl)
 
-    if (itepa(np,jisor).gt.0) then
+    if (itepa(np, jisor).gt.0) then
 
       rewind(impla3)
 
       ipt = 0
-      do ii=1,npt
+      do ii=1, npt
 
         read(impla3) numl
-        read(impla3) xpl,ypl,zpl
-        if (ivisv1.eq.1) read(impla3) u1l,v1l,w1l
-        if (ivisv2.eq.1) read(impla3) u2l,v2l,w2l
+        read(impla3) xpl, ypl, zpl
+        if (ivisv1.eq.1) read(impla3) u1l, v1l, w1l
+        if (ivisv2.eq.1) read(impla3) u2l, v2l, w2l
         if (ivistp.eq.1) read(impla3) tpl
         if (ivisdm.eq.1) read(impla3) dml
         if (ivismp.eq.1) read(impla3) mpl
@@ -618,7 +613,7 @@ if (nfin.eq.1) then
         if (ivisch.eq.1) read(impla3) mchl
         if (ivisck.eq.1) read(impla3) mckl
 
-        if (numl .eq. nl ) then
+        if (numl .eq. nl) then
 
           ipt = ipt+1
 
@@ -665,125 +660,125 @@ if (nfin.eq.1) then
 
 !  Ecriture Fichier Geometrie
 
-      write(impla1,3010)
-      write(impla1,1010) nl
-      write(impla1,3004) list0(nl)
-      write(impla1,3005)
-      write(impla1,1010) ipt
-      do ii=1,ipt
-        write(impla1,1030) ra(ix+ii-1)
+      write(impla1, 3010)
+      write(impla1, 1010) nl
+      write(impla1, 3004) list0(nl)
+      write(impla1, 3005)
+      write(impla1, 1010) ipt
+      do ii=1, ipt
+        write(impla1, 1030) ra(ix+ii-1)
       enddo
-      do ii=1,ipt
-        write(impla1,1030) ra(iy+ii-1)
+      do ii=1, ipt
+        write(impla1, 1030) ra(iy+ii-1)
       enddo
-      do ii=1,ipt
-        write(impla1,1030) ra(iz+ii-1)
+      do ii=1, ipt
+        write(impla1, 1030) ra(iz+ii-1)
       enddo
-      write(impla1,3006)
+      write(impla1, 3006)
       if (ipt.eq.0) then
-        write(impla1,1010) 0
+        write(impla1, 1010) 0
       else
-        write(impla1,1010) ipt-1
+        write(impla1, 1010) ipt-1
       endif
-      do ii=1,ipt-1
-        write(impla1,1020) ii,ii+1
+      do ii=1, ipt-1
+        write(impla1, 1020) ii, ii+1
       enddo
 
 !  Ecriture Fichiers Variables
 
       if (ivisv1.eq.1) then
 
-        write(impla5(1),3010)
-        write(impla5(1),1010) nl
-        write(impla5(1),3005)
-        do ii=1,ipt
-          write(impla5(1),1030) ra(iu1l+ii-1)
+        write(impla5(1), 3010)
+        write(impla5(1), 1010) nl
+        write(impla5(1), 3005)
+        do ii=1, ipt
+          write(impla5(1), 1030) ra(iu1l+ii-1)
         enddo
-        do ii=1,ipt
-          write(impla5(1),1030) ra(iv1l+ii-1)
+        do ii=1, ipt
+          write(impla5(1), 1030) ra(iv1l+ii-1)
         enddo
-        do ii=1,ipt
-          write(impla5(1),1030) ra(iw1l+ii-1)
+        do ii=1, ipt
+          write(impla5(1), 1030) ra(iw1l+ii-1)
         enddo
       endif
 
       if (ivisv2.eq.1) then
-        write(impla5(2),3010)
-        write(impla5(2),1010) nl
-        write(impla5(2),3005)
-        do ii=1,ipt
-          write(impla5(2),1030) ra(iu2l+ii-1)
+        write(impla5(2), 3010)
+        write(impla5(2), 1010) nl
+        write(impla5(2), 3005)
+        do ii=1, ipt
+          write(impla5(2), 1030) ra(iu2l+ii-1)
         enddo
-        do ii=1,ipt
-          write(impla5(2),1030) ra(iv2l+ii-1)
+        do ii=1, ipt
+          write(impla5(2), 1030) ra(iv2l+ii-1)
         enddo
-        do ii=1,ipt
-          write(impla5(2),1030) ra(iw2l+ii-1)
+        do ii=1, ipt
+          write(impla5(2), 1030) ra(iw2l+ii-1)
         enddo
       endif
 
       if (ivistp.eq.1) then
-        write(impla5(3),3010)
-        write(impla5(3),1010) nl
-        write(impla5(3),3005)
-        do ii=1,ipt
-          write(impla5(3),1030) ra(itpl+ii-1)
+        write(impla5(3), 3010)
+        write(impla5(3), 1010) nl
+        write(impla5(3), 3005)
+        do ii=1, ipt
+          write(impla5(3), 1030) ra(itpl+ii-1)
         enddo
       endif
       if (ivisdm.eq.1) then
-        write(impla5(4),3010)
-        write(impla5(4),1010) nl
-        write(impla5(4),3005)
-        do ii=1,ipt
-          write(impla5(4) ,1030) ra(idml+ii-1)
+        write(impla5(4), 3010)
+        write(impla5(4), 1010) nl
+        write(impla5(4), 3005)
+        do ii=1, ipt
+          write(impla5(4), 1030) ra(idml+ii-1)
         enddo
       endif
       if (ivismp.eq.1) then
-        write(impla5(5),3010)
-        write(impla5(5),1010) nl
-        write(impla5(5),3005)
-        do ii=1,ipt
-          write(impla5(5),1030) ra(impl+ii-1)
+        write(impla5(5), 3010)
+        write(impla5(5), 1010) nl
+        write(impla5(5), 3005)
+        do ii=1, ipt
+          write(impla5(5), 1030) ra(impl+ii-1)
         enddo
       endif
       if (iviste.eq.1) then
-        write(impla5(6),3010)
-        write(impla5(6),1010) nl
-        write(impla5(6),3005)
-        do ii=1,ipt
-          write(impla5(6),1030) ra(itel+ii-1)
+        write(impla5(6), 3010)
+        write(impla5(6), 1010) nl
+        write(impla5(6), 3005)
+        do ii=1, ipt
+          write(impla5(6), 1030) ra(itel+ii-1)
         enddo
       endif
       if (ivishp.eq.1) then
-        write(impla5(7),3010)
-        write(impla5(7),1010) nl
-        write(impla5(7),3005)
-        do ii=1,ipt
-          write(impla5(7),1030) ra(ihpl+ii-1)
+        write(impla5(7), 3010)
+        write(impla5(7), 1010) nl
+        write(impla5(7), 3005)
+        do ii=1, ipt
+          write(impla5(7), 1030) ra(ihpl+ii-1)
         enddo
       endif
       if (ivisdk.eq.1) then
-        write(impla5(8),3010)
-        write(impla5(8),1010) nl
-        write(impla5(8),3005)
-        do ii=1,ipt
-          write(impla5(8),1030) ra(idckl+ii-1)
+        write(impla5(8), 3010)
+        write(impla5(8), 1010) nl
+        write(impla5(8), 3005)
+        do ii=1, ipt
+          write(impla5(8), 1030) ra(idckl+ii-1)
         enddo
       endif
       if (ivisch.eq.1) then
-        write(impla5(9),3010)
-        write(impla5(9),1010) nl
-        write(impla5(9),3005)
-        do ii=1,ipt
-          write(impla5(9),1030) ra(imchl+ii-1)
+        write(impla5(9), 3010)
+        write(impla5(9), 1010) nl
+        write(impla5(9), 3005)
+        do ii=1, ipt
+          write(impla5(9), 1030) ra(imchl+ii-1)
         enddo
       endif
       if (ivisck.eq.1) then
-        write(impla5(10),3010)
-        write(impla5(10),1010) nl
-        write(impla5(10),3005)
-        do ii=1,ipt
-          write(impla5(10),1030) ra(imckl+ii-1)
+        write(impla5(10), 3010)
+        write(impla5(10), 1010) nl
+        write(impla5(10), 3005)
+        do ii=1, ipt
+          write(impla5(10), 1030) ra(imckl+ii-1)
         enddo
       endif
 
@@ -811,7 +806,7 @@ endif
 return
 
    99 continue
-write (nfecra,9999) fich (ii1:ii2), ios
+write (nfecra, 9999) fich (ii1:ii2), ios
 call csexit(1)
 
 !--------
@@ -819,14 +814,14 @@ call csexit(1)
 !--------
 
  1010 format (i10)
- 1020 format (i10,i10)
+ 1020 format (i10, i10)
  1030 format (e12.5)
 
  3000 format('geometrie trajectoire')
  3001 format('au format ensight6 : .case')
  3002 format('node id assign')
  3003 format('element id assign')
- 3004 format('trajectoire',I10)
+ 3004 format('trajectoire', I10)
  3005 format('coordinates')
  3006 format('bar2')
 
@@ -846,33 +841,33 @@ call csexit(1)
  5010 format('FORMAT')
  5011 format('type: ensight gold')
  5012 format('GEOMETRY')
- 5013 format('model: ',A)
+ 5013 format('model: ', A)
  5014 format('VARIABLE')
- 5015 format('vector per node: vitesse_fluide_vu       ',A )
- 5016 format('vector per node: vitesse_particules      ',A )
- 5017 format('scalar per node: temps_de_sejour         ',A )
- 5018 format('scalar per node: diametre                ',A )
- 5019 format('scalar per node: masse                   ',A )
- 5020 format('scalar per node: temperature             ',A )
- 5021 format('scalar per node: temperature             ',A )
- 5022 format('scalar per node: dck                     ',A )
- 5023 format('scalar per node: mch                     ',A )
- 5024 format('scalar per node: mck                     ',A )
+ 5015 format('vector per node: vitesse_fluide_vu       ', A)
+ 5016 format('vector per node: vitesse_particules      ', A)
+ 5017 format('scalar per node: temps_de_sejour         ', A)
+ 5018 format('scalar per node: diametre                ', A)
+ 5019 format('scalar per node: masse                   ', A)
+ 5020 format('scalar per node: temperature             ', A)
+ 5021 format('scalar per node: temperature             ', A)
+ 5022 format('scalar per node: dck                     ', A)
+ 5023 format('scalar per node: mch                     ', A)
+ 5024 format('scalar per node: mck                     ', A)
 
- 9999 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@    ERREUR D''OUVERTURE SUR LE FICHIER : ',A                 ,/,&
-'@    AVEC UN IOSTAT EGAL A : ',I6                             ,/,&
-'@    (ENSLAG)                                                ',/,&
-'@                                                            ',/,&
-'@  Verifier les numero de fichiers utilises par le Lagrangien',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+ 9999 format(                                                       &
+'@                                                            ', /, &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@', /, &
+'@                                                            ', /, &
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ', /, &
+'@    =========                                               ', /, &
+'@    ERREUR D''OUVERTURE SUR LE FICHIER : ', A                , /, &
+'@    AVEC UN IOSTAT EGAL A : ', I6                            , /, &
+'@    (ENSLAG)                                                ', /, &
+'@                                                            ', /, &
+'@  Verifier les numero de fichiers utilises par le Lagrangien', /, &
+'@                                                            ', /, &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@', /, &
+'@                                                            ', /)
 
 !----
 ! FIN

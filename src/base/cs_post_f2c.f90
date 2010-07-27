@@ -28,8 +28,7 @@
 subroutine pstcwr &
 !=================
 
- ( numgep , nomcas , nomrep , nomfmt , optfmt ,                   &
-   indmod , ntchr )
+ ( numgep , nomcas , nomrep , nomfmt , optfmt , indmod , ntchr )
 
 !===============================================================================
 ! FONCTION :
@@ -321,9 +320,9 @@ lnmva3 = len(nomva3)
 if ((lnmvar .eq. lnmva2) .and. (lnmvar .eq. lnmva3)) then
 
   do 10 ii = lnmvar, 1, -1
-    IF (     NOMVAR(II:II) .NE. ' '                               &
-        .OR. NOMVA2(II:II) .NE. ' '                               &
-        .OR. NOMVA3(II:II) .NE. ' ') THEN
+    if (     nomvar(ii:ii) .ne. ' '                               &
+        .or. nomva2(ii:ii) .ne. ' '                               &
+        .or. nomva3(ii:ii) .ne. ' ') then
       goto 20
     endif
  10     continue
@@ -334,9 +333,9 @@ if ((lnmvar .eq. lnmva2) .and. (lnmvar .eq. lnmva3)) then
 
     jj = ii
 
-!         On prevoit le cas ou c'est l'avant-dernier caractere
-!         qui change, comme avec VitesX1, VitesX2, ... en
-!         cas de calcul avec plusieurs phases
+    ! Handle the case where the next-to-last character changes, such
+    ! as with VelocityX1, VelocityX2, ... in case of a calculation
+    ! with multiple phases.
 
     if (      (ii .gt. 2)                                         &
         .and. (nomvar(ii:ii) .eq. nomva2(ii:ii))                  &
@@ -344,28 +343,35 @@ if ((lnmvar .eq. lnmva2) .and. (lnmvar .eq. lnmva3)) then
       ii = jj-1
     endif
 
-!         On supprime le caractere lie a la dimension
+    ! Remove the character related to the spatial axis
 
-    IF (      NOMVAR(II:II) .EQ. 'X'                              &
-        .AND. NOMVA2(II:II) .EQ. 'Y'                              &
-        .AND. NOMVA3(II:II) .EQ. 'Z') THEN
-      NOMVAR(II:II) = ' '
-    ELSE IF (      NOMVAR(II:II) .EQ. 'x'                         &
-             .AND. NOMVA2(II:II) .EQ. 'y'                         &
-             .AND. NOMVA3(II:II) .EQ. 'z') THEN
-      NOMVAR(II:II) = ' '
-    ELSE IF (      NOMVAR(II:II) .EQ. '1'                         &
-             .AND. NOMVA2(II:II) .EQ. '2'                         &
-             .AND. NOMVA3(II:II) .EQ. '3') THEN
-      NOMVAR(II:II) = ' '
+    if (      nomvar(ii:ii) .eq. 'X'                              &
+        .and. nomva2(ii:ii) .eq. 'Y'                              &
+        .and. nomva3(ii:ii) .eq. 'Z') then
+      nomvar(ii:ii) = ' '
+    else if (      nomvar(ii:ii) .eq. 'x'                         &
+             .and. nomva2(ii:ii) .eq. 'y'                         &
+             .and. nomva3(ii:ii) .eq. 'z') then
+      nomvar(ii:ii) = ' '
+    else if (      nomvar(ii:ii) .eq. 'U'                         &
+             .and. nomva2(ii:ii) .eq. 'V'                         &
+             .and. nomva3(ii:ii) .eq. 'W') then
+      nomvar(ii:ii) = ' '
+    else if (      nomvar(ii:ii) .eq. 'u'                         &
+             .and. nomva2(ii:ii) .eq. 'v'                         &
+             .and. nomva3(ii:ii) .eq. 'w') then
+      nomvar(ii:ii) = ' '
+    else if (      nomvar(ii:ii) .eq. '1'                         &
+             .and. nomva2(ii:ii) .eq. '2'                         &
+             .and. nomva3(ii:ii) .eq. '3') then
+      nomvar(ii:ii) = ' '
     endif
 
-!         Si l'on a supprime l'avant-dernier caractere, on
-!         decale le dernier caractere
+    ! If the next-to last character was removed, the last one must be shifted.
 
     if (ii .eq. jj+1) then
       nomvar(ii:ii) = nomvar(jj:jj)
-      NOMVAR(JJ:JJ) = ' '
+      nomvar(jj:jj) = ' '
     endif
 
   endif

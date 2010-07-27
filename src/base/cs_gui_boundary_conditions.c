@@ -571,7 +571,7 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
     /* try to build the interpreter */
     if (mei_tree_builder(tree))
         bft_error(__FILE__, __LINE__, 0,
-                  _("Error: can not interprete expression: %s\n"), tree->string);
+                  _("Error: can not interpret expression: %s\n"), tree->string);
 
     /* check for symbols */
     for (i = 0; i < symbol_size; ++i)

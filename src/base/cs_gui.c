@@ -4803,7 +4803,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         if (mei_tree_builder(ev_rho))
             bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interprete expression: %s\n"), ev_rho->string);
+                      _("Error: can not interpret expression: %s\n"), ev_rho->string);
 
         if (mei_tree_find_symbol(ev_rho, "rho"))
             bft_error(__FILE__, __LINE__, 0,
@@ -4851,7 +4851,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         if (mei_tree_builder(ev_mu))
             bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interprete expression: %s\n"), ev_mu->string);
+                      _("Error: can not interpret expression: %s\n"), ev_mu->string);
 
         if (mei_tree_find_symbol(ev_mu, "mu"))
             bft_error(__FILE__, __LINE__, 0,
@@ -4899,7 +4899,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         if (mei_tree_builder(ev_cp))
             bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interprete expression: %s\n"), ev_cp->string);
+                      _("Error: can not interpret expression: %s\n"), ev_cp->string);
 
         if (mei_tree_find_symbol(ev_cp, "cp"))
             bft_error(__FILE__, __LINE__, 0,
@@ -4947,7 +4947,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
         if (mei_tree_builder(ev_la))
             bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not interprete expression: %s\n"), ev_la->string);
+                      _("Error: can not interpret expression: %s\n"), ev_la->string);
 
         if (mei_tree_find_symbol(ev_la, "lambda"))
             bft_error(__FILE__, __LINE__, 0,
@@ -5021,7 +5021,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
             if (mei_tree_builder(ev_Ds))
                 bft_error(__FILE__, __LINE__, 0,
-                          _("Error: can not interprete expression: %s\n"), ev_Ds->string);
+                          _("Error: can not interpret expression: %s\n"), ev_Ds->string);
 
             if (mei_tree_find_symbol(ev_Ds, "diffusivity"))
                 bft_error(__FILE__, __LINE__, 0,

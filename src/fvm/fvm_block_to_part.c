@@ -1113,19 +1113,19 @@ fvm_block_to_part_copy_index(fvm_block_to_part_t  *d,
  *   datatype    <-- type of data considered
  *   block_index <-- local index in block distribution
  *   block_val   <-- values in block distribution
- *                   (size: send_index[n_block_ents])
+ *                   (size: block_index[n_block_ents])
  *   part_index  --> local index in general distribution
  *   part_val    --> numbers in general  distribution
- *                   (size: recv_index[n_part_ents])
+ *                   (size: part_index[n_part_ents])
  *----------------------------------------------------------------------------*/
 
 void
 fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
                                fvm_datatype_t         datatype,
-                               const fvm_lnum_t      *send_index,
-                               const void            *send_val,
-                               const fvm_lnum_t      *recv_index,
-                               void                  *recv_val)
+                               const fvm_lnum_t      *block_index,
+                               const void            *block_val,
+                               const fvm_lnum_t      *part_index,
+                               void                  *part_val)
 {
   int    i;
   size_t j, k, w_displ, r_displ;
@@ -1144,8 +1144,8 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
   unsigned char *send_buf = NULL;
   unsigned char *recv_buf = NULL;
 
-  const unsigned char *_send_val = send_val;
-  unsigned char *_recv_val = recv_val;
+  const unsigned char *_send_val = block_val;
+  unsigned char *_recv_val = part_val;
 
   size_t type_size = fvm_datatype_size[datatype];
   MPI_Datatype mpi_type = fvm_datatype_to_mpi[datatype];
@@ -1170,7 +1170,7 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
     const size_t end_id = start_id + d->send_count[i];
     for (j = start_id; j < end_id; j++) {
       const size_t send_id = d->send_list[j];
-      send_count[i] += send_index[send_id+1] - send_index[send_id];
+      send_count[i] += block_index[send_id+1] - block_index[send_id];
     }
   }
 
@@ -1184,7 +1184,7 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
     const size_t end_id = start_id + d->recv_count[i];
     for (j = start_id; j < end_id; j++) {
       const size_t recv_id = inv_order[j];
-      recv_count[i] += recv_index[recv_id+1] - recv_index[recv_id];
+      recv_count[i] += part_index[recv_id+1] - part_index[recv_id];
     }
   }
 
@@ -1205,9 +1205,9 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
   for (j = 0; j < d->send_size; j++) {
 
     size_t ent_id = d->send_list[j];
-    size_t ent_size =  (send_index[ent_id + 1] - send_index[ent_id])
+    size_t ent_size =  (block_index[ent_id + 1] - block_index[ent_id])
                       * type_size;
-    r_displ = send_index[ent_id] * type_size;
+    r_displ = block_index[ent_id] * type_size;
 
     for (k = 0; k < ent_size; k++)
       send_buf[w_displ++] = _send_val[r_displ++];
@@ -1237,8 +1237,8 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
   recv_val_index[0] = 0;
 
   for (j = 0; j < d->n_part_ents; j++)
-    recv_val_index[d->recv_order[j] + 1] = (  recv_index[j+1]
-                                            - recv_index[j])*type_size;
+    recv_val_index[d->recv_order[j] + 1] = (  part_index[j+1]
+                                            - part_index[j])*type_size;
 
   for (j = 0; j < d->n_part_ents; j++)
     recv_val_index[j+1] += recv_val_index[j];
@@ -1247,7 +1247,7 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
 
   for (j = 0; j < d->n_part_ents; j++) {
     const size_t recv_id = d->recv_order[j];
-    const size_t ent_size =   (recv_index[recv_id+1] - recv_index[recv_id])
+    const size_t ent_size =   (part_index[recv_id+1] - part_index[recv_id])
                             * type_size;
     r_displ = recv_val_index[recv_id];
     for (k = 0; k < ent_size; k++)
