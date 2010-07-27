@@ -1,4 +1,11 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add counter to memory alloc/realloc/free calls.
+  modified routines:
+    src/bft/bft_mem_usage.c
+    src/bft/bft_mem_usage.h
+    tests/bft_mem_usage_test.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove part of the VmPeak/VmSize query (needed only on old Linux kernels).
   modified routine:
     src/bft/bft_mem_usage.c

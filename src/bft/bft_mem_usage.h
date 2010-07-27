@@ -109,6 +109,16 @@ bft_mem_usage_pr_size(void);
 size_t
 bft_mem_usage_max_pr_size(void);
 
+/*
+ * Return counter to number of calls to malloc, realloc, and free.
+ *
+ * This function returns zeroes when the appropriate instrumentation
+ * is not available.
+ */
+
+void
+bft_mem_usage_n_calls(size_t count[3]);
+
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus

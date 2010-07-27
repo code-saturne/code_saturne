@@ -34,6 +34,8 @@
 int
 main (int argc, char *argv[])
 {
+  size_t count[3];
+
   void *p1, *p2, *p3;
 
   /* BFT initialization and environment */
@@ -55,6 +57,16 @@ main (int argc, char *argv[])
 
   printf("max memory usage: %lu kB\n",
          (unsigned long) bft_mem_usage_max_pr_size());
+
+  bft_mem_usage_n_calls(count);
+  if (count[0] != 0) {
+    printf("%lu calls to malloc\n"
+           "%lu calls to realloc\n"
+           "%lu calls to free\n",
+           (unsigned long) count[0],
+           (unsigned long) count[1],
+           (unsigned long) count[2]);
+  }
 
   bft_mem_usage_end();
 

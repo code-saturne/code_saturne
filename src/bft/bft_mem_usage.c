@@ -155,7 +155,9 @@ static void
                                       const __malloc_ptr_t);
 
 static int _bft_mem_usage_global_use_hooks = 0;
-static int _bft_mem_usage_global_up = 0;
+static size_t _bft_mem_usage_n_allocs = 0;
+static size_t _bft_mem_usage_n_reallocs = 0;
+static size_t _bft_mem_usage_n_frees = 0;
 
 #endif /* (HAVE_MALLOC_HOOKS) */
 
@@ -164,16 +166,6 @@ static int _bft_mem_usage_global_up = 0;
  *-----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MALLOC_HOOKS)
-
-/*
- * Memory size update to be called by malloc_hook functions.
- */
-
-static void
-_bft_mem_usage_size_update(void)
-{
-  (void) bft_mem_usage_pr_size();
-}
 
 /*
  * Test malloc_hook function.
@@ -200,10 +192,8 @@ _bft_mem_usage_malloc_hook_test(size_t size,
 /*
  * Memory counting malloc_hook function.
  *
- * This function calls the regular realloc function, but tries to keep
- * track of whether allocated memory is increasing or decreasing;
- * just before allocated memory decreases, memory counting functions
- * are called unless deactivated through bft_mem_usage_set_options().
+ * This function calls the regular malloc function, but also
+ * increments a counter for the number of calls to malloc().
  *
  * returns:
  *   Pointer to allocated memory.
@@ -217,8 +207,9 @@ _bft_mem_usage_malloc_hook(size_t size,
 
   __malloc_hook = _bft_mem_usage_old_malloc_hook;
 
-  if (_bft_mem_usage_global_up == 0)
-    _bft_mem_usage_global_up = 1;
+  /* Increment counter and call malloc */
+
+  _bft_mem_usage_n_allocs += 1;
 
   result = malloc(size);
 
@@ -230,10 +221,8 @@ _bft_mem_usage_malloc_hook(size_t size,
 /*
  * Memory counting realloc_hook function.
  *
- * This function calls the regular realloc function, but tries to keep
- * track of whether allocated memory is increasing or decreasing;
- * just before allocated memory decreases, memory counting functions
- * are called unless deactivated through bft_mem_usage_set_options().
+ * This function calls the regular realloc function, but also
+ * increments a counter for the number of calls to realloc().
  */
 
 static __malloc_ptr_t
@@ -251,15 +240,11 @@ _bft_mem_usage_realloc_hook(void *ptr,
   __realloc_hook = _bft_mem_usage_old_realloc_hook;
   __malloc_hook  = _bft_mem_usage_old_malloc_hook;
 
-  /* Memory usage may be going down, so update */
-  if (_bft_mem_usage_global_up == 1)
-    _bft_mem_usage_size_update();
+  /* Increment counter and call realloc */
+
+  _bft_mem_usage_n_reallocs += 1;
 
   result = realloc(ptr, size);
-
-  /* Memory usage may be going up; set flag just in case */
-  if (_bft_mem_usage_global_up == 0)
-    _bft_mem_usage_global_up = 1;
 
   /* Reset hooks */
   __realloc_hook = _bft_mem_usage_realloc_hook;
@@ -271,10 +256,8 @@ _bft_mem_usage_realloc_hook(void *ptr,
 /*
  * Memory counting free_hook function.
  *
- * This function calls the regular free function, but tries to keep
- * track of whether allocated memory is increasing or decreasing;
- * just before allocated memory decreases, memory counting functions
- * are called unless deactivated through bft_mem_usage_set_options().
+ * This function calls the regular free function, but also
+ * increments a counter for the number of calls to free().
  */
 
 static void
@@ -283,10 +266,9 @@ _bft_mem_usage_free_hook(void *ptr,
 {
   __free_hook = _bft_mem_usage_old_free_hook;
 
-  if (_bft_mem_usage_global_up == 1) {
-    _bft_mem_usage_global_up = 0;
-    _bft_mem_usage_size_update();
-  }
+  /* Increment counter and call free */
+
+  _bft_mem_usage_n_frees += 1;
 
   free(ptr);
 
@@ -351,6 +333,9 @@ _bft_mem_usage_unset_hooks(void)
     __realloc_hook = _bft_mem_usage_old_realloc_hook;
     __free_hook    = _bft_mem_usage_old_free_hook;
     _bft_mem_usage_global_use_hooks = 0;
+    _bft_mem_usage_n_allocs = 0;
+    _bft_mem_usage_n_reallocs = 0;
+    _bft_mem_usage_n_frees = 0;
   }
 }
 
@@ -735,6 +720,23 @@ bft_mem_usage_max_pr_size(void)
   (void) bft_mem_usage_pr_size();
 
   return _bft_mem_usage_global_max_pr;
+}
+
+/*
+ * \brief Return counter to number of calls to malloc, realloc, and free.
+ *
+ * This function returns zeroes when the appropriate instrumentation
+ * is not available.
+ */
+
+void
+bft_mem_usage_n_calls(size_t count[3])
+{
+#if defined(HAVE_MALLOC_HOOKS)
+  count[0] = _bft_mem_usage_n_allocs;
+  count[1] = _bft_mem_usage_n_reallocs;
+  count[2] = _bft_mem_usage_n_frees;
+#endif /* (HAVE_MALLOC_HOOKS) */
 }
 
 /*----------------------------------------------------------------------------*/
