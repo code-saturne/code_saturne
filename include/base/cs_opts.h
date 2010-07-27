@@ -56,6 +56,8 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  char          *app_name;      /* Application name */
+
   cs_int_t       ifoenv;        /* 0 if not using Preprocessor, 1 otherwise */
 
   /* Redirection of standard output */

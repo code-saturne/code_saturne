@@ -333,6 +333,26 @@ void CS_PROCF (rasize, RASIZE)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * First analysis of the command line to determine an application name.
+ *
+ * If no name is defined by the command line, a name is determined based
+ * on the working directory.
+ *
+ * The caller is responsible for freeing the returned string.
+ *
+ * parameters:
+ *   argc  <-- number of command line arguments
+ *   argv  <-- array of command line arguments
+ *
+ * returns:
+ *   pointer to character string with application name
+ *----------------------------------------------------------------------------*/
+
+char *
+cs_base_get_app_name(int          argc,
+                     const char  *argv[]);
+
+/*----------------------------------------------------------------------------
  * Print logfile header
  *
  * parameters:

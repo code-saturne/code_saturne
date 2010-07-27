@@ -76,6 +76,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <ple_defs.h>
+#include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -630,39 +631,45 @@ _cs_base_erreur_mpi(MPI_Comm  *comm,
 /*----------------------------------------------------------------------------
  * Complete MPI setup.
  *
- * MPI should have been initialized by cs_opts_mpi_init().
+ * MPI should have been initialized by cs_base_mpi_init().
+ *
+ * The application name is used to build subgroups of processes with
+ * identical name from the MPI_COMM_WORLD communicator, thus separating
+ * this instance of Code_Saturne from other coupled codes. It may be
+ * defined using the --app-num argument, and is based on the working
+ * directory's base name otherwise.
  *
  * parameters:
- *   app_num <-- -1 if MPI is not needed, or application number in
- *               MPI_COMM_WORLD of this instance of Code_Saturne.
+ *   app_name <-- pointer to application instance name.
+ *
+ * returns:
+ *   application number (-1 without coupled codes, >= 0 if coupled codes)
  *----------------------------------------------------------------------------*/
 
-static void
-_cs_base_mpi_setup(int  app_num)
+static int
+_cs_base_mpi_setup(const char *app_name)
 {
   int nbr, rank;
 
-  int app_num_l = app_num, app_num_max = -1;
+  int app_num = -1;
 
 #if defined(DEBUG) || !defined(NDEBUG)
   MPI_Errhandler errhandler;
 #endif
 
-  /*
-    If necessary, split MPI_COMM_WORLD to separate different coupled
-    applications (collective operation, like all MPI communicator
-    creation operations).
+  app_num = ple_coupling_mpi_name_to_id(MPI_COMM_WORLD, app_name);
 
-    We suppose the color argument to MPI_Comm_split is equal to the
-    application number, given through the command line or through
-    mpiexec and passed here as an argument.
+  /*
+    Split MPI_COMM_WORLD to separate different coupled applications
+    (collective operation, like all MPI communicator creation operations).
+
+    app_num is equal to -1 if all applications have the same instance
+    name, in which case no communicator split is necessary.
   */
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  MPI_Allreduce(&app_num_l, &app_num_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-
-  if (app_num_max > 0)
+  if (app_num > -1)
     MPI_Comm_split(MPI_COMM_WORLD, app_num, rank, &cs_glob_mpi_comm);
   else
     cs_glob_mpi_comm = MPI_COMM_WORLD;
@@ -680,7 +687,7 @@ _cs_base_mpi_setup(int  app_num)
      but we may set cs_glob_rank_id to its serial value if
      we are only using MPI for coupling. */
 
-  if (cs_glob_n_ranks == 1 && app_num_max > 0)
+  if (cs_glob_n_ranks == 1 && app_num > -1)
     cs_glob_rank_id = -1;
 
   /* Initialize associated libraries */
@@ -702,6 +709,8 @@ _cs_base_mpi_setup(int  app_num)
     MPI_Errhandler_free(&errhandler);
   }
 #endif
+
+  return app_num;
 }
 
 #endif /* HAVE_MPI */
@@ -872,6 +881,73 @@ void CS_PROCF (rasize, RASIZE)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * First analysis of the command line to determine an application name.
+ *
+ * If no name is defined by the command line, a name is determined based
+ * on the working directory.
+ *
+ * The caller is responsible for freeing the returned string.
+ *
+ * parameters:
+ *   argc  <-- number of command line arguments
+ *   argv  <-- array of command line arguments
+ *
+ * returns:
+ *   pointer to character string with application name
+ *----------------------------------------------------------------------------*/
+
+char *
+cs_base_get_app_name(int          argc,
+                     const char  *argv[])
+{
+  char *app_name = NULL;
+  int arg_id = 0;
+
+  /* Loop on command line arguments */
+
+  arg_id = 0;
+
+  while (++arg_id < argc) {
+    const char *s = argv[arg_id];
+    if (strcmp(s, "--app-name") == 0) {
+      if (arg_id + 1 < argc) {
+        BFT_MALLOC(app_name, strlen(argv[arg_id + 1]) + 1, char);
+        strcpy(app_name, argv[arg_id + 1]);
+      }
+    }
+  }
+
+  /* Use execution directory if name is unavailable */
+
+#if defined(HAVE_GETCWD)
+
+  if (app_name == NULL) {
+
+    int i;
+    int buf_size = 128;
+    char *wd = NULL, *buf = NULL;
+
+    while (wd == NULL) {
+      buf_size *= 2;
+      BFT_REALLOC(buf, buf_size, char);
+      wd = getcwd(buf, buf_size);
+      if (wd == NULL && errno != ERANGE)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("Error querying working directory.\n"));
+    }
+
+    for (i = strlen(buf) - 1; i > 0 && buf[i-1] != '/'; i--);
+    BFT_MALLOC(app_name, strlen(buf + i) + 1, char);
+    strcpy(app_name, buf + i);
+    BFT_FREE(buf);
+  }
+
+#endif /* defined(HAVE_GETCWD) */
+
+  return app_name;
+}
+
+/*----------------------------------------------------------------------------
  * Print logfile header
  *
  * parameters:
@@ -994,8 +1070,9 @@ cs_base_logfile_head(int    argc,
  * and `cs_glob_rank_id' (rank of local process) are set by this function.
  *
  * returns:
- *   -1 if MPI is not needed, or application number in MPI_COMM_WORLD of
- *   processes associated with this instance of Code_Saturne
+ *   -1 if MPI is not or no other code is coupled, or application number
+ *   in MPI_COMM_WORLD of processes associated with this instance of
+ *   Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
@@ -1007,8 +1084,9 @@ cs_base_mpi_init(int    *argc,
   char *s;
 
   int arg_id = 0, flag = 0;
-  int appnum = -1;
   int use_mpi = false;
+
+  int app_num = -1;
 
 #if   defined(__bg__) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 
@@ -1082,19 +1160,8 @@ cs_base_mpi_init(int    *argc,
 
     /* Parallel run */
 
-    if (strcmp(s, "--mpi") == 0) {
-      int _appnum = 0;
+    if (strcmp(s, "--mpi") == 0)
       use_mpi = true;
-      if (arg_id + 1 < *argc) {
-        char *start = (*argv)[arg_id + 1];
-        char *end = start + strlen(start);
-        _appnum = strtol(start, &end, 0);
-        if (end == start + strlen(start)) { /* following argument is an int */
-          arg_id++;
-          appnum = _appnum;
-        }
-      }
-    }
 
   } /* End of loop on command line arguments */
 
@@ -1110,31 +1177,20 @@ cs_base_mpi_init(int    *argc,
 #endif
     }
 
-    /*
-      If appnum was not given through the command line but we
-      are running under MPI-2, appnum may be available through
-      the MPI_APPNUM attribute.
-    */
-
-#if defined(MPI_VERSION) && (MPI_VERSION >= 2)
-    if (appnum < 0) {
-      void *attp = NULL;
-      MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &attp, &flag);
-      if (flag != 0)
-        appnum = *(int *)attp;
-    }
-#endif
-
-    if (appnum < 0)
-      appnum = 0;
   }
 
   /* Now setup global variables and communicators */
 
-  if (use_mpi == true)
-    _cs_base_mpi_setup(appnum);
+  if (use_mpi == true) {
 
-  return appnum;
+    char *app_name = cs_base_get_app_name(*argc, (const char **)(*argv));
+
+    app_num = _cs_base_mpi_setup(app_name);
+
+    BFT_FREE(app_name);
+  }
+
+  return app_num;
 
 #else /* if defined(HAVE_MPI) */
 
@@ -1644,8 +1700,22 @@ cs_base_system_info(void)
   bft_printf("  %s%s\n", _("Directory:         "), str_directory);
 
 #if defined(HAVE_MPI)
+#  if defined(MPI_VERSION) && (MPI_VERSION >= 2)
+  {
+    int flag = 0;
+    void *attp = NULL;
+    MPI_Initialized(&flag);
+    if (flag != 0) {
+      flag = 0;
+      MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &attp, &flag);
+    }
+    if (flag != 0)
+      bft_printf("  %s%d\n", _("MPI appnum:        "), *(int *)attp);
+  }
+#  endif
   bft_printf("  %s%d\n", _("MPI ranks:         "), cs_glob_n_ranks);
 #endif
+
 #if defined(HAVE_OPENMP)
   bft_printf("  %s%d\n", _("OpenMP threads:    "), cs_glob_n_threads);
 #endif

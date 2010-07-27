@@ -114,24 +114,25 @@ _arg_env_help(const char  *name)
 
   fprintf (e, _("\nCommand line options:\n\n"));
   fprintf
-    (e, _(" --solcom          stand-alone kernel with \"geomet\" mesh in\n"
-          "                   SolCom format (obsolete)\n"));
+    (e, _(" --app-name        <app_name> to name this code instance\n"
+          "                   (default: working directory base name)\n"));
   fprintf
-    (e, _(" --mpi             use MPI for parallelism or coupling\n"
-          "                   [appnum]: number of this application in\n"
-          "                             case of code coupling (default: 0)\n"));
+    (e, _(" --benchmark       elementary operations performance\n"
+          "                   [--mpitrace] operations done only once\n"
+          "                                for light MPI traces\n"));
+  fprintf
+    (e, _(" -h, --help        this help message\n\n"));
+
+  fprintf
+    (e, _(" --mpi             force use of MPI for parallelism or coupling\n"
+          "                   (usually automatic, only required for\n"
+          "                   undetermined MPI libraries)\n"));
   fprintf
     (e, _(" --mpi-io          <mode> set parallel I/O behavior\n"
           "                     off: do not use MPI-IO\n"
           "                     eo:  MPI-IO with explicit offsets\n"
           "                          (default if available)\n"
           "                     ip:  MPI-IO with individual file pointers\n"));
-  fprintf
-    (e, _(" -q, --quality     mesh quality verification mode\n"));
-  fprintf
-    (e, _(" --benchmark       elementary operations performance\n"
-          "                   [--mpitrace] operations done only once\n"
-          "                                for light MPI traces\n"));
   fprintf
     (e, _(" --log             output redirection for rank -1 or 0:\n"
           "                     0: standard output\n"
@@ -146,13 +147,17 @@ _arg_env_help(const char  *name)
     (e, _(" -p, --param       <file_name> parameter file\n"));
 
   fprintf
+    (e, _(" -q, --quality     mesh quality verification mode\n"));
+
+  fprintf
+    (e, _(" --solcom          stand-alone kernel with \"geomet\" mesh in\n"
+          "                   SolCom format (obsolete)\n"));
+  fprintf
     (e, _(" --syr-socket      enable sockets for SYRTHES 3 coupling\n"
           "                   <port_num> port number on rank 0\n"));
 
   fprintf
     (e, _(" --version         print version number\n"));
-  fprintf
-    (e, _(" -h, --help        this help message\n\n"));
 }
 
 /*----------------------------------------------------------------------------
@@ -240,6 +245,8 @@ cs_opts_define(int         argc,
 
   /* Default initialization */
 
+  opts->app_name = NULL;
+
   opts->ifoenv = 1;
 
   opts->ilisr0 = 1;
@@ -263,17 +270,51 @@ cs_opts_define(int         argc,
 
     s = argv[arg_id];
 
-    if (strcmp(s, "--solcom") == 0)
-      opts->ifoenv = 0;
+    if (strcmp(s, "--app-name") == 0) {
+      if (arg_id + 1 < argc) {
+        BFT_REALLOC(opts->app_name, strlen(argv[arg_id + 1]) + 1, char);
+        strcpy(opts->app_name, argv[arg_id + 1]);
+      }
+    }
+
+    else if (strcmp(s, "--benchmark") == 0) {
+      opts->benchmark = 1;
+      if (arg_id + 1 < argc) {
+        if (strcmp(argv[arg_id + 1], "--mpitrace") == 0) {
+          opts->benchmark = 2;
+          arg_id++;
+        }
+      }
+    }
+
+    else if (strcmp(s, "--log") == 0) {
+      int n1 = 0;
+      n1 = _arg_to_int(++arg_id, argc, argv, &argerr);
+      if (n1 == 0)
+        opts->ilisr0 = 0;
+      else if (n1 == 1)
+        opts->ilisr0 = 1;
+      else
+        argerr = 1;
+    }
+
+    else if (strcmp(s, "--logp") == 0) {
+      int n1 = 0;
+      n1 = _arg_to_int(++arg_id, argc, argv, &argerr);
+      if (n1 == -1)
+        opts->ilisrp = 2;
+      else if (n1 == 0)
+        opts->ilisrp = 0;
+      else if (n1 == 1)
+        opts->ilisrp = 1;
+      else
+        argerr = 1;
+    }
 
 #if defined(HAVE_MPI)
 
     else if (strcmp(s, "--mpi") == 0) {
-      int tmperr = 0;
-      (void)_arg_to_int(arg_id + 1, argc, argv, &tmperr);
-      if (tmperr == 0) {
-        arg_id++;
-      }
+      /* Handled in pre-reading stage */
     }
 
     else if (strcmp(s, "--mpi-io") == 0) {
@@ -305,43 +346,6 @@ cs_opts_define(int         argc,
 
 #endif /* defined(HAVE_MPI) */
 
-    else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0)
-      opts->verif = true;
-
-    else if (strcmp(s, "--log") == 0) {
-      int n1 = 0;
-      n1 = _arg_to_int(++arg_id, argc, argv, &argerr);
-      if (n1 == 0)
-        opts->ilisr0 = 0;
-      else if (n1 == 1)
-        opts->ilisr0 = 1;
-      else
-        argerr = 1;
-    }
-
-    else if (strcmp(s, "--logp") == 0) {
-      int n1 = 0;
-      n1 = _arg_to_int(++arg_id, argc, argv, &argerr);
-      if (n1 == -1)
-        opts->ilisrp = 2;
-      else if (n1 == 0)
-        opts->ilisrp = 0;
-      else if (n1 == 1)
-        opts->ilisrp = 1;
-      else
-        argerr = 1;
-    }
-
-    else if (strcmp(s, "--benchmark") == 0) {
-      opts->benchmark = 1;
-      if (arg_id + 1 < argc) {
-        if (strcmp(argv[arg_id + 1], "--mpitrace") == 0) {
-          opts->benchmark = 2;
-          arg_id++;
-        }
-      }
-    }
-
     else if (strcmp(s, "-p") == 0 || strcmp(s, "--param") == 0) {
       if (arg_id + 1 < argc) {
         s = argv[++arg_id];
@@ -357,6 +361,12 @@ cs_opts_define(int         argc,
       else
         argerr = 1;
     }
+
+    else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0)
+      opts->verif = true;
+
+    else if (strcmp(s, "--solcom") == 0)
+      opts->ifoenv = 0;
 
 #if defined(HAVE_SOCKET)
 
@@ -449,6 +459,12 @@ cs_opts_define(int         argc,
     else
       cs_exit(EXIT_SUCCESS);
   }
+
+  /* If application name has not been defined, use working directory
+     base name as default. */
+
+  if (opts->app_name == NULL)
+    opts->app_name = cs_base_get_app_name(0, NULL);
 }
 
 /*----------------------------------------------------------------------------*/

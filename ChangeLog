@@ -1,4 +1,12 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Now use an appname to distinguish between codes in case of coupling.
+  modified routines:
+    include/base/cs_base.h
+    include/base/cs_opts.h
+    src/base/cs_base.c
+    src/base/cs_opts.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
                Jérôme Bonelle <jerome.bonelle@edf.fr>
   Add the locate-on-closest feature for SYRTHES 4 coupling.
   modified routines:
