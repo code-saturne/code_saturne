@@ -138,8 +138,8 @@ if test -f conftestval ; then
     AC_MSG_ERROR([zlib uint, ulong, or void sizes do not match current values.])
   else
     AC_MSG_RESULT([$cs_ac_sizeof])
-    AC_DEFINE([CS_SIZEOF_Z_OFF_T], [$cs_ac_sizeof],
-              [The size of z_off_t, as returned by zlibCompileFlags.])
+    AC_DEFINE_UNQUOTED([SIZEOF_Z_OFF_T], $cs_ac_sizeof,
+                       [The size of z_off_t, as returned by zlibCompileFlags.])
   fi
 fi
 ],

@@ -1,4 +1,9 @@
 * 27/07/2010 - David Monfort <david.monfort@edf.fr>
+  Fix unquoted variable in the Zlib m4 macro definition.
+  modified script:
+    config/cs_zlib.m4
+
+* 27/07/2010 - David Monfort <david.monfort@edf.fr>
   The monitoring files are now created in a specific directory.
   modified script:
     bin/cs_case_domain.py
