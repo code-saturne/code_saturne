@@ -1,4 +1,12 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+               Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Add the locate-on-closest feature for SYRTHES 4 coupling.
+  modified routines:
+    include/base/cs_coupling.h
+    src/base/cs_coupling.c
+    src/base/cs_syr4_coupling.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Revert --mpi option suppression for the partitioner (useful for MPI init).
   modified routine:
     src/apps/cs_partition.c

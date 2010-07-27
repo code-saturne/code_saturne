@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -404,8 +404,6 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
     BFT_FREE(coupling_ent->wall_temp);
   if (coupling_ent->flux != NULL)
     BFT_FREE(coupling_ent->flux);
-  if (coupling_ent->tfluid_tmp != NULL)
-    BFT_FREE(coupling_ent->tfluid_tmp);
 
   /* Allocate arrays */
 
@@ -463,11 +461,14 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                     int                  post_process)
 {
   char coupled_mesh_name[64];
-  fvm_gnum_t n_exterior = 0;
+  fvm_gnum_t n_exterior = 0, n_dist_elts = 0;
   fvm_lnum_t *elt_list = NULL;
   fvm_coord_t *elt_centers = NULL;
   const double tolerance = 0.1;
   fvm_nodal_t *location_elts = NULL;
+  ple_mesh_elements_closest_t *locate_on_closest = NULL;
+  float *cs_to_syr_dist = NULL;
+  float *syr_to_cs_dist = NULL;
 
   cs_syr4_coupling_ent_t *coupling_ent = NULL;
 
@@ -517,6 +518,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   /* Creation of a new nodal mesh from selected border faces */
 
   else if (elt_dim == syr_coupling->dim - 1) {
+
+    locate_on_closest = cs_coupling_point_closest_mesh;
 
     sprintf(coupled_mesh_name, _("SYRTHES_faces_%d"), coupling_number);
 
@@ -612,6 +615,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   /* Build and initialize associated locator */
 
+  if (syr_coupling->verbosity > 0)
+    bft_printf(_("\nLocator structure and mesh creation."));
+
 #if defined(PLE_HAVE_MPI)
   coupling_ent->locator = ple_locator_create(tolerance,
                                              syr_coupling->comm,
@@ -627,6 +633,10 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
      in 2D. */
 
   if (coupling_ent->n_elts > 0) {
+
+    if (locate_on_closest != NULL)
+      BFT_MALLOC(cs_to_syr_dist, coupling_ent->n_elts, float);
+
     BFT_MALLOC(elt_centers,
                coupling_ent->n_elts*syr_coupling->dim,
                fvm_coord_t);
@@ -642,19 +652,104 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                        location_elts,
                        syr_coupling->dim,
                        coupling_ent->n_elts,
-                       elt_list,
-                       elt_centers,
                        NULL,
+                       elt_centers,
+                       cs_to_syr_dist,
                        cs_coupling_mesh_extents,
                        cs_coupling_point_in_mesh,
-                       NULL);
+                       locate_on_closest);
 
   if (elt_centers != NULL)
     BFT_FREE(elt_centers);
 
+  if (post_process != 0 && locate_on_closest != NULL) {
+    const float *face_var[1] = {cs_to_syr_dist};
+    cs_post_write_var(coupling_ent->post_mesh_id,
+                      _("distance_to_solid"),
+                      1,
+                      false,
+                      false, /* use_parent, */
+                      CS_POST_TYPE_float,
+                      -1, /* time-independent variable */
+                      0.0,
+                      NULL,
+                      NULL,
+                      face_var);
+  }
+
+  BFT_FREE(cs_to_syr_dist);
+
+  /* Post-process distances from SYRTHES points to Code_Saturne faces */
+
+  if (locate_on_closest != NULL) {
+
+    n_dist_elts = ple_locator_get_n_dist_points(coupling_ent->locator);
+    BFT_MALLOC(syr_to_cs_dist, n_dist_elts, float);
+
+    ple_locator_exchange_point_var(coupling_ent->locator,
+                                   syr_to_cs_dist,
+                                   NULL,
+                                   NULL,
+                                   sizeof(float),
+                                   1,
+                                   1);
+
+    if (post_process != 0) {
+
+      fvm_lnum_t i;
+      int mesh_id = coupling_ent->post_mesh_id - 1;
+      fvm_lnum_t *p_vtx_num = NULL;
+      fvm_io_num_t *vtx_io_num = NULL;
+      fvm_nodal_t *syr_points = fvm_nodal_create("SYRTHES face centers",
+                                                 syr_coupling->dim);
+
+      BFT_MALLOC(p_vtx_num, n_dist_elts, fvm_lnum_t);
+
+      for (i = 0; i < (fvm_lnum_t)n_dist_elts; i++)
+        p_vtx_num[i] = i+1;
+
+      fvm_nodal_define_vertex_list(syr_points, n_dist_elts, p_vtx_num);
+      fvm_nodal_set_shared_vertices
+        (syr_points,
+         ple_locator_get_dist_coords(coupling_ent->locator));
+
+      if (cs_glob_n_ranks > 1) {
+
+        vtx_io_num = fvm_io_num_create_from_scan(n_dist_elts);
+
+        fvm_nodal_init_io_num(syr_points,
+                              fvm_io_num_get_global_num(vtx_io_num),
+                              0);
+
+      }
+
+      cs_post_add_existing_mesh(mesh_id, syr_points, 0, true);
+      cs_post_associate(mesh_id, -1);
+
+      cs_post_write_vertex_var(mesh_id,
+                               _("distance_to_fluid"),
+                               1,
+                               false,
+                               false, /* use parent */
+                               CS_POST_TYPE_float,
+                               -1, /* time-independent variable */
+                               0.0,
+                               syr_to_cs_dist);
+
+      cs_post_free_mesh(mesh_id);
+
+      if (cs_glob_n_ranks > 1)
+        fvm_io_num_destroy(vtx_io_num);
+
+    } /* Do post-processing */
+
+    BFT_FREE(syr_to_cs_dist);
+
+  }
+
   /* Check that all points are effectively located */
 
-  n_exterior =  ple_locator_get_n_exterior(coupling_ent->locator);
+  n_exterior = ple_locator_get_n_exterior(coupling_ent->locator);
 
   fvm_parall_counter(&n_exterior, 1);
 
@@ -693,8 +788,6 @@ _destroy_coupled_ent(cs_syr4_coupling_ent_t **coupling_ent)
     BFT_FREE(ce->wall_temp);
   if (ce->flux != NULL)
     BFT_FREE(ce->flux);
-  if (ce->tfluid_tmp != NULL)
-    BFT_FREE(ce->tfluid_tmp);
 
   if (ce->elts != NULL)
     ce->elts = fvm_nodal_destroy(ce->elts);

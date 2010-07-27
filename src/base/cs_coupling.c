@@ -313,6 +313,81 @@ cs_coupling_point_in_mesh_p(const void         *mesh,
                            distance);
 }
 
+/*----------------------------------------------------------------------------
+ * Find elements in a given mesh closest to points: updates the
+ * location[] and distance[] arrays associated with a set of points
+ * for points that are closer to an element of this mesh than to previously
+ * encountered elements.
+ *
+ * This function currently only handles elements of lower dimension than
+ * the spatial dimension.
+ *
+ * Location is relative to the id of a given element + 1 in
+ * concatenated sections of same element dimension.
+ *
+ * parameters:
+ *   mesh         <-- pointer to mesh representation structure
+ *   n_points     <-- number of points to locate
+ *   point_coords <-- point coordinates
+ *   location     <-> number of element containing or closest to each
+ *                    point (size: n_points)
+ *   distance     <-> distance from point to element indicated by
+ *                    location[]: < 0 if unlocated, or absolute
+ *                    distance to a surface element (size: n_points)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_coupling_point_closest_mesh(const void         *mesh,
+                               ple_lnum_t          n_points,
+                               const ple_coord_t   point_coords[],
+                               ple_lnum_t          location[],
+                               float               distance[])
+{
+  fvm_point_location_closest_nodal((const fvm_nodal_t *)mesh,
+                                   0, /* Do not locate_on_parents */
+                                   n_points,
+                                   point_coords,
+                                   location,
+                                   distance);
+}
+
+/*----------------------------------------------------------------------------
+ * Find elements in a given mesh closest to points: updates the
+ * location[] and distance[] arrays associated with a set of points
+ * for points that are closer to an element of this mesh than to previously
+ * encountered elements.
+ *
+ * This function currently only handles elements of lower dimension than
+ * the spatial dimension.
+ *
+ * Location is relative to parent element numbers.
+ *
+ * parameters:
+ *   mesh         <-- pointer to mesh representation structure
+ *   n_points     <-- number of points to locate
+ *   point_coords <-- point coordinates
+ *   location     <-> number of element containing or closest to each
+ *                    point (size: n_points)
+ *   distance     <-> distance from point to element indicated by
+ *                    location[]: < 0 if unlocated, or absolute
+ *                    distance to a surface element (size: n_points)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_coupling_point_closest_mesh_p(const void         *mesh,
+                                 ple_lnum_t          n_points,
+                                 const ple_coord_t   point_coords[],
+                                 ple_lnum_t          location[],
+                                 float               distance[])
+{
+  fvm_point_location_closest_nodal((const fvm_nodal_t *)mesh,
+                                   1, /* Locate_on_parents */
+                                   n_points,
+                                   point_coords,
+                                   location,
+                                   distance);
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
