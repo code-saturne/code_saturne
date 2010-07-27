@@ -1,4 +1,10 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a bug in the datatype settings in the MED and CGNS writers.
+  modified routines:
+    src/fvm/fvm_to_cgns.c
+    src/fvm/fvm_to_med.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Missing modification in the mesh builder changeset (periodicity).
   modified routine:
     src/base/iniusi.f90

@@ -1150,19 +1150,23 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
 
   /* Define MPI and FVM datatype */
 
-#if (FVM_COORD == FVM_DOUBLE)
-  fvm_datatype = FVM_DOUBLE;
-  mpi_datatype = MPI_DOUBLE;
-#else
-  if (sizeof(med_float) == sizeof(fvm_coord)) {
-    mpi_datatype = MPI_FLOAT;
+  if (sizeof(fvm_coord_t) == sizeof(double))
+    fvm_datatype = FVM_DOUBLE;
+  else if (sizeof(fvm_coord_t) == sizeof(float))
     fvm_datatype = FVM_FLOAT;
-  }
-  else {
+  else
     bft_error(__FILE__, __LINE__, 0 ,
-              _("Incompatible datatype sizes between MPI, FVM and MED."));
-  }
-#endif
+              "Unexpected fvm_coord_t datatype size (%d).",
+              sizeof(fvm_coord_t));
+
+  if (sizeof(med_float) == sizeof(double))
+    mpi_datatype = MPI_DOUBLE;
+  else if (sizeof(med_float) == sizeof(float))
+    mpi_datatype = MPI_FLOAT;
+  else
+    bft_error(__FILE__, __LINE__, 0 ,
+              "Unexpected med_float datatype size (%d).",
+              sizeof(med_float));
 
   if (rank == 0) {
 
@@ -1409,13 +1413,16 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
               "Associated file: \"%s\".",
               mesh->name, writer->filename);
 
-  /* Get fvm datatype */
+  /* Define FVM datatype */
 
-#if (FVM_COORD == FVM_DOUBLE)
-  datatype = FVM_DOUBLE;
-#else
-  datatype = FVM_FLOAT;
-#endif
+  if (sizeof(fvm_coord_t) == sizeof(double))
+    datatype = FVM_DOUBLE;
+  else if (sizeof(fvm_coord_t) == sizeof(float))
+    datatype = FVM_FLOAT;
+  else
+    bft_error(__FILE__, __LINE__, 0 ,
+              "Unexpected fvm_coord_t datatype size (%d).",
+              sizeof(fvm_coord_t));
 
   /* Coordinates name and unit names */
 
@@ -3223,8 +3230,7 @@ fvm_to_med_init_writer(const char                   *name,
   name_length = strlen(name);
   if (name_length == 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("No MED filename: \"%s\"\n"),
-              *name);
+              _("Empty MED filename."));
 
   BFT_MALLOC(writer->name, name_length + 1, char);
   strcpy(writer->name, name);

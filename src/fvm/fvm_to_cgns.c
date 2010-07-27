@@ -829,7 +829,7 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
 
   assert(base != NULL);
 
-  if (sizeof(FVM_COORD) == sizeof(FVM_DOUBLE)) {
+  if (sizeof(fvm_coord_t) == sizeof(double)) {
     cgns_datatype = RealDouble;
     mpi_datatype = MPI_DOUBLE;
   }
@@ -1054,7 +1054,7 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
   assert(writer->is_open == true);
   assert(base != NULL);
 
-  if (sizeof(FVM_COORD) == sizeof(FVM_DOUBLE))
+  if (sizeof(fvm_coord_t) == sizeof(double))
     cgns_datatype = RealDouble;
   else
     cgns_datatype = RealSingle;
@@ -2356,8 +2356,7 @@ fvm_to_cgns_init_writer(const char             *name,
   name_length = strlen(name);
   if (name_length == 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("No CGNS filename: \"%s\"\n"),
-              *name);
+              _("Empty CGNS filename."));
   BFT_MALLOC(writer->name, name_length + 1, char);
   strcpy(writer->name, name);
 
