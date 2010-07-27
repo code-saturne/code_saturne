@@ -300,7 +300,7 @@ int ecs_file_printf(const ecs_file_t  *const f,
 
   else
     ecs_error(__FILE__, __LINE__, 0,
-              _("Error writing to closed file \"%s\")"), f->name);
+              _("Error writing to closed file \"%s\""), f->name);
 
   return retval;
 }
@@ -1473,7 +1473,7 @@ ecs_file_write(const void        *rec,
 
   if (f->ptr == NULL)
     ecs_error(__FILE__, __LINE__, 0,
-              _("Error writing to closed file \"%s\")"), f->name);
+              _("Error writing to closed file \"%s\""), f->name);
 
   /* Number of bytes of record to write */
 

@@ -1151,7 +1151,7 @@ int bft_file_printf(const bft_file_t  *const f,
 
   else
     _bft_file_error(__FILE__, __LINE__, 0,
-                    _("Error writing to closed file \"%s\")"), f->name);
+                    _("Error writing to closed file \"%s\""), f->name);
 
   return retval;
 }
@@ -1307,7 +1307,7 @@ bft_file_write(const void        *const rec,
 
   if (f->ptr == NULL)
     _bft_file_error(__FILE__, __LINE__, 0,
-                    _("Error writing to closed file \"%s\")"), f->name);
+                    _("Error writing to closed file \"%s\""), f->name);
 
   /* Number of bytes of record to write */
 

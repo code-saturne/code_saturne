@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-07-27 12:16+0200\n"
-"PO-Revision-Date: 2010-07-27 12:22+0200\n"
+"POT-Creation-Date: 2010-07-27 13:31+0200\n"
+"PO-Revision-Date: 2010-07-27 13:30+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "MIME-Version: 1.0\n"
@@ -6243,8 +6243,8 @@ msgstr ""
 #: src/bft/bft_file.c:1154 src/bft/bft_file.c:1310
 #: preprocessor/util/ecs_file.c:303 preprocessor/util/ecs_file.c:1476
 #, c-format
-msgid "Error writing to closed file \"%s\")"
-msgstr "Erreur à l'écriture du fichier fermé \"%s\")"
+msgid "Error writing to closed file \"%s\""
+msgstr "Erreur à l'écriture du fichier fermé \"%s\""
 
 #: src/bft/bft_file.c:1456 preprocessor/util/ecs_file.c:1622
 #, c-format

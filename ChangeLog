@@ -1,4 +1,12 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor correction in an error message.
+  modified file:
+    po/fr.po
+  modified routines:
+    preprocessor/util/ecs_file.c
+    src/bft/bft_file.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add the parallel partitioning capability to the user script.
   modified scripts:
     bin/cs_case_domain.py
