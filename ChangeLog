@@ -1,4 +1,9 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove a redundant call to the _set_block_ranges function.
+  modified routine:
+    src/base/cs_preprocessor_data.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Make coherent the use of echoing in the preprocessor_output reading.
   modified routine:
     src/base/cs_preprocessor_data.c

@@ -2605,8 +2605,6 @@ _read_data(int              file_id,
 
   echo = cs_io_get_echo(pp_in);
 
-  _set_block_ranges(mesh, mr);
-
   /* Loop on sections read */
 
   while (end_read == false) {
