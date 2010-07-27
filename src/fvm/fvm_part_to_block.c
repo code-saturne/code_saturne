@@ -7,7 +7,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2008-2009  EDF
+  Copyright (C) 2008-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -108,6 +108,9 @@ struct _fvm_part_to_block_t {
   int         *send_displ;      /* Send displs for MPI_Alltoall */
   int         *recv_displ;      /* Receive displs for MPI_Alltoall */
 
+  int         *block_rank_id;   /* Block id for each part entity
+                                   (NULL if based on global_ent_num) */
+  fvm_lnum_t  *send_block_id;   /* Id in block of sent entities */
   fvm_lnum_t  *recv_block_id;   /* Id in block of received entities */
 
   const fvm_gnum_t *global_ent_num; /* Shared global entity numbers */
@@ -187,6 +190,8 @@ _part_to_block_create(MPI_Comm comm)
   d->send_displ = NULL;
   d->recv_displ = NULL;
 
+  d->block_rank_id = NULL;
+  d->send_block_id = NULL;
   d->recv_block_id = NULL;
   d->global_ent_num = NULL;
 
@@ -217,6 +222,7 @@ _init_alltoallv_by_gnum(fvm_part_to_block_t  *d,
   const int n_ranks = d->n_ranks;
   const int rank_step = d->bi.rank_step;
   const fvm_lnum_t block_size = d->bi.block_size;
+  const fvm_gnum_t _block_size = block_size;
 
   const fvm_gnum_t *global_ent_num = d->global_ent_num;
 
@@ -233,7 +239,9 @@ _init_alltoallv_by_gnum(fvm_part_to_block_t  *d,
   /* Count values to send and receive */
 
   for (j = 0; j < d->n_part_ents; j++) {
-    int send_rank = ((global_ent_num[j] -1)/block_size)* rank_step;
+    int64_t g_ent_id = global_ent_num[j] -1;
+    int64_t _send_rank = g_ent_id / _block_size;
+    int send_rank = _send_rank*rank_step;
     d->send_count[send_rank] += 1;
   }
 
@@ -250,7 +258,8 @@ _init_alltoallv_by_gnum(fvm_part_to_block_t  *d,
 
   for (j = 0; j < d->n_part_ents; j++) {
     int64_t g_ent_id = global_ent_num[j] -1;
-    int send_rank = (g_ent_id/block_size)*rank_step;
+    int64_t _send_rank = g_ent_id / _block_size;
+    int send_rank = _send_rank*rank_step;
     send_block_id[d->send_displ[send_rank]] = g_ent_id % block_size;
     d->send_displ[send_rank] += 1;
   }
@@ -351,6 +360,7 @@ _copy_array_alltoallv(fvm_part_to_block_t   *d,
   unsigned char *send_buf = NULL;
   unsigned char *recv_buf = NULL;
 
+  size_t type_size = fvm_datatype_size[datatype];
   size_t stride_size = fvm_datatype_size[datatype]*stride;
   MPI_Datatype mpi_type = fvm_datatype_to_mpi[datatype];
 
@@ -360,6 +370,7 @@ _copy_array_alltoallv(fvm_part_to_block_t   *d,
   const int n_ranks = d->n_ranks;
   const int rank_step = d->bi.rank_step;
   const fvm_lnum_t base_block_size = d->bi.block_size;
+  const fvm_gnum_t _base_block_size = base_block_size;
   const size_t n_recv_ents = d->recv_size;
 
   const fvm_gnum_t *global_ent_num = d->global_ent_num;
@@ -381,14 +392,27 @@ _copy_array_alltoallv(fvm_part_to_block_t   *d,
 
   /* Prepare list of element values to send */
 
-  for (j = 0; j < d->n_part_ents; j++) {
-    int64_t g_ent_id = global_ent_num[j] -1;
-    int send_rank = (g_ent_id/base_block_size)*rank_step;
-    size_t r_displ = j*stride_size;
-    size_t w_displ = d->send_displ[send_rank]*stride_size;
-    d->send_displ[send_rank] += 1;
-    for (k = 0; k < stride_size; k++)
-      send_buf[w_displ + k] = _part_values[r_displ + k];
+  if (d->block_rank_id == NULL) {
+    for (j = 0; j < d->n_part_ents; j++) {
+      int64_t g_ent_id = global_ent_num[j] -1;
+      int64_t _send_rank = g_ent_id / _base_block_size;
+      int send_rank = _send_rank*rank_step;
+      size_t r_displ = j*stride_size;
+      size_t w_displ = d->send_displ[send_rank]*type_size;
+      d->send_displ[send_rank] += stride;
+      for (k = 0; k < stride_size; k++)
+        send_buf[w_displ + k] = _part_values[r_displ + k];
+    }
+  }
+  else {
+    for (j = 0; j < d->n_part_ents; j++) {
+      int send_rank = d->block_rank_id[j];
+      size_t r_displ = j*stride_size;
+      size_t w_displ = d->send_displ[send_rank]*type_size;
+      d->send_displ[send_rank] += stride;
+      for (k = 0; k < stride_size; k++)
+        send_buf[w_displ + k] = _part_values[r_displ + k];
+    }
   }
 
   /* Reset send_displ */
@@ -446,11 +470,11 @@ _copy_array_alltoallv(fvm_part_to_block_t   *d,
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_array_gather(fvm_part_to_block_t   *d,
-                   fvm_datatype_t         datatype,
-                   int                    stride,
-                   const void            *part_values,
-                   void                  *block_values)
+_copy_array_gatherv(fvm_part_to_block_t   *d,
+                    fvm_datatype_t         datatype,
+                    int                    stride,
+                    const void            *part_values,
+                    void                  *block_values)
 {
   int        i;
   size_t     j, k;
@@ -512,6 +536,455 @@ _copy_array_gather(fvm_part_to_block_t   *d,
       d->recv_displ[i] /= stride;
     }
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Copy array data from block distribution to general domain partition.
+ *
+ * arguments:
+ *   d           <-- partition to block distributor
+ *   part_index  <-- local index in general partition distribution
+ *                   (size: n_part_entities + 1)
+ *   block_index --> local index in block distribution
+ *                   (size: n_block_entities + 1)
+ *----------------------------------------------------------------------------*/
+
+static void
+_copy_index_alltoallv(fvm_part_to_block_t  *d,
+                      const fvm_lnum_t     *part_index,
+                      fvm_lnum_t           *block_index)
+{
+  int        i;
+  size_t     j;
+
+  fvm_lnum_t *send_buf = NULL;
+  fvm_lnum_t *recv_buf = NULL;
+
+  const int n_ranks = d->n_ranks;
+  const int rank_step = d->bi.rank_step;
+  const fvm_lnum_t base_block_size = d->bi.block_size;
+  const fvm_gnum_t _base_block_size = base_block_size;
+  const fvm_gnum_t *global_ent_num = d->global_ent_num;
+
+  /* Prepare MPI buffers */
+
+  BFT_MALLOC(send_buf, d->n_part_ents, fvm_lnum_t);
+
+  /* Prepare list of element values to send */
+
+  if (d->block_rank_id == NULL) {
+    for (j = 0; j < d->n_part_ents; j++) {
+      int64_t g_ent_id = global_ent_num[j] -1;
+      int64_t _send_rank = g_ent_id/_base_block_size;
+      int send_rank = _send_rank*rank_step;
+      send_buf[d->send_displ[send_rank]] = part_index[j+1] - part_index[j];
+      d->send_displ[send_rank] += 1;
+    }
+  }
+  else {
+    for (j = 0; j < d->n_part_ents; j++) {
+      int send_rank = d->block_rank_id[j];
+      send_buf[d->send_displ[send_rank]] = part_index[j+1] - part_index[j];
+      d->send_displ[send_rank] += 1;
+    }
+  }
+
+  /* Reset send_displ */
+
+  for (i = 0; i < n_ranks; i++)
+    d->send_displ[i] -= d->send_count[i];
+
+  BFT_MALLOC(recv_buf, d->recv_size, fvm_lnum_t);
+
+  /* Exchange values */
+
+  MPI_Alltoallv(send_buf, d->send_count, d->send_displ, FVM_MPI_LNUM,
+                recv_buf, d->recv_count, d->recv_displ, FVM_MPI_LNUM,
+                d->comm);
+
+  /* Distribute received values */
+
+  if (block_index != NULL) {
+
+    for (j = 0; j < d->n_block_ents+1; j++)
+      block_index[j] = 0;
+
+    for (j = 0; j < d->recv_size; j++)
+      block_index[d->recv_block_id[j]+1] = recv_buf[j];
+
+    /* Transform count to index */
+
+    for (j = 0; j < d->n_block_ents; j++)
+      block_index[j+1] += block_index[j];
+  }
+
+  /* Cleanup */
+
+  BFT_FREE(recv_buf);
+  BFT_FREE(send_buf);
+}
+
+/*----------------------------------------------------------------------------
+ * Copy array data from block distribution to general domain partition,
+ * using gather to rank 0 when only one block is active.
+ *
+ * arguments:
+ *   d           <-- partition to block distributor
+ *   part_index  <-- local index in general partition distribution
+ *                   (size: n_part_entities + 1)
+ *   block_index --> local index in block distribution
+ *                   (size: n_block_entities + 1)
+ *----------------------------------------------------------------------------*/
+
+static void
+_copy_index_gatherv(fvm_part_to_block_t  *d,
+                    const fvm_lnum_t     *part_index,
+                    fvm_lnum_t           *block_index)
+{
+  size_t     j;
+
+  fvm_lnum_t *send_buf = NULL;
+  fvm_lnum_t *recv_buf = NULL;
+
+  int send_count = d->n_part_ents;
+
+  const size_t n_recv_ents = d->recv_size;
+
+  /* Prepare MPI buffers */
+
+  BFT_MALLOC(send_buf, d->n_part_ents, fvm_lnum_t);
+
+  /* Prepare list of element values to send */
+
+  for (j = 0; j < d->n_part_ents; j++)
+    send_buf[j] = part_index[j+1] - part_index[j];
+
+  BFT_MALLOC(recv_buf, n_recv_ents, fvm_lnum_t);
+
+  /* Exchange values */
+
+  MPI_Gatherv(send_buf, send_count, FVM_MPI_LNUM,
+              recv_buf, d->recv_count, d->recv_displ, FVM_MPI_LNUM,
+              0, d->comm);
+
+  /* Distribute received values */
+
+  if (block_index != NULL) {
+
+    for (j = 0; j < d->n_block_ents+1; j++)
+      block_index[j] = 0;
+
+    for (j = 0; j < n_recv_ents; j++)
+      block_index[d->recv_block_id[j]+1] = recv_buf[j];
+
+    /* Transform count to index */
+
+    for (j = 0; j < d->n_block_ents; j++)
+      block_index[j+1] += block_index[j];
+  }
+
+  /* Cleanup */
+
+  BFT_FREE(recv_buf);
+  BFT_FREE(send_buf);
+}
+
+/*----------------------------------------------------------------------------
+ * Copy indexed data from general domain partition to block distribution.
+ *
+ * This is useful for distribution of entity connectivity information.
+ *
+ * arguments:
+ *   d           <-- partition to block distributor
+ *   datatype    <-- type of data considered
+ *   part_index  <-- local index in general distribution
+ *   part_val    <-- numbers in general  distribution
+ *                   (size: send_index[n_part_ents])
+ *   block_index --> local index in block distribution
+ *   block_val   --> values in block distribution
+ *                   (size: recv_index[n_block_ents])
+ *----------------------------------------------------------------------------*/
+
+static void
+_copy_indexed_alltoallv(fvm_part_to_block_t   *d,
+                        fvm_datatype_t         datatype,
+                        const fvm_lnum_t      *part_index,
+                        const void            *part_val,
+                        const fvm_lnum_t      *block_index,
+                        void                  *block_val)
+{
+  int    i, l;
+  size_t j, k;
+
+  size_t w_displ = 0, r_displ = 0;
+  size_t send_size = 0, recv_size = 0;
+
+  int  *send_count = NULL;
+  int  *recv_count = NULL;
+  int  *send_displ = NULL;
+  int  *recv_displ = NULL;
+
+  unsigned char *send_buf = NULL;
+  unsigned char *recv_buf = NULL;
+
+  const unsigned char *_part_val = part_val;
+  unsigned char *_block_val = block_val;
+
+  size_t type_size = fvm_datatype_size[datatype];
+  MPI_Datatype mpi_type = fvm_datatype_to_mpi[datatype];
+
+  const int n_ranks = d->n_ranks;
+  const int rank_step = d->bi.rank_step;
+  const fvm_lnum_t base_block_size = d->bi.block_size;
+  const fvm_gnum_t _base_block_size = base_block_size;
+  const size_t n_recv_ents = d->recv_size;
+
+  const fvm_gnum_t *global_ent_num = d->global_ent_num;
+
+  /* Build send and receive counts */
+  /*-------------------------------*/
+
+  BFT_MALLOC(send_count, n_ranks, int);
+  BFT_MALLOC(recv_count, n_ranks, int);
+  BFT_MALLOC(send_displ, n_ranks, int);
+  BFT_MALLOC(recv_displ, n_ranks, int);
+
+  for (i = 0; i < n_ranks; i++) {
+    send_count[i] = 0;
+    recv_count[i] = 0;
+  }
+
+  /* Prepare count of element values to send */
+
+  if (d->block_rank_id == NULL) {
+    for (j = 0; j < d->n_part_ents; j++) {
+      int64_t g_ent_id = global_ent_num[j] -1;
+      int64_t _send_rank = g_ent_id/_base_block_size;
+      int send_rank = _send_rank*rank_step;
+      send_count[send_rank] += part_index[j+1] - part_index[j];
+    }
+  }
+  else {
+    for (j = 0; j < d->n_part_ents; j++) {
+      int send_rank = d->block_rank_id[j];
+      send_count[send_rank] += part_index[j+1] - part_index[j];
+    }
+  }
+
+  /* Prepare count of element values to receive */
+
+  k = 0;
+  for (i = 0; i < n_ranks; i++) {
+    for (l = 0; l < d->recv_count[i]; l++) {
+      w_displ = d->recv_block_id[k++];
+      recv_count[i] += block_index[w_displ + 1] - block_index[w_displ];
+    }
+  }
+
+  send_size = _compute_displ(n_ranks, send_count, send_displ);
+  recv_size = _compute_displ(n_ranks, recv_count, recv_displ);
+
+
+  /* Build send and receive buffers */
+  /*--------------------------------*/
+
+  BFT_MALLOC(send_buf, send_size * type_size, unsigned char);
+  BFT_MALLOC(recv_buf, recv_size * type_size, unsigned char);
+
+  if (d->block_rank_id == NULL) {
+    for (j = 0; j < d->n_part_ents; j++) {
+      int64_t g_ent_id = global_ent_num[j] -1;
+      int64_t _send_rank = g_ent_id/_base_block_size;
+      int send_rank = _send_rank*rank_step;
+      size_t ent_size = (part_index[j+1] - part_index[j]);
+      r_displ = part_index[j]*type_size;
+      w_displ = send_displ[send_rank]*type_size;
+      send_displ[send_rank] += ent_size;
+      for (k = 0; k < ent_size*type_size; k++)
+        send_buf[w_displ + k] = _part_val[r_displ + k];
+    }
+  }
+  else {
+    for (j = 0; j < d->n_part_ents; j++) {
+      int send_rank = d->block_rank_id[j];
+      size_t ent_size = (part_index[j+1] - part_index[j]);
+      r_displ = part_index[j]*type_size;
+      w_displ = send_displ[send_rank]*type_size;
+      send_displ[send_rank] += ent_size;
+      for (k = 0; k < ent_size*type_size; k++)
+        send_buf[w_displ + k] = _part_val[r_displ + k];
+    }
+  }
+
+  /* Reset send_displ */
+
+  for (i = 0; i < n_ranks; i++)
+    send_displ[i] -= send_count[i];
+
+  BFT_MALLOC(recv_buf, recv_size*type_size, unsigned char);
+
+  /* Exchange values */
+
+  MPI_Alltoallv(send_buf, send_count, send_displ, mpi_type,
+                recv_buf, recv_count, recv_displ, mpi_type, d->comm);
+
+  BFT_FREE(send_buf);
+  BFT_FREE(send_count);
+  BFT_FREE(send_displ);
+
+  BFT_FREE(recv_count);
+  BFT_FREE(recv_displ);
+
+  /* Distribute received values */
+
+  if (block_index != NULL) {
+
+    r_displ = 0;
+
+    for (j = 0; j < n_recv_ents; j++) {
+
+      size_t block_id = d->recv_block_id[j];
+      size_t ent_size =   (block_index[block_id+1] - block_index[block_id])
+                        * type_size;
+      w_displ = block_index[block_id] * type_size;
+
+      for (k = 0; k < ent_size; k++)
+        _block_val[w_displ++] = recv_buf[r_displ++];
+    }
+
+    assert(r_displ == recv_size*type_size);
+  }
+
+  /* Cleanup */
+
+  BFT_FREE(recv_buf);
+}
+
+/*----------------------------------------------------------------------------
+ * Copy indexed data from general domain partition to block distribution,
+ * using gather to rank 0 when only one block is active.
+ *
+ * This is useful for distribution of entity connectivity information.
+ *
+ * arguments:
+ *   d           <-- partition to block distributor
+ *   datatype    <-- type of data considered
+ *   part_index  <-- local index in general distribution
+ *   part_val    <-- numbers in general  distribution
+ *                   (size: send_index[n_part_ents])
+ *   block_index --> local index in block distribution
+ *   block_val   --> values in block distribution
+ *                   (size: recv_index[n_block_ents])
+ *----------------------------------------------------------------------------*/
+
+static void
+_copy_indexed_gatherv(fvm_part_to_block_t   *d,
+                      fvm_datatype_t         datatype,
+                      const fvm_lnum_t      *part_index,
+                      const void            *part_val,
+                      const fvm_lnum_t      *block_index,
+                      void                  *block_val)
+{
+  int    i, l;
+  size_t j, k;
+
+  size_t w_displ = 0, r_displ = 0;
+  size_t recv_size = 0;
+  int  send_count = 0;
+
+  int  *recv_count = NULL;
+  int  *recv_displ = NULL;
+
+  unsigned char *send_buf = NULL;
+  unsigned char *recv_buf = NULL;
+
+  const unsigned char *_part_val = part_val;
+  unsigned char *_block_val = block_val;
+
+  size_t type_size = fvm_datatype_size[datatype];
+  MPI_Datatype mpi_type = fvm_datatype_to_mpi[datatype];
+
+  const int n_ranks = d->n_ranks;
+  const size_t n_recv_ents = d->recv_size;
+
+  /* Build send and receive counts */
+  /*-------------------------------*/
+
+  BFT_MALLOC(recv_count, n_ranks, int);
+  BFT_MALLOC(recv_displ, n_ranks, int);
+
+  for (i = 0; i < n_ranks; i++)
+    recv_count[i] = 0;
+
+  /* Prepare count of element values to send */
+
+  for (j = 0; j < d->n_part_ents; j++)
+    send_count += part_index[j+1] - part_index[j];
+
+  /* Prepare count of element values to receive */
+
+  k = 0;
+  for (i = 0; i < n_ranks; i++) {
+    for (l = 0; l < d->recv_count[i]; l++) {
+      w_displ = d->recv_block_id[k++];
+      recv_count[i] += block_index[w_displ + 1] - block_index[w_displ];
+    }
+  }
+
+  recv_size = _compute_displ(n_ranks, recv_count, recv_displ);
+
+  /* Build send and receive buffers */
+  /*--------------------------------*/
+
+  BFT_MALLOC(send_buf, send_count * type_size, unsigned char);
+  BFT_MALLOC(recv_buf, recv_size * type_size, unsigned char);
+
+  for (j = 0; j < d->n_part_ents; j++) {
+    size_t ent_size = (part_index[j+1] - part_index[j]);
+    r_displ = part_index[j]*type_size;
+    w_displ += ent_size*type_size;
+    for (k = 0; k < ent_size*type_size; k++)
+      send_buf[w_displ + k] = _part_val[r_displ + k];
+  }
+
+  assert(w_displ == send_count*type_size);
+
+  BFT_MALLOC(recv_buf, recv_size*type_size, unsigned char);
+
+  /* Exchange values */
+
+  MPI_Gatherv(send_buf, send_count, mpi_type,
+              recv_buf, recv_count, recv_displ, mpi_type,
+              0, d->comm);
+
+  BFT_FREE(send_buf);
+
+  BFT_FREE(recv_count);
+  BFT_FREE(recv_displ);
+
+  /* Distribute received values */
+
+  if (block_index != NULL) {
+
+    r_displ = 0;
+
+    for (j = 0; j < n_recv_ents; j++) {
+
+      size_t block_id = d->recv_block_id[j];
+      size_t ent_size =   (block_index[block_id+1] - block_index[block_id])
+                        * type_size;
+      w_displ = block_index[block_id] * type_size;
+
+      for (k = 0; k < ent_size; k++)
+        _block_val[w_displ++] = recv_buf[r_displ++];
+    }
+
+    assert(r_displ == recv_size*type_size);
+  }
+
+  /* Cleanup */
+
+  BFT_FREE(recv_buf);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -615,6 +1088,8 @@ fvm_part_to_block_destroy(fvm_part_to_block_t **d)
   BFT_FREE(_d->send_displ);
   BFT_FREE(_d->recv_displ);
 
+  BFT_FREE(_d->block_rank_id);
+  BFT_FREE(_d->send_block_id);
   BFT_FREE(_d->recv_block_id);
 
   BFT_FREE(*d);
@@ -642,7 +1117,7 @@ fvm_part_to_block_get_n_part_ents(fvm_part_to_block_t *d)
 }
 
 /*----------------------------------------------------------------------------
- * Copy array data from block distribution to general domain partition.
+ * Copy array data from general domain partition to block distribution.
  *
  * arguments:
  *   d            <-- partition to block distributor
@@ -660,17 +1135,82 @@ fvm_part_to_block_copy_array(fvm_part_to_block_t   *d,
                              void                  *block_values)
 {
   if (d->bi.n_ranks == 1)
-    _copy_array_gather(d,
-                       datatype,
-                       stride,
-                       part_values,
-                       block_values);
+    _copy_array_gatherv(d,
+                        datatype,
+                        stride,
+                        part_values,
+                        block_values);
   else
     _copy_array_alltoallv(d,
                           datatype,
                           stride,
                           part_values,
                           block_values);
+}
+
+/*----------------------------------------------------------------------------
+ * Copy local index from general domain partition to block distribution.
+ *
+ * This is useful for distribution of entity connectivity information.
+ *
+ * arguments:
+ *   d           <-- partition to block distributor
+ *   part_index  <-- local index in general partition distribution
+ *                   (size: n_part_entities + 1)
+ *   block_index --> local index in block distribution
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_part_to_block_copy_index(fvm_part_to_block_t  *d,
+                             const fvm_lnum_t     *part_index,
+                             fvm_lnum_t           *block_index)
+
+{
+  if (d->bi.n_ranks == 1)
+    _copy_index_gatherv(d, part_index, block_index);
+  else
+    _copy_index_alltoallv(d, part_index, block_index);
+}
+
+/*----------------------------------------------------------------------------
+ * Copy indexed data from general domain partition to block distribution,
+ * using gather to rank 0 when only one block is active.
+ *
+ * This is useful for distribution of entity connectivity information.
+ *
+ * arguments:
+ *   d           <-- partition to block distributor
+ *   datatype    <-- type of data considered
+ *   part_index  <-- local index in general distribution
+ *   part_val    <-- numbers in general  distribution
+ *                   (size: send_index[n_part_ents])
+ *   block_index --> local index in block distribution
+ *   block_val   --> values in block distribution
+ *                   (size: recv_index[n_block_ents])
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_part_to_block_copy_indexed(fvm_part_to_block_t   *d,
+                               fvm_datatype_t         datatype,
+                               const fvm_lnum_t      *part_index,
+                               const void            *part_val,
+                               const fvm_lnum_t      *block_index,
+                               void                  *block_val)
+{
+  if (d->bi.n_ranks == 1)
+    _copy_indexed_gatherv(d,
+                          datatype,
+                          part_index,
+                          part_val,
+                          block_index,
+                          block_val);
+  else
+    _copy_indexed_alltoallv(d,
+                            datatype,
+                            part_index,
+                            part_val,
+                            block_index,
+                            block_val);
 }
 
 #endif /* defined(HAVE_MPI) */

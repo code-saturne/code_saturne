@@ -148,7 +148,7 @@ fvm_lnum_t
 fvm_part_to_block_get_n_part_ents(fvm_part_to_block_t *d);
 
 /*----------------------------------------------------------------------------
- * Copy array data from block distribution to general domain partition.
+ * Copy array data from general domain partition to block distribution.
  *
  * arguments:
  *   d            <-- partition to block distributor
@@ -164,6 +164,48 @@ fvm_part_to_block_copy_array(fvm_part_to_block_t   *d,
                              int                    stride,
                              const void            *part_values,
                              void                  *block_values);
+
+/*----------------------------------------------------------------------------
+ * Copy local index from general domain partition to block distribution.
+ *
+ * This is useful for distribution of entity connectivity information.
+ *
+ * arguments:
+ *   d           <-- partition to block distributor
+ *   part_index  <-- local index in general partition distribution
+ *                   (size: n_part_entities + 1)
+ *   block_index --> local index in block distribution
+ *                   (size: n_block_entities + 1)
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_part_to_block_copy_index(fvm_part_to_block_t  *d,
+                             const fvm_lnum_t     *part_index,
+                             fvm_lnum_t           *block_index);
+
+/*----------------------------------------------------------------------------
+ * Copy indexed data from general domain partition to block distribution.
+ *
+ * This is useful for distribution of entity connectivity information.
+ *
+ * arguments:
+ *   d           <-- partition to block distributor
+ *   datatype    <-- type of data considered
+ *   part_index  <-- local index in general distribution
+ *   part_val    <-- numbers in general  distribution
+ *                   (size: part_index[n_part_ents])
+ *   block_index --> local index in block distribution
+ *   block_val   --> values in block distribution
+ *                   (size: block_index[n_block_ents])
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_part_to_block_copy_indexed(fvm_part_to_block_t   *d,
+                               fvm_datatype_t         datatype,
+                               const fvm_lnum_t      *part_index,
+                               const void            *part_val,
+                               const fvm_lnum_t      *block_index,
+                               void                  *block_val);
 
 #endif /* defined(HAVE_MPI) */
 

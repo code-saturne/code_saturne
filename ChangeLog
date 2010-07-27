@@ -1,4 +1,10 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add two part-to-block functions in preparation to MPI-I/O writing.
+  modified routines:
+    src/fvm/fvm_part_to_block.c
+    src/fvm/fvm_part_to_block.h
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add counter to memory alloc/realloc/free calls.
   modified routines:
     src/bft/bft_mem_usage.c
