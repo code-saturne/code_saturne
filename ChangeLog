@@ -1,4 +1,9 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a wrong "else if" clause on the size of cs_int_t.
+  modified routine:
+    src/base/cs_post.c
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Now use an appname to distinguish between codes in case of coupling.
   modified routines:
     include/base/cs_base.h
