@@ -1,4 +1,10 @@
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove part of the VmPeak/VmSize query (needed only on old Linux kernels).
+  modified routine:
+    src/bft/bft_mem_usage.c
+    src/bft/bft_mem_usage.h
+
+* 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove a redundant call to the _set_block_ranges function.
   modified routine:
     src/base/cs_preprocessor_data.c

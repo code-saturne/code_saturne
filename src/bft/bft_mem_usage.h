@@ -103,11 +103,7 @@ bft_mem_usage_pr_size(void);
  *
  * The returned value is the maximum returned by bft_mem_usage_pr_size()
  * during the program's lifetime. With memory allocations which return
- * memory to the system (such as the GNU glibc on Linux systems),
- * this value will be correct only if allocation is tracked. This should
- * be the case if malloc hooks are used with the glibc allocation
- * functions (BFT library's default configuration/installation option),
- * but may give results lower than the true maximum in other cases.
+ * memory to the system, this value could be incorrect in certain cases.
  */
 
 size_t

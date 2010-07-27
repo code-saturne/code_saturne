@@ -140,9 +140,6 @@ static void  *_bft_mem_usage_global_init_sbrk = NULL;
 #if defined (__linux__) && defined(HAVE_SYS_STAT_H) \
                         && defined(HAVE_SYS_TYPES_H)
 static int    _bft_mem_usage_proc_file_init = 0;
-static int    _bft_mem_usage_proc_file_peak = 0;
-static int    _bft_mem_usage_proc_file_fd   = -1;
-static long   _bft_mem_usage_proc_file_pos  = 0;
 #endif
 
 #if defined(HAVE_MALLOC_HOOKS)
@@ -372,26 +369,20 @@ _bft_mem_usage_pr_size_init(void)
   char  buf[512]; /* should be large enough for "/proc/%lu/status"
                      then beginning of file content */
   size_t  r_size, i;
+  _Bool   status_has_size = false;
   _Bool   status_has_peak = false;
+  int  fd;
   const pid_t  pid = getpid();
 
   /*
     Under Linux with procfs, one line of the pseudo-file "/proc/pid/status"
     (where pid is the process number) is of the following form:
     VmSize:     xxxx kB
-    This line may be the 10th for a 2.4 kernel, or the 12th to 13th for
-    a 2.6.x kernel. On more recent 2.6.x kernels, another line (the 12th)
-    is of the form:
+    This line may be the 12th to 13th for a 2.6.x kernel.
+    On recent enough 2.6.x kernels, another line (the 12th) is of the form:
     VmPeak:     xxxx kB
-    When VmSize is available but not VmPeak, we use low-level file I/O on
-    this file (using read() instead of fread()) to avoid update issues due
-    to buffering when keeping the file open and re-reading the area
-    containing the "VmSize" information.
-    When VmPeak is also available, memory use tracking is not necessary, so
-    the number of calls to bft_mem_usage_pr_size() is presumably much lower
-    (being based solely on the user code, not on bft_mem_usage's tracking),
-    so we prefer to open and close "/proc/pid/status" on each
-    call to bft_mem_usage_pr_size().
+    When both VmSize and VmPeak are available, we are able to determine
+    memory use in a robust fashion using these fields.
   */
 
   if (_bft_mem_usage_proc_file_init != 0)
@@ -399,11 +390,11 @@ _bft_mem_usage_pr_size_init(void)
 
   sprintf(buf, "/proc/%lu/status", (unsigned long) pid);
 
-  _bft_mem_usage_proc_file_fd = open(buf, O_RDONLY);
+  fd = open(buf, O_RDONLY);
 
-  if (_bft_mem_usage_proc_file_fd != -1) {
+  if (fd != -1) {
 
-    r_size = read(_bft_mem_usage_proc_file_fd, buf, 512);
+    r_size = read(fd, buf, 512);
 
     if (r_size > 32) { /* Leave a margin for "VmPeak" or "VmSize:" line */
       r_size -= 32;
@@ -414,65 +405,28 @@ _bft_mem_usage_pr_size_init(void)
         }
       }
       for (i = 0; i < r_size; i++) {
-        if (buf[i] == 'V' && strncmp(buf+i, "VmSize:", 7) == 0)
+        if (buf[i] == 'V' && strncmp(buf+i, "VmSize:", 7) == 0) {
+          status_has_size = true;
           break;
+        }
       }
       /* If VmSize was found, proc file may be used */
-      if (i < r_size) {
-        if (status_has_peak == true) {
-          _bft_mem_usage_proc_file_peak = 1;
-        }
-        else {
-          /* set search position, leaving small margin ahead of position
-             in case file content length before "VmSize:" changes
-             (typically by 1 or 2 chars) */
-          i = (i > 16) ? i -16 : 0;
-          _bft_mem_usage_proc_file_pos = i;
-        }
+      if (status_has_peak && status_has_size)
         _bft_mem_usage_proc_file_init = 1;
-      }
     }
 
-    /* Close file if unusable or if VmPeak is available */
-    if (   _bft_mem_usage_proc_file_init == -1
-        || _bft_mem_usage_proc_file_peak == 1) {
-      (void)close(_bft_mem_usage_proc_file_fd);
-      _bft_mem_usage_proc_file_fd = -1;
-    }
+    (void)close(fd);
   }
 
   /* If initialization failed for some reason (proc file unavailable or does
      or does not contain the required fields), mark method as unusable */
   if (_bft_mem_usage_proc_file_init == 0)
     _bft_mem_usage_proc_file_init = -1;
-
-#if defined(HAVE_MALLOC_HOOKS)
-  /* Unset tracking hooks if unneeded */
-  _bft_mem_usage_unset_hooks();
-#endif
-}
-
-/*!
- * \brief Finalize current process memory use count depending on system.
- */
-
-static void
-_bft_mem_usage_pr_size_end(void)
-{
-  if (_bft_mem_usage_proc_file_init != 1)
-    return;
-
-  if (_bft_mem_usage_proc_file_fd != -1) {
-    (void)close(_bft_mem_usage_proc_file_fd);
-    _bft_mem_usage_proc_file_init = 0;
-    _bft_mem_usage_proc_file_fd = -1;
-  }
 }
 
 #else  /* defined (__linux__) && ... */
 
 #define _bft_mem_usage_pr_size_init()
-#define _bft_mem_usage_pr_size_end()
 
 #endif /* defined (__linux__) && ... */
 
@@ -523,12 +477,8 @@ void
 bft_mem_usage_end(void)
 {
 #if defined(HAVE_MALLOC_HOOKS)
-
   _bft_mem_usage_unset_hooks();
-
 #endif
-
-  _bft_mem_usage_pr_size_end();
 }
 
 /*!
@@ -566,86 +516,45 @@ bft_mem_usage_pr_size(void)
     VmPeak:     xxxx kB
   */
 
-  {
-    if (_bft_mem_usage_proc_file_init == 0)
-      _bft_mem_usage_pr_size_init();
+  if (_bft_mem_usage_proc_file_init == 0)
+    _bft_mem_usage_pr_size_init();
 
-    if (_bft_mem_usage_proc_file_init == 1) {
+  if (_bft_mem_usage_proc_file_init == 1) {
 
-      /* If "VmPeak:" unavailable, find "VmSize:" in already opened file */
+    char  buf[81]; /* should be large enough for "/proc/%lu/status" */
+    const pid_t  pid = getpid();
 
-      if (_bft_mem_usage_proc_file_peak == 0) {
+    FILE *fp;
+    unsigned long val;
+    char *s;
 
-        char  buf[64]; /* should be large enough for "VmSize:" area */
-        size_t  r_size, i;
-        unsigned long  val;
+    sprintf(buf, "/proc/%lu/status", (unsigned long) pid);
+    fp = fopen(buf, "r");
 
-        if (lseek(_bft_mem_usage_proc_file_fd,
-                  _bft_mem_usage_proc_file_pos,
-                  SEEK_SET) > -1) {
+    if (fp != NULL) {
 
-          r_size = read(_bft_mem_usage_proc_file_fd, buf, 64);
+      int fields_read = 0;
 
-          if (r_size > 32) { /* Leave a margin for "VmSize:" line */
-            buf[r_size - 1] = '\0';
-            r_size -= 32;
-            for (i = 0; i < r_size; i++)
-              if (buf[i] == 'V' && strncmp(buf+i, "VmSize:", 7) == 0)
-                break;
-            sscanf (buf + i + 7, "%lu", &val);
-            sys_mem_usage = (size_t) val;
-          }
-
+      while (fields_read < 2) {
+        s = fgets(buf, 80, fp);
+        if (s == NULL)
+          break;
+        if (strncmp(s, "VmSize:", 7) == 0) {
+          sscanf (s + 7, "%lu", &val);
+          sys_mem_usage = (size_t) val;
+          fields_read += 1;
         }
-
+        else if (strncmp(s, "VmPeak:", 7) == 0) {
+          sscanf (s + 7, "%lu", &val);
+          if ((size_t) val > _bft_mem_usage_global_max_pr)
+            _bft_mem_usage_global_max_pr = (size_t) val;
+          fields_read += 1;
+        }
       }
 
-      /* If "VmPeak:" available, open and close file */
+      fclose(fp);
 
-      else {
-
-        char  buf[81]; /* should be large enough for "/proc/%lu/status" */
-        const pid_t  pid = getpid();
-
-        FILE *fp;
-        unsigned long val;
-        char *s;
-
-        sprintf(buf, "/proc/%lu/status", (unsigned long) pid);
-        fp = fopen(buf, "r");
-
-        if (fp != NULL) {
-
-          int fields_read = 0;
-
-          while (fields_read < 2) {
-            s = fgets(buf, 80, fp);
-            if (s == NULL)
-              break;
-            if (strncmp(s, "VmSize:", 7) == 0) {
-              sscanf (s + 7, "%lu", &val);
-              sys_mem_usage = (size_t) val;
-              fields_read += 1;
-            }
-            else if (strncmp(s, "VmPeak:", 7) == 0) {
-              sscanf (s + 7, "%lu", &val);
-              if ((size_t) val > _bft_mem_usage_global_max_pr)
-                _bft_mem_usage_global_max_pr = (size_t) val;
-              fields_read += 1;
-            }
-          }
-
-          fclose(fp);
-
-        }
-
-      } /* End of condition on "VmPeak:" availability */
-
-    }
-
-#if !defined(HAVE_MALLOC_HOOKS)
-    _bft_mem_usage_pr_size_end();
-#endif
+    } /* End of condition on "VmSize:" and "VmPeak:" availability */
 
   }
 
@@ -817,11 +726,7 @@ bft_mem_usage_pr_size(void)
  *
  * The returned value is the maximum returned by bft_mem_usage_pr_size()
  * during the program's lifetime. With memory allocations which return
- * memory to the system (such as the GNU glibc on Linux systems),
- * this value will be correct only if allocation is tracked. This should
- * be the case if malloc hooks are used with the glibc allocation
- * functions (BFT library's default configuration/installation option),
- * but may give results lower than the true maximum in other cases.
+ * memory to the system, this value could be incorrect in certain cases.
  */
 
 size_t
