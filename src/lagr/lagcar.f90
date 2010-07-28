@@ -213,6 +213,15 @@ double precision xnul , rom , prt , fnus , xrkl , xcp
 ! 0.  GESTION MEMOIRE
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+bb1 = 0.d0
+bb2 = 0.d0
+bb3 = 0.d0
+ktil = 0.d0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

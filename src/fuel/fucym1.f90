@@ -164,6 +164,18 @@ double precision x2t
 ! 1. CALCULS PRELIMINAIRES
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+zco23 = 0.d0
+zco2t = 0.d0
+zco3 = 0.d0
+zh2o3 = 0.d0
+zh2s3 = 0.d0
+zn23 = 0.d0
+zo23 = 0.d0
+zfov3 = 0.d0
+zso23 = 0.d0
+
 ! --- Masses molaires
 
 wmco   = wmole(ico  )

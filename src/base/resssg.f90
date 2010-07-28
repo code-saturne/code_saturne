@@ -251,6 +251,13 @@ double precision xaniso(3,3), xstrai(3,3), xrotac(3,3), xprod(3,3)
 ! 1. INITIALISATION
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+iii = 0
+jjj = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

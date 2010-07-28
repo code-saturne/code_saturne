@@ -288,6 +288,39 @@ double precision upx   , upy   , upz   , vistot
 !  COEFU sert a stocker la vitesse en I'
 !    On l'utilise aussi pour stocker la pression en I' (dans TYPECL), etc
 
+! Initialize variables to avoid compiler warnings
+
+iepiph = 0
+ifbiph = 0
+ikiph = 0
+iomgip = 0
+iphiph = 0
+ir11ip = 0
+ir22ip = 0
+ir33ip = 0
+ir12ip = 0
+ir13ip = 0
+ir23ip = 0
+iclep = 0
+iclk = 0
+iclomg = 0
+iclfb = 0
+iclphi = 0
+icl11 = 0
+icl22 = 0
+icl33 = 0
+icl12 = 0
+icl13 = 0
+icl23 = 0
+iclvar = 0
+iclvaf = 0
+icluf = 0
+iclvf = 0
+iclwf = 0
+ipccv = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

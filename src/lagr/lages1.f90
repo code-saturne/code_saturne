@@ -225,6 +225,10 @@ idebra = idbra0
 ! 1. INITIALISATIONS
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+vitf = 0.d0
+
 iphas = ilphas
 
 grav(1) = gx

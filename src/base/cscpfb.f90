@@ -156,6 +156,14 @@ double precision vitent, daxis2
 ! 1.  INITIALISATIONS
 !=========================================================================
 
+! Initialize variables to avoid compiler warnings
+
+itrav = 0
+
+vitent = 0.d0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 
@@ -193,6 +201,20 @@ if (icormx(numcpl).eq.1) then
   omgnrl = sqrt(omegal(1)**2 + omegal(2)**2 + omegal(3)**2)
   omgnrd = sqrt(omegad(1)**2 + omegad(2)**2 + omegad(3)**2)
   omgnrr = sqrt(omegar(1)**2 + omegar(2)**2 + omegar(3)**2)
+
+else
+
+  omegal(1) = 0.d0
+  omegal(2) = 0.d0
+  omegal(3) = 0.d0
+
+  omegar(1) = 0.d0
+  omegar(2) = 0.d0
+  omegar(3) = 0.d0
+
+  omgnrl = 0.d0
+  omgnrd = 0.d0
+  omgnrr = 0.d0
 
 endif
 

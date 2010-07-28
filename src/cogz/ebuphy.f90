@@ -204,6 +204,15 @@ ipass = ipass + 1
 ! 1. INITIALISATIONS A CONSERVER
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ipckab = 0
+ipt3 = 0
+ipt4 = 0
+
+ckabgb = 0.d0
+ckabgf = 0.d0
+
 ! --- Initialisation memoire
 
 idebia = idbia0

@@ -190,6 +190,17 @@ double precision cmaxs2,cmins2,cmaxa2,cmina2
 ! 0. INITIALISATIONS
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+zchx13 = 0.d0
+zchx23 = 0.d0
+zco23 = 0.d0
+zco2t = 0.d0
+zco3 = 0.d0
+zh2o3 = 0.d0
+zn23 = 0.d0
+zo23 = 0.d0
+
 ! --- Initialisation tableau de travail
 
 do iel = 1, ncel

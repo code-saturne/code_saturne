@@ -1429,7 +1429,7 @@ _ecs_pre_ideas__lit_groups(ecs_maillage_t   *maillage,
   ecs_int_t    max_val_ent[ECS_N_ENTMAIL];
   ecs_int_t    tab_ent[ECS_N_ENTMAIL];
   ecs_int_t    ind_ent;
-  ecs_int_t    min_ent;
+  ecs_int_t    min_ent = ECS_N_ENTMAIL;
   ecs_int_t    tmp_ent;
 
   size_t       ent_cpt_elt[ECS_N_ENTMAIL]; /* Nombre d'elements par entite  */

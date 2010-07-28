@@ -204,6 +204,18 @@ double precision epsrgp, climgp, extrap, vrmin, vrmax, var
 ! 0. INITIALISATION
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ipcsii = 0
+ipcdi1 = 0
+ipcdi2 = 0
+ipcdi3 = 0
+ipcla1 = 0
+ipcla2 = 0
+ipcla3 = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

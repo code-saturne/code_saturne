@@ -499,7 +499,7 @@ _peinur1(cs_int_t      strid_c,
          cs_real_t    *w3)
 {
   cs_int_t  i, t_id, rank_id, shift;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_halo_t  *halo = mesh->halo;
@@ -939,7 +939,7 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
                           cs_real_t         *wdrdxy)
 {
   cs_int_t  i, cell_id, rank_id, shift, t_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_halo_t  *halo = mesh->halo;
@@ -1101,9 +1101,9 @@ CS_PROCF (pering, PERING)(const cs_int_t    *nphas,
                           const cs_real_t   *dudxyz,
                           const cs_real_t   *drdxyz)
 {
-  cs_int_t  i, rank_id, phase_id, t_id, shift;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext, tag;
-  cs_int_t  d_ph, d_var;
+  cs_int_t  i, rank_id, phase_id, t_id, shift, tag;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
+  cs_int_t  d_ph = 0, d_var = 0;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_halo_t  *halo = mesh->halo;
@@ -1324,7 +1324,7 @@ CS_PROCF (peinu2, PEINU2)(const cs_int_t    *iphas,
                           cs_real_t         *dudxyz)
 {
   cs_int_t  i, t_id, rank_id, shift;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
   fvm_periodicity_type_t  perio_type;
   cs_real_t  matrix[3][4];
 
@@ -1479,7 +1479,7 @@ CS_PROCF (peinr2, PEINR2)(const cs_int_t    *iphas,
                           cs_real_t         *drdxyz)
 {
   cs_int_t  i, i1, i2, j, k, l, m, rank_id, shift, t_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
   fvm_periodicity_type_t  perio_type;
 
   cs_real_t  matrix[3][4];
@@ -1824,7 +1824,7 @@ cs_perio_sync_coords(const cs_halo_t *halo,
                      cs_real_t       *coords)
 {
   cs_int_t  i, rank_id, t_id, shift;
-  cs_int_t  start_std, start_ext, end_std, end_ext, length;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
 
   cs_real_t  matrix[3][4];
 
@@ -1904,7 +1904,7 @@ cs_perio_sync_var_scal(const cs_halo_t *halo,
                        cs_real_t        var[])
 {
   cs_int_t  i, rank_id, shift, t_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
 
   fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
 
@@ -1990,7 +1990,7 @@ cs_perio_sync_var_vect(const cs_halo_t *halo,
                        cs_real_t        var_z[])
 {
   cs_int_t  i, rank_id, shift, t_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
   cs_real_t  x_in, y_in, z_in;
 
   cs_real_t matrix[3][4];
@@ -2144,7 +2144,7 @@ cs_perio_sync_var_tens(const cs_halo_t *halo,
                        cs_real_t        var33[])
 {
   cs_int_t  i, rank_id, shift, t_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
   cs_real_t  v11, v12, v13, v21, v22, v23, v31, v32, v33;
 
   cs_real_t  matrix[3][4];
@@ -2274,7 +2274,7 @@ cs_perio_sync_var_diag(const cs_halo_t *halo,
                        cs_real_t        var33[])
 {
   cs_int_t  i, rank_id, shift, t_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
   cs_real_t  v11, v22, v33;
   cs_real_t  matrix[3][4];
 
@@ -2442,7 +2442,7 @@ cs_perio_save_rotation_halo(const cs_halo_t   *halo,
                             const cs_real_t    var[])
 {
   cs_int_t  i, rank_id, shift, t_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
   fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
@@ -2523,7 +2523,7 @@ cs_perio_restore_rotation_halo(const cs_halo_t   *halo,
                                cs_real_t          var[])
 {
   cs_int_t  i, rank_id, shift, t_id;
-  cs_int_t  start_std, end_std, length, start_ext, end_ext;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
   fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;

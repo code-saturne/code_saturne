@@ -211,6 +211,37 @@ integer          ippphp, ippfbp, ippomg
 ! 1.  INITIALISATIONS
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+iuiph = 0
+iviph = 0
+iwiph = 0
+iepiph = 0
+ifbiph = 0
+ikiph = 0
+iomgip = 0
+iphiph = 0
+iviph = 0
+ir11ip = 0
+ir22ip = 0
+ir33ip = 0
+ir12ip = 0
+ir13ip = 0
+ir23ip = 0
+ippepp = 0
+ippkip = 0
+ippfbp = 0
+ippomg = 0
+ippphp = 0
+ipp11p = 0
+ipp22p = 0
+ipp33p = 0
+ipp12p = 0
+ipp13p = 0
+ipp23p = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

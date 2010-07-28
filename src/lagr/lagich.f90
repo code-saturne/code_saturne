@@ -208,6 +208,10 @@ parameter ( precis = 1.d-15 )
 ! 1. INITIALISATIONS
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+coef = 0.d0
+
 iphas = ilphas
 
 d6spi = 6.d0 / pi

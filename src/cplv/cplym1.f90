@@ -202,6 +202,10 @@ double precision reac1  , reac2  , reac3
 ! 1. INITIALISATIONS
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+s1 = 0.d0
+
 ! --- Initialisation tableau de travail
 
 do iel = 1, ncel

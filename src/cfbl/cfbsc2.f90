@@ -250,6 +250,13 @@ double precision pfac1, pfac2, pfac3, unsvol
 ! 1.  INITIALISATION
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+pif = 0.d0
+pjf = 0.d0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

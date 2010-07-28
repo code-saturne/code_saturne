@@ -1,4 +1,83 @@
 * 28/07/2010 - David Monfort <david.monfort@edf.fr>
+  Initialize some variables to avoid spurious compiler warnings, even if there
+  was no real issue in the code.
+  modified routines:
+    preprocessor/appli/ecs_cmd.c
+    preprocessor/pre-post/ecs_champ_post.c
+    preprocessor/pre-post/ecs_champ_post_med.c
+    preprocessor/pre-post/ecs_pre_cgns.c
+    preprocessor/pre-post/ecs_pre_ens.c
+    preprocessor/pre-post/ecs_pre_ideas.c
+    preprocessor/pre-post/ecs_pre_med.c
+    preprocessor/pre-post/ecs_pre_nopo.c
+    preprocessor/util/ecs_comm.c
+    src/atmo/atphyv.f90
+    src/base/bilsc2.f90
+    src/base/clca66.f90
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/clsyvt.f90
+    src/base/condli.f90
+    src/base/coupbo.f90
+    src/base/covofi.f90
+    src/base/cscpfb.f90
+    src/base/cs_gui_matisse.c
+    src/base/cs_join_intersect.c
+    src/base/cs_join_update.c
+    src/base/cs_mesh_warping.c
+    src/base/cs_perio.c
+    src/base/cs_syr3_comm.c
+    src/base/cs_syr3_coupling.c
+    src/base/distpr.f90
+    src/base/dvvpst.f90
+    src/base/iniva0.f90
+    src/base/lecamp.f90
+    src/base/navsto.f90
+    src/base/numvec.f90
+    src/base/preduv.f90
+    src/base/resssg.f90
+    src/base/rijech.f90
+    src/base/typecl.f90
+    src/base/varpos.f90
+    src/base/vericl.f90
+    src/base/verini.f90
+    src/cfbl/cfbsc2.f90
+    src/cfbl/cfqdmv.f90
+    src/cogz/colecd.f90
+    src/cogz/d3pint.f90
+    src/cogz/ebuphy.f90
+    src/cogz/pdflwc.f90
+    src/cogz/pdfpp4.f90
+    src/cplv/cpcym2.f90
+    src/cplv/cpflux.f90
+    src/cplv/cpltsv.f90
+    src/cplv/cplym1.f90
+    src/cplv/cptssc.f90
+    src/cplv/cptsvc.f90
+    src/cplv/cpvarp.f90
+    src/ctwr/cs_ctwr_air_props.c
+    src/ctwr/cs_ctwr.c
+    src/ctwr/cs_ctwr_mesh.c
+    src/elec/elflux.f90
+    src/elec/elphyv.f90
+    src/fuel/fucym1.f90
+    src/fuel/futsvc.f90
+    src/fuel/fuvarp.f90
+    src/lagr/enslag.f90
+    src/lagr/lagcar.f90
+    src/lagr/lagcel.f90
+    src/lagr/lages1.f90
+    src/lagr/lages2.f90
+    src/lagr/lagich.f90
+    src/lagr/lagitf.f90
+    src/lagr/laglis.f90
+    src/lagr/lagnwc.f90
+    src/lagr/lagsta.f90
+    users/atmo/usatcl.f90
+    users/base/usvort.f90
+    users/lagr/uslabo.f90
+
+* 28/07/2010 - David Monfort <david.monfort@edf.fr>
   Remove no more used static functions in the periodicity algorithm.
   modified routines:
     src/base/cs_perio.c

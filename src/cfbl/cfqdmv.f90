@@ -266,6 +266,12 @@ double precision d2s3  , pbord , diipbx, diipby, diipbz, pip, xkb
 ! 1.  INITIALISATION
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+iclik = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

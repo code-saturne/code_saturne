@@ -215,6 +215,14 @@ double precision pis6 , concen
 ! 0.  GESTION MEMOIRE
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ildck1 = 0
+ilmck1 = 0
+ilmch1 = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

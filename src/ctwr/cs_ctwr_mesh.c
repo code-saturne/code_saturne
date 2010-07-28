@@ -1753,6 +1753,8 @@ void cs_ctwr_adair (void)
   fvm_lnum_t loca_cel;
   cs_ctwr_zone_t  *ct;
 
+   ieau = -1;
+
   /*---------------------------------------------*
    * Construction des coefficient d'interpolation*
    * sur chaque zone d echange ict               *

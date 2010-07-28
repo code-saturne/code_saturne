@@ -311,6 +311,8 @@ icliwp = iclrtp(iwiph ,icoef)
 if(itytur(iphas).eq.2 .or. iturb(iphas).eq.50                     &
      .or. iturb(iphas).eq.60) then
   iclik  = iclrtp(ikiph ,icoef)
+else
+  iclik = 0
 endif
 
 ro0iph = ro0(iphas)

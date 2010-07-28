@@ -1996,12 +1996,18 @@ _update_adj_face_connect(cs_int_t               n_adj_faces,
 
       for (j = 0; j < n_face_vertices; j++) { /* Scan edges */
 
-        if (tmp[j] < tmp[j+1])
-          v1_id = tmp[j], v2_id = tmp[j+1];
-        else if (tmp[j+1] < tmp[j])
-          v1_id = tmp[j+1], v2_id = tmp[j];
-        else /* delete the current edge (count += 0) */
+        if (tmp[j] < tmp[j+1]) {
+          v1_id = tmp[j];
+          v2_id = tmp[j+1];
+        }
+        else if (tmp[j+1] < tmp[j]) {
+          v1_id = tmp[j+1];
+          v2_id = tmp[j];
+        }
+        else { /* delete the current edge (count += 0) */
           v1_id = -1;
+          v2_id = -1;
+        }
 
         /* edge builder->n_vertices is still equal to the initial
            number of vertices; this should not be a problem,

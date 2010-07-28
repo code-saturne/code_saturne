@@ -349,7 +349,7 @@ _comm_mpi_body(void                  *sec_elts,
                _cs_syr3_comm_mode_t   mode,
                const cs_syr3_comm_t  *comm)
 {
-  int ierror;
+  int ierror = 0;
   int n_elts = n_sec_elts;
 
   MPI_Status  status;
@@ -448,7 +448,7 @@ _comm_read_sock(const cs_syr3_comm_t  *comm,
   size_t   end_id;
   size_t   n_loc;
   size_t   n_bytes;
-  size_t   count;
+  size_t   count = 0;
   ssize_t  ret;
 
   assert(rec  != NULL);
@@ -516,7 +516,7 @@ _comm_write_sock(const cs_syr3_comm_t  *comm,
   size_t   end_id;
   size_t   n_loc;
   size_t   n_bytes;
-  size_t   count;
+  size_t   count = 0;
   ssize_t  ret;
 
   cs_byte_t   * rec_tmp;
@@ -832,7 +832,7 @@ _comm_echo_header(const char  *sec_name,
 
   if (n_elts > 0) {
 
-    char *nom_typ;
+    char *nom_typ = NULL;
 
     switch(elt_type) {
     case CS_TYPE_char:
@@ -1118,7 +1118,7 @@ cs_syr3_comm_send_message(const char             sec_name[CS_SYR3_COMM_H_LEN],
 {
   char   sec_name_write[CS_SYR3_COMM_H_LEN + 1];
 
-  char  *elt_type_name;
+  char  *elt_type_name = NULL;
   char   elt_type_name_write[CS_SYR3_COMM_ELT_TYPE_NAME_LEN + 1];
 
 

@@ -147,6 +147,15 @@ double precision enthal, temper, energ, cvt
 
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+iepsel = 0
+iepsfa = 0
+igamag = 0
+ixmasm = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

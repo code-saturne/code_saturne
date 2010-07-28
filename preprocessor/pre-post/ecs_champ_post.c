@@ -159,6 +159,7 @@ ecs_loc_champ_post__cpt_elt_typ(const ecs_champ_t  *champ_def,
 
   nbr_elt_typ_geo = ecs_tab_int__cree_init(ECS_ELT_TYP_FIN, 0);
 
+  elt_typ_ref = -1;
   elt_typ_ref_prec = -1;
 
   elt_def_pos = NULL;

@@ -95,6 +95,12 @@ integer          ibloc, iel, ireg, ilig, nfamax, itmp
 
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+iiech = 0
+irelii = 0
+irelib = 0
+
 !===============================================================================
 ! 1. SORTIE IMMEDIATE SI L'ON N'A PAS UN CALCULATEUR VECTORIEL
 !===============================================================================

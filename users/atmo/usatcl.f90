@@ -289,6 +289,7 @@ d2s3 = 2.d0/3.d0
 
 ! Paremeters for the analytical rough wall law (neutral)
 zref=10.d0
+zent=1.d0
 xuref=10.d0
 rugd=0.1d0
 rugt=0.1d0

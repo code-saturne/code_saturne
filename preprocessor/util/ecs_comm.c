@@ -130,7 +130,7 @@ _write_rec(ecs_comm_t  *comm,
            size_t       n_elts,
            ecs_type_t   datatype)
 {
-  size_t t_size;
+  size_t t_size = 0;
 
   assert(comm != NULL);
   assert(rec  != NULL);

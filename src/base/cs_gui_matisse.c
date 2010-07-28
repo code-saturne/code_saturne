@@ -171,7 +171,7 @@ cs_gui_warehousing_type(void)
 {
   char *path;
   char *value;
-  int   intval;
+  int   intval = -1;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 4, "matisse", "compute", "geometry", "typent");

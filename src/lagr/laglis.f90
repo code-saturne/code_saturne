@@ -215,6 +215,10 @@ idebra = idbra0
 ! 1. INITIALISATION
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+itabvr = 0
+
 if (nbpart.ne.0) then
   aa = 100.d0 / dble(nbpart)
 else

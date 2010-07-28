@@ -1457,7 +1457,7 @@ ecs_pre_med__lit_maillage(const char  *nom_fic_maillage,
 
   med_int        mdim_med;
   med_int        nbr_maillages_med;
-  int            num_maillage_med;
+  int            num_maillage_med = 1;
   med_maillage   type_maillage_med;
 
   /* Création d'un maillage initialement vide (valeur de retour) */

@@ -231,6 +231,13 @@ double precision rbid(1)
 
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ipp = 0
+cp0iph = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

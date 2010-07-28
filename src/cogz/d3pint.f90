@@ -126,6 +126,18 @@ save          ipass
 ! 0. ON COMPTE LES PASSAGES
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ipckab = 0
+ipct3 = 0
+ipct4 = 0
+
+aa1 = 0.d0
+aa2 = 0.d0
+bb1 = 0.d0
+bb2 = 0.d0
+
+
 ipass = ipass + 1
 
 

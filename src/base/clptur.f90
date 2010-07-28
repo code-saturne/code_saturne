@@ -261,6 +261,35 @@ save             ntlast , iaff
 ! 1.  INITIALISATIONS
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+iepiph = 0
+ifbiph = 0
+ikiph = 0
+iomgip = 0
+iphiph = 0
+ir11ip = 0
+ir22ip = 0
+ir33ip = 0
+ir12ip = 0
+ir13ip = 0
+ir23ip = 0
+iclep = 0
+iclk = 0
+iclomg = 0
+iclfb = 0
+iclphi = 0
+icl11 = 0
+icl22 = 0
+icl33 = 0
+icl12 = 0
+icl13 = 0
+icl23 = 0
+iclvar = 0
+ipccv = 0
+
+ek = 0.d0
+
 ! --- Memoire
 idebia = idbia0
 idebra = idbra0

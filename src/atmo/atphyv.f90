@@ -244,6 +244,10 @@ double precision xrtp,pp,zent
 ! 0. INITIALISATIONS A CONSERVER
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ivart = -1
+
 ! --- Initialisation memoire
 
 idebia = idbia0

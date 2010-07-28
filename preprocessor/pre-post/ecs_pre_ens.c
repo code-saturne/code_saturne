@@ -1871,7 +1871,7 @@ ecs_loc_pre_ens__lit_geo_gold(const char       *nom_fic_geo,
 
   char    *ret = NULL;
 
-  ecs_int_t   nbr_elt_lus;
+  ecs_int_t   nbr_elt_lus = 0;
   bool        pb_rub;
   bool        lire_node_id;
   bool        lire_elem_id;
@@ -2186,7 +2186,7 @@ ecs_loc_pre_ens__lit_geo_6(const char       *nom_fic_geo,
 
   char             *ret = NULL;
 
-  ecs_int_t         nbr_elt_lus;
+  ecs_int_t         nbr_elt_lus = 0;
   bool              pb_rub;
   bool              lire_node_id;
   bool              lire_elem_id;

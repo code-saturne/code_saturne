@@ -216,6 +216,20 @@ double precision epsrgp , climgp , extrap
 ! 1. INITIALISATION
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ieiph = 0
+ikiph = 0
+iomgip = 0
+ir11ip = 0
+ir22ip = 0
+ir33ip = 0
+
+xe = 0.d0
+xk = 0.d0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

@@ -274,6 +274,12 @@ double precision errch,ter1,ddelta,xden
 ! 1. INITIALISATION
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ipghc2 = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

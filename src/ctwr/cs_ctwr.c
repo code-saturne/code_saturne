@@ -1169,6 +1169,8 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
   cs_real_t *fem_upw_rec, *fem_upw_send;
   cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
+  faxn = 0.;
+
   gravite[0] = -ct_prop->gravx;
   gravite[1] = -ct_prop->gravy;
   gravite[2] = -ct_prop->gravz;
@@ -1692,6 +1694,8 @@ void cs_ctwr_aetssc
   cs_real_t *tai, *xai, *rhoai,*vx, *vy, *vz, *tei, *femei, *vgin;
   fvm_lnum_t  *lst_par_cel;
   cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
+
+  fax = 0.;
 
   gravite[0] = -ct_prop->gravx;
   gravite[1] = -ct_prop->gravy;
@@ -2279,8 +2283,8 @@ void cs_ctwr_bilanct
 {
   const cs_real_t  *i_face_normal = mesh_quantities->i_face_normal;
   const cs_real_t  *b_face_normal = mesh_quantities->b_face_normal;
-  cs_int_t         icel_1, icel_2, icel, ifac, ict, idim, i, j, ieau_Sup,
-    ieau_inf, length;
+  cs_int_t         icel_1, icel_2, ict, idim, i, j, ieau_Sup, ieau_inf, length;
+  cs_int_t         icel = -1, ifac = -1;
   cs_real_t   cpe, cpv, cpa, hv0;
   const cs_int_t   *i_face_cells = mesh->i_face_cells;
   const cs_int_t   *b_face_cells = mesh->b_face_cells;

@@ -964,12 +964,12 @@ ecs_pre_nopo__lit_maillage(const char  *nom_fic_maillage)
   ecs_int_t     ind;
   int32_t       ind_test;
 
-  size_t        lnop0; /* number of words in NOP0 */
-  size_t        lnop1; /* number of words in NOP1 */
-  size_t        lnop2; /* number of words in NOP2 */
-  size_t        lnop3; /* number of words in NOP3 */
-  size_t        lnop4; /* number of words in NOP4 */
-  size_t        lnop5; /* number of words in NOP5 */
+  size_t        lnop0 = 0; /* number of words in NOP0 */
+  size_t        lnop1 = 0; /* number of words in NOP1 */
+  size_t        lnop2 = 0; /* number of words in NOP2 */
+  size_t        lnop3 = 0; /* number of words in NOP3 */
+  size_t        lnop4 = 0; /* number of words in NOP4 */
+  size_t        lnop5 = 0; /* number of words in NOP5 */
 
   ecs_int_t     *nop0;
   ecs_int_t     *nop1;

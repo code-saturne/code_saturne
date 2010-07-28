@@ -85,6 +85,8 @@ ihm   = iscapp(1)
 
 ! ---> Variables propres a la phase dispersee
 
+is = 0
+
 do icla = 1, nclacp
   is = 1+icla
   inp(icla) = iscapp(is)

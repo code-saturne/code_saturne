@@ -239,6 +239,27 @@ save             ipass
 ! 1.  Initialization
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+iuiph = 0
+iviph = 0
+iwiph = 0
+iepiph = 0
+ifbiph = 0
+ikiph = 0
+iomgip = 0
+iphiph = 0
+ir11ip = 0
+ir22ip = 0
+ir33ip = 0
+ir12ip = 0
+ir13ip = 0
+ir23ip = 0
+
+pref = 0.d0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

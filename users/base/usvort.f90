@@ -533,6 +533,9 @@ double precision vardat(ndat)
 integer          ii
 double precision phidat, dist1
 
+! Initialize variables to avoid compiler warnings
+
+phidat = 0.d0
 
 ! Dans l'exemple suivant, on se contente de retourne la valeur situee
 ! dans le fichier de donnee a l'abscisse la plus proche du point de

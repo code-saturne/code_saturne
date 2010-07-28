@@ -299,7 +299,8 @@ _match_halo_face_cut_p(const cs_mesh_t             *mesh,
                        fvm_lnum_t                   new_face_vtx_lst[])
 {
   int i, j;
-  fvm_lnum_t k, l, face_id, new_face_id, t_id, v_id;
+  fvm_lnum_t k, l, t_id, v_id;
+  fvm_lnum_t face_id = -1, new_face_id = -1;
   fvm_lnum_t n_face_triangles;
   fvm_lnum_t  *send_count = NULL, *recv_count = NULL;
   fvm_lnum_t  *send_index = NULL, *recv_index = NULL;

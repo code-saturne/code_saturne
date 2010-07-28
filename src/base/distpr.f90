@@ -211,6 +211,11 @@ double precision dismax, dismin
 !===============================================================================
 ! 1. INITIALISATIONS
 !===============================================================================
+
+! Initialize variables to avoid compiler warnings
+
+rnoini = 0.d0
+
 !     Memoire
 idebia = idbia0
 idebra = idbra0

@@ -224,9 +224,25 @@ double precision srfbnf, rcodcn
 ! 1.  INITIALISATIONS
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ir11ip = 0
+ir22ip = 0
+ir33ip = 0
+ir12ip = 0
+ir13ip = 0
+ir23ip = 0
+icl11 = 0
+icl22 = 0
+icl33 = 0
+icl12 = 0
+icl13 = 0
+icl23 = 0
+iclvar = 0
+
+! --- Memoire
 idebia = idbia0
 idebra = idbra0
-
 
 ! --- Variables
 iuiph  = iu  (iphas)

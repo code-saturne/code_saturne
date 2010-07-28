@@ -205,6 +205,24 @@ double precision aa    , bb    , surfbn, xnorme
 ! 1. INITIALISATION
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ii = 0
+jj = 0
+irki = 0
+irkj = 0
+irkm = 0
+iski = 0
+iskj = 0
+iskm = 0
+
+vni = 0.d0
+vnj = 0.d0
+vnk = 0.d0
+vnm = 0.d0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

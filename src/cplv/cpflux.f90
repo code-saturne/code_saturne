@@ -124,6 +124,10 @@ double precision pprco2
 ! 1. INITIALISATIONS ET CALCULS PRELIMINAIRES
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ipcdia = 0
+
 ! --- Initialisation memoire
 
 idebia = idbia0

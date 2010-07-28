@@ -261,6 +261,13 @@ save             ipass
 ! 0 - INITIALISATIONS A CONSERVER
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ipccp = 0
+ipcvsl = 0
+ipcsig = 0
+ipcray = 0
+
 ! --- Initialisation memoire
 
 idebia = idbia0

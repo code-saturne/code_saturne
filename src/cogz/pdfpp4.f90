@@ -527,6 +527,8 @@ coyfpp=coyfp(iel)
 
 ! ---> rapport des variances conditionnelles
 
+    cstvar = 0.d0
+
     if (((ymax(2)-y2).gt.epsi).and.((y2-ymin(2)).gt.epsi)         &
          .and.((ymax(1)-y1).gt.epsi).and.((y1-ymin(1)).gt.epsi))  &
          then

@@ -276,6 +276,11 @@ idebra = idbra0
 ! 1.  INITIALISATION
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+icelcr = 0
+ipercr = 0
+
 do ip = 1,nbpmax
   ibord(ip) = 0
 enddo

@@ -792,7 +792,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   double  a, b, c, d, e, f, s, t;
   double  d2_limit_e1, d_limit_e1, d2_limit_e2, d_limit_e2, d2_e1e2;
   double  inv_cross_norm2, cross_norm2;
-  double  int_inter[2], ext_inter[4], v0[3], v1[3], v2[3];
+  double  int_inter[2] = {0., 0.}, ext_inter[4], v0[3], v1[3], v2[3];
 
   int  n_int_inter = 0, n_ext_inter = 0;
   cs_bool_t  int_p1e2 = false, int_p2e2 = false;

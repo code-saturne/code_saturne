@@ -510,7 +510,7 @@ ecs_champ_post_med__ecr_famille(const char           *nom_maillage,
   ecs_int_t        ifam_ent;
   size_t           ind;
 
-  ecs_med_maillage_t  *maillage_med;
+  ecs_med_maillage_t  *maillage_med = NULL;
 
   const ecs_famille_t  *ptr_fam;
 

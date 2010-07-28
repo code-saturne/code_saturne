@@ -261,6 +261,16 @@ if(iwarni(iu(1)).ge.1) then
   write(nfecra,1000)
 endif
 
+! Initialize variables to avoid compiler warnings
+
+ivar = 0
+iflmas = 0
+iismph = 0
+ipcrom = 0
+imax = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

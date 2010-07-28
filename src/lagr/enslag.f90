@@ -143,6 +143,25 @@ save    ipass
 ! -1.  GESTION MEMOIRE
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+iu1l = 0
+iv1l = 0
+iw1l = 0
+iu2l = 0
+iv2l = 0
+iw2l = 0
+itpl = 0
+idml = 0
+impl = 0
+itel = 0
+ihpl = 0
+idckl = 0
+imchl = 0
+imckl = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

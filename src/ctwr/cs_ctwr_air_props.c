@@ -177,7 +177,8 @@ cs_real_t
 cs_ctwr_xsath(const cs_real_t  th)
 {
   const cs_real_t  Pres = 101325.;
-  cs_real_t  xsat,a1,b1,c1,ps,pv;
+  cs_real_t  a1,b1,c1,ps,pv;
+  cs_real_t  xsat = 0.;
 
   /* T less than -20 degrees */
 
@@ -310,7 +311,7 @@ cs_ctwr_dxsath(const cs_real_t  th)
 {
   const cs_real_t  Pres = 101325.;
   cs_real_t   a1,b1,c1,ps,pv,grpim;
-  cs_real_t   dxsath;
+  cs_real_t   dxsath = 0.;
 
   /* T less than -20 degrees */
 

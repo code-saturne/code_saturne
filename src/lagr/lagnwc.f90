@@ -212,6 +212,11 @@ idebra = idbra0
 ! 1. INITIALISATION
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+icelcr = 0
+ipercr = 0
+
 ! Traitement de la periodicite
 
 if (iperio.eq.1) then

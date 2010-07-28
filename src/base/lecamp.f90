@@ -139,6 +139,12 @@ double precision d2s3, d2s3xk
 ! 0. INITIALISATIONS
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+ivar = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

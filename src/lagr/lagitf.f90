@@ -183,6 +183,11 @@ double precision energ , dissip
 ! 1. INITIALISATIONS
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+dissip = 0.d0
+energ = 0.d0
+
 iphas = ilphas
 
 ct = 1.d0

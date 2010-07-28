@@ -231,7 +231,7 @@ ecs_loc_cmd__lit_arg_fic(char   *nomfic,
   char       **lst_arg;
 
   char         ligne[ECS_CMD_LIGNE_MAX + 1];
-  char        *res;
+  char        *res = NULL;
 
   bool         bool_err;
 

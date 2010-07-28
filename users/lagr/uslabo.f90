@@ -604,6 +604,7 @@ else if (iusclb(kzone).eq.iencrl) then
            + enc2(icha)
       viscp = exp( log(10.d0)*enc3 ) * 0.1d0
 
+      trap = 1.d0
       if ( viscp.gt.visref(icha) ) then
         n1 = 1
         call zufall(n1,vnorl(1))

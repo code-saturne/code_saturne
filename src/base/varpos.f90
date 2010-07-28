@@ -121,6 +121,9 @@ save          nppmax
 ! 0. INITIALISATIONS
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+ippok = 0
+
 ipass = ipass + 1
 
 !     Nombre max pour les formats choisis

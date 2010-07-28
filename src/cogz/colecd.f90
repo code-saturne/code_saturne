@@ -97,6 +97,13 @@ double precision moxyd
 ! -0. INITIALISATION et VERIFICATIONS
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+iico2 = 0
+iih2o = 0
+
+mfuel = 0.d0
+moxyd = 0.d0
 
 epsi = 1.d-9
 

@@ -195,6 +195,12 @@ double precision xxk, xcmu, trii
 ! 1.  INITIALISATION
 !===============================================================================
 
+! Initialize variables to avoid compiler warnings
+
+jj = 0
+
+! Memoire
+
 idebia = idbia0
 idebra = idbra0
 

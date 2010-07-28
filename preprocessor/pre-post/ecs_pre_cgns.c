@@ -899,8 +899,8 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
 
   ecs_loc_cgns_zone_t     *ptr_zone;
 
-  ecs_loc_cgns_boco_t     *tab_boco_loc;
-  char                   **nom_boco_loc;
+  ecs_loc_cgns_boco_t     *tab_boco_loc = NULL;
+  char                   **nom_boco_loc = NULL;
 
   /* Déclarations des variables pour CGNS */
   /*-------------------------------------*/
@@ -1998,7 +1998,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
   ecs_int_t    ient;
   ecs_int_t    ient_max;
 
-  ecs_int_t    ind_type;
+  ecs_int_t    ind_type = -1;
   ecs_int_t    ind_pos;
   ecs_int_t    ind_val;
   ecs_int_t    ind_som;
@@ -2007,7 +2007,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
   ecs_int_t    cpt_section;
   ecs_int_t    nbr_elt_loc;
   ecs_int_t    nbr_elt_zone;
-  ecs_int_t    nbr_som_elt;
+  ecs_int_t    nbr_som_elt = 0;
 
   ecs_int_t    ii, jj, kk;
   ecs_int_t    ni, nj, nk;
@@ -2942,7 +2942,7 @@ ecs_loc_pre_cgns__cree_grps_zs(const ecs_loc_cgns_base_t  *base_maillage,
   ecs_int_t    ind_zone;
   ecs_int_t    ind_zs;
 
-  char        *nom_grp;
+  char        *nom_grp = NULL;
 
   ecs_int_t   *tab_ind_zs_ent;
   ecs_int_t   *renum_zs;
