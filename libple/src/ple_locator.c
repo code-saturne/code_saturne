@@ -103,6 +103,7 @@ struct _ple_locator_t {
                                      located on the closest element */
 
 #if defined(PLE_HAVE_MPI)
+  int       async_exchange;    /* flag for asynchronous variables exchange */
   MPI_Comm  comm;              /* Associated MPI communicator */
 #endif
 
@@ -110,7 +111,6 @@ struct _ple_locator_t {
   int       start_rank;        /* First MPI rank of distant location */
 
   int       n_intersects;      /* Number of intersecting distant ranks */
-  int       n_max_intersects;  /* Global max number of intersecting ranks */
   int      *intersect_rank;    /* List of intersecting distant ranks */
   double   *intersect_extents; /* List of intersecting distant extents */
 
@@ -445,7 +445,8 @@ _update_location_ranks(ple_locator_t  *this_locator,
   int i, k;
   ple_lnum_t j;
 
-  int comm_size, n_max_intersects;
+  int loc_vals[2], max_vals[2];
+  int comm_size;
   int *send_flag = NULL, *recv_flag = NULL, *intersect_rank_id = NULL;
 
   double comm_timing[4] = {0., 0., 0., 0.};
@@ -520,10 +521,16 @@ _update_location_ranks(ple_locator_t  *this_locator,
 
   _locator_trace_start_comm(_ple_locator_log_start_g_comm, comm_timing);
 
-  MPI_Allreduce(&(this_locator->n_intersects), &n_max_intersects, 1, MPI_INT,
-                MPI_MAX, this_locator->comm);
+  loc_vals[0] = this_locator->n_intersects;
+  loc_vals[1] = _ple_locator_async_threshold;
 
-  this_locator->n_intersects = n_max_intersects;
+  MPI_Allreduce(loc_vals, max_vals, 2, MPI_INT, MPI_MAX,
+                this_locator->comm);
+
+  if (max_vals[0] <= max_vals[1])
+    this_locator->async_exchange = 1;
+  else
+    this_locator->async_exchange = 0;
 
   _locator_trace_end_comm(_ple_locator_log_end_g_comm, comm_timing);
 
@@ -2434,7 +2441,6 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
   this_locator->start_rank = 0;
 
   this_locator->n_intersects = 0;
-  this_locator->n_max_intersects = 0;
 
   tolerance = PLE_MAX(this_locator->tolerance, 1.e-3);
 
@@ -2478,6 +2484,8 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
   /*-------------------------------*/
 
 #if defined(PLE_HAVE_MPI)
+
+  this_locator->async_exchange = 0;
 
   MPI_Initialized(&mpi_flag);
 
@@ -2942,7 +2950,7 @@ ple_locator_exchange_point_var(ple_locator_t     *this_locator,
 
     assert (datatype != MPI_DATATYPE_NULL);
 
-    if (this_locator->n_max_intersects > _ple_locator_async_threshold)
+    if (this_locator->async_exchange == 0)
       _exchange_point_var_distant(this_locator,
                                   distant_var,
                                   local_var,
@@ -3073,17 +3081,17 @@ ple_locator_dump(const ple_locator_t  *this_locator)
              "Number of ranks of distant location:   %d\n"
              "First rank of distant location:        %d\n"
              "Number of intersecting distant ranks:  %d\n",
-             "Max. number of intersecting ranks:     %d\n",
              _locator->tolerance, _locator->dim,
              (int)_locator->locate_closest,
              _locator->n_ranks, _locator->start_rank,
-             _locator->n_intersects,
-             _locator->n_max_intersects);
+             _locator->n_intersects);
 
 #if defined(PLE_HAVE_MPI)
   if (_locator->comm != MPI_COMM_NULL)
-    ple_printf("\n"
+    ple_printf("Asynchronous exchange:                 %d\n"
+               "\n"
                "Associated MPI communicator:           %ld\n",
+               _locator->async_exchange,
                (long)(_locator->comm));
 #endif
 

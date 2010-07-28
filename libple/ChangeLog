@@ -1,3 +1,9 @@
+2010-06-24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Corrected blocking bug in ple_locator_set_mesh().
+	* Ensure all processes accessing a locator use the same type of
+	algorithm (synchronous or asynchronous).
+
 2010-06-28  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Added ple_coupling_mpi_name_to_id() function.
