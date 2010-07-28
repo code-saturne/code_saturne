@@ -1,3 +1,8 @@
+* 28/07/2010 - David Monfort <david.monfort@edf.fr>
+  Update Code_Saturne version number to 2.1-alpha1
+  modified script:
+    configure.ac
+
 * 28/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove all occurences of the application number and replace it by the
   application name.
