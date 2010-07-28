@@ -272,8 +272,9 @@ cs_opts_define(int         argc,
 
     if (strcmp(s, "--app-name") == 0) {
       if (arg_id + 1 < argc) {
-        BFT_REALLOC(opts->app_name, strlen(argv[arg_id + 1]) + 1, char);
+        BFT_MALLOC(opts->app_name, strlen(argv[arg_id + 1]) + 1, char);
         strcpy(opts->app_name, argv[arg_id + 1]);
+        arg_id++;
       }
     }
 

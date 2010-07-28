@@ -946,7 +946,11 @@ class domain(base_domain):
             args += ' ' + self.mode_args
 
         if 'app_id' in kw:
-            args += ' --mpi --app-name ' + os.path.basename(self.case_dir)
+            if self.tag == None:
+                args += ' --mpi --app-name ' + os.path.basename(self.case_dir)
+            else:
+                args += ' --mpi --app-name ' + os.path.basename(self.case_dir) \
+                    + '.' + self.tag
         elif self.n_procs > 1:
             args += ' --mpi'
 
