@@ -1327,8 +1327,11 @@ class syrthes_domain(base_domain):
             args += ' --echo-comm ' + str(self.echo_comm)
 
         if self.coupling_mode == 'MPI':
-            args += ' --app-name ' + os.path.basename(self.case_dir)
-            args += ' --comm-mpi ' + any_to_str(self.coupled_apps)
+            args += ' --app-name SYRTHES.' + os.path.basename(self.case_dir)
+            if self.coupled_apps != None:
+                args += ' --comm-mpi ' + any_to_str(self.coupled_apps)
+            else:
+                args += ' --comm-mpi ' + os.path.basename(self.case_dir)
 
         elif self.coupling_mode == 'sockets':
             if 'host_port' in kw:

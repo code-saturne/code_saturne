@@ -1,3 +1,31 @@
+* 28/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove all occurences of the application number and replace it by the
+  application name.
+  modified script:
+    bin/cs_case_domain.py
+  modified routines:
+    gui/Pages/ConjugateHeatTransferModel.py
+    gui/Pages/ConjugateHeatTransferView.py
+    include/base/cs_base.h
+    include/base/cs_coupling.h
+    include/base/cs_sat_coupling.h
+    include/base/cs_syr3_coupling.h
+    include/base/cs_syr4_coupling.h
+    include/base/cs_syr_coupling.h
+    src/apps/cs_partition.c
+    src/apps/cs_solver.c
+    src/base/cs_base.c
+    src/base/cs_coupling.c
+    src/base/cs_gui_conjugate_heat_transfer.c
+    src/base/cs_sat_coupling.c
+    src/base/cs_sat_f2c.f90
+    src/base/cs_syr3_coupling.c
+    src/base/cs_syr4_coupling.c
+    src/base/cs_syr_coupling.c
+    src/base/cs_syr_f2c.f90
+    users/base/ussatc.f90
+    users/base/ussyrc.f90
+
 * 28/07/2010 - David Monfort <david.monfort@edf.fr>
   Initialize some variables to avoid spurious compiler warnings, even if there
   was no real issue in the code.

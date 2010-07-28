@@ -71,7 +71,7 @@ include "parall.h"
 
 character*32     namsyr
 character        cprjsy
-integer          numsyr, nbcsyr, ii
+integer          nbcsyr, ii
 integer          iwarns
 
 !===============================================================================
@@ -84,23 +84,17 @@ if(1.eq.1) return
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-numsyr = -1
 iwarns = 1
 
 nbcsyr = 3
 
 ! In the case of a single Code_Saturne and single SYRTHES instance, the
-! 'numsyr' and 'namsyr' arguments of 'defsyr' are ignored.
+! 'namsyr' argument of 'defsyr' is ignored.
 
 ! In case of multiple couplings, a coupling will be matched with available
-! SYRTHES instances prioritarily based on the 'namsyr' (SYRTHES instance name)
-! argument, then on the 'numsyr' (SYRTHES instance application number) argument.
-
-! If 'namsyr' is empty or when coupling with SYRTHES 3, matching will be based
-! on 'numsyr' only.
+! SYRTHES instances based on the 'namsyr' (SYRTHES instance name) argument.
 
 ! The arguments to defsyr are:
-!   numsyr <-- matching SYRTHES application id, or -1
 !   namsyr <-- matching SYRTHES application name
 !   cprjsy <-- ' ' : standard 3D coupling
 !              'x', 'y', or 'z': projection axis for coupling with 2D SYRTHES.
@@ -121,7 +115,7 @@ do ii = 1, nbcsyr
 
     cprjsy = ' '
 
-    call defsyr(numsyr, namsyr, cprjsy, '3', ' ', iwarns)
+    call defsyr(namsyr, cprjsy, '3', ' ', iwarns)
     !==========
 
   ! Example: 2D surface coupling at faces of group 'Wall' with instance
@@ -133,7 +127,7 @@ do ii = 1, nbcsyr
 
     cprjsy = 'z'
 
-    call defsyr(numsyr, namsyr, cprjsy, 'Wall', ' ', iwarns)
+    call defsyr(namsyr, cprjsy, 'Wall', ' ', iwarns)
     !==========
 
   ! Example: 3D volume coupling at box with corners (0, 0, 0) and (1, 1, 1)
@@ -145,7 +139,7 @@ do ii = 1, nbcsyr
 
     cprjsy = ' '
 
-    call defsyr(numsyr, namsyr, cprjsy,                          &
+    call defsyr(namsyr, cprjsy,  &
     !==========
                 ' ', 'box[0., 0., 0., 1., 1., 1.]', iwarns)
 

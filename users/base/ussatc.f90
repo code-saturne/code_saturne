@@ -70,7 +70,7 @@ include "parall.h"
 ! Local variables
 
 character*32     namsat
-integer          numsat, nbcsat, ii
+integer          nbcsat, ii
 integer          iwarns
 
 !===============================================================================
@@ -84,23 +84,18 @@ if(1.eq.1) return
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-numsat = -1
 iwarns = 1
 
 nbcsat = 2
 
 ! In the case of a coupling between two Code_Saturne instances, the
-! 'numsat' and 'namsat' arguments of 'defsat' are ignored.
+! 'namsat' argument of 'defsat' is ignored.
 
 ! In case of multiple couplings, a coupling will be matched with available
-! Code_Saturne instances prioritarily based on the 'namsat' (Code_Saturne
-! instance name) argument, then on the 'numsat' (Code_Saturne instance
-! application number) argument.
-
-! If 'namsat' is empty, matching will be based on 'numsat' only.
+! Code_Saturne instances based on the 'namsat' (Code_Saturne instance name)
+! argument.
 
 ! The arguments to defsat are:
-!   numsat <-- matching Code_Saturne application id, or -1
 !   namsat <-- matching Code_Saturne application name
 !   crtcsu <-- cell selection criteria for support
 !   crtfsu <-- boundary face selection criteria for support (not functional)
@@ -118,9 +113,7 @@ do ii = 1, nbcsat
 
   if (ii .eq. 1) then
 
-    numsat = 1
-
-    call defsat(numsat, namsat, 'all[]', ' ', ' ', '3 or 4', iwarns)
+    call defsat(namsat, 'all[]', ' ', ' ', '3 or 4', iwarns)
     !==========
 
   ! Example: coupling  with instance number 3
@@ -130,9 +123,7 @@ do ii = 1, nbcsat
 
   else if (ii .eq. 2) then
 
-    numsat = 3
-
-    call defsat(numsat, namsat, 'all[]', ' ', 'all[]', 'coupled_faces', iwarns)
+    call defsat(namsat, 'all[]', ' ', 'all[]', 'coupled_faces', iwarns)
     !==========
 
   endif

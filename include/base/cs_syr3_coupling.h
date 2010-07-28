@@ -171,7 +171,7 @@ cs_syr3_coupling_get_face_list(const cs_syr3_coupling_t  *syr_coupling,
  *   dim                <-- spatial mesh dimension
  *   ref_axis           <-- reference axis
  *   face_sel_criterion <-- criterion for selection of boundary faces
- *   syr_num            <-- SYRTHES number
+ *   syr_name           <-- SYRTHES application name
  *   syr_proc_rank      <-- syrthes process rank for MPI
  *   comm_type          <-- communicator type
  *   verbosity          <-- verbosity level
@@ -181,7 +181,7 @@ void
 cs_syr3_coupling_add(int                 dim,
                      int                 ref_axis,
                      const char         *face_sel_criterion,
-                     int                 syr_num,
+                     const char         *syr_name,
                      int                 syr_proc_rank,
                      cs_syr3_comm_type_t comm_type,
                      int                 verbosity);

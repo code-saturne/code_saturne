@@ -2020,7 +2020,6 @@ main(int    argc,
      char  *argv[])
 {
   int  n_ext_libs = 0;
-  int  app_num = -1;
   int  alg_opt = 0;
   int  no_write = 0;
   int  no_perio = 0;
@@ -2038,7 +2037,7 @@ main(int    argc,
      and MPI initialization if it is. */
 
 #if defined(HAVE_MPI)
-  app_num = cs_base_mpi_init(&argc, &argv);
+  cs_base_mpi_init(&argc, &argv);
 #endif
 
   /* Default initialization */

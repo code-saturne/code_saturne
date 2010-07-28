@@ -143,7 +143,6 @@ cs_run(void);
  * Static global variables
  *============================================================================*/
 
-static int        app_num = -1;
 static cs_opts_t  opts;
 
 #if defined(_GNU_SOURCE)
@@ -225,7 +224,7 @@ cs_run(void)
      may have the option of assigning a name to this instance. */
 
 #if defined(HAVE_MPI)
-  cs_coupling_discover_mpi_apps(app_num, opts.app_name);
+  cs_coupling_discover_mpi_apps(opts.app_name);
 #endif
 
   if (opts.app_name != NULL)
@@ -554,7 +553,7 @@ main(int    argc,
      and MPI initialization if it is. */
 
 #if defined(HAVE_MPI)
-  app_num = cs_base_mpi_init(&argc, &argv);
+  cs_base_mpi_init(&argc, &argv);
 #endif
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */

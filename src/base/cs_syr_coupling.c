@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -105,8 +105,7 @@ typedef struct {
   int      match_id;    /* Id of matched application, -1 initially */
   int      dim;         /* Coupled mesh dimension */
   int      ref_axis;    /* Selected axis for edge extraction */
-  int      app_num;     /* Application number, or -1 */
-  char    *app_name;    /* Application name, or -1 */
+  char    *app_name;    /* Application name */
   char    *face_sel_c;  /* Face selection criteria */
   char    *cell_sel_c;  /* Cell selection criteria */
   int      verbosity;   /* Verbosity level */
@@ -197,9 +196,8 @@ _print_all_unmatched_syr(void)
 
       bft_printf(_(" SYRTHES coupling:\n"
                    "   coupling id:              %d\n"
-                   "   local name:               \"%s\"\n"
-                   "   local number:             %d\n\n"),
-                 i, local_name, scb->app_num);
+                   "   local name:               \"%s\"\n\n"),
+                 i, local_name);
     }
   }
 
@@ -235,7 +233,6 @@ _syr4_add_mpi(int builder_id,
                        scb->ref_axis,
                        scb->face_sel_c,
                        scb->cell_sel_c,
-                       scb->app_num,
                        scb->app_name,
                        scb->verbosity);
 
@@ -265,7 +262,7 @@ _syr3_add_mpi(int builder_id,
   cs_syr3_coupling_add(scb->dim,
                        scb->ref_axis,
                        scb->face_sel_c,
-                       scb->app_num,
+                       scb->app_name,
                        syr_rank,
                        CS_SYR3_COMM_TYPE_MPI,
                        scb->verbosity);
@@ -317,12 +314,11 @@ _print_all_mpi_syr(void)
                    "   version:                  \"%s\"\n"
                    "   local name:               \"%s\"\n"
                    "   distant application name: \"%s\"\n"
-                   "   local number:             %d\n"
-                   "   MPI application number:   %d\n"
+                   "   MPI application id:       %d\n"
                    "   MPI root rank:            %d\n"
                    "   number of MPI ranks:      %d\n\n"),
                  i, syr_version, local_name, distant_name,
-                 scb->app_num, ai.app_num, ai.root_rank, ai.n_ranks);
+                 scb->match_id, ai.root_rank, ai.n_ranks);
     }
   }
 
@@ -420,35 +416,18 @@ _init_all_mpi_syr(void)
             continue;
 
           ai = ple_coupling_mpi_world_get_info(mpi_apps, syr_appinfo[j*2 + 1]);
-          if (ai.app_name != NULL) {
-            if (strcmp(ai.app_name, scb->app_name) == 0) {
-              scb->match_id = syr_appinfo[j*2 + 1];
-              syr_appinfo[j*2] = i;
-              n_matched_apps += 1;
-              break;
-            }
-          }
-        }
-
-      }
-
-      /* Second loop on available SYRTHES instances to match app_nums */
-
-      if (scb->match_id < 0 && scb->app_num > -1) {
-
-        for (j = 0; j < n_syr_apps; j++) {
-
-          if (syr_appinfo[j*2] != 0) /* Consider only unmatched applications */
+          if (ai.app_name == NULL)
             continue;
 
-          ai = ple_coupling_mpi_world_get_info(mpi_apps, syr_appinfo[j*2 + 1]);
-          if (ai.app_num == scb->app_num) {
+          if (strcmp(ai.app_name, scb->app_name) == 0) {
             scb->match_id = syr_appinfo[j*2 + 1];
             syr_appinfo[j*2] = i;
             n_matched_apps += 1;
             break;
           }
+
         }
+
       }
 
     } /* End of loop on defined SYRTHES instances */
@@ -505,7 +484,7 @@ _syr3_add_socket(int builder_id)
   cs_syr3_coupling_add(scb->dim,
                        scb->ref_axis,
                        scb->face_sel_c,
-                       scb->app_num,
+                       scb->app_name,
                        -1,
                        CS_SYR3_COMM_TYPE_SOCKET,
                        scb->verbosity);
@@ -569,20 +548,16 @@ _init_all_socket_syr(int port_num)
  * Define new SYRTHES coupling.
  *
  * In the case of a single Code_Saturne and single SYRTHES instance, the
- * syrthes_app_num and syrthes_name arguments are ignored.
+ * syrthes_name argument is ignored.
  *
  * In case of multiple couplings, a coupling will be matched with available
- * SYRTHES instances prioritarily based on the syrthes_name argument, then
- * on the syrthes_app_num argument. If syrthes_name is empty, matching will
- * be based on syrthes_app_num only.
+ * SYRTHES instances based on the syrthes_name argument.
  *
  * Fortran Interface:
  *
  * SUBROUTINE DEFSY1
  * *****************
  *
- * INTEGER        syrthes_app_num   : <-- : application number of coupled
- *                                  :     : SYRTHES instance, or -1
  * CHARACTER*     syrthes_name      : <-- : name of coupled SYRTHES instance
  * CHARACTER      projection_axis   : <-- : ' ' for 3D, 'x', 'y', or 'z'
  *                                  :     : for 2D projection
@@ -598,7 +573,6 @@ _init_all_socket_syr(int port_num)
 
 void CS_PROCF(defsy1, DEFSY1)
 (
- cs_int_t    *syrthes_app_num,
  const char  *syrthes_name,
  char        *projection_axis,
  const char  *boundary_criteria,
@@ -628,8 +602,7 @@ void CS_PROCF(defsy1, DEFSY1)
   if (_volume_criteria != NULL && strlen(_volume_criteria) == 0)
     cs_base_string_f_to_c_free(&_volume_criteria);
 
-  cs_syr_coupling_define(*syrthes_app_num,
-                         _syrthes_name,
+  cs_syr_coupling_define(_syrthes_name,
                          _boundary_criteria,
                          _volume_criteria,
                          *projection_axis,
@@ -943,16 +916,13 @@ void CS_PROCF (varsyo, VARSYO)
  * Define new SYRTHES coupling.
  *
  * In the case of a single Code_Saturne and single SYRTHES instance, the
- * syrthes_app_num and syrthes_name arguments are ignored.
+ * syrthes_name argument is ignored.
  *
  * In case of multiple couplings, a coupling will be matched with available
- * SYRTHES instances prioritarily based on the syrthes_name argument, then
- * on the syrthes_app_num argument. If syrthes_name is empty, matching will
- * be based on syrthes_app_num only.
+ * SYRTHES instances based on the syrthes_name argument.
  *
  * arguments:
- *   syrthes_app_num   <-- number of SYRTHES application, or -1
- *   syrthes_name      <-- name of SYRTHES instance, or NULL
+ *   syrthes_name      <-- name of SYRTHES instance
  *   boundary_criteria <-- boundary face selection criteria, or NULL
  *   volume_criteria   <-- volume cell selection criteria, or NULL
  *   projection_axis   <-- 'x', 'y', or 'y' for 2D projection axis (case
@@ -961,8 +931,7 @@ void CS_PROCF (varsyo, VARSYO)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_define(int          syrthes_app_num,
-                       const char  *syrthes_name,
+cs_syr_coupling_define(const char  *syrthes_name,
                        const char  *boundary_criteria,
                        const char  *volume_criteria,
                        char         projection_axis,
@@ -1000,8 +969,6 @@ cs_syr_coupling_define(int          syrthes_app_num,
     scb->dim = 3;
     scb->ref_axis = -1;
   }
-
-  scb->app_num = syrthes_app_num;
 
   scb->app_name = NULL;
   if (syrthes_name != NULL) {

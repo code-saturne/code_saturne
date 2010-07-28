@@ -76,7 +76,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         """
         default = {}
         default['syrthes_name']       = "SYRTHES"
-        default['syrthes_app_num']    = 0
+        default['verbosity']  = 0
         default['projection_axis']    = "off"
         default['selection_criteria'] = "all[]"
         return default
@@ -110,22 +110,22 @@ class ConjugateHeatTransferModel(Variables, Model):
         for index in range(len(node_list)):
             num = index + 1
             syrthes_name = self.getSyrthesInstanceName(num)
-            app_num      = self.getSyrthesAppNumber(num)
+            verbosity    = self.getSyrthesVerbosity(num)
             proj_axis    = self.getSyrthesProjectionAxis(num)
             location     = self.getSelectionCriteria(num)
-            list.append([syrthes_name, app_num, proj_axis, location])
+            list.append([syrthes_name, verbosity, proj_axis, location])
 
         return list
 
 
-    def addSyrthesCoupling(self, syrthes_name, app_num, proj_axis, location):
+    def addSyrthesCoupling(self, syrthes_name, verbosity, proj_axis, location):
         """
         Add a new definition of a Syrthes coupling.
 
         @type syrthes_name: C{String}
         @param syrthes_name: Syrthes instance name
-        @type app_num: C{Int}
-        @param app_num: Syrthes Application number
+        @type verbosity: C{Int}
+        @param verbosity: Syrthes verbosity
         @type proj_axis: C{String}
         @param proj_axis: Syrthes projection axis
         @type location: C{String}
@@ -138,7 +138,7 @@ class ConjugateHeatTransferModel(Variables, Model):
 
         num = num + 1
         self.setSyrthesInstanceName(num, syrthes_name)
-        self.setSyrthesAppNumber(num, app_num)
+        self.setSyrthesVerbosity(num, verbosity)
         self.setSyrthesProjectionAxis(num, proj_axis)
         self.setSelectionCriteria(num, location)
         self.setConjugateHeatTransferStatus("on")
@@ -214,7 +214,7 @@ class ConjugateHeatTransferModel(Variables, Model):
 
         @type num: C{Int}
         @param num: Syrthes coupling number
-        @return: Syrthes Application number
+        @return: Syrthes verbosity
         @rtype: C{String}
         """
         return self.__getStringData(num-1,
@@ -224,34 +224,34 @@ class ConjugateHeatTransferModel(Variables, Model):
     #------------------------------------------------------------------
     # Syrthes application number
     #------------------------------------------------------------------
-    def setSyrthesAppNumber(self, num, value):
+    def setSyrthesVerbosity(self, num, value):
         """
-        Set value of Syrthes Application number.
+        Set value of Syrthes verbosity.
 
         @type num: C{Int}
         @param num: Syrthes coupling number
         @type value: C{Int}
-        @param value: Syrthes Application number
+        @param value: Syrthes verbosity
         """
         self.isLowerOrEqual(num, self.__getNumberOfSyrthesCoupling())
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
         node = self.__node_syr.xmlGetNodeList('syrthes')[num-1]
-        node.xmlSetData('syrthes_app_num', value)
+        node.xmlSetData('verbosity', value)
 
 
-    def getSyrthesAppNumber(self, num):
+    def getSyrthesVerbosity(self, num):
         """
-        Get value of Syrthes Application number.
+        Get value of Syrthes verbosity.
 
         @type num: C{Int}
         @param num: Syrthes coupling number
-        @return: Syrthes Application number
+        @return: Syrthes verbosity
         @rtype: C{Int}
         """
         return self.__getIntData(num-1,
-                                 'syrthes_app_num',
-                                 self.setSyrthesAppNumber)
+                                 'verbosity',
+                                 self.setSyrthesVerbosity)
 
     #------------------------------------------------------------------
     # Projection axis
@@ -282,7 +282,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         """
         return self.__getStringData(num-1,
                                     'projection_axis',
-                                    self.setSyrthesAppNumber)
+                                    self.setSyrthesVerbosity)
 
     #------------------------------------------------------------------
     # Selection criteria

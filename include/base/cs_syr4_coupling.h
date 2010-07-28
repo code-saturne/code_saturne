@@ -109,8 +109,7 @@ cs_syr4_coupling_by_id(cs_int_t coupling_id);
  *   ref_axis           <-- reference axis
  *   face_sel_criterion <-- criterion for selection of boundary faces
  *   cell_sel_criterion <-- criterion for selection of cells
- *   app_num            <-- SYRTHES application number, or -1
- *   app_name           <-- SYRTHES application name, or NULL
+ *   app_name           <-- SYRTHES application name
  *   verbosity          <-- verbosity level
  *----------------------------------------------------------------------------*/
 
@@ -119,7 +118,6 @@ cs_syr4_coupling_add(fvm_lnum_t   dim,
                      fvm_lnum_t   ref_axis,
                      const char  *face_sel_criterion,
                      const char  *cell_sel_criterion,
-                     int          app_num,
                      const char  *app_name,
                      int          verbosity);
 

@@ -74,20 +74,16 @@ BEGIN_C_DECLS
  * Define new SYRTHES coupling.
  *
  * In the case of a single Code_Saturne and single SYRTHES instance, the
- * syrthes_app_num and syrthes_name arguments are ignored.
+ * syrthes_name argument is ignored.
  *
  * In case of multiple couplings, a coupling will be matched with available
- * SYRTHES instances prioritarily based on the syrthes_name argument, then
- * on the syrthes_app_num argument. If syrthes_name is empty, matching will
- * be based on syrthes_app_num only.
+ * SYRTHES instances based on the syrthes_name argument.
  *
  * Fortran Interface:
  *
  * SUBROUTINE DEFSY1
  * *****************
  *
- * INTEGER        syrthes_app_num   : <-- : application number of coupled
- *                                  :     : SYRTHES instance, or -1
  * CHARACTER*     syrthes_name      : <-- : name of coupled SYRTHES instance
  * CHARACTER      projection_axis   : <-- : ' ' for 3D, 'x', 'y', or 'z'
  *                                  :     : for 2D projection
@@ -103,7 +99,6 @@ BEGIN_C_DECLS
 
 void CS_PROCF(defsy1, DEFSY1)
 (
- cs_int_t    *syrthes_app_num,
  const char  *syrthes_name,
  char        *projection_axis,
  const char  *boundary_criteria,
@@ -282,16 +277,13 @@ void CS_PROCF (varsyo, VARSYO)
  * Define new SYRTHES coupling.
  *
  * In the case of a single Code_Saturne and single SYRTHES instance, the
- * syrthes_app_num and syrthes_name arguments are ignored.
+ * syrthes_name argument is ignored.
  *
  * In case of multiple couplings, a coupling will be matched with available
- * SYRTHES instances prioritarily based on the syrthes_name argument, then
- * on the syrthes_app_num argument. If syrthes_name is empty, matching will
- * be based on syrthes_app_num only.
+ * SYRTHES instances based on the syrthes_name argument.
  *
  * arguments:
- *   syrthes_app_num   <-- number of SYRTHES application, or -1
- *   syrthes_name      <-- name of SYRTHES instance, or NULL
+ *   syrthes_name      <-- name of SYRTHES instance
  *   boundary_criteria <-- boundary face selection criteria, or NULL
  *   volume_criteria   <-- volume cell selection criteria, or NULL
  *   projection_axis   <-- 'x', 'y', or 'y' for 2D projection axis (case
@@ -300,8 +292,7 @@ void CS_PROCF (varsyo, VARSYO)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_define(int          syrthes_app_num,
-                       const char  *syrthes_name,
+cs_syr_coupling_define(const char  *syrthes_name,
                        const char  *boundary_criteria,
                        const char  *volume_criteria,
                        char         projection_axis,

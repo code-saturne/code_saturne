@@ -139,7 +139,6 @@ struct _cs_syr4_coupling_t {
   int                      dim;      /* Coupled mesh dimension */
   int                      ref_axis; /* Selected axis for edge extraction */
 
-  int                      syr_num;  /* Application number, or -1 */
   char                    *syr_name; /* Application name, or -1 */
 
   char                    *face_sel; /* Face selection criteria */
@@ -445,7 +444,6 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
  * parameters:
  *   syr_coupling    <-- partially initialized SYRTHES coupling structure
  *   select_criteria <-- selection criteria
- *   coupling_number <-- number of the corresponding SYRTHES coupling
  *   elt_dim         <-- element dimension
  *   post_process    <-- if 1, activate associated post-processing
  *
@@ -456,11 +454,10 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
 static cs_syr4_coupling_ent_t *
 _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                     const char          *select_criteria,
-                    int                  coupling_number,
                     int                  elt_dim,
                     int                  post_process)
 {
-  char coupled_mesh_name[64];
+  char *coupled_mesh_name = NULL;
   fvm_gnum_t n_exterior = 0, n_dist_elts = 0;
   fvm_lnum_t *elt_list = NULL;
   fvm_coord_t *elt_centers = NULL;
@@ -498,7 +495,10 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   if (elt_dim == syr_coupling->dim) {
 
-    sprintf(coupled_mesh_name, _("SYRTHES_cells_%d"), coupling_number);
+    BFT_MALLOC(coupled_mesh_name,
+               strlen("SYRTHES  cells") + strlen(syr_coupling->syr_name) + 1,
+               char);
+    sprintf(coupled_mesh_name, _("SYRTHES %s cells"), syr_coupling->syr_name);
 
     BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, fvm_lnum_t);
 
@@ -513,6 +513,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                        elt_list);
 
     BFT_FREE(elt_list);
+    BFT_FREE(coupled_mesh_name);
+
   }
 
   /* Creation of a new nodal mesh from selected border faces */
@@ -521,7 +523,10 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
     locate_on_closest = cs_coupling_point_closest_mesh;
 
-    sprintf(coupled_mesh_name, _("SYRTHES_faces_%d"), coupling_number);
+    BFT_MALLOC(coupled_mesh_name,
+               strlen("SYRTHES  faces") + strlen(syr_coupling->syr_name) + 1,
+               char);
+    sprintf(coupled_mesh_name, _("SYRTHES %s faces"), syr_coupling->syr_name);
 
     BFT_MALLOC(elt_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
 
@@ -538,6 +543,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                        elt_list);
 
     BFT_FREE(elt_list);
+    BFT_FREE(coupled_mesh_name);
 
   }
 
@@ -899,8 +905,7 @@ cs_syr4_coupling_by_id(fvm_lnum_t coupling_id)
  *   ref_axis           <-- reference axis
  *   face_sel_criterion <-- criterion for selection of boundary faces
  *   cell_sel_criterion <-- criterion for selection of cells
- *   syr_num            <-- SYRTHES application number, or -1
- *   syr_name           <-- SYRTHES application name, or NULL
+ *   syr_name           <-- SYRTHES application name
  *   verbosity          <-- verbosity level
  *----------------------------------------------------------------------------*/
 
@@ -909,7 +914,6 @@ cs_syr4_coupling_add(fvm_lnum_t   dim,
                      fvm_lnum_t   ref_axis,
                      const char  *face_sel_criterion,
                      const char  *cell_sel_criterion,
-                     int          syr_num,
                      const char  *syr_name,
                      int          verbosity)
 {
@@ -924,12 +928,15 @@ cs_syr4_coupling_add(fvm_lnum_t   dim,
   syr_coupling->dim = dim;
   syr_coupling->ref_axis = ref_axis;
 
-  syr_coupling->syr_num = syr_num;
   syr_coupling->syr_name = NULL;
 
   if (syr_name != NULL) {
     BFT_MALLOC(syr_coupling->syr_name, strlen(syr_name) + 1, char);
     strcpy(syr_coupling->syr_name, syr_name);
+  }
+  else {
+    BFT_MALLOC(syr_coupling->syr_name, 1, char);
+    syr_coupling->syr_name[0] = '\0';
   }
 
   /* Selection criteria  */
@@ -1165,8 +1172,8 @@ cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling,
 
   if (verbosity > 0)
     bft_printf(_("\n ** Processing the mesh for SYRTHES coupling "
-                 "\"%d\"\n\n"),
-                 syr_coupling->syr_num);
+                 "\"%s\"\n\n"),
+                 syr_coupling->syr_name);
 
   /* Define coupled mesh */
 
@@ -1175,14 +1182,12 @@ cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling,
   if (syr_coupling->face_sel != NULL)
     syr_coupling->faces = _create_coupled_ent(syr_coupling,
                                               syr_coupling->face_sel,
-                                              syr_coupling->syr_num,
                                               syr_coupling->dim - 1,
                                               post_process);
 
   if (syr_coupling->cell_sel != NULL)
     syr_coupling->cells = _create_coupled_ent(syr_coupling,
                                               syr_coupling->cell_sel,
-                                              syr_coupling->syr_num,
                                               syr_coupling->dim,
                                               post_process);
 
@@ -1202,8 +1207,8 @@ cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling,
               op_name_recv);
 
   else if (verbosity > 0) {
-    bft_printf(_("\n ** Mesh located for SYRTHES coupling \"%d\".\n\n"),
-               syr_coupling->syr_num);
+    bft_printf(_("\n ** Mesh located for SYRTHES coupling \"%s\".\n\n"),
+               syr_coupling->syr_name);
     bft_printf_flush();
   }
 

@@ -114,7 +114,7 @@ struct _cs_syr3_coupling_t {
   int             dim;              /* Coupled mesh dimension */
   int             ref_axis;         /* Selected axis for edge extraction */
 
-  int             syr_num;          /* SYRTHES number */
+  char           *syr_name;         /* SYRTHES instance name */
 
   /* Boundary faces parameters of coupled mesh */
 
@@ -867,8 +867,8 @@ _dump_syr_coupling(cs_syr3_coupling_t  *syr_coupling)
              "SYRTHES 3 coupling structure dump\n"
              "---------------------------------\n\n");
 
-  bft_printf("\nSYRTHES coupling number: %d\n",
-             syr_coupling->syr_num);
+  bft_printf("\nSYRTHES coupling name: %s\n",
+             syr_coupling->syr_name);
 
   /* Print selection criteria */
 
@@ -1058,7 +1058,7 @@ cs_syr3_coupling_get_face_list(const cs_syr3_coupling_t  *syr_coupling,
  *   dim                <-- spatial mesh dimension
  *   ref_axis           <-- reference axis
  *   face_sel_criterion <-- criterion for selection of boundary faces
- *   syr_num            <-- SYRTHES number
+ *   syr_name           <-- SYRTHES application name
  *   syr_proc_rank      <-- SYRTHES process rank for MPI
  *   comm_type          <-- communicator type
  *   verbosity          <-- verbosity level
@@ -1068,7 +1068,7 @@ void
 cs_syr3_coupling_add(int                 dim,
                      int                 ref_axis,
                      const char         *face_sel_criterion,
-                     int                 syr_num,
+                     const char         *syr_name,
                      int                 syr_proc_rank,
                      cs_syr3_comm_type_t comm_type,
                      int                 verbosity)
@@ -1081,7 +1081,15 @@ cs_syr3_coupling_add(int                 dim,
               cs_glob_syr_n_couplings + 1, cs_syr3_coupling_t*);
   BFT_MALLOC(syr_coupling, 1, cs_syr3_coupling_t);
 
-  syr_coupling->syr_num = syr_num;
+  syr_coupling->syr_name = NULL;
+  if (syr_name != NULL) {
+    BFT_MALLOC(syr_coupling->syr_name, strlen(syr_name) + 1, char);
+    strcpy(syr_coupling->syr_name, syr_name);
+  }
+  else {
+    BFT_MALLOC(syr_coupling->syr_name, 1, char);
+    syr_coupling->syr_name[0] = '\0';
+  }
 
   syr_coupling->dim = dim;
   syr_coupling->ref_axis = ref_axis;
@@ -1213,6 +1221,8 @@ cs_syr3_coupling_all_destroy(void)
       cs_syr3_comm_finalize_socket();
 #endif
 
+    BFT_FREE(syr_coupling->syr_name);
+
     BFT_FREE(syr_coupling);
 
   } /* End of loop on cs_glob_syr_coupling_array */
@@ -1251,22 +1261,21 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t  *syr_coupling)
 
   if (comm_echo > 0) {
     bft_printf(_("\n ** Processing the mesh for SYRTHES coupling "
-                 "\"%d\"\n\n"),
-                 syr_coupling->syr_num);
+                 "\"%s\"\n\n"),
+                 syr_coupling->syr_name);
     bft_printf_flush();
   }
 
   /* Define coupled mesh name */
 
-  length = strlen("SYRTHES_faces_") + 1 + 1;
+  length = strlen("SYRTHES  faces") + strlen(syr_coupling->syr_name) + 1;
   BFT_MALLOC(coupled_mesh_name, length + 1, char);
-  sprintf(coupled_mesh_name, "SYRTHES_faces_%d", syr_coupling->syr_num);
+  sprintf(coupled_mesh_name, "SYRTHES %s faces", syr_coupling->syr_name);
 
   /* Define coupled mesh */
 
   coupled_mesh = _define_coupled_mesh(coupled_mesh_name,
                                       syr_coupling);
-
 
   n_g_vertices = fvm_nodal_get_n_g_vertices(coupled_mesh);
 

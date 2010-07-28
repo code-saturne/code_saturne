@@ -88,7 +88,6 @@ BEGIN_C_DECLS
 
 #if defined(PLE_HAVE_MPI)
 
-static int                       _cs_glob_coupling_mpi_app_num = -1;
 static ple_coupling_mpi_world_t *_cs_glob_coupling_mpi_app_world = NULL;
 
 #endif
@@ -107,24 +106,32 @@ static ple_coupling_mpi_world_t *_cs_glob_coupling_mpi_app_world = NULL;
  * Discover other applications in the same MPI root communicator.
  *
  * parameters:
- *   app_num  <-- application number for this instance of Code_Saturne (>= 0)
- *   app_name <-- optional name of this instance of Code_Saturne, or NULL.
+ *   app_name <-- name of this instance of Code_Saturne.
  *----------------------------------------------------------------------------*/
 
 void
-cs_coupling_discover_mpi_apps(int          app_num,
-                              const char  *app_name)
+cs_coupling_discover_mpi_apps(const char  *app_name)
 {
-  if (app_num > -1 && cs_glob_mpi_comm != MPI_COMM_WORLD) {
+  int mpi_flag;
+  int world_size;
+
+  MPI_Initialized(&mpi_flag);
+
+  if (!mpi_flag)
+    return;
+
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+  if (cs_glob_n_ranks < world_size) {
 
     int i, n_apps, app_id;
+    int app_num = -1;
 
     /* App_type contains a string such as
-       "Code_Saturne 1.4.0" or "NEPTUNE_CFD 1.2.1" */
+       "Code_Saturne 2.1.0" or "NEPTUNE_CFD 1.2.1" */
 
     const char app_type[] = CS_APP_NAME " " CS_APP_VERSION;
 
-    _cs_glob_coupling_mpi_app_num = app_num;
 
     if (cs_glob_rank_id < 1) {
       bft_printf(_("\n"
@@ -157,7 +164,7 @@ cs_coupling_discover_mpi_apps(int          app_num,
         bft_printf(_("  %d; type:      \"%s\"%s\n"
                      "     case name: \"%s\"\n"
                      "     lead rank: %d; n_ranks: %d\n\n"),
-                   ai.app_num, ai.app_type, is_local,
+                   i+1, ai.app_type, is_local,
                    ai.app_name, ai.root_rank, ai.n_ranks);
       }
 

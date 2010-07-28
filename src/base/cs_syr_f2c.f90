@@ -28,7 +28,7 @@
 subroutine defsyr &
 !================
 
- ( numsyr, nomsyr , cproj, critbo, critvl, iwarni )
+ ( nomsyr , cproj, critbo, critvl, iwarni )
 
 !===============================================================================
 ! FONCTION :
@@ -41,8 +41,7 @@ subroutine defsyr &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! numsyr           ! a  ! <-- ! numero du cas syrthes associe                  !
-! nomsyr           ! a  ! <-- ! nom du cas syrthes associe                     !
+! nomsyr           ! a  ! <-- ! nom du cas SYRTHES associe                     !
 ! cproj            ! c  ! <-- ! direction de projection (' ' pour              !
 !                  !    !     ! 3d, 'x', 'y', ou 'z' pour 2d)                  !
 ! critbo           ! a  ! <-- ! critere de selection des faces de              !
@@ -71,11 +70,11 @@ implicit none
 
 character*(*) nomsyr, critbo, critvl
 character     cproj
-integer       numsyr, iwarni
+integer       iwarni
 
 ! Variables locales
 
-integer       lnomsy, lcritb, lcritv
+integer  lnomsy, lcritb, lcritv
 
 !===============================================================================
 
@@ -83,10 +82,8 @@ lnomsy = len(nomsyr)
 lcritb = len(critbo)
 lcritv = len(critvl)
 
-call defsy1(numsyr, nomsyr, cproj,  critbo, critvl, iwarni,       &
+call defsy1(nomsyr, cproj,  critbo, critvl, iwarni, lnomsy, lcritb, lcritv)
 !==========
-            lnomsy, lcritb, lcritv)
-
 
 return
 

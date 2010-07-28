@@ -641,12 +641,9 @@ _cs_base_erreur_mpi(MPI_Comm  *comm,
  *
  * parameters:
  *   app_name <-- pointer to application instance name.
- *
- * returns:
- *   application number (-1 without coupled codes, >= 0 if coupled codes)
  *----------------------------------------------------------------------------*/
 
-static int
+static void
 _cs_base_mpi_setup(const char *app_name)
 {
   int nbr, rank;
@@ -709,8 +706,6 @@ _cs_base_mpi_setup(const char *app_name)
     MPI_Errhandler_free(&errhandler);
   }
 #endif
-
-  return app_num;
 }
 
 #endif /* HAVE_MPI */
@@ -1068,14 +1063,9 @@ cs_base_logfile_head(int    argc,
  *
  * Global variables `cs_glob_n_ranks' (number of Code_Saturne processes)
  * and `cs_glob_rank_id' (rank of local process) are set by this function.
- *
- * returns:
- *   -1 if MPI is not or no other code is coupled, or application number
- *   in MPI_COMM_WORLD of processes associated with this instance of
- *   Code_Saturne
  *----------------------------------------------------------------------------*/
 
-int
+void
 cs_base_mpi_init(int    *argc,
                  char  **argv[])
 {
@@ -1085,8 +1075,6 @@ cs_base_mpi_init(int    *argc,
 
   int arg_id = 0, flag = 0;
   int use_mpi = false;
-
-  int app_num = -1;
 
 #if   defined(__bg__) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 
@@ -1185,16 +1173,10 @@ cs_base_mpi_init(int    *argc,
 
     char *app_name = cs_base_get_app_name(*argc, (const char **)(*argv));
 
-    app_num = _cs_base_mpi_setup(app_name);
+    _cs_base_mpi_setup(app_name);
 
     BFT_FREE(app_name);
   }
-
-  return app_num;
-
-#else /* if defined(HAVE_MPI) */
-
-  return -1;
 
 #endif
 }
@@ -1700,21 +1682,29 @@ cs_base_system_info(void)
   bft_printf("  %s%s\n", _("Directory:         "), str_directory);
 
 #if defined(HAVE_MPI)
-#  if defined(MPI_VERSION) && (MPI_VERSION >= 2)
   {
-    int flag = 0;
-    void *attp = NULL;
+    int flag = 0, appnum = -1;
+
     MPI_Initialized(&flag);
     if (flag != 0) {
+
+#  if defined(MPI_VERSION) && (MPI_VERSION >= 2)
+      void *attp = NULL;
       flag = 0;
       MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &attp, &flag);
-    }
-    if (flag != 0)
-      bft_printf("  %s%d\n", _("MPI appnum:        "), *(int *)attp);
-  }
+      if (flag != 0)
+        appnum = *(int *)attp;
 #  endif
-  bft_printf("  %s%d\n", _("MPI ranks:         "), cs_glob_n_ranks);
-#endif
+
+      if (appnum > -1)
+        bft_printf("  %s%d (%s %d)\n",
+                   _("MPI ranks:         "), cs_glob_n_ranks,
+                   _("appnum attribute:"), appnum);
+      else
+        bft_printf("  %s%d\n", _("MPI ranks:         "), cs_glob_n_ranks);
+    }
+  }
+#endif /* defined(HAVE_MPI) */
 
 #if defined(HAVE_OPENMP)
   bft_printf("  %s%d\n", _("OpenMP threads:    "), cs_glob_n_threads);

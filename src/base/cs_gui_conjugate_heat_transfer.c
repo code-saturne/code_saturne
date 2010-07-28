@@ -130,12 +130,10 @@ _get_syrthes_coupling(const char* keyword, const int number)
  * Define new SYRTHES coupling.
  *
  * In the case of a single Code_Saturne and single SYRTHES instance, the
- * syrthes_app_num and syrthes_name arguments are ignored.
+ * syrthes_name argument is ignored.
  *
  * In case of multiple couplings, a coupling will be matched with available
- * SYRTHES instances prioritarily based on the syrthes_name argument, then
- * on the syrthes_app_num argument. If syrthes_name is empty, matching will
- * be based on syrthes_app_num only.
+ * SYRTHES instances prioritarily based on the syrthes_name argument.
  *
  * subroutine uisyrc
  * *****************
@@ -146,9 +144,8 @@ void CS_PROCF (uisyrc, UISYRC) (void)
 {
     int izone;
     int verbosity = 0;
-    int app_num = 0;
     char* syrthes_name = NULL;
-    char* syrthes_app_num = NULL;
+    char* syrthes_verbosity = NULL;
     char* projection_axis = NULL;
     char* boundary_criteria = NULL;
     char* volume_criteria = NULL;
@@ -160,14 +157,14 @@ void CS_PROCF (uisyrc, UISYRC) (void)
     for (izone=0 ; izone < coupling ; izone++)
     {
       syrthes_name      = _get_syrthes_coupling("syrthes_name",       izone+1);
-      syrthes_app_num   = _get_syrthes_coupling("syrthes_app_num",    izone+1);
+      syrthes_verbosity = _get_syrthes_coupling("verbosity",          izone+1);
       projection_axis   = _get_syrthes_coupling("projection_axis",    izone+1);
       boundary_criteria = _get_syrthes_coupling("selection_criteria", izone+1);
 
-      app_num = atoi(syrthes_app_num);
+      if (syrthes_verbosity != NULL)
+        verbosity = atoi(syrthes_verbosity);
 
-      cs_syr_coupling_define(app_num,
-                             syrthes_name,
+      cs_syr_coupling_define(syrthes_name,
                              boundary_criteria,
                              volume_criteria,
                              *projection_axis,
@@ -176,12 +173,12 @@ void CS_PROCF (uisyrc, UISYRC) (void)
 #if _XML_DEBUG_
       bft_printf("==>uisyrc\n");
       bft_printf("--syrthes_name      = %s\n", syrthes_name);
-      bft_printf("--syrthes_app_num   = %s\n", syrthes_app_num);
+      bft_printf("--syrthes_verbosity = %s\n", syrthes_verbosity);
       bft_printf("--boundary_criteria = %s\n", boundary_criteria);
       bft_printf("--projection_axis   = %s\n", projection_axis);
 #endif
       BFT_FREE(syrthes_name);
-      BFT_FREE(syrthes_app_num);
+      BFT_FREE(syrthes_verbosity);
       BFT_FREE(projection_axis);
       BFT_FREE(boundary_criteria);
 

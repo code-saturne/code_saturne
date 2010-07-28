@@ -28,7 +28,7 @@
 subroutine defsat &
 !================
 
- ( numsat, nomsat, ccesup, cfbsup, ccecpl, cfbcpl, iwarni )
+ ( nomsat, ccesup, cfbsup, ccecpl, cfbcpl, iwarni )
 
 !===============================================================================
 ! FONCTION :
@@ -41,8 +41,7 @@ subroutine defsat &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! numsat           ! a  ! <-- ! numero du cas saturne associe                  !
-! nomsat           ! a  ! <-- ! nom du cas satthes associe                     !
+! nomsat           ! a  ! <-- ! nom du cas Code_Saturne associe                !
 ! ccesup           ! a  ! <-- ! critere de selection des cellules              !
 !                  !    !     ! support (ou vide)                              !
 ! cfbsup           ! a  ! <-- ! critere de selection des faces de              !
@@ -71,7 +70,7 @@ implicit none
 ! Arguments
 
 character*(*) nomsat, ccesup, cfbsup, ccecpl, cfbcpl
-integer       numsat, iwarni
+integer       iwarni
 
 ! Variables locales
 
@@ -85,7 +84,7 @@ lccecp = len(ccecpl)
 lcfbsu = len(cfbsup)
 lccesu = len(ccesup)
 
-call defsa1(numsat, nomsat, ccesup, cfbsup, ccecpl, cfbcpl, &
+call defsa1(nomsat, ccesup, cfbsup, ccecpl, cfbcpl, &
 !==========
             lnomsa, lccesu, lcfbsu, lccecp, lcfbcp, iwarni)
 

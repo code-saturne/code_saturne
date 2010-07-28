@@ -376,13 +376,9 @@ cs_base_logfile_head(int    argc,
  *
  * Global variables `cs_glob_n_ranks' (number of Code_Saturne processes)
  * and `cs_glob_rank_id' (rank of local process) are set by this function.
- *
- * returns:
- *   -1 if MPI is not needed, or application number in MPI_COMM_WORLD of
- *   processes associated with this instance of Code_Saturne
  *----------------------------------------------------------------------------*/
 
-int
+void
 cs_base_mpi_init(int    *argc,
                  char  **argv[]);
 
