@@ -1,4 +1,9 @@
 * 28/07/2010 - David Monfort <david.monfort@edf.fr>
+  Remove no more used static functions in the periodicity algorithm.
+  modified routines:
+    src/base/cs_perio.c
+
+* 28/07/2010 - David Monfort <david.monfort@edf.fr>
   Fix a wrong macro for MPI detection (an old version was used).
   modified routines:
     src/base/cs_gradient.c
