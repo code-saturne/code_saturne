@@ -187,19 +187,16 @@ _gradient_info_dump(cs_gradient_info_t *this_info)
              this_info->name, cs_gradient_type_name[this_info->type],
              n_calls, this_info->wt_tot);
 
-#if defined(_CS_HAVE_MPI)
+#if defined(HAVE_MPI)
 
-  if (cs_glob_base_nbr > 1) {
+  if (cs_glob_n_ranks > 1) {
 
     double cpu_min, cpu_max, cpu_tot;
     double cpu_loc = this_info->cpu_tot;
 
-    MPI_Allreduce(&cpu_loc, &cpu_min, 1, MPI_DOUBLE, MPI_MIN,
-                  cs_glob_base_mpi_comm);
-    MPI_Allreduce(&cpu_loc, &cpu_max, 1, MPI_DOUBLE, MPI_MAX,
-                  cs_glob_base_mpi_comm);
-    MPI_Allreduce(&cpu_loc, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
-                  cs_glob_base_mpi_comm);
+    MPI_Allreduce(&cpu_loc, &cpu_min, 1, MPI_DOUBLE, MPI_MIN, cs_glob_mpi_comm);
+    MPI_Allreduce(&cpu_loc, &cpu_max, 1, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
+    MPI_Allreduce(&cpu_loc, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
 
     bft_printf(_("  Min local total CPU time:         %12.3f\n"
                  "  Max local total CPU time:         %12.3f\n"

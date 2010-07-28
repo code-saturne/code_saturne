@@ -1,4 +1,9 @@
 * 28/07/2010 - David Monfort <david.monfort@edf.fr>
+  Fix a wrong macro for MPI detection (an old version was used).
+  modified routines:
+    src/base/cs_gradient.c
+
+* 28/07/2010 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Fix the command line related to the app-name option.
   modified script:
