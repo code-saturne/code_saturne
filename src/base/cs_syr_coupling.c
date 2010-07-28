@@ -284,7 +284,7 @@ _print_all_mpi_syr(void)
 {
   int i;
 
-  const ple_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
+  const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
   const char empty_string[] = "";
 
   /* Loop on defined SYRTHES instances */
@@ -299,8 +299,8 @@ _print_all_mpi_syr(void)
       const char *local_name = empty_string;
       const char *distant_name = empty_string;
 
-      const ple_coupling_mpi_world_info_t
-        ai = ple_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
+      const ple_coupling_mpi_set_info_t
+        ai = ple_coupling_mpi_set_get_info(mpi_apps, scb->match_id);
 
       if (scb->app_name != NULL)
         local_name = scb->app_name;
@@ -342,18 +342,18 @@ _init_all_mpi_syr(void)
   int n_syr3_apps = 0, n_syr4_apps = 0;
   int syr_app_id = -1, syr_app_type = 0;
 
-  const ple_coupling_mpi_world_t *mpi_apps = cs_coupling_get_mpi_apps();
+  const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
 
   if (mpi_apps == NULL)
     return;
 
-  n_apps = ple_coupling_mpi_world_n_apps(mpi_apps);
+  n_apps = ple_coupling_mpi_set_n_apps(mpi_apps);
 
   /* First pass to count available SYRTHES couplings */
 
   for (i = 0; i < n_apps; i++) {
-    const ple_coupling_mpi_world_info_t
-      ai = ple_coupling_mpi_world_get_info(mpi_apps, i);
+    const ple_coupling_mpi_set_info_t
+      ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
     if (strncmp(ai.app_type, "SYRTHES 4", 9) == 0) {
       n_syr4_apps += 1;
       syr_app_id = i;
@@ -378,7 +378,7 @@ _init_all_mpi_syr(void)
   else {
 
     int j;
-    ple_coupling_mpi_world_info_t ai;
+    ple_coupling_mpi_set_info_t ai;
 
     int n_syr_apps = 0;
     int *syr_appinfo = NULL;
@@ -389,7 +389,7 @@ _init_all_mpi_syr(void)
     BFT_MALLOC(syr_appinfo, (n_syr3_apps + n_syr4_apps)*2, int);
 
     for (i = 0; i < n_apps; i++) {
-      ai = ple_coupling_mpi_world_get_info(mpi_apps, i);
+      ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
       if (   (strncmp(ai.app_type, "SYRTHES 4", 9) == 0)
           || (strncmp(ai.app_type, "SYRTHES 3", 9) == 0)) {
         syr_appinfo[n_syr_apps*2] = 0;
@@ -415,7 +415,7 @@ _init_all_mpi_syr(void)
           if (syr_appinfo[j*2] != 0) /* Consider only unmatched applications */
             continue;
 
-          ai = ple_coupling_mpi_world_get_info(mpi_apps, syr_appinfo[j*2 + 1]);
+          ai = ple_coupling_mpi_set_get_info(mpi_apps, syr_appinfo[j*2 + 1]);
           if (ai.app_name == NULL)
             continue;
 
@@ -448,8 +448,8 @@ _init_all_mpi_syr(void)
     _cs_syr_coupling_builder_t *scb = _syr_coupling_builder + i;
 
     if (scb->match_id > -1) {
-      const ple_coupling_mpi_world_info_t
-        ai = ple_coupling_mpi_world_get_info(mpi_apps, scb->match_id);
+      const ple_coupling_mpi_set_info_t
+        ai = ple_coupling_mpi_set_get_info(mpi_apps, scb->match_id);
 
       if (strncmp(ai.app_type, "SYRTHES 4", 9) == 0)
         _syr4_add_mpi(i, ai.root_rank, ai.n_ranks);

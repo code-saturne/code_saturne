@@ -85,7 +85,7 @@ int syr_glob_base_rank = - 1;           /* Parallel rank; -1 if serial */
 char syr_glob_build_date[] = __DATE__;  /* Build date */
 
 #if defined(HAVE_MPI)
-ple_coupling_mpi_world_t *syr_glob_coupling_world = NULL;
+ple_coupling_mpi_set_t *syr_glob_coupling_world = NULL;
 #endif
 
 /*===========================================================================
@@ -325,6 +325,7 @@ syr_mpi_initialize(int    *argc,
   MPI_Comm  mpi_comm_syr = MPI_COMM_NULL;
   char *app_name = NULL;
   int app_num = -1;
+  int sync_flag = PLE_COUPLING_NO_SYNC;
 
   /* Initialize MPI */
 
@@ -361,10 +362,11 @@ syr_mpi_initialize(int    *argc,
   /* Discover other applications in the same MPI root communicator
      (and participate in correspondig communication). */
 
-  syr_glob_coupling_world = ple_coupling_mpi_world_create(app_num,
-                                                          "SYRTHES 3.4",
-                                                          app_name,
-                                                          mpi_comm_syr);
+  syr_glob_coupling_world = ple_coupling_mpi_set_create(sync_flag,
+                                                        "SYRTHES 3.4",
+                                                        app_name,
+                                                        MPI_COMM_WORLD,
+                                                        mpi_comm_syr);
 
   PLE_FREE(app_name);
 
@@ -383,7 +385,7 @@ syr_mpi_finalize(void)
 {
   int ierror = 0;
 
-  ple_coupling_mpi_world_destroy(&syr_glob_coupling_world);
+  ple_coupling_mpi_set_destroy(&syr_glob_coupling_world);
 
   assert(syr_glob_coupling_world == NULL);
 
@@ -441,12 +443,12 @@ syr_mpi_appinfo(const char  *app_name,
 
     int i;
 
-    n_apps = ple_coupling_mpi_world_n_apps(syr_glob_coupling_world);
+    n_apps = ple_coupling_mpi_set_n_apps(syr_glob_coupling_world);
 
     for (i = 0; i < n_apps; i++) {
 
-      const ple_coupling_mpi_world_info_t
-        ai = ple_coupling_mpi_world_get_info(syr_glob_coupling_world, i);
+      const ple_coupling_mpi_set_info_t
+        ai = ple_coupling_mpi_set_get_info(syr_glob_coupling_world, i);
 
       if (!strcmp(ai.app_name, app_name)) {
 

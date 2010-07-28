@@ -45,14 +45,15 @@ main (int argc, char *argv[])
 {
 #if defined(PLE_HAVE_MPI)
 
-  int rank;
+  int rank, i, j;
 
+  int n_apps = 1;
   int app_id = -1;
+  int sync_flag = PLE_COUPLING_INIT;
   MPI_Comm app_comm = MPI_COMM_NULL;
   MPI_Comm intracomm = MPI_COMM_NULL;
-  ple_coupling_mpi_world_t *w = NULL;
-  int local_range[2] = {-1, -1};
-  int distant_range[2] = {-1, -1};
+  ple_coupling_mpi_set_t *s = NULL;
+  ple_coupling_mpi_set_info_t info[4];
 
   MPI_Init(&argc, &argv);
 
@@ -74,30 +75,96 @@ main (int argc, char *argv[])
 
   switch(app_id) {
   case 0:
-    w = ple_coupling_mpi_world_create(app_id, "Code_A", NULL, app_comm);
+    sync_flag = PLE_COUPLING_NO_SYNC;
+    s = ple_coupling_mpi_set_create(sync_flag, "Code_A", NULL,
+                                    MPI_COMM_WORLD, app_comm);
     break;
   case 1:
-    w = ple_coupling_mpi_world_create(app_id, "Code_B", "case b", app_comm);
+    s = ple_coupling_mpi_set_create(sync_flag, "Code_B", "case b",
+                                    MPI_COMM_WORLD, app_comm);
     break;
   case 2:
-    w = ple_coupling_mpi_world_create(app_id, "Code_C", NULL, app_comm);
+    s = ple_coupling_mpi_set_create(sync_flag, "Code_C", NULL,
+                                    MPI_COMM_WORLD, app_comm);
     break;
   default:
-    w = ple_coupling_mpi_world_create(app_id, "Code_D", "case d", app_comm);
+    s = ple_coupling_mpi_set_create(sync_flag, "Code_D", "case d",
+                                    MPI_COMM_WORLD, app_comm);
     break;
   }
 
-  ple_coupling_mpi_world_dump(w);
+  ple_coupling_mpi_set_dump(s);
 
-  ple_coupling_mpi_world_destroy(&w);
+  for (i = 0; i < 4; i++) {
 
-  if (app_id < 2) {
-    int dist_root_rank = app_id == 0 ? 2 : 0;
-    ple_coupling_mpi_intracomm_create(app_comm,
+    const int *status = NULL;
+    const double *ts = NULL;
+
+    switch(app_id) {
+    case 0:
+      break;
+    case 1:
+      ple_coupling_mpi_set_synchronize(s, PLE_COUPLING_NEW_ITERATION, 0.1);
+      break;
+    case 2:
+      if (i == 1)
+        ple_coupling_mpi_set_synchronize(s,
+                                         (  PLE_COUPLING_NEW_ITERATION
+                                          | PLE_COUPLING_LAST),
+                                         0.1);
+      else
+        ple_coupling_mpi_set_synchronize(s,
+                                         PLE_COUPLING_NEW_ITERATION,
+                                         0.2);
+      break;
+    default:
+      ple_coupling_mpi_set_synchronize(s, PLE_COUPLING_NEW_ITERATION, 0.3);
+      break;
+    }
+
+    if (app_id != 0) {
+      status = ple_coupling_mpi_set_get_status(s);
+      ts = ple_coupling_mpi_set_get_timestep(s);
+
+      ple_printf("\n");
+      for (j = 0; j < ple_coupling_mpi_set_n_apps(s); j++)
+        ple_printf("app %d status %d, time step %f\n", j, status[j], ts[j]);
+    }
+  }
+
+  n_apps = ple_coupling_mpi_set_n_apps(s);
+
+  for (i = 0; i < n_apps; i++)
+    info[i] = ple_coupling_mpi_set_get_info(s, i);
+
+  ple_coupling_mpi_set_destroy(&s);
+
+  if (n_apps > 1 && app_id < 2) {
+
+    int local_range[2],  distant_range[2];
+    int dist_app_id = (app_id + 1) % 2;
+    int dist_root_rank = info[dist_app_id].root_rank;
+
+    local_range[0] = info[app_id].root_rank;
+    local_range[1] = local_range[0] + info[app_id].n_ranks;
+    distant_range[0] = info[dist_app_id].root_rank;
+    distant_range[1] = distant_range[0] + info[dist_app_id].n_ranks;
+
+    ple_printf("\nBuilding intracomm with:\n"
+               "  dist_root_rank = %d\n"
+               "  local_range =   [%d, %d]\n"
+               "  distant_range = [%d, %d]\n",
+               dist_root_rank,
+               local_range[0], local_range[1],
+               distant_range[0], distant_range[1]);
+
+    ple_coupling_mpi_intracomm_create(MPI_COMM_WORLD,
+                                      app_comm,
                                       dist_root_rank,
                                       &intracomm,
                                       local_range,
                                       distant_range);
+
   }
 
   MPI_Finalize();

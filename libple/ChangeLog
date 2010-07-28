@@ -1,3 +1,9 @@
+2010-07-27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Changed ple_coupling_mpi_world... ple_coupling_mpi_set, and add
+	ple_coupling_mpi_set_synchronize(), ple_coupling_mpi_set_get_status(),
+	and ple_coupling_mpi_set_get_timestep() functions.
+
 2010-06-24  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Corrected blocking bug in ple_locator_set_mesh().

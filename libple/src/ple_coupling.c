@@ -64,23 +64,43 @@ extern "C" {
  * Local type definitions
  *============================================================================*/
 
-/* Structure used manage information about coupling with MPI_COMM_WORLD */
+/* Structure used to manage information about coupling */
 
 #if defined(PLE_HAVE_MPI)
 
-struct _ple_coupling_mpi_world_t {
+struct _ple_coupling_mpi_set_t {
 
   int    n_apps;       /* Number of distinct applications */
   int    app_id;       /* Id of the local application in the application info */
   int    app_names_l;  /* Length of application names array */
 
-  int   *app_info;     /* For each application, 5 integers: application number,
-                          associated root, n_ranks, and indexes in app_names */
+  int   *app_info;     /* For each application, 4 integers: associated root in
+                          base_comm, n_ranks, and indexes in app_names */
   char  *app_names;    /* Array of application type names and instance names */
+
+  int      *app_status;   /* Synchronization status for each application */
+  double   *app_timestep; /* Current time step for each application */
+
+  MPI_Comm  base_comm;    /* Handle to base communicator */
+  MPI_Comm  app_comm;     /* Handle to local application communicator */
 
 };
 
+/* Structure for MPI_DOUBLE_INT */
+
+typedef struct {
+  double  d;
+  int     i;
+} _mpi_double_int_t;
+
 #endif /* defined(PLE_HAVE_MPI) */
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+static int _coupling_tag
+= ('P'+'L'+'E'+'_'+'C'+'O'+'U'+'P'+'L'+'I'+'N'+'G') % 512;
 
 /*============================================================================
  * Local function defintions
@@ -177,6 +197,86 @@ _order_names(const char  *name[],
     order[i] = o_save;
     _order_names_descend_tree(name, 0, i, order);
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Synchronize root applications in a set.
+ *
+ * This function should only be called by application roots.
+ *
+ * parameters:
+ *   s         <-- pointer to PLE coupling MPI set info structure.
+ *   sync_flag <-- synchronization info for current application.
+ *   time_step <-- time step for current application.
+ *   glob_vals <-> temporary synchronization values.
+ *----------------------------------------------------------------------------*/
+
+static void
+_coupling_mpi_set_synchronize_roots(ple_coupling_mpi_set_t  *s,
+                                    int                      sync_flag,
+                                    double                   time_step,
+                                    _mpi_double_int_t        glob_vals[])
+{
+  int i;
+  MPI_Status status;
+  int app_rank;
+
+  int sync_root = -1;
+
+  MPI_Comm_rank(s->app_comm, &app_rank);
+
+  /* Return immediately if not application root */
+
+  if (app_rank != 0 || (s->app_status[s->app_id] & PLE_COUPLING_NO_SYNC))
+    return;
+
+  /* First, sync data to root */
+
+  for (i = 0; i < s->n_apps; i++) {
+    if (! (s->app_status[i] & PLE_COUPLING_NO_SYNC)) {
+      sync_root = i;
+      break;
+    }
+  }
+
+  if (sync_root == s->app_id) {
+
+    for (i = 0; i < s->n_apps; i++) {
+      if (s->app_status[i] & PLE_COUPLING_NO_SYNC) { /* Keep previous values */
+        glob_vals[i].i = s->app_status[i];
+        glob_vals[i].d = s->app_timestep[i];
+      }
+      else {
+        if (i != sync_root)
+          MPI_Recv(&(glob_vals[i]), 1, MPI_DOUBLE_INT, s->app_info[i*4],
+                   _coupling_tag, s->base_comm, &status);
+        else {
+          glob_vals[i].i = sync_flag;
+          glob_vals[i].d = time_step;
+        }
+      }
+    }
+  }
+  else if (! (s->app_status[s->app_id] & PLE_COUPLING_NO_SYNC)) {
+    _mpi_double_int_t send_vals;
+    send_vals.i = sync_flag;
+    send_vals.d = time_step;
+    MPI_Send(&send_vals, 1, MPI_DOUBLE_INT, s->app_info[sync_root],
+             _coupling_tag, s->base_comm);
+  }
+
+  /* Now, root sends data to all */
+
+  if (sync_root == s->app_id) {
+    for (i = 0; i < s->n_apps; i++) {
+      if (i != sync_root && ! (s->app_status[i] & PLE_COUPLING_NO_SYNC))
+        MPI_Send(glob_vals, s->n_apps, MPI_DOUBLE_INT, s->app_info[i*4],
+                 _coupling_tag, s->base_comm);
+    }
+  }
+  else
+    MPI_Recv(glob_vals, s->n_apps, MPI_DOUBLE_INT, s->app_info[sync_root],
+             _coupling_tag, s->base_comm, &status);
 }
 
 /*============================================================================
@@ -355,58 +455,65 @@ ple_coupling_mpi_name_to_id(MPI_Comm     comm,
 }
 
 /*----------------------------------------------------------------------------
- * Discover other applications in the same MPI_COMM_WORLD.
+ * Discover other applications in a set with a common communicator.
  *
- * The application communicator app_comm is usually obtained from
- * MPI_COMM_WORLD using MPI_Comm_split, with app_num corresponding to
- * the "color" argument in that function.
+ * In most cases, the base communicator is MPI_COMM_WORLD, and the local
+ * application communicator app_comm is usually obtained from it using
+ * MPI_Comm_split, but other combinations may be possible using MPI-2
+ * process management functions.
  *
  * As this function requires communication between applications, it
- * is a collective function in MPI_COMM_WORLD.
+ * is a collective function in base_comm.
  *
  * parameters:
- *   app_num   <-- application number in MPI_COMM_WORLD (nonnegative).
- *   app_name  <-- name of current application.
- *   case_name <-- name of current case, or NULL.
+ *   sync_flag <-- 1 if application is to be synchronized at each
+ *                 time step, 0 if independent from others.
+ *   app_type  <-- name of current application type (software name).
+ *   app_name  <-- name of current application (data/case name).
+ *   base_comm <-- communicator associated with all applications.
  *   app_comm  <-- communicator associated with local application.
  *
  * returns:
- *   PLE coupling MPI_COMM_WORLD info structure.
+ *   PLE coupling MPI set info structure.
  *----------------------------------------------------------------------------*/
 
-ple_coupling_mpi_world_t *
-ple_coupling_mpi_world_create(int          app_num,
-                              const char  *app_type,
-                              const char  *app_name,
-                              MPI_Comm     app_comm)
+ple_coupling_mpi_set_t *
+ple_coupling_mpi_set_create(int          sync_flag,
+                            const char  *app_type,
+                            const char  *app_name,
+                            MPI_Comm     base_comm,
+                            MPI_Comm     app_comm)
 {
-  int i;
+  int i, j;
   MPI_Status status;
 
-  int world_rank = -1, app_rank = -1, n_app_ranks = 0;
+  int set_rank = -1, app_rank = -1, n_app_ranks = 0;
   int root_marker = 0;
   int info_tag = 1, name_tag = 2;
 
   int counter[2] = {0, 0};
-  int l_rank_info[5] = {-1, -1, -1, 1, 1};
+  int l_rank_info[5] = {-1, -1, -1, 1, 1}; /* Status (1) + rank info (4) */
   int *rank_info = NULL;
   char *app_names = NULL;
 
-  ple_coupling_mpi_world_t *w = NULL;
+  ple_coupling_mpi_set_t *s = NULL;
 
   /* Initialization */
 
-  PLE_MALLOC(w, 1, ple_coupling_mpi_world_t);
+  PLE_MALLOC(s, 1, ple_coupling_mpi_set_t);
 
-  w->n_apps = 0;
-  w->app_id = -1;
-  w->app_names_l = 0;
-  w->app_info = NULL;
-  w->app_names = NULL;
+  s->n_apps = 0;
+  s->app_id = -1;
+  s->app_names_l = 0;
+  s->app_info = NULL;
+  s->app_names = NULL;
+
+  s->base_comm = base_comm;
+  s->app_comm = app_comm;
 
   /* Initialization */
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+  MPI_Comm_rank(base_comm, &set_rank);
 
   if (app_comm != MPI_COMM_NULL) {
     MPI_Comm_rank(app_comm, &app_rank);
@@ -417,8 +524,8 @@ ple_coupling_mpi_world_create(int          app_num,
     n_app_ranks = 1;
   }
 
-  l_rank_info[0] = app_num;
-  l_rank_info[1] = world_rank;
+  l_rank_info[0] = sync_flag;
+  l_rank_info[1] = set_rank;
   l_rank_info[2] = n_app_ranks;
   if (app_type != NULL)
     l_rank_info[3] = strlen(app_type) + 1;
@@ -428,14 +535,14 @@ ple_coupling_mpi_world_create(int          app_num,
   if (app_rank == 0)
     root_marker = 1;
 
-  /* Root rank of MPI_COMM_WORLD counts applications and receives info */
+  /* Root rank of base_comm counts applications and receives info */
 
   MPI_Reduce(&root_marker, &(counter[0]), 1, MPI_INT, MPI_SUM, 0,
-             MPI_COMM_WORLD);
+             base_comm);
 
-  /* Root of MPI_COMM_WORLD collects all info */
+  /* Root of base_comm collects all info */
 
-  if (world_rank == 0) {
+  if (set_rank == 0) {
 
     int start = 0;
 
@@ -452,7 +559,7 @@ ple_coupling_mpi_world_create(int          app_num,
 
     for (i = start; i < counter[0]; i++)
       MPI_Recv(rank_info + i*5, 5, MPI_INT, MPI_ANY_SOURCE, info_tag,
-               MPI_COMM_WORLD, &status);
+               base_comm, &status);
 
     /* Convert rank_info count to index values */
 
@@ -482,7 +589,7 @@ ple_coupling_mpi_world_create(int          app_num,
       rank_info[i*5 + 3] = counter[1];
       rank_info[i*5 + 4] = counter[1] + app_type_size;
       MPI_Recv(app_names + counter[1], msg_len, MPI_CHAR, rank_info[i*5 +1],
-               name_tag, MPI_COMM_WORLD, &status);
+               name_tag, base_comm, &status);
       counter[1] += msg_len;
     }
 
@@ -490,7 +597,7 @@ ple_coupling_mpi_world_create(int          app_num,
 
   /* Other root ranks send info to root */
 
-  else if (app_rank == 0) { /* world_rank != 0 */
+  else if (app_rank == 0) { /* set_rank != 0 */
 
     char *sendbuf = NULL;
     int   sendbuf_l = l_rank_info[3] + l_rank_info[4];
@@ -506,130 +613,148 @@ ple_coupling_mpi_world_create(int          app_num,
     else
       sendbuf[l_rank_info[3]] = '\0';
 
-    MPI_Send(l_rank_info, 5, MPI_INT, 0, info_tag, MPI_COMM_WORLD);
-    MPI_Send(sendbuf, sendbuf_l, MPI_CHAR, 0, name_tag, MPI_COMM_WORLD);
+    MPI_Send(l_rank_info, 5, MPI_INT, 0, info_tag, base_comm);
+    MPI_Send(sendbuf, sendbuf_l, MPI_CHAR, 0, name_tag, base_comm);
 
     PLE_FREE(sendbuf);
   }
 
   /* Now root broadcasts application info */
 
-  MPI_Bcast(counter, 2, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(counter, 2, MPI_INT, 0, base_comm);
 
-  if (world_rank != 0) {
+  if (set_rank != 0) {
     PLE_MALLOC(rank_info, counter[0]*5, int);
     PLE_MALLOC(app_names, counter[1], char);
   }
 
-  MPI_Bcast(rank_info, counter[0]*5, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(app_names, counter[1], MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast(rank_info, counter[0]*5, MPI_INT, 0, base_comm);
+  MPI_Bcast(app_names, counter[1], MPI_CHAR, 0, base_comm);
 
   /* Set global values */
 
-  w->n_apps = counter[0];
-  w->app_names_l = counter[1];
-  w->app_info = rank_info;
-  w->app_names = app_names;
+  s->n_apps = counter[0];
+  s->app_names_l = counter[1];
+  s->app_names = app_names;
 
-  for (i = 0; i < w->n_apps && w->app_id < 0; i++) {
-    if (w->app_info[i*5] == app_num)
-      w->app_id = i;
+  PLE_MALLOC(s->app_info, s->n_apps*4, int);
+  PLE_MALLOC(s->app_status, s->n_apps, int);
+  PLE_MALLOC(s->app_timestep, s->n_apps, double);
+
+  for (i = 0; i < s->n_apps && s->app_id < 0; i++) {
+    for (j = 0; j < 4; j++)
+      s->app_info[i*4 + j] = rank_info[i*5 + j+1];
+    s->app_status[i] = rank_info[i*5];
+    s->app_timestep[i] = 0.;
   }
 
-  return w;
+  PLE_FREE(rank_info);
+
+  /* Set rank set to that of the application root for matching */
+
+  MPI_Bcast(&set_rank, 1, MPI_INT, 0, app_comm);
+
+  for (i = 0; i < s->n_apps && s->app_id < 0; i++) {
+    if (s->app_info[i*4] == set_rank)
+      s->app_id = i;
+  }
+
+  return s;
 }
 
 /*----------------------------------------------------------------------------
- * Free an PLE coupling MPI_COMM_WORLD info structure.
+ * Free an PLE coupling MPI set info structure.
  *
  * parameters:
- *   w <-> pointer to structure that should be freed.
+ *   s <-> pointer to structure that should be freed.
  *----------------------------------------------------------------------------*/
 
 void
-ple_coupling_mpi_world_destroy(ple_coupling_mpi_world_t **w)
+ple_coupling_mpi_set_destroy(ple_coupling_mpi_set_t **s)
 {
-  ple_coupling_mpi_world_t *_w = *w;
+  ple_coupling_mpi_set_t *_s = *s;
 
-  if (_w != NULL) {
-    PLE_FREE(_w->app_info);
-    PLE_FREE(_w->app_names);
-    PLE_FREE(*w);
+  if (_s != NULL) {
+    PLE_FREE(_s->app_info);
+    PLE_FREE(_s->app_names);
+    PLE_FREE(_s->app_status);
+    PLE_FREE(_s->app_timestep);
+    PLE_FREE(*s);
   }
 }
 
 /*----------------------------------------------------------------------------
- * Return the number of applications in MPI_COMM_WORLD.
+ * Return the number of applications in a coupled set.
  *
  * parameters:
- *   w <-- pointer to PLE coupling MPI_COMM_WORLD info structure.
+ *   s <-- pointer to PLE coupling MPI set info structure.
  *
  * returns:
- *   number of application in MPI_COMM_WORLD.
+ *   number of application in set's common communicator.
  *----------------------------------------------------------------------------*/
 
 int
-ple_coupling_mpi_world_n_apps(const ple_coupling_mpi_world_t  *w)
+ple_coupling_mpi_set_n_apps(const ple_coupling_mpi_set_t  *s)
 {
   int retval = 0;
 
-  if (w != NULL)
-    retval = w->n_apps;
+  if (s != NULL)
+    retval = s->n_apps;
 
   return retval;
 }
 
 /*----------------------------------------------------------------------------
- * Return the id of the local application in MPI_COMM_WORLD.
+ * Return the id of the local application in a coupled set.
  *
  * parameters:
- *   w <-- pointer to PLE coupling MPI_COMM_WORLD info structure.
+ *   s <-- pointer to PLE coupling MPI set info structure.
  *
  * returns:
- *   id of the local application in MPI_COMM_WORLD.
+ *   id of the local application in set's common communicator.
  *----------------------------------------------------------------------------*/
 
 int
-ple_coupling_mpi_world_get_app_id(const ple_coupling_mpi_world_t  *w)
+ple_coupling_mpi_set_get_app_id(const ple_coupling_mpi_set_t  *s)
 {
   int retval = -1;
 
-  if (w != NULL)
-    retval = w->app_id;
+  if (s != NULL)
+    retval = s->app_id;
 
   return retval;
 }
 
 /*----------------------------------------------------------------------------
- * Return application information in MPI_COMM_WORLD.
+ * Return application information in set's common communicator.
  *
  * parameters:
- *   w      <-- pointer to PLE coupling MPI_COMM_WORLD info structure.
+ *   s      <-- pointer to PLE coupling MPI set info structure.
  *   app_id <-- application id
  *
  * returns:
  *   application information structure.
  *----------------------------------------------------------------------------*/
 
-ple_coupling_mpi_world_info_t
-ple_coupling_mpi_world_get_info(const ple_coupling_mpi_world_t  *w,
-                                int                              app_id)
+ple_coupling_mpi_set_info_t
+ple_coupling_mpi_set_get_info(const ple_coupling_mpi_set_t  *s,
+                              int                            app_id)
 {
-  ple_coupling_mpi_world_info_t  retval;
+  ple_coupling_mpi_set_info_t  retval;
 
-  retval.app_num = -1;
+  retval.status = 0;
   retval.root_rank = -1;
   retval.n_ranks = 0;
   retval.app_type = NULL;
   retval.app_name = NULL;
 
-  if (w != NULL) {
-    if (app_id >= 0 && app_id < w->n_apps) {
-      retval.app_num = w->app_info[app_id*5];
-      retval.root_rank = w->app_info[app_id*5 + 1];
-      retval.n_ranks = w->app_info[app_id*5 + 2];
-      retval.app_type = w->app_names + w->app_info[app_id*5 + 3];
-      retval.app_name = w->app_names + w->app_info[app_id*5 + 4];
+  if (s != NULL) {
+    if (app_id >= 0 && app_id < s->n_apps) {
+      retval.status = s->app_status[app_id];
+      retval.root_rank = s->app_info[app_id*4];
+      retval.n_ranks = s->app_info[app_id*4 + 1];
+      retval.app_type = s->app_names + s->app_info[app_id*4 + 2];
+      retval.app_name = s->app_names + s->app_info[app_id*4 + 3];
     }
   }
 
@@ -637,12 +762,115 @@ ple_coupling_mpi_world_get_info(const ple_coupling_mpi_world_t  *w,
 }
 
 /*----------------------------------------------------------------------------
- * Create an intracommunicator from a local and distant communicator
- * within MPI_COMM_WORLD.
+ * Synchronize applications in a set.
  *
  * parameters:
+ *   s         <-- pointer to PLE coupling MPI set info structure.
+ *   sync_flag <-- synchronization info for current application.
+ *   time_step <-- time step for current application.
+ *----------------------------------------------------------------------------*/
+
+void
+ple_coupling_mpi_set_synchronize(ple_coupling_mpi_set_t  *s,
+                                 int                      sync_flag,
+                                 double                   time_step)
+{
+  int i;
+
+  int last_sync_mask = (  PLE_COUPLING_NO_SYNC
+                        | PLE_COUPLING_STOP
+                        | PLE_COUPLING_LAST);
+
+  _mpi_double_int_t *glob_vals = NULL;
+
+  /* Return immediately if not synchronized */
+
+  if (s->app_status[s->app_id] & PLE_COUPLING_NO_SYNC)
+    return;
+
+  PLE_MALLOC(glob_vals, s->n_apps, _mpi_double_int_t);
+
+  /* Synchronize roots, then broad cast locally */
+
+  _coupling_mpi_set_synchronize_roots(s, sync_flag, time_step, glob_vals);
+
+  MPI_Bcast(glob_vals, s->n_apps, MPI_DOUBLE_INT, 0, s->app_comm);
+
+  /* Save values, and update synchronization flag */
+
+  for (i = 0; i < s->n_apps; i++) {
+
+    s->app_timestep[i] = glob_vals[i].d;
+    s->app_status[i] = glob_vals[i].i;
+
+    if (s->app_status[i] & last_sync_mask)
+      s->app_status[i] = (s->app_status[i] | PLE_COUPLING_NO_SYNC);
+  }
+
+  PLE_FREE(glob_vals);
+}
+
+/*----------------------------------------------------------------------------
+ * Get status of applications in a set.
+ *
+ * This function allows access to the status flag of each synchronized
+ * application in the set. It may be used immediately after
+ * ple_coupling_mpi_set_create(), and flags are updated after each
+ * call to ple_coupling_mpi_set_synchronize().
+ *
+ * parameters:
+ *   s <-- pointer to PLE coupling MPI set info structure.
+ *
+ * returns:
+ *   a pointer to the set's array of status flags
+ *----------------------------------------------------------------------------*/
+
+const int *
+ple_coupling_mpi_set_get_status(const ple_coupling_mpi_set_t  *s)
+{
+  const int *retval;
+
+  if (s != NULL)
+    return s->app_status;
+  else retval = NULL;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Get time steps in a set.
+ *
+ * This function may be called after ple_coupling_mpi_set_synchronize()
+ * to access the time step values of each synchronized application in the set.
+ *
+ * parameters:
+ *   s <-- pointer to PLE coupling MPI set info structure.
+ *
+ * returns:
+ *   a pointer to the set's array of time steps
+ *----------------------------------------------------------------------------*/
+
+const double *
+ple_coupling_mpi_set_get_timestep(const ple_coupling_mpi_set_t  *s)
+{
+  const double *retval;
+
+  if (s != NULL)
+    retval = s->app_timestep;
+  else
+    retval = NULL;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Create an intracommunicator from a local and distant communicator
+ * within a base communicator.
+ *
+ * parameters:
+ *   base_comm     <-- communicator associated with both applications
  *   app_comm      <-- communicator associated with local application
- *   distant_root  <-- rank of distant group leader in MPI_COMM_WORLD
+ *   distant_root  <-- rank of distant group leader in base_comm
  *   new_comm      --> pointer to new communicator
  *   local_range   --> first and past-the last ranks of local application
  *                     in new communicator
@@ -651,13 +879,13 @@ ple_coupling_mpi_world_get_info(const ple_coupling_mpi_world_t  *w,
  *----------------------------------------------------------------------------*/
 
 void
-ple_coupling_mpi_intracomm_create(MPI_Comm   app_comm,
+ple_coupling_mpi_intracomm_create(MPI_Comm   base_comm,
+                                  MPI_Comm   app_comm,
                                   int        distant_root,
                                   MPI_Comm  *new_comm,
                                   int        local_range[2],
                                   int        distant_range[2])
 {
-  int coupling_tag = ('P'+'L'+'E'+'_'+'C'+'O'+'U'+'P'+'L'+'I'+'N'+'G') % 512;
   int  mpi_flag = 0;
   int  n_dist_ranks = 0;
   int  n_loc_ranks, r_glob, r_loc_max;
@@ -674,7 +902,7 @@ ple_coupling_mpi_intracomm_create(MPI_Comm   app_comm,
   if (mpi_flag == 0)
     return;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &r_glob);
+  MPI_Comm_rank(base_comm, &r_glob);
 
   MPI_Allreduce(&r_glob, &r_loc_max, 1, MPI_INT, MPI_MAX, app_comm);
 
@@ -685,8 +913,8 @@ ple_coupling_mpi_intracomm_create(MPI_Comm   app_comm,
 
   /* Create a reserved communicator */
 
-  MPI_Intercomm_create(app_comm, 0, MPI_COMM_WORLD,
-                       distant_root, coupling_tag, &intercomm_tmp);
+  MPI_Intercomm_create(app_comm, 0, base_comm,
+                       distant_root, _coupling_tag, &intercomm_tmp);
 
   MPI_Intercomm_merge(intercomm_tmp, high, new_comm);
 
@@ -720,37 +948,40 @@ ple_coupling_mpi_intracomm_create(MPI_Comm   app_comm,
 }
 
 /*----------------------------------------------------------------------------
- * Dump printout of an PLE coupling MPI_COMM_WORLD info structure.
+ * Dump printout of an PLE coupling MPI set info structure.
  *
  * parameters:
- *   w <-- pointer to PLE coupling MPI_COMM_WORLD info structure.
+ *   w <-- pointer to PLE coupling MPI set info structure.
  *----------------------------------------------------------------------------*/
 
 void
-ple_coupling_mpi_world_dump(const ple_coupling_mpi_world_t  *w)
+ple_coupling_mpi_set_dump(const ple_coupling_mpi_set_t  *s)
 {
   int i;
 
-  if (w == NULL) {
-    ple_printf("  Coupling MPI_COMM_WORLD info: nil\n");
+  if (s == NULL) {
+    ple_printf("  Coupling MPI set info: nil\n");
     return;
   }
 
-  ple_printf("  Coupling MPI_COMM_WORLD info: %p\n"
+  ple_printf("  Coupling MPI set info:        %p\n"
              "    number of applications:     %d\n"
              "    local application id:       %d\n"
              "    app_names_size:             %d\n\n",
-             w, w->n_apps, w->app_id, w->app_names_l);
+             s, s->n_apps, s->app_id, s->app_names_l);
 
-  for (i = 0; i < w->n_apps; i++)
-    ple_printf("    Application number:  %d\n"
+  for (i = 0; i < s->n_apps; i++)
+    ple_printf("    Application id:      %d\n"
                "      root_rank:         %d\n"
                "      n_ranks:           %d\n"
                "      app_type:          \"%s\"\n"
-               "      app_name:          \"%s\"\n\n",
-               w->app_info[i*5], w->app_info[i*5 + 1], w->app_info[i*5 + 2],
-               w->app_names + w->app_info[i*5 + 3],
-               w->app_names + w->app_info[i*5 + 4]);
+               "      app_name:          \"%s\"\n"
+               "      status:            %d\n"
+               "      time step:         %f\n\n",
+               i, s->app_info[i*4], s->app_info[i*4 + 1],
+               s->app_names + s->app_info[i*4 + 2],
+               s->app_names + s->app_info[i*4 + 3],
+               s->app_status[i], s->app_timestep[i]);
 }
 
 /*----------------------------------------------------------------------------*/

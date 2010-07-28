@@ -1,4 +1,16 @@
 * 28/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Changed ple_coupling_mpi_world... ple_coupling_mpi_set, and add
+  ple_coupling_mpi_set_synchronize(), ple_coupling_mpi_set_get_status(),
+  and ple_coupling_mpi_set_get_timestep() functions.
+  modified routines:
+    include/base/cs_coupling.h
+    libsyrcs/syr_defs.c
+    src/base/cs_coupling.c
+    src/base/cs_sat_coupling.c
+    src/base/cs_syr4_coupling.c
+    src/base/cs_syr_coupling.c
+
+* 28/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Prepare the scripts to handle SYRTHES 4 in a near future.
   modified scripts:
     bin/cs_case_domain.py

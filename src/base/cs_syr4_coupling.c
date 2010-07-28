@@ -206,7 +206,8 @@ _init_comm(cs_syr4_coupling_t *syr_coupling,
              coupling_id);
   bft_printf_flush();
 
-  ple_coupling_mpi_intracomm_create(cs_glob_mpi_comm,
+  ple_coupling_mpi_intracomm_create(MPI_COMM_WORLD,
+                                    cs_glob_mpi_comm,
                                     syr_coupling->syr_root_rank,
                                     &(syr_coupling->comm),
                                     local_range,

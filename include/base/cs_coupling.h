@@ -94,7 +94,7 @@ cs_coupling_finalize(void);
  *   info on other applications structure.
  *----------------------------------------------------------------------------*/
 
-const ple_coupling_mpi_world_t *
+const ple_coupling_mpi_set_t *
 cs_coupling_get_mpi_apps(void);
 
 #endif /* HAVE_MPI */
