@@ -197,11 +197,10 @@ if __name__ == '__main__':
     # Possible SYRTHES coupling
 
     if os.path.isdir(os.path.join(casedir, 'DATA_SYR')):
-        sd = syrthes_domain(syrthes_env = 'syrthes.env',  # SYRTHES paths file
-                            echo_comm = None,             # coupling verbosity
-                            coupling_mode = 'MPI',        # 'MPI' or 'sockets'
-                            coupled_apps = None)          # coupled domain names
-                                                          # if n_domains > 1
+        sd = syrthes3_domain(echo_comm = None,        # coupling verbosity
+                             coupling_mode = 'MPI',   # 'MPI' or 'sockets'
+                             coupled_apps = None)     # coupled domain names
+                                                      # if n_domains > 1
     else:
         sd = None
 

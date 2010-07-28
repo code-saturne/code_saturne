@@ -1135,10 +1135,9 @@ class domain(base_domain):
 
 #-------------------------------------------------------------------------------
 
-class syrthes_domain(base_domain):
+class syrthes3_domain(base_domain):
 
     def __init__(self,
-                 syrthes_env = 'syrthes.env',  # SYRTHES environment file
                  echo_comm = None,             # coupling verbosity
                  coupling_mode = 'MPI',        # 'MPI' or 'sockets'
                  coupled_apps = None):         # coupled domain names
@@ -1154,7 +1153,6 @@ class syrthes_domain(base_domain):
         self.result_dir = None
         self.src_dir = None
         self.result_suffix = None
-        self.syrthes_env = 'syrthes.env'
         self.echo_comm = None
 
         self.set_coupling_mode(coupling_mode)
@@ -1354,16 +1352,22 @@ class syrthes_domain(base_domain):
         Copy data to the execution directory
         """
 
-        if os.path.isabs(self.syrthes_env):
-            syrthes_env = self.syrthes_env
-        else:
-            syrthes_env = os.path.join(self.data_dir, self.syrthes_env)
+        syrthes_env = os.path.join(self.data_dir, 'syrthes.env')
 
         cmd = os.path.join(cs_config.dirs.pkgdatadir, 'runcase_syrthes')
         cmd += ' -copy-data -syrthes-env=' + syrthes_env
 
         if run_command(cmd) != 0:
             raise RunCaseError
+
+    #---------------------------------------------------------------------------
+
+    def preprocess(self):
+        """
+        Run preprocessing stages (empty for Syrthes3)
+        """
+
+        return
 
     #---------------------------------------------------------------------------
 

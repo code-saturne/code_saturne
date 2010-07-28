@@ -150,6 +150,28 @@ class case:
 
     #---------------------------------------------------------------------------
 
+    def check_and_init_couplings(self):
+
+        """
+        Check consistency of coupling modes.
+        """
+
+        coupling_mode = None
+
+        if len(self.domains) > 0:
+            coupling_mode = 'MPI'
+
+        if len(self.syr_domains) > 0:
+            if coupling_mode == None:
+                coupling_mode = self.syr_domains[0].coupling_mode
+            for d in self.syr_domains:
+                if d.coupling_mode != coupling_mode:
+                    err_str = 'This script can only handle SYRTHES couplings ' \
+                        + 'using the same coupling mode.\n'
+                    raise RunCaseError(err_str)
+
+    #---------------------------------------------------------------------------
+
     def print_procs_distribution(self):
 
         """
@@ -751,7 +773,10 @@ class case:
             e.write(test_pf + str(nr) + test_sf)
             s_args = d.solver_args(app_id=app_id)
             e.write('  cd ' + s_args[0] + '\n')
-            e.write('  ' + s_args[1] + s_args[2] + ' $@ > ' + d.syrthes.log + ' 2>&1\n')
+            try:
+                e.write('  ' + s_args[1] + s_args[2] + ' $@ > ' + d.log_file + ' 2>&1\n')
+            except AttributeError:
+                e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
             if app_id == 0:
                 test_pf = 'el' + test_pf
             app_id += 1
@@ -1129,6 +1154,10 @@ fi
         Prepare data for calculation.
         """
 
+        # Check coupling modes consistency and set defaults
+
+        self.check_and_init_couplings()
+
         # General values
 
         now = datetime.datetime.now()
@@ -1148,14 +1177,6 @@ fi
 
             if d.adaptation:
                 adaptation(d.adaptation, saturne_script, self.case_dir)
-
-        if len(self.syr_domains) > 0:
-            coupling_mode = self.syr_domains[0].coupling_mode
-            for d in self.syr_domains:
-                if d.coupling_mode != coupling_mode:
-                    err_str = 'This script can only handle SYRTHES couplings ' \
-                        + 'using the same coupling mode.\n'
-                    raise RunCaseError(err_str)
 
         # Now that all domains are defined, set result copy mode
 
@@ -1271,6 +1292,8 @@ fi
                 d.run_preprocessor()
                 if len(d.error) > 0:
                     self.error = d.error
+            for d in self.syr_domains:
+                d.preprocess()
 
         if self.exec_partition:
             for d in self.domains:
