@@ -1,8 +1,3 @@
-* 29/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
-  Fix a wrong definition of integers instead of reals.
-  modified routine:
-    src/atmo/atprke.f90
-
 * 27/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a minor bug when echoing I/O structures.
   modified routine:

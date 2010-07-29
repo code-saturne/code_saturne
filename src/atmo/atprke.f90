@@ -187,11 +187,10 @@ integer         iel
 integer         itpp , icltpp
 integer         iccocg, inc
 integer         iivar, iphydp
-integer         nswrgp, imligp
-integer         iwarnp
+integer         nswrgp, epsrgp, imligp
+integer         iwarnp, climgp, extrap
 
 double precision gravke, prdtur
-double precision epsrgp, climgp, extrap
 
 
 !
