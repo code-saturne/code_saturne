@@ -1,3 +1,8 @@
+* 29/07/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix a bug in the SYRTHES 4 post-processing.
+  modified routines:
+    src/base/cs_syr4_coupling.c
+
 * 28/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Changed ple_coupling_mpi_world... ple_coupling_mpi_set, and add
   ple_coupling_mpi_set_synchronize(), ple_coupling_mpi_set_get_status(),

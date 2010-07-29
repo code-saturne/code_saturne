@@ -670,7 +670,10 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     BFT_FREE(elt_centers);
 
   if (post_process != 0 && locate_on_closest != NULL) {
-    const float *face_var[1] = {cs_to_syr_dist};
+
+    cs_post_activate_writer(0, 1);
+    cs_post_write_meshes(-1, 0.0);
+
     cs_post_write_var(coupling_ent->post_mesh_id,
                       _("distance_to_solid"),
                       1,
@@ -681,7 +684,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                       0.0,
                       NULL,
                       NULL,
-                      face_var);
+                      cs_to_syr_dist);
   }
 
   BFT_FREE(cs_to_syr_dist);
@@ -732,6 +735,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
       cs_post_add_existing_mesh(mesh_id, syr_points, 0, true);
       cs_post_associate(mesh_id, -1);
+
+      cs_post_activate_writer(0, 1);
+      cs_post_write_meshes(-1, 0.0);
 
       cs_post_write_vertex_var(mesh_id,
                                _("distance_to_fluid"),
