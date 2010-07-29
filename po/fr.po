@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-07-27 19:28+0200\n"
-"PO-Revision-Date: 2010-07-27 19:39+0200\n"
+"POT-Creation-Date: 2010-07-29 19:08+0200\n"
+"PO-Revision-Date: 2010-07-29 19:13+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "MIME-Version: 1.0\n"
@@ -446,7 +446,7 @@ msgstr ""
 msgid "%s version %s\n"
 msgstr "%s version %s\n"
 
-#: src/apps/cs_partition.c:374 src/base/cs_opts.c:341
+#: src/apps/cs_partition.c:374 src/base/cs_opts.c:342
 #, c-format
 msgid ""
 "%s was built without MPI support,\n"
@@ -591,7 +591,7 @@ msgid ""
 "unexpected or of incorrect size."
 msgstr ""
 "Section de type <%s> sur <%s>\n"
-"inattendue ou de taille incorrecte"
+"inattendue ou de taille incorrecte."
 
 #: src/apps/cs_partition.c:1813
 #, c-format
@@ -603,26 +603,26 @@ msgstr ""
 msgid "  %s \"%-32s\"\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2084
+#: src/apps/cs_partition.c:2083
 msgid ""
 " .------------------------------.\n"
 " |   Code_Saturne Partitioner   |\n"
 " `------------------------------'\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2096
+#: src/apps/cs_partition.c:2095
 msgid ""
 "\n"
 "  External library:\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2098
+#: src/apps/cs_partition.c:2097
 msgid ""
 "\n"
 "  External libraries:\n"
 msgstr ""
 
-#: src/apps/cs_partition.c:2266
+#: src/apps/cs_partition.c:2265
 msgid ""
 "\n"
 " .------------------------.\n"
@@ -631,7 +631,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_solver.c:305
+#: src/apps/cs_solver.c:304
 #, c-format
 msgid ""
 "\n"
@@ -640,7 +640,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/apps/cs_solver.c:311
+#: src/apps/cs_solver.c:310
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -648,11 +648,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:367
+#: src/apps/cs_solver.c:366
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:381
+#: src/apps/cs_solver.c:380
 #, c-format
 msgid ""
 "\n"
@@ -661,7 +661,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:397
+#: src/apps/cs_solver.c:396
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -669,7 +669,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:419
+#: src/apps/cs_solver.c:418
 #, c-format
 msgid ""
 "\n"
@@ -684,7 +684,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:429
+#: src/apps/cs_solver.c:428
 #, c-format
 msgid ""
 "\n"
@@ -697,7 +697,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:435
+#: src/apps/cs_solver.c:434
 #, c-format
 msgid ""
 "\n"
@@ -712,7 +712,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:505
+#: src/apps/cs_solver.c:504
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -837,7 +837,7 @@ msgstr ""
 "Erreur MPI :\n"
 "%s\n"
 
-#: src/base/cs_base.c:818
+#: src/base/cs_base.c:813
 #, c-format
 msgid ""
 " Sub-routine calling iasize:                %s\n"
@@ -852,7 +852,7 @@ msgstr ""
 "\n"
 " ----> Définir iasize au moins égale à %d entiers)."
 
-#: src/base/cs_base.c:862
+#: src/base/cs_base.c:857
 #, c-format
 msgid ""
 " Sub-routine calling rasize:             %s\n"
@@ -867,20 +867,20 @@ msgstr ""
 "\n"
 " ----> Définir rasize au moins égale à %d réels)."
 
-#: src/base/cs_base.c:936
+#: src/base/cs_base.c:931
 msgid "Error querying working directory.\n"
 msgstr "Erreur à la récupération du répertoire d'exécution du cas.\n"
 
-#: src/base/cs_base.c:1016
+#: src/base/cs_base.c:1011
 msgid "command: \n"
 msgstr "commande : \n"
 
-#: src/base/cs_base.c:1031
+#: src/base/cs_base.c:1026
 #, c-format
 msgid "  build %s\n"
 msgstr "  build %s\n"
 
-#: src/base/cs_base.c:1035
+#: src/base/cs_base.c:1030
 #, c-format
 msgid ""
 "  MPI version %d.%d (%s)\n"
@@ -889,7 +889,7 @@ msgstr ""
 "  Version MPI %d.%d (%s)\n"
 "\n"
 
-#: src/base/cs_base.c:1038
+#: src/base/cs_base.c:1033
 #, c-format
 msgid ""
 "  MPI version %d.%d\n"
@@ -898,15 +898,15 @@ msgstr ""
 "  Version MPI %d.%d\n"
 "\n"
 
-#: src/base/cs_base.c:1385
+#: src/base/cs_base.c:1367
 msgid "Total memory used:                       "
 msgstr "Consommation mémoire totale mesurée :     "
 
-#: src/base/cs_base.c:1386
+#: src/base/cs_base.c:1368
 msgid "Theoretical instrumented dynamic memory: "
 msgstr "Mémoire dynamique instrumentée théorique :"
 
-#: src/base/cs_base.c:1390 preprocessor/appli/ecs_main.c:721
+#: src/base/cs_base.c:1372 preprocessor/appli/ecs_main.c:721
 #, c-format
 msgid ""
 "\n"
@@ -917,22 +917,22 @@ msgstr ""
 "Bilan de l'occupation mémoire :\n"
 "\n"
 
-#: src/base/cs_base.c:1453
+#: src/base/cs_base.c:1435
 #, c-format
 msgid "  %s %12.3f %ciB\n"
 msgstr "  %s %12.3f %cio\n"
 
-#: src/base/cs_base.c:1458
+#: src/base/cs_base.c:1440
 #, c-format
 msgid "                             local minimum: %12.3f %ciB  (rank %d)\n"
 msgstr "                             minimum local : %12.3f %cio  (rang %d)\n"
 
-#: src/base/cs_base.c:1461
+#: src/base/cs_base.c:1443
 #, c-format
 msgid "                             local maximum: %12.3f %ciB  (rank %d)\n"
 msgstr "                             maximum local : %12.3f %cio  (rang %d)\n"
 
-#: src/base/cs_base.c:1501
+#: src/base/cs_base.c:1483
 #, c-format
 msgid ""
 "\n"
@@ -951,7 +951,7 @@ msgstr ""
 "   Mémoire de travail maximale locale demandée %12.3f %cio\n"
 "                                      utilisée %12.3f %cio\n"
 
-#: src/base/cs_base.c:1538
+#: src/base/cs_base.c:1520
 msgid ""
 "\n"
 "Calculation time summary:\n"
@@ -959,7 +959,7 @@ msgstr ""
 "\n"
 "Bilan des temps de calcul :\n"
 
-#: src/base/cs_base.c:1552
+#: src/base/cs_base.c:1534
 #, c-format
 msgid ""
 "\n"
@@ -968,12 +968,12 @@ msgstr ""
 "\n"
 "  Temps CPU utilisateur : %12.3f s\n"
 
-#: src/base/cs_base.c:1554
+#: src/base/cs_base.c:1536
 #, c-format
 msgid "  System CPU time:     %12.3f s\n"
 msgstr "  Temps CPU système :     %12.3f s\n"
 
-#: src/base/cs_base.c:1559
+#: src/base/cs_base.c:1541
 #, c-format
 msgid ""
 "\n"
@@ -982,12 +982,12 @@ msgstr ""
 "\n"
 "  Temps CPU :             %12.3f s\n"
 
-#: src/base/cs_base.c:1568
+#: src/base/cs_base.c:1550
 #, c-format
 msgid "  Total CPU time:      %12.3f s\n"
 msgstr "  Temps CPU cumulé :      %12.3f s\n"
 
-#: src/base/cs_base.c:1579
+#: src/base/cs_base.c:1561
 #, c-format
 msgid ""
 "\n"
@@ -996,56 +996,56 @@ msgstr ""
 "\n"
 "  Temps écoulé :          %12.3f s\n"
 
-#: src/base/cs_base.c:1582
+#: src/base/cs_base.c:1564
 #, c-format
 msgid "  CPU / elapsed time   %12.3f\n"
 msgstr "  Temps CPU / écoulé      %12.3f\n"
 
-#: src/base/cs_base.c:1674
+#: src/base/cs_base.c:1656
 msgid "Local case configuration:\n"
 msgstr "Configuration locale du cas :\n"
 
-#: src/base/cs_base.c:1676
+#: src/base/cs_base.c:1658
 msgid "Date:              "
 msgstr "Date :             "
 
-#: src/base/cs_base.c:1684
+#: src/base/cs_base.c:1666
 msgid "System:            "
 msgstr "Système :          "
 
-#: src/base/cs_base.c:1686
+#: src/base/cs_base.c:1668
 msgid "Machine:           "
 msgstr "Machine :          "
 
-#: src/base/cs_base.c:1690
+#: src/base/cs_base.c:1672
 msgid "Processor:         "
 msgstr "Processeur :       "
 
-#: src/base/cs_base.c:1693
+#: src/base/cs_base.c:1675
 msgid "Memory:            "
 msgstr "Mémoire :          "
 
-#: src/base/cs_base.c:1696
+#: src/base/cs_base.c:1678
 msgid "User:              "
 msgstr "Utilisateur :      "
 
-#: src/base/cs_base.c:1700
+#: src/base/cs_base.c:1682
 msgid "Directory:         "
 msgstr "Répertoire :       "
 
-#: src/base/cs_base.c:1713
-msgid "MPI appnum:        "
-msgstr "Application MPI :  "
-
-#: src/base/cs_base.c:1716
+#: src/base/cs_base.c:1701 src/base/cs_base.c:1704
 msgid "MPI ranks:         "
 msgstr "Rangs MPI :        "
 
-#: src/base/cs_base.c:1720
+#: src/base/cs_base.c:1702
+msgid "appnum attribute:"
+msgstr ""
+
+#: src/base/cs_base.c:1710
 msgid "OpenMP threads:    "
 msgstr "Threads OpenMP:    "
 
-#: src/base/cs_base.c:1777 preprocessor/appli/ecs_cmd.c:1635
+#: src/base/cs_base.c:1767 preprocessor/appli/ecs_cmd.c:1635
 #, c-format
 msgid ""
 "It is impossible to redirect the standard output to file:\n"
@@ -1054,14 +1054,14 @@ msgstr ""
 "Il est impossible de rediriger les sorties standard dans le fichier :\n"
 "%s"
 
-#: src/base/cs_base.c:1783
+#: src/base/cs_base.c:1773
 #, c-format
 msgid ""
 "It is impossible to redirect the standard error to file:\n"
 "%s"
 msgstr ""
 
-#: src/base/cs_base.c:1812
+#: src/base/cs_base.c:1802
 #, c-format
 msgid ""
 "\n"
@@ -1554,7 +1554,7 @@ msgstr ""
 "Écriture de %d valeurs de type %s, dep_temps %s\n"
 "        (temps %f, itération %d) ..."
 
-#: src/base/cs_calcium.c:475 src/base/cs_sat_coupling.c:280
+#: src/base/cs_calcium.c:475 src/base/cs_sat_coupling.c:278
 #: src/base/cs_syr4_coupling.c:216
 msgid "[ok]\n"
 msgstr "[ok]\n"
@@ -1578,7 +1578,19 @@ msgstr ""
 "Support de librairies partagées non disponible.\n"
 "Impossible de charger : %s\n"
 
-#: src/base/cs_coupling.c:130
+#: src/base/cs_coupling.c:135
+msgid "(point-to-point or not synchronized)"
+msgstr ""
+
+#: src/base/cs_coupling.c:136
+msgid "(group synchronized)"
+msgstr ""
+
+#: src/base/cs_coupling.c:137
+msgid " (this instance)"
+msgstr ""
+
+#: src/base/cs_coupling.c:141
 msgid ""
 "\n"
 "Applications accessible through MPI:\n"
@@ -1589,17 +1601,19 @@ msgstr ""
 "Applications accessibles grâce à MPI :\n"
 "--------------------------------------\n"
 
-#: src/base/cs_coupling.c:157
+#: src/base/cs_coupling.c:167
 #, c-format
 msgid ""
 "  %d; type:      \"%s\"%s\n"
 "     case name: \"%s\"\n"
 "     lead rank: %d; n_ranks: %d\n"
+"     %s\n"
 "\n"
 msgstr ""
 "  %d; type :        \"%s\"%s\n"
 "     nom de cas :  \"%s\"\n"
 "     rang racine : %d ; nb_rangs : %d\n"
+"     %s\n"
 "\n"
 
 #: src/base/cs_ext_neighborhood.c:1007
@@ -1674,7 +1688,7 @@ msgstr ""
 "  Nombre d'appels :                 %d\n"
 "  Temps écoulé cumulé :             %12.3f\n"
 
-#: src/base/cs_gradient.c:204 src/base/cs_sles.c:275
+#: src/base/cs_gradient.c:201 src/base/cs_sles.c:275
 #, c-format
 msgid ""
 "  Min local total CPU time:         %12.3f\n"
@@ -1685,12 +1699,12 @@ msgstr ""
 "  Temps CPU cumulé local max :      %12.3f\n"
 "  Temps CPU cumulé total :          %12.3f\n"
 
-#: src/base/cs_gradient.c:214 src/base/cs_sles.c:285
+#: src/base/cs_gradient.c:211 src/base/cs_sles.c:285
 #, c-format
 msgid "  Total CPU time:                   %12.3f\n"
 msgstr "  Temps CPU cumulé :                %12.3f\n"
 
-#: src/base/cs_gradient.c:635
+#: src/base/cs_gradient.c:632
 #, c-format
 msgid ""
 " GRADIENT LIMITATION in %10d cells\n"
@@ -3395,47 +3409,47 @@ msgid ""
 "  Impossible to continue the mesh update after the merge operation.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:2487
+#: src/base/cs_join_update.c:2493
 #, c-format
 msgid "  Join Face connectivity %d (%u): "
 msgstr ""
 
-#: src/base/cs_join_update.c:2518
+#: src/base/cs_join_update.c:2524
 msgid "  Cannot achieve to reorient the current joined face.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3100 src/base/cs_join_update.c:3152
+#: src/base/cs_join_update.c:3106 src/base/cs_join_update.c:3158
 #, c-format
 msgid ""
 "  Cannot achieve to reorient the current joined face with face %d (selected "
 "face).\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3423
+#: src/base/cs_join_update.c:3429
 #, c-format
 msgid ""
 " Incoherency found before interior face orientation checking.\n"
 " Join face %d (%u) and related faces [%d, %d]\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3615
+#: src/base/cs_join_update.c:3621
 #, c-format
 msgid "  Delete %d local vertices not used in mesh definition.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4072
+#: src/base/cs_join_update.c:4078
 #, c-format
 msgid ""
 "  Warning: Face %d (%u) has more than two ancestors.\n"
 "  Old faces implied:"
 msgstr ""
 
-#: src/base/cs_join_update.c:4091
+#: src/base/cs_join_update.c:4097
 #, c-format
 msgid "  Warning: Face %d (%u) has no ancestor.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4102
+#: src/base/cs_join_update.c:4108
 #, c-format
 msgid ""
 "\n"
@@ -3444,14 +3458,14 @@ msgid ""
 "    Number of border faces to add  : %9d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4129
+#: src/base/cs_join_update.c:4135
 #, c-format
 msgid ""
 " There are %u undefined faces with no ancestor.\n"
 " Cannot continue the joining algorithm.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4137
+#: src/base/cs_join_update.c:4143
 #, c-format
 msgid ""
 "\n"
@@ -3459,34 +3473,34 @@ msgid ""
 "     Global number of border faces to add: %10llu\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4145
+#: src/base/cs_join_update.c:4151
 #, c-format
 msgid "     Global number of multiple border faces: %10llu\n"
 msgstr "     Nombre global de faces de bord multiples : %10llu\n"
 
-#: src/base/cs_join_update.c:4353
+#: src/base/cs_join_update.c:4359
 #, c-format
 msgid "  Clean border face %d. New number of vertices: %d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4375
+#: src/base/cs_join_update.c:4381
 #, c-format
 msgid ""
 "\n"
 "  Degenerate connectivity for %d final local boundary faces.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4414
+#: src/base/cs_join_update.c:4420
 #, c-format
 msgid "  Clean interior face %d. New number of vertices: %d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4436
+#: src/base/cs_join_update.c:4442
 #, c-format
 msgid "  Degenerate connectivity for %d final local interior faces.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4486
+#: src/base/cs_join_update.c:4492
 #, c-format
 msgid ""
 "\n"
@@ -4216,7 +4230,7 @@ msgstr ""
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
-#: src/base/cs_mesh_warping.c:1230
+#: src/base/cs_mesh_warping.c:1231
 msgid ""
 "The faces have been renumbered before cutting.\n"
 "This case should not arise, because the mesh entities\n"
@@ -4226,12 +4240,12 @@ msgstr ""
 "Ce cas ne devrait pas se produire, car on devrait découper\n"
 "les entités de maillage avant de les renuméroter."
 
-#: src/base/cs_mesh_warping.c:1238
+#: src/base/cs_mesh_warping.c:1239
 #, c-format
 msgid "\t%12d global faces before cutting\n"
 msgstr "\t%12d faces globales avant découpage\n"
 
-#: src/base/cs_mesh_warping.c:1258
+#: src/base/cs_mesh_warping.c:1259
 #, c-format
 msgid ""
 "\t%12d global faces after cutting\n"
@@ -4240,19 +4254,19 @@ msgstr ""
 "\t%12d faces globales après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1304
+#: src/base/cs_mesh_warping.c:1305
 msgid "Warped faces to cut"
 msgstr "Faces gauche a decouper"
 
-#: src/base/cs_mesh_warping.c:1325
+#: src/base/cs_mesh_warping.c:1326
 msgid "Face warping"
 msgstr "Gauchissement des faces"
 
-#: src/base/cs_mesh_warping.c:1364
+#: src/base/cs_mesh_warping.c:1365
 msgid "Warped faces after cutting"
 msgstr "Faces gauche apres decoupage"
 
-#: src/base/cs_mesh_warping.c:1444
+#: src/base/cs_mesh_warping.c:1445
 #, c-format
 msgid ""
 "\n"
@@ -4271,7 +4285,7 @@ msgstr ""
 " Angle maximal autorisé (deg) : %7.4f\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1507
+#: src/base/cs_mesh_warping.c:1508
 msgid ""
 "\n"
 " No face to cut. Verify the criterion if necessary.\n"
@@ -4279,7 +4293,7 @@ msgstr ""
 "\n"
 " Aucune face à découper. Revoir le critère si nécessaire.\n"
 
-#: src/base/cs_mesh_warping.c:1545
+#: src/base/cs_mesh_warping.c:1546
 #, c-format
 msgid ""
 " Interior faces:\n"
@@ -4296,7 +4310,7 @@ msgstr ""
 "\t%12d faces localement après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1552 src/base/cs_mesh_warping.c:1590
+#: src/base/cs_mesh_warping.c:1553 src/base/cs_mesh_warping.c:1591
 #, c-format
 msgid ""
 " Size of the new face -> vertices connectivity: %12d\n"
@@ -4305,7 +4319,7 @@ msgstr ""
 " Taille de la nouvelle connectivité face -> sommets :%12d\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1583
+#: src/base/cs_mesh_warping.c:1584
 #, c-format
 msgid ""
 " Boundary faces:\n"
@@ -4678,28 +4692,28 @@ msgstr ""
 msgid " --version         print version number\n"
 msgstr " --version         affiche le numéro de version\n"
 
-#: src/base/cs_opts.c:355
+#: src/base/cs_opts.c:356
 #, c-format
 msgid ""
 "%s was built without XML support,\n"
 "so parameter file \"%s\" may not be loaded.\n"
 msgstr ""
 
-#: src/base/cs_opts.c:403
+#: src/base/cs_opts.c:404
 #, c-format
 msgid ""
 "%s was built without socket support,\n"
 "so option \"%s\" may not be used.\n"
 msgstr ""
 
-#: src/base/cs_opts.c:420
+#: src/base/cs_opts.c:421
 #, c-format
 msgid ""
 "%s was built without dynamic loader support,\n"
 "so module file \"%s\" may not be loaded.\n"
 msgstr ""
 
-#: src/base/cs_perio.c:640
+#: src/base/cs_perio.c:368
 #, c-format
 msgid ""
 "The %d periodic transformations of the halo do not comply\n"
@@ -4708,11 +4722,11 @@ msgstr ""
 "Les %d transformations périodiques du halo ne correspondent\n"
 "pas à celles du maillage principal (au nombre de %d).\n"
 
-#: src/base/cs_perio.c:950 src/base/cs_perio.c:1092
+#: src/base/cs_perio.c:678 src/base/cs_perio.c:820
 msgid "IDIMTE and/or ITENSO have incoherent values"
 msgstr "IDIMTE et/ou ITENSO ont des valeurs incohérentes"
 
-#: src/base/cs_perio.c:2827
+#: src/base/cs_perio.c:2555
 #, c-format
 msgid ""
 "Attempt to restore halo rotation elements on the\n"
@@ -5221,42 +5235,39 @@ msgstr ""
 "  Temps écoulé pour la lecture :    %12.3f\n"
 "  Temps écoulé pour l'écriture :    %12.3f\n"
 
-#: src/base/cs_sat_coupling.c:235
+#: src/base/cs_sat_coupling.c:233
 #, c-format
 msgid ""
 " Code_Saturne coupling:\n"
 "   coupling id:              %d\n"
 "   local name:               \"%s\"\n"
-"   local number:             %d\n"
 "\n"
 msgstr ""
 " Couplage Code_Saturne :\n"
 "   id de couplage :             %d\n"
 "   nom local :                  \"%s\"\n"
-"   numéro local :               %d\n"
 "\n"
 
-#: src/base/cs_sat_coupling.c:270
+#: src/base/cs_sat_coupling.c:267
 #, c-format
 msgid " Code_Saturne coupling %d: initializing MPI communication ... "
 msgstr " Couplage Code_Saturne %d : initialisation de la communication MPI ..."
 
-#: src/base/cs_sat_coupling.c:281 src/base/cs_syr4_coupling.c:217
+#: src/base/cs_sat_coupling.c:279 src/base/cs_syr4_coupling.c:217
 #, c-format
 msgid ""
 "  Local ranks = [%d..%d], distant ranks = [%d..%d].\n"
 "\n"
 msgstr "Rangs locaux = [%d..%d], rangs distants = [%d..%d].\n"
 
-#: src/base/cs_sat_coupling.c:366
+#: src/base/cs_sat_coupling.c:363
 #, c-format
 msgid ""
 " Code_Saturne coupling:\n"
 "   coupling id:              %d\n"
 "   local name:               \"%s\"\n"
 "   distant application name: \"%s\"\n"
-"   local number:             %d\n"
-"   MPI application number:   %d\n"
+"   MPI application id:       %d\n"
 "   MPI root rank:            %d\n"
 "   number of MPI ranks:      %d\n"
 "\n"
@@ -5265,33 +5276,32 @@ msgstr ""
 "   id de couplage :             %d\n"
 "   nom local :                  \"%s\"\n"
 "   nom d'application distante : \"%s\"\n"
-"   numéro local :               %d\n"
-"   numéro d'application MPI :   %d\n"
+"   id d'application MPI :       %d\n"
 "   rang racine MPI :            %d\n"
 "   nombre de rangs MPI :        %d\n"
 "\n"
 
-#: src/base/cs_sat_coupling.c:1020 src/base/cs_sat_coupling.c:1241
-#: src/base/cs_sat_coupling.c:1308 src/base/cs_sat_coupling.c:1383
-#: src/base/cs_sat_coupling.c:1444 src/base/cs_sat_coupling.c:1514
-#: src/base/cs_sat_coupling.c:1612 src/base/cs_sat_coupling.c:1691
-#: src/base/cs_sat_coupling.c:1782 src/base/cs_sat_coupling.c:1858
-#: src/base/cs_sat_coupling.c:1926
+#: src/base/cs_sat_coupling.c:992 src/base/cs_sat_coupling.c:1213
+#: src/base/cs_sat_coupling.c:1280 src/base/cs_sat_coupling.c:1355
+#: src/base/cs_sat_coupling.c:1416 src/base/cs_sat_coupling.c:1486
+#: src/base/cs_sat_coupling.c:1584 src/base/cs_sat_coupling.c:1663
+#: src/base/cs_sat_coupling.c:1754 src/base/cs_sat_coupling.c:1830
+#: src/base/cs_sat_coupling.c:1898
 #, c-format
 msgid "Impossible coupling number %d; there are %d couplings"
 msgstr "Numéro de couplage %d impossible ;  on a %d couplages"
 
-#: src/base/cs_sat_coupling.c:1067
+#: src/base/cs_sat_coupling.c:1039
 #, c-format
 msgid "coupled_cells_%d"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1078
+#: src/base/cs_sat_coupling.c:1050
 #, c-format
 msgid "coupled_faces_%d"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1321
+#: src/base/cs_sat_coupling.c:1293
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELCPL()\n"
@@ -5302,7 +5312,7 @@ msgstr ""
 "On a indiqué NCECPL = %d et NFBCPL = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:1396
+#: src/base/cs_sat_coupling.c:1368
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELNCP()\n"
@@ -5313,7 +5323,7 @@ msgstr ""
 "On a indiqué NCENCP = %d et NFBNCP = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:1538
+#: src/base/cs_sat_coupling.c:1510
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for COOCPL()\n"
@@ -5324,13 +5334,13 @@ msgstr ""
 "On a indiqué ITYDIS = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#: src/base/cs_sat_coupling.c:1619
+#: src/base/cs_sat_coupling.c:1591
 msgid ""
 "The centred interpolation scheme is not available\n"
 "when coupling cells"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1630
+#: src/base/cs_sat_coupling.c:1602
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for PNDCPL().\n"
@@ -5341,7 +5351,7 @@ msgstr ""
 "On a indiqué ITYLOC = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#: src/base/cs_sat_coupling.c:1708
+#: src/base/cs_sat_coupling.c:1680
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -5352,7 +5362,7 @@ msgstr ""
 "On a indiqué ITYVAR = %d et NBRDIS = %d.\n"
 "On devrait avoir la valeur 0 ou %d pour NBRDIS."
 
-#: src/base/cs_sat_coupling.c:1715
+#: src/base/cs_sat_coupling.c:1687
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -5363,7 +5373,7 @@ msgstr ""
 "On a indiqué ITYVAR = %d et NBRLOC = %d.\n"
 "On devrait avoir la valeur 0 ou %d pour NBRLOC."
 
-#: src/base/cs_sat_coupling.c:2087
+#: src/base/cs_sat_coupling.c:2055
 msgid ""
 "At least 1 Code_Saturne coupling was defined for which\n"
 "no communication with a Code_Saturne instance is possible."
@@ -5701,7 +5711,7 @@ msgstr "T Paroi"
 msgid "Flux"
 msgstr "Flux"
 
-#: src/base/cs_syr3_coupling.c:1096
+#: src/base/cs_syr3_coupling.c:1104
 msgid ""
 "Coupling with SYRTHES impossible.\n"
 "No selection criteria for faces to couple."
@@ -5709,7 +5719,7 @@ msgstr ""
 "Couplage avec SYRTHES impossible.\n"
 "Aucun critère de sélection pour les faces à coupler."
 
-#: src/base/cs_syr3_coupling.c:1223
+#: src/base/cs_syr3_coupling.c:1233
 msgid ""
 "\n"
 "Structures associated with SYRTHES 3 coupling freed.\n"
@@ -5717,18 +5727,18 @@ msgstr ""
 "\n"
 "Libération des structures associées au couplage avec SYRTHES 3.\n"
 
-#: src/base/cs_syr3_coupling.c:1253 src/base/cs_syr4_coupling.c:1167
+#: src/base/cs_syr3_coupling.c:1263 src/base/cs_syr4_coupling.c:1181
 #, c-format
 msgid ""
 "\n"
-" ** Processing the mesh for SYRTHES coupling \"%d\"\n"
+" ** Processing the mesh for SYRTHES coupling \"%s\"\n"
 "\n"
 msgstr ""
 "\n"
-" ** Traitement du maillage pour le couplage SYRTHES \"%d\"\n"
+" ** Traitement du maillage pour le couplage SYRTHES \"%s\"\n"
 "\n"
 
-#: src/base/cs_syr3_coupling.c:1275
+#: src/base/cs_syr3_coupling.c:1284
 msgid ""
 "Coupling with SYRTHES impossible.\n"
 "No face to couple.\n"
@@ -5736,21 +5746,21 @@ msgstr ""
 "Couplage avec SYRTHES impossible.\n"
 "Aucune face à coupler.\n"
 
-#: src/base/cs_syr3_coupling.c:1283
+#: src/base/cs_syr3_coupling.c:1292
 #, c-format
 msgid "Triangulation of the extracted mesh (%d faces)  ..."
 msgstr "Triangulation du maillage extrait (%d faces)  ..."
 
-#: src/base/cs_syr3_coupling.c:1296
+#: src/base/cs_syr3_coupling.c:1305
 #, c-format
 msgid "Splitting the extracted mesh in edges (%d faces)  ..."
 msgstr "Décomposition en arêtes du maillage extrait (%d faces)  ..."
 
-#: src/base/cs_syr3_coupling.c:1311
+#: src/base/cs_syr3_coupling.c:1320
 msgid "Error triangulating the extracted mesh before sending to SYRTHES.\n"
 msgstr "Erreur lors du découpage du maillage extrait avant envoi à Syrthes.\n"
 
-#: src/base/cs_syr3_coupling.c:1405
+#: src/base/cs_syr3_coupling.c:1414
 #, c-format
 msgid ""
 "\n"
@@ -5759,7 +5769,7 @@ msgstr ""
 "\n"
 "Maillage extrait composé de %d triangles"
 
-#: src/base/cs_syr3_coupling.c:1407
+#: src/base/cs_syr3_coupling.c:1416
 #, c-format
 msgid ""
 "\n"
@@ -5768,20 +5778,20 @@ msgstr ""
 "\n"
 "Maillage extrait composé de %d arêtes"
 
-#: src/base/cs_syr3_coupling.c:1411
+#: src/base/cs_syr3_coupling.c:1420
 #, c-format
 msgid " and %d vertices (locally)\n"
 msgstr " et %d sommets (localement)\n"
 
-#: src/base/cs_syr3_coupling.c:1491
+#: src/base/cs_syr3_coupling.c:1500
 msgid "\tInterpolation from vertices to elements            ..."
 msgstr "\tInterpolation des sommets vers les éléments           ..."
 
-#: src/base/cs_syr3_coupling.c:1580
+#: src/base/cs_syr3_coupling.c:1589
 msgid "\tInterpolation from elements to vertices            ..."
 msgstr "\tInterpolation des éléments sur les sommets            ..."
 
-#: src/base/cs_syr3_messages.c:157 src/base/cs_syr4_coupling.c:1122
+#: src/base/cs_syr3_messages.c:157 src/base/cs_syr4_coupling.c:1136
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5814,8 +5824,8 @@ msgstr ""
 "========================================================\n"
 
 #: src/base/cs_syr3_messages.c:276 src/base/cs_syr3_messages.c:359
-#: src/base/cs_syr_coupling.c:805 src/base/cs_syr_coupling.c:846
-#: src/base/cs_syr_coupling.c:885 src/base/cs_syr_coupling.c:924
+#: src/base/cs_syr_coupling.c:778 src/base/cs_syr_coupling.c:819
+#: src/base/cs_syr_coupling.c:858 src/base/cs_syr_coupling.c:897
 #, c-format
 msgid "SYRTHES coupling number %d impossible; there are %d couplings"
 msgstr "Numéro de couplage SYRTHES %d impossible ;  on a %d couplages"
@@ -5831,12 +5841,12 @@ msgstr ""
 " on attendait \"%s\" (%d éléments, type %d)\n"
 " on a reçu    \"%s\"(%d éléments, type %d)\n"
 
-#: src/base/cs_syr4_coupling.c:206
+#: src/base/cs_syr4_coupling.c:205
 #, c-format
 msgid " SYRTHES coupling %d: initializing MPI communication ... "
 msgstr " Couplage SYRTHES %d : initialisation de la communication MPI ..."
 
-#: src/base/cs_syr4_coupling.c:493
+#: src/base/cs_syr4_coupling.c:491
 msgid ""
 "\n"
 "Extracting coupled mesh             ..."
@@ -5844,17 +5854,17 @@ msgstr ""
 "\n"
 "Extraction du maillage couplé           ..."
 
-#: src/base/cs_syr4_coupling.c:501
+#: src/base/cs_syr4_coupling.c:502
 #, c-format
-msgid "SYRTHES_cells_%d"
-msgstr "Cellules_SYRTHES_%d"
+msgid "SYRTHES %s cells"
+msgstr "Cellules SYRTHES %s"
 
-#: src/base/cs_syr4_coupling.c:524
+#: src/base/cs_syr4_coupling.c:530
 #, c-format
-msgid "SYRTHES_faces_%d"
-msgstr "Faces_SYRTHES_%d"
+msgid "SYRTHES %s faces"
+msgstr "Faces SYRTHES %s"
 
-#: src/base/cs_syr4_coupling.c:551
+#: src/base/cs_syr4_coupling.c:558
 #, c-format
 msgid ""
 " Selection criteria:\n"
@@ -5865,15 +5875,15 @@ msgstr ""
 " \"%s\"\n"
 " produit un maillage vide pour le couplage SYRTHES.\n"
 
-#: src/base/cs_syr4_coupling.c:566
+#: src/base/cs_syr4_coupling.c:573
 msgid "Projecting the extracted mesh to 2D ..."
 msgstr "Projection 2D du maillage extrait  ..."
 
-#: src/base/cs_syr4_coupling.c:574
+#: src/base/cs_syr4_coupling.c:581
 msgid "Error projecting the extracted mesh."
 msgstr "Erreur lors de la projection du maillage extrait."
 
-#: src/base/cs_syr4_coupling.c:601
+#: src/base/cs_syr4_coupling.c:608
 #, c-format
 msgid ""
 "\n"
@@ -5882,7 +5892,7 @@ msgstr ""
 "\n"
 "Maillage extrait composé de %llu éléments.\n"
 
-#: src/base/cs_syr4_coupling.c:619
+#: src/base/cs_syr4_coupling.c:626
 msgid ""
 "\n"
 "Locator structure and mesh creation."
@@ -5890,15 +5900,15 @@ msgstr ""
 "\n"
 "Création de la structure de localisation et du maillage."
 
-#: src/base/cs_syr4_coupling.c:668
+#: src/base/cs_syr4_coupling.c:678
 msgid "distance_to_solid"
 msgstr ""
 
-#: src/base/cs_syr4_coupling.c:730
+#: src/base/cs_syr4_coupling.c:743
 msgid "distance_to_fluid"
 msgstr ""
 
-#: src/base/cs_syr4_coupling.c:758
+#: src/base/cs_syr4_coupling.c:771
 #, c-format
 msgid ""
 "Coupling with SYRTHES impossible:\n"
@@ -5909,7 +5919,7 @@ msgstr ""
 "%llu centres d'éléments du maillage \"%s\"\n"
 "non localisés sur le maillage SYRTHES."
 
-#: src/base/cs_syr4_coupling.c:951
+#: src/base/cs_syr4_coupling.c:965
 msgid ""
 "Coupling with SYRTHES impossible.\n"
 "No selection criteria for faces or cells to couple."
@@ -5917,7 +5927,7 @@ msgstr ""
 "Couplage avec SYRTHES impossible.\n"
 "Aucun critère de sélection pour les faces ou les cellules à coupler."
 
-#: src/base/cs_syr4_coupling.c:1019
+#: src/base/cs_syr4_coupling.c:1033
 msgid ""
 "\n"
 "Structures associated with SYRTHES 4 coupling freed.\n"
@@ -5925,7 +5935,7 @@ msgstr ""
 "\n"
 "Libération des structures associées au couplage avec SYRTHES 4.\n"
 
-#: src/base/cs_syr4_coupling.c:1066
+#: src/base/cs_syr4_coupling.c:1080
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5942,7 +5952,7 @@ msgstr ""
 "      Options SYRTHES      : \"%s\"\n"
 "========================================================\n"
 
-#: src/base/cs_syr4_coupling.c:1137
+#: src/base/cs_syr4_coupling.c:1151
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5959,7 +5969,7 @@ msgstr ""
 "      message attendu : cmd:iter:start\n"
 "========================================================\n"
 
-#: src/base/cs_syr4_coupling.c:1200
+#: src/base/cs_syr4_coupling.c:1212
 #, c-format
 msgid ""
 " Message received from SYRTHES: \"%s\"\n"
@@ -5968,33 +5978,31 @@ msgstr ""
 " Le message reçu de SYRTHES: \"%s\"\n"
 " indique une erreur ou est inattendu."
 
-#: src/base/cs_syr4_coupling.c:1205
+#: src/base/cs_syr4_coupling.c:1217
 #, c-format
 msgid ""
 "\n"
-" ** Mesh located for SYRTHES coupling \"%d\".\n"
+" ** Mesh located for SYRTHES coupling \"%s\".\n"
 "\n"
 msgstr ""
 "\n"
-" ** Localisation du maillage pour le couplage SYRTHES \"%d\".\n"
+" ** Localisation du maillage pour le couplage SYRTHES \"%s\".\n"
 "\n"
 
-#: src/base/cs_syr_coupling.c:198
+#: src/base/cs_syr_coupling.c:197
 #, c-format
 msgid ""
 " SYRTHES coupling:\n"
 "   coupling id:              %d\n"
 "   local name:               \"%s\"\n"
-"   local number:             %d\n"
 "\n"
 msgstr ""
 " Couplage SYRTHES :\n"
 "   id de couplage :             %d\n"
 "   nom local :                  \"%s\"\n"
-"   numéro local :               %d\n"
 "\n"
 
-#: src/base/cs_syr_coupling.c:315
+#: src/base/cs_syr_coupling.c:312
 #, c-format
 msgid ""
 " SYRTHES coupling:\n"
@@ -6002,8 +6010,7 @@ msgid ""
 "   version:                  \"%s\"\n"
 "   local name:               \"%s\"\n"
 "   distant application name: \"%s\"\n"
-"   local number:             %d\n"
-"   MPI application number:   %d\n"
+"   MPI application id:       %d\n"
 "   MPI root rank:            %d\n"
 "   number of MPI ranks:      %d\n"
 "\n"
@@ -6013,13 +6020,12 @@ msgstr ""
 "   version :                    \"%s\"\n"
 "   nom local :                  \"%s\"\n"
 "   nom d'application distante : \"%s\"\n"
-"   numéro local :               %d\n"
-"   numéro d'application MPI :   %d\n"
+"   id d'application MPI :       %d\n"
 "   rang racine MPI :            %d\n"
 "   nombre de rangs MPI :        %d\n"
 "\n"
 
-#: src/base/cs_syr_coupling.c:1069
+#: src/base/cs_syr_coupling.c:1036
 msgid ""
 "At least 1 SYRTHES coupling was defined for which\n"
 "no communication with a SYRTHES instance is possible."
@@ -6654,11 +6660,11 @@ msgid ""
 "CURRENT:  %f \n"
 msgstr ""
 
-#: src/ctwr/cs_ctwr.c:2632
+#: src/ctwr/cs_ctwr.c:2636
 msgid "T water"
 msgstr ""
 
-#: src/ctwr/cs_ctwr.c:2644
+#: src/ctwr/cs_ctwr.c:2648
 msgid "Flux water"
 msgstr ""
 
@@ -7635,7 +7641,7 @@ msgid ""
 "Current size = %lu, minimum size required = %lu."
 msgstr ""
 
-#: src/lagr/cs_lagr.c:202
+#: src/lagr/cs_lagr.c:215
 #, c-format
 msgid ""
 "overflow |%g| > %g\n"
@@ -7644,7 +7650,7 @@ msgstr ""
 "Dépassement |%g| > %g\n"
 "Vérifiez la boite englobante pour vos données."
 
-#: src/lagr/cs_lagr.c:464
+#: src/lagr/cs_lagr.c:477
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
@@ -8550,7 +8556,7 @@ msgstr "erreur_connectivite"
 msgid "Isolated Faces"
 msgstr "Faces isolees"
 
-#: preprocessor/pre-post/ecs_champ_post.c:225
+#: preprocessor/pre-post/ecs_champ_post.c:226
 msgid ""
 "Elements of the mesh to post-process have\n"
 "not been sorted by type."
@@ -8558,7 +8564,7 @@ msgstr ""
 "Les éléments du maillage à post-traiter n'ont\n"
 "pas été triés selon leurs types."
 
-#: preprocessor/pre-post/ecs_champ_post.c:488
+#: preprocessor/pre-post/ecs_champ_post.c:489
 #, c-format
 msgid ""
 "MED: error writing file \"%s\".\n"
