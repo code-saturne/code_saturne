@@ -1,3 +1,8 @@
+* 29/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a wrong definition of integers instead of reals.
+  modified routine:
+    src/atmo/atprke.f90
+
 * 29/07/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix a bug in the SYRTHES 4 post-processing.
   modified routines:
