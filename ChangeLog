@@ -1,3 +1,10 @@
+* 29/07/2010 - David Monfort <david.monfort@edf.fr>
+  Add pragmas to disable warnings on float-comparisons, only for two specific
+  routines where we do want to do these comparisons.
+  modified routines:
+    src/lagr/cs_lagr.c
+    src/mei/mei_evaluate.c
+
 * 29/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a wrong definition of integers instead of reals.
   modified routine:

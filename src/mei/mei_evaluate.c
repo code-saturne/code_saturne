@@ -72,6 +72,19 @@ extern "C" {
 
 #define HASHSIZE 701
 
+/*=============================================================================
+ * Specific pragmas to disable some unrelevant warnings
+ *============================================================================*/
+
+/* Globally disable warning on float-comparisons (equality) for GCC and Intel
+   compilers as we do it on purpose (infinite precision algorithm). */
+
+#if defined(__GNUC__) && !defined(__ICC)
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#elif defined(__ICC)
+#pragma warning disable 1572
+#endif
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
