@@ -1,4 +1,10 @@
 * 29/07/2010 - David Monfort <david.monfort@edf.fr>
+  Move the mass-flux update in case of a rotating mesh, only relevant when
+  disabling the pressure reconstruction (no impact on current simulations).
+  modified routine:
+    src/base/navsto.f90
+
+* 29/07/2010 - David Monfort <david.monfort@edf.fr>
   Add pragmas to disable warnings on float-comparisons, only for two specific
   routines where we do want to do these comparisons.
   modified routines:
