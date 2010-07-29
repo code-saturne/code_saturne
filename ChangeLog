@@ -1,3 +1,9 @@
+* 29/07/2010 - David Monfort <david.monfort@edf.fr>
+  Move the mass-flux update in case of a rotating mesh, only relevant when
+  disabling the pressure reconstruction (no impact on current simulations).
+  modified routine:
+    src/base/navsto.f90
+
 * 29/07/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a wrong definition of integers instead of reals.
   modified routine:
