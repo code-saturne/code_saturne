@@ -1231,6 +1231,13 @@ fi
 
         self.print_procs_distribution()
 
+        # Prepare Syrthes 4 domains
+        # (possible now that the exact number of processors is known)
+
+        for d in self.syr_domains:
+            if 'init_syrthes_case' in dir(d):
+                d.init_syrthes_case()
+
         # Compile user subroutines if necessary.
 
         if self.exec_solver == True:
