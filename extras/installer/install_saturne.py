@@ -216,11 +216,16 @@ class Setup:
 
     def __init__(self):
 
-        # Optional libraries
-        self.optlibs = ['cgns', 'hdf5', 'med', 'mpi', 'libxml2']
+        # Code_Saturne libraries
+        self.satlibs = ['bft', 'fvm', 'mei', 'ecs', 'ncs']
 
-        # Code_Saturne version
-        self.version = '2.1-alpha1'
+        # Optional libraries
+        self.optlibs = ['cgns', 'hdf5', 'med', 'mpi', 'libxml2', 'swig']
+
+        self.libs = self.optlibs + self.satlibs
+
+        # Code_Saturne version 
+        self.version = '2.0-rc2'
 
         # Logging file
         self.log_file = sys.stdout
@@ -242,9 +247,6 @@ class Setup:
         # Disable GUI
         self.disable_gui = 'no'
 
-        # Disable preprocessor
-        self.disable_pre = 'no'
-
         # Python interpreter path
         self.python = None
 
@@ -263,29 +265,78 @@ class Setup:
         # Architecture name
         self.arch = None
 
-        # Installation prefix (if None, standard directory "/usr" will be used)
+        # Global installation prefix
+        # (if None, standard directory "/usr" will be used)
         self.prefix = None
+
+        # Code_Saturne installation prefix
+        self.cs_prefix = None
 
 
         # Packages definition
         self.packages = {}
 
+        url_cs = "http://research.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/%s"
+	# See below for kernel specific url
+        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/918391265/724961558/%s"
+
+        # BFT library
+
+        self.packages['bft'] = \
+            Package(name="BFT",
+                    description="Basic Functions and Tools",
+                    package="bft",
+                    version="1.1.2",
+                    archive="bft-112.tgz",
+                    url=url_cs)
+
+        # FVM library
+
+        self.packages['fvm'] = \
+            Package(name="FVM",
+                    description="Finite Volume Mesh",
+                    package="fvm",
+                    version="0.15.0",
+                    archive="fvm-0150.tgz",
+                    url=url_cs)
+
+        p = self.packages['fvm']
+        p.use_lib_mpi_wrapper = True
+
+        # MEI library
+
+        self.packages['mei'] = \
+            Package(name="MEI",
+                    description="Mathematical Expressions Interpreter",
+                    package="mei",
+                    version="1.0.1",
+                    archive="mei-101.tgz",
+                    url=url_cs)
+
+        # Code_Saturne Preprocessor
+
+        self.packages['ecs'] = \
+            Package(name="ECS",
+                    description="Code_Saturne Preprocessor",
+                    package="ecs",
+                    version="2.0-rc1",
+                    archive="ecs-200rc1.tgz",
+                    url=url_cs)
+
         # Code_Saturne Kernel
 
         url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/918391265/569282765/%s"
 
-        self.packages['code_saturne'] = \
-            Package(name="Code_Saturne",
-                    description="Code_Saturne CFD tool",
-                    package="code_saturne",
-                    version="2.1-alpha1",
-                    archive="cs-21a1.tgz",
+        self.packages['ncs'] = \
+            Package(name="NCS",
+                    description="Code_Saturne Kernel",
+                    package="ncs",
+                    version="2.0-rc1",
+                    archive="ncs-200rc1.tgz",
                     url=url_cs)
 
-        p = self.packages['code_saturne']
-        p.use = 'yes'
-        p.installation = 'yes'
-        p.installation_pdf = 'yes'
+        p = self.packages['ncs']
+        p.use_lib_mpi_wrapper = True
 
         # CGNS library
 
@@ -352,9 +403,22 @@ class Setup:
         p = self.packages['libxml2']
         p.config_opts = "--with-ftp=no --with-http=no"
 
+        # Swig library
+
+        self.packages['swig'] = \
+            Package(name="Swig",
+                    description="Wrapper Python",
+                    package="swig",
+                    version="1.3.40",
+                    archive="swig-1.3.40.tar.gz",
+                    url="http://sourceforge.net/projects/swig/files/swig/swig-1.3.40/%s/download")
+
+        p = self.packages['swig']
+        p.config_opts = "--without-alllang"
+
 
     def read_setup(self):
-
+        
         #
         # setup file reading
         #
@@ -380,7 +444,7 @@ class Setup:
             if len(list) == 0: continue
 
             key = list[0]
-
+            
             if len(list) > 1:
                 if key == 'download': self.download = list[1]
                 elif key == 'prefix': self.prefix = list[1]
@@ -392,7 +456,6 @@ class Setup:
                 elif key == 'compF': self.fc = list[1]
                 elif key == 'mpiCompC': self.mpicc = list[1]
                 elif key == 'disable_gui': self.disable_gui = list[1]
-                elif key == 'disable_pre': self.disable_pre = list[1]
                 elif key == 'python': self.python = list[1]
                 elif key == 'blas': self.blas = list[1]
                 elif key == 'metis': self.metis = list[1]
@@ -442,6 +505,14 @@ class Setup:
             self.syrthes = os.path.expandvars(self.syrthes)
             self.syrthes = os.path.abspath(self.syrthes)
 
+        # Compute Code_Saturne installation prefix
+        if self.prefix is not None:
+            subdir = os.path.join('cs-' + self.version)
+            if self.arch is not None:
+                subdir = os.path.join(subdir, 'arch', self.arch)
+                if self.debug == 'yes': subdir = subdir + '_dbg'
+            self.cs_prefix= os.path.join(self.prefix, subdir)
+
 
     def check_setup(self):
 
@@ -469,18 +540,10 @@ Check the setup file and some utilities presence.
                              "Please check your setup file.\n\n")
             sys.exit(1)
 
-        # Testing GUI option
+        # Testing debug option
         if self.disable_gui not in ['yes', 'no']:
             sys.stderr.write("\n*** Aborting installation:\n"
                              "\'disable_gui\' option in the setup file "
-                             "should be \'yes\' or \'no\'.\n"
-                             "Please check your setup file.\n\n")
-            sys.exit(1)
-
-        # Testing preprocessor option
-        if self.disable_pre not in ['yes', 'no']:
-            sys.stderr.write("\n*** Aborting installation:\n"
-                             "\'disable_pre\' option in the setup file "
                              "should be \'yes\' or \'no\'.\n"
                              "Please check your setup file.\n\n")
             sys.exit(1)
@@ -492,7 +555,7 @@ Check the setup file and some utilities presence.
                              "should be \'en\' or \'fr'.\n"
                              "Please check your setup file.\n\n")
             sys.exit(1)
-
+            
         # Testing prefix directory
         if self.prefix is not None and not os.path.isdir(self.prefix):
             sys.stderr.write("\n*** Aborting installation:\n"
@@ -521,25 +584,24 @@ Check the setup file and some utilities presence.
                                      "Please check your setup file.\n\n"
                                      % compiler)
                     sys.exit(1)
-
+        
         # Looking for Python executable provided by the user
-        python = 'python'
-        if self.python is not None: python = self.python
-        ret = run_test(python)
+        if self.python is not None:
+            python_exe = os.path.join(self.python, 'python')
+        else:
+            python_exe = "python"
+
+        ret = run_test(python_exe)
         if ret != 0:
             if self.python is not None:
                 sys.stderr.write("\n*** Aborting installation:\n"
-                                 "\'%s\' Python exec is provided in the setup "
-                                 "file doesn't not seem to be executable.\n"
+                                 "\'%s\' Python path is provided in the setup "
+                                 "file but no executable can be found.\n"
                                  "Please check your setup file.\n\n"
                                  % self.python)
-            else:
-                sys.stderr.write("\n*** Aborting installation:\n"
-                                 "Cannot find Python executable.\n"
-                                 "Please check your setup file.\n\n")
             sys.exit(1)
         else:
-            cmd = python + " -c \'import sys; print sys.version[:3]\'"
+            cmd = python_exe + " -c \'import sys; print sys.version[:3]\'"
             if verbose == 'yes':
                 sys.stdout.write("     Python version is ")
             p = subprocess.Popen(cmd,
@@ -553,7 +615,7 @@ Check the setup file and some utilities presence.
                     sys.stdout.write(output[0])
 
         # Checking libraries options
-        for lib in self.optlibs:
+        for lib in self.libs:
             p = self.packages[lib]
             if p.use not in ['yes', 'no', 'auto']:
                 sys.stderr.write("\n*** Aborting installation:\n"
@@ -587,7 +649,7 @@ Check the setup file and some utilities presence.
                              "Please check your setup file.\n\n"
                              % self.blas)
             sys.exit(1)
-
+            
         # Looking for Metis path probided by the user
         if self.metis is not None and not os.path.isdir(self.metis):
             sys.stderr.write("\n*** Aborting installation:\n"
@@ -596,7 +658,7 @@ Check the setup file and some utilities presence.
                              "Please check your setup file.\n\n"
                              % self.metis)
             sys.exit(1)
-
+            
         # Looking for Scotch path probided by the user
         if self.scotch is not None and not os.path.isdir(self.scotch):
             sys.stderr.write("\n*** Aborting installation:\n"
@@ -605,7 +667,7 @@ Check the setup file and some utilities presence.
                              "Please check your setup file.\n\n"
                              % self.scotch)
             sys.exit(1)
-
+            
         # Looking for SYRTHES path probided by the user
         if self.syrthes is not None and not os.path.isdir(self.syrthes):
             sys.stderr.write("\n*** Aborting installation:\n"
@@ -627,24 +689,24 @@ Check the setup file and some utilities presence.
         # Looking for pdflatex for potential documentation compilation
         ret = run_test("pdflatex")
         if ret != 0:
-            self.packages['code_saturne'].installation_pdf = 'no'
+            self.packages['ncs'].installation_pdf = 'no'
             sys.stderr.write("\n*** Warning: "
                              "pdflatex utility cannot be found\n"
                              "Code_Saturne documentation will not be "
                              "installed\n")
         else:
-            self.packages['code_saturne'].installation_pdf = 'yes'
+            self.packages['ncs'].installation_pdf = 'yes'
 
         # Looking for fig2dev for potential documentation compilation
         ret = run_test("fig2dev")
         if ret != 0:
-            self.packages['code_saturne'].installation_pdf = 'no'
+            self.packages['ncs'].installation_pdf = 'no'
             sys.stderr.write("\n*** Warning: "
                              "fig2dev utility cannot be found\n"
                              "Code_Saturne documentation will not be "
                              "installed\n")
         else:
-            self.packages['code_saturne'].installation_pdf = 'yes'
+            self.packages['ncs'].installation_pdf = 'yes'
 
         if verbose == 'yes':
             sys.stdout.write("\n")
@@ -653,131 +715,178 @@ Check the setup file and some utilities presence.
     def update_package_opts(self):
 
         # Update log file, installation directory and compilers
-        for lib in self.optlibs + ['code_saturne']:
+        for lib in self.libs:
             p = self.packages[lib]
             # Update logging file
             p.log_file = self.log_file
             # Installation directory
             if p.installation == 'yes':
-                subdir = os.path.join(p.package + '-' + p.version)
-                if self.arch is not None:
-                    subdir = os.path.join(subdir, 'arch', self.arch)
-                if lib in ['code_saturne'] and self.debug == 'yes':
-                    subdir = subdir + '_dbg'
-                p.install_dir = os.path.join(self.prefix, subdir)
+                if lib in self.satlibs:
+                    p.install_dir = self.cs_prefix
+                else:
+                    subdir = os.path.join(p.package + '-' + p.version)
+                    if self.arch is not None:
+                        subdir = os.path.join(subdir, 'arch', self.arch)
+                    p.install_dir = os.path.join(self.prefix, subdir)
             # Compilers
-            if lib in ['code_saturne'] and self.mpicc is not None:
+            if lib in ['fvm', 'ncs'] and self.mpicc is not None:
                 p.cc = self.mpicc
             else:
                 p.cc = self.cc
-            if lib in ['med', 'code_saturne']:
+            if lib in ['med', 'lib']:
                 p.fc = self.fc
 
         # Update configuration options
 
-        config_opts = ''
         if self.debug == 'yes':
-            config_opts = config_opts + " --enable-debug"
+            for lib in self.satlibs:
+                p = self.packages[lib]
+                p.config_opts = p.config_opts + " --enable-debug"
+
+        bft = self.packages['bft']
+        fvm = self.packages['fvm']
+        mei = self.packages['mei']
+        ecs = self.packages['ecs']
+        ncs = self.packages['ncs']
 
         cgns = self.packages['cgns']
         hdf5 = self.packages['hdf5']
         med= self.packages['med']
         mpi = self.packages['mpi']
         libxml2 = self.packages['libxml2']
+        swig = self.packages['swig']
 
         # Disable GUI
 
         if self.disable_gui == 'yes':
-            config_opts = config_opts + " --disable-gui"
+            mei.installation = 'no'
+            mei.use = 'no'
+            ncs.config_opts = ncs.config_opts + " --disable-gui"
 
-        # Disable preprocessor
+        # BFT
 
-        if self.disable_pre == 'yes':
-            config_opts = config_opts + " --disable-preprocessor"
+        for p in [fvm, mei, ecs, ncs]:
+            p.config_opts = p.config_opts + " --with-bft=" + bft.install_dir
+
+        # FVM
+
+        ncs.config_opts = ncs.config_opts + " --with-fvm=" + fvm.install_dir
+
+        # MEI
+
+        if mei.use == 'yes':
+            ncs.config_opts = ncs.config_opts + " --with-mei=" + mei.install_dir
+
+        # Preprocessor
+
+        ncs.config_opts = ncs.config_opts + " --with-prepro=" + ecs.install_dir
 
         # CGNS
 
-        if cgns.use == 'no':
-            config_opts = config_opts + " --without-cgns"
-        else:
-            if cgns.install_dir is not None:
-                config_opts = config_opts + " --with-cgns=" + cgns.install_dir
+        for p in [fvm, ecs]:
+            if cgns.use == 'no':
+                p.config_opts = p.config_opts + " --without-cgns"
+            else:
+                if cgns.install_dir is not None:
+                    p.config_opts = p.config_opts + \
+                        " --with-cgns=" + cgns.install_dir
 
         # HDF5
 
-        if hdf5.use == 'no':
-            config_opts = config_opts + " --without-hdf5"
-        else:
-            if hdf5.install_dir is not None:
-                config_opts = config_opts + " --with-hdf5=" + hdf5.install_dir
-                # HDF5 is also needed for MED build
-                med.config_opts = med.config_opts + \
-                    " --with-hdf5=" + hdf5.install_dir
+        if med.use == 'yes':
+            med.config_opts = med.config_opts + " --with-hdf5=" + hdf5.install_dir
+
+        for p in [fvm, ecs]:
+            if hdf5.use == 'no':
+                p.config_opts = p.config_opts + " --without-hdf5"
+            else:
+                if hdf5.install_dir is not None:
+                    p.config_opts = p.config_opts + \
+                        " --with-hdf5=" + hdf5.install_dir
 
         # MED
 
-        if med.use == 'no':
-            config_opts = config_opts + " --without-med"
-        else:
-            if med.install_dir is not None:
-                config_opts = config_opts + " --with-med=" + med.install_dir
+        for p in [fvm, ecs]:
+            if med.use == 'no':
+                p.config_opts = p.config_opts + " --without-med"
+            else:
+                if med.install_dir is not None:
+                    p.config_opts = p.config_opts + \
+                        " --with-med=" + med.install_dir
 
         # MPI
 
-        if mpi.use == 'no' and self.mpicc is None:
-            config_opts = config_opts + " --without-mpi"
-        else:
-            if mpi.install_dir is not None:
-                config_opts = config_opts +  " --with-mpi=" + mpi.install_dir
+        for p in [fvm, ncs]:
+            if mpi.use == 'no' and self.mpicc is None:
+                p.config_opts = p.config_opts + " --without-mpi"
+            else:
+                if mpi.install_dir is not None:
+                    p.config_opts = p.config_opts + \
+                        " --with-mpi=" + mpi.install_dir
 
         if mpi.use == 'yes' or self.mpicc is not None:
-            config_opts = config_opts + " --disable-mpi-io"
+            fvm.config_opts = fvm.config_opts + " --disable-mpi-io"
 
         # Metis
 
         if self.metis is not None:
-            config_opts = config_opts + " --with-metis=" + self.metis
+            ecs.config_opts = ecs.config_opts + " --with-metis=" + self.metis
 
         # Scotch
 
         if self.scotch is not None:
-            config_opts = config_opts + " --with-scotch=" + self.scotch
+            ecs.config_opts = ecs.config_opts + " --with-scotch=" + self.scotch
 
         # Libxml2
 
         if libxml2.use == 'no':
-            config_opts = config_opts + " --without-libxml2"
+            ncs.config_opts = ncs.config_opts + " --without-libxml2"
         else:
             if libxml2.install_dir is not None:
-                config_opts = config_opts + \
+                ncs.config_opts = ncs.config_opts + \
                     " --with-libxml2=" + libxml2.install_dir
+            
+        # Swig
+
+        if swig.use == 'no':
+            mei.config_opts = mei.config_opts + " --disable-python-bindings"
+        else:
+            if swig.install_dir is not None:
+                mei.config_opts = mei.config_opts + \
+                    " --with-swig-exec=" + os.path.join(swig.install_dir, 'bin')
 
         # Python
 
+        for p in [mei, ncs]:
+            if self.python is not None:
+                p.config_opts = p.config_opts + \
+                    " --with-python-exec=" + self.python
+
         if self.python is not None:
-            config_opts = config_opts + " --with-python=" + self.python
+            swig.config_opts = swig.config_opts + \
+                " --with-python=" + os.path.dirname(self.python)
+        else:
+            swig.config_opts = swig.config_opts + " --with-python"
 
         # BLAS
 
         if self.blas is not None:
-            config_opts = config_opts + " --with-blas=" + self.blas
+            ncs.config_opts = ncs.config_opts + " --with-blas=" + self.blas
 
         # SYRTHES
 
         if self.syrthes is not None:
-            config_opts = config_opts + " --with-syrthes=" + self.syrthes
+            ncs.config_opts = ncs.config_opts + " --with-syrthes=" + self.syrthes
 
         # Language
 
         if self.language == 'fr':
-            config_opts = config_opts + " --enable-french"
-
-        self.packages['code_saturne'].config_opts = config_opts
+            ncs.config_opts = ncs.config_opts + " --enable-french"
 
 
     def install(self):
 
-        for lib in self.optlibs + ['code_saturne']:
+        for lib in self.libs:
             p = self.packages[lib]
             if p.installation == 'yes':
                 sys.stdout.write("Installation of %s\n" % p.name)
@@ -853,11 +962,6 @@ mpiCompC  %(mpicc)s
 disable_gui  %(disable_gui)s
 #
 #--------------------------------------------------------
-# Disable preprocessor
-#--------------------------------------------------------
-disable_pre  %(disable_pre)s
-#
-#--------------------------------------------------------
 # Python is mandatory to launch the Graphical User
 # Interface and to use Code_Saturne scripts.
 # It has to be compiled with PyQt 4 support.
@@ -867,7 +971,7 @@ disable_pre  %(disable_pre)s
 # the package manager if needed.
 #
 # If you need to provide your own Python, just set
-# the following variable to the Python interpreter.
+# the following variable to the bin directory of Python
 #--------------------------------------------------------
 python    %(python)s
 #
@@ -916,6 +1020,19 @@ scotch    %(scotch)s
 #--------------------------------------------------------
 syrthes   %(syrthes)s
 #
+#========================================================
+#  Name     Path                      Use         Install
+#========================================================
+"""
+        setupLibSat = \
+"""#
+#--------------------------------------------------------
+# Code_Saturne kernel and module libraries
+#--------------------------------------------------------
+#
+"""
+        setupLibOpt = \
+"""#
 #--------------------------------------------------------
 # Optional packages:
 # ------------------
@@ -937,10 +1054,11 @@ syrthes   %(syrthes)s
 # recommended to use the system's default MPI library.
 #
 #   Libxml2 is needed to read xml files output by the
-# Graphical User Interface.
+# Graphical User Interface, and swig is needed by the
+# Graphical User Interface to handle mathematical
+# expressions. Both should be installed by you package
+# manager.
 #--------------------------------------------------------
-#
-#  Name    Path    Use   Install
 #
 """
         setupLib= \
@@ -969,11 +1087,17 @@ syrthes   %(syrthes)s
                      'use_arch':self.use_arch, 'arch':self.arch,
                      'cc':self.cc, 'fc':self.fc, 'mpicc':self.mpicc,
                      'disable_gui':self.disable_gui,
-                     'disable_pre':self.disable_pre,
                      'python':self.python, 'blas':self.blas,
                      'metis':self.metis, 'scotch': self.scotch,
                      'syrthes':self.syrthes })
 
+        sf.write(setupLibSat)
+        for lib in self.satlibs:
+            p = self.packages[lib]
+            sf.write(setupLib % { 'lib':lib, 'dir':p.install_dir,
+                                  'use':p.use, 'install':p.installation })
+
+        sf.write(setupLibOpt)
         for lib in self.optlibs:
             p = self.packages[lib]
             sf.write(setupLib % { 'lib':lib, 'dir':p.install_dir,
@@ -994,7 +1118,7 @@ if __name__ == "__main__":
         """
         Installation of Code_Saturne
         ____________________________
-
+        
 The process will take several minutes.
 You can have a look at the log file meanwhile.
 """
@@ -1030,9 +1154,8 @@ Thank you for choosing Code_Saturne!
     setup.check_setup()
     setup.update_package_opts()
     setup.install()
-
+    
     setup.log_file.close()
 
-    cspath = os.path.join(setup.packages['code_saturne'].install_dir, 'bin')
-    sys.stdout.write(finalize % {'cspath':cspath})
+    sys.stdout.write(finalize % {'cspath':os.path.join(setup.cs_prefix, 'bin')})
     sys.stdout.write(thanks)

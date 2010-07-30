@@ -94,10 +94,6 @@ def process_cmd_line(argv):
                       metavar="<nsyr>",
                       help="specify the number of SYRTHES instances")
 
-    parser.add_option("--nsyr4", dest="n_syr4", type="int",
-                      metavar="<nsyr4>",
-                      help="specify the number of SYRTHES 4 instances")
-
     parser.set_defaults(use_gui=True)
     parser.set_defaults(use_ref=True)
     parser.set_defaults(study_name=os.path.basename(os.getcwd()))
@@ -106,7 +102,6 @@ def process_cmd_line(argv):
     parser.set_defaults(verbose=1)
     parser.set_defaults(n_sat=1)
     parser.set_defaults(n_syr=0)
-    parser.set_defaults(n_syr4=0)
 
     (options, args) = parser.parse_args(argv)
 
@@ -123,8 +118,7 @@ def process_cmd_line(argv):
                  options.use_ref,
                  options.verbose,
                  options.n_sat,
-                 options.n_syr,
-                 options.n_syr4)
+                 options.n_syr)
 
 
 #-------------------------------------------------------------------------------
@@ -198,7 +192,7 @@ class Study:
 
 
     def __init__(self, name, cases, copy, use_gui, use_ref,
-                 verbose, n_sat, n_syr, n_syr4):
+                 verbose, n_sat, n_syr):
         """
         Initialize the structure for a study.
         """
@@ -215,7 +209,6 @@ class Study:
         self.verbose = verbose
         self.n_sat = n_sat
         self.n_syr = n_syr
-        self.n_syr4 = n_syr4
 
 
     def create(self):
@@ -364,66 +357,6 @@ class Study:
                                              'usr'),
                                 users_syr)
 
-        # Loop for dependency on the number of instances of SYRTHES 4
-
-        if self.n_syr4 > 0:
-            config = ConfigParser.ConfigParser()
-            config.read([os.path.expanduser('~/.code_saturne.cfg'),
-                         os.path.join(cs_config.dirs.sysconfdir,
-                                      'code_saturne.cfg')])
-            if config.has_option('install', 'syrthes'):
-                syr4home = config.get('install', 'syrthes')
-            else:
-                sys.stderr.write("Cannot localize SYRTHES installation")
-                sys.exit(1)
-
-            for i in range(self.n_syr4):
-        
-                # Data directory
-
-                if self.n_syr == 1:
-                    data_syr = 'DATA_SYR'
-                else:
-                    data_syr = 'DATA_SYR.%(inst)d' % { 'inst' : i+1 }
-
-                os.mkdir(data_syr)
-
-                # Reference files path
-
-                ref_syr_data = os.path.join(syr4home, 'data')
-
-                if self.use_ref:
-                    data_ref_syr = os.path.join(data_syr, 'REFERENCE')
-                    os.mkdir(data_ref_syr)
-                    files = ["syrthes.data", "syrthes.py"]
-                    for f in files:
-                        src = os.path.join(ref_syr_data, f)
-                        dst = os.path.join(data_ref_syr, f)
-                        shutil.copy2(src, dst)
-
-                # User source files directory
-
-                if self.n_syr == 1:
-                    src_syr = 'SRC_SYR'
-                else:
-                    src_syr = 'SRC_SYR.%(inst)d' % { 'inst' : i+1 }
-
-                os.mkdir(src_syr)
-
-                # Always copy Makefile
-
-                files = ["Makefile"]
-                for f in files:
-                    src = os.path.join(syr4home, f)
-                    dst = os.path.join(src_syr, f)
-                    shutil.copy2(src, dst)
-
-                ref_syr_user = os.path.join(syr4home, 'usr')
-
-                if self.use_ref:
-                    users_syr = os.path.join(src_syr, 'REFERENCE')
-                    shutil.copytree(ref_syr_user, users_syr)
-
         # Results directory (only one for all instances)
 
         resu = 'RESU'
@@ -508,8 +441,6 @@ class Study:
             print("Number of Code_Saturne instances:", self.n_sat)
         if self.n_syr > 0:
             print("Number of SYRTHES instances:", self.n_syr)
-        if self.n_syr4 > 0:
-            print("Number of SYRTHES 4 instances:", self.n_syr4)
         print()
 
 

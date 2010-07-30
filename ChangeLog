@@ -1,11 +1,4 @@
 * 29/07/2010 - David Monfort <david.monfort@edf.fr>
-  Update the installer to behave correctly with the new packaging.
-  modified files:
-    extras/installer/install_saturne.py
-    extras/installer/README.txt
-    extras/installer/setup
-
-* 29/07/2010 - David Monfort <david.monfort@edf.fr>
   Update French dictionnary.
   modified file:
     po/fr.po
