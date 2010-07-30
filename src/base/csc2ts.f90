@@ -183,7 +183,7 @@ double precision rvcpce(ncecpl)
 ! Local variables
 
 integer          idebia , idebra , ifinia , ifinra
-integer          iel
+integer          iel    , ipcrom
 integer          ipt    , ielloc
 double precision xdis   , xloc   , xtau
 
@@ -191,6 +191,8 @@ double precision xdis   , xloc   , xtau
 
 idebia = idbia0
 idebra = idbra0
+
+ipcrom = ipproc(irom(iphas))
 
 xtau = 100.d0*dtref
 
@@ -201,8 +203,8 @@ do ipt = 1, ncecpl
   xdis = rvcpce(ipt)
   xloc = rtpa(ielloc,ivar)
 
-  crvexp(ielloc) = crvexp(ielloc)                                 &
-                 + volume(ielloc)*(xdis-xloc)/xtau
+  crvexp(ielloc) = crvexp(ielloc) &
+                 + volume(ielloc)*propce(ielloc,ipcrom)*(xdis-xloc)/xtau
 
 enddo
 
