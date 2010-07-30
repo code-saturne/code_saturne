@@ -51,6 +51,11 @@ mpiCompC
 disable_gui  no
 #
 #--------------------------------------------------------
+# Disable preprocessor
+#--------------------------------------------------------
+disable_pre  no
+#
+#--------------------------------------------------------
 # Python is mandatory to launch the Graphical User
 # Interface and to use Code_Saturne scripts.
 # It has to be compiled with PyQt 4 support.
@@ -60,7 +65,7 @@ disable_gui  no
 # the package manager if needed.
 #
 # If you need to provide your own Python, just set
-# the following variable to the bin directory of Python
+# the following variable to the Python interpreter.
 #--------------------------------------------------------
 python
 #
@@ -109,20 +114,6 @@ scotch
 #--------------------------------------------------------
 syrthes
 #
-#========================================================
-#  Name     Path                      Use         Install
-#========================================================
-#
-#--------------------------------------------------------
-# Code_Saturne kernel and module libraries
-#--------------------------------------------------------
-#
-bft    None    yes  yes
-fvm    None    yes  yes
-mei    None    yes  yes
-ecs    None    yes  yes
-ncs    None    yes  yes
-#
 #--------------------------------------------------------
 # Optional packages:
 # ------------------
@@ -144,17 +135,15 @@ ncs    None    yes  yes
 # recommended to use the system's default MPI library.
 #
 #   Libxml2 is needed to read xml files output by the
-# Graphical User Interface, and swig is needed by the
-# Graphical User Interface to handle mathematical
-# expressions. Both should be installed by you package
-# manager.
+# Graphical User Interface.
 #--------------------------------------------------------
+#
+#  Name    Path    Use   Install
 #
 cgns       None    yes   yes
 hdf5       None    yes   yes
 med        None    yes   yes
 mpi        None    yes   yes
 libxml2    None    auto  no
-swig       None    auto  no
 #
 #========================================================

@@ -4,7 +4,7 @@ INSTALLATION PROCEDURE FOR CODE_SATURNE
 
 For more information about the different modules and external libraries
 necessary or compliant with Code_Saturne, refer to the COMPATIBILITY file
-in the Kernel distribution (ncs-x.y.z).
+in the Kernel distribution (code_saturne-x.y.z).
 
 Section I   gives information on the automatic installer
 Section II  gives information for manual installation
@@ -45,16 +45,10 @@ the build directory, ...)
   associated libraries. Due to dependencies between the different modules, the
   order of install should be the following:
   - libxml2 (it is advised to use the distrib own package)
-  - swig (it is advised to use the distrib own package)
   - MPI
   - CGNS
   - HDF5
   - MED
-  - BFT (Code_Saturne Base Functions and Types library)
-  - FVM (Code_Saturne Finite Volume Mesh library)
-  - MEI (Code_Saturne Mathematical Expressions Interpreter library)
-  - ECS (Code_Saturne Preprocessor)
-  - NCS (Code_Saturne Kernel and Graphical User Interface)
 
   The following packages cannot be installed
   - Zlib
@@ -72,7 +66,7 @@ the build directory, ...)
      In this case, specify "no" in the "Usage" and "Install" columns. The other
      elements will be installed in accordance. The "Path" column is not used.
 
-  - to automatically detect some element (especially useful for libxml2 or swig)
+  - to automatically detect some element (especially useful for libxml2)
      In this case, specify "auto" in the "Usage". The other elements will be
       installed in accordance. The "Path" and "Install" column are not used.
 
@@ -95,7 +89,7 @@ the build directory, ...)
    Before using the "install_saturne.py" script, the C and Fortran compilers
    to be used can be specified next to the CompC and CompF keywords.
    An optional MPI wrapper compiler (for the C language) can be specified to
-   be used for FVM and the Kernel installation.
+   be used Code_Saturne installation.
 
    If the "use_arch" variable is set to "yes", then the "arch" keyword refers
    to the architecture of the machine. Leaving it blank will make it
@@ -106,149 +100,62 @@ the build directory, ...)
    Commonly used compilers for different architectures :
    SunOS : compC = cc -Xa
            compF = f90
-   
+
    IRIX64 : compC = cc -64
             compF = f90 -64
 
 
 
-    
+
 II) MANUAL INSTALL
 ==================
 If the automatic install script fails, you should install each module
-individually. Except for the modules developped by EDF (Kernel, Preprocessor,
-BFT, FVM and MEI), you should refer to the installation procedure provided by
-the distributor of the module.
+individually. For all modules, except Code_Saturne, you should refer
+to the installation procedure provided by the distributor of the module.
 
 Herebelow, $version stands for the current version of Code_Saturne and $prefix
 for the directory where you want to install Code_Saturne.
 
+  Installing Code_Saturne
+  -----------------------
 
-  Installing BFT
-  --------------
-  - create a "build" directory (usually bft-x.y.z.build)
+  - create a "build" directory (usually code_saturne-x.y.z.build)
+
 
   - from within the build directory, run the configure command:
 
-      ../bft-x.y.z/configure --prefix=$prefix/cs-$version
+    ../code_saturne-x.y.z/configure --prefix=$prefix/code_saturne-$version \
 
-    Depending on the elements wanted, additional options can be added
-    to the configure:
-      --with-zlib=... for Zlib support
-      CC=...          to specify the compiler if necessary
+      # Pre- and post-processing *optional* support
 
-  - run the "make" commands:
-      make
-      make install
-      make clean
+      --with-zlib=...       for Zlib support
+      --with-hdf5=...       for HDF5 support (compulsory for MED)
+      --with-med=...        for MED support
+      --with-cgns=...       for CGNS support
+      --with-adf=...        for ADF support (compulsory for CCM if no CGNS)
+      --with-ccm=...        for CCM support
 
-    For further information, refer to the INSTALL file in the BFT directory.
+      # Partitioning *optional* support (strongly advised for parallel computing)
 
+      --with-scotch=...     for Pt-SCOTCH / SCOTCH support
+      --with-metis=...      for ParMETIS / METIS (an alternative to SCOTCH)
 
-  Installing FVM
-  --------------
-  - create a "build" directory (usually fvm-x.y.z.build)
+      # Graphical interface and scripts support
 
-  - from within the build directory, run the configure command:
+      --with-libxml2=...    for Libxml2 support
+      --with-python=...     for specific Python executable
+      --with-pyqt4-exec=... for PyQt4 developper tools
 
-      ../fvm-x.y.z/configure --prefix=$prefix/cs-$version \
-         --with-bft=$prefix/cs-$version
+      # Run-time options
 
-    Depending on the elements wanted, additional options can be added
-    to the configure:
-      --with-cgns=... for CGNS support
-      --with-hdf5=... for HDF5 (compulsory for MED)
-      --with-med=...  for MED
-      --with-mpi=...  for MPI
-      CC=...          to specify the compiler
-                         (especially if mpicc should be used, to get
-                          the proper links to MPI libraries)
+      --with-blas=...       for BLAS
+      --with-mpi=...        for MPI (parallel computing)
+      --with-syrthes=...    for SYRTHES coupling
 
-  - run the "make" commands:
-      make
-      make install
-      make clean
+      CC=...   to specify the compiler if necessary (especially if mpicc
+                  should be used, to get the proper links to MPI libraries)
+      FC=...   to specify the Fortran compiler if necessary
 
-    For further information, refer to the INSTALL file in the FVM directory.
-
-
-  Installing MEI
-  --------------
-  - create a "build" directory (usually mei-x.y.z.build)
-
-  - from within the build directory, run the configure command:
-
-      ../mei-x.y.z/configure --prefix=$prefix/cs-$version \
-         --with-bft=$prefix/cs-$version
-
-    Depending on the elements wanted, additional options can be added
-    to the configure:
-      --with-python-exec=...  for specific Python executable
-      --with-swig-exec=...    for SWIG (Python bindings)
-
-  - run the "make" commands:
-      make
-      make install
-      make clean
-
-    For further information, refer to the INSTALL file in the MEI directory.
-
-
-  Installing the Preprocessor (ecs)
-  ---------------------------------
-  - create a "build" directory (usually ecs-x.y.z.build)
-
-  - from within the build directory, run the configure command:
-
-      ../ecs-x.y.z/configure --prefix=$prefix/cs-$version \
-         --with-bft=$prefix/cs-$version
-
-    Depending on the elements wanted, additional options can be added
-    to the configure:
-      --with-adf=...    for ADF support (compulsory for CCM if no CGNS)
-      --with-ccm=...    for CCM support
-      --with-cgns=...   for CGNS support
-      --with-hdf5=...   for HDF5 (compulsory for MED)
-      --with-med=...    for MED
-      --with-metis=...  for Metis optimised domain partitioning
-                            (strongly advised for parallel computing)
-      --with-scotch=... for Scotch optimised domain partitioning
-                           (alternative for Metis)
-      CC=...            to specify the compiler if necessary
-
-  - run the "make" commands:
-      make
-      make install
-      make clean
-
-    For further information, refer to the INSTALL file in the ECS directory.
-
-
-  Installing the Kernel (ncs)
-  ---------------------------
-
-  - create a "build" directory (usually ncs-x.y.z.build)
-
-  - from within the build directory, run the configure command:
-
-      ../ncs-x.y.z/configure --prefix=$prefix/cs-$version \
-         --with-bft=$prefix/cs-$version \
-         --with-fvm=$prefix/cs-$version \
-         --with-mei=$prefix/cs-$version \
-         --with-prepro=$prefix/cs-$version
-
-    Depending on the elements wanted, additional options can be added
-    to the configure:
-      --with-libxml2=...      for Libxml2 support (compulsory for the Interface)
-      --with-blas=...         for BLAS
-      --with-mpi=...          for MPI
-      --with-syrthes=...      for SYRTHES coupling
-      --with-python-exec=...  for specific Python executable
-      --with-pyqt4-exec=...   for PyQt4 developper tools
-      CC=...           to specify the compiler if necessary
-                         (especially if mpicc should be used, to get
-                          the proper links to MPI libraries)
-      FC=...           to specify the Fortran compiler if necessary
 
   - run the "make" commands:
       make
@@ -262,7 +169,7 @@ for the directory where you want to install Code_Saturne.
       make install-pdf
 
     The compiled libraries will be put in $prefix/cs-$version
-    
+
 
 
 III) Before using Code_Saturne
@@ -271,9 +178,9 @@ Each user of Code_Saturne must set her/his PATH accordingly with Code_Saturne
 installation before using the code. The easiest way is to put the following
 lines in each of the users ".profile" (depending on the shell).
 
-cspath=$prefix/cs-$version/bin
+cspath=$prefix/code_saturne-$version/bin
 #(adjust path to your system)
-if [ -d $cspath ] ; then  
+if [ -d $cspath ] ; then
   export PATH=$cspath:$PATH
 fi
 
