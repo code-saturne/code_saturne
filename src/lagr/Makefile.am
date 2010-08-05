@@ -23,8 +23,8 @@
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/include/base \
--I$(top_srcdir)/include/lagr \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 @MPI_CPPFLAGS@
@@ -45,8 +45,8 @@ AM_LDFLAGS =
 
 saturneincludedir = $(includedir)
 saturneinclude_HEADERS = \
-$(top_srcdir)/include/lagr/cs_lagr.h \
-$(top_srcdir)/include/lagr/cs_lagr_perio.h \
+cs_lagr.h \
+cs_lagr_perio.h \
 $(top_srcdir)/include/lagr/lagdim.h \
 $(top_srcdir)/include/lagr/lagpar.h \
 $(top_srcdir)/include/lagr/lagran.h

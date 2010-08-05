@@ -35,9 +35,9 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/include/base \
--I$(top_srcdir)/include/ctwr \
--I$(top_srcdir)/include/lagr \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 $(CPPFLAGS_PLE) \

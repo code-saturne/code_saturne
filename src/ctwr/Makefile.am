@@ -31,8 +31,8 @@ endif
 # Main part
 
 AM_CPPFLAGS = \
--I$(top_srcdir)/include/base \
--I$(top_srcdir)/include/ctwr \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 $(CPPFLAGS_PLE) \
@@ -52,10 +52,10 @@ AM_LDFLAGS =
 
 saturneincludedir = $(includedir)
 saturneinclude_HEADERS = \
-$(top_srcdir)/include/ctwr/cs_ctwr_air_props.h \
-$(top_srcdir)/include/ctwr/cs_ctwr.h \
-$(top_srcdir)/include/ctwr/cs_ctwr_halo.h \
-$(top_srcdir)/include/ctwr/cs_ctwr_mesh.h \
+cs_ctwr_air_props.h \
+cs_ctwr.h \
+cs_ctwr_halo.h \
+cs_ctwr_mesh.h \
 $(top_srcdir)/include/ctwr/ctincl.h
 
 # Library source files

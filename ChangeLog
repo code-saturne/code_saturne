@@ -1,3 +1,6 @@
+* 05/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Move all C header files from include/* to src/*.
+
 * 30/07/2010 - Benoit de Laage de Meux <benoit.de-laage-de-meux@edf.fr>
   Add a missing multiplication by the density in a coupling source term.
   modified routine:
