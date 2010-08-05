@@ -1,3 +1,8 @@
+2010-08-05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Corrected Makefile.am so as to avoid failure on uninstall when the
+	installation include directory is not empty.
+
 2010-07-27  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Changed ple_coupling_mpi_world... ple_coupling_mpi_set, and add

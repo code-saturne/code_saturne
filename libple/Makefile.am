@@ -54,7 +54,7 @@ configinclude_HEADERS = ple_config.h
 noinst_HEADERS = ple_config_priv.h
 
 uninstall-local:
-	rmdir $(configincludedir)
+	rmdir $(configincludedir) || exit 0
 
 DISTCLEANFILES = ple-config ple_config.h ple_config_priv.h
 
