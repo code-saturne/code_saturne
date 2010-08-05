@@ -79,9 +79,9 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "parall.h"
-include "cstphy.h"
+include "paramx.f90"
+include "parall.f90"
+include "cstphy.f90"
 
 !===============================================================================
 

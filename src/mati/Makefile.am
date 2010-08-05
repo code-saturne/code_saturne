@@ -23,9 +23,9 @@
 # Main part
 
 AM_FCFLAGS = \
--I$(top_srcdir)/include/base \
--I$(top_srcdir)/include/pprt \
--I$(top_srcdir)/include/mati \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/mati \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -34,7 +34,7 @@ AM_LDFLAGS =
 
 saturneincludedir = $(includedir)
 saturneinclude_HEADERS = \
-../../include/mati/matiss.h
+matiss.f90
 
 # Library source files
 

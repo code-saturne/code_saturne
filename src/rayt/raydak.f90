@@ -68,9 +68,9 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "entsor.h"
-include "cstnum.h"
+include "paramx.f90"
+include "entsor.f90"
+include "cstnum.f90"
 
 !===============================================================================
 

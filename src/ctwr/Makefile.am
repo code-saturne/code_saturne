@@ -32,7 +32,6 @@ endif
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 $(CPPFLAGS_PLE) \
@@ -41,9 +40,9 @@ $(CPPFLAGS_PLE) \
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 
 AM_FCFLAGS = \
--I$(top_srcdir)/include/base \
--I$(top_srcdir)/include/pprt \
--I$(top_srcdir)/include/ctwr \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/ctwr \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -56,7 +55,7 @@ cs_ctwr_air_props.h \
 cs_ctwr.h \
 cs_ctwr_halo.h \
 cs_ctwr_mesh.h \
-$(top_srcdir)/include/ctwr/ctincl.h
+ctincl.f90
 
 # Library source files
 

@@ -123,9 +123,9 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "vector.h"
-include "entsor.h"
+include "paramx.f90"
+include "vector.f90"
+include "entsor.f90"
 !===============================================================================
 
 ! Arguments

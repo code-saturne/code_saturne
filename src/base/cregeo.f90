@@ -112,13 +112,13 @@ implicit none
 
 !===============================================================================
 
-include "paramx.h"
-include "entsor.h"
-include "optcal.h"
-include "cstphy.h"
-include "ppppar.h"
-include "ppthch.h"
-include "ppincl.h"
+include "paramx.f90"
+include "entsor.f90"
+include "optcal.f90"
+include "cstphy.f90"
+include "ppppar.f90"
+include "ppthch.f90"
+include "ppincl.f90"
 
 !===============================================================================
 

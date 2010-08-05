@@ -23,12 +23,12 @@
 # Main part
 
 AM_FCFLAGS = \
--I$(top_srcdir)/include/base \
--I$(top_srcdir)/include/pprt \
--I$(top_srcdir)/include/cogz \
--I$(top_srcdir)/include/cplv \
--I$(top_srcdir)/include/rayt \
--I$(top_srcdir)/include/lagr \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/cogz \
+-I$(top_srcdir)/src/cplv \
+-I$(top_srcdir)/src/rayt \
+-I$(top_srcdir)/src/lagr \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -37,7 +37,7 @@ AM_LDFLAGS =
 
 saturneincludedir = $(includedir)
 saturneinclude_HEADERS = \
-$(top_srcdir)/include/cplv/cpincl.h
+cpincl.f90
 
 # Library source files
 

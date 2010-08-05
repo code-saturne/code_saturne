@@ -55,13 +55,13 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "dimens.h"
-include "paramx.h"
-include "cstphy.h"
-include "optcal.h"
-include "ppppar.h"
-include "ppthch.h"
-include "ppincl.h"
+include "dimens.f90"
+include "paramx.f90"
+include "cstphy.f90"
+include "optcal.f90"
+include "ppppar.f90"
+include "ppthch.f90"
+include "ppincl.f90"
 
 ! Arguments
 

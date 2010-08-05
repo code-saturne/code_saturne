@@ -66,14 +66,14 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "pointe.h"
-include "vector.h"
-include "entsor.h"
-include "cstnum.h"
-include "cstphy.h"
-include "ppppar.h"
-include "atincl.h"
+include "paramx.f90"
+include "pointe.f90"
+include "vector.f90"
+include "entsor.f90"
+include "cstnum.f90"
+include "cstphy.f90"
+include "ppppar.f90"
+include "atincl.f90"
 
 !===============================================================================
 

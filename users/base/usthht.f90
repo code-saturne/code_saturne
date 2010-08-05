@@ -62,10 +62,10 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "entsor.h"
-include "parall.h"
-include "period.h"
+include "paramx.f90"
+include "entsor.f90"
+include "parall.f90"
+include "period.f90"
 
 !===============================================================================
 

@@ -23,9 +23,9 @@
 # Main part
 
 AM_FCFLAGS = \
--I$(top_srcdir)/include/base \
--I$(top_srcdir)/include/pprt \
--I$(top_srcdir)/include/atmo \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/atmo \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -34,7 +34,7 @@ AM_LDFLAGS =
 
 saturneincludedir = $(includedir)
 saturneinclude_HEADERS = \
-$(top_srcdir)/include/atmo/atincl.h
+atincl.f90
 
 # Library source files
 

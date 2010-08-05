@@ -162,19 +162,19 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "dimfbr.h"
-include "paramx.h"
-include "cstphy.h"
-include "entsor.h"
-include "numvar.h"
-include "optcal.h"
-include "vector.h"
-include "pointe.h"
-include "period.h"
-include "parall.h"
-include "ppppar.h"
-include "ppthch.h"
-include "ppincl.h"
+include "dimfbr.f90"
+include "paramx.f90"
+include "cstphy.f90"
+include "entsor.f90"
+include "numvar.f90"
+include "optcal.f90"
+include "vector.f90"
+include "pointe.f90"
+include "period.f90"
+include "parall.f90"
+include "ppppar.f90"
+include "ppthch.f90"
+include "ppincl.f90"
 
 !===============================================================================
 

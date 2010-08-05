@@ -134,16 +134,16 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "dimfbr.h"
-include "paramx.h"
-include "numvar.h"
-include "entsor.h"
-include "optcal.h"
-include "cstnum.h"
-include "cstphy.h"
-include "pointe.h"
-include "period.h"
-include "parall.h"
+include "dimfbr.f90"
+include "paramx.f90"
+include "numvar.f90"
+include "entsor.f90"
+include "optcal.f90"
+include "cstnum.f90"
+include "cstphy.f90"
+include "pointe.f90"
+include "period.f90"
+include "parall.f90"
 
 !===============================================================================
 

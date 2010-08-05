@@ -59,9 +59,9 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "optcal.h"
-include "albase.h"
+include "paramx.f90"
+include "optcal.f90"
+include "albase.f90"
 
 !===============================================================================
 

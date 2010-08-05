@@ -95,10 +95,10 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "entsor.h"
-include "optcal.h"
-include "parall.h"
+include "paramx.f90"
+include "entsor.f90"
+include "optcal.f90"
+include "parall.f90"
 
 !===============================================================================
 

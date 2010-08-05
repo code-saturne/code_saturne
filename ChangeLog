@@ -1,4 +1,13 @@
 * 05/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Move all Fortran include files from include/* to src/* and rename
+  their extension to .f90 in preparation for switch to modules.
+  Rename vortex.h to vorinc.f90 to avoid conflict with existing vortex.f90.
+  modified files:
+    include/*/*.h
+    src/*/*.f90
+    users/*/*.f90
+
+* 05/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Move all C header files from include/* to src/*.
 
 * 30/07/2010 - Benoit de Laage de Meux <benoit.de-laage-de-meux@edf.fr>

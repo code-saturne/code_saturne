@@ -58,12 +58,12 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "entsor.h"
-include "lagdim.h"
-include "lagpar.h"
-include "lagran.h"
-include "ihmpre.h"
+include "paramx.f90"
+include "entsor.f90"
+include "lagdim.f90"
+include "lagpar.f90"
+include "lagran.f90"
+include "ihmpre.f90"
 
 !===============================================================================
 

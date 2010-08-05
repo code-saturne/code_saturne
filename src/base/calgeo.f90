@@ -112,9 +112,9 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "optcal.h"
-include "pointe.h"
+include "paramx.f90"
+include "optcal.f90"
+include "pointe.f90"
 
 !===============================================================================
 

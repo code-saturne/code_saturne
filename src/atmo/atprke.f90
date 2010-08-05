@@ -134,18 +134,18 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "dimfbr.h"
-include "paramx.h"
-include "numvar.h"
-include "entsor.h"
-include "cstnum.h"
-include "cstphy.h"
-include "optcal.h"
-include "parall.h"
-include "period.h"
-include "ppppar.h"
-include "ppthch.h"
-include "ppincl.h"
+include "dimfbr.f90"
+include "paramx.f90"
+include "numvar.f90"
+include "entsor.f90"
+include "cstnum.f90"
+include "cstphy.f90"
+include "optcal.f90"
+include "parall.f90"
+include "period.f90"
+include "ppppar.f90"
+include "ppthch.f90"
+include "ppincl.f90"
 
 !===============================================================================
 

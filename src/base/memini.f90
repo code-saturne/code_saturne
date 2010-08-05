@@ -60,10 +60,10 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "dimens.h"
-include "entsor.h"
-include "ihmpre.h"
+include "paramx.f90"
+include "dimens.f90"
+include "entsor.f90"
+include "ihmpre.f90"
 
 !===============================================================================
 

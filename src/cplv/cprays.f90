@@ -69,15 +69,15 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "cstnum.h"
-include "cstphy.h"
-include "entsor.h"
-include "numvar.h"
-include "ppppar.h"
-include "ppthch.h"
-include "ppincl.h"
-include "radiat.h"
+include "paramx.f90"
+include "cstnum.f90"
+include "cstphy.f90"
+include "entsor.f90"
+include "numvar.f90"
+include "ppppar.f90"
+include "ppthch.f90"
+include "ppincl.f90"
+include "radiat.f90"
 
 !===============================================================================
 

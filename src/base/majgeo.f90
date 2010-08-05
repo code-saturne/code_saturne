@@ -74,11 +74,11 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "dimens.h"
-include "dimfbr.h"
-include "paramx.h"
-include "entsor.h"
-include "parall.h"
+include "dimens.f90"
+include "dimfbr.f90"
+include "paramx.f90"
+include "entsor.f90"
+include "parall.f90"
 
 ! Arguments
 

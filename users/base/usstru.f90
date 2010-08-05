@@ -150,14 +150,14 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "cstnum.h"
-include "optcal.h"
-include "entsor.h"
-include "pointe.h"
-include "albase.h"
-include "period.h"
-include "parall.h"
+include "paramx.f90"
+include "cstnum.f90"
+include "optcal.f90"
+include "entsor.f90"
+include "pointe.f90"
+include "albase.f90"
+include "period.f90"
+include "parall.f90"
 
 !===============================================================================
 
@@ -439,13 +439,13 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "cstnum.h"
-include "optcal.h"
-include "pointe.h"
-include "albase.h"
-include "period.h"
-include "parall.h"
+include "paramx.f90"
+include "cstnum.f90"
+include "optcal.f90"
+include "pointe.f90"
+include "albase.f90"
+include "period.f90"
+include "parall.f90"
 
 !===============================================================================
 

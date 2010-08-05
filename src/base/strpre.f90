@@ -136,17 +136,17 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "dimfbr.h"
-include "paramx.h"
-include "optcal.h"
-include "numvar.h"
-include "pointe.h"
-include "albase.h"
-include "alstru.h"
-include "alaste.h"
-include "period.h"
-include "parall.h"
-include "entsor.h"
+include "dimfbr.f90"
+include "paramx.f90"
+include "optcal.f90"
+include "numvar.f90"
+include "pointe.f90"
+include "albase.f90"
+include "alstru.f90"
+include "alaste.f90"
+include "period.f90"
+include "parall.f90"
+include "entsor.f90"
 
 !===============================================================================
 

@@ -23,10 +23,10 @@
 # Main part
 
 AM_FCFLAGS = \
--I$(top_srcdir)/include/base \
--I$(top_srcdir)/include/pprt \
--I$(top_srcdir)/include/elec \
--I$(top_srcdir)/include/rayt \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/elec \
+-I$(top_srcdir)/src/rayt \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -35,7 +35,7 @@ AM_LDFLAGS =
 
 saturneincludedir = $(includedir)
 saturneinclude_HEADERS = \
-$(top_srcdir)/include/elec/elincl.h
+elincl.f90
 
 # Library source files
 

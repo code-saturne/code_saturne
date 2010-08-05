@@ -53,12 +53,12 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "ihmpre.h"
-include "matiss.h"
-include "cstphy.h"
-include "entsor.h"
-include "optcal.h"
+include "paramx.f90"
+include "ihmpre.f90"
+include "matiss.f90"
+include "cstphy.f90"
+include "entsor.f90"
+include "optcal.f90"
 
 !===============================================================================
 

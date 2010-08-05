@@ -142,10 +142,10 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "optcal.h"
-include "entsor.h"
-include "vortex.h"
+include "paramx.f90"
+include "optcal.f90"
+include "entsor.f90"
+include "vorinc.f90"
 
 !===============================================================================
 

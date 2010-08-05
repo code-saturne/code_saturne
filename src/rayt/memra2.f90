@@ -101,12 +101,12 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "entsor.h"
-include "numvar.h"
-include "optcal.h"
-include "ppppar.h"
-include "radiat.h"
+include "paramx.f90"
+include "entsor.f90"
+include "numvar.f90"
+include "optcal.f90"
+include "ppppar.f90"
+include "radiat.f90"
 
 !===============================================================================
 

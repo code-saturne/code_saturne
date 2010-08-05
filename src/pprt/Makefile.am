@@ -23,17 +23,17 @@
 # Main part
 
 AM_FCFLAGS = \
--I$(top_srcdir)/include/base \
--I$(top_srcdir)/include/pprt \
--I$(top_srcdir)/include/atmo \
--I$(top_srcdir)/include/cfbl \
--I$(top_srcdir)/include/cogz \
--I$(top_srcdir)/include/cplv \
--I$(top_srcdir)/include/ctwr \
--I$(top_srcdir)/include/elec \
--I$(top_srcdir)/include/fuel \
--I$(top_srcdir)/include/lagr \
--I$(top_srcdir)/include/rayt \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/atmo \
+-I$(top_srcdir)/src/cfbl \
+-I$(top_srcdir)/src/cogz \
+-I$(top_srcdir)/src/cplv \
+-I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/elec \
+-I$(top_srcdir)/src/fuel \
+-I$(top_srcdir)/src/lagr \
+-I$(top_srcdir)/src/rayt \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -42,10 +42,10 @@ AM_LDFLAGS =
 
 saturneincludedir = $(includedir)
 saturneinclude_HEADERS = \
-$(top_srcdir)/include/pprt/ppcpfu.h \
-$(top_srcdir)/include/pprt/ppincl.h \
-$(top_srcdir)/include/pprt/ppppar.h \
-$(top_srcdir)/include/pprt/ppthch.h
+ppcpfu.f90 \
+ppincl.f90 \
+ppppar.f90 \
+ppthch.f90
 
 # Library source files
 

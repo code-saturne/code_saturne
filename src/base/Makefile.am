@@ -42,18 +42,18 @@ $(CPPFLAGS_PLE) \
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 
 AM_FCFLAGS = \
--I$(top_srcdir)/include/base \
--I$(top_srcdir)/include/pprt \
--I$(top_srcdir)/include/atmo \
--I$(top_srcdir)/include/cfbl \
--I$(top_srcdir)/include/cogz \
--I$(top_srcdir)/include/cplv \
--I$(top_srcdir)/include/ctwr \
--I$(top_srcdir)/include/elec \
--I$(top_srcdir)/include/fuel \
--I$(top_srcdir)/include/mati \
--I$(top_srcdir)/include/lagr \
--I$(top_srcdir)/include/rayt \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/atmo \
+-I$(top_srcdir)/src/cfbl \
+-I$(top_srcdir)/src/cogz \
+-I$(top_srcdir)/src/cplv \
+-I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/elec \
+-I$(top_srcdir)/src/fuel \
+-I$(top_srcdir)/src/mati \
+-I$(top_srcdir)/src/lagr \
+-I$(top_srcdir)/src/rayt \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -62,25 +62,25 @@ AM_LDFLAGS =
 
 saturneincludedir = $(includedir)
 saturneinclude_HEADERS = \
-$(top_srcdir)/include/base/alaste.h \
-$(top_srcdir)/include/base/albase.h \
-$(top_srcdir)/include/base/alstru.h \
-$(top_srcdir)/include/base/cplsat.h \
-$(top_srcdir)/include/base/cstnum.h \
-$(top_srcdir)/include/base/cstphy.h \
-$(top_srcdir)/include/base/dimens.h \
-$(top_srcdir)/include/base/dimfbr.h \
-$(top_srcdir)/include/base/entsor.h \
-$(top_srcdir)/include/base/ihmpre.h \
-$(top_srcdir)/include/base/mltgrd.h \
-$(top_srcdir)/include/base/numvar.h \
-$(top_srcdir)/include/base/optcal.h \
-$(top_srcdir)/include/base/parall.h \
-$(top_srcdir)/include/base/paramx.h \
-$(top_srcdir)/include/base/period.h \
-$(top_srcdir)/include/base/pointe.h \
-$(top_srcdir)/include/base/vector.h \
-$(top_srcdir)/include/base/vortex.h \
+alaste.f90 \
+albase.f90 \
+alstru.f90 \
+cplsat.f90 \
+cstnum.f90 \
+cstphy.f90 \
+dimens.f90 \
+dimfbr.f90 \
+entsor.f90 \
+ihmpre.f90 \
+mltgrd.f90 \
+numvar.f90 \
+optcal.f90 \
+parall.f90 \
+paramx.f90 \
+period.f90 \
+pointe.f90 \
+vector.f90 \
+vorinc.f90 \
 cs_ale.h \
 cs_ast_coupling.h \
 cs_base.h \

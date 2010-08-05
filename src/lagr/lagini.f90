@@ -76,11 +76,11 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "entsor.h"
-include "period.h"
-include "lagpar.h"
-include "lagran.h"
+include "paramx.f90"
+include "entsor.f90"
+include "period.f90"
+include "lagpar.f90"
+include "lagran.f90"
 
 !===============================================================================
 

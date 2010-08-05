@@ -95,9 +95,9 @@ subroutine cldipo &
 
 implicit none
 
-include "paramx.h"
-include "cstnum.h"
-include "entsor.h"
+include "paramx.f90"
+include "cstnum.f90"
+include "entsor.f90"
 
 integer           idbia0, idbra0
 integer           nfac  , nfabor, ncelet, ncel

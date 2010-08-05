@@ -58,10 +58,10 @@ implicit none
 !     COMMON DATA
 !===============================================================================
 
-include "paramx.h"
-include "entsor.h"
-include "ppppar.h"
-include "atincl.h"
+include "paramx.f90"
+include "entsor.f90"
+include "ppppar.f90"
+include "atincl.f90"
 
 !===============================================================================
 

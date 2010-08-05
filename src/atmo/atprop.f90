@@ -64,18 +64,18 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "dimens.h"
-include "numvar.h"
-include "optcal.h"
-include "cstphy.h"
-include "entsor.h"
-include "cstnum.h"
-include "ppppar.h"
-include "ppthch.h"
-include "atincl.h"
-include "ppincl.h"
-include "ihmpre.h"
+include "paramx.f90"
+include "dimens.f90"
+include "numvar.f90"
+include "optcal.f90"
+include "cstphy.f90"
+include "entsor.f90"
+include "cstnum.f90"
+include "ppppar.f90"
+include "ppthch.f90"
+include "atincl.f90"
+include "ppincl.f90"
+include "ihmpre.f90"
 
 !===============================================================================
 

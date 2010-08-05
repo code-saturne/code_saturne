@@ -100,16 +100,16 @@ implicit none
 ! Common blocks
 !===============================================================================
 
-include "paramx.h"
-include "dimens.h"
-include "numvar.h"
-include "entsor.h"
-include "optcal.h"
-include "cstphy.h"
-include "parall.h"
-include "period.h"
-include "ppppar.h"
-include "radiat.h"
+include "paramx.f90"
+include "dimens.f90"
+include "numvar.f90"
+include "entsor.f90"
+include "optcal.f90"
+include "cstphy.f90"
+include "parall.f90"
+include "period.f90"
+include "ppppar.f90"
+include "radiat.f90"
 
 !===============================================================================
 
