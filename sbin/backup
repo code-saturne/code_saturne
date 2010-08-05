@@ -44,8 +44,7 @@ tar cvf $ARCHNAME $PREFIX_BASE/ChangeLog $PREFIX_BASE/ABOUT-NLS $PREFIX_BASE/AUT
                   $PREFIX_BASE/README $PREFIX_BASE/TODO $PREFIX_BASE/cs_config.h.in \
                   $PREFIX_BASE/config* $PREFIX_BASE/Makefile.* \
                   $PREFIX_BASE/bin $PREFIX_BASE/data $PREFIX_BASE/doc \
-                  $PREFIX_BASE/examples $PREFIX_BASE/extras \
-                  $PREFIX_BASE/gui $PREFIX_BASE/include \
+                  $PREFIX_BASE/examples $PREFIX_BASE/extras $PREFIX_BASE/gui \
                   $PREFIX_BASE/libple $PREFIX_BASE/libsyrcs $PREFIX_BASE/preprocessor \
                   $PREFIX_BASE/patches $PREFIX_BASE/po $PREFIX_BASE/sbin \
                   $PREFIX_BASE/src $PREFIX_BASE/tests \
