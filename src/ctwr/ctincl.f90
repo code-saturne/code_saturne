@@ -25,29 +25,25 @@
 
 !-------------------------------------------------------------------------------
 
-!                             ctincl.h
+! Module for cooling towers
 
-!===============================================================================
+module ctincl
 
-!            INCLUDE POUR LE MODULE AEROREFRIGERANTS
+  !=============================================================================
 
-!-------------------------------------------------------------------------------
+  ! iaeeri : activation de l'ecart impose
+  ! iaeerp : frequence de modification de la temperature
 
-! IAEERI : ACTIVATION DE L'ECART IMPOSE
-! IAEERP : FREQUENCE DE MODIFICATION DE LA TEMPERATURE
+  integer, save :: iaeeri, iaeerp, nbzsup, nbzinf
 
-integer           iaeeri, iaeerp, nbzsup, nbzinf
+  ! vaeeri : ecart de refrigeration a imposer
+  ! paseri : pas de temperature pour le calcul de la pente de ecartref(teau)
+  ! aetemn : minimum de la temperature d'eau refroidie moyenne ponderee
+  ! aetemx : maximum de la temperature d'eau chaude moyenne ponderee
 
-common / ictvar / iaeeri, iaeerp, nbzsup, nbzinf
+  double precision, save :: vaeeri, paseri, aetemn, aetemx, inbaei, &
+                            lizsup(100), lizinf(100)
 
-! VAEERI : ECART DE REFRIGERATION A IMPOSER
-! PASERI : PAS DE TEMPERATURE POUR LE CALCUL DE LA PENTE DE ECARTREF(TEAU)
-! AETEMN : MINIMUM DE LA TEMPERATURE D'EAU REFROIDIE MOYENNE PONDEREE
-! AETEMX : MAXIMUM DE LA TEMPERATURE D'EAU CHAUDE MOYENNE PONDEREE
+  !=============================================================================
 
-double precision  vaeeri, paseri, aetemn, aetemx, inbaei, &
-       lizsup(100), lizinf(100)
-
-common / rctvar / vaeeri, paseri, aetemn, aetemx, inbaei, &
-                  lizsup, lizinf
-
+end module ctincl

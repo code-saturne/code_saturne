@@ -23,9 +23,7 @@
 # Main part
 
 AM_FCFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/cfbl \
+@FCMODINCLUDE@$(top_builddir)/src \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -33,8 +31,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 saturneincludedir = $(includedir)
-saturneinclude_HEADERS = \
-cfpoin.f90
+saturneinclude_HEADERS =
 
 # Library source files
 
@@ -80,3 +77,6 @@ $(top_srcdir)/users/cfbl/uscfth.f90 \
 $(top_srcdir)/users/cfbl/uscfx1.f90 \
 $(top_srcdir)/users/cfbl/uscfx2.f90 \
 $(top_srcdir)/users/cfbl/uscfxi.f90
+
+clean-local:
+	-rm -f *__genmod.f90 *.mod

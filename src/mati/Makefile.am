@@ -23,9 +23,7 @@
 # Main part
 
 AM_FCFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/mati \
+@FCMODINCLUDE@$(top_builddir)/src \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -33,8 +31,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 saturneincludedir = $(includedir)
-saturneinclude_HEADERS = \
-matiss.f90
+saturneinclude_HEADERS =
 
 # Library source files
 
@@ -50,3 +47,6 @@ mttsns.f90 \
 mttssc.f90 \
 mttycl.f90
 libcsmati_la_LDFLAGS = -no-undefined
+
+clean-local:
+	-rm -f *__genmod.f90 *.mod

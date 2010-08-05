@@ -1,8 +1,5 @@
 !-------------------------------------------------------------------------------
 
-!VERS
-
-
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
@@ -28,128 +25,103 @@
 
 !-------------------------------------------------------------------------------
 
-!                              atincl.h
+! Module for atmospheric module specific physics
 
-!===============================================================================
+module atincl
 
-!            INCLUDE FOR THE ATMOSPHERIC MODULE SPECIFIC PHYSICS
+  !=============================================================================
 
-!-------------------------------------------------------------------------------
+  use ppppar
 
-! 1. Pointers specific to the atmospheric physics
+  !=============================================================================
 
-! 1.1 Pointers specific to the input meteo profile (in ra)
-!-------------------------------------------------------------------------------
-!         /IPROM/
-!   Pointers specific to values read in the input meteo file:
-!                    ITMMET ---> time (in sec) of the meteo profile
-!                    IZDMET ---> altitudes of the dynamic profiles
-!                    IZTMET ---> altitudes of the temperature profile
-!                    IUMET, IVMET, IWMET  --> meteo u, v, w profiles
-!                    IEKMET --->  meteo turbulent kinetic energy profile
-!                    IEPMET ---> meteo turbulent dissipation profile
-!                    ITTMET --->  meteo temperature (Celsius) profile
-!                    IQVMET ---> meteo specific humidity profile
-!                    IPMER  ---> Sea level pressure
-!                    IXMET, IYMET --> cooordinates of the meteo profile
+  ! 1. Pointers specific to the atmospheric physics
 
-!   Pointers specific to values calculated from the meteo file
-!   (cf atlecm.f90):
-!                    IRMET -->  density profile
-!                    ITPMET -->  potential temperature profile
-!                    IPHMET -->  hydro. pressure from Laplace integration
+  ! 1.1 Pointers specific to the input meteo profile (in ra)
+  !-------------------------------------------------------------------------------
+  !   Pointers specific to values read in the input meteo file:
+  !                    itmmet ---> time (in sec) of the meteo profile
+  !                    izdmet ---> altitudes of the dynamic profiles
+  !                    iztmet ---> altitudes of the temperature profile
+  !                    iumet, ivmet, iwmet  --> meteo u, v, w profiles
+  !                    iekmet --->  meteo turbulent kinetic energy profile
+  !                    iepmet ---> meteo turbulent dissipation profile
+  !                    ittmet --->  meteo temperature (Celsius) profile
+  !                    iqvmet ---> meteo specific humidity profile
+  !                    ipmer  ---> Sea level pressure
+  !                    ixmet, iymet --> cooordinates of the meteo profile
 
-integer        itmmet,                                            &
-               izdmet,                                            &
-               iztmet,                                            &
-               iumet,                                             &
-               ivmet,                                             &
-               iwmet,                                             &
-               iekmet,                                            &
-               iepmet,                                            &
-               ittmet,                                            &
-               iqvmet,                                            &
-               ipmer,                                             &
-               ixmet,                                             &
-               iymet,                                             &
-               irmet,                                             &
-               itpmet,                                            &
-               iphmet
+  !   Pointers specific to values calculated from the meteo file
+  !   (cf atlecm.f90):
+  !                    irmet -->  density profile
+  !                    itpmet -->  potential temperature profile
+  !                    iphmet -->  hydro. pressure from Laplace integration
 
-common /iprom/ itmmet,                                            &
-               izdmet,                                            &
-               iztmet,                                            &
-               iumet,                                             &
-               ivmet,                                             &
-               iwmet,                                             &
-               iekmet,                                            &
-               iepmet,                                            &
-               ittmet,                                            &
-               iqvmet,                                            &
-               ipmer,                                             &
-               ixmet,                                             &
-               iymet,                                             &
-               irmet,                                             &
-               itpmet,                                            &
-               iphmet
+  integer, save ::  itmmet,  &
+                    izdmet,  &
+                    iztmet,  &
+                    iumet,   &
+                    ivmet,   &
+                    iwmet,   &
+                    iekmet,  &
+                    iepmet,  &
+                    ittmet,  &
+                    iqvmet,  &
+                    ipmer,   &
+                    ixmet,   &
+                    iymet,   &
+                    irmet,   &
+                    itpmet,  &
+                    iphmet
 
-! 1.2 Pointers for the positions of the variables (in rtp, rtpa)
-!-------------------------------------------------------------------------------
+  ! 1.2 Pointers for the positions of the variables (in rtp, rtpa)
+  !-------------------------------------------------------------------------------
 
-!         /IATVAR/
-!   Variables specific to the atmospheric physics:
-!   IPPMOD(IATMOS) = 1 (Dry atmosphere):
-!                    ITEMPP---> potential temperature
-!   IPPMOD(IATMOS) = 2 (Humid atmosphere):
-!                    ITEMPL---> liquid potential temperature
-!                    ITOTWT---> total water content
-!                    INTDRP---> total number of droplets
+  !   Variables specific to the atmospheric physics:
+  !   ippmod(iatmos) = 1 (Dry atmosphere):
+  !                    itempp---> potential temperature
+  !   ippmod(IATMOS) = 2 (Humid atmosphere):
+  !                    itempl---> liquid potential temperature
+  !                    itotwt---> total water content
+  !                    intdrp---> total number of droplets
 
-integer        itempp, itempl, itotwt, intdrp
+  integer, save :: itempp, itempl, itotwt, intdrp
 
-common /iatvar/ itempp, itempl, itotwt, intdrp
+  ! 1.3 Pointers for the positions of the properties for the specific phys.
+  !      (ipproc in propce, propfa, propfb)
+  !-------------------------------------------------------------------------------
 
-! 1.3 Pointers for the positions of the properties for the specific phys.
-!      (ipproc in propce, propfa, propfb)
-!-------------------------------------------------------------------------------
+  !   Properties specific to the atmospheric physics:
+  !   ippmod(iatmos) = 1 or 2 (Dry or Humid atmosphere):
+  !                    itempc---> temperature (in celsius)
+  !   ippmod(iatmos) = 2 (Humid atmosphere):
+  !                    iliqwt---> liquid water content
 
-!         /IATPRO/
-!   Properties specific to the atmospheric physics:
-!   IPPMOD(IATMOS) = 1 or 2 (Dry or Humid atmosphere):
-!                    ITEMPC---> temperature (in celsius)
-!   IPPMOD(IATMOS) = 2 (Humid atmosphere):
-!                    ILIQWT---> liquid water content
+  integer, save :: itempc,iliqwt
 
-integer        itempc,iliqwt
+  !-------------------------------------------------------------------------------
 
-common /iatpro/ itempc,iliqwt
+  ! 2. Data specific to the atmospheric physics
 
+  ! 2.1 Constant specific
+  !-------------------------------------------------------------------------------
+  ! rair --> perfect gas constant for air (mixture) defined in atini1
 
-!-------------------------------------------------------------------------------
+  double precision, save :: rair
 
-! 2. Data specific to the atmospheric physics
+  ! 2.2 Data specific to the input meteo profile
+  !-------------------------------------------------------------------------------
+  !                   imeteo --> flag for reading the meteo input file
+  !                               = 0 -> no reading
+  !                              = 1 -> reading
+  !                   nbmetd --> numbers of altitudes for the dynamics
+  !                   nbmett --> numbers of altitudes for the temperature
+  !                                and specific humidity
+  !                   nbmetm --> numbers of time steps for the meteo profiles
+  !                   iprofm --> read zone boundary conditions from profile
 
-! 2.1 Constant specific
-!-------------------------------------------------------------------------------
-!          /ATMCST/ RAIR --> perfect gaz constant for air (mixture)
-!                            defined in atini1
+  integer, save :: imeteo, nbmetd, nbmett, nbmetm, iprofm(nozppm)
 
- double precision rair
- common /atmcst/ rair
+  !=============================================================================
 
-! 2.2 Data specific to the input meteo profile
-!-------------------------------------------------------------------------------
-!          /PROMET/
-!                   IMETEO --> flag for reading the meteo input file
-!                               = 0 -> no reading
-!                              = 1 -> reading
-!                   NBMETD --> numbers of altitudes for the dynamics
-!                   NBMETT --> numbers of altitudes for the temperature
-!                                and specific humidity
-!                   NBMETM --> numbers of time steps for the meteo profiles
-!                   IPROFM --> read zone boundary conditions from profile
-
-  integer   imeteo, nbmetd, nbmett, nbmetm,                       &
-            iprofm(nozppm)
-
-  common / iimet / imeteo, nbmetd, nbmett,nbmetm, iprofm
+end module atincl

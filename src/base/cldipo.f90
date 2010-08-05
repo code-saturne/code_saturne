@@ -93,11 +93,17 @@ subroutine cldipo &
 !            --- tableau de travail
 !===============================================================================
 
-implicit none
+!===============================================================================
+! Module files
+!===============================================================================
 
-include "paramx.f90"
-include "cstnum.f90"
-include "entsor.f90"
+use paramx
+use cstnum
+use entsor
+
+!===============================================================================
+
+implicit none
 
 integer           idbia0, idbra0
 integer           nfac  , nfabor, ncelet, ncel

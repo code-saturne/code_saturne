@@ -148,29 +148,29 @@ subroutine ppprcl &
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use pointe
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use fuincl
+use ppincl
+use cfpoin
+use atincl
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "numvar.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "cstnum.f90"
-include "entsor.f90"
-include "pointe.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "coincl.f90"
-include "cpincl.f90"
-include "fuincl.f90"
-include "ppincl.f90"
-include "cfpoin.f90"
-include "atincl.f90"
-
-!===============================================================================
 
 ! Arguments
 

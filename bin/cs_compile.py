@@ -161,7 +161,7 @@ def compile_and_link(srcdir, destdir, optlibs,
         cmd = build.cc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
-        cmd = cmd + " -I" + os.path.join(dirs.prefix, "include")
+        cmd = cmd + " -I" + dirs.includedir
         cmd = cmd + " -DHAVE_CONFIG_H"
         cmd = cmd + " " + build.cppflags
         cmd = cmd + " " + build.cflags
@@ -173,9 +173,12 @@ def compile_and_link(srcdir, destdir, optlibs,
         if (retval != 0 and not keep_going):
             break
         cmd = build.fc
-        if len(h_files) > 0:
-            cmd = cmd + " -I" + srcdir
-        cmd = cmd + " -I" + os.path.join(dirs.prefix, "include")
+        cmd = cmd + " -I" + srcdir
+        if build.fcmodinclude != "-I":
+            cmd += " " + build.fcmodinclude + srcdir
+        cmd = cmd + " -I" + dirs.includedir
+        if build.fcmodinclude != "-I":
+            cmd += " " + build.fcmodinclude + dirs.includedir
         cmd = cmd + " " + build.fcflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:

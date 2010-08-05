@@ -207,26 +207,26 @@ subroutine uscfcl &
 !     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use pointe
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use parall
+use period
+use ppppar
+use ppthch
+use ppincl
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "pointe.f90"
-include "numvar.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "cstnum.f90"
-include "entsor.f90"
-include "parall.f90"
-include "period.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "ppincl.f90"
-
-!===============================================================================
 
 ! Arguments
 

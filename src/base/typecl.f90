@@ -150,27 +150,27 @@ subroutine typecl &
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens, only: ndimfb
+use numvar
+use optcal
+use cstnum
+use cstphy
+use entsor
+use parall
+use pointe
+use ppppar
+use ppthch
+use ppincl
+use cplsat
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Fortran common blocks
-!===============================================================================
-
-include "dimfbr.f90"
-include "paramx.f90"
-include "numvar.f90"
-include "optcal.f90"
-include "cstnum.f90"
-include "cstphy.f90"
-include "entsor.f90"
-include "pointe.f90"
-include "parall.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "ppincl.f90"
-include "cplsat.f90"
-
-!===============================================================================
 
 ! Arguments
 

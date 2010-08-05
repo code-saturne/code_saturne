@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,15 +25,16 @@
 
 !-------------------------------------------------------------------------------
 
-!                              imhpre.h
-!===============================================================================
+! Module for GUI parameter file flag
 
-! IIHMPR : INDIQUE S'IL Y A UN FICHIER DE DONNEES INTERFACE CONSULTE
+module ihmpre
 
-!    On pourrait se passer de ce common en interrogeant une structure C
+  !=============================================================================
 
-integer            iihmpr
+  ! We could avoid this module by querying a C structure
 
-common / iiihmp /  iihmpr
+  integer, save :: iihmpr
 
-! FIN
+  !=============================================================================
+
+end module ihmpre

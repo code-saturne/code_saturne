@@ -89,26 +89,23 @@ subroutine cou1di &
 !            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
 !     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
 !            --- tableau de travail
+!===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
 
+use paramx
+use numvar
+use optcal
+use cstnum
+use cstphy
+use entsor
+use pointe
 
 !===============================================================================
 
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "numvar.f90"
-include "optcal.f90"
-include "cstnum.f90"
-include "cstphy.f90"
-include "entsor.f90"
-include "pointe.f90"
-
-!===============================================================================
 
 ! Arguments
 

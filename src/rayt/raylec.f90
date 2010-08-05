@@ -75,25 +75,25 @@ subroutine raylec &
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use pointe
+use entsor
+use cstphy
+use ppppar
+use ppthch
+use cpincl
+use ppincl
+use radiat
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "numvar.f90"
-include "optcal.f90"
-include "pointe.f90"
-include "entsor.f90"
-include "cstphy.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "cpincl.f90"
-include "ppincl.f90"
-include "radiat.f90"
-
-!===============================================================================
 
 ! Arguments
 

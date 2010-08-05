@@ -23,12 +23,7 @@
 # Main part
 
 AM_FCFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/cogz \
--I$(top_srcdir)/src/cplv \
--I$(top_srcdir)/src/fuel \
--I$(top_srcdir)/src/rayt \
+@FCMODINCLUDE@$(top_builddir)/src \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -36,8 +31,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 saturneincludedir = $(includedir)
-saturneinclude_HEADERS = \
-fuincl.f90
+saturneinclude_HEADERS =
 
 # Library source files
 
@@ -78,3 +72,6 @@ fuel_DATA = \
 $(top_srcdir)/users/fuel/usfucl.f90 \
 $(top_srcdir)/users/fuel/usfui1.f90 \
 $(top_srcdir)/users/fuel/usfuiv.f90
+
+clean-local:
+	-rm -f *__genmod.f90 *.mod

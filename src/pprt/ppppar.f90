@@ -25,30 +25,29 @@
 
 !-------------------------------------------------------------------------------
 
-!                              ppppar.h
+! General module for specific physics containing common parameters
 
-!===============================================================================
+module ppppar
 
-!            INCLUDE GENERAL PROPRE A LA PHYSIQUE PARTICULIERE
-!                    CONTENANT DES PARAMETRES COMMUNS
-!                        (A PLUSIEURS INCLUDES)
-!-------------------------------------------------------------------------------
+  !===========================================================================
 
-! --> NB DE ZONES DE BORD MAXIMAL
-integer    nbzppm
-parameter (nbzppm=2000)
-! --> NUMERO DE ZONE DE BORD MAXIMAL
-integer    nozppm
-parameter (nozppm=2000)
+  ! --> Nb de zones de bord maximal
+  integer    nbzppm
+  parameter (nbzppm=2000)
 
+  ! --> Numero de zone de bord maximal
+  integer    nozppm
+  parameter (nozppm=2000)
 
-!--> POINTEURS VARIABLES COMBUSTION CHARBON PULVERISE cpincl, ppincl
+  !--> Pointeurs variables combustion charbon pulverise cpincl, ppincl
 
-!       NCHARM        --> Nombre maximal de charbons
-!       NCPCMX        --> Nombre maximal de classes par charbon
-!       NCLCPM        --> Nombre total de classes
+  !    ncharm --> nombre maximal de charbons
+  !    ncpcmx --> nombre maximal de classes par charbon
+  !    nclcpm --> Nombre total de classes
 
-integer    ncharm  , ncpcmx   , nclcpm
-parameter (ncharm=3, ncpcmx=10, nclcpm=ncharm*ncpcmx)
-! -->
-! FIN
+  integer    ncharm  , ncpcmx   , nclcpm
+  parameter (ncharm=3, ncpcmx=10, nclcpm=ncharm*ncpcmx)
+
+  !=============================================================================
+
+end module ppppar

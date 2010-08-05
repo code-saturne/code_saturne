@@ -1,3 +1,33 @@
+* 05/08/2010 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Transform all Fortran common blocks to modules.
+  Fold dimfbr into dimens and vector into parall.
+  modified scripts:
+    configure.ac
+    bin/cs_compile.py
+    bin/cs_config_build.py
+    config/cs_fortran.am
+    src/Makefile.am
+    src/apps/Makefile.am
+    src/atmo/Makefile.am
+    src/base/Makefile.am
+    src/cfbl/Makefile.am
+    src/cogz/Makefile.am
+    src/cplv/Makefile.am
+    src/ctwr/Makefile.am
+    src/elec/Makefile.am
+    src/fuel/Makefile.am
+    src/lagr/Makefile.am
+    src/mati/Makefile.am
+    src/pprt/Makefile.am
+    src/rayt/Makefile.am
+  modified files:
+    src/*/*.f90
+    users/*/*.f90
+  removed files:
+    src/base/dimfbr.f90
+    src/base/vector.f90
+
 * 05/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Move all Fortran include files from include/* to src/* and rename
   their extension to .f90 in preparation for switch to modules.
@@ -9,6 +39,10 @@
 
 * 05/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Move all C header files from include/* to src/*.
+  modified scripts:
+    src/base/Makefile.am
+    src/ctwr/Makefile.am
+    src/lagr/Makefile.am
 
 * 30/07/2010 - Benoit de Laage de Meux <benoit.de-laage-de-meux@edf.fr>
   Add a missing multiplication by the density in a coupling source term.

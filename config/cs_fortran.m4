@@ -26,9 +26,6 @@ dnl-----------------------------------------------------------------------------
 
 AC_DEFUN([CS_AC_TEST_FC_MOD], [
 
-cs_fc_modext=""
-cs_fc_modflag=""
-
 AC_LANG_PUSH(Fortran)
 
 # Create temporary directory
@@ -67,7 +64,7 @@ AC_COMPILE_IFELSE([
 
 cd ..
 
-for cs_fc_flag in "-I " "-M" "-p"; do
+for cs_fc_flag in "-I" "-I " "-J" "-M" "-p"; do
   if test "x$cs_fc_modflag" = "x" ; then
     save_FCFLAGS="$FCFLAGS"
     FCFLAGS="$save_FCFLAGS ${cs_fc_flag}tmpdir_$i"
@@ -87,6 +84,12 @@ done
 
 rm -fr tmpdir_$i
 AC_LANG_POP(Fortran)
+
+FCMODEXT=$cs_fc_modext
+FCMODINCLUDE=$cs_fc_modflag
+
+AC_SUBST(FCMODEXT)
+AC_SUBST(FCMODINCLUDE)
 
 ])dnl
 

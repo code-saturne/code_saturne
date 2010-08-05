@@ -42,18 +42,7 @@ $(CPPFLAGS_PLE) \
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 
 AM_FCFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/atmo \
--I$(top_srcdir)/src/cfbl \
--I$(top_srcdir)/src/cogz \
--I$(top_srcdir)/src/cplv \
--I$(top_srcdir)/src/ctwr \
--I$(top_srcdir)/src/elec \
--I$(top_srcdir)/src/fuel \
--I$(top_srcdir)/src/mati \
--I$(top_srcdir)/src/lagr \
--I$(top_srcdir)/src/rayt \
+@FCMODINCLUDE@$(top_builddir)/src \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -62,25 +51,6 @@ AM_LDFLAGS =
 
 saturneincludedir = $(includedir)
 saturneinclude_HEADERS = \
-alaste.f90 \
-albase.f90 \
-alstru.f90 \
-cplsat.f90 \
-cstnum.f90 \
-cstphy.f90 \
-dimens.f90 \
-dimfbr.f90 \
-entsor.f90 \
-ihmpre.f90 \
-mltgrd.f90 \
-numvar.f90 \
-optcal.f90 \
-parall.f90 \
-paramx.f90 \
-period.f90 \
-pointe.f90 \
-vector.f90 \
-vorinc.f90 \
 cs_ale.h \
 cs_ast_coupling.h \
 cs_base.h \
@@ -158,20 +128,11 @@ noinst_LTLIBRARIES = libcshot.la \
                      libcscore.la \
                      libcsbase.la
 
+###
+
 libcshot_la_CFLAGS = @CFLAGS_DBG@ @CFLAGS_HOT@
 libcshot_la_FCFLAGS = \
--I$(top_srcdir)/include/base \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/atmo \
--I$(top_srcdir)/src/cfbl \
--I$(top_srcdir)/src/cogz \
--I$(top_srcdir)/src/cplv \
--I$(top_srcdir)/src/ctwr \
--I$(top_srcdir)/src/elec \
--I$(top_srcdir)/src/fuel \
--I$(top_srcdir)/src/mati \
--I$(top_srcdir)/src/lagr \
--I$(top_srcdir)/src/rayt \
+@FCMODINCLUDE@$(top_builddir)/src \
 @FCFLAGS_DBG@ @FCFLAGS_HOT@
 libcshot_la_SOURCES = \
 cs_benchmark.c \
@@ -508,3 +469,6 @@ $(top_srcdir)/users/base/usvima.f90 \
 $(top_srcdir)/users/base/usvist.f90 \
 $(top_srcdir)/users/base/usvort.f90 \
 $(top_srcdir)/users/base/usvpst.f90
+
+clean-local:
+	-rm -f *__genmod.f90 *__genmod.mod

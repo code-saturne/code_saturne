@@ -61,33 +61,32 @@ subroutine lagopt
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use entsor
+use optcal
+use cstphy
+use lagpar
+use lagdim
+use lagran
+use ppppar
+use ppthch
+use ppincl
+use cpincl
+use radiat
+use ihmpre
+
+!===============================================================================
+
 implicit none
 
-!===============================================================================
-! Common blocks
-!===============================================================================
+integer  ii , ip , irf , iphas , icha , i1 , i2 , i3, iok
 
-include "paramx.f90"
-include "dimens.f90"
-include "numvar.f90"
-include "entsor.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "lagpar.f90"
-include "lagdim.f90"
-include "lagran.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "ppincl.f90"
-include "cpincl.f90"
-include "radiat.f90"
-include "ihmpre.f90"
-
-!===============================================================================
-
-integer          ii , ip , irf , iphas , icha , i1 , i2 , i3, iok
-
-!===============================================================================
 !===============================================================================
 ! 0. INITIALISATION
 !===============================================================================

@@ -40,9 +40,7 @@ $(CPPFLAGS_PLE) \
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 
 AM_FCFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/ctwr \
+@FCMODINCLUDE@$(top_builddir)/src \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -54,8 +52,7 @@ saturneinclude_HEADERS = \
 cs_ctwr_air_props.h \
 cs_ctwr.h \
 cs_ctwr_halo.h \
-cs_ctwr_mesh.h \
-ctincl.f90
+cs_ctwr_mesh.h
 
 # Library source files
 
@@ -85,3 +82,6 @@ $(top_srcdir)/users/ctwr/usctcl.f90 \
 $(top_srcdir)/users/ctwr/usctdz.f90 \
 $(top_srcdir)/users/ctwr/uscti1.f90 \
 $(top_srcdir)/users/ctwr/usctiv.f90
+
+clean-local:
+	-rm -f *__genmod.f90 *.mod

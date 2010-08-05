@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,20 +25,23 @@
 
 !-------------------------------------------------------------------------------
 
-!                              period.h
-!===============================================================================
+! Module for periodicity flags
 
-! IPERIO : INDIQUE S'IL Y A AU MOINS UNE PERIODICITE
-!          VALEUR ADMISSIBLES : 0 ou 1 ; VALEUR PAR DEFAUT : 0
-! IPEROT : INDIQUE LE NOMBRE DE PERIODICITES DE ROTATION
-!          (COMPLETE AUTOMATIQUEMENT)
-!          VALEUR PAR DEFAUT : 0
+module period
 
-! IGUPER : 0/1 INDIQUE QU'ON A /N'A PAS CALCULE LES GRADIENTS DANS DUDXYZ
-! IGRPER : 0/1 INDIQUE QU'ON A /N'A PAS CALCULE LES GRADIENTS DANS DRDXYZ
+  !=============================================================================
 
-integer            iperio, iperot, iguper, igrper
+  ! iperio : indique s'il y a au moins une periodicite
+  !          valeur admissibles : 0 ou 1 ; valeur par defaut : 0
+  ! iperot : indique le nombre de periodicites de rotation
+  !          (complete automatiquement)
+  !          valeur par defaut : 0
 
-common / iiiper /  iperio, iperot, iguper, igrper
+  ! iguper : 0/1 indique qu'on a /n'a pas calcule les gradients dans dudxyz
+  ! igrper : 0/1 indique qu'on a /n'a pas calcule les gradients dans drdxyz
 
-! FIN
+  integer, save :: iperio, iperot, iguper, igrper
+
+  !=============================================================================
+
+end module period

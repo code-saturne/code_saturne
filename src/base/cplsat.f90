@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,32 +25,38 @@
 
 !-------------------------------------------------------------------------------
 
-!                              cplsat.h
-!===============================================================================
+! Module for code/code coupling
 
-!  COUPLAGE CODE / CODE - GESTION DES PARAMETRES PRINCIPAUX
+module cplsat
 
-! NBRCPL : NOMBRE DE COUPLAGE CODE_SATURNE / CODE_SATURNE
-! IFACCP : INDICATEUR DE COUPLAGE FACE/FACE UNIQUEMENT
-! IMOBIL : INDICATEUR DE MAILLAGE MOBILE POUR LES TURBOMACHINES
+  !=============================================================================
 
-integer           nbrcpl, ifaccp, imobil
+  use paramx
 
-common / icplcs / nbrcpl, ifaccp, imobil
+  !=============================================================================
 
-! NBCPMX : NOMBRE DE COUPLAGE MAX ADMISSIBLE
+  !  couplage code / code - gestion des parametres principaux
 
-integer   nbcpmx
-parameter(nbcpmx=10)
+  ! nbrcpl : nombre de couplage Code_Saturne / Code_Saturne
+  ! ifaccp : indicateur de couplage face/face uniquement
+  ! imobil : indicateur de maillage mobile pour les turbomachines
 
-! ITURCP(NBCPMX,NPHSMX) : MODELE DE TURBULENCE DE L'INSTANCE DISTANTE
-! IMAJCP(NBCPMX)        : INDICE DE MISE A JOUR DE LA LOCALISATION DU COUPLAGE
-! ICORMX(NBCPMX)        : INDICE DE PRESENCE DE CALCUL EN REPERE RELATIF
-! NVARCP(NBCPMX)        : NOMBRE DE VARIABLE A ENVOYER/RECEVOIR
-! NVARTO(NBCPMX)        : TAILLE DES TABLEAUX D'ECHANGE
+  integer, save :: nbrcpl, ifaccp, imobil
 
+  ! nbcpmx : nombre de couplage max admissible
 
-integer           iturcp(nbcpmx,nphsmx), imajcp(nbcpmx), icormx(nbcpmx)
-integer           nvarcp(nbcpmx), nvarto(nbcpmx)
-common / icplcs / iturcp, imajcp, icormx, nvarcp, nvarto
+  integer   nbcpmx
+  parameter(nbcpmx=10)
 
+  ! iturcp(nbcpmx,nphsmx) : modele de turbulence de l'instance distante
+  ! imajcp(nbcpmx)        : indice de mise a jour de la localisation du couplage
+  ! icormx(nbcpmx)        : indice de presence de calcul en repere relatif
+  ! nvarcp(nbcpmx)        : nombre de variables a envoyer/recevoir
+  ! nvarto(nbcpmx)        : taille des tableaux d'echange
+
+  integer, save :: iturcp(nbcpmx,nphsmx), imajcp(nbcpmx), icormx(nbcpmx)
+  integer, save :: nvarcp(nbcpmx), nvarto(nbcpmx)
+
+  !=============================================================================
+
+end module cplsat

@@ -110,28 +110,27 @@ subroutine strini &
 !            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
 !     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
 !            --- tableau de travail
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use optcal
+use cstphy
+use entsor
+use pointe
+use albase
+use alstru
+use alaste
+use ihmpre
+use parall
+use period
 
 !===============================================================================
 
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "entsor.f90"
-include "pointe.f90"
-include "albase.f90"
-include "alstru.f90"
-include "alaste.f90"
-include "ihmpre.f90"
-include "period.f90"
-include "parall.f90"
-
-!===============================================================================
 
 ! Arguments
 

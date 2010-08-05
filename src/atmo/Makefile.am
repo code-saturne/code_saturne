@@ -23,9 +23,7 @@
 # Main part
 
 AM_FCFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/atmo \
+@FCMODINCLUDE@$(top_builddir)/src \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -33,8 +31,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 saturneincludedir = $(includedir)
-saturneinclude_HEADERS = \
-atincl.f90
+saturneinclude_HEADERS =
 
 # Library source files
 
@@ -63,3 +60,6 @@ atmo_DATA = \
 $(top_srcdir)/users/atmo/usatcl.f90 \
 $(top_srcdir)/users/atmo/usati1.f90 \
 $(top_srcdir)/users/atmo/usativ.f90
+
+clean-local:
+	-rm -f *__genmod.f90 *__genmod.mod

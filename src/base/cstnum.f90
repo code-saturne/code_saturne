@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,11 +25,16 @@
 
 !-------------------------------------------------------------------------------
 
-!                              cstnum.h
-!===============================================================================
+! Module for numerical constants
 
-double precision  epzero       ,rinfin       ,grand       ,       &
-                  zero         ,pi
-parameter        (epzero=1.d-12,rinfin=1.d+30,grand=1.d+12,       &
-                  zero  =0.d0  ,pi=3.141592653589793d0)
+module cstnum
 
+  !=============================================================================
+
+  double precision  epzero, rinfin, grand, zero, pi
+  parameter        (epzero=1.d-12, rinfin=1.d+30, grand=1.d+12,  &
+                    zero=0.d0, pi=3.141592653589793d0)
+
+  !=============================================================================
+
+end module cstnum

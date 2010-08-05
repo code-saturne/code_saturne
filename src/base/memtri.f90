@@ -91,32 +91,32 @@ subroutine memtri &
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens, only: ndimfb
+use optcal
+use cstphy
+use numvar
+use entsor
+use pointe
+use albase
+use period
+use ppppar
+use ppthch
+use ppincl
+use cfpoin
+use lagpar
+use lagdim
+use lagran
+use ihmpre
+use cplsat
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "dimfbr.f90"
-include "paramx.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "numvar.f90"
-include "entsor.f90"
-include "pointe.f90"
-include "albase.f90"
-include "period.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "ppincl.f90"
-include "cfpoin.f90"
-include "lagpar.f90"
-include "lagdim.f90"
-include "lagran.f90"
-include "ihmpre.f90"
-include "cplsat.f90"
-
-!===============================================================================
 
 ! Arguments
 

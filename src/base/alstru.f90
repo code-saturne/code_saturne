@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,63 +25,64 @@
 
 !-------------------------------------------------------------------------------
 
-!                              alstru.h
-!===============================================================================
+! Module for ALE structure movement with internal coupling
 
-!  METHODE ALE - MOUVEMENT DE STRUCTURES EN COUPLAGE INTERNE
+module alstru
 
-! NBSTRU : NOMBRE DE STRUCTURES MOBILES
+  !=============================================================================
 
-! XMSTRU : MATRICE DE MASSE DES STRUCTURES (kg)
-! XCSTRU : MATRICE DE FRICTION DES STRUCTURES (kg/s)
-! XKSTRU : MATRICE DE RAIDEUR DES STRUCTURES (kg/s2 = N/m)
-! XSTREQ : VECTEUR ECART DE LA POSITION DES STRUCTURE DANS LE MAILLAGE
-!          INITIAL PAR RAPPORT A LEUR POSITION D'EQUILIBRE (m)
-! XSTR   : VECTEUR DEPLACEMENT DES STRUCTURES PAR RAPPORT A LEUR POSITION
-!          DANS LE MAILLAGE INITIAL (m)
-! XPSTR  : VECTEUR VITESSE DES STRUCTURES (m/s)
-! XPPSTR : VECTEUR ACCELERATION DES STRUCTURES (m/s2)
-! FORSTR : VECTEUR FORCE EXERCE SUR LES STRUCTURES (N)
-! XSTA   : VALEUR DE XSTR AU PAS DE TEMPS PRECEDENT
-! XPSTA  : VALEUR DE XPSTR AU PAS DE TEMPS PRECEDENT
-! XPPSTA : VALEUR DE XPPSTR AU PAS DE TEMPS PRECEDENT
-! FORSTA : VALEUR DE FORSTR AU PAS DE TEMPS PRECEDENT
-! XSTP   : VALEUR PREDITE DE XSTR
-! FORSTP : VALEUR PREDITE DE FORSTR
-! DTSTR  : PAS DE TEMPS ASSOCIE AU MOUVEMENT DES STRUCTURES
-! AEXXST : COEFFICIENT DE PREDICTION DU DEPLACEMENT (SUR XPSTR)
-! BEXXST : COEFFICIENT DE PREDICTION DU DEPLACEMENT (SUR XPSTR-XPSTA)
-! CFOPRE : COEFFICIENT DE PREDICTION DES EFFORTS
+  use paramx
 
+  !=============================================================================
 
-integer          nbstru
+  !  Methode ale - mouvement de structures en couplage interne
 
-common / istruc / nbstru
+  ! nbstru : nombre de structures mobiles
 
-double precision xmstru(3,3,nstrmx)
-double precision xcstru(3,3,nstrmx)
-double precision xkstru(3,3,nstrmx)
-double precision xstr(3,nstrmx)  ,xsta(3,nstrmx)
-double precision xstp(3,nstrmx)  ,xstreq(3,nstrmx)
-double precision xpstr(3,nstrmx) ,xpsta(3,nstrmx)
-double precision xppstr(3,nstrmx),xppsta(3,nstrmx)
-double precision forstr(3,nstrmx),forsta(3,nstrmx)
-double precision forstp(3,nstrmx)
-double precision dtstr(nstrmx)
-double precision aexxst, bexxst, cfopre
+  ! xmstru : matrice de masse des structures (kgl)
+  ! xcstru : matrice de friction des structures (kg/s)
+  ! xkstru : matrice de raideur des structures (kg/s2 = N/m)
+  ! xstreq : vecteur ecart de la position des structure dans le maillage
+  !          initial par rapport a leur position d'equilibre (m)
+  ! xstr   : vecteur deplacement des structures par rapport a leur position
+  !          dans le maillage initial (m)
+  ! xpstr  : vecteur vitesse des structures (m/s)
+  ! xppstr : vecteur acceleration des structures (m/s2)
+  ! forstr : vecteur force exerce sur les structures (N)
+  ! xsta   : valeur de xstr au pas de temps precedent
+  ! xpsta  : valeur de xpstr au pas de temps precedent
+  ! xppsta : valeur de xppstr au pas de temps precedent
+  ! forsta : valeur de forstr au pas de temps precedent
+  ! xstp   : valeur predite de xstr
+  ! forstp : valeur predite de forstr
+  ! dtstr  : pas de temps associe au mouvement des structures
+  ! aexxst : coefficient de prediction du deplacement (sur xpstr)
+  ! bexxst : coefficient de prediction du deplacement (sur xpstr-xpsta)
+  ! cfopre : coefficient de prediction des efforts
 
-common / rstruc / xmstru, xcstru, xkstru, xstr  , xsta  , xstp,   &
-                  xstreq, xpstr , xpsta , xppstr, xppsta,         &
-                  forstr, forsta, forstp, dtstr,                  &
-                  aexxst, bexxst, cfopre
+  integer, save :: nbstru
 
-!  METHODE DE NEWMARK HHT
+  double precision, save :: xmstru(3,3,nstrmx)
+  double precision, save :: xcstru(3,3,nstrmx)
+  double precision, save :: xkstru(3,3,nstrmx)
+  double precision, save :: xstr(3,nstrmx)  ,xsta(3,nstrmx)
+  double precision, save :: xstp(3,nstrmx)  ,xstreq(3,nstrmx)
+  double precision, save :: xpstr(3,nstrmx) ,xpsta(3,nstrmx)
+  double precision, save :: xppstr(3,nstrmx),xppsta(3,nstrmx)
+  double precision, save :: forstr(3,nstrmx),forsta(3,nstrmx)
+  double precision, save :: forstp(3,nstrmx)
+  double precision, save :: dtstr(nstrmx)
+  double precision, save :: aexxst, bexxst, cfopre
 
-!  ALPNMK : COEFFICIENT ALPHA DE LA METHODE DE NEWMARK HHT
-!  BETNMK : COEFFICIENT BETA  DE LA METHODE DE NEWMARK HHT
-!  GAMNMK : COEFFICIENT GAMMA DE LA METHODE DE NEWMARK HHT
-double precision alpnmk, gamnmk, betnmk
-common / rnemrk / alpnmk, gamnmk, betnmk
+  ! methode de Newmark hht
 
-! FIN
+  !  alpnmk : coefficient alpha de la methode de Newmark hht
+  !  betnmk : coefficient beta  de la methode de Newmark hht
+  !  gamnmk : coefficient gamma de la methode de Newmark hht
+
+  double precision, save :: alpnmk, gamnmk, betnmk
+
+  !=============================================================================
+
+end module alstru
 

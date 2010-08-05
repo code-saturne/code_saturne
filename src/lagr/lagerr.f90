@@ -54,30 +54,27 @@ subroutine lagerr
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use optcal
+use entsor
+
+!===============================================================================
+
 implicit none
 
 !===============================================================================
-! Common blocks
-!===============================================================================
 
-include "paramx.f90"
-include "dimens.f90"
-include "optcal.f90"
-include "entsor.f90"
+open(impstp, file='ficstp',                                     &
+     status='unknown', form='formatted', access='sequential')
 
-!===============================================================================
-
-
-!===============================================================================
-
-OPEN ( IMPSTP, FILE='ficstp',                                     &
-       STATUS='UNKNOWN',                                          &
-       FORM='FORMATTED',                                          &
-       ACCESS='SEQUENTIAL' )
-
-WRITE(IMPSTP,'(A)') ' '
-WRITE(IMPSTP,'(I6)') NTCABS
-WRITE(IMPSTP,'(A)') ' '
+write(impstp,'(a)') ' '
+write(impstp,'(i6)') ntcabs
+write(impstp,'(a)') ' '
 
 close (impstp)
 

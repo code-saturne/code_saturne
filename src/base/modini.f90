@@ -49,24 +49,24 @@ subroutine modini
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use cstnum
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use albase
+use alstru
+use cplsat
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "cstnum.f90"
-include "dimens.f90"
-include "numvar.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "entsor.f90"
-include "albase.f90"
-include "alstru.f90"
-include "cplsat.f90"
-
-!===============================================================================
 
 ! Arguments
 

@@ -68,26 +68,28 @@ subroutine majgeo &
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use dimens
+use paramx
+use entsor
+use parall
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "dimens.f90"
-include "dimfbr.f90"
-include "paramx.f90"
-include "entsor.f90"
-include "parall.f90"
 
 ! Arguments
 
-integer          ncel2, ncele2, nfac2, nfabo2, nsom2
-integer          lndfa2, lndfb2
-integer          ncelg2, nfacg2 , nfbrg2, nsomg2
-integer          nthdi2, nthdb2
-integer          ngrpi2, ngrpb2
-integer          idxfi(*), idxfb(*)
+integer, intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
+integer, intent(in) :: lndfa2, lndfb2
+integer, intent(in) :: ncelg2, nfacg2 , nfbrg2, nsomg2
+integer, intent(in) :: nthdi2, nthdb2
+integer, intent(in) :: ngrpi2, ngrpb2
+
+integer, dimension(*), intent(in) :: idxfi, idxfb
 
 ! Local variables
 
@@ -138,59 +140,8 @@ nsomgb = nsomg2
 ! 5. INITIALISATION DES INFORMATIONS SUR LES THREADS
 !===============================================================================
 
-do ii = 1, nthrd1
-  do jj = 1, nthrd2
-    iompli(1, ii, jj) = 0
-    iompli(2, ii, jj) = 0
-    iomplb(1, ii, jj) = 0
-    iomplb(2, ii, jj) = 0
-  enddo
-enddo
+call init_fortran_omp(nfac, nfabor, &
+                      nthdi2, nthdb2, ngrpi2, ngrpb2, idxfi, idxfb)
 
-! Pour le groupe j et le thread i, boucles sur les faces
-! de iompl.(1, j, i) à iompl.(2, j, i).
-
-! Par defaut (i.e. sans Open MP), 1 thread et un groupe
-
-iompli(1, 1, 1) = 1
-iompli(2, 1, 1) = nfac
-iomplb(1, 1, 1) = 1
-iomplb(2, 1, 1) = nfabor
-
-! Numerotations pour boucles OpenMP sur les faces interieures
-
-ngrpi = ngrpi2
-nthrdi = nthdi2
-
-if (nthrdi.gt.1 .and. ngrpi.gt.1) then
-
-  do ii = 1, nthrdi
-    do jj = 1, ngrpi
-
-      iompli(1, jj, ii) = idxfi((ii-1)*ngrpi*2 + 2*jj-1) + 1
-      iompli(2, jj, ii) = idxfi((ii-1)*ngrpi*2 + 2*jj)
-
-    enddo
-  enddo
-
-endif
-
-! Numerotations pour boucles OpenMP sur les faces de bord
-
-ngrpb = ngrpb2
-nthrdb = nthdb2
-
-if (nthrdb.gt.1 .and. ngrpb.gt.1) then
-
-  do ii = 1, nthrdb
-    do jj = 1, ngrpb
-
-      iomplb(1, jj, ii) = idxfb((ii-1)*ngrpb*2 + 2*jj-1) + 1
-      iomplb(2, jj, ii) = idxfb((ii-1)*ngrpb*2 + 2*jj)
-
-    enddo
-  enddo
-
-endif
 return
 end subroutine

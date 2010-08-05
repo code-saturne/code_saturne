@@ -170,28 +170,26 @@ subroutine mttssc &
 !            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
 !     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
 !            --- tableau de travail
-!-------------------------------------------------------------------------------
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use cstnum
+use paramx
+use pointe
+use numvar
+use entsor
+use optcal
+use cstphy
+use parall
+use period
+use matiss
+
 !===============================================================================
 
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "cstnum.f90"
-include "paramx.f90"
-include "pointe.f90"
-include "numvar.f90"
-include "entsor.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "parall.f90"
-include "period.f90"
-include "matiss.f90"
-
-
-!===============================================================================
 
 ! Arguments
 

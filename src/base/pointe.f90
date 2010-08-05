@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,124 +25,114 @@
 
 !-------------------------------------------------------------------------------
 
-!                              pointe.h
-!===============================================================================
+! Module for pointer variables
 
-!... GEOMETRIE
-!      ACCESSIBLES DIRECTEMENT DANS IA, RA
+module pointe
 
-! Pointeur Dimension       Description
-! IICELB ! NCELBR                  ! REPERAGE DES CELLULES DE BORD
-! ISRFAN ! NFAC                    ! SURFACE DES FACES INTERNES
-! ISRFBN ! NFABOR                  ! SURFACE DES FACES DE BORD
-! IDIST  ! NFAC                    ! IJ.Nij
-! IDISTB ! NFABOR                  ! EQUIVALENT DE IDIST AU BORD
-! IPOND  ! NFAC                    ! PONDERATION (Aij=POND Ai+(1-POND)Aj)
-! IDIJPF ! NFAC*NDIM               ! VECTEUR I'J'
-! IDIIPB ! NFAC*NDIM               ! EQUIVALENT DE IDIIPF AU BORD
-! IDOFIJ ! NFAC*NDIM               ! VECTEUR OF A LA FACE IJ
+  !=============================================================================
 
-integer           iicelb ,                                        &
-                  isrfan , isrfbn , idist  , idistb , ipond ,     &
-                  idijpf , idiipb , idofij
-common / ipgeom / iicelb ,                                        &
-                  isrfan , isrfbn , idist  , idistb , ipond ,     &
-                  idijpf , idiipb , idofij
+  use paramx
 
+  !=============================================================================
 
-!... AUXILIAIRES INDEPENDANTS DU NOMBRE DE PHASES
-!      ACCESSIBLES DIRECTEMENT DANS IA, RA
+  !... Geometrie
+  !      accessibles directement dans ia, ra
 
-! Pointeur Dimension       Description
-! ICOCG  ! NCELET*9                ! STOCKAGE POUR GRADIENT
-! ICOCGB ! NCELBR*9                ! STOCKAGE POUR GRADIENT BORD
-! ICOCI  ! NCELET*9                ! STOCKAGE POUR GRADIENT SI INIT. PAR MC
-! ICOCIB ! NCELBR*9                ! STOCKAGE POUR GRADIENT BORD SI INIT. PAR MC
-! ITPUCO !    -                    ! VARIABLES DU COUPLAGE U-P
-! IDIPAR ! NCELET                  ! DISTANCE A LA FACE DE TYPE 5 (PHASE 1) LA
-!                            PLUS PROCHE
-! IYPPAR ! NCELET                  ! YPLUS ASSOCIE (LES only)
-! IFORBR ! NFABOR*3                ! EFFORTS AUX BORDS (SI POSTTRAITE)
-! IIDFST ! NFABOR                  ! TABLEAU D'INDIRECTION POUR LES STRUCTURES
-!                          MOBILES EN ALE
+  ! Pointeur Dimension       Description
+  ! iicelb ! ncelbr                  ! reperage des cellules de bord
+  ! isrfan ! nfac                    ! surface des faces internes
+  ! isrfbn ! nfabor                  ! surface des faces de bord
+  ! idist  ! nfac                    ! ij.Nij
+  ! idistb ! nfabor                  ! equivalent de idist au bord
+  ! ipond  ! nfac                    ! ponderation (Aij=pond Ai+(1-pond)Aj)
+  ! idijpf ! nfac*ndim               ! vecteur i'j'
+  ! idiipb ! nfac*ndim               ! equivalent de idiipf au bord
+  ! idofij ! nfac*ndim               ! vecteur of a la face ij
 
-!... PARAMETRES DU MODULE THERMIQUE 1D
-! NFPT1D !                         ! NB DE FACES DE BORD AVEC MODULE THERMIQUE 1D
-! INPPT1 ! NFPT1D                  ! NOMBRE DE MAILLES DANS LA PAROI
-! IEPPT1 ! NFPT1D                  ! EPAISSEUR DE LA PAROI
-! IRGPT1 ! NFPT1D                  ! RAISON DU MAILLAGE
-! IIFPT1 ! NFPT1D                  ! NUMERO DE LA FACE
-! ITPPT1 ! NFPT1D                  ! TEMPERATURE DE PAROI
-! IICLT1 ! NFPT1D                  ! TYPE DE CONDITION LIMITE
-! ITEPT1 ! NFPT1D                  ! TEMPERATURE EXTERIEURE
-! IHEPT1 ! NFPT1D                  ! COEFFICIENT D ECHANGE EXTERIEUR
-! IFEPT1 ! NFPT1D                  ! FLUX THERMIQUE EXTERIEUR
-! IXLMT1 ! NFPT1D                  ! DIFFUSIVITE THERMIQUE
-! IRCPT1 ! NFPT1D                  ! RHO*CP
-! IDTPT1 ! NFPT1D                  ! PAS DE TEMPS
+  integer, save :: iicelb ,                                        &
+                   isrfan , isrfbn , idist  , idistb , ipond ,     &
+                   idijpf , idiipb , idofij
 
-integer           icocg  , icocgb , icoci  , icocib ,             &
-                  itpuco , idipar , iyppar , iforbr , iidfst ,    &
-                  nfpt1d , nmxt1d , inppt1 , iifpt1 , iiclt1 ,    &
-                  ieppt1 , irgpt1 , itppt1 ,                      &
-                  itept1 , ihept1 , ifept1 ,                      &
-                  ixlmt1 , ircpt1 , idtpt1
+  !... Auxiliaires independants du nombre de phases
+  !      accessibles directement dans ia, ra
 
-common / ipaux0 / icocg  , icocgb , icoci  , icocib ,             &
-                  itpuco , idipar , iyppar , iforbr , iidfst ,    &
-                  nfpt1d , nmxt1d , inppt1 , iifpt1 , iiclt1 ,    &
-                  ieppt1 , irgpt1 , itppt1 ,                      &
-                  itept1 , ihept1 , ifept1 ,                      &
-                  ixlmt1 , ircpt1 , idtpt1
+  ! Pointeur Dimension       Description
+  ! icocg  ! ncelet*9                ! stockage pour gradient
+  ! icocgb ! ncelbr*9                ! stockage pour gradient bord
+  ! icoci  ! ncelet*9                ! stockage pour gradient si init. par mc
+  ! icocib ! ncelbr*9                ! stockage pour gradient bord si init. par
+  ! itpuco !    -                    ! mc variables du couplage U-P
+  ! idipar ! ncelet                  ! distance a la face de type 5 (phase 1) la
+  !                                    plus proche
+  ! iyppar ! ncelet                  ! yplus associe (LES only)
+  ! iforbr ! nfabor*3                ! efforts aux bords (si posttraite)
+  ! iidfst ! nfabor                  ! tableau d'indirection pour les structures
+  !                                    mobiles EN ALE
 
-!... AUXILIAIRES ACCESSIBLES DIRECTEMENT DANS IA, RA
-!     TOUS CES TABLEAUX SONT (Dimension,NPHAS)
+  !... Parametres du module thermique 1D
+  ! nfpt1d !                         ! nb faces de bord avec module thermique 1D
+  ! inppt1 ! nfpt1d                  ! nombre de mailles dans la paroi
+  ! ieppt1 ! nfpt1d                  ! epaisseur de la paroi
+  ! irgpt1 ! nfpt1d                  ! raison du maillage
+  ! iifpt1 ! nfpt1d                  ! numero de la face
+  ! itppt1 ! nfpt1d                  ! temperature de paroi
+  ! iiclt1 ! nfpt1d                  ! type de condition limite
+  ! itept1 ! nfpt1d                  ! temperature exterieure
+  ! ihept1 ! nfpt1d                  ! coefficient d'echange exterieur
+  ! ifept1 ! nfpt1d                  ! flux thermique exterieur
+  ! ixlmt1 ! nfpt1d                  ! diffusivite thermique
+  ! ircpt1 ! nfpt1d                  ! rho*Cp
+  ! idtpt1 ! nfpt1d                  ! pas de temps
 
-! Pointeur Dimension       Description
-! IITYPF ! NFABOR                  ! TYPE DES FACES DE BORD
-! IITRIF ! NFABOR                  ! INDIRECTION POUR TRI FACES DE BORD
-! IYPLBR ! NFABOR                  ! YPLUS BORD (SI POST-TRAITE)
-! IISYMP ! NFABOR                  ! ZERO POUR ANNULER LE FLUX DE MASSE
-!        !                         !   (SYMETRIES ET PAROIS AVEC CL COUPLEES)
-!        !                         ! UN SINON
-! IIFAPA ! NCELET                  ! NUMERO DE FACE DE BORD 5 LA PLUS PROCHE
-! NCEPDC !                         ! NOMBRE DE CELLULES AVEC PDC
-! IICEPD ! NCEPDC                  ! NUMERO DES CELLULES AVEC PerteDeCharge
-! ICKUPD ! (NCEPDC,6)              ! VALEUR DES COEFF DE PDC
-! NCETSM !                         ! NOMBRE DE CELLULES AVEC TSM
-! IICESM ! NCETSM                  ! NUMERO DES CELLULES AVEC TSMasse
-! IITPSM ! NCETSM                  ! TYPE DE TSM
-! ISMACE ! NCETSM                  ! VALEUR DE TSM
-! IS2KW  ! NCELET                  ! STOCKAGE DE 2 Sij.Sij EN K-OMEGA
-! IDVUKW ! NCELET                  ! STOCKAGE DE DIVU EN K-OMEGA (EN MEME TEMPS QUE S2KW)
+  integer, save :: icocg  , icocgb , icoci  , icocib ,             &
+                   itpuco , idipar , iyppar , iforbr , iidfst ,    &
+                   nfpt1d , nmxt1d , inppt1 , iifpt1 , iiclt1 ,    &
+                   ieppt1 , irgpt1 , itppt1 ,                      &
+                   itept1 , ihept1 , ifept1 ,                      &
+                   ixlmt1 , ircpt1 , idtpt1
 
-integer           iitypf        , iitrif        ,                 &
-                  iisymp        , iyplbr        ,                 &
-                  iifapa(nphsmx), ncepdc(nphsmx),                 &
-                  iicepd(nphsmx), ickupd(nphsmx), ncetsm(nphsmx), &
-                  iicesm(nphsmx), iitpsm(nphsmx), ismace(nphsmx), &
-                  is2kw (nphsmx), idvukw(nphsmx)
-common / iposup / iitypf        , iitrif        ,                 &
-                  iisymp        , iyplbr        ,                 &
-                  iifapa        , ncepdc        ,                 &
-                  iicepd        , ickupd        , ncetsm        , &
-                  iicesm        , iitpsm        , ismace        , &
-                  is2kw         , idvukw
+  !... Auxiliaires accessibles directement dans ia, ra
+  !     tous ces tableaux sont (dimension, nphas)
 
+  ! Pointeur Dimension       Description
+  ! iitypf ! nfabor                  ! type des faces de bord
+  ! iitrif ! nfabor                  ! indirection pour tri faces de bord
+  ! iyplbr ! nfabor                  ! yplus bord (si post-traite)
+  ! iisymp ! nfabor                  ! zero pour annuler le flux de masse
+  !        !                         !   (symetries et parois avec cl couplees)
+  !        !                         ! un sinon
+  ! iifapa ! ncelet                  ! numero de face de bord 5 la plus proche
+  ! ncepdc !                         ! nombre de cellules avec pdc
+  ! iicepd ! ncepdc                  ! numero des cellules avec pertedecharge
+  ! ickupd ! (ncepdc,6)              ! valeur des coeff de pdc
+  ! ncetsm !                         ! nombre de cellules avec tsm
+  ! iicesm ! ncetsm                  ! numero des cellules avec tsmasse
+  ! iitpsm ! ncetsm                  ! type de tsm
+  ! ismace ! ncetsm                  ! valeur de tsm
+  ! is2kw  ! ncelet                  ! stockage de 2 Sij.Sij en k-omega
+  ! idvukw ! ncelet                  ! stockage de divu en k-omega (en meme
+  !                                    temps que s2kw)
 
-!... AUXILIAIRES ACCESSIBLES DIRECTEMENT DANS IA, RA
-!    POUR LA PERODICITE
+  integer, save :: iitypf        , iitrif        ,                 &
+                   iisymp        , iyplbr        ,                 &
+                   iifapa(nphsmx), ncepdc(nphsmx),                 &
+                   iicepd(nphsmx), ickupd(nphsmx), ncetsm(nphsmx), &
+                   iicesm(nphsmx), iitpsm(nphsmx), ismace(nphsmx), &
+                   is2kw (nphsmx), idvukw(nphsmx)
 
-! Pointeur Dimension                 |   Description
-! IDUDXY ! (NCELET-NCEL,3,3,NPHAS)             ! SAUVEGARDE DU GRADIENT DE LA
-!        !                                     ! VITESSE EN CAS DE ROTATION
-! IWDUDX ! (NCELET-NCEL,3,3,NPHAS)             ! TABLEAU DE TRAVAIL LIE A DUDXYZ
-! IDRDXY ! (NCELET-NCEL,6,3,NPHAS)             ! SAUVEGARDE DU GRADIENT DE RIJ
-!        !                                     ! EN CAS DE ROTATION
-! IWDRDX ! (NCELET-NCEL,6,3,NPHAS)             ! TABLEAU DE TRAVAIL LIE A DRDXYZ
+  !... Auxiliaires accessibles directement dans ia, ra
+  !    pour la perodicite
 
-integer            idudxy,idrdxy,iwdudx,iwdrdx
-common / ipaux1 /  idudxy,idrdxy,iwdudx,iwdrdx
+  ! Pointeur Dimension                 |   Description
+  ! idudxy ! (ncelet-ncel,3,3,nphas)   ! sauvegarde du gradient de la
+  !        !                           ! vitesse en cas de rotation
+  ! iwdudx ! (ncelet-ncel,3,3,nphas)   ! tableau de travail lie a dudxyz
+  ! idrdxy ! (ncelet-ncel,6,3,nphas)   ! sauvegarde du gradient de rij
+  !        !                           ! en cas de rotation
+  ! iwdrdx ! (ncelet-ncel,6,3,nphas)   ! tableau de travail lie a drdxyz
 
+  integer, save :: idudxy, idrdxy, iwdudx, iwdrdx
 
-! FIN
+  !=============================================================================
+
+end module pointe

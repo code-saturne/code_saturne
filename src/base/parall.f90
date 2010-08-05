@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,40 +25,132 @@
 
 !-------------------------------------------------------------------------------
 
-!                              parall.h
-!===============================================================================
+! Module for basic MPI and OpenMP parallelism-related values
+
+module parall
+
+  !=============================================================================
+
+  ! irangp : process rank
+  !   = -1 in sequential mode
+  !   =  r (0 < r < n_processes) in distributed parallel run
+  ! nrangp : number of processes (=1 if sequental)
+  ! nthrdi : maximum number of independent interior face subsets in a group
+  ! nthrdi : maximum number of independent boundary face subsets in a group
+  ! ngrpi  : number of interior face groups (> 1 with OpenMP, 1 otherwise)
+  ! ngrpb  : number of boundary face groups (> 1 with OpenMP, 1 otherwise)
+  ! iompli : per-thread bounds for interior faces
+  ! iomplb : per-thread bounds for boundary faces
+  !          (for group j and thread i, loops
+  !           from iompl.(1, j, i) to iompl.(2, j, i)
+
+  integer, save ::  irangp, nrangp, nthrdi, nthrdb, ngrpi, ngrpb
+
+  integer, dimension(:,:,:), allocatable :: iompli
+  integer, dimension(:,:,:), allocatable :: iomplb
+
+  ! Global dimensions (i.e. independent of parallel partitioning)
+  !   ncelgb : global number of cells
+  !   nfacgb : global number of interior faces
+  !   nfbrgb : global number of boundary faces
+  !   nsomgb : global number of vertices
+
+  integer(kind=8), save :: ncelgb, nfacgb, nfbrgb, nsomgb
+
+  ! Forced vectorization flags
+  !   ivecti : force vectorization of interior face -> cell loops (0/1)
+  !   ivectb : force vectorization of boundary face -> cell loops (0/1)
+
+  integer, save :: ivecti , ivectb
+
+contains
+
+  !=============================================================================
+
+  ! Initialize OpenMP-related values
+
+  subroutine init_fortran_omp &
+             (nfac, nfabor, nthrdi_in, nthrdb_in, &
+              ngrpi_in, ngrpb_in, idxfi, idxfb)
+
+    ! Arguments
+
+    integer, intent(in) :: nfac, nfabor
+    integer, intent(in) :: nthrdi_in, nthrdb_in, ngrpi_in, ngrpb_in
+    integer, dimension(*), intent(in) :: idxfi, idxfb
+
+    ! Local variables
+
+    integer ii, jj
+    integer err
+
+    ! Set numbers of threads and groups
+
+    nthrdi = nthrdi_in
+    nthrdb = nthrdb_in
+    ngrpi   = ngrpi_in
+    ngrpb   = ngrpb_in
+
+    if (.not.allocated(iompli)) then
+      allocate(iompli(2, ngrpi, nthrdi), stat=err)
+    endif
+
+    if (err .eq. 0 .and. .not.allocated(iomplb)) then
+      allocate(iomplb(2, ngrpb, nthrdb), stat=err)
+    endif
+
+    if (err /= 0) then
+      write (*, *) "Error allocating thread/group index array."
+      call csexit(err)
+    endif
+
+    ! For group j and thread i, loops on faces from
+    ! iompl.(1, j, i) to iompl.(2, j, i).
+
+    ! By default (i.e. without Open MP), 1 thread and one group
+
+    iompli(1, 1, 1) = 1
+    iompli(2, 1, 1) = nfac
+
+    iomplb(1, 1, 1) = 1
+    iomplb(2, 1, 1) = nfabor
+
+    ! Numberings for OpenMP loops on interior faces
+
+    if (nthrdi.gt.1 .and. ngrpi.gt.1) then
+
+      iompli = 0
+
+      do ii = 1, nthrdi
+        do jj = 1, ngrpi
+          iompli(1, jj, ii) = idxfi((ii-1)*ngrpi*2 + 2*jj - 1) + 1
+          iompli(2, jj, ii) = idxfi((ii-1)*ngrpi*2 + 2*jj)
+        enddo
+      enddo
+
+    endif
+
+    ! Numberings for OpenMP loops on boundary faces
+
+    if (nthrdb.gt.1 .and. ngrpb.gt.1) then
+
+      iomplb = 0
+
+      do ii = 1, nthrdb
+        do jj = 1, ngrpb
+          iomplb(1, jj, ii) = idxfb((ii-1)*ngrpb*2 + 2*jj - 1) + 1
+          iomplb(2, jj, ii) = idxfb((ii-1)*ngrpb*2 + 2*jj)
+        enddo
+      enddo
+
+    endif
+
+    return
+
+  end subroutine init_fortran_omp
+
+  !=============================================================================
+
+end module parall
 
 
-! Gestion du parallellisme
-
-!   irangp : rang du processus
-!     = -1 en mode sequentiel
-!     =  r (0 < r < nb_processus) en execution parallelle distribuee
-!   nrangp : nombre de processus (=1 si sequentiel)
-!   nthrdi : nombre de sous ensembles independants de faces internes max
-!            dans un groupe (>= 1 avec OpenMP, 1 sinon)
-!   nthrdb : nombre de sous ensembles independants de faces de bord max
-!            dans un groupe (>= 1 avec OpenMP, 1 sinon)
-!   ngrpi  : nombre de groupes de faces internes (> 1 avec OpenMP, 1 sinon)
-!   ngrpb  : nombre de groupes de faces de bord (> 1 avec OpenMP, 1 sinon)
-!   iompli : bornes par thread pour les faces internes
-!   iomplb : bornes par thread pour les faces de bord
-!            pour le groupe (couleur) j et le thread i, boucles
-!            de iompl.(1, j, i) à iompl.(2, j, i)
-
-integer           irangp, nrangp, nthrdi, nthrdb, ngrpi, ngrpb,           &
-                  iompli(2, nthrd1, nthrd2), iomplb(2, nthrd1, nthrd2)
-common / iparal / irangp, nrangp, nthrdi, nthrdb, ngrpi, ngrpb,           &
-                  iompli, iomplb
-
-
-! Dimensions globales (i.e. independantes de decoupage parallele)
-!   ncelgb : nombre de cellules global
-!   nfacgb : nombre de faces internes global
-!   nfbrgb : nombre de faces de bord global
-!   nsomgb : nombre de sommets global
-
-integer           ncelgb, nfacgb, nfbrgb, nsomgb
-common / igeogb / ncelgb, nfacgb, nfbrgb, nsomgb
-
-! FIN

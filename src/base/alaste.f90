@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,30 +25,36 @@
 
 !-------------------------------------------------------------------------------
 
-!                              alaste.h
-!===============================================================================
+! Module for ALE with Code_Aster coupling
 
-!  METHODE ALE - MOUVEMENT DE STRUCTURES EN COUPLAGE AVEC CODE_ASTER
+module alaste
 
-! NTCAST : NUMERO D'ITERATION DE COUPLAGE AVEC CODE_ASTER
-! NBASTE : NOMBRE DE STRUCTURES MOBILES
-! NBFAST : NOMBRE DE FACES COUPLEES
-! NBNAST : NOMBRE DE NOEUDS COUPLES
-! ISYNCP : INDICATEUR D'IMPRESSION DES RESULTATS DES DEUX CODES
-!          AUX MEMES INSTANTS (SORTIE ENSIGHT POUR ASTER)
-! ASDDLF : BLOCAGE DES DDL DE FORCE
-! ASDDLC : BLOCAGE DES DDL CINEMATIQUES
+  !=============================================================================
 
-integer           ntcast
-integer           nbaste, nbfast, nbnast
-integer           iforas
-integer           isyncp
-integer           asddlf(3,nastmx), asddlc(3,nastmx)
+  ! Nombre de structures max en ALE et Couplage Code_Aster
 
-common / iaster / ntcast, nbaste, nbfast, nbnast,                 &
-                  iforas,                                         &
-                  isyncp,                                         &
-                  asddlf, asddlc
+  integer nastmx
+  parameter (nastmx=200)
 
-! FIN
+  !  Methode ALE - mouvement de structures en couplage avec Code_Aster
+
+  ! ntcast : numero d'iteration de couplage avec Code_Aster
+  ! nbaste : nombre de structures mobiles
+  ! nbfast : nombre de faces couplees
+  ! nbnast : nombre de noeuds couples
+  ! isyncp : indicateur d'impression des resultats des deux codes
+  !          aux memes instants (sortie EnSight pour Code_Aster)
+  ! asddlf : blocage des ddl de force
+  ! asddlc : blocage des ddl cinematiques
+
+  integer, save ::  ntcast
+  integer, save ::  nbaste, nbfast, nbnast
+  integer, save ::  iforas
+  integer, save ::  isyncp
+  integer, save ::  asddlf(3,nastmx), asddlc(3,nastmx)
+
+  !=============================================================================
+
+end module alaste
+
 

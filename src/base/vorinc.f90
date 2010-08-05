@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,154 +25,132 @@
 
 !-------------------------------------------------------------------------------
 
-!                              vortex.h
-!===============================================================================
+! Module for vortex method for LES boundary conditions
 
-!  METHODE DES VORTEX POUR CONDITIONS AUX LIMITES D'ENTREE EN L.E.S.
+module vorinc
 
-! --------------
-! PARAMETRES MAX
-! --------------
-integer    nentmx, ndatmx
-parameter (nentmx = 10)
-parameter (ndatmx = 10000)
+  !=============================================================================
 
-! NENTMX    : NOMBRE D'ENTREE MAX
-! NDATMX    : NOMBRE DE POINTS MAX POUR LE FICHIER DES DONNEES
+  ! --------------
+  ! Parametres max
+  ! --------------
+  integer entmx, ndatmx
+  parameter (nentmx = 10)
+  parameter (ndatmx = 10000)
 
-! ----------
-! DIMENSIONS
-! ----------
-integer         icvor(nentmx)   , icvor2(nentmx)  ,               &
-                icvmax , nvomax
+  ! nentmx    : nombre d'entree max
+  ! ndatmx    : nombre de points max pour le fichier des donnees
 
-common /idimvo/ icvor  , icvor2 , icvmax , nvomax
+  ! ----------
+  ! Dimensions
+  ! ----------
+  integer, save :: icvor(nentmx), icvor2(nentmx), icvmax , nvomax
 
-! ICVOR  : NOMBRE DE FACES (GLOBAL) UTILISANT DES VORTEX
-!          POUR CHAQUE ENTREE
-! ICVOR2 : COMPTEUR DU NOMBRE LOCAL DE FACES UTILISANT DES VORTEX
-! ICVMAX : NOMBRE MAX DE FACES UTILISANT DES VORTEX (SUR TOUTES ENTREES
-!          CONFONDUES)
-! NVOMAX : NOMBRE MAX DE VORTEX UTILISE (TOUTES ENTREES CONFONDUES)
+  ! icvor  : nombre de faces (global) utilisant des vortex
+  !          pour chaque entree
+  ! icvor2 : compteur du nombre local de faces utilisant des vortex
+  ! icvmax : nombre max de faces utilisant des vortex (sur toutes entrees
+  !          confondues)
+  ! nvomax : nombre max de vortex utilise (toutes entrees confondues)
 
-! ---------
-! POINTEURS
-! ---------
+  ! ---------
+  ! pointeurs
+  ! ---------
 
-integer         iirepv , iifagl , iivrce ,                        &
-                ixyzv  , ivisv  ,                                 &
-                iyzcel , iuvort , ivvort , iwvort ,               &
-                iyzvor , iyzvoa , isignv , ixsigm ,               &
-                ixgamm , ixtmp  , ixtmpl ,                        &
-                iw1x   , iw1y   , iw1z   , iw1v   ,               &
-                iw2x   , iw2y   , iw2z   , iw2v
+  integer, save ::  iirepv , iifagl , iivrce ,                    &
+                    ixyzv  , ivisv  ,                             &
+                    iyzcel , iuvort , ivvort , iwvort ,           &
+                    iyzvor , iyzvoa , isignv , ixsigm ,           &
+                    ixgamm , ixtmp  , ixtmpl ,                    &
+                    iw1x   , iw1y   , iw1z   , iw1v   ,           &
+                    iw2x   , iw2y   , iw2z   , iw2v
 
-common /iivort/ iirepv , iifagl , iivrce ,                        &
-                ixyzv  , ivisv  ,                                 &
-                iyzcel , iuvort , ivvort , iwvort ,               &
-                iyzvor , iyzvoa , isignv , ixsigm ,               &
-                ixgamm , ixtmp  , ixtmpl ,                        &
-                iw1x   , iw1y   , iw1z   , iw1v   ,               &
-                iw2x   , iw2y   , iw2z   , iw2v
+  ! iirepv    : debut du tableau associant aux faces de bord
+  !             le numero d'une entree
+  ! iifagl    : debut du tableau de connectivite
+  ! iivrce    : debut du tableau reperant la cellule la plus voisine
+  !             de chaque vortex
+  ! ixyzv     : debut du tableaux contenant les coordonnees de
+  !             toutes les faces d'entree
+  ! ivisv     : debut du tableau contenant la viscosite sur
+  !             toutes les faces d'entree
+  ! iyzcel    : debut du tableau contenant les coordonnees des
+  !             faces d'entree dans le repere local
+  ! iuvort,...: debuts des tableaux contenant les composantes de vitesse
+  ! iyzvor    : debut du tableau contenant la position des vortex
+  !             dans le repere local
+  ! iyzvoa    : debut du tableau contenant la position des vortex
+  !             dans le repere local au pas de temps precedent
+  ! isignv    : debut du tableau contenant le sens de rotation des
+  !             vortex
+  ! ixsigm    : debut du tableau contenant la taille des vortex
+  ! ixgamm    : debut du tableau contenant l'intensite des vortex
+  ! ixtmp     : debut du tableau contenant le temps cumule
+  ! ixtmpl    : debut du tableau contenant le temps de vie des vortex
+  ! iw1x,...  : debut des tableaux de travails servant a communiquer
+  !             les donnees aux entrees a tous les processeurs
+  !             (plus utilise apres vorpre)
 
-! IIREPV    : DEBUT DU TABLEAU ASSOCIANT AUX FACES DE BORD
-!             LE NUMERO D'UNE ENTREE
-! IIFAGL    : DEBUT DU TABLEAU DE CONNECTIVITE
-! IIVRCE    : DEBUT DU TABLEAU REPERANT LA CELLULE LA PLUS VOISINE
-!             DE CHAQUE VORTEX
-! IXYZV     : DEBUT DU TABLEAUX CONTENANT LES COORDONNEES DE
-!             TOUTES LES FACES D'ENTREE
-! IVISV     : DEBUT DU TABLEAU CONTENANT LA VISCOSITE SUR
-!             TOUTES LES FACES D'ENTREE
-! IYZCEL    : DEBUT DU TABLEAU CONTENANT LES COORDONNEES DES
-!             FACES D'ENTREE DANS LE REPERE LOCAL
-! IUVORT,...: DEBUTS DES TABLEAUX CONTENANT LES COMPOSANTES DE VITESSE
-! IYZVOR    : DEBUT DU TABLEAU CONTENANT LA POSITION DES VORTEX
-!             DANS LE REPERE LOCAL
-! IYZVOA    : DEBUT DU TABLEAU CONTENANT LA POSITION DES VORTEX
-!             DANS LE REPERE LOCAL AU PAS DE TEMPS PRECEDENT
-! ISIGNV    : DEBUT DU TABLEAU CONTENANT LE SENS DE ROTATION DES
-!             VORTEX
-! IXSIGM    : DEBUT DU TABLEAU CONTENANT LA TAILLE DES VORTEX
-! IXGAMM    : DEBUT DU TABLEAU CONTENANT L'INTENSITE DES VORTEX
-! IXTMP     : DEBUT DU TABLEAU CONTENANT LE TEMPS CUMULE
-! IXTMPL    : DEBUT DU TABLEAU CONTENANT LE TEMPS DE VIE DES VORTEX
-! IW1X,..  : DEBUT DES TABLEAUX DE TRAVAILS SERVANT A COMMUNIQUER
-!             LES DONNEES AUX ENTREES A TOUS LES PROCESSEURS
-!             (PLUS UTILISE APRES VORPRE)
+  ! -----------------
+  ! Options de calcul
+  ! -----------------
 
-! -----------------
-! OPTIONS DE CALCUL
-! -----------------
+  integer, save :: nnent, nvort(nentmx), initvo(nentmx),          &
+                   icas(nentmx), itlivo(nentmx),                  &
+                   isgmvo(nentmx), idepvo(nentmx),                &
+                   iclvor(4,nentmx), ndat(nentmx)
 
-integer         nnent  , nvort(nentmx)   ,                        &
-                initvo(nentmx)  ,                                 &
-                icas(nentmx)    , itlivo(nentmx)  ,               &
-                isgmvo(nentmx)  , idepvo(nentmx)  ,               &
-                iclvor(4,nentmx), ndat(nentmx)
+  ! nnent  : nombre d entrees utilisees
+  ! nvort  : nombre de vortex
+  ! initvo : indicateur de reinitialisation
+  ! icas   : type de geometrie pour l'entree
+  ! itlivo : type de modele pour la duree de vie
+  ! isgmvo : type de modele pour la taille des vortex
+  ! idepvo : type de modele pour la marche en temps
+  ! iclvor : type de condition aux limites
+  ! ndat   : nombre de lignes du fichier de donnees
 
-common /ioptvo/ nnent  , nvort  , initvo ,                        &
-                icas   , itlivo , isgmvo , idepvo ,               &
-                iclvor , ndat
+  ! -------
+  ! Donnees
+  ! -------
 
-! NNENT  : NOMBRE D ENTREES UTILISEES
-! NVORT  : NOMBRE DE VORTEX
-! INITVO : INDICATEUR DE REINITIALISATION
-! ICAS   : TYPE DE GEOMETRIE POUR L'ENTREE
-! ITLIVO : TYPE DE MODELE POUR LA DUREE DE VIE
-! ISGMVO : TYPE DE MODELE POUR LA TAILLE DES VORTEX
-! IDEPVO : TYPE DE MODELE POUR LA MARCHE EN TEMPS
-! ICLVOR : TYPE DE CONDITION AUX LIMITES
-! NDAT   : NOMBRE DE LIGNES DU FICHIER DE DONNEES
+  double precision, save :: tlimvo(nentmx), xsgmvo(nentmx), ud(nentmx),      &
+                            xdat(ndatmx,nentmx),                             &
+                            ydat(ndatmx,nentmx), zdat(ndatmx,nentmx),        &
+                            udat(ndatmx,nentmx),                             &
+                            vdat(ndatmx,nentmx), wdat(ndatmx,nentmx),        &
+                            dudat(ndatmx,nentmx),                            &
+                            kdat(ndatmx,nentmx), epsdat(ndatmx,nentmx),      &
+                            udebit(nentmx), kdebit(nentmx), edebit(nentmx),  &
+                            dir1(3,nentmx), dir2(3,nentmx), dir3(3,nentmx),  &
+                            cen(3,nentmx) , surf(3,nentmx),                  &
+                            ymax(nentmx)  , ymin(nentmx),                    &
+                            zmax(nentmx)  , zmin(nentmx),                    &
+                            xsurfv(nentmx), llz(nentmx),                     &
+                            lly(nentmx)   , lld(nentmx)
 
-! -------
-! DONNEES
-! -------
+  ! tlimvo      : temps de vie max des vortex impose par l'utilisateur
+  ! xsgmvo      : diametre des vortex impose par l'utilisateur
+  ! ud          : vitesse de deplacement (max) imposee par l'utilisateur
+  ! xdat, ...   : coordonnees des points ou sont connues les donnees
+  ! udat        : vitesse moyenne principale (fichier de donnees)
+  ! vdat,wdat   : vitesse moyenne transverse (fichier de donnees)
+  ! dudat       : derive normale de la vitesse principale (fichier d'entree)
+  ! kdat        : ec moyenne (fichier d'entree)
+  ! epsdat      : dissipation (fichier d'entree)
+  ! udebit      : vitesse moyenne imposee par l'utilisateur en entree
+  ! kdebit      : ec imposee par l'utilisateur en entree
+  ! edebit      : dissipation imposee par l'utilisateur en entree
+  ! dir1,...    : vecteurs definissant le repere local dans le plan d'entree
+  ! cen         : coordonnees du centre de l'entree
+  ! surf        : vecteur surface du plan d'entree (supposee plane)
+  ! xmax,...    : dimensions max de l'entree dans le repere local
+  ! llz,lly,lld : dimensions de l'entree dans le calcul
 
-double precision tlimvo(nentmx), xsgmvo(nentmx), ud(nentmx),      &
-                 xdat(ndatmx,nentmx),                             &
-                 ydat(ndatmx,nentmx), zdat(ndatmx,nentmx),        &
-                 udat(ndatmx,nentmx),                             &
-                 vdat(ndatmx,nentmx), wdat(ndatmx,nentmx),        &
-                 dudat(ndatmx,nentmx),                            &
-                 kdat(ndatmx,nentmx), epsdat(ndatmx,nentmx),      &
-                 udebit(nentmx), kdebit(nentmx), edebit(nentmx),  &
-                 dir1(3,nentmx), dir2(3,nentmx), dir3(3,nentmx),  &
-                 cen(3,nentmx) , surf(3,nentmx),                  &
-                 ymax(nentmx)  , ymin(nentmx),                    &
-                 zmax(nentmx)  , zmin(nentmx),                    &
-                 xsurfv(nentmx), llz(nentmx),                     &
-                 lly(nentmx)   , lld(nentmx)
+  character*50, save :: ficvor(nentmx)
 
-common /roptvo/  tlimvo , xsgmvo , ud     ,                       &
-                 xdat   , ydat   , zdat   ,                       &
-                 udat   , vdat   , wdat   ,                       &
-                 dudat  , kdat   ,                                &
-                 epsdat , udebit , kdebit , edebit ,              &
-                 dir1   , dir2   , dir3   , cen    , surf   ,     &
-                 ymax   , ymin   , zmax   , zmin   ,              &
-                 xsurfv , llz    , lly    , lld
+  ! ficvor : nom du fichier de donnee
+  !=============================================================================
 
+end module vorinc
 
-! TLIMVO      : TEMPS DE VIE MAX DES VORTEX IMPOSE PAR L'UTILISATEUR
-! XSGMVO      : DIAMETRE DES VORTEX IMPOSE PAR L'UTILISATEUR
-! UD          : VITESSE DE DEPLACEMENT (MAX) IMPOSEE PAR L'UTILISATEUR
-! XDAT, ...   : COORDONNEES DES POINTS OU SONT CONNUES LES DONNEES
-! UDAT        : VITESSE MOYENNE PRINCIPALE (FICHIER DE DONNEES)
-! VDAT,WDAT   : VITESSE MOYENNE TRANSVERSE (FICHIER DE DONNEES)
-! DUDAT       : DERIVE NORMALE DE LA VITESSE PRINCIPALE (FICHIER D'ENTREE)
-! KDAT        : EC MOYENNE (FICHIER D'ENTREE)
-! EPSDAT      : DISSIPATION (FICHIER D'ENTREE)
-! UDEBIT      : VITESSE MOYENNE IMPOSEE PAR L'UTILISATEUR EN ENTREE
-! KDEBIT      : EC IMPOSEE PAR L'UTILISATEUR EN ENTREE
-! EDEBIT      : DISSIPATION IMPOSEE PAR L'UTILISATEUR EN ENTREE
-! DIR1,...    : VECTEURS DEFINISSANT LE REPERE LOCAL DANS LE PLAN D'ENTREE
-! CEN         : COORDONNEES DU CENTRE DE L'ENTREE
-! SURF        : VECTEUR SURFACE DU PLAN D'ENTREE (SUPPOSEE PLANE)
-! XMAX,...    : DIMENSIONS MAX DE L'ENTREE DANS LE REPERE LOCAL
-! LLZ,LLY,LLD : DIMENSIONS DE L'ENTREE DANS LE CALCUL
-
-character*50     ficvor(nentmx)
-common /coptvo/  ficvor
-
-! FICVOR : NOM DU FICHIER DE DONNEE

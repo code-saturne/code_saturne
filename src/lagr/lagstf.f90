@@ -63,22 +63,22 @@ subroutine lagstf &
 !            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
 !     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
 !            --- tableau de travail
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use cstnum
+use entsor
+use lagpar
+use lagran
 
 !===============================================================================
 
 implicit none
-
-!===============================================================================
-! Common blocks
-
-include "paramx.f90"
-include "numvar.f90"
-include "cstnum.f90"
-include "entsor.f90"
-include "lagpar.f90"
-include "lagran.f90"
-
-!===============================================================================
 
 ! Arguments
 
@@ -92,7 +92,6 @@ double precision parbor(nfabor, nvisbr), unsnbr(nfabor)
 integer          nbrfac , ifac
 
 !==============================================================================
-
 
 nbrfac = 0
 

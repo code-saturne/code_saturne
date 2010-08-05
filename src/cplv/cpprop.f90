@@ -58,28 +58,28 @@ subroutine cpprop &
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use ppppar
+use ppthch
+use ppcpfu
+use coincl
+use cpincl
+use ppincl
+use ihmpre
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "dimens.f90"
-include "numvar.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "entsor.f90"
-include "cstnum.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "ppcpfu.f90"
-include "coincl.f90"
-include "cpincl.f90"
-include "ppincl.f90"
-include "ihmpre.f90"
-
-!===============================================================================
 
 ! Arguments
 

@@ -87,31 +87,31 @@ subroutine ecrava &
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens, only: ndimfb
+use numvar
+use cstphy
+use entsor
+use pointe
+use optcal
+use albase
+use alstru
+use alaste
+use ppppar
+use ppthch
+use ppincl
+use coincl
+use cpincl
+use fuincl
+use elincl
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "dimfbr.f90"
-include "paramx.f90"
-include "numvar.f90"
-include "cstphy.f90"
-include "entsor.f90"
-include "pointe.f90"
-include "optcal.f90"
-include "albase.f90"
-include "alstru.f90"
-include "alaste.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "ppincl.f90"
-include "coincl.f90"
-include "cpincl.f90"
-include "fuincl.f90"
-include "elincl.f90"
-
-!===============================================================================
 
 ! Arguments
 

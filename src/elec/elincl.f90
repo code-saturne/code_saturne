@@ -25,141 +25,125 @@
 
 !-------------------------------------------------------------------------------
 
-!                             elincl.h
+! Module for electric arcs
 
-!===============================================================================
+module elincl
 
-!            INCLUDE POUR LES VERSION ELECTRIQUES
+  !=============================================================================
 
-!-------------------------------------------------------------------------------
+  use paramx
+  use ppthch
 
-!--> DEFINITION DES PARAMETERS
-!    =========================
-
-!     PERMVI : Mu zero, permeabilite magnetique du vide H/m
-!     EPSZER : Epsilon zero, permittivite du vide F/m
-
-double precision permvi            , epszer
-parameter      ( permvi = 1.2566d-6, epszer = 8.854d-12 )
-
-!--> DONNEES EN COMMON POUR LE CHAUFFAGE EFFET JOULE
-!    ===============================================
-
-!     TH, NPOT et NPO sont deja dans ppthch.h
-
-! ----- Fournies par l'utilisateur
-!       IENTM1       --> indicateur entree matiere premiere
-!       IELPH1       --> indicateur electrode phase 1
-!       IELPH2       --> indicateur electrode phase 2
-!       IELPH3       --> indicateur electrode phase 3
-!       IELNEU       --> indicateur electrode neutre
-!       ENH          --> tabulation enthalpie(temperature)
-!       USRHO        -->  - - - - - inverse masse volumique - - -
-!       SIG          -->  - - - - - conductivite  - - - -
-!       KAB          -->  - - - - - coeff absorption  - -
-!       VIS          -->  - - - - - viscosite - - - - - -
-!       LCP          -->  - - - - - Lambda/Cp
-
-integer           ientm1(ntypmx),ielph1(ntypmx),ielph2(ntypmx)
-integer           ielph3(ntypmx),ielneu(ntypmx)
-common / ichjou / ientm1        ,ielph1        ,ielph2       ,    &
-                  ielph3        ,ielneu
+  !=============================================================================
 
 
-!       ENHEL        --> tabulation enthalpie      (temperature)
-!       RHOEL        -->  - - - - - masse volumique - - -
-!       CPEL         -->  - - - - - CP             - - -
-!       SIGEL        -->  - - - - - conductivite elec  - - - -
-!       XLABEL        -->  - - - - -  conductivite thermique  - -
-!       XKABEL        -->  - - - - -  coeff absorption  (pour Srad)- -
-!       VISEL        -->  - - - - - viscosite dynamique - - - - - -
+  !--> DEFINITION DES PARAMETERS
+  !    =========================
 
-double precision  rhoel (ngazgm,npot), cpel  (ngazgm,npot)
-double precision  sigel (ngazgm,npot), visel (ngazgm,npot)
-double precision  xlabel(ngazgm,npot), xkabel(ngazgm,npot)
-common / rchjou / rhoel              , cpel               ,       &
-                  sigel              , visel              ,       &
-                  xlabel             , xkabel
+  !     PERMVI : Mu zero, permeabilite magnetique du vide H/m
+  !     EPSZER : Epsilon zero, permittivite du vide F/m
 
+  double precision permvi            , epszer
+  parameter      ( permvi = 1.2566d-6, epszer = 8.854d-12 )
 
-! CL sur les electrodes
+  !--> DONNEES EN COMMON POUR LE CHAUFFAGE EFFET JOULE
+  !    ===============================================
 
-integer nelemx,nbtrmx
-parameter (nelemx = 1000 , nbtrmx = 100)
+  !     TH, NPOT et NPO sont deja dans ppthch.h
 
-integer          nbelec , nbtrf , ntfref
-common /eletrf / nbelec , nbtrf , ntfref
+  ! ----- Fournies par l'utilisateur
+  !       IENTM1       --> indicateur entree matiere premiere
+  !       IELPH1       --> indicateur electrode phase 1
+  !       IELPH2       --> indicateur electrode phase 2
+  !       IELPH3       --> indicateur electrode phase 3
+  !       IELNEU       --> indicateur electrode neutre
+  !       ENH          --> tabulation enthalpie(temperature)
+  !       USRHO        -->  - - - - - inverse masse volumique - - -
+  !       SIG          -->  - - - - - conductivite  - - - -
+  !       KAB          -->  - - - - - coeff absorption  - -
+  !       VIS          -->  - - - - - viscosite - - - - - -
+  !       LCP          -->  - - - - - Lambda/Cp
 
-integer        ielecc(nelemx),ielect(nelemx),ielecb(nelemx)
-common/eletrf/ielecc         ,ielect        ,ielecb
+  integer, save ::           ientm1(ntypmx),ielph1(ntypmx),ielph2(ntypmx)
+  integer, save ::           ielph3(ntypmx),ielneu(ntypmx)
 
-integer       ibrpr(nbtrmx),ibrsec(nbtrmx)
-common/brtrsf/ibrpr        ,ibrsec
+  !       ENHEL        --> tabulation enthalpie      (temperature)
+  !       RHOEL        -->  - - - - - masse volumique - - -
+  !       CPEL         -->  - - - - - CP             - - -
+  !       SIGEL        -->  - - - - - conductivite elec  - - - -
+  !       XLABEL        -->  - - - - -  conductivite thermique  - -
+  !       XKABEL        -->  - - - - -  coeff absorption  (pour Srad)- -
+  !       VISEL        -->  - - - - - viscosite dynamique - - - - - -
 
-double precision tenspr(nbtrmx),rnbs(nbtrmx)
-double precision zr(nbtrmx)    ,zi(nbtrmx)
-common/crtrsf/   tenspr , rnbs , zr , zi
+  double precision, save ::  rhoel (ngazgm,npot), cpel  (ngazgm,npot)
+  double precision, save ::  sigel (ngazgm,npot), visel (ngazgm,npot)
+  double precision, save ::  xlabel(ngazgm,npot), xkabel(ngazgm,npot)
 
-double precision uroff(nbtrmx)    ,uioff(nbtrmx)
-common/offser/   uroff            ,uioff
+  ! CL sur les electrodes
 
-!--> PARAMETRES POUR LA VERSION ARC ELECTRIQUE
-!    ========================================
+  integer nelemx,nbtrmx
+  parameter (nelemx = 1000 , nbtrmx = 100)
 
-!     IXKABE : valeur lue dans le fichier dp_elec
-!             = 0 la derniere colonne du fichier est lue mais pas utilisee
-!             = 1 la derniere colonne du fivhier represente le coefficient
-!                 d'absorption
-!             = 2 la derniere colonne du fivhier represente le TS radiatif
+  integer, save ::        nbelec , nbtrf , ntfref
+  integer, save ::        ielecc(nelemx),ielect(nelemx),ielecb(nelemx)
 
-integer           ixkabe
-common / ioptel / ixkabe
+  integer, save ::       ibrpr(nbtrmx),ibrsec(nbtrmx)
 
+  double precision, save :: tenspr(nbtrmx),rnbs(nbtrmx)
+  double precision, save :: zr(nbtrmx)    ,zi(nbtrmx)
 
+  double precision, save :: uroff(nbtrmx)    ,uioff(nbtrmx)
 
-!    Grandeurs necessaires au claquage
+  !--> PARAMETRES POUR LA VERSION ARC ELECTRIQUE
+  !    ========================================
 
-!      NTDCLA : iterration de debut du claquage
-!      ICLAQ  : indicateur pour savoir si on fait actuellement un claquage
-!                = 0 Pas de claquage
-!                = 1 Claquage
-!       XCLAQ ,YCLAQ ZCLAQ : Position de point de claquage
+  !     IXKABE : valeur lue dans le fichier dp_elec
+  !             = 0 la derniere colonne du fichier est lue mais pas utilisee
+  !             = 1 la derniere colonne du fivhier represente le coefficient
+  !                 d'absorption
+  !             = 2 la derniere colonne du fivhier represente le TS radiatif
 
-integer           ntdcla , iclaq
-common / iclaqu / ntdcla , iclaq
+  integer, save ::           ixkabe
 
-double precision  xclaq , yclaq , zclaq
-common / rclaqu / xclaq , yclaq , zclaq
+  !    Grandeurs necessaires au claquage
 
+  !      NTDCLA : iterration de debut du claquage
+  !      ICLAQ  : indicateur pour savoir si on fait actuellement un claquage
+  !                = 0 Pas de claquage
+  !                = 1 Claquage
+  !       XCLAQ ,YCLAQ ZCLAQ : Position de point de claquage
 
-!--> DONNEES SUR LA CORRECTION DES VARIABLES ELECTRIQUES
-!    EN FONCTION D'UNE INTENSITE DE COURANT DONNEES
-!    ========================================
+  integer, save ::           ntdcla , iclaq
 
-!     IELCOR : = 0 pas de correction
-!              = 1 correction
+  double precision, save ::  xclaq , yclaq , zclaq
 
-!     COUIMP : intensite de courant impose par l'utilisateur
-!                pour Arc Electrique
-!     PUISIM : puissance imposee pour Joule
-!     DPOT   : Delta du potentiel electrique entre l'Anode et la cathode
-!              (arc et Joule)
-!     COEJOU : coefficient de correction pour version Joule
+  !--> DONNEES SUR LA CORRECTION DES VARIABLES ELECTRIQUES
+  !    EN FONCTION D'UNE INTENSITE DE COURANT DONNEES
+  !    ========================================
 
-integer           ielcor
-common / iecorr / ielcor
+  !     IELCOR : = 0 pas de correction
+  !              = 1 correction
 
-double precision  couimp , dpot , puisim , coejou, elcou
-common / recorr / couimp , dpot , puisim , coejou, elcou
+  !     COUIMP : intensite de courant impose par l'utilisateur
+  !                pour Arc Electrique
+  !     PUISIM : puissance imposee pour Joule
+  !     DPOT   : Delta du potentiel electrique entre l'Anode et la cathode
+  !              (arc et Joule)
+  !     COEJOU : coefficient de correction pour version Joule
 
-!--> DONNEES POUR LES ESPECES AYANT UN IMPACT
-!    SUR LE PROBLEME ELECTRIQUE
-!    ========================================
+  integer, save ::           ielcor
 
-!     QESPEL : Charge massique des especes  C/kg
-!     SUSCEP : Susceptibilite (relation champ - mobilite) m2/s/V
+  double precision, save ::  couimp , dpot , puisim , coejou, elcou
 
-double precision   qespel(ngazgm), suscep(ngazgm)
-common / rdpbel /  qespel        , suscep
+  !--> DONNEES POUR LES ESPECES AYANT UN IMPACT
+  !    SUR LE PROBLEME ELECTRIQUE
+  !    ========================================
 
+  !     QESPEL : Charge massique des especes  C/kg
+  !     SUSCEP : Susceptibilite (relation champ - mobilite) m2/s/V
 
+  double precision, save ::   qespel(ngazgm), suscep(ngazgm)
+
+  !=============================================================================
+
+end module elincl

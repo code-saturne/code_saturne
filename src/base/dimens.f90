@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,26 +25,33 @@
 
 !-------------------------------------------------------------------------------
 
-!                              dimens.h
-!===============================================================================
+! Module for dimensions
 
-!... DONNEES DU MAILLAGE
+module dimens
 
-integer           ncelet,ncel,nfac,nfabor,ncelbr,                 &
-                  nprfml,nfml,nnod,lndfac,lndfbr
-common / igeome / ncelet,ncel,nfac,nfabor,ncelbr,                 &
-                  nprfml,nfml,nnod,lndfac,lndfbr
+  !=============================================================================
 
-integer           ndim
-common / indim3 / ndim
+  ! Mesh and field data
 
-integer           nvar, nscal, nvisls, nphas
-common / ivaria / nvar, nscal, nvisls, nphas
+  !=============================================================================
 
-integer           ncofab
-common / ipclim / ncofab
+  integer, save :: ncelet, ncel, nfac, nfabor, ncelbr,   &
+                   nprfml, nfml, nnod, lndfac, lndfbr
 
-integer           nproce, nprofa, nprofb, nfluma
-common / iprpph / nproce, nprofa, nprofb, nfluma
+  integer, save :: ndim
 
-! FIN
+  integer, save :: nvar, nscal, nvisls, nphas
+
+  integer, save :: ncofab
+
+  integer, save :: nproce, nprofa, nprofb, nfluma
+
+  ! Fake dimension for arrays propfb, coefa and coefb
+  ! where nfabor = 0 (to avoid issues with array bounds when
+  ! multidimensional arrays have size nfabor in one dimension)
+
+  integer, save :: ndimfb
+
+  !=============================================================================
+
+end module dimens

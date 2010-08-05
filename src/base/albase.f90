@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,35 +25,37 @@
 
 !-------------------------------------------------------------------------------
 
-!                              albase.h
-!===============================================================================
+! Module for multigrid parameters
 
-!  METHODE ALE
-!  IALE   : UTILISATION DE LA METHODE ALE
-!         = 0 SANS METHODE ALE
-!         = 1 AVEC METHODE ALE
-!  IIMPAL : POINTEUR SUR IMPALE, INDICATEUR DE DEPLACEMENT IMPOSE
-!  IXYZN0 : POINTEUR SUR XYZNO0, POSITION INITIALE DU MAILLAGE
-!  IDEPAL : POINTEUR SUR DEPALE, DEPLACEMENT DU MAILLAGE
-!  IIALTY : POINTEUR SUR IALTYB, TYPE DE BORD
-!  NALINF : NOMBRE D'ITERATIONS D'INITIALISATION DU FLUIDE
-!  NALIMX : NOMBRE MAXIMAL D'ITERATIONS D'IMPLICITATION DU DEPLACEMENT
-!           DES STRUCTURES
-!  IORTVM : TYPE DE VISCOSITE DE MAILLAGE
-!         = 0 ISOTROPE
-!         = 1 ORTHOTROPE
-!  EPALIM : PRECISION RELATIVE D'IMPLICITATION DU DEPLACEMENT DES
-!           STRUCTURES
-!  ITALIN : ITERATION D'INITIALISATION DE l'ALE
-!         = 0 NON
-!         = 1 OUI
+module albase
 
-integer           iale  , iimpal, ixyzn0, idepal, iialty, nalinf
-integer           nalimx, iortvm, italin
-common / icmale / iale  , iimpal, ixyzn0, idepal, iialty, nalinf, &
-                  nalimx, iortvm, italin
+  !=============================================================================
 
-double precision epalim
-common / rcmale / epalim
-! FIN
+  !  Methode ale
+  !  iale   : utilisation de la methode ALE
+  !         = 0 sans methode ALE
+  !         = 1 avec methode ALE
+  !  iimpal : pointeur sur impale, indicateur de deplacement impose
+  !  ixyzn0 : pointeur sur xyzno0, position initiale du maillage
+  !  idepal : pointeur sur depale, deplacement du maillage
+  !  iialty : pointeur sur ialtyb, type de bord
+  !  nalinf : nombre d'iterations d'initialisation du fluide
+  !  nalimx : nombre maximal d'iterations d'implicitation du deplacement
+  !           des structures
+  !  iortvm : type de viscosite de maillage
+  !         = 0 isotrope
+  !         = 1 orthotrope
+  !  epalim : precision relative d'implicitation du deplacement des
+  !           structures
+  !  italin : iteration d'initialisation de l'ALE
+  !         = 0 non
+  !         = 1 oui
 
+  integer, save :: iale  , iimpal, ixyzn0, idepal, iialty, nalinf
+  integer, save :: nalimx, iortvm, italin
+
+  double precision, save :: epalim
+
+  !=============================================================================
+
+end module albase

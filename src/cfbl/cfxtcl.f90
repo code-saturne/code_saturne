@@ -150,28 +150,28 @@ subroutine cfxtcl &
 !            --- tableau de travail
 !===============================================================================
 
-implicit none
-
 !===============================================================================
-! Common blocks
+! Module files
 !===============================================================================
 
 ! Arguments
 
-include "paramx.f90"
-include "numvar.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "cstnum.f90"
-include "pointe.f90"
-include "entsor.f90"
-include "parall.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "ppincl.f90"
-include "cfpoin.f90"
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use pointe
+use entsor
+use parall
+use ppppar
+use ppthch
+use ppincl
+use cfpoin
 
 !===============================================================================
+
+implicit none
 
 ! Arguments
 

@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,159 +25,81 @@
 
 !-------------------------------------------------------------------------------
 
-!                              paramx.h
-!===============================================================================
-
-
-
-
-
-!                         =================
-!                         =================
-
-!                             ATTENTION
-
-!                         =================
-!                         =================
-
-
-
-
-
-
-!              LA MODIFICATION DES PARAMETRES CI DESSOUS
-
-
-
-!                           EST INTERDITE
-
-!                         =================
-!                         =================
-
-
-
-
-
-
-
-
-!       Elle demande la recompilation de la totalite de la bibliotheque
-!         operation qui ne peut etre effectuee que si l'on dispose de
-!         la totalite des sources.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-! PARAMETRES DIVERS
-! =================
-
-! NPHSMX : NOMBRE MAX DE PHASES
-!          (keep it coherent with CS_NPHSMX in cs_perio.h)
-! NSCAMX : NOMBRE MAX DE SCALAIRES
-! NVARMX : NOMBRE MAX DE VARIABLES =
-!          NOMBRE MAX DE SCALAIRES + 12 (U,V,W,P,Rij,E,ALP)*NPHSMX
-! NPRCMX : NOMBRE MAX DE PROPRIETES PHYSIQUES AUX CELLULES (TOTAL) =
-!          NSCAMX (Lambda) + 7 (RHO,CP,VISCL,VISCT,COU,FOU,IPRTOT) NPHSMX
-!                          + 4 (ESTIM) NPHSMX
-! NPRFMX : NOMBRE MAX DE PROPRIETES PHYSIQUES AUX FACES INTERNES =
-!          NSCAMX (Flumas) + 2*NPHSMX(Flumas,ALP)
-! NPRBMX : NOMBRE MAX DE PROPRIETES PHYSIQUES AUX FACES DE BORD =
-!          NSCAMX (Flumab) + 3*NPHSMX(Flumab,ALP, ROMB)
-! NPROMX : NOMBRE MAX DE PROPRIETES PHYSIQUES TOUT CONFONDU
-!          Majore par NPRCMX+NPRFMX+NPRBMX
-! NGRDMX : NOMBRE MAX DE GRANDEURS =
-!          NVARMX + NPROMX
-! NSMAMX : NOMBRE MAX DE CASES POUR LES TABLEAUX TERMES SOURCE DE MASSE
-!          NVARMX + NPHSMX pour SMACEL
-! NVPPMX : NOMBRE DE VARIABLES POUR AFFICHAGES
-!          NGRDMX + 20 (20 couvre DT, TPUCOU, et une marge de 16 ...)
-
-integer   nphsmx, nscamx, nvarmx, nprcmx, nprfmx, nprbmx, npromx
-integer   ngrdmx, nsmamx, nvppmx
-parameter(nphsmx=1)
-parameter(nscamx=200)
-parameter(nvarmx=nscamx+12*nphsmx)
-parameter(nprcmx=nscamx+11*nphsmx)
-parameter(nprfmx=nscamx+ 2*nphsmx)
-parameter(nprbmx=nscamx+ 3*nphsmx)
-parameter(npromx=nprcmx+ nprfmx+nprbmx)
-parameter(ngrdmx=nvarmx+ npromx)
-parameter(nsmamx=nvarmx+ nphsmx)
-parameter(nvppmx=ngrdmx+20)
-
-! NUSHMX : NOMBRE MAX DE FICHIERS UTILISATEUR POUR HISTORIQUES
-integer    nushmx
-parameter(nushmx=16)
-
-! NUSRMX : NOMBRE MAX DE FICHIERS UTILISATEUR
-integer    nusrmx
-parameter(nusrmx=10)
-
-! NCAPTM : NOMBRE MAX DE SONDES (POUR HISTORIQUES)
-!          Voir le format associe dans ecrhis
-integer    ncaptm
-parameter(ncaptm=100)
-
-! NTYPMX NOMBRE DE TYPES DE CONDITIONS AUX LIMITES POSSIBLES
-
-integer    ntypmx
-parameter(ntypmx=200)
-
-integer    iindef, ientre, isolib, isymet, iparoi,                &
-           iparug, iesicf, isspcf, isopcf, ierucf,                &
-           ieqhcf, icscpl
-
-parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
-          iparug=6, iesicf=7, isspcf=8, isopcf=9, ierucf=10,      &
-          ieqhcf=11, icscpl=12)
-
-! NESTMX : NOMBRE MAX D'ESTIMATEURS
-!  IESPRE, IESDER, IESCOR, IESTOT : Numeros
-integer    nestmx
-parameter (nestmx=4)
-integer    iespre  , iesder  , iescor  , iestot
-parameter (iespre=1, iesder=2, iescor=3, iestot=4)
-
-! NBMOMX : NOMBRE MAX DE MOYENNES (MOMENTS) CALCULE
-! NDGMOX : DEGRE MAX DES MOMENTS
-integer    nbmomx, ndgmox
-parameter (nbmomx = 50, ndgmox = 5)
-
-! IPST* : SELECTION POST TRAITEMENT AUTOMATIQUE BORD : VOIR IPSTDV
-
-integer    ipstyp  , ipstcl  , ipstft, ipstfo
-parameter (ipstyp=2, ipstcl=3, ipstft=5, ipstfo=7)
-
-! CONDITIONS AUX LIMITES POSSIBLES POUR LA VITESSE DE MAILLAGE EN ALE
-
-integer    ibfixe, igliss, ivimpo
-parameter(ibfixe=1, igliss=2, ivimpo=3 )
-
-! NOMBRE DE STRUCTURES MAX EN ALE
-
-integer nstrmx
-parameter (nstrmx=200)
-
-! NOMBRE DE STRUCTURES MAX EN ALE ET COUPLAGE CODE_ASTER
-
-integer nastmx
-parameter (nastmx=200)
-
-! DIMENSIONS MAXIMALES DES TABLEAUX CONTENANT LES BORNES PAR THREAD
-
-integer nthrd1, nthrd2
-parameter (nthrd1=4, nthrd2=16)
-
+! Module for definition of general parameters
+
+module paramx
+
+  !=============================================================================
+
+  ! nphsmx : nombre max de phases
+  !          (keep it consistent with cs_nphsmx in cs_perio.h)
+  ! nscamx : nombre max de scalaires
+  ! nvarmx : nombre max de variables =
+  !          nombre max de scalaires + 12 (u,v,w,P,Rij,e,alp)*nphsmx
+  ! nprcmx : nombre max de proprietes physiques aux cellules (total) =
+  !          nscamx (Lambda) + 7 (rho,Cp,viscl,visct,cou,fou,iprtot) nphsmx
+  !                          + 4 (estim) nphsmx
+  ! nprfmx : nombre max de proprietes physiques aux faces internes =
+  !          nscamx (flumas) + 2*nphsmx(flumas,alp)
+  ! nprbmx : nombre max de proprietes physiques aux faces de bord =
+  !          nscamx (flumab) + 3*nphsmx(flumab,alp, romb)
+  ! npromx : nombre max de proprietes physiques tout confondu
+  !          majore par nprcmx+nprfmx+nprbmx
+  ! ngrdmx : nombre max de grandeurs =
+  !          nvarmx + npromx
+  ! nsmamx : nombre max de cases pour les tableaux termes source de masse
+  !          nvarmx + nphsmx pour smacel
+  ! nvppmx : nombre de variables pour affichages
+  !          ngrdmx + 20 (20 couvre dt, tpucou, et une marge de 16 ...)
+
+  integer   nphsmx, nscamx, nvarmx, nprcmx, nprfmx, nprbmx, npromx
+  integer   ngrdmx, nsmamx, nvppmx
+  parameter(nphsmx=1)
+  parameter(nscamx=200)
+  parameter(nvarmx=nscamx+12*nphsmx)
+  parameter(nprcmx=nscamx+11*nphsmx)
+  parameter(nprfmx=nscamx+ 2*nphsmx)
+  parameter(nprbmx=nscamx+ 3*nphsmx)
+  parameter(npromx=nprcmx+ nprfmx+nprbmx)
+  parameter(ngrdmx=nvarmx+ npromx)
+  parameter(nsmamx=nvarmx+ nphsmx)
+  parameter(nvppmx=ngrdmx+20)
+
+  ! ntypmx nombre de types de conditions aux limites possibles
+
+  integer    ntypmx
+  parameter(ntypmx=200)
+
+  integer    iindef, ientre, isolib, isymet, iparoi,                &
+             iparug, iesicf, isspcf, isopcf, ierucf,                &
+             ieqhcf, icscpl
+
+  parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
+            iparug=6, iesicf=7, isspcf=8, isopcf=9, ierucf=10,      &
+            ieqhcf=11, icscpl=12)
+
+  ! nestmx : nombre max d'estimateurs
+  ! iespre, iesder, iescor, iestot : numeros
+  integer    nestmx
+  parameter (nestmx=4)
+  integer    iespre  , iesder  , iescor  , iestot
+  parameter (iespre=1, iesder=2, iescor=3, iestot=4)
+
+  ! nbmomx : nombre max de moyennes (moments) calcule
+  ! ndgmox : degre max des moments
+  integer    nbmomx, ndgmox
+  parameter (nbmomx = 50, ndgmox = 5)
+
+  ! conditions aux limites possibles pour la vitesse de maillage en ale
+
+  integer    ibfixe, igliss, ivimpo
+  parameter(ibfixe=1, igliss=2, ivimpo=3 )
+
+  ! nstrmx : nombre de structures max en ale
+
+  integer nstrmx
+  parameter (nstrmx=200)
+
+  !=============================================================================
+
+end module paramx

@@ -88,36 +88,36 @@ subroutine caltri &
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use pointe
+use optcal
+use cstphy
+use entsor
+use albase
+use parall
+use period
+use ppppar
+use ppthch
+use ppincl
+use coincl
+use cpincl
+use lagpar
+use lagdim
+use lagran
+use vorinc
+use ihmpre
+use matiss
+use radiat
+use cplsat
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "dimens.f90"
-include "pointe.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "entsor.f90"
-include "albase.f90"
-include "period.f90"
-include "parall.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "ppincl.f90"
-include "coincl.f90"
-include "cpincl.f90"
-include "lagpar.f90"
-include "lagdim.f90"
-include "lagran.f90"
-include "vorinc.f90"
-include "ihmpre.f90"
-include "matiss.f90"
-include "radiat.f90"
-include "cplsat.f90"
-
-!===============================================================================
 
 ! Arguments
 

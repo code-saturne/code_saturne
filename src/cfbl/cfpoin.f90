@@ -25,21 +25,24 @@
 
 !-------------------------------------------------------------------------------
 
-!                              cfpoin.h
-!===============================================================================
+! Module for fuel combustion
 
+module cfpoin
 
-!      ACCESSIBLES DIRECTEMENT DANS IA, RA
+  !=============================================================================
 
-! Pointeur Dimension       Description
-! IIFBET ! NFABOR*NPHAS            ! INDICATEUR FLUX THERMIQUE AU BORD IMPOSE
-!                          (il faut annuler des contributions de bord
-!                           de l'eq de E)
-! IIFBRU ! NFABOR*NPHAS            ! INDICATEUR FLUX DE BORD CALCULE PAR RUSANOV
-!                          (il faut annuler des contributions de bord
-!                           de l'eq de Qdm et de l'eq de E)
+  !      Accessibles directement dans ia, ra
 
-integer           iifbet , iifbru
-common / ipfbcf/  iifbet , iifbru
+  ! Pointeur Dimension       Description
+  ! iifbet ! nfabor*nphas            ! indicateur flux thermique au bord impose
+  !                          (il faut annuler des contributions de bord
+  !                           de l'eq de E)
+  ! iifbru ! nfabor*nphas            ! indicateur flux de bord calcule par rusanov
+  !                          (il faut annuler des contributions de bord
+  !                           de l'eq de Qdm et de l'eq de E)
 
-! FIN
+  integer, save :: iifbet , iifbru
+
+  !=============================================================================
+
+end module cfpoin

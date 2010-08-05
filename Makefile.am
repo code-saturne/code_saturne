@@ -230,3 +230,6 @@ dist-hook:
 	-rm -rf `find $(distdir)/examples  -name .svn`
 	-rm -rf `find $(distdir)/extras  -name .svn`
 	-rm -rf `find $(distdir)/patches -name .svn`
+
+clean-local:
+	-rm -f *__genmod.f90 *__genmod.mod

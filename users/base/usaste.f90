@@ -119,23 +119,23 @@ subroutine usaste &
 !     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use cstnum
+use optcal
+use entsor
+use pointe
+use albase
+use parall
+use period
+use alaste
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "cstnum.f90"
-include "optcal.f90"
-include "entsor.f90"
-include "pointe.f90"
-include "albase.f90"
-include "period.f90"
-include "parall.f90"
-include "alaste.f90"
-
-!===============================================================================
 
 ! Arguments
 

@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,22 +25,29 @@
 
 !-------------------------------------------------------------------------------
 
-!                              mltgrd.h
-!===============================================================================
+! Module for multigrid parameters
 
-! MULTIGRILLE
-! -----------
-!   NCEGRM : NOMBRE MAX DE CELLULES SUR MAILLAGE LE PLUS GROSSIER
-!   NGRMAX : NOMBRE MAX DE NIVEAUX DE MAILLAGES
-!   NAGMX0 : PARAMETRE CONSTRUCTION DE  MAILLAGE AUTOMATIQUE
-!   IAGMX0 : PARAMETRE CONSTRUCTION DE  MAILLAGE AUTOMATIQUE
-!   NCPMGR : Si > 0, active le post traitement de l'agglomeration, en
-!            projetant les numeros de cellules grossieres sur le
-!            maillage fin (modulo NCPMGR(IVAR))
+module mltgrd
 
-integer           ncegrm, ngrmax,                                 &
-                  nagmx0(nvarmx), iagmx0(nvarmx), ncpmgr(nvarmx)
-common / ioptmg / ncegrm, ngrmax,                                 &
-                  nagmx0, iagmx0, ncpmgr
+  !=============================================================================
 
-! FIN
+  use paramx
+
+  !=============================================================================
+
+  ! Multigrille
+  ! -----------
+  !   ncegrm : nombre max de cellules sur maillage le plus grossier
+  !   ngrmax : nombre max de niveaux de maillages
+  !   nagmx0 : parametre construction de  maillage automatique
+  !   iagmx0 : parametre construction de  maillage automatique
+  !   ncpmgr : si > 0, active le post traitement de l'agglomeration, en
+  !            projetant les numeros de cellules grossieres sur le
+  !            maillage fin (modulo ncpmgr(ivar))
+
+  integer, save :: ncegrm, ngrmax,                                 &
+                   nagmx0(nvarmx), iagmx0(nvarmx), ncpmgr(nvarmx)
+
+  !=============================================================================
+
+end module mltgrd

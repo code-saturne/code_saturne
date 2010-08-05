@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,290 +25,256 @@
 
 !-------------------------------------------------------------------------------
 
-!                              entsor.h
-!===============================================================================
+! Module for input/output
 
-! --- SORTIE STD
-!     NFECRA : UNITE SORTIE STD
-!     IWARNI : NIVEAU D'IMPRESSION
+module entsor
 
-integer           nfecra,iwarni(nvarmx)
-common / icontr / nfecra,iwarni
+  !=============================================================================
 
-! --- FICHIER GEOMETRIE
+  use paramx
 
-character*6       ficgeo
-common / ageotl / ficgeo
+  !=============================================================================
 
-integer                   impgeo
-common / igeotl /         impgeo
+  ! --- sortie std
+  !     nfecra : unite sortie std
+  !     iwarni : niveau d'impression
 
-! --- FICHIER METHODE DES VORTEX
+  integer, save :: nfecra, iwarni(nvarmx)
 
-!     IMPMVO --> fichier suite methode des vortex (ASCII
-!                obligatoirement, structure specifique)
-!     IMPVVO --> fichier suite methode des vortex (ASCII
-!                obligatoirement, structure specifique)
-!     IMPDVO --> fichier de donnees de la methode des vortex
-!                (nom FICDAT laisse a l'utilisateur dans usvort)
+  ! --- fichier geometrie
 
-integer            impmvo, impvvo, impdvo
-common / ifamon /  impmvo, impvvo, impdvo
+  character*6, save :: ficgeo
 
-character*13      ficdat
-common / afaval / ficdat
+  integer, save :: impgeo
 
-! ---  FREQUENCE DE SAUVEGARDE
-
-integer           ntsuit
-common / ifafrq / ntsuit
-
-! --- FICHIER NSTOP
-
-character*6       ficstp
-common / afarre / ficstp
-
-integer                   impstp
-common / ifarre /         impstp
-
-! --- LECTURE PREPROCESSEUR
-
-integer           ifoenv
-common / ifenvp / ifoenv
+  ! --- fichier methode des vortex
 
-! --- SORTIES POST TRAITEMENT (via FVM)
+  !     impmvo --> fichier suite methode des vortex (ASCII
+  !                obligatoirement, structure specifique)
+  !     impvvo --> fichier suite methode des vortex (ASCII
+  !                obligatoirement, structure specifique)
+  !     impdvo --> fichier de donnees de la methode des vortex
+  !                (nom FICDAT laisse a l'utilisateur dans usvort)
 
-!     ICHRVL : Post traitement du domaine fluide
-!     ICHRBO : Post traitement du bord du domaine
-!     ICHRSY : Post traitement des zones de bord couplees avec SYRTHES
-!     ICHRZE : Post traitement des zones d'echange aerorefrigerants
-!     ICHRMD : Indique si les maillages ecrits seront :
-!               0 : fixes,
-!               1 : deformables a topologie constante,
-!               2 : modifiables (pourront etre completement redefinis
-!                   en cours de calcul via le sous-programme USMPST),
-!              10 : comme INDMOD = 0, avec champ de deplacement,
-!              11 : comme INDMOD = 1, avec champ de deplacement,
-!              12 : comme INDMOD = 2, avec champ de deplacement.
-!     NTCHR  : frequence de sortie par defaut ( > 0 ou -1 (a la fin) )
-!     ICHRVR : on sort la variable (1) ou non (0) ou non initialise
-!     FMTCHR : format de sortie ('EnSight Gold', 'MED_fichier', 'CGNS')
-!     OPTCHR : options associees au format de sortie
+  integer, save :: impmvo, impvvo, impdvo
 
-integer           ichrvl, ichrbo, ichrsy, ichrze,                 &
-                  ichrmd, ntchr , ichrvr(nvppmx)
-common / iepost / ichrvl, ichrbo, ichrsy, ichrze,                 &
-                  ichrmd, ntchr, ichrvr
+  character*13, save :: ficdat
 
-character*32      fmtchr
-character*96      optchr
-common / aepost / fmtchr, optchr
+  ! ---  frequence de sauvegarde
 
-! --- FICHIER THERMOPHYSIQUE SPECIFIQUE PHYSIQUE PARTICULIERE
+  integer, save :: ntsuit
 
-!     IMP    --> Unite logique du fichier
-!     FPP    --> Fichier utilisateur lorsqu'on utilise Janaf
-!     JNF    --> Janaf
-!     JON    --> Utilisation de Janaf ou non
+  ! --- fichier nstop
 
-character*6       ficfpp
-character*5       ficjnf
-common / afcppp / ficfpp, ficjnf
+  character*6, save :: ficstp
 
-integer           impfpp, impjnf, indjon
-common / ifcppp / impfpp, impjnf, indjon
+  integer, save :: impstp
 
-! --- INPUT FILES FOR THE ATMOSPHERIC SPECIFIC PHYSICS
-!        IMPMET --> logical unit of the meteo profile file
-!        FICMET --> name of the meteo profile file
+  ! --- lecture preprocesseur
 
-  integer impmet
-  common / ifcmet / impmet
+  integer, save :: ifoenv
 
-  character*10 ficmet
-  common / afcmet / ficmet
+  ! --- Sorties post traitement (via FVM)
 
-! --- FICHIERS HISTORIQUES
+  !     ichrvl : Post traitement du domaine fluide
+  !     ichrbo : Post traitement du bord du domaine
+  !     ichrsy : Post traitement des zones de bord couplees avec SYRTHES
+  !     ichrze : Post traitement des zones d'echange aerorefrigerants
+  !     ichrmd : Indique si les maillages ecrits seront :
+  !               0 : fixes,
+  !               1 : deformables a topologie constante,
+  !               2 : modifiables (pourront etre completement redefinis
+  !                   en cours de calcul via le sous-programme usmpst),
+  !              10 : comme indmod = 0, avec champ de deplacement,
+  !              11 : comme indmod = 1, avec champ de deplacement,
+  !              12 : comme indmod = 2, avec champ de deplacement.
+  !     ntchr  : frequence de sortie par defaut ( > 0 ou -1 (a la fin) )
+  !     ichrvr : on sort la variable (1) ou non (0) ou non initialise
+  !     fmtchr : format de sortie ('EnSight Gold', 'MED_fichier', 'CGNS')
+  !     optchr : options associees au format de sortie
 
-!     IMPHIS : fichier stock + unite d'ecriture des variables
-!     EMPHIS : EMPlacement
-!     PREHIS : PREfixe des fichiers
-!     EXTHIS : EXTension des fichiers
-!     IMPUSH : Unite fichiers specifiques ushist
-!     FICUSH : Nom   fichiers specifiques ushist
-!     IMPSTH : fichier stock + unite d'ecriture des variables
-!              des structures mobiles
+  integer, save :: ichrvl, ichrbo, ichrsy, ichrze,                 &
+                   ichrmd, ntchr, ichrvr(nvppmx)
 
-character*80      emphis, prehis, exthis
-common / avhist / emphis, prehis, exthis
+  character*32, save :: fmtchr
+  character*96, save :: optchr
 
-character*13      ficush(nushmx)
-common / afhist / ficush
+  ! --- Fichier thermophysique specifique physique particuliere
 
-integer                   imphis(2), impush(nushmx), impsth(2)
-common / ifhist /         imphis, impush, impsth
+  !     imp    --> unite logique du fichier
+  !     fpp    --> fichier utilisateur lorsqu'on utilise Janaf
+  !     jnf    --> Janaf
+  !     jon    --> Utilisation de Janaf ou non
 
-!     NCAPT  : nombre de sondes total (limite a NCAPTM)
-!     NTHIST : Frequence de sortie
-!         ( > 0 ou -1 (jamais) ou non initialise -999)
-!     NTHSAV : Frequence de sauvegarde
-!         ( > 0 ou -1 (a la fin) ou non initialise -999)
-!     IHISVR : nb de sonde et numero par variable
-!         (-999 non initialise)
-!     IHISTR : indicateur d'ecriture des historiques des structures
-!              mobiles internes (=0 ou 1)
-!     NCAPT  : nombre de sondes total (limite a NCAPTM)
-!     NODCAP : element correspondant aux sondes
-!     NDRCAP : rang processus contenant NODCAP (parallelisme)
-!     XYZCAP : position demandee des sondes
+  character*6, save :: ficfpp
+  character*5, save :: ficjnf
 
-integer           ncapt, nthist, nthsav,                          &
-                  ihisvr(nvppmx,ncaptm+1), ihistr,                &
-                  nodcap(ncaptm), ndrcap(ncaptm)
+  integer, save :: impfpp, impjnf, indjon
 
-common / ivhist / ncapt , nthist, nthsav,                         &
-                  ihisvr, ihistr,                                 &
-                  nodcap, ndrcap
+  ! --- Input files for the atmospheric specific physics
+  !        impmet --> logical unit of the meteo profile file
+  !        ficmet --> name of the meteo profile file
 
-double precision  xyzcap(3,ncaptm)
-common / rvhist / xyzcap
+  integer, save :: impmet
 
+  character*10, save :: ficmet
 
-! --- FICHIERS LAGRANGIENS
+  ! --- Fichiers historiques
 
-!   - FICHIER SUITE ET SUITE STATISTISQUE  AMONT LAGRANGIEN
+  !     nushmx : nombre max de fichiers utilisateur pour historiques
+  !     imphis : fichier stock + unite d'ecriture des variables
+  !     emphis : emplacement
+  !     prehis : prefixe des fichiers
+  !     exthis : extension des fichiers
+  !     impush : unite fichiers specifiques ushist
+  !     ficush : nom   fichiers specifiques ushist
+  !     impsth : fichier stock + unite d'ecriture des variables
+  !              des structures mobiles
 
-character*13      ficaml, ficmls
-common / afamla / ficaml, ficmls
+  integer    nushmx
+  parameter(nushmx=16)
 
-!   - FICHIER SUITE ET SUITE STATISTISQUE AVAL LAGRANGIEN
+  character*80, save :: emphis, prehis, exthis
+  character*13, save :: ficush(nushmx)
 
-character*13      ficavl, ficvls
-common / afavla / ficavl, ficvls
+  integer, save :: imphis(2), impush(nushmx), impsth(2)
 
+  ! ncaptm : nombre max de sondes (pour historiques)
+  !          voir le format associe dans ecrhis
 
-!   - FICHIER LISTING LAGRANGIEN
+  integer    ncaptm
+  parameter(ncaptm=100)
 
-!     FICLAL : Nom du fichier
-!     IMPLAL : Unite du fichier
-!     NTLAL  : Periode de sortie du listing
-character*6       ficlal
-common / afalal / ficlal
+  !     ncapt  : nombre de sondes total (limite a ncaptm)
+  !     nthist : frequence de sortie
+  !         ( > 0 ou -1 (jamais) ou non initialise -999)
+  !     nthsav : Frequence de sauvegarde
+  !         ( > 0 ou -1 (a la fin) ou non initialise -999)
+  !     ihisvr : nb de sonde et numero par variable
+  !         (-999 non initialise)
+  !     ihistr : indicateur d'ecriture des historiques des structures
+  !              mobiles internes (=0 ou 1)
+  !     ncapt  : nombre de sondes total (limite a ncaptm)
+  !     nodcap : element correspondant aux sondes
+  !     ndrcap : rang processus contenant nodcap (parallelisme)
+  !     xyzcap : position demandee des sondes
 
-integer                   implal, ntlal
-common / ifalal /         implal, ntlal
+  integer, save :: ncapt, nthist, nthsav,                  &
+                   ihisvr(nvppmx,ncaptm+1), ihistr,        &
+                   nodcap(ncaptm), ndrcap(ncaptm)
 
-!   - FICHIER HISTORIQUE LAGRANGIEN
+  double precision, save :: xyzcap(3,ncaptm)
 
-integer                   impli1, impli2
-common / ifalah /         impli1, impli2
+  ! --- Fichiers Lagrangiens
 
-!   - AUTRES FICHIERS LAGRANGIEN
+  !   - Fichier suite et suite statistisque  amont Lagrangien
 
-integer           impla1 , impla2 , impla3 , impla4 , impla5(15)
-common / ifalag / impla1 , impla2 , impla3 , impla4 , impla5
+  character*13, save :: ficaml, ficmls
 
+  !   - Fichier suite et suite statistisque aval Lagrangien
 
-! --- FICHIERS UTILISATEURS
+  character*13, save :: ficavl, ficvls
 
-character*13      ficusr(nusrmx)
-common / afuser / ficusr
+  !   - Fichier listing Lagrangien
 
-integer           impusr(nusrmx)
-common / ifuser / impusr
+  !     ficlal : nom du fichier
+  !     implal : unite du fichier
+  !     ntlal  : periode de sortie du listing
 
+  character*6, save :: ficlal
 
-! --- SORTIES LISTING
+  integer, save :: implal, ntlal
 
-!   COMMUNES
-!     IPP*   : Pointeurs de reperage des variables pour les sorties
-!     NOMVAR : Nom des variables
-!     ILISVR : on suit la variable (1) ou non (0) ou non initialise
-!     ITRSVR : numero de variable si IPP correspond a une variable resolue (p,u,k...)
-!              0 si IPP correspond a une variable annexe (cp, mut...)ou a rien
-!     NTLIST : periode  ecriture
-!       ( -1 : dernier pas de temps : > 0 : periode)
+  !   - Fichier historique Lagrangien
 
-integer           ipprtp(nvarmx),                                 &
-                  ipppro(npromx),                                 &
-                  ippdt         ,                                 &
-                  ipptx         , ippty         , ipptz  ,        &
-                  ipp2ra(nvppmx)
-common / ipntpp / ipprtp        ,                                 &
-                  ipppro        ,                                 &
-                  ippdt         ,                                 &
-                  ipptx         , ippty         , ipptz  ,        &
-                  ipp2ra
+  integer, save :: impli1, impli2
 
-character*80      nomvar(nvppmx)
-common / anampp / nomvar
+  !   - Autres fichiers Lagrangien
 
-integer           ilisvr(nvppmx),itrsvr(nvppmx)
-common / ipostp / ilisvr        ,itrsvr
+  integer, save :: impla1 , impla2 , impla3 , impla4 , impla5(15)
 
+  ! --- Fichiers utilisateurs
 
-integer           ntlist
-common / ilisti / ntlist
+  ! nusrmx : nombre max de fichiers utilisateur
 
-!   PARAMETRES DE SUIVI DE CALCUL, MIN-MAX, CLIPMIN, CLIPMAX
+  integer    nusrmx
+  parameter(nusrmx=10)
 
-integer           iclpmn(nvppmx) , iclpmx(nvppmx)
-common / isuivi / iclpmn         , iclpmx
+  character*13, save :: ficusr(nusrmx)
+  integer, save ::      impusr(nusrmx)
 
-double precision  varmin(nvppmx) , varmax(nvppmx),                &
-                  varmna(nvppmx) , varmxa(nvppmx)
-common / rsuivi / varmin ,         varmax,                        &
-                  varmna ,         varmxa
+  ! --- Sorties listing
 
+  !   Communes
+  !     ipp*   : pointeurs de reperage des variables pour les sorties
+  !     nomvar : nom des variables
+  !     ilisvr : on suit la variable (1) ou non (0) ou non initialise
+  !     itrsvr : numero de variable si ipp correspond a une variable resolue
+  !              (p,u,k...)
+  !              0 si ipp correspond a une variable annexe (cp, mut...)
+  !              ou a rien
+  !     ntlist : periode  ecriture
+  !       ( -1 : dernier pas de temps : > 0 : periode)
 
-!   PARAMETRES DE CONVERGENCE, NORME DU SECOND MEMBRE, NOMBRE ITERATIONS
-!                                RESIDU NORME, DERIVE
+  integer, save :: ipprtp(nvarmx), ipppro(npromx),                &
+                   ippdt, ipptx, ippty, ipptz,                    &
+                   ipp2ra(nvppmx)
 
-integer           nbivar(nvppmx)
-common / iconvg / nbivar
+  character*80, save :: nomvar(nvppmx)
 
-double precision  rnsmbr(nvppmx) ,                                &
-                  resvar(nvppmx) , dervar(nvppmx)
-common / rconvg / rnsmbr ,                                        &
-                  resvar         , dervar
+  integer, save :: ilisvr(nvppmx),itrsvr(nvppmx)
 
+  integer, save :: ntlist
 
-!   PARAMETRES DU PAS DE TEMPS LOCAL =
-!     NB COURANT, FOURIER ET COMBINE MIN ET MAX + POINTS ASSOCIES
-!     PTPLOC(.,1)   = NOMBRE , PTPLOC(.,2 3 et 4) = POINT ASSOCIE
-!     PTPLOC(1 2,.) = COURANT MIN/MAX
-!     PTPLOC(3 4,.) = FOURIER MIN/MAX
-!     PTPLOC(5 6,.) = COU/FOU MIN/MAX
-!     PTPLOC(7 8,.) = DT      MIN/MAX
-!     NCLPTR        = NB DE CLIPPINGS PAR LE PDT MAX LIE AUX EFFETS DE DENSITE
-!     RPDTRO        = RAPPORT MAX ENTRE DT ET DTmax LIE AUX EFFETS DE DENSITE
-!                      +LOCALISATION
+  ! Parametres de suivi de calcul, min-max, clipmin, clipmax
 
-integer           nclptr
-common / iptloc /  nclptr
+  integer, save :: iclpmn(nvppmx) , iclpmx(nvppmx)
 
-double precision  ptploc(8,4), rpdtro(4)
-common / rptloc /  ptploc, rpdtro
+  double precision, save ::  varmin(nvppmx) , varmax(nvppmx),     &
+                             varmna(nvppmx) , varmxa(nvppmx)
 
+  ! Parametres de convergence, norme du second membre, nombre iterations
+  ! residu norme, derive.
 
-!   PARAMETRES DES SORTIES AU BORD =
+  integer, save :: nbivar(nvppmx)
 
-!     IPSTDV = PROPRIETES POST TRAITEES
-!        IPSTDV EST LE PRODUIT DES VALEURS ENTIERES SUIVANTES (NOMBRES PREMIERS) :
-!          IPSTYP => YPLUS
-!          IPSTCL => VARIABLES NON RECONSTRUITES (suffisant pour Dirichlet)
-!          IPSTFT => FLUX THERMIQUE RECONSTRUIT
+  double precision, save :: rnsmbr(nvppmx) ,                      &
+                            resvar(nvppmx) , dervar(nvppmx)
 
-!     SI IPSTDV = 1 = PAS DE SORTIE
+  ! Parametres du pas de temps local =
+  !   nb Courant, Fourier et combine min et max + points associes
+  !   ptploc(.,1)   = nombre , ptploc(.,2 3 et 4) = point associe
+  !   ptploc(1 2,.) = Courant min/max
+  !   ptploc(3 4,.) = Fourier min/max
+  !   ptploc(5 6,.) = cou/fou min/max
+  !   ptploc(7 8,.) = dt      min/max
+  !   nclptr        = nb de clippings par le pdt max lie aux effets de densite
+  !   rpdtro        = rapport max entre dt et dtmax lie aux effets de densite
+  !                    +localisation
 
+  integer, save :: nclptr
 
-integer            ipstdv
-common / iipstd /  ipstdv
+  double precision, save :: ptploc(8,4), rpdtro(4)
 
+  ! Parametres des sorties au bord =
 
-! --- TEMPS CPU
+  ! ipstdv = proprietes post traitees
+  !   ipstdv est le produit des valeurs entieres suivantes (nombres premiers) :
+  !   ipstyp => yplus
+  !   ipstcl => variables non reconstruites (suffisant pour Dirichlet)
+  !   ipstft => flux thermique reconstruit
 
-double precision  tmarus
-common / temcpu / tmarus
+  integer    ipstyp  , ipstcl  , ipstft, ipstfo
+  parameter (ipstyp=2, ipstcl=3, ipstft=5, ipstfo=7)
 
-! FIN
+  !   si ipstdv = 1 = pas de sortie
+
+  integer, save :: ipstdv
+
+  ! --- Temps CPU
+
+  double precision, save :: tmarus
+
+  !=============================================================================
+
+end module entsor

@@ -49,30 +49,31 @@ subroutine usfui1
 !           and composite types (ex: ra real array)
 !     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use cstnum
+use parall
+use period
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use fuincl
+use ppincl
+use ppcpfu
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-!     DONNEES EN COMMON
-!===============================================================================
-
-include "paramx.f90"
-include "dimens.f90"
-include "numvar.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "entsor.f90"
-include "cstnum.f90"
-include "parall.f90"
-include "period.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "coincl.f90"
-include "cpincl.f90"
-include "fuincl.f90"
-include "ppincl.f90"
-include "ppcpfu.f90"
-
-!===============================================================================
 
 integer          jpp , icla
 

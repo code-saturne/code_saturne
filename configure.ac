@@ -313,6 +313,9 @@ fi
 # Check for Fortran 2003 flush feature
 CS_AC_TEST_FC_FLUSH
 
+# Check for Fortran module generation
+CS_AC_TEST_FC_MOD
+
 #------------------------------------------------------------------------------
 # Determine OpenMP support
 #------------------------------------------------------------------------------

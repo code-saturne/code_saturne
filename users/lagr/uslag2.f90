@@ -171,26 +171,26 @@ subroutine uslag2 &
 !     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstnum
+use cstphy
+use entsor
+use lagpar
+use lagran
+use ppppar
+use ppthch
+use cpincl
+use ihmpre
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "numvar.f90"
-include "optcal.f90"
-include "cstnum.f90"
-include "cstphy.f90"
-include "entsor.f90"
-include "lagpar.f90"
-include "lagran.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "cpincl.f90"
-include "ihmpre.f90"
-
-!===============================================================================
 
 ! Arguments
 

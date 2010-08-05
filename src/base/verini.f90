@@ -50,32 +50,32 @@ subroutine verini &
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use cstnum
+use dimens
+use numvar
+use optcal
+use mltgrd
+use cstphy
+use entsor
+use albase
+use alstru
+use parall
+use period
+use ppthch
+use ppppar
+use ppincl
+use lagpar
+use lagran
+use radiat
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "cstnum.f90"
-include "dimens.f90"
-include "numvar.f90"
-include "optcal.f90"
-include "mltgrd.f90"
-include "cstphy.f90"
-include "entsor.f90"
-include "albase.f90"
-include "alstru.f90"
-include "period.f90"
-include "parall.f90"
-include "ppthch.f90"
-include "ppppar.f90"
-include "ppincl.f90"
-include "lagpar.f90"
-include "lagran.f90"
-include "radiat.f90"
-
-!===============================================================================
 
 ! Arguments
 
@@ -101,7 +101,7 @@ double precision arakfr
 jj = 0
 
 !===============================================================================
-! 1. ENTREES SORTIES entsor.h : formats 1000
+! 1. ENTREES SORTIES entsor : formats 1000
 !===============================================================================
 
 ! --- Dimension
@@ -203,7 +203,7 @@ endif
 
 
 !===============================================================================
-! 2. OPTIONS DU CALCUL : TABLEAUX DE optcal.h : formats 2000
+! 2. OPTIONS DU CALCUL : TABLEAUX DE optcal : formats 2000
 !===============================================================================
 
 ! --- Dimensions
@@ -1427,7 +1427,7 @@ if(imgrok.eq.1.and.ngrmax.le.0)then
 endif
 
 !===============================================================================
-! 3. TABLEAUX DE cstphy.h : formats 4000
+! 3. TABLEAUX DE cstphy : formats 4000
 !===============================================================================
 
 do iphas = 1, nphas
@@ -1659,7 +1659,7 @@ if(nscal.gt.0) then
 endif
 
 !===============================================================================
-! 4. TABLEAUX DE period.h : formats 5000
+! 4. TABLEAUX DE period : formats 5000
 !===============================================================================
 
 ! --- periodicite de rotation incompatible avec couplage
@@ -1715,7 +1715,7 @@ endif
 
 
 !===============================================================================
-! 5. TABLEAUX DE parall.h : formats 6000 (limitations)
+! 5. TABLEAUX DE parall : formats 6000 (limitations)
 !===============================================================================
 
 ! --- parallelisme incompatible avec lagrangien
@@ -1732,7 +1732,7 @@ if(irangp.ge.0.and.ineedy.eq.1.and.abs(icdpar).eq.2) then
 endif
 
 !===============================================================================
-! 6. METHODE ALE (albase.h, alstru.h) : formats 7000
+! 6. METHODE ALE (albase, alstru) : formats 7000
 !===============================================================================
 
 if (iale.ne.0 .and. iale.ne.1) then

@@ -31,11 +31,7 @@ AM_CPPFLAGS = \
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@ @CFLAGS_EXT@
 
 AM_FCFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/cplv \
--I$(top_srcdir)/src/lagr \
--I$(top_srcdir)/src/rayt \
+@FCMODINCLUDE@$(top_builddir)/src \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -45,10 +41,7 @@ AM_LDFLAGS =
 saturneincludedir = $(includedir)
 saturneinclude_HEADERS = \
 cs_lagr.h \
-cs_lagr_perio.h \
-lagdim.f90 \
-lagpar.f90 \
-lagran.f90
+cs_lagr_perio.h
 
 # Library source files
 
@@ -131,3 +124,6 @@ $(top_srcdir)/users/lagr/uslaru.f90 \
 $(top_srcdir)/users/lagr/uslast.f90 \
 $(top_srcdir)/users/lagr/uslatc.f90 \
 $(top_srcdir)/users/lagr/uslatp.f90
+
+clean-local:
+	-rm -f *__genmod.f90 *.mod

@@ -27,6 +27,7 @@
 
 subroutine fulecd
 !================
+
 !===============================================================================
 !  FONCTION  :
 !  ---------
@@ -47,26 +48,26 @@ subroutine fulecd
 !            --- tableau de travail
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use pointe
+use entsor
+use cstnum
+use cstphy
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use fuincl
+use ppincl
+use ppcpfu
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "paramx.f90"
-include "pointe.f90"
-include "entsor.f90"
-include "cstnum.f90"
-include "cstphy.f90"
-include "ppppar.f90"
-include "ppthch.f90"
-include "coincl.f90"
-include "cpincl.f90"
-include "fuincl.f90"
-include "ppincl.f90"
-include "ppcpfu.f90"
-
-!===============================================================================
 
 ! Arguments
 

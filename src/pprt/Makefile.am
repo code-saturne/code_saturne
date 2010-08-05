@@ -23,17 +23,7 @@
 # Main part
 
 AM_FCFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/pprt \
--I$(top_srcdir)/src/atmo \
--I$(top_srcdir)/src/cfbl \
--I$(top_srcdir)/src/cogz \
--I$(top_srcdir)/src/cplv \
--I$(top_srcdir)/src/ctwr \
--I$(top_srcdir)/src/elec \
--I$(top_srcdir)/src/fuel \
--I$(top_srcdir)/src/lagr \
--I$(top_srcdir)/src/rayt \
+@FCMODINCLUDE@$(top_builddir)/src \
 @FCFLAGS_DBG@ @FCFLAGS_OPT@
 
 AM_LDFLAGS =
@@ -41,11 +31,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 saturneincludedir = $(includedir)
-saturneinclude_HEADERS = \
-ppcpfu.f90 \
-ppincl.f90 \
-ppppar.f90 \
-ppthch.f90
+saturneinclude_HEADERS =
 
 # Library source files
 
@@ -77,3 +63,6 @@ $(top_srcdir)/users/pprt/usppmo.f90
 pprtdir = $(pkgdatadir)/users/pprt
 pprt_DATA = \
 $(top_srcdir)/users/pprt/usppmo.f90
+
+clean-local:
+	-rm -f *__genmod.f90 *.mod

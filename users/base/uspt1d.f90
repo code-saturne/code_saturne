@@ -181,26 +181,24 @@ subroutine uspt1d &
 !===============================================================================
 
 !===============================================================================
-
-implicit none
-
-!===============================================================================
 ! Data in common
 !===============================================================================
 
-include "paramx.f90"
-include "numvar.f90"
-include "entsor.f90"
-include "optcal.f90"
-include "cstphy.f90"
-include "cstnum.f90"
-include "parall.f90"
-include "period.f90"
+use paramx
+use numvar
+use entsor
+use optcal
+use cstphy
+use cstnum
+use parall
+use period
 
 !===============================================================================
 
+implicit none
+
 ! Arguments
-!-------------------------------------------------------------------
+
 integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor
 integer          nfml   , nprfml

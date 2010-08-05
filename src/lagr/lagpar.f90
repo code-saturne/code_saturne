@@ -25,128 +25,126 @@
 
 !-------------------------------------------------------------------------------
 
-!                              lagpar.h
-!===============================================================================
+! Module for Lagrangian: parameters
 
-!===============================================================================
+module lagpar
 
-!     Include pour le module Lagrangien : dimensions
+  !=============================================================================
 
-!         Trois fichiers complementaires
-!                            lagran.h qui porte les non dimensions
-!                            lagdim.h qui porte les dimensions variables
-!                            lagpar.h qui porte les parametres
+  !         Trois modules complementaires
+  !                            lagran qui porte les non dimensions
+  !                            lagdim qui porte les dimensions variables
+  !                            lagpar qui porte les parametres
 
-!===============================================================================
-! 1. Classes et particules
+  !=============================================================================
+  ! 1. Classes et particules
 
-!     NCLAGM : NOMBRE MAXIMAL DE CLASSES DE PARTICULES
+  !     NCLAGM : NOMBRE MAXIMAL DE CLASSES DE PARTICULES
 
-integer         nclagm
-parameter      (nclagm = 20)
+  integer         nclagm
+  parameter      (nclagm = 20)
 
-!     NCHARM2 : NOMBRE MAXIMAL DE CLASSES DE CHARBON (voir cpincl.h)
+  !     NCHARM2 : NOMBRE MAXIMAL DE CLASSES DE CHARBON (voir cpincl.h)
 
-integer         ncharm2
-parameter      (ncharm2 = 3)
+  integer         ncharm2
+  parameter      (ncharm2 = 3)
 
-!     NCLSTM : NOMBRE MAXIMUM DE STATISTIQUES VOLUMIQUE PAR GROUPE
+  !     NCLSTM : NOMBRE MAXIMUM DE STATISTIQUES VOLUMIQUE PAR GROUPE
 
-integer         nclstm
-parameter      (nclstm = 100)
+  integer         nclstm
+  parameter      (nclstm = 100)
 
-!===============================================================================
-! 2. Conditions aux limites
+  !=============================================================================
+  ! 2. Conditions aux limites
 
-!     NFLAGM : NOMBRE MAXIMAL DE ZONE FRONTIERES
+  !     NFLAGM : NOMBRE MAXIMAL DE ZONE FRONTIERES
 
-integer         nflagm
-parameter      (nflagm = 100)
+  integer         nflagm
+  parameter      (nflagm = 100)
 
-!===============================================================================
-! 3. Conditions aux limites
+  !=============================================================================
+  ! 3. Conditions aux limites
 
-!     NDLAGM : NOMBRE MAXIMAL DE DONNEES SUR LES PARTICULES (REELS)
+  !     NDLAGM : NOMBRE MAXIMAL DE DONNEES SUR LES PARTICULES (REELS)
 
-integer         ndlagm
-parameter      (ndlagm = 50)
+  integer         ndlagm
+  parameter      (ndlagm = 50)
 
-!     NDLAIM : NOMBRE MAXIMAL DE DONNEES SUR LES PARTICULES (ENTIERS)
+  !     NDLAIM : NOMBRE MAXIMAL DE DONNEES SUR LES PARTICULES (ENTIERS)
 
-integer         ndlaim
-parameter      (ndlaim = 10)
+  integer         ndlaim
+  parameter      (ndlaim = 10)
 
-!===============================================================================
-! 4. Schema en temps
+  !=============================================================================
+  ! 4. Schema en temps
 
-!     NVGAUS : NOMBRE DE VARIABLES ALEATOIRES GAUSSIENNES PAR PARTICULES
+  !     NVGAUS : NOMBRE DE VARIABLES ALEATOIRES GAUSSIENNES PAR PARTICULES
 
-integer         nvgaus
-parameter      (nvgaus = 9)
-
-
-!===============================================================================
-! 5. Mouvement Brownien
-
-!     NVGAUS : NOMBRE DE VARIABLES ALEATOIRES GAUSSIENNES PAR PARTICULES
-
-integer         nbrgau
-parameter      (nbrgau = 6)
+  integer         nvgaus
+  parameter      (nvgaus = 9)
 
 
-!===============================================================================
-! 6. Variables utilisateurs supplementaires
+  !=============================================================================
+  ! 5. Mouvement Brownien
 
-!     NUSVAR : Nombre maximum de variables utilisateur supplementaires
+  !     NVGAUS : NOMBRE DE VARIABLES ALEATOIRES GAUSSIENNES PAR PARTICULES
 
-integer         nusvar
-parameter      (nusvar = 10)
+  integer         nbrgau
+  parameter      (nbrgau = 6)
+
+
+  !=============================================================================
+  ! 6. Variables utilisateurs supplementaires
+
+  !     NUSVAR : Nombre maximum de variables utilisateur supplementaires
+
+  integer         nusvar
+  parameter      (nusvar = 10)
 
 !     NUSSTA : Nombre maximum de stats utilisateur supplementaires
 
-integer         nussta
-parameter      (nussta = 20)
+  integer         nussta
+  parameter      (nussta = 20)
 
-!     NUSBRD : Nombre maximum interactions particules/frontieres
-!              utilisateur supplementaires
+  !     NUSBRD : Nombre maximum interactions particules/frontieres
+  !              utilisateur supplementaires
 
-integer         nusbrd
-parameter      (nusbrd = 10)
+  integer         nusbrd
+  parameter      (nusbrd = 10)
 
-!===============================================================================
-! 7. Affichages et fichiers suite
+  !============================================================================
+  ! 7. Affichages et fichiers suite
 
-!     NVPLMX : Nombre maximum de variables
+  !     NVPLMX : Nombre maximum de variables
 
-integer         nvplmx
-parameter      (nvplmx = 50)
+  integer         nvplmx
+  parameter      (nvplmx = 50)
 
-!===============================================================================
-! 8. Visualisation particulaires
+  !=============================================================================
+  ! 8. Visualisation particulaires
 
-!     NLISTE : Nombre maximum de particules visualisable
+  !     NLISTE : Nombre maximum de particules visualisable
 
-integer         nliste
-parameter      (nliste = 500)
+  integer         nliste
+  parameter      (nliste = 500)
 
-!===============================================================================
-! 9. Types d'interaction au bord
+  !=============================================================================
+  ! 9. Types d'interaction au bord
 
-!     NLISTE : Nombre maximum de particules visualisable
+  !     NLISTE : Nombre maximum de particules visualisable
 
-integer         ientrl     , isortl     , irebol
-integer         idepo1     , idepo2     , idepo3
-integer         iencrl     , jbord1     , jbord2
-integer         jbord3     , jbord4     , jbord5
-integer         idepfa
+  integer         ientrl     , isortl     , irebol
+  integer         idepo1     , idepo2     , idepo3
+  integer         iencrl     , jbord1     , jbord2
+  integer         jbord3     , jbord4     , jbord5
+  integer         idepfa
 
-parameter      (ientrl =  1, isortl =  2, irebol =  3)
-parameter      (idepo1 =  4, idepo2 =  5, idepo3 =  6)
-parameter      (iencrl =  7, jbord1 =  8, jbord2 =  9)
-parameter      (jbord3 = 10, jbord4 = 11, jbord5 = 12)
-parameter      (idepfa = 13)
+  parameter      (ientrl =  1, isortl =  2, irebol =  3)
+  parameter      (idepo1 =  4, idepo2 =  5, idepo3 =  6)
+  parameter      (iencrl =  7, jbord1 =  8, jbord2 =  9)
+  parameter      (jbord3 = 10, jbord4 = 11, jbord5 = 12)
+  parameter      (idepfa = 13)
 
-!===============================================================================
+  !=============================================================================
 
-! FIN
-
+end module lagpar
