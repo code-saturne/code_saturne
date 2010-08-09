@@ -1,3 +1,7 @@
+2010-08-09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Corrected blocking bug in ple_locator_set_mesh().
+
 2010-08-05  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Corrected Makefile.am so as to avoid failure on uninstall when the
@@ -11,7 +15,6 @@
 
 2010-06-24  Yvan Fournier <yvan.fournier@edf.fr>
 
-	* Corrected blocking bug in ple_locator_set_mesh().
 	* Ensure all processes accessing a locator use the same type of
 	algorithm (synchronous or asynchronous).
 

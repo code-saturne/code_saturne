@@ -2437,9 +2437,6 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
 
   this_locator->dim = dim;
 
-  this_locator->n_ranks = 1;
-  this_locator->start_rank = 0;
-
   this_locator->n_intersects = 0;
 
   tolerance = PLE_MAX(this_locator->tolerance, 1.e-3);
