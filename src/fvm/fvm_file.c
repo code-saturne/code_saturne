@@ -1147,7 +1147,7 @@ fvm_file_open(const char         *name,
     int positioning_mask = (  FVM_FILE_EXPLICIT_OFFSETS
                             | FVM_FILE_INDIVIDUAL_POINTERS);
     if (_hints & positioning_mask)
-      f->semantics = hints & positioning_mask;
+      f->semantics = _hints & positioning_mask;
     else
       f->semantics = FVM_FILE_INDIVIDUAL_POINTERS;
     f->semantics = f->semantics | (_hints & FVM_FILE_NO_PREDISTRIBUTE);

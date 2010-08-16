@@ -1,4 +1,9 @@
 * 16/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct parallel file open when no mode hints are given.
+  modified files:
+    src/fvm/fvm_file.c
+
+* 16/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct result tesselation data distribution offset when padding
   for extra spatial dimensions.
   modified files:
