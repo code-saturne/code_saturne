@@ -1,3 +1,8 @@
+* 16/08/2010 - Bertrand Carissimo <bertrand.carissimo@edf.fr>
+  Better correction for uninitialized variable.
+  modified routine:
+    users/base/usatcl.f90
+
 * 30/07/2010 - Benoit de Laage de Meux <benoit.de-laage-de-meux@edf.fr>
   Add a missing multiplication by the density in a coupling source term.
   modified routine:

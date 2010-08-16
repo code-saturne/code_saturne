@@ -369,6 +369,7 @@ do ilelt = 1, nlelt
   iprofm(izone) = 1
 
 !     - Dynamical variables are prescribed with a rough log law
+  zent=cdgfbo(3,ifac)
 
   ustar=xkappa*xuref/log((zref+rugd)/rugd)
   xuent=ustar/xkappa*log((zent+rugd)/rugd)
