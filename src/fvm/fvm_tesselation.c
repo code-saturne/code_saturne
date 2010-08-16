@@ -2978,10 +2978,14 @@ fvm_tesselation_vertex_values(const fvm_tesselation_t  *this_tesselation,
   if (   (src_datatype != FVM_DOUBLE && src_datatype != FVM_FLOAT)
       || (dest_datatype != FVM_DOUBLE && dest_datatype != FVM_FLOAT)) {
 
+    unsigned char *_dest_data = dest_data;
+
+    size_t data_shift =     start_id
+                          * (dest_dim * fvm_datatype_size[dest_datatype]);
     size_t data_size_c =    (end_id - start_id)
                           * (dest_dim * fvm_datatype_size[dest_datatype]);
 
-    memset(dest_data, 0, data_size_c);
+    memset(_dest_data + data_shift, 0, data_size_c);
 
   }
 
