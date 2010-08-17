@@ -1,3 +1,8 @@
+* 17/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow reading of meshes with cell but no face definitions.
+  modified files:
+    preprocessor/base/ecs_maillage.c
+
 * 16/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct parallel file open when no mode hints are given.
   modified files:

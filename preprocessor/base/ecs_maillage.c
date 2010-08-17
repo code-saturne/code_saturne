@@ -1097,6 +1097,9 @@ ecs_maillage__nettoie_nodal(ecs_maillage_t  *maillage)
   signe_elt.nbr = 0;
   signe_elt.val = NULL;
 
+  if (maillage->champ_def[ECS_ENTMAIL_FAC] == NULL)
+    return;
+
   vect_transf = ecs_champ_def__fusionne(maillage->champ_def[ECS_ENTMAIL_FAC],
                                         &nbr_elt_new,
                                         &signe_elt);
@@ -1243,7 +1246,8 @@ ecs_maillage__connect_descend(ecs_maillage_t * maillage)
   /* Décomposition des cellules en leurs faces */
   /*-------------------------------------------*/
 
-  nbr_fac_old = ecs_champ__ret_elt_nbr(maillage->champ_def[ECS_ENTMAIL_FAC]);
+  if (maillage->champ_def[ECS_ENTMAIL_FAC] != NULL)
+    nbr_fac_old = ecs_champ__ret_elt_nbr(maillage->champ_def[ECS_ENTMAIL_FAC]);
 
   ecs_champ_def__decompose_cel(&maillage->champ_def[ECS_ENTMAIL_FAC],
                                maillage->champ_def[ECS_ENTMAIL_CEL]);
