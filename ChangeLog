@@ -1,3 +1,8 @@
+* 19/08/2010 - Juan Uribe <juan.uribe@manchester.ac.uk>
+  Correct value for the diffusion coefficient in k-omega SST.
+  modified routine:
+    src/base/iniini.f90
+
 * 17/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow reading of meshes with cell but no face definitions.
   modified files:
