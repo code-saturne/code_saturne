@@ -1,3 +1,8 @@
+* 19/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct mismatched working dir type in MPI environement setup.
+  modified script:
+    bin/cs_exec_environment.py
+
 * 19/08/2010 - Juan Uribe <juan.uribe@manchester.ac.uk>
   Correct value for the diffusion coefficient in k-omega SST.
   modified routine:
