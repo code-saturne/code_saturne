@@ -1,7 +1,9 @@
-* 19/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
-  Correct mismatched working dir type in MPI environement setup.
-  modified script:
-    bin/cs_exec_environment.py
+* 19/08/2010 - David Monfort <david.monfort@edf.fr>
+  Release of Code_Saturne 2.0.
+  modified routines:
+    configure.ac
+    extras/installer/install_saturne.py
+    QUALITY_ASSURANCE
 
 * 19/08/2010 - Juan Uribe <juan.uribe@manchester.ac.uk>
   Correct value for the diffusion coefficient in k-omega SST.

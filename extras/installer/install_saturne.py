@@ -225,7 +225,7 @@ class Setup:
         self.libs = self.optlibs + self.satlibs
 
         # Code_Saturne version 
-        self.version = '2.0-rc2'
+        self.version = '2.0'
 
         # Logging file
         self.log_file = sys.stdout
@@ -276,9 +276,7 @@ class Setup:
         # Packages definition
         self.packages = {}
 
-        url_cs = "http://research.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/%s"
-        # See below for kernel specific url
-        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/715855256/45500713/%s"
+        url_cs = "https://code-saturne.info/products/code-saturne/releases/" + self.version + "/%s"
 
         # BFT library
 
@@ -319,8 +317,8 @@ class Setup:
             Package(name="ECS",
                     description="Code_Saturne Preprocessor",
                     package="ecs",
-                    version="2.0-rc2",
-                    archive="ecs-200rc2.tgz",
+                    version="2.0",
+                    archive="ecs-200.tgz",
                     url=url_cs)
 
         # Code_Saturne Kernel
@@ -329,8 +327,8 @@ class Setup:
             Package(name="NCS",
                     description="Code_Saturne Kernel",
                     package="ncs",
-                    version="2.0-rc2",
-                    archive="ncs-200rc2.tgz",
+                    version="2.0",
+                    archive="ncs-200.tgz",
                     url=url_cs)
 
         p = self.packages['ncs']
