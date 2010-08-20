@@ -1,3 +1,8 @@
+* 19/08/2010 - Juan Uribe <juan.uribe@manchester.ac.uk>
+  Correct value for the diffusion coefficient in k-omega SST.
+  modified routine:
+    src/base/iniini.f90
+
 * 16/08/2010 - Bertrand Carissimo <bertrand.carissimo@edf.fr>
   Better correction for uninitialized variable.
   modified routine:

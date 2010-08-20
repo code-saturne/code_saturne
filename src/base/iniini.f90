@@ -1361,7 +1361,7 @@ cv2fet = 110.d0
 
 !   pour le modele k-omega sst
 ckwsk1 = 1.d0/0.85d0
-ckwsk2 = 2.d0
+ckwsk2 = 1.d0
 ckwsw1 = 2.d0
 ckwsw2 = 1.d0/0.856d0
 ckwbt1 = 0.075d0
