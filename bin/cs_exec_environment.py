@@ -358,7 +358,7 @@ MPI_MPMD_execve     = (1<<3)
 
 class mpi_environment:
 
-    def __init__(self, resource_info=None):
+    def __init__(self, resource_info=None, wdir = None):
         """
         Returns MPI environment info.
         """
@@ -403,11 +403,11 @@ class mpi_environment:
         if len(mpi_lib.bindir) > 0:
             p.insert(0, mpi_lib.bindir)
 
-        init_method(p, resource_info)
+        init_method(p, resource_info, wdir)
 
     #---------------------------------------------------------------------------
 
-    def __init_mpich2__(self, p, resource_info=None):
+    def __init_mpich2__(self, p, resource_info=None, wdir = None):
 
         """
         Initialize for MPICH2 environment.
@@ -523,7 +523,7 @@ class mpi_environment:
                     self.del_hostsfile = 'rm -f ./mpd.nodes'
                     self.mpiboot += ' --file ./mpd.nodes'
             else:
-                hostsfile = resource_info.get_hosts_file(self)
+                hostsfile = resource_info.get_hosts_file(wdir)
                 if hostsfile != None:
                     if self.mpiboot != None:
                         self.mpiboot += ' --file ' + hostsfile
@@ -550,7 +550,7 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_mpich1__(self, p, resource_info=None):
+    def __init_mpich1__(self, p, resource_info=None, wdir = None):
 
         """
         Initialize for MPICH1 environment.
@@ -590,7 +590,7 @@ class mpi_environment:
         # Resource manager info
 
         if resource_info != None:
-            hostsfile = resource_info.get_hosts_file(self)
+            hostsfile = resource_info.get_hosts_file(wdir)
             if hostsfile != None:
                 self.mpiexec += ' -machinefile ' + hostsfile
 
@@ -600,7 +600,7 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_openmpi__(self, p, resource_info=None):
+    def __init_openmpi__(self, p, resource_info=None, wdir = None):
         """
         Initialize for OpenMPI environment.
         """
@@ -640,7 +640,7 @@ class mpi_environment:
 
         if resource_info != None:
             if not resource_info.manager in ['SLURM', 'PBS']:
-                hostsfile = resource_info.get_hosts_file(self)
+                hostsfile = resource_info.get_hosts_file(wdir)
                 if hostsfile != None:
                     self.mpiexec += ' --machinefile ' + hostsfile
 
@@ -650,7 +650,7 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_lam__(self, p, resource_info=None):
+    def __init_lam__(self, p, resource_info=None, wdir = None):
         """
         Initialize for LAM/MPI environment.
         """
@@ -701,7 +701,7 @@ class mpi_environment:
         # Resource manager info
 
         if resource_info != None:
-            hostsfile = resource_info.get_hosts_file(self)
+            hostsfile = resource_info.get_hosts_file(wdir)
             if hostsfile != None and self.mpiboot != None:
                 self.mpiboot += ' ' + hostsfile
                 self.mpihalt += ' ' + hostsfile
@@ -717,7 +717,7 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_bgl__(self, p, resource_info=None):
+    def __init_bgl__(self, p, resource_info=None, wdir = None):
 
         """
         Initialize for Blue Gene/L environment.
@@ -741,7 +741,7 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_bgp__(self, p, resource_info=None):
+    def __init_bgp__(self, p, resource_info=None, wdir = None):
 
         """
         Initialize for Blue Gene/P environment.
@@ -764,7 +764,7 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_hp_mpi__(self, p, resource_info=None):
+    def __init_hp_mpi__(self, p, resource_info=None, wdir = None):
         """
         Initialize for HP MPI environment.
         """
@@ -801,7 +801,7 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_mpibull2__(self, p, resource_info=None):
+    def __init_mpibull2__(self, p, resource_info=None, wdir = None):
         """
         Initialize for MPIBULL2 environment.
         """
@@ -834,7 +834,7 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_other__(self, p, resource_info=None):
+    def __init_other__(self, p, resource_info=None, wdir = None):
         """
         Initialize MPI environment info for environments not handled
         in one the the previous cases.
@@ -910,7 +910,7 @@ class exec_environment:
         # Associate default launcher and associated options based on
         # known MPI types, use default otherwise
 
-        self.mpi_env = mpi_environment(self.resources)
+        self.mpi_env = mpi_environment(self.resources, wdir)
 
 #-------------------------------------------------------------------------------
 
