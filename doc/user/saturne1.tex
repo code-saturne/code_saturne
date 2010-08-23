@@ -171,43 +171,45 @@ Every calculation directory contains:
 \item A directory \texttt{SCRIPTS} for the launch script
 \item A directory \texttt{RESU} for the results\\
 To improve the calculation traceability, the files and directories
-sent to \texttt{RESU} after a calculation are given a suffix
-identifying the calculation start date and time by an eight-digit
-number (two digits for each month, day, hour and minute; the result of a
-calculation started at 14h03 on December 31$^{\text{st}}$ will therefore be indexed
-12311403)
+sent to \texttt{RESU} after a calculation are either placed in a subdirectory
+or given a suffix identifying the calculation start date and time by an
+eight-digit number (two digits for each month, day, hour and minute; the
+result of a calculation started at 14h03 on December 31$^{\text{st}}$ will
+therefore be indexed 12311403). By default, a subdirectory is used, but
+it is possible to revert to the legacy postfixing scheme by setting
+\texttt{results\_by\_suffix = True} instead of \texttt{False} in the
+\texttt{runcase} script's case definition command.
 \end{list}
 
 \noindent
 In the standard cases, \texttt{RESU} contains a directory
-\texttt{CHR.ENSIGHT.mmddhhmm} with the post-processing files in {\em EnSight} format,
-a directory \texttt{RESTART.mmddhhmm} for the calculation
+\texttt{CHR.ENSIGHT} with the post-processing files in {\em EnSight} format,
+a directory \texttt{RESTART} for the calculation
       restart files,
-a directory  \texttt{HIST.mmddhhmm} for the files of chronological
+a directory  \texttt{HIST} for the files of chronological
       record of the results at specific locations (probes),\\
-\texttt{listpre.mmddhhmm} and \texttt{listing.mmddhhmm} files reporting the
+\texttt{preprocessor.log} and \texttt{listing} files reporting the
 Preprocessor and the Kernel execution. For an easier follow-up of the modifications
 in former calculations, the user-subroutines used in a calculation are stored in
-a directory \texttt{SRC.mmddhhmm} in the directory \texttt{RESU}. The {\em Xml}
+a directory \texttt{SRC} in the directory \texttt{RESU}. The {\em Xml}
 Interface data file, thermo-chemical data files and launch script are also
 copied into the  directory \texttt{RESU} with the appropriate suffix (whatever
 its name, the launch script appears in the directory \texttt{RESU} as
-\texttt{runcase.mmddhhmm}). \texttt{compil.log.mmddhhmm} and
-\texttt{summary.mmddhhmm} are respectively reports of the compilation phase and
+\texttt{runcase}). \texttt{compil.log} and
+\texttt{summary} are respectively reports of the compilation phase and
 general information on the calculation (which kind of machine, which user, which
 version of the code, ...). Eventually, when the user subroutines produce
 specific result files (extraction of 1D profiles for instance), a
-directory \texttt{RES\_USERS.mmddhhmm} is created in the directory \texttt{RESU}
+directory \texttt{RES\_USERS} is created in the directory \texttt{RESU}
 for these files\footnote{in order for the script to copy them properly, their
 names have to be given in the variable \texttt{USER\_OUTPUT\_FILES}
 of the launch script, see \S\ref{prg_runcase}}.
 
-
 During calculations coupled with \syrthes (option specified in the launch
 script of \CS or {\em via} the Interface) the same organisation is used for the
 files related to \CS. For the files related
- to \syrthes, the location of the upstream files is specified in the
-\texttt{syrthes.env} file. Yet, the launch script is built presuming that the
+ to \syrthes 3, the location of the upstream files is specified in the
+\texttt{syrthes.env} file. Yet, the launch script is built assuming that the
 following organisation is applied:
 \begin{list}{$\bullet$}{}
 \item a directory \texttt{SRC\_SYR} for the potential \syrthes user subroutines
@@ -219,18 +221,17 @@ also be placed in this directory.
 
 The \syrthes result files (geometry file, chronological result files, calculation
 restart files and the historic file) are placed in a sub-directory
-\texttt{RESU\_SYR.mmddhhmm} of the \texttt{RESU} directory, where
-\texttt{mmddhhmm} corresponds to the calculation identification suffix.
+\texttt{RESU\_SYR} of the \texttt{RESU} directory.
 
 \sloppy
 
 \noindent
 The \syrthes execution report file is placed in the \texttt{RESU} directory (same as
-for the \CS review) under the name \texttt{listsyr.mmddhhmm} and the compilation
-report file is under the name  \texttt{compil\_syrthes.log.mmddhhmm}.
+for the \CS review) under the name \texttt{syrthes.log} and the compilation
+report file is under the name  \texttt{compil\_syrthes.log}.
 For an easier follow-up of the modifications
 in former calculations, the potential \syrthes user-subroutines used in a
-calculation are stored in a directory \texttt{SRC\_SYR.mmddhhmm} in the
+calculation are stored in a directory \texttt{SRC\_SYR} in the
 directory \texttt{RESU}.
 
 \fussy
@@ -2818,9 +2819,9 @@ In order for this last formula to be valid even for \texttt{ifac=nfac},
 is equal to \texttt{lndfac+1}.\\
 The composition of the arrays \texttt{nodfbr} and \texttt{ipnfbr} is similar.
 
-\minititre{Note 4: commons}
-{\bf The user will not modify the existing ``commons''.} This would require the
-recompilation of the complete version, operation which is not allowed in
+\minititre{Note 4: Fortran modules}
+{\bf The user will not modify the existing Fortran modules.} This would require
+the recompilation of the complete version, operation which is not allowed in
 standard use.
 
 %==================================
@@ -2874,8 +2875,8 @@ In addition, other geometric variables are accessible in sections of
 the unidimensional macro-arrays IA (for integers) and RA (for real numbers)
 which are passed as arguments
 in every subroutine (apart from a few ones of very low level). The
-index-number of the first element of these sections is stored in a ``common''
-(in the file \texttt{pointe.h}), passed to most of the routines. Hence, the
+index-number of the first element of these sections is stored in a Fortran modules
+(in the file \texttt{pointe.f90}), passed to most of the routines. Hence, the
 surface of an internal face \texttt{ifac} is stored in
 \texttt{ra(isrfan+ifac-1)}.
 Or, the coordinate of vector $\vect{OF}$ (see below for
@@ -2965,8 +2966,8 @@ variables at the previous time step}
 \underline{About \texttt{rtp} and \texttt{rtpa}}
 
 The indexes allowing to mark out the different variables (from 1 to
-\texttt{nvar}) are integers available in a ``common'' file called
-\texttt{numvar.h}. Some solved variables (pressure, velocity, turbulence)
+\texttt{nvar}) are integers available in a module file called
+\texttt{numvar.f90}. Some solved variables (pressure, velocity, turbulence)
 depend on the considered phase, and the index which refers to it is then a
 array of size \texttt{nphsmx}, the maximum number of phases.
 
@@ -3342,11 +3343,11 @@ although they concern only the wall boundary faces.
 
 The main numerical variables and ``pointers''\footnote{As for the
 geometrical variables, some variables may be accessed to directly in
-sections of the unidimensional macro-arrays IA (for the integers) and RA
-(for the real numbers) which are present as arguments in every
+sections of the unidimensional macro-arrays \texttt{ia} (for the integers)
+and \texttt{ra} (for the real numbers) which are present as arguments in every
 subroutine (apart from a few ones of very low level). The number of the
-first position of these sections in IA and RA is indicated by an integer
-stored in a ``common''. These integers are called ``pointers''} are
+first position of these sections in \texttt{ia} and \texttt{ra} is indicated
+by an integer stored in a module. These integers are called ``pointers''} are
 displayed below.
 
 \minititre{Boundary conditions}
@@ -3559,7 +3560,7 @@ The second index of the array \texttt{iclrtp} allows to have several sets of
 boundary conditions for each variable. The ``standard'' boundary
 conditions are determined by \texttt{ijcl=icoef}, where \texttt{icoef} is a
 parameter which is fixed automatically by the code, and can be accessed to in the
-``common'' file \texttt{numvar.h}. More specificic or advanced boundary
+module file \texttt{numvar.f90}. More specificic or advanced boundary
 conditions can be accessed to with \texttt{ijcl=icoeff}. \\
 In practice, for a variable \texttt{ivar} whose value $\phi_{I'}$ in a
 boundary cell is known, the value at the corresponding boundary face
@@ -4564,7 +4565,7 @@ corresponding to this new wall face type (see
 \texttt{ntypmx\index{ntypmx}} (maximum number of boundary face types), and of
 course different from the values \texttt{ientre}, \texttt{iparoi},
 \texttt{iparug}, \texttt{isymet}, \texttt{isolib} and \texttt{iindef} (the value
-of these variables is given in the file \texttt{paramx.h}). This allows to
+of these variables is given in the file \texttt{paramx.f90}). This allows to
 easily isolate some boundary faces, in order to calculate balances.
 
 %==================================
@@ -6315,7 +6316,7 @@ subroutine \texttt{usclim} will be modified by the radiation module
 according to the data given in \texttt{usray2} (cf. \S\ref{fvm_selector}).\\
 A zone number must be given to each boundary face \footnote{this must be less
  than the maximum allowable by the code, \texttt{nozrdm}. This is fixed at 2000
- in \texttt{radiat.h} and cannot be modified.}and, specifically for
+ in \texttt{radiat.f90} and cannot be modified.}and, specifically for
 the walls, a boundary condition type and an initialisation temperature
 (in Kelvin). The initialisation temperature is only used to make the
 solving implicit at the first time step. The zone number allows to assign
@@ -6338,7 +6339,7 @@ each boundary face. There are five different types:
 
 \item \texttt{\textbf{iprefl}}: for a reflecting wall face, calculation of the
       temperature by means of a flux balance.
- This is fixed at 2000 in \texttt{radiat.h} and cannot be modified.
+ This is fixed at 2000 in \texttt{radiat.f90} and cannot be modified.
 
 \item \texttt{\textbf{ifgrno}}: gray or black wall face to which a conduction
       flux is imposed,
@@ -6792,7 +6793,7 @@ study case. Their content is described below.
   8     &    1   238         &    \texttt{ngazg\index{ngazg}}   & Number of species                         \\
         &                    &    \texttt{npo\index{npo}}       & Number of given temperature points for    \\
         &                    &                         & the tabulated physical properties                  \\
-        &                    &                         & (\texttt{npo} $\leqslant$ \texttt{npot} set in \texttt{ppthch.h})             \\
+        &                    &                         & (\texttt{npo} $\leqslant$ \texttt{npot} set in \texttt{ppthch.f90})             \\
         &                    &                         & So there will be \texttt{ngazg} blocks of \texttt{npo} lines each    \\ \hline
   9     &\#                            ... &           & Free comment                                       \\ \hline
  10     &\#  Proprietes                ... &           & Free comment                                       \\ \hline
@@ -6850,7 +6851,7 @@ the eventual user scalars: {\em \texttt{usclim}} is not used at all.}\\
 In the case of a specific physics modeling, a zone number \texttt{izone}
 \footnote{\texttt{izone} must be less than the maximum number of boundary
 zone allowable by the code, \texttt{nozppm}. This is fixed at 2000 in
- \texttt{pppvar.h};not to be modified} (for
+ \texttt{pppvar.f90};not to be modified} (for
 instance the color \texttt{icoul}) is associated with every boundary face, in
 order to gather together all the boundary faces of the same type. In
 comparison to \texttt{usclim}, the main change from the user point of
@@ -7233,7 +7234,7 @@ used at all.}
 For the electric module, each boundary face is associated with a number
  \texttt{izone} \footnote{\texttt{izone} must be less than the maximum
  value allowed by the code, \texttt{nozzppm}. This is fixed at 2000 in \texttt
-{ppvar.h} and cannot be modified.}(the color \texttt{icoul} for example) in
+{ppppar.f90} and cannot be modified.}(the color \texttt{icoul} for example) in
  order to group together all the boundary faces of the same type. In the report
  \texttt{usclim}, the main change from the users point of view concerns the
  specification of the boundary conditions of the potential, which isn't

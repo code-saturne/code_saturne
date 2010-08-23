@@ -1,4 +1,9 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update user documentations.
+  modified file:
+    doc/user/saturne1.tex
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Update default compiler flags.
   modified scripts:
     config/cs_auto_flags.sh
