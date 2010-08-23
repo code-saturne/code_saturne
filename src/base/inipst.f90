@@ -91,7 +91,7 @@ character        optpst(96)
 
 ! Local variables
 
-integer          ii
+integer          ll
 
 !===============================================================================
 
@@ -105,12 +105,11 @@ ipstze = ichrze
 ipstmd = ichrmd
 ntpst = ntchr
 
-do ii = 1, len(fmtchr)
-  fmtpst(ii) = fmtchr(ii:ii)
-enddo
-do ii = 1, len(optchr)
-  optpst(ii) = optchr(ii:ii)
-enddo
+ll = len(fmtchr)
+call cssf2c(ll, fmtchr, fmtpst)
+
+ll = len(optchr)
+call cssf2c(ll, optchr, optpst)
 
 !===============================================================================
 

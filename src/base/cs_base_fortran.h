@@ -76,6 +76,32 @@ void CS_PROCF (csmkdr, CSMKDR)
  const cs_int_t   *dirlen
 );
 
+/*----------------------------------------------------------------------------
+ * Copy a Fortan string buffer to a C string buffer
+ *
+ * The aim of this function is to aviod issues with Fortran array bounds
+ * checking when compilers such as icc 11 consider a character array from C
+ * as an array of 1-character length strings.
+ *
+ * Fortran interface
+ *
+ * SUBROUTINE CSSF2C (LEN, CSTR, FSTR)
+ * *****************
+ *
+ * INTEGER          LEN         : --> : String length
+ * CHARACTER*       FSTR        : --> : Fortran string
+ * CHARACTER*       CSTR        : <-- : C string
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cssf2c, CSSF2C)
+(
+ const cs_int_t   *len,
+ const char       *fstr,
+ char             *cstr
+ CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
+                                         by many Fortran compilers) */
+);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

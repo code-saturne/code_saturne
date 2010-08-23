@@ -1,4 +1,12 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Modifiy Fortran to C string copy to avoid issues with bounds
+  checking with recent Fortran compilers such as icc 11.
+  modified files:
+    src/base/cs_base_fortran.c
+    src/base/cs_base_fortran.h
+    src/base/inipst.f90
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Update user documentations.
   modified file:
     doc/user/saturne1.tex
