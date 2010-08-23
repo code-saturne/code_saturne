@@ -1236,9 +1236,6 @@ _update_cut_faces_num(cs_mesh_t       *mesh,
 
   if (mesh->n_domains > 1) {
 
-    bft_printf(_("\t%12d global faces before cutting\n"),
-               *n_g_faces);
-
     previous_io_num = fvm_io_num_create(NULL,
                                         *p_global_face_num,
                                         n_init_faces,
@@ -1255,9 +1252,6 @@ _update_cut_faces_num(cs_mesh_t       *mesh,
     BFT_REALLOC(*p_global_face_num, n_faces, fvm_gnum_t);
     size = sizeof(fvm_gnum_t) * n_faces;
     memcpy(*p_global_face_num, global_num, size);
-
-    bft_printf(_("\t%12d global faces after cutting\n\n"),
-               *n_g_faces);
 
     new_io_num = fvm_io_num_destroy(new_io_num);
 
@@ -1433,12 +1427,13 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
   cs_real_t  *i_face_normal = NULL, *b_face_normal = NULL;
   double  *working_array = NULL, *i_face_warping = NULL, *b_face_warping = NULL;
   fvm_lnum_t  *n_i_sub_elt_lst = NULL, *n_b_sub_elt_lst = NULL;
+  fvm_gnum_t  n_g_faces_ini = 0;
   fvm_gnum_t  n_g_i_cut_faces = 0, n_g_b_cut_faces = 0;
 
   const cs_int_t  n_init_i_faces = mesh->n_i_faces;
   const cs_int_t  n_init_b_faces = mesh->n_b_faces;
 
-#if 0   /* JB DEBUG */
+#if 0   /* DEBUG */
   cs_mesh_dump(mesh);
 #endif
 
@@ -1524,6 +1519,8 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
   /* Internal face treatment */
   /* ----------------------- */
 
+  n_g_faces_ini = mesh->n_g_b_faces;
+
   if (mesh->halo == NULL)
     _cut_warped_faces(mesh,
                       2,
@@ -1543,16 +1540,6 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
                              &i_face_lst,
                              &n_i_sub_elt_lst);
 
-  bft_printf(_(" Interior faces:\n"
-               "\t%12d cut faces to respect the criterion\n"
-               "\n"
-               "\t%12d local faces before cutting\n"
-               "\t%12d local faces after cutting\n\n"),
-             n_i_cut_faces, n_init_i_faces, mesh->n_i_faces);
-
-  bft_printf(_(" Size of the new face -> vertices connectivity: %12d\n\n"),
-             mesh->i_face_vtx_connect_size);
-
   /* Update global number of internal faces and its global numbering */
 
   _update_cut_faces_num(mesh,
@@ -1562,12 +1549,20 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
                         &(mesh->n_g_i_faces),
                         &(mesh->global_i_face_num));
 
+  bft_printf(_(" Interior faces:\n\n"
+               "   %12llu faces before cutting\n"
+               "   %12llu faces after cutting\n\n"),
+             (unsigned long long)n_g_faces_ini,
+             (unsigned long long)(mesh->n_g_i_faces));
+
   /* Partial memory free */
 
   BFT_FREE(n_i_sub_elt_lst);
 
   /* Border face treatment */
   /* --------------------- */
+
+  n_g_faces_ini = mesh->n_g_b_faces;
 
   _cut_warped_faces(mesh,
                     1,
@@ -1581,16 +1576,6 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
                     &mesh->b_face_vtx_idx,
                     &mesh->b_face_vtx_lst);
 
-  bft_printf(_(" Boundary faces:\n"
-               "\t%12d cut faces to respect the criterion\n"
-               "\n"
-               "\t%12d local faces before cutting\n"
-               "\t%12d local faces after cutting\n\n"),
-             n_b_cut_faces, n_init_b_faces, mesh->n_b_faces);
-
-  bft_printf(_(" Size of the new face -> vertices connectivity: %12d\n\n"),
-             mesh->b_face_vtx_connect_size);
-
   /* Update global number of border faces and its global numbering */
 
   _update_cut_faces_num(mesh,
@@ -1600,11 +1585,17 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
                         &(mesh->n_g_b_faces),
                         &(mesh->global_b_face_num));
 
+  bft_printf(_(" Boundary faces:\n\n"
+               "   %12llu faces before cutting\n"
+               "   %12llu faces after cutting\n\n"),
+             (unsigned long long)n_g_faces_ini,
+             (unsigned long long)(mesh->n_g_b_faces));
+
   /* Partial memory free */
 
   BFT_FREE(n_b_sub_elt_lst);
 
-  /* Post-treatment of the selected faces */
+  /* post processing of the selected faces */
 
   if (post_flag == true)
     _post_after_cutting(n_i_cut_faces,

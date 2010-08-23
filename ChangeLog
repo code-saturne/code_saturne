@@ -1,4 +1,9 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Cutting warped faces now logs global and not local counts.
+  modified files:
+    src/base/cs_mesh_warping.c
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Removed internationalization for memory allocation log file.
   modified files:
     preprocessor/util/ecs_mem.c
