@@ -219,6 +219,13 @@ if test "x$cs_gcc" = "xgcc"; then
       ;;
   esac
 
+  case "$cs_cc_vendor-$cs_cc_version" in
+    gcc-4.[56]*)
+      cflags_default_opt="$cflags_default_opt -fexcess-precision=fast"
+      cflags_default_hot="$cflags_default_hot -fexcess-precision=fast"
+      ;;
+  esac
+
   case "$host_os" in
     *cygwin)
     cflags_default="`echo $cflags_default | sed -e 's/c99/gnu99/g'`"
@@ -278,7 +285,8 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     # Default compiler flags
     cflags_default="-c99"
     cflags_default_dbg="-g -Mbounds"
-    cflags_default_opt="-fast -fastsse"
+    cflags_default_opt="-O2"
+    cflags_default_hot="-fast"
     cflags_default_prf="-Mprof=func,lines"
     cflags_default_omp="-mp"
 
@@ -433,7 +441,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
         cflags_default="-c99 -64"
         cflags_default_opt="-O2 -woff 1521,1552,1096"
         cflags_default_dbg="-g -woff 1429,1521,1209 -fullwarn"
-        cflags_default_prf="-fbexe"
+        cflags_default_prf="$cflags_default_opt"
 
       fi
       ;;
@@ -654,7 +662,8 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     # Default compiler flags
     fcflags_default="-Mpreprocess"
     fcflags_default_dbg="-g -Mbounds"
-    fcflags_default_opt="-fast -fastsse"
+    fcflags_default_opt="-O2"
+    fcflags_default_hot="-fast"
     fcflags_default_prf="-Mprof=func,lines"
     fcflags_default_omp="-mp"
 
@@ -837,7 +846,7 @@ if test "x$cs_linker_set" != "xyes" ; then
       ldflags_default="-64 -Wl,-woff,85"
       ldflags_default_opt=""
       ldflags_default_dbg="-g"
-      ldflags_default_prf=""
+      ldflags_default_prf="-p"
       ;;
 
     solaris2.*)

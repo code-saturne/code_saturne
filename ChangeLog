@@ -1,4 +1,9 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update default compiler flags.
+  modified scripts:
+    config/cs_auto_flags.sh
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct periodicity definition when a mesh with periodicity data
   is not the first preprocessor output file read.
   modified files:
