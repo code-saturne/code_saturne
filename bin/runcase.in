@@ -969,7 +969,7 @@ if [ $EXEC_KERNEL = yes ] ; then
     fi
   done
 
-  for f in probes_*.dat ; do
+  for f in probes_*.dat str_*.dat Lag_*.dat ; do
     if [ -f $f ] ; then
       if [ ! -d $RESU/HIST.$SUFFIX ] ; then
         mkdir $RESU/HIST.$SUFFIX
