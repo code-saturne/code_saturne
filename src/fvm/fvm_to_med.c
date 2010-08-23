@@ -1451,9 +1451,7 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
                         NULL,
                         &n_extra_vertices);
 
-  extra_vertex_coords = _extra_vertex_coords(writer,
-                                             mesh);
-
+  extra_vertex_coords = _extra_vertex_coords(writer, mesh);
 
   /* Vertex coordinates export */
   /*---------------------------*/

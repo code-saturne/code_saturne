@@ -1,4 +1,11 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor style changes.
+  modified files:
+    src/fvm/fvm_to_med.c
+    src/base/cs_syr3_coupling.c
+    src/base/cs_io.c
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Cutting warped faces now logs global and not local counts.
   modified files:
     src/base/cs_mesh_warping.c

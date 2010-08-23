@@ -1454,7 +1454,8 @@ cs_syr3_coupling_vtx_to_elt(const cs_syr3_coupling_t  *syr_coupling,
                             const cs_real_t           *vtx_values,
                             cs_real_t                 *elt_values)
 {
-  cs_int_t n_elts, stride = 1;
+  cs_int_t n_elts;
+  cs_int_t stride = 1;
 
   cs_int_t  *parent_num = NULL;
   cs_int_t  *connect = NULL;
@@ -1541,7 +1542,8 @@ cs_syr3_coupling_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
                             fvm_lnum_t                 n_vertices,
                             cs_real_t                 *vtx_values)
 {
-  cs_int_t n_elts, stride = 1;
+  cs_int_t n_elts;
+  cs_int_t stride = 1;
 
   cs_int_t  *parent_num = NULL;
   cs_int_t  *connect = NULL;

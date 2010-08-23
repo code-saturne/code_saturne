@@ -1308,11 +1308,11 @@ _echo_data(size_t           echo,
            fvm_datatype_t   elt_type,
            const void      *elts)
 {
+  fvm_file_off_t  i;
   fvm_gnum_t  num_shift = 1;
   size_t  _n_elts = n_elts;
   fvm_file_off_t  echo_start = 0;
   fvm_file_off_t  echo_end = 0;
-  fvm_file_off_t  i;
   const char *_loc_glob[] = {N_(" (local)"), ""};
   const char *loc_glob = _loc_glob[1];
 
@@ -1941,10 +1941,11 @@ _write_header(const char      *sec_name,
               const void      *elts,
               cs_io_t         *outp)
 {
+  fvm_file_off_t header_vals[6];
+
   double t_start = 0.;
   fvm_file_off_t write_size = 0;
   fvm_file_off_t data_size = n_vals * fvm_datatype_size[elt_type];
-  fvm_file_off_t header_vals[6];
   size_t name_size = 0, name_pad_size = 0;
   size_t n_written = 0;
   cs_io_log_t  *log = NULL;
@@ -2468,10 +2469,11 @@ int
 cs_io_read_header(cs_io_t             *inp,
                   cs_io_sec_header_t  *header)
 {
+  fvm_file_off_t header_vals[6];
+
   double t_start = 0.;
   int type_name_error = 0;
   fvm_file_off_t body_size = 0;
-  fvm_file_off_t header_vals[6];
   cs_io_log_t  *log = NULL;
   size_t n_read = 0, n_add = 0;
 
