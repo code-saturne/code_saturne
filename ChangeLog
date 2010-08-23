@@ -1,4 +1,20 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor Makefile consistency improvements.
+  modified scripts:
+    src/atmo/Makefile.am
+    src/bft/Makefile.am
+    src/cfbl/Makefile.am
+    src/cogz/Makefile.am
+    src/cplv/Makefile.am
+    src/elec/Makefile.am
+    src/fuel/Makefile.am
+    src/fvm/Makefile.am
+    src/mati/Makefile.am
+    src/mei/Makefile.am
+    src/pprt/Makefile.am
+    src/rayt/Makefile.am
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Update script for move of headers from include to src.
   modified script:
     sbin/rmb
