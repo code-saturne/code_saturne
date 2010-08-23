@@ -637,9 +637,6 @@ main(int    argc,
   /* In case of use with SALOME, optional connection with CFD_Proxy
      launcher or load and start of YACS module */
 
-  /* For verbose output, uncomment the following */
-  /*cs_calcium_set_verbosity(3);*/
-
   /* Using CFD_Proxy, simply initialize connection before standard run */
   if (opts.proxy_socket != NULL) {
     cs_proxy_comm_initialize(opts.proxy_socket,
