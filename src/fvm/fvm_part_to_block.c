@@ -821,8 +821,6 @@ _copy_indexed_alltoallv(fvm_part_to_block_t   *d,
   for (i = 0; i < n_ranks; i++)
     send_displ[i] -= send_count[i];
 
-  BFT_MALLOC(recv_buf, recv_size*type_size, unsigned char);
-
   /* Exchange values */
 
   MPI_Alltoallv(send_buf, send_count, send_displ, mpi_type,
