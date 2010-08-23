@@ -1,4 +1,9 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update French dictionnary.
+  modified file:
+    po/fr.po
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Added selection functions for faces at cell criteria boundaries
   and for pre-selection of families.
   modified files:
