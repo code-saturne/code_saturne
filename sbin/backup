@@ -4,55 +4,17 @@ PREFIX=`dirname $0`
 PREFIX=`cd "$PREFIX/.." ; pwd`
 SUBDIR=`basename $PREFIX`
 
-ARCHNAME=${SUBDIR}.tar
-\rm -f $ARCHNAME.gz
+ARCHNAME=${SUBDIR}.tar.gz
 
 RUNDIR=`pwd`
 
-if [ `uname -s` = Linux ] ; then
-  TMPDIR=`mktemp -d /tmp/cs_backup.XXXXXX`
-else
-  TMPDIR=/tmp/ncs_`basename $0`
-  mkdir $TMPDIR
-fi
-if [ $? -ne 0 ]; then
-  echo "$0: Error creating temporary directory..."
-  exit 1
-fi
-
-cp -p -r $PREFIX $TMPDIR/
-cd $TMPDIR || exit 1
-
-# Clean copy
-
-find "$TMPDIR" -name .svn -exec \rm -rf {} \;
-find "$TMPDIR" -name *~ -exec \rm {} \;
-find "$TMPDIR" -name \#* -exec \rm {} \;
-find "$TMPDIR" -name \.\#* -exec \rm {} \;
-
-cd `basename "$PREFIX"`/doc 
-if [ $? = 0 ]; then
-  make distclean
-  cd $TMPDIR || exit 1
-fi
+cd $PREFIX/.. || exit 1
 
 PREFIX_BASE=`basename $PREFIX`
 
-tar cvf $ARCHNAME $PREFIX_BASE/ChangeLog $PREFIX_BASE/ABOUT-NLS $PREFIX_BASE/AUTHORS \
-                  $PREFIX_BASE/COPYING $PREFIX_BASE/INSTALL $PREFIX_BASE/NEWS \
-                  $PREFIX_BASE/COMPATIBILITY $PREFIX_BASE/QUALITY_ASSURANCE \
-                  $PREFIX_BASE/README $PREFIX_BASE/TODO $PREFIX_BASE/cs_config.h.in \
-                  $PREFIX_BASE/config* $PREFIX_BASE/Makefile.* \
-                  $PREFIX_BASE/bin $PREFIX_BASE/data $PREFIX_BASE/doc \
-                  $PREFIX_BASE/examples $PREFIX_BASE/extras $PREFIX_BASE/gui \
-                  $PREFIX_BASE/libple $PREFIX_BASE/libsyrcs $PREFIX_BASE/preprocessor \
-                  $PREFIX_BASE/patches $PREFIX_BASE/po $PREFIX_BASE/sbin \
-                  $PREFIX_BASE/src $PREFIX_BASE/tests \
-                  $PREFIX_BASE/users
+tar cvzf $ARCHNAME --exclude='*.svn' --exclude='*.git' --exclude='.*.swp' --exclude=$ARCHNAME $PREFIX_BASE 
 
-gzip $ARCHNAME
-mv $ARCHNAME.gz $RUNDIR
+mv $ARCHNAME $RUNDIR
 
 cd $RUNDIR
-\rm -rf $TMPDIR
 
