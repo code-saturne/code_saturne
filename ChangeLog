@@ -1,4 +1,13 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Old EnSight writer is still accessible using "v1" writer option.
+  added files:
+    src/fvm/fvm_to_ensight_v1.c
+    src/fvm/fvm_to_ensight_v1.h
+  modified files:
+    src/fvm/Makefile.am
+    src/fvm/fvm_writer.c
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   EnSight writer now enables parallel IO in binary mode.
   modified files:
     src/fvm/fvm_to_ensight.c

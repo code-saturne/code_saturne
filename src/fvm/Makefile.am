@@ -74,6 +74,7 @@ fvm_to_cgns.h \
 fvm_to_med.h \
 fvm_to_ensight.h \
 fvm_to_ensight_case.h \
+fvm_to_ensight_v1.h \
 fvm_to_text.h \
 fvm_writer_helper.h \
 fvm_writer_priv.h
@@ -116,6 +117,7 @@ fvm_selector_postfix.c \
 fvm_tesselation.c \
 fvm_to_ensight.c \
 fvm_to_ensight_case.c \
+fvm_to_ensight_v1.c \
 fvm_to_text.c \
 fvm_trace.c \
 fvm_triangulate.c \
