@@ -1,3 +1,21 @@
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Attributes are removed from group classes.
+  Attributes read in the input mesh are converted to group names so as
+  to be renamable by the user and listed in the meshe's groups, but
+  additional mesh family items may be built when group names are convertible
+  to integers so that user subroutines looping on families and family
+  properties still work as before.
+  Also, selectors still contain internal attributes so as to ensure a
+  range[] of integers works as expected, but these are now built directly
+  from group names which are convertible to integers.
+  modified files:
+    src/base/cs_mesh.c
+    src/base/cs_preprocessor_data.c
+    src/base/cs_selector.c
+    src/fvm/fvm_group.c
+    src/fvm/fvm_group.h
+    src/fvm/fvm_selector.c
+
 * 23/08/2010 - David Monfort <david.monfort@edf.fr>
   Pass the multigrid relaxation parameter to the different subroutines by
   argument instead of using a common block to avoid issues when the routines

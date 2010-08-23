@@ -2937,9 +2937,8 @@ void
 cs_mesh_init_group_classes(cs_mesh_t  *mesh)
 {
   int  i, j;
-  int  grp_nbr, grp_num, grp_idx, color_nbr;
+  int  grp_nbr, grp_num, grp_idx;
 
-  int  *color = NULL;
   char **group = NULL;
 
   if (mesh->class_defs != NULL)
@@ -2950,21 +2949,14 @@ cs_mesh_init_group_classes(cs_mesh_t  *mesh)
   /* Construction of the fvm_group_class structure */
 
   BFT_MALLOC(group, mesh->n_max_family_items, char*);
-  BFT_MALLOC(color, mesh->n_max_family_items, int);
 
   for (i = 0; i < mesh->n_families; i++) {
 
-    color_nbr = 0;
     grp_nbr  = 0;
 
     for (j = 0; j <  mesh->n_max_family_items; j++) {
 
-      if (mesh->family_item[j * mesh->n_families + i] > 0){
-        color[color_nbr++]
-          = mesh->family_item[j *mesh->n_families + i];
-      }
-      else if (  mesh->family_item[j * mesh->n_families + i]
-               < 0) {
+      if (mesh->family_item[j * mesh->n_families + i] < 0) {
         /* Fortran formulation */
         grp_num = -mesh->family_item[j*mesh->n_families + i] -1;
         grp_idx = mesh->group_idx[grp_num];
@@ -2975,14 +2967,11 @@ cs_mesh_init_group_classes(cs_mesh_t  *mesh)
 
     fvm_group_class_set_add(mesh->class_defs,
                             grp_nbr,
-                            color_nbr,
-                            (const char **)group,
-                            color);
+                            (const char **)group);
 
   } /* End of loop on families */
 
   BFT_FREE(group);
-  BFT_FREE(color);
 }
 
 /*----------------------------------------------------------------------------

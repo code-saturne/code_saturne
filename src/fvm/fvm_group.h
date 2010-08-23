@@ -9,7 +9,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2007  EDF
+  Copyright (C) 2007-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -96,32 +96,6 @@ const char **
 fvm_group_class_get_group_names(const fvm_group_class_t  *this_group_class);
 
 /*----------------------------------------------------------------------------
- * Return the number of attributes of a group class.
- *
- * parameters:
- *   this_group_class <-- pointer to group class structure
- *
- * returns:
- *   number of attributes in group class
- *----------------------------------------------------------------------------*/
-
-int
-fvm_group_class_get_n_attributes(const fvm_group_class_t  *this_group_class);
-
-/*----------------------------------------------------------------------------
- * Return the array of attributes of a group class.
- *
- * parameters:
- *   this_group_class <-- pointer to group class structure
- *
- * returns:
- *   pointer to array of attributes in group class
- *----------------------------------------------------------------------------*/
-
-const int *
-fvm_group_class_get_attributes(const fvm_group_class_t  *this_group_class);
-
-/*----------------------------------------------------------------------------
  * Creation of a group class set structure.
  *
  * returns:
@@ -138,16 +112,12 @@ fvm_group_class_set_create(void);
  *   this_group_class_set <-> pointer to group class set structure
  *   n_groups             <-- number of groups in class
  *   group_names          <-- array of group names
- *   n_attributes         <-- number of attributes in class
- *   attributes           <-- list of attributes
  *----------------------------------------------------------------------------*/
 
 void
 fvm_group_class_set_add(fvm_group_class_set_t   *this_group_class_set,
                         int                      n_groups,
-                        int                      n_attributes,
-                        const char             **group_names,
-                        const int               *attributes);
+                        const char             **group_names);
 
 /*----------------------------------------------------------------------------
  * Destruction of a group class set structure.

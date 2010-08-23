@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2007  EDF
+  Copyright (C) 2007-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -313,6 +313,38 @@ static int _compare_attributes(const void *x, const void *y)
 }
 
 /*----------------------------------------------------------------------------
+ * Check if a string defines an integer and scan its value
+ *
+ * parameters:
+ *   str   <-- string parsed
+ *   value --> integer conversion
+ *
+ * returns:
+ *   true if the string defines an integer, false otherwise
+ *----------------------------------------------------------------------------*/
+
+static _Bool
+_is_int(const char  *str,
+        int         *value)
+{
+  int _value;
+  int retcode, int_len;
+
+  *value = 0;
+  retcode = (_Bool)(sscanf(str, "%i%n", &_value, &int_len));
+
+  if (retcode) {
+    if (int_len != (int)strlen(str))
+      retcode = 0;
+  }
+
+  if (retcode)
+    *value = _value;
+
+  return retcode;
+}
+
+/*----------------------------------------------------------------------------
  * Add attribute information to a selector.
  *
  * A global list of attributes from all group classes is built and sorted,
@@ -327,9 +359,9 @@ static void
 _assign_attributes(fvm_selector_t               *this_selector,
                    const fvm_group_class_set_t  *group_class_set)
 {
-  int i, j;
-  int *set_attributes = NULL;
-  int n_attributes_tot = 0;
+  int i, j, group_int;
+  int *set_attributes = NULL, *attributes = NULL;
+  int n_attributes_tot = 0, n_attributes_max = 0;
 
   /* Build basic arrays which exist in any case */
 
@@ -342,26 +374,25 @@ _assign_attributes(fvm_selector_t               *this_selector,
 
   for (i = 0; i < this_selector->n_group_classes; i++) {
 
+    int n_attributes = 0;
     const fvm_group_class_t *gc = fvm_group_class_set_get(group_class_set, i);
-    const int n_attributes = fvm_group_class_get_n_attributes(gc);
+    const int n_groups = fvm_group_class_get_n_groups(gc);
+    const char **group_names = fvm_group_class_get_group_names(gc);
+
+    for (j = 0; j < n_groups; j++) {
+      if (_is_int(group_names[j], &group_int))
+        n_attributes += 1;
+    }
 
     n_attributes_tot += n_attributes;
+    if (n_attributes > n_attributes_max)
+      n_attributes_max = n_attributes;
 
     this_selector->n_class_attributes[i] = n_attributes;
     if (n_attributes > 0)
       BFT_MALLOC(this_selector->attribute_ids[i], n_attributes, int);
     else
       this_selector->attribute_ids[i] = NULL;
-  }
-
-  if (n_attributes_tot == 0)
-    return;
-
-  /* Fill arrays with unsorted group class info */
-
-  for (i = 0; i < this_selector->n_group_classes; i++) {
-    const fvm_group_class_t *gc = fvm_group_class_set_get(group_class_set, i);
-    n_attributes_tot += fvm_group_class_get_n_attributes(gc);
   }
 
   if (n_attributes_tot == 0)
@@ -374,13 +405,15 @@ _assign_attributes(fvm_selector_t               *this_selector,
   for (i = 0; i < this_selector->n_group_classes; i++) {
 
     const fvm_group_class_t *gc = fvm_group_class_set_get(group_class_set, i);
-    const int n_attributes = fvm_group_class_get_n_attributes(gc);
-    const int *attributes = fvm_group_class_get_attributes(gc);
+    const int n_groups = fvm_group_class_get_n_groups(gc);
+    const char **group_names = fvm_group_class_get_group_names(gc);
 
-    for (j = 0; j < n_attributes; j++)
-      set_attributes[n_attributes_tot + j] = attributes[j];
+    for (j = 0; j < n_groups; j++) {
+      if (_is_int(group_names[j], &group_int)) {
+        set_attributes[n_attributes_tot++] = group_int;
+      }
+    }
 
-    n_attributes_tot += n_attributes;
   }
 
   qsort(set_attributes, n_attributes_tot, sizeof(int), &_compare_attributes);
@@ -400,12 +433,21 @@ _assign_attributes(fvm_selector_t               *this_selector,
 
   /* Now build attribute_id arrays */
 
+  BFT_MALLOC(attributes, n_attributes_max, int);
+
   for (i = 0; i < this_selector->n_group_classes; i++) {
 
     int mid_id;
+    int n_attributes = 0;
     const fvm_group_class_t *gc = fvm_group_class_set_get(group_class_set, i);
-    const int n_attributes = fvm_group_class_get_n_attributes(gc);
-    const int *attributes = fvm_group_class_get_attributes(gc);
+    const int n_groups = fvm_group_class_get_n_groups(gc);
+    const char **group_names = fvm_group_class_get_group_names(gc);
+
+    for (j = 0; j < n_groups; j++) {
+      if (_is_int(group_names[j], &group_int)) {
+        attributes[n_attributes++] = group_int;
+      }
+    }
 
     for (j = 0; j < n_attributes; j++) {
 
@@ -434,6 +476,8 @@ _assign_attributes(fvm_selector_t               *this_selector,
 
     }
   }
+
+  BFT_FREE(attributes);
 }
 
 /*----------------------------------------------------------------------------

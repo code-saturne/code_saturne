@@ -257,8 +257,7 @@ cs_selector_get_b_face_list(const char  *criteria,
     const char *missing
       = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                 "criteria:\n"
+    bft_printf(_("The group \"%s\" in the selection criteria:\n"
                  "\"%s\"\n"
                  " does not correspond to any boundary face.\n"),
                missing, criteria);
@@ -293,8 +292,7 @@ cs_selector_get_i_face_list(const char  *criteria,
     const char *missing
       = fvm_selector_get_missing(cs_glob_mesh->select_i_faces, c_id, 0);
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                 "criteria:\n"
+    bft_printf(_("The group \"%s\" in the selection criteria:\n"
                  "\"%s\"\n"
                  " does not correspond to any interior face.\n"),
                missing, criteria);
@@ -329,8 +327,7 @@ cs_selector_get_cell_list(const char  *criteria,
     const char *missing
       = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                 "criteria:\n"
+    bft_printf(_("The group \"%s\" in the selection criteria:\n"
                  "\"%s\"\n"
                  " does not correspond to any cell.\n"),
                missing, criteria);

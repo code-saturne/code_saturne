@@ -2254,6 +2254,81 @@ _mesh_groups_rename(cs_mesh_t          *mesh,
  * structures relative to the data in the given file.
  *
  * parameters
+ *   mesh <-> pointer to mesh structure
+ *   n_gc <-- number of group classes last read
+ *----------------------------------------------------------------------------*/
+
+static void
+_colors_to_groups(cs_mesh_t  *mesh,
+                  int         n_gc)
+{
+  cs_int_t  i, j;
+  int  n_colors = 0;
+  int  color_names_size = 0;
+
+  /* Counting pass */
+
+  for (j = 0; j < mesh->n_max_family_items; j++) {
+    for (i = mesh->n_families - n_gc; i < mesh->n_families; i++) {
+      if (mesh->family_item[mesh->n_families*j + i] > 0) {
+        int color_id = mesh->family_item[mesh->n_families*j + i];
+        int name_size = 1;
+        while (color_id > 0) {
+          color_id /= 10;
+          name_size += 1;
+        }
+        n_colors += 1;
+        color_names_size += name_size;
+      }
+    }
+  }
+
+  /* Reallocation */
+
+  if (n_colors > 0) {
+    if (mesh->n_groups > 0) {
+      BFT_REALLOC(mesh->group_idx, mesh->n_groups + n_colors + 1, cs_int_t);
+      BFT_REALLOC(mesh->group_lst,
+                  mesh->group_idx[mesh->n_groups] - 1 + color_names_size,
+                  char);
+    }
+    else {
+      BFT_MALLOC(mesh->group_idx, n_colors + 1, cs_int_t);
+      BFT_MALLOC(mesh->group_lst, color_names_size, char);
+      mesh->group_idx[0] = 1;
+    }
+  }
+
+  /* Assignment */
+
+  for (j = 0; j < mesh->n_max_family_items; j++) {
+    for (i = mesh->n_families - n_gc; i < mesh->n_families; i++) {
+      if (mesh->family_item[mesh->n_families*j + i] > 0) {
+        int color_id = mesh->family_item[mesh->n_families*j + i];
+        int name_size = 1;
+        cs_int_t group_lst_end = mesh->group_idx[mesh->n_groups] - 1;
+        sprintf(mesh->group_lst + group_lst_end, "%d", color_id);
+        while (color_id > 0) {
+          color_id /= 10;
+          name_size += 1;
+        }
+        mesh->group_idx[mesh->n_groups + 1]
+          = mesh->group_idx[mesh->n_groups] + name_size;
+        mesh->n_groups += 1;
+        mesh->family_item[mesh->n_families*j + i] = - mesh->n_groups;
+      }
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Read sections from the pre-processor about the dimensions of mesh
+ *
+ * This function updates the information in the mesh and mesh reader
+ * structures relative to the data in the given file.
+ *
+ * parameters
  *   mesh     <-> pointer to mesh structure
  *   mr       <-> pointer to mesh reader structure
  *   file_id  <-- file id in mesh reader
@@ -2496,13 +2571,6 @@ _read_dimensions(cs_mesh_t       *mesh,
         cs_io_read_global(&header, mesh->group_lst + i, pp_in);
       }
 
-      if (f->n_group_renames > 0)
-        _mesh_groups_rename(mesh,
-                            mesh->n_groups - n_groups,
-                            f->n_group_renames,
-                            f->old_group_names,
-                            f->new_group_names);
-
     }
     else if (strncmp(header.sec_name, "group_class_properties",
                      CS_IO_NAME_LEN) == 0) {
@@ -2543,7 +2611,16 @@ _read_dimensions(cs_mesh_t       *mesh,
           }
           BFT_FREE(_family_item);
         }
+        /* Transform colors to group names if present */
+        _colors_to_groups(mesh, n_gc);
       }
+
+      if (f->n_group_renames > 0)
+        _mesh_groups_rename(mesh,
+                            mesh->n_groups - n_groups,
+                            f->n_group_renames,
+                            f->old_group_names,
+                            f->new_group_names);
 
     }
 
@@ -3713,6 +3790,109 @@ _clean_families(cs_mesh_t  *mesh)
   BFT_FREE(renum);
 }
 
+/*----------------------------------------------------------------------------
+ * Add colors to group class descriptions for group names which are
+ * convertible to integers.
+ *
+ * parameters
+ *   mesh <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_build_colors(cs_mesh_t  *mesh)
+{
+  cs_int_t  i, j;
+  int  n_max_family_items = mesh->n_max_family_items;
+  int  n_colors = 0;
+
+  if (mesh->n_groups == 0)
+    return;
+
+  /* Counting pass */
+
+  for (i = 0; i < mesh->n_families; i++) {
+    int n_add = 0;
+    int n_family_colors = 0;
+    int n_null = 0;
+    for (j = 0; j < mesh->n_max_family_items; j++) {
+      int gc_prop = mesh->family_item[mesh->n_families*j + i];
+      if (gc_prop < 0) {
+        int color_id;
+        int group_id = - mesh->family_item[mesh->n_families*j + i] - 1;
+        const char *group_name = mesh->group_lst + mesh->group_idx[group_id] - 1;
+        if (sscanf(group_name, "%d", &color_id) == 1) {
+          n_colors += 1;
+          n_family_colors += 1;
+        }
+      }
+      else if (gc_prop == 0)
+        n_null += 1;
+    }
+    n_add = n_family_colors - n_null;
+    if (n_add > 0)
+      n_max_family_items = CS_MAX(mesh->n_max_family_items + n_add,
+                                  n_max_family_items);
+  }
+
+  /* Update structure */
+
+  if (n_colors > 0) {
+
+    int *family_items = NULL;
+
+    /* Increase maximum number of definitions and pad it necessary */
+
+    if (n_max_family_items > mesh->n_max_family_items) {
+      BFT_REALLOC(mesh->family_item,
+                  mesh->n_families*n_max_family_items,
+                  cs_int_t);
+      for (i = mesh->n_max_family_items;
+           i < n_max_family_items;
+           i++) {
+        for (j = 0; j < mesh->n_families; j++)
+          mesh->family_item[mesh->n_families*i + j] = 0;
+      }
+      mesh->n_max_family_items = n_max_family_items;
+    }
+
+    /* Now insert color numbers before group numbers */
+
+    BFT_MALLOC(family_items, mesh->n_max_family_items, int);
+
+    for (i = 0; i < mesh->n_families; i++) {
+
+      int n_family_items = 0;
+      int n_family_colors = 0;
+
+      for (j = 0; j < mesh->n_max_family_items; j++) {
+        int gc_prop = mesh->family_item[mesh->n_families*j + i];
+        if (gc_prop != 0)
+          family_items[n_family_items++] = gc_prop;
+        if (gc_prop < 0) {
+          int color_id;
+          int group_id = - mesh->family_item[mesh->n_families*j + i] - 1;
+          const char *group_name
+            = mesh->group_lst + mesh->group_idx[group_id] - 1;
+          if (sscanf(group_name, "%d", &color_id) == 1) {
+            mesh->family_item[mesh->n_families*n_family_colors + i] = color_id;
+            n_family_colors += 1;
+          }
+        }
+      }
+
+      if (n_family_colors > 0) {
+        for (j = 0; j < n_family_items; j++)
+          mesh->family_item[mesh->n_families*(n_family_colors+j) + i]
+            = family_items[j];
+      }
+
+    }
+
+    BFT_FREE(family_items);
+
+  }
+}
+
 /*============================================================================
  *  Public function definitions for Fortran API
  *============================================================================*/
@@ -4025,9 +4205,10 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
   _mesh_reader_destroy(&mr);
   _cs_glob_mesh_reader = mr;
 
-  /* Remove family duplicates */
+  /* Remove family duplicates and insert colors if present */
 
   _clean_families(mesh);
+  _build_colors(mesh);
 }
 
 /*----------------------------------------------------------------------------*/

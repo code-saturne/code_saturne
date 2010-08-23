@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2009  EDF
+  Copyright (C) 2004-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -79,9 +79,7 @@ extern "C" {
 
 struct _fvm_group_class_t {
   int              n_groups;            /* Number of groups in class */
-  int              n_attributes;        /* Number of attributes */
   char           **group_name;          /* Array of group names */
-  int             *attribute;           /* Array of attributes */
 };
 
 /*----------------------------------------------------------------------------
@@ -98,35 +96,6 @@ struct _fvm_group_class_set_t {
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compare integers (qsort function).
- *
- * parameters:
- *   a <-> pointer to first integer
- *   b <-> pointer to second integer
- *
- * returns:
- *   result of strcmp() on integers
- *----------------------------------------------------------------------------*/
-
-static int
-_compare_atts(const void  *a,
-              const void  *b)
-{
-  int retval = 1;
-
-  const int *v0 = a;
-  const int *v1 = b;
-
-  if (*v0 < *v1)
-    retval = -1;
-
-  else if (*v0 == *v1)
-      retval = 0;
-
-  return retval;
-}
 
 /*----------------------------------------------------------------------------
  * Compare strings (qsort function).
@@ -175,7 +144,7 @@ _group_class_set_send(const fvm_group_class_set_t  *class_set,
 
   for (i = 0; i < class_set->size; i++) {
     const fvm_group_class_t  *gc = class_set->class + i;
-    n_ints += 2 + gc->n_groups + gc->n_attributes;
+    n_ints += 2 + gc->n_groups;
     for (j = 0; j < gc->n_groups; j++)
       n_chars += strlen(gc->group_name[j]) + 1;
   }
@@ -195,15 +164,12 @@ _group_class_set_send(const fvm_group_class_set_t  *class_set,
   for (i = 0; i < class_set->size; i++) {
     const fvm_group_class_t  *gc = class_set->class + i;
     send_ints[n_ints++] = gc->n_groups;
-    send_ints[n_ints++] = gc->n_attributes;
     for (j = 0; j < gc->n_groups; j++) {
       strcpy(send_chars + n_chars, gc->group_name[j]);
       n_chars += strlen(gc->group_name[j]);
       send_chars[n_chars] = '\0';
       n_chars++;
     }
-    for (j = 0; j < gc->n_attributes; j++)
-      send_ints[n_ints++] = gc->attribute[j];
   }
 
   assert(n_ints == send_count[1]);
@@ -272,19 +238,14 @@ _group_class_set_recv(fvm_group_class_set_t  *class_set,
   for (i = 0; i < class_set->size; i++) {
     fvm_group_class_t  *gc = class_set->class + i;
     gc->n_groups = recv_ints[n_ints++];
-    gc->n_attributes = recv_ints[n_ints++];
     if (gc->n_groups > 0)
       BFT_MALLOC(gc->group_name, gc->n_groups, char *);
-    if (gc->n_attributes > 0)
-      BFT_MALLOC(gc->attribute, gc->n_attributes, int);
     for (j = 0; j < gc->n_groups; j++) {
       size_t l = strlen(recv_chars + n_chars) + 1;
       BFT_MALLOC(gc->group_name[j], l, char);
       strcpy(recv_chars + n_chars, gc->group_name[j]);
       n_chars += l;
     }
-    for (j = 0; j < gc->n_attributes; j++)
-      gc->attribute[j] = recv_ints[n_ints++];
   }
 
   /* Free receive buffers */
@@ -316,23 +277,14 @@ _group_class_dump(const fvm_group_class_t  *this_group_class,
 
   bft_printf("\n"
              "    _group_class[%3d]: %p\n"
-             "    n_groups:          %d\n"
-             "    n_attributes:      %d\n",
+             "    n_groups:          %d\n",
              id, this_group_class,
-             this_group_class->n_groups,
-             this_group_class->n_attributes);
+             this_group_class->n_groups);
 
   if (this_group_class->n_groups > 0) {
     bft_printf("    group names:\n");
     for (i = 0; i < this_group_class->n_groups; i++)
       bft_printf("     \" %s\"\n", this_group_class->group_name[i]);
-  }
-
-  if (this_group_class->n_attributes > 0) {
-    bft_printf("    attributes:");
-    for (i = 0; i < this_group_class->n_attributes; i++)
-      bft_printf(" %d", this_group_class->attribute[i]);
-    bft_printf("\n");
   }
 }
 
@@ -385,50 +337,6 @@ fvm_group_class_get_group_names(const fvm_group_class_t  *this_group_class)
 }
 
 /*----------------------------------------------------------------------------
- * Return the number of attributes of a group class.
- *
- * parameters:
- *   this_group_class <-- pointer to group class structure
- *
- * returns:
- *   number of attributes in group class
- *----------------------------------------------------------------------------*/
-
-int
-fvm_group_class_get_n_attributes(const fvm_group_class_t  *this_group_class)
-{
-  int  retval = 0;
-
-  if (this_group_class != NULL) {
-    retval = this_group_class->n_attributes;
-  }
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Return the array of attributes of a group class.
- *
- * parameters:
- *   this_group_class <-- pointer to group class structure
- *
- * returns:
- *   pointer to array of attributes in group class
- *----------------------------------------------------------------------------*/
-
-const int *
-fvm_group_class_get_attributes(const fvm_group_class_t  *this_group_class)
-{
-  const int  *retval = NULL;
-
-  if (this_group_class != NULL) {
-    retval = this_group_class->attribute;
-  }
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
  * Creation of a group class set structure.
  *
  * returns:
@@ -452,23 +360,18 @@ fvm_group_class_set_create(void)
 /*----------------------------------------------------------------------------
  * Add a group class to a set.
  *
- * attributes and group names are automatically sorted in the group class
- * description
+ * Group names are automatically sorted in the group class description.
  *
  * parameters:
  *   this_group_class_set <-> pointer to group class set structure
  *   n_groups             <-- number of groups in class
  *   group_names          <-- array of group names
- *   n_attributes         <-- number of attributes in class
- *   attributes           <-- list of attributes
  *----------------------------------------------------------------------------*/
 
 void
 fvm_group_class_set_add(fvm_group_class_set_t   *this_group_class_set,
                         int                      n_groups,
-                        int                      n_attributes,
-                        const char             **group_names,
-                        const int               *attributes)
+                        const char             **group_names)
 {
   int i;
   fvm_group_class_set_t *class_set = this_group_class_set;
@@ -485,10 +388,8 @@ fvm_group_class_set_add(fvm_group_class_set_t   *this_group_class_set,
   _class = class_set->class + class_set->size;
 
   _class->n_groups = n_groups;
-  _class->n_attributes = n_attributes;
 
   BFT_MALLOC(_class->group_name, n_groups, char *);
-  BFT_MALLOC(_class->attribute, n_attributes, int);
 
   /* Copy group names */
 
@@ -498,14 +399,6 @@ fvm_group_class_set_add(fvm_group_class_set_t   *this_group_class_set,
       strcpy(_class->group_name[i], group_names[i]);
     }
     qsort(_class->group_name, n_groups, sizeof(char *), &_compare_names);
-  }
-
-  /* Copy attributes list */
-
-  if (n_attributes > 0) {
-    for (i = 0; i < n_attributes; i++)
-      _class->attribute[i] = attributes[i];
-    qsort(_class->attribute, n_attributes, sizeof(int), &_compare_atts);
   }
 
   /* Update the number of classes in set */
@@ -536,10 +429,8 @@ fvm_group_class_set_destroy(fvm_group_class_set_t  *this_group_class_set)
       BFT_FREE(_class->group_name[j]);
 
     _class->n_groups = 0;
-    _class->n_attributes = 0;
 
     BFT_FREE(_class->group_name);
-    BFT_FREE(_class->attribute);
 
   }
 
