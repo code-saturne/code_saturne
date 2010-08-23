@@ -607,6 +607,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     fvm_parall_counter(&n_g_elts, 1);
     bft_printf(_("\nExtracted mesh built of %llu elements.\n"),
                (unsigned long long)n_g_elts);
+    bft_printf_flush();
   }
 
   /* Initialize post-processing */
@@ -622,8 +623,10 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   /* Build and initialize associated locator */
 
-  if (syr_coupling->verbosity > 0)
-    bft_printf(_("\nLocator structure and mesh creation."));
+  if (syr_coupling->verbosity > 0) {
+    bft_printf(_("\nLocator structure and mesh creation ..."));
+    bft_printf_flush();
+  }
 
 #if defined(PLE_HAVE_MPI)
   coupling_ent->locator = ple_locator_create(tolerance,
@@ -665,6 +668,11 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                        cs_coupling_mesh_extents,
                        cs_coupling_point_in_mesh,
                        locate_on_closest);
+
+  if (syr_coupling->verbosity > 0) {
+    bft_printf(" [ok]\n");
+    bft_printf_flush();
+  }
 
   if (elt_centers != NULL)
     BFT_FREE(elt_centers);
