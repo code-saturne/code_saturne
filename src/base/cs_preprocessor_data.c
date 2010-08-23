@@ -97,12 +97,30 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  const char         *filename;   /* File name */
+  fvm_file_off_t      offset;     /* File offsets for re-opening */
+  const double       *matrix;     /* Coordinate transformation matrix */
+
+  size_t              n_group_renames;
+  const char  *const *old_group_names;
+  const char  *const *new_group_names;
+
+  /* Single allocation for all data */
+
+  size_t              data_size;
+  unsigned char      *data;
+
+} _mesh_file_info_t;
+
+/* Structure used for building mesh structure */
+/* ------------------------------------------ */
+
+typedef struct {
+
   /* File info */
 
-  int               n_files;           /* Number of files to read */
-  int               n_max_files;       /* Current maximum number of files */
-  char            **filename;          /* File names */
-  fvm_file_off_t   *offset;            /* File offsets for re-opening */
+  int                 n_files;
+  _mesh_file_info_t  *file_info;
 
   /* Face-related dimensions */
 
@@ -165,39 +183,86 @@ static _mesh_reader_t *_cs_glob_mesh_reader = NULL;
 
 /* Definitions of file to read */
 
-int _n_files = 1;
-const char *_file_names_default[] = {"preprocessor_output"};
-char **_file_names = _file_names_default;
+int _n_mesh_files = 0;
+int _n_max_mesh_files = 0;
+_mesh_file_info_t  *_mesh_file_info = NULL;
 
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Return minimum size required to align data with the base pointer size.
+ *
+ * parameters:
+ *   min_size <-- minimum data size
+ *
+ * returns:
+ *   the data size requirde including alignment
+ *----------------------------------------------------------------------------*/
+
+static inline size_t
+_align_size(size_t  min_size)
+{
+  const size_t align = (sizeof(void *))/sizeof(unsigned char);
+  return (min_size + (align-1) - ((min_size - 1) % align));
+}
+
+/*----------------------------------------------------------------------------
+ * Define defaul input data in nothing has been specified by the user.
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_default_input_if_needed(void)
+{
+  if (_n_mesh_files == 0)
+    cs_preprocessor_data_add_file("preprocessor_output", 0, NULL, NULL);
+}
+
+/*----------------------------------------------------------------------------
  * Create an empty mesh reader helper structure.
+ *
+ * Property of the matching mesh file information structure is transferred
+ * to the mesh reader.
+ *
+ * parameters:
+ *   n_mesh_files   <-> number of associated mesh files
+ *   mesh_file_info <-> array of mesh file information structures
  *
  * returns:
  *   A pointer to a mesh reader helper structure
  *----------------------------------------------------------------------------*/
 
 static _mesh_reader_t *
-_mesh_reader_create(void)
+_mesh_reader_create(int                 *n_mesh_files,
+                    _mesh_file_info_t  **mesh_file_info)
 {
+  int i;
   _mesh_reader_t  *mr = NULL;
 
   BFT_MALLOC(mr, 1, _mesh_reader_t);
 
   memset(mr, 0, sizeof(_mesh_reader_t));
 
-  mr->n_files = 0;
-  mr->n_max_files = 0;
-  mr->filename = NULL;
-  mr->offset = NULL;
+  /* Transfer ownership of mesh file info */
+
+  mr->n_files = *n_mesh_files;
+  mr->file_info = *mesh_file_info;
+
+  BFT_REALLOC(mr->file_info, mr->n_files, _mesh_file_info_t);
+
+  /* Setup remaining structure fields */
+
+  *n_mesh_files = 0;
+  *mesh_file_info = NULL;
+
+  BFT_MALLOC(mr->gc_id_shift, mr->n_files, int);
+  for (i = 0; i < mr->n_files; i++)
+    mr->gc_id_shift[i] = 0;
 
   mr->n_g_faces = 0;
   mr->n_g_face_connect_size = 0;
 
-  mr->gc_id_shift = 0;
   mr->n_perio_read = 0;
   mr->n_cells_read = 0;
   mr->n_faces_read = 0;
@@ -232,10 +297,11 @@ _mesh_reader_create(void)
 /*----------------------------------------------------------------------------
  * Destroy a mesh reader helper structure
  *
- * mr <-> pointer to a mesh reader helper
+ * parameters:
+ *   mr <-> pointer to a mesh reader helper
  *
  * returns:
- *  NULL pointer
+ *   NULL pointer
  *----------------------------------------------------------------------------*/
 
 static void
@@ -244,10 +310,11 @@ _mesh_reader_destroy(_mesh_reader_t  **mr)
   int i;
   _mesh_reader_t *_mr = *mr;
 
-  for (i = 0; i < _mr->n_files; i++)
-    BFT_FREE(_mr->filename[i]);
-  BFT_FREE(_mr->filename);
-  BFT_FREE(_mr->offset);
+  for (i = 0; i < _mr->n_files; i++) {
+    _mesh_file_info_t  *f = _mr->file_info + i;
+    BFT_FREE(f->data);
+  }
+  BFT_FREE(_mr->file_info);
 
   BFT_FREE(_mr->gc_id_shift);
 
@@ -302,7 +369,7 @@ _add_periodicity(cs_mesh_t *mesh,
   tr_id = fvm_periodicity_add_by_matrix(mesh->periodicity,
                                         perio_num,
                                         _perio_type,
-                                        matrix);
+                                        _matrix);
 }
 
 /*----------------------------------------------------------------------------
@@ -527,7 +594,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
  *   face_ifs          <-- parallel and periodic faces interfaces set
  *   face_cell         <-- local face -> cell connectivity
  *   face_vertices_idx <-- local face -> vertices index
- *   face_type         --> face type marker
+ *   face_typ         --> face type marker
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1900,7 +1967,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
                                mr->n_perio,
                                mr->periodicity_num,
                                mr->n_per_face_couples,
-                               (const fvm_gnum_t **const)mr->per_face_couples);
+                               (const fvm_gnum_t *const *)mr->per_face_couples);
 
   /* We may now separate interior from boundary faces */
 
@@ -2038,7 +2105,7 @@ _decompose_data_l(cs_mesh_t          *mesh,
   _face_type_l(mesh,
                _n_faces,
                mr->n_per_face_couples,
-               (const fvm_gnum_t **const)mr->per_face_couples,
+               (const fvm_gnum_t *const *)mr->per_face_couples,
                _face_cells,
                _face_vertices_idx,
                face_type);
@@ -2078,27 +2145,125 @@ _decompose_data_l(cs_mesh_t          *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Rename groups in a mesh.
+ *
+ * parameters:
+ *   mesh            <-> mesh being modified
+ *   start_id        <-- id of first group to rename
+ *   n_group_renames <-- number of group rename couples
+ *   old_group_names <-- old group names (size: n_group_renames)
+ *   new_group_names <-- new group names (size: n_group_renames)
+ *----------------------------------------------------------------------------*/
+
+static void
+_mesh_groups_rename(cs_mesh_t          *mesh,
+                    size_t              start_id,
+                    size_t              n_group_renames,
+                    const char  *const *old_group_names,
+                    const char  *const *new_group_names)
+{
+  size_t  i, j, k;
+  int  have_rename = 0;
+  size_t  end_id = mesh->n_groups;
+  size_t  n_ids = 0;
+  int  *new_group_id = NULL;
+
+  if (end_id > start_id)
+    n_ids = end_id - start_id;
+
+  /* Check for rename matches */
+
+  BFT_MALLOC(new_group_id, n_ids, int);
+
+  for (i = 0, j = start_id; i < n_ids; i++, j++) {
+    const char *g_name = mesh->group_lst + (mesh->group_idx[j] - 1);
+    new_group_id[i] = -1;
+    for (k = 0; k < n_group_renames; k++) {
+      if (strcmp(g_name, old_group_names[k]) == 0) {
+        new_group_id[i] = k;
+        have_rename = 1;
+        break;
+      }
+    }
+  }
+
+  /* Now rename matched groups */
+
+  if (have_rename) {
+
+    size_t new_size = 0;
+    size_t old_size = mesh->group_idx[end_id] - mesh->group_idx[start_id];
+    int *saved_idx = NULL;
+    char *saved_names = NULL;
+
+    BFT_MALLOC(saved_idx, n_ids + 1, int);
+    BFT_MALLOC(saved_names, old_size, char);
+
+    for (i = 0; i < n_ids+1; i++)
+      saved_idx[i] = mesh->group_idx[start_id + i] - mesh->group_idx[start_id];
+    memcpy(saved_names,
+           mesh->group_lst + (mesh->group_idx[start_id] - 1),
+           old_size);
+
+    /* Update index */
+
+    for (i = 0; i < n_ids; i++) {
+      const char *new_src = NULL;
+      new_size += 1;
+      if (new_group_id[i] > -1)
+        new_src = new_group_names[new_group_id[i]];
+      else
+        new_src = saved_names + saved_idx[i];
+      if (new_src != NULL)
+        new_size += strlen(new_src);
+      mesh->group_idx[start_id + i + 1]
+        = mesh->group_idx[start_id] + new_size;
+    }
+
+    BFT_REALLOC(mesh->group_lst, mesh->group_idx[mesh->n_groups] - 1, char);
+
+    for (i = 0, j = start_id; i < n_ids; i++, j++) {
+      char *new_dest = mesh->group_lst + (mesh->group_idx[j] - 1);
+      const char *new_src = NULL;
+      if (new_group_id[i] > -1)
+        new_src = new_group_names[new_group_id[i]];
+      else
+        new_src = saved_names + saved_idx[i];
+      if (new_src != NULL)
+        strcpy(new_dest, new_src);
+      else
+        strcpy(new_dest, "");
+    }
+
+    BFT_FREE(saved_names);
+    BFT_FREE(saved_idx);
+
+  }
+
+  BFT_FREE(new_group_id);
+}
+
+/*----------------------------------------------------------------------------
  * Read sections from the pre-processor about the dimensions of mesh
  *
  * This function updates the information in the mesh and mesh reader
  * structures relative to the data in the given file.
  *
  * parameters
- *   filename <-- name of preprocessor output file
  *   mesh     <-> pointer to mesh structure
  *   mr       <-> pointer to mesh reader structure
+ *   file_id  <-- file id in mesh reader
  *----------------------------------------------------------------------------*/
 
 static void
-_read_dimensions(const char      *filename,
-                 cs_mesh_t       *mesh,
-                 _mesh_reader_t  *mr)
+_read_dimensions(cs_mesh_t       *mesh,
+                 _mesh_reader_t  *mr,
+                 int              file_id)
 {
   cs_int_t  i, j;
   cs_io_sec_header_t  header;
 
   fvm_gnum_t n_elts = 0;
-  int        file_id = mr->n_files;
   int        n_gc = 0;
   int        n_gc_props_max = 0;
   int        n_groups = 0;
@@ -2107,42 +2272,32 @@ _read_dimensions(const char      *filename,
   cs_bool_t  end_read = false;
   cs_io_t   *pp_in = NULL;
 
+  _mesh_file_info_t  *f = NULL;
+
   const char  *unexpected_msg = N_("Section of type <%s> on <%s>\n"
                                    "unexpected or of incorrect size");
 
-  /* Update reader file info */
+  if (file_id < 0 || file_id >= mr->n_files)
+    return;
 
-  if (mr->n_files >= mr->n_max_files) {
-    if (mr->n_max_files == 0)
-      mr->n_max_files = 1;
-    else
-      mr->n_max_files *= 2;
-    BFT_REALLOC(mr->filename, mr->n_max_files, char *);
-    BFT_REALLOC(mr->offset, mr->n_max_files, fvm_file_off_t);
-    BFT_REALLOC(mr->gc_id_shift, mr->n_max_files, int);
-  }
-
-  BFT_MALLOC(mr->filename[file_id], strlen(filename) + 1, char);
-  strcpy(mr->filename[file_id], filename);
-  mr->offset[file_id] = 0;
+  f = mr->file_info + file_id;
+  f->offset = 0;
 
   mr->gc_id_shift[file_id] = mesh->n_families;
 
-  mr->n_files += 1;
-
   /* Initialize reading of Preprocessor output */
 
-  bft_printf(_(" Reading metadata from file: \"%s\"\n"), filename);
+  bft_printf(_(" Reading metadata from file: \"%s\"\n"), f->filename);
 
 #if defined(HAVE_MPI)
-  pp_in = cs_io_initialize(filename,
+  pp_in = cs_io_initialize(f->filename,
                            "Face-based mesh definition, R0",
                            CS_IO_MODE_READ,
                            FVM_FILE_NO_MPI_IO,
                            CS_IO_ECHO_NONE,
                            cs_glob_mpi_comm);
 #else
-  pp_in = cs_io_initialize(filename,
+  pp_in = cs_io_initialize(f->filename,
                            "Face-based mesh definition, R0",
                            CS_IO_MODE_READ,
                            CS_IO_ECHO_NONE,
@@ -2337,6 +2492,13 @@ _read_dimensions(const char      *filename,
         cs_io_read_global(&header, mesh->group_lst + i, pp_in);
       }
 
+      if (f->n_group_renames > 0)
+        _mesh_groups_rename(mesh,
+                            mesh->n_groups - n_groups,
+                            f->n_group_renames,
+                            f->old_group_names,
+                            f->new_group_names);
+
     }
     else if (strncmp(header.sec_name, "group_class_properties",
                      CS_IO_NAME_LEN) == 0) {
@@ -2458,7 +2620,7 @@ _read_dimensions(const char      *filename,
 
   /* Close file */
 
-  mr->offset[file_id] = cs_io_get_offset(pp_in);
+  f->offset = cs_io_get_offset(pp_in);
   cs_io_finalize(&pp_in);
 }
 
@@ -2544,6 +2706,211 @@ _data_range(cs_io_sec_header_t  *header,
 }
 
 /*----------------------------------------------------------------------------
+ * Transform coordinates.
+ *
+ * parameters:
+ *   n_coords <-- number of coordinates.
+ *   coords   <-> array of coordinates
+ *   matrix   <-- matrix of the transformation in homogeneous coord.
+ *                last line = [0; 0; 0; 1] (Not used here)
+ *----------------------------------------------------------------------------*/
+
+static void
+_transform_coords(size_t         n_coords,
+                  cs_real_t     *coords,
+                  const double   matrix[])
+
+{
+  size_t  i;
+  double  _matrix[3][4];
+  memcpy(_matrix, matrix, 12*sizeof(double));
+
+  for (i = 0; i < n_coords; i++) {
+
+    size_t j, coo_shift;
+    cs_real_t  tmp_coord[3];
+
+    coo_shift = i*3;
+
+    for (j = 0; j < 3; j++)
+      tmp_coord[j] = coords[coo_shift + j];
+
+    for (j = 0; j < 3; j++) {
+      coords[coo_shift + j] = (  _matrix[j][0] * tmp_coord[0]
+                               + _matrix[j][1] * tmp_coord[1]
+                               + _matrix[j][2] * tmp_coord[2]
+                               + _matrix[j][3]);
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Invert a homogeneous transformation matrix.
+ *
+ * parameters:
+ *   a  <-- matrix
+ *   b  --> inverse matrix
+ *----------------------------------------------------------------------------*/
+
+static void
+_inverse_transf_matrix(double  a[3][4],
+                       double  b[3][4])
+{
+  int i, j, k, k_pivot;
+
+  double abs_pivot, abs_a_ki, factor;
+  double _a[3][4];
+  double _a_swap[3], _b_swap[3];
+
+  /* Copy array (avoid modifying a), and initialize inverse */
+
+  memcpy(_a, a, sizeof(double)*12);
+
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 4; j++)
+      b[i][j] = 0.0;
+  }
+  for (i = 0; i < 3; i++)
+    b[i][i] = 1.0;
+
+  /* Forward elimination */
+
+  for (i = 0; i < 2; i++) {
+
+    /* Seek best pivot */
+
+    k_pivot = i;
+    abs_pivot = fabs(_a[i][i]);
+
+    for (k = i+1; k < 3; k++) {
+      abs_a_ki = fabs(_a[k][i]);
+      if (abs_a_ki > abs_pivot) {
+        abs_pivot = abs_a_ki;
+        k_pivot = k;
+      }
+    }
+
+    /* Swap if necessary */
+
+    if (k_pivot != i) {
+      for (j = 0; j < 4; j++) {
+        _a_swap[j] = _a[i][j];
+        _a[i][j] = _a[k_pivot][j];
+        _a[k_pivot][j] = _a_swap[j];
+        _b_swap[j] = b[i][j];
+        b[i][j] = b[k_pivot][j];
+        b[k_pivot][j] = _b_swap[j];
+      }
+    }
+
+    if (abs_pivot < 1.0e-18)
+      bft_error(__FILE__, __LINE__, 0,
+                _("User-defined Transformation matrix is not invertible:\n"
+                  "  [[%12.5f %12.5f %12.5f %12.5f]\n"
+                  "   [%12.5f %12.5f %12.5f %12.5f]\n"
+                  "   [%12.5f %12.5f %12.5f %12.5f]\n"
+                  "   [%12.5f %12.5f %12.5f %12.5f]]\n"),
+                a[0][0], a[0][1], a[0][2], a[0][3],
+                a[1][0], a[1][1], a[1][2], a[1][3],
+                a[2][0], a[2][1], a[2][2], a[2][3],
+                0., 0., 0., 1.);
+
+    /* Eliminate values */
+
+    for (k = i+1; k < 3; k++) {
+      factor = _a[k][i] / _a[i][i];
+      _a[k][i] = 0.0;
+      for (j = i+1; j < 4; j++) {
+        _a[k][j] -= _a[i][j]*factor;
+        b[k][j] -= b[i][j]*factor;
+      }
+    }
+
+  }
+
+  /* Normalize lines */
+
+  for (i = 0; i < 3; i++) {
+    factor = _a[i][i];
+    for (j = 0; j < 4; j++) {
+      _a[i][j] /= factor;
+      b[i][j] /= factor;
+    }
+  }
+
+  /* Eliminate last column */
+
+  for (j = 3; j > 0; j--) {
+    for (i = 0; i < j; i++) {
+      b[i][j] -= _a[i][j];
+      _a[i][j] = 0.0;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Combine transformation matrixes (c = a.b)
+ *
+ * parameters:
+ *   a <-- first transformation matrix
+ *   b <-- second transformation matrix
+ *   c --> combined transformation matrix
+ *---------------------------------------------------------------------------*/
+
+static void
+_combine_tr_matrixes(double  a[3][4],
+                     double  b[3][4],
+                     double  c[3][4])
+{
+  c[0][0] = a[0][0]*b[0][0] + a[0][1]*b[1][0] + a[0][2]*b[2][0];
+  c[0][1] = a[0][0]*b[0][1] + a[0][1]*b[1][1] + a[0][2]*b[2][1];
+  c[0][2] = a[0][0]*b[0][2] + a[0][1]*b[1][2] + a[0][2]*b[2][2];
+  c[0][3] = a[0][0]*b[0][3] + a[0][1]*b[1][3] + a[0][2]*b[2][3] + a[0][3];
+
+  c[1][0] = a[1][0]*b[0][0] + a[1][1]*b[1][0] + a[1][2]*b[2][0];
+  c[1][1] = a[1][0]*b[0][1] + a[1][1]*b[1][1] + a[1][2]*b[2][1];
+  c[1][2] = a[1][0]*b[0][2] + a[1][1]*b[1][2] + a[1][2]*b[2][2];
+  c[1][3] = a[1][0]*b[0][3] + a[1][1]*b[1][3] + a[1][2]*b[2][3] + a[1][3];
+
+  c[2][0] = a[2][0]*b[0][0] + a[2][1]*b[1][0] + a[2][2]*b[2][0];
+  c[2][1] = a[2][0]*b[0][1] + a[2][1]*b[1][1] + a[2][2]*b[2][1];
+  c[2][2] = a[2][0]*b[0][2] + a[2][1]*b[1][2] + a[2][2]*b[2][2];
+  c[2][3] = a[2][0]*b[0][3] + a[2][1]*b[1][3] + a[2][2]*b[2][3] + a[2][3];
+}
+
+/*----------------------------------------------------------------------------
+ * Transform a periodicity matrix in case of coordinates transformation
+ *
+ * The new transformation is the combination of the following:
+ *  - switch to initial coordinates
+ *  - apply initial periodicity
+ *  - switch to new coordinates
+ *
+ * parameters:
+ *   matrix       <-- matrix of the transformation in homogeneous coord.
+ *                    last line = [0; 0; 0; 1] (Not used here)
+ *   perio_matrix <-- matrix of the periodic matrix transformation
+ *                    in homogeneous coord.
+ *----------------------------------------------------------------------------*/
+
+static void
+_transform_perio_matrix(const double  matrix[],
+                        double        perio_matrix[3][4])
+
+{
+  double  _m[3][4];
+  double  _inv_m[3][4], _tmp_m[3][4];
+
+  memcpy(_m, matrix, 12*sizeof(double));
+
+  _inverse_transf_matrix(_m, _inv_m);
+
+  _combine_tr_matrixes(perio_matrix, _inv_m, _tmp_m);
+  _combine_tr_matrixes(_m, _tmp_m, perio_matrix);
+}
+
+/*----------------------------------------------------------------------------
  * Read pre-processor mesh data for a given mesh and finalize input.
  *
  * parameters:
@@ -2582,26 +2949,29 @@ _read_data(int              file_id,
   fvm_gnum_t n_g_face_connect_size = 0;
 
   fvm_gnum_t face_vtx_range[2] = {0, 0};
+  _mesh_file_info_t  *f = NULL;
 
   const char  *unexpected_msg = N_("Section of type <%s> on <%s>\n"
                                    "unexpected or of incorrect size.");
 
+  f = mr->file_info + file_id;
+
 #if defined(HAVE_MPI)
-  pp_in = cs_io_initialize(mr->filename[file_id],
+  pp_in = cs_io_initialize(f->filename,
                            "Face-based mesh definition, R0",
                            CS_IO_MODE_READ,
                            cs_glob_io_hints,
                            echo,
                            cs_glob_mpi_comm);
 #else
-  pp_in = cs_io_initialize(mr->filename[file_id],
+  pp_in = cs_io_initialize(f->filename,
                            "Face-based mesh definition, R0",
                            CS_IO_MODE_READ,
                            echo,
                            -1);
 #endif
 
-  cs_io_set_offset(pp_in, mr->offset[file_id]);
+  cs_io_set_offset(pp_in, f->offset);
 
   echo = cs_io_get_echo(pp_in);
 
@@ -2908,6 +3278,15 @@ _read_data(int              file_id,
         cs_io_assert_cs_real(&header, pp_in);
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
                          mr->vertex_coords + val_offset_cur, pp_in);
+
+        /* Transform coordinates if necessary */
+
+        if (f->matrix != NULL) {
+          fvm_gnum_t range_size = gnum_range_cur[1] - gnum_range_cur[0];
+          _transform_coords(range_size,
+                            mr->vertex_coords + val_offset_cur,
+                            f->matrix);
+        }
       }
 
       /* Additional buffers for periodicity */
@@ -2939,6 +3318,9 @@ _read_data(int              file_id,
           cs_io_read_global(&header, perio_matrix, pp_in);
 
           /* Add a periodicity to mesh->periodicities */
+
+          if (f->matrix != NULL)
+            _transform_perio_matrix(f->matrix, perio_matrix);
 
           _add_periodicity(mesh,
                            perio_type,
@@ -3006,7 +3388,7 @@ _read_data(int              file_id,
   /* Finalize pre-processor input */
   /*------------------------------*/
 
-  mr->offset[file_id] = 0;
+  f->offset = 0;
   cs_io_finalize(&pp_in);
 }
 
@@ -3180,6 +3562,32 @@ _clean_groups(cs_mesh_t  *mesh)
   }
 
   BFT_FREE(renum);
+
+  /* Remove empty group if present (it should appear first now) */
+
+  if (mesh->n_groups > 1) {
+
+    if ((mesh->group_idx[1] - mesh->group_idx[0]) == 1) {
+
+      size_t new_lst_size = (  mesh->group_idx[mesh->n_groups]
+                             - mesh->group_idx[1]);
+      for (i = 0; i < mesh->n_groups; i++)
+        mesh->group_idx[i] = mesh->group_idx[i+1] - 1;
+      mesh->n_groups -= 1;
+      memmove(mesh->group_lst, mesh->group_lst+1, new_lst_size);
+
+      BFT_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+      BFT_REALLOC(mesh->group_lst, new_lst_size, char);
+
+      for (j = 0; j < size_tot; j++) {
+        int gc_id = mesh->family_item[j];
+        if (gc_id < 0)
+          mesh->family_item[j] += 1;
+      }
+
+    }
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -3363,14 +3771,17 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
 
   /* Initialize reading of Preprocessor output */
 
-  _cs_glob_mesh_reader = _mesh_reader_create();
+  _set_default_input_if_needed();
+
+  _cs_glob_mesh_reader = _mesh_reader_create(&_n_mesh_files,
+                                             &_mesh_file_info);
+
+  _n_max_mesh_files = 0;
 
   mr = _cs_glob_mesh_reader;
 
-  for (file_id = 0; file_id < _n_files; file_id++)
-    _read_dimensions(_file_names[file_id],
-                     mesh,
-                     mr);
+  for (file_id = 0; file_id < mr->n_files; file_id++)
+    _read_dimensions(mesh, mr, file_id);
 
   /* Return values */
 
@@ -3446,6 +3857,120 @@ cs_preprocessor_data_part_choice(int choice)
 }
 
 /*----------------------------------------------------------------------------
+ * Define input mesh file to read.
+ *
+ * If this function is never called, the default file is read.
+ * The first time this function is called,  this default is overriden by the
+ * defined file, and all subsequent calls define additional meshes to read.
+ *
+ * parameters:
+ *   file_name       <-- name of file to read
+ *   n_group_renames <-- number of groups to rename
+ *   group_rename    <-- old (group_rename[i*2]) to new (group_rename[i*2 + 1])
+ *                       group names array (size: n_group_renames*2)
+ *   transf_matrix   <-- coordinate transformation matrix (or NULL)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_preprocessor_data_add_file(const char     *file_name,
+                              size_t          n_group_renames,
+                              const char    **group_rename,
+                              const double    transf_matrix[3][4])
+{
+  size_t  i, l;
+  size_t  data_size = 0;
+  char  **_old_group_names = NULL, **_new_group_names = NULL;
+  _mesh_file_info_t  *f = NULL;
+
+  /* Compute data size */
+
+  data_size = _align_size(strlen(file_name) + 1);
+
+  if (transf_matrix != NULL)
+    data_size += _align_size(12*sizeof(double));
+
+  data_size += (_align_size(n_group_renames * sizeof(char *)) * 2);
+
+  for (i = 0; i < n_group_renames; i++) {
+    data_size += _align_size(strlen(group_rename[i*2]) + 1);
+    if (group_rename[i*2+1] != NULL)
+      data_size += _align_size(strlen(group_rename[i*2+1]) + 1);
+  }
+
+  /* Allocate data (reallocate mesh file info array f necesary) */
+
+  if (_n_max_mesh_files == 0) {
+    _n_max_mesh_files = 1;
+    BFT_MALLOC(_mesh_file_info, 1, _mesh_file_info_t);
+  }
+
+  if (_n_mesh_files + 1 > _n_max_mesh_files) {
+    _n_max_mesh_files *= 2;
+    BFT_REALLOC(_mesh_file_info, _n_max_mesh_files, _mesh_file_info_t);
+  }
+
+  f = _mesh_file_info + _n_mesh_files;
+  _n_mesh_files += 1;
+
+  /* Setup base structeure fields */
+
+  f->offset = 0;
+  f->data_size = data_size;
+  BFT_MALLOC(f->data, f->data_size, unsigned char);
+  memset(f->data, 0, f->data_size);
+
+  /* Setup data */
+
+  data_size = 0;
+
+  l = strlen(file_name) + 1;
+  memcpy(f->data, file_name, l);
+  f->filename = (const char *)(f->data);
+
+  data_size = _align_size(l);
+
+  if (transf_matrix != NULL) {
+    l = 12*sizeof(double);
+    memcpy(f->data + data_size, transf_matrix, l);
+    f->matrix = (const double *)(f->data + data_size);
+    data_size += _align_size(l);
+  }
+  else
+    f->matrix = NULL;
+
+  f->n_group_renames = n_group_renames;
+  f->old_group_names = NULL;
+  f->new_group_names = NULL;
+
+  if (n_group_renames > 0) {
+
+    _old_group_names = (char **)(f->data + data_size);
+    f->old_group_names = (const char *const *)_old_group_names;
+    data_size += _align_size(n_group_renames * sizeof(char *));
+
+    _new_group_names = (char **)(f->data + data_size);
+    f->new_group_names = (const char *const *)_new_group_names;
+    data_size += _align_size(n_group_renames * sizeof(char *));
+
+  }
+
+  for (i = 0; i < n_group_renames; i++) {
+    l = strlen(group_rename[i*2]) + 1;
+    _old_group_names[i] = (char *)(f->data + data_size);
+    memcpy(_old_group_names[i], group_rename[i*2], l);
+    data_size += _align_size(l);
+    if (group_rename[i*2+1] != NULL) {
+      l = strlen(group_rename[i*2+1]) + 1;
+      _new_group_names[i] = (char *)(f->data + data_size);
+      memcpy(_new_group_names[i], group_rename[i*2+1], l);
+      data_size += _align_size(l);
+    }
+    else
+      _new_group_names[i] = NULL;
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Read pre-processor mesh data and finalize input.
  *
  * parameters:
@@ -3495,49 +4020,9 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
   _mesh_reader_destroy(&mr);
   _cs_glob_mesh_reader = mr;
 
-  /* Remove list of files to read */
-
-  if (_file_names != _file_names_default) {
-    for (file_id = 0; file_id < _n_files; file_id++)
-      BFT_FREE(_file_names[file_id]);
-    BFT_FREE(_file_names[file_id]);
-    _n_files = 0;
-  }
-
   /* Remove family duplicates */
 
   _clean_families(mesh);
-}
-
-/*----------------------------------------------------------------------------
- * Define preprocessed mesh to read.
- *
- * If this function is never called, the default file read is
- * "preprocessor_data". The first time this function is called,  this default
- * is overriden by the defined file, and all subsequent calls define
- * additional meshes to read.
- *
- * parameters:
- *   file_name <-- name of file to read
- *----------------------------------------------------------------------------*/
-
-void
- cs_preprocessor_data_add_file(const char  *file_name)
-{
-  /* Deactivate default upon first call */
-
-  if (_n_files == 1 && _file_names == _file_names_default) {
-    _n_files = 0;
-    _file_names = NULL;
-  }
-
-  /* Add file definition */
-
-  BFT_REALLOC(_file_names, _n_files + 1, char *);
-  BFT_MALLOC(_file_names[_n_files], strlen(file_name) + 1, char);
-
-  strcpy(_file_names[_n_files], file_name);
-  _n_files ++;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1,4 +1,16 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Appending multiple meshes is now done through a user function;
+  coordinate transformations and group renames are now possible.
+  modified files:
+    src/apps/cs_solver.c
+    src/base/Makefile.am
+    src/base/cs_preprocessor_data.c
+    src/base/cs_preprocessor_data.h
+    src/base/cs_prototypes.h
+    users/base/cs_user_mesh_input.c
+    users/base/usmodg.f90
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove include directory if possible when uninstalling.
   modified scripts:
     src/Makefile.am

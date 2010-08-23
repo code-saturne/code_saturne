@@ -38,10 +38,10 @@ subroutine usmodg &
    xyznod )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! --------
 
-! ROUTINE UTILISATEUR POUR MODIF DE LA GEOMETRIE
+! User subroutine for geometry modification
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -125,25 +125,24 @@ if(1.eq.1) return
 
 
 !============================================================================
-!     MODIFICATION DES COORDONNES DES SOMMETS
+! Modifiy vertex coordinatesd
 !============================================================================
 
-!  On donne ci dessous des exemples, desactives par le test.
+!  Examples below are deactivated by the test on iutile.
 
 iutile = 0
 
 if(iutile.eq.1) then
 
-!       exemple : division des dimensions par 1000
-!                 (passage de millimetres en metres)
+!  Example: divide coordinates by 1000 (millimetres to metres)
 
-!  ATTENTION :
+!  Warning:
 
-!    LE CHANGEMENT D'ECHELLE DU MAILLAGE EST INCOMPTABILE
-!    AVEC LA PERIODICITE, QUELLE QU'ELLE SOIT
+!    This is incompatible with pre-processed periodicity,
+!    as the periodicity transformation is not updated.
 
-!    POUR UTILISER LA PERIODICITE, IL FAUT CHANGER D'ECHELLE
-!    EN DEHORS DE CODE_SATURNE
+!    With periodicity, using a coordinate transformation matrix
+!    in cs_user_mesh_input is preferred.
 
   unsmil = 1.d0 / 1000.d0
 

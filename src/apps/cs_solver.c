@@ -204,6 +204,10 @@ cs_run(void)
   cs_glob_mesh_builder = cs_mesh_builder_create();
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
 
+  /* Define meshes to read */
+
+  cs_user_mesh_input();
+
   /* Define joining and periodicity parameters if requested
      Must be done before initi1 for the sake of verification */
 

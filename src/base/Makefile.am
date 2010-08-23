@@ -431,7 +431,8 @@ $(top_srcdir)/users/base/ustsv2.f90 \
 $(top_srcdir)/users/base/usvima.f90 \
 $(top_srcdir)/users/base/usvist.f90 \
 $(top_srcdir)/users/base/usvort.f90 \
-$(top_srcdir)/users/base/usvpst.f90
+$(top_srcdir)/users/base/usvpst.f90 \
+$(top_srcdir)/users/base/cs_user_mesh_input.c
 
 basedir = $(pkgdatadir)/users/base
 base_DATA = \
@@ -468,7 +469,8 @@ $(top_srcdir)/users/base/ustsv2.f90 \
 $(top_srcdir)/users/base/usvima.f90 \
 $(top_srcdir)/users/base/usvist.f90 \
 $(top_srcdir)/users/base/usvort.f90 \
-$(top_srcdir)/users/base/usvpst.f90
+$(top_srcdir)/users/base/usvpst.f90 \
+$(top_srcdir)/users/base/cs_user_mesh_input.c
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

@@ -135,35 +135,37 @@ int
 cs_preprocessor_data_part_choice(int choice);
 
 /*----------------------------------------------------------------------------
+ * Define input mesh file to read.
+ *
+ * If this function is never called, the default file is read.
+ * The first time this function is called,  this default is overriden by the
+ * defined file, and all subsequent calls define additional meshes to read.
+ *
+ * parameters:
+ *   file_name       <-- name of file to read
+ *   n_group_renames <-- number of groups to rename
+ *   group_rename    <-- old (group_rename[i*2]) to new (group_rename[i*2 + 1])
+ *                       group names array (size: n_group_renames*2)
+ *   transf_matrix   <-- coordinate transformation matrix (or NULL)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_preprocessor_data_add_file(const char     *file_name,
+                              size_t          n_group_renames,
+                              const char    **group_rename,
+                              const double    transf_matrix[3][4]);
+
+/*----------------------------------------------------------------------------
  * Read pre-processor mesh data and finalize input.
  *
  * parameters:
  *   mesh         <-- pointer to mesh structure
  *   mesh_builder <-- pointer to mesh builder structure
- *
- * returns:
  *----------------------------------------------------------------------------*/
 
 void
 cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
                                cs_mesh_builder_t  *mesh_builder);
-
-/*----------------------------------------------------------------------------
- * Define preprocessed mesh to read.
- *
- * If this function is never called, the default file read is
- * "preprocessor_data". The first time this function is called,  this default
- * is overriden by the defined file, and all subsequent calls define
- * additional meshes to read.
- *
- * Group, color, and coordinate transformations are not implemented yet.
- *
- * parameters:
- *   file_name <-- name of file to read
- *----------------------------------------------------------------------------*/
-
-void
-cs_preprocessor_data_add_file(const char  *file_name);
 
 /*----------------------------------------------------------------------------*/
 
