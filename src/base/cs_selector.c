@@ -42,6 +42,7 @@
 #include <bft_sys_info.h>
 #include <bft_timer.h>
 
+#include "cs_halo.h"
 #include "cs_mesh.h"
 #include "cs_selector.h"
 
@@ -209,6 +210,58 @@ void CS_PROCF(csgcel, CSGCEL)
 }
 
 /*----------------------------------------------------------------------------
+ * Build a list of cells verifying a given selection criteria.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(csgceb, CSGCEB)
+(
+ const char   *const fstr,        /* <-- Fortran string */
+ cs_int_t     *const len,         /* <-- String Length  */
+ cs_int_t     *const n_i_faces,   /* --> number of interior faces */
+ cs_int_t     *const n_b_faces,   /* --> number of boundary faces */
+ cs_int_t     *const i_face_list, /* --> interior face list  */
+ cs_int_t     *const b_face_list  /* --> boundary face list  */
+ CS_ARGF_SUPP_CHAINE
+)
+{
+  char _c_string[CS_SELECTOR_STR_LEN + 1];
+  char *c_string = _c_string;
+  int i;
+  int c_len = *len -1;
+
+  /* Initialization */
+
+  *n_i_faces = 0;
+  *n_b_faces = 0;
+
+  /* Copy fstr without last blanks  */
+  while(fstr[c_len--] == ' ' &&  c_len >= 0);
+
+  if (c_len < -1)
+    return;
+
+  c_len += 2;
+
+  if (c_len > CS_SELECTOR_STR_LEN)
+    BFT_MALLOC(c_string, c_len + 1, char);
+
+  for(i = 0; i < c_len; i++)
+    c_string[i] = fstr[i];
+  c_string[c_len] = '\0';
+
+  /* Get cells with C string */
+
+  cs_selector_get_cells_boundary(c_string,
+                                 n_i_faces,
+                                 n_b_faces,
+                                 i_face_list,
+                                 b_face_list);
+
+  if (c_string != _c_string)
+    BFT_FREE(c_string);
+}
+
+/*----------------------------------------------------------------------------
  * Build a list of interior faces belonging to a given periodicity.
  *----------------------------------------------------------------------------*/
 
@@ -223,6 +276,51 @@ void CS_PROCF(getfpe, GETFPE)
   cs_selector_get_perio_face_list(*perio_num,
                                   n_faces,
                                   face_list);
+}
+
+/*----------------------------------------------------------------------------
+ * Build a list of families verifying a given selection criteria.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(csgfam, CSGFAM)
+(
+ const char   *const fstr,         /* <-- Fortran string */
+ cs_int_t     *const len,          /* <-- String Length  */
+ cs_int_t     *const n_families,   /* --> number of families */
+ cs_int_t     *const family_list   /* --> family list  */
+ CS_ARGF_SUPP_CHAINE
+)
+{
+  char _c_string[CS_SELECTOR_STR_LEN + 1];
+  char *c_string = _c_string;
+  int i;
+  int c_len = *len -1;
+
+  /* Initialization */
+
+  *n_families = 0;
+
+  /* Copy fstr without last blanks  */
+  while(fstr[c_len--] == ' ' &&  c_len >= 0);
+
+  if (c_len < -1)
+    return;
+
+  c_len += 2;
+
+  if (c_len > CS_SELECTOR_STR_LEN)
+    BFT_MALLOC(c_string, c_len + 1, char);
+
+  for(i = 0; i < c_len; i++)
+    c_string[i] = fstr[i];
+  c_string[c_len] = '\0';
+
+  /* Get faces with C string */
+
+  cs_selector_get_family_list(c_string, n_families, family_list);
+
+  if (c_string != _c_string)
+    BFT_FREE(c_string);
 }
 
 /*=============================================================================
@@ -335,6 +433,74 @@ cs_selector_get_cell_list(const char  *criteria,
 }
 
 /*----------------------------------------------------------------------------
+ * Fill lists of faces at the boundary of a set of cells verifying a given
+ * selection criteria.
+ *
+ * parameters:
+ *   criteria    <-- selection criteria string
+ *   n_i_faces   --> number of selected interior faces
+ *   n_b_faces   --> number of selected interior faces
+ *   i_face_list --> list of selected interior faces
+ *                   (1 to n, preallocated to cs_glob_mesh->n_i_faces)
+ *   b_face_list --> list of selected boundary faces
+ *                   (1 to n, preallocated to cs_glob_mesh->n_b_faces)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_cells_boundary(const char  *criteria,
+                               fvm_lnum_t  *n_i_faces,
+                               fvm_lnum_t  *n_b_faces,
+                               fvm_lnum_t   i_face_list[],
+                               fvm_lnum_t   b_face_list[])
+{
+  fvm_lnum_t ii, n_cells;
+  fvm_lnum_t *cell_list, *cell_flag;
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+
+  /* Mark cells inside zone selection */
+
+  BFT_MALLOC(cell_list, mesh->n_cells, fvm_lnum_t);
+  BFT_MALLOC(cell_flag, mesh->n_cells, fvm_lnum_t);
+
+  for (ii = 0; ii < mesh->n_cells; ii++)
+    cell_flag[ii] = 0;
+
+  n_cells = 0;
+
+  cs_selector_get_cell_list(criteria, &n_cells, cell_list);
+
+  for (ii = 0; ii < n_cells; ii++)
+    cell_flag[cell_list[ii] - 1] = 1;
+
+  BFT_FREE(cell_list);
+
+  if (mesh->halo != NULL)
+    cs_halo_sync_num(mesh->halo, CS_HALO_STANDARD, cell_flag);
+
+  /* Now build lists of faces on cell boundaries */
+
+  for (ii = 0; ii < mesh->n_i_faces; ii++) {
+    fvm_lnum_t c_id_0 = mesh->i_face_cells[ii*2] - 1;
+    fvm_lnum_t c_id_1 = mesh->i_face_cells[ii*2 + 1] - 1;
+    if (cell_flag[c_id_0] != cell_flag[c_id_1]) {
+      i_face_list[*n_i_faces] = ii + 1;
+      *n_i_faces += 1;
+    }
+  }
+
+  for (ii = 0; ii < mesh->n_b_faces; ii++) {
+    fvm_lnum_t c_id = mesh->b_face_cells[ii] - 1;
+    if (cell_flag[c_id] == 1) {
+      b_face_list[*n_b_faces] = ii + 1;
+      *n_b_faces += 1;
+    }
+  }
+
+  BFT_FREE(cell_flag);
+}
+
+/*----------------------------------------------------------------------------
  * Fill a list of interior faces belonging to a given periodicity.
  *
  * parameters:
@@ -365,6 +531,43 @@ cs_selector_get_perio_face_list(int          perio_num,
   }
 
   BFT_FREE(face_perio_num);
+}
+
+/*----------------------------------------------------------------------------
+ * Fill a list of families verifying a given selection criteria.
+ *
+ * parameters:
+ *   criteria    <-- selection criteria string
+ *   n_families  --> number of selected interior faces
+ *   family_list --> list of selected families faces
+ *                   (0 to n, preallocated to cs_glob_mesh->n_families + 1)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_family_list(const char  *criteria,
+                            fvm_lnum_t  *n_families,
+                            cs_int_t     family_list[])
+{
+  int c_id;
+
+  *n_families = 0;
+
+  /* As all selectors were build with the same group class definitions,
+     any selector may be used here. */
+  c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
+                               criteria,
+                               n_families,
+                               family_list);
+
+  if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
+    const char *missing
+      = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("The group \"%s\" in the selection criteria:\n"
+                 "\"%s\"\n"
+                 " is not present in the mesh.\n"),
+               missing, criteria);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

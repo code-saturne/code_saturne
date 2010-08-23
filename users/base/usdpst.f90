@@ -157,14 +157,16 @@ double precision ra(*)
 integer          indmod, icas, nbcas, ipart, nbpart, ipref, icat
 integer          ntchrl
 
-integer          nlcel, nlfac , nlfbr
-integer          iel, ifac  , ii
+integer          nlcel, nlfac , nlfbr, nlfam
+integer          iel, ifac, ifam, ii
 integer          idebia, idebra
-integer          icoul , icoul1, icoul2, iel1  , iel2
+integer          iflag1, iflag2, iel1, iel2
 character*32     nomcas, nomfmt, nommai
 character*96     nomrep, optfmt
 
 double precision xfac  , yfac  , zfac
+
+integer, allocatable, dimension(:) :: fam_list, fam_mask
 
 !===============================================================================
 
@@ -349,8 +351,9 @@ do ipart = 1, nbpart
   ! are defined.
 
   ! Part 1:
-  !   We select interior faces separating cells with color 2 from cells
-  !   with color 3, as well as boundary faces of color 4.
+  !   We select interior faces separating cells of color 2 from those
+  !   of colors 3, (assuming no cell has both colors), as well as
+  !   boundary faces of color 4.
 
   if (ipart .eq. 1) then
 
@@ -358,39 +361,55 @@ do ipart = 1, nbpart
 
     ! Interior faces
 
+    allocate(fam_list(nfml))
+    allocate(fam_mask(nfml))
+
+    fam_mask = 0
+
+    ! Build mask on families matching colors 2 (1), 3 (2)
+
+    call getfam('2', nlfam, fam_list)
+    !==========
+
+    do ifam = 1, nlfam
+      fam_mask(fam_list(ifam)) = 1
+    enddo
+
+    call getfam('3', nlfam, fam_list)
+    !==========
+
+    do ifam = 1, nlfam
+      fam_mask(fam_list(ifam)) = 2
+    enddo
+
+    deallocate(fam_list)
+
+    ! Now that mask is built, test for adjacency
+
     do ifac = 1, nfac
 
       ! Adjacent cells
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
 
-      ! Adjacent cell colors (with only 1 property per cell)
-      icoul1 = iprfml(ifmcel(iel1),1)
-      icoul2 = iprfml(ifmcel(iel2),1)
+      ! Adjacent cell flags
+      iflag1 = fam_mask(ifmcel(iel1))
+      iflag2 = fam_mask(ifmcel(iel2))
 
       ! Should the face belong to the extracted mesh ?
-      if ((icoul1.eq.2.and.icoul2.eq.3).or.(icoul1.eq.3.and.icoul2.eq.2)) then
+      if ((iflag1.eq.1.and.iflag2.eq.2).or.(iflag1.eq.2.and.iflag2.eq.1)) then
         nlfac = nlfac+1
         lstfac(nlfac)= ifac
       endif
 
     enddo
 
+    deallocate(fam_mask)
+
     ! Boundary faces
 
-    do ifac = 1, nfabor
-
-      ! Face color (with only 1 property per cell)
-      icoul = iprfml(ifmfbr(ifac),1)
-
-      ! Should the face belong to the extracted mesh ?
-      if (icoul.eq.4) then
-        nlfbr = nlfbr+1
-        lstfbr(nlfbr)= ifac
-      endif
-
-    enddo
-
+    call getfbr('4', nlfbr, lstfbr)
+    !==========
 
   ! Part 2:
   !   We select interior faces with y = 0.5

@@ -82,6 +82,21 @@ void CS_PROCF(csgcel, CSGCEL)
 );
 
 /*----------------------------------------------------------------------------
+ * Build a list of cells verifying a given selection criteria.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(csgceb, CSGCEB)
+(
+ const char   *const fstr,        /* <-- Fortran string */
+ cs_int_t     *const len,         /* <-- String Length  */
+ cs_int_t     *const n_i_faces,   /* --> number of interior faces */
+ cs_int_t     *const n_b_faces,   /* --> number of boundary faces */
+ cs_int_t     *const i_face_list, /* --> interior face list  */
+ cs_int_t     *const b_face_list  /* --> boundary face list  */
+ CS_ARGF_SUPP_CHAINE
+);
+
+/*----------------------------------------------------------------------------
  * Build a list of interior faces belonging to a given periodicity.
  *----------------------------------------------------------------------------*/
 
@@ -90,6 +105,19 @@ void CS_PROCF(getfpe, GETFPE)
  cs_int_t     *const perio_num, /* <-- Periodicity number */
  cs_int_t     *const n_faces,   /* --> number of faces */
  cs_int_t     *const face_list  /* --> face list  */
+ CS_ARGF_SUPP_CHAINE
+);
+
+/*----------------------------------------------------------------------------
+ * Build a list of families verifying a given selection criteria.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(csgfam, CSGFAM)
+(
+ const char   *const fstr,         /* <-- Fortran string */
+ cs_int_t     *const len,          /* <-- String Length  */
+ cs_int_t     *const n_families,   /* --> number of families */
+ cs_int_t     *const family_list   /* --> family list  */
  CS_ARGF_SUPP_CHAINE
 );
 
@@ -143,6 +171,27 @@ cs_selector_get_cell_list(const char  *criteria,
                           fvm_lnum_t   cell_list[]);
 
 /*----------------------------------------------------------------------------
+ * Fill lists of faces at the boundary of a set of cells verifying a given
+ * selection criteria.
+ *
+ * parameters:
+ *   criteria    <-- selection criteria string
+ *   n_i_faces   --> number of selected interior faces
+ *   n_b_faces   --> number of selected interior faces
+ *   i_face_list --> list of selected interior faces
+ *                   (1 to n, preallocated to cs_glob_mesh->n_i_faces)
+ *   b_face_list --> list of selected boundary faces
+ *                   (1 to n, preallocated to cs_glob_mesh->n_b_faces)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_cells_boundary(const char  *criteria,
+                               fvm_lnum_t  *n_i_faces,
+                               fvm_lnum_t  *n_b_faces,
+                               fvm_lnum_t   i_face_list[],
+                               fvm_lnum_t   b_face_list[]);
+
+/*----------------------------------------------------------------------------
  * Fill a list of interior faces belonging to a given periodicity.
  *
  * parameters:
@@ -156,6 +205,21 @@ void
 cs_selector_get_perio_face_list(int          perio_num,
                                 fvm_lnum_t  *n_i_faces,
                                 fvm_lnum_t   i_face_list[]);
+
+/*----------------------------------------------------------------------------
+ * Fill a list of families verifying a given selection criteria.
+ *
+ * parameters:
+ *   criteria    <-- selection criteria string
+ *   n_families  --> number of selected interior faces
+ *   family_list --> list of selected families faces
+ *                   (0 to n, preallocated to cs_glob_mesh->n_families + 1)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_family_list(const char  *criteria,
+                            fvm_lnum_t  *n_families,
+                            cs_int_t     family_list[]);
 
 /*----------------------------------------------------------------------------*/
 

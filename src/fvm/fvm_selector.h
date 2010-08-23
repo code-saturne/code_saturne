@@ -122,6 +122,30 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
                       fvm_lnum_t      *selected_elements);
 
 /*----------------------------------------------------------------------------
+ * Define the list of group classes verifying the criteria described
+ * by a character string.
+ *
+ * The selected_gc[] array must be pre-allocated, and be of sufficient
+ * size to contain all elements associated with the selector.
+ *
+ * parameters:
+ *   this_selector  <-> pointer to selector
+ *   str            <-- string defining selection criteria
+ *   n_selected_gcs <-- number of group classes selected
+ *   selected_gcs   <-> selected group class list (0 to n numbering,
+ *                      as group class "zero" may exist)
+ *
+ * returns:
+ *   criteria id associated by selector with str
+ *----------------------------------------------------------------------------*/
+
+int
+fvm_selector_get_gc_list(fvm_selector_t  *this_selector,
+                         const char      *str,
+                         int             *n_selected_gcs,
+                         int              selected_gcs[]);
+
+/*----------------------------------------------------------------------------
  * Return the number of operands associated with a selection criteria
  * which are missing in the selector's associated group class set.
  *

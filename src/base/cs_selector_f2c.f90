@@ -25,33 +25,85 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine getfbr &
+subroutine getfac &
 !=================
 
  ( fstr , facnb, faces)
 
 
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! CONSTRUCTION DE LA LISTE DES FACES DE BORD CORRESPONDANT A
-! A L'INTERPRETATION DE LA CHAINE DE CARACTERE FSTR
+! Build the list of interior faces matching a criteria string.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! fstr             ! a  ! <-- ! chaine a interpreter                           !
-! faces            ! e  !  <- ! faces selectionnees                            !
-! facnb            ! e  !  <- ! nombre de faces selectionnees                  !
+! fstr             ! a  ! <-- ! criteria string                                !
+! facnb            ! i  ! --> ! number of selected faces                       !
+! faces            ! ia ! --> ! selected faces                                 !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+character*(*) fstr
+integer       faces(*), facnb
+
+! Local variables
+
+integer          lenstr
+
+!===============================================================================
+
+lenstr=len(fstr)
+call csgfac(fstr, lenstr, facnb, faces)
+
+return
+
+end subroutine
+
+!===============================================================================
+
+subroutine getfbr &
+!=================
+
+ ( fstr , facnb, faces)
+
+!===============================================================================
+! Purpose:
+! -------
+
+! Build the list of boundary faces matching a criteria string.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+! fstr             ! a  ! <-- ! criteria string                                !
+! facnb            ! i  ! --> ! number of selected faces                       !
+! faces            ! ia ! --> ! selected faces                                 !
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -79,33 +131,33 @@ call csgfbr(fstr, lenstr, facnb, faces)
 return
 
 end subroutine
+
+!===============================================================================
+
 subroutine getcel &
 !=================
 
  ( fstr , cellnb, cells)
 
-
 !===============================================================================
-! FONCTION :
-! --------
+! Purpose:
+! -------
 
-! CONSTRUCTION DE LA LISTE DES CELLULES CORRESPONDANT A
-! A L'INTERPRETATION DE LA CHAINE DE CARACTERE FSTR
+! Build the list of cells matching a criteria string.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! fstr             ! a  ! <-- ! chaine a interpreter                           !
-! cells            ! e  !  <- ! faces selectionnees                            !
-! cellnb           ! e  !  <- ! nombre de faces selectionnees                  !
+! fstr             ! a  ! <-- ! criteria string                                !
+! cellnb           ! i  ! --> ! number fo selected cells                       !
+! cells            ! ia ! --> ! selected cells                                 !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -133,33 +185,35 @@ call csgcel(fstr, lenstr, cellnb, cells)
 return
 
 end subroutine
-subroutine getfac &
-!=================
-
- ( fstr , facnb, faces)
-
 
 !===============================================================================
-! FONCTION :
-! --------
 
-! CONSTRUCTION DE LA LISTE DES FACES INTERNES CORRESPONDANT A
-! A L'INTERPRETATION DE LA CHAINE DE CARACTERE FSTR
+subroutine getceb &
+!=================
+
+ ( fstr , ifacnb, bfacnb, ifaces, bfaces )
+
+!===============================================================================
+! Purpose:
+! -------
+
+! Build the lists of faces at the boundary of cells matching a criteria string.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! fstr             ! a  ! <-- ! chaine a interpreter                           !
-! cells            ! e  !  <- ! faces selectionnees                            !
-! cellnb           ! e  !  <- ! nombre de faces selectionnees                  !
+! fstr             ! a  ! <-- ! criteria string                                !
+! ifaces           ! i  ! --> ! selected interior faces                        !
+! bfaces           ! i  ! --> ! selected boundary faces                        !
+! ifacnb           ! ia ! --> ! number fo selected interior faces              !
+! bfacnb           ! ia ! --> ! number fo selected boundary faces              !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -173,7 +227,61 @@ implicit none
 ! Arguments
 
 character*(*) fstr
-integer       faces(*), facnb
+integer       ifaces(*), bfaces(*), ifacnb, bfacnb
+
+! Local variables
+
+integer       lenstr
+
+!===============================================================================
+
+lenstr=len(fstr)
+call csgceb(fstr, lenstr, ifacnb, bfacnb, ifaces, bfaces)
+
+return
+
+end subroutine
+
+!===============================================================================
+
+subroutine getfam &
+!=================
+
+ ( fstr , famnb, families)
+
+!===============================================================================
+! Purpose:
+! -------
+
+! Build the list of mesh element families matching a criteria string.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+! fstr             ! a  ! <-- ! criteria string                                !
+! families         ! i  ! <-- ! selected families                              !
+! famnb            ! i  ! <-- ! number of selected families                    !
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+character*(*) fstr
+integer       families(*), famnb
 
 ! Local variables
 
@@ -182,7 +290,7 @@ integer          lenstr
 !===============================================================================
 
 lenstr=len(fstr)
-call csgfac(fstr, lenstr, facnb, faces)
+call csgfac(fstr, lenstr, famnb, families)
 
 return
 

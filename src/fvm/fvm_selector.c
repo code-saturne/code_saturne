@@ -1033,6 +1033,73 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
 }
 
 /*----------------------------------------------------------------------------
+ * Define the list of group classes verifying the criteria described
+ * by a character string.
+ *
+ * The selected_gc[] array must be pre-allocated, and be of sufficient
+ * size to contain all elements associated with the selector.
+ *
+ * parameters:
+ *   this_selector  <-> pointer to selector
+ *   str            <-- string defining selection criteria
+ *   n_selected_gcs <-- number of group classes selected
+ *   selected_gcs   <-> selected group class list (0 to n numbering,
+ *                      as group class "zero" may exist)
+ *
+ * returns:
+ *   criteria id associated by selector with str
+ *----------------------------------------------------------------------------*/
+
+int
+fvm_selector_get_gc_list(fvm_selector_t  *this_selector,
+                         const char      *str,
+                         int             *n_selected_gcs,
+                         int              selected_gcs[])
+{
+  int  c_id, gc_id;
+  const fvm_selector_postfix_t *pf = NULL;
+  fvm_selector_t  *ts = this_selector;
+  fvm_lnum_t  i;
+
+  assert(this_selector != NULL);
+
+  *n_selected_gcs = 0;
+
+  /* Add or find the test number in the the cached operations list */
+
+  c_id = _get_criteria_id(ts, str);
+
+  ts->_operations->n_calls[c_id] += 1;
+  pf = ts->_operations->postfix[c_id];
+
+  if (   fvm_selector_postfix_coords_dep(pf) == true
+      || fvm_selector_postfix_normals_dep(pf) == true)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Selection of group classes by criteria:\n"
+                "\"%s\"\n"
+                "must not depend on coordinates or normals."),
+              str);
+
+  /* copy group class list */
+
+  if (ts->_operations->group_class_set[c_id] != NULL) {
+
+    int n_criteria_group_classes
+      = ts->_operations->n_group_classes[c_id];
+    const int *_criteria_group_class_set
+      = ts->_operations->group_class_set[c_id];
+
+    for (gc_id = 0; gc_id < n_criteria_group_classes; gc_id++)
+      selected_gcs[gc_id] = _criteria_group_class_set[gc_id];
+
+    *n_selected_gcs = n_criteria_group_classes;
+
+  }
+
+  return c_id;
+}
+
+/*----------------------------------------------------------------------------
  * Return the number of operands associated with a selection criteria
  * which are missing in the selector's associated group class set.
  *
