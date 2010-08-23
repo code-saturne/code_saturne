@@ -1,4 +1,9 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove include directory if possible when uninstalling.
+  modified scripts:
+    src/Makefile.am
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve bft_printf_flush() usage consistency.
   modified files:
     src/base/cs_syr4_coupling.c

@@ -119,3 +119,5 @@ uninstall-local:
 	test -n "$$files" || exit 0; \
 	echo " ( cd '$(DESTDIR)$(saturneincludedir)' && rm -f" $$files ")"; \
 	cd "$(DESTDIR)$(saturneincludedir)" && rm -f $$files
+	rmdir $(saturneincludedir) || exit 0
+
