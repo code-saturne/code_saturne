@@ -135,6 +135,21 @@ void
 fvm_part_to_block_destroy(fvm_part_to_block_t **d);
 
 /*----------------------------------------------------------------------------
+ * Transfer ownership of global entity numbers to a block distributor.
+ *
+ * The global_ent_num[] array should be the same as the one used
+ * for the creation of the block distributor.
+ *
+ * arguments:
+ *   d              <-- distributor helper
+ *   global_ent_num <-> global entity numbers
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_part_to_block_transfer_gnum(fvm_part_to_block_t  *d,
+                                fvm_gnum_t            global_ent_num[]);
+
+/*----------------------------------------------------------------------------
  * Return number of entities associated with local partition
  *
  * arguments:

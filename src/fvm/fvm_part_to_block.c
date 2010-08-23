@@ -113,7 +113,8 @@ struct _fvm_part_to_block_t {
   fvm_lnum_t  *send_block_id;   /* Id in block of sent entities */
   fvm_lnum_t  *recv_block_id;   /* Id in block of received entities */
 
-  const fvm_gnum_t *global_ent_num; /* Shared global entity numbers */
+  const fvm_gnum_t  *global_ent_num;  /* Shared global entity numbers */
+  fvm_gnum_t        *_global_ent_num; /* Private global entity numbers */
 };
 
 #endif /* defined(HAVE_MPI) */
@@ -194,6 +195,7 @@ _part_to_block_create(MPI_Comm comm)
   d->send_block_id = NULL;
   d->recv_block_id = NULL;
   d->global_ent_num = NULL;
+  d->_global_ent_num = NULL;
 
   return d;
 }
@@ -1093,7 +1095,30 @@ fvm_part_to_block_destroy(fvm_part_to_block_t **d)
   BFT_FREE(_d->send_block_id);
   BFT_FREE(_d->recv_block_id);
 
+  if (_d->_global_ent_num != NULL)
+    BFT_FREE(_d->_global_ent_num);
+
   BFT_FREE(*d);
+}
+
+/*----------------------------------------------------------------------------
+ * Transfer ownership of global entity numbers to a block distributor.
+ *
+ * The global_ent_num[] array should be the same as the one used
+ * for the creation of the block distributor.
+ *
+ * arguments:
+ *   d              <-- distributor helper
+ *   global_ent_num <-> global entity numbers
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_part_to_block_transfer_gnum(fvm_part_to_block_t  *d,
+                                fvm_gnum_t            global_ent_num[])
+{
+  assert(d->global_ent_num == global_ent_num);
+
+  d->_global_ent_num = global_ent_num;
 }
 
 /*----------------------------------------------------------------------------
