@@ -223,7 +223,7 @@ if (iperio.eq.1) then
   icelcr = idebia
   ipercr = icelcr + ncelet-ncel
   ifinia = ipercr + ncelet-ncel
-  CALL IASIZE('LAGNWC', IFINIA)
+  call iasize('lagnwc', ifinia)
   !==========
 
   do iel = 1,ncelet-ncel

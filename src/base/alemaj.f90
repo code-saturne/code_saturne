@@ -209,7 +209,7 @@ iclwma = iclrtp(iwma,icoef )
 
 idproj = idebra
 ifinra = idproj + ndim*nnod
-CALL RASIZE('ALEMAJ',IFINRA)
+call rasize('alemaj',ifinra)
 !==========
 
 call aldepl                                                       &

@@ -141,10 +141,10 @@ endif
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMPHY',IFINIA)
+call iasize('memphy',ifinia)
 !==========
 
-CALL RASIZE('MEMPHY',IFINRA)
+call rasize('memphy',ifinra)
 !==========
 
 return

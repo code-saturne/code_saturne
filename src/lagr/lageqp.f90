@@ -282,7 +282,7 @@ icoefby = icoefay + nfabor
 icoefaz = icoefby + nfabor
 icoefbz = icoefaz + nfabor
 ifinra  = icoefbz + nfabor
-CALL RASIZE ('LAGEQP',IFINRA)
+call rasize ('lageqp',ifinra)
 !==========
 
 do ifac = 1, nfabor
@@ -333,7 +333,7 @@ ifinia = idebia
 icefap = idebra
 icefbp = icefap + nfabor
 ifinra = icefbp + nfabor
-CALL RASIZE ('LAGEQP',IFINRA)
+call rasize ('lageqp',ifinra)
 !==========
 
 do ifac = 1, nfabor

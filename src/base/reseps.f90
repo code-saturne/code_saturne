@@ -309,7 +309,7 @@ enddo
 maxelt = max(ncelet, nfac, nfabor)
 ils    = idebia
 ifinia = ils + maxelt
-CALL IASIZE('RESEPS',IFINIA)
+call iasize('reseps',ifinia)
 
 call ustsri                                                       &
 !==========

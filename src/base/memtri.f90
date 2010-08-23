@@ -357,11 +357,11 @@ endif
 
 ! --> Verification
 
-CALL IASIZE('MEMTRI',IFINIA)
-!     ==========
+call iasize('memtri',ifinia)
+!==========
 
-CALL RASIZE('MEMTRI',IFINRA)
-!     ==========
+call rasize('memtri',ifinra)
+!==========
 
 
 !===============================================================================

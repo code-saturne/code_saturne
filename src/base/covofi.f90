@@ -373,7 +373,7 @@ else
   maxelt = max(ncelet,nfac,nfabor)
   ils    = idebia
   idbia1 = ils + maxelt
-  CALL IASIZE('COVOFI',IDBIA1)
+  call iasize('covofi',idbia1)
 
   call ustssc                                                     &
   !==========

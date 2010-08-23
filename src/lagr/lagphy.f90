@@ -307,8 +307,8 @@ if (iphyla.eq.2) then
   iwl1   = idebra
   iwl2   = iwl1 + nbpmax
   ifinra = iwl2 + nbpmax
-  CALL RASIZE('LAGUNE',IFINRA)
-!       ==========
+  call rasize('lagphy',ifinra)
+  !==========
 
   call lagich                                                     &
   !==========

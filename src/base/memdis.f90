@@ -149,7 +149,7 @@ ifinra =       iw9    + ncelet
 
 !---> VERIFICATION
 
-CALL RASIZE('MEMDIS',IFINRA)
+call rasize('memdis',ifinra)
 !==========
 
 return

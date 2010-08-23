@@ -195,7 +195,7 @@ ifinra =       iesflb + nfabor*iescat
 
 !---> VERIFICATION
 
-CALL RASIZE('MEMNAV',IFINRA)
+call rasize('memnav',ifinra)
 !==========
 
 return

@@ -328,7 +328,7 @@ idebra = idbra0
     iw9    = if3max + ncelet
     iw10   = iw9    + ncelet
     ifinra = iw10   + ncelet
-    CALL RASIZE('PPPPHY',IFINRA)
+    call rasize('pppphy',ifinra)
 
      call cpphyv                                                  &
      !==========

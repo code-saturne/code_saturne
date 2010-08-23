@@ -108,8 +108,8 @@ ifinia =       iizfrd + nfabor
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMRA1',IFINIA)
-!     ==========
+call iasize('memra1',ifinia)
+!==========
 
 return
 end subroutine

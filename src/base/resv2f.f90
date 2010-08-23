@@ -382,7 +382,7 @@ enddo
 maxelt = max(ncelet, nfac, nfabor)
 ils    = idebia
 ifinia = ils + maxelt
-CALL IASIZE('RESV2F',IFINIA)
+call iasize('resv2f',ifinia)
 
 call ustsv2                                                       &
 !==========
@@ -661,7 +661,7 @@ enddo
 maxelt = max(ncelet, nfac, nfabor)
 ils    = idebia
 ifinia = ils + maxelt
-CALL IASIZE('RESV2F',IFINIA)
+call iasize('resv2f',ifinia)
 
 call ustsv2                                                       &
 !==========

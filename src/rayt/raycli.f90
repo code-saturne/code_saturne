@@ -349,7 +349,7 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
 
       ils    = idebia
       idbia1 = ils + maxelt
-      CALL IASIZE('RAYCLI',IDBIA1)
+      call iasize('raycli',idbia1)
 
       call usray2                                                 &
       !==========

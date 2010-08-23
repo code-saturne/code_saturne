@@ -224,7 +224,7 @@ idebra = idbra0
 maxelt = max(ncelet,nfac,nfabor)
 ils    = idebia
 idbia1 = ils + maxelt
-CALL IASIZE('PPCLIM',IDBIA1)
+call iasize('ppclim',idbia1)
 
 !===============================================================================
 ! 2. AIGUILLAGE VERS LE MODELE ADEQUAT

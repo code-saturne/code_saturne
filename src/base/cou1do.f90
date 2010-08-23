@@ -210,10 +210,10 @@ iappel = 3
 maxelt = max(ncelet,nfac,nfabor)
 ils    = idebia
 idbia1 = ils + maxelt
-CALL IASIZE('COU1DO',IDBIA1)
+call iasize('cou1do',idbia1)
 
 call  uspt1d                                                      &
-!     ============
+!===========
  ( idbia1 , idebra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr ,                            &

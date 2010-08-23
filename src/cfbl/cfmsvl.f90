@@ -254,7 +254,7 @@ idebra = idbra0
 iwfabg = idebra
 iwfbbg = iwfabg+nfac
 idebra = iwfbbg+nfabor
-CALL RASIZE('CFMSVL',IDEBRA)
+call rasize('cfmsvl',idebra)
 
 ! --- Numero de phase associee au scalaire traite
 iphas  = iphsca(iscal)

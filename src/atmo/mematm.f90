@@ -136,10 +136,10 @@ ifinra = iphmet + nbmett*nbmetm
 
 ! --> Verification
 
-CALL IASIZE('MEMATM',IFINIA)
+call iasize('mematm',ifinia)
 !==========
 
-CALL RASIZE('MEMATM',IFINRA)
+call rasize('mematm',ifinra)
 !==========
 
 !----

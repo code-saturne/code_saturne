@@ -114,10 +114,10 @@ irvdis = ifinra
 irvcpl = irvdis + nvcpto*nptdis
 ifinra = irvcpl + nvcpto*nptcpl
 
-CALL IASIZE('MEMCS2',IFINIA)
+call iasize('memcs2',ifinia)
 !==========
 
-CALL RASIZE('MEMCS2',IFINRA)
+call rasize('memcs2',ifinra)
 !==========
 
 

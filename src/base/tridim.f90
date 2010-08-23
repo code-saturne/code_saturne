@@ -760,7 +760,7 @@ do iphas = 1, nphas
 
       ils    = idebia
       idbia1 = ils + maxelt
-      CALL IASIZE('TRIDIM',IDBIA1)
+      call iasize('tridim',idbia1)
 
       call uskpdc                                                 &
       !==========
@@ -796,7 +796,7 @@ do iphas = 1, nphas
 
     ils    = idebia
     idbia1 = ils + maxelt
-    CALL IASIZE('TRIDIM',IDBIA1)
+    call iasize('tridim',idbia1)
 
 !     Mise a zero du tableau de type de TS masse et source
     do ii = 1, ncetsm(iphas)*nvar
@@ -891,7 +891,7 @@ if (ivrtex.eq.1) then
 
   ils    = ifinia
   ifnia1 = ils + maxelt
-  CALL IASIZE('TRIDIM',IFNIA1)
+  call iasize('tridim',ifnia1)
 
   iphas  = 1
   iappel = 2
@@ -1067,8 +1067,8 @@ do while (iterns.le.nterup)
         ifnia1 = iilzfb + nbzfmx
         iqcalc = ifinra
         ifnra1 = iqcalc + nozfmx
-        CALL IASIZE('TRIDIM',IFNIA1)
-        CALL RASIZE('TRIDIM',IFNRA1)
+        call iasize('tridim',ifnia1)
+        call rasize('tridim',ifnra1)
 
         call stdtcl &
         !==========
@@ -1100,7 +1100,7 @@ do while (iterns.le.nterup)
 
       ils    = ifinia
       ifnia1 = ils + maxelt
-      CALL IASIZE('TRIDIM',IFNIA1)
+      call iasize('tridim',ifnia1)
 
       call usclim &
       !==========
@@ -1238,7 +1238,7 @@ do while (iterns.le.nterup)
 
     ils    = ifinia
     ifnia1 = ils + maxelt
-    CALL IASIZE('TRIDIM',IFNIA1)
+    call iasize('tridim',ifnia1)
 
     call usalcl &
     !==========

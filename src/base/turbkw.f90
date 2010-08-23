@@ -506,7 +506,7 @@ enddo
 maxelt = max(ncelet, nfac, nfabor)
 ils    = idebia
 ifinia = ils + maxelt
-CALL IASIZE('TURBKW',IFINIA)
+call iasize('turbkw',ifinia)
 
 call ustskw                                                       &
 !==========

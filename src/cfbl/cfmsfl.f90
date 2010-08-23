@@ -306,7 +306,7 @@ if(itsqdm.ne.0) then
   maxelt = max(ncelet, nfac, nfabor)
   ils    = idebia
   ifinia = ils + maxelt
-  CALL IASIZE('CFMSFL',IFINIA)
+  call iasize('cfmsfl',ifinia)
 
 !     Suivant X
   call ustsns                                                     &

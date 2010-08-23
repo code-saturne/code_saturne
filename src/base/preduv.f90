@@ -1307,7 +1307,7 @@ do isou = 1, 3
       maxelt = max(ncelet, nfac, nfabor)
       ils    = idebia
       ifinia = ils + maxelt
-      CALL IASIZE('PREDUV',IFINIA)
+      call iasize('preduv',ifinia)
 
       call ustsns                                                 &
       !==========

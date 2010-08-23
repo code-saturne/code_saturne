@@ -227,11 +227,11 @@ endif
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMLA2',IFINIA)
-!     ==========
+call iasize('memla2',ifinia)
+!==========
 
-CALL RASIZE('MEMLA2',IFINRA)
-!     ==========
+call rasize('memla2',ifinra)
+!==========
 
 return
 end subroutine

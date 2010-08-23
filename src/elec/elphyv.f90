@@ -799,7 +799,7 @@ endif
 maxelt = max(ncelet, nfac, nfabor)
 ils    = idebia
 ifinia = ils + maxelt
-CALL IASIZE('ELPHYV',IFINIA)
+call iasize('elphyv',ifinia)
 
 call uselph                                                       &
 !==========

@@ -131,10 +131,10 @@ ifinra =       itext   + nfabor
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMRA3',IFINIA)
+call iasize('memra3',ifinia)
 !==========
 
-CALL RASIZE('MEMRA3',IFINRA)
+call rasize('memra3',ifinra)
 !==========
 
 return

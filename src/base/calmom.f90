@@ -104,7 +104,7 @@ integer          jmom, icumut
 
 itravm = idbra0
 ifinra  = itravm + ncelet
-CALL RASIZE('CALMOM',IFINRA)
+call rasize('calmom',ifinra)
 
 ! Boucle et test sur les moments a calculer
 do imom = 1, nbmomt

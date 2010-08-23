@@ -163,10 +163,10 @@ endif
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMCLI',IFINIA)
+call iasize('memcli',ifinia)
 !==========
 
-CALL RASIZE('MEMCLI',IFINRA)
+call rasize('memcli',ifinra)
 !==========
 
 return

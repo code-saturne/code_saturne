@@ -86,7 +86,7 @@ if(iappel.eq.1) then
 
   ifinra = idebra
 
-  CALL IASIZE('MEMVOR',IFINIA)
+  call iasize('memvor',ifinia)
 
 elseif(iappel.eq.2) then
 
@@ -105,8 +105,8 @@ elseif(iappel.eq.2) then
   iw2v   = iw2z   + nnent*icvmax
   ifinra = iw2v   + nnent*icvmax
 
-  CALL IASIZE('MEMVOR',IFINIA)
-  CALL RASIZE('MEMVOR',IFINRA)
+  call iasize('memvor',ifinia)
+  call rasize('memvor',ifinra)
 
 elseif(iappel.eq.3) then
 
@@ -126,8 +126,8 @@ elseif(iappel.eq.3) then
   ixtmpl = ixtmp  + nnent*nvomax
   ifinra = ixtmpl + nnent*nvomax
 
-  CALL IASIZE('MEMVOR',IFINIA)
-  CALL RASIZE('MEMVOR',IFINRA)
+  call iasize('memvor',ifinia)
+  call rasize('memvor',ifinra)
 endif
 
 return

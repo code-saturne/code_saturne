@@ -108,10 +108,10 @@ ifinra = iwb    + nfabor
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMCFE',IFINIA)
+call iasize('memcfe',ifinia)
 !==========
 
-CALL RASIZE('MEMCFE',IFINRA)
+call rasize('memcfe',ifinra)
 !==========
 
 return

@@ -100,7 +100,7 @@ integer          ifac, ii, iel , iiasse
 iiasse = iicelb + nfabor
 ifinia = iiasse + ncelet
 
-CALL IASIZE('MEMCBR',IFINIA)
+call iasize('memcbr',ifinia)
 !==========
 
 !===============================================================================

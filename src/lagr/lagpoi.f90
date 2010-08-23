@@ -260,8 +260,8 @@ iw7    = iw6    + ncelet
 iw8    = iw7    + ncelet
 iw9    = iw8    + ncelet
 ifinra = iw9    + ncelet
-CALL RASIZE('LAGPOI',IFINRA)
-!     ==========
+call rasize('lagpoi',ifinra)
+!==========
 
 do iel=1,ncel
   if ( statis(iel,ilpd) .gt. seuil ) then
@@ -316,7 +316,7 @@ call lageqp                                                       &
 icoefap = ifinra
 icoefbp = icoefap + nfabor
 ifinra  = icoefbp + nfabor
-CALL RASIZE ('LAGEQP',IFINRA)
+call rasize ('lageqp',ifinra)
 !==========
 
 do ifac = 1, nfabor

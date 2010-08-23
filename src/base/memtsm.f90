@@ -144,11 +144,11 @@ enddo
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMTSM',IFINIA)
-!     ==========
+call iasize('memtsm',ifinia)
+!==========
 
-CALL RASIZE('MEMTSM',IFINRA)
-!     ==========
+call rasize('memtsm',ifinra)
+!==========
 
 !---> FORMATS
 

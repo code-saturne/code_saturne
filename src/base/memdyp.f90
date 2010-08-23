@@ -172,7 +172,7 @@ ifinra =       iw9    + ncelet
 
 !---> VERIFICATION
 
-CALL RASIZE('MEMDYP',IFINRA)
+call rasize('memdyp',ifinra)
 !==========
 
 return

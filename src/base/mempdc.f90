@@ -161,11 +161,11 @@ endif
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMPDC',IFINIA)
-!     ==========
+call iasize('mempdc',ifinia)
+!==========
 
-CALL RASIZE('MEMPDC',IFINRA)
-!     ==========
+call rasize('mempdc',ifinra)
+!==========
 
 !---> FORMATS
 

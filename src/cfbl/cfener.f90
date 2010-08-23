@@ -323,7 +323,7 @@ enddo
 maxelt = max(ncelet,nfac,nfabor)
 ils = idebia
 idbia1 = ils + maxelt
-CALL IASIZE('CFENER',IDBIA1)
+call iasize('cfener',idbia1)
 
 call ustssc                                                       &
 !==========
@@ -442,108 +442,108 @@ endif
 
 !   Calcul du gradient de P/RHO
 
-!      DO IEL = 1, NCEL
-!        W7(IEL) = RTP(IEL,IPR(IPHAS))/W9(IEL)
-!      ENDDO
+!      do iel = 1, ncel
+!        w7(iel) = rtp(iel,ipr(iphas))/w9(iel)
+!      enddo
 
 ! Rq : A defaut de connaitre les parametres pour P/RHO on prend ceux de P
 
-!      III = IPR(IPHAS)
-!      INC = 1
-!      ICCOCG = 1
-!      NSWRGP = NSWRGR(III)
-!      IMLIGP = IMLIGR(III)
-!      IWARNP = IWARNI(III)
-!      EPSRGP = EPSRGR(III)
-!      CLIMGP = CLIMGR(III)
-!      EXTRAP = EXTRAG(III)
+!      iii = ipr(iphas)
+!      inc = 1
+!      iccocg = 1
+!      nswrgp = nswrgr(iii)
+!      imligp = imligr(iii)
+!      iwarnp = iwarni(iii)
+!      epsrgp = epsrgr(iii)
+!      climgp = climgr(iii)
+!      extrap = extrag(iii)
 
 !       On alloue localement 2 tableaux de NFABOR pour le calcul
 !       de COEFA et COEFB de P/RHO
 
-!      ICOEFA = IDEBRA
-!      ICOEFB = ICOEFA + NFABOR
-!      IFINRA = ICOEFB + NFABOR
-!      CALL RASIZE ('CFENER',IFINRA)
-!==========
+!      icoefa = idebra
+!      icoefb = icoefa + nfabor
+!      ifinra = icoefb + nfabor
+!      call rasize ('cfener',ifinra)
+!      !==========
 
-!      DO IFAC = 1, NFABOR
-!        RA(ICOEFA+IFAC-1) = ZERO
-!        RA(ICOEFB+IFAC-1) = 1.D0
-!      ENDDO
+!      do ifac = 1, nfabor
+!        ra(icoefa+ifac-1) = zero
+!        ra(icoefb+ifac-1) = 1.d0
+!      enddo
 
 ! En periodique et parallele, echange avant calcul du gradient
-!      IF (IRANGP.GE.0.OR.IPERIO.EQ.1) THEN
-!        CALL SYNSCA(W7)
-  !==========
-!      ENDIF
+!      if (irangp.ge.0.or.iperio.eq.1) then
+!        call synsca(w7)
+!        !==========
+!      endif
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
 !     n'est pas la vitesse ni Rij)
-!      IVAR0 = 0
-!      IPHYDP = 0
-!      CALL GRDCEL
-!==========
-!     & ( IDEBIA , IFINRA ,
-!     &   NDIM   , NCELET , NCEL   , NFAC   , NFABOR , NFML   , NPRFML ,
-!     &   NNOD   , LNDFAC , LNDFBR , NCELBR , NPHAS  ,
-!     &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
-!     &   IVAR0  , IMRGRA , INC    , ICCOCG , NSWRGP , IMLIGP , IPHYDP ,
-!     &   IWARNP , NFECRA , EPSRGP , CLIMGP , EXTRAP ,
-!     &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-!     &   IPNFAC , NODFAC , IPNFBR , NODFBR ,
-!     &   IDEVEL , ITUSER , IA     ,
-!     &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
-!     &   W7     , W7     , W7     ,
-!     &   W7     , RA(ICOEFA) , RA(ICOEFB)  ,
-!     &   W1     , W2     , W3     ,
-!     &   W4     , W5     , W6     ,
-!     &   RDEVEL , RTUSER , RA     )
+!      ivar0 = 0
+!      iphydp = 0
+!      call grdcel
+!      !==========
+!     & ( idebia , ifinra ,
+!     &   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml ,
+!     &   nnod   , lndfac , lndfbr , ncelbr , nphas  ,
+!     &   nideve , nrdeve , nituse , nrtuse ,
+!     &   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,
+!     &   iwarnp , nfecra , epsrgp , climgp , extrap ,
+!     &   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,
+!     &   ipnfac , nodfac , ipnfbr , nodfbr ,
+!     &   idevel , ituser , ia     ,
+!     &   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume ,
+!     &   w7     , w7     , w7     ,
+!     &   w7     , ra(icoefa) , ra(icoefb)  ,
+!     &   w1     , w2     , w3     ,
+!     &   w4     , w5     , w6     ,
+!     &   rdevel , rtuser , ra     )
 
 !       On libere la place dans RA
 
-!      IFINRA = IDEBRA
+!      ifinra = idebra
 
 !     Faces internes
-!      DO IFAC = 1, NFAC
+!      do ifac = 1, nfac
 
-!        II = IFACEL(1,IFAC)
-!        JJ = IFACEL(2,IFAC)
+!        ii = ifacel(1,ifac)
+!        jj = ifacel(2,ifac)
 
-!        IIJ = IDIJPF-1+3*(IFAC-1)
-!        DIJPFX = RA(IIJ+1)
-!        DIJPFY = RA(IIJ+2)
-!        DIJPFZ = RA(IIJ+3)
+!        iij = idijpf-1+3*(ifac-1)
+!        dijpfx = ra(iij+1)
+!        dijpfy = ra(iij+2)
+!        dijpfz = ra(iij+3)
 
-!        POND   = RA(IPOND-1+IFAC)
+!        pond   = ra(ipond-1+ifac)
 
 !        Calcul II' et JJ'
 
-!        DIIPFX = CDGFAC(1,IFAC) - (XYZCEN(1,II)+
-!     &           (1.D0-POND) * DIJPFX)
-!        DIIPFY = CDGFAC(2,IFAC) - (XYZCEN(2,II)+
-!     &           (1.D0-POND) * DIJPFY)
-!        DIIPFZ = CDGFAC(3,IFAC) - (XYZCEN(3,II)+
-!     &           (1.D0-POND) * DIJPFZ)
-!        DJJPFX = CDGFAC(1,IFAC) -  XYZCEN(1,JJ)+
-!     &               POND  * DIJPFX
-!        DJJPFY = CDGFAC(2,IFAC) -  XYZCEN(2,JJ)+
-!     &               POND  * DIJPFY
-!        DJJPFZ = CDGFAC(3,IFAC) -  XYZCEN(3,JJ)+
-!     &               POND  * DIJPFZ
+!        diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+
+!     &           (1.d0-pond) * dijpfx)
+!        diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+
+!     &           (1.d0-pond) * dijpfy)
+!        diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+
+!     &           (1.d0-pond) * dijpfz)
+!        djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+
+!     &               pond  * dijpfx
+!        djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+
+!     &               pond  * dijpfy
+!        djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+
+!     &               pond  * dijpfz
 
-!        PIP = W7(II)
-!     &       +W1(II)*DIIPFX+W2(II)*DIIPFY+W3(II)*DIIPFZ
+!        pip = w7(ii)
+!     &       +w1(ii)*diipfx+w2(ii)*diipfy+w3(ii)*diipfz
 
-!        PJP = W7(JJ)
-!     &       +W1(JJ)*DJJPFX+W2(JJ)*DJJPFY+W3(JJ)*DJJPFZ
+!        pjp = w7(jj)
+!     &       +w1(jj)*djjpfx+w2(jj)*djjpfy+w3(jj)*djjpfz
 
-!        FLUI = (PROPFA(IFAC,IFLMAS)+ABS(PROPFA(IFAC,IFLMAS)))
-!        FLUJ = (PROPFA(IFAC,IFLMAS)-ABS(PROPFA(IFAC,IFLMAS)))
+!        flui = (propfa(ifac,iflmas)+abs(propfa(ifac,iflmas)))
+!        fluj = (propfa(ifac,iflmas)-abs(propfa(ifac,iflmas)))
 
-!        VISCF(IFAC) = -(POND*PIP*FLUI+POND*PJP*FLUJ)
+!        viscf(ifac) = -(pond*pip*flui+pond*pjp*fluj)
 
-!      ENDDO
+!      enddo
 
 !     Sans Reconstruction
 
@@ -728,7 +728,7 @@ extrap = extrag(iii)
 icoefa = idebra
 icoefb = icoefa + nfabor
 ifinra = icoefb + nfabor
-CALL RASIZE ('CFENER',IFINRA)
+call rasize ('cfener',ifinra)
 !==========
 
 do ifac = 1, nfabor

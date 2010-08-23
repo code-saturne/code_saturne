@@ -200,7 +200,7 @@ idebra = idbra0
 maxelt = max(ncelet, nfac, nfabor)
 ils    = idebia
 ifinia = ils + maxelt
-CALL IASIZE('CFPHYV',IFINIA)
+call iasize('cfphyv',ifinia)
 
 iuscfp = 1
 call uscfpv                                                       &

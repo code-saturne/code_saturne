@@ -146,10 +146,10 @@ ifinra =       igrarz + ncelet*iipmcf
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMDTV',IFINIA)
+call iasize('memdtv',ifinia)
 !==========
 
-CALL RASIZE('MEMDTV',IFINRA)
+call rasize('memdtv',ifinra)
 !==========
 
 return

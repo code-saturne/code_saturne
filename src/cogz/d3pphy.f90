@@ -217,7 +217,7 @@ idebra = idbra0
 
 iinpdf = idebia
 ifinia = iinpdf + ncelet
-CALL IASIZE('D3PPHY',IFINIA)
+call iasize('d3pphy',ifinia)
 !==========
 
 !===============================================================================

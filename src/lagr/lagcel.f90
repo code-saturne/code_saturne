@@ -342,7 +342,7 @@ if (iperio.eq.1) then
   icelcr = idebia
   ipercr = icelcr + ncelet-ncel
   ifinia = ipercr + ncelet-ncel
-  CALL IASIZE('LAGCEL', IFINIA)
+  call iasize('lagcel', ifinia)
   !==========
 
   do iel = 1,ncelet-ncel

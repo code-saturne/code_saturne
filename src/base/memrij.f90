@@ -186,7 +186,7 @@ ifinra =       iw9    + ncelet
 
 !---> VERIFICATION
 
-CALL RASIZE('MEMRIJ',IFINRA)
+call rasize('memrij',ifinra)
 !==========
 
 return

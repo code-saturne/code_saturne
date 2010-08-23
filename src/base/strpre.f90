@@ -298,7 +298,7 @@ if (nbaste.gt.0) then
 
     ilstfa = idebia
     ifinia = ilstfa + nbfast
-    CALL IASIZE('STRPRE',IFINIA)
+    call iasize('strpre',ifinia)
 
     indast = 0
     do ifac = 1, nfabor

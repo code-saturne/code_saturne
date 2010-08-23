@@ -343,7 +343,7 @@ if ( itytur(iphas).eq.2 .or. itytur(iphas).eq.3                   &
   icoefa = idebra
   icoefb = icoefa + nfabor
   ifinra = icoefb + nfabor
-  CALL RASIZE ('CPTSVC',IFINRA)
+  call rasize ('cptsvc',ifinra)
   !==========
 
   do ifac = 1, nfabor

@@ -146,7 +146,7 @@ ifinra =       iw9    + ncelet
 
 !---> VERIFICATION
 
-CALL RASIZE('MEMSCA',IFINRA)
+call rasize('memsca',ifinra)
 !==========
 
 return

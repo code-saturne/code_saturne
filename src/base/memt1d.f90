@@ -160,11 +160,11 @@ ifinra = irgpt1 + nfpt1d
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMT1D',IFINIA)
-!     ==========
+call iasize('memt1d',ifinia)
+!==========
 
-CALL RASIZE('MEMT1D',IFINRA)
-!     ==========
+call rasize('memt1d',ifinra)
+!==========
 
 !---> INITIALISATION DES TABLEAUX
 !     a des valeurs sortant en erreur dans vert1d

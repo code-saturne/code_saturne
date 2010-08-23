@@ -241,7 +241,7 @@ inxpar = idppar + nbpart
 inypar = inxpar + nbpart
 inzpar = inypar + nbpart
 ifinra = inzpar + nbpart
-CALL RASIZE('LAGFCH',IFINRA)
+call rasize('lagfch',ifinra)
 !==========
 
 do ip = 1,nbpart

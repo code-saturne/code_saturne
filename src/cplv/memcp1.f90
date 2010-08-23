@@ -126,10 +126,10 @@ ifinra =        iworr   + ntbwor*ncelet
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMPH1',IFINIA)
+call iasize('memph1',ifinia)
 !==========
 
-CALL RASIZE('MEMPH1',IFINRA)
+call rasize('memph1',ifinra)
 !==========
 
 return

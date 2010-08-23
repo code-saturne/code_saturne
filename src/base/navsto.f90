@@ -467,7 +467,7 @@ if( iprco.le.0 ) then
     iflint = idebra
     ifinra = iflint + nfac
 
-    CALL RASIZE('NAVSTO',IFINRA)
+    call rasize('navsto',ifinra)
     !==========
 
     do iphas = 1, nphas
@@ -734,7 +734,7 @@ do iphas = 1, nphas
     icocgv = iflbrd + nfabor
     ifinra = icocgv + ncelet*9
 
-    CALL RASIZE('NAVSTO',IFINRA)
+    call rasize('navsto',ifinra)
     !==========
 
 !     on ote la partie en u-predit dans le flux de masse final,
@@ -816,7 +816,7 @@ do iphas = 1, nphas
     icocgv = idebra
     ifinra = icocgv + ncelet*9
 
-    CALL RASIZE('NAVSTO',IFINRA)
+    call rasize('navsto',ifinra)
     !==========
 
     call recvmc                                                   &
@@ -988,12 +988,12 @@ if (iale.eq.1) then
     coefa(ifac,iclwma) = -coefa(ifac,iclwma)
   enddo
 
-!     One temporary array needed for internal faces, in case some internal vertices
-!       are moved directly by the user
+    ! One temporary array needed for interior faces, in case some
+    ! interior vertices are moved directly by the user
     iflint = idebra
     ifinra = iflint + nfac
 
-    CALL RASIZE('NAVSTO',IFINRA)
+    call rasize('navsto',ifinra)
     !==========
 
   do iphas = 1, nphas

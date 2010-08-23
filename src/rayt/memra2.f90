@@ -176,7 +176,7 @@ ifinra =       iflxmb + nfabor
 !---> VERIFICATION
 !===============================================================================
 
-CALL RASIZE('MEMRA2',IFINRA)
+call rasize('memra2',ifinra)
 !==========
 
 return

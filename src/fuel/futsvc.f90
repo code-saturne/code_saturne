@@ -335,7 +335,7 @@ if ( itytur(iphas).eq.2 .or. itytur(iphas).eq.3                   &
   icoefa = idebra
   icoefb = icoefa + nfabor
   ifinra = icoefb + nfabor
-  CALL RASIZE ('FUTSVC',IFINRA)
+  call rasize ('futsvc',ifinra)
   !==========
 
   do ifac = 1, nfabor

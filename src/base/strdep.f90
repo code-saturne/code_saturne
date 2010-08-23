@@ -219,7 +219,7 @@ enddo
 
 iforas = idebra
 ifinra = iforas + 3*nbfast
-CALL RASIZE('STRDEP',IFINRA)
+call rasize('strdep',ifinra)
 !==========
 
 indast = 0

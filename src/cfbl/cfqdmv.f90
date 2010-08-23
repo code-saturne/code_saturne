@@ -780,7 +780,7 @@ do isou = 1, 3
   maxelt = max(ncelet, nfac, nfabor)
   ils    = idebia
   ifinia = ils + maxelt
-  CALL IASIZE('CFQDMV',IFINIA)
+  call iasize('cfqdmv',ifinia)
 
   call ustsns                                                     &
   !==========

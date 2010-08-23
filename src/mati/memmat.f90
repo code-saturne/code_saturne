@@ -134,10 +134,10 @@ ifinra = idebra
 
 ! --> Verification
 
-CALL IASIZE('MEMMAT',IFINIA)
+call iasize('memmat',ifinia)
 !==========
 
-CALL RASIZE('MEMMAT',IFINRA)
+call rasize('memmat',ifinra)
 !==========
 
 return

@@ -793,7 +793,7 @@ npt = nbpart
 iiwork = idebia
 ifinia = iiwork + nbpmax
 ifinra = idebra
-CALL IASIZE('LAGENT',IFINIA)
+call iasize('lagent',ifinia)
 !==========
 
 !     Ensuite, on regarde ou on les met

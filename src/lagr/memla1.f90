@@ -177,10 +177,10 @@ endif
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMLA1',IFINIA)
+call iasize('memla1',ifinia)
 !==========
 
-CALL RASIZE('MEMLA1',IFINRA)
+call rasize('memla1',ifinra)
 !==========
 
 return

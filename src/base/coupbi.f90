@@ -163,9 +163,9 @@ do inbcou = 1, nbccou
   ithpar = idebra
   ifinra = ithpar + nbfcou
 
-  CALL IASIZE('COUPBI',IFINIA)
+  call iasize('coupbi',ifinia)
   !==========
-  CALL RASIZE('COUPBI',IFINRA)
+  call rasize('coupbi',ifinra)
   !==========
 
 !        LECTURE DU MESSAGE (TEMPERATURE PAROI) ET

@@ -199,9 +199,9 @@ do inbcou = 1, nbccou
 
 ! Fin Compressible
 
-  CALL RASIZE('COUPBO',IFINIA)
+  call rasize('coupbo',ifinia)
   !==========
-  CALL RASIZE('COUPBO',IFINRA)
+  call rasize('coupbo',ifinra)
   !==========
 
 !       BOUCLE SUR LES FACES DE COUPLAGE ET CALCUL DES COEFFICIENTS

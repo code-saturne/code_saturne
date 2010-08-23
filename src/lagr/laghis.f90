@@ -160,7 +160,7 @@ if(modhis.eq.0.or.modhis.eq.1) then
   ifinia = idebia
   idmoyd = idebra
   ifinra = idmoyd + ncelet
-  CALL RASIZE('LAGHIS',IFINRA)
+  call rasize('laghis',ifinra)
   !==========
 
   do ipas  = 1,1+nbclst

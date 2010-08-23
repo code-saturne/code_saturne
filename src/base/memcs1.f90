@@ -99,7 +99,7 @@ ilcenc = ilfbcp + nfbcpl
 ilfbnc = ilcenc + ncencp
 ifinia = ilfbnc + nfbncp
 
-CALL IASIZE('MEMCS1',IFINIA)
+call iasize('memcs1',ifinia)
 !==========
 
 ifinra = idebra

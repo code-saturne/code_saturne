@@ -112,10 +112,10 @@ ifinra = iwcel4 + ncelet
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMCFV',IFINIA)
+call iasize('memcfv',ifinia)
 !==========
 
-CALL RASIZE('MEMCFV',IFINRA)
+call rasize('memcfv',ifinra)
 !==========
 
 return

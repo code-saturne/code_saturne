@@ -160,7 +160,7 @@ ifinra =       icoefu + nfabor*ndim
 
 !---> VERIFICATION
 
-CALL RASIZE('MEMCFM',IFINRA)
+call rasize('memcfm',ifinra)
 !==========
 
 return

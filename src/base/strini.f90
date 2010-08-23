@@ -210,7 +210,7 @@ maxelt = max(ncelet,nfac,nfabor)
 ils    = ifinia
 ifnia2 = ils + maxelt
 
-CALL IASIZE('STRINI',IFNIA2)
+call iasize('strini',ifnia2)
 !==========
 
 do ifac = 1, nfabor
@@ -330,7 +330,7 @@ if (nbaste.gt.0) then
 
   itrav  = ifinia
   ifnia2 = itrav + nnod
-  CALL IASIZE('STRINI',IFNIA2)
+  call iasize('strini',ifnia2)
 
   do inod = 1, nnod
      ia(itrav + inod-1) = 0
@@ -358,7 +358,7 @@ if (nbaste.gt.0) then
   iidflo = ilstfa + nbfast
   iidnlo = iidflo + nbfast
   ifnia2 = iidnlo + nbnast
-  CALL IASIZE('STRINI',IFNIA2)
+  call iasize('strini',ifnia2)
 
   indast = 0
   do ifac = 1, nfabor

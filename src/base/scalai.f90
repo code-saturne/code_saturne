@@ -233,7 +233,7 @@ if (ippmod(iphpar).ge.1) then
 maxelt = max(ncelet, nfac, nfabor)
 ils    = idebia
 ifinia = ils + maxelt
-CALL IASIZE('SCALAI',IFINIA)
+call iasize('scalai',ifinia)
 
   call ppinv2                                                     &
   !==========

@@ -177,7 +177,7 @@ itrav7 = itrav6 + nptdis
 itrav8 = itrav7 + nptdis
 ifinra = itrav8 + nptdis
 
-CALL RASIZE('CSCPFB',IFINRA)
+call rasize('cscpfb',ifinra)
 
 
 d2s3 = 2.d0/3.d0

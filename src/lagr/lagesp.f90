@@ -239,7 +239,7 @@ enddo
 ifinia = idebia
 ifexla = idebra
 ifinra = ifexla + 3*nbpmax
-CALL RASIZE('LAGESP',IFINRA)
+call rasize('lagesp',ifinra)
 !==========
 
 do ip = 1,3*nbpmax

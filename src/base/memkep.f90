@@ -150,7 +150,7 @@ ifinra =       iw9    + ncelet
 
 !---> VERIFICATION
 
-CALL RASIZE('MEMKEP',IFINRA)
+call rasize('memkep',ifinra)
 !==========
 
 return

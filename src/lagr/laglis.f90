@@ -313,7 +313,7 @@ if (istala.eq.1) then
       ifinia = idebia
       itabvr = idebra
       ifinra = itabvr + ncelet
-      CALL RASIZE('LAGLIS',IFINRA)
+      call rasize('laglis',ifinra)
       !==========
 
 !     MOYENNE
@@ -397,7 +397,7 @@ if (iensi3.eq.1) then
 
       itabvr = idebra
       ifinra = itabvr + nfabor
-      CALL RASIZE('LAGLIS',IFINRA)
+      call rasize('laglis',ifinra)
       !==========
 
       do ifac = 1,nfabor

@@ -147,7 +147,7 @@ ifinra =       iw9    + ncelet
 
 !---> VERIFICATION
 
-CALL RASIZE('MEMALE',IFINRA)
+call rasize('memale',ifinra)
 !==========
 
 return

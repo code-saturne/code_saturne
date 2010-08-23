@@ -700,7 +700,7 @@ if (iilagr.eq.2 .and. nor.eq.nordre) then
   ifinia = idebia
   iitslg = idebra
   ifinra = iitslg + ntersl*nbpmax
-  CALL RASIZE('LAGUNE',IFINRA)
+  call rasize('lagune',ifinra)
   !==========
 
   call lagcou                                                     &

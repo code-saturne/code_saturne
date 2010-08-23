@@ -697,8 +697,8 @@ else if  (numtyp .eq. -2) then
 
 !          Verification de la disponibilite de la memoire
 
-        CALL IASIZE('DVVPST',IFINIA)
-        CALL RASIZE('DVVPST',IFINRA)
+        call iasize('dvvpst',ifinia)
+        call rasize('dvvpst',ifinra)
 
 
 !          Calcul du gradient de la temperature / enthalpie
@@ -1179,7 +1179,7 @@ if (     ippmod(ieljou).ge.1                                      &
   iw2    = iw1    + ncelet*3
   ifinra = iw2    + ncelet*3
 
-  CALL RASIZE ('DVVPST', IFINRA)
+  call rasize ('dvvpst', ifinra)
   !==========
 
   call uselen                                                     &

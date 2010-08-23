@@ -128,10 +128,10 @@ ifinra =       ixam   + nfac*2
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMCFT',IFINIA)
+call iasize('memcft',ifinia)
 !==========
 
-CALL RASIZE('MEMCFT',IFINRA)
+call rasize('memcft',ifinra)
 !==========
 
 return

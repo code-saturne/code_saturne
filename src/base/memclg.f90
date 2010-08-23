@@ -117,11 +117,11 @@ ifinra = idofij + nfac  *ndim
 
 !---> VERIFICATION
 
-CALL IASIZE('MEMCLG',IFINIA)
-!     ==========
+call iasize('memclg',ifinia)
+!==========
 
-CALL RASIZE('MEMCLG',IFINRA)
-!     ==========
+call rasize('memclg',ifinra)
+!==========
 
 return
 end subroutine
