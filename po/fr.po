@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-07-29 19:08+0200\n"
+"POT-Creation-Date: 2010-08-23 17:28+0200\n"
 "PO-Revision-Date: 2010-07-29 19:13+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -74,19 +74,19 @@ msgstr ""
 "\n"
 
 #: src/apps/cs_io_dump.c:357 src/bft/bft_mem.c:579 src/bft/bft_mem.c:738
-#: src/bft/bft_mem.c:992 preprocessor/util/ecs_mem.c:472
-#: preprocessor/util/ecs_mem.c:633
+#: src/bft/bft_mem.c:992 preprocessor/util/ecs_mem.c:473
+#: preprocessor/util/ecs_mem.c:634
 #, c-format
 msgid "Failure to allocate \"%s\" (%lu bytes)"
 msgstr ""
 
 #: src/apps/cs_io_dump.c:396 src/bft/bft_mem.c:845
-#: preprocessor/util/ecs_mem.c:741
+#: preprocessor/util/ecs_mem.c:742
 #, c-format
 msgid "Failure to reallocate \"%s\" (%lu bytes)"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:473 src/bft/bft_file.c:1089 src/fvm/fvm_file.c:291
+#: src/apps/cs_io_dump.c:473 src/bft/bft_file.c:1089 src/fvm/fvm_file.c:423
 #: preprocessor/util/ecs_file.c:1294
 #, c-format
 msgid ""
@@ -98,12 +98,12 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/apps/cs_io_dump.c:477 src/fvm/fvm_file.c:295
+#: src/apps/cs_io_dump.c:477 src/fvm/fvm_file.c:427
 #, c-format
 msgid "Premature end of file \"%s\""
 msgstr ""
 
-#: src/apps/cs_io_dump.c:480 src/fvm/fvm_file.c:298
+#: src/apps/cs_io_dump.c:480 src/fvm/fvm_file.c:430
 #, c-format
 msgid "Error reading file \"%s\""
 msgstr "Erreur à la lecture du fichier \"%s\""
@@ -111,8 +111,8 @@ msgstr "Erreur à la lecture du fichier \"%s\""
 #: src/apps/cs_io_dump.c:524 src/apps/cs_io_dump.c:536
 #: src/apps/cs_io_dump.c:543 src/apps/cs_io_dump.c:557 src/bft/bft_file.c:895
 #: src/bft/bft_file.c:908 src/bft/bft_file.c:915 src/bft/bft_file.c:930
-#: src/fvm/fvm_file.c:395 src/fvm/fvm_file.c:407 src/fvm/fvm_file.c:414
-#: src/fvm/fvm_file.c:428 preprocessor/util/ecs_file.c:1079
+#: src/fvm/fvm_file.c:527 src/fvm/fvm_file.c:539 src/fvm/fvm_file.c:546
+#: src/fvm/fvm_file.c:560 preprocessor/util/ecs_file.c:1079
 #: preprocessor/util/ecs_file.c:1092 preprocessor/util/ecs_file.c:1099
 #: preprocessor/util/ecs_file.c:1114 preprocessor/util/ecs_file.c:1128
 #, c-format
@@ -122,12 +122,12 @@ msgid ""
 "  %s"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:545 src/bft/bft_file.c:917 src/fvm/fvm_file.c:416
+#: src/apps/cs_io_dump.c:545 src/bft/bft_file.c:917 src/fvm/fvm_file.c:548
 #: preprocessor/util/ecs_file.c:1101
 msgid "sizeof(off_t) > sizeof(long) but fseeko() not available"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:612 src/bft/bft_file.c:785 src/fvm/fvm_file.c:484
+#: src/apps/cs_io_dump.c:612 src/bft/bft_file.c:785 src/fvm/fvm_file.c:616
 #: preprocessor/util/ecs_file.c:960
 #, c-format
 msgid ""
@@ -152,7 +152,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:720 src/bft/bft_file.c:645 src/fvm/fvm_file.c:222
+#: src/apps/cs_io_dump.c:720 src/bft/bft_file.c:645 src/fvm/fvm_file.c:354
 #: preprocessor/util/ecs_file.c:768 preprocessor/util/ecs_file.c:774
 #, c-format
 msgid ""
@@ -197,7 +197,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:787 src/bft/bft_file.c:674 src/fvm/fvm_file.c:250
+#: src/apps/cs_io_dump.c:787 src/bft/bft_file.c:674 src/fvm/fvm_file.c:382
 #: preprocessor/util/ecs_file.c:805 preprocessor/util/ecs_file.c:818
 #: preprocessor/util/ecs_file.c:895
 #, c-format
@@ -219,7 +219,7 @@ msgid ""
 "  `----------------------------'\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:1212 src/base/cs_io.c:2585
+#: src/apps/cs_io_dump.c:1212 src/base/cs_io.c:2587
 #, c-format
 msgid ""
 "Type \"%s\" is not known\n"
@@ -584,7 +584,7 @@ msgstr ""
 msgid "Ignored:"
 msgstr ""
 
-#: src/apps/cs_partition.c:1707 src/base/cs_preprocessor_data.c:2586
+#: src/apps/cs_partition.c:1707 src/base/cs_preprocessor_data.c:3035
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
@@ -631,7 +631,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_solver.c:304
+#: src/apps/cs_solver.c:309
 #, c-format
 msgid ""
 "\n"
@@ -640,7 +640,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/apps/cs_solver.c:310
+#: src/apps/cs_solver.c:315
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -648,11 +648,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:366
+#: src/apps/cs_solver.c:371
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:380
+#: src/apps/cs_solver.c:385
 #, c-format
 msgid ""
 "\n"
@@ -661,7 +661,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:396
+#: src/apps/cs_solver.c:406
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -669,7 +669,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:418
+#: src/apps/cs_solver.c:428
 #, c-format
 msgid ""
 "\n"
@@ -684,7 +684,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:428
+#: src/apps/cs_solver.c:438
 #, c-format
 msgid ""
 "\n"
@@ -697,7 +697,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:434
+#: src/apps/cs_solver.c:444
 #, c-format
 msgid ""
 "\n"
@@ -712,7 +712,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:504
+#: src/apps/cs_solver.c:514
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -1039,11 +1039,11 @@ msgstr "Rangs MPI :        "
 
 #: src/base/cs_base.c:1702
 msgid "appnum attribute:"
-msgstr ""
+msgstr "attribut appnum :"
 
 #: src/base/cs_base.c:1710
 msgid "OpenMP threads:    "
-msgstr "Threads OpenMP:    "
+msgstr "Threads OpenMP :   "
 
 #: src/base/cs_base.c:1767 preprocessor/appli/ecs_cmd.c:1635
 #, c-format
@@ -1769,7 +1769,7 @@ msgstr ""
 msgid "zone's label number %i is greater than %i, the maximum allowed \n"
 msgstr ""
 
-#: src/base/cs_gui_boundary_conditions.c:1079 src/base/cs_selector.c:243
+#: src/base/cs_gui_boundary_conditions.c:1079
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -1922,7 +1922,7 @@ msgstr ""
 msgid "Name of variable %i was never set.\n"
 msgstr ""
 
-#: src/base/cs_gui.c:4292 src/base/cs_selector.c:315
+#: src/base/cs_gui.c:4292
 #, c-format
 msgid ""
 "The group or attribute \"%s\" in the selection\n"
@@ -2228,13 +2228,13 @@ msgstr "    %d premiers et derniers éléments%s :\n"
 msgid "    elements%s:\n"
 msgstr "    éléments%s :\n"
 
-#: src/base/cs_io.c:1907 src/base/cs_io.c:2091 src/base/cs_io.c:3137
-#: src/base/cs_io.c:3236
+#: src/base/cs_io.c:1907 src/base/cs_io.c:2092 src/base/cs_io.c:3139
+#: src/base/cs_io.c:3238
 #, c-format
 msgid "Error writing %llu bytes to file \"%s\"."
 msgstr "Erreur à l'écriture de %llu octets dans le fichier \"%s\"."
 
-#: src/base/cs_io.c:2120
+#: src/base/cs_io.c:2121
 #, c-format
 msgid ""
 " %llu indexed records:\n"
@@ -2247,12 +2247,12 @@ msgstr ""
 "position)\n"
 "\n"
 
-#: src/base/cs_io.c:2134
+#: src/base/cs_io.c:2135
 #, c-format
 msgid " %40s %10llu %2u %2u %2u %6s %c %2u %ld\n"
 msgstr ""
 
-#: src/base/cs_io.c:2143
+#: src/base/cs_io.c:2144
 #, c-format
 msgid ""
 "\n"
@@ -2261,12 +2261,12 @@ msgstr ""
 "\n"
 " %u fichier(s) associé(s):\n"
 
-#: src/base/cs_io.c:2146
+#: src/base/cs_io.c:2147
 #, c-format
 msgid "  \"%s\"\n"
 msgstr "  \"%s\"\n"
 
-#: src/base/cs_io.c:2196 src/base/cs_io.c:2252
+#: src/base/cs_io.c:2197 src/base/cs_io.c:2253
 #, c-format
 msgid ""
 "\n"
@@ -2275,7 +2275,7 @@ msgstr ""
 "\n"
 " Lecture du fichier :  %s\n"
 
-#: src/base/cs_io.c:2198
+#: src/base/cs_io.c:2199
 #, c-format
 msgid ""
 "\n"
@@ -2284,17 +2284,17 @@ msgstr ""
 "\n"
 " Écriture du fichier : %s\n"
 
-#: src/base/cs_io.c:2309
+#: src/base/cs_io.c:2310
 #, c-format
 msgid " Finished reading:    %s\n"
 msgstr " Fin de la lecture :  %s\n"
 
-#: src/base/cs_io.c:2312
+#: src/base/cs_io.c:2313
 #, c-format
 msgid " Finished writing:    %s\n"
 msgstr " Fin de l'écriture :  %s\n"
 
-#: src/base/cs_io.c:2641
+#: src/base/cs_io.c:2643
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -2303,7 +2303,7 @@ msgstr ""
 "Erreur à la lecture du fichier : \"%s\".\n"
 "Le type de données \"%s\" n'est pas reconnu."
 
-#: src/base/cs_io.c:2760
+#: src/base/cs_io.c:2762
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -2315,7 +2315,7 @@ msgstr ""
 "\"%s\" est un entier signé\n"
 "et n'est pas convertible à partir du type lu : \"%s\"."
 
-#: src/base/cs_io.c:2795
+#: src/base/cs_io.c:2797
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -2327,7 +2327,7 @@ msgstr ""
 "\"%s\" est un entier non signé\n"
 "et n'est pas convertible à partir du type lu : \"%s\"."
 
-#: src/base/cs_io.c:2826
+#: src/base/cs_io.c:2828
 #, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
@@ -2338,7 +2338,7 @@ msgstr ""
 "Le type attendu pour la section : \"%s\"\n"
 "est \"r4\" ou \"r8\" (réel), et non \"%s\"."
 
-#: src/base/cs_io.c:3065
+#: src/base/cs_io.c:3067
 #, c-format
 msgid ""
 "    first element for next rank:\n"
@@ -2347,20 +2347,20 @@ msgstr ""
 "    premier élement rang suivant :\n"
 "    %10llu : %12llu\n"
 
-#: src/base/cs_io.c:3299
+#: src/base/cs_io.c:3301
 #, c-format
 msgid "  I/O mode:          %s\n"
 msgstr "  mode E/S :          %s\n"
 
-#: src/base/cs_io.c:3305
+#: src/base/cs_io.c:3307
 msgid "MPI-IO, explicit offsets"
 msgstr "MPI-IO, positions explicites"
 
-#: src/base/cs_io.c:3309
+#: src/base/cs_io.c:3311
 msgid "MPI-IO, individual file pointers"
 msgstr "MPI-IO, pointeurs de fichiers individuels"
 
-#: src/base/cs_io.c:3313
+#: src/base/cs_io.c:3315
 msgid ""
 "serial IO\n"
 "\n"
@@ -2368,14 +2368,14 @@ msgstr ""
 "ES série\n"
 "\n"
 
-#: src/base/cs_io.c:3387
+#: src/base/cs_io.c:3389
 msgid ""
 "\n"
 "Code_Saturne IO files read:\n"
 "\n"
 msgstr ""
 
-#: src/base/cs_io.c:3389
+#: src/base/cs_io.c:3391
 msgid ""
 "\n"
 "Code_Saturne IO files written:\n"
@@ -2385,7 +2385,7 @@ msgstr ""
 "Fichiers d'E/S Code_Saturne écrits :\n"
 "\n"
 
-#: src/base/cs_io.c:3425
+#: src/base/cs_io.c:3427
 #, c-format
 msgid ""
 "  %s\n"
@@ -2398,7 +2398,7 @@ msgstr ""
 "    local :  %12.5f s, %12.3f %cio\n"
 "    ouvert : %12.5f s, %u fois\n"
 
-#: src/base/cs_io.c:3445
+#: src/base/cs_io.c:3447
 #, c-format
 msgid ""
 "  %s\n"
@@ -2409,7 +2409,7 @@ msgstr ""
 "    données : %12.5f s, %12.3f %cio\n"
 "    ouvert :  %12.5f s, %u fois\n"
 
-#: src/base/cs_io.c:3475
+#: src/base/cs_io.c:3477
 msgid ""
 "\n"
 "\n"
@@ -2421,29 +2421,29 @@ msgstr ""
 " contenu du fichier :\n"
 "\n"
 
-#: src/base/cs_io.c:3478
+#: src/base/cs_io.c:3480
 #, c-format
 msgid "  file: %s\n"
 msgstr "  fichier : %s\n"
 
-#: src/base/cs_io.c:3480
+#: src/base/cs_io.c:3482
 #, c-format
 msgid "  contents: \"%s\"\n"
 msgstr "  contenu : \"%s\"\n"
 
-#: src/base/cs_io.c:3482
+#: src/base/cs_io.c:3484
 msgid "  mode: CS_IO_MODE_READ\n"
 msgstr "  mode : CS_IO_MODE_READ\n"
 
-#: src/base/cs_io.c:3484
+#: src/base/cs_io.c:3486
 msgid "  mode: CS_IO_MODE_WRITE\n"
 msgstr "  mode : CS_IO_MODE_WRITE\n"
 
-#: src/base/cs_io.c:3487
+#: src/base/cs_io.c:3489
 msgid "  MPI communicator: %l\n"
 msgstr "  Communicateur MPI : %l\n"
 
-#: src/base/cs_io.c:3490
+#: src/base/cs_io.c:3492
 #, c-format
 msgid ""
 "  default header size: %lu\n"
@@ -2667,7 +2667,7 @@ msgstr ""
 "    temps écoulé :              %10.3g\n"
 "    temps CPU :                 %10.3g\n"
 
-#: src/base/cs_join.c:1696
+#: src/base/cs_join.c:1700
 #, c-format
 msgid ""
 "\n"
@@ -3748,7 +3748,41 @@ msgstr ""
 " Histogramme du nombre de faces internes par cellule :\n"
 "\n"
 
-#: src/base/cs_mesh.c:1605
+#: src/base/cs_mesh.c:1728
+msgid ""
+"\n"
+" Periodic faces (which are also interior faces):\n"
+msgstr ""
+
+#: src/base/cs_mesh.c:1731
+#, c-format
+msgid "     Periodicity %2d:          %llu face couples\n"
+msgstr ""
+
+#: src/base/cs_mesh.c:1740
+msgid ""
+"\n"
+" Groups:\n"
+msgstr ""
+"\n"
+" Groupes :\n"
+
+#: src/base/cs_mesh.c:1745
+#, c-format
+msgid "       cells:          %12llu\n"
+msgstr "       cellules :          %12llu\n"
+
+#: src/base/cs_mesh.c:1748
+#, c-format
+msgid "       interior faces: %12llu\n"
+msgstr "       faces intérieures : %12llu\n"
+
+#: src/base/cs_mesh.c:1751
+#, c-format
+msgid "       boundary faces: %12llu\n"
+msgstr "       faces de bord :     %12llu\n"
+
+#: src/base/cs_mesh.c:1785
 msgid ""
 "\n"
 " Histogram of the number of cells per rank:\n"
@@ -3758,12 +3792,12 @@ msgstr ""
 " Histogramme de la distribution du nombre de cellules sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:1613
+#: src/base/cs_mesh.c:1793
 #, c-format
 msgid " Number of cells:                                      %d\n"
 msgstr " Nombre de cellules :                                  %d\n"
 
-#: src/base/cs_mesh.c:1626
+#: src/base/cs_mesh.c:1806
 msgid ""
 "\n"
 " Histogram of the number of standard + halo cells per rank:\n"
@@ -3774,7 +3808,7 @@ msgstr ""
 " standard + halo sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:1635
+#: src/base/cs_mesh.c:1815
 #, c-format
 msgid ""
 " Number of cells + halo cells:                         %d\n"
@@ -3783,7 +3817,7 @@ msgstr ""
 " Nombre de cellules + cellules halo :                  %d\n"
 "\n"
 
-#: src/base/cs_mesh.c:1655
+#: src/base/cs_mesh.c:1835
 msgid ""
 "\n"
 " Histogram of the number of ghost cells per rank:\n"
@@ -3793,7 +3827,7 @@ msgstr ""
 " Histogramme de la distribution des cellules fantômes sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:1667
+#: src/base/cs_mesh.c:1847
 msgid ""
 "\n"
 " Histogram of the number of ghost cells\n"
@@ -3805,7 +3839,7 @@ msgstr ""
 " dans le voisinage standard sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:1677
+#: src/base/cs_mesh.c:1857
 #, c-format
 msgid ""
 "\n"
@@ -3814,12 +3848,12 @@ msgstr ""
 "\n"
 " Nombre de cellules fantômes :                  %10d\n"
 
-#: src/base/cs_mesh.c:1680
+#: src/base/cs_mesh.c:1860
 #, c-format
 msgid "   in the standard neighborhood:              %10d\n"
 msgstr "   dans le voisinage standard :               %10d\n"
 
-#: src/base/cs_mesh.c:1699
+#: src/base/cs_mesh.c:1879
 msgid ""
 "\n"
 " Histogram of the number of interior faces per rank:\n"
@@ -3829,12 +3863,12 @@ msgstr ""
 " Histogramme de la distribution du nombre de faces interne sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:1707
+#: src/base/cs_mesh.c:1887
 #, c-format
 msgid " Number of interior faces:                             %d\n"
 msgstr " Nombre de faces internes :                            %d\n"
 
-#: src/base/cs_mesh.c:1723
+#: src/base/cs_mesh.c:1903
 msgid ""
 "\n"
 " Histogram of the number of boundary faces per rank:\n"
@@ -3844,12 +3878,12 @@ msgstr ""
 " Histogramme de la distribution du nombre de faces de bord sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:1731
+#: src/base/cs_mesh.c:1911
 #, c-format
 msgid " Number of boundary faces:                             %d\n"
 msgstr " Nombre de faces de bord :                             %d\n"
 
-#: src/base/cs_mesh.c:1752
+#: src/base/cs_mesh.c:1932
 msgid ""
 "\n"
 " Histogram of the number of neighboring domains per rank:\n"
@@ -3860,7 +3894,7 @@ msgstr ""
 "rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:2300
+#: src/base/cs_mesh.c:2484
 #, c-format
 msgid ""
 "\n"
@@ -3875,7 +3909,7 @@ msgstr ""
 "                       Y : %14.7e %14.7e\n"
 "                       Z : %14.7e %14.7e\n"
 
-#: src/base/cs_mesh.c:2332
+#: src/base/cs_mesh.c:2610
 msgid ""
 "\n"
 " Global definition of the number of elements (cells, vertices, faces...)\n"
@@ -3883,7 +3917,7 @@ msgstr ""
 "\n"
 " Définition globale du nombre d'éléments (cellules, sommets, faces...)\n"
 
-#: src/base/cs_mesh.c:2423
+#: src/base/cs_mesh.c:2701
 msgid ""
 "\n"
 " Halo construction with extended neighborhood\n"
@@ -3895,11 +3929,11 @@ msgstr ""
 " ==========================================\n"
 "\n"
 
-#: src/base/cs_mesh.c:2429
+#: src/base/cs_mesh.c:2707
 msgid " Composing periodicities\n"
 msgstr " Composition des périodicités\n"
 
-#: src/base/cs_mesh.c:2436
+#: src/base/cs_mesh.c:2714
 msgid ""
 "\n"
 " Halo construction with standard neighborhood\n"
@@ -3911,31 +3945,31 @@ msgstr ""
 " ============================================\n"
 "\n"
 
-#: src/base/cs_mesh.c:2450
+#: src/base/cs_mesh.c:2728
 msgid " Face interfaces creation\n"
 msgstr " Création de l'interface entre faces\n"
 
-#: src/base/cs_mesh.c:2501
+#: src/base/cs_mesh.c:2779
 msgid " Definition of periodic vertices\n"
 msgstr " Définition des sommets périodiques\n"
 
-#: src/base/cs_mesh.c:2522
+#: src/base/cs_mesh.c:2800
 msgid " Vertex interfaces creation\n"
 msgstr " Création de l'interface entre sommets\n"
 
-#: src/base/cs_mesh.c:2555
+#: src/base/cs_mesh.c:2833
 msgid " Halo creation\n"
 msgstr " Création des halos\n"
 
-#: src/base/cs_mesh.c:2560
+#: src/base/cs_mesh.c:2838
 msgid " Halo definition\n"
 msgstr " Définition des halos\n"
 
-#: src/base/cs_mesh.c:2586
+#: src/base/cs_mesh.c:2864
 msgid " Extended neighborhood structures definition\n"
 msgstr " Définition des structures pour le voisinage étendu\n"
 
-#: src/base/cs_mesh.c:2613
+#: src/base/cs_mesh.c:2891
 #, c-format
 msgid ""
 "\n"
@@ -3944,7 +3978,7 @@ msgstr ""
 "\n"
 " Création de la connectivité étendue (%.3g s)\n"
 
-#: src/base/cs_mesh.c:2946
+#: src/base/cs_mesh.c:3340
 #, c-format
 msgid ""
 " %s\n"
@@ -4240,33 +4274,19 @@ msgstr ""
 "Ce cas ne devrait pas se produire, car on devrait découper\n"
 "les entités de maillage avant de les renuméroter."
 
-#: src/base/cs_mesh_warping.c:1239
-#, c-format
-msgid "\t%12d global faces before cutting\n"
-msgstr "\t%12d faces globales avant découpage\n"
-
-#: src/base/cs_mesh_warping.c:1259
-#, c-format
-msgid ""
-"\t%12d global faces after cutting\n"
-"\n"
-msgstr ""
-"\t%12d faces globales après découpage\n"
-"\n"
-
-#: src/base/cs_mesh_warping.c:1305
+#: src/base/cs_mesh_warping.c:1299
 msgid "Warped faces to cut"
 msgstr "Faces gauche a decouper"
 
-#: src/base/cs_mesh_warping.c:1326
+#: src/base/cs_mesh_warping.c:1320
 msgid "Face warping"
 msgstr "Gauchissement des faces"
 
-#: src/base/cs_mesh_warping.c:1365
+#: src/base/cs_mesh_warping.c:1359
 msgid "Warped faces after cutting"
 msgstr "Faces gauche apres decoupage"
 
-#: src/base/cs_mesh_warping.c:1445
+#: src/base/cs_mesh_warping.c:1440
 #, c-format
 msgid ""
 "\n"
@@ -4285,7 +4305,7 @@ msgstr ""
 " Angle maximal autorisé (deg) : %7.4f\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1508
+#: src/base/cs_mesh_warping.c:1503
 msgid ""
 "\n"
 " No face to cut. Verify the criterion if necessary.\n"
@@ -4293,47 +4313,34 @@ msgstr ""
 "\n"
 " Aucune face à découper. Revoir le critère si nécessaire.\n"
 
-#: src/base/cs_mesh_warping.c:1546
+#: src/base/cs_mesh_warping.c:1552
 #, c-format
 msgid ""
 " Interior faces:\n"
-"\t%12d cut faces to respect the criterion\n"
 "\n"
-"\t%12d local faces before cutting\n"
-"\t%12d local faces after cutting\n"
-"\n"
-msgstr ""
-" Faces internes:\n"
-"\t%12d faces découpées pour respecter le critère\n"
-"\n"
-"\t%12d faces localement avant découpage\n"
-"\t%12d faces localement après découpage\n"
-"\n"
-
-#: src/base/cs_mesh_warping.c:1553 src/base/cs_mesh_warping.c:1591
-#, c-format
-msgid ""
-" Size of the new face -> vertices connectivity: %12d\n"
+"   %12llu faces before cutting\n"
+"   %12llu faces after cutting\n"
 "\n"
 msgstr ""
-" Taille de la nouvelle connectivité face -> sommets :%12d\n"
+" Faces intérieures :\n"
+"\n"
+"   %12llu faces avant découpage\n"
+"   %12llu faces après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1584
+#: src/base/cs_mesh_warping.c:1588
 #, c-format
 msgid ""
 " Boundary faces:\n"
-"\t%12d cut faces to respect the criterion\n"
 "\n"
-"\t%12d local faces before cutting\n"
-"\t%12d local faces after cutting\n"
+"   %12llu faces before cutting\n"
+"   %12llu faces after cutting\n"
 "\n"
 msgstr ""
-" Faces de bord:\n"
-"\t%12d faces découpées pour respecter le critère\n"
+" Faces de bord :\n"
 "\n"
-"\t%12d faces localement avant découpage\n"
-"\t%12d faces localement après découpage\n"
+"   %12llu faces avant découpage\n"
+"   %12llu faces après découpage\n"
 "\n"
 
 #: src/base/cs_multigrid.c:286
@@ -4535,7 +4542,7 @@ msgstr "Multigrille [%s]:\n"
 msgid "Multigrid [%s]: cycle %4d\n"
 msgstr "Multigrille [%s] : cycle %4d\n"
 
-#: src/base/cs_multigrid.c:1644
+#: src/base/cs_multigrid.c:1645
 #, c-format
 msgid ""
 "\n"
@@ -4544,7 +4551,7 @@ msgstr ""
 "\n"
 " Construction de la hiérarchie de grilles pour \"%s\"\n"
 
-#: src/base/cs_multigrid.c:1688
+#: src/base/cs_multigrid.c:1689
 #, c-format
 msgid ""
 " CLMLGA: maximum number of coarse grids (%d)\n"
@@ -4553,7 +4560,7 @@ msgstr ""
 " CLMLGA : nombre de maillages grossiers maximal (%d)\n"
 "          atteint pour \"%s\".\n"
 
-#: src/base/cs_multigrid.c:1699
+#: src/base/cs_multigrid.c:1700
 #, c-format
 msgid ""
 "\n"
@@ -4562,7 +4569,7 @@ msgstr ""
 "\n"
 "   construction de la grille de niveau %2d\n"
 
-#: src/base/cs_multigrid.c:1735
+#: src/base/cs_multigrid.c:1736
 #, c-format
 msgid ""
 "                                  total       min        max\n"
@@ -4573,7 +4580,7 @@ msgstr ""
 "     nombre de cellules : %12llu %10d %10d\n"
 "     nombre de faces :                 %10d %10d\n"
 
-#: src/base/cs_multigrid.c:1744
+#: src/base/cs_multigrid.c:1745
 #, c-format
 msgid ""
 "     number of cells:     %10d\n"
@@ -4582,7 +4589,7 @@ msgstr ""
 "     nombre de cellules : %10d\n"
 "     nombre de faces :    %10d\n"
 
-#: src/base/cs_multigrid.c:1767
+#: src/base/cs_multigrid.c:1768
 #, c-format
 msgid ""
 "   number of coarse grids:           %d\n"
@@ -4880,7 +4887,7 @@ msgstr "Bord"
 msgid "Calculation domain"
 msgstr "Domaine de calcul"
 
-#: src/base/cs_preprocessor_data.c:384 src/base/cs_preprocessor_data.c:2110
+#: src/base/cs_preprocessor_data.c:451 src/base/cs_preprocessor_data.c:2356
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
@@ -4889,20 +4896,20 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendue ou de taille incorrecte"
 
-#: src/base/cs_preprocessor_data.c:401
+#: src/base/cs_preprocessor_data.c:468
 #, c-format
 msgid " No \"%s\" file available;\n"
 msgstr ""
 
-#: src/base/cs_preprocessor_data.c:403
+#: src/base/cs_preprocessor_data.c:470
 msgid "   an unoptimized domain partitioning will be used.\n"
 msgstr "   un découpage de domaines non optimisé sera utilisé.\n"
 
-#: src/base/cs_preprocessor_data.c:405
+#: src/base/cs_preprocessor_data.c:472
 msgid "   domain partitioning will use a space-filling curve.\n"
 msgstr "   le partitionnement sera basé sur une courbe fractale.\n"
 
-#: src/base/cs_preprocessor_data.c:451
+#: src/base/cs_preprocessor_data.c:518
 #, c-format
 msgid ""
 "The number of cells reported by file\n"
@@ -4913,7 +4920,7 @@ msgstr ""
 "\"%s\" (%llu)\n"
 "ne correspond pas au maillage courant (%llu)."
 
-#: src/base/cs_preprocessor_data.c:472
+#: src/base/cs_preprocessor_data.c:539
 #, c-format
 msgid ""
 "The number of ranks reported by file\n"
@@ -4924,12 +4931,12 @@ msgstr ""
 "\"%s\" (%d)\n"
 "ne correspond pas au nombre de rangs courant (%d)."
 
-#: src/base/cs_preprocessor_data.c:507
+#: src/base/cs_preprocessor_data.c:574
 #, c-format
 msgid "Section of type <%s> on <%s> is unexpected."
 msgstr "Section de type <%s> sur <%s> inattendue."
 
-#: src/base/cs_preprocessor_data.c:1519 src/base/cs_preprocessor_data.c:1775
+#: src/base/cs_preprocessor_data.c:1586 src/base/cs_preprocessor_data.c:1842
 #, c-format
 msgid ""
 "Number of cells on rank %d is zero.\n"
@@ -4938,12 +4945,12 @@ msgstr ""
 "Le nombre de cellules pour le rang %d est nul.\n"
 "(rapport nombre de cellules / nombre de processeurs trop faible)."
 
-#: src/base/cs_preprocessor_data.c:2135
+#: src/base/cs_preprocessor_data.c:2369
 #, c-format
 msgid " Reading metadata from file: \"%s\"\n"
 msgstr " Lecture des méta-données du fichier: \"%s\"\n"
 
-#: src/base/cs_preprocessor_data.c:2508 src/base/cs_preprocessor_data.c:2844
+#: src/base/cs_preprocessor_data.c:2751 src/base/cs_preprocessor_data.c:3295
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
@@ -4952,7 +4959,7 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "de taille incorrecte (courante : %llu, lu : %llu, total : %llu."
 
-#: src/base/cs_preprocessor_data.c:2517 src/base/cs_preprocessor_data.c:2853
+#: src/base/cs_preprocessor_data.c:2760 src/base/cs_preprocessor_data.c:3304
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
@@ -4961,7 +4968,22 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "avec un nombre incorrect de valeurs par support."
 
-#: src/base/cs_preprocessor_data.c:2659
+#: src/base/cs_preprocessor_data.c:2890
+#, c-format
+msgid ""
+"User-defined Transformation matrix is not invertible:\n"
+"  [[%12.5f %12.5f %12.5f %12.5f]\n"
+"   [%12.5f %12.5f %12.5f %12.5f]\n"
+"   [%12.5f %12.5f %12.5f %12.5f]\n"
+"   [%12.5f %12.5f %12.5f %12.5f]]\n"
+msgstr ""
+"Matrice de transformation non inversible :\n"
+"  %12.5f %12.5f %12.5f %12.5f\n"
+"  %12.5f %12.5f %12.5f %12.5f\n"
+"  %12.5f %12.5f %12.5f %12.5f\n"
+"  %12.5f %12.5f %12.5f %12.5f\n"
+
+#: src/base/cs_preprocessor_data.c:3110
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
@@ -4970,7 +4992,7 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendue."
 
-#: src/base/cs_preprocessor_data.c:3430
+#: src/base/cs_preprocessor_data.c:4025
 #, c-format
 msgid ""
 "The algorithm selection indicator for domain partitioning\n"
@@ -5276,7 +5298,7 @@ msgstr ""
 "   id de couplage :             %d\n"
 "   nom local :                  \"%s\"\n"
 "   nom d'application distante : \"%s\"\n"
-"   id d'application MPI :       %d\n"
+"   numéro d'application MPI :   %d\n"
 "   rang racine MPI :            %d\n"
 "   nombre de rangs MPI :        %d\n"
 "\n"
@@ -5381,18 +5403,50 @@ msgstr ""
 "Au moins 1 couplage Code_Saturne a été défini pour lequel\n"
 "aucune communication avec une instance de Code_Saturne n'est possible."
 
-#: src/base/cs_selector.c:279
+#: src/base/cs_selector.c:358
 #, c-format
 msgid ""
-"The group or attribute \"%s\" in the selection\n"
-"criteria:\n"
+"The group \"%s\" in the selection criteria:\n"
 "\"%s\"\n"
-" does not correspond to any interior face.\n"
+" does not correspond to any boundary face.\n"
 msgstr ""
 "Le groupe ou attribut \"%s\" figurant dans le\n"
 "critère de sélection:\n"
 "\"%s\"\n"
+" ne correspond à aucune face de bord.\n"
+
+#: src/base/cs_selector.c:393
+#, c-format
+msgid ""
+"The group \"%s\" in the selection criteria:\n"
+"\"%s\"\n"
+" does not correspond to any interior face.\n"
+msgstr ""
+"Le groupe \"%s\" figurant dans le critère de sélection:\n"
+"\"%s\"\n"
 " ne correspond à aucune face interne.\n"
+
+#: src/base/cs_selector.c:428
+#, c-format
+msgid ""
+"The group \"%s\" in the selection criteria:\n"
+"\"%s\"\n"
+" does not correspond to any cell.\n"
+msgstr ""
+"Le groupe \"%s\" figurant dans le critère de sélection:\n"
+"\"%s\"\n"
+" ne correspond à aucune cellule.\n"
+
+#: src/base/cs_selector.c:566
+#, c-format
+msgid ""
+"The group \"%s\" in the selection criteria:\n"
+"\"%s\"\n"
+" is not present in the mesh.\n"
+msgstr ""
+"Le groupe \"%s\" figurant dans le critère de sélection:\n"
+"\"%s\"\n"
+" n'est pas présent dans le maillage.\n"
 
 #: src/base/cs_sles.c:174
 msgid "Conjugate gradient"
@@ -5727,7 +5781,7 @@ msgstr ""
 "\n"
 "Libération des structures associées au couplage avec SYRTHES 3.\n"
 
-#: src/base/cs_syr3_coupling.c:1263 src/base/cs_syr4_coupling.c:1181
+#: src/base/cs_syr3_coupling.c:1263 src/base/cs_syr4_coupling.c:1189
 #, c-format
 msgid ""
 "\n"
@@ -5783,15 +5837,15 @@ msgstr ""
 msgid " and %d vertices (locally)\n"
 msgstr " et %d sommets (localement)\n"
 
-#: src/base/cs_syr3_coupling.c:1500
+#: src/base/cs_syr3_coupling.c:1501
 msgid "\tInterpolation from vertices to elements            ..."
 msgstr "\tInterpolation des sommets vers les éléments           ..."
 
-#: src/base/cs_syr3_coupling.c:1589
+#: src/base/cs_syr3_coupling.c:1591
 msgid "\tInterpolation from elements to vertices            ..."
 msgstr "\tInterpolation des éléments sur les sommets            ..."
 
-#: src/base/cs_syr3_messages.c:157 src/base/cs_syr4_coupling.c:1136
+#: src/base/cs_syr3_messages.c:157 src/base/cs_syr4_coupling.c:1144
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5892,23 +5946,23 @@ msgstr ""
 "\n"
 "Maillage extrait composé de %llu éléments.\n"
 
-#: src/base/cs_syr4_coupling.c:626
+#: src/base/cs_syr4_coupling.c:627
 msgid ""
 "\n"
-"Locator structure and mesh creation."
+"Locator structure and mesh creation ..."
 msgstr ""
 "\n"
-"Création de la structure de localisation et du maillage."
+"Création de la structure de localisation et du maillage ..."
 
-#: src/base/cs_syr4_coupling.c:678
+#: src/base/cs_syr4_coupling.c:686
 msgid "distance_to_solid"
 msgstr ""
 
-#: src/base/cs_syr4_coupling.c:743
+#: src/base/cs_syr4_coupling.c:751
 msgid "distance_to_fluid"
 msgstr ""
 
-#: src/base/cs_syr4_coupling.c:771
+#: src/base/cs_syr4_coupling.c:779
 #, c-format
 msgid ""
 "Coupling with SYRTHES impossible:\n"
@@ -5919,7 +5973,7 @@ msgstr ""
 "%llu centres d'éléments du maillage \"%s\"\n"
 "non localisés sur le maillage SYRTHES."
 
-#: src/base/cs_syr4_coupling.c:965
+#: src/base/cs_syr4_coupling.c:973
 msgid ""
 "Coupling with SYRTHES impossible.\n"
 "No selection criteria for faces or cells to couple."
@@ -5927,7 +5981,7 @@ msgstr ""
 "Couplage avec SYRTHES impossible.\n"
 "Aucun critère de sélection pour les faces ou les cellules à coupler."
 
-#: src/base/cs_syr4_coupling.c:1033
+#: src/base/cs_syr4_coupling.c:1041
 msgid ""
 "\n"
 "Structures associated with SYRTHES 4 coupling freed.\n"
@@ -5935,7 +5989,7 @@ msgstr ""
 "\n"
 "Libération des structures associées au couplage avec SYRTHES 4.\n"
 
-#: src/base/cs_syr4_coupling.c:1080
+#: src/base/cs_syr4_coupling.c:1088
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5952,7 +6006,7 @@ msgstr ""
 "      Options SYRTHES      : \"%s\"\n"
 "========================================================\n"
 
-#: src/base/cs_syr4_coupling.c:1151
+#: src/base/cs_syr4_coupling.c:1159
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5969,7 +6023,7 @@ msgstr ""
 "      message attendu : cmd:iter:start\n"
 "========================================================\n"
 
-#: src/base/cs_syr4_coupling.c:1212
+#: src/base/cs_syr4_coupling.c:1220
 #, c-format
 msgid ""
 " Message received from SYRTHES: \"%s\"\n"
@@ -5978,7 +6032,7 @@ msgstr ""
 " Le message reçu de SYRTHES: \"%s\"\n"
 " indique une erreur ou est inattendu."
 
-#: src/base/cs_syr4_coupling.c:1217
+#: src/base/cs_syr4_coupling.c:1225
 #, c-format
 msgid ""
 "\n"
@@ -6020,7 +6074,7 @@ msgstr ""
 "   version :                    \"%s\"\n"
 "   nom local :                  \"%s\"\n"
 "   nom d'application distante : \"%s\"\n"
-"   id d'application MPI :       %d\n"
+"   numéro d'application MPI :   %d\n"
 "   rang racine MPI :            %d\n"
 "   nombre de rangs MPI :        %d\n"
 "\n"
@@ -6433,55 +6487,14 @@ msgid ""
 "%s."
 msgstr ""
 
-#: src/bft/bft_mem.c:268 preprocessor/util/ecs_mem.c:226
-#, c-format
-msgid ""
-"Memory allocation summary\n"
-"-------------------------\n"
-"\n"
-msgstr ""
-"Résumé de l'allocation mémoire\n"
-"------------------------------\n"
-"\n"
-
-#: src/bft/bft_mem.c:275 preprocessor/util/ecs_mem.c:233
-#, c-format
-msgid "Theoretical current allocated memory:   %8lu.%lu %cB\n"
-msgstr ""
-
-#: src/bft/bft_mem.c:280 preprocessor/util/ecs_mem.c:238
-#, c-format
-msgid "Theoretical maximum allocated memory:   %8lu.%lu %cB\n"
-msgstr ""
-
-#: src/bft/bft_mem.c:284 preprocessor/util/ecs_mem.c:242
-#, c-format
-msgid ""
-"\n"
-"Number of allocations:   %lu\n"
-"          reallocations: %lu\n"
-"          frees:         %lu\n"
-"\n"
-msgstr ""
-
-#: src/bft/bft_mem.c:299 preprocessor/util/ecs_mem.c:257
-#, c-format
-msgid "Maximum program memory measure:  %8lu kB\n"
-msgstr "Mémoire programme mesurée maximale :  %8lu kB\n"
-
-#: src/bft/bft_mem.c:308 preprocessor/util/ecs_mem.c:266
-#, c-format
-msgid "Current program memory measure:   %8lu kB\n"
-msgstr "Mémoire programme mesurée courante :   %8lu kB\n"
-
-#: src/bft/bft_mem.c:411 src/bft/bft_mem.c:526 preprocessor/util/ecs_mem.c:298
-#: preprocessor/util/ecs_mem.c:416
+#: src/bft/bft_mem.c:411 src/bft/bft_mem.c:526 preprocessor/util/ecs_mem.c:299
+#: preprocessor/util/ecs_mem.c:417
 #, c-format
 msgid ""
 "Adress [%10p] does not correspond to the beginning of an allocated block."
 msgstr ""
 
-#: src/bft/bft_mem.c:470 preprocessor/util/ecs_mem.c:359
+#: src/bft/bft_mem.c:470 preprocessor/util/ecs_mem.c:360
 msgid "Memory allocation failure"
 msgstr ""
 
@@ -6489,18 +6502,13 @@ msgstr ""
 msgid "bft_mem_init() has already been called"
 msgstr ""
 
-#: src/bft/bft_mem.c:602 preprocessor/util/ecs_mem.c:495
+#: src/bft/bft_mem.c:602 preprocessor/util/ecs_mem.c:496
 #, c-format
 msgid "Failure to open memory log file \"%s\"\n"
 msgstr ""
 
 #: src/bft/bft_mem.c:635
 msgid "bft_mem_end() called before bft_mem_init()"
-msgstr ""
-
-#: src/bft/bft_mem.c:664 preprocessor/util/ecs_mem.c:558
-#, c-format
-msgid "Number of non freed pointers remaining: %lu\n"
 msgstr ""
 
 #: src/bft/bft_mem.c:985
@@ -6815,7 +6823,7 @@ msgstr ""
 msgid "simple polyhedron"
 msgstr ""
 
-#: src/fvm/fvm_file.c:336
+#: src/fvm/fvm_file.c:468
 #, c-format
 msgid ""
 "Error writing file \"%s\":\n"
@@ -6826,12 +6834,12 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/fvm/fvm_file.c:340
+#: src/fvm/fvm_file.c:472
 #, c-format
 msgid "Error writing file \"%s\""
 msgstr "Erreur à la lecture du fichier \"%s\""
 
-#: src/fvm/fvm_file.c:773
+#: src/fvm/fvm_file.c:861
 #, c-format
 msgid ""
 "MPI IO error for file: %s\n"
@@ -6839,6 +6847,15 @@ msgid ""
 msgstr ""
 "Erreur MPI IO pour le fichier : %s\n"
 "Type d'erreur : %s"
+
+#: src/fvm/fvm_file.c:2213
+#, c-format
+msgid ""
+"Error serializing data:\n"
+"\n"
+"  requested range: [%llu, %llu[\n"
+"  local range:     [%llu, %llu["
+msgstr ""
 
 #: src/fvm/fvm_interface.c:3402
 msgid ""
@@ -6931,7 +6948,7 @@ msgstr ""
 msgid "Locating volume elements closest to points not handled yet"
 msgstr ""
 
-#: src/fvm/fvm_selector.c:948
+#: src/fvm/fvm_selector.c:992
 #, c-format
 msgid ""
 "Selection criteria:\n"
@@ -6940,7 +6957,7 @@ msgid ""
 "has no associated coordinates."
 msgstr ""
 
-#: src/fvm/fvm_selector.c:956
+#: src/fvm/fvm_selector.c:1000
 #, c-format
 msgid ""
 "Selection criteria:\n"
@@ -6949,7 +6966,7 @@ msgid ""
 "has no associated normals."
 msgstr ""
 
-#: src/fvm/fvm_selector.c:963
+#: src/fvm/fvm_selector.c:1007
 #, c-format
 msgid ""
 "Selection criteria:\n"
@@ -6957,6 +6974,14 @@ msgid ""
 "is associated with %d spatial dimensions, but\n"
 "geometric conditions are only currently implemented\n"
 "for 3 spatial dimension."
+msgstr ""
+
+#: src/fvm/fvm_selector.c:1078
+#, c-format
+msgid ""
+"Selection of group classes by criteria:\n"
+"\"%s\"\n"
+"must not depend on coordinates or normals."
 msgstr ""
 
 #: src/fvm/fvm_selector_postfix.c:760
@@ -7222,7 +7247,7 @@ msgid ""
 msgstr ""
 
 #: src/fvm/fvm_to_cgns.c:432 src/fvm/fvm_to_cgns.c:2564
-#: src/fvm/fvm_to_ensight_case.c:222 src/fvm/fvm_to_med.c:3413
+#: src/fvm/fvm_to_ensight_case.c:222 src/fvm/fvm_to_med.c:3411
 #, c-format
 msgid ""
 "The time value associated with time step <%d> equals <%g>,\n"
@@ -7406,18 +7431,18 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2573 src/fvm/fvm_to_med.c:3422
+#: src/fvm/fvm_to_cgns.c:2573 src/fvm/fvm_to_med.c:3420
 #, c-format
 msgid "The given time step value should be >= 0, and not %d\n"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2582 src/fvm/fvm_to_med.c:3431
+#: src/fvm/fvm_to_cgns.c:2582 src/fvm/fvm_to_med.c:3429
 #, c-format
 msgid "The given time step value should be >= %d, and not %d\n"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:3011 src/fvm/fvm_to_ensight.c:3230
-#: src/fvm/fvm_to_med.c:3875
+#: src/fvm/fvm_to_cgns.c:3011 src/fvm/fvm_to_ensight.c:3709
+#: src/fvm/fvm_to_med.c:3873
 #, c-format
 msgid "Data of dimension %d not handled"
 msgstr ""
@@ -7499,7 +7524,7 @@ msgid ""
 "but re-defined with datatype %d."
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:1346 src/fvm/fvm_to_med.c:1513
+#: src/fvm/fvm_to_med.c:1346 src/fvm/fvm_to_med.c:1511
 #, c-format
 msgid ""
 "MEDcoordEcr() failed to write coords:\"%s\"\n"
@@ -7507,7 +7532,7 @@ msgid ""
 "Associated med_mesh: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:1815 src/fvm/fvm_to_med.c:1992
+#: src/fvm/fvm_to_med.c:1813 src/fvm/fvm_to_med.c:1990
 #, c-format
 msgid ""
 "MEDconnEcr() failed to write strided connectivity:\n"
@@ -7516,9 +7541,9 @@ msgid ""
 "Associated MED geometrical element: \"%i\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:1832 src/fvm/fvm_to_med.c:2009
-#: src/fvm/fvm_to_med.c:2210 src/fvm/fvm_to_med.c:2357
-#: src/fvm/fvm_to_med.c:2701 src/fvm/fvm_to_med.c:2880
+#: src/fvm/fvm_to_med.c:1830 src/fvm/fvm_to_med.c:2007
+#: src/fvm/fvm_to_med.c:2208 src/fvm/fvm_to_med.c:2355
+#: src/fvm/fvm_to_med.c:2699 src/fvm/fvm_to_med.c:2878
 #, c-format
 msgid ""
 "MEDfamEcr() failed to write family numbers:\n"
@@ -7527,7 +7552,7 @@ msgid ""
 "Associated MED geometrical element: \"%i\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:2194 src/fvm/fvm_to_med.c:2341
+#: src/fvm/fvm_to_med.c:2192 src/fvm/fvm_to_med.c:2339
 #, c-format
 msgid ""
 "MEDpolygoneConnEcr() failed to write connectivity:\n"
@@ -7535,7 +7560,7 @@ msgid ""
 "Associated med_mesh_name: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:2685 src/fvm/fvm_to_med.c:2864
+#: src/fvm/fvm_to_med.c:2683 src/fvm/fvm_to_med.c:2862
 #, c-format
 msgid ""
 "MEDpolyedreConnEcr() failed to write connectivity:\n"
@@ -7543,35 +7568,35 @@ msgid ""
 "Associated med_mesh_name: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:3233
+#: src/fvm/fvm_to_med.c:3231
 msgid "Empty MED filename."
 msgstr "Nom de fichier MED vide."
 
-#: src/fvm/fvm_to_med.c:3311
+#: src/fvm/fvm_to_med.c:3309
 #, c-format
 msgid ""
 "MEDouvrir() failed to open file: %s\n"
 "Associated writer: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:3359 src/fvm/fvm_to_med.c:3779
-#: src/fvm/fvm_to_med.c:4067
+#: src/fvm/fvm_to_med.c:3357 src/fvm/fvm_to_med.c:3777
+#: src/fvm/fvm_to_med.c:4065
 #, c-format
 msgid "MEDfermer() failed to close file \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:3560 src/fvm/fvm_to_med.c:3857
+#: src/fvm/fvm_to_med.c:3558 src/fvm/fvm_to_med.c:3855
 #, c-format
 msgid ""
 "MEDouvrir() failed to re-open file: %s\n"
 "Associated writer: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:3575
+#: src/fvm/fvm_to_med.c:3573
 msgid "Mesh name required to continue.\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:3627
+#: src/fvm/fvm_to_med.c:3625
 #, c-format
 msgid ""
 "MED must have a connectivity.\n"
@@ -7579,7 +7604,7 @@ msgid ""
 "Writer: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:4012
+#: src/fvm/fvm_to_med.c:4010
 #, c-format
 msgid ""
 "MED must have entities.\n"
@@ -7624,12 +7649,12 @@ msgstr ""
 msgid "  %s : %12.3f %cb\n"
 msgstr "  %s : %12.3f %co\n"
 
-#: src/fvm/fvm_writer.c:665
+#: src/fvm/fvm_writer.c:684
 #, c-format
 msgid "Format type \"%s\" required for case \"%s\" is unknown"
 msgstr ""
 
-#: src/fvm/fvm_writer.c:670
+#: src/fvm/fvm_writer.c:689
 #, c-format
 msgid "Format type \"%s\" required for case \"%s\" is not available"
 msgstr ""
@@ -8263,7 +8288,7 @@ msgstr ""
 msgid "Creating file:"
 msgstr "Création du fichier :"
 
-#: preprocessor/appli/ecs_main.c:569 preprocessor/base/ecs_maillage.c:1895
+#: preprocessor/appli/ecs_main.c:569 preprocessor/base/ecs_maillage.c:1899
 #: preprocessor/pre-post/ecs_champ_post_ens.c:959
 msgid "Fluid Domain"
 msgstr "Domaine fluide"
@@ -8499,7 +8524,7 @@ msgstr "On compte %lu face(s) isolée(s)\n"
 msgid "Dump mesh structure to file"
 msgstr "Dump de la structure maillage dans le fichier"
 
-#: preprocessor/base/ecs_maillage.c:1572
+#: preprocessor/base/ecs_maillage.c:1576
 #, c-format
 msgid ""
 "\n"
@@ -8510,7 +8535,7 @@ msgstr ""
 "  Coordonnées minimales et maximales du domaine :\n"
 "\n"
 
-#: preprocessor/base/ecs_maillage.c:1846
+#: preprocessor/base/ecs_maillage.c:1850
 #, c-format
 msgid ""
 "\n"
@@ -8525,7 +8550,7 @@ msgstr ""
 "-------------------------------\n"
 "\n"
 
-#: preprocessor/base/ecs_maillage.c:1849
+#: preprocessor/base/ecs_maillage.c:1853
 #, c-format
 msgid ""
 "  Number of cells:                            %10d\n"
@@ -8534,25 +8559,25 @@ msgstr ""
 "  Nombre de cellules :                        %10d\n"
 "  Nombre de faces internes :                  %10d\n"
 
-#: preprocessor/base/ecs_maillage.c:1855
+#: preprocessor/base/ecs_maillage.c:1859
 #, c-format
 msgid "  Number of boundary faces:                   %10d\n"
 msgstr "  Nombre de faces de bord :                   %10d\n"
 
-#: preprocessor/base/ecs_maillage.c:1860
+#: preprocessor/base/ecs_maillage.c:1864
 #, c-format
 msgid "  Number of vertices:                         %10d\n"
 msgstr "  Nombre de sommets :                         %10d\n"
 
-#: preprocessor/base/ecs_maillage.c:1884
+#: preprocessor/base/ecs_maillage.c:1888
 msgid "Connectivity Error Faces"
 msgstr "Faces erreur connectivite"
 
-#: preprocessor/base/ecs_maillage.c:1896
+#: preprocessor/base/ecs_maillage.c:1900
 msgid "connectivity_error"
 msgstr "erreur_connectivite"
 
-#: preprocessor/base/ecs_maillage.c:1910
+#: preprocessor/base/ecs_maillage.c:1914
 msgid "Isolated Faces"
 msgstr "Faces isolees"
 
@@ -11035,11 +11060,11 @@ msgstr ""
 msgid "unknown"
 msgstr ""
 
-#: preprocessor/util/ecs_mem.c:460
+#: preprocessor/util/ecs_mem.c:461
 msgid "ecs_mem_init() has already been called"
 msgstr ""
 
-#: preprocessor/util/ecs_mem.c:505
+#: preprocessor/util/ecs_mem.c:506
 #, c-format
 msgid ""
 "       :     FILE NAME              : LINE  :  POINTER "
@@ -11048,6 +11073,12 @@ msgid ""
 "-------:----------------------------:-------:----------------------------------------:-----------:-----------------------------:--------------"
 msgstr ""
 
-#: preprocessor/util/ecs_mem.c:529
+#: preprocessor/util/ecs_mem.c:530
 msgid "ecs_mem_end() called before ecs_mem_init()"
 msgstr ""
+
+#: preprocessor/util/ecs_mem.c:559
+#, c-format
+msgid "Number of non freed pointers remaining: %lu\n"
+msgstr ""
+
