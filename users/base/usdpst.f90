@@ -492,7 +492,7 @@ call pstass(ipart, icas)
 
 ! In this example, variables output on the main volume mesh will
 ! also be output on the subset defined by post-processing mesh 3.
-ipart = -3
+ipart = 3
 icat = -1
 call pstcat(ipart, icat)
 !==========

@@ -1,4 +1,9 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct example in usdpst.
+  modified files:
+    users/base/usdpst.f90
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct memory leak in fvm_part_to_block_copy_indexed().
   modified files:
     src/fvm/fvm_part_to_block.c
