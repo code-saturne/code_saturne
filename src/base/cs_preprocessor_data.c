@@ -2979,13 +2979,12 @@ _read_data(int              file_id,
                            mr->per_face_couples[perio_id],
                            pp_in);
 
-          /* Shift referenced vertex numbers in case of appended data */
-          if (mr->n_g_vertices_read > 0) {
+          /* Shift referenced face numbers in case of appended data */
+          if (mr->n_g_faces_read > 0) {
             fvm_lnum_t ii;
-            for (ii = 0; ii < n_vals_cur; ii++) {
-              if (mr->per_face_couples[val_offset_cur + ii] != 0)
-                mr->per_face_couples[val_offset_cur + ii]
-                  += mr->n_g_vertices_read;
+            for (ii = 0; ii < n_vals; ii++) {
+              if (mr->per_face_couples[perio_id][ii] != 0)
+                mr->per_face_couples[perio_id][ii] += mr->n_g_faces_read;
             }
           }
         }
