@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2007-2009  EDF
+  Copyright (C) 2007-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -120,6 +120,35 @@ struct _fvm_file_t {
 
 };
 
+#if defined(HAVE_MPI)
+
+/* Helper structure for IO serialization */
+
+struct _fvm_file_serializer_t {
+
+  int          rank_id;        /* Local rank in communicator */
+  int          n_ranks;        /* Number of ranks in communicator */
+
+  fvm_gnum_t   range[2];       /* Global start and past-the-end numbers
+                                  for local rank */
+
+  size_t       size;           /* datatype size (may include stride) */
+
+  fvm_gnum_t   next_g_num;     /* Next global number */
+  int          next_rank_id;   /* Next rank with which we will communicate */
+
+  fvm_lnum_t  *count;          /* Number of elements in each block */
+
+  void        *buf;            /* pointer to external buffer */
+  void        *recv_buf;       /* pointer to external buffer if
+                                  buf_block_size >= max_block_size,
+                                  or to buf otherwise */
+
+  MPI_Comm     comm;           /* Associated MPI communicator */
+};
+
+#endif /* defined(HAVE_MPI) */
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -135,6 +164,109 @@ static fvm_file_hints_t _default_semantics = 0;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Initialize an fvm_file_serializer_t structure.
+ *
+ * The buf_block_size argument is optional, and may be used when the buffer
+ * on rank 0 is larger than (global_num_end - global_num_start)*size*stride
+ * bytes. If zero, a block size of (global_num_end - global_num_start) on
+ * rank 0 is assumed; a buffer may not be smaller than this, as it must
+ * initially contain all data on rank 0's block.
+ *
+ * parameters:
+ *   s                <-> pointer to structure that should be initialized
+ *   size             <-- size of each item of data in bytes
+ *   global_num_start <-- global number of first block item (1 to n numbering)
+ *   global_num_end   <-- global number of past-the end block item
+ *                        (1 to n numbering)
+ *   buf_block_size   <-- Local data buffer block size, or 0 for default
+ *                        global_num_end - global_num_start
+ *                        (only useful on rank 0)
+ *   buf              <-- pointer to local block data buffer
+ *   comm             <-- associated MPI communicator
+ *----------------------------------------------------------------------------*/
+
+static void
+_serializer_init(fvm_file_serializer_t  *s,
+                 size_t                  size,
+                 fvm_gnum_t              global_num_start,
+                 fvm_gnum_t              global_num_end,
+                 size_t                  buf_block_size,
+                 void                   *buf,
+                 MPI_Comm                comm)
+
+{
+  fvm_lnum_t l_count = 0;
+
+  s->range[0] = global_num_start;
+  s->range[1] = global_num_end;
+
+  s->size = size;
+
+  if (s->range[1] > s->range[0])
+    l_count = s->range[1] - s->range[0];
+
+  /* Get local rank and size of the current MPI communicator */
+
+  MPI_Comm_rank(comm, &(s->rank_id));
+  MPI_Comm_size(comm, &(s->n_ranks));
+
+  s->next_rank_id = 0;
+  s->next_g_num = global_num_start;
+
+  /* Initialize counter */
+
+  if (s->rank_id == 0)
+    BFT_MALLOC(s->count, s->n_ranks, fvm_lnum_t);
+  else
+    s->count = NULL;
+
+  MPI_Gather(&l_count, 1, FVM_MPI_LNUM, s->count, 1, FVM_MPI_LNUM, 0, comm);
+
+  /* Allocate local buffer if necessary, or point to external buffer */
+
+  s->buf = buf;
+  s->recv_buf = NULL;
+
+  if (s->rank_id == 0) {
+    int i;
+    fvm_lnum_t _max_block_size = 0;
+    fvm_lnum_t _buf_block_size = FVM_MAX((fvm_lnum_t)buf_block_size, l_count);
+    for (i = 0; i < s->n_ranks; i++)
+      _max_block_size = FVM_MAX(_max_block_size, s->count[i]);
+    if (_max_block_size > _buf_block_size)
+      BFT_MALLOC(s->recv_buf, _max_block_size*size, unsigned char);
+    else
+      s->recv_buf = buf;
+  }
+
+  s->comm = comm;
+}
+
+/*----------------------------------------------------------------------------
+ * Finalize an fvm_file_serializer_t structure.
+ *
+ * parameters:
+ *   s <-- pointer to structure that should be finalized
+ *----------------------------------------------------------------------------*/
+
+static void
+_serializer_finalize(fvm_file_serializer_t  *s)
+{
+  s->next_rank_id = 0;
+  s->next_g_num = 1;
+
+  if (s->count != NULL)
+    BFT_FREE(s->count);
+
+  if (s->recv_buf != s->buf && s->recv_buf != NULL)
+    BFT_FREE(s->recv_buf);
+}
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Convert data from "little-endian" to "big-endian" or the reverse.
@@ -622,7 +754,7 @@ _file_read_block(fvm_file_t  *f,
  *
  * parameters:
  *   f                <-- fvm_file_t descriptor
- *   buf              --> pointer to location receiving data
+ *   buf              <-> pointer to location containing data
  *   size             <-- size of each item of data in bytes
  *   global_num_start <-- global number of first block item (1 to n numbering)
  *   global_num_end   <-- global number of past-the end block item
@@ -641,7 +773,7 @@ _file_write_block(fvm_file_t  *f,
 {
   size_t retval = 0;
 
-  if (f->rank == 0)
+  if (f->n_ranks == 1)
     retval = _file_write(f,
                          buf,
                          size,
@@ -649,92 +781,48 @@ _file_write_block(fvm_file_t  *f,
 
 #if defined(HAVE_MPI)
 
-  if (f->comm != MPI_COMM_NULL) {
+  if (f->n_ranks > 1) {
 
-    MPI_Status status;
-    int rank_id;
+    fvm_file_serializer_t  s;
+    fvm_lnum_t *count = NULL;
+    void  *write_buf = NULL;
 
-    int loc_count = global_num_end - global_num_start;
-    int _counts[64];
-    int *counts = NULL;
+    _serializer_init(&s,
+                     size,
+                     global_num_start,
+                     global_num_end,
+                     0,
+                     buf,
+                     f->comm);
 
-    if (f->rank == 0) {
-      if (f->n_ranks < 64)
-        counts = _counts;
-      else
-        BFT_MALLOC(counts, f->n_ranks, int);
-    }
+    do {
 
-    /* Exchange counts */
+      int dist_rank = s.next_rank_id;
 
-    MPI_Gather(&loc_count, 1, MPI_INT, counts, 1, MPI_INT, 0, f->comm);
+      write_buf = fvm_file_serializer_advance(&s, NULL);
 
-    /* Rank 0 receives data from other ranks and distributes it */
+      if (write_buf != NULL) /* only on rank 0 */
+        s.count[dist_rank]
+          = (fvm_lnum_t)_file_write(f,
+                                    write_buf,
+                                    size,
+                                    (size_t)(s.count[dist_rank]));
 
-    if (f->rank == 0) {
-
-      int dist_rank;
-      int _buf_size = 0;
-      unsigned char *_buf = NULL;
-
-      /* Allocate exchange buffer */
-
-      for (dist_rank = 1; dist_rank < f->n_ranks; dist_rank++)
-        _buf_size = FVM_MAX(_buf_size, counts[dist_rank]);
-
-      BFT_MALLOC(_buf, _buf_size*size, unsigned char);
-
-      /* Loop on ranks */
-
-      for (dist_rank = 1; dist_rank < f->n_ranks; dist_rank++) {
-
-        /* Only exchange with ranks providing data */
-
-        if (counts[dist_rank] == 0)
-          continue;
-
-        /* Forced synchronization */
-
-        rank_id = dist_rank;
-        MPI_Send(&rank_id, 1, MPI_INT, dist_rank, FVM_MPI_TAG, f->comm);
-
-        /* Receive data */
-
-        MPI_Recv(_buf, counts[dist_rank]*size, MPI_BYTE, dist_rank,
-                 FVM_MPI_TAG, f->comm, &status);
-
-        /* Write data to file */
-
-        counts[dist_rank]
-          = (int)_file_write(f, _buf, size, (size_t)counts[dist_rank]);
-
-      } /* End of loop on distant ranks */
-
-      BFT_FREE(_buf);
-
-    }
-
-    /* Other ranks receive data from rank 0 */
-
-    else if (loc_count > 0) {
-
-      /* Forced synchronization */
-
-      MPI_Recv(&rank_id, 1, MPI_INT, 0, FVM_MPI_TAG, f->comm, &status);
-
-      /* Receive data */
-
-      MPI_Send(buf, (int)(loc_count*size), MPI_BYTE, 0,
-               FVM_MPI_TAG, f->comm);
-
-    }
+    } while (write_buf != NULL);
 
     /* Exchange return codes */
 
-    MPI_Scatter(counts, 1, MPI_INT, &retval, 1, MPI_INT,  0, f->comm);
+    if (s.rank_id == 0)
+      count = s.count;
+    else
+      BFT_MALLOC(count, s.n_ranks, fvm_lnum_t);
 
-    if (counts != NULL && counts != _counts)
-      BFT_FREE(counts);
+    MPI_Scatter(count, 1, MPI_INT, &retval, 1, MPI_INT,  0, f->comm);
+
+    if (s.rank_id != 0)
+      BFT_FREE(count);
+
+    _serializer_finalize(&s);
   }
 
 #endif /* defined(HAVE_MPI) */
@@ -1601,7 +1689,7 @@ fvm_file_read_block(fvm_file_t  *f,
 
 size_t
 fvm_file_write_block(fvm_file_t  *f,
-                     void        *buf,
+                     const void  *buf,
                      size_t       size,
                      size_t       stride,
                      fvm_gnum_t   global_num_start,
@@ -1659,7 +1747,7 @@ fvm_file_write_block(fvm_file_t  *f,
  *   global_num_start at rank i+1 = global_num_end at rank i.
  * Otherwise, behavior (especially positioning for future reads) is undefined.
  *
- * This function is intended to be used mainly data that is already of
+ * This function is intended to be used mainly data that is already a
  * copy of original data (such as data that has been redistributed across
  * processors just for the sake of output), or that is to be deleted after
  * writing, so it may modify the values in its input buffer (notably to
@@ -1958,6 +2046,193 @@ fvm_file_dump(const fvm_file_t  *f)
 
   bft_printf("\n");
 }
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Create a fvm_file_serializer_t structure.
+ *
+ * The buf_block_size argument is optional, and may be used when the buffer
+ * on rank 0 is larger than (global_num_end - global_num_start)*size*stride
+ * bytes. If zero, a block size of (global_num_end - global_num_start) on
+ * rank 0 is assumed; a buffer may not be smaller than this, as it must
+ * initially contain all data on rank 0's block.
+ *
+ * parameters:
+ *   size             <-- size of each item of data in bytes
+ *   stride           <-- number of (interlaced) values per block item
+ *   global_num_start <-- global number of first block item (1 to n numbering)
+ *   global_num_end   <-- global number of past-the end block item
+ *                        (1 to n numbering)
+ *   buf_block_size   <-- Local data buffer block size, or 0 for default
+ *                        global_num_end - global_num_start
+ *                        (only useful on rank 0)
+ *   buf              <-- pointer to local block data buffer
+ *   comm             <-- associated MPI communicator
+ *
+ * returns:
+ *   pointer to new serializer structure
+ *----------------------------------------------------------------------------*/
+
+fvm_file_serializer_t *
+fvm_file_serializer_create(size_t        size,
+                           size_t        stride,
+                           fvm_gnum_t    global_num_start,
+                           fvm_gnum_t    global_num_end,
+                           size_t        buf_block_size,
+                           void         *buf,
+                           MPI_Comm      comm)
+{
+  fvm_file_serializer_t  *s = NULL;
+
+  BFT_MALLOC(s, 1, fvm_file_serializer_t);
+
+  _serializer_init(s,
+                   size * stride,
+                   global_num_start,
+                   global_num_end,
+                   buf_block_size,
+                   buf,
+                   comm);
+
+  return s;
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a fvm_file_serializer_t structure.
+ *
+ * parameters:
+ *   s <-- pointer to pointer structure that should be destroyed
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_file_serializer_destroy(fvm_file_serializer_t  **s)
+{
+  if (s != NULL) {
+    _serializer_finalize(*s);
+    BFT_FREE(*s);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Advance a fvm_file_serializer_t structure.
+ *
+ * Data from the buffer of the next communicating rank is copied
+ * to rank 0 (this is a no-op the first time this function is called,
+ * as rank 0 already has its data).
+ *
+ * On rank 0, the return value may point to the buffer defined when
+ * initializing the serializer, or to an aditional buffer if the former is
+ * too small to receive data from all ranks.
+ *
+ * Note also that for ranks > 0, this function always returns NULL,
+ * as only one call is needed for those ranks.
+ *
+ * parameters:
+ *   s         <-- pointer to serializer structure
+ *   cur_range --> optional start and past-the end global numbers for the
+ *                 current block (size: 2), or NULL; only on rank 0
+ *
+ * returns:
+ *   a pointer to the buffer containing new data (first call counts as new),
+ *   or NULL if we are finished; always NULL on ranks > 0
+ *----------------------------------------------------------------------------*/
+
+void *
+fvm_file_serializer_advance(fvm_file_serializer_t  *s,
+                            fvm_gnum_t              cur_range[2])
+{
+  MPI_Status status;
+  fvm_gnum_t sync_range[2] = {s->next_g_num, 0};
+
+  void *retval = NULL;
+
+  /* Rank 0 receives data */
+
+  if (s->rank_id == 0) {
+
+    int dist_rank = s->next_rank_id;
+    int count = 0;
+
+    if (s->next_rank_id >= s->n_ranks)
+      return NULL;
+
+    else if (s->next_rank_id != 0) {
+
+      count = s->count[dist_rank];
+
+      /* Forced synchronization */
+      sync_range[1] = sync_range[0] + count;
+      MPI_Send(&sync_range, 2, FVM_MPI_GNUM, dist_rank, FVM_MPI_TAG, s->comm);
+
+      /* Receive data */
+      MPI_Recv(s->recv_buf, (count * s->size), MPI_BYTE, dist_rank,
+               FVM_MPI_TAG, s->comm, &status);
+
+      retval = s->recv_buf;
+    }
+
+    else { /* First call, rank id 0 */
+      count = s->count[dist_rank];
+      retval = s->buf;
+    }
+
+    /* Update status */
+
+    s->next_rank_id += 1;
+    while (s->next_rank_id < s->n_ranks) {
+      if (s->count[s->next_rank_id] > 0)
+        break;
+      else
+        s->next_rank_id += 1;
+    }
+
+    if (cur_range != NULL) {
+      cur_range[0] = s->next_g_num;
+      cur_range[1] = cur_range[0] + count;
+    }
+
+    s->next_g_num += count;
+
+  }
+
+  /* Other ranks send data */
+
+  else {
+
+    int count = s->range[1] - s->range[0];
+
+    if (count > 0) {
+
+      /* Forced synchronization */
+      MPI_Recv(&sync_range, 2, FVM_MPI_GNUM, 0, FVM_MPI_TAG, s->comm, &status);
+      count = (sync_range[1] - sync_range[0]);
+
+      if (sync_range[0] != s->range[0] || sync_range[1] != s->range[1])
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error serializing data:\n\n"
+                    "  requested range: [%llu, %llu[\n"
+                    "  local range:     [%llu, %llu["),
+                  (unsigned long long)sync_range[0],
+                  (unsigned long long)sync_range[1],
+                  (unsigned long long)(s->range[0]),
+                  (unsigned long long)(s->range[1]));
+
+      /* Send data */
+      MPI_Send(s->buf, (count * s->size), MPI_BYTE, 0, FVM_MPI_TAG, s->comm);
+
+    }
+
+  }
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  MPI_Barrier(comm);
+#endif
+
+  return retval;
+}
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 

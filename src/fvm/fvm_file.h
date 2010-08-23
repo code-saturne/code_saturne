@@ -71,6 +71,12 @@ extern "C" {
 
 typedef struct _fvm_file_t  fvm_file_t;
 
+/* Helper structure for IO serialization */
+
+#if defined(HAVE_MPI)
+typedef struct _fvm_file_serializer_t fvm_file_serializer_t;
+#endif
+
 /* FVM file modes */
 
 typedef enum {
@@ -314,7 +320,7 @@ fvm_file_read_block(fvm_file_t  *f,
 
 size_t
 fvm_file_write_block(fvm_file_t  *f,
-                     void        *buf,
+                     const void  *buf,
                      size_t       size,
                      size_t       stride,
                      fvm_gnum_t   global_num_start,
@@ -330,7 +336,7 @@ fvm_file_write_block(fvm_file_t  *f,
  *   global_num_start at rank i+1 = global_num_end at rank i.
  * Otherwise, behavior (especially positioning for future reads) is undefined.
  *
- * This function is intended to be used mainly data that is already of
+ * This function is intended to be used mainly data that is already a
  * copy of original data (such as data that has been redistributed across
  * processors just for the sake of output), or that is to be deleted after
  * writing, so it may modify the values in its input buffer (notably to
@@ -426,6 +432,82 @@ fvm_file_set_default_semantics(fvm_file_hints_t  hints);
 
 void
 fvm_file_dump(const fvm_file_t  *f);
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Create a fvm_file_serializer_t structure.
+ *
+ * The buf_block_size argument is optional, and may be used when the buffer
+ * on rank 0 is larger than (global_num_end - global_num_start)*size*stride
+ * bytes. If zero, a block size of (global_num_end - global_num_start) on
+ * rank 0 is assumed; a buffer may not be smaller than this, as it must
+ * initially contain all data on rank 0's block.
+ *
+ * parameters:
+ *   size             <-- size of each item of data in bytes
+ *   stride           <-- number of (interlaced) values per block item
+ *   global_num_start <-- global number of first block item (1 to n numbering)
+ *   global_num_end   <-- global number of past-the end block item
+ *                        (1 to n numbering)
+ *   buf_block_size   <-- Local data buffer block size, or 0 for default
+ *                        global_num_end - global_num_start
+ *                        (only useful on rank 0)
+ *   buf              <-- pointer to local block data buffer
+ *   comm             <-- associated MPI communicator
+ *
+ * returns:
+ *   pointer to new serializer structure
+ *----------------------------------------------------------------------------*/
+
+fvm_file_serializer_t *
+fvm_file_serializer_create(size_t        size,
+                           size_t        stride,
+                           fvm_gnum_t    global_num_start,
+                           fvm_gnum_t    global_num_end,
+                           size_t        buf_block_size,
+                           void         *buf,
+                           MPI_Comm      comm);
+
+/*----------------------------------------------------------------------------
+ * Destroy a fvm_file_serializer_t structure.
+ *
+ * parameters:
+ *   s <-- pointer to pointer structure that should be destroyed
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_file_serializer_destroy(fvm_file_serializer_t  **s);
+
+/*----------------------------------------------------------------------------
+ * Advance a fvm_file_serializer_t structure.
+ *
+ * Data from the buffer of the next communicating rank is copied
+ * to rank 0 (this is a no-op the first time this function is called,
+ * as rank 0 already has its data).
+ *
+ * On rank 0, the return value may point to the buffer defined when
+ * initializing the serializer, or to an aditional buffer if the former is
+ * too small to receive data from all ranks.
+ *
+ * Note also that for ranks > 0, this function always returns NULL,
+ * as only one call is needed for those ranks.
+ *
+ * parameters:
+ *   s         <-- pointer to serializer structure
+ *   cur_range --> optional start and past-the end global numbers for the
+ *                 current block (size: 2), or NULL; only on rank 0
+ *
+ * returns:
+ *   a pointer to the buffer containing new data (first call counts as new),
+ *   or NULL if we are finished; always NULL on ranks > 0
+ *----------------------------------------------------------------------------*/
+
+void *
+fvm_file_serializer_advance(fvm_file_serializer_t  *s,
+                            fvm_gnum_t              cur_range[2]);
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 

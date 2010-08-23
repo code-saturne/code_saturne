@@ -1,8 +1,14 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added fvm_file_serializer_t structure and associated functions.
+  modified files:
+    src/fvm/fvm_file.c
+    src/fvm/fvm_file.h
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Added fvm_part_to_block_transfer_gnum() function.
   modified files:
     src/fvm/fvm_part_to_block.c
-    src/fvm/fvm_part_to_block.c
+    src/fvm/fvm_part_to_block.h
 
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Output information on groups and periodic faces in solver log file,
