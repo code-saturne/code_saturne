@@ -1,3 +1,7 @@
+2010-08-23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Update and clean-up default compiler flags.
+
 2010-08-09  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Corrected blocking bug in ple_locator_set_mesh().

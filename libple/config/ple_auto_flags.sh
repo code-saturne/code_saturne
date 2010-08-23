@@ -157,6 +157,13 @@ if test "x$ple_gcc" = "xgcc"; then
 
   esac
 
+  case "$cs_cc_vendor-$cs_cc_version" in
+    gcc-4.[56]*)
+      cflags_default_opt="$cflags_default_opt -fexcess-precision=fast"
+      cflags_default_hot="$cflags_default_hot -fexcess-precision=fast"
+      ;;
+  esac
+
   case "$host_os" in
     *cygwin)
     cflags_default="`echo $cflags_default | sed -e 's/c99/gnu99/g'`"
@@ -179,7 +186,7 @@ elif test "x$ple_gcc" = "xicc"; then
 
   # Default compiler flags
   cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
-  cflags_default_dbg="-g -O0 -traceback"
+  cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_prf="-p"
 
@@ -209,9 +216,9 @@ if test "x$ple_compiler_known" != "xyes" ; then
     ple_compiler_known=yes
 
     # Default compiler flags
-    cflags_default="-Xa -fPIC"
+    cflags_default="-c99"
     cflags_default_dbg="-g -Mbounds"
-    cflags_default_opt="-fast -fastsse"
+    cflags_default_opt="-O2"
     cflags_default_prf="-Mprof=func,lines"
 
   fi
@@ -344,7 +351,7 @@ if test "x$ple_compiler_known" != "xyes" ; then
       fi
       ;;
 
-    irix5.*|irix6.*)
+    irix6.*)
 
       # Native SGI IRIX C compiler
       #---------------------------
@@ -363,7 +370,7 @@ if test "x$ple_compiler_known" != "xyes" ; then
         cflags_default="-c99 -64"
         cflags_default_opt="-O2 -woff 1429,1521"
         cflags_default_dbg="-g -woff 1429,1521,1209 -fullwarn"
-        cflags_default_prf="-O0"
+        cflags_default_prf="$cflags_default_opt"
 
       fi
       ;;
@@ -388,7 +395,7 @@ if test "x$ple_compiler_known" != "xyes" ; then
         cflags_default="-Aa +e +DA2.0W"
         cflags_default_opt="+O2"
         cflags_default_dbg="-g"
-        cflags_default_prf="-G"
+        cflags_default_prf="-G" # -G for gprof, -p for prof
 
         # Default linker flags
         ldflags_default="+DA2.0W"
@@ -460,11 +467,11 @@ if test "x$ple_linker_set" != "xyes" ; then
       ldflags_default_prf="-pg"
       ;;
 
-    irix5.*|irix6.*)
+    irix6.*)
       ldflags_default="-64 -Wl,-woff,85"
       ldflags_default_opt=""
       ldflags_default_dbg="-g"
-      ldflags_default_prf=""
+      ldflags_default_prf="-p"
       ;;
 
     solaris2.*)
