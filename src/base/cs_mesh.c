@@ -1578,6 +1578,186 @@ _get_perio_faces_l(const cs_mesh_t    *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Prepare local processor count for mesh stats.
+ *
+ * parameters:
+ *   mesh          <-- pointer to mesh structure
+ *   n_group_elts  --> number of cells, interior faces, and boundary faces
+ *                     belonging to each group
+ *                     (size: mesh->n_groups * 3, interleaved)
+ *   n_perio_faces --> number of faces belonging to each group
+ *                     (size: mesh->n_init_perio)
+ *----------------------------------------------------------------------------*/
+
+static void
+_prepare_mesh_group_stats(const cs_mesh_t  *mesh,
+                          fvm_gnum_t        n_group_elts[],
+                          fvm_gnum_t        n_perio_faces[])
+{
+  fvm_lnum_t i, j;
+
+  int *i_face_flag = NULL;
+  fvm_lnum_t *f_count = NULL;
+
+  /* In case of parallel and/or periodic faces, build a flag so as to count
+     purely parallel faces only once, but periodic faces twice.
+     The flag is defined to the periodicity number for periodic faces,
+     0 for regular or purely parallel faces with an "outside" ghost cell,
+     -1 for purely parallel faces with and "inside" ghost cell. */
+
+  if (mesh->halo != NULL) {
+
+    BFT_MALLOC(i_face_flag, mesh->n_i_faces, int);
+
+    if (mesh->n_init_perio > 0) {
+      cs_mesh_get_face_perio_num(mesh, i_face_flag);
+      for (i = 0; i < mesh->n_i_faces; i++)
+        if (i_face_flag[i] < 0)
+          i_face_flag[i] = - i_face_flag[i];
+    }
+    else {
+      for (i = 0; i < mesh->n_i_faces; i++)
+        i_face_flag[i] = 0;
+    }
+
+    for (i = 0; i < mesh->n_i_faces; i++) {
+      fvm_lnum_t c_num_0 = mesh->i_face_cells[i*2];
+      if (i_face_flag[i] == 0 && c_num_0 >= mesh->n_cells)
+        i_face_flag[i] = -1;
+    }
+
+  }
+
+  /* Set counts to zero */
+
+  BFT_MALLOC(f_count, mesh->n_families*3, fvm_lnum_t);
+  for (i = 0; i < mesh->n_families*3; i++)
+    f_count[i] = 0;
+
+  for (i = 0; i < mesh->n_init_perio; i++)
+    n_perio_faces[i] = 0;
+
+  /* Cell counters */
+
+  for (i = 0; i < mesh->n_cells; i++)
+    f_count[(mesh->cell_family[i] - 1) * 3] += 1;
+
+  /* Interior face counters */
+
+  if (i_face_flag != NULL) {
+    for (i = 0; i < mesh->n_i_faces; i++) {
+      const int flag = i_face_flag[i];
+      if (flag > 0)
+        n_perio_faces[flag - 1] += 1;
+      if (flag > -1)
+        f_count[(mesh->i_face_family[i] - 1) * 3 + 1] += 1;
+    }
+    BFT_FREE(i_face_flag);
+  }
+  else {
+    for (i = 0; i < mesh->n_i_faces; i++)
+      f_count[(mesh->i_face_family[i] - 1) * 3 + 1] += 1;
+  }
+
+  /* Boundary face counters */
+
+  if (mesh->n_b_faces > 0) {
+    for (i = 0; i < mesh->n_b_faces; i++)
+      f_count[(mesh->b_face_family[i] - 1) * 3 + 2] += 1;
+  }
+
+  /* Now transfer count from group classes to groups */
+
+  for (i = 0; i < mesh->n_groups*3; i++)
+    n_group_elts[i] = 0;
+
+  for (i = 0; i < mesh->n_families; i++) {
+    for (j = 0; j < mesh->n_max_family_items; j++) {
+      int group_id = -1 - mesh->family_item[mesh->n_families*j + i];
+      if (group_id >= 0) {
+        int k;
+        for (k = 0; k < 3; k++)
+          n_group_elts[group_id*3 + k] += f_count[i*3 + k];
+      }
+    }
+  }
+
+  BFT_FREE(f_count);
+}
+
+/*----------------------------------------------------------------------------
+ * Print mesh group statistics.
+ *
+ * parameters:
+ *   mesh <-- pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_print_mesh_group_stats(const cs_mesh_t  *mesh)
+{
+  int i;
+  size_t count_size = mesh->n_groups*3 + mesh->n_init_perio;
+  fvm_gnum_t *count = NULL, *n_elt_groups = NULL, *n_perio_faces = NULL;
+
+  if (count_size == 0)
+    return;
+
+  BFT_MALLOC(count, count_size, fvm_gnum_t);
+
+  n_elt_groups = count;
+  n_perio_faces = count + mesh->n_groups*3;
+
+  _prepare_mesh_group_stats(mesh, n_elt_groups, n_perio_faces);
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    fvm_gnum_t *_count = NULL;
+    BFT_MALLOC(_count, count_size, fvm_gnum_t);
+    MPI_Allreduce(count, _count, count_size, FVM_MPI_GNUM, MPI_SUM,
+                  cs_glob_mpi_comm);
+    memcpy(count, _count, sizeof(fvm_gnum_t)*count_size);
+    BFT_FREE(_count);
+  }
+#endif
+
+  /* Print perodic faces information */
+
+  if (mesh->n_init_perio > 0) {
+
+
+    bft_printf(_("\n Periodic faces (which are also interior faces):\n"));
+
+    for (i = 0; i < mesh->n_init_perio; i++)
+      bft_printf(_("     Periodicity %2d:          %llu face couples\n"),
+                 i+1, (unsigned long long)(n_perio_faces[i]/2));
+
+  }
+
+  /* Print group information */
+
+  if (mesh->n_groups > 0) {
+
+    bft_printf(_("\n Groups:\n"));
+
+    for (i = 0; i < mesh->n_groups; i++) {
+      bft_printf("    \"%s\"\n", mesh->group_lst + (mesh->group_idx[i] - 1));
+      if (n_elt_groups[i*3] > 0)
+        bft_printf(_("       cells:          %12llu\n"),
+                   (unsigned long long)(n_elt_groups[i*3]));
+      if (n_elt_groups[i*3 + 1] > 0)
+        bft_printf(_("       interior faces: %12llu\n"),
+                   (unsigned long long)(n_elt_groups[i*3 + 1]));
+      if (n_elt_groups[i*3 + 2] > 0)
+        bft_printf(_("       boundary faces: %12llu\n"),
+                   (unsigned long long)(n_elt_groups[i*3 + 2]));
+    }
+
+  }
+
+  BFT_FREE(count);
+}
+
+/*----------------------------------------------------------------------------
  * Write a summary about mesh features in log file
  *
  * parameters:
@@ -3110,6 +3290,53 @@ cs_mesh_get_cell_gnum(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Mark interior faces with the number of their associated periodic
+ * transform id.
+ *
+ * parameters:
+ *   mesh      <-- pointer to mesh structure
+ *   perio_num --> periodicity number associated with each face, signed for
+ *                 direct/reverse transform, 0 for non-periodic faces
+ *                 (size: mesh->n_i_faces)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_get_face_perio_num(const cs_mesh_t  *mesh,
+                           int               perio_num[])
+{
+  fvm_lnum_t i;
+
+  for (i = 0; i < mesh->n_i_faces; i++)
+    perio_num[i] = 0;
+
+  if (mesh->n_init_perio > 0) {
+
+    int *halo_perio_num = NULL;
+
+    /* Mark ghost cells with their periodicity number */
+
+    BFT_MALLOC(halo_perio_num, mesh->n_ghost_cells, int);
+
+    _get_halo_perio_num(mesh, halo_perio_num, NULL);
+
+    for (i = 0; i < mesh->n_i_faces; i++) {
+      const fvm_lnum_t h_id0 = mesh->i_face_cells[i*2] - mesh->n_cells - 1;
+      const fvm_lnum_t h_id1 = mesh->i_face_cells[i*2+1] - mesh->n_cells - 1;
+      if (h_id0 >= 0) {
+        if (halo_perio_num[h_id0] != 0)
+          perio_num[i] = halo_perio_num[h_id0];
+      }
+      else if (h_id1 >= 0) {
+        if (halo_perio_num[h_id1] != 0)
+          perio_num[i] = halo_perio_num[h_id1];
+      }
+    }
+
+    BFT_FREE(halo_perio_num);
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Print information on a mesh structure.
  *
  * parameters:
@@ -3131,6 +3358,8 @@ cs_mesh_print_info(const cs_mesh_t  *mesh,
              (unsigned long long)(mesh->n_g_i_faces),
              (unsigned long long)(mesh->n_g_b_faces),
              (unsigned long long)(mesh->n_g_vertices));
+
+  _print_mesh_group_stats(mesh);
 }
 
 /*----------------------------------------------------------------------------
@@ -3147,22 +3376,30 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
   bft_printf("\n\nDUMP OF THE MESH STRUCTURE: %p\n\n",mesh);
 
-  bft_printf("space dim :        %d\n",mesh->dim);
-  bft_printf("n_domains :        %d\n",mesh->n_domains);
-  bft_printf("domain_num:        %d\n",mesh->domain_num);
+  bft_printf("space dim :        %d\n"
+             "n_domains :        %d\n",
+             "domain_num:        %d\n",
+             mesh->dim, mesh->n_domains, mesh->domain_num);
 
-  bft_printf("\nLocal dimensions:\n");
-  bft_printf("n_cells:                %d\n",mesh->n_cells);
-  bft_printf("n_cells_with_ghosts:        %d\n",mesh->n_cells_with_ghosts);
-  bft_printf("n_vertices:                %d\n",mesh->n_vertices);
-  bft_printf("n_i_faces:                %d\n",mesh->n_i_faces);
-  bft_printf("n_b_faces:                %d\n",mesh->n_b_faces);
+  bft_printf("\nLocal dimensions:\n"
+             "n_cells:                  %d\n"
+             "n_cells_with_ghosts:      %d\n"
+             "n_vertices:               %d\n"
+             "n_i_faces:                %d\n"
+             "n_b_faces:                %d\n",
+             mesh->n_cells, mesh->n_cells_with_ghosts,
+             mesh->n_vertices,
+             mesh->n_i_faces, mesh->n_b_faces);
 
-  bft_printf("\nGlobal dimensions:\n");
-  bft_printf("n_g_cells:        %d\n",mesh->n_g_cells);
-  bft_printf("n_g_vertices:        %d\n",mesh->n_g_vertices);
-  bft_printf("n_g_i_faces:        %d\n",mesh->n_g_i_faces);
-  bft_printf("n_g_b_faces:        %d\n",mesh->n_g_b_faces);
+  bft_printf("\nGlobal dimensions:\n"
+             "n_g_cells:                %llu\n"
+             "n_g_vertices:             %llu\n"
+             "n_g_i_faces:              %llu\n"
+             "n_g_b_faces:              %llu\n",
+             (unsigned long long)mesh->n_g_cells,
+             (unsigned long long)mesh->n_g_vertices,
+             (unsigned long long)mesh->n_g_i_faces,
+             (unsigned long long)mesh->n_g_b_faces);
 
   bft_printf("\n\n        --------"
              "        Vertices"

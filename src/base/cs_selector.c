@@ -208,6 +208,23 @@ void CS_PROCF(csgcel, CSGCEL)
     BFT_FREE(c_string);
 }
 
+/*----------------------------------------------------------------------------
+ * Build a list of interior faces belonging to a given periodicity.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(getfpe, GETFPE)
+(
+ cs_int_t     *const perio_num, /* <-- Periodicity number */
+ cs_int_t     *const n_faces,   /* --> number of faces */
+ cs_int_t     *const face_list  /* --> face list  */
+ CS_ARGF_SUPP_CHAINE
+)
+{
+  cs_selector_get_perio_face_list(*perio_num,
+                                  n_faces,
+                                  face_list);
+}
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -318,6 +335,39 @@ cs_selector_get_cell_list(const char  *criteria,
                  " does not correspond to any cell.\n"),
                missing, criteria);
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Fill a list of interior faces belonging to a given periodicity.
+ *
+ * parameters:
+ *   perio_num   <-- periodicity number
+ *   n_i_faces   --> number of selected interior faces
+ *   i_face_list --> list of selected interior faces
+ *                   (1 to n, preallocated to cs_glob_mesh->n_i_faces)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_perio_face_list(int          perio_num,
+                                fvm_lnum_t  *n_i_faces,
+                                fvm_lnum_t   i_face_list[])
+{
+  int ii;
+  int *face_perio_num = NULL;
+
+  BFT_MALLOC(face_perio_num, cs_glob_mesh->n_i_faces, int);
+
+  cs_mesh_get_face_perio_num(cs_glob_mesh, face_perio_num);
+
+  *n_i_faces = 0;
+  for (ii = 0; ii < cs_glob_mesh->n_i_faces; ii++) {
+    if (CS_ABS(face_perio_num[ii]) == perio_num) {
+      i_face_list[*n_i_faces] = ii+1;
+      *n_i_faces += 1;
+    }
+  }
+
+  BFT_FREE(face_perio_num);
 }
 
 /*----------------------------------------------------------------------------*/

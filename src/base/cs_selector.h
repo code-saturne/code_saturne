@@ -81,6 +81,18 @@ void CS_PROCF(csgcel, CSGCEL)
  CS_ARGF_SUPP_CHAINE
 );
 
+/*----------------------------------------------------------------------------
+ * Build a list of interior faces belonging to a given periodicity.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(getfpe, GETFPE)
+(
+ cs_int_t     *const perio_num, /* <-- Periodicity number */
+ cs_int_t     *const n_faces,   /* --> number of faces */
+ cs_int_t     *const face_list  /* --> face list  */
+ CS_ARGF_SUPP_CHAINE
+);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -129,6 +141,21 @@ void
 cs_selector_get_cell_list(const char  *criteria,
                           fvm_lnum_t  *n_cells,
                           fvm_lnum_t   cell_list[]);
+
+/*----------------------------------------------------------------------------
+ * Fill a list of interior faces belonging to a given periodicity.
+ *
+ * parameters:
+ *   perio_num   <-- periodicity number
+ *   n_i_faces   --> number of selected interior faces
+ *   i_face_list --> list of selected interior faces
+ *                   (1 to n, preallocated to cs_glob_mesh->n_i_faces)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_perio_face_list(int          perio_num,
+                                fvm_lnum_t  *n_i_faces,
+                                fvm_lnum_t   i_face_list[]);
 
 /*----------------------------------------------------------------------------*/
 

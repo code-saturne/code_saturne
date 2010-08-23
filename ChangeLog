@@ -1,4 +1,13 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Output information on groups and periodic faces in solver log file,
+  and add selection functions to list periodic faces.
+  modified files:
+    src/base/cs_mesh.c
+    src/base/cs_mesh.h
+    src/base/cs_selector.c
+    src/base/cs_selector.h
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Enable saving of meshes in preprocessor data output whenever
   the input mesh has been modified or meshes have been concatenated.
   added files:

@@ -544,6 +544,21 @@ cs_mesh_get_cell_gnum(const cs_mesh_t  *mesh,
                       int               blank_perio);
 
 /*----------------------------------------------------------------------------
+ * Mark interior faces with the number of their associated periodic
+ * transform id.
+ *
+ * parameters:
+ *   mesh      <-- pointer to mesh structure
+ *   perio_num --> periodicity number associated with each face, signed for
+ *                 direct/reverse transform, 0 for non-periodic faces
+ *                 (size: mesh->n_i_faces)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_get_face_perio_num(const cs_mesh_t  *mesh,
+                           int               perio_num[]);
+
+/*----------------------------------------------------------------------------
  * Print information on a mesh structure.
  *
  * parameters:
