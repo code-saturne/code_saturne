@@ -1,4 +1,11 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  EnSight writer now enables parallel IO in binary mode.
+  modified files:
+    src/fvm/fvm_to_ensight.c
+    src/fvm/fvm_to_ensight_case.c
+    src/fvm/fvm_to_ensight_case.h
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Added fvm_file_serializer_t structure and associated functions.
   modified files:
     src/fvm/fvm_file.c

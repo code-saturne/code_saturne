@@ -999,14 +999,14 @@ fvm_to_ensight_case_get_var_file(fvm_to_ensight_case_t       *const this_case,
 /*----------------------------------------------------------------------------
  * Write an EnSight Gold case file.
  *
- * This function should only be called by one process in parallel mode.
- *
  * parameters:
  *   this_case  <-- case structure
+ *   rank       <-- calling rank in case of parallelism
  *----------------------------------------------------------------------------*/
 
 void
-fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *const this_case)
+fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
+                               int                     rank)
 {
   int          i, j;
   bft_file_t  *f;
@@ -1015,6 +1015,11 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *const this_case)
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   if (this_case->modified == false)
+    return;
+
+  this_case->modified = false;
+
+  if (rank > 0)
     return;
 
   /* Open case file (overwrite it if present) */
@@ -1101,8 +1106,6 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *const this_case)
   /* Close case file */
 
   bft_file_free(f);
-
-  this_case->modified = false;
 }
 
 /*----------------------------------------------------------------------------*/
