@@ -784,7 +784,6 @@ _copy_indexed_alltoallv(fvm_part_to_block_t   *d,
   send_size = _compute_displ(n_ranks, send_count, send_displ);
   recv_size = _compute_displ(n_ranks, recv_count, recv_displ);
 
-
   /* Build send and receive buffers */
   /*--------------------------------*/
 
@@ -908,11 +907,12 @@ _copy_indexed_gatherv(fvm_part_to_block_t   *d,
   /* Build send and receive counts */
   /*-------------------------------*/
 
-  BFT_MALLOC(recv_count, n_ranks, int);
-  BFT_MALLOC(recv_displ, n_ranks, int);
-
-  for (i = 0; i < n_ranks; i++)
-    recv_count[i] = 0;
+  if (d->rank == 0) {
+    BFT_MALLOC(recv_count, n_ranks, int);
+    BFT_MALLOC(recv_displ, n_ranks, int);
+    for (i = 0; i < n_ranks; i++)
+      recv_count[i] = 0;
+  }
 
   /* Prepare count of element values to send */
 
@@ -921,33 +921,35 @@ _copy_indexed_gatherv(fvm_part_to_block_t   *d,
 
   /* Prepare count of element values to receive */
 
-  k = 0;
-  for (i = 0; i < n_ranks; i++) {
-    for (l = 0; l < d->recv_count[i]; l++) {
-      w_displ = d->recv_block_id[k++];
-      recv_count[i] += block_index[w_displ + 1] - block_index[w_displ];
+  if (d->rank == 0) {
+    k = 0;
+    for (i = 0; i < n_ranks; i++) {
+      for (l = 0; l < d->recv_count[i]; l++) {
+        w_displ = d->recv_block_id[k++];
+        recv_count[i] += block_index[w_displ + 1] - block_index[w_displ];
+      }
     }
+    recv_size = _compute_displ(n_ranks, recv_count, recv_displ);
   }
-
-  recv_size = _compute_displ(n_ranks, recv_count, recv_displ);
 
   /* Build send and receive buffers */
   /*--------------------------------*/
 
-  BFT_MALLOC(send_buf, send_count * type_size, unsigned char);
-  BFT_MALLOC(recv_buf, recv_size * type_size, unsigned char);
+  if (d->rank == 0)
+    BFT_MALLOC(recv_buf, recv_size*type_size, unsigned char);
 
+  BFT_MALLOC(send_buf, send_count * type_size, unsigned char);
+
+  w_displ = 0;
   for (j = 0; j < d->n_part_ents; j++) {
     size_t ent_size = (part_index[j+1] - part_index[j]);
     r_displ = part_index[j]*type_size;
-    w_displ += ent_size*type_size;
     for (k = 0; k < ent_size*type_size; k++)
       send_buf[w_displ + k] = _part_val[r_displ + k];
+    w_displ += ent_size*type_size;
   }
 
   assert(w_displ == send_count*type_size);
-
-  BFT_MALLOC(recv_buf, recv_size*type_size, unsigned char);
 
   /* Exchange values */
 
@@ -956,9 +958,6 @@ _copy_indexed_gatherv(fvm_part_to_block_t   *d,
               0, d->comm);
 
   BFT_FREE(send_buf);
-
-  BFT_FREE(recv_count);
-  BFT_FREE(recv_displ);
 
   /* Distribute received values */
 
@@ -982,7 +981,11 @@ _copy_indexed_gatherv(fvm_part_to_block_t   *d,
 
   /* Cleanup */
 
-  BFT_FREE(recv_buf);
+  if (d->rank == 0) {
+    BFT_FREE(recv_buf);
+    BFT_FREE(recv_count);
+    BFT_FREE(recv_displ);
+  }
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -1097,7 +1100,7 @@ fvm_part_to_block_destroy(fvm_part_to_block_t **d)
  * Return number of entities associated with local partition
  *
  * arguments:
- *   d <-- distribtor helper
+ *   d <-- distributor helper
  *
  * returns:
  *   number of entities associated with distribution receive

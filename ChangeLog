@@ -1,4 +1,9 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct behavior of _copy_indexed_gatherv().
+  modified files:
+    src/fvm/fvm_part_to_block.c
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove obsolete comment (verbosity control moved to component API).
   modified files:
     src/apps/cs_solver.c
