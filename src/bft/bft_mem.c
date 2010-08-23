@@ -265,26 +265,26 @@ static void _bft_mem_summary(FILE  *f)
     return;
 
   fprintf(f, "\n\n");
-  fprintf(f, _("Memory allocation summary\n"
-               "-------------------------\n\n"));
+  fprintf(f, "Memory allocation summary\n"
+          "-------------------------\n\n");
 
   /* Available memory usage information */
 
   _bft_mem_size_val(_bft_mem_global_alloc_cur, value, &unit);
   fprintf(f,
-          _("Theoretical current allocated memory:   %8lu.%lu %cB\n"),
+          "Theoretical current allocated memory:   %8lu.%lu %cB\n",
           value[0], value[1], unit);
 
   _bft_mem_size_val(_bft_mem_global_alloc_max, value, &unit);
   fprintf(f,
-          _("Theoretical maximum allocated memory:   %8lu.%lu %cB\n"),
+          "Theoretical maximum allocated memory:   %8lu.%lu %cB\n",
           value[0], value[1], unit);
 
   fprintf(f,
-          _("\n"
-            "Number of allocations:   %lu\n"
-            "          reallocations: %lu\n"
-            "          frees:         %lu\n\n"),
+          "\n"
+          "Number of allocations:   %lu\n"
+          "          reallocations: %lu\n"
+          "          frees:         %lu\n\n",
           (unsigned long)_bft_mem_global_n_allocs,
           (unsigned long)_bft_mem_global_n_reallocs,
           (unsigned long)_bft_mem_global_n_frees);
@@ -296,7 +296,7 @@ static void _bft_mem_summary(FILE  *f)
     mem_usage = bft_mem_usage_max_pr_size();
     if (mem_usage > 0) {
       fprintf(f,
-              _("Maximum program memory measure:  %8lu kB\n"),
+              "Maximum program memory measure:  %8lu kB\n",
               (unsigned long)mem_usage);
     }
 
@@ -305,7 +305,7 @@ static void _bft_mem_summary(FILE  *f)
     mem_usage = bft_mem_usage_pr_size();
     if (mem_usage > 0)
       fprintf(f,
-              _("Current program memory measure:   %8lu kB\n"),
+              "Current program memory measure:   %8lu kB\n",
               (unsigned long)mem_usage);
   }
 
@@ -661,7 +661,7 @@ void bft_mem_end(void)
       }
 
       fprintf(_bft_mem_global_file,
-              _("Number of non freed pointers remaining: %lu\n"),
+              "Number of non freed pointers remaining: %lu\n",
               non_free);
 
     }

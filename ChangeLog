@@ -1,4 +1,10 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Removed internationalization for memory allocation log file.
+  modified files:
+    preprocessor/util/ecs_mem.c
+    src/bft/bft_mem.c
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Avoid buffering of cs_exec_environment.run_command() output with Python
   versions > 2.3 so output starts appearing before process is finished.
   modified scripts:
