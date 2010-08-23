@@ -1607,6 +1607,10 @@ cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
 
   BFT_FREE(i_face_lst);
   BFT_FREE(b_face_lst);
+
+  /* Set mesh modification flag */
+
+  mesh->modified = 1;
 }
 
 /*----------------------------------------------------------------------------

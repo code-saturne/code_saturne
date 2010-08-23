@@ -2238,6 +2238,10 @@ _mesh_groups_rename(cs_mesh_t          *mesh,
     BFT_FREE(saved_names);
     BFT_FREE(saved_idx);
 
+    /* Set mesh modification flag */
+
+    mesh->modified = 1;
+
   }
 
   BFT_FREE(new_group_id);
@@ -3286,6 +3290,7 @@ _read_data(int              file_id,
           _transform_coords(range_size,
                             mr->vertex_coords + val_offset_cur,
                             f->matrix);
+          mesh->modified = 1;
         }
       }
 

@@ -677,6 +677,145 @@ cs_halo_renumber_cells(cs_halo_t       *halo,
 }
 
 /*----------------------------------------------------------------------------
+ * Update array of any type of halo values in case of parallelism or
+ * periodicity.
+ *
+ * Data is untyped; only its size is given, so this function may also
+ * be used to synchronize interleaved multidimendsional data, using
+ * size = element_size*dim (assuming a homogeneous environment, at least
+ * as far as data encoding goes).
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * parameters:
+ *   halo      <-- pointer to halo structure
+ *   sync_mode <-- synchronization mode (standard or extended)
+ *   num       <-> pointer to local number value array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_untyped(const cs_halo_t  *halo,
+                     cs_halo_type_t    sync_mode,
+                     size_t            size,
+                     void             *val)
+{
+  fvm_lnum_t i, start, length;
+  size_t j;
+
+  cs_int_t end_shift = 0;
+  int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
+  unsigned char *restrict _val = val;
+
+  if (sync_mode == CS_HALO_STANDARD)
+    end_shift = 1;
+
+  else if (sync_mode == CS_HALO_EXTENDED)
+    end_shift = 2;
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    int rank_id;
+    int request_count = 0;
+    unsigned char *build_buffer = (unsigned char *)_cs_glob_halo_send_buffer;
+    const int local_rank = cs_glob_rank_id;
+
+    /* Receive data from distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      start = halo->index[2*rank_id];
+      length = (  halo->index[2*rank_id + end_shift]
+                - halo->index[2*rank_id]);
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        unsigned char *dest = _val + (halo->n_local_elts*size) + start*size;
+
+        MPI_Irecv(dest,
+                  length * size,
+                  MPI_UNSIGNED_CHAR,
+                  halo->c_domain_rank[rank_id],
+                  halo->c_domain_rank[rank_id],
+                  cs_glob_mpi_comm,
+                  &(_cs_glob_halo_request[request_count++]));
+
+      }
+      else
+        local_rank_id = rank_id;
+
+    }
+
+    /* We wait for posting all receives (often recommended) */
+
+    MPI_Barrier(cs_glob_mpi_comm);
+
+    /* Send data to distant ranks */
+
+    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      /* If this is not the local rank */
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        unsigned char *src;
+
+        start = halo->send_index[2*rank_id];
+        length = (  halo->send_index[2*rank_id + end_shift]
+                  - halo->send_index[2*rank_id]);
+
+        src = build_buffer + start*size;
+
+        for (i = 0; i < length; i++) {
+          for (j = 0; j < size; j++)
+            src[i*size + j] = _val[halo->send_list[start + i]*size + j];
+        }
+
+        MPI_Isend(src,
+                  length*size,
+                  MPI_UNSIGNED_CHAR,
+                  halo->c_domain_rank[rank_id],
+                  local_rank,
+                  cs_glob_mpi_comm,
+                  &(_cs_glob_halo_request[request_count++]));
+
+      }
+
+    }
+
+    /* Wait for all exchanges */
+
+    MPI_Waitall(request_count, _cs_glob_halo_request, _cs_glob_halo_status);
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  /* Copy local values in case of periodicity */
+
+  if (halo->n_transforms > 0) {
+
+    if (local_rank_id > -1) {
+
+      unsigned char *recv
+        = _val + (halo->n_local_elts + halo->index[2*local_rank_id]) * size;
+
+      start = halo->send_index[2*local_rank_id];
+      length = (  halo->send_index[2*local_rank_id + end_shift]
+                - halo->send_index[2*local_rank_id]);
+
+      for (i = 0; i < length; i++) {
+        for (j = 0; j < size; j++)
+          recv[i*size + j] = _val[halo->send_list[start + i]*size + j];
+      }
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Update array of integer halo values in case of parallelism or periodicity.
  *
  * This function aims at copying main values from local elements
@@ -724,7 +863,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
-        buffer = num + halo->n_local_elts + start ;
+        buffer = num + halo->n_local_elts + start;
 
         MPI_Irecv(buffer,
                   length,
@@ -850,7 +989,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
 
-        buffer = var + halo->n_local_elts + start ;
+        buffer = var + halo->n_local_elts + start;
 
         MPI_Irecv(buffer,
                   length,

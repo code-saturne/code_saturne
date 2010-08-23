@@ -167,6 +167,10 @@ typedef struct {
   fvm_selector_t *select_i_faces;     /* Internal faces selection object */
   fvm_selector_t *select_b_faces;     /* Border faces selection object */
 
+  /* Modification flag */
+
+  int modified;
+
 } cs_mesh_t;
 
 /* Auxiliary and temporary structure used to build mesh */
@@ -522,6 +526,24 @@ cs_mesh_get_perio_faces(const cs_mesh_t    *mesh,
                         fvm_gnum_t       ***perio_face_couples);
 
 /*----------------------------------------------------------------------------
+ * Build global cell numbering array extended to ghost cell values.
+ *
+ * If the blank_perio flag is nonzero, periodic ghost cell numbers
+ * are set to zero instead of the value of the matching cell.
+ *
+ * The caller is responsible for freeing the returned array when it
+ * is no longer useful.
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   blank_perio <-- flag to zeroe periodic cell values
+ *----------------------------------------------------------------------------*/
+
+fvm_gnum_t *
+cs_mesh_get_cell_gnum(const cs_mesh_t  *mesh,
+                      int               blank_perio);
+
+/*----------------------------------------------------------------------------
  * Print information on a mesh structure.
  *
  * parameters:
@@ -532,6 +554,23 @@ cs_mesh_get_perio_faces(const cs_mesh_t    *mesh,
 void
 cs_mesh_print_info(const cs_mesh_t  *mesh,
                    const char       *name);
+
+/*----------------------------------------------------------------------------
+ * Compute global face connectivity size.
+ *
+ * Faces on simple parallel boundaries are counted only once, but periodic
+ * faces are counted twice.
+ *
+ * parameters:
+ *   mesh                   <-- pointer to a cs_mesh_t structure
+ *   g_i_face_vertices_size --> global interior face connectivity size, or NULL
+ *   g_b_face_vertices_size --> global boundary face connectivity size, or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
+                              fvm_gnum_t       *g_i_face_vertices_size,
+                              fvm_gnum_t       *g_b_face_vertices_size);
 
 /*----------------------------------------------------------------------------
  * Dump of a mesh structure.

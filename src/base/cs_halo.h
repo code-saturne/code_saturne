@@ -255,6 +255,31 @@ cs_halo_renumber_cells(cs_halo_t       *halo,
                        const cs_int_t   new_cell_id[]);
 
 /*----------------------------------------------------------------------------
+ * Update array of any type of halo values in case of parallelism or
+ * periodicity.
+ *
+ * Data is untyped; only its size is given, so this function may also
+ * be used to synchronize interleaved multidimendsional data, using
+ * size = element_size*dim (assuming a homogeneous environment, at least
+ * as far as data encoding goes).
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * parameters:
+ *   halo      <-- pointer to halo structure
+ *   sync_mode <-- synchronization mode (standard or extended)
+ *   num       <-> pointer to local number value array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_untyped(const cs_halo_t  *halo,
+                     cs_halo_type_t    sync_mode,
+                     size_t            size,
+                     void             *val);
+
+/*----------------------------------------------------------------------------
  * Update array of integer halo values in case of parallelism or periodicity.
  *
  * This function aims at copying main values from local elements

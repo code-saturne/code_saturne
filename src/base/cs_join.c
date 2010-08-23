@@ -1684,6 +1684,10 @@ cs_join_all(void)
       MPI_Barrier(cs_glob_mpi_comm);
 #endif
 
+    /* Set mesh modification flag */
+
+    mesh->modified = 1;
+
   } /* End of loop on joinings */
 
   /* Destroy all remaining structures relative to joining operation */

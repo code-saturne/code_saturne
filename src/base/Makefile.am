@@ -94,6 +94,7 @@ cs_mesh.h \
 cs_mesh_halo.h \
 cs_mesh_quality.h \
 cs_mesh_quantities.h \
+cs_mesh_save.h \
 cs_mesh_solcom.h \
 cs_mesh_warping.h \
 cs_multigrid.h \
@@ -240,6 +241,7 @@ cs_mesh_connect.c \
 cs_mesh_halo.c \
 cs_mesh_quality.c \
 cs_mesh_quantities.c \
+cs_mesh_save.c \
 cs_mesh_solcom.c \
 cs_mesh_warping.c \
 cs_multigrid.c \

@@ -94,6 +94,7 @@
 #include "cs_join.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_mesh_save.h"
 #include "cs_mesh_solcom.h"
 #include "cs_mesh_quality.h"
 #include "cs_mesh_warping.h"
@@ -393,6 +394,11 @@ cs_run(void)
   cs_mesh_dump(cs_glob_mesh);
   cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
 #endif
+
+  /* Now that mesh modification is finished, save mesh if modified */
+
+  if (cs_glob_mesh->modified == 1)
+    cs_mesh_save(cs_glob_mesh, "output_mesh");
 
   /* Compute iterations or quality criteria depending on verification options */
 

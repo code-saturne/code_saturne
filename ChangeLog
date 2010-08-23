@@ -1,4 +1,21 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Enable saving of meshes in preprocessor data output whenever
+  the input mesh has been modified or meshes have been concatenated.
+  added files:
+    src/base/cs_mesh_save.c
+    src/base/cs_mesh_save.h
+  modified files:
+    src/apps/cs_solver.c
+    src/base/Makefile.am
+    src/base/cs_halo.c
+    src/base/cs_halo.h
+    src/base/cs_join.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh.h
+    src/base/cs_mesh_warping.c
+    src/base/cs_preprocessor_data.c
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Transform all calls to iasize() and rasize() to lowercase.
   modified files:
     src/atmo/mematm.f90

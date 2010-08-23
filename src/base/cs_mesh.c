@@ -1447,7 +1447,7 @@ _get_perio_faces_l(const cs_mesh_t    *mesh,
   assert(halo != NULL);
   assert(halo->n_c_domains == 1);
 
-  /* Mark ghost cells with their periodicity number and halo rank id */
+  /* Mark ghost cells with their periodicity number */
 
   BFT_MALLOC(halo_perio_num, mesh->n_ghost_cells, int);
 
@@ -2021,6 +2021,10 @@ cs_mesh_create(void)
   mesh->select_i_faces = NULL;
   mesh->select_b_faces = NULL;
 
+  /* Modification flag */
+
+  mesh->modified = 0;
+
   return (mesh);
 }
 
@@ -2310,6 +2314,100 @@ cs_mesh_info(const cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
+ * Compute global face connectivity size.
+ *
+ * Faces on simple parallel boundaries are counted only once, but periodic
+ * faces are counted twice.
+ *
+ * parameters:
+ *   mesh                   <-- pointer to a cs_mesh_t structure
+ *   g_i_face_vertices_size --> global interior face connectivity size, or NULL
+ *   g_b_face_vertices_size --> global boundary face connectivity size, or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
+                              fvm_gnum_t       *g_i_face_vertices_size,
+                              fvm_gnum_t       *g_b_face_vertices_size)
+{
+  fvm_gnum_t  _g_face_vertices_size[2] = {0, 0};
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    fvm_lnum_t i;
+    fvm_gnum_t _l_face_vertices_size[2] = {0, 0};
+
+    /* Without periodicity, count faces bordering halo once */
+
+    if (mesh->n_init_perio == 0) {
+      for (i = 0; i < mesh->n_i_faces; i++) {
+        if (mesh->i_face_cells[i*2] <= mesh->n_cells)
+          _l_face_vertices_size[0] += (  mesh->i_face_vtx_idx[i+1]
+                                       - mesh->i_face_vtx_idx[i]);
+      }
+    }
+
+    /* With periodicity, count faces bordering halo once for purely parallel halo */
+
+    else {
+
+      fvm_lnum_t  rank_id, t_id, shift;
+      fvm_lnum_t  start = 0, end = 0;
+      int *perio_flag = NULL;
+
+      const cs_halo_t *halo = mesh->halo;
+      const cs_int_t  n_transforms = halo->n_transforms;
+
+      BFT_MALLOC(perio_flag, mesh->n_ghost_cells, int);
+      for (i = 0; i < mesh->n_ghost_cells; i++)
+        perio_flag[i] = 0;
+
+      for (t_id = 0; t_id < n_transforms; t_id++) {
+        shift = 4 * halo->n_c_domains * t_id;
+        for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+          start = halo->perio_lst[shift + 4*rank_id];
+          end = start + halo->perio_lst[shift + 4*rank_id + 1];
+          for (i = start; i < end; i++)
+            perio_flag[i] = 1;
+        }
+      }
+
+      for (i = 0; i < mesh->n_i_faces; i++) {
+        int count_face = 1;
+        if (mesh->i_face_cells[i*2] > mesh->n_cells) {
+          if (perio_flag[mesh->i_face_cells[i*2] - mesh->n_cells - 1] == 0)
+            count_face = 0;
+        }
+        if (count_face)
+          _l_face_vertices_size[0] += (  mesh->i_face_vtx_idx[i+1]
+                                       - mesh->i_face_vtx_idx[i]);
+      }
+
+      BFT_FREE(perio_flag);
+    }
+
+    _l_face_vertices_size[1] = mesh->b_face_vtx_connect_size;
+
+    MPI_Allreduce(&_l_face_vertices_size, &_g_face_vertices_size, 2,
+                  FVM_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  if (cs_glob_n_ranks == 1) {
+    _g_face_vertices_size[0] = mesh->i_face_vtx_connect_size;
+    _g_face_vertices_size[1] = mesh->b_face_vtx_connect_size;
+  }
+
+  if (g_i_face_vertices_size != NULL)
+    *g_i_face_vertices_size = _g_face_vertices_size[0];
+  if (g_b_face_vertices_size != NULL)
+    *g_b_face_vertices_size = _g_face_vertices_size[1];
+}
+
+/*----------------------------------------------------------------------------
  * Compute global number of elements (cells, vertices, internal and border
  * faces) and sync cell family.
  *
@@ -2468,7 +2566,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
                                                  mesh->n_init_perio,
                                                  perio_num,
                                                  mb->n_perio_couples,
-                      (const fvm_gnum_t **const)(mb->perio_couples));
+                      (const fvm_gnum_t *const *)(mb->perio_couples));
       for (i = 0; i < mb->n_perio; i++)
         BFT_FREE(mb->perio_couples[i]);
       BFT_FREE(mb->perio_couples);
@@ -2528,7 +2626,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
                                                  mesh->n_init_perio,
                                                  perio_num,
                                                  n_periodic_couples,
-                       (const fvm_gnum_t **const)periodic_couples);
+                      (const fvm_gnum_t *const *)periodic_couples);
 
     if (mesh->global_vtx_num != g_vertex_num)
       BFT_FREE(g_vertex_num);
@@ -2900,7 +2998,7 @@ cs_mesh_get_perio_faces(const cs_mesh_t    *mesh,
 {
   assert (mesh != NULL);
 
-  if (mesh->halo == NULL)
+  if (mesh->n_init_perio == 0)
     return;
 
 #if defined(HAVE_MPI)
@@ -2929,6 +3027,86 @@ cs_mesh_get_perio_faces(const cs_mesh_t    *mesh,
               &_compare_couples);
     }
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Build global cell numbering array extended to ghost cell values.
+ *
+ * If the blank_perio flag is nonzero, periodic ghost cell numbers
+ * are set to zero instead of the value of the matching cell.
+ *
+ * The caller is responsible for freeing the returned array when it
+ * is no longer useful.
+ *
+ * parameters:
+ *   mesh        <-- pointer to mesh structure
+ *   blank_perio <-- flag to zeroe periodic cell values
+ *----------------------------------------------------------------------------*/
+
+fvm_gnum_t *
+cs_mesh_get_cell_gnum(const cs_mesh_t  *mesh,
+                      int               blank_perio)
+{
+  fvm_lnum_t i;
+  fvm_gnum_t *cell_gnum = NULL;
+
+  assert (mesh != NULL);
+
+  /* Allocate array */
+
+  BFT_MALLOC(cell_gnum, mesh->n_cells_with_ghosts, fvm_gnum_t);
+
+  /* Build global cell numbering including parallel halos */
+
+  for (i = 0; i < mesh->n_cells; i++)
+    cell_gnum[i] = mesh->global_cell_num[i];
+  for (i = mesh->n_cells; i < mesh->n_cells_with_ghosts; i++)
+    cell_gnum[i] = 0;
+
+  if (mesh->halo != NULL) {
+
+    cs_halo_sync_untyped(mesh->halo,
+                         CS_HALO_EXTENDED,
+                         sizeof(fvm_gnum_t),
+                         cell_gnum);
+
+    if (blank_perio) {
+
+      const cs_halo_t *halo = mesh->halo;
+
+      fvm_lnum_t  rank_id, t_id, shift;
+      fvm_lnum_t  start = 0, end = 0;
+
+      const cs_int_t  n_transforms = halo->n_transforms;
+      const cs_int_t  n_elts = halo->n_local_elts;
+
+      for (t_id = 0; t_id < n_transforms; t_id++) {
+
+        shift = 4 * halo->n_c_domains * t_id;
+
+        for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+          start = halo->perio_lst[shift + 4*rank_id];
+          end = start + halo->perio_lst[shift + 4*rank_id + 1];
+          for (i = start; i < end; i++)
+            cell_gnum[n_elts+i] = 0;
+
+          start = halo->perio_lst[shift + 4*rank_id + 2];
+          end = start + halo->perio_lst[shift + 4*rank_id + 3];
+          for (i = start; i < end; i++)
+            cell_gnum[n_elts+i] = 0;
+
+        } /* End of loop on ranks */
+
+      } /* End of loop on transformation */
+
+    } /* End for blank_perio */
+
+  }
+
+  /* Return global cell number */
+
+  return cell_gnum;
 }
 
 /*----------------------------------------------------------------------------
@@ -3137,6 +3315,11 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
   cs_numbering_dump(mesh->i_face_numbering);
   cs_numbering_dump(mesh->b_face_numbering);
+
+  /* Modification flag */
+
+  bft_printf("\nModification flag:\n");
+  bft_printf("modified:         %d\n",mesh->modified);
 
   bft_printf("\n\nEND OF DUMP OF MESH STRUCTURE\n\n");
   bft_printf_flush();
