@@ -790,19 +790,19 @@ fvm_order_local_allocated(const fvm_lnum_t  list[],
 
   else {
 
-    BFT_MALLOC(number_list, nb_ent, fvm_gnum_t);
     if (list != NULL) {
+      BFT_MALLOC(number_list, nb_ent, fvm_gnum_t);
       for (i = 0 ; i < nb_ent ; i++)
         number_list[i] = (fvm_gnum_t)(list[i]);
+      _order_local(number_list,
+                   order,
+                   nb_ent);
+      BFT_FREE(number_list);
     }
     else {
       for (i = 0 ; i < nb_ent ; i++)
-        number_list[i] = (fvm_gnum_t)(i + 1);
+        order[i] = i;
     }
-    _order_local(number_list,
-                 order,
-                 nb_ent);
-    BFT_FREE(number_list);
 
   }
 

@@ -1,4 +1,10 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Avoid unneeded ordering when no global numbers are present in
+  fvm_order_local_allocated().
+  modified files:
+    src/fvm/fvm_order.c
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct example in usdpst.
   modified files:
     users/base/usdpst.f90
