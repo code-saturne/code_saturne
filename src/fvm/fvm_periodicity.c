@@ -155,12 +155,12 @@ const char  *fvm_periodicity_type_name[] = {N_("null"),
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Combine transormation matrixes.
+ * Combine transformation matrixes.
  *
  * parameters:
- *   m0  <-- first rotation matrix
- *   m1  <-- second rotation matrix
- *   m01 <-- third rotation matrix
+ *   a <-- first transformation matrix
+ *   b <-- second transformation matrix
+ *   c --> combined transformation matrix
  *---------------------------------------------------------------------------*/
 
 static void
