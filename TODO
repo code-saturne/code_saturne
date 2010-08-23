@@ -39,8 +39,6 @@ SCRIPTS ET DOC
 
 * Reorganiser la base des cas tests
 
-* Script blue gene integre
-
 * Adapter les scripts d'autovalidation pour prendre en compte les fichier
   de sortie binaire EnSight (changement ASCII => binaire du mode verif)
 
@@ -155,8 +153,6 @@ LAGR
 
 * Prevoir le cas ILAGR=2 pour INEEDY (i.e. forces de paroi)
 
-* Verif commentaires lagraf.F et lagout.F sur Ensight apres modifs AD
-
 ELEC
 ----
 * uselrc n'est pas standard. Il est activé par IELCOR=1 et pas seulement par le fait
@@ -171,13 +167,10 @@ CFBL
 
 RAYT
 ----
-* Transferer vers fvm le raybrd.F qui ecrit sa part ensight tout seul tranquillement
-  sans se soucier du parallélisme ....
 
 ALE
 ---
-* Branchement de couplage avec Aster. Changement du numero de maillage fvm (10 par defaut)
-  pour l'envoi vers Calcium
+* Branchement de couplage avec Aster.
 
 * Non compatible avec la periodicite de rotation (a cause de inimas
     qui necessiterait de connaitre le gradient de w) -> au pire le changer
@@ -200,15 +193,7 @@ ALE
 
 INTEGRATION DVLPTS EXTERNES
 ---------------------------
-* Integration aéros
-
-* Integration ALE (IFS)
-
-* Integration de modifs issues de l'affaire Saturne dans Salome
-
 * Modifs couplage homard
-
-* Integrations couplages CS/CS et autres dvlpts DESIDER
 
 =======================================================================
 =======================================================================
@@ -218,9 +203,6 @@ POINTS A PRIORITE MODEREE OU FAIBLE
 
 SCRIPTS ET DOC
 -------------
-* Refonte des Makefiles
-
-
 * Dans la doc, on pourrait creer un "apropos", par exemple "apropos gradient" qui
   renverrait a un exemple de calcul de gradient dans un sous-programme utilisateur
   -> on pourrait rajouter une ligne "c-apropos" suivi des mots clefs, sur lesquels on
@@ -311,7 +293,7 @@ BASE
    -> attention a certaines periodicite comme la periodicite de sortie des fichiers
       suite. 
 
-* Et si on decoupait et reorganisait bilsc2.F ?
+* Et si on decoupait et reorganisait bilsc2.f90 ?
 
 * Pb de IPUCOU et Rij avec la periodicite de rotation a cause de la viscos orthotrope
   (a priori OK donc en SSG qui a une viscos scalaire)
@@ -341,8 +323,8 @@ BASE
   des cellules pourrait n'etre faite qu'une fois dans CLVOLC, a condition que le voisinage
   etendu y soit bien defini.
 
-* Supprimer les dépendances croises entre cs_mesh.*, cs_mesh_connect.*, cs_halo.*,
-  et cs_ext_neighborhood.*, ou au moins faire apparaitre la hierarchie des structures
+* Supprimer les dépendances croises entre cs_mesh.* et cs_ext_neighborhood.*,
+  ou au moins faire apparaitre la hierarchie des structures
   (peut necessiter la creation d'un fichier cs_mesh_priv.h, et le maintien d'un lien
   entre les structures de maillage publiques et privees, ou le passage de certains
   membres des structures par argument ou sous-structures de travail pour eviter qu'un
@@ -391,9 +373,6 @@ RAYT
 REMARQUES POUR MEMOIRE
 =======================================================================
 =======================================================================
-
-* csprnt.F : le format "$" n'est pas reconnu sur un compilateur sous ...
-  Windows !!!!!!!
 
 * Attention au recalage pression au deuxieme pas de temps. 
 
@@ -445,7 +424,10 @@ BONNES PRATIQUES (POUR MEMOIRE)
   6 lettres au plus et 2 lettres au moins par nom de variable 
  			(bannir les variables I, N, J ou K )
 
-* Ne pas mettre de tabs dans les fortrans ou C (penser au script rmb.sh). 
+* Ne pas mettre de tabs dans les fortrans ou C, et encore moins en
+  en Python (penser au script sbin/rmb, et utilisez un éditeur digne
+  de ce nom afin de ne pas mélanger automatiquement tabulations et
+  espaces). 
 
 * Eviter les lignes de fortran commentees dans les us* : 
  		sinon jamais compile donc forcement faux
@@ -460,7 +442,8 @@ BONNES PRATIQUES (POUR MEMOIRE)
   Virer les do while si possible (mettre un goto si necessaire) 
 
 * Eviter l'acces a des pointeurs de pointeurs de pointeur dans les boucles 
- 	mettre un entier avant, c'est plus lisible et ca va plus vite. 
+ 	mettre un entier avant, c'est plus lisible et ca va probablement
+        plus vite. 
 
 * Encadrer les write et print sauvages par ifdef debug 
  		(ex de cpcym1 : le test doit il etre conserve ?) 
