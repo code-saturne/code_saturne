@@ -1604,6 +1604,7 @@ void CS_PROCF(clmlga, CLMLGA)
  const cs_int_t   *ngrmax,    /* <-- Maximum number of grid levels */
  const cs_int_t   *ncegrm,    /* <-- Maximum local number of cells on
                                      coarsest grid */
+ const cs_real_t  *rlxp1,     /* <-- P0/P1 relaxation parameter */
  const cs_real_t  *dam,       /* <-- Matrix diagonal */
  const cs_real_t  *xam        /* <-- Matrix extra-diagonal terms */
 )
@@ -1698,7 +1699,7 @@ void CS_PROCF(clmlga, CLMLGA)
     if (*iwarnp > 2)
       bft_printf(_("\n   building level %2d grid\n"), grid_lv);
 
-    g = cs_grid_coarsen(g, *iwarnp, *nagmax, iagmax);
+    g = cs_grid_coarsen(g, *iwarnp, *nagmax, iagmax, *rlxp1);
 
     cs_grid_get_info(g,
                      &grid_lv,

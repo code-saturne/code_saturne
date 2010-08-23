@@ -134,6 +134,7 @@ extern void CS_PROCF (crstgr, CRSTGR)
  const cs_int_t    ifaceg[],    /* <-- coarse grid face->cell connectivity */
  const cs_int_t    irscel[],    /* <-- Fine -> coarse cell connectivity */
  const cs_int_t    irsfac[],    /* <-- Fine -> coarse face connectivity */
+ const cs_real_t  *rlxp1,       /* <-- P0/P1 relaxation parameter */
  const cs_real_t   volumf[],    /* <-- fine grid cell volumes */
  const cs_real_t   xyzfin[],    /* <-- fine grid cell centers */
  const cs_real_t   surfaf[],    /* <-- fine grid face surface vectors */

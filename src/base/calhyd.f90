@@ -401,6 +401,7 @@ if (imgr(ipriph).gt.0) then
    ncelet , ncel   , nfac   ,                                     &
    isym   , iagmax , nagmax , npstmg , iwarnp ,                   &
    ngrmax , ncegrm ,                                              &
+   rlxp1  ,                                                       &
    dam    , xam    )
 
 endif

@@ -242,6 +242,7 @@ use entsor
 use parall
 use period
 use mltgrd
+use optcal, only: rlxp1
 
 !===============================================================================
 
@@ -422,6 +423,7 @@ if (imgrp.gt.0) then
    ncelet , ncel   , nfac   ,                                     &
    isym   , iagmax , nagmax , npstmg , iwarnp ,                   &
    ngrmax , ncegrm ,                                              &
+   rlxp1  ,                                                       &
    dam    , xam    )
 
 endif

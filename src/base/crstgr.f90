@@ -32,6 +32,7 @@ subroutine crstgr &
   ncelf  , ncelg  , ncelfe , ncelge , nfacf  , nfacg ,            &
   iwarnp ,                                                        &
   ifaclf , ifaclg , irscel , irsfac ,                             &
+  rlxp1  ,                                                        &
   volumf , xyzfin , surfaf , xaf0   , xaf0ij ,                    &
   daf    , xaf    ,                                               &
   volumg , xyzgro , surfag , xag0   , xag0ij ,                    &
@@ -111,6 +112,7 @@ subroutine crstgr &
 ! xyzgro(3,ncelg)  ! tr ! <-- ! coordonnes cellule maillage grossier           !
 ! surfag(3,nfacg)  ! tr ! <-- ! surface face interne maillage grossier         !
 ! xagxg0(2,nfacg)  ! tr ! <-- ! integ. xag0*coord.cell adj. maillage grossier  !
+! rlxp1            ! tr ! <-- ! P0/P1 relaxation parameter                     !
 ! w1,..,4(ncel)    ! tr ! <-> ! tableaux de travail                            !
 !__________________!____!_____!________________________________________________!
 
@@ -124,9 +126,7 @@ subroutine crstgr &
 ! Module files
 !===============================================================================
 
-use paramx
 use entsor
-use optcal
 use cstnum
 use parall
 
@@ -140,11 +140,13 @@ integer          iappel, isym, igr
 integer          ncelf, ncelfe, nfacf, ncelg, ncelge, nfacg
 integer          iwarnp
 
-double precision daf(ncelf), xaf(nfacf,2)
-double precision dag(ncelge), xag(nfacg,2)
-
 integer          ifaclf(2, nfacf), ifaclg(2, nfacg)
 integer          irscel(ncelf), irsfac(nfacf)
+
+double precision rlxp1
+
+double precision daf(ncelf), xaf(nfacf,2)
+double precision dag(ncelge), xag(nfacg,2)
 
 double precision xaf0(nfacf),volumf(ncelfe), xyzfin(3, ncelfe)
 double precision xag0(nfacg),volumg(ncelge), xyzgro(3, ncelge)

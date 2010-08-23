@@ -1,3 +1,19 @@
+* 23/08/2010 - David Monfort <david.monfort@edf.fr>
+  Pass the multigrid relaxation parameter to the different subroutines by
+  argument instead of using a common block to avoid issues when the routines
+  are called by NEPTUNE_CFD.
+  modified routines:
+    src/base/autmgr.f90
+    src/base/calhyd.f90
+    src/base/codits.f90
+    src/base/crstgr.f90
+    src/base/cs_grid.c
+    src/base/cs_grid.h
+    src/base/cs_multigrid.c
+    src/base/cs_multigrid.h
+    src/base/cs_prototypes.h
+    src/base/resolp.f90
+
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Old EnSight writer is still accessible using "v1" writer option.
   added files:

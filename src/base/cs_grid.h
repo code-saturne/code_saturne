@@ -216,7 +216,8 @@ cs_grid_t *
 cs_grid_coarsen(const cs_grid_t  *f,
                 int               verbosity,
                 int               agglomeration_limit,
-                int              *max_agglomeration);
+                int              *max_agglomeration,
+                double            relaxation_parameter);
 
 /*----------------------------------------------------------------------------
  * Compute coarse cell variable values from fine cell values

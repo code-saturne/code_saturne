@@ -1229,7 +1229,8 @@ cs_grid_t *
 cs_grid_coarsen(const cs_grid_t   *f,
                 int                verbosity,
                 int                agglomeration_limit,
-                int               *max_agglomeration)
+                int               *max_agglomeration,
+                double             relaxation_parameter)
 {
   cs_int_t iappel, iusmgr;
   cs_int_t igr;
@@ -1389,6 +1390,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
                             &iwarnp,
                             f->face_cell, c->face_cell,
                             c->coarse_cell, c->coarse_face,
+                            &relaxation_parameter,
                             f->cell_vol, f->cell_cen, f->face_normal,
                             f->xa0, f->xa0ij, f->da, f->xa,
                             c->cell_vol, c->cell_cen, c->face_normal,
@@ -1416,6 +1418,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
                             &iwarnp,
                             f->face_cell, c->face_cell,
                             c->coarse_cell, c->coarse_face,
+                            &relaxation_parameter,
                             f->cell_vol, f->cell_cen, f->face_normal,
                             f->xa0, f->xa0ij, f->da, f->xa,
                             c->cell_vol, c->cell_cen, c->face_normal,
