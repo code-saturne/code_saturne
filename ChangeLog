@@ -1,4 +1,10 @@
 * 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Avoid buffering of cs_exec_environment.run_command() output with Python
+  versions > 2.3 so output starts appearing before process is finished.
+  modified scripts:
+    bin/cs_exec_environment.py
+
+* 23/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Modifiy Fortran to C string copy to avoid issues with bounds
   checking with recent Fortran compilers such as icc 11.
   modified files:

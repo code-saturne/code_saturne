@@ -77,20 +77,21 @@ def run_command(cmd, echo = False, stdout = sys.stdout, stderr = sys.stderr):
     if have_subprocess == True:
         p = subprocess.Popen(cmd,
                              shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        output = p.communicate()
+                             stdout=stdout,
+                             stderr=stderr)
+        p.communicate()
         returncode = p.returncode
 
     else:
         p = popen2.Popen3(cmd, capturestderr=True)
         returncode = p.wait()
         output = (p.fromchild.read(), p.childerr.read())
-
-    if len(output[0]) > 0:
-        stdout.write(output[0])
-    if len(output[1]) > 0:
-        stderr.write(output[1])
+        if len(output[0]) > 0:
+            stdout.write(output[0])
+        if len(output[1]) > 0:
+            stderr.write(output[1])
+        p.fromchild.close()
+        p.childerr.close()
 
     return returncode
 
