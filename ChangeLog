@@ -1,3 +1,8 @@
+* 24/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix the info command of code_saturne.
+  modified script:
+    bin/cs_info.py
+
 * 23/08/2010 - David Monfort <david.monfort@edf.fr>
   Fix the copying of the ALE and Lagrangian monitoring files.
   modified script:

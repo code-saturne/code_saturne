@@ -147,9 +147,8 @@ def launch_manual(reader, m):
 
             for r in (sys_tools + readers):
                 cmd = r + ' ' + manual + ' 2>/dev/null &'
-                try: os.system(cmd)
-                except: pass
-                return
+                if os.system(cmd) == 0:
+                    return
 
 
 #-------------------------------------------------------------------------------
