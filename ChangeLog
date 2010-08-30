@@ -1,3 +1,9 @@
+* 30/08/2010 - David Monfort <david.monfort@edf.fr>
+  Ugrade to gettext version 0.18.1.
+  modified scripts:
+    configure.ac
+	po/Rules-quot
+
 * 24/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix the info command of code_saturne.
   modified script:
