@@ -45,11 +45,6 @@ TEXINPUTFILES =
 
 EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
 
-# One adds the whole directory of test cases and get rid of the .svn
-# directories with a dist-hook. The reason for this trick is that
-# the number of test cases can grow and change a lot.
-EXTRA_DIST += test_cases
-
 # Subdirectories (order is important)
 
 SUBDIRS = graphics .

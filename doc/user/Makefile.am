@@ -28,7 +28,6 @@ TEXMAIN = user.tex
 
 TEXOTHERS = \
 a1_autovalid.tex \
-ale.tex \
 biblio.tex \
 saturne1.tex \
 saturne2.tex \
