@@ -1,4 +1,10 @@
 * 30/08/2010 - David Monfort <david.monfort@edf.fr>
+  Search for Fortran 77 compilers just in case we have SYRTHES coupling to
+  avoid spurious warnings at the bootstrap stage.
+  modified script:
+    configure.ac
+
+* 30/08/2010 - David Monfort <david.monfort@edf.fr>
   Ugrade to gettext version 0.18.1.
   modified scripts:
     configure.ac

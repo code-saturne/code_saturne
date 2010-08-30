@@ -92,6 +92,10 @@ user_LIBS=$LIBS
 AC_PROG_CC
 AC_PROG_FC
 
+# Search for Fortran 77 compilers just in case we have SYRTHES coupling
+# To be removed as soon SYRTHES 4 becomes the official version
+AC_PROG_F77
+
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AM_PROG_CC_C_O
