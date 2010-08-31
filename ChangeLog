@@ -1,3 +1,9 @@
+* 31/08/2010 - David Monfort <david.monfort@edf.fr>
+  Fix two small bugs in the Python automatic installer (MEI use and Fortran
+  compiler).
+  modified file:
+    extras/installer/install_saturne.py
+
 * 24/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix the info command of code_saturne.
   modified script:

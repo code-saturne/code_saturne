@@ -729,7 +729,7 @@ Check the setup file and some utilities presence.
                 p.cc = self.mpicc
             else:
                 p.cc = self.cc
-            if lib in ['med', 'lib']:
+            if lib in ['med', 'ncs']:
                 p.fc = self.fc
 
         # Update configuration options
@@ -752,11 +752,10 @@ Check the setup file and some utilities presence.
         libxml2 = self.packages['libxml2']
         swig = self.packages['swig']
 
-        # Disable GUI
+        # Disable GUI (and MEI Python bindings too)
 
         if self.disable_gui == 'yes':
-            mei.installation = 'no'
-            mei.use = 'no'
+            swig.use = 'no'
             ncs.config_opts = ncs.config_opts + " --disable-gui"
 
         # BFT
