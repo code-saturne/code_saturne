@@ -133,7 +133,8 @@ typedef struct _cs_multigrid_info_t {
   unsigned             n_levels[3];         /* Number of grid levels:
                                                [last, min, max] */
 
-  unsigned long long   coarse_size[3];      /* Coarse grid size */
+  unsigned long long   coarse_size[3];      /* Coarse grid size:
+                                               [min, max, total] */
 
   unsigned             n_iterations[3][4];  /* Number of iterations for
                                                system resolution:
@@ -261,11 +262,12 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
 {
   unsigned long long n_builds_denom = CS_MAX(this_info->n_builds, 1);
   unsigned long long n_solves_denom = CS_MAX(this_info->n_solves, 1);
-  unsigned long long c_size_mean = this_info->coarse_size[0];
+  unsigned long long c_size_mean = this_info->coarse_size[2] / n_builds_denom;
   int n_builds = this_info->n_builds;
   int n_solves = this_info->n_solves;
   int n_lv_min = this_info->n_levels[1];
   int n_lv_max = this_info->n_levels[2];
+  int n_lv_mean = (int)(this_info->n_levels_tot / n_builds_denom);
   unsigned long long c_size_min = this_info->coarse_size[0];
   unsigned long long c_size_max = this_info->coarse_size[1];
   int n_it_f_min = this_info->n_iterations[1][0];
@@ -276,8 +278,6 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
   int n_it_t_max = this_info->n_iterations[2][2];
   int n_it_e_min = this_info->n_iterations[1][3];
   int n_it_e_max = this_info->n_iterations[2][3];
-  unsigned long long n_lv_mean
-    = (unsigned long long)(this_info->coarse_size[2] / n_builds_denom);
   int n_it_f_mean = (int)(this_info->n_iterations_tot[0] / n_solves_denom);
   int n_it_c_mean = (int)(this_info->n_iterations_tot[1] / n_solves_denom);
   int n_it_t_mean = (int)(this_info->n_iterations_tot[2] / n_solves_denom);
@@ -1757,7 +1757,7 @@ void CS_PROCF(clmlga, CLMLGA)
 
   cs_base_string_f_to_c_free(&var_name);
 
-  mg_info->coarse_size[0] = CS_MIN(n_g_cells, mg_info->coarse_size[1]);
+  mg_info->coarse_size[0] = CS_MIN(n_g_cells, mg_info->coarse_size[0]);
   mg_info->coarse_size[1] = CS_MAX(n_g_cells, mg_info->coarse_size[1]);
   mg_info->coarse_size[2] += n_g_cells;
 
