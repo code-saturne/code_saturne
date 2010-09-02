@@ -396,8 +396,6 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
   for (i = 0; i < n_i_faces; i++) {
     face_cell_g[i*2] = cell_gnum[mesh->i_face_cells[i*2] - 1];
     face_cell_g[i*2 + 1] = cell_gnum[mesh->i_face_cells[i*2 + 1] - 1];
-    assert(face_cell_g[i*2] < 214995);
-    assert(face_cell_g[i*2+1] < 214995);
   }
   for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++) {
     face_cell_g[j*2] = cell_gnum[mesh->b_face_cells[i] - 1];

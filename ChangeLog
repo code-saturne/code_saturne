@@ -1,4 +1,9 @@
 * 02/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove assertion related to a specific case.
+  modified routine:
+    src/base/cs_mesh_save.c
+
+* 02/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct the coarse grid size instrumentation of the multigrid.
   modified routine:
     src/base/cs_multigrid.c
