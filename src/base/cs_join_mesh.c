@@ -2027,15 +2027,24 @@ void
 cs_join_mesh_minmax_tol(cs_join_param_t    param,
                         cs_join_mesh_t    *mesh)
 {
-  int  i;
+  fvm_lnum_t  i;
   cs_join_vertex_t  _min, _max, g_min, g_max;
 
   const int  n_ranks = cs_glob_n_ranks;
 
+  _min.state = CS_JOIN_STATE_UNDEF;
+  _max.state = CS_JOIN_STATE_UNDEF;
+  _min.gnum = 0;
+  _max.gnum = 0;
   _min.tolerance = DBL_MAX;
   _max.tolerance = -DBL_MAX;
-  g_min.tolerance = DBL_MAX;
-  g_max.tolerance = -DBL_MAX;
+  for (i = 0; i < 3; i++) {
+    _min.coord[i] = DBL_MAX;
+    _max.coord[i] = DBL_MAX;
+  }
+
+  g_min = _min;
+  g_max = _max;
 
   /* Compute local min/max */
 
@@ -3779,8 +3788,8 @@ cs_join_mesh_dump_vertex(const cs_join_vertex_t   vertex)
   assert(vertex.gnum > 0);
   assert(vertex.tolerance >= 0.0);
 
-  bft_printf(" %10u | %11.8f | % 12.10e % 12.10e  % 12.10e | %s\n",
-             vertex.gnum, vertex.tolerance,
+  bft_printf(" %10u | %10.5e | % 10.8e % 10.8e % 10.8e | %s\n",
+             vertex.gnum, (double)(vertex.tolerance),
              vertex.coord[0], vertex.coord[1], vertex.coord[2],
              _print_state(vertex.state));
 }

@@ -1,11 +1,18 @@
 * 02/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a Valgrind warning for uninitialized logging values in parallel
+  mesh joining. Also added minor formatting improvements in the
+  matching log entry (vertex tolerance).
+  modified file:
+    src/base/cs_join_mesh.c
+
+* 02/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove assertion related to a specific case.
-  modified routine:
+  modified file:
     src/base/cs_mesh_save.c
 
 * 02/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct the coarse grid size instrumentation of the multigrid.
-  modified routine:
+  modified file:
     src/base/cs_multigrid.c
 
 * 30/08/2010 - David Monfort <david.monfort@edf.fr>
