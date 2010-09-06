@@ -1,3 +1,10 @@
+* 06/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow GUI's check_mesh functionnality to work correctly in case
+  of joining, periodicity, or warped faces.
+  This includes replacing an obsolete ecs_bindir path by cs_bindir.
+  modified file:
+    gui/Pages/SolutionVerifView.py
+
 * 02/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a Valgrind warning for uninitialized logging values in parallel
   mesh joining. Also added minor formatting improvements in the

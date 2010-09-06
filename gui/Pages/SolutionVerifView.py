@@ -89,7 +89,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         self.pushButton.setEnabled(False)
 
         self.cs = os.path.join(cs_config.dirs.bindir, "cs_solver")
-        self.ecs = os.path.join(cs_config.dirs.ecs_bindir, "cs_preprocess")
+        self.ecs = os.path.join(cs_config.dirs.bindir, "cs_preprocess")
 
         self.case = case
         self.case2 = case2
@@ -312,6 +312,21 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         XMLinit(self.case2)
         self.case2['xmlfile'] = 'cs_cmd'
         self.case2['salome'] = self.case['salome']
+
+        faces_cutting = self.case.xmlGetNode('faces_cutting')
+        joining = self.case.xmlGetNode('joining')
+        periodicity = self.case.xmlGetNode('periodicity')
+
+        sd_node = self.case2.xmlGetNode('solution_domain')
+        if faces_cutting != None:
+            if (faces_cutting)['status'] == 'on':
+                sd_node.xmlInitNode('faces_cutting',
+                                    status='on').xmlChildsCopy(faces_cutting)
+        if joining != None:
+            sd_node.xmlInitNode('joining').xmlChildsCopy(joining)
+        if periodicity != None:
+            sd_node.xmlInitNode('solution_domain').xmlChildsCopy(periodicity)
+
         self.out2 = OutputControlModel(self.case2)
 
         # combo models
