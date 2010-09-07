@@ -392,9 +392,9 @@ class Study:
         # On clusters, also copy the batch card (if defined)
 
         config = ConfigParser.ConfigParser()
-        config.read([os.path.expanduser('~/.code_saturne.cfg'),
-                     os.path.join(cs_config.dirs.sysconfdir,
-                                  'code_saturne.cfg')])
+        config.read([os.path.join(cs_config.dirs.sysconfdir,
+                                  'code_saturne.cfg')
+                     os.path.expanduser('~/.code_saturne.cfg')])
 
         if config.has_option('install', 'batch'):
 

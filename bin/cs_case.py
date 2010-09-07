@@ -1572,9 +1572,9 @@ fi
                 username = os.getenv('USER')
 
             config = ConfigParser.ConfigParser({'user':username})
-            config.read([os.path.expanduser('~/.code_saturne.cfg'),
-                         os.path.join(cs_config.dirs.sysconfdir,
-                                      'code_saturne.cfg')])
+            config.read([os.path.join(cs_config.dirs.sysconfdir,
+                                      'code_saturne.cfg')
+                         os.path.expanduser('~/.code_saturne.cfg')])
 
             if config.has_option('run', 'tmpdir'):
                 tmpdir = os.path.expanduser(config.get('run', 'tmpdir'))

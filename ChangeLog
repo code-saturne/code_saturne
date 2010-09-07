@@ -1,3 +1,10 @@
+* 07/09/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Change the order of config files when inquiring them in order to let the
+  user change the defaults settings.
+  modified scripts:
+    bin/cs_create.py
+    bin/cs_case.py
+
 * 06/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow GUI's check_mesh functionnality to work correctly in case
   of joining, periodicity, or warped faces.
