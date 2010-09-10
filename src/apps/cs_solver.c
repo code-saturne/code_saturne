@@ -182,6 +182,7 @@ cs_run(void)
   cs_int_t  nituse, nrtuse, nideve, nrdeve;
 
   int  _verif = -1;
+  int  check_mask = 0;
   int  cwf_post = 0;
   double  cwf_threshold = -1.0;
 
@@ -379,7 +380,9 @@ cs_run(void)
 
   /* Initialize meshes for the main post-processing */
 
-  cs_post_init_main_meshes();
+  check_mask = (opts.verif == true) ? 2 + 1 : 0;
+
+  cs_post_init_main_meshes(check_mask);
 
   /* Compute geometric quantities related to the mesh */
 

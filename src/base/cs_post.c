@@ -55,6 +55,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <fvm_nodal.h>
+#include <fvm_parall.h>
 #include <fvm_writer.h>
 
 /*----------------------------------------------------------------------------
@@ -195,6 +196,11 @@ static int                _cs_post_nbr_var_tp_max = 0;
 
 static cs_post_time_dep_var_t **_cs_post_f_var_tp = NULL;
 static int                     *_cs_post_i_var_tp = NULL;
+
+/* Default directory name */
+
+static const char  _cs_post_dirname_ens[] = "chr.ensight";
+static const char  _cs_post_dirname_def[] = ".";
 
 /*============================================================================
  * Private function definitions
@@ -837,7 +843,7 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
       fvm_writer_export_nodal(writer->writer, post_mesh->exp_mesh);
     }
 
-    if (write_mesh == true && post_mesh->id == -1)
+    if (write_mesh == true && (post_mesh->id == -1 || post_mesh->id == -2))
       _cs_post_write_domain(writer->writer,
                             post_mesh->exp_mesh,
                             nt_cur_abs,
@@ -975,6 +981,445 @@ _cs_post_write_displacements(int     nt_cur_abs,
   /* Free memory */
 
   BFT_FREE(deplacements);
+}
+
+/*----------------------------------------------------------------------------
+ * Output volume sub-meshes by group
+ *
+ * parameters:
+ *   mesh      <-- base mesh
+ *   fmt_name  <-- format name
+ *   fmt_opts  <-- format options
+ *---------------------------------------------------------------------------*/
+
+static void
+_vol_submeshes_by_group(const cs_mesh_t  *mesh,
+                        const char       *fmt_name,
+                        const char       *fmt_opts)
+{
+  fvm_lnum_t  i, j, k;
+  fvm_lnum_t n_cells, n_i_faces, n_b_faces;
+  char part_name[81] ;
+  int max_null_family = 0;
+  char *fam_flag = NULL, *group_flag = NULL;
+  const char *dir_name = NULL;
+  fvm_lnum_t *cell_list = NULL, *i_face_list = NULL, *b_face_list = NULL;
+  fvm_writer_t *writer = NULL;
+  fvm_nodal_t *exp_mesh = NULL;
+
+  if (mesh->n_families == 0)
+    return;
+
+  /* Families should be sorted, so if a nonzero family is empty,
+     it is family 1 */
+
+  if (mesh->family_item[0] == 0)
+    max_null_family = 1;
+
+  if (mesh->n_families <= max_null_family)
+    return;
+
+  /* Get writer info */
+
+  /* Default values */
+
+  /* Create default writer */
+
+  if (fmt_name[0] == 'e' || fmt_name[0] == 'E')
+    dir_name = _cs_post_dirname_ens;
+  else
+    dir_name = _cs_post_dirname_def;
+
+  writer = fvm_writer_init("mesh_groups",
+                           dir_name,
+                           fmt_name,
+                           fmt_opts,
+                           FVM_WRITER_FIXED_MESH);
+
+  /* Now detect which groups may be referenced */
+
+  BFT_MALLOC(fam_flag, (mesh->n_families + 1) * 3, char);
+  memset(fam_flag, 0, (mesh->n_families + 1) * 3);
+
+  if (mesh->cell_family != NULL) {
+    for (i = 0; i < mesh->n_cells; i++)
+      fam_flag[mesh->cell_family[i]*3] = 1;
+  }
+  if (mesh->i_face_family != NULL) {
+    for (i = 0; i < mesh->n_i_faces; i++)
+      fam_flag[mesh->i_face_family[i]*3 + 1] = 1;
+  }
+  if (mesh->b_face_family != NULL) {
+    for (i = 0; i < mesh->n_b_faces; i++)
+      fam_flag[mesh->b_face_family[i]*3 + 2] = 1;
+  }
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    char *_fam_flag = NULL;
+    BFT_MALLOC(_fam_flag, mesh->n_families * 3, char);
+    MPI_Allreduce(fam_flag, _fam_flag, (mesh->n_families + 1) * 3,
+                  MPI_CHAR, MPI_MAX, cs_glob_mpi_comm);
+    BFT_FREE(fam_flag);
+    fam_flag = _fam_flag;
+  }
+#endif /* defined(HAVE_MPI) */
+
+  BFT_MALLOC(group_flag, mesh->n_groups * 3, char);
+  memset(group_flag, 0, mesh->n_groups * 3);
+
+  for (i = 0; i < mesh->n_families; i++) {
+    for (j = 0; j < 3; j++) {
+      if (fam_flag[(i+1)*3 + j] != 0) {
+        for (k = 0; k < mesh->n_max_family_items; k++) {
+          int g_id = - mesh->family_item[mesh->n_families*k + i] - 1;
+          if (g_id >= 0)
+            group_flag[g_id*3 + j] = 1;
+        }
+      }
+    }
+  }
+
+  /* Now extract volume elements by groups.
+     Note that selector structures may not have been initialized yet,
+     so to avoid issue, we use a direct selection here. */
+
+  BFT_REALLOC(fam_flag, mesh->n_families, char);
+
+  BFT_MALLOC(cell_list, mesh->n_cells, fvm_lnum_t);
+
+  for (i = 0; i < mesh->n_groups; i++) {
+
+    if (group_flag[i*3] != 0) {
+
+      const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
+
+      memset(fam_flag, 0, mesh->n_families);
+      for (j = 0; j < mesh->n_families; j++) {
+        for (k = 0; k < mesh->n_max_family_items; k++) {
+          int g_id = - mesh->family_item[mesh->n_families*k + j] - 1;
+          if (g_id == i)
+            fam_flag[j] = 1;
+        }
+      }
+
+      for (j = 0, n_cells = 0; j < mesh->n_cells; j++) {
+        int f_id = mesh->cell_family[j];
+        if (f_id > 0 && fam_flag[f_id - 1])
+          cell_list[n_cells++] = j + 1;
+      }
+      strcpy(part_name, "vol: ");
+      strncat(part_name, g_name, 80 - strlen(part_name));
+      exp_mesh = cs_mesh_connect_cells_to_nodal(mesh,
+                                                part_name,
+                                                false,
+                                                n_cells,
+                                                cell_list);
+
+      if (fvm_writer_needs_tesselation(writer, exp_mesh, FVM_CELL_POLY) > 0)
+        fvm_nodal_tesselate(exp_mesh, FVM_CELL_POLY, NULL);
+
+      fvm_writer_set_mesh_time(writer, -1, 0);
+      fvm_writer_export_nodal(writer, exp_mesh);
+
+      exp_mesh = fvm_nodal_destroy(exp_mesh);
+    }
+
+  }
+
+  /* Now export cells with no groups */
+
+  if (mesh->cell_family != NULL) {
+    for (j = 0, n_cells = 0; j < mesh->n_cells; j++) {
+      if (mesh->cell_family[j] <= max_null_family)
+        cell_list[n_cells++] = j + 1;
+    }
+  }
+  else {
+    for (j = 0, n_cells = 0; j < mesh->n_cells; j++)
+      cell_list[n_cells++] = j + 1;
+  }
+
+  i = n_cells;
+  fvm_parall_counter_max(&i, 1);
+
+  if (i > 0) {
+    exp_mesh = cs_mesh_connect_cells_to_nodal(mesh,
+                                              "vol: no_group",
+                                              false,
+                                              n_cells,
+                                              cell_list);
+
+    if (fvm_writer_needs_tesselation(writer, exp_mesh, FVM_CELL_POLY) > 0)
+      fvm_nodal_tesselate(exp_mesh, FVM_CELL_POLY, NULL);
+
+    fvm_writer_set_mesh_time(writer, -1, 0);
+    fvm_writer_export_nodal(writer, exp_mesh);
+
+    exp_mesh = fvm_nodal_destroy(exp_mesh);
+  }
+
+  BFT_FREE(cell_list);
+
+  /* Now extract faces by groups */
+
+  BFT_MALLOC(i_face_list, mesh->n_i_faces, fvm_lnum_t);
+  BFT_MALLOC(b_face_list, mesh->n_b_faces, fvm_lnum_t);
+
+  for (i = 0; i < mesh->n_groups; i++) {
+
+    if (group_flag[i*3 + 1] != 0 || group_flag[i*3 + 2] != 0) {
+
+      const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
+
+      memset(fam_flag, 0, mesh->n_families);
+      for (j = 0; j < mesh->n_families; j++) {
+        for (k = 0; k < mesh->n_max_family_items; k++) {
+          int g_id = - mesh->family_item[mesh->n_families*k + j] - 1;
+          if (g_id == i)
+            fam_flag[j] = 1;
+        }
+      }
+
+      n_i_faces = 0;
+      if (mesh->i_face_family != NULL) {
+        for (j = 0; j < mesh->n_i_faces; j++) {
+          int f_id = mesh->i_face_family[j];
+          if (f_id > 0 && fam_flag[f_id - 1])
+            i_face_list[n_i_faces++] = j + 1;
+        }
+      }
+      n_b_faces = 0;
+      if (mesh->b_face_family != NULL) {
+        for (j = 0; j < mesh->n_b_faces; j++) {
+          int f_id = mesh->b_face_family[j];
+          if (f_id > 0 && fam_flag[f_id - 1])
+            b_face_list[n_b_faces++] = j + 1;
+        }
+      }
+
+      strcpy(part_name, "surf: ");
+      strncat(part_name, g_name, 80 - strlen(part_name));
+      exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                part_name,
+                                                false,
+                                                n_i_faces,
+                                                n_b_faces,
+                                                i_face_list,
+                                                b_face_list);
+
+      if (fvm_writer_needs_tesselation(writer, exp_mesh, FVM_FACE_POLY) > 0)
+        fvm_nodal_tesselate(exp_mesh, FVM_FACE_POLY, NULL);
+
+      fvm_writer_set_mesh_time(writer, -1, 0);
+      fvm_writer_export_nodal(writer, exp_mesh);
+
+      exp_mesh = fvm_nodal_destroy(exp_mesh);
+    }
+
+  }
+
+  writer = fvm_writer_finalize(writer);
+
+  BFT_FREE(b_face_list);
+  BFT_FREE(i_face_list);
+
+  BFT_FREE(fam_flag);
+  BFT_FREE(group_flag);
+}
+
+/*----------------------------------------------------------------------------
+ * Output boundary sub-meshes by group, if it contains multiple groups.
+ *
+ * parameters:
+ *   mesh      <-- base mesh
+ *   fmt_name  <-- format name
+ *   fmt_opts  <-- format options
+ *---------------------------------------------------------------------------*/
+
+static void
+_boundary_submeshes_by_group(const cs_mesh_t  *mesh,
+                             const char       *fmt_name,
+                             const char       *fmt_opts)
+{
+  fvm_lnum_t i, j, k;
+  fvm_lnum_t n_b_faces;
+  fvm_gnum_t n_no_group = 0;
+  int max_null_family = 0;
+  char *fam_flag = NULL, *group_flag = NULL;
+  const char *dir_name = NULL;
+  fvm_lnum_t *b_face_list = NULL;
+  fvm_writer_t *writer = NULL;
+  fvm_nodal_t *exp_mesh = NULL;
+
+  if (mesh->n_families == 0)
+    return;
+
+  /* Families should be sorted, so if a nonzero family is empty,
+     it is family 1 */
+
+  if (mesh->family_item[0] == 0)
+    max_null_family = 1;
+
+  if (mesh->n_families <= max_null_family)
+    return;
+
+  /* Check how many boundary faces belong to no group */
+
+  if (mesh->b_face_family != NULL) {
+    for (j = 0, n_b_faces = 0; j < mesh->n_b_faces; j++) {
+      if (mesh->b_face_family[j] <= max_null_family)
+        n_no_group += 1;
+    }
+  }
+  else
+    n_no_group = mesh->n_b_faces;
+
+  fvm_parall_counter(&n_no_group, 1);
+
+  if (n_no_group == mesh->n_g_b_faces)
+    return;
+
+  /* Get writer info */
+
+  /* Default values */
+
+  /* Create default writer */
+
+  if (fmt_name[0] == 'e' || fmt_name[0] == 'E')
+    dir_name = _cs_post_dirname_ens;
+  else
+    dir_name = _cs_post_dirname_def;
+
+  writer = fvm_writer_init("boundary_groups",
+                           dir_name,
+                           fmt_name,
+                           fmt_opts,
+                           FVM_WRITER_FIXED_MESH);
+
+  /* Now detect which groups may be referenced */
+
+  BFT_MALLOC(fam_flag, mesh->n_families + 1, char);
+  memset(fam_flag, 0, mesh->n_families + 1);
+
+  if (mesh->b_face_family != NULL) {
+    for (i = 0; i < mesh->n_b_faces; i++)
+      fam_flag[mesh->b_face_family[i]] = 1;
+  }
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    char *_fam_flag = NULL;
+    BFT_MALLOC(_fam_flag, mesh->n_families, char);
+    MPI_Allreduce(fam_flag, _fam_flag, mesh->n_families + 1,
+                  MPI_CHAR, MPI_MAX, cs_glob_mpi_comm);
+    BFT_FREE(fam_flag);
+    fam_flag = _fam_flag;
+  }
+#endif /* defined(HAVE_MPI) */
+
+  BFT_MALLOC(group_flag, mesh->n_groups, char);
+  memset(group_flag, 0, mesh->n_groups);
+
+  for (i = 0; i < mesh->n_families; i++) {
+    if (fam_flag[(i+1)] != 0) {
+      for (j = 0; j < mesh->n_max_family_items; j++) {
+        int g_id = - mesh->family_item[mesh->n_families*j + i] - 1;
+        if (g_id >= 0)
+          group_flag[g_id] = 1;
+      }
+    }
+  }
+
+  /* Now extract boundary faces by groups.
+     Note that selector structures may not have been initialized yet,
+     so to avoid issue, we use a direct selection here. */
+
+  BFT_REALLOC(fam_flag, mesh->n_families, char);
+
+  BFT_MALLOC(b_face_list, mesh->n_b_faces, fvm_lnum_t);
+
+  for (i = 0; i < mesh->n_groups; i++) {
+
+    if (group_flag[i] != 0) {
+
+      const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
+
+      memset(fam_flag, 0, mesh->n_families);
+      for (j = 0; j < mesh->n_families; j++) {
+        for (k = 0; k < mesh->n_max_family_items; k++) {
+          int g_id = - mesh->family_item[mesh->n_families*k + j] - 1;
+          if (g_id == i)
+            fam_flag[j] = 1;
+        }
+      }
+
+      n_b_faces = 0;
+      if (mesh->b_face_family != NULL) {
+        for (j = 0; j < mesh->n_b_faces; j++) {
+          int f_id = mesh->b_face_family[j];
+          if (f_id > 0 && fam_flag[f_id - 1])
+            b_face_list[n_b_faces++] = j + 1;
+        }
+      }
+
+      exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                g_name,
+                                                false,
+                                                0,
+                                                n_b_faces,
+                                                NULL,
+                                                b_face_list);
+
+      if (fvm_writer_needs_tesselation(writer, exp_mesh, FVM_FACE_POLY) > 0)
+        fvm_nodal_tesselate(exp_mesh, FVM_FACE_POLY, NULL);
+
+      fvm_writer_set_mesh_time(writer, -1, 0);
+      fvm_writer_export_nodal(writer, exp_mesh);
+
+      exp_mesh = fvm_nodal_destroy(exp_mesh);
+    }
+
+  }
+
+  /* Output boundary faces belonging to no group */
+
+  if (n_no_group > 0) {
+
+    if (mesh->b_face_family != NULL) {
+      for (j = 0, n_b_faces = 0; j < mesh->n_b_faces; j++) {
+        if (mesh->b_face_family[j] <= max_null_family)
+          b_face_list[n_b_faces++] = j + 1;
+      }
+    }
+    else {
+      for (j = 0, n_b_faces = 0; j < mesh->n_b_faces; j++)
+        b_face_list[n_b_faces++] = j + 1;
+    }
+
+    exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                              "no_group",
+                                              false,
+                                              0,
+                                              n_b_faces,
+                                              NULL,
+                                              b_face_list);
+
+    if (fvm_writer_needs_tesselation(writer, exp_mesh, FVM_FACE_POLY) > 0)
+      fvm_nodal_tesselate(exp_mesh, FVM_FACE_POLY, NULL);
+
+    fvm_writer_set_mesh_time(writer, -1, 0);
+    fvm_writer_export_nodal(writer, exp_mesh);
+
+    exp_mesh = fvm_nodal_destroy(exp_mesh);
+  }
+
+  BFT_FREE(b_face_list);
+
+  writer = fvm_writer_finalize(writer);
+
+  BFT_FREE(fam_flag);
+  BFT_FREE(group_flag);
 }
 
 /*============================================================================
@@ -3381,13 +3826,11 @@ cs_post_init_main_writer(void)
   cs_int_t  ntchr = -1;
 
   const char  nomcas[] = "chr";
-  const char  nomrep_ens[] = "chr.ensight";
-  const char  nomrep_def[] = ".";
   const char *nomrep = NULL;
 
   const cs_int_t  writer_id = -1; /* Default (main) writer id */
 
-  /* Get parameters from Fortran COMMON blocks */
+  /* Get parameters from Fortran module */
 
   CS_PROCF(inipst, INIPST)(&indic_vol,
                            &indic_brd,
@@ -3407,9 +3850,9 @@ cs_post_init_main_writer(void)
   /* Create default writer */
 
   if (fmtchr[0] == 'e' || fmtchr[0] == 'E')
-    nomrep = nomrep_ens;
+    nomrep = _cs_post_dirname_ens;
   else
-    nomrep = nomrep_def;
+    nomrep = _cs_post_dirname_def;
 
   cs_post_add_writer(writer_id,
                      nomcas,
@@ -3423,10 +3866,21 @@ cs_post_init_main_writer(void)
 
 /*----------------------------------------------------------------------------
  * Initialize main post-processing meshes
+ *
+ * The check_flag variable is a mask, used for additionnal post-processing:
+ *
+ *  - If (check_flag & 1), volume submeshes are output by groups if more
+ *    than one group is present and the default writer uses the EnSight format.
+ *
+ *  - If (check_flag & 2), boundary submeshes are output by groups if more
+ *    than one group is present and the default writer uses the EnSight format.
+ *
+ * parameters:
+ *   check_flag <-- mask used for additional output
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_init_main_meshes(void)
+cs_post_init_main_meshes(int check_mask)
 {
   /* Default values */
 
@@ -3480,6 +3934,10 @@ cs_post_init_main_meshes(void)
 
       cs_post_associate(mesh_id, writer_id);
 
+      if ((check_mask & 1) && (fmtchr[0] == 'e' || fmtchr[0] == 'E'))
+        _vol_submeshes_by_group(cs_glob_mesh,
+                                fmtchr,
+                                optchr);
     }
 
     if (indic_brd > 0) { /* Boundary mesh */
@@ -3498,6 +3956,10 @@ cs_post_init_main_meshes(void)
 
       cs_post_associate(mesh_id, writer_id);
 
+      if ((check_mask & 2) && (fmtchr[0] == 'e' || fmtchr[0] == 'E'))
+        _boundary_submeshes_by_group(cs_glob_mesh,
+                                     fmtchr,
+                                     optchr);
     }
 
   } /* End if cs_glob_mesh->n_i_faces > 0 || cs_glob_mesh->n_b_faces > 0 */

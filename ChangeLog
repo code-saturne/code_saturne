@@ -1,4 +1,14 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added output of default volume and boundary mesh groups to EnSight format.
+  This requires the usage of additional cases, so as to avoid time dependency
+  issues and group name clashes between surface and volume parts.
+  modified files:
+    po/fr.po
+    src/apps/cs_solver.c
+    src/base/cs_post.c
+    src/base/cs_post.h
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Made generation of post-processing mesh group info optional.
   modified files: 
     po/fr.po

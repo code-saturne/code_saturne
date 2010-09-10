@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-10 13:35+0200\n"
+"POT-Creation-Date: 2010-09-10 13:45+0200\n"
 "PO-Revision-Date: 2010-07-29 19:13+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -632,7 +632,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_solver.c:309
+#: src/apps/cs_solver.c:310
 #, c-format
 msgid ""
 "\n"
@@ -641,7 +641,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/apps/cs_solver.c:315
+#: src/apps/cs_solver.c:316
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -649,11 +649,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:378
+#: src/apps/cs_solver.c:379
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:392
+#: src/apps/cs_solver.c:395
 #, c-format
 msgid ""
 "\n"
@@ -662,7 +662,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:411
+#: src/apps/cs_solver.c:414
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -670,7 +670,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:433
+#: src/apps/cs_solver.c:436
 #, c-format
 msgid ""
 "\n"
@@ -685,7 +685,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:443
+#: src/apps/cs_solver.c:446
 #, c-format
 msgid ""
 "\n"
@@ -698,7 +698,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:449
+#: src/apps/cs_solver.c:452
 #, c-format
 msgid ""
 "\n"
@@ -713,7 +713,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:519
+#: src/apps/cs_solver.c:522
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -4261,7 +4261,7 @@ msgid ""
 "parameters."
 msgstr ""
 
-#: src/base/cs_mesh_solcom.c:381 src/base/cs_post.c:3472
+#: src/base/cs_mesh_solcom.c:381 src/base/cs_post.c:3926
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
@@ -4747,7 +4747,7 @@ msgstr ""
 "alors que les dernières variables dont le halo de rotation\n"
 "a été sauvegardé sont définies à partir de [%p, %p, %p]."
 
-#: src/base/cs_post.c:282
+#: src/base/cs_post.c:288
 #, c-format
 msgid ""
 "The requested post-processing writer number\n"
@@ -4756,7 +4756,7 @@ msgstr ""
 "Le gestionnaire de post traitement numéro %d demandé\n"
 "n'est pas défini.\n"
 
-#: src/base/cs_post.c:313
+#: src/base/cs_post.c:319
 #, c-format
 msgid ""
 "The requested post-processing mesh number\n"
@@ -4765,7 +4765,7 @@ msgstr ""
 "Le maillage de post traitement numéro %d demandé\n"
 "n'est pas défini.\n"
 
-#: src/base/cs_post.c:343
+#: src/base/cs_post.c:349
 msgid ""
 "The requested post-processing mesh number\n"
 "must be < 0 (reserved) or > 0 (user).\n"
@@ -4773,7 +4773,7 @@ msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-#: src/base/cs_post.c:349
+#: src/base/cs_post.c:355
 #, c-format
 msgid ""
 "The requested post-processing mesh number\n"
@@ -4782,15 +4782,15 @@ msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "(%d) a déjà été affecté.\n"
 
-#: src/base/cs_post.c:777
+#: src/base/cs_post.c:783
 msgid "parallel domain"
 msgstr ""
 
-#: src/base/cs_post.c:958
+#: src/base/cs_post.c:964
 msgid "displacement"
 msgstr ""
 
-#: src/base/cs_post.c:1893
+#: src/base/cs_post.c:2338
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IVARPR must be\n"
@@ -4799,7 +4799,7 @@ msgstr ""
 "L'argument IVARPR du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1902
+#: src/base/cs_post.c:2347
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IENTLA must be\n"
@@ -4808,7 +4808,7 @@ msgstr ""
 "L'argument IENTLA du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1969
+#: src/base/cs_post.c:2414
 msgid ""
 "The requested post-processing writer number\n"
 "must be < 0 (reserved) or > 0 (user).\n"
@@ -4816,7 +4816,7 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-#: src/base/cs_post.c:1975
+#: src/base/cs_post.c:2420
 #, c-format
 msgid ""
 "The requested post-processing writer number\n"
@@ -4825,11 +4825,11 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "(%d) a déjà été affecté.\n"
 
-#: src/base/cs_post.c:2240 src/base/cs_post.c:2243
+#: src/base/cs_post.c:2685 src/base/cs_post.c:2688
 msgid " edges"
 msgstr ""
 
-#: src/base/cs_post.c:2285
+#: src/base/cs_post.c:2730
 #, c-format
 msgid ""
 "Post-processing mesh number %d has been aliased\n"
@@ -4838,7 +4838,7 @@ msgstr ""
 "Le maillage de post-traitement %d est référencé\n"
 "par le maillage %d, donc il ne peut être libéré.\n"
 
-#: src/base/cs_post.c:2302
+#: src/base/cs_post.c:2747
 #, c-format
 msgid ""
 "Post-processing mesh number %d has been associated\n"
@@ -4850,7 +4850,7 @@ msgstr ""
 "des maillages dépendant du temps, donc il ne peut\n"
 "pas être libéré.\n"
 
-#: src/base/cs_post.c:2398
+#: src/base/cs_post.c:2843
 #, c-format
 msgid ""
 "The mesh %d cannot be an alias of mesh %d,\n"
@@ -4859,7 +4859,7 @@ msgstr ""
 "Le maillage %d ne peut être un alias du maillage %d,\n"
 "qui est lui-même déjà un alias du maillage %d.\n"
 
-#: src/base/cs_post.c:3317
+#: src/base/cs_post.c:3762
 #, c-format
 msgid ""
 "\n"
@@ -4880,11 +4880,11 @@ msgstr ""
 "  Temps écoulé pour les maillages : %12.3f\n"
 "  Temps écoulé pour les champs :    %12.3f\n"
 
-#: src/base/cs_post.c:3490
+#: src/base/cs_post.c:3948
 msgid "Boundary"
 msgstr "Bord"
 
-#: src/base/cs_post.c:3615
+#: src/base/cs_post.c:4077
 msgid "Calculation domain"
 msgstr "Domaine de calcul"
 

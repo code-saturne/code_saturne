@@ -937,10 +937,21 @@ cs_post_init_main_writer(void);
 
 /*----------------------------------------------------------------------------
  * Initialize main post-processing meshes
+ *
+ * The check_flag variable is a mask, used for additionnal post-processing:
+ *
+ *  - If (check_flag & 1), volume submeshes are output by groups if more
+ *    than one group is present and the default writer uses the EnSight format.
+ *
+ *  - If (check_flag & 2), boundary submeshes are output by groups if more
+ *    than one group is present and the default writer uses the EnSight format.
+ *
+ * parameters:
+ *   check_flag <-- mask used for additional output
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_init_main_meshes(void);
+cs_post_init_main_meshes(int check_mask);
 
 /*----------------------------------------------------------------------------
  * Initialize post-processing writer with same format and associated
