@@ -393,7 +393,7 @@ class Study:
 
         config = ConfigParser.ConfigParser()
         config.read([os.path.join(cs_config.dirs.sysconfdir,
-                                  'code_saturne.cfg')
+                                  'code_saturne.cfg'),
                      os.path.expanduser('~/.code_saturne.cfg')])
 
         if config.has_option('install', 'batch'):
