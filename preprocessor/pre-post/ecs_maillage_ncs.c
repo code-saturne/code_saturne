@@ -311,7 +311,6 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
   size_t         icel;
   size_t         ifac;
   ecs_int_t      ifam;
-  size_t         igrp;
   size_t         ipropr;
   size_t         nbr_cel_avec_fam_defaut;
   size_t         nbr_fac_avec_fam_defaut;
@@ -328,9 +327,6 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
   ecs_int_t      mid;
   ecs_int_t      num_grp_loc;
   char          *nom_grp_loc;
-
-  ecs_famille_t   *fam_tete_ent;
-  ecs_famille_t   *fam_tete_globale;
 
   ecs_tab_int_t    tab_nbr_cel_fam;
   ecs_tab_int_t    tab_nbr_fac_fam;
@@ -718,7 +714,7 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_maillage_ncs__ecr(bool             simulate,
+ecs_maillage_ncs__ecr(const char      *output,
                       ecs_maillage_t  *maillage)
 {
   size_t          n_cells, n_faces, n_vertices, face_vertices_size;
@@ -791,7 +787,7 @@ ecs_maillage_ncs__ecr(bool             simulate,
   /* En cas de simulation seule, libération des tableaux temporaires
      et sortie directe */
 
-  if (simulate == true) {
+  if (output == NULL) {
 
     if (tab_propr_fam.nbr != 0)
       ECS_FREE(tab_propr_fam.val);
@@ -816,7 +812,7 @@ ecs_maillage_ncs__ecr(bool             simulate,
   printf(_("\n\nWrite output for Kernel\n"
            "-----------------------\n"));
 
-  comm = ecs_comm_initialize();
+  comm = ecs_comm_initialize(output);
 
   /*------------------------------------------------------------------------
    * Écriture des dimensions :

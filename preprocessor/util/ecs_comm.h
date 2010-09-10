@@ -65,7 +65,7 @@ typedef struct _ecs_comm_t ecs_comm_t ;
  *----------------------------------------------------------------------------*/
 
 ecs_comm_t *
-ecs_comm_initialize(void);
+ecs_comm_initialize(const char  *file_name);
 
 /*----------------------------------------------------------------------------
  * Close writer.

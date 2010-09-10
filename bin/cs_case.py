@@ -1593,8 +1593,8 @@ fi
                                             hosts_list,
                                             mpi_environment)
                 if retcode == 0:
-                    self.run_partitioner()
-            if run_solver == True:
+                    retcode = self.run_partitioner()
+            if run_solver == True and retcode == 0:
                 self.run_solver()
 
             if save_results == True:

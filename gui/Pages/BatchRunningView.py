@@ -499,10 +499,10 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelCSTMPPREFIX.addItem(self.tr("prescribed"), 'prescribed')
 
         self.modelExecPrepro.addItem(self.tr("Run the preprocessor"), 'True')
-        self.modelExecPrepro.addItem(self.tr("Use existing DATA/preprocessor_output"), 'False')
+        self.modelExecPrepro.addItem(self.tr("Use existing DATA/mesh_input"), 'False')
 
         self.modelExecPartit.addItem(self.tr("Run the partitioner"), 'True')
-        self.modelExecPartit.addItem(self.tr("Use existing domain_number_<p> file in DATA/PARTITION_OUTPUT/\n"\
+        self.modelExecPartit.addItem(self.tr("Use existing domain_number_<p> file in DATA/partition_input/\n"\
                                              "if present, unoptimized partition otherwise"), 'False')
 
         self.modelExecKernel.addItem(self.tr("Setup data and run the calculation"), 'True')

@@ -51,10 +51,15 @@ casedir = 'CASEDIRNAME'
 
 MESHDIR = None
 
-# Meshes should be defined as a list, for example:
-#   MESHES = ['part1.des', 'part2.unv', '~/meshdatabase/part3.unv']
+# Meshes should be defined as a list of strings defining mesh
+# file names. If preprocessor options must be used for some meshes,
+# a tuple containing a file name followed by additional options
+# may be used instead of a simple file name, for example:
+#   MESHES = ['part1.des',
+#             ('part2_med', '--format med --num 2'),
+#             '~/meshdatabase/part3.unv']
 
-# The mesh name can be given as an absolute path name, if not it will be
+# Mesh names can be given as absolute path names; otherwise, file are
 # searched in the following directories, in the order:
 #   - the   case mesh database directory, MESHDIR (if defined)
 #   - the  study mesh database directory, MESH directory (if present)

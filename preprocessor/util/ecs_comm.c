@@ -264,11 +264,9 @@ _echo_header(const char   *name,
  *============================================================================*/
 
 ecs_comm_t *
-ecs_comm_initialize(void)
+ecs_comm_initialize(const char  *file_name)
 {
   ecs_comm_t  * comm = NULL;
-
-  const char    file_name[] = "preprocessor_output";
 
   /* Create structure */
 
@@ -276,7 +274,7 @@ ecs_comm_initialize(void)
 
   ECS_MALLOC(comm->name, strlen(file_name) + 1, char);
 
-  sprintf(comm->name, file_name);
+  strcpy(comm->name, file_name);
 
   /* Initialize other fields */
 

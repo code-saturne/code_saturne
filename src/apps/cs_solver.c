@@ -406,7 +406,7 @@ cs_run(void)
   /* Now that mesh modification is finished, save mesh if modified */
 
   if (cs_glob_mesh->modified == 1)
-    cs_mesh_save(cs_glob_mesh, "output_mesh");
+    cs_mesh_save(cs_glob_mesh, "mesh_output");
 
   /* Compute iterations or quality criteria depending on verification options */
 

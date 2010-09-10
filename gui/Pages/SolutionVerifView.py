@@ -102,57 +102,85 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         self.procErrorFlag = False
 
         self.cwd = os.getcwd()
-        os.chdir(self.case['resu_path'])
+
+        self.exec_dir = os.path.join(self.case['resu_path'], 'check_mesh')
+        if os.path.isdir(self.exec_dir):
+            shutil.rmtree(self.exec_dir)
+
+        os.mkdir(self.exec_dir)
+        os.chdir(self.exec_dir)
+
         self.fmt = string.join(string.split(self.__getPostCommand()))
 
-        self.__ecsProcess()
+        # Prepare preprocessing
+
+        self.preprocess_cmd = []
+        nodeList = self.mdl.node_meshes.xmlGetNodeList('mesh', 'name')
+
+        if len(nodeList) > 1:
+            os.mkdir('mesh_input')
+
+        for meshNode in nodeList:
+
+            cmd = self.ecs
+
+            name   = meshNode['name']
+            format = meshNode['format']
+            mesh = self.case['mesh_path'] + '/' + name
+            cmd += ' --mesh ' + mesh
+            if meshNode['num']:
+                cmd += ' --num ' + meshNode['num']
+            if meshNode['grp_fac']:
+                cmd += ' --grp-fac ' + meshNode['grp_fac']
+            if meshNode['grp_cel']:
+                cmd += ' --grp-cel ' + meshNode['grp_cel']
+
+            cmd += ' ' + self.__getPostCommand()
+
+            cmd += ' --case preprocess'
+            if len(nodeList) > 1:
+                str_add = '_%02d' % (len(self.preprocess_cmd) + 1)
+                cmd += str_add
+                cmd += ' --out ' + os.path.join('mesh_input', 'mesh' + str_add)
+            else:
+                cmd += ' --out mesh_input'
+            log.debug("ecs_cmd = %s" % cmd)
+
+            self.preprocess_cmd.append(cmd)
+
+        self.__preProcess()
 
 
-    def __ecsProcess(self):
+    def __preProcess(self):
+
+        cmd = self.preprocess_cmd.pop(0)
+        nodelist = self.mdl.node_meshes.xmlGetNodeList('mesh', 'name')
+
+        if len(self.preprocess_cmd) < len(nodelist):
+            self.disconnect(self.proc,
+                            SIGNAL('finished(int, QProcess::ExitStatus)'),
+                            self.__preProcess)
+
         # Run Preprocessor
 
-        lines = []
-        lines.append(self.mdl.getMeshCommand())
-        lines.append(self.__getPostCommand())
-        lines.append(" --case check_mesh ")
-        log.debug("ecs_cmd = %s" % lines)
+        self.proc.start(cmd)
 
-        f1 = 'ecs_cmd'
-        f = open(f1, 'w')
-        f.writelines(lines)
-        f.close()
+        next_task = None
 
-        args = ' --in ' + f1
-        self.proc.start(self.ecs + args)
-
-        self.connect(self.proc, SIGNAL('finished(int, QProcess::ExitStatus)'), self.__ecsPostTreatment)
+        if len(self.preprocess_cmd) > 0:
+            self.connect(self.proc,
+                         SIGNAL('finished(int, QProcess::ExitStatus)'),
+                         self.__preProcess)
+        else:
+            self.connect(self.proc,
+                         SIGNAL('finished(int, QProcess::ExitStatus)'),
+                         self.__ecsPostTreatment)
 
 
     def __ecsPostTreatment(self):
         if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
-            if self.fmt == "--ensight":
-                os.chdir(os.path.join(self.case['resu_path'], 'check_mesh.ensight'))
-                os.rename('CHR.case', 'PREPROCESSOR.case')
-                os.rename('chr.geo', 'preprocessor.geo')
-
-                out = cStringIO.StringIO()
-                f = open('PREPROCESSOR.case')
-                for line in f:
-                    out.write(line.replace('chr', 'preprocessor') + '\n'),
-                f.close()
-                out2 = open('PREPROCESSOR.case', 'w')
-                out2.write(out.getvalue())
-                out2.close()
-
-                os.chdir(self.case['resu_path'])
-
-            elif self.fmt == "--med":
-                os.rename('check_mesh.med', 'PREPROCESSOR.med')
-
-            #elif self.fmt == "--cgns":
-            #    os.rename('check_mesh.cgns', 'PREPROCESSOR.cgns')
-
-            if os.path.isfile(os.path.join(self.case['resu_path'], 'preprocessor_output')):
+            mesh_input = os.path.join(self.exec_dir, 'mesh_input')
+            if os.path.isfile(mesh_input) or os.path.isdir(mesh_input):
                 self.__csProcess()
             else:
                 self.__finished()
@@ -161,43 +189,47 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
             self.__finished()
 
 
-
     def __csProcess(self):
         # Run Kernel
-        self.disconnect(self.proc, SIGNAL('finished(int, QProcess::ExitStatus)'), self.__ecsPostTreatment)
+        self.disconnect(self.proc,
+                        SIGNAL('finished(int, QProcess::ExitStatus)'),
+                        self.__ecsPostTreatment)
 
         self.case2.xmlSaveDocument()
         args = ' --quality --log 0 --param ' + self.case2['xmlfile']
         self.proc.start(self.cs + args)
 
-        self.connect(self.proc, SIGNAL('finished(int, QProcess::ExitStatus)'), self.__csPostTreatment)
+        self.connect(self.proc,
+                     SIGNAL('finished(int, QProcess::ExitStatus)'),
+                     self.__csPostTreatment)
 
 
     def __csPostTreatment(self):
         if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
             if self.fmt == "--ensight":
-                for src in os.listdir(os.path.join(self.case['resu_path'], 'chr.ensight')):
-                    shutil.copy(os.path.join(self.case['resu_path'], 'chr.ensight', src),
-                                os.path.join(self.case['resu_path'], 'check_mesh.ensight'))
-                os.chdir(os.path.join(self.case['resu_path'], 'check_mesh.ensight'))
-                os.rename('CHR.case', 'QUALITY.case')
 
-                for src in os.listdir(os.path.join(self.case['resu_path'], 'check_mesh.ensight')):
+                os.rename(os.path.join(self.exec_dir, 'chr.ensight'),
+                          os.path.join(self.exec_dir, 'quality.ensight'))
+
+                os.chdir(os.path.join(self.exec_dir, 'quality.ensight'))
+
+                for src in os.listdir(os.getcwd()):
                     if src[:4] == "chr.":
                         dst = src.replace("chr.", "quality.")
                         os.rename(src, dst)
 
+                os.rename('CHR.case', 'QUALITY.case')
+
                 out = cStringIO.StringIO()
                 f = open('QUALITY.case')
                 for line in f:
-                    out.write(line.replace('chr', 'quality') + '\n')
+                    out.write(line.replace('chr', 'quality'))
                 f.close()
                 out2 = open('QUALITY.case', 'w')
                 out2.write(out.getvalue())
                 out2.close()
 
-                shutil.rmtree(os.path.join(self.case['resu_path'], 'chr.ensight'))
-                os.chdir(self.case['resu_path'])
+                os.chdir(self.exec_dir)
 
             elif self.fmt == "--med":
                 os.rename('chr.med', 'QUALITY.med')
@@ -206,9 +238,14 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                 os.rename('chr.cgns', 'QUALITY.cgns')
 
         # Cleanup
-        os.remove('preprocessor_output')
+        mesh_input = os.path.join(self.exec_dir, 'mesh_input')
+        if os.path.isdir(mesh_input):
+            shutil.rmtree(mesh_input)
+        else:
+            os.remove(mesh_input)
+        if os.path.isfile('mesh_output'):
+            os.remove('mesh_output')
         os.remove('cs_cmd')
-        os.remove('ecs_cmd')
 
         self.__saveLog()
         self.__finished()
@@ -262,16 +299,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
 
     def __saveLog(self):
-        fileName = QFileDialog.getSaveFileName(self,
-                                               self.tr("Save File As"),
-                                               self.case['resu_path'],
-                                               self.tr("Mesh quality criteria log (listpre.*);;All files (*)"))
-        if fileName.isEmpty(): return
-        try:
-            logFile = open(str(fileName), 'w')
-        except:
-            QMessageBox.warning(self, 'Error', 'Could not open file for writing')
-            return
+        logFile = open(os.path.join(self.exec_dir, 'check_mesh.log'), 'w')
         logFile.write(str(self.logText.toPlainText().toAscii()))
         logFile.close()
 

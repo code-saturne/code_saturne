@@ -77,11 +77,9 @@
  *  Fonction qui écrit les données dans le fichier d'interface pour le noyau
  *----------------------------------------------------------------------------*/
 
-void ecs_maillage_ncs__ecr
-(
- bool                      simulate,
- ecs_maillage_t     *const maillage
-) ;
+void
+ecs_maillage_ncs__ecr(const char      *output,
+                      ecs_maillage_t  *maillage);
 
 /*----------------------------------------------------------------------------*/
 

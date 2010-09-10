@@ -215,8 +215,42 @@ _align_size(size_t  min_size)
 static void
 _set_default_input_if_needed(void)
 {
-  if (_n_mesh_files == 0)
-    cs_preprocessor_data_add_file("preprocessor_output", 0, NULL, NULL);
+  int ret = 0;
+
+#if defined(WIN32) || defined(_WIN32)
+  const char dir_separator[] = "\\";
+#else
+  const char dir_separator[] = "/";
+#endif
+  const char input_default[] = "mesh_input";
+
+  if (_n_mesh_files == 0) {
+
+    if (bft_file_isreg(input_default))
+      cs_preprocessor_data_add_file(input_default, 0, NULL, NULL);
+
+    else if (bft_file_isdir(input_default)) {
+      int i;
+      char **dir_files = bft_file_listdir(input_default);
+      for (i = 0; dir_files[i] != NULL; i++) {
+        char *tmp_name = NULL;
+        BFT_MALLOC(tmp_name,
+                   strlen(input_default) + 1 + strlen(dir_files[i]) + 1,
+                   char);
+        sprintf(tmp_name, "%s%s%s",
+                input_default, dir_separator, dir_files[i]);
+        if (bft_file_isreg(tmp_name))
+          cs_preprocessor_data_add_file(tmp_name, 0, NULL, NULL);
+        BFT_FREE(tmp_name);
+        BFT_FREE(dir_files[i]);
+      }
+      BFT_FREE(dir_files);
+    }
+
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("No \"%s\" file or directory found."), input_default);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3955,6 +3989,9 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
 
   for (file_id = 0; file_id < mr->n_files; file_id++)
     _read_data(file_id, mesh, mr, echo);
+
+  if (mr->n_files > 1)
+    mesh->modified = 1;
 
   /* Read cell rank data if available */
 

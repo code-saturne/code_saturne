@@ -28,7 +28,7 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the XML calls for ecs execution
+This module defines the XML calls for preprocessor execution
 This module contains the following classes and function:
 - MeshModel
 - SolutionDomainModel
@@ -72,7 +72,6 @@ class MeshModel:
         self.ext['ccm']   = "ccm"
         self.ext['ngeom'] = "ngeom"
         self.ext['unv']   = "ideas"
-        self.ext['mesh']  = "meta"
 
 
     def getMeshExtension(self, mesh):
@@ -132,8 +131,7 @@ class MeshModel:
                 (5,  'gambit',  'GAMBIT Neutral ".neu"'       ),
                 (6,  'ccm',     'STAR-CCM+ ".ccm"'            ),
                 (7,  'ngeom',   'pro-STAR/STAR4 ".ngeom"'     ),
-                (8,  'ideas',   'I-deas universal ".unv"'     ),
-                (9,  'meta',    'Meta-mesh file ".mesh"'      )]
+                (8,  'ideas',   'I-deas universal ".unv"'     )]
 
         return list
 
@@ -170,8 +168,7 @@ class MeshModel:
                 ("GAMBIT Neutral files",      "*.neu"  ),
                 ("STAR-CCM+",                 "*.ccm"  ),
                 ("pro-STAR/STAR4 files",      "*.ngeom"),
-                ("I-deas universal files",    "*.unv"  ),
-                ("Meta-mesh files",           "*.mesh" ) ]
+                ("I-deas universal files",    "*.unv"  )]
 
         return list
 
@@ -1050,12 +1047,12 @@ class SolutionDomainModel(MeshModel, Model):
 
     def getSimCommCommand(self):
         """
-        Get " --sim-comm " command line for preprocessor execution
+        Get " --no-write " command line for preprocessor execution
         """
         lines = ''
         node = self.node_standalone.xmlGetNode('simulation_communication')
         if node and node['status'] == 'on':
-            lines = " -sc "
+            lines = " --no-write "
         return lines
 
 
@@ -1121,7 +1118,7 @@ class SolutionDomainTestCase(ModelTest):
         assert model != None, 'Could not instantiate SolutionDomainModel'
 
     def checkAddDelMeshandGetMeshList(self):
-        """ Check whether the meshes could be added and deleted and list of meshes could be get """
+        """ Check whether the meshes could be added and deleted and list of meshes could be got """
         mdl = SolutionDomainModel(self.case)
         mdl.addMesh('fdc','des')
         mdl.addMesh('pic','des')
@@ -1141,7 +1138,7 @@ class SolutionDomainTestCase(ModelTest):
 
 
     def checkSetandGetCutStatusAndAngleValue(self):
-        """ Check whether the status of node cut and value of angle could be set and get"""
+        """ Check whether the status of node cut and value of angle could be set and got"""
         mdl = SolutionDomainModel(self.case)
         mdl.setCutStatus('on')
         doc1 = '''<faces_cutting status="on"/>'''
@@ -1162,7 +1159,7 @@ class SolutionDomainTestCase(ModelTest):
             'Could not get angle for faces_cutting'
 
     def checkSetandGetSimCommStatus(self):
-        """ Check whether the status of node simulation_communication could be set and get"""
+        """ Check whether the status of node simulation_communication could be set and got"""
         mdl = SolutionDomainModel(self.case)
         mdl.setSimCommStatus('on')
         doc = '''<standalone>
@@ -1175,7 +1172,7 @@ class SolutionDomainTestCase(ModelTest):
             'Could not get status of node simulation_communication'
 
     def checkgetPeriodicSelectionsCount(self):
-        """ Check whether the number of periodicities could be get"""
+        """ Check whether the number of periodicities could be got"""
         select = {}
         select['selector'] = '1 or 2 or 3 or toto'
         select['fraction'] = '0.1'
@@ -1205,7 +1202,7 @@ class SolutionDomainTestCase(ModelTest):
             'Could not get number for periodicities'
 
     def checkSetandgetPeriodicityMode(self):
-        """ Check whether the mode of transformation could be set and get """
+        """ Check whether the mode of transformation could be set and got """
         select = {}
         select['selector'] = '1 or 2 or 3 or toto'
         select['fraction'] = '0.1'
@@ -1245,7 +1242,7 @@ class SolutionDomainTestCase(ModelTest):
             'Could not get mode of transformation for periodicities'
 
     def checkSetandgetTranslationDirection(self):
-        """ Check whether the dir values translation mode of periodicity could be set and get"""
+        """ Check whether the dir values translation mode of periodicity could be set and got"""
         select = {}
         select['selector'] = '1 or 2 or 3 or toto'
         select['fraction'] = '0.1'
@@ -1268,7 +1265,7 @@ class SolutionDomainTestCase(ModelTest):
             'Could not get one direction values for translation'
 
     def checkSetandgetRotationDirectionandAngleandCenter(self):
-        """ Check whether the values for rotation's mode of periodicity could be set and get"""
+        """ Check whether the values for rotation's mode of periodicity could be set and got"""
         select = {}
         select['selector'] = '1 or 2 or 3 or toto'
         select['fraction'] = '0.1'
@@ -1376,7 +1373,7 @@ class SolutionDomainTestCase(ModelTest):
     def checkReplaceandDeleteandSetandGetForJoinFaces(self):
         """
         Check whether faces of face joining could be replaced and deleted
-        and status could be set and get
+        and status could be set and got
         """
         select = {}
         select['selector'] = '1 or 2 or 3 or toto'
@@ -1517,7 +1514,7 @@ class SolutionDomainTestCase(ModelTest):
     def checkReplaceandDeleteandSetandGetStatusForPeriodicFaces(self):
         """
         Check whether faces of of periodicity could be replaced and deleted
-        and status could be set and get
+        and status could be set and got
         """
         select = {}
         select['selector'] = '5 or 6 or toto'
@@ -1630,16 +1627,14 @@ class SolutionDomainTestCase(ModelTest):
         mdl = SolutionDomainModel(self.case)
         mdl.case['mesh_path'] = 'MESH'
         mdl.addMesh('fdc.des','des')
-        mdl.addMesh('pic.des','des')
-        mdl.addMesh('truc.ngeom','ngeom')
-        line = ''' -m MESH/fdc.des -m MESH/pic.des -m MESH/truc.ngeom '''
+        line = ''' -m MESH/fdc.des '''
 
         assert mdl.getMeshCommand() == line,\
             'Mesh command is not verified in SolutionDomain Model'
 
 
     def checkReorientSetAndGetStatusAndCommand(self):
-        """ Check whether reorient status could be set and get and command line could be get """
+        """ Check whether reorient status could be set and got and command line could be got """
         mdl = SolutionDomainModel(self.case)
         mdl.setOrientation('on')
         doc = '''<reorientation status="on"/>'''
@@ -1655,7 +1650,7 @@ class SolutionDomainTestCase(ModelTest):
 
 
     def checkSimCommAndVerifMaillCommand(self):
-        """ Check whether simulation_communication command line could be get """
+        """ Check whether simulation_communication command line could be got """
         mdl = SolutionDomainModel(self.case)
         mdl.setSimCommStatus('on')
         cmd_sim = mdl.getSimCommCommand()
@@ -1664,7 +1659,7 @@ class SolutionDomainTestCase(ModelTest):
             'Simulation_communication command is not verified in SolutionDomain Model'
 
     def checkPostCommand(self):
-        """Check whether output postprocessing format command line could be get"""
+        """Check whether output postprocessing format command line could be got"""
         mdl = SolutionDomainModel(self.case)
         mdl.setPostProFormat('CGNS')
 
@@ -1702,7 +1697,7 @@ class MeshModelTestCase(unittest.TestCase):
         pass
 
     def checkGetMeshExtension(self):
-        """Check whether mesh extension could be get"""
+        """Check whether mesh extension could be got"""
         mdl = MeshModel()
 
         for f in self.files:
@@ -1710,7 +1705,7 @@ class MeshModelTestCase(unittest.TestCase):
           assert ext == f[1], 'could not get the mesh extension'
 
     def checkGetMeshFormat(self):
-        """Check whether mesh extension could be get"""
+        """Check whether mesh extension could be got"""
         mdl = MeshModel()
 
         for f in self.files:

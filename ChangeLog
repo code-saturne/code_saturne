@@ -1,4 +1,38 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Mesh concatenation support removed from Preprocessor.
+  This leads to multiple related changes throughout the tool chain to
+  maintain consistency. A new option enables the preprocessor to
+  determine the name of its output file. For consistency,
+  all mesh files uses by the Kernel are by default:
+  - mesh_input (file or directory)
+  - mesh_output (file)
+  Note that the Preprocessor may in fact still concatenate meshes,
+  albeit only from a single file (which may be useful for example
+  it a rotor and star mesh were both in a single mesh file).
+  modified files:
+    bin/cs_case_domain.py
+    bin/cs_case.py
+    bin/cs_check_mesh.py
+    bin/runcase.in
+    gui/Pages/BatchRunningView.py
+    gui/Pages/SolutionDomainModel.py
+    gui/Pages/SolutionVerifView.py
+    po/fr.po
+    preprocessor/appli/ecs_cmd.c
+    preprocessor/appli/ecs_cmd_priv.h
+    preprocessor/appli/ecs_main.c
+    preprocessor/base/ecs_famille.h
+    preprocessor/pre-post/ecs_maillage_ncs.c
+    preprocessor/pre-post/ecs_maillage_ncs.h
+    preprocessor/pre-post/ecs_post_ens.c
+    preprocessor/util/ecs_comm.c
+    preprocessor/util/ecs_comm.h
+    src/apps/cs_partition.c
+    src/apps/cs_solver.c
+    src/base/cs_preprocessor_data.c
+    users/base/cs_user_mesh_input.c
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Removed preprocessor meta-file and command-line input file support.
   modified files:
     po/fr.po

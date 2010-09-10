@@ -78,7 +78,8 @@
 
 #define ECS_CMD_EXEC_NAME                             "cs_preprocess"
 
-#define ECS_CMD_OUTFILE_NAME_DEFAULT               "preprocessor.log"
+#define ECS_CMD_LOGFILE_NAME_DEFAULT               "preprocessor.log"
+#define ECS_CMD_OUTFILE_NAME_DEFAULT            "preprocessor_output"
 
 #define ECS_CMD_POST_CASE_DEFAULT                        "preprocess"
 #define ECS_CMD_POST_DIR_ENS_EXT                           ".ensight"
@@ -123,8 +124,12 @@
 
 #define ECS_CMD_OPTION_MESH_FILE                             "--mesh"
 #define ECS_CMD_OPTION_MESH_FILE_1                               "-m"
+
+#define ECS_CMD_OPTION_OUTPUT_FILE                            "--out"
+#define ECS_CMD_OPTION_OUTPUT_FILE_1                             "-o"
+
 #define ECS_CMD_OPTION_ORIENT_CORREC                     "--reorient"
-#define ECS_CMD_OPTION_OUTPUT_FILE                            "--log"
+#define ECS_CMD_OPTION_LOG_FILE                               "--log"
 
 #define ECS_CMD_OPTION_VERSION                            "--version"
 
@@ -146,12 +151,17 @@ struct _ecs_cmd_post_t {
 
 struct _ecs_cmd_t {
 
+  char                   *fic_maillage;
   char                   *nom_cas;
-  ecs_int_t               nbr_dump;
-  ecs_int_t              *liste_num_maillage;
-  ecs_pre_format_t       *liste_fmt_maillage;
-  bool                   *liste_grp_maillage;
-  ecs_tab_char_t          liste_fic_maillage;
+  char                   *nom_out;
+  int                     nbr_dump;
+  int                     n_num_maillage;
+  int                    *num_maillage;
+  ecs_pre_format_t        fmt_maillage;
+  bool                    grp_cel_section;
+  bool                    grp_cel_zone;
+  bool                    grp_fac_section;
+  bool                    grp_fac_zone;
 
 #if defined(HAVE_CGNS)
   ecs_cmd_post_t         *post_cgns;
@@ -162,8 +172,6 @@ struct _ecs_cmd_t {
 #endif /* HAVE_MED */
 
   bool                    correct_orient;
-
-  bool                    sim_comm;
 
 };
 

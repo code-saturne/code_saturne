@@ -8,7 +8,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2010 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -257,20 +257,17 @@ ecs_loc_cmd__aff_version(void)
 
   time_cnv.tm_isdst = -1;
 
-  /* Date de compilation recalculée et internationalisée */
+  /* Recomputed and internationalized build date */
 
   mktime(&time_cnv);
   strftime(str_date, ECS_STR_SIZE - 1, "%c", &time_cnv);
 
 #if defined (PACKAGE_VERSION)
-  printf("\n  %s %s   (%s)\n",
-         _("ECS   version"), PACKAGE_VERSION, str_date);
+  printf(_("\n  %s version %s   (built %s)\n\n"),
+         PACKAGE_NAME, PACKAGE_VERSION, str_date);
 #else
-  printf("\n  %s    (%s)\n",
-         _("ECS   version"), str_date);
+  printf(_("\n  (built %s)\n\n"), str_date);
 #endif
-
-  printf("\n");
 
 #if defined(HAVE_CCM)
   printf(_("  STAR-CCM+ file format support\n"));
@@ -417,18 +414,18 @@ static void ecs_loc_cmd__aff_aide
   printf(_("\n\n\nwith :\n\n"));
 
 
-  _fct_prt(ECS_CMD_OPTION_MESH_FILE_1, _("<file> [...]"),
+  _fct_prt(ECS_CMD_OPTION_MESH_FILE_1, _("<file>"),
            _(": Preprocessor input mesh file"));
   _fct_prt("", "", _("  (mesh file format determined"));
   _fct_prt("", "", _("   automatically by filename extension"));
   _fct_prt("", "", _("   or forced by \"--format\" sub-option)"));
-  _fct_prt(ECS_CMD_OPTION_MESH_FILE, _("<file> [...]"), _(": same"));
+  _fct_prt(ECS_CMD_OPTION_MESH_FILE, _("<file>"), _(": same"));
 
   printf("\n");
 
 
   _fct_prt(ECS_CMD_OPTION_NULL_COMM, "",
-           _(": simulate messages without file output"));
+           _(": do not write preprocessor output"));
 
 
   printf("\n");
@@ -457,12 +454,23 @@ static void ecs_loc_cmd__aff_aide
   printf("\n");
 
 
-  _fct_prt(ECS_CMD_OPTION_OUTPUT_FILE, _("[<file>]"),
+  _fct_prt(ECS_CMD_OPTION_LOG_FILE, _("[<file>]"),
            _(": redirect terminal output to a file"));
 
   sprintf(opt_str, _("  (default file: \"%s\")"),
+          ECS_CMD_LOGFILE_NAME_DEFAULT);
+  _fct_prt("", "", opt_str);
+
+  printf("\n");
+
+
+  _fct_prt(ECS_CMD_OPTION_OUTPUT_FILE_1, _("<file>"),
+           _(": output file name"));
+  sprintf(opt_str, _("  (default file: \"%s\")"),
           ECS_CMD_OUTFILE_NAME_DEFAULT);
   _fct_prt("", "", opt_str);
+
+  _fct_prt(ECS_CMD_OPTION_OUTPUT_FILE, _("<file>"), _(": same"));
 
   printf("\n");
 
@@ -534,8 +542,8 @@ static void ecs_loc_cmd__aff_aide
            _(": selection of mesh file format"));
 
 
-  _fct_prt(ECS_CMD_OPTION_NUM_MESH, "<n>",
-           _(": selection of mesh number in file"));
+  _fct_prt(ECS_CMD_OPTION_NUM_MESH, "<n> [...]",
+           _(": selection of mesh numbers in file"));
   _fct_prt("", "",
            _("  (if the format allows it)"));
 
@@ -684,19 +692,9 @@ ecs_loc_cmd__lit_arg_maillage(ecs_cmd_t  *cmd,
   int          iarg;
   int          iarg_prec;
 
-  size_t       ific;
-  size_t       iloc;
-
-  char        *cle_fmt = NULL;
+  const char  *cle_fmt = NULL;
   bool         bool_fin = false;
   bool         bool_num = false;
-
-  bool         grp_cel_section = false;
-  bool         grp_cel_zone    = false;
-  bool         grp_fac_section = false;
-  bool         grp_fac_zone    = false;
-
-  ecs_int_t         num_maillage = 0;
 
   const char arg_err_keyword[]
     = N_("Error in command line specification.\n\n"
@@ -705,8 +703,6 @@ ecs_loc_cmd__lit_arg_maillage(ecs_cmd_t  *cmd,
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   iarg_prec = *argpos - 1;
-
-  ific = cmd->liste_fic_maillage.nbr;
 
   for (iarg = *argpos; iarg < argc && bool_fin == false; iarg++) {
 
@@ -723,31 +719,38 @@ ecs_loc_cmd__lit_arg_maillage(ecs_cmd_t  *cmd,
 
     }
 
-    /* Sous-option de numéro de maillage */
+    /* Sous-option de numéros de maillage */
 
     else if (!strcmp (ECS_CMD_OPTION_NUM_MESH, argv[iarg])) {
+
+      int iarg_num;
+
+      cmd->n_num_maillage = 0;
+      cmd->num_maillage = NULL;
 
       if (bool_num == false)
         bool_num = true;
       else
         ecs_loc_cmd__aff_opt_en_double(argc, argv, argv[iarg]);
 
-      if (iarg + 1 < argc && atoi(argv[iarg + 1]) > 0)
-
-        num_maillage = atoi(argv[iarg + 1]);
-
-      else {
-
-        ecs_loc_cmd__aff_titre(argc, argv);
-
-        ecs_loc_cmd__aff_aide();
-
-        ecs_error(__FILE__, __LINE__, 0,
-                  _(arg_err_keyword), argv[iarg + 1], argv[iarg]);
-
+      for (iarg_num  = iarg+1; iarg_num < argc; iarg_num++) {
+        if (! (isdigit(argv[iarg_num][0]) && atoi(argv[iarg + 1]) > 0))
+          break;
       }
 
-      iarg++; /* Un sous-argument lu -> avancer iarg */
+      cmd->n_num_maillage = iarg_num - (iarg+1);
+
+      if (cmd->n_num_maillage == 0) {
+        ecs_loc_cmd__aff_titre(argc, argv);
+        ecs_loc_cmd__aff_aide();
+        ecs_error(__FILE__, __LINE__, 0,
+                  _(arg_err_keyword), argv[iarg + 1], argv[iarg]);
+      }
+
+      ECS_MALLOC(cmd->num_maillage, cmd->n_num_maillage, int);
+      for (iarg_num  = 0; iarg_num < cmd->n_num_maillage; iarg_num++)
+        cmd->num_maillage[iarg_num] = atoi(argv[++iarg]);
+
     }
 
     /* Sous-options de création de groupes de cellules */
@@ -756,23 +759,17 @@ ecs_loc_cmd__lit_arg_maillage(ecs_cmd_t  *cmd,
 
       if (   iarg + 1 < argc
           && !strcmp(ECS_CMD_KEY_MESH_GRP_SECTION, argv[iarg + 1]))
-
-        grp_cel_section = true;
+        cmd->grp_cel_section = true;
 
       else if (   iarg + 1 < argc
           && !strcmp(ECS_CMD_KEY_MESH_GRP_ZONE, argv[iarg + 1]))
-
-        grp_cel_zone = true;
+        cmd->grp_cel_zone = true;
 
       else {
-
         ecs_loc_cmd__aff_titre(argc, argv);
-
         ecs_loc_cmd__aff_aide();
-
         ecs_error(__FILE__, __LINE__, 0,
                   _(arg_err_keyword), argv[iarg + 1], argv[iarg]);
-
       }
 
       iarg++; /* Un sous-argument lu -> avancer iarg */
@@ -784,23 +781,17 @@ ecs_loc_cmd__lit_arg_maillage(ecs_cmd_t  *cmd,
 
       if (   iarg + 1 < argc
           && !strcmp(ECS_CMD_KEY_MESH_GRP_SECTION, argv[iarg + 1]))
-
-        grp_fac_section = true;
+        cmd->grp_fac_section = true;
 
       else if (   iarg + 1 < argc
           && !strcmp(ECS_CMD_KEY_MESH_GRP_ZONE, argv[iarg + 1]))
-
-        grp_fac_zone = true;
+        cmd->grp_fac_zone = true;
 
       else {
-
         ecs_loc_cmd__aff_titre(argc, argv);
-
         ecs_loc_cmd__aff_aide();
-
         ecs_error(__FILE__, __LINE__, 0,
                   _(arg_err_keyword), argv[iarg + 1], argv[iarg]);
-
       }
 
       iarg++; /* Un sous-argument lu -> avancer iarg */
@@ -809,51 +800,28 @@ ecs_loc_cmd__lit_arg_maillage(ecs_cmd_t  *cmd,
     /* Nom de fichier */
 
     else if (argv[iarg][0] != '-') {
-
-      ECS_REALLOC(cmd->liste_fic_maillage.val, ific + 1, char *);
-
-      ECS_MALLOC(cmd->liste_fic_maillage.val[ific],
-                 strlen(argv[iarg]) + 1, char);
-      strcpy(cmd->liste_fic_maillage.val[ific], argv[iarg]);
-
-      ific++;
+      ECS_MALLOC(cmd->fic_maillage, strlen(argv[iarg]) + 1, char);
+      strcpy(cmd->fic_maillage, argv[iarg]);
     }
 
     /* Autre option (pas une sous-option) -> on a fini */
 
     else {
-
       iarg--;
       bool_fin = true;
-
     }
   }
 
-  if (cmd->liste_fic_maillage.nbr == ific)
+  if (cmd->fic_maillage == NULL)
     ecs_loc_cmd__aff_manque_arg(argc, argv, argv[iarg_prec]);
 
-  ECS_REALLOC(cmd->liste_num_maillage, ific + 1, ecs_int_t);
-
-  ECS_REALLOC(cmd->liste_fmt_maillage, ific + 1, ecs_pre_format_t);
-
-  ECS_REALLOC(cmd->liste_grp_maillage, (ific + 1) * 4, bool);
-
-  for (iloc = cmd->liste_fic_maillage.nbr; iloc < ific; iloc++)
-    cmd->liste_num_maillage[iloc] = num_maillage;
-
-  for (iloc = cmd->liste_fic_maillage.nbr; iloc < ific; iloc++)
-     cmd->liste_fmt_maillage[iloc]
-       = ecs_pre__type_format(cmd->liste_fic_maillage.val[iloc],
-                              cle_fmt);
-
-  for (iloc = cmd->liste_fic_maillage.nbr; iloc < ific; iloc++) {
-    cmd->liste_grp_maillage[iloc*4    ] = grp_cel_section;
-    cmd->liste_grp_maillage[iloc*4 + 1] = grp_cel_zone;
-    cmd->liste_grp_maillage[iloc*4 + 2] = grp_fac_section;
-    cmd->liste_grp_maillage[iloc*4 + 3] = grp_fac_zone;
+  if (cmd->n_num_maillage == 0) {
+    cmd->n_num_maillage = 1;
+    ECS_MALLOC(cmd->num_maillage, 1, int);
+    cmd->num_maillage[0] = 0;
   }
 
-  cmd->liste_fic_maillage.nbr = ific;
+  cmd->fmt_maillage = ecs_pre__type_format(cmd->fic_maillage, cle_fmt);
 
   *argpos = iarg - 1;
 }
@@ -954,16 +922,23 @@ ecs_loc_cmd__initialise(void)
   /* Initialisations */
   /*=================*/
 
+  cmd->fic_maillage                  = NULL;
+
   lng =   strlen(ECS_CMD_POST_CASE_DEFAULT) + 1;
   ECS_MALLOC(cmd->nom_cas, lng, char);
   strcpy(cmd->nom_cas, ECS_CMD_POST_CASE_DEFAULT);
 
-  cmd->liste_num_maillage            = NULL;
-  cmd->liste_fmt_maillage            = NULL;
-  cmd->liste_grp_maillage            = NULL;
+  cmd->nom_out                       = NULL;
 
-  cmd->liste_fic_maillage.val        = NULL;
-  cmd->liste_fic_maillage.nbr        = 0;
+  cmd->nbr_dump = 0;
+
+  cmd->n_num_maillage = 0;
+  cmd->num_maillage = NULL;
+  cmd->fmt_maillage = ECS_PRE_FORMAT_NUL;
+  cmd->grp_cel_section = false;
+  cmd->grp_cel_zone    = false;
+  cmd->grp_fac_section = false;
+  cmd->grp_fac_zone    = false;
 
 #if defined(HAVE_CGNS)
 
@@ -981,10 +956,6 @@ ecs_loc_cmd__initialise(void)
 
   cmd->correct_orient = false;
 
-  cmd->nbr_dump = 0;
-
-  cmd->sim_comm = false;
-
   return cmd;
 }
 
@@ -995,7 +966,6 @@ ecs_loc_cmd__initialise(void)
 static void
 ecs_loc_cmd__aff_config(ecs_cmd_t  *cmd)
 {
-  size_t           ific;
   time_t           date;
 
 #if !defined(PATH_MAX)
@@ -1152,10 +1122,7 @@ ecs_loc_cmd__aff_config(ecs_cmd_t  *cmd)
 
   printf("  ");
   ecs_print_padded_str(_("Mesh file"), 19);
-  printf(" : %s\n", cmd->liste_fic_maillage.val[0]);
-
-  for (ific = 1; ific < cmd->liste_fic_maillage.nbr; ific++)
-    printf("  %-*s   %s\n", 19, "", cmd->liste_fic_maillage.val[ific]);
+  printf(" : %s\n", cmd->fic_maillage);
 
   printf("\n");
 }
@@ -1258,37 +1225,18 @@ ecs_cmd__lit_arg(int    argc,
                  char  *argv[])
 {
   int        iarg;
-  size_t     ific;
   size_t     lng;
-  bool       bool_cmd_option_case;
-  bool       bool_cmd_option_cwd;
-  bool       bool_cmd_option_help;
-  bool       bool_cmd_option_input_file;
-  bool       bool_cmd_option_mesh_file;
-  bool       bool_cmd_option_output_file;
-  bool       bool_cmd_option_ncs_file;
-  bool       bool_cmd_option_parall;
-  bool       bool_cmd_option_verif;
-  bool       bool_cmd_option_version;
+  bool       bool_cmd_option_case = false;
+  bool       bool_cmd_option_cwd = false;
+  bool       bool_cmd_option_help = false;
+  bool       bool_cmd_option_mesh_file = false;
+  bool       bool_cmd_option_output_file = false;
+  bool       bool_cmd_option_version = false;
+  bool       bool_no_write = false;
 
   ecs_cmd_t  *cmd;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  /*-----------------*/
-  /* Initialisations */
-  /*-----------------*/
-
-  bool_cmd_option_case        = false;
-  bool_cmd_option_input_file  = false;
-  bool_cmd_option_cwd         = false;
-  bool_cmd_option_help        = false;
-  bool_cmd_option_mesh_file   = false;
-  bool_cmd_option_output_file = false;
-  bool_cmd_option_parall      = false;
-  bool_cmd_option_ncs_file    = false;
-  bool_cmd_option_verif       = false;
-  bool_cmd_option_version     = false;
 
   /*----------------------------------------*/
   /* Initialisation des options de commande */
@@ -1365,22 +1313,16 @@ ecs_cmd__lit_arg(int    argc,
 
       /* 1 argument optionnel : nombre n d'elements affiches en echo */
 
-      if (argc -1 > iarg && strncmp(argv[iarg + 1], "-", 1)) {
-
+      if (argc -1 > iarg && strncmp(argv[iarg + 1], "-", 1))
         cmd->nbr_dump = (ecs_int_t) atoi(argv[++iarg]);
 
-      }
     }
-    else if (!strcmp (ECS_CMD_OPTION_NULL_COMM, argv[iarg])) {
+    else if (!strcmp (ECS_CMD_OPTION_NULL_COMM, argv[iarg]))
+      bool_no_write = true;
 
-      cmd->sim_comm = true;
-
-    }
     else if (!strcmp(ECS_CMD_OPTION_HELP_1, argv[iarg]) ||
-             !strcmp(ECS_CMD_OPTION_HELP, argv[iarg])) {
-
+             !strcmp(ECS_CMD_OPTION_HELP, argv[iarg]))
       bool_cmd_option_help = true;
-    }
 
 #if defined(HAVE_CGNS)
 
@@ -1436,11 +1378,12 @@ ecs_cmd__lit_arg(int    argc,
                                     &iarg);
     }
 
-    else if (!strcmp (ECS_CMD_OPTION_OUTPUT_FILE, argv[iarg])) {
+    else if (!strcmp (ECS_CMD_OPTION_LOG_FILE, argv[iarg])) {
 
-      const char * outfic;
-      char * outfic_err;
-      FILE * ptrfic;
+      int have_error = 0;
+      const char *outfic;
+      char *outfic_err;
+      FILE *ptrfic;
 
       if (bool_cmd_option_output_file == false)
         bool_cmd_option_output_file = true;
@@ -1450,7 +1393,7 @@ ecs_cmd__lit_arg(int    argc,
       if (argc - 1 > iarg && strncmp(argv[iarg + 1], "-", 1))
         outfic = argv[++iarg];
       else
-        outfic = ECS_CMD_OUTFILE_NAME_DEFAULT;
+        outfic = ECS_CMD_LOGFILE_NAME_DEFAULT;
 
       ECS_MALLOC(outfic_err, strlen(outfic) + strlen(".err") + 1, char);
 
@@ -1458,14 +1401,15 @@ ecs_cmd__lit_arg(int    argc,
 
 #if defined(HAVE_DUP2)
       if ((ptrfic = freopen(outfic, "w", stdout)) == NULL ||
-          dup2(fileno(ptrfic), fileno(stderr)) == -1) {
+          dup2(fileno(ptrfic), fileno(stderr)) == -1)
+        have_error = 1;
 #else
       if (freopen(outfic, "w", stdout) == NULL ||
-          freopen(outfic_err, "w", stderr) == NULL) {
+          freopen(outfic_err, "w", stderr) == NULL)
+        have_error = 1;
 #endif
-
+      if (have_error) {
         ecs_loc_cmd__aff_titre(argc, argv);
-
         ecs_error(__FILE__, __LINE__, errno,
                   _("It is impossible to redirect the standard output "
                     "to file:\n%s"), outfic);
@@ -1473,16 +1417,32 @@ ecs_cmd__lit_arg(int    argc,
 
       ECS_FREE(outfic_err);
     }
-    else if (!strcmp (ECS_CMD_OPTION_ORIENT_CORREC, argv[iarg])) {
 
+    else if (   !strcmp (ECS_CMD_OPTION_OUTPUT_FILE_1, argv[iarg])
+             || !strcmp (ECS_CMD_OPTION_OUTPUT_FILE, argv[iarg])) {
+
+      const char *outfic;
+
+      if (cmd->nom_out != NULL)
+        ecs_loc_cmd__aff_opt_en_double(argc, argv, argv[iarg]);
+
+      if (argc - 1 > iarg && strncmp(argv[iarg + 1], "-", 1))
+        outfic = argv[++iarg];
+      else
+        outfic = ECS_CMD_OUTFILE_NAME_DEFAULT;
+
+      ECS_MALLOC(cmd->nom_out, strlen(outfic) + 1, char);
+
+      strcpy(cmd->nom_out, outfic);
+
+    }
+
+    else if (!strcmp (ECS_CMD_OPTION_ORIENT_CORREC, argv[iarg]))
       cmd->correct_orient = true;
 
-    }
-    else if (!strcmp (ECS_CMD_OPTION_VERSION, argv[iarg])) {
-
+    else if (!strcmp (ECS_CMD_OPTION_VERSION, argv[iarg]))
       bool_cmd_option_version = true;
 
-    }
     else {
 
       ecs_loc_cmd__aff_titre(argc, argv);
@@ -1493,6 +1453,7 @@ ecs_cmd__lit_arg(int    argc,
                 _("Option \"%s\" is not recognized.\n"), argv[iarg]);
 
     }
+
   } /* Fin : boucle sur les arguments */
 
   /*---------------------------------------------------------------*/
@@ -1501,15 +1462,11 @@ ecs_cmd__lit_arg(int    argc,
 
   ecs_loc_cmd__aff_titre(argc, argv);
 
-  /*
-    Si l'on a lu un fichier de commandes, on a recopié argc et argv,
-    que l'on peut libérer maintenant.
-  */
-
-  if (bool_cmd_option_input_file == true) {
-    for (iarg = 0; iarg < argc; iarg++)
-      ECS_FREE(argv[iarg]);
-    ECS_FREE(argv);
+  if (cmd->nom_out == NULL && bool_no_write == false) {
+    ECS_MALLOC(cmd->nom_out,
+               strlen(ECS_CMD_OUTFILE_NAME_DEFAULT) + 1,
+               char);
+    strcpy(cmd->nom_out, ECS_CMD_OUTFILE_NAME_DEFAULT);
   }
 
   /*-----------------------------------------*/
@@ -1537,7 +1494,7 @@ ecs_cmd__lit_arg(int    argc,
   /* Verification que les donnees necessaires ont ete fournies */
   /*-----------------------------------------------------------*/
 
-  if (cmd->liste_fic_maillage.nbr == 0) {
+  if (cmd->fic_maillage == NULL) {
 
     ecs_loc_cmd__aff_aide();
 
@@ -1555,10 +1512,9 @@ ecs_cmd__lit_arg(int    argc,
   /* Verification que le fichier de maillage existe */
   /*------------------------------------------------*/
 
-  for (ific = 0; ific < cmd->liste_fic_maillage.nbr; ific++)
-    ecs_loc_cmd__teste_exist_fic(cmd->liste_fic_maillage.val[ific],
-                                 _("Mesh file \"%s\" "
-                                   "is not accessible.\n%s"));
+  ecs_loc_cmd__teste_exist_fic(cmd->fic_maillage,
+                               _("Mesh file \"%s\" "
+                                 "is not accessible.\n%s"));
 
   /*---------------------------------------------------*/
   /* Affichage de la configuration du cas de lancement */
@@ -1577,8 +1533,6 @@ ecs_cmd__lit_arg(int    argc,
 ecs_cmd_t *
 ecs_cmd__detruit(ecs_cmd_t  *cmd)
 {
-  size_t  ific;
-
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   assert(cmd != NULL);
@@ -1589,18 +1543,13 @@ ecs_cmd__detruit(ecs_cmd_t  *cmd)
   if (cmd->nom_cas != NULL)
     ECS_FREE(cmd->nom_cas);
 
-  for (ific = 0; ific < cmd->liste_fic_maillage.nbr; ific++)
-    ECS_FREE(cmd->liste_fic_maillage.val[ific]);
+  if (cmd->nom_out != NULL)
+    ECS_FREE(cmd->nom_out);
 
-  if (cmd->liste_fic_maillage.nbr != 0) {
+  ECS_FREE(cmd->fic_maillage);
 
-    ECS_FREE(cmd->liste_fic_maillage.val);
-
-    ECS_FREE(cmd->liste_num_maillage);
-    ECS_FREE(cmd->liste_fmt_maillage);
-    ECS_FREE(cmd->liste_grp_maillage);
-
-  }
+  if (cmd->n_num_maillage > 0)
+    ECS_FREE(cmd->num_maillage);
 
 #if defined(HAVE_CGNS)
   if (cmd->post_cgns != NULL)

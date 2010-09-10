@@ -369,8 +369,8 @@ class domain(base_domain):
         self.result_suffix = None
 
         self.restart_input_dir = None
-        self.preprocess_output_in = None
-        self.partition_output_in = None
+        self.mesh_input = None
+        self.partition_input = None
 
         # Default executable
 
@@ -382,10 +382,10 @@ class domain(base_domain):
         if mesh_dir is not None:
             self.mesh_dir = os.path.expanduser(mesh_dir)
 
-        if type(meshes) == tuple or type(meshes) == list:
+        if type(meshes) == list:
             self.meshes = meshes
         else:
-            self.meshes = (meshes,)
+            self.meshes = [meshes,]
         self.reorient = reorient
 
         # Partition options
@@ -438,10 +438,8 @@ class domain(base_domain):
         base_domain.set_case_dir(self, case_dir)
 
         self.restart_input_dir = os.path.join(self.data_dir, 'restart')
-        self.preprocess_output_in = os.path.join(self.data_dir,
-                                                 'preprocessor_output')
-        self.partition_output_in = os.path.join(self.data_dir,
-                                                'PARTITION_OUTPUT')
+        self.mesh_input = os.path.join(self.data_dir, 'mesh_input')
+        self.partition_input = os.path.join(self.data_dir, 'partition_input')
 
     #---------------------------------------------------------------------------
 
@@ -625,6 +623,9 @@ class domain(base_domain):
                 err_str = 'Preprocessing stage is asked but no mesh is given'
                 raise RunCaseError(err_str)
 
+            if (type(mesh) == tuple):
+                mesh = mesh[0]
+
             mesh = os.path.expanduser(mesh)
 
             if os.path.isabs(mesh):
@@ -668,7 +669,7 @@ class domain(base_domain):
 
     def copy_preprocessor_output_data(self):
         """
-        Copy preprocessor_output file to the execution directory,
+        Copy or link mesh_input file or directory to the execution directory,
         required both for the partitioner and the solver.
         """
 
@@ -677,10 +678,9 @@ class domain(base_domain):
         elif not (self.exec_partition or self.exec_solver):
             return
 
-        if self.preprocess_output_in != None:
-            self.symlink(self.preprocess_output_in,
-                         os.path.join(self.exec_dir, 'preprocessor_output'),
-                         'file')
+        if self.mesh_input != None:
+            self.symlink(self.mesh_input,
+                         os.path.join(self.exec_dir, 'mesh_input'))
         else:
             err_str = 'Error: no path name given for link to: ' + target
             raise RunCaseError(err_str)
@@ -697,8 +697,8 @@ class domain(base_domain):
 
         if self.n_procs < 2:
             self.exec_partition = False
-        elif self.exec_partition == False and self.partition_output_in != None:
-            partition = os.path.join(self.partition_output_in,
+        elif self.exec_partition == False and self.partition_input != None:
+            partition = os.path.join(self.partition_input,
                                      'domain_number_' + str(self.n_procs))
             if os.path.isfile(partition):
                 self.symlink(partition)
@@ -767,35 +767,70 @@ class domain(base_domain):
         if self.exec_preprocess == False:
             return
 
-        # Build command
-
-        cmd = os.path.join(cs_config.dirs.bindir, 'cs_preprocess')
-        for m in self.meshes:
-            cmd += ' --mesh ' + os.path.basename(m)
-
-        if self.reorient:
-            cmd += ' --reorient'
-
-        cmd += ' --log'
-
-        # Run command
+        # Switch to execution directory
 
         cur_dir = os.path.realpath(os.getcwd())
         if cur_dir != self.exec_dir:
             os.chdir(self.exec_dir)
 
-        retcode = run_command(cmd)
+        mesh_id = None
 
-        if retcode != 0:
-            err_str = \
-                'Error running the preprocessor.\n' \
-                'Check the preprocessor.log file for details.\n\n'
-            sys.stderr.write(err_str)
+        if len(self.meshes) > 1:
+            mesh_id = 0
+            destdir = 'mesh_input'
+            if not os.path.isdir(destdir):
+                os.mkdir(destdir)
+            else:
+                list = os.listdir(destdir)
+                for f in list:
+                    os.remove(os.path.join(destdir,f))
 
-            self.exec_partition = False
-            self.exec_solver = False
+        # Run once per mesh
 
-            self.error = 'preprocess'
+        for m in self.meshes:
+
+            # Build command
+
+            cmd = os.path.join(cs_config.dirs.bindir, 'cs_preprocess')
+
+            if (type(m) == tuple):
+                cmd += ' --mesh ' + os.path.basename(m[0])
+                for opt in m[1:]:
+                    cmd += ' ' + opt
+
+            else:
+                cmd += ' --mesh ' + os.path.basename(m)
+
+            if self.reorient:
+                cmd += ' --reorient'
+
+            if (mesh_id != None):
+                mesh_id += 1
+                cmd += ' --log preprocessor_%02d.log' % (mesh_id)
+                cmd += ' --out ' + os.path.join('mesh_input',
+                                                'mesh_%02d.log' % (mesh_id))
+            else:
+                cmd += ' --log'
+                cmd += ' --out mesh_input'
+
+            # Run command
+
+            retcode = run_command(cmd)
+
+            if retcode != 0:
+                err_str = \
+                    'Error running the preprocessor.\n' \
+                    'Check the preprocessor.log file for details.\n\n'
+                sys.stderr.write(err_str)
+
+                self.exec_partition = False
+                self.exec_solver = False
+
+                self.error = 'preprocess'
+
+                break
+
+        # Revert to initial directory
 
         if cur_dir != self.exec_dir:
             os.chdir(cur_dir)
@@ -808,6 +843,9 @@ class domain(base_domain):
         """
         Tests if the partitioner is available and partitioning is defined.
         """
+
+        if (self.exec_partition == False or self.partition_n_procs == None):
+            return
 
         partitioner = os.path.join(cs_config.dirs.bindir, 'cs_partition')
         if not os.path.isfile(partitioner):
@@ -829,6 +867,16 @@ class domain(base_domain):
                 'It should contain the number of processors for which a\n' \
                 'partition is required, or a list of such numbers.\n'
             raise RunCaseError(err_str)
+
+        if os.path.isdir(os.path.join(self.exec_dir, 'mesh_input')):
+            w_str = \
+                'Warning: mesh_input is a directory\n\n' \
+                'The Kernel must be run to concatenate its contents\n' \
+                ' before graph-based partitioning is available.\n\n' \
+                'Partitioning by a space-filling curve will be used.\n\n'
+            sys.stderr.write(w_str)
+            self.exec_partition = False
+            self.partition_n_procs = None
 
     #---------------------------------------------------------------------------
 
@@ -977,18 +1025,27 @@ class domain(base_domain):
 
         dir_files = os.listdir(self.exec_dir)
 
-        # Copy log file first
+        # Copy log file(s) first
 
-        f = os.path.join(self.exec_dir, 'preprocessor.log')
-        if os.path.isfile(f):
-            self.copy_result(f)
+        if len(self.meshes) == 1:
+            f = os.path.join(self.exec_dir, 'preprocessor.log')
+            if os.path.isfile(f):
+                self.copy_result(f)
+        else:
+            mesh_id = 0
+            for m in self.meshes:
+                mesh_id += 1
+                f = os.path.join(self.exec_dir,
+                                 'preprocessor_%02d.log' % (mesh_id))
+                if os.path.isfile(f):
+                    self.copy_result(f)
 
         # copy output if required
 
         if not self.exec_solver:
-            f = os.path.join(self.exec_dir, 'preprocessor_output')
-            if os.path.isfile(f):
-                self.copy_result(f)
+            f = os.path.join(self.exec_dir, 'mesh_input')
+            if os.path.isfile(f) or os.path.isdir(f):
+                self.copy_result(f, 'mesh_output')
 
     #---------------------------------------------------------------------------
 
@@ -1013,7 +1070,7 @@ class domain(base_domain):
         if not self.exec_solver:
 
             part_files = fnmatch.filter(dir_files, 'domain_number_*')
-            self.copy_results_to_dir(part_files, 'PARTITION_OUTPUT')
+            self.copy_results_to_dir(part_files, 'partition_output')
 
     #---------------------------------------------------------------------------
 
@@ -1071,6 +1128,10 @@ class domain(base_domain):
         post_list = fnmatch.filter(dir_files, '*.ensight')
         post_list.extend(fnmatch.filter(dir_files, '*.med'))
         post_list.extend(fnmatch.filter(dir_files, '*.cgns'))
+
+        # Retrieve output mesh if available.
+
+        self.copy_result('mesh_output')
 
         # Retrieve postprocessor output.
 

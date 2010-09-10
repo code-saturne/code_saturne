@@ -102,7 +102,7 @@ cs_user_mesh_input(void)
 
   /* Read input mesh with no modification */
   {
-    cs_preprocessor_data_add_file("input_mesh", 0, NULL, NULL);
+    cs_preprocessor_data_add_file("mesh_input/mesh_01", 0, NULL, NULL);
   }
 
   /* Add same mesh with transformations */
@@ -113,7 +113,7 @@ cs_user_mesh_input(void)
                                         {0., 1., 0., 0.},
                                         {0., 0., 1., 0.}};
 
-    cs_preprocessor_data_add_file("input_mesh",
+    cs_preprocessor_data_add_file("mesh_input/mesh_02",
                                   2, renames,
                                   transf_matrix);
   }

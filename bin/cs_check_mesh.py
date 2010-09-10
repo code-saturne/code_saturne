@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009  EDF
+#   Copyright (C) 2009-2010  EDF
 #
 #   The Code_Saturne Preprocessor is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -68,13 +68,15 @@ def run_check(opts):
 
     for o in ('-h', '--help'):
         if o in opts:
-            cmd = cmd + " " + str(o)
+            cmd += " " + str(o)
             retval = run_command(cmd)
             return retval
 
     for o in opts:
-        cmd = cmd + " " + str(o)
-    cmd = cmd + " --ensight --case check_mesh"
+        cmd += " " + str(o)
+
+    cmd += " --out mesh_input"
+    cmd += " --ensight --case check_mesh"
     retval = run_command(cmd)
 
     os.chdir('check_mesh.ensight')
@@ -84,7 +86,7 @@ def run_check(opts):
     retval = 0
 
     cmd = os.path.join(cs_config.dirs.bindir, 'cs_solver')
-    cmd = cmd + " --quality --log 0"
+    cmd += " --quality --log 0"
     retval = run_command(cmd)
 
     dir_files = os.listdir('chr.ensight')
@@ -97,7 +99,7 @@ def run_check(opts):
     os.chdir(cur_dir)
 
 
-    os.remove('preprocessor_output')
+    os.remove('mesh_input')
 
     return retval
 

@@ -171,7 +171,7 @@ _aff_taille_maillage(const ecs_maillage_t *maillage)
 static ecs_maillage_t *
 _lit_maillage(const ecs_cmd_t *cmd)
 {
-  size_t           ific;
+  int              ific;
 
   ecs_maillage_t  *maillage = NULL;
   ecs_maillage_t  *maillage_lu = NULL;
@@ -182,26 +182,26 @@ _lit_maillage(const ecs_cmd_t *cmd)
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  for (ific = 0; ific < cmd->liste_fic_maillage.nbr; ific++) {
+  for (ific = 0; ific < cmd->n_num_maillage; ific++) {
 
     /* Chargement de la structure */
 
-    maillage_lu = ecs_pre__lit_maillage(cmd->liste_fic_maillage.val[ific],
-                                        cmd->liste_fmt_maillage[ific],
-                                        cmd->liste_num_maillage[ific],
-                                        cmd->liste_grp_maillage[ific*4    ],
-                                        cmd->liste_grp_maillage[ific*4 + 1],
-                                        cmd->liste_grp_maillage[ific*4 + 2],
-                                        cmd->liste_grp_maillage[ific*4 + 3]);
+    maillage_lu = ecs_pre__lit_maillage(cmd->fic_maillage,
+                                        cmd->fmt_maillage,
+                                        cmd->num_maillage[ific],
+                                        cmd->grp_cel_section,
+                                        cmd->grp_cel_zone,
+                                        cmd->grp_fac_section,
+                                        cmd->grp_fac_zone);
 
     /* Affichage des infos maillage */
 
     ECS_MALLOC(chaine,
-               strlen(titre) + strlen(cmd->liste_fic_maillage.val[ific]) + 1,
+               strlen(titre) + strlen(cmd->fic_maillage) + 1,
                char);
 
     strcpy(chaine, titre);
-    strcat(chaine, cmd->liste_fic_maillage.val[ific]);
+    strcat(chaine, cmd->fic_maillage);
 
     if (cmd->nbr_dump > 0) {
 
@@ -222,13 +222,13 @@ _lit_maillage(const ecs_cmd_t *cmd)
 
   } /* Fin : boucle sur les fichiers de maillage à lire */
 
-  if (cmd->liste_fic_maillage.nbr != 1 && cmd->nbr_dump > 0)
+  if (cmd->n_num_maillage > 1 && cmd->nbr_dump > 0)
     ecs_maillage__imprime(maillage,
                           nom_fic_dump,
                           cmd->nbr_dump,
                           "After concatenation of meshes from files");
 
-  if (cmd->liste_fic_maillage.nbr == 1)
+  if (cmd->n_num_maillage == 1)
     printf (_("\nDone reading mesh"
               "\n-----------------\n"));
   else
@@ -682,8 +682,7 @@ main(int    argc ,
                           "Before output for Kernel");
 
 
-  ecs_maillage_ncs__ecr(cmd->sim_comm,
-                        maillage);
+  ecs_maillage_ncs__ecr(cmd->nom_out, maillage);
 
 
   /*==========================================================================*/

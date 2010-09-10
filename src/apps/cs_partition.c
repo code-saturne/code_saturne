@@ -111,6 +111,7 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
+#include <bft_file.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
 #include <bft_timer.h>
@@ -617,10 +618,10 @@ _read_global_count(cs_io_t             *inp,
 
   /* Check data consistency */
 
-  if (header->n_location_vals != 0)
+  if (header->n_location_vals > 1)
     bft_error(__FILE__, __LINE__, 0,
               _("Section: \"%s\" of file \"%s\" has  %d values per\n"
-                "location where 0 were expected."),
+                "location where 0 or 1 were expected."),
               header->sec_name, cs_io_get_name(inp), header->n_location_vals);
 
   /* Ensure type of value matches */
@@ -2027,6 +2028,7 @@ main(int    argc,
   int  *n_ranks = NULL;
   int  *cell_part = NULL;
 
+  const char  input_file[] = "mesh_input";
   fvm_gnum_t  n_g_cells = 0;
   fvm_gnum_t  cell_range[2] = {0, 0};
   fvm_lnum_t  n_cells = 0;
@@ -2125,7 +2127,13 @@ main(int    argc,
 
   /* Read selected data */
 
-  _read_input("preprocessor_output",
+  if (bft_file_isdir(input_file))
+    bft_error(__FILE__, __LINE__, 0,
+              _("\"%s\" is a directory. Run the Kernel to concatenate\n"
+                "its contents into a single file before partitioning."),
+              input_file);
+
+  _read_input(input_file,
               no_perio,
               &n_g_cells,
               cell_range,

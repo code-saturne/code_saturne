@@ -134,14 +134,6 @@ ecs_famille__copie(ecs_famille_t  *this_famille);
 void
 ecs_famille__affiche(const ecs_famille_t  *this_fam);
 
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie le nombre et la liste des des pointeurs sur les noms
- *   des descripteurs de la famille donnée en argument
- *----------------------------------------------------------------------------*/
-
-ecs_tab_char_t
-ecs_famille__ret_nom(const ecs_famille_t  *this_fam);
-
 /*----------------------------------------------------------------------------*/
 
 #endif /* _ECS_FAMILLE_H_ */

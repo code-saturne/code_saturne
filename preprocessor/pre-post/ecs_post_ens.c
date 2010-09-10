@@ -339,9 +339,9 @@ ecs_post_ens__cree_cas(const char  *nom_cas,
 
     /* Préfixe des noms de fichiers */
 
-    ECS_MALLOC(cas_ens->prefixe_fic, strlen("chr") + 1, char);
+    ECS_MALLOC(cas_ens->prefixe_fic, strlen("mesh") + 1, char);
 
-    strcpy(cas_ens->prefixe_fic, "chr");
+    strcpy(cas_ens->prefixe_fic, "mesh");
 
     /* Cas du fichier ".case" (nom en majuscules) */
 
