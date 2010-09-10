@@ -67,7 +67,9 @@ elements) and may have structural non-conformities (hanging nodes).
 as shown on figure \ref{Fig_elements}:
 \begin{itemize}
 \item the Kernel module is the numerical solver
-\item the Preprocessor module is in charge of mesh import
+\item the Preprocessor module is in charge of mesh import,
+mesh joining (arbitrary interfaces), and definition of periodicity
+boundary conditions (translation and/or rotation)
 \item the Partitioner is in charge of optimizing domain decomposition
 for parallel computing (optional, but highly recommended for parallel
 performance)\\
@@ -636,9 +638,9 @@ the machine.\\
 %==================================
 \label{prg_executionmodes}%
 As explained before, \CS is composed of two main modules, the Preprocessor and the
-Kernel, and an optional Partitioner. The Preprocessor reads the meshes.
-The Partitioner optimizes domain decomposition for parallel runs.
-The resulting data is transfered to the Kernel through specific
+Kernel, and an optional Partitioner. The Preprocessor reads the meshes and
+performs the necessary joinings. The Partitioner optimizes domain decomposition
+for parallel runs. The resulting data is transfered to the Kernel through specific
 files, named \texttt{preprocessor\_output} and \texttt{domain\_number\_*}, where
 \texttt{*} is the number of processors used. In a standard calculation, the files
 are not copied from the temporary execution directory to the results directory,
@@ -826,7 +828,7 @@ Surface elements:  & triangles, quadrangles
 Volume elements:   & tetrahedra, prisms, hexahedra\\
 \hline
 Zone selection:    & element face references and volume sub-domains\\
-                   & (interpreted as numbered groups)\\
+                   & (interpreted as numbered colors)\\
 \hline
 Compatibility:     & all files of this type as long as the coordinate
                      system used is Cartesian and not cylindrical or
@@ -877,7 +879,7 @@ Surface elements:  & triangles, quadrangles\\
 \hline
 Volume elements:   & tetrahedra, prisms, hexahedra\\
 \hline
-Zone selection:    & colors (always) and named groups\\
+Zone selection:    & colors (systematic) and named groups\\
 \hline
 Compatibility:     & \ideas (\emph{Master Series} 5 to 9, \emph{NX Series} 10 to 12)
                      at least\\
@@ -928,8 +930,8 @@ test cases are thus not extensive in terms of functionality (especially
 when considering definition of descriptions), so support for this format
 is lightly tested.
 
-Currently, geometric entity numbers are converted to group numbers.
-This tends to lead to a large number of groups.
+Currently, geometric entity numbers are converted to ``color'' numbers.
+This tends to lead to a large number of colors.
 
 \smallskip \noindent
 \begin{tabular}[top]{|p{4.5cm}%
@@ -944,7 +946,7 @@ Surface elements:  & polygons\\
 Volume elements:   & polyhedra\\
 \hline
 Zone selection:    & face and cell sets\\
-                   & (interpreted as numbered groups)\\
+                   & (interpreted as numbered colors)\\
 \hline
 Compatibility:     & all files of this type ? (tested on purely polyhedral meshes)\\
 \hline
@@ -963,11 +965,11 @@ used by CGNS prior to the shift to HDF-5). libccmio comes with a version
 of ADF modified for performance, but also works with a standard version
 from CGNS.
 
-Currently, geometric entity numbers are converted to numbered groups,
+Currently, geometric entity numbers are converted to ``color'' numbers,
 with the corresponding names printed to the \pcs log. Depending on whether
 the names were generated automatically or set by the user, it would be
-preferable to use the original group names rather than base their
-names on their numbers.
+preferable to interpret such sets as named ``groups'' rather than numbered
+``colors''.
 
 The CCMIO library is distributed freely by CD-Adapco upon demand.
 
@@ -984,7 +986,7 @@ Surface elements:  & polygons\\
 Volume elements:   & polyhedra\\
 \hline
 Zone selection:    & named face and cell sets\\
-                   & (interpreted as numbered groups, with names appearing in log)\\
+                   & (interpreted as numbered colors, with names appearing in log)\\
 \hline
 Compatibility:     & all files of this type ? (tested on purely polyhedral meshes)\\
 \hline
@@ -1007,15 +1009,16 @@ elements to the volume mesh, using one \emph{part} per group. The volume
 mesh may also be separated into several \emph{parts} so as to identify
 different zones. As \emph{part} names may contain up to 80 characters,
 we do not transform them into groups (whose names could be unwieldy),
-so we simply convert their numbers to group names.
+so we simply interpret their number as a color.
 
 Also note that files produced by \harpoon may contain badly oriented
 prisms, so the \pcs orientation correction option
 (\texttt{--reorient})may need to be used. Meshes built by this tool also
 contain hanging nodes, with non-conforming elements sharing some vertices.
-Mesh joining must thus also be used, and is not activated automatically,
-as the user may prefer to specify which surfaces should be joined,
-and which ones should not (i.e. to conserve thin walls).
+The \texttt{--join --semi-conf} preprocessor option must thus be used.
+This option is not set automatically, as the user may prefer to specify
+which surfaces should be joined, and which ones should not (i.e. to
+conserve thin walls).
 
 \smallskip \noindent
 \begin{tabular}[top]{|p{4.5cm}%
@@ -1033,7 +1036,7 @@ Surface elements:  & triangles, quadrangles\\
 \hline
 Volume elements:   & tetrahedra, pyramids, prisms, hexahedra\\
 \hline
-Zone selection:    & part numbers interpreted as numbered groups\\
+Zone selection:    & part numbers interpreted as color numbers\\
 \hline
 Compatibility:     & All files of this type\\
 \hline
@@ -1060,17 +1063,17 @@ entity number. Using version 2, it is possible to associate an
 arbitrary number of labels with each element, but files produced
 by \gmsh use 2 labels, with the same meanings as with version 1.
 
-We chose to convert physical entity numbers to groups. It is possible
+We chose to convert physical entity numbers to colors. It is possible
 to build a mesh using \gmsh without defining any  physical entities
-(in which case all elements will belong to the same group, but the \gmsh
+(in which case all elements will have the same color, but the \gmsh
 documentation clearly says that geometric entities are to be used
 so as to group elementary entities having similar ``physical'' meanings.
 
-So as to obtain distinct groups with a mesh generated by \gmsh, it
+So as to obtain distinct colors with a mesh generated by \gmsh, it
 is thus necessary for the user to define physical entities.
 This requires an extra step, but allows for fine-grained control
-over the groups associated with the mesh, while using only elementary
-entities could lead to a high number of groups.
+over the colors associated with the mesh, while using only elementary
+entities could lead to a high number of colors.
 
 \smallskip \noindent
 \begin{tabular}[top]{|p{4.5cm}%
@@ -1084,7 +1087,7 @@ Surface elements:  & triangles, quadrangles\\
 \hline
 Volume elements:   & tetrahedra, pyramids, prisms, hexahedra\\
 \hline
-Zone selection:    & physical entity numbers interpreted as numbered groups\\
+Zone selection:    & physical entity numbers interpreted as color numbers\\
 \hline
 Compatibility:     & all files of this type\\
 \hline
@@ -1118,8 +1121,7 @@ parallel runs. Note that some libraries allowing direct \ensightg support
 do not necessarily support the whole format specification.
 Especially, VTK does not support material types, and has only recently
 added support for polyhedral elements in \ensightg files (interpreted
-as convex point sets in \paraview versions 2.4 to 2.8, and as true
-polyhedra starting with \paraview versions 2.10).
+as convex point sets, and not true polyhedra, but at least usable).
 Also, both \ensightg (8.2 and above) and VTK allow for automatic distribution,
 reducing the usefulness of pre-distributed meshes with per-processor files.
 
@@ -1129,8 +1131,8 @@ connectivity, so as a convention, we consider that surface or
 volume zones may only be considered to be part of the same mesh
 if the file defines vertex IDs (which we consider to be
 unique vertex labels). In this case, \emph{part} numbers
-are interpreted as group names. Without vertex IDs, only one part is read,
-and no groups are assigned.
+are interpreted as colors. Without vertex IDs, only one part is read,
+and no colors are assigned.
 
 \smallskip \noindent
 \begin{tabular}[top]{|p{4.5cm}%
@@ -1146,7 +1148,7 @@ Surface elements:  & triangles, quadrangles, polygons\\
 Volume elements:   & tetrahedra, pyramids, prisms, hexahedra, convex polyhedra\\
 \hline
 Zone selection:    & possibility of defining element materials (not used), or
-                     interpret part number as group name if vertex IDs are
+                     interpret part number as color number if vertex IDs are
                      given\\
 \hline
 Compatibility:     & files readable by \ensight 7.4 to 9.0, as well as tools
@@ -1201,7 +1203,7 @@ Zone selection:    & element families ({\it i.e.} colors and groups)\\
 Compatibility:     & all versions of \med 2.2 or 2.3 (only unstructured
                      nodal connectivity is supported)\\
 \hline
-Documentation:     & online documentation. Download link at \url{http://files.opencascade.com/Salome/Salome5.1.4/med-fichier_2.3.6.tar.gz}\\
+Documentation:     & online documentation. Download link at \url{http://files.opencascade.com/Salome/Salome5.1.2/med-fichier_2.3.5.tar.gz}\\
 \hline
 \end{tabular}
 
@@ -1294,6 +1296,63 @@ Documentation:     & See CGNS site: \url{http://www.cgns.org}\\
 \end{tabular}
 
 %==================================
+\subsubsection{Mesh meta-files}
+%==================================
+
+The \pcs allows use of text files (preferably with a {\tt .mesh} extension)
+describing a set of meshes and their transformations, in place of (or
+combined with) ``true'' mesh files. These meta-files are
+described here:
+
+Empty lines are ignored, and the \# character may be used to define
+comments (the part of a line following this character is ignored).
+
+One may request the reading of as many meshes as one needs, using
+for each mesh a section such as:
+
+\noindent
+\verb+read_mesh:+ {\it filename}
+
+or:
+
+\noindent
+\verb+read_mesh:+ {\it filename} {\tt <sub-options>}
+
+If this section type appears more than once, the corresponding meshes
+are automatically appended. If needed, a mesh meta-file may itself
+declare another meta-file as a mesh file.
+Possible sub-options associated with a file may be separated by commas,
+semicolumns, or spaces, and are of the following form:
+
+\noindent
+\begin{tabular}[top]{ p{2.5cm}%
+                     >{\PreserveBackslash\raggedright\hspace{0pt}}p{12.5cm} }
+{\tt format=}   & {format name (identical to command-line options)}\\
+{\tt num=}      & {mesh number (useful when a file contains multiple meshes)}\\
+{\tt grp\_cel=} & {{\tt <section} or {\tt zone>}, useful only for files in
+                    CGNS format}\\
+{\tt grp\_fac=} & {{\tt <section} or {\tt zone>}, useful only for files in
+                    CGNS format}\\
+\end{tabular}
+
+\smallskip
+It is also possible to define a geometric transformation to apply to a mesh,
+using a homogeneous coordinates transformation matrix (3 lines, 4 columns,
+with the 3 first columns describing a rotation/scaling factor,
+and the last column describing a translation. The corresponding section
+is as follows (values may be spread over several lines):
+
+\noindent
+\verb+transformation_matrix:+ $t_{11}$ $t_{12}$ $t_{13}$ $t_{14}$
+$t_{21}$ $t_{22}$ $t_{23}$ $t_{24}$ $t_{31}$ $t_{32}$ $t_{33}$ $t_{34}$\\
+
+Note that the order in which multiple meshes are declared defines the
+order in which they are read and appended, but the geometric transformation
+is only applied at the end (this is a description file, not a command file).
+If multiple transformations are needed, a hierarchy of mesh meta-files
+may be used.
+
+%==================================
 \subsubsection{Meshing tools and associated formats}
 %==================================
 
@@ -1315,11 +1374,13 @@ also possible, but has some limitations).
 
 The use of files of the ``Common Solver'' type\footnote{File type specifically
 developed for the early prototype versions of \CS (\texttt{tlc}) extension}
-is still in part possible but is deprecated. Such files are read directly
-from the Kernel, and this format is not handled by the launch
-scripts anymore. Many potentialities of \CS are not
+is still possible but is deprecated. Such files are read directly from the
+Kernel, without the \pcs.
+The variable SOLCOM must
+ be set to 1 in the launch scripts. Many potentialities of \CS are not
 usable with this file format (mesh joining with hanging nodes, periodicity,
 parallel computing, ...).
+For all the other formats, the \pcs must be used (SOLCOM=0).
 
 %==================================
 \subsubsection{Meshing remarks}
@@ -1347,6 +1408,45 @@ The main options are:
 used. The launch script automatically calls the Preprocessor with the option
 \texttt{-m \$MESH}, where \texttt{MESH} is the variable where the user has
 specified the different meshes to be used.
+
+\item \texttt{--join}: triggers the mesh joining functions. If nothing more is
+specified, every area of contact between two meshes will be joined together. The
+joining can be limited to certain selected faces. For instance, to join only
+the faces of colors 6 and 7, the full option will be \mbox{\texttt{--join --color
+6 7}}. These options are to be specified in the \texttt{COMMAND\_JOIN} variable in
+the launch script, to be automatically passed to the command line.
+
+\item \texttt{--perio}: triggers periodic boundary conditions. Two types of
+periodic boundaries are possible: translation or rotation (see
+\S\ref{prg_paralperio} for additional details). For the translation, the basic
+option line is \texttt{--perio --trans tx ty tz}\\
+where \texttt{tx}, \texttt{ty} and \texttt{tz} are the coordinates of the
+translation vector. For the rotation, there are two possibilities. The
+transformation can be defined with a rotation angle (in degrees, between -180
+and 180), a direction  and an
+invariant point\\
+\texttt{--perio --rota --angle a --dir dx dy dz --invpt px py pz}\\
+(with obvious notations), or by giving the rotation matrix and an invariant point\\
+\texttt{--perio --rota --matrix m11 m12 m13 m21 m22 m23 m31 m32 m33 --invpt px py
+pz}\\
+A rotation and a translation can be combined, by giving both \texttt{--rota} and
+\texttt{--trans} specifications. The translation will always be applied first,
+whatever the order in which the rotation and the translation have been given.\\
+The orientation of the transformations is not important since both the
+transformation and its inverse will be used to connect faces. Yet, when
+combining a translation and a rotation, the orientations given for both have to
+be consistent.\\
+It is possible (and usually recommended) to restrict the  search for periodic
+connections between faces to a certain group of faces, by adding selection
+arguments like \texttt{--color}. It is also possible to specify up to 3
+independent periodicities, simply by repeating the \texttt{--perio} option. Below
+is given a example of the option line for a triple periodicity (the \verb+\+
+indicates the continuation of the command line):\\
+\texttt{--perio --trans -10.2 0 0 --color 2} \verb+\+\\
+\texttt{--perio --rota --angle 90 --dir 0 0 1 --invpt 0 0 0 --color 3 4} \verb+\+\\
+\texttt{--perio --trans 0 1 0 --rota --matrix 1 0  0 0 0 -1 0 1 0 --invpt 0 0 -0.2}\\
+This option is to be specified in the \texttt{COMMAND\_PERIO} variable in
+the launch script, to be automatically passed to the command line.
 
 \item \texttt{--reorient}: try to re-orient badly-oriented cells
 if it is necessary to compensate for mesh-generation software
@@ -1710,9 +1810,10 @@ followings:
 
 \begin{list}{-}{}
 \item Analysis environment: definition of the calculation directories
-      (STUDY, CASE), mesh file(s), coupling with \syrthes, stand-alone
-      execution of the Preprocessor module (used by the Interface to get
-      the colors of the boundary faces).
+      (STUDY, CASE), mesh file(s), periodicity, coupling with \syrthes,
+      stand-alone execution of the
+      Preprocessor module (used by the Interface to get the colors of the boundary
+      faces).
 
 \item Thermophysical models: physical model, ALE mobile mesh features,
       turbulence model, thermal model,
@@ -1960,7 +2061,10 @@ may thus lead to reduced performance.
 
 The \pcs module of \CS reads the
 mesh file(s) (under any supported format) and translates the necessary
-information into a Kernel input file.
+information into a Kernel input file. Mesh joining and domain partitioning for parallel
+calculations are done at this stage. In case of periodic boundary
+conditions, the \pcs module also identifies the boundary faces that are
+related through periodicity and generates the corresponding connectivity.
 
 The executable of the \pcs module is \texttt{cs\_preprocess},
 and the most useful options and sub-options are described briefly here.
@@ -2079,15 +2183,22 @@ By default, the \pcs does not generate any post-processor output.
 By adding \texttt{--ensight}, \texttt{--med}, or \texttt{--cgns} to
 the command-line arguments, the output of the mesh to the indicated format
 is provoked. It is possible to generate output to different formats
-simultaneously.
+simultaneously. Note that we will obtain additional surface meshes
+corresponding to the calculation domain boundary, to faces joined
+or modified by joinings or periodicity, etc. Note also that
+periodic faces are not considered to be part of the domain boundary.
+\footnote{Periodicity is interpreted as a ``geometric'' condition
+rather than a classical boundary condition.}
 
-We consider 3 types of output: the volume mesh, informational meshes
-(such as reoriented elements), and meshes outlining zones with errors.
+We consider 4 types of output: the volume mesh (output before possible
+joinings), the boundary mesh, informational meshes (such as faces
+stemming from or modified by a joining of periodicity, or
+selected interior faces), and meshes outlining to zones with errors.
 By default, all types of meshes are output. If one or several of
-the two filtering sub-options is used , only the meshes of the
+the three filtering sub-options is used , only the meshes of the
 requested types will be output, as well as meshes corresponding to
 zones with errors (non-filterable). The filtering sub-options
-are: \texttt{--volume} and \texttt{--info}.
+are: \texttt{--volume}, \texttt{--boundary}, and \texttt{--info}.
 
 One may also optionally avoid outputting polygons or polyhedra
 by adding the \texttt{--discard-poly} sub-option.
@@ -2096,11 +2207,199 @@ in visualization tools or limitations of the CGNS 2 format.
 In this case, the post-processing output will be incomplete,
 but at least readable.
 
+In the case of \emph{EnSight Gold} output, we may use the
+\texttt{--simple} sub-option to avoid splitting the output in
+several \emph{parts} corresponding to different attributes
+(colors and groups) borne by this mesh.
+
 Still in the case of the \emph{EnSight Gold} output, we may
 force the output in text mode using the \texttt{--text} sub-option,
 or force binary output to ``big-endian'' variant using the
 \texttt{--big-endian} sub-option. By default, the output is native
 binary.
+
+Finally, in the case of output in the \emph{MED} format, we may
+force the conversion of attributes (colors) to groups using
+the \texttt{--color-to-group} sub-option.
+
+\subsubsection{Faces selection\label{sec:optpcs:select}}
+
+Selection of faces occurs at several levels, especially for conforming
+joining.
+
+It is also possible to select a set of interior faces bearing attributes
+(colors or groups) for verification purposes using the option
+\texttt{--int-face}. The \pcs prints the number of interior faces
+matching a selection criterion, and if in addition post-processing
+output is activated, a surface mesh corresponding to the selected faces
+will be generated.
+
+\pcs selection criteria are more limited than those
+used by th kernel, and are generated using the following sub-options:
+
+\noindent
+\begin{tabular}{l l}
+\texttt{--color} $c_1$ $c_2$ ... $c_n$~ &
+to select faces of the indicated color numbers\\
+\texttt{--group} $g_1$ $g_2$ ... $g_n$~ &
+to select faces of the groups named\\
+\texttt{--invsel} &
+to use the complement of the indicated colors and groups\\
+\end{tabular}
+
+The same selection sub-options are used for conforming joining, periodicity,
+and interior faces verification. In the case of joining and periodicity,
+the selection is automatically restricted to boundary faces, while
+in the case of interior face verification, it is restricted to
+interior faces bearing attributes.
+
+For example, to select all interior faces of mesh \texttt{example.des}
+which bear an attribute (color or group), but are not of color 2 and do not
+belong to group ``inlet'', with output of an \emph{Ensight Gold} part
+and with no kernel output (using \texttt{-sc}), we use the following
+command line (the \verb=\= character marks line continuation):
+
+\noindent
+\begin{tabular}{l l l}
+\texttt{cs\_preprocess} & \texttt{-m example.des -sc --ensight } \verb=\= \\
+         & \texttt{--int-face --group entree --color 2 --invsel}\\
+\end{tabular}
+
+\subsubsection{Joining of non-conforming meshes\label{sec:optpcs:join}}
+
+Conforming joining of possibly non-conforming meshes is one of the
+\pcs's main functions. To activate it, use the \texttt{--join} or
+\texttt{-j} command-line options, possibly followed by face selection
+criteria and sub-options controlling associated tolerance parameters.
+
+For a simple mesh, it is rarely useful to specify face selection
+criteria, as joining is sufficiently automated to detect which faces
+may actually be joined. For a more complex mesh, or a mesh with thin
+walls which we want to avoid transforming into interior faces, it is
+recommended to filter boundary faces that may be joined by using
+face selection sub-arguments (see \S\ref{sec:formats_in}). This has the
+additional advantage of reducing the number of faces to test for
+in the intersection/overlap search, and thus reduced to time
+required by the joining algorithm.
+
+One may also modify tolerance criteria using 2 sub-options:
+
+\noindent
+\begin{tabular}[top]{p{3.0cm}%
+                     >{\PreserveBackslash\raggedright\hspace{0pt}}p{12.0cm}}
+\texttt{--fraction} $r$  &
+assigns value $r$ (where $0 < r < 0,49$) to the maximum
+intersection distance multiplier ($0,1$ by default). The maximum
+intersection distance for a given vertex is based on the length of
+the shortest incident edge, multiplied by $r$. The maximum intersection
+at a given point along an edge is interpolated from that at its
+vertices, as shown on the left of figure \ref{fig_join_tolerance}; \\
+\texttt{--plane} $c$ &
+assigns the minimum cosine between normals for two faces to be
+considered coplanar ($0,8$ by default, which corresponds to almost 37°);
+this parameter is used in the second stage of the algorithm, to
+reconstruct conforming faces, as shown on the right of figure
+\ref{fig_join_tolerance}.\\
+\end{tabular}
+
+\begin{figure}[hp]
+\centerline{
+\includegraphics*[width=14cm]{join_tolerance}}
+\caption{Maximum intersection tolerance and faces normal angle
+\label{fig_join_tolerance}}
+\end{figure}
+
+In practice, we are sometimes led to increase the maximum intersection
+distance multiplier to $0.2$ or even $0.3$ when joining curved surfaces,
+so that all intersection are detected. As this influences merging
+of vertices and thus simplification of reconstructed faces, but also
+deformation of ``lateral'' faces, it is recommended only to modify it
+if necessary. As for the \texttt{--plane} sub-option, its use has
+only been necessary on a few meshes up to now, and always in the
+sense of reducing the tolerance (i.e. bringing the minimum cosine closer
+to 1) so that face reconstruction does not try to generate faces
+from initial faces on different surfaces.
+
+As an example, to join faces with color $2$ of the mesh \texttt{mesh.des}
+with an intersection distance multiplier of  $0.15$, then joining all
+remaining joinable boundary faces with a default parameter of $0.1$,
+we may use the following command:
+
+\texttt{cs\_preprocess -m mesh.des -j --fraction 0.15 --color 2 -j}
+
+In cases where any two faces to join always have at least one common vertex
+(which is the case with meshes containing hanging nodes generated by
+tools such as \harpoon), we may use the \texttt{--semi-conf}
+sub-option, for a much faster edge intersection search than with
+the usual algorithm.
+
+\subsubsection{Periodicity\label{sec:optpcs:period}}
+
+Handling of periodicity is based on an extension of conforming joining,
+as shown on figure \ref{fig_join_periodic}. It is thus not necessary
+that periodic faces be conforming (though it usually leads to better
+mesh quality). All sub-options relative to conforming joining of
+non-conforming faces also apply to periodicity. Note also that
+once pre-processed, 2 periodic faces have the same orientation
+(possibly adjusted by periodicity of rotation).
+
+\begin{figure}[hp]
+\centerline{
+\includegraphics*[height=8cm]{join_periodic}}
+\caption{Matching of periodic faces
+\label{fig_join_periodic}}
+\end{figure}
+
+The sub-option for a translation-type periodicity is \texttt{--trans} followed
+by the three translation vector components $(tx, ty, tz)$.
+The sub-option for a rotation-type periodicity is \texttt{--rota}, 
+which must be completed either by:
+
+\noindent
+\texttt{--angle} $\alpha$ \texttt{--dir} $dx$ $dy$ $dz$
+
+\noindent
+where $\alpha$ is the rotation angle in degrees and $(dx, dy, dz)$ defines
+the rotation axis (using the trigonometric orientation), or by:
+
+\noindent
+\texttt{--matrix} $m11$ $m12$ $m13$ $m21$ $m22$ $m23$ $m31$ $m32$ $m33$
+
+\noindent
+where 
+\begin{math}
+  \left( \begin{smallmatrix}
+     m_{11} & m_{12} & m_{13} \\ m_{21} & m_{22} & m_{23} \\ m_{31} & m_{32} & m_{33}
+  \end{smallmatrix} \right)
+\end{math}
+ defines the rotation matrix.
+
+In either case, we may define an invariant point different from $(0, 0, 0)$
+by adding the rotation sub-option \texttt{--invpt} $px$ $py$ $pz$.
+A translation and a rotation may be combined: in this case, the composite
+transformation is always $R \circ T$, independently of the order in which
+the translation and rotation are defined.
+
+The orientation of the transformations has no importance (but in the
+case of a composite transformation $R \circ T$, $R$ and $T$ must be
+consistent).
+As with joining, it is recommended to filter boundary faces to process
+using a selection criterion. As many periodicities may be built as desired,
+as long as boundary faces are present. One a periodicity is handled,
+faces having periodic matches do not appear as boundary faces, but as
+interior faces, and are thus not available anymore for other
+periodicities.
+
+We finish with the example of a periodicity of rotation of $90$ degrees around
+an axis of direction $(0, 0, 1)$ passing through $(1, 0, 0)$,
+for faces of group ``perio\_1'' and with a joining tolerance of $20\%$ (the
+\verb=\= character marks line continuation):
+
+\noindent
+\begin{tabular}{l l l}
+\texttt{--perio} & \texttt{--rota --angle 90 --dir 0 0 1 --invpt 1 0 0} \verb=\= \\
+ & \texttt{--fraction 0.2 --group perio\_1}\\
+\end{tabular}
 
 \subsubsection{Element orientation correction\label{sec:optpcs:orient}}
 
@@ -2219,11 +2518,14 @@ indices being incremented appropriately.
 probably not be unique when appending multiple meshes.}
 
 At this stage, volume elements are sorted by type, and the fluid domain
-post-processing output is generated if required.
+post-processing output is generated if required. Conforming joining,
+which may transform cells into general polyhedra only occurs
+after this. This allows bypassing a limitation of most post-processing
+tools, which do not handle polyhedral elements.
 \emph{It is possible to require the simultaneous output with
 multiple formats.}
 
-In general, groups assigned to vertices are ignored.
+In general, colors or groups assigned to vertices are ignored.
 selections are thus based on faces or cells. with tools such
 as \simail, faces of volume elements may be referenced directly, while
 with \ideas or SALOME, a layer of surface elements bearing the required
@@ -2232,8 +2534,8 @@ that a layer of surface elements is added (i.e. when reading a \simail
 mesh, additional faces are generated to bear cell face colors.
 When building the descending connectivity, all faces with the
 same topology are merged: the initial presence of two layers of identical
-surface elements belonging to different groups would thus lead to
-a calculation mesh with faces belonging to two groups.
+surface elements bearing different colors would thus lead to
+a calculation mesh with faces bearing two colors.
 
 \subsection{Files passed to the Kernel\label{sec:pcs:mode_comm}}
 
@@ -2242,8 +2544,9 @@ binary file, using ``big endian'' data representation, named
 \texttt{preprocessor\_output}.
 
 When using the \pcs for mesh verification, data for the Kernel
-is usually not needed. In this case, the \texttt{--no-write} option may be
-avoid creating a {\tt preprocessor\_output} file.
+is usually not needed. In this case, the \texttt{-sc} option may be
+used to simulate output, without creation of a {\tt preprocessor\_output}
+file.
 
 %==================================
 \section{Partitioning for parallel runs\label{sec:parall}}
@@ -2260,7 +2563,11 @@ This separation leads to extra work for the Kernel, which must
 redistribute data read in the  {\tt preprocessor\_output} file
 based on the associated partitioning, but avoids requiring
 re-running the \pcs whenever running on a different number of
-files.
+files. This useful mainly for large files (20 to 100 million
+cells, for which running the \pcs may require several hours and
+a machine with a very large memory capacity. Simple domain
+partitioning requires much less time, and in general slightly
+less memory than the \pcs.
 
 Without partitioning (for example if neither \metis nor
 \scotch is available, or the partitioner has not been run
@@ -3394,8 +3701,14 @@ in the standard cases:
       reserved (automatic timeout on the idle processors that will stop the
       whole calculation).
 
-\item Periodicity is defined through the Graphical Interface or using
-      the \texttt{usperio} user subroutine.
+
+\item Periodicity is activated through the Graphical Interface or by completing
+      the \texttt{COMMAND\_PERIO} of the launch script \texttt{runcase}.
+      The transformation
+      allowing to pass from a boundary to the other one must be defined
+      (the direction does not matter) and the set of periodic faces
+      should be (optional but strongly advised) marked out (for instance
+      by means of a color).
 
 \item Periodicity is compatible with parallelism.
 
@@ -3504,10 +3817,6 @@ If the user wants an operation to be done by only one processor (for
 
 
 {\bf Some notes about periodicity}
-
-Note that periodic faces are not part of the domain boundary:
-periodicity is interpreted as a ``geometric'' condition
-rather than a classical boundary condition.
 
 Some particular points should be reminded:
 \begin{list}{-}{}
@@ -4060,31 +4369,6 @@ case. This function of
 \texttt{code\_saturne~create} can be deactivated with
 the option \texttt{--nogui} (useful if the user knows that he will not
 use the interface).
-
-%==================================
-\subsection{Selection of mesh inputs: \textmd{\texttt{cs\_user\_mesh\_input}}}
-%==================================
-
-\noindent
-\textit{Subroutine called only during the calculation initialisation.}
-
-This C function may be used to select which mesh input files
-are read, and apply optional coordinate transformations or group renumberings
-to them. By default, the input read is a file named \texttt{preprocessor\_output},
-but if this function is used, any file may be selected, and the same
-file may be read multiple times (applying a different coordinate transformation
-each time).
-All inputs read through this function are automatically concatenated, and
-may be later joined using the mesh joining options.
-
-Geometric transformations are defined using a homogeneous coordinates
-transformation matrix. Such a matrix has 3 lines and 4 columns, with the
-3 first columns describing a rotation/scaling factor, and the last column
-describing a translation. A 4th line is implicit, containing zeroes
-off-diagonal, and 1 on the diagonal. The advantages of this representation
-is that any rotation/translation/scaling combination may be expressed
-by matrix multiplication, while simple rotations or translations
-may still be defined easily.
 
 %==================================
 \subsection{Management of boundary conditions: \textmd{\texttt{usclim}}}
@@ -5602,76 +5886,6 @@ This subroutine is called in \texttt{usray4}, user subroutine from the
 radiation module.
 
 %==================================
-\subsection{Define mesh faces joining: \textmd{\texttt{usjoin}}}
-%==================================
-
-\noindent
-\textit{Subroutine called only during the calculation initialisation.}
-
-This subroutine may be used to define mesh joinings. It allows access
-to advanced joining parameters (such as search tree memory/speed
-tuning parameters) not accessible through the GUI.
-
-It is possible (and usually recommended) to restrict the operation to
-faces to those which are ``probably'' joined,
-using appropriate selection criteria.
-
-The most useful parameter to \texttt{defjoi} is the \texttt{fract}
-parameter, which assigns value $r$ (where $0 < r < 0,49$) to the maximum
-intersection distance multiplier ($0,1$ by default). The maximum
-intersection distance for a given vertex is based on the length of
-the shortest incident edge, multiplied by $r$. The maximum intersection
-at a given point along an edge is interpolated from that at its
-vertices, as shown on the left of figure \ref{fig_join_tolerance}; \\
-
-The \texttt{--plane} parameter also defined the maximum angle between
-face normals up to which two faces are considered coplanar (25° by default);
-this parameter is used in the second stage of the algorithm, to
-reconstruct conforming faces, as shown on the right of figure
-\ref{fig_join_tolerance}.\\
-
-\begin{figure}[hp]
-\centerline{
-\includegraphics*[width=14cm]{join_tolerance}}
-\caption{Maximum intersection tolerance and faces normal angle
-\label{fig_join_tolerance}}
-\end{figure}
-
-In practice, we are sometimes led to increase the maximum intersection
-distance multiplier to $0.2$ or even $0.3$ when joining curved surfaces,
-so that all intersection are detected. As this influences merging
-of vertices and thus simplification of reconstructed faces, but also
-deformation of ``lateral'' faces, it is recommended only to modify it
-if necessary. As for the \texttt{plane} parameter, its use has
-only been necessary on a few meshes up to now, and always in the
-sense of reducing the tolerance (i.e. bringing the minimum cosine closer
-to 1) so that face reconstruction does not try to generate faces
-from initial faces on different surfaces.
-
-%==================================
-\subsection{Define mesh faces periodicity: \textmd{\texttt{usperi}}}
-%==================================
-
-\noindent
-\textit{Subroutine called only during the calculation initialisation.}
-
-This subroutine may be used to define mesh periodicities. It allows access
-to advanced joining parameters (such as search tree memory/speed
-tuning parameters) not accessible through the GUI.
-
-Handling of periodicity is based on an extension of conforming joining,
-as shown on figure \ref{fig_join_periodic}. It is thus not necessary
-that periodic faces be conforming (though it usually leads to better
-mesh quality). All options relative to conforming joining of
-non-conforming faces also apply to periodicity. Note also that
-once pre-processed, 2 periodic faces have the same orientation
-(possibly adjusted by periodicity of rotation).
-
-It is possible (and usually recommended) to restrict the  search for periodic
-connections between faces to those which are ``probably'' periodic,
-using appropriate selection criteria.
-
-%==================================
 \subsection{Modification of the mesh geometry: \textmd{\texttt{usmodg}}}
 %==================================
 
@@ -5854,12 +6068,11 @@ the structures being shared in memory). It is possible to define as many
 alias' as are required for a "part", but an alias cannot be defined for another alias.
 
 It is not possible to mix cells and faces in the same ``part'' (most of
-the post-processing tools being perturbed by such a case)\footnote{actually,
-faces adjacent to selected cells and belonging to face or cell groups
-may be selected when the \texttt{indgrp} of \texttt{pstcma} is set to 1,
-so as to maintain group information, but those faces will
-only be written for formats supporting this (such as MED),
-and will only bear groups, not variable fields}. If the user
+the post-processing tools being perturbed by such a case)\footnote{in thr
+future, it will probably be possible to automatically add faces bearing
+group or attribute characteristics to a cell mesh, but those faces will
+only be written for formats supporting this (such as MED 2.3),
+and will only bear attributes, not variable fields}. If the user
 defines lists of faces and cells simultaneously, only the higher dimension
 entities (the cells) will be taken into account.
 
