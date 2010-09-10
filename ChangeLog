@@ -1,4 +1,14 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added bft_file_listdir() function.
+  A correction in group sorting is also applied to fvm_group.c
+  modified files:
+    configure.ac
+    po/fr.po
+    src/bft/bft_file.c
+    src/bft/bft_file.h
+    src/fvm/fvm_group.c
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Added output of default volume and boundary mesh groups to EnSight format.
   This requires the usage of additional cases, so as to avoid time dependency
   issues and group name clashes between surface and volume parts.

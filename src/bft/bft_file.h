@@ -595,6 +595,24 @@ bft_file_isreg(const char  *const name);
 int
 bft_file_isdir(const char  *const name);
 
+/*
+ * List files inside a directory.
+ *
+ * The array returned must be freed by the caller using BFT_FREE,
+ * as well as the individual entries in the array.
+ *
+ * parameters:
+ *   pathname <-- name of directory.
+ *
+ * returns:
+ *   an array of file names in a directory. The last entry is set to NULL.
+ *   If no means to list the directory or an error occured, the return
+ *    value is simply NULL.
+ */
+
+char **
+bft_file_listdir(const char  *pathname);
+
 /* Returns the error handler associated with the bft_file_...() functions.
  *
  * returns:

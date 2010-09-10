@@ -59,12 +59,17 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
 #if defined(HAVE_SYS_TYPES_H) && defined(HAVE_SYS_STAT_H)
 #include <sys/stat.h>
 #include <sys/types.h>
 #endif /* defined(HAVE_SYS_TYPES_H) && defined(HAVE_SYS_STAT_H) */
+
+#if defined(HAVE_DIRENT_H)
+#include <dirent.h>
+#endif
 
 #if defined(WIN32) || defined(_WIN32)
 #include <io.h>
@@ -484,6 +489,24 @@ _bft_file_read(void              *const rec,
   }
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Compare strings (qsort function).
+ *
+ * parameters:
+ *   a <-> pointer to first string
+ *   b <-> pointer to second string
+ *
+ * returns:
+ *   result of strcmp() on strings
+ *----------------------------------------------------------------------------*/
+
+static int
+_bft_file_compare_names(const void  *a,
+                        const void  *b)
+{
+  return strcmp(*((const char **)a), *((const char **)b));
 }
 
 /*============================================================================
@@ -1598,6 +1621,61 @@ bft_file_isdir(const char  *const name)
 #endif /* defined(HAVE_SYS_STAT_H) */
 
   return retval;
+}
+
+/*!
+ * \brief List files inside a directory.
+ *
+ * The array returned must be freed by the caller using BFT_FREE,
+ * as well as the individual entries in the array.
+ *
+ * \param [in] pathname name of directory.
+ *
+ * \returns an array of file names in a directory. The last entry is
+ *          set to NULL. If no means to list the directory or an error
+ *          occured, the return value is simply NULL.
+ */
+
+char **
+bft_file_listdir(const char  *pathname)
+{
+  char **dirnames = NULL;
+
+#if defined(HAVE_SYS_TYPES_H) && defined(HAVE_DIRENT_H)
+
+  struct dirent *ent;
+  int n_ent = 0;
+  DIR *d = opendir(pathname);
+
+  if (d == NULL) {
+    _bft_file_error(__FILE__, __LINE__, 0,
+                    _("Error opening directory \"%s\":\n\n"
+                      "  %s"), pathname, strerror(errno));
+    return NULL;
+  }
+
+  /* Counting pass */
+
+  while(readdir(d) != NULL)
+    n_ent += 1;
+
+  rewinddir(d);
+
+  BFT_MALLOC(dirnames, n_ent + 1, char *);
+
+  n_ent = 0;
+  while((ent = readdir(d)) != NULL) {
+    BFT_MALLOC(dirnames[n_ent], strlen(ent->d_name) + 1, char);
+    strcpy(dirnames[n_ent], ent->d_name);
+    n_ent += 1;
+  }
+  dirnames[n_ent] = NULL;
+
+  qsort(dirnames, n_ent, sizeof(char *), &_bft_file_compare_names);
+
+#endif /* defined(HAVE_SYS_TYPES_H) && defined(HAVE_DIRENT_H) */
+
+  return dirnames;
 }
 
 /*!

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-10 13:45+0200\n"
+"POT-Creation-Date: 2010-09-10 13:54+0200\n"
 "PO-Revision-Date: 2010-07-29 19:13+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -87,7 +87,7 @@ msgstr ""
 msgid "Failure to reallocate \"%s\" (%lu bytes)"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:473 src/bft/bft_file.c:1089 src/fvm/fvm_file.c:423
+#: src/apps/cs_io_dump.c:473 src/bft/bft_file.c:1112 src/fvm/fvm_file.c:423
 #: preprocessor/util/ecs_file.c:1294
 #, c-format
 msgid ""
@@ -110,8 +110,8 @@ msgid "Error reading file \"%s\""
 msgstr "Erreur à la lecture du fichier \"%s\""
 
 #: src/apps/cs_io_dump.c:524 src/apps/cs_io_dump.c:536
-#: src/apps/cs_io_dump.c:543 src/apps/cs_io_dump.c:557 src/bft/bft_file.c:895
-#: src/bft/bft_file.c:908 src/bft/bft_file.c:915 src/bft/bft_file.c:930
+#: src/apps/cs_io_dump.c:543 src/apps/cs_io_dump.c:557 src/bft/bft_file.c:918
+#: src/bft/bft_file.c:931 src/bft/bft_file.c:938 src/bft/bft_file.c:953
 #: src/fvm/fvm_file.c:527 src/fvm/fvm_file.c:539 src/fvm/fvm_file.c:546
 #: src/fvm/fvm_file.c:560 preprocessor/util/ecs_file.c:1079
 #: preprocessor/util/ecs_file.c:1092 preprocessor/util/ecs_file.c:1099
@@ -123,12 +123,12 @@ msgid ""
 "  %s"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:545 src/bft/bft_file.c:917 src/fvm/fvm_file.c:548
+#: src/apps/cs_io_dump.c:545 src/bft/bft_file.c:940 src/fvm/fvm_file.c:548
 #: preprocessor/util/ecs_file.c:1101
 msgid "sizeof(off_t) > sizeof(long) but fseeko() not available"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:612 src/bft/bft_file.c:785 src/fvm/fvm_file.c:616
+#: src/apps/cs_io_dump.c:612 src/bft/bft_file.c:808 src/fvm/fvm_file.c:616
 #: preprocessor/util/ecs_file.c:960
 #, c-format
 msgid ""
@@ -153,7 +153,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:720 src/bft/bft_file.c:645 src/fvm/fvm_file.c:354
+#: src/apps/cs_io_dump.c:720 src/bft/bft_file.c:668 src/fvm/fvm_file.c:354
 #: preprocessor/util/ecs_file.c:768 preprocessor/util/ecs_file.c:774
 #, c-format
 msgid ""
@@ -198,7 +198,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/apps/cs_io_dump.c:787 src/bft/bft_file.c:674 src/fvm/fvm_file.c:382
+#: src/apps/cs_io_dump.c:787 src/bft/bft_file.c:697 src/fvm/fvm_file.c:382
 #: preprocessor/util/ecs_file.c:805 preprocessor/util/ecs_file.c:818
 #: preprocessor/util/ecs_file.c:895
 #, c-format
@@ -6295,7 +6295,7 @@ msgstr ""
 "paroi.\n"
 "Vérifier l''existence et le nom du fichier suite: %s \n"
 
-#: src/bft/bft_file.c:159 preprocessor/util/ecs_file.c:170
+#: src/bft/bft_file.c:164 preprocessor/util/ecs_file.c:170
 #, c-format
 msgid ""
 "Error reading binary file \"%s\":\n"
@@ -6306,12 +6306,12 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:162 preprocessor/util/ecs_file.c:173
+#: src/bft/bft_file.c:167 preprocessor/util/ecs_file.c:173
 #, c-format
 msgid "Error: reading from closed file \"%s\""
 msgstr "Erreur : lecture à partir d'un fichier fermé \"%s\""
 
-#: src/bft/bft_file.c:164 preprocessor/util/ecs_file.c:175
+#: src/bft/bft_file.c:169 preprocessor/util/ecs_file.c:175
 #, c-format
 msgid ""
 "Error writing binary file \"%s\":\n"
@@ -6322,7 +6322,7 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:167 preprocessor/util/ecs_file.c:178
+#: src/bft/bft_file.c:172 preprocessor/util/ecs_file.c:178
 #, c-format
 msgid ""
 "Error reading Fortran binary file \"%s\":\n"
@@ -6333,7 +6333,7 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:170 preprocessor/util/ecs_file.c:181
+#: src/bft/bft_file.c:175 preprocessor/util/ecs_file.c:181
 #, c-format
 msgid ""
 "Error writing Fortran binary file \"%s\":\n"
@@ -6344,16 +6344,16 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:173 preprocessor/util/ecs_file.c:184
+#: src/bft/bft_file.c:178 preprocessor/util/ecs_file.c:184
 msgid "A record is too large to be represented in this format (i.e. > 2GB)."
 msgstr ""
 
-#: src/bft/bft_file.c:265 preprocessor/util/ecs_file.c:230
+#: src/bft/bft_file.c:270 preprocessor/util/ecs_file.c:230
 #: preprocessor/util/ecs_file.c:247
 msgid "Premature end of file."
 msgstr ""
 
-#: src/bft/bft_file.c:311 preprocessor/util/ecs_file.c:355
+#: src/bft/bft_file.c:316 preprocessor/util/ecs_file.c:355
 #, c-format
 msgid ""
 "Error reading line %d of text file \"%s\":\n"
@@ -6364,7 +6364,7 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:315 preprocessor/util/ecs_file.c:359
+#: src/bft/bft_file.c:320 preprocessor/util/ecs_file.c:359
 #, c-format
 msgid ""
 "Error reading text file \"%s\":\n"
@@ -6375,7 +6375,7 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:369 preprocessor/util/ecs_file.c:433
+#: src/bft/bft_file.c:374 preprocessor/util/ecs_file.c:433
 #, c-format
 msgid ""
 "Error reading Fortran binary file \"%s\":\n"
@@ -6384,7 +6384,7 @@ msgid ""
 "  read record size:     %lu\n"
 msgstr ""
 
-#: src/bft/bft_file.c:728 preprocessor/util/ecs_file.c:881
+#: src/bft/bft_file.c:751 preprocessor/util/ecs_file.c:881
 #, c-format
 msgid ""
 "Error flushing file \"%s\":\n"
@@ -6395,7 +6395,7 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:829 preprocessor/util/ecs_file.c:1004
+#: src/bft/bft_file.c:852 preprocessor/util/ecs_file.c:1004
 #, c-format
 msgid ""
 "Error rewinding file \"%s\":\n"
@@ -6406,14 +6406,14 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:878 preprocessor/util/ecs_file.c:1062
+#: src/bft/bft_file.c:901 preprocessor/util/ecs_file.c:1062
 #, c-format
 msgid ""
 "Invalid offset argument \"%d\" setting position in file\n"
 "\"%s\""
 msgstr ""
 
-#: src/bft/bft_file.c:1085 preprocessor/util/ecs_file.c:1290
+#: src/bft/bft_file.c:1108 preprocessor/util/ecs_file.c:1290
 #, c-format
 msgid ""
 "Error reading line %d of file \"%s\":\n"
@@ -6424,21 +6424,21 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:1102 preprocessor/util/ecs_file.c:1314
+#: src/bft/bft_file.c:1125 preprocessor/util/ecs_file.c:1314
 #, c-format
 msgid ""
 "Premature end of file \"%s\" at line %d\n"
 "\n"
 msgstr ""
 
-#: src/bft/bft_file.c:1106 preprocessor/util/ecs_file.c:1318
+#: src/bft/bft_file.c:1129 preprocessor/util/ecs_file.c:1318
 #, c-format
 msgid ""
 "Premature end of file \"%s\"\n"
 "\n"
 msgstr ""
 
-#: src/bft/bft_file.c:1146 preprocessor/util/ecs_file.c:286
+#: src/bft/bft_file.c:1169 preprocessor/util/ecs_file.c:286
 #, c-format
 msgid ""
 "Error writing to text file \"%s\":\n"
@@ -6449,13 +6449,13 @@ msgstr ""
 "\n"
 "  %s"
 
-#: src/bft/bft_file.c:1154 src/bft/bft_file.c:1310
+#: src/bft/bft_file.c:1177 src/bft/bft_file.c:1333
 #: preprocessor/util/ecs_file.c:303 preprocessor/util/ecs_file.c:1476
 #, c-format
 msgid "Error writing to closed file \"%s\""
 msgstr "Erreur à l'écriture dans le fichier fermé \"%s\""
 
-#: src/bft/bft_file.c:1456 preprocessor/util/ecs_file.c:1622
+#: src/bft/bft_file.c:1479 preprocessor/util/ecs_file.c:1622
 #, c-format
 msgid ""
 "Failure to create directory \"%s\":\n"
@@ -6463,30 +6463,41 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/bft/bft_file.c:1479 preprocessor/util/ecs_file.c:1645
+#: src/bft/bft_file.c:1502 preprocessor/util/ecs_file.c:1645
 msgid ""
 "  A similarly named file or directory exists and its status is\n"
 "  not available."
 msgstr ""
 
-#: src/bft/bft_file.c:1484 src/bft/bft_file.c:1497
+#: src/bft/bft_file.c:1507 src/bft/bft_file.c:1520
 #: preprocessor/util/ecs_file.c:1650 preprocessor/util/ecs_file.c:1663
 msgid "  A similarly named file exists and is not a directory."
 msgstr ""
 
-#: src/bft/bft_file.c:1538 preprocessor/util/ecs_file.c:1704
+#: src/bft/bft_file.c:1561 preprocessor/util/ecs_file.c:1704
 #, c-format
 msgid ""
 "Error querying information for file:\n"
 "%s."
 msgstr ""
 
-#: src/bft/bft_file.c:1583 preprocessor/util/ecs_file.c:1749
+#: src/bft/bft_file.c:1606 preprocessor/util/ecs_file.c:1749
 #, c-format
 msgid ""
 "Error querying information for directory:\n"
 "%s."
 msgstr ""
+
+#: src/bft/bft_file.c:1652
+#, fuzzy, c-format
+msgid ""
+"Error opening directory \"%s\":\n"
+"\n"
+"  %s"
+msgstr ""
+"Erreur à l'ouverture du fichier \"%s\" :\n"
+"\n"
+"  %s"
 
 #: src/bft/bft_mem.c:411 src/bft/bft_mem.c:526 preprocessor/util/ecs_mem.c:299
 #: preprocessor/util/ecs_mem.c:417

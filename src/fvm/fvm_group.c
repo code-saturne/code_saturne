@@ -112,7 +112,7 @@ static int
 _compare_names(const void  *a,
                const void  *b)
 {
-  return strcmp((const char *)a, (const char *)b);
+  return strcmp(*((const char **)a), *((const char **)b));
 }
 
 #if defined(HAVE_MPI)

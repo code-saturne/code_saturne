@@ -554,7 +554,7 @@ AM_CONDITIONAL(HAVE_GUI, [test "x$have_gui" = "xyes"])
 #------------------------------------------------------------------------------
 
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/utsname.h sys/stat.h stddef.h])
+AC_CHECK_HEADERS([sys/types.h sys/utsname.h sys/stat.h dirent.h stddef.h])
 AC_CHECK_HEADERS([malloc.h unistd.h fcntl.h sys/types.h sys/signal.h])
 AC_CHECK_HEADERS([sys/procfs.h sys/sysinfo.h sys/resource.h])
 
