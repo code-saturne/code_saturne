@@ -1,4 +1,9 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI now builds correct MESHES[] structure when mesh import options are used.
+  modified files:
+    gui/Pages/BatchRunningModel.py
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Preprocessor only creates visualization files if necessary.
   Creation of EnSight cases or MED files is delayed until a mesh
   is really exported. This allows the GUI mesh checking functionnality

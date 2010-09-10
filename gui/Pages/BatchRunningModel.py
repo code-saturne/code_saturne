@@ -37,14 +37,14 @@ This module modify the "runcase" script file
 #-------------------------------------------------------------------------------
 
 import sys, unittest
-import os, sys, string, types, re
+import os, os.path, sys, string, types, re
 
 #-------------------------------------------------------------------------------
 # Library modules import
 #-------------------------------------------------------------------------------
 
 import Base.Toolbox as Tool
-from Pages.SolutionDomainModel import SolutionDomainModel
+from Pages.SolutionDomainModel import MeshModel, SolutionDomainModel
 from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 from Pages.ProfilesModel import ProfilesModel
@@ -259,10 +259,30 @@ class BatchRunningModel(Model):
                 #raise ValueError, "No preprocessor heading!"
 
         sdm = SolutionDomainModel(self.case)
+        mm = MeshModel()
         prm = ProfilesModel(self.case)
 
         # MESHES
-        self.dicoValues['MESHES'] = sdm.getMeshList()
+        self.dicoValues['MESHES'] = []
+        for m in sdm.getMeshList():
+            l_args = []
+            extension = mm.getMeshExtension(m)
+            if not extension in mm.getExtensionFileList():
+                l_args.append('--format ' + sdm.getMeshFormat(m))
+            n = sdm.getMeshNumber(m)
+            if n != None:
+                l_args.append('--num ' + str(n))
+            gc = sdm.getMeshGroupCells(m)
+            if gc != 'off':
+                l_args.append('--grp-cel ' + gc)                
+            gf = sdm.getMeshGroupFaces(m)
+            if gf != 'off':
+                l_args.append('--grp-fac ' + gf)                
+            if len(l_args) >  0:
+                l_args.insert(0, m)
+                self.dicoValues['MESHES'].append(tuple(l_args))
+            else:
+                self.dicoValues['MESHES'].append(m)
 
         self.dicoValues['REORIENT'] = sdm.getReorientCommand()
         self.dicoValues['PARAMETERS'] = os.path.basename(self.case['xmlfile'])
