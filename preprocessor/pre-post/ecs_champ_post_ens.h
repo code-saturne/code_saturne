@@ -94,11 +94,8 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
                              size_t                 n_vertices,
                              const ecs_coord_t      vertex_coords[],
                              ecs_champ_t           *champ_def,
-                             const int              elt_fam[],
-                             const ecs_famille_t   *famille_tete,
                              const ecs_tab_int_t   *tab_elt_typ_geo,
                              ecs_post_ens_t        *cas_ens);
-
 
 /*----------------------------------------------------------------------------
  *  Fonction écrivant le champ à sortir au format Ensight

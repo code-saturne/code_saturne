@@ -79,7 +79,6 @@
 
 typedef struct {
 
-  char        *nom_maillage;   /* Nom du maillage associé */
   char        *nom_part;       /* Nom du "part" EnSight */
   int          num_part;       /* Numéro du "part" */
   ecs_int_t    nbr_som;        /* Nombre de sommets associés */

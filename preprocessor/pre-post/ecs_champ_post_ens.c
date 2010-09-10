@@ -101,7 +101,6 @@
 static void
 ecs_loc_post_ens__ecr_coord(const ecs_file_t   *fic,
                             size_t              nbr_som,
-                            const ecs_int_t    *indice_som,
                             const ecs_coord_t  *coo_som)
 {
   int  icoo;
@@ -117,26 +116,10 @@ ecs_loc_post_ens__ecr_coord(const ecs_file_t   *fic,
 
       while (isom_deb < nbr_som ) {
 
-        if (indice_som == NULL) {
-
-          for (isom = isom_deb, cpt_som = 0;
-               isom < nbr_som && cpt_som < 4096;
-               isom++, cpt_som++)
-            cnv_val[cpt_som] = coo_som[isom*3 + icoo];
-
-        }
-        else {
-
-          for (isom = isom_deb, cpt_som = 0;
-               isom < nbr_som && cpt_som < 4096;
-               isom++) {
-
-            if (indice_som[isom] > -1)
-              cnv_val[cpt_som++] = coo_som[isom*3 + icoo];
-
-          }
-
-        }
+        for (isom = isom_deb, cpt_som = 0;
+             isom < nbr_som && cpt_som < 4096;
+             isom++, cpt_som++)
+          cnv_val[cpt_som] = coo_som[isom*3 + icoo];
 
         ecs_file_write(cnv_val, sizeof(float), cpt_som, fic);
 
@@ -151,18 +134,9 @@ ecs_loc_post_ens__ecr_coord(const ecs_file_t   *fic,
 
     for (icoo = 0; icoo < 3; icoo++) {
 
-      if (indice_som == NULL) {
-        for (isom = 0; isom < nbr_som; isom++)
-          ecs_file_printf(fic, "%12.5E\n",
-                          (float)coo_som[isom * 3 + icoo]);
-      }
-      else {
-        for (isom = 0; isom < nbr_som; isom++) {
-          if (indice_som[isom] > -1)
-            ecs_file_printf(fic, "%12.5E\n",
-                            (float)coo_som[isom*3 + icoo]);
-        }
-      }
+      for (isom = 0; isom < nbr_som; isom++)
+        ecs_file_printf(fic, "%12.5E\n",
+                        (float)coo_som[isom * 3 + icoo]);
 
     }
 
@@ -319,6 +293,10 @@ ecs_loc_post_ens__ecr_val_champ(const ecs_file_t  *fic,
   }
 }
 
+/*============================================================================
+ *                             Fonctions publiques
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
  *  Fonction qui écrit les connectivités nodales des éléments
  *   selon leur type géometrique
@@ -326,23 +304,16 @@ ecs_loc_post_ens__ecr_val_champ(const ecs_file_t  *fic,
  *  Les élements doivent avoir été triés suivant leur type géometrique
  *----------------------------------------------------------------------------*/
 
-static void
-ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
-                                 const char            *nom_part,
-                                 size_t                 n_vertices,
-                                 const ecs_coord_t      vertex_coords[],
-                                 ecs_champ_t           *champ_def,
-                                 const ecs_tab_int_t   *liste_filtre,
-                                 const ecs_tab_int_t   *tab_elt_typ_geo,
-                                 bool                   ecrire_parent,
-                                 ecs_post_ens_t        *cas_ens)
+void
+ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
+                             size_t                 n_vertices,
+                             const ecs_coord_t      vertex_coords[],
+                             ecs_champ_t           *champ_def,
+                             const ecs_tab_int_t   *tab_elt_typ_geo,
+                             ecs_post_ens_t        *cas_ens)
 {
   size_t     ielt;
-  size_t     ielt_loc;
   size_t     ival;
-  size_t     ival_deb;
-  size_t     ival_fin;
-  size_t     isom;
 
   size_t     cpt_elt;
   size_t     cpt_elt_fin;
@@ -350,7 +321,6 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
   size_t     cpt_buf;
   size_t     nbr_elt;
   size_t     nbr_som;
-  size_t     nbr_som_tot;
   int        elt_typ_ref;
   int        marqueur_fin;
   size_t     nbr_elt_typ_geo;
@@ -363,8 +333,6 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
   ecs_file_t * fic_imp;
 
   ecs_int_32_t  connect_buf[4096];
-
-  ecs_int_t  * indice_som = NULL;
 
   ecs_post_ens_part_t  * this_part = NULL;
 
@@ -385,10 +353,8 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
   cas_ens->tab_part[cas_ens->nbr_part - 1] = this_part;
 
   this_part->num_part = cas_ens->nbr_part;
-  ECS_MALLOC(this_part->nom_maillage, strlen(nom_maillage) + 1, char);
-  strcpy(this_part->nom_maillage, nom_maillage);
-  ECS_MALLOC(this_part->nom_part, strlen(nom_part) + 1, char);
-  strcpy(this_part->nom_part, nom_part);
+  ECS_MALLOC(this_part->nom_part, strlen(nom_maillage) + 1, char);
+  strcpy(this_part->nom_part, nom_maillage);
 
   this_part->lst_parents = NULL;
 
@@ -401,7 +367,7 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
 
   ecs_champ__regle_en_pos(champ_def);
 
-  nbr_som_tot = n_vertices;
+  nbr_som = n_vertices;
   def_pos_tab = champ_def->pos;
   def_val_tab = champ_def->val;
 
@@ -414,41 +380,6 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
 
   /* Écriture du nombre de sommets */
 
-  if (liste_filtre == NULL) {
-
-    nbr_som = nbr_som_tot;
-
-  }
-  else {
-
-    ECS_MALLOC(indice_som, nbr_som_tot, ecs_int_t);
-
-    for (isom = 0; isom < nbr_som_tot; isom++)
-      indice_som[isom] = -1;
-
-    nbr_som = 0;
-
-    for (ielt_loc = 0; ielt_loc < liste_filtre->nbr; ielt_loc++) {
-
-      ielt = liste_filtre->val[ielt_loc];
-
-      for (ival = def_pos_tab[ielt    ] - 1;
-           ival < def_pos_tab[ielt + 1] - 1;
-           ival++) {
-        isom = def_val_tab[ival] - 1;
-        if (indice_som[isom] == -1)
-          indice_som[isom] = 0;
-      }
-    }
-
-    for (isom = 0; isom < nbr_som_tot; isom++) {
-      if (indice_som[isom] > -1) {
-        indice_som[isom] = nbr_som++;
-      }
-    }
-
-  }
-
   ecs_post_ens__ecr_chaine(fic_imp, "coordinates");
   ecs_post_ens__ecr_int(fic_imp, (int)nbr_som);
 
@@ -460,8 +391,7 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
   /* On est en dimension 3 */
 
   ecs_loc_post_ens__ecr_coord(fic_imp,
-                              nbr_som_tot,
-                              indice_som,
+                              nbr_som,
                               vertex_coords);
 
   /* Écriture des éléments */
@@ -472,11 +402,7 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
   this_part->nom_typ_ele = NULL;
 
   cpt_elt = 0;
-
-  if (liste_filtre == NULL)
-    nbr_elt = champ_def->nbr;
-  else
-    nbr_elt = liste_filtre->nbr;
+  nbr_elt = champ_def->nbr;
 
   cpt_elt_tot = 0;
 
@@ -493,18 +419,7 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
     while (tab_elt_typ_geo->val[elt_typ_ref] == 0)
       elt_typ_ref++;
 
-    if (liste_filtre == NULL) {
-      cpt_elt_fin = cpt_elt + tab_elt_typ_geo->val[elt_typ_ref];
-    }
-    else {
-      cpt_elt_fin = cpt_elt;
-      cpt_elt_tot += tab_elt_typ_geo->val[elt_typ_ref];
-      for (ielt_loc = cpt_elt;
-           (   ielt_loc < liste_filtre->nbr
-            && liste_filtre->val[ielt_loc] < (ecs_int_t)cpt_elt_tot);
-           ielt_loc++)
-        cpt_elt_fin++;
-    }
+    cpt_elt_fin = cpt_elt + tab_elt_typ_geo->val[elt_typ_ref];
 
     nbr_elt_typ_geo = cpt_elt_fin - cpt_elt;
 
@@ -575,48 +490,23 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
 
       /* Nombre de sommets par élément */
 
-      if (liste_filtre == NULL) {
-        for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
-          connect_buf[cpt_buf++] = def_pos_tab[ielt + 1] - def_pos_tab[ielt];
-          if (cpt_buf == 4096 || ielt + 1 == cpt_elt_fin) {
-            ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
-            cpt_buf = 0;
-          }
-        }
-      }
-      else {
-        for (ielt_loc = cpt_elt; ielt_loc < cpt_elt_fin; ielt_loc++) {
-          ielt = liste_filtre->val[ielt_loc];
-          connect_buf[cpt_buf++] = def_pos_tab[ielt + 1] - def_pos_tab[ielt];
-          if (cpt_buf == 4096 || ielt_loc + 1 == cpt_elt_fin) {
-            ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
-            cpt_buf = 0;
-          }
+      for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
+        connect_buf[cpt_buf++] = def_pos_tab[ielt + 1] - def_pos_tab[ielt];
+        if (cpt_buf == 4096 || ielt + 1 == cpt_elt_fin) {
+          ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
+          cpt_buf = 0;
         }
       }
 
       /* Connectivité */
 
-      if (liste_filtre == NULL) {
-        for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
-          cpt_buf = 0;
-          for (ival = def_pos_tab[ielt + 1];
-               ival > def_pos_tab[ielt    ];
-               ival--)
-            connect_buf[cpt_buf++] = def_val_tab[ival - 2];
-          ecs_loc_post_ens__ecr_buf_int(fic_imp, cpt_buf, cpt_buf, connect_buf);
-        }
-      }
-      else {
-        for (ielt_loc = cpt_elt; ielt_loc < cpt_elt_fin; ielt_loc++) {
-          ielt = liste_filtre->val[ielt_loc];
-          cpt_buf = 0;
-          for (ival = def_pos_tab[ielt + 1];
-               ival > def_pos_tab[ielt    ];
-               ival--)
-            connect_buf[cpt_buf++] = indice_som[def_val_tab[ival - 2] - 1] + 1;
-          ecs_loc_post_ens__ecr_buf_int(fic_imp, cpt_buf, cpt_buf, connect_buf);
-        }
+      for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
+        cpt_buf = 0;
+        for (ival = def_pos_tab[ielt + 1];
+             ival > def_pos_tab[ielt    ];
+             ival--)
+          connect_buf[cpt_buf++] = def_val_tab[ival - 2];
+        ecs_loc_post_ens__ecr_buf_int(fic_imp, cpt_buf, cpt_buf, connect_buf);
       }
 
       break;
@@ -632,52 +522,25 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
 
       /* Faces par élément */
 
-      if (liste_filtre == NULL) {
-        for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
-          marqueur_fin = -1;
-          nbr_fac_loc = 0;
-          for (ival = def_pos_tab[ielt    ] - 1;
-               ival < def_pos_tab[ielt + 1] - 1;
-               ival++) {
-            if (def_val_tab[ival] != marqueur_fin) {
-              if (marqueur_fin == -1)
-                marqueur_fin = def_val_tab[ival];
-            }
-            else {
-              marqueur_fin = -1;
-              nbr_fac_loc += 1;
-            }
+      for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
+        marqueur_fin = -1;
+        nbr_fac_loc = 0;
+        for (ival = def_pos_tab[ielt    ] - 1;
+             ival < def_pos_tab[ielt + 1] - 1;
+             ival++) {
+          if (def_val_tab[ival] != marqueur_fin) {
+            if (marqueur_fin == -1)
+              marqueur_fin = def_val_tab[ival];
           }
-          connect_buf[cpt_buf++] = nbr_fac_loc;
-          if (cpt_buf == 4096 || ielt + 1 == cpt_elt_fin) {
-            ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
-            cpt_buf = 0;
+          else {
+            marqueur_fin = -1;
+            nbr_fac_loc += 1;
           }
         }
-
-      }
-      else {
-        for (ielt_loc = cpt_elt; ielt_loc < cpt_elt_fin; ielt_loc++) {
-          ielt = liste_filtre->val[ielt_loc];
-          marqueur_fin = -1;
-          nbr_fac_loc = 0;
-          for (ival = def_pos_tab[ielt    ] - 1;
-               ival < def_pos_tab[ielt + 1] - 1;
-               ival++) {
-            if (def_val_tab[ival] != marqueur_fin) {
-              if (marqueur_fin == -1)
-                marqueur_fin = def_val_tab[ival];
-            }
-            else {
-              marqueur_fin = -1;
-              nbr_fac_loc += 1;
-            }
-          }
-          connect_buf[cpt_buf++] = nbr_fac_loc;
-          if (cpt_buf == 4096 || ielt_loc + 1 == cpt_elt_fin) {
-            ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
-            cpt_buf = 0;
-          }
+        connect_buf[cpt_buf++] = nbr_fac_loc;
+        if (cpt_buf == 4096 || ielt + 1 == cpt_elt_fin) {
+          ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
+          cpt_buf = 0;
         }
       }
 
@@ -686,57 +549,25 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
       marqueur_fin = -1;
       nbr_som_loc = 0;
 
-      if (liste_filtre == NULL) {
+      cpt_buf = 0;
 
-        cpt_buf = 0;
+      for (ival = def_pos_tab[cpt_elt    ] - 1;
+           ival < def_pos_tab[cpt_elt_fin] - 1;
+           ival++) {
 
-        for (ival = def_pos_tab[cpt_elt    ] - 1;
-             ival < def_pos_tab[cpt_elt_fin] - 1;
-             ival++) {
-
-          if (def_val_tab[ival] != marqueur_fin) {
-            nbr_som_loc += 1;
-            if (marqueur_fin == -1)
-              marqueur_fin = def_val_tab[ival];
-          }
-          else {
-            marqueur_fin = -1;
-            connect_buf[cpt_buf++] = nbr_som_loc;
-            if (cpt_buf == 4096 || ival + 2 == def_pos_tab[cpt_elt_fin]) {
-              ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
-              cpt_buf = 0;
-            }
-            nbr_som_loc = 0;
-          }
-
+        if (def_val_tab[ival] != marqueur_fin) {
+          nbr_som_loc += 1;
+          if (marqueur_fin == -1)
+            marqueur_fin = def_val_tab[ival];
         }
-
-      }
-      else {
-
-        for (ielt_loc = cpt_elt; ielt_loc < cpt_elt_fin; ielt_loc++) {
-
-          ielt = liste_filtre->val[ielt_loc];
-          ival_deb = def_pos_tab[ielt    ] - 1;
-          ival_fin = def_pos_tab[ielt + 1] - 1;
-
-          for (ival = ival_deb; ival < ival_fin; ival++) {
-            if (def_val_tab[ival] != marqueur_fin) {
-              nbr_som_loc += 1;
-              if (marqueur_fin == -1)
-                marqueur_fin = def_val_tab[ival];
-            }
-            else {
-              marqueur_fin = -1;
-              connect_buf[cpt_buf++] = nbr_som_loc;
-              if (cpt_buf == 4096 || ival + 1 == ival_fin) {
-                ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
-                cpt_buf = 0;
-              }
-              nbr_som_loc = 0;
-            }
+        else {
+          marqueur_fin = -1;
+          connect_buf[cpt_buf++] = nbr_som_loc;
+          if (cpt_buf == 4096 || ival + 2 == def_pos_tab[cpt_elt_fin]) {
+            ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
+            cpt_buf = 0;
           }
-
+          nbr_som_loc = 0;
         }
 
       }
@@ -746,55 +577,22 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
       marqueur_fin = -1;
       cpt_buf = 0;
 
-      if (liste_filtre == NULL) {
+      for (ival = def_pos_tab[cpt_elt    ] - 1;
+           ival < def_pos_tab[cpt_elt_fin] - 1;
+           ival++) {
 
-        for (ival = def_pos_tab[cpt_elt    ] - 1;
-             ival < def_pos_tab[cpt_elt_fin] - 1;
-             ival++) {
-
-          if (def_val_tab[ival] != marqueur_fin) {
-            connect_buf[cpt_buf++] = def_val_tab[ival];
-            if (marqueur_fin == -1)
-              marqueur_fin = def_val_tab[ival];
-          }
-          else {
-            marqueur_fin = -1;
-            ecs_loc_post_ens__ecr_buf_int(fic_imp,
-                                          cpt_buf,
-                                          cpt_buf,
-                                          connect_buf);
-            cpt_buf = 0;
-          }
-
+        if (def_val_tab[ival] != marqueur_fin) {
+          connect_buf[cpt_buf++] = def_val_tab[ival];
+          if (marqueur_fin == -1)
+            marqueur_fin = def_val_tab[ival];
         }
-
-      }
-      else {
-
-        for (ielt_loc = cpt_elt; ielt_loc < cpt_elt_fin; ielt_loc++) {
-
-          ielt = liste_filtre->val[ielt_loc];
-          ival_deb = def_pos_tab[ielt    ] - 1;
-          ival_fin = def_pos_tab[ielt + 1] - 1;
-
-          for (ival = ival_deb; ival < ival_fin; ival++) {
-
-            if (def_val_tab[ival] != marqueur_fin) {
-              connect_buf[cpt_buf++] = indice_som[def_val_tab[ival] - 1] + 1;
-              if (marqueur_fin == -1)
-                marqueur_fin = def_val_tab[ival];
-            }
-            else {
-              marqueur_fin = -1;
-              ecs_loc_post_ens__ecr_buf_int(fic_imp,
-                                            cpt_buf,
-                                            cpt_buf,
-                                            connect_buf);
-              cpt_buf = 0;
-            }
-
-          }
-
+        else {
+          marqueur_fin = -1;
+          ecs_loc_post_ens__ecr_buf_int(fic_imp,
+                                        cpt_buf,
+                                        cpt_buf,
+                                        connect_buf);
+          cpt_buf = 0;
         }
 
       }
@@ -805,54 +603,22 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
 
       nbr_som_loc = 0;
 
-      if (liste_filtre == NULL) {
+      if (cpt_elt < cpt_elt_fin)
+        nbr_som_loc = def_pos_tab[cpt_elt + 1] - def_pos_tab[cpt_elt];
 
-        if (cpt_elt < cpt_elt_fin)
-          nbr_som_loc = def_pos_tab[cpt_elt + 1] - def_pos_tab[cpt_elt];
+      for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
 
-        for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
+        for (ival = def_pos_tab[ielt]     - 1;
+             ival < def_pos_tab[ielt + 1] - 1;
+             ival++)
+          connect_buf[cpt_buf++] = def_val_tab[ival];
 
-          for (ival = def_pos_tab[ielt]     - 1;
-               ival < def_pos_tab[ielt + 1] - 1;
-               ival++)
-            connect_buf[cpt_buf++] = def_val_tab[ival];
-
-          if (cpt_buf >= (4096 - nbr_som_loc) || ielt + 1 == cpt_elt_fin) {
-            ecs_loc_post_ens__ecr_buf_int(fic_imp,
-                                          nbr_som_loc,
-                                          cpt_buf,
-                                          connect_buf);
-            cpt_buf = 0;
-          }
-
-        }
-
-      }
-      else {
-
-        if (cpt_elt < cpt_elt_fin) {
-          ielt = liste_filtre->val[cpt_elt];
-          nbr_som_loc = def_pos_tab[ielt + 1] - def_pos_tab[ielt];
-        }
-
-        for (ielt_loc = cpt_elt; ielt_loc < cpt_elt_fin; ielt_loc++) {
-
-          ielt = liste_filtre->val[ielt_loc];
-
-          for (ival = def_pos_tab[ielt]     - 1;
-               ival < def_pos_tab[ielt + 1] - 1;
-               ival++)
-
-            connect_buf[cpt_buf++] = indice_som[def_val_tab[ival] - 1] + 1;
-
-          if (cpt_buf >= (4096 - nbr_som_loc) || ielt_loc + 1 == cpt_elt_fin) {
-            ecs_loc_post_ens__ecr_buf_int(fic_imp,
-                                          nbr_som_loc,
-                                          cpt_buf,
-                                          connect_buf);
-            cpt_buf = 0;
-          }
-
+        if (cpt_buf >= (4096 - nbr_som_loc) || ielt + 1 == cpt_elt_fin) {
+          ecs_loc_post_ens__ecr_buf_int(fic_imp,
+                                        nbr_som_loc,
+                                        cpt_buf,
+                                        connect_buf);
+          cpt_buf = 0;
         }
 
       }
@@ -873,147 +639,11 @@ ecs_loc_champ_post_ens__ecr_part(const char            *nom_maillage,
   /* Nettoyage avant la sortie */
   /*---------------------------*/
 
-  if (indice_som != NULL)
-    ECS_FREE(indice_som);
-
   ecs_champ__libere_pos_tab(champ_def, def_pos_tab);
 
   /* Fermeture du fichier de géométrie */
 
   ecs_file_close_stream(cas_ens->fic_geo);
-
-  if (ecrire_parent == true && liste_filtre != NULL) {
-    ECS_MALLOC(this_part->lst_parents, liste_filtre->nbr, ecs_int_t);
-    memcpy(this_part->lst_parents,
-           liste_filtre->val,
-           liste_filtre->nbr * sizeof(ecs_int_t));
-  }
-}
-
-/*============================================================================
- *                             Fonctions publiques
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- *  Fonction qui écrit les connectivités nodales des éléments
- *   selon leur type géometrique
- *
- *  Les élements doivent avoir été triés suivant leur type géometrique
- *----------------------------------------------------------------------------*/
-
-void
-ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
-                             size_t                 n_vertices,
-                             const ecs_coord_t      vertex_coords[],
-                             ecs_champ_t           *champ_def,
-                             const int              elt_fam[],
-                             const ecs_famille_t   *famille_tete,
-                             const ecs_tab_int_t   *tab_elt_typ_geo,
-                             ecs_post_ens_t        *cas_ens)
-{
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  assert(vertex_coords != NULL);
-  assert(champ_def != NULL);
-
-  assert(cas_ens != NULL);
-
-  /* Ecriture en sous-parts */
-  /*------------------------*/
-
-  if (elt_fam != NULL && famille_tete != NULL) {
-
-    size_t         idescr;
-    size_t         n_elts;
-
-    ecs_tab_char_t   tab_nom_descr;
-    ecs_tab_int_t   *tab_lst_descr;  /* Tableau de pointeurs */
-
-    /* Récupération et tri des numéros de familles */
-
-    n_elts = ecs_champ__ret_elt_nbr(champ_def);
-
-    ecs_famille_chaine__att_fam_elt(famille_tete,
-                                    n_elts,
-                                    elt_fam,
-                                    _("Color "),
-                                    "",
-                                    true,
-                                    &tab_nom_descr,
-                                    &tab_lst_descr);
-
-    for (idescr = 0; idescr < tab_nom_descr.nbr; idescr++) {
-
-      if (tab_lst_descr[idescr].nbr >0) {
-
-        bool        ecrire_parent  = false;
-        const char prefixe_vol[]   = N_("vol");
-        const char prefixe_surf[]  = N_("surf");
-        const char nom_descr_nul[] = N_("no attribute");
-        const char separ[]  = N_(": ");
-
-        const char *prefixe_nom = nom_maillage;
-        const char *nom_descr = NULL;
-        char *nom_part = NULL;
-
-        if (!strcmp(nom_maillage, _("Fluid Domain"))) {
-            prefixe_nom = prefixe_vol;
-            ecrire_parent = true;
-        }
-        else if (!strcmp(nom_maillage, "surf"))
-            prefixe_nom = prefixe_surf;
-
-        if (tab_nom_descr.val[idescr] != NULL)
-          nom_descr = tab_nom_descr.val[idescr];
-        else
-          nom_descr = nom_descr_nul;
-
-        ECS_MALLOC(nom_part,
-                   ( strlen(_(prefixe_nom)) + strlen(_(separ))
-                     + strlen(_(nom_descr)) + 1),
-                   char);
-        sprintf(nom_part, "%s%s%s",
-                _(prefixe_nom), _(separ), _(nom_descr));
-
-        ecs_loc_champ_post_ens__ecr_part(nom_maillage,
-                                         nom_part,
-                                         n_vertices,
-                                         vertex_coords,
-                                         champ_def,
-                                         tab_lst_descr + idescr,
-                                         tab_elt_typ_geo,
-                                         ecrire_parent,
-                                         cas_ens);
-
-        ECS_FREE(nom_part);
-
-      }
-    }
-
-    /* Libération mémoire */
-
-    for (idescr = 0; idescr < tab_nom_descr.nbr; idescr++) {
-      ECS_FREE(tab_nom_descr.val[idescr]);
-      ECS_FREE(tab_lst_descr[idescr].val);
-    }
-    ECS_FREE(tab_nom_descr.val);
-    ECS_FREE(tab_lst_descr);
-
-  }
-
-  /* Ecriture en une seule part */
-  /*----------------------------*/
-
-  else
-    ecs_loc_champ_post_ens__ecr_part(nom_maillage,
-                                     nom_maillage,
-                                     n_vertices,
-                                     vertex_coords,
-                                     champ_def,
-                                     NULL,
-                                     tab_elt_typ_geo,
-                                     false,
-                                     cas_ens);
 }
 
 /*----------------------------------------------------------------------------
@@ -1045,7 +675,7 @@ ecs_champ_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
 
   for (ind_part = 0;
        (   ind_part < cas_ens->nbr_part
-        && strcmp((cas_ens->tab_part[ind_part])->nom_maillage,
+        && strcmp((cas_ens->tab_part[ind_part])->nom_part,
                   nom_maillage) != 0);
        ind_part++);
 
@@ -1055,7 +685,7 @@ ecs_champ_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
   fic_champ = ecs_post_ens__ecrit_fic_var(cas_ens, nom_champ);
 
   while (   ind_part < cas_ens->nbr_part
-         && strcmp((cas_ens->tab_part[ind_part])->nom_maillage,
+         && strcmp((cas_ens->tab_part[ind_part])->nom_part,
                    nom_maillage) == 0) {
 
     part_loc = cas_ens->tab_part[ind_part];

@@ -199,32 +199,6 @@ ecs_famille_chaine__cree_descr(ecs_famille_t   *famille,
 ecs_tab_bool_t
 ecs_famille_chaine__indic_fam_att(const ecs_famille_t  *fam_tete);
 
-/*----------------------------------------------------------------------------
- *  Fonction qui construit un tableau de description d'attributs
- *   décrits par une liste chaînée de familles, avec pour chacun la
- *   liste des éléments portant cet attribut (à partir du numéro de
- *   famille associé à chaque élément et donné par tab_fam_ent)
- *
- *  Les arguments prefixe_coul et prefixe_grp permettent de déterminer les
- *   chaînes de caractères précédent éventuellement les numéros de couleur ou
- *   noms de groupe dans le tableau résultant tab_nom_descr.
- *  L'argument "grouper_ident" indique si l'on doit combiner les attributs
- *   appartenant exactement aux mêmes familles.
- *
- *  La libération des tableaux tab_nom_desc et tab_lst_desc est à la
- *   charge de la fonction utilisatrice.
- *----------------------------------------------------------------------------*/
-
-void
-ecs_famille_chaine__att_fam_elt(const ecs_famille_t   *fam_tete,
-                                size_t                 n_elts,
-                                const int              elt_fam[],
-                                const char            *prefixe_coul,
-                                const char            *prefixe_grp,
-                                bool                   grouper_ident,
-                                ecs_tab_char_t        *tab_nom_descr,
-                                ecs_tab_int_t        **tab_lst_descr);
-
 /*----------------------------------------------------------------------------*/
 
 #endif /* _ECS_FAMILLE_CHAINE_H_ */

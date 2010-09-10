@@ -257,7 +257,6 @@ ecs_loc_post_ens__detruit_part(ecs_post_ens_part_t  *this_part)
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  ECS_FREE(this_part->nom_maillage);
   ECS_FREE(this_part->nom_part);
 
   this_part->num_part = 0;

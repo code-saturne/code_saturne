@@ -1,4 +1,16 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Removed group output by Preprocessor for EnSight format (moved to Kernel).
+  modified files:
+    po/fr.po
+    preprocessor/base/ecs_famille_chaine.c
+    preprocessor/base/ecs_famille_chaine.h
+    preprocessor/pre-post/ecs_champ_post.c
+    preprocessor/pre-post/ecs_champ_post_ens.c
+    preprocessor/pre-post/ecs_champ_post_ens.h
+    preprocessor/pre-post/ecs_post_ens.c
+    preprocessor/pre-post/ecs_post_ens_priv.h
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Update list of files with translations.
   modified files:
     po/POTFILES.in

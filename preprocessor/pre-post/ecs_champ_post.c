@@ -290,28 +290,9 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
                                  n_vertices,
                                  vertex_coords,
                                  champ_def,
-                                 elt_fam,
-                                 famille_elt,
                                  &tab_elt_typ_geo,
                                  cas_post->cas_ens);
 
-    if (champ_def_inf != NULL) {
-
-      tab_elt_typ_geo_inf = ecs_loc_champ_post__cpt_elt_typ(champ_def_inf,
-                                                            dim_entite_max-1);
-
-      ecs_champ_post_ens__ecr_part("surf",
-                                   n_vertices,
-                                   vertex_coords,
-                                   champ_def_inf,
-                                   elt_fam_inf,
-                                   famille_inf,
-                                   &tab_elt_typ_geo_inf,
-                                   cas_post->cas_ens);
-
-      tab_elt_typ_geo_inf.nbr = 0;
-      ECS_FREE(tab_elt_typ_geo_inf.val);
-    }
   }
 
 #if defined(HAVE_CGNS)
