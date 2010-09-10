@@ -663,6 +663,9 @@ _cut_warped_faces_perio(cs_mesh_t       *mesh,
 
         /* Update "face -> vertices" connectivity */
 
+        for (j = 0; j < 3; j++)
+          new_face_vtx_lst[connect_size + j] = new_face_connectivity[shift++];
+
         n_new_faces++;
         connect_size += 3;
         new_face_vtx_idx[n_new_faces]
