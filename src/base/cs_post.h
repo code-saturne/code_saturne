@@ -98,26 +98,25 @@ typedef void
  * mesh's time dependency, and the default output frequency for associated
  * variables.
  *
- * Fortran Interface: use PSTCWR (see cs_post_util.F)
+ * Fortran Interface: use pstcwr (see cs_post_f2c.f90)
  *
- * SUBROUTINE PSTCW1 (NUMGEP, NOMCAS, NOMREP, NOMFMT, OPTFMT,
+ * subroutine pstcw1 (numgep, nomcas, nomrep, nomfmt, optfmt,
  * *****************
- *                    LNMCAS, LNMFMT, LNMREP, LOPFMT,
- *                    INDMOD, NTCHR)
+ *                    lnmcas, lnmfmt, lnmrep, lopfmt, indmod, ntchr)
  *
- * INTEGER          NUMWRI      : <-- : Number of writer to create (< 0 for
+ * integer          numwri      : <-- : number of writer to create (< 0 for
  *                              :     : standard writer, > 0 for user writer)
- * CHARACTER        NOMCAS      : <-- : Name of associated case
- * CHARACTER        NOMREP      : <-- : Name of associated directory
- * INTEGER          NOMFMT      : <-- : Name of associated format
- * INTEGER          OPTFMT      : <-- : Additional format options
- * INTEGER          LNMCAS      : <-- : Case name length
- * INTEGER          LNMREP      : <-- : Directory name length
- * INTEGER          LNMFMT      : <-- : Format name length
- * INTEGER          LOPFMT      : <-- : Format options string length
- * INTEGER          INDMOD      : <-- : 0 if fixed, 1 if deformable,
+ * character        nomcas      : <-- : name of associated case
+ * character        nomrep      : <-- : name of associated directory
+ * integer          nomfmt      : <-- : name of associated format
+ * integer          optfmt      : <-- : additional format options
+ * integer          lnmcas      : <-- : case name length
+ * integer          lnmrep      : <-- : directory name length
+ * integer          lnmfmt      : <-- : format name length
+ * integer          lopfmt      : <-- : format options string length
+ * integer          indmod      : <-- : 0 if fixed, 1 if deformable,
  *                              :     : 2 if topology changes
- * INTEGER          NTCHR       : <-- : Default output frequency
+ * integer          ntchr       : <-- : default output frequency
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstcw1, PSTCW1)
@@ -151,29 +150,31 @@ void CS_PROCF (pstcw1, PSTCW1)
  * interior faces to extract is zero, than we extrac by default the boundary
  * mesh, and the list of associated boundary faces is thus not necessary.
  *
- * Fortran interface: use PSTCMA (see cs_post_util.F)
+ * Fortran interface: use pstcma (see cs_post_f2c.f90)
  *
- * SUBROUTINE PSTCM1 (NUMMAI, NOMMAI, LNMMAI,
+ * subroutine pstcm1 (nummai, nommai, lnmmai,
  * *****************
- *                    NBRCEL, NBRFAC, NBRFBR, LSTCEL, LSTFAC, LSTFBR)
+ *                    nbrcel, nbrfac, nbrfbr, lstcel, lstfac, lstfbr)
  *
- * INTEGER          NUMMAI      : <-- : Number of output mesh to create
+ * integer          nummai      : <-- : number of output mesh to create
  *                              :     : (< 0 for standard mesh,
  *                              :     : > 0 for user mesh)
- * CHARACTER        NOMMAI      : <-- : Name of associated output mesh
- * INTEGER          LNMMAI      : <-- : Mesh name length
- * INTEGER          NBRCEL      : <-- : Number of associated cells
- * INTEGER          NBRFAC      : <-- : Number of associated interior faces
- * INTEGER          NBRFBR      : <-- : Nulber of associated boundary faces
- * INTEGER          LSTCEL      : <-- : List of associated cells
- * INTEGER          LSTFAC      : <-- : List of associated interior faces
- * INTEGER          LSTFBR      : <-- : List of associated boundary faces
+ * character        nommai      : <-- : name of associated output mesh
+ * integer          lnmmai      : <-- : mesh name length
+ * integer          indgrp      : <-- : 1 to add group information, or O
+ * integer          nbrcel      : <-- : number of associated cells
+ * integer          nbrfac      : <-- : number of associated interior faces
+ * integer          nbrfbr      : <-- : nulber of associated boundary faces
+ * integer          lstcel      : <-- : list of associated cells
+ * integer          lstfac      : <-- : list of associated interior faces
+ * integer          lstfbr      : <-- : list of associated boundary faces
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstcm1, PSTCM1)
 (
  const cs_int_t  *nummai,
  const char      *nommai,
+ const cs_int_t  *indgrp,
  const cs_int_t  *lnmmai,
  const cs_int_t  *nbrcel,
  const cs_int_t  *nbrfac,
@@ -197,11 +198,11 @@ void CS_PROCF (pstcm1, PSTCM1)
  *
  * Fortran interface:
  *
- * SUBROUTINE PSTEDG (NUMMAI, NUMREF)
+ * subroutine pstedg (nummai, numref)
  * *****************
  *
- * INTEGER          NUMMAI      : <-- : Number of the edges mesh to create
- * INTEGER          NUMREF      : <-- : Number of the existing mesh
+ * integer          nummai      : <-- : number of the edges mesh to create
+ * integer          numref      : <-- : number of the existing mesh
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstedg, PSTEDG)
@@ -223,11 +224,11 @@ void CS_PROCF (pstedg, PSTEDG)
  *
  * Fortran interface:
  *
- * SUBROUTINE PSTCAT (NUMMAI, NUMWRI)
+ * subroutine pstcat (nummai, numwri)
  * *****************
  *
- * INTEGER          NUMMAI      : <-- : Number of the alias to create
- * INTEGER          NUMCAT      : <-- : Number of the assigned category
+ * integer          nummai      : <-- : number of the alias to create
+ * integer          numcat      : <-- : number of the assigned category
  *                                      (-1: as volume, -2: as boundary)
  *----------------------------------------------------------------------------*/
 
@@ -242,11 +243,11 @@ void CS_PROCF (pstcat, PSTCAT)
  *
  * Fortran interface:
  *
- * SUBROUTINE PSTALM (NUMMAI, NUMREF)
+ * subroutine pstalm (nummai, numref)
  * *****************
  *
- * INTEGER          NUMMAI      : <-- : Number of the alias to create
- * INTEGER          NUMREF      : <-- : Number of the associated output mesh
+ * integer          nummai      : <-- : number of the alias to create
+ * integer          numref      : <-- : number of the associated output mesh
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstalm, PSTALM)
@@ -260,11 +261,11 @@ void CS_PROCF (pstalm, PSTALM)
  *
  * Fortran interface:
  *
- * SUBROUTINE PSTASS (NUMMAI, NUMWRI)
+ * subroutine pstass (nummai, numwri)
  * *****************
  *
- * INTEGER          NUMMAI      : <-- : Number of the associated output mesh
- * INTEGER          NUMWRI      : <-- : Number of the writer to associate
+ * integer          nummai      : <-- : number of the associated output mesh
+ * integer          numwri      : <-- : number of the writer to associate
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstass, PSTASS)
@@ -279,10 +280,10 @@ void CS_PROCF (pstass, PSTASS)
  *
  * Fortran interface:
  *
- * SUBROUTINE PSTNTC (NTCABS)
+ * subroutine pstntc (ntcabs)
  * *****************
  *
- * INTEGER          NTCABS      : <-- : Current time step number
+ * integer          ntcabs      : <-- : current time step number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstntc, PSTNTC)
@@ -296,11 +297,11 @@ void CS_PROCF (pstntc, PSTNTC)
  *
  * Fortran interface:
  *
- * SUBROUTINE PSTNTC (NUMWRI, INDACT)
+ * subroutine pstntc (numwri, indact)
  * *****************
  *
- * INTEGER          NUMWRI      : <-- : Writer number, or 0 for all writers
- * INTEGER          INDACT      : <-- : 0 to deactivate, 1 to activate
+ * integer          numwri      : <-- : writer number, or 0 for all writers
+ * integer          indact      : <-- : 0 to deactivate, 1 to activate
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstact, PSTACT)
@@ -314,11 +315,11 @@ void CS_PROCF (pstact, PSTACT)
  *
  * Fortran interface:
  *
- * SUBROUTINE PSTEMA (NTCABS, TTCABS)
+ * subroutine pstema (ntcabs, ttcabs)
  * *****************
  *
- * INTEGER          NTCABS      : <-- : Current time step number
- * DOUBLE PRECISION TTCABS      : <-- : Current physical time
+ * integer          ntcabs      : <-- : current time step number
+ * double precision ttcabs      : <-- : current physical time
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstema, PSTEMA)
@@ -332,79 +333,78 @@ void CS_PROCF (pstema, PSTEMA)
  *
  * Fortran interface:
  *
- * SUBROUTINE PSTVAR (IDBIA0, IDBRA0,
+ * subroutine pstvar (idbia0, idbra0,
  * *****************
- *                    NDIM,   NTCABS, NCELET, NCEL,   NFAC,   NFABOR,
- *                    NFML,   NPRFML, NNOD,   LNDFAC, LNDFBR, NCELBR,
- *                    NVAR,   NSCAL,  NPHAS,  NVLSTA, NVISBR,
- *                    NIDEVE, NRDEVE, NITUSE, NRTUSE,
- *                    IFACEL, IFABOR, IFMFBR, IFMCEL, IPRFML,
- *                    IPNFAC, NODFAC, IPNFBR, NODFBR,
- *                    IDEVEL, ITUSER, IA,
- *                    TTCABS, XYZCEN, SURFAC, SURFBO, CDGFAC, CDGFBO,
- *                    XYZNOD, VOLUME,
- *                    DT,     RTPA,   RTP,    PROPCE, PROPFA, PROPFB,
- *                    COEFA,  COEFB,
- *                    STATCE, STATIV, STATFB,
- *                    RDEVEL, RTUSER, RA)
+ *                    ndim,   ntcabs, ncelet, ncel,   nfac,   nfabor,
+ *                    nfml,   nprfml, nnod,   lndfac, lndfbr, ncelbr,
+ *                    nvar,   nscal,  nphas,  nvlsta, nvisbr,
+ *                    nideve, nrdeve, nituse, nrtuse,
+ *                    ifacel, ifabor, ifmfbr, ifmcel, iprfml,
+ *                    ipnfac, nodfac, ipnfbr, nodfbr,
+ *                    idevel, ituser, ia,
+ *                    ttcabs, xyzcen, surfac, surfbo, cdgfac, cdgfbo,
+ *                    xyznod, volume,
+ *                    dt,     rtpa,   rtp,    propce, propfa, propfb,
+ *                    coefa,  coefb,
+ *                    statce, stativ, statfb,
+ *                    rdevel, rtuser, ra)
  *
- * INTEGER          IDBIA0      : <-- : Number of first free position in IA
- * INTEGER          IDBRA0      : <-- : Number of first free position in RA
- * INTEGER          NDIM        : <-- : Spatial dimension
- * INTEGER          NTCABS      : --> : Current time step number
- * INTEGER          NCELET      : <-- : Number of extended (real + ghost) cells
- * INTEGER          NFAC        : <-- : Number of interior faces
- * INTEGER          NFABOR      : <-- : Number of boundary faces
- * INTEGER          NFML        : <-- : Number of families (group classes)
- * INTEGER          NPRFML      : <-- : Number of family properties
- * INTEGER          NNOD        : <-- : Number of vertices
- * INTEGER          LNDFAC      : <-- : Size of nodfac
- * INTEGER          LNDFBR      : <-- : Size of nodfbr
- * INTEGER          NCELBR      : <-- : Number of cells on boundary
- * INTEGER          NVAR        : <-- : Number of variables
- * INTEGER          NSCAL       : <-- : Number of scalars
- * INTEGER          NPHAS       : <-- : Number of phases
- * INTEGER          NVLSTA      : <-- : Number of statistical variables (lagr)
- * INTEGER          NVISBR      : <-- : Number of boundary stat. variables (lagr)
- * INTEGER          NIDEVE      : <-- : Size of IDEVEL integer array
- * INTEGER          NRDEVE      : <-- : Size of RDEVEL floating-point array
- * INTEGER          NITUSE      : <-- : Size of ITUSER integer array
- * INTEGER          NRTUSE      : <-- : Size of RTUSER floating-point array
- * INTEGER          IFACEL      : <-- : Interior faces -> cells connectivity
- * INTEGER          IFABOR      : <-- : Boundary faces -> cell connectivity
- * INTEGER          IFMFBR      : <-- : Boundary face families
- * INTEGER          IFMCEL      : <-- : Cell families
- * INTEGER          IPRFML      : <-- : List of family properties
- * INTEGER          IPNFAC      : <-- : Interior faces -> vertices connect. idx.
- * INTEGER          NODFAC      : <-- : Interior faces -> vertices connectivity
- * INTEGER          IPNFBR      : <-- : Boundary faces -> vertices connect. idx.
- * INTEGER          NODFBR      : <-- : Boundary faces -> vertices connectivity
- * INTEGER          IDEVEL      : <-- : IDEVEL integer array
- * INTEGER          ITUSER      : <-- : ITUSER integer array
- * INTEGER          IA          : <-- : IA integer array
- * DOUBLE PRECISION TTCABS      : <-- : Current physical time
- * DOUBLE PRECISION XYZCEN      : <-- : Points associated with cell centers
- * DOUBLE PRECISION SURFAC      : <-- : Interior face surface vectors
- * DOUBLE PRECISION SURFBO      : <-- : Boundary face surface vectors
- * DOUBLE PRECISION CDGFAC      : <-- : Interior face centers
- * DOUBLE PRECISION CDGFBO      : <-- : Boundary face vectors
- * DOUBLE PRECISION XYZNOD      : <-- : Vertex coordinates (optional)
- * DOUBLE PRECISION VOLUME      : <-- : Cell volumes
- * DOUBLE PRECISION DT          : <-- : Local time step
- * DOUBLE PRECISION RTPA        : <-- : Cell variables at previous time step
- * DOUBLE PRECISION RTP         : <-- : Cell variables
- * DOUBLE PRECISION PROPCE      : <-- : Cell physical properties
- * DOUBLE PRECISION PROPFA      : <-- : Interior face physical properties
- * DOUBLE PRECISION PROPFB      : <-- : Boundary face physical properties
- * DOUBLE PRECISION COEFA       : <-- : Boundary conditions array
- * DOUBLE PRECISION COEFB       : <-- : Boundary conditions array
- * DOUBLE PRECISION STATCE      : <-- : Cell statistics (Lagrangian)
- * DOUBLE PRECISION STATIV      : <-- : Cell variance statistics (Lagrangian)
- * DOUBLE PRECISION STATFB      : <-- : Boundary face statistics (Lagrangian)
- * DOUBLE PRECISION RDEVEL      : <-- : RDEVEL floating-point array
- * DOUBLE PRECISION RTUSER      : <-- : RTUSER floating-point array
- * DOUBLE PRECISION RA          : <-- : RA floating-point array
- *
+ * integer          idbia0      : <-- : number of first free position in ia
+ * integer          idbra0      : <-- : number of first free position in ra
+ * integer          ndim        : <-- : spatial dimension
+ * integer          ntcabs      : --> : current time step number
+ * integer          ncelet      : <-- : number of extended (real + ghost) cells
+ * integer          nfac        : <-- : number of interior faces
+ * integer          nfabor      : <-- : number of boundary faces
+ * integer          nfml        : <-- : number of families (group classes)
+ * integer          nprfml      : <-- : number of family properties
+ * integer          nnod        : <-- : number of vertices
+ * integer          lndfac      : <-- : size of nodfac
+ * integer          lndfbr      : <-- : size of nodfbr
+ * integer          ncelbr      : <-- : number of cells on boundary
+ * integer          nvar        : <-- : number of variables
+ * integer          nscal       : <-- : number of scalars
+ * integer          nphas       : <-- : number of phases
+ * integer          nvlsta      : <-- : number of statistical variables (lagr)
+ * integer          nvisbr      : <-- : number of boundary stat. variables (lagr)
+ * integer          nideve      : <-- : size of idevel integer array
+ * integer          nrdeve      : <-- : size of rdevel floating-point array
+ * integer          nituse      : <-- : size of ituser integer array
+ * integer          nrtuse      : <-- : size of rtuser floating-point array
+ * integer          ifacel      : <-- : interior faces -> cells connectivity
+ * integer          ifabor      : <-- : boundary faces -> cell connectivity
+ * integer          ifmfbr      : <-- : boundary face families
+ * integer          ifmcel      : <-- : cell families
+ * integer          iprfml      : <-- : list of family properties
+ * integer          ipnfac      : <-- : interior faces -> vertices connect. idx.
+ * integer          nodfac      : <-- : interior faces -> vertices connectivity
+ * integer          ipnfbr      : <-- : boundary faces -> vertices connect. idx.
+ * integer          nodfbr      : <-- : boundary faces -> vertices connectivity
+ * integer          idevel      : <-- : idevel integer array
+ * integer          ituser      : <-- : ituser integer array
+ * integer          ia          : <-- : ia integer array
+ * double precision ttcabs      : <-- : current physical time
+ * double precision xyzcen      : <-- : points associated with cell centers
+ * double precision surfac      : <-- : interior face surface vectors
+ * double precision surfbo      : <-- : boundary face surface vectors
+ * double precision cdgfac      : <-- : interior face centers
+ * double precision cdgfbo      : <-- : boundary face vectors
+ * double precision xyznod      : <-- : vertex coordinates (optional)
+ * double precision volume      : <-- : cell volumes
+ * double precision dt          : <-- : local time step
+ * double precision rtpa        : <-- : cell variables at previous time step
+ * double precision rtp         : <-- : cell variables
+ * double precision propce      : <-- : cell physical properties
+ * double precision propfa      : <-- : interior face physical properties
+ * double precision propfb      : <-- : boundary face physical properties
+ * double precision coefa       : <-- : boundary conditions array
+ * double precision coefb       : <-- : boundary conditions array
+ * double precision statce      : <-- : cell statistics (lagrangian)
+ * double precision stativ      : <-- : cell variance statistics (lagrangian)
+ * double precision statfb      : <-- : boundary face statistics (lagrangian)
+ * double precision rdevel      : <-- : rdevel floating-point array
+ * double precision rtuser      : <-- : rtuser floating-point array
+ * double precision ra          : <-- : ra floating-point array
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstvar, PSTVAR)
@@ -472,26 +472,26 @@ void CS_PROCF (pstvar, PSTVAR)
  * Post-processing output of a variable defined on cells or faces of a mesh
  * using associated writers.
  *
- * Fortran interface; use PSTEVA (see cs_post_util.F)
+ * fortran interface; use psteva (see cs_post_f2c.f90)
  *
- * SUBROUTINE PSTEV1 (NUMMAI, NOMVAR, LNMVAR, IDIMT,  IENTLA, IVARPR,
+ * subroutine pstev1 (nummai, nomvar, lnmvar, idimt,  ientla, ivarpr,
  * *****************
- *                    NTCABS, TTCABS, VARCEL, VARFAC, VARFBR)
+ *                    ntcabs, ttcabs, varcel, varfac, varfbr)
  *
- * INTEGER          NUMMAI      : <-- : Number of associated output mesh
- * CHARACTER        NOMVAR      : <-- : Name of associated variable
- * INTEGER          LNMVAR      : <-- : Variable name length
- * INTEGER          IDIMT       : <-- : 1 for scalar, 3 for vector
- * INTEGER          IENTLA      : <-- : If a vector, 1 for interlaced values
+ * integer          nummai      : <-- : number of associated output mesh
+ * character        nomvar      : <-- : name of associated variable
+ * integer          lnmvar      : <-- : variable name length
+ * integer          idimt       : <-- : 1 for scalar, 3 for vector
+ * integer          ientla      : <-- : if a vector, 1 for interlaced values
  *                              :     : (x1, y1, z1, x2, y2, ..., yn, zn),
  *                              :     : 0 otherwise (x1, x2, ...xn, y1, y2, ...)
- * INTEGER          IVARPR      : <-- : 1 if variable is defined on "parent"
+ * integer          ivarpr      : <-- : 1 if variable is defined on "parent"
  *                              :     : mesh, 2 if defined on output mesh
- * INTEGER          NTCABS      : <-- : Current time step number
- * DOUBLE PRECISION TTCABS      : <-- : Current physical time
- * DOUBLE PRECISION VARCEL(*)   : <-- : Cell values
- * DOUBLE PRECISION VARFAC(*)   : <-- : Interior face values
- * DOUBLE PRECISION VARFBO(*)   : <-- : Boundary face values
+ * integer          ntcabs      : <-- : current time step number
+ * double precision ttcabs      : <-- : current physical time
+ * double precision varcel(*)   : <-- : cell values
+ * double precision varfac(*)   : <-- : interior face values
+ * double precision varfbo(*)   : <-- : boundary face values
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstev1, PSTEV1)
@@ -555,19 +555,21 @@ cs_post_add_writer(int          writer_id,
  * mesh, and the list of associated boundary faces is thus not necessary.
  *
  * parameters:
- *   mesh_id     <-- id of mesh to create (< 0 reserved, > 0 for user)
- *   mesh_name   <-- associated mesh name
- *   n_cells     <-- number of associated cells
- *   n_i_faces   <-- number of associated interior faces
- *   n_b_faces   <-- number of associated boundary faces
- *   cell_list   <-> list of associated cells
- *   i_face_list <-> list of associated interior faces
- *   b_face_list <-> list of associated boundary faces
+ *   mesh_id      <-- number of mesh to create (< 0 reserved, > 0 for user)
+ *   mesh_name    <-- associated mesh name
+ *   add_families <-- add family information if possible
+ *   n_cells      <-- number of associated cells
+ *   n_i_faces    <-- number of associated interior faces
+ *   n_b_faces    <-- number of associated boundary faces
+ *   cell_list    <-- list of associated cells
+ *   i_face_list  <-- list of associated interior faces
+ *   b_face_list  <-- list of associated boundary faces
  *----------------------------------------------------------------------------*/
 
 void
 cs_post_add_mesh(int          mesh_id,
                  const char  *mesh_name,
+                 cs_bool_t    add_families,
                  cs_int_t     n_cells,
                  cs_int_t     n_i_faces,
                  cs_int_t     n_b_faces,

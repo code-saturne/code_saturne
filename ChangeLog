@@ -1,4 +1,15 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Made generation of post-processing mesh group info optional.
+  modified files: 
+    po/fr.po
+    src/base/cs_boundary_conditions.c
+    src/base/cs_join_post.c
+    src/base/cs_post.c
+    src/base/cs_post_f2c.f90
+    src/base/cs_post.h
+    users/base/usdpst.f90
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Synchronize face families when joining meshes.
   modified files:
     po/fr.po

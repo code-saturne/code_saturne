@@ -155,7 +155,7 @@ double precision ra(*)
 ! Local variables
 
 integer          indmod, icas, nbcas, ipart, nbpart, ipref, icat
-integer          ntchrl
+integer          ntchrl, indgrp
 
 integer          nlcel, nlfac , nlfbr, nlfam
 integer          iel, ifac, ifam, ii
@@ -327,6 +327,7 @@ do ipart = 1, nbpart
   ! Miscellaneous initializations
   !==============================
 
+  indgrp = 1
   nlcel = 0
   nlfac = 0
   nlfbr = 0
@@ -451,8 +452,9 @@ do ipart = 1, nbpart
   ! Create post-processing mesh
   !============================
 
-  call pstcma (ipart, nommai, nlcel, nlfac, nlfbr, lstcel, lstfac, lstfbr)
+  call pstcma (ipart, nommai, indgrp, &
   !==========
+               nlcel, nlfac, nlfbr, lstcel, lstfac, lstfbr)
 
   ! Associate extracted mesh and writer (to be adapted by the user)
   !================================================================

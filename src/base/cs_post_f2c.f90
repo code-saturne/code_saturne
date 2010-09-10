@@ -137,6 +137,7 @@ subroutine pstcma &
 !                  !    !     ! (< 0 pour maillage reserve,   ,                !
 !                  !    !     !  > 0 pour maillage utilisateur)                !
 ! nommai           ! a  ! <-- ! nom du maillage associe                        !
+! indgrp           ! e  ! <-- ! 1 to add group information, or O               !
 ! nbrcel           ! e  ! <-- ! nombre de cellules associees                   !
 ! nbrfac           ! e  ! <-- ! nombre de faces internes associees             !
 ! nbrfbr           ! e  ! <-- ! nombre de faces de bord associees              !
@@ -165,7 +166,7 @@ implicit none
 ! Arguments
 
 character*32     nommai
-integer          nummai, nbrcel, nbrfac, nbrfbr
+integer          nummai, indgrp, nbrcel, nbrfac, nbrfbr
 
 integer          lstcel(nbrcel), lstfac(nbrfac), lstfbr(nbrfbr)
 
@@ -177,7 +178,7 @@ integer          lnmmai
 
 lnmmai = len(nommai)
 
-call pstcm1 (nummai, nommai, lnmmai,                              &
+call pstcm1 (nummai, nommai, lnmmai, indgrp,                      &
 !==========
              nbrcel, nbrfac, nbrfbr, lstcel, lstfac, lstfbr)
 
@@ -257,6 +258,7 @@ call pstev1 (nummai, nomvar, lnmvar, dimvar, ientla, ivarpr,      &
 return
 
 end subroutine
+
 subroutine pstsnv &
 !================
 
