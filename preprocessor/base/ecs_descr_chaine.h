@@ -192,15 +192,6 @@ ecs_descr_chaine__renumerote(ecs_descr_t          *descr_tete ,
                              const ecs_tab_int_t   vect_transf);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui renvoie le nombre et la liste des identificateurs
- *   des descripteurs de type couleur d'une liste chaînée de descripteurs
- *   dont la tête est donnée en argument
- *----------------------------------------------------------------------------*/
-
-ecs_tab_int_t
-ecs_descr_chaine__ret_ide(ecs_descr_t  *descr_tete);
-
-/*----------------------------------------------------------------------------
  *  Fonction qui renvoie le nombre et la liste des pointeurs sur les noms
  *   des descripteurs de type groupe d'une liste chaînée dont la tête est
  *   donnée en argument
@@ -217,16 +208,6 @@ ecs_descr_chaine__ret_nom(ecs_descr_t   *descr_tete);
 ecs_descr_t **
 ecs_descr_chaine__ret_ref(ecs_descr_t  *descr_tete,
                           int          *nbr_descr);
-
-/*----------------------------------------------------------------------------
- *  Fonction qui retourne la tête de la liste chaînée des descripteurs
- *   de type donné `descr_typ_t'
- *   contenus dans la liste chaînée des descripteurs dont la tête est donnée
- *----------------------------------------------------------------------------*/
-
-ecs_descr_t *
-ecs_descr_chaine__ret_descr_typ(ecs_descr_t      *descr_tete,
-                                ecs_descr_typ_t   descr_typ);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui crée une nouvelle chaîne de descripteurs

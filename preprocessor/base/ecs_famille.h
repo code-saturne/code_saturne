@@ -112,14 +112,6 @@ float
 ecs_famille__ret_taille(const ecs_famille_t  *this_fam);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui renvoie le nombre et la liste des identificateurs des
- *   descripteurs de la famille donnée en argument
- *----------------------------------------------------------------------------*/
-
-ecs_tab_int_t
-ecs_famille__ret_ide(const ecs_famille_t  *this_fam);
-
-/*----------------------------------------------------------------------------
  *  Fonction qui renvoie le nombre et la liste des des pointeurs sur les noms
  *   des descripteurs de la famille donnée en argument
  *----------------------------------------------------------------------------*/
@@ -141,14 +133,6 @@ ecs_famille__copie(ecs_famille_t  *this_famille);
 
 void
 ecs_famille__affiche(const ecs_famille_t  *this_fam);
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie le nombre et la liste des identificateurs des
- *   descripteurs de la famille donnée en argument
- *----------------------------------------------------------------------------*/
-
-ecs_tab_int_t
-ecs_famille__ret_ide(const ecs_famille_t  *this_fam);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui renvoie le nombre et la liste des des pointeurs sur les noms

@@ -335,7 +335,6 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
   ecs_tab_int_t    tab_nbr_cel_fam;
   ecs_tab_int_t    tab_nbr_fac_fam;
   ecs_tab_int_t    tab_nbr_fbr_fam;
-  ecs_tab_int_t   *tab_propr_ide_fam_ent[ECS_N_ENTMAIL];
   ecs_tab_char_t  *tab_propr_nom_fam_ent[ECS_N_ENTMAIL];
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -477,16 +476,12 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
 
     if (maillage->famille[ient] != NULL) {
 
-      tab_propr_ide_fam_ent[ient]
-        = ecs_famille_chaine__ret_ide(maillage->famille[ient]);
-
       tab_propr_nom_fam_ent[ient]
         = ecs_famille_chaine__ret_nom(maillage->famille[ient]);
 
       /* Calcul du nombre maximal de propriétés */
       for (ifam = 0; ifam < nbr_fam_ent[ient]; ifam++) {
-        nbr_loc_propr =   tab_propr_ide_fam_ent[ient][ifam].nbr
-                        + tab_propr_nom_fam_ent[ient][ifam].nbr;
+        nbr_loc_propr = tab_propr_nom_fam_ent[ient][ifam].nbr;
         *nbr_max_propr = ECS_MAX(*nbr_max_propr, nbr_loc_propr);
       }
 
@@ -546,8 +541,7 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
       ecs_warn();
 
     printf
-      (_("%d faces from a total of %d have no color\n"
-         "and belong to no group...\n"
+      (_("%d faces from a total of %d do not belong to a group...\n"
          "A default family is assigned to those faces.\n\n"),
        (int)nbr_fac_avec_fam_defaut, (int)nbr_fac);
 
@@ -559,8 +553,7 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
 
     ecs_warn();
     printf
-      (_("%d cells from a total of %d have no color\n"
-         "and belong to no group...\n"
+      (_("%d cells from a total of %d do not belong to a group...\n"
          "A default family is assigned to those cells.\n\n"),
        (int)nbr_cel_avec_fam_defaut, (int)nbr_cel);
 
@@ -612,7 +605,7 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
     printf("  %*s%s\n", (int)(strlen(_("Family")) + 1), "",
            _("Default family"));
     printf("  %*s%s\n", (int)(strlen(_("Family")) + 1), "",
-           _("(with no color nor group)"));
+           _("(no group)"));
 
     /* Comme on ne traite pas les faces internes, inutile d'affecter la */
     /* famille par défaut à celles n'appartenant pas à une famille > 0  */
@@ -623,48 +616,6 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
        nbr_fbr_avec_fam_defaut);
 
   } /* Fin : si affichage de la famille par défaut */
-
-  /* Affichage des couleurs et des groupes en fonction des familles */
-  /*----------------------------------------------------------------*/
-
-  if (nbr_fam_tot != 0) {
-
-    /* Affichage du titre */
-
-    printf(_("\n\nDefinition of colors and groups"
-             " based on families\n"
-             "-------------------------------"
-             "------------------\n\n"));
-
-    fam_tete_globale = NULL;
-
-    for (ient = ECS_ENTMAIL_CEL; ient >= ECS_ENTMAIL_FAC; ient--) {
-
-      fam_tete_ent = ecs_famille_chaine__copie(maillage->famille[ient]);
-
-      ecs_famille_chaine__ajoute(&fam_tete_globale, fam_tete_ent);
-
-    } /* Fin : boucle sur les entités de maillages */
-
-    ecs_famille_chaine__aff_fam_att(fam_tete_globale);
-
-    ecs_famille_chaine__detruit(&fam_tete_globale);
-
-    /* Affichage des numéros et noms de groupes si lieu */
-
-    if (noms_groupes->nbr > 0) {
-
-      printf(_("\n\n"
-               "Groups numbering\n"
-               "----------------\n\n"));
-
-      for (igrp   = 0; igrp < noms_groupes->nbr; igrp++)
-        printf(_("  Group %3d : \"%s\"\n"),
-               (int)(igrp + 1), noms_groupes->val[igrp]);
-
-    }
-
-  } /* Fin : s'il y a au moins une famille */
 
   *nbr_fam = cpt_fam;
   if (bool_cree_fam_par_defaut == true)
@@ -690,19 +641,6 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
     for (ifam = 0; ifam < nbr_fam_ent[ient]; ifam++) {
 
       cpt_prop = 0;
-
-      /* Couleurs */
-
-      for (ipropr = 0;
-           ipropr < tab_propr_ide_fam_ent[ient][ifam].nbr; ipropr++) {
-
-        if (tab_propr_ide_fam_ent[ient][ifam].val[ipropr] >= 0) {
-          tab_propr_fam->val[decal_fam_ent + cpt_prop * (*nbr_fam) + ifam]
-            = tab_propr_ide_fam_ent[ient][ifam].val[ipropr];
-          cpt_prop++;
-        }
-
-      }
 
       /* Groupes */
 
@@ -764,14 +702,10 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
   }
 
   for (ient = ECS_ENTMAIL_CEL; ient >= ECS_ENTMAIL_FAC; ient--) {
-    for (ifam = 0; ifam < nbr_fam_ent[ient]; ifam++) {
-      ECS_FREE(tab_propr_ide_fam_ent[ient][ifam].val);
+    for (ifam = 0; ifam < nbr_fam_ent[ient]; ifam++)
       ECS_FREE(tab_propr_nom_fam_ent[ient][ifam].val);
-    }
-    if (nbr_fam_ent[ient] != 0) {
-      ECS_FREE(tab_propr_ide_fam_ent[ient]);
+    if (nbr_fam_ent[ient] != 0)
       ECS_FREE(tab_propr_nom_fam_ent[ient]);
-    }
   }
 }
 

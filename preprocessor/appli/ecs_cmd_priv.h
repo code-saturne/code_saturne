@@ -76,7 +76,7 @@
  * Définition des noms de fichiers et d'extensions
  *----------------------------------------------------------------------------*/
 
-#define ECS_CMD_EXEC_NAME                                       "ecs"
+#define ECS_CMD_EXEC_NAME                             "cs_preprocess"
 
 #define ECS_CMD_OUTFILE_NAME_DEFAULT               "preprocessor.log"
 
@@ -118,7 +118,6 @@
 #define ECS_CMD_OPTION_POST_MED                               "--med"
 #endif /* HAVE_MED */
 
-#define ECS_CMD_OPTION_POST_COLOR_TO_GROUP         "--color-to-group"
 #define ECS_CMD_OPTION_POST_NO_POLY                  "--discard-poly"
 #define ECS_CMD_OPTION_POST_TEXT                             "--text"
 #define ECS_CMD_OPTION_POST_BIG_ENDIAN                 "--big-endian"
@@ -142,10 +141,8 @@ struct _ecs_cmd_post_t {
   bool       simple;         /* pas de subdivision des "parts" (EnSight) */
   bool       text;           /* version texte (EnSight) */
   bool       big_endian;     /* binaire big-endian (EnSight) */
-  bool       color_to_group; /* Couleurs transformées en groupes (MED) */
 
   bool       volume;         /* sortie du volume */
-  bool       bord;           /* sortie des faces de bord */
   bool       info;           /* sortie des maillages d'information */
 
 };

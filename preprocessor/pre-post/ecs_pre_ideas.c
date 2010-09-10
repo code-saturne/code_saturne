@@ -1755,8 +1755,7 @@ _ecs_pre_ideas__lit_groups(ecs_maillage_t   *maillage,
         /* Creation du descripteur de champ correspondant au groupe lu */
         /*-------------------------------------------------------------*/
 
-        descr_grp = ecs_descr__cree(ECS_DESCR_GROUPE,
-                                    ECS_DESCR_IDE_NUL,
+        descr_grp = ecs_descr__cree(ECS_DESCR_IDE_NUL,
                                     ideas_grp_name);
 
         /* Transformation du tableau referencant le groupe en une table */

@@ -1617,8 +1617,7 @@ ecs_loc_pre_gambit__cree_groupes(ecs_maillage_t  *maillage,
         /* Création du descripteur de champ correspondant au groupe lu */
         /*-------------------------------------------------------------*/
 
-        descr_grp = ecs_descr__cree(ECS_DESCR_GROUPE,
-                                    ECS_DESCR_IDE_NUL,
+        descr_grp = ecs_descr__cree(ECS_DESCR_IDE_NUL,
                                     nom_grp[igrp]);
 
         /* Transformation du tableau référencant le groupe en une table */

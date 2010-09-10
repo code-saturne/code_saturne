@@ -730,11 +730,6 @@ static void ecs_loc_cmd__aff_aide
 
   printf("\n");
 
-  _fct_prt(ECS_CMD_OPTION_POST_COLOR_TO_GROUP,
-           "", _(": transform colors to groups (MED)"));
-
-  printf("\n");
-
   _fct_prt(ECS_CMD_OPTION_POST_MAIN,
            "", _(": activate output of main mesh"));
   sprintf(opt_str, _("  (by default if %s not given)"),
@@ -1021,10 +1016,8 @@ ecs_loc_cmd__lit_arg_post(int    argc,
   cmd_post->no_poly        = false;
   cmd_post->text           = false;
   cmd_post->big_endian     = false;
-  cmd_post->color_to_group = false;
 
   cmd_post->volume = false;
-  cmd_post->bord   = false;
   cmd_post->info   = false;
 
   for (iarg = *argpos + 1; iarg < argc && bool_fin == false; iarg++) {
@@ -1041,10 +1034,6 @@ ecs_loc_cmd__lit_arg_post(int    argc,
 
     else if (!strcmp (ECS_CMD_OPTION_POST_BIG_ENDIAN, argv[iarg])) {
       cmd_post->big_endian = true;
-    }
-
-    else if (!strcmp (ECS_CMD_OPTION_POST_COLOR_TO_GROUP, argv[iarg])) {
-      cmd_post->color_to_group = true;
     }
 
     else if (!strcmp (ECS_CMD_OPTION_POST_MAIN, argv[iarg])) {
@@ -1069,10 +1058,8 @@ ecs_loc_cmd__lit_arg_post(int    argc,
      activée, tous les types post traitements sont actifs */
 
   if (   cmd_post->volume == false
-      && cmd_post->bord   == false
       && cmd_post->info   == false) {
     cmd_post->volume = true;
-    cmd_post->bord   = true;
     cmd_post->info   = true;
   }
 

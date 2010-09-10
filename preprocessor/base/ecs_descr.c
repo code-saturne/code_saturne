@@ -91,13 +91,12 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *    Fonction de création d'une structure de descripteur de champ
+ *  Fonction de création d'une structure de descripteur de champ
  *----------------------------------------------------------------------------*/
 
 ecs_descr_t *
-ecs_descr__cree(ecs_descr_typ_t   typ,
-                const ecs_int_t   ide,
-                const char       *nom)
+ecs_descr__cree(int          ide,
+                const char  *nom)
 {
   ecs_descr_t * descr_loc;
 
@@ -109,14 +108,6 @@ ecs_descr__cree(ecs_descr_typ_t   typ,
 
   descr_loc->num = 1;
 
-  /* Affectation du type du descripteur */
-
-  descr_loc->typ = typ;
-
-  /* Affectation de l'identificateur du descripteur */
-
-  descr_loc->ide = ide;
-
   /* Affectation du nom du descripteur */
 
   if (nom != NULL) {
@@ -124,7 +115,16 @@ ecs_descr__cree(ecs_descr_typ_t   typ,
     strcpy(descr_loc->nom, nom);
   }
   else {
-    descr_loc->nom = NULL;
+    int _tmp_ide = ECS_ABS(ide);
+    int l = 1;
+    while (_tmp_ide/10 > 1) {
+      _tmp_ide /= 10;
+      l += 1;
+    }
+    if (ide < 0)
+      l += 1;
+    ECS_MALLOC(descr_loc->nom, l + 1, char);
+    sprintf(descr_loc->nom, "%d", ide);
   }
 
   /* Initialisation par défaut du lien sur le descripteur suivant */
@@ -169,8 +169,6 @@ ecs_descr__imprime(const ecs_descr_t  *this_descr,
                    FILE               *fic_imp)
 {
 #define ECS_FCT_IMP_DESCR_NUM         "numero"
-#define ECS_FCT_IMP_DESCR_TYP         "type"
-#define ECS_FCT_IMP_DESCR_IDE         "ide"
 #define ECS_FCT_IMP_DESCR_NOM         "nom"
 #define ECS_FCT_IMP_DESCR_L_DESCR     "l_descr_sui"
 
@@ -183,32 +181,11 @@ ecs_descr__imprime(const ecs_descr_t  *this_descr,
   /* Écriture du contenu de la structure `ecs_descr_t' */
   /*===============================================*/
 
-  /* Numéro du descripteur */
-  /*-----------------------*/
-
   ecs_fic__imprime_val(fic_imp, imp_col, ECS_FCT_IMP_DESCR_NUM,
                        ECS_TYPE_ecs_int_t, &this_descr->num);
 
-  /* Type du descripteur */
-  /*---------------------*/
-
-  ecs_fic__imprime_val(fic_imp, imp_col, ECS_FCT_IMP_DESCR_TYP,
-                       ECS_TYPE_ecs_int_t, &this_descr->typ);
-
-  /* Identificateur du descripteur */
-  /*-------------------------------*/
-
-  ecs_fic__imprime_val(fic_imp, imp_col, ECS_FCT_IMP_DESCR_IDE,
-                       ECS_TYPE_ecs_int_t, &this_descr->ide);
-
-  /* Nom du descripteur */
-  /*--------------------*/
-
   ecs_fic__imprime_val(fic_imp, imp_col, ECS_FCT_IMP_DESCR_NOM,
                        ECS_TYPE_char, this_descr->nom);
-
-  /* Lien sur un éventuel descripteur */
-  /*----------------------------------*/
 
   ecs_fic__imprime_val(fic_imp, imp_col, ECS_FCT_IMP_DESCR_L_DESCR,
                        ECS_TYPE_void, this_descr->l_descr_sui);
@@ -219,7 +196,7 @@ ecs_descr__imprime(const ecs_descr_t  *this_descr,
  *----------------------------------------------------------------------------*/
 
 float
-ecs_descr__ret_taille(const ecs_descr_t *this_descr)
+ecs_descr__ret_taille(const ecs_descr_t  *this_descr)
 {
   float   taille;
 
@@ -240,7 +217,7 @@ ecs_descr__ret_taille(const ecs_descr_t *this_descr)
  *----------------------------------------------------------------------------*/
 
 ecs_descr_t *
-ecs_descr__copie(ecs_descr_t * this_descr)
+ecs_descr__copie(ecs_descr_t  *this_descr)
 {
   ecs_descr_t   * descr_loc;
 
@@ -248,8 +225,7 @@ ecs_descr__copie(ecs_descr_t * this_descr)
 
   assert(this_descr != NULL);
 
-  descr_loc = ecs_descr__cree(this_descr->typ,
-                              this_descr->ide,
+  descr_loc = ecs_descr__cree(ECS_DESCR_IDE_NUL,
                               this_descr->nom);
 
   return descr_loc;
@@ -267,31 +243,19 @@ bool
 ecs_descr__compare(const ecs_descr_t  *descr_1,
                    const ecs_descr_t  *descr_2)
 {
-  bool       bool_retour;
+  bool       bool_retour = true;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   assert(descr_1 != NULL && descr_2 != NULL);
 
+  if (descr_1->nom != NULL || descr_2->nom != NULL) {
 
-  if (descr_1->typ == descr_2->typ && descr_1->ide == descr_2->ide)
-    bool_retour = true;
-  else
-    bool_retour = false;
+    if((descr_1->nom == NULL && descr_2->nom != NULL) ||
+       (descr_1->nom != NULL && descr_2->nom == NULL) ||
+       strcmp(descr_1->nom, descr_2->nom ) != 0 ) {
 
-
-  if (bool_retour == true) {
-
-    if (descr_1->nom != NULL || descr_2->nom != NULL) {
-
-      if((descr_1->nom == NULL && descr_2->nom != NULL) ||
-         (descr_1->nom != NULL && descr_2->nom == NULL) ||
-         strcmp(descr_1->nom,
-                descr_2->nom ) != 0 ) {
-
-        bool_retour = false;
-
-      }
+      bool_retour = false;
 
     }
 
@@ -301,60 +265,7 @@ ecs_descr__compare(const ecs_descr_t  *descr_1,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui compare 2 descripteurs
- *
- *  La fonction renvoie :
- *  - `true' si les types des deux identificateurs sont identiques et
- *           -       si les noms            des 2 descripteurs sont a `NULL'
- *                et si les identificateurs des 2 descripteurs sont identiques
- *           - ou    si les noms            des 2 descripteurs sont identiques
- *                   (et tous deux differents de `NULL')
- *  - `false' sinon
- *----------------------------------------------------------------------------*/
-
-bool
-ecs_descr__compare_selection(const ecs_descr_t  *descr_1,
-                             const ecs_descr_t  *descr_2)
-{
-  assert(descr_1 != NULL && descr_2 != NULL);
-
-  if (descr_1->typ != descr_2->typ)
-    return false;
-
-  if (descr_1->nom == NULL && descr_2->nom == NULL) {
-
-    /* Les noms des 2 descripteurs sont a `NULL' : */
-    /* on compare leurs identificateurs            */
-
-    if (descr_1->ide != descr_2->ide)
-
-      return false;
-
-  }
-  else {
-
-    /* Au moins un nom des deux descripteurs n'est pas a `NULL' : */
-    /*    on compare les deux noms                                */
-
-
-    if((descr_1->nom == NULL && descr_2->nom != NULL) ||
-       (descr_1->nom != NULL && descr_2->nom == NULL) ||
-       strcmp(descr_1->nom,
-              descr_2->nom ) != 0 )
-
-      return false;
-  }
-
-  return true;
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction qui affiche le contenu d'un descripteur
- *
- *  Sont affichés :
- *   - le type du descripteur ("Couleur" ou "Groupe")
- *   - l'identificateur dans le cas d'une couleur
- *   - la chaîne de caractères dans le cas d'un groupe
+ *  Fonction qui affiche le nom d'un descripteur
  *----------------------------------------------------------------------------*/
 
 void
@@ -363,62 +274,11 @@ ecs_descr__affiche(const ecs_descr_t  *descr,
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  switch (descr->typ) {
+  assert(descr->nom != NULL);
 
-  case ECS_DESCR_COULEUR:
-
-    if (descr->nom == NULL)
-      printf("  %*s%s %d\n",
-             decal, "", _("Color"),
-             descr->ide);
-    else
-      printf("  %*s%s %d (%s)\n",
-             decal, "", _("Color"), descr->ide, descr->nom);
-
-    break;
-
-  case ECS_DESCR_GROUPE:
-
-    assert(descr->nom != NULL);
-
-    printf("  %*s%s \"%s\"\n",
-           decal, "", _("Group"),
-           descr->nom);
-
-    break;
-
-  default:
-
-    assert(descr->typ == ECS_DESCR_COULEUR ||
-           descr->typ == ECS_DESCR_GROUPE     );
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie le type du descripteur :
- *  - soit `ECS_DESCR_TYP_COULEUR' pour un descripteur de type "couleur"
- *  - soit `ECS_DESCR_TYP_GROUPE'  pour un descripteur de type "groupe"
- *----------------------------------------------------------------------------*/
-
-ecs_descr_typ_t
-ecs_descr__ret_typ(const ecs_descr_t  *descr)
-{
-  assert(descr != NULL);
-
-  return descr->typ;
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie l'identificateur du descripteur donné en argument
- *----------------------------------------------------------------------------*/
-
-int
-ecs_descr__ret_ide(const ecs_descr_t  *descr)
-{
-  assert(descr != NULL);
-
-  return descr->ide;
+  printf("  %*s%s \"%s\"\n",
+         decal, "", _("Group"),
+         descr->nom);
 }
 
 /*----------------------------------------------------------------------------

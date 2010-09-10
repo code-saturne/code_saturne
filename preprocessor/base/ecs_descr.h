@@ -69,18 +69,6 @@ typedef struct _ecs_descr_t ecs_descr_t;
 
 
 /*============================================================================
- *                         Définition d'enumeration
- *============================================================================*/
-
-typedef enum {
-
-  ECS_DESCR_COULEUR,
-  ECS_DESCR_GROUPE
-
-} ecs_descr_typ_t;
-
-
-/*============================================================================
  *                         Définition de macros
  *============================================================================*/
 
@@ -95,13 +83,12 @@ typedef enum {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *    Fonction de création d'une structure de descripteur de champ
+ *  Fonction de création d'une structure de descripteur de champ
  *----------------------------------------------------------------------------*/
 
 ecs_descr_t *
-ecs_descr__cree(ecs_descr_typ_t   typ_e,
-                ecs_int_t         ide,
-                const char       *nom);
+ecs_descr__cree(int          ide,
+                const char  *nom);
 
 /*----------------------------------------------------------------------------
  *  Fonction libérant la structure `ecs_descr_t' donnée en argument.
@@ -149,48 +136,12 @@ ecs_descr__compare(const ecs_descr_t  *descr_1,
                    const ecs_descr_t  *descr_2);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui compare 2 descripteurs
- *
- *  La fonction renvoie :
- *  - `true'
- *           -       si les noms            des 2 descripteurs sont à `NULL'
- *                et si les identificateurs des 2 descripteurs sont identiques
- *           - ou    si les noms            des 2 descripteurs sont identiques
- *                   (et tous deux differents de `NULL')
- *  - `false' sinon
- *----------------------------------------------------------------------------*/
-
-bool
-ecs_descr__compare_selection(const ecs_descr_t  *descr_1,
-                             const ecs_descr_t  *descr_2);
-
-/*----------------------------------------------------------------------------
- *  Fonction qui affiche le contenu d'un descripteur
- *
- *  Sont affichés :
- *   - l'identificateur dans le cas d'une couleur
- *   - la chaîne de caractères dans le cas d'un groupe
+ *  Fonction qui affiche le nom d'un descripteur
  *----------------------------------------------------------------------------*/
 
 void
 ecs_descr__affiche(const ecs_descr_t  *descr,
-                   const int           decal);
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie le type du descripteur :
- *  - soit `ECS_DESCR_TYP_COULEUR' pour un descripteur de type "couleur"
- *  - soit `ECS_DESCR_TYP_GROUPE'  pour un descripteur de type "groupe"
- *----------------------------------------------------------------------------*/
-
-ecs_descr_typ_t
-ecs_descr__ret_typ(const ecs_descr_t  *descr);
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie l'identificateur du descripteur donné en argument
- *----------------------------------------------------------------------------*/
-
-int
-ecs_descr__ret_ide(const ecs_descr_t  *descr);
+                   int                 decal);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui renvoie le nom du descripteur donné en argument

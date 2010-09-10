@@ -1,4 +1,34 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Preprocessor now converts all colors to groups on mesh import.
+  modified files:
+    po/fr.po
+    preprocessor/appli/ecs_cmd.c
+    preprocessor/appli/ecs_cmd_priv.h
+    preprocessor/appli/ecs_main.c
+    preprocessor/base/ecs_descr.c
+    preprocessor/base/ecs_descr_chaine.c
+    preprocessor/base/ecs_descr_chaine.h
+    preprocessor/base/ecs_descr.h
+    preprocessor/base/ecs_descr_priv.h
+    preprocessor/base/ecs_famille.c
+    preprocessor/base/ecs_famille_chaine.c
+    preprocessor/base/ecs_famille_chaine.h
+    preprocessor/base/ecs_famille.h
+    preprocessor/pre-post/ecs_champ_post.c
+    preprocessor/pre-post/ecs_champ_post_med.c
+    preprocessor/pre-post/ecs_champ_post_med.h
+    preprocessor/pre-post/ecs_maillage_ncs.c
+    preprocessor/pre-post/ecs_maillage_post.c
+    preprocessor/pre-post/ecs_maillage_pre.c
+    preprocessor/pre-post/ecs_post.c
+    preprocessor/pre-post/ecs_post.h
+    preprocessor/pre-post/ecs_pre_cgns.c
+    preprocessor/pre-post/ecs_pre_gambit.c
+    preprocessor/pre-post/ecs_pre_ideas.c
+    preprocessor/pre-post/ecs_pre_med.c
+    preprocessor/pre-post/ecs_pre_nopo.c
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Removed group output by Preprocessor for EnSight format (moved to Kernel).
   modified files:
     po/fr.po

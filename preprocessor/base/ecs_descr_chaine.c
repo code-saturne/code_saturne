@@ -110,12 +110,6 @@ _ecs_descr_chaine_compare(const void  *descr1,
   else if (d1->nom == NULL && d2->nom != NULL)
     return -1;
 
-  else if (d1->ide < d2->ide)
-    return -1;
-
-  else if (d1->ide > d2->ide)
-    return 1;
-
   return 0;
 }
 
@@ -531,8 +525,7 @@ ecs_descr_chaine__trouve_num(ecs_descr_t        *descr_tete,
   ptr_descr = descr_tete;
 
   while (   ptr_descr != NULL
-         && ecs_descr__compare_selection(ptr_descr ,
-                                         descr_rech ) == false)
+         && ecs_descr__compare(ptr_descr, descr_rech ) == false)
     ptr_descr = ptr_descr->l_descr_sui;
 
   if (ptr_descr != NULL) {
@@ -579,8 +572,7 @@ ecs_descr_chaine__renumerote(ecs_descr_t          *descr_tete ,
 
     assert(ptr_descr != NULL);
 
-    descr_new = ecs_descr__cree(ptr_descr->typ,
-                                ptr_descr->ide,
+    descr_new = ecs_descr__cree(ECS_DESCR_IDE_NUL,
                                 ptr_descr->nom);
 
     ecs_descr_chaine__ajoute(&descr_tete_new,
@@ -589,65 +581,6 @@ ecs_descr_chaine__renumerote(ecs_descr_t          *descr_tete ,
   }
 
   return descr_tete_new;
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie le nombre et la liste des identificateurs
- *   des descripteurs de type couleur d'une liste chaînée de descripteurs
- *   dont la tête est donnée en argument
- *----------------------------------------------------------------------------*/
-
-ecs_tab_int_t
-ecs_descr_chaine__ret_ide(ecs_descr_t  *descr_tete)
-{
-  ecs_int_t      cpt_descr;
-  ecs_descr_t   *ptr_descr;
-  ecs_tab_int_t  tab_ide_descr_chaine;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  assert(descr_tete != NULL);
-
-  /* Comptage des descripteurs de type couleur */
-
-  cpt_descr = 0;
-
-  for (ptr_descr  = descr_tete;
-       ptr_descr != NULL;
-       ptr_descr  = ptr_descr->l_descr_sui) {
-
-    if (ptr_descr->typ == ECS_DESCR_COULEUR) {
-
-      assert(ptr_descr->ide != ECS_DESCR_IDE_NUL);
-
-      cpt_descr += 1;
-
-    }
-
-  }
-
-  ECS_MALLOC(tab_ide_descr_chaine.val, cpt_descr, ecs_int_t);
-  tab_ide_descr_chaine.nbr = cpt_descr;
-
-  /* Construction de la liste des descripteurs de type couleur */
-
-  cpt_descr = 0;
-
-  for (ptr_descr  = descr_tete;
-       ptr_descr != NULL;
-       ptr_descr  = ptr_descr->l_descr_sui) {
-
-    if (ptr_descr->typ == ECS_DESCR_COULEUR) {
-
-      tab_ide_descr_chaine.val[cpt_descr] = ptr_descr->ide;
-
-      cpt_descr += 1;
-
-    }
-
-  }
-
-  return tab_ide_descr_chaine;
 }
 
 /*----------------------------------------------------------------------------
@@ -675,14 +608,8 @@ ecs_descr_chaine__ret_nom(ecs_descr_t   *descr_tete)
   for (ptr_descr  = descr_tete;
        ptr_descr != NULL;
        ptr_descr  = ptr_descr->l_descr_sui) {
-
-    if (ptr_descr->typ == ECS_DESCR_GROUPE) {
-
-      assert(ptr_descr->nom != NULL);
-
-      cpt_descr += 1;
-
-    }
+    assert(ptr_descr->nom != NULL);
+    cpt_descr += 1;
   }
 
   ECS_MALLOC(tab_nom_descr_chaine.val, cpt_descr, char *);
@@ -695,14 +622,8 @@ ecs_descr_chaine__ret_nom(ecs_descr_t   *descr_tete)
   for (ptr_descr  = descr_tete;
        ptr_descr != NULL;
        ptr_descr  = ptr_descr->l_descr_sui) {
-
-    if (ptr_descr->typ == ECS_DESCR_GROUPE) {
-
-      tab_nom_descr_chaine.val[cpt_descr] = ptr_descr->nom;
-
-      cpt_descr += 1;
-
-    }
+    tab_nom_descr_chaine.val[cpt_descr] = ptr_descr->nom;
+    cpt_descr += 1;
   }
 
   return tab_nom_descr_chaine;
@@ -742,41 +663,6 @@ ecs_descr_chaine__ret_ref(ecs_descr_t  *descr_tete,
   }
 
   return liste_ref_descr;
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction qui retourne la tête de la liste chaînée des descripteurs
- *   de type donné `descr_typ_t'
- *   contenus dans la liste chaînée des descripteurs dont la tête est donnée
- *----------------------------------------------------------------------------*/
-
-ecs_descr_t *
-ecs_descr_chaine__ret_descr_typ(ecs_descr_t      *descr_tete,
-                                ecs_descr_typ_t   descr_typ)
-{
-  ecs_descr_t * descr_copie;
-  ecs_descr_t * descr_tete_typ;
-  ecs_descr_t * ptr_descr;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  descr_tete_typ  = NULL;
-
-  for (ptr_descr  = descr_tete;
-       ptr_descr != NULL;
-       ptr_descr  = ptr_descr->l_descr_sui) {
-
-    if (ptr_descr->typ == descr_typ) {
-
-      descr_copie = ecs_descr__copie(ptr_descr);
-
-      ecs_descr_chaine__ajoute(&descr_tete_typ,
-                               descr_copie);
-
-    }
-  }
-
-  return descr_tete_typ;
 }
 
 /*----------------------------------------------------------------------------
@@ -831,8 +717,6 @@ ecs_descr_chaine__trie(ecs_descr_t  *descr_tete)
     assert(ptr_descr->num <= (int)nbr_descr);
     tab_renum.val[tab_descr[j].num - 1] = j + 1;
     ptr_descr->num = j + 1;
-    ptr_descr->typ = tab_descr[j].typ;
-    ptr_descr->ide = tab_descr[j].ide;
     ptr_descr->nom = tab_descr[j].nom;
   }
 

@@ -464,8 +464,7 @@ ecs_maillage_pre__cree_elt(ecs_maillage_t   *maillage,
 
         for (icoul = 0; icoul < nbr_coul_ent[ient]; icoul++) {
 
-          descr_couleur = ecs_descr__cree(ECS_DESCR_COULEUR,
-                                          val_coul_ent[ient][icoul],
+          descr_couleur = ecs_descr__cree(val_coul_ent[ient][icoul],
                                           NULL);
 
           ecs_descr_chaine__ajoute(&descr_couleur_tete,

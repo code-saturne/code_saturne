@@ -222,13 +222,14 @@ static const ecs_loc_nopo_elt_t  ecs_loc_nopo_elt_liste_c[8] = {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Compactage des couleurs. On fournit en entrée le numéro de couleur
+ *  Compactage des références. On fournit en entrée le numéro de référence
  *  d'une liste d'entités, on obtient en sortie (dans le même tableau)
- *  la position de cette couleur dans le tableau compacté ; on récupère
- *  le tableau des valeurs des couleurs correspondant à chaque indice,
- *  ainsi que le nombre de couleurs total et le nombre d'entités par couleur.
+ *  la position de cette référence dans le tableau compacté ; on récupère
+ *  le tableau des valeurs des références correspondant à chaque indice,
+ *  ainsi que le nombre de références total et le nombre d'entités par
+ *  référence.
  *
- *  Si on n'a aucune couleur, on renvoie des pointeurs à NULL.
+ *  Si on n'a aucune référence, on renvoie des pointeurs à NULL.
  *----------------------------------------------------------------------------*/
 
 static void
@@ -314,7 +315,7 @@ ecs_loc_pre_nopo__compct_ref(ecs_int_t     nbr_ent,
 
   ECS_REALLOC(*cpt_elt_coul_ent, *cpt_coul_ent, ecs_size_t);
 
-  /* Test si on n'a que la couleur 0 (équivaut à aucune couleur) */
+  /* Test si on n'a que la référence 0 (équivaut à aucune référence) */
 
   if (*cpt_coul_ent == 1) {
 
@@ -390,7 +391,7 @@ ecs_loc_pre_nopo__cree_elements(ecs_maillage_t   *maillage,
 
   ecs_size_t  *elt_pos_som_ent    [ECS_N_ENTMAIL]; /* Positions numeros som */
   ecs_int_t   *elt_val_som_ent    [ECS_N_ENTMAIL]; /* Numeros des sommets   */
-  ecs_int_t   *elt_val_coul_ent   [ECS_N_ENTMAIL]; /* Couleurs              */
+  ecs_int_t   *elt_val_coul_ent   [ECS_N_ENTMAIL]; /* Références            */
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -634,7 +635,7 @@ ecs_loc_pre_nopo__cree_elements(ecs_maillage_t   *maillage,
             elt_pos_som_ent[issent][ind_elt_add[issent] + 1] =
               elt_pos_som_ent[issent][ind_elt_add[issent]] + nbr_som;
 
-            /* Couleur de l'élément ajouté (sera compactée plus tard) */
+            /* Référence de l'élément ajouté (sera compactée plus tard) */
 
             elt_val_coul_ent[issent][ind_elt_add[issent]] = tab_ref[isselt];
 
@@ -667,7 +668,7 @@ ecs_loc_pre_nopo__cree_elements(ecs_maillage_t   *maillage,
       elt_pos_som_ent[ient][cpt_elt_ent[ient] + 1] =
         elt_pos_som_ent[ient][cpt_elt_ent[ient]] + nbr_som;
 
-      /* Couleur de l'élément lu (sera compactée plus tard) */
+      /* Référence de l'élément lu (sera compactée plus tard) */
 
       elt_val_coul_ent[ient][cpt_elt_ent[ient]] = ndsde;
 
@@ -685,7 +686,7 @@ ecs_loc_pre_nopo__cree_elements(ecs_maillage_t   *maillage,
   for (ient = ECS_ENTMAIL_FAC; ient < ECS_N_ENTMAIL; ient++)
     cpt_elt_ent[ient] = ind_elt_add[ient];
 
-  /* Compactage des couleurs des éléments */
+  /* Compactage des références des éléments */
 
   for (ient = ECS_ENTMAIL_FAC; ient < ECS_N_ENTMAIL; ient++) {
 

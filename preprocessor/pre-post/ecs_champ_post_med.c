@@ -295,8 +295,6 @@ ecs_loc_champ_post_med__maillage(const ecs_med_t  *cas_med,
 /*----------------------------------------------------------------------------
  *  Fonction écrivant une famille
  *
- *  Les descripteurs de type "couleur" sont écrits en tant qu'attributs MED,
- *   sans description MED associée.
  *  Les numéros des descripteurs de type "groupe" seront perdus.
  *----------------------------------------------------------------------------*/
 
@@ -305,8 +303,7 @@ ecs_loc_champ_post_med__ecr_fam(const char           *prefixe_nom_fam,
                                 char                 *nom_maillage_med,
                                 const med_int         num_fam_med,
                                 const ecs_famille_t  *ptr_fam,
-                                ecs_med_t            *cas_med,
-                                bool                  couleur_en_groupe)
+                                ecs_med_t            *cas_med)
 {
   size_t   ipropr;
 
@@ -318,16 +315,11 @@ ecs_loc_champ_post_med__ecr_fam(const char           *prefixe_nom_fam,
 
   char        nom_fam_med[MED_TAILLE_NOM + 1];
   char        str_num_fam_med[MED_TAILLE_NOM + 1];
-  char      * att_des_med;
   char      * grp_nom_med;
-  char      * ptr_att_des_med;
   char      * ptr_grp_nom_med;
 
   size_t      ind;
-  med_int     nbr_att_med;
   med_int     nbr_grp_med;
-  med_int   * att_ide_med;
-  med_int   * att_val_med;
 
   med_err     ret_med = 0;
 
@@ -336,10 +328,8 @@ ecs_loc_champ_post_med__ecr_fam(const char           *prefixe_nom_fam,
 
   /* Récupération des propriétés de la famille */
 
-  tab_ide_descr = ecs_famille__ret_ide(ptr_fam);
   tab_nom_descr = ecs_famille__ret_nom(ptr_fam);
 
-  nbr_att_med = (med_int)tab_ide_descr.nbr;
   nbr_grp_med = (med_int)tab_nom_descr.nbr;
 
 
@@ -355,111 +345,30 @@ ecs_loc_champ_post_med__ecr_fam(const char           *prefixe_nom_fam,
   nom_fam_med[MED_TAILLE_NOM] = '\0';
 
 
-  /* Création des attributs MED et groupes */
+  /* Création des groupes MED */
 
-  if (couleur_en_groupe == false) {
+  if (nbr_grp_med > 0)
+    ECS_MALLOC(grp_nom_med, MED_TAILLE_LNOM  * nbr_grp_med + 1, char);
+  else
+    grp_nom_med = NULL;
 
-    ECS_MALLOC(att_ide_med, (ecs_int_t)nbr_att_med, med_int);
-    ECS_MALLOC(att_val_med, (ecs_int_t)nbr_att_med, med_int);
-    if (nbr_att_med > 0)
-      ECS_MALLOC(att_des_med, MED_TAILLE_DESC * nbr_att_med + 1, char);
-    else
-      att_des_med = NULL;
-    if (nbr_grp_med > 0)
-      ECS_MALLOC(grp_nom_med, MED_TAILLE_LNOM  * nbr_grp_med + 1, char);
-    else
-      grp_nom_med = NULL;
+  /* Affectation des groupes MED */
 
+  for (ipropr = 0, nbr_grp_med = 0;
+       ipropr < tab_nom_descr.nbr;
+       ipropr++) {
 
-    /* Affectation des attributs et groupes MED */
-
-    for (ipropr = 0, nbr_att_med = 0;
-         ipropr < tab_ide_descr.nbr;
-         ipropr++) {
-
-      att_ide_med[nbr_att_med] = nbr_att_med + 1;
-      att_val_med[nbr_att_med] = tab_ide_descr.val[ipropr];
-
-      ptr_att_des_med = att_des_med + (MED_TAILLE_DESC*nbr_att_med);
-
-      for (ind = 0; ind < MED_TAILLE_DESC; ind++)
-        ptr_att_des_med[ind] = ' ';
-
-      nbr_att_med++;
-
+    ptr_grp_nom_med = grp_nom_med + (MED_TAILLE_LNOM*nbr_grp_med);
+    ind = 0;
+    while (   ind < MED_TAILLE_LNOM
+           && tab_nom_descr.val[ipropr][ind] != '\0') {
+      ptr_grp_nom_med[ind] = tab_nom_descr.val[ipropr][ind];
+      ind++;
     }
+    while (ind < MED_TAILLE_LNOM)
+      ptr_grp_nom_med[ind++] = ' ';
 
-    for (ipropr = 0, nbr_grp_med = 0;
-         ipropr < tab_nom_descr.nbr;
-         ipropr++) {
-
-      ptr_grp_nom_med = grp_nom_med + (MED_TAILLE_LNOM*nbr_grp_med);
-      ind = 0;
-      while (   ind < MED_TAILLE_LNOM
-             && tab_nom_descr.val[ipropr][ind] != '\0') {
-        ptr_grp_nom_med[ind] = tab_nom_descr.val[ipropr][ind];
-        ind++;
-      }
-      while (ind < MED_TAILLE_LNOM)
-        ptr_grp_nom_med[ind++] = ' ';
-
-      nbr_grp_med++;
-
-    }
-
-  }
-  else { /* if (couleur_en_groupe == true) */
-
-    ECS_MALLOC(att_ide_med, (ecs_int_t)nbr_att_med, med_int);
-    ECS_MALLOC(att_val_med, (ecs_int_t)nbr_att_med, med_int);
-    att_des_med = NULL;
-    if (nbr_att_med + nbr_grp_med > 0)
-      ECS_MALLOC(grp_nom_med,
-                 MED_TAILLE_LNOM  * (nbr_grp_med + nbr_att_med) + 1,
-                 char);
-    else
-      grp_nom_med = NULL;
-
-
-    /* Affectation des attributs et groupes MED */
-
-    for (ipropr = 0, nbr_grp_med = 0;
-         ipropr < tab_nom_descr.nbr;
-         ipropr++) {
-
-      ptr_grp_nom_med = grp_nom_med + (MED_TAILLE_LNOM*nbr_grp_med);
-      ind = 0;
-      while (   ind < MED_TAILLE_LNOM
-             && tab_nom_descr.val[ipropr][ind] != '\0') {
-        ptr_grp_nom_med[ind] = tab_nom_descr.val[ipropr][ind];
-        ind++;
-      }
-      while (ind < MED_TAILLE_LNOM)
-        ptr_grp_nom_med[ind++] = '\0';
-
-      nbr_grp_med++;
-
-    }
-
-    for (ipropr = 0, nbr_att_med = 0;
-         ipropr < tab_ide_descr.nbr;
-         ipropr++) {
-
-      ptr_grp_nom_med = grp_nom_med + (MED_TAILLE_LNOM*nbr_grp_med);
-
-#if defined(HAVE_SNPRINTF)
-      ind = snprintf(ptr_grp_nom_med, MED_TAILLE_LNOM, "%d",
-                     (int)(tab_ide_descr.val[ipropr]));
-#else
-      ind = sprintf(ptr_grp_nom_med, "%d", (int)(tab_ide_descr.val[ipropr]));
-#endif
-
-      while (ind < MED_TAILLE_LNOM)
-        ptr_grp_nom_med[ind++] = '\0';
-
-      nbr_grp_med++;
-
-    }
+    nbr_grp_med++;
 
   }
 
@@ -472,10 +381,10 @@ ecs_loc_champ_post_med__ecr_fam(const char           *prefixe_nom_fam,
                      nom_maillage_med,
                      nom_fam_med,
                      num_fam_med,
-                     att_ide_med,
-                     att_val_med,
-                     att_des_med,
-                     nbr_att_med,
+                     NULL,
+                     NULL,
+                     NULL,
+                     0,
                      grp_nom_med,
                      nbr_grp_med);
 
@@ -486,9 +395,6 @@ ecs_loc_champ_post_med__ecr_fam(const char           *prefixe_nom_fam,
                 "Number of family to write: \"%d\""),
               cas_med->nom_fic, nom_fam_med, (int)num_fam_med);
 
-  ECS_FREE(att_ide_med);
-  ECS_FREE(att_val_med);
-  ECS_FREE(att_des_med);
   ECS_FREE(grp_nom_med);
 }
 
@@ -504,8 +410,7 @@ void
 ecs_champ_post_med__ecr_famille(const char           *nom_maillage,
                                 const ecs_famille_t  *famille_elt,
                                 const ecs_famille_t  *famille_inf,
-                                ecs_med_t            *cas_med,
-                                bool                  couleur_en_groupe)
+                                ecs_med_t            *cas_med)
 {
   ecs_int_t        ifam_ent;
   size_t           ind;
@@ -592,8 +497,7 @@ ecs_champ_post_med__ecr_famille(const char           *nom_maillage,
                                       maillage_med->nom_maillage_med,
                                       num_fam_med,
                                       ptr_fam,
-                                      cas_med,
-                                      couleur_en_groupe);
+                                      cas_med);
 
     }
   } /* Fin : boucle sur les tetes de liste chaînée des familles */

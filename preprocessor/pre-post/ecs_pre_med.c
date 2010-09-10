@@ -1314,9 +1314,7 @@ ecs_loc_pre_med__lit_famille(const ecs_med_t  *fic_maillage,
           nom   = NULL;
         }
 
-        descr = ecs_descr__cree(ECS_DESCR_COULEUR,
-                                ide,
-                                nom);
+        descr = ecs_descr__cree(ide, nom);
 
         ecs_descr_chaine__ajoute(&descr_tete, descr);
 
@@ -1359,12 +1357,9 @@ ecs_loc_pre_med__lit_famille(const ecs_med_t  *fic_maillage,
 
         /* Pas de valeur entière associée */
 
-        descr = ecs_descr__cree(ECS_DESCR_GROUPE,
-                                ECS_DESCR_IDE_NUL,
-                                nom);
+        descr = ecs_descr__cree(ECS_DESCR_IDE_NUL, nom);
 
-        ecs_descr_chaine__ajoute(&descr_tete,
-                                 descr);
+        ecs_descr_chaine__ajoute(&descr_tete, descr);
 
         if (nom != NULL)
           ECS_FREE(nom);
@@ -1580,8 +1575,8 @@ ecs_pre_med__lit_maillage(const char  *nom_fic_maillage,
 
   ecs_pre_med__detruit(fic_maillage);
 
-  /* Transformation des familles en attributs "groupe" et "couleur" */
-  /*----------------------------------------------------------------*/
+  /* Transformation des familles en attributs "groupe" */
+  /*---------------------------------------------------*/
 
   ecs_maillage__cree_attributs(maillage);
 

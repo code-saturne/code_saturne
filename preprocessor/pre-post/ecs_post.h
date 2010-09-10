@@ -91,8 +91,6 @@ typedef struct {
   bool     text;             /* Forcer la sortie en mode texte si disponible */
   bool     big_endian;       /* Forcer la sortie binaire en mode big-endian
                                 si possible */
-  bool     color_to_group;   /* Forcer la sortie binaire en mode big-endian
-                                si possible */
   bool     ecr_type[3];      /* Indicateur de sortie des maillages par type */
 
 } ecs_post_opt_t;

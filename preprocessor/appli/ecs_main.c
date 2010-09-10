@@ -314,7 +314,6 @@ _init_post(const ecs_cmd_t *cmd)
     cas_post->post_med = true;
 
     cas_post->opt_med.no_poly = cmd->post_med->no_poly;
-    cas_post->opt_med.color_to_group = cmd->post_med->color_to_group;
 
     cas_post->opt_med.ecr_type[ECS_POST_TYPE_VOLUME]
       = cmd->post_med->volume;

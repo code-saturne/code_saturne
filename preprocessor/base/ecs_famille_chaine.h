@@ -147,35 +147,16 @@ ecs_famille_t  *
 ecs_famille_chaine__copie(ecs_famille_t  *famille_tete);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui affiche par attribut (couleur ou groupe),
- *   les numéros des familles auxquelles l'attribut appartient
- *   à partir d'une liste chaînée de familles dont la tête est donnée
- *----------------------------------------------------------------------------*/
-
-void
-ecs_famille_chaine__aff_fam_att(ecs_famille_t  *fam_tete);
-
-/*----------------------------------------------------------------------------
  *  Fonction qui renvoie pour chaque numéro de famille
- *   le nombre et la liste des identificateurs de type couleur
+ *   le nombre et une liste de pointeurs sur les noms des groupes
  *   des descripteurs de la famille
- *----------------------------------------------------------------------------*/
-
-ecs_tab_int_t *
-ecs_famille_chaine__ret_ide(ecs_famille_t   *fam_tete);
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie pour chaque numéro de famille
- *   le nombre et une liste de pointeurs sur les noms des identificateurs
- *   de type groupe des descripteurs de la famille
  *----------------------------------------------------------------------------*/
 
 ecs_tab_char_t *
 ecs_famille_chaine__ret_nom(ecs_famille_t   *fam_tete);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui construit une liste chaînée de descripteurs de type
- *   "couleur" et "groupe"
+ *  Fonction qui construit une liste chaînée de descripteurs
  *   pour chaque numéro de famille contenu dans le tableau donné
  *   et à partir de la liste chaînée des familles
  *

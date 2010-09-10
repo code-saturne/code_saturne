@@ -87,8 +87,7 @@ void
 ecs_champ_post_med__ecr_famille(const char           *nom_maillage,
                                 const ecs_famille_t  *famille_elt,
                                 const ecs_famille_t  *famille_inf,
-                                ecs_med_t            *cas_med,
-                                bool                  couleur_en_groupe);
+                                ecs_med_t            *cas_med);
 
 /*----------------------------------------------------------------------------
  *  Fonction imprimant le contenu des champs asociees aux sommets

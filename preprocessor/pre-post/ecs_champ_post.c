@@ -332,8 +332,7 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
     ecs_champ_post_med__ecr_famille(nom_maillage,
                                     famille_elt,
                                     famille_inf,
-                                    cas_post->cas_med,
-                                    (cas_post->opt_med).color_to_group);
+                                    cas_post->cas_med);
 
     /* Écriture du maillage principal */
 

@@ -2846,8 +2846,7 @@ ecs_loc_pre_cgns__cree_grps_boco(const ecs_loc_cgns_base_t  *base_maillage,
 
       /* Création du descripteur de champ correspondant au groupe lu */
 
-      descr_grp = ecs_descr__cree(ECS_DESCR_GROUPE,
-                                  ECS_DESCR_IDE_NUL,
+      descr_grp = ecs_descr__cree(ECS_DESCR_IDE_NUL,
                                   nom_boco);
 
       /* Transformation du tableau référencant le groupe en une table */
@@ -3174,8 +3173,7 @@ ecs_loc_pre_cgns__cree_grps_zs(const ecs_loc_cgns_base_t  *base_maillage,
 
           /* Création du descripteur de champ correspondant au groupe lu */
 
-          descr_grp = ecs_descr__cree(ECS_DESCR_GROUPE,
-                                      ECS_DESCR_IDE_NUL,
+          descr_grp = ecs_descr__cree(ECS_DESCR_IDE_NUL,
                                       nom_grp);
 
 

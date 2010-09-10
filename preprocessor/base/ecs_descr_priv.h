@@ -2,15 +2,14 @@
 #define _ECS_DESCR_PRIV_H_
 
 /*============================================================================
- *  Définition privee de la structure `ecs_descr_t' décrivant
- *   un descripteur de champ de type "attribut"
+ * Private definition of the `ecs_descr_t' structure, describing a group
  *============================================================================*/
 
 /*
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2010 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -31,56 +30,41 @@
   Boston, MA  02110-1301  USA
 */
 
-
-/*============================================================================
- *                                 Visibilité
- *============================================================================*/
-
+/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C
+ * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' publics  du  paquetage global "Utilitaire"
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "ecs_def.h"
 #include "ecs_tab_glob.h"
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' publics  des paquetages visibles
- *----------------------------------------------------------------------------*/
-
-
-/*----------------------------------------------------------------------------
- *  Fichiers `include' publics  du  paquetage courant
+ *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "ecs_descr.h"
 
-
 /*============================================================================
- *                       Définition de macros
+ * Macro definitions
  *============================================================================*/
 
-
 /*============================================================================
- *                       Définition de la structure
+ * Type definitions
  *============================================================================*/
 
-/* Descripteur de couleur ou groupe. */
+/* Group descriptor. */
 
 struct _ecs_descr_t {
 
-  int                  num;           /* Numéro */
-  ecs_descr_typ_t      typ;           /* Type */
-  int                  ide;           /* Numéro d'attribut */
-  char               * nom;           /* Nom */
+  int               num;           /* Number */
+  char             *nom;           /* Name */
   struct
-  _ecs_descr_t       * l_descr_sui;   /* Pointeur sur le descripteur suivant */
+  _ecs_descr_t     *l_descr_sui;   /* Pointer to next descriptor */
 
 };
 

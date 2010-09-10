@@ -335,7 +335,6 @@ ecs_maillage_post__ecr_fac_liste(const char           *nom_liste,
 {
   ecs_maillage_t  * maillage_extrait;
 
-  ecs_tab_int_t     liste_couleur;
   ecs_tab_char_t    liste_groupe;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -344,9 +343,6 @@ ecs_maillage_post__ecr_fac_liste(const char           *nom_liste,
 
   /* Initialisations */
   /*-----------------*/
-
-  liste_couleur.nbr = 0;
-  liste_couleur.val = NULL;
 
   liste_groupe.nbr = 0;
   liste_groupe.val = NULL;

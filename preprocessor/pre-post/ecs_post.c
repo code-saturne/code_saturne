@@ -80,7 +80,6 @@ ecs_loc_post__init_opts(ecs_post_opt_t  *opts)
   opts->no_poly = false;
   opts->text = false;
   opts->big_endian = false;
-  opts->color_to_group  = false;
 
   opts->ecr_type[ECS_POST_TYPE_VOLUME] = true;
   opts->ecr_type[ECS_POST_TYPE_INFO] = true;
