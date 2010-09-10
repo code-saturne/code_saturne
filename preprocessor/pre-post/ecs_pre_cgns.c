@@ -114,23 +114,16 @@ extern "C" {
                                           CGNS et le fichier ADF.h prévoient
                                           des chaînes de 32 caractères) */
 
-#define ECS_CGNS_NBR_TYP_ELT        20  /* Nombre de types d'éléments CGNS */
-#define ECS_CGNS_NBR_MAX_SOM         8  /* Nombre maximal de sommets
-                                           définissant un élément */
 #define ECS_CGNS_SSELT_NBR_MAX_SOM   4  /* Nombre maximal de sommets
                                            définissant un sous-élément */
 
 
 /* Compatibilité avec diverses versions de CGNS */
 
-#if !defined(CG_OK)
-#define CG_OK  ALL_OK
-#endif
-
 #if defined(CGNS_SCOPE_ENUMS)
-#define CS_CG_ENUM( e ) CG_ ## e
+#define CS_CG_ENUM(e) CG_ ## e
 #else
-#define CS_CG_ENUM( e ) e
+#define CS_CG_ENUM(e) e
 #endif
 
 
@@ -210,7 +203,7 @@ typedef struct {
   CS_CG_ENUM(ElementType_t)   cgns_type;   /* Type CGNS de l'élément         */
   ecs_elt_typ_t               ecs_type;    /* Type ECS  de l'élément         */
   ecs_int_t                   nbr_som;     /* Nombre de sommets associés     */
-  ecs_int_t                   num_som[ECS_CGNS_NBR_MAX_SOM];  /* Sommets ECS */
+  ecs_int_t                   num_som[8];  /* Sommets ECS */
 
 } ecs_cgns_elt_t;
 
@@ -223,127 +216,162 @@ typedef struct {
 /* de cgnslib.h (mais ne contient pas les deux premières entrées)      */
 
 static const ecs_cgns_elt_t
-ecs_cgns_elt_liste_c[ECS_CGNS_NBR_TYP_ELT] = {
+ecs_cgns_elt_liste_c[NofValidElementTypes] = {
+  {                                /* 0 */
+    CS_CG_ENUM(ElementTypeNull),
+    ECS_ELT_TYP_NUL,
+    1,
+    { 0 }
+  },
   {                                /* 1 */
-    CS_CG_ENUM(NODE),
+    CS_CG_ENUM(ElementTypeUserDefined),
     ECS_ELT_TYP_NUL,
     1,
     { 0 }
   },
   {                                /* 2 */
+    CS_CG_ENUM(NODE),
+    ECS_ELT_TYP_NUL,
+    1,
+    { 0 }
+  },
+  {                                /* 3 */
     CS_CG_ENUM(BAR_2),
     ECS_ELT_TYP_NUL,
     2,
     { 0 }
   },
-  {                                /* 3 */
+  {                                /* 4 */
     CS_CG_ENUM(BAR_3),
     ECS_ELT_TYP_NUL,
     3,
     { 0 }
   },
-  {                                /* 4 */
+  {                                /* 5 */
     CS_CG_ENUM(TRI_3),
     ECS_ELT_TYP_FAC_TRIA,
     3,
     { 1, 2, 3 }
   },
-  {                                /* 5 */
+  {                                /* 6 */
     CS_CG_ENUM(TRI_6),
     ECS_ELT_TYP_FAC_TRIA,
     6,
     { 1, 2, 3 }
   },
-  {                                /* 6 */
+  {                                /* 7 */
     CS_CG_ENUM(QUAD_4),
     ECS_ELT_TYP_FAC_QUAD,
     4,
     { 1, 2, 3, 4 }
   },
-  {                                /* 7 */
+  {                                /* 8 */
     CS_CG_ENUM(QUAD_8),
     ECS_ELT_TYP_FAC_QUAD,
     8,
     { 1, 2, 3, 4 }
   },
-  {                                /* 8 */
+  {                                /* 9 */
     CS_CG_ENUM(QUAD_9),
     ECS_ELT_TYP_FAC_QUAD,
     9,
     { 1, 2, 3, 4 }
   },
-  {                                /* 9 */
+  {                               /* 10 */
     CS_CG_ENUM(TETRA_4),
     ECS_ELT_TYP_CEL_TETRA,
     4,
     { 1, 2, 3, 4 }
   },
-  {                               /* 10 */
+  {                               /* 11 */
     CS_CG_ENUM(TETRA_10),
     ECS_ELT_TYP_CEL_TETRA,
     10,
     { 1, 2, 3, 4 }
   },
-  {                               /* 11 */
+  {                               /* 12 */
     CS_CG_ENUM(PYRA_5),
     ECS_ELT_TYP_CEL_PYRAM,
     5,
     { 1, 2, 3, 4, 5 }
   },
-  {                               /* 12 */
+#if (CGNS_VERSION >= 3000)
+  {                               /* 13 */
+    CS_CG_ENUM(PYRA_13),
+    ECS_ELT_TYP_CEL_PYRAM,
+    13,
+    { 1, 2, 3, 4, 5 }
+  },
+#endif
+  {                               /* 13 or 14 */
     CS_CG_ENUM(PYRA_14),
     ECS_ELT_TYP_CEL_PYRAM,
     14,
     { 1, 2, 3, 4, 5 }
   },
-  {                               /* 13 */
+  {                               /* 14 or 15 */
     CS_CG_ENUM(PENTA_6),
     ECS_ELT_TYP_CEL_PRISM,
     6,
     { 1, 2, 3, 4, 5, 6 }
   },
-  {                               /* 14 */
+  {                               /* 15 or 16 */
     CS_CG_ENUM(PENTA_15),
     ECS_ELT_TYP_CEL_PRISM,
     15,
     { 1, 2, 3, 4, 5, 6 }
   },
-  {                               /* 15 */
+  {                               /* 16 or 17 */
     CS_CG_ENUM(PENTA_18),
     ECS_ELT_TYP_CEL_PRISM,
     18,
     { 1, 2, 3, 4, 5, 6 }
   },
-  {                               /* 16 */
+  {                               /* 17 or 18 */
     CS_CG_ENUM(HEXA_8),
     ECS_ELT_TYP_CEL_HEXA,
     8,
     { 1, 2, 3, 4, 5, 6, 7, 8 },
   },
-  {                               /* 17 */
+  {                               /* 18 or 19 */
     CS_CG_ENUM(HEXA_20),
     ECS_ELT_TYP_CEL_HEXA,
     20,
     { 1, 2, 3, 4, 5, 6, 7, 8 },
   },
-  {                               /* 18 */
+  {                               /* 19 or 20 */
     CS_CG_ENUM(HEXA_27),
     ECS_ELT_TYP_CEL_HEXA,
     27,
     { 1, 2, 3, 4, 5, 6, 7, 8 },
   },
-  {                               /* 19 */
+  {                               /* 20 or 21 */
     CS_CG_ENUM(MIXED),
     ECS_ELT_TYP_NUL,
     0,
     { 0 },
   },
-  {                               /* 20 */
+#if (CGNS_VERSION < 3000)
+  {                               /* 21 */
     CS_CG_ENUM(NGON_n),
     ECS_ELT_TYP_FAC_POLY,
     0,
     { 0 }
   }
+#else
+  {                               /* 22 */
+    CS_CG_ENUM(NGON_n),
+    ECS_ELT_TYP_FAC_POLY,
+    0,
+    { 0 }
+  },
+  {                               /* 23 */
+    CS_CG_ENUM(NFACE_n),
+    ECS_ELT_TYP_CEL_POLY,
+    0,
+    { 0 }
+  }
+#endif
 };
 
 /*============================================================================
@@ -376,7 +404,7 @@ ecs_loc_pre_cgns__cree(const char  *nom_fichier,
   ECS_MALLOC(base->nom_fic, strlen(nom_fichier) + 1, char);
   strcpy(base->nom_fic, nom_fichier);
 
-  ret = cg_open(base->nom_fic, CS_CG_ENUM(MODE_READ), &(base->num_fic));
+  ret = cg_open(base->nom_fic, CG_MODE_READ, &(base->num_fic));
 
   if (ret < 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -2196,8 +2224,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
         if (ptr_section->type != CS_CG_ENUM(MIXED)) {
 
           if (ptr_section->type < CS_CG_ENUM(NGON_n)) {
-            ecs_typ     = ecs_cgns_elt_liste_c[  ptr_section->type
-                                               - CS_CG_ENUM(NODE)].ecs_type;
+            ecs_typ     = ecs_cgns_elt_liste_c[ptr_section->type].ecs_type;
             nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
           }
           else {
@@ -2220,12 +2247,11 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           while (cpt_elt_loc < nbr_elt_loc) {
 
-            ind_type    = *ptr_ele - CS_CG_ENUM(NODE);
-            if (ind_type < CS_CG_ENUM(NGON_n) - CS_CG_ENUM(NODE)) {
+            ind_type    = *ptr_ele;
+            if (ind_type < CS_CG_ENUM(NGON_n)) {
               ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
               nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
-              ptr_ele += ecs_cgns_elt_liste_c[*ptr_ele
-                                              - CS_CG_ENUM(NODE)].nbr_som + 1;
+              ptr_ele += ecs_cgns_elt_liste_c[*ptr_ele].nbr_som + 1;
             }
             else {
               ecs_typ     = ECS_ELT_TYP_FAC_POLY;
@@ -2433,8 +2459,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
         if (ptr_section->type != CS_CG_ENUM(MIXED)) {
 
-          ind_type    = ptr_section->type - CS_CG_ENUM(NODE);
-          if (ind_type < CS_CG_ENUM(NGON_n) - CS_CG_ENUM(NODE)) {
+          ind_type    = ptr_section->type;
+          if (ind_type < CS_CG_ENUM(NGON_n)) {
             ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
             nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
           }
@@ -2451,8 +2477,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           if (ptr_section->type == CS_CG_ENUM(MIXED)) {
 
-            ind_type    = *ptr_ele - CS_CG_ENUM(NODE);
-            if (ind_type < CS_CG_ENUM(NGON_n) - CS_CG_ENUM(NODE)) {
+            ind_type    = *ptr_ele;
+            if (ind_type < CS_CG_ENUM(NGON_n)) {
               ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
               nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
             }
@@ -2492,7 +2518,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
               =  elt_pos_som_ent[ient][ind_pos] + nbr_som_elt;
 
             for (ind_som = 0; ind_som < nbr_som_elt; ind_som++) {
-              if (ind_type < CS_CG_ENUM(NGON_n) - CS_CG_ENUM(NODE))
+              if (ind_type < CS_CG_ENUM(NGON_n))
                 elt_val_som_ent[ient][ind_val++]
                   = *(ptr_ele
                       + ecs_cgns_elt_liste_c[ind_type].num_som[ind_som] - 1)
@@ -2502,7 +2528,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
                   = *(ptr_ele + ind_som) + num_som_deb - 1;
             }
 
-            if (ind_type < CS_CG_ENUM(NGON_n) - CS_CG_ENUM(NODE))
+            if (ind_type < CS_CG_ENUM(NGON_n))
               ptr_ele += ecs_cgns_elt_liste_c[ind_type].nbr_som;
             else
               ptr_ele += nbr_som_elt;

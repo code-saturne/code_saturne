@@ -97,8 +97,20 @@ extern "C" {
 
 /* Compatibility with different CGNS library versions */
 
-#if !defined(CG_OK)
-#define CG_OK  0
+#if !defined(CGNS_ENUMV)
+#define CGNS_ENUMV(e) e
+#endif
+
+#if !defined(CGNS_ENUMT)
+#define CGNS_ENUMT(e) e
+#endif
+
+#if !defined (CGNS_ENUMD)
+#define CGNS_ENUMD(e) e
+#endif
+
+#if !defined (CGNS_ENUMF)
+#define CGNS_ENUMF(e) e
 #endif
 
 /*============================================================================
@@ -111,11 +123,12 @@ extern "C" {
 
 typedef struct {
 
-  char            *name;       /* Solution name */
-  int              index;      /* CGNS base index */
-  GridLocation_t   location;   /* CGNS grid location of values */
-  double           time_value; /* Time step value */
-  int              time_step;  /* No. of iteration associated with time value */
+  char                        *name;       /* Solution name */
+  int                          index;      /* CGNS base index */
+  CGNS_ENUMT(GridLocation_t)   location;   /* CGNS grid location of values */
+  double                       time_value; /* Time step value */
+  int                          time_step;  /* No. of iteration associated
+                                              with time value */
 
 } fvm_to_cgns_solution_t;
 
@@ -325,10 +338,10 @@ _add_base(fvm_to_cgns_writer_t  *writer,
  *----------------------------------------------------------------------------*/
 
 static int
-_add_solution(fvm_to_cgns_writer_t  *writer,
-              int                    time_step,
-              double                 time_value,
-              GridLocation_t         location)
+_add_solution(fvm_to_cgns_writer_t        *writer,
+              int                          time_step,
+              double                       time_value,
+              CGNS_ENUMT(GridLocation_t)   location)
 {
   int  base_id, sol_id, sol_length;
   char sol_name[FVM_CGNS_NAME_SIZE + 1];
@@ -420,7 +433,7 @@ static int
 _get_solution_index(const fvm_to_cgns_writer_t  *writer,
                     int                          time_step,
                     double                       time_value,
-                    GridLocation_t               location)
+                    CGNS_ENUMT(GridLocation_t)   location)
 {
   int sol_id, n_sols;
 
@@ -633,7 +646,7 @@ _add_zone(const fvm_nodal_t           *mesh,
                          base->index,
                          "Zone 1",
                          zone_sizes,
-                         Unstructured,
+                         CGNS_ENUMV(Unstructured),
                          &zone_index);
 
   if (retval != CG_OK)
@@ -727,7 +740,7 @@ static void
 _define_section(const fvm_writer_section_t  *section,
                 int section_id,
                 char section_name[FVM_CGNS_NAME_SIZE + 1],
-                ElementType_t *cgns_elt_type)
+                CGNS_ENUMT(ElementType_t) *cgns_elt_type)
 {
   assert(section != NULL);
 
@@ -735,47 +748,47 @@ _define_section(const fvm_writer_section_t  *section,
 
   case FVM_EDGE:
     sprintf(section_name, "Edges_%d", section_id);
-    *cgns_elt_type = BAR_2;
+    *cgns_elt_type = CGNS_ENUMV(BAR_2);
     break;
 
   case FVM_FACE_TRIA:
     sprintf(section_name, "Triangles_%d", section_id);
-    *cgns_elt_type = TRI_3;
+    *cgns_elt_type = CGNS_ENUMV(TRI_3);
     break;
 
   case FVM_FACE_QUAD:
     sprintf(section_name, "Quadrangles_%d", section_id);
-    *cgns_elt_type = QUAD_4;
+    *cgns_elt_type = CGNS_ENUMV(QUAD_4);
     break;
 
   case FVM_FACE_POLY:
     sprintf(section_name, "Polygons_%d", section_id);
-    *cgns_elt_type = MIXED;
+    *cgns_elt_type = CGNS_ENUMV(MIXED);
     break;
 
   case FVM_CELL_TETRA:
     sprintf(section_name, "Tetrahedra_%d", section_id);
-    *cgns_elt_type = TETRA_4;
+    *cgns_elt_type = CGNS_ENUMV(TETRA_4);
     break;
 
   case FVM_CELL_PYRAM:
     sprintf(section_name, "Pyramids_%d", section_id);
-    *cgns_elt_type = PYRA_5;
+    *cgns_elt_type = CGNS_ENUMV(PYRA_5);
     break;
 
   case FVM_CELL_PRISM:
     sprintf(section_name, "Prisms_%d", section_id);
-    *cgns_elt_type = PENTA_6;
+    *cgns_elt_type = CGNS_ENUMV(PENTA_6);
     break;
 
   case FVM_CELL_HEXA:
     sprintf(section_name, "Hexahedra_%d", section_id);
-    *cgns_elt_type = HEXA_8;
+    *cgns_elt_type = CGNS_ENUMV(HEXA_8);
     break;
 
   default:
     sprintf(section_name, "Null_section_%d", section_id);
-    *cgns_elt_type = ElementTypeNull;
+    *cgns_elt_type = CGNS_ENUMV(ElementTypeNull);
   }
 
   return;
@@ -802,7 +815,7 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
   int coord_index, section_id;
   fvm_lnum_t  i, j;
   MPI_Datatype  mpi_datatype;
-  DataType_t  cgns_datatype;
+  CGNS_ENUMT(DataType_t)  cgns_datatype;
 
   int  idx_start = 0, idx_end = 0;
   int zone_index = 1;
@@ -830,11 +843,11 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
   assert(base != NULL);
 
   if (sizeof(fvm_coord_t) == sizeof(double)) {
-    cgns_datatype = RealDouble;
+    cgns_datatype = CGNS_ENUMV(RealDouble);
     mpi_datatype = MPI_DOUBLE;
   }
   else {
-    cgns_datatype = RealSingle;
+    cgns_datatype = CGNS_ENUMV(RealSingle);
     mpi_datatype = MPI_FLOAT;
   }
 
@@ -1033,7 +1046,7 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
   int  coord_index;
   fvm_lnum_t  i, j;
   fvm_lnum_t  idx_start, idx_end;
-  DataType_t  cgns_datatype;
+  CGNS_ENUMT(DataType_t)  cgns_datatype;
 
   int  zone_index = 1;
   size_t  stride = (size_t)mesh->dim;
@@ -1055,9 +1068,9 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
   assert(base != NULL);
 
   if (sizeof(fvm_coord_t) == sizeof(double))
-    cgns_datatype = RealDouble;
+    cgns_datatype = CGNS_ENUMV(RealDouble);
   else
-    cgns_datatype = RealSingle;
+    cgns_datatype = CGNS_ENUMV(RealSingle);
 
   /* Compute extra vertex coordinates if present */
 
@@ -1184,7 +1197,7 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
 {
   int  section_index;
   char  section_name[FVM_CGNS_NAME_SIZE + 1];
-  ElementType_t  cgns_elt_type; /* Definition in cgnslib.h */
+  CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
 
   fvm_gnum_t  global_num_start = 0, global_num_end = 0;
   fvm_gnum_t  elt_start = 0, elt_end = 0;
@@ -1231,6 +1244,7 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
           for (i = 0; i < n; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
+#if (CGNS_VERSION < 3000)
         retval = cg_section_partial_write(writer->index,
                                           base->index,
                                           zone_index,
@@ -1241,6 +1255,25 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
                                           0, /* unsorted boundary elements */
                                           _global_connect_s,
                                           &section_index);
+#else
+        retval = cg_section_partial_write(writer->index,
+                                          base->index,
+                                          zone_index,
+                                          section_name,
+                                          cgns_elt_type,
+                                          elt_start,
+                                          elt_end,
+                                          0, /* unsorted boundary elements */
+                                          &section_index);
+        if (retval == CG_OK)
+          retval = cg_elements_partial_write(writer->index,
+                                             base->index,
+                                             zone_index,
+                                             section_index,
+                                             elt_start,
+                                             elt_end,
+                                             _global_connect_s);
+#endif /* (CGNS_VERSION >= 3000) */
       }
 
       if (retval != CG_OK)
@@ -1288,7 +1321,7 @@ _export_connect_l(const fvm_writer_section_t  *export_section,
 {
   int  section_index;
   char section_name[FVM_CGNS_NAME_SIZE + 1];
-  ElementType_t cgns_elt_type; /* Definition in cgnslib.h */
+  CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
 
   fvm_gnum_t elt_start = 0, elt_end = 0;
 
@@ -1363,7 +1396,7 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
 {
   int  section_index;
   char section_name[FVM_CGNS_NAME_SIZE + 1];
-  ElementType_t cgns_elt_type; /* Definition in cgnslib.h */
+  CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
 
   fvm_lnum_t  n_sub_elements_max = 0;
   fvm_lnum_t  start_id = 0, end_id = 0;
@@ -1509,6 +1542,7 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
           for (i = 0; i < n; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
+#if (CGNS_VERSION < 3000)
         retval = cg_section_partial_write(writer->index,
                                           base->index,
                                           zone_index,
@@ -1519,6 +1553,25 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
                                           0, /* unsorted boundary elements */
                                           _global_connect_s,
                                           &section_index);
+#else
+        retval = cg_section_partial_write(writer->index,
+                                          base->index,
+                                          zone_index,
+                                          section_name,
+                                          cgns_elt_type,
+                                          elt_start,
+                                          elt_end,
+                                          0, /* unsorted boundary elements */
+                                          &section_index);
+        if (retval == CG_OK)
+          retval = cg_elements_partial_write(writer->index,
+                                             base->index,
+                                             zone_index,
+                                             section_index,
+                                             elt_start,
+                                             elt_end,
+                                             _global_connect_s);
+#endif /* (CGNS_VERSION >= 3000) */
       }
 
       if (retval != CG_OK)
@@ -1576,7 +1629,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
   char  section_name[FVM_CGNS_NAME_SIZE + 1];
   fvm_lnum_t  n_sub_elements_max;
   fvm_lnum_t  n_buffer_elements_max;
-  ElementType_t  cgns_elt_type; /* Definition in cgnslib.h */
+  CGNS_ENUMT(ElementType_t)  cgns_elt_type; /* Definition in cgnslib.h */
 
   fvm_lnum_t  start_id = 0, end_id = 0;
   fvm_gnum_t  elt_start = 0, elt_end = 0;
@@ -1635,6 +1688,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
         for (i = 0; i < n; i++)
           _vertex_num[i] = vertex_num[i];
       }
+#if (CGNS_VERSION < 3000)
       retval = cg_section_partial_write(writer->index,
                                         base->index,
                                         zone_index,
@@ -1645,6 +1699,25 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
                                         0, /* unsorted boundary elements */
                                         _vertex_num,
                                         &section_index);
+#else
+      retval = cg_section_partial_write(writer->index,
+                                        base->index,
+                                        zone_index,
+                                        section_name,
+                                        cgns_elt_type,
+                                        elt_start,
+                                        elt_end,
+                                        0, /* unsorted boundary elements */
+                                        &section_index);
+      if (retval == CG_OK)
+        retval = cg_elements_partial_write(writer->index,
+                                           base->index,
+                                           zone_index,
+                                           section_index,
+                                           elt_start,
+                                           elt_end,
+                                          _vertex_num);
+#endif /* (CGNS_VERSION >= 3000) */
     }
 
     if (retval != CG_OK)
@@ -1699,7 +1772,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
   int  section_index;
   char  section_name[FVM_CGNS_NAME_SIZE + 1];
   fvm_lnum_t  elt_id, vertex_id;
-  ElementType_t cgns_elt_type; /* Definition in cgnslib.h */
+  CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
 
   size_t  connect_end = 0;
   fvm_gnum_t  elt_start = 0, elt_end = 0;
@@ -1738,8 +1811,9 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
   for (elt_id = 0; elt_id < n_elements; elt_id++) {
 
     connect_index[elt_id] = vertex_index[elt_id] + elt_id;
-    connect_num[connect_end++] = NGON_n + vertex_index[elt_id + 1]
-                                        - vertex_index[elt_id];
+    connect_num[connect_end++]
+      = CGNS_ENUMV(NGON_n) + vertex_index[elt_id + 1]
+                           - vertex_index[elt_id];
 
     for (vertex_id = vertex_index[elt_id];
          vertex_id < vertex_index[elt_id + 1];
@@ -1793,10 +1867,11 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
         if (sizeof(int) < sizeof(fvm_gnum_t)) {
           int i = 0, j = 0, n = elt_end + 1 - elt_start;
           for (i = 0; i < n; i++)
-            j += global_connect_s[j] - NGON_n + 1;
+            j += global_connect_s[j] - CGNS_ENUMV(NGON_n) + 1;
           for (i = 0; i < j; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
+#if (CGNS_VERSION < 3000)
         retval = cg_section_partial_write(writer->index,
                                           base->index,
                                           zone_index,
@@ -1807,6 +1882,25 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
                                           0, /* unsorted boundary elements */
                                           _global_connect_s,
                                           &section_index);
+#else
+        retval = cg_section_partial_write(writer->index,
+                                          base->index,
+                                          zone_index,
+                                          section_name,
+                                          cgns_elt_type,
+                                          elt_start,
+                                          elt_end,
+                                          0, /* unsorted boundary elements */
+                                          &section_index);
+        if (retval == CG_OK)
+          retval = cg_elements_partial_write(writer->index,
+                                             base->index,
+                                             zone_index,
+                                             section_index,
+                                             elt_start,
+                                             elt_end,
+                                             _global_connect_s);
+#endif /* (CGNS_VERSION >= 3000) */
       }
 
       if (retval != CG_OK)
@@ -1858,7 +1952,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 {
   int  i, j, section_index;
   char  section_name[FVM_CGNS_NAME_SIZE + 1];
-  ElementType_t  cgns_elt_type; /* Definition in cgnslib.h */
+  CGNS_ENUMT(ElementType_t)  cgns_elt_type; /* Definition in cgnslib.h */
 
   fvm_lnum_t  connect_size = 0;
   fvm_gnum_t  elt_start = 0, elt_end = 0;
@@ -1882,8 +1976,9 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
              fvm_lnum_t);
 
   for (j = 0; j < section->n_elements; j++) {
-    connect[connect_size++] = NGON_n + section->vertex_index[j+1]
-                                     - section->vertex_index[j];
+    connect[connect_size++]
+      = CGNS_ENUMV(NGON_n) + section->vertex_index[j+1]
+                           - section->vertex_index[j];
 
     for (i = section->vertex_index[j]; i < section->vertex_index[j+1]; i++)
       connect[connect_size++] = section->vertex_num[i];
@@ -1948,7 +2043,7 @@ _export_field_e(const fvm_writer_section_t      *export_list,
                 const char                      *fieldlabel,
                 int                              solution_index,
                 int                              input_dim,
-                DataType_t                       cgns_datatype,
+                CGNS_ENUMT(DataType_t)           cgns_datatype,
                 fvm_interlace_t                  interlace,
                 int                              n_parent_lists,
                 const fvm_lnum_t                 parent_num_shift[],
@@ -2061,7 +2156,7 @@ _export_field_n(const fvm_nodal_t               *mesh,
                 const char                      *fieldlabel,
                 int                              solution_index,
                 int                              input_dim,
-                DataType_t                       cgns_datatype,
+                CGNS_ENUMT(DataType_t)           cgns_datatype,
                 fvm_interlace_t                  interlace,
                 int                              n_parent_lists,
                 const fvm_lnum_t                 parent_num_shift[],
@@ -2197,7 +2292,7 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
 
       dim[0] = sol_id;
       retval = cg_array_write("TimeValues",
-                              RealDouble,
+                              CGNS_ENUMV(RealDouble),
                               1,
                               dim,
                               time_values);
@@ -2211,10 +2306,10 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
 
       dim[0] = sol_id;
       retval = cg_array_write("IterationValues",
-                           Integer,
-                           1,
-                           dim,
-                           time_steps);
+                              CGNS_ENUMV(Integer),
+                              1,
+                              dim,
+                              time_steps);
 
       if (retval != CG_OK)
         bft_error(__FILE__, __LINE__, 0,
@@ -2266,7 +2361,7 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
       }
 
       retval = cg_array_write("FlowSolutionPointers",
-                              Character,
+                              CGNS_ENUMV(Character),
                               2,
                               dim,
                               sol_names);
@@ -2284,7 +2379,7 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
 
     retval = cg_simulation_type_write(writer->index,
                                       base->index,
-                                      TimeAccurate);
+                                      CGNS_ENUMV(TimeAccurate));
 
     if (retval != CG_OK)
       bft_error(__FILE__, __LINE__, 0,
@@ -2454,7 +2549,7 @@ fvm_to_cgns_init_writer(const char             *name,
 
   if (writer->rank == 0) {
 
-    if (cg_open(writer->filename, MODE_WRITE, &writer_index) != CG_OK)
+    if (cg_open(writer->filename, CG_MODE_WRITE, &writer_index) != CG_OK)
       bft_error(__FILE__, __LINE__, 0,
                 _("cg_open() failed to open file \"%s\" : \n%s"),
                 writer->filename, cg_get_error());
@@ -2952,8 +3047,8 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
                         = (fvm_to_cgns_writer_t *)this_writer_p;
   int base_index = 0;
   int sol_index = 0;
-  DataType_t      cgns_datatype = DataTypeNull;
-  GridLocation_t  cgns_location = GridLocationNull;
+  CGNS_ENUMT(DataType_t)      cgns_datatype = CGNS_ENUMV(DataTypeNull);
+  CGNS_ENUMT(GridLocation_t)  cgns_location = CGNS_ENUMV(GridLocationNull);
 
   const int  rank = writer->rank;
   const int  n_ranks = writer->n_ranks;
@@ -2965,27 +3060,27 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
 
   switch (datatype) {
   case FVM_DOUBLE:
-    cgns_datatype = RealDouble;
+    cgns_datatype = CGNS_ENUMV(RealDouble);
     export_datatype = FVM_DOUBLE;
     break;
   case FVM_FLOAT:
-    cgns_datatype = RealSingle;
+    cgns_datatype = CGNS_ENUMV(RealSingle);
     export_datatype = FVM_FLOAT;
     break;
   case FVM_UINT32:
-    cgns_datatype = Integer;
+    cgns_datatype = CGNS_ENUMV(Integer);
     export_datatype = FVM_INT32;
     break;
   case FVM_UINT64:
-    cgns_datatype = Integer;
+    cgns_datatype = CGNS_ENUMV(Integer);
     export_datatype = FVM_INT32;
     break;
   case FVM_INT32:
-    cgns_datatype = Integer;
+    cgns_datatype = CGNS_ENUMV(Integer);
     export_datatype = FVM_INT32;
     break;
   case FVM_INT64:
-    cgns_datatype = Integer;
+    cgns_datatype = CGNS_ENUMV(Integer);
     export_datatype = FVM_INT32;
     break;
   default:
@@ -2995,9 +3090,9 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
   /* Set CGNS location */
 
   if (location == FVM_WRITER_PER_NODE)
-    cgns_location = Vertex;
+    cgns_location = CGNS_ENUMV(Vertex);
   else if (location == FVM_WRITER_PER_ELEMENT)
-    cgns_location = CellCenter;
+    cgns_location = CGNS_ENUMV(CellCenter);
 
   /* Cell dimension */
 

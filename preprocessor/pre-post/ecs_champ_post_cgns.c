@@ -81,7 +81,6 @@
  *  Fichier  `include' du  paquetage courant associé au fichier courant
  *---------------------------------------------------------------------------*/
 
-#include "ecs_cgns.h"
 #include "ecs_post_cgns.h"
 #include "ecs_champ_post_cgns.h"
 
@@ -98,8 +97,13 @@
  * Définitions de paramètres et macros
  *============================================================================*/
 
-#define ECS_CGNS_SSELT_NBR_MAX_SOM   4  /* Nombre maximal de sommets
-                                           définissant un sous-élément */
+/* Compatibilité avec diverses versions de CGNS */
+
+#if defined(CGNS_SCOPE_ENUMS)
+#define CS_CG_ENUM(e) CG_ ## e
+#else
+#define CS_CG_ENUM(e) e
+#endif
 
 
 /*============================================================================
@@ -137,13 +141,8 @@ ecs_loc_champ_post_cgns__base(const ecs_post_cgns_t  *cas_cgns,
 
   if (base_cgns->fic_ouvert == false) {
 
-#if defined(CGNS_SCOPE_ENUMS)
-    if (cg_open(base_cgns->nom_fic, CG_MODE_MODIFY, &(base_cgns->num_fic))
+    if (   cg_open(base_cgns->nom_fic, CG_MODE_MODIFY, &(base_cgns->num_fic))
         != CG_OK)
-#else
-    if (cg_open(base_cgns->nom_fic, MODE_MODIFY, &(base_cgns->num_fic))
-        != CG_OK)
-#endif
       ecs_error(__FILE__, __LINE__, 0,
                 _("CGNS: error re-opening file \"%s\":\n%s"),
                 base_cgns->nom_fic, cg_get_error());

@@ -8,7 +8,6 @@ preprocessor/base/ecs_descr_chaine.c
 preprocessor/base/ecs_famille.c
 preprocessor/base/ecs_famille_chaine.c
 preprocessor/base/ecs_maillage.c
-preprocessor/pre-post/ecs_cgns.c
 preprocessor/pre-post/ecs_champ_comm.c
 preprocessor/pre-post/ecs_champ_post.c
 preprocessor/pre-post/ecs_champ_post_cgns.c

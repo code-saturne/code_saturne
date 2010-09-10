@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-10 16:57+0200\n"
+"POT-Creation-Date: 2010-09-10 17:08+0200\n"
 "PO-Revision-Date: 2010-09-10 16:59+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -638,7 +638,7 @@ msgstr ""
 "Ce Programme a été compilé avec un type \"ecs_int_32_t\"\n"
 "de longueur %d octets au lieu de 4. (Erreur de portage)\n"
 
-#: preprocessor/appli/ecs_main.c:512 preprocessor/pre-post/ecs_post_cgns.c:301
+#: preprocessor/appli/ecs_main.c:512 preprocessor/pre-post/ecs_post_cgns.c:300
 #: preprocessor/pre-post/ecs_post_ens.c:300
 #: preprocessor/pre-post/ecs_post_ens.c:599
 #: preprocessor/pre-post/ecs_post_ens.c:693
@@ -849,15 +849,15 @@ msgstr ""
 "    Nombre de faces initial           : %10d\n"
 "    Nombre de faces après traitement  : %10d\n"
 
-#: preprocessor/base/ecs_descr.c:280 preprocessor/pre-post/ecs_pre_cgns.c:2879
-#: preprocessor/pre-post/ecs_pre_cgns.c:3208
+#: preprocessor/base/ecs_descr.c:280 preprocessor/pre-post/ecs_pre_cgns.c:2905
+#: preprocessor/pre-post/ecs_pre_cgns.c:3234
 #: preprocessor/pre-post/ecs_pre_gambit.c:1648
 #: preprocessor/pre-post/ecs_pre_ideas.c:1783
 msgid "Group"
 msgstr "Groupe"
 
 #: preprocessor/base/ecs_famille.c:261 preprocessor/base/ecs_famille.c:264
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:216
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:215
 #: preprocessor/pre-post/ecs_maillage_ncs.c:598
 #: preprocessor/pre-post/ecs_maillage_ncs.c:601
 #: preprocessor/pre-post/ecs_maillage_ncs.c:603
@@ -958,7 +958,7 @@ msgstr ""
 "MED : erreur a l'écriture du fichier \"%s\".\n"
 "Erreur à la création du champ \"%s\"\n"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:132
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:136
 #, c-format
 msgid ""
 "CGNS: no mesh named \"%s\".\n"
@@ -967,7 +967,7 @@ msgstr ""
 "CGNS : aucun maillage nommé \"%s\".\n"
 "n'est associé au fichier : \"%s\"\n"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:148
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:147
 #, c-format
 msgid ""
 "CGNS: error re-opening file \"%s\":\n"
@@ -976,13 +976,13 @@ msgstr ""
 "CGNS : échec à la réouverture du fichier \"%s\" :\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:202
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:571
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:201
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:570
 msgid "Mesh_values"
 msgstr "Grandeurs_maillage"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:207
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:576
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:206
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:575
 #, c-format
 msgid ""
 "CGNS: error writing a solution node\n"
@@ -993,8 +993,8 @@ msgstr ""
 "Nom du fichier : \"%s\" ; base : \"1\"\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:235
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:609
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:234
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:608
 #, c-format
 msgid ""
 "CGNS: error writing field \"%s\"\n"
@@ -1003,8 +1003,8 @@ msgstr ""
 "CGNS : échec à l'écriture du champ \"%s\"\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:334
-#: preprocessor/pre-post/ecs_post_cgns.c:312
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:333
+#: preprocessor/pre-post/ecs_post_cgns.c:311
 #, c-format
 msgid ""
 "CGNS: error writing file \"%s\":\n"
@@ -1015,7 +1015,7 @@ msgstr ""
 "Nom du maillage à écrire : \"%s\"\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:362
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:361
 #, c-format
 msgid ""
 "CGNS: error writing coordinates\n"
@@ -1026,7 +1026,7 @@ msgstr ""
 "Nom du maillage à écrire : \"%s\"\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_champ_post_cgns.c:479
+#: preprocessor/pre-post/ecs_champ_post_cgns.c:478
 #, c-format
 msgid ""
 "CGNS: in mesh: \"%s\",\n"
@@ -1286,8 +1286,8 @@ msgstr "Couleur"
 msgid "Number of vertices"
 msgstr "Nombre de sommets"
 
-#: preprocessor/pre-post/ecs_post_cgns.c:154
-#: preprocessor/pre-post/ecs_post_cgns.c:197
+#: preprocessor/pre-post/ecs_post_cgns.c:153
+#: preprocessor/pre-post/ecs_post_cgns.c:196
 #, c-format
 msgid ""
 "CGNS: error closing file \"%s\"\n"
@@ -1296,7 +1296,7 @@ msgstr ""
 "CGNS : échec à la fermeture du fichier \"%s\"\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_post_cgns.c:240
+#: preprocessor/pre-post/ecs_post_cgns.c:239
 #, c-format
 msgid ""
 "A mesh named: %s\n"
@@ -1305,8 +1305,8 @@ msgstr ""
 "On a déjà défini un maillage de nom : %s\n"
 "dans le cas CGNS : %s\n"
 
-#: preprocessor/pre-post/ecs_post_cgns.c:295
-#: preprocessor/pre-post/ecs_pre_cgns.c:383
+#: preprocessor/pre-post/ecs_post_cgns.c:294
+#: preprocessor/pre-post/ecs_pre_cgns.c:411
 #, c-format
 msgid ""
 "CGNS: error opening file \"%s\":\n"
@@ -1315,7 +1315,7 @@ msgstr ""
 "CGNS : échec à l'ouverture du fichier \"%s\" :\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_post_cgns.c:318
+#: preprocessor/pre-post/ecs_post_cgns.c:317
 #, c-format
 msgid ""
 "CGNS: error writing file \"%s\":\n"
@@ -1603,7 +1603,7 @@ msgstr ""
 "Erreur %d à la lecture d'informations sur les sommets et la topologie\n"
 "dans un fichier STAR-CCM+ file."
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:392
+#: preprocessor/pre-post/ecs_pre_cgns.c:420
 #, c-format
 msgid ""
 "CGNS error:\n"
@@ -1614,7 +1614,7 @@ msgid ""
 "running the adf2hdf of hdf2adf converters may solve the issue."
 msgstr ""
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:399
+#: preprocessor/pre-post/ecs_pre_cgns.c:427
 #, c-format
 msgid ""
 "\n"
@@ -1623,16 +1623,16 @@ msgstr ""
 "\n"
 "  Le fichier contient plusieurs bases :\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:404
-#: preprocessor/pre-post/ecs_pre_cgns.c:635
+#: preprocessor/pre-post/ecs_pre_cgns.c:432
 #: preprocessor/pre-post/ecs_pre_cgns.c:663
-#: preprocessor/pre-post/ecs_pre_cgns.c:823
-#: preprocessor/pre-post/ecs_pre_cgns.c:963
-#: preprocessor/pre-post/ecs_pre_cgns.c:1111
-#: preprocessor/pre-post/ecs_pre_cgns.c:1301
-#: preprocessor/pre-post/ecs_pre_cgns.c:2141
-#: preprocessor/pre-post/ecs_pre_cgns.c:3394
-#: preprocessor/pre-post/ecs_pre_cgns.c:3407
+#: preprocessor/pre-post/ecs_pre_cgns.c:691
+#: preprocessor/pre-post/ecs_pre_cgns.c:851
+#: preprocessor/pre-post/ecs_pre_cgns.c:991
+#: preprocessor/pre-post/ecs_pre_cgns.c:1139
+#: preprocessor/pre-post/ecs_pre_cgns.c:1329
+#: preprocessor/pre-post/ecs_pre_cgns.c:2169
+#: preprocessor/pre-post/ecs_pre_cgns.c:3420
+#: preprocessor/pre-post/ecs_pre_cgns.c:3433
 #, c-format
 msgid ""
 "CGNS error:\n"
@@ -1641,12 +1641,12 @@ msgstr ""
 "erreur CGNS :\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:405
+#: preprocessor/pre-post/ecs_pre_cgns.c:433
 #, c-format
 msgid "    Base %2d: %s\n"
 msgstr "    Base %2d : %s\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:408
+#: preprocessor/pre-post/ecs_pre_cgns.c:436
 #, c-format
 msgid ""
 "\n"
@@ -1657,7 +1657,7 @@ msgstr ""
 "  On n'a pas précisé de base ; on lit la première\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:411
+#: preprocessor/pre-post/ecs_pre_cgns.c:439
 #, c-format
 msgid ""
 "\n"
@@ -1668,11 +1668,11 @@ msgstr ""
 "  On a demandé la base numéro %d\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:415
+#: preprocessor/pre-post/ecs_pre_cgns.c:443
 msgid "no CGNS base in file.\n"
 msgstr "aucune base CGNS dans le fichier.\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:420
+#: preprocessor/pre-post/ecs_pre_cgns.c:448
 #, c-format
 msgid ""
 "The mesh number requested (%d) is higher than\n"
@@ -1683,7 +1683,7 @@ msgstr ""
 "au nombre de bases définies (%d) dans le fichier\n"
 "%s.\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:450
+#: preprocessor/pre-post/ecs_pre_cgns.c:478
 #, c-format
 msgid ""
 "CGNS: error closing file \"%s\":\n"
@@ -1692,19 +1692,19 @@ msgstr ""
 "CGNS : échec à la fermeture du fichier \"%s\" :\n"
 "%s"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:557
+#: preprocessor/pre-post/ecs_pre_cgns.c:585
 msgid "cartesian"
 msgstr "cartésiennes"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:558
+#: preprocessor/pre-post/ecs_pre_cgns.c:586
 msgid "cylindrical"
 msgstr "cylindriques"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:559
+#: preprocessor/pre-post/ecs_pre_cgns.c:587
 msgid "spherical"
 msgstr "sphériques"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:681
+#: preprocessor/pre-post/ecs_pre_cgns.c:709
 #, c-format
 msgid ""
 "\n"
@@ -1713,7 +1713,7 @@ msgstr ""
 "\n"
 "    Zone %d : \"%s\" ; type \"%s\"\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:690
+#: preprocessor/pre-post/ecs_pre_cgns.c:718
 #, c-format
 msgid ""
 "\n"
@@ -1722,7 +1722,7 @@ msgstr ""
 "\n"
 "      %d (%d x %d) sommets ; %d (%d x %d) cellules\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:700
+#: preprocessor/pre-post/ecs_pre_cgns.c:728
 #, c-format
 msgid ""
 "\n"
@@ -1731,7 +1731,7 @@ msgstr ""
 "\n"
 "      %d (%d x %d x %d) sommets ; %d (%d x %d x %d) cellules\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:711
+#: preprocessor/pre-post/ecs_pre_cgns.c:739
 #, c-format
 msgid ""
 "\n"
@@ -1740,17 +1740,17 @@ msgstr ""
 "\n"
 "      %d sommets ; %d cellules\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:723
+#: preprocessor/pre-post/ecs_pre_cgns.c:751
 #, c-format
 msgid "      (%s coordinates, \"%s\" precision, unit \"%s\")\n"
 msgstr "      (coordonnées %s, précision \"%s\", unité \"%s\")\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:729
+#: preprocessor/pre-post/ecs_pre_cgns.c:757
 #, c-format
 msgid "      %d time-varying coordinates (the first are used)\n"
 msgstr "      %d coordonnées temporelles (on prend les premières)\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:827
+#: preprocessor/pre-post/ecs_pre_cgns.c:855
 #, c-format
 msgid ""
 "      Section %2d: \"%s\";\n"
@@ -1759,7 +1759,7 @@ msgstr ""
 "      Section %2d : \"%s\" ;\n"
 "                   (indices %d à %d, type \"%s\")\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:852
+#: preprocessor/pre-post/ecs_pre_cgns.c:880
 #, c-format
 msgid ""
 "The CGNS mesh read contains multizone (\"one to one\")\n"
@@ -1772,7 +1772,7 @@ msgstr ""
 "automatiquement par le Préprocesseur.\n"
 "-> Utilisez un recollement conforme approprié\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:860
+#: preprocessor/pre-post/ecs_pre_cgns.c:888
 #, c-format
 msgid ""
 "The CGNS mesh read contains non-conforming (\"abutting\")\n"
@@ -1785,7 +1785,7 @@ msgstr ""
 "automatiquement par le Préprocesseur.\n"
 "-> Utilisez un recollement conforme approprié\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:868
+#: preprocessor/pre-post/ecs_pre_cgns.c:896
 #, c-format
 msgid ""
 "The CGNS mesh read contains (\"overset\") connectivity\n"
@@ -1795,12 +1795,12 @@ msgstr ""
 "multizone par recouvrement ( \"overset\") qui ne sont pas\n"
 "pris en compte par le Préprocesseur.\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:969
+#: preprocessor/pre-post/ecs_pre_cgns.c:997
 #, c-format
 msgid "  CGNS boundary condition information:\n"
 msgstr "  Conditions aux limites CGNS indiquées :\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:994
+#: preprocessor/pre-post/ecs_pre_cgns.c:1022
 #, c-format
 msgid ""
 "\n"
@@ -1809,17 +1809,17 @@ msgstr ""
 "\n"
 "    Zone %d\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:1040
+#: preprocessor/pre-post/ecs_pre_cgns.c:1068
 #, c-format
 msgid "      BC %2d: \"%s\" (\"%s\")\n"
 msgstr "      CL %2d : \"%s\" (\"%s\")\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:1050
+#: preprocessor/pre-post/ecs_pre_cgns.c:1078
 #, c-format
 msgid "      BC %2d: \"%s\" (\"%s\" on \"%s\")\n"
 msgstr "      CL %2d : \"%s\" (\"%s\" sur \"%s\")\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:1313
+#: preprocessor/pre-post/ecs_pre_cgns.c:1341
 #, c-format
 msgid ""
 "Cylindrical or spherical coordinates with unknown\n"
@@ -1828,7 +1828,7 @@ msgstr ""
 "Coordonnées cylindriques ou sphériques avec unité\n"
 "d'angle non définie ou inconnue (-> on suppose des radians)\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3363
+#: preprocessor/pre-post/ecs_pre_cgns.c:3389
 #, c-format
 msgid ""
 "\n"
@@ -1841,7 +1841,7 @@ msgstr ""
 "Lecture du fichier de maillage au format CGNS\n"
 "------------------------------\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3367
+#: preprocessor/pre-post/ecs_pre_cgns.c:3393
 #: preprocessor/pre-post/ecs_pre_gambit.c:1755
 #: preprocessor/pre-post/ecs_pre_gmsh.c:937
 #: preprocessor/pre-post/ecs_pre_ideas.c:1872
@@ -1857,36 +1857,36 @@ msgstr ""
 "\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3382
+#: preprocessor/pre-post/ecs_pre_cgns.c:3408
 #, c-format
 msgid "  CGNS version       : %3.1f\n"
 msgstr "  Version CGNS       : %3.1f\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3388
+#: preprocessor/pre-post/ecs_pre_cgns.c:3414
 msgid "  Title              : "
 msgstr "  Titre              : "
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3396
+#: preprocessor/pre-post/ecs_pre_cgns.c:3422
 #, c-format
 msgid "  Base name          : %s\n"
 msgstr "  Nom de la base     : %s\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3397
+#: preprocessor/pre-post/ecs_pre_cgns.c:3423
 #, c-format
 msgid "  Physical dimension : %d\n"
 msgstr "  Dimension physique : %d\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3398
+#: preprocessor/pre-post/ecs_pre_cgns.c:3424
 #, c-format
 msgid "  Cell dimension     : %d\n"
 msgstr "  Dimension cellule  : %d\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3408
+#: preprocessor/pre-post/ecs_pre_cgns.c:3434
 #, c-format
 msgid "  Number of zones    : %d\n"
 msgstr "  Nombre de zones    : %d\n"
 
-#: preprocessor/pre-post/ecs_pre_cgns.c:3412
+#: preprocessor/pre-post/ecs_pre_cgns.c:3438
 #, c-format
 msgid "Mesh entities are of dimension: %d\n"
 msgstr "Les entités de maillage sont de dimension : %d\n"
@@ -10724,7 +10724,7 @@ msgstr ""
 msgid "Tesselation of element type %s not implemented."
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:298
+#: src/fvm/fvm_to_cgns.c:311
 #, c-format
 msgid ""
 "cg_base_write() failed to create a new base:\n"
@@ -10733,7 +10733,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:384
+#: src/fvm/fvm_to_cgns.c:397
 #, c-format
 msgid ""
 "cg_sol_write() failed to create a new solution node:\n"
@@ -10744,7 +10744,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:432 src/fvm/fvm_to_cgns.c:2564
+#: src/fvm/fvm_to_cgns.c:445 src/fvm/fvm_to_cgns.c:2659
 #: src/fvm/fvm_to_ensight_case.c:222 src/fvm/fvm_to_med.c:3824
 #, c-format
 msgid ""
@@ -10752,7 +10752,7 @@ msgid ""
 "but time value <%g> has already been associated with this time step.\n"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:641
+#: src/fvm/fvm_to_cgns.c:654
 #, c-format
 msgid ""
 "cg_zone_write() failed to create a new zone:\n"
@@ -10761,7 +10761,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:907
+#: src/fvm/fvm_to_cgns.c:920
 #, c-format
 msgid ""
 "cg_coord_partial_write() failed to write coords:\n"
@@ -10769,7 +10769,7 @@ msgid ""
 "Associated base: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:984
+#: src/fvm/fvm_to_cgns.c:997
 #, c-format
 msgid ""
 "cg_coord_partial_write() failed to writeextra vertices coords:\n"
@@ -10777,7 +10777,7 @@ msgid ""
 "Associated base: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:1111
+#: src/fvm/fvm_to_cgns.c:1124
 #, c-format
 msgid ""
 "cg_coord_partial write() failed to write coords:\n"
@@ -10787,7 +10787,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:1139
+#: src/fvm/fvm_to_cgns.c:1152
 #, c-format
 msgid ""
 "cg_coord_partial_write() failed to write extra vertices coords:\n"
@@ -10797,7 +10797,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:1248
+#: src/fvm/fvm_to_cgns.c:1281
 #, c-format
 msgid ""
 "cg_section_partial_write() failed to write elements:\n"
@@ -10807,7 +10807,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:1322
+#: src/fvm/fvm_to_cgns.c:1355
 #, c-format
 msgid ""
 "cg_section_write() failed to write elements:\n"
@@ -10817,7 +10817,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:1526 src/fvm/fvm_to_cgns.c:1652
+#: src/fvm/fvm_to_cgns.c:1579 src/fvm/fvm_to_cgns.c:1725
 #, c-format
 msgid ""
 "cg_section_partial_write() failed to write tesselated elements:\n"
@@ -10827,7 +10827,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:1814
+#: src/fvm/fvm_to_cgns.c:1908
 #, c-format
 msgid ""
 "cg_section_partial_write() failed to write polygonal elements:\n"
@@ -10837,7 +10837,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:1906
+#: src/fvm/fvm_to_cgns.c:2001
 #, c-format
 msgid ""
 "cg_section_write() failed to write polygonal elements:\n"
@@ -10847,7 +10847,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2012 src/fvm/fvm_to_cgns.c:2119
+#: src/fvm/fvm_to_cgns.c:2107 src/fvm/fvm_to_cgns.c:2214
 #, c-format
 msgid ""
 "cg_field_partial_write() failed to write field values:\n"
@@ -10857,7 +10857,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2177
+#: src/fvm/fvm_to_cgns.c:2272
 #, c-format
 msgid ""
 "cg_biter_write() failed to create a BaseIterativeData\n"
@@ -10866,7 +10866,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2207
+#: src/fvm/fvm_to_cgns.c:2302
 #, c-format
 msgid ""
 "cg_array_write() failed to write TimeValues\n"
@@ -10875,7 +10875,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2221
+#: src/fvm/fvm_to_cgns.c:2316
 #, c-format
 msgid ""
 "cg_array_write failed to write IterationValues\n"
@@ -10884,7 +10884,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2239
+#: src/fvm/fvm_to_cgns.c:2334
 #, c-format
 msgid ""
 "cg_ziter_write() failed to create a ZoneIterativeData\n"
@@ -10893,7 +10893,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2276
+#: src/fvm/fvm_to_cgns.c:2371
 #, c-format
 msgid ""
 "cg_array_write() failed to write FlowSolutionPointers\n"
@@ -10902,7 +10902,7 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2291
+#: src/fvm/fvm_to_cgns.c:2386
 #, c-format
 msgid ""
 "cg_simulation_type_write() failed\n"
@@ -10911,35 +10911,35 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2359
+#: src/fvm/fvm_to_cgns.c:2454
 msgid "Empty CGNS filename."
 msgstr "Nom de fichier CGNS vide."
 
-#: src/fvm/fvm_to_cgns.c:2459
+#: src/fvm/fvm_to_cgns.c:2554
 #, c-format
 msgid ""
 "cg_open() failed to open file \"%s\" : \n"
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2514
+#: src/fvm/fvm_to_cgns.c:2609
 #, c-format
 msgid ""
 "cg_close() failed to close file \"%s\" :\n"
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2573 src/fvm/fvm_to_med.c:3833
+#: src/fvm/fvm_to_cgns.c:2668 src/fvm/fvm_to_med.c:3833
 #, c-format
 msgid "The given time step value should be >= 0, and not %d\n"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2582 src/fvm/fvm_to_med.c:3842
+#: src/fvm/fvm_to_cgns.c:2677 src/fvm/fvm_to_med.c:3842
 #, c-format
 msgid "The given time step value should be >= %d, and not %d\n"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:3012 src/fvm/fvm_to_ensight.c:3710
+#: src/fvm/fvm_to_cgns.c:3107 src/fvm/fvm_to_ensight.c:3710
 #: src/fvm/fvm_to_med.c:4256
 #, c-format
 msgid "Data of dimension %d not handled"

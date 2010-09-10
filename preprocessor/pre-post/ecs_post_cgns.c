@@ -75,7 +75,6 @@ extern "C" {
   *  Fichier  `include' du  paquetage courant associe au fichier courant
  *---------------------------------------------------------------------------*/
 
-#include "ecs_cgns.h"
 #include "ecs_post_cgns.h"
 
 
@@ -289,7 +288,7 @@ ecs_post_cgns__ajoute_maillage(const char       *nom_maillage,
       base_cgns->nom_fic[ind] = tolower(base_cgns->nom_fic[ind]);
   }
 
-  if (cg_open(base_cgns->nom_fic, CS_CG_ENUM(MODE_WRITE), &(base_cgns->num_fic))
+  if (   cg_open(base_cgns->nom_fic, CG_MODE_WRITE, &(base_cgns->num_fic))
       != CG_OK)
     ecs_error(__FILE__, __LINE__, 0,
               _("CGNS: error opening file \"%s\":\n%s"),

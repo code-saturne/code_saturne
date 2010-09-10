@@ -32,7 +32,6 @@ AM_LDFLAGS = \
 noinst_LTLIBRARIES = libprepostecs.la
 
 libprepostecs_la_SOURCES = \
-ecs_cgns.c \
 ecs_champ_comm.c \
 ecs_champ_post.c \
 ecs_champ_post_cgns.c \

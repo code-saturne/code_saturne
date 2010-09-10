@@ -1,4 +1,18 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Code can now be built with either CGNS 2.5 or CGNS 3.
+  modified files:
+    po/fr.po
+    po/POTFILES.in
+    preprocessor/pre-post/ecs_champ_post_cgns.c
+    preprocessor/pre-post/ecs_post_cgns.c
+    preprocessor/pre-post/ecs_pre_cgns.c
+    preprocessor/pre-post/Makefile.am
+    src/fvm/fvm_to_cgns.c
+  removed files:
+     preprocessor/pre-post/ecs_cgns.c
+     preprocessor/pre-post/ecs_cgns.h
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   GUI now builds correct MESHES[] structure when mesh import options are used.
   modified files:
     gui/Pages/BatchRunningModel.py
