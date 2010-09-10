@@ -11,6 +11,9 @@
     preprocessor/pre-post/ecs_pre.c
     preprocessor/pre-post/ecs_pre.h
     preprocessor/pre-post/Makefile.am
+  removed files:
+    preprocessor/pre-post/ecs_pre_meta.c
+    preprocessor/pre-post/ecs_pre_meta.h
 
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Preprocessor now converts all colors to groups on mesh import.
