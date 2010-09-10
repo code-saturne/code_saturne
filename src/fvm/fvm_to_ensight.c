@@ -3469,6 +3469,7 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
   /* Build list of sections that are used here, in order of output */
 
   export_list = fvm_writer_export_list(mesh,
+                                       fvm_nodal_get_max_entity_dim(mesh),
                                        true,
                                        this_writer->discard_polygons,
                                        this_writer->discard_polyhedra,
@@ -3751,6 +3752,7 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
   /* Build list of sections that are used here, in order of output */
 
   export_list = fvm_writer_export_list(mesh,
+                                       fvm_nodal_get_max_entity_dim(mesh),
                                        true,
                                        this_writer->discard_polygons,
                                        this_writer->discard_polyhedra,

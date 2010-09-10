@@ -1040,6 +1040,7 @@ void CS_PROCF (defloc, DEFLOC)
 
     coupl->cells_sup = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
                                                       coupled_mesh_name,
+                                                      false,
                                                       coupl->nbr_cel_sup,
                                                       c_elt_list);
 
@@ -1051,6 +1052,7 @@ void CS_PROCF (defloc, DEFLOC)
 
     coupl->faces_sup = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                                       coupled_mesh_name,
+                                                      false,
                                                       0,
                                                       coupl->nbr_fbr_sup,
                                                       NULL,

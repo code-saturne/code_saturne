@@ -490,11 +490,13 @@ _cs_post_define_mesh(cs_post_mesh_t  *post_mesh,
     if (glob_flag[3] == 1)
       exp_mesh = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
                                                 mesh_name,
+                                                true,
                                                 cs_glob_mesh->n_cells,
                                                 NULL);
     else
       exp_mesh = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
                                                 mesh_name,
+                                                true,
                                                 n_cells,
                                                 cell_list);
 
@@ -504,6 +506,7 @@ _cs_post_define_mesh(cs_post_mesh_t  *post_mesh,
     if (glob_flag[4] == 1)
       exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                                 mesh_name,
+                                                true,
                                                 0,
                                                 cs_glob_mesh->n_b_faces,
                                                 NULL,
@@ -511,6 +514,7 @@ _cs_post_define_mesh(cs_post_mesh_t  *post_mesh,
     else
       exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                                 mesh_name,
+                                                true,
                                                 n_i_faces,
                                                 n_b_faces,
                                                 i_face_list,

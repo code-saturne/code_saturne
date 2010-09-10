@@ -2425,75 +2425,6 @@ cs_mesh_order_vertices(cs_mesh_t  *const mesh)
 }
 
 /*----------------------------------------------------------------------------
- * Print mesh characteristics.
- *
- * parameters:
- *   mesh --> pointer to mesh structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_info(const cs_mesh_t  *mesh)
-{
-  cs_int_t  i, vtx_id;
-
-  cs_int_t  dim = mesh->dim;
-
-  /* Allocation of the structures if this is not an update */
-
-  if (mesh->n_g_vertices > 0) {
-
-    cs_real_t  min_xyz[3] = { 1.e127,  1.e127,  1.e127};
-    cs_real_t  max_xyz[3] = {-1.e127, -1.e127, -1.e127};
-
-    for (vtx_id = 0 ; vtx_id < mesh->n_vertices ; vtx_id++) {
-
-      for (i = 0 ; i < dim ; i++) {
-
-        if (mesh->vtx_coord[vtx_id*dim + i] < min_xyz[i])
-          min_xyz[i] = mesh->vtx_coord[vtx_id*dim + i];
-
-        if (mesh->vtx_coord[vtx_id*dim + i] > max_xyz[i])
-          max_xyz[i] = mesh->vtx_coord[vtx_id*dim + i];
-
-      }
-
-    } /* End of loop on vertices */
-
-
-#if defined(HAVE_MPI)
-
-    if (cs_glob_n_ranks > 1) {
-
-      cs_real_t  g_min_xyz[3];
-      cs_real_t  g_max_xyz[3];
-
-      MPI_Allreduce(min_xyz, g_min_xyz, dim, CS_MPI_REAL, MPI_MIN,
-                    cs_glob_mpi_comm);
-      MPI_Allreduce(max_xyz, g_max_xyz, dim, CS_MPI_REAL, MPI_MAX,
-                    cs_glob_mpi_comm);
-
-      for (i = 0 ; i < dim ; i++) {
-        min_xyz[i] = g_min_xyz[i];
-        max_xyz[i] = g_max_xyz[i];
-      }
-
-    }
-
-#endif
-
-    bft_printf(_("\n"
-                 " Mesh coordinates:               minimum    and maximum\n"
-                 "                       X : %14.7e %14.7e\n"
-                 "                       Y : %14.7e %14.7e\n"
-                 "                       Z : %14.7e %14.7e\n"),
-               min_xyz[0], max_xyz[0], min_xyz[1], max_xyz[1],
-               min_xyz[2], max_xyz[2]);
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
  * Compute global face connectivity size.
  *
  * Faces on simple parallel boundaries are counted only once, but periodic
@@ -2983,7 +2914,8 @@ cs_mesh_init_group_classes(cs_mesh_t  *mesh)
 void
 cs_mesh_init_selectors(void)
 {
-  cs_mesh_init_group_classes(cs_glob_mesh);
+  if (cs_glob_mesh->class_defs == NULL)
+    cs_mesh_init_group_classes(cs_glob_mesh);
 
   /* Construction of the selectors */
 
@@ -3337,6 +3269,54 @@ void
 cs_mesh_print_info(const cs_mesh_t  *mesh,
                    const char       *name)
 {
+  if (mesh->n_g_vertices > 0) {
+
+    cs_int_t  i, vtx_id;
+    cs_int_t  dim = mesh->dim;
+    cs_real_t  min_xyz[3] = { 1.e127,  1.e127,  1.e127};
+    cs_real_t  max_xyz[3] = {-1.e127, -1.e127, -1.e127};
+
+    for (vtx_id = 0 ; vtx_id < mesh->n_vertices ; vtx_id++) {
+
+      for (i = 0 ; i < dim ; i++) {
+
+        if (mesh->vtx_coord[vtx_id*dim + i] < min_xyz[i])
+          min_xyz[i] = mesh->vtx_coord[vtx_id*dim + i];
+
+        if (mesh->vtx_coord[vtx_id*dim + i] > max_xyz[i])
+          max_xyz[i] = mesh->vtx_coord[vtx_id*dim + i];
+
+      }
+
+    } /* End of loop on vertices */
+
+#if defined(HAVE_MPI)
+
+    if (cs_glob_n_ranks > 1) {
+      cs_real_t  g_min_xyz[3];
+      cs_real_t  g_max_xyz[3];
+      MPI_Allreduce(min_xyz, g_min_xyz, dim, CS_MPI_REAL, MPI_MIN,
+                    cs_glob_mpi_comm);
+      MPI_Allreduce(max_xyz, g_max_xyz, dim, CS_MPI_REAL, MPI_MAX,
+                    cs_glob_mpi_comm);
+      for (i = 0 ; i < dim ; i++) {
+        min_xyz[i] = g_min_xyz[i];
+        max_xyz[i] = g_max_xyz[i];
+      }
+    }
+
+#endif
+
+    bft_printf(_("\n"
+                 " Mesh coordinates:               minimum    and maximum\n"
+                 "                       X : %14.7e %14.7e\n"
+                 "                       Y : %14.7e %14.7e\n"
+                 "                       Z : %14.7e %14.7e\n"),
+               min_xyz[0], max_xyz[0], min_xyz[1], max_xyz[1],
+               min_xyz[2], max_xyz[2]);
+
+  }
+
   bft_printf(_(" %s\n"
                "     Number of cells:          %llu\n"
                "     Number of interior faces: %llu\n"

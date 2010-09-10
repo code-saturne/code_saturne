@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2009  EDF
+  Copyright (C) 2004-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -248,6 +248,9 @@ _fvm_nodal_section_reduce(fvm_nodal_section_t  * this_section)
 
     retval = true;
   }
+
+  if (this_section->gc_id != NULL)
+    BFT_FREE(this_section->gc_id);
 
   if (this_section->tesselation != NULL)
     fvm_tesselation_reduce(this_section->tesselation);
@@ -529,9 +532,10 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
              "  _vertex_index:        %p\n"
              "  _vertex_num:          %p\n"
              "  _parent_element_num:  %p\n",
+             "  gc_id:                %p\n",
              this_section->_face_index, this_section->_face_num,
              this_section->_vertex_index, this_section->_vertex_num,
-             this_section->_parent_element_num);
+             this_section->_parent_element_num, this_section->gc_id);
 
   if (this_section->face_index != NULL) {
     bft_printf("\nPolyhedra -> faces (polygons) connectivity:\n\n");
@@ -611,6 +615,13 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
     }
   }
 
+  if (this_section->gc_id != NULL) {
+    bft_printf("\nGroup class ids:\n\n");
+    for (i = 0; i < this_section->n_elements; i++)
+      bft_printf("%10d : %10d\n", i + 1, this_section->gc_id[i]);
+    bft_printf("\n");
+  }
+
   /* Faces tesselation */
 
   if (this_section->tesselation != NULL)
@@ -687,6 +698,8 @@ fvm_nodal_section_create(const fvm_element_t  type)
   this_section->_vertex_index = NULL;
   this_section->_vertex_num = NULL;
 
+  this_section->gc_id = NULL;
+
   this_section->tesselation = NULL;
 
   /* Numbering */
@@ -698,7 +711,6 @@ fvm_nodal_section_create(const fvm_element_t  type)
   this_section->global_element_num = NULL;
 
   return (this_section);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -714,7 +726,6 @@ fvm_nodal_section_create(const fvm_element_t  type)
 fvm_nodal_section_t *
 fvm_nodal_section_destroy(fvm_nodal_section_t  * this_section)
 {
-
   /* Connectivity */
 
   if (this_section->_face_index != NULL)
@@ -726,6 +737,9 @@ fvm_nodal_section_destroy(fvm_nodal_section_t  * this_section)
     BFT_FREE(this_section->_vertex_index);
   if (this_section->_vertex_num != NULL)
     BFT_FREE(this_section->_vertex_num);
+
+  if (this_section->gc_id != NULL)
+    BFT_FREE(this_section->gc_id);
 
   if (this_section->tesselation != NULL)
     fvm_tesselation_destroy(this_section->tesselation);
@@ -746,7 +760,6 @@ fvm_nodal_section_destroy(fvm_nodal_section_t  * this_section)
   BFT_FREE(this_section);
 
   return (this_section);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1027,8 +1040,9 @@ fvm_nodal_create(const char  *name,
 
   this_nodal->sections = NULL;
 
-  return (this_nodal);
+  this_nodal->gc_set = NULL;
 
+  return (this_nodal);
 }
 
 /*----------------------------------------------------------------------------
@@ -1068,6 +1082,9 @@ fvm_nodal_destroy(fvm_nodal_t  * this_nodal)
   if (this_nodal->sections != NULL)
     BFT_FREE(this_nodal->sections);
 
+  if (this_nodal->gc_set != NULL)
+    this_nodal->gc_set = fvm_group_class_set_destroy(this_nodal->gc_set);
+
   /* Main structure destroyed and NULL returned */
 
   BFT_FREE(this_nodal);
@@ -1078,6 +1095,9 @@ fvm_nodal_destroy(fvm_nodal_t  * this_nodal)
 /*----------------------------------------------------------------------------
  * Copy a nodal mesh representation structure, sharing arrays with the
  * original structure.
+ *
+ * Element group classes and mesh group class descriptions are not currently
+ * copied.
  *
  * parameters:
  *   this_nodal  <-> pointer to structure that should be copied
@@ -1137,12 +1157,13 @@ fvm_nodal_copy(const fvm_nodal_t *this_nodal)
   else
     new_nodal->global_vertex_num = NULL;
 
-
   BFT_MALLOC(new_nodal->sections,
              new_nodal->n_sections,
              fvm_nodal_section_t *);
   for (i = 0; i < new_nodal->n_sections; i++)
     new_nodal->sections[i] = _fvm_nodal_section_copy(this_nodal->sections[i]);
+
+  new_nodal->gc_set = NULL;
 
   return (new_nodal);
 }
@@ -1200,6 +1221,8 @@ fvm_nodal_reduce(fvm_nodal_t  *this_nodal,
 
   }
 
+  if (this_nodal->gc_set != NULL)
+    this_nodal->gc_set = fvm_group_class_set_destroy(this_nodal->gc_set);
 }
 
 /*----------------------------------------------------------------------------
@@ -1484,6 +1507,96 @@ fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
   this_nodal->vertex_coords = _vertex_coords;
 
   return _vertex_coords;
+}
+
+/*----------------------------------------------------------------------------
+ * Assign group class set descriptions to a nodal mesh.
+ *
+ * The structure builds its own copy of the group class sets,
+ * renumbering them so as to discard those not referenced.
+ * Empty group classes are also renumbered to zero.
+ *
+ * This function should only be called once all element sections
+ * have been added to a nodal mesh representation.
+ *
+ * parameters:
+ *   this_nodal <-> nodal mesh structure
+ *   gc_set     <-- group class set descriptions
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
+                              const fvm_group_class_set_t  *gc_set)
+{
+  int gc_id, section_id;
+  int n_gc = fvm_group_class_set_size(gc_set);
+  int n_gc_new = 0;
+  fvm_lnum_t *gc_renum = NULL;
+
+  assert(this_nodal != NULL);
+
+  if (this_nodal->gc_set != NULL)
+    this_nodal->gc_set = fvm_group_class_set_destroy(this_nodal->gc_set);
+
+  if (gc_set == NULL)
+    return;
+
+  /* Mark referenced group classes */
+
+  BFT_MALLOC(gc_renum, n_gc, fvm_lnum_t);
+
+  for (gc_id = 0; gc_id < n_gc; gc_id++)
+    gc_renum[gc_id] = 0;
+
+  for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
+    fvm_lnum_t i;
+    const fvm_nodal_section_t  *section = this_nodal->sections[section_id];
+    if (section->gc_id == NULL)
+      continue;
+    for (i = 0; i < section->n_elements; i++) {
+      if (section->gc_id[i] != 0)
+        gc_renum[section->gc_id[i] - 1] = 1;
+    }
+  }
+
+  fvm_parall_counter_max(gc_renum, n_gc);
+
+  /* Renumber group classes if necessary */
+
+  for (gc_id = 0; gc_id < n_gc; gc_id++) {
+    if (gc_renum[gc_id] != 0) {
+      gc_renum[gc_id] = n_gc_new + 1;
+      n_gc_new++;
+    }
+  }
+
+  if (n_gc_new < n_gc) {
+    for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
+      fvm_lnum_t i;
+      const fvm_nodal_section_t  *section = this_nodal->sections[section_id];
+      if (section->gc_id == NULL)
+        continue;
+      for (i = 0; i < section->n_elements; i++) {
+        if (section->gc_id[i] != 0)
+          section->gc_id[i] = gc_renum[section->gc_id[i] - 1];
+      }
+    }
+  }
+
+  /* Transform renumbering array to list */
+
+  n_gc_new = 0;
+  for (gc_id = 0; gc_id < n_gc; gc_id++) {
+    if (gc_renum[gc_id] != 0)
+      gc_renum[n_gc_new++] = gc_id;
+  }
+
+  if (n_gc_new > 0)
+    this_nodal->gc_set = fvm_group_class_set_copy(gc_set,
+                                                  n_gc_new,
+                                                  gc_renum);
+
+  BFT_FREE(gc_renum);
 }
 
 /*----------------------------------------------------------------------------
@@ -2211,6 +2324,9 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
   for (i = 0; i < this_nodal->n_sections; i++)
     _fvm_nodal_section_dump(this_nodal->sections[i]);
 
+  /* Dump group class set (NULL allowed) */
+
+  fvm_group_class_set_dump(this_nodal->gc_set);
 }
 
 /*----------------------------------------------------------------------------*/

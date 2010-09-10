@@ -373,16 +373,6 @@ void
 cs_mesh_order_vertices(cs_mesh_t  *const mesh);
 
 /*----------------------------------------------------------------------------
- * Print mesh characteristics
- *
- * parameters:
- *   mesh         --> pointer to mesh structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_info(const cs_mesh_t  *mesh);
-
-/*----------------------------------------------------------------------------
  * Compute global number of elements (cells, vertices, internal and border
  * faces) and sync cell family.
  *

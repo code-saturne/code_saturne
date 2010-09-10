@@ -1,4 +1,35 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added export of group classes to MED output.
+  modified files:
+    po/fr.po
+    src/apps/cs_solver.c
+    src/base/cs_ast_coupling.c
+    src/base/cs_join_post.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh_connect.c
+    src/base/cs_mesh_connect.h
+    src/base/cs_mesh.h
+    src/base/cs_mesh_warping.c
+    src/base/cs_post.c
+    src/base/cs_sat_coupling.c
+    src/base/cs_syr3_coupling.c
+    src/base/cs_syr4_coupling.c
+    src/ctwr/cs_ctwr_mesh.c
+    src/fvm/fvm_group.c
+    src/fvm/fvm_group.h
+    src/fvm/fvm_nodal.c
+    src/fvm/fvm_nodal_from_desc.c
+    src/fvm/fvm_nodal_from_desc.h
+    src/fvm/fvm_nodal.h
+    src/fvm/fvm_nodal_priv.h
+    src/fvm/fvm_to_cgns.c
+    src/fvm/fvm_to_ensight.c
+    src/fvm/fvm_to_ensight_v1.c
+    src/fvm/fvm_to_med.c
+    src/fvm/fvm_writer_helper.c
+    src/fvm/fvm_writer_helper.h
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct MED export of polyhedra in parallel when using --enable-long-gnum.
   modified file:
     src/fvm/fvm_to_med.c

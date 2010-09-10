@@ -161,6 +161,23 @@ fvm_group_class_set_get(const fvm_group_class_set_t  *this_group_class_set,
                         int                           group_class_id);
 
 /*----------------------------------------------------------------------------
+ * Copy a group class set, optionally with a renumbering array.
+ *
+ * parameters:
+ *   this_class_set <-- pointer to group class set to be copied
+ *   n_renums       <-- number of group classes
+ *   renum          <-- group class renumbering (1 to n), or NULL
+ *
+ * returns:
+ *   pointer to new copy of group class set
+ *----------------------------------------------------------------------------*/
+
+fvm_group_class_set_t  *
+fvm_group_class_set_copy(const fvm_group_class_set_t  *this_group_class_set,
+                         int                           n_renums,
+                         int                           renum[]);
+
+/*----------------------------------------------------------------------------
  * Dump printout of a group class set
  *
  * parameters:

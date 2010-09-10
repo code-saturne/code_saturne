@@ -102,10 +102,11 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t             *mesh,
  * mesh's link to its parent cells, built using this list).
  *
  * parameters:
- *   mesh           <-- base mesh
- *   name           <-- extracted mesh name
- *   cell_list_size <-- size of cell_list[] array
- *   cell_list      <-> list of cells (1 to n), or NULL
+ *   mesh             <-- base mesh
+ *   name             <-- extracted mesh name
+ *   include_families <-- include family info if true
+ *   cell_list_size   <-- size of cell_list[] array
+ *   cell_list        <-> list of cells (1 to n), or NULL
  *
  * returns:
  *   pointer to extracted nodal mesh
@@ -114,6 +115,7 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t             *mesh,
 fvm_nodal_t *
 cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
                                const char       *name,
+                               cs_bool_t         include_families,
                                fvm_lnum_t        cell_list_size,
                                fvm_lnum_t        cell_list[]);
 
@@ -129,6 +131,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
  * parameters:
  *   mesh             <-- base mesh
  *   name             <-- extracted mesh name
+ *   include_families <-- include family info if true
  *   i_face_list_size <-- size of i_face_list[] array
  *   b_face_list_size <-- size of b_face_list[] array
  *   i_face_list      <-> list of interior faces (1 to n), or NULL
@@ -141,6 +144,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 fvm_nodal_t *
 cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
                                const char       *name,
+                               cs_bool_t         include_families,
                                fvm_lnum_t        i_face_list_size,
                                fvm_lnum_t        b_face_list_size,
                                fvm_lnum_t        i_face_list[],

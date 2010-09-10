@@ -177,6 +177,7 @@ void CS_PROCF(astgeo, ASTGEO)
 
   ifs_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                             "MaillageExtraitAster_1",
+                                            false,
                                             0,
                                             n_faces,
                                             NULL,
@@ -406,6 +407,7 @@ void CS_PROCF(astcin, ASTCIN)
 
   mesh_ifs = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                             "MaillageExtraitAster_1",
+                                            false,
                                             0,
                                             n_faces,
                                             NULL,

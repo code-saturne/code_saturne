@@ -31,6 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "fvm_defs.h"
+#include "fvm_group.h"
 #include "fvm_io_num.h"
 
 /*----------------------------------------------------------------------------*/
@@ -246,6 +247,25 @@ fvm_nodal_set_shared_vertices(fvm_nodal_t        *this_nodal,
 fvm_coord_t *
 fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
                             fvm_coord_t   vertex_coords[]);
+
+/*----------------------------------------------------------------------------
+ * Assign group class set descriptions to a nodal mesh.
+ *
+ * The structure builds its own copy of the group class sets,
+ * renumbering them so as to discard those not referenced.
+ * Empty group classes are also renumbered to zero.
+ *
+ * This function should only be called once all element sections
+ * have been added to a nodal mesh representation.
+ *
+ * parameters:
+ *   this_nodal <-> nodal mesh structure
+ *   gc_set     <-- group class set descriptions
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
+                              const fvm_group_class_set_t  *gc_set);
 
 /*----------------------------------------------------------------------------
  * Obtain the name of a nodal mesh.

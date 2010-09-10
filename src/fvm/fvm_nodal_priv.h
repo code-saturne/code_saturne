@@ -9,7 +9,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2008  EDF
+  Copyright (C) 2004-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -31,6 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "fvm_defs.h"
+#include "fvm_group.h"
 #include "fvm_nodal.h"
 #include "fvm_tesselation.h"
 
@@ -103,6 +104,10 @@ typedef struct _fvm_nodal_section_t {
   fvm_lnum_t  *_face_num;          /* face_num if owner, NULL if shared */
   fvm_lnum_t  *_vertex_index;      /* vertex_index if owner, NULL if shared */
   fvm_lnum_t  *_vertex_num;        /* vertex numbers if owner, NULL if shared */
+
+  /* Pointers to group class ids, if present */
+
+  int         *gc_id;              /* Group class id, NULL if implicit 0 */
 
   /* Auxiliary structure used to define subdivision of elements into
      simpler element types (usually polygons to triangles and
@@ -197,6 +202,10 @@ struct _fvm_nodal_t {
   /*-------------------*/
 
   fvm_nodal_section_t  **sections;  /* Array of section descriptions */
+
+  /* Group class descriptions if present */
+
+  fvm_group_class_set_t   *gc_set;  /* Pointer to group class set, or NULL */
 
 };
 

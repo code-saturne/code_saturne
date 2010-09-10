@@ -7,7 +7,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2006  EDF
+  Copyright (C) 2004-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -1278,6 +1278,7 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
  *   face_vertex_num <-- face -> vertex numbers (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
+ *   cell_gc_id      <-- cell -> group class ids, or NULL
  *   parent_cell_num <-- cell -> parent cell number (1 to n) if non-trivial
  *                       (i.e. if cell definitions correspond to a subset
  *                       of the parent mesh), NULL otherwise.
@@ -1294,6 +1295,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
                               const fvm_lnum_t   *face_vertex_num[],
                               const fvm_lnum_t    cell_face_idx[],
                               const fvm_lnum_t    cell_face_num[],
+                              const int           cell_gc_id[],
                               const fvm_lnum_t    parent_cell_num[],
                               fvm_lnum_t         *cell_face_list[])
 {
@@ -1404,7 +1406,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
   }
 
   /* Construction of nodal connectivities */
-  /*---------------------------------------*/
+  /*--------------------------------------*/
 
   for (cell_counter = 0 ; cell_counter < n_extr_cells ; cell_counter++) {
 
@@ -1500,12 +1502,30 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 
   _raise_sections_parent_num(FVM_N_ELEMENT_TYPES, sections, parent_cell_num);
 
-  /* Add sections to nodal mesh structure */
-
   _optimize_sections_parent_num(FVM_N_ELEMENT_TYPES, sections);
 
-  _fvm_nodal_add_sections(this_nodal, FVM_N_ELEMENT_TYPES, sections);
+  /* Add group class ids if present */
 
+  if (cell_gc_id != NULL) {
+    int section_id;
+    for (section_id = 0; section_id < FVM_N_ELEMENT_TYPES; section_id++) {
+      section = sections[section_id];
+      if (section == NULL)
+        continue;
+      BFT_MALLOC(section->gc_id, section->n_elements, int);
+      if (section->parent_element_num != NULL) {
+        for (cell_id = 0; cell_id < section->n_elements; cell_id++)
+          section->gc_id[cell_id]
+            = cell_gc_id[section->parent_element_num[cell_id] - 1];
+      }
+      else
+        memcpy(section->gc_id, cell_gc_id, section->n_elements*sizeof(int));
+    }
+  }
+
+  /* Add sections to nodal mesh structure */
+
+  _fvm_nodal_add_sections(this_nodal, FVM_N_ELEMENT_TYPES, sections);
 }
 
 /*----------------------------------------------------------------------------
@@ -1531,6 +1551,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
  *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_gc_id      <-- face -> group class ids, or NULL (per face list)
  *   parent_face_num <-- face -> parent face number (1 to n) if non-trivial
  *                       (i.e. if face definitions correspond to a subset
  *                       of the parent mesh), NULL otherwise.
@@ -1544,6 +1565,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
                               const fvm_lnum_t    face_list_shift[],
                               const fvm_lnum_t   *face_vertex_idx[],
                               const fvm_lnum_t   *face_vertex_num[],
+                              const int          *face_gc_id[],
                               const fvm_lnum_t    parent_face_num[])
 {
   int  type_id;
@@ -1714,9 +1736,48 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
 
   _raise_sections_parent_num(FVM_N_ELEMENT_TYPES, sections, parent_face_num);
 
-  /* Add sections to nodal mesh structure */
-
   _optimize_sections_parent_num(FVM_N_ELEMENT_TYPES, sections);
+
+  /* Add group class ids if present */
+
+  if (face_gc_id != NULL) {
+
+    int section_id;
+
+    for (section_id = 0; section_id < FVM_N_ELEMENT_TYPES; section_id++) {
+
+      section = sections[section_id];
+      if (section == NULL)
+        continue;
+
+      BFT_MALLOC(section->gc_id, section->n_elements, int);
+
+      if (section->parent_element_num != NULL) {
+        for (face_id = 0; face_id < section->n_elements; face_id++) {
+          int fl;
+          fvm_lnum_t _face_id = section->parent_element_num[face_id] - 1;
+          for (fl = n_face_lists - 1 ; _face_id < face_list_shift[fl] ; fl--);
+          assert(fl > -1);
+          _face_id -= face_list_shift[fl];
+          section->gc_id[face_id] = face_gc_id[fl][_face_id];
+        }
+      }
+
+      else {
+        for (face_id = 0; face_id < section->n_elements; face_id++) {
+          int fl;
+          fvm_lnum_t _face_id = face_id;
+          for (fl = n_face_lists - 1 ; _face_id < face_list_shift[fl] ; fl--);
+          assert(fl > -1);
+          _face_id -= face_list_shift[fl];
+          section->gc_id[face_id] = face_gc_id[fl][_face_id];
+        }
+      }
+
+    }
+  }
+
+  /* Add sections to nodal mesh structure */
 
   _fvm_nodal_add_sections(this_nodal, FVM_N_ELEMENT_TYPES, sections);
 

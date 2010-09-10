@@ -230,6 +230,7 @@ _define_coupled_mesh(char                *coupled_mesh_name,
   coupled_mesh
     = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                      coupled_mesh_name,
+                                     false,
                                      0,
                                      syr_coupling->n_faces,
                                      NULL,

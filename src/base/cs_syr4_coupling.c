@@ -510,6 +510,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     coupling_ent->elts
       = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
                                        coupled_mesh_name,
+                                       false,
                                        coupling_ent->n_elts,
                                        elt_list);
 
@@ -538,6 +539,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     coupling_ent->elts
       = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                        coupled_mesh_name,
+                                       false,
                                        0,
                                        coupling_ent->n_elts,
                                        NULL,

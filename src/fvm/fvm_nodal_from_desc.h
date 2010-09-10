@@ -72,6 +72,7 @@ extern "C" {
  *   face_vertex_num <-- face -> vertex numbers (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
+ *   cell_gc_id      <-- cell -> group class ids, or NULL
  *   parent_cell_num <-- cell -> parent cell number (1 to n) if non-trivial
  *                       (i.e. if cell definitions correspond to a subset
  *                       of the parent mesh), NULL otherwise.
@@ -88,6 +89,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
                               const fvm_lnum_t   *face_vertex_num[],
                               const fvm_lnum_t    cell_face_idx[],
                               const fvm_lnum_t    cell_face_num[],
+                              const int           cell_gc_id[],
                               const fvm_lnum_t    parent_cell_num[],
                               fvm_lnum_t         *cell_face_list[]);
 
@@ -114,6 +116,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
  *   face_vertex_num <-- face -> vertex numbers (per face list)
+ *   face_gc_id      <-- face -> group class ids, or NULL (per face list)
  *   parent_face_num <-- face -> parent face number (1 to n) if non-trivial
  *                       (i.e. if face definitions correspond to a subset
  *                       of the parent mesh), NULL otherwise.
@@ -127,6 +130,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
                               const fvm_lnum_t    face_list_shift[],
                               const fvm_lnum_t   *face_vertex_idx[],
                               const fvm_lnum_t   *face_vertex_num[],
+                              const int          *face_gc_id[],
                               const fvm_lnum_t    parent_face_num[]);
 
 /*----------------------------------------------------------------------------*/

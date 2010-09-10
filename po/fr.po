@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-08-30 19:23+0200\n"
+"POT-Creation-Date: 2010-09-10 11:49+0200\n"
 "PO-Revision-Date: 2010-07-29 19:13+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -649,11 +649,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:371
+#: src/apps/cs_solver.c:373
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:385
+#: src/apps/cs_solver.c:388
 #, c-format
 msgid ""
 "\n"
@@ -662,7 +662,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:406
+#: src/apps/cs_solver.c:407
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -670,7 +670,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:428
+#: src/apps/cs_solver.c:429
 #, c-format
 msgid ""
 "\n"
@@ -685,7 +685,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:438
+#: src/apps/cs_solver.c:439
 #, c-format
 msgid ""
 "\n"
@@ -698,7 +698,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:444
+#: src/apps/cs_solver.c:445
 #, c-format
 msgid ""
 "\n"
@@ -713,7 +713,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:514
+#: src/apps/cs_solver.c:515
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -3083,7 +3083,7 @@ msgid ""
 " Edge number: %d (%u) - (%d, %d) in old numbering.\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:2054
+#: src/base/cs_join_mesh.c:2063
 msgid ""
 "\n"
 "  Local min/max. tolerance:\n"
@@ -3091,7 +3091,7 @@ msgid ""
 " Glob. Num. |  Tolerance  |              Coordinates\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:2078
+#: src/base/cs_join_mesh.c:2087
 msgid ""
 "\n"
 "  Global min/max. tolerance:\n"
@@ -3099,14 +3099,14 @@ msgid ""
 " Glob. Num. |  Tolerance  |              Coordinates\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3259
+#: src/base/cs_join_mesh.c:3268
 #, c-format
 msgid ""
 " The given vertex number: %d is not defined in the edge structure (edges-"
 ">vtx_idx).\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3271
+#: src/base/cs_join_mesh.c:3280
 #, c-format
 msgid ""
 " The given couple of vertex numbers :\n"
@@ -3115,7 +3115,7 @@ msgid ""
 " is not defined in the edge structure.\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3365
+#: src/base/cs_join_mesh.c:3374
 #, c-format
 msgid ""
 " Problem in mesh connectivity. Face: %llu\n"
@@ -3125,7 +3125,7 @@ msgid ""
 " Modify joining parameters to reduce merging (fraction & merge).\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3822 src/base/cs_join_mesh.c:3935
+#: src/base/cs_join_mesh.c:3831 src/base/cs_join_mesh.c:3944
 #, c-format
 msgid ""
 "\n"
@@ -3133,7 +3133,7 @@ msgid ""
 "  -- Dump a cs_join_mesh_t structure: (%p) --\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3827 src/base/cs_join_mesh.c:3940
+#: src/base/cs_join_mesh.c:3836 src/base/cs_join_mesh.c:3949
 #, c-format
 msgid ""
 "\n"
@@ -3141,28 +3141,28 @@ msgid ""
 "  -- Dump a cs_join_mesh_t structure: %s (%p) --\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3829
+#: src/base/cs_join_mesh.c:3838
 #, c-format
 msgid ""
 "\n"
 " mesh->n_faces:       %9d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3830
+#: src/base/cs_join_mesh.c:3839
 #, c-format
 msgid ""
 " mesh->n_g_faces:   %11u\n"
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3839
+#: src/base/cs_join_mesh.c:3848
 #, c-format
 msgid ""
 "\n"
 " face_id: %5d gnum: %9u n_vertices: %4d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3862 src/base/cs_join_mesh.c:3880
+#: src/base/cs_join_mesh.c:3871 src/base/cs_join_mesh.c:3889
 #, c-format
 msgid ""
 "  Incoherency found in the current mesh definition\n"
@@ -3170,7 +3170,7 @@ msgid ""
 "  Vertices: local (%d, %d), global (%u, %u) are defined twice\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3896
+#: src/base/cs_join_mesh.c:3905
 #, c-format
 msgid ""
 "\n"
@@ -3181,35 +3181,35 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3904 src/base/cs_join_mesh.c:4023
+#: src/base/cs_join_mesh.c:3913 src/base/cs_join_mesh.c:4032
 #, c-format
 msgid ""
 " Local Num | Global Num |  Tolerance  |        Coordinates\n"
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3942
+#: src/base/cs_join_mesh.c:3951
 #, c-format
 msgid ""
 "\n"
 " mesh->n_faces:     %11d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3943
+#: src/base/cs_join_mesh.c:3952
 #, c-format
 msgid ""
 " mesh->n_g_faces:   %11llu\n"
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3953
+#: src/base/cs_join_mesh.c:3962
 #, c-format
 msgid ""
 "\n"
 " face_id: %9d gnum: %10llu n_vertices : %4d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:3977 src/base/cs_join_mesh.c:3997
+#: src/base/cs_join_mesh.c:3986 src/base/cs_join_mesh.c:4006
 #, c-format
 msgid ""
 "  Incoherency found in the current mesh definition\n"
@@ -3217,7 +3217,7 @@ msgid ""
 "  Vertices: local (%d, %d), global (%llu, %llu) are defined twice\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4014
+#: src/base/cs_join_mesh.c:4023
 #, c-format
 msgid ""
 "\n"
@@ -3228,35 +3228,35 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4053
+#: src/base/cs_join_mesh.c:4062
 msgid ""
 "\n"
 "  Edge connectivity used in the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4054
+#: src/base/cs_join_mesh.c:4063
 #, c-format
 msgid "  Number of edges:      %8d\n"
 msgstr "  Nombre d'arêtes :     %8d\n"
 
-#: src/base/cs_join_mesh.c:4055
+#: src/base/cs_join_mesh.c:4064
 #, c-format
 msgid "  Number of vertices:   %8d\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4064
+#: src/base/cs_join_mesh.c:4073
 #, c-format
 msgid "  Edge %6d  (%8u) <Vertex> [%8u %8u]\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4091
+#: src/base/cs_join_mesh.c:4100
 msgid ""
 "\n"
 "  Vertex -> Vertex connectivity :\n"
 "\n"
 msgstr ""
 
-#: src/base/cs_join_mesh.c:4098
+#: src/base/cs_join_mesh.c:4107
 #, c-format
 msgid "  Vertex %6d (%7u) - %3d - "
 msgstr ""
@@ -3295,11 +3295,11 @@ msgid ""
 " Check the datatype of the field to export.\n"
 msgstr ""
 
-#: src/base/cs_join_post.c:374
+#: src/base/cs_join_post.c:375
 msgid "Rank"
 msgstr ""
 
-#: src/base/cs_join_post.c:394
+#: src/base/cs_join_post.c:395
 msgid "VtxTolerance"
 msgstr ""
 
@@ -3895,7 +3895,76 @@ msgstr ""
 "rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:2484
+#: src/base/cs_mesh.c:2541
+msgid ""
+"\n"
+" Global definition of the number of elements (cells, vertices, faces...)\n"
+msgstr ""
+"\n"
+" Définition globale du nombre d'éléments (cellules, sommets, faces...)\n"
+
+#: src/base/cs_mesh.c:2632
+msgid ""
+"\n"
+" Halo construction with extended neighborhood\n"
+" ============================================\n"
+"\n"
+msgstr ""
+"\n"
+" Construction du halo avec voisinage étendu\n"
+" ==========================================\n"
+"\n"
+
+#: src/base/cs_mesh.c:2638
+msgid " Composing periodicities\n"
+msgstr " Composition des périodicités\n"
+
+#: src/base/cs_mesh.c:2645
+msgid ""
+"\n"
+" Halo construction with standard neighborhood\n"
+" ============================================\n"
+"\n"
+msgstr ""
+"\n"
+" Construction du halo avec voisinage standard\n"
+" ============================================\n"
+"\n"
+
+#: src/base/cs_mesh.c:2659
+msgid " Face interfaces creation\n"
+msgstr " Création de l'interface entre faces\n"
+
+#: src/base/cs_mesh.c:2710
+msgid " Definition of periodic vertices\n"
+msgstr " Définition des sommets périodiques\n"
+
+#: src/base/cs_mesh.c:2731
+msgid " Vertex interfaces creation\n"
+msgstr " Création de l'interface entre sommets\n"
+
+#: src/base/cs_mesh.c:2764
+msgid " Halo creation\n"
+msgstr " Création des halos\n"
+
+#: src/base/cs_mesh.c:2769
+msgid " Halo definition\n"
+msgstr " Définition des halos\n"
+
+#: src/base/cs_mesh.c:2795
+msgid " Extended neighborhood structures definition\n"
+msgstr " Définition des structures pour le voisinage étendu\n"
+
+#: src/base/cs_mesh.c:2822
+#, c-format
+msgid ""
+"\n"
+" Extended connectivity creation (%.3g s)\n"
+msgstr ""
+"\n"
+" Création de la connectivité étendue (%.3g s)\n"
+
+#: src/base/cs_mesh.c:3310
 #, c-format
 msgid ""
 "\n"
@@ -3910,76 +3979,7 @@ msgstr ""
 "                       Y : %14.7e %14.7e\n"
 "                       Z : %14.7e %14.7e\n"
 
-#: src/base/cs_mesh.c:2610
-msgid ""
-"\n"
-" Global definition of the number of elements (cells, vertices, faces...)\n"
-msgstr ""
-"\n"
-" Définition globale du nombre d'éléments (cellules, sommets, faces...)\n"
-
-#: src/base/cs_mesh.c:2701
-msgid ""
-"\n"
-" Halo construction with extended neighborhood\n"
-" ============================================\n"
-"\n"
-msgstr ""
-"\n"
-" Construction du halo avec voisinage étendu\n"
-" ==========================================\n"
-"\n"
-
-#: src/base/cs_mesh.c:2707
-msgid " Composing periodicities\n"
-msgstr " Composition des périodicités\n"
-
-#: src/base/cs_mesh.c:2714
-msgid ""
-"\n"
-" Halo construction with standard neighborhood\n"
-" ============================================\n"
-"\n"
-msgstr ""
-"\n"
-" Construction du halo avec voisinage standard\n"
-" ============================================\n"
-"\n"
-
-#: src/base/cs_mesh.c:2728
-msgid " Face interfaces creation\n"
-msgstr " Création de l'interface entre faces\n"
-
-#: src/base/cs_mesh.c:2779
-msgid " Definition of periodic vertices\n"
-msgstr " Définition des sommets périodiques\n"
-
-#: src/base/cs_mesh.c:2800
-msgid " Vertex interfaces creation\n"
-msgstr " Création de l'interface entre sommets\n"
-
-#: src/base/cs_mesh.c:2833
-msgid " Halo creation\n"
-msgstr " Création des halos\n"
-
-#: src/base/cs_mesh.c:2838
-msgid " Halo definition\n"
-msgstr " Définition des halos\n"
-
-#: src/base/cs_mesh.c:2864
-msgid " Extended neighborhood structures definition\n"
-msgstr " Définition des structures pour le voisinage étendu\n"
-
-#: src/base/cs_mesh.c:2891
-#, c-format
-msgid ""
-"\n"
-" Extended connectivity creation (%.3g s)\n"
-msgstr ""
-"\n"
-" Création de la connectivité étendue (%.3g s)\n"
-
-#: src/base/cs_mesh.c:3340
+#: src/base/cs_mesh.c:3320
 #, c-format
 msgid ""
 " %s\n"
@@ -4084,7 +4084,7 @@ msgstr ""
 msgid " End of coherency check of the mesh structure.\n"
 msgstr " Fin des tests de cohérence de la structure de maillage.\n"
 
-#: src/base/cs_mesh_connect.c:294
+#: src/base/cs_mesh_connect.c:513
 msgid ""
 "The main mesh does not contain any face -> vertices\n"
 "connectivity, necessary for the nodal connectivity\n"
@@ -4094,7 +4094,7 @@ msgstr ""
 "faces->sommets, indispensable à la reconstruction\n"
 "de la connectivité nodale (cs_mesh_connect_cells_to_nodal)."
 
-#: src/base/cs_mesh_connect.c:443
+#: src/base/cs_mesh_connect.c:726
 msgid ""
 "The main mesh does not contain any face -> vertices\n"
 "connectivity, necessary for the nodal connectivity\n"
@@ -4261,7 +4261,7 @@ msgid ""
 "parameters."
 msgstr ""
 
-#: src/base/cs_mesh_solcom.c:381 src/base/cs_post.c:3459
+#: src/base/cs_mesh_solcom.c:381 src/base/cs_post.c:3463
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
@@ -4279,15 +4279,15 @@ msgstr ""
 msgid "Warped faces to cut"
 msgstr "Faces gauche a decouper"
 
-#: src/base/cs_mesh_warping.c:1320
+#: src/base/cs_mesh_warping.c:1321
 msgid "Face warping"
 msgstr "Gauchissement des faces"
 
-#: src/base/cs_mesh_warping.c:1359
+#: src/base/cs_mesh_warping.c:1360
 msgid "Warped faces after cutting"
 msgstr "Faces gauche apres decoupage"
 
-#: src/base/cs_mesh_warping.c:1440
+#: src/base/cs_mesh_warping.c:1442
 #, c-format
 msgid ""
 "\n"
@@ -4306,7 +4306,7 @@ msgstr ""
 " Angle maximal autorisé (deg) : %7.4f\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1503
+#: src/base/cs_mesh_warping.c:1505
 msgid ""
 "\n"
 " No face to cut. Verify the criterion if necessary.\n"
@@ -4314,7 +4314,7 @@ msgstr ""
 "\n"
 " Aucune face à découper. Revoir le critère si nécessaire.\n"
 
-#: src/base/cs_mesh_warping.c:1552
+#: src/base/cs_mesh_warping.c:1554
 #, c-format
 msgid ""
 " Interior faces:\n"
@@ -4329,7 +4329,7 @@ msgstr ""
 "   %12llu faces après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1588
+#: src/base/cs_mesh_warping.c:1590
 #, c-format
 msgid ""
 " Boundary faces:\n"
@@ -4782,15 +4782,15 @@ msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "(%d) a déjà été affecté.\n"
 
-#: src/base/cs_post.c:769
+#: src/base/cs_post.c:773
 msgid "parallel domain"
 msgstr ""
 
-#: src/base/cs_post.c:950
+#: src/base/cs_post.c:954
 msgid "displacement"
 msgstr ""
 
-#: src/base/cs_post.c:1884
+#: src/base/cs_post.c:1888
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IVARPR must be\n"
@@ -4799,7 +4799,7 @@ msgstr ""
 "L'argument IVARPR du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1893
+#: src/base/cs_post.c:1897
 #, c-format
 msgid ""
 "The PSTEVA sub-routine argument IENTLA must be\n"
@@ -4808,7 +4808,7 @@ msgstr ""
 "L'argument IENTLA du sous-programme PSTEVA doit être\n"
 "égal à 0 ou 1, et non %d.\n"
 
-#: src/base/cs_post.c:1960
+#: src/base/cs_post.c:1964
 msgid ""
 "The requested post-processing writer number\n"
 "must be < 0 (reserved) or > 0 (user).\n"
@@ -4816,7 +4816,7 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-#: src/base/cs_post.c:1966
+#: src/base/cs_post.c:1970
 #, c-format
 msgid ""
 "The requested post-processing writer number\n"
@@ -4825,11 +4825,11 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "(%d) a déjà été affecté.\n"
 
-#: src/base/cs_post.c:2227 src/base/cs_post.c:2230
+#: src/base/cs_post.c:2231 src/base/cs_post.c:2234
 msgid " edges"
 msgstr ""
 
-#: src/base/cs_post.c:2272
+#: src/base/cs_post.c:2276
 #, c-format
 msgid ""
 "Post-processing mesh number %d has been aliased\n"
@@ -4838,7 +4838,7 @@ msgstr ""
 "Le maillage de post-traitement %d est référencé\n"
 "par le maillage %d, donc il ne peut être libéré.\n"
 
-#: src/base/cs_post.c:2289
+#: src/base/cs_post.c:2293
 #, c-format
 msgid ""
 "Post-processing mesh number %d has been associated\n"
@@ -4850,7 +4850,7 @@ msgstr ""
 "des maillages dépendant du temps, donc il ne peut\n"
 "pas être libéré.\n"
 
-#: src/base/cs_post.c:2385
+#: src/base/cs_post.c:2389
 #, c-format
 msgid ""
 "The mesh %d cannot be an alias of mesh %d,\n"
@@ -4859,7 +4859,7 @@ msgstr ""
 "Le maillage %d ne peut être un alias du maillage %d,\n"
 "qui est lui-même déjà un alias du maillage %d.\n"
 
-#: src/base/cs_post.c:3304
+#: src/base/cs_post.c:3308
 #, c-format
 msgid ""
 "\n"
@@ -4880,11 +4880,11 @@ msgstr ""
 "  Temps écoulé pour les maillages : %12.3f\n"
 "  Temps écoulé pour les champs :    %12.3f\n"
 
-#: src/base/cs_post.c:3476
+#: src/base/cs_post.c:3480
 msgid "Boundary"
 msgstr "Bord"
 
-#: src/base/cs_post.c:3600
+#: src/base/cs_post.c:3604
 msgid "Calculation domain"
 msgstr "Domaine de calcul"
 
@@ -5304,12 +5304,12 @@ msgstr ""
 "   nombre de rangs MPI :        %d\n"
 "\n"
 
-#: src/base/cs_sat_coupling.c:992 src/base/cs_sat_coupling.c:1213
-#: src/base/cs_sat_coupling.c:1280 src/base/cs_sat_coupling.c:1355
-#: src/base/cs_sat_coupling.c:1416 src/base/cs_sat_coupling.c:1486
-#: src/base/cs_sat_coupling.c:1584 src/base/cs_sat_coupling.c:1663
-#: src/base/cs_sat_coupling.c:1754 src/base/cs_sat_coupling.c:1830
-#: src/base/cs_sat_coupling.c:1898
+#: src/base/cs_sat_coupling.c:992 src/base/cs_sat_coupling.c:1215
+#: src/base/cs_sat_coupling.c:1282 src/base/cs_sat_coupling.c:1357
+#: src/base/cs_sat_coupling.c:1418 src/base/cs_sat_coupling.c:1488
+#: src/base/cs_sat_coupling.c:1586 src/base/cs_sat_coupling.c:1665
+#: src/base/cs_sat_coupling.c:1756 src/base/cs_sat_coupling.c:1832
+#: src/base/cs_sat_coupling.c:1900
 #, c-format
 msgid "Impossible coupling number %d; there are %d couplings"
 msgstr "Numéro de couplage %d impossible ;  on a %d couplages"
@@ -5319,12 +5319,12 @@ msgstr "Numéro de couplage %d impossible ;  on a %d couplages"
 msgid "coupled_cells_%d"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1050
+#: src/base/cs_sat_coupling.c:1051
 #, c-format
 msgid "coupled_faces_%d"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1293
+#: src/base/cs_sat_coupling.c:1295
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELCPL()\n"
@@ -5335,7 +5335,7 @@ msgstr ""
 "On a indiqué NCECPL = %d et NFBCPL = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:1368
+#: src/base/cs_sat_coupling.c:1370
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for LELNCP()\n"
@@ -5346,7 +5346,7 @@ msgstr ""
 "On a indiqué NCENCP = %d et NFBNCP = %d.\n"
 "On devrait avoir les valeurs %d et %d pour ce couplage."
 
-#: src/base/cs_sat_coupling.c:1510
+#: src/base/cs_sat_coupling.c:1512
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for COOCPL()\n"
@@ -5357,13 +5357,13 @@ msgstr ""
 "On a indiqué ITYDIS = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#: src/base/cs_sat_coupling.c:1591
+#: src/base/cs_sat_coupling.c:1593
 msgid ""
 "The centred interpolation scheme is not available\n"
 "when coupling cells"
 msgstr ""
 
-#: src/base/cs_sat_coupling.c:1602
+#: src/base/cs_sat_coupling.c:1604
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for PNDCPL().\n"
@@ -5374,7 +5374,7 @@ msgstr ""
 "On a indiqué ITYLOC = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#: src/base/cs_sat_coupling.c:1680
+#: src/base/cs_sat_coupling.c:1682
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -5385,7 +5385,7 @@ msgstr ""
 "On a indiqué ITYVAR = %d et NBRDIS = %d.\n"
 "On devrait avoir la valeur 0 ou %d pour NBRDIS."
 
-#: src/base/cs_sat_coupling.c:1687
+#: src/base/cs_sat_coupling.c:1689
 #, c-format
 msgid ""
 "Coupling %d: inconsistent arguments for VARCPL()\n"
@@ -5396,7 +5396,7 @@ msgstr ""
 "On a indiqué ITYVAR = %d et NBRLOC = %d.\n"
 "On devrait avoir la valeur 0 ou %d pour NBRLOC."
 
-#: src/base/cs_sat_coupling.c:2055
+#: src/base/cs_sat_coupling.c:2057
 msgid ""
 "At least 1 Code_Saturne coupling was defined for which\n"
 "no communication with a Code_Saturne instance is possible."
@@ -5750,7 +5750,7 @@ msgstr ""
 "\n"
 "Extraction du maillage \"%s\"\n"
 
-#: src/base/cs_syr3_coupling.c:263
+#: src/base/cs_syr3_coupling.c:264
 msgid ""
 "\n"
 " *** Renumbering of the boundary faces list    ..."
@@ -5758,15 +5758,15 @@ msgstr ""
 "\n"
 " *** Renumerotation de la liste des faces de bord    ..."
 
-#: src/base/cs_syr3_coupling.c:827 src/base/cs_syr4_coupling.c:326
+#: src/base/cs_syr3_coupling.c:828 src/base/cs_syr4_coupling.c:326
 msgid "Wall T"
 msgstr "T Paroi"
 
-#: src/base/cs_syr3_coupling.c:837 src/base/cs_syr4_coupling.c:326
+#: src/base/cs_syr3_coupling.c:838 src/base/cs_syr4_coupling.c:326
 msgid "Flux"
 msgstr "Flux"
 
-#: src/base/cs_syr3_coupling.c:1104
+#: src/base/cs_syr3_coupling.c:1105
 msgid ""
 "Coupling with SYRTHES impossible.\n"
 "No selection criteria for faces to couple."
@@ -5774,7 +5774,7 @@ msgstr ""
 "Couplage avec SYRTHES impossible.\n"
 "Aucun critère de sélection pour les faces à coupler."
 
-#: src/base/cs_syr3_coupling.c:1233
+#: src/base/cs_syr3_coupling.c:1234
 msgid ""
 "\n"
 "Structures associated with SYRTHES 3 coupling freed.\n"
@@ -5782,7 +5782,7 @@ msgstr ""
 "\n"
 "Libération des structures associées au couplage avec SYRTHES 3.\n"
 
-#: src/base/cs_syr3_coupling.c:1263 src/base/cs_syr4_coupling.c:1189
+#: src/base/cs_syr3_coupling.c:1264 src/base/cs_syr4_coupling.c:1191
 #, c-format
 msgid ""
 "\n"
@@ -5793,7 +5793,7 @@ msgstr ""
 " ** Traitement du maillage pour le couplage SYRTHES \"%s\"\n"
 "\n"
 
-#: src/base/cs_syr3_coupling.c:1284
+#: src/base/cs_syr3_coupling.c:1285
 msgid ""
 "Coupling with SYRTHES impossible.\n"
 "No face to couple.\n"
@@ -5801,21 +5801,21 @@ msgstr ""
 "Couplage avec SYRTHES impossible.\n"
 "Aucune face à coupler.\n"
 
-#: src/base/cs_syr3_coupling.c:1292
+#: src/base/cs_syr3_coupling.c:1293
 #, c-format
 msgid "Triangulation of the extracted mesh (%d faces)  ..."
 msgstr "Triangulation du maillage extrait (%d faces)  ..."
 
-#: src/base/cs_syr3_coupling.c:1305
+#: src/base/cs_syr3_coupling.c:1306
 #, c-format
 msgid "Splitting the extracted mesh in edges (%d faces)  ..."
 msgstr "Décomposition en arêtes du maillage extrait (%d faces)  ..."
 
-#: src/base/cs_syr3_coupling.c:1320
+#: src/base/cs_syr3_coupling.c:1321
 msgid "Error triangulating the extracted mesh before sending to SYRTHES.\n"
 msgstr "Erreur lors du découpage du maillage extrait avant envoi à Syrthes.\n"
 
-#: src/base/cs_syr3_coupling.c:1414
+#: src/base/cs_syr3_coupling.c:1415
 #, c-format
 msgid ""
 "\n"
@@ -5824,7 +5824,7 @@ msgstr ""
 "\n"
 "Maillage extrait composé de %d triangles"
 
-#: src/base/cs_syr3_coupling.c:1416
+#: src/base/cs_syr3_coupling.c:1417
 #, c-format
 msgid ""
 "\n"
@@ -5833,20 +5833,20 @@ msgstr ""
 "\n"
 "Maillage extrait composé de %d arêtes"
 
-#: src/base/cs_syr3_coupling.c:1420
+#: src/base/cs_syr3_coupling.c:1421
 #, c-format
 msgid " and %d vertices (locally)\n"
 msgstr " et %d sommets (localement)\n"
 
-#: src/base/cs_syr3_coupling.c:1501
+#: src/base/cs_syr3_coupling.c:1502
 msgid "\tInterpolation from vertices to elements            ..."
 msgstr "\tInterpolation des sommets vers les éléments           ..."
 
-#: src/base/cs_syr3_coupling.c:1591
+#: src/base/cs_syr3_coupling.c:1592
 msgid "\tInterpolation from elements to vertices            ..."
 msgstr "\tInterpolation des éléments sur les sommets            ..."
 
-#: src/base/cs_syr3_messages.c:157 src/base/cs_syr4_coupling.c:1144
+#: src/base/cs_syr3_messages.c:157 src/base/cs_syr4_coupling.c:1146
 #, c-format
 msgid ""
 "========================================================\n"
@@ -5914,12 +5914,12 @@ msgstr ""
 msgid "SYRTHES %s cells"
 msgstr "Cellules SYRTHES %s"
 
-#: src/base/cs_syr4_coupling.c:530
+#: src/base/cs_syr4_coupling.c:531
 #, c-format
 msgid "SYRTHES %s faces"
 msgstr "Faces SYRTHES %s"
 
-#: src/base/cs_syr4_coupling.c:558
+#: src/base/cs_syr4_coupling.c:560
 #, c-format
 msgid ""
 " Selection criteria:\n"
@@ -5930,15 +5930,15 @@ msgstr ""
 " \"%s\"\n"
 " produit un maillage vide pour le couplage SYRTHES.\n"
 
-#: src/base/cs_syr4_coupling.c:573
+#: src/base/cs_syr4_coupling.c:575
 msgid "Projecting the extracted mesh to 2D ..."
 msgstr "Projection 2D du maillage extrait  ..."
 
-#: src/base/cs_syr4_coupling.c:581
+#: src/base/cs_syr4_coupling.c:583
 msgid "Error projecting the extracted mesh."
 msgstr "Erreur lors de la projection du maillage extrait."
 
-#: src/base/cs_syr4_coupling.c:608
+#: src/base/cs_syr4_coupling.c:610
 #, c-format
 msgid ""
 "\n"
@@ -5947,7 +5947,7 @@ msgstr ""
 "\n"
 "Maillage extrait composé de %llu éléments.\n"
 
-#: src/base/cs_syr4_coupling.c:627
+#: src/base/cs_syr4_coupling.c:629
 msgid ""
 "\n"
 "Locator structure and mesh creation ..."
@@ -5955,15 +5955,15 @@ msgstr ""
 "\n"
 "Création de la structure de localisation et du maillage ..."
 
-#: src/base/cs_syr4_coupling.c:686
+#: src/base/cs_syr4_coupling.c:688
 msgid "distance_to_solid"
 msgstr ""
 
-#: src/base/cs_syr4_coupling.c:751
+#: src/base/cs_syr4_coupling.c:753
 msgid "distance_to_fluid"
 msgstr ""
 
-#: src/base/cs_syr4_coupling.c:779
+#: src/base/cs_syr4_coupling.c:781
 #, c-format
 msgid ""
 "Coupling with SYRTHES impossible:\n"
@@ -5974,7 +5974,7 @@ msgstr ""
 "%llu centres d'éléments du maillage \"%s\"\n"
 "non localisés sur le maillage SYRTHES."
 
-#: src/base/cs_syr4_coupling.c:973
+#: src/base/cs_syr4_coupling.c:975
 msgid ""
 "Coupling with SYRTHES impossible.\n"
 "No selection criteria for faces or cells to couple."
@@ -5982,7 +5982,7 @@ msgstr ""
 "Couplage avec SYRTHES impossible.\n"
 "Aucun critère de sélection pour les faces ou les cellules à coupler."
 
-#: src/base/cs_syr4_coupling.c:1041
+#: src/base/cs_syr4_coupling.c:1043
 msgid ""
 "\n"
 "Structures associated with SYRTHES 4 coupling freed.\n"
@@ -5990,7 +5990,7 @@ msgstr ""
 "\n"
 "Libération des structures associées au couplage avec SYRTHES 4.\n"
 
-#: src/base/cs_syr4_coupling.c:1088
+#: src/base/cs_syr4_coupling.c:1090
 #, c-format
 msgid ""
 "========================================================\n"
@@ -6007,7 +6007,7 @@ msgstr ""
 "      Options SYRTHES      : \"%s\"\n"
 "========================================================\n"
 
-#: src/base/cs_syr4_coupling.c:1159
+#: src/base/cs_syr4_coupling.c:1161
 #, c-format
 msgid ""
 "========================================================\n"
@@ -6024,7 +6024,7 @@ msgstr ""
 "      message attendu : cmd:iter:start\n"
 "========================================================\n"
 
-#: src/base/cs_syr4_coupling.c:1220
+#: src/base/cs_syr4_coupling.c:1222
 #, c-format
 msgid ""
 " Message received from SYRTHES: \"%s\"\n"
@@ -6033,7 +6033,7 @@ msgstr ""
 " Le message reçu de SYRTHES: \"%s\"\n"
 " indique une erreur ou est inattendu."
 
-#: src/base/cs_syr4_coupling.c:1225
+#: src/base/cs_syr4_coupling.c:1227
 #, c-format
 msgid ""
 "\n"
@@ -6685,11 +6685,11 @@ msgstr "    Mise à jour de la connectivité faces -> cellules\n"
 msgid "    Distant halo definition\n"
 msgstr "    Création du halo distant\n"
 
-#: src/ctwr/cs_ctwr_mesh.c:1208
+#: src/ctwr/cs_ctwr_mesh.c:1214
 msgid " Creating halos\n"
 msgstr ""
 
-#: src/ctwr/cs_ctwr_mesh.c:1213
+#: src/ctwr/cs_ctwr_mesh.c:1219
 msgid " Defining halos\n"
 msgstr ""
 
@@ -6888,7 +6888,7 @@ msgstr ""
 msgid "Extrusion of vertices only to edges not implemented yet."
 msgstr ""
 
-#: src/fvm/fvm_nodal_from_desc.c:1470
+#: src/fvm/fvm_nodal_from_desc.c:1472
 #, c-format
 msgid "Incoherent connectivity for cell %d\n"
 msgstr ""
@@ -7248,7 +7248,7 @@ msgid ""
 msgstr ""
 
 #: src/fvm/fvm_to_cgns.c:432 src/fvm/fvm_to_cgns.c:2564
-#: src/fvm/fvm_to_ensight_case.c:222 src/fvm/fvm_to_med.c:3411
+#: src/fvm/fvm_to_ensight_case.c:222 src/fvm/fvm_to_med.c:3824
 #, c-format
 msgid ""
 "The time value associated with time step <%d> equals <%g>,\n"
@@ -7432,18 +7432,18 @@ msgid ""
 "%s"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2573 src/fvm/fvm_to_med.c:3420
+#: src/fvm/fvm_to_cgns.c:2573 src/fvm/fvm_to_med.c:3833
 #, c-format
 msgid "The given time step value should be >= 0, and not %d\n"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:2582 src/fvm/fvm_to_med.c:3429
+#: src/fvm/fvm_to_cgns.c:2582 src/fvm/fvm_to_med.c:3842
 #, c-format
 msgid "The given time step value should be >= %d, and not %d\n"
 msgstr ""
 
-#: src/fvm/fvm_to_cgns.c:3011 src/fvm/fvm_to_ensight.c:3709
-#: src/fvm/fvm_to_med.c:3873
+#: src/fvm/fvm_to_cgns.c:3012 src/fvm/fvm_to_ensight.c:3710
+#: src/fvm/fvm_to_med.c:4256
 #, c-format
 msgid "Data of dimension %d not handled"
 msgstr ""
@@ -7481,7 +7481,7 @@ msgid ""
 "been defined, which conflicts with the current transient definition.\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:336
+#: src/fvm/fvm_to_med.c:339
 #, c-format
 msgid ""
 "MEDmaaCr() failed to create a new med_mesh.\n"
@@ -7489,7 +7489,7 @@ msgid ""
 "Associated writer name: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:347
+#: src/fvm/fvm_to_med.c:350
 #, c-format
 msgid ""
 "MEDdimEspaceCr() failed to set spacial dimension for a new med_mesh.\n"
@@ -7497,19 +7497,15 @@ msgid ""
 "Associated writer name: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:357
-msgid "FAMILY_0"
-msgstr ""
-
-#: src/fvm/fvm_to_med.c:376
+#: src/fvm/fvm_to_med.c:413
 #, c-format
 msgid ""
-"MEDfamCr() failed to create family 0for a new med_mesh.\n"
+"MEDfamCr() failed to create family %dfor a new med_mesh.\n"
 "Associated med_mesh name: \"%s\"\n"
 "Associated writer name: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:1073
+#: src/fvm/fvm_to_med.c:1114
 #, c-format
 msgid ""
 "MED field \"%s\" already defined\n"
@@ -7517,7 +7513,7 @@ msgid ""
 "but re-defined with %d components."
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:1081
+#: src/fvm/fvm_to_med.c:1122
 #, c-format
 msgid ""
 "MED field \"%s\" already defined\n"
@@ -7525,7 +7521,7 @@ msgid ""
 "but re-defined with datatype %d."
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:1346 src/fvm/fvm_to_med.c:1511
+#: src/fvm/fvm_to_med.c:1387 src/fvm/fvm_to_med.c:1552
 #, c-format
 msgid ""
 "MEDcoordEcr() failed to write coords:\"%s\"\n"
@@ -7533,18 +7529,7 @@ msgid ""
 "Associated med_mesh: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:1813 src/fvm/fvm_to_med.c:1990
-#, c-format
-msgid ""
-"MEDconnEcr() failed to write strided connectivity:\n"
-"Associated writer: \"%s\"\n"
-"Associated med_mesh_name: \"%s\"\n"
-"Associated MED geometrical element: \"%i\"\n"
-msgstr ""
-
-#: src/fvm/fvm_to_med.c:1830 src/fvm/fvm_to_med.c:2007
-#: src/fvm/fvm_to_med.c:2208 src/fvm/fvm_to_med.c:2355
-#: src/fvm/fvm_to_med.c:2699 src/fvm/fvm_to_med.c:2878
+#: src/fvm/fvm_to_med.c:1860 src/fvm/fvm_to_med.c:2321
 #, c-format
 msgid ""
 "MEDfamEcr() failed to write family numbers:\n"
@@ -7553,7 +7538,16 @@ msgid ""
 "Associated MED geometrical element: \"%i\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:2192 src/fvm/fvm_to_med.c:2339
+#: src/fvm/fvm_to_med.c:2156 src/fvm/fvm_to_med.c:2477
+#, c-format
+msgid ""
+"MEDconnEcr() failed to write strided connectivity:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+"Associated MED geometrical element: \"%i\"\n"
+msgstr ""
+
+#: src/fvm/fvm_to_med.c:2664 src/fvm/fvm_to_med.c:2796
 #, c-format
 msgid ""
 "MEDpolygoneConnEcr() failed to write connectivity:\n"
@@ -7561,7 +7555,7 @@ msgid ""
 "Associated med_mesh_name: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:2683 src/fvm/fvm_to_med.c:2862
+#: src/fvm/fvm_to_med.c:3124 src/fvm/fvm_to_med.c:3288
 #, c-format
 msgid ""
 "MEDpolyedreConnEcr() failed to write connectivity:\n"
@@ -7569,35 +7563,35 @@ msgid ""
 "Associated med_mesh_name: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:3231
+#: src/fvm/fvm_to_med.c:3644
 msgid "Empty MED filename."
 msgstr "Nom de fichier MED vide."
 
-#: src/fvm/fvm_to_med.c:3309
+#: src/fvm/fvm_to_med.c:3722
 #, c-format
 msgid ""
 "MEDouvrir() failed to open file: %s\n"
 "Associated writer: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:3357 src/fvm/fvm_to_med.c:3777
-#: src/fvm/fvm_to_med.c:4065
+#: src/fvm/fvm_to_med.c:3770 src/fvm/fvm_to_med.c:4160
+#: src/fvm/fvm_to_med.c:4449
 #, c-format
 msgid "MEDfermer() failed to close file \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:3558 src/fvm/fvm_to_med.c:3855
+#: src/fvm/fvm_to_med.c:3960 src/fvm/fvm_to_med.c:4238
 #, c-format
 msgid ""
 "MEDouvrir() failed to re-open file: %s\n"
 "Associated writer: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:3573
+#: src/fvm/fvm_to_med.c:3975
 msgid "Mesh name required to continue.\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:3625
+#: src/fvm/fvm_to_med.c:4028
 #, c-format
 msgid ""
 "MED must have a connectivity.\n"
@@ -7605,7 +7599,7 @@ msgid ""
 "Writer: \"%s\"\n"
 msgstr ""
 
-#: src/fvm/fvm_to_med.c:4010
+#: src/fvm/fvm_to_med.c:4394
 #, c-format
 msgid ""
 "MED must have entities.\n"

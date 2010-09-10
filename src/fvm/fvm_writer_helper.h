@@ -109,6 +109,7 @@ typedef struct _fvm_writer_field_helper_t fvm_writer_field_helper_t;
  * parameters:
  *   mesh                 <-- pointer to nodal mesh structure
  *   group_same_type      <-- group sections of the same type
+ *   min_export_dim       <-- minimum dimension of sections to export
  *   discard_polygons     <-- ignore polygonal sections
  *   discard_polyhedra    <-- ignore polyhedral sections
  *   divide_polygons      <-- tesselate polygonal sections
@@ -121,6 +122,7 @@ typedef struct _fvm_writer_field_helper_t fvm_writer_field_helper_t;
 
 fvm_writer_section_t *
 fvm_writer_export_list(const fvm_nodal_t  *mesh,
+                       int                 min_export_dim,
                        _Bool               group_same_type,
                        _Bool               discard_polygons,
                        _Bool               discard_polyhedra,

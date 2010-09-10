@@ -1187,6 +1187,7 @@ _field_helper_step_nl(fvm_writer_field_helper_t   *helper,
  *
  * parameters:
  *   mesh                 <-- pointer to nodal mesh structure
+ *   min_export_dim       <-- minimum dimension of sections to export
  *   group_same_type      <-- group sections of the same type
  *   discard_polygons     <-- ignore polygonal sections
  *   discard_polyhedra    <-- ignore polyhedral sections
@@ -1200,6 +1201,7 @@ _field_helper_step_nl(fvm_writer_field_helper_t   *helper,
 
 fvm_writer_section_t *
 fvm_writer_export_list(const fvm_nodal_t  *mesh,
+                       int                 min_export_dim,
                        _Bool               group_same_type,
                        _Bool               discard_polygons,
                        _Bool               discard_polyhedra,
@@ -1214,7 +1216,6 @@ fvm_writer_export_list(const fvm_nodal_t  *mesh,
 
   fvm_lnum_t  num_shift = 0;
   fvm_gnum_t  extra_vertex_base = fvm_nodal_n_g_vertices(mesh) + 1;
-  const int  export_dim = fvm_nodal_get_max_entity_dim(mesh);
 
   /* Initial count and allocation */
 
@@ -1228,7 +1229,7 @@ fvm_writer_export_list(const fvm_nodal_t  *mesh,
        (i.e. no output of faces if cells present, or edges
        if cells or faces) */
 
-    if (section->entity_dim == export_dim) {
+    if (section->entity_dim >= min_export_dim) {
 
       /* Optionally discard polygons or polyhedra */
       if (   (section->type == FVM_FACE_POLY && discard_polygons == true)
@@ -1271,7 +1272,7 @@ fvm_writer_export_list(const fvm_nodal_t  *mesh,
     const fvm_nodal_section_t  *const  section = mesh->sections[i];
 
     /* Ignore sections with entity dimension other than the highest */
-    if (section->entity_dim != export_dim)
+    if (section->entity_dim < min_export_dim)
       continue;
 
     /* Ignore polygonal or polyhedra sections if they should be discarded */

@@ -330,6 +330,7 @@ cs_join_post_mesh(const char            *mesh_name,
                                 face_list_shift,
                                 face_vertex_idx,
                                 face_vertex_lst,
+                                NULL,
                                 NULL);
 
   /* Define vertex_coord for fvm_nodal_set_shared_vertices() */

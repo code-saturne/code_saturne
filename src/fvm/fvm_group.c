@@ -257,6 +257,34 @@ _group_class_set_recv(fvm_group_class_set_t  *class_set,
 #endif
 
 /*----------------------------------------------------------------------------
+ * Copy a group class
+ *
+ * parameters:
+ *   src  <-- pointer to source group class
+ *   dest --> pointer to group class copy
+ *----------------------------------------------------------------------------*/
+
+static void
+_group_class_copy(const fvm_group_class_t  *src,
+                  fvm_group_class_t        *dest)
+{
+  int i;
+
+  if (src == NULL) {
+    dest->n_groups = 0;
+    dest->group_name = NULL;
+  }
+  else {
+    dest->n_groups = src->n_groups;
+    BFT_MALLOC(dest->group_name, dest->n_groups, char *);
+    for (i = 0; i < src->n_groups; i++) {
+      BFT_MALLOC(dest->group_name[i], strlen(src->group_name[i]) + 1, char);
+      strcpy(dest->group_name[i], src->group_name[i]);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Dump printout of a group class
  *
  * parameters:
@@ -484,6 +512,49 @@ fvm_group_class_set_get(const fvm_group_class_set_t  *this_group_class_set,
   }
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Copy a group class set, or a subset thereof
+ *
+ * parameters:
+ *   this_class_set <-- pointer to group class set to be copied
+ *   n_gcs          <-- number of group classes
+ *   gc_id          <-- group class list (0 to n-1), or NULL
+ *
+ * returns:
+ *   pointer to new copy of group class set
+ *----------------------------------------------------------------------------*/
+
+fvm_group_class_set_t  *
+fvm_group_class_set_copy(const fvm_group_class_set_t  *this_group_class_set,
+                         int                           n_gcs,
+                         int                           gc_id[])
+{
+  int i;
+  fvm_group_class_set_t  *class_set = NULL;
+
+  BFT_MALLOC(class_set, 1, fvm_group_class_set_t);
+
+  if (n_gcs == 0)
+    class_set->size = this_group_class_set->size;
+  else
+    class_set->size = n_gcs;
+
+  BFT_MALLOC(class_set->class, class_set->size, fvm_group_class_t);
+
+  if (n_gcs == 0) {
+    for (i = 0; i < class_set->size; i++)
+      _group_class_copy(this_group_class_set->class + i,
+                        class_set->class + i);
+  }
+  else {
+    for (i = 0; i < n_gcs; i++)
+      _group_class_copy(this_group_class_set->class + gc_id[i],
+                        class_set->class + i);
+  }
+
+  return class_set;
 }
 
 /*----------------------------------------------------------------------------

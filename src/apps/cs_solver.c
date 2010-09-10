@@ -317,10 +317,6 @@ cs_run(void)
   cs_renumber_mesh(cs_glob_mesh,
                    cs_glob_mesh_quantities);
 
-  /* Initialize meshes for the main post-processing */
-
-  cs_post_init_main_meshes();
-
   /* Update Fortran mesh sizes and quantities */
 
   {
@@ -368,11 +364,18 @@ cs_run(void)
                               idxfb);
   }
 
-  cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
-
   /* Destroy the temporary structure used to build the main mesh */
 
   cs_mesh_builder_destroy(&cs_glob_mesh_builder);
+
+  /* Print info on mesh */
+
+  cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
+
+  /* Initialize meshes for the main post-processing */
+
+  cs_mesh_init_group_classes(cs_glob_mesh);
+  cs_post_init_main_meshes();
 
   /* Compute geometric quantities related to the mesh */
 
@@ -383,8 +386,6 @@ cs_run(void)
   t2 = bft_timer_wtime();
 
   bft_printf(_("\n Computing geometric quantities (%.3g s)\n"), t2-t1);
-
-  cs_mesh_info(cs_glob_mesh);
 
   /* Initialize selectors for the mesh */
   cs_mesh_init_selectors();
