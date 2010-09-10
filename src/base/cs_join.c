@@ -1398,6 +1398,30 @@ void CS_PROCF(setajp, SETAJP)
 
 }
 
+/*----------------------------------------------------------------------------
+ * Print information on a mesh structure.
+ *
+ * parameters:
+ *   mesh  <--  pointer to mesh structure.
+ *   name  <--  associated name.
+ *----------------------------------------------------------------------------*/
+
+static void
+_print_mesh_info(const cs_mesh_t  *mesh,
+                 const char       *name)
+{
+  bft_printf(_(" %s\n"
+               "     Number of cells:          %llu\n"
+               "     Number of interior faces: %llu\n"
+               "     Number of boundary faces: %llu\n"
+               "     Number of vertices:       %llu\n"),
+             name,
+             (unsigned long long)(mesh->n_g_cells),
+             (unsigned long long)(mesh->n_g_i_faces),
+             (unsigned long long)(mesh->n_g_b_faces),
+             (unsigned long long)(mesh->n_g_vertices));
+}
+
 /*============================================================================
  * Public function definitions
  *===========================================================================*/
@@ -1525,7 +1549,7 @@ cs_join_all(void)
                  join_param.n_max_equiv_breaks,
                  join_param.max_sub_faces);
 
-      cs_mesh_print_info(mesh, _(" Before joining"));
+      _print_mesh_info(mesh, _(" Before joining"));
       bft_printf("\n");
     }
 
@@ -1661,7 +1685,7 @@ cs_join_all(void)
 
     if (join_param.verbosity > 0) {
       bft_printf("\n");
-      cs_mesh_print_info(mesh, _(" After joining"));
+      _print_mesh_info(mesh, _(" After joining"));
       bft_printf("\n");
     }
 

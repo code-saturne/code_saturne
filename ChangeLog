@@ -1,4 +1,10 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Only print minimal mesh info (as in version 2.0) before and after mesh
+  joining.
+  modified files:
+    src/base/cs_join.c
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Switch to recommended definition method of LOCALEDIR for internationalization.
   modified scripts:
     configure.ac
