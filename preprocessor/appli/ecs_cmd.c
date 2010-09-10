@@ -397,7 +397,7 @@ static void ecs_loc_cmd__aff_aide
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
 
-  printf(_("\n\nUSAGE :"));
+  printf(_("\n\nUSAGE:"));
 
 
   /* Usage en PRE-TRAITEMENT */

@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-10 16:36+0200\n"
-"PO-Revision-Date: 2010-09-10 14:53+0200\n"
+"POT-Creation-Date: 2010-09-10 16:57+0200\n"
+"PO-Revision-Date: 2010-09-10 16:59+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "Language: fr\n"
@@ -74,7 +74,7 @@ msgstr "  Lecture de fichiers compressés ('.gz') avec Zlib %s\n"
 #: preprocessor/appli/ecs_cmd.c:315
 #, c-format
 msgid "    (compiled with Zlib %s)\n"
-msgstr ""
+msgstr "    (compilé avec Zlib %s)\n"
 
 #: preprocessor/appli/ecs_cmd.c:355
 #, c-format
@@ -100,11 +100,11 @@ msgstr ""
 msgid ""
 "\n"
 "\n"
-"USAGE :"
+"USAGE:"
 msgstr ""
 "\n"
 "\n"
-"USAGE:"
+"UTILISATION :"
 
 #: preprocessor/appli/ecs_cmd.c:405
 #, c-format
@@ -158,7 +158,7 @@ msgstr ": idem"
 
 #: preprocessor/appli/ecs_cmd.c:428
 msgid ": do not write preprocessor output"
-msgstr ""
+msgstr ": ne pas écrire de fichier en sortie"
 
 #: preprocessor/appli/ecs_cmd.c:437
 #, c-format
@@ -202,7 +202,7 @@ msgstr "  (fichier par défaut  : \"%s\")"
 
 #: preprocessor/appli/ecs_cmd.c:468
 msgid ": output file name"
-msgstr ""
+msgstr ": nom du fichier de sortie"
 
 #: preprocessor/appli/ecs_cmd.c:479
 msgid ": if necessary, correct orientation of"
@@ -639,10 +639,10 @@ msgstr ""
 "de longueur %d octets au lieu de 4. (Erreur de portage)\n"
 
 #: preprocessor/appli/ecs_main.c:512 preprocessor/pre-post/ecs_post_cgns.c:301
-#: preprocessor/pre-post/ecs_post_ens.c:424
-#: preprocessor/pre-post/ecs_post_ens.c:587
-#: preprocessor/pre-post/ecs_post_ens.c:681
-#: preprocessor/pre-post/ecs_post_med.c:136
+#: preprocessor/pre-post/ecs_post_ens.c:300
+#: preprocessor/pre-post/ecs_post_ens.c:599
+#: preprocessor/pre-post/ecs_post_ens.c:693
+#: preprocessor/pre-post/ecs_post_med.c:215
 msgid "Creating file:"
 msgstr "Création du fichier :"
 
@@ -1324,19 +1324,19 @@ msgstr ""
 "CGNS : erreur à l'écriture du fichier \"%s\" :\n"
 "Le numéro de base renvoyé est \"%d\" et non \"1\"."
 
-#: preprocessor/pre-post/ecs_post_med.c:122
-#: preprocessor/pre-post/ecs_pre_med.c:119
-#, c-format
-msgid "MED: error opening file \"%s\"."
-msgstr "MED : échec à l'ouverture du fichier \"%s\"."
-
-#: preprocessor/pre-post/ecs_post_med.c:159
+#: preprocessor/pre-post/ecs_post_med.c:149
 #: preprocessor/pre-post/ecs_pre_med.c:143
 #, c-format
 msgid "MED: error closing file \"%s\"."
 msgstr "MED : échec à la fermeture du fichier \"%s\"."
 
-#: preprocessor/pre-post/ecs_post_med.c:225
+#: preprocessor/pre-post/ecs_post_med.c:213
+#: preprocessor/pre-post/ecs_pre_med.c:119
+#, c-format
+msgid "MED: error opening file \"%s\"."
+msgstr "MED : échec à l'ouverture du fichier \"%s\"."
+
+#: preprocessor/pre-post/ecs_post_med.c:227
 #, c-format
 msgid ""
 "A mesh named: %s\n"
@@ -1345,7 +1345,7 @@ msgstr ""
 "On a déjà défini un maillage de nom : %s\n"
 "dans le cas MED : %s\n"
 
-#: preprocessor/pre-post/ecs_post_med.c:275
+#: preprocessor/pre-post/ecs_post_med.c:277
 #, c-format
 msgid ""
 "MED: error writing file \"%s\".\n"
@@ -1354,7 +1354,7 @@ msgstr ""
 "MED : erreur a l'écriture du fichier \"%s\".\n"
 "Nom du maillage à créer : \"%s\"\n"
 
-#: preprocessor/pre-post/ecs_post_med.c:285
+#: preprocessor/pre-post/ecs_post_med.c:287
 #, c-format
 msgid ""
 "MED: error writing file \"%s\".\n"
@@ -1365,7 +1365,7 @@ msgstr ""
 "Nom du maillage : \"%s\"\n"
 "dimension du maillage : \"%d\" / de l'espace : \"%d\""
 
-#: preprocessor/pre-post/ecs_post_med.c:327
+#: preprocessor/pre-post/ecs_post_med.c:329
 #, c-format
 msgid "Field \"%s\" has already been defined in file \"%s\"\n"
 msgstr "Le champ \"%s\" a déjà été défini dans le fichier \"%s\"\n"
@@ -11171,52 +11171,3 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
-
-#~ msgid "ECS   version"
-#~ msgstr "ECS   version"
-
-#~ msgid "<file> [...]"
-#~ msgstr "<fichier> [...]"
-
-#~ msgid ": simulate messages without file output"
-#~ msgstr ": simulation de messages sans envoi réel"
-
-#~ msgid ": command line completed by a file"
-#~ msgstr ": ligne de commande complétée par un fichier"
-
-#~ msgid "  (default file: standard input)"
-#~ msgstr "  (fichier par défaut : entrée standard)"
-
-#~ msgid "Meta-mesh file"
-#~ msgstr "Méta-fichier de maillage"
-
-#~ msgid ""
-#~ "\n"
-#~ "\n"
-#~ "Reading mesh based on meta-mesh file\n"
-#~ "------------------------------------\n"
-#~ msgstr ""
-#~ "\n"
-#~ "\n"
-#~ "Lecture du méta-fichier de maillage\n"
-#~ "-----------------------------------\n"
-
-#~ msgid ""
-#~ "  Meta-mesh file: %s\n"
-#~ "\n"
-#~ "\n"
-#~ msgstr ""
-#~ "  Méta-fichier de maillage : %s\n"
-#~ "\n"
-#~ "\n"
-
-#~ msgid ""
-#~ "Error in mesh options specification on line %d of file \"%s\"\n"
-#~ "\n"
-#~ "\"%s\" should use a syntax of the form:\n"
-#~ "opt1 = value1, opt2 = value2, ..."
-#~ msgstr ""
-#~ "Erreur dans les options de maillage ligne %d du fichier \"%s\"\n"
-#~ "\n"
-#~ "\"%s\" devrait avoir une syntaxe de la forme :\n"
-#~ "opt2 = valeur1, opt2 = valeur2, ..."

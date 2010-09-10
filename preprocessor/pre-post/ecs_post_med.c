@@ -103,8 +103,7 @@ ecs_post_med__cree_cas(const char  *nom_cas,
   ECS_MALLOC(cas_med->nom_cas, strlen(nom_cas) + 1, char);
   strcpy(cas_med->nom_cas, nom_cas);
 
-  lng_nom_fic
-    = strlen(nom_cas) + strlen(".med") + 1;
+  lng_nom_fic = strlen(nom_cas) + strlen(".med") + 1;
 
   ECS_MALLOC(cas_med->nom_fic, lng_nom_fic, char);
   strcpy(cas_med->nom_fic, nom_cas);
@@ -115,13 +114,6 @@ ecs_post_med__cree_cas(const char  *nom_cas,
       cas_med->nom_fic[ind] = '_';
   }
 
-  cas_med->fid = MEDouvrir(cas_med->nom_fic, MED_CREATION);
-
-  if (cas_med->fid < 0)
-    ecs_error(__FILE__, __LINE__, 0,
-              _("MED: error opening file \"%s\"."),
-              cas_med->nom_fic);
-
   cas_med->nbr_var = 0;
   cas_med->nom_var = NULL;
 
@@ -130,10 +122,7 @@ ecs_post_med__cree_cas(const char  *nom_cas,
 
   cas_med->no_poly = no_poly;
 
-  /* Info sur la création du fichier MED */
-  /*-------------------------------------*/
-
-  printf("  %s %s\n", _("Creating file:"), cas_med->nom_fic);
+  cas_med->fid = 0;
 
   return cas_med;
 }
@@ -154,10 +143,12 @@ ecs_post_med__detruit_cas(ecs_med_t  *cas_med)
 
     /* Destruction du cas */
 
-    if (MEDfermer(cas_med->fid) != 0)
-      ecs_error(__FILE__, __LINE__, 0,
-                _("MED: error closing file \"%s\"."),
-                cas_med->nom_fic);
+    if (cas_med->fid != 0) {
+      if (MEDfermer(cas_med->fid) != 0)
+        ecs_error(__FILE__, __LINE__, 0,
+                  _("MED: error closing file \"%s\"."),
+                  cas_med->nom_fic);
+    }
 
     ECS_FREE(cas_med->nom_cas);
     ECS_FREE(cas_med->nom_fic);
@@ -212,6 +203,17 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
 
   if (cas_med == NULL)
     return;
+
+  /* Create MED file if not done yet */
+
+  if (cas_med->fid == 0) {
+    cas_med->fid = MEDouvrir(cas_med->nom_fic, MED_CREATION);
+    if (cas_med->fid < 0)
+      ecs_error(__FILE__, __LINE__, 0,
+                _("MED: error opening file \"%s\"."),
+                cas_med->nom_fic);
+    printf("  %s %s\n", _("Creating file:"), cas_med->nom_fic);
+  }
 
   /* Vérification que le maillage n'a pas déjà été défini */
 

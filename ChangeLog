@@ -1,4 +1,20 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Preprocessor only creates visualization files if necessary.
+  Creation of EnSight cases or MED files is delayed until a mesh
+  is really exported. This allows the GUI mesh checking functionnality
+  to limit Preprocessor visualization output to information (isolated faces)
+  or error cases, except in the case of mesh concatenation, where
+  visualizing each separate piece of geometry before visualization
+  may be useful.
+  modified files:
+    bin/cs_check_mesh.py
+    gui/Pages/SolutionVerifView.py
+    preprocessor/appli/ecs_main.c
+    preprocessor/pre-post/ecs_post_cgns.c
+    preprocessor/pre-post/ecs_post_ens.c
+    preprocessor/pre-post/ecs_post_med.c
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Mesh concatenation support removed from Preprocessor.
   This leads to multiple related changes throughout the tool chain to
   maintain consistency. A new option enables the preprocessor to

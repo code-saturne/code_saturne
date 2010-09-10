@@ -7,7 +7,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2010 EDF S.A., France
 
   contact: saturne-support@edf.fr
 

@@ -74,9 +74,8 @@ def run_check(opts):
 
     for o in opts:
         cmd += " " + str(o)
-
     cmd += " --out mesh_input"
-    cmd += " --ensight --case check_mesh"
+    cmd += " --ensight --info --case check_mesh"
     retval = run_command(cmd)
 
     os.chdir('check_mesh.ensight')

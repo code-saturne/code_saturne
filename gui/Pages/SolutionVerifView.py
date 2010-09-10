@@ -89,7 +89,6 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         self.pushButton.setEnabled(False)
 
         self.cs = os.path.join(cs_config.dirs.bindir, "cs_solver")
-        self.ecs = os.path.join(cs_config.dirs.bindir, "cs_preprocess")
 
         self.case = case
         self.case2 = case2
@@ -110,7 +109,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         os.mkdir(self.exec_dir)
         os.chdir(self.exec_dir)
 
-        self.fmt = string.join(string.split(self.__getPostCommand()))
+        self.fmt = string.split(self.__getPostCommand())[0]
 
         # Prepare preprocessing
 
@@ -122,7 +121,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
         for meshNode in nodeList:
 
-            cmd = self.ecs
+            cmd = os.path.join(cs_config.dirs.bindir, "cs_preprocess")
 
             name   = meshNode['name']
             format = meshNode['format']
@@ -136,6 +135,13 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                 cmd += ' --grp-cel ' + meshNode['grp_cel']
 
             cmd += ' ' + self.__getPostCommand()
+
+            # Only info for Preprocessing when a single mesh is read,
+            # but also allow individual parts to appear in case of
+            # multiple meshes.
+
+            if len(nodeList) == 1:
+                cmd += ' --info'
 
             cmd += ' --case preprocess'
             if len(nodeList) > 1:
@@ -257,11 +263,11 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         """
         format = self.out2.getPostProFormat()
         if format == "EnSight":
-            l = " --ensight "
+            l = " --ensight"
         elif format == "MED_fichier":
-            l = " --med "
+            l = " --med"
         elif format == "CGNS":
-            l = " --cgns "
+            l = " --cgns"
         return l
 
 
@@ -499,20 +505,6 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
             self.checkBoxBigEndian.setEnabled(True)
             self.modelPolyhedra.enableItem(str_model='display')
             self.comboBoxPolyhedra.setEnabled(True)
-
-
-    def __getPostCommand(self):
-        """
-        Return the preprocessor argument for postprocessing.
-        """
-        format = self.out2.getPostProFormat()
-        if format == "EnSight":
-            l = " --ensight "
-        elif format == "MED_fichier":
-            l = " --med "
-        elif format == "CGNS":
-            l = " --cgns "
-        return l
 
 
     def __setButtonEnabled(self):

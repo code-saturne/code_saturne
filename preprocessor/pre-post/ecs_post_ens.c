@@ -7,7 +7,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2010 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -193,15 +193,113 @@ ecs_loc_post_ens__ajout_var(ecs_post_ens_t  *cas_ens,
 
 /*----------------------------------------------------------------------------
  *  Fonction écrivant un fichier Case
+ *
+ *  Cette fonction crée le répertoire correspondant si nécessaire
  *----------------------------------------------------------------------------*/
 
 static void
 ecs_loc_post_ens__ecr_case(ecs_post_ens_t  *cas_ens)
 {
-  ecs_file_t    * fic_case;
-  ecs_int_t       ivar;
+  ecs_file_t  *fic_case;
+  ecs_int_t    ivar;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
+
+  if (cas_ens->nom_fic_case == NULL) {
+
+    size_t ind;
+    char *nom_base;
+
+    ECS_MALLOC(nom_base,
+               strlen(cas_ens->nom_cas) + 1 + strlen(".ensight") + 1,
+               char);
+    strcpy(nom_base, cas_ens->nom_cas);
+    strcat(nom_base, ".ensight");
+
+    for (ind = 0; ind < strlen(cas_ens->nom_cas); ind++) {
+      if (nom_base[ind] == ' ')
+        nom_base[ind] = '_';
+      else
+        nom_base[ind] = tolower(nom_base[ind]);
+    }
+
+    /* Création du répertoire si possible */
+    /*------------------------------------*/
+
+    if (ecs_file_mkdir_default(nom_base) == 0) {
+
+      /* Nom du répertoire */
+
+      ECS_MALLOC(cas_ens->prefixe_rep,
+                 strlen(nom_base) + strlen("/") + 1,
+                 char);
+
+      strcpy(cas_ens->prefixe_rep, nom_base);
+      strcat(cas_ens->prefixe_rep, "/");
+
+        /* Préfixe des noms de fichiers */
+
+        ECS_MALLOC(cas_ens->prefixe_fic, strlen("mesh") + 1, char);
+
+        strcpy(cas_ens->prefixe_fic, "mesh");
+
+        /* Cas du fichier ".case" (nom en majuscules) */
+
+        ECS_MALLOC(cas_ens->nom_fic_case,
+                   strlen(cas_ens->prefixe_rep) + strlen(cas_ens->prefixe_fic)
+                   + strlen(".case") + 1, char);
+
+        strcpy(cas_ens->nom_fic_case, cas_ens->prefixe_rep);
+        strcat(cas_ens->nom_fic_case, cas_ens->prefixe_fic);
+
+        for (ind = strlen(cas_ens->prefixe_rep);
+             cas_ens->nom_fic_case[ind] != '\0';
+             ind++)
+          cas_ens->nom_fic_case[ind] = toupper(cas_ens->nom_fic_case[ind]);
+
+        strcat(cas_ens->nom_fic_case, ".case");
+
+    }
+    else {
+
+      /* Nom du répertoire */
+
+      ECS_MALLOC(cas_ens->prefixe_rep, 1, char);
+
+      strcpy(cas_ens->prefixe_rep, "");
+
+      /* Préfixe des noms de fichiers */
+
+      ECS_MALLOC(cas_ens->prefixe_fic,
+                 strlen(nom_base) + strlen("_") + 1,
+                 char);
+
+      strcpy(cas_ens->prefixe_fic, nom_base);
+      strcat(cas_ens->prefixe_fic, "_");
+
+      /* Cas du fichier ".case" (nom en majuscules) */
+
+      ECS_MALLOC(cas_ens->nom_fic_case,
+                 strlen(nom_base) + strlen(".case") + 1,
+                 char);
+
+      for (ind = 0; nom_base[ind] != '\0'; ind++)
+        nom_base[ind] = toupper(nom_base[ind]);
+
+      strcpy(cas_ens->nom_fic_case, nom_base);
+      strcat(cas_ens->nom_fic_case, "_");
+
+      strcat(cas_ens->nom_fic_case, ".case");
+    }
+
+    ECS_FREE(nom_base);
+
+    /* Info sur la création du fichier Case */
+    /*--------------------------------------*/
+
+    printf("  %s %s\n", _("Creating file:"), cas_ens->nom_fic_case);
+
+  }
 
   /* Ouverture du fichier Case */
   /*---------------------------*/
@@ -232,11 +330,8 @@ ecs_loc_post_ens__ecr_case(ecs_post_ens_t  *cas_ens)
   if (cas_ens->nbr_var > 0) {
     ecs_file_printf(fic_case, "VARIABLE\n");
 
-    for (ivar = 0; ivar < cas_ens->nbr_var; ivar ++) {
-
+    for (ivar = 0; ivar < cas_ens->nbr_var; ivar ++)
       ecs_file_printf(fic_case, "%s\n", cas_ens->ligne_var[ivar]);
-
-    }
   }
 
   /* Fermeture du fichier Case */
@@ -294,10 +389,7 @@ ecs_post_ens__cree_cas(const char  *nom_cas,
                        bool         text,
                        bool         big_endian)
 {
-  char            *nom_base;
   ecs_post_ens_t  *cas_ens;
-
-  size_t           ind;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -314,82 +406,11 @@ ecs_post_ens__cree_cas(const char  *nom_cas,
   ECS_MALLOC(cas_ens->nom_cas, strlen(nom_cas) + 1, char);
   strcpy(cas_ens->nom_cas, nom_cas);
 
-  ECS_MALLOC(nom_base, strlen(nom_cas) + 1 + strlen(".ensight") + 1, char);
-  strcpy(nom_base, nom_cas);
-  strcat(nom_base, ".ensight");
+  /* Noms qui seront initialisés à la première écriture du fichier case */
 
-  for (ind = 0; ind < strlen(nom_cas); ind++) {
-    if (nom_base[ind] == ' ')
-      nom_base[ind] = '_';
-    else
-      nom_base[ind] = tolower(nom_base[ind]);
-  }
-
-  /* Création du répertoire si possible */
-  /*------------------------------------*/
-
-  if (ecs_file_mkdir_default(nom_base) == 0) {
-
-    /* Nom du répertoire */
-
-    ECS_MALLOC(cas_ens->prefixe_rep, strlen(nom_base) + strlen("/") + 1, char);
-
-    strcpy(cas_ens->prefixe_rep, nom_base);
-    strcat(cas_ens->prefixe_rep, "/");
-
-    /* Préfixe des noms de fichiers */
-
-    ECS_MALLOC(cas_ens->prefixe_fic, strlen("mesh") + 1, char);
-
-    strcpy(cas_ens->prefixe_fic, "mesh");
-
-    /* Cas du fichier ".case" (nom en majuscules) */
-
-    ECS_MALLOC(cas_ens->nom_fic_case,
-               strlen(cas_ens->prefixe_rep) + strlen(cas_ens->prefixe_fic)
-               + strlen(".case") + 1, char);
-
-    strcpy(cas_ens->nom_fic_case, cas_ens->prefixe_rep);
-    strcat(cas_ens->nom_fic_case, cas_ens->prefixe_fic);
-
-    for (ind = strlen(cas_ens->prefixe_rep);
-         cas_ens->nom_fic_case[ind] != '\0';
-         ind++)
-      cas_ens->nom_fic_case[ind] = toupper(cas_ens->nom_fic_case[ind]);
-
-    strcat(cas_ens->nom_fic_case, ".case");
-
-  }
-  else {
-
-    /* Nom du répertoire */
-
-    ECS_MALLOC(cas_ens->prefixe_rep, 1, char);
-
-    strcpy(cas_ens->prefixe_rep, "");
-
-    /* Préfixe des noms de fichiers */
-
-    ECS_MALLOC(cas_ens->prefixe_fic, strlen(nom_base) + strlen("_") + 1, char);
-
-    strcpy(cas_ens->prefixe_fic, nom_base);
-    strcat(cas_ens->prefixe_fic, "_");
-
-    /* Cas du fichier ".case" (nom en majuscules) */
-
-    ECS_MALLOC(cas_ens->nom_fic_case, strlen(nom_base)
-               + strlen(".case") + 1, char);
-
-    for (ind = 0; nom_base[ind] != '\0'; ind++)
-      nom_base[ind] = toupper(nom_base[ind]);
-
-    strcpy(cas_ens->nom_fic_case, nom_base);
-    strcat(cas_ens->nom_fic_case, "_");
-
-    strcat(cas_ens->nom_fic_case, ".case");
-  }
-
-  ECS_FREE(nom_base);
+  cas_ens->prefixe_rep = NULL;
+  cas_ens->prefixe_fic = NULL;
+  cas_ens->nom_fic_case = NULL;
 
   /* Autres membres de la structure `ecs_post_ens_t` */
   /*-------------------------------------------------*/
@@ -406,22 +427,10 @@ ecs_post_ens__cree_cas(const char  *nom_cas,
   cas_ens->tab_part = NULL;
   cas_ens->fic_geo  = NULL;
 
-  /* Première écriture du fichier Case */
-  /*-----------------------------------*/
-
-  cas_ens->modifie = true;
-
-  ecs_loc_post_ens__ecr_case(cas_ens);
-
   cas_ens->modifie = false;
 
   cas_ens->text = text;
   cas_ens->big_endian = big_endian;
-
-  /* Info sur la création du fichier Case */
-  /*--------------------------------------*/
-
-  printf("  %s %s\n", _("Creating file:"), cas_ens->nom_fic_case);
 
   return cas_ens;
 }
@@ -539,14 +548,17 @@ ecs_post_ens__ecrit_fic_geo(ecs_post_ens_t  *cas_ens)
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
+  /* Si le répertoire et le fichier .case n'ont pas encore été
+     crées, on les crée. */
+
+  ecs_loc_post_ens__ecr_case(cas_ens);
+
   /* Si le fichier géométrie est simplement fermé, on le réouvre */
   /*-------------------------------------------------------------*/
 
   if (cas_ens->fic_geo != NULL) {
-
     ecs_file_open_stream(cas_ens->fic_geo, ECS_FILE_MODE_APPEND);
     return cas_ens->fic_geo;
-
   }
 
   /* Construction du nom du fichier contenant la géométrie */
