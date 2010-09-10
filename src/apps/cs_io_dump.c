@@ -648,9 +648,9 @@ _convert_size(unsigned char  buf[],
   }
   else
     _error(__FILE__, __LINE__, 0,
-           _("Compilation configuration / porting error:\n"
-             "Unable to determine a 64-bit unsigned int type.\n"
-             "size_t is %d bits, unsigned long long %d bits"),
+           "Compilation configuration / porting error:\n"
+           "Unable to determine a 64-bit unsigned int type.\n"
+           "size_t is %d bits, unsigned long long %d bits",
            sizeof(size_t)*8, sizeof(unsigned long long)*8);
 
 #endif
@@ -1921,7 +1921,7 @@ _find_and_extract_section(_cs_io_t    *inp,
       }
       else
         _error(__FILE__, __LINE__, 0,
-               _("File file \"%s\" contains multiple section:\n"
+               _("File \"%s\" contains multiple sections\n"
                  "named \"%s\" with location id %d\n\n"),
                inp->filename, _name, _location);
     }

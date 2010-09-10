@@ -204,7 +204,7 @@ _arg_env_help(const char  *name)
 
   bft_printf
     (_("Usage: %s [options] <n_ranks> [<n_ranks_2> ... <n_ranks_n>]\n\n"
-       "Compute domain partition(s) of Code_Saturne Preprocessor output.\n\n"
+       "Compute domain partition(s) of Code_Saturne mesh_input file.\n\n"
        "<n_ranks> number of ranks of destination partition (> 1).\n"),
      name);
 

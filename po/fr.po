@@ -1,16 +1,16 @@
 # translation of fr.po to
-# French translations for ncs package.
-# Copyright (C) 2008 EDF S.A.
-# This file is distributed under the same license as the ncs package.
+# French translations for code_saturne package.
+# Copyright (C) 2008-2010 EDF S.A.
+# This file is distributed under the same license as Code_Saturne.
 #
-# Automatically generated, 2008.
-# Saturne <saturne-support@edf.fr>, 2008.
+# Automatically generated, 2008-2010.
+# Saturne <saturne-support@edf.fr>, 2008-2010.
 msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-10 13:54+0200\n"
-"PO-Revision-Date: 2010-07-29 19:13+0200\n"
+"POT-Creation-Date: 2010-09-10 14:32+0200\n"
+"PO-Revision-Date: 2010-09-10 14:53+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "Language: fr\n"
@@ -51,6 +51,39 @@ msgid ""
 "  -h, --help        this message.\n"
 "\n"
 msgstr ""
+"\n"
+"Utilisation : %s [options] <nom_fichier>\n"
+"         ou : %s -d [options] <nom_fichier_1> <nom_fichier_2>\n"
+"\n"
+"Imprime les entêtes et de manière optionnelle le contenu d'un fichier\n"
+"issu du Préprocesseur, du Partitionneur, ou d'un fichier de reprise,\n"
+"ou comparer deux de ces fichiers.\n"
+"\n"
+"Options :\n"
+"\n"
+"  -d, --diff        mode différences.\n"
+"\n"
+"  -e, --extract     mode extraction (extrait une section complète,\n"
+"                    sans méta-données).\n"
+"\n"
+"  --f-format <fmt>  format pour les nombres en virgule flottante (défaut\n"
+"                    \"15.9e\" pour les \"floats\", \"22.15e\" pour les "
+"\"doubles\").\n"
+"  --location <id>   limitation aux sections avec id de support indiqué.\n"
+"\n"
+"  -n <level>        nombre des premiers et derniers éléments de chaque "
+"section\n"
+"                    à sortir (défaut : entêtes uniquement).\n"
+"\n"
+"  --section <name>  limitation aux sections du nom indiqué.\n"
+"\n"
+"  --threshold <val> en mode différences, valeur réelle au dessus de laquelle "
+"une\n"
+"                    différence est considérée significative (défaut : "
+"1e-30).\n"
+"\n"
+"  -h, --help        ce message.\n"
+"\n"
 
 #: src/apps/cs_io_dump.c:307 src/base/cs_base.c:364 src/bft/bft_error.c:169
 #: preprocessor/util/ecs_def.c:308
@@ -79,13 +112,13 @@ msgstr ""
 #: preprocessor/util/ecs_mem.c:634
 #, c-format
 msgid "Failure to allocate \"%s\" (%lu bytes)"
-msgstr ""
+msgstr "Impossible d'allouer \"%s\" (%lu octets)"
 
 #: src/apps/cs_io_dump.c:396 src/bft/bft_mem.c:845
 #: preprocessor/util/ecs_mem.c:742
 #, c-format
 msgid "Failure to reallocate \"%s\" (%lu bytes)"
-msgstr ""
+msgstr "Impossible de réallouer \"%s\" (%lu octets)"
 
 #: src/apps/cs_io_dump.c:473 src/bft/bft_file.c:1112 src/fvm/fvm_file.c:423
 #: preprocessor/util/ecs_file.c:1294
@@ -102,7 +135,7 @@ msgstr ""
 #: src/apps/cs_io_dump.c:477 src/fvm/fvm_file.c:427
 #, c-format
 msgid "Premature end of file \"%s\""
-msgstr ""
+msgstr "Fin de fichier \"%s\" prématurée."
 
 #: src/apps/cs_io_dump.c:480 src/fvm/fvm_file.c:430
 #, c-format
@@ -122,11 +155,14 @@ msgid ""
 "\n"
 "  %s"
 msgstr ""
+"Erreur de positionnement dans le fichier \"%s\" :\n"
+"\n"
+"  %s"
 
 #: src/apps/cs_io_dump.c:545 src/bft/bft_file.c:940 src/fvm/fvm_file.c:548
 #: preprocessor/util/ecs_file.c:1101
 msgid "sizeof(off_t) > sizeof(long) but fseeko() not available"
-msgstr ""
+msgstr "sizeof(off_t) > sizeof(long) mais fseeko() non disponible"
 
 #: src/apps/cs_io_dump.c:612 src/bft/bft_file.c:808 src/fvm/fvm_file.c:616
 #: preprocessor/util/ecs_file.c:960
@@ -136,14 +172,9 @@ msgid ""
 "\n"
 "  %s"
 msgstr ""
-
-#: src/apps/cs_io_dump.c:651 src/base/cs_io.c:311 src/base/cs_io.c:352
-#, c-format
-msgid ""
-"Compilation configuration / porting error:\n"
-"Unable to determine a 64-bit unsigned int type.\n"
-"size_t is %d bits, unsigned long long %d bits"
-msgstr ""
+"Erreur à l'obtention de la position dans le fichier \"%s\" :\n"
+"\n"
+"  %s"
 
 #: src/apps/cs_io_dump.c:712
 #, c-format
@@ -152,6 +183,9 @@ msgid ""
 "Opening input file: \"%s\"\n"
 "\n"
 msgstr ""
+"\n"
+"Ouverture du fichier d'entrée : \"%s\"\n"
+"\n"
 
 #: src/apps/cs_io_dump.c:720 src/bft/bft_file.c:668 src/fvm/fvm_file.c:354
 #: preprocessor/util/ecs_file.c:768 preprocessor/util/ecs_file.c:774
@@ -171,6 +205,8 @@ msgid ""
 "File format of \"%s\" is not recognized:\n"
 "First %d bytes: \"%s\"."
 msgstr ""
+"Format du fichier \"%s\" non reconnu\n"
+"Premiers %d octets : \"%s\"."
 
 #: src/apps/cs_io_dump.c:739
 #, c-format
@@ -197,6 +233,9 @@ msgid ""
 "Closing input: \"%s\"\n"
 "\n"
 msgstr ""
+"\n"
+"Fermeture de l'entrée : \"%s\"\n"
+"\n"
 
 #: src/apps/cs_io_dump.c:787 src/bft/bft_file.c:697 src/fvm/fvm_file.c:382
 #: preprocessor/util/ecs_file.c:805 preprocessor/util/ecs_file.c:818
@@ -219,6 +258,10 @@ msgid ""
 "  |   Code_Saturne file dump   |\n"
 "  `----------------------------'\n"
 msgstr ""
+"\n"
+"  .------------------------------------.\n"
+"  |   Analyse de fichier Code_Saturne  |\n"
+"  `------------------------------------'\n"
 
 #: src/apps/cs_io_dump.c:1212 src/base/cs_io.c:2587
 #, c-format
@@ -232,7 +275,7 @@ msgstr ""
 #: src/apps/cs_io_dump.c:1329
 #, c-format
 msgid "      Values in header\n"
-msgstr ""
+msgstr "      Valeurs dans l'entête\n"
 
 #: src/apps/cs_io_dump.c:1368
 #, c-format
@@ -259,7 +302,7 @@ msgstr ""
 #: src/apps/cs_io_dump.c:1654
 #, c-format
 msgid "    Type:                 \"%s\"\n"
-msgstr ""
+msgstr "    Type :                \"%s\"\n"
 
 #: src/apps/cs_io_dump.c:1656
 #, c-format
@@ -268,14 +311,20 @@ msgid ""
 "      Index id:            %lu\n"
 "      Values per location: %lu\n"
 msgstr ""
+"      Id de support :      %lu\n"
+"      Id d'index :         %lu\n"
+"      Valeurs par lieu :   %lu\n"
 
 #: src/apps/cs_io_dump.c:1924
 #, c-format
 msgid ""
-"File file \"%s\" contains multiple section:\n"
+"File \"%s\" contains multiple sections\n"
 "named \"%s\" with location id %d\n"
 "\n"
 msgstr ""
+"Le fichier \"%s\" contient plusieurs sections\n"
+"nommées \"%s\" avec id de support %d\n"
+"\n"
 
 #: src/apps/cs_io_dump.c:2101
 #, c-format
@@ -283,11 +332,13 @@ msgid ""
 "  \"%-32s\"; Location: %2lu Size: %llu\n"
 "    Type: %-6s;  |  Type: %-6s; \n"
 msgstr ""
+"  \"%-32s\" ; Support : %2lu Taille : %llu\n"
+"    Type : %-6s ;  |  Type : %-6s ;\n"
 
 #: src/apps/cs_io_dump.c:2107
 #, c-format
 msgid "  \"%-32s\"; Location: %2lu; Type: %-6s; Size: %llu\n"
-msgstr ""
+msgstr "  \"%-32s\" ; Support : %2lu ; Type : %-6s ; Taille : %llu\n"
 
 #: src/apps/cs_io_dump.c:2372
 #, c-format
@@ -296,6 +347,9 @@ msgid ""
 "    Type: %-6s; |  Type: %-6s\n"
 "\n"
 msgstr ""
+"  \"%-32s\" ; Support : %2lu ; Taille : %llu\n"
+"    Type : %-6s ; |  Type : %-6s\n"
+"\n"
 
 #: src/apps/cs_io_dump.c:2376
 #, c-format
@@ -304,6 +358,9 @@ msgid ""
 "    Size: %llu  |  Size: %llu\n"
 "\n"
 msgstr ""
+"  \"%-32s\" ; Support : %2lu ; Type : %-6s\n"
+"    Taille : %llu  |  Taille : %llu\n"
+"\n"
 
 #: src/apps/cs_io_dump.c:2380
 #, c-format
@@ -312,6 +369,9 @@ msgid ""
 "    Type: %-6s; Size: %llu  |  Type: %-6s; Size: %llu\n"
 "\n"
 msgstr ""
+"  \"%-32s\" ; Support : %2lu\n"
+"    Type : %-6s ; Taille : %llu  |  Type : %-6s ; Taille : %llu\n"
+"\n"
 
 #: src/apps/cs_io_dump.c:2459
 #, c-format
@@ -319,6 +379,8 @@ msgid ""
 "    Differences: %llu; Max: %g; Mean: %g\n"
 "\n"
 msgstr ""
+"    Différences : %llu ; Max : %g ; Moyenne : %g\n"
+"\n"
 
 #: src/apps/cs_io_dump.c:2462
 #, c-format
@@ -326,11 +388,13 @@ msgid ""
 "    Differences: %llu\n"
 "\n"
 msgstr ""
+"    Différences : %llu\n"
+"\n"
 
 #: src/apps/cs_io_dump.c:2497
 #, c-format
 msgid "  \"%-32s\"; Type: %-6s; Location: %2lu; Size: %llu\n"
-msgstr ""
+msgstr "  \"%-32s\" ; Type : %-6s ; Support : %2lu ; Taille : %llu\n"
 
 #: src/apps/cs_io_dump.c:2501
 #, c-format
@@ -351,10 +415,16 @@ msgstr ""
 msgid ""
 "Usage: %s [options] <n_ranks> [<n_ranks_2> ... <n_ranks_n>]\n"
 "\n"
-"Compute domain partition(s) of Code_Saturne Preprocessor output.\n"
+"Compute domain partition(s) of Code_Saturne mesh_input file.\n"
 "\n"
 "<n_ranks> number of ranks of destination partition (> 1).\n"
 msgstr ""
+"Utilisation : %s [options] <n_rangs> [<n_ragks_2> ... <n_rangs_n>]\n"
+"\n"
+"Détermine les partitions d'un fichier mesh_input de Code_Saturne.\n"
+"\n"
+"<n_rangs> nombre de rangs de la partition cible (> 1).\n"
+"\n"
 
 #: src/apps/cs_partition.c:211 src/base/cs_opts.c:115
 #, c-format
@@ -372,6 +442,8 @@ msgid ""
 " --no-perio        ignore periodicity information if present.\n"
 " --no-write        do not write output.\n"
 msgstr ""
+" --no-perio        ignore l'information sur la périodicité si présente.\n"
+" --no-write        ne pas écrire de données de sortie.\n"
 
 #: src/apps/cs_partition.c:219
 msgid " --metis           use ParMETIS for partitioning (default).\n"
@@ -380,8 +452,7 @@ msgstr ""
 
 #: src/apps/cs_partition.c:222
 msgid " --metis           use METIS for partitioning (default).\n"
-msgstr ""
-" --metis           utiliser ParMETIS pour le partitionnement (défaut).\n"
+msgstr " --metis           utiliser METIS pour le partitionnement (défaut).\n"
 
 #: src/apps/cs_partition.c:226
 msgid " --scotch          use PT-SCOTCH for partitioning.\n"
@@ -404,6 +475,11 @@ msgid ""
 "                          (default if available)\n"
 "                     ip:  MPI-IO with individual file pointers\n"
 msgstr ""
+" --mpi-io          <mode> choix du mode des E/S parallèles\n"
+"                     off: ne pas utiliser MPI-IO\n"
+"                     eo:  MPI-IO avec positions explicites\n"
+"                          (défaut si disponible)\n"
+"                     ip:  MPI-IO avec pointeurs de fichiers individuels\n"
 
 #: src/apps/cs_partition.c:240
 msgid ""
@@ -453,6 +529,8 @@ msgid ""
 "%s was built without MPI support,\n"
 "so option \"%s\" may not be used.\n"
 msgstr ""
+"%s a été construit sans support MPI,\n"
+"donc l'option \"%s\" n'est pas disponible.\n"
 
 #: src/apps/cs_partition.c:420
 #, c-format
@@ -460,6 +538,8 @@ msgid ""
 "%s was built without METIS or ParMETIS support,\n"
 "so option \"%s\" may not be used.\n"
 msgstr ""
+"%s a été construit sans support METIS ou ParMETIS,\n"
+"donc l'option \"%s\" n'est pas disponible.\n"
 
 #: src/apps/cs_partition.c:436
 #, c-format
@@ -467,10 +547,12 @@ msgid ""
 "%s was built without SCOTCH or PT-SCOTCH support,\n"
 "so option \"%s\" may not be used.\n"
 msgstr ""
+"%s a été construit sans support SCOTCH ou PT-SCOTCH,\n"
+"donc l'option \"%s\" n'est pas disponible.\n"
 
 #: src/apps/cs_partition.c:515
 msgid "  Number of cells per domain (histogramm):\n"
-msgstr ""
+msgstr "  Nombre de cellules par domaine (histogramme) :\n"
 
 #: src/apps/cs_partition.c:622
 #, c-format
@@ -478,6 +560,8 @@ msgid ""
 "Section: \"%s\" of file \"%s\" has  %d values per\n"
 "location where 0 were expected."
 msgstr ""
+"La section : \"%s\" du fichier \"%s\" a %d valeurs par\n"
+"emplacement alors qu'on en attendait 0."
 
 #: src/apps/cs_partition.c:632
 #, c-format
@@ -485,6 +569,8 @@ msgid ""
 "Section: \"%s\" of file \"%s\" is not\n"
 "of unsigned integer type."
 msgstr ""
+"La section: \"%s\" du fichier \"%s\" n'est pas\n"
+"de type entier non signé."
 
 #: src/apps/cs_partition.c:676
 #, c-format
@@ -492,6 +578,8 @@ msgid ""
 "Section: \"%s\" of file \"%s\" has  %d values per\n"
 "location where 2 were expected."
 msgstr ""
+"La section : \"%s\" du fichier \"%s\" a %d valeurs par\n"
+"emplacement alors qu'on en attendait 2."
 
 #: src/apps/cs_partition.c:687
 #, c-format
@@ -499,6 +587,8 @@ msgid ""
 "Section: \"%s\" of file \"%s\" is not\n"
 "of integer type."
 msgstr ""
+"La section : \"%s\" du fichier \"%s\" n'est pas\n"
+"de type entier."
 
 #: src/apps/cs_partition.c:1085
 #, c-format
@@ -506,6 +596,8 @@ msgid ""
 "\n"
 "Partitioning %d cells to %d domains (METIS_PartGraphRecursive).\n"
 msgstr ""
+"\n"
+"Partition de %d cellules vers %d domaines (METIS_PartGraphRecursive).\n"
 
 #: src/apps/cs_partition.c:1106
 #, c-format
@@ -513,6 +605,8 @@ msgid ""
 "\n"
 "Partitioning %d cells to %d domains (METIS_PartGraphKway).\n"
 msgstr ""
+"\n"
+"Partition de %d cellules vers %d domaines (METIS_PartGraphKway).\n"
 
 #: src/apps/cs_partition.c:1128 src/apps/cs_partition.c:1545
 #, c-format
@@ -522,6 +616,10 @@ msgid ""
 "  wall-clock time: %f s; CPU time: %f s\n"
 "\n"
 msgstr ""
+"\n"
+"  Nombre total de faces sur des frontières parallèles : %llu\n"
+"  temps écoulé : %f s ; temps CPU : %f s\n"
+"\n"
 
 #: src/apps/cs_partition.c:1211
 #, c-format
@@ -529,6 +627,8 @@ msgid ""
 "\n"
 "Partitioning %llu cells to %d domains (ParMETIS_V3_PartKway).\n"
 msgstr ""
+"\n"
+"Partition de %llu cellules vers %d domaines (ParMETIS_V3_PartKway).\n"
 
 #: src/apps/cs_partition.c:1247
 #, c-format
@@ -538,6 +638,10 @@ msgid ""
 "  wall-clock time: %f s\n"
 "\n"
 msgstr ""
+"\n"
+"  Nombre total de faces sur des frontières parallèles : %llu\n"
+"  temps écoulé : %f s\n"
+"\n"
 
 #: src/apps/cs_partition.c:1290
 #, c-format
@@ -546,6 +650,9 @@ msgid ""
 "Fatal error encountered by libScotch.\n"
 "\n"
 msgstr ""
+"\n"
+"Erreur bloquante rencontrée par libScotch.\n"
+"\n"
 
 #: src/apps/cs_partition.c:1335
 #, c-format
@@ -554,6 +661,9 @@ msgid ""
 "Warning (libScotch):\n"
 "\n"
 msgstr ""
+"\n"
+"Attention (libScotch) :\n"
+"\n"
 
 #: src/apps/cs_partition.c:1475
 #, c-format
@@ -561,6 +671,8 @@ msgid ""
 "\n"
 "Partitioning %d cells to %d domains (SCOTCH_graphPart).\n"
 msgstr ""
+"\n"
+"Partition de %d cellules vers %d domaines (SCOTCH_graphpart).\n"
 
 #: src/apps/cs_partition.c:1601
 #, c-format
@@ -568,6 +680,8 @@ msgid ""
 "\n"
 "Partitioning %llu cells to %d domains (SCOTCH_dgraphPart).\n"
 msgstr ""
+"\n"
+"Partition de %llu cellules vers %d domaines (SCOTCH_dgraphpart).\n"
 
 #: src/apps/cs_partition.c:1653
 #, c-format
@@ -576,14 +690,17 @@ msgid ""
 "  wall-clock time: %f s;\n"
 "\n"
 msgstr ""
+"\n"
+"  temps écoulé : %f s ;\n"
+"\n"
 
 #: src/apps/cs_partition.c:1704
 msgid "Read:   "
-msgstr ""
+msgstr "Lu :    "
 
 #: src/apps/cs_partition.c:1705
 msgid "Ignored:"
-msgstr ""
+msgstr "Ignoré :"
 
 #: src/apps/cs_partition.c:1707 src/base/cs_preprocessor_data.c:3035
 #, c-format
@@ -597,12 +714,12 @@ msgstr ""
 #: src/apps/cs_partition.c:1813
 #, c-format
 msgid "  %s \"%-32s\"; Type: %-6s; Size: %llu\n"
-msgstr ""
+msgstr "  %s \"%-32s\" ; Type : %-6s ; Taille : %llu\n"
 
 #: src/apps/cs_partition.c:1820
 #, c-format
 msgid "  %s \"%-32s\"\n"
-msgstr ""
+msgstr "  %s \"%-32s\"\n"
 
 #: src/apps/cs_partition.c:2083
 msgid ""
@@ -610,18 +727,25 @@ msgid ""
 " |   Code_Saturne Partitioner   |\n"
 " `------------------------------'\n"
 msgstr ""
+" .--------------------------------.\n"
+" |   Partitionneur Code_Saturne   |\n"
+" `--------------------------------'\n"
 
 #: src/apps/cs_partition.c:2095
 msgid ""
 "\n"
 "  External library:\n"
 msgstr ""
+"\n"
+"  Librairie externe :\n"
 
 #: src/apps/cs_partition.c:2097
 msgid ""
 "\n"
 "  External libraries:\n"
 msgstr ""
+"\n"
+"  Librairies externes :\n"
 
 #: src/apps/cs_partition.c:2265
 msgid ""
@@ -631,6 +755,11 @@ msgid ""
 " `------------------------'\n"
 "\n"
 msgstr ""
+"\n"
+" .--------------------------------------.\n"
+" |   Fin d'exécution du Partitionneur   |\n"
+" `--------------------------------------'\n"
+"\n"
 
 #: src/apps/cs_solver.c:310
 #, c-format
@@ -1061,6 +1190,8 @@ msgid ""
 "It is impossible to redirect the standard error to file:\n"
 "%s"
 msgstr ""
+"Il est impossible de rediriger les sorties erreur dans le fichier :\n"
+"%s"
 
 #: src/base/cs_base.c:1802
 #, c-format
@@ -1085,7 +1216,7 @@ msgstr ""
 #: src/base/cs_base_fortran.c:204
 #, c-format
 msgid "The directory %s cannot be created"
-msgstr ""
+msgstr "Le répertoire %s ne peut être créé"
 
 #: src/base/cs_benchmark.c:164
 #, c-format
@@ -1581,15 +1712,15 @@ msgstr ""
 
 #: src/base/cs_coupling.c:135
 msgid "(point-to-point or not synchronized)"
-msgstr ""
+msgstr "(point à point ou non synchronisé)"
 
 #: src/base/cs_coupling.c:136
 msgid "(group synchronized)"
-msgstr ""
+msgstr "(synchronisé par groupe)"
 
 #: src/base/cs_coupling.c:137
 msgid " (this instance)"
-msgstr ""
+msgstr " (cette instance)"
 
 #: src/base/cs_coupling.c:141
 msgid ""
@@ -1599,8 +1730,8 @@ msgid ""
 "\n"
 msgstr ""
 "\n"
-"Applications accessibles grâce à MPI :\n"
-"--------------------------------------\n"
+"Applications accessibles via MPI :\n"
+"----------------------------------\n"
 
 #: src/base/cs_coupling.c:167
 #, c-format
@@ -2351,7 +2482,7 @@ msgstr ""
 #: src/base/cs_io.c:3301
 #, c-format
 msgid "  I/O mode:          %s\n"
-msgstr "  mode E/S :          %s\n"
+msgstr "  mode E/S :         %s\n"
 
 #: src/base/cs_io.c:3307
 msgid "MPI-IO, explicit offsets"
@@ -2375,6 +2506,9 @@ msgid ""
 "Code_Saturne IO files read:\n"
 "\n"
 msgstr ""
+"\n"
+"fichiers d'E/S Code_Saturne lus :\n"
+"\n"
 
 #: src/base/cs_io.c:3391
 msgid ""
@@ -2464,6 +2598,8 @@ msgid ""
 "\n"
 "  Element selection successfully done.\n"
 msgstr ""
+"\n"
+"  Sélection d'éléments effectuée.\n"
 
 #: src/base/cs_join.c:289
 #, c-format
@@ -2646,6 +2782,18 @@ msgid ""
 "    Max. number of subfaces by face:          %8d\n"
 "\n"
 msgstr ""
+"  Paramètres de recollement avancés :\n"
+"    Niveau de verbosité :                          %8d\n"
+"    Profondeur max. pour construction de l'arbre : %8d\n"
+"    Nombre max. de boîtes par feuille :            %8d\n"
+"    Rapport max. de boîtes liées / initiales :     %8.5f\n"
+"    Multiplicateur de tolérance de fusion :        %8.5f\n"
+"    Facteur pré-fusion :                           %8.5f\n"
+"    Mode de calcul de la tolérance :               %8d\n"
+"    Mode de calcul des intersections :             %8d\n"
+"    Nombre max. de suppressions d'équivalences :   %8d\n"
+"    Nombre max. de sous-faces par face :          %8d\n"
+"\n"
 
 #: src/base/cs_join.c:1552
 msgid " Before joining"
@@ -2946,13 +3094,18 @@ msgid ""
 "  Number of global iterations to converge on vertex equivalences: %3d\n"
 "\n"
 msgstr ""
+"  Nombre global d'itérations de convergence sur équivalences de sommets : "
+"%3d\n"
+"\n"
 
 #: src/base/cs_join_merge.c:1437
 #, c-format
 msgid ""
 "\n"
-"  Pre-merge for %llu global couple of elements.\n"
+"  Pre-merge for %llu global element couples.\n"
 msgstr ""
+"\n"
+"  Pré-fusion pour %llu couples globaux d'éléments.\n"
 
 #: src/base/cs_join_merge.c:1441
 #, c-format
@@ -2991,6 +3144,8 @@ msgid ""
 "\n"
 "  %3d loop(s) to get consistent subsets\n"
 msgstr ""
+"\n"
+"  %3d boucles pour obtenir des sous-ensembles consistents\n"
 
 #: src/base/cs_join_merge.c:2184
 #, c-format
@@ -2998,6 +3153,8 @@ msgid ""
 "\n"
 "  Excessive transitivity for %llu set(s) of vertices.\n"
 msgstr ""
+"\n"
+"  Transitivité excessive pour %llu ensembles de sommets.\n"
 
 #: src/base/cs_join_merge.c:2190
 #, c-format
@@ -3769,11 +3926,13 @@ msgid ""
 "\n"
 " Periodic faces (which are also interior faces):\n"
 msgstr ""
+"\n"
+" Faces périodiques (qui sont aussi des faces intérieures) :\n"
 
 #: src/base/cs_mesh.c:1731
 #, c-format
 msgid "     Periodicity %2d:          %llu face couples\n"
-msgstr ""
+msgstr "     Périodicité %2d :         %llu couples de faces\n"
 
 #: src/base/cs_mesh.c:1740
 msgid ""
@@ -4232,9 +4391,7 @@ msgstr ""
 
 #: src/base/cs_mesh_quantities.c:572 src/base/cs_mesh_quantities.c:706
 msgid "Cell centre computation is only implemented in 3D."
-msgstr ""
-"Le calcul des centres des cellules\n"
-"ne sont implantés qu'en 3D."
+msgstr "Le calcul des centres des cellules n'est implanté qu'en 3D."
 
 #: src/base/cs_mesh_quantities.c:927
 #, c-format
@@ -4260,6 +4417,11 @@ msgid ""
 " In case of mesh joining, this may be due to overly  agressive joining "
 "parameters."
 msgstr ""
+"  %llu cellules ont un volume négatif.\n"
+" Lancez la vérification de qualité du maillage pour une sortie "
+"visualisable.\n"
+" En cas de recollement de maillage, ceci peut être dû à des paramètres\n"
+" de recollement trop agressifs."
 
 #: src/base/cs_mesh_solcom.c:381 src/base/cs_post.c:3926
 msgid "Fluid volume"
@@ -4620,6 +4782,8 @@ msgid ""
 " --app-name        <app_name> to name this code instance\n"
 "                   (default: working directory base name)\n"
 msgstr ""
+" --app-name        <app_name> pour nommer cette instance du code\n"
+"                   (défault : nom de base du répertoire de travail)\n"
 
 #: src/base/cs_opts.c:120
 #, c-format
@@ -4694,6 +4858,8 @@ msgid ""
 " --syr-socket      enable sockets for SYRTHES 3 coupling\n"
 "                   <port_num> port number on rank 0\n"
 msgstr ""
+" --syr-socket      autoriser les \"sockets\" pour le couplage SYRTHES 3\n"
+"                   <port_num> numéro du port sur le rang 0\n"
 
 #: src/base/cs_opts.c:160
 #, c-format
@@ -4900,7 +5066,7 @@ msgstr ""
 #: src/base/cs_preprocessor_data.c:468
 #, c-format
 msgid " No \"%s\" file available;\n"
-msgstr ""
+msgstr " Pas de fichier \"%s\" disponible;\n"
 
 #: src/base/cs_preprocessor_data.c:470
 msgid "   an unoptimized domain partitioning will be used.\n"
@@ -5158,11 +5324,11 @@ msgstr ""
 
 #: src/base/cs_restart.c:1254
 msgid "The checkpoint directory cannot be created"
-msgstr ""
+msgstr "Le répertoire de reprise n'a pas pu être créé"
 
 #: src/base/cs_restart.c:1275
 msgid "The restart directory cannot be found"
-msgstr ""
+msgstr "Le répertoire de reprise ne peut pas être trouvé"
 
 #: src/base/cs_restart.c:1420
 #, c-format
@@ -6489,13 +6655,13 @@ msgid ""
 msgstr ""
 
 #: src/bft/bft_file.c:1652
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Error opening directory \"%s\":\n"
 "\n"
 "  %s"
 msgstr ""
-"Erreur à l'ouverture du fichier \"%s\" :\n"
+"Erreur à l'ouverture du répertoire \"%s\" :\n"
 "\n"
 "  %s"
 

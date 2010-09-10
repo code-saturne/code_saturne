@@ -308,9 +308,9 @@ _convert_to_offset(const unsigned char  buf[],
   }
   else
     bft_error(__FILE__, __LINE__, 0,
-              _("Compilation configuration / porting error:\n"
-                "Unable to determine a 64-bit unsigned int type.\n"
-                "size_t is %d bits, unsigned long long %d bits"),
+              "Compilation configuration / porting error:\n"
+              "Unable to determine a 64-bit unsigned int type.\n"
+              "size_t is %d bits, unsigned long long %d bits",
               sizeof(size_t)*8, sizeof(unsigned long long)*8);
 
 #endif
@@ -349,9 +349,9 @@ _convert_from_offset(unsigned char         buf[],
   }
   else
     bft_error(__FILE__, __LINE__, 0,
-              _("Compilation configuration / porting error:\n"
-                "Unable to determine a 64-bit unsigned int type.\n"
-                "size_t is %d bits, unsigned long long %d bits"),
+              "Compilation configuration / porting error:\n"
+              "Unable to determine a 64-bit unsigned int type.\n"
+              "size_t is %d bits, unsigned long long %d bits",
               sizeof(size_t)*8, sizeof(unsigned long long)*8);
 
 #endif

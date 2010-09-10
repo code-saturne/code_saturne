@@ -1,4 +1,13 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update French dictionnary and improve some messages.
+  modified files:
+    po/fr.po
+    src/apps/cs_io_dump.c
+    src/apps/cs_partition.c
+    src/base/cs_io.c
+    src/base/cs_join_merge.c
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Added bft_file_listdir() function.
   A correction in group sorting is also applied to fvm_group.c
   modified files:

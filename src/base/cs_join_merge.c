@@ -1434,7 +1434,7 @@ _pre_merge(cs_join_param_t     param,
     fvm_gnum_t n_g_counter = n_local_pre_merge;
     fvm_parall_counter(&n_g_counter, 1);
 
-    bft_printf(_("\n  Pre-merge for %llu global couple of elements.\n"),
+    bft_printf(_("\n  Pre-merge for %llu global element couples.\n"),
                (unsigned long long)n_g_counter);
 
     if (param.verbosity > 1) {
