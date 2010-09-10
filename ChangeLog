@@ -1,4 +1,12 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Synchronize face families when joining meshes.
+  modified files:
+    po/fr.po
+    src/base/cs_join_update.c
+    src/base/cs_join_util.c
+    src/base/cs_join_util.h
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Migrate private functions _clean_families() and _build_colors() to public
   functions cs_mesh_clean_families() and cs_mesh_build_colors().
   modified files:

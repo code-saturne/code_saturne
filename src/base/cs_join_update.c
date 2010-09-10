@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2009 EDF S.A., France
+ *     Copyright (C) 2008-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -2166,17 +2166,22 @@ _update_adj_face_connect(cs_int_t               n_adj_faces,
  * parameters:
  *   n2o_hist     <--  new -> old global face numbering
  *   join_select  <--  list all local entities implied in the joining op.
+ *   mesh         <--  pointer to the associated cs_mesh_t structure
  *   join_param   <--  set of user-defined parameter
  *   cell_gnum    <->  global cell number related to each old face
+ *   face_family  <-> family number related to each old face
  *---------------------------------------------------------------------------*/
 
 static void
-_exchange_cell_gnum(const cs_join_gset_t     *n2o_hist,
-                    const cs_join_select_t   *join_select,
-                    cs_join_param_t           join_param,
-                    fvm_gnum_t                cell_gnum[])
+_exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
+                               const cs_join_select_t   *join_select,
+                               const cs_mesh_t          *mesh,
+                               cs_join_param_t           join_param,
+                               fvm_gnum_t                cell_gnum[],
+                               cs_int_t                  face_family[])
 {
-  int  i, j, rank, fid, shift;
+  int  rank;
+  fvm_lnum_t  i, j, fid, shift;
   fvm_gnum_t  compact_fgnum;
 
   int  reduce_size = 0;
@@ -2255,7 +2260,7 @@ _exchange_cell_gnum(const cs_join_gset_t     *n2o_hist,
 
   assert(send_shift[n_ranks] == n2o_hist->index[n2o_hist->n_elts]);
 
-  BFT_MALLOC(send_gbuf, send_shift[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(send_gbuf, send_shift[n_ranks]*2, fvm_gnum_t);
   BFT_MALLOC(parent, send_shift[n_ranks], int);
 
   /* Fill the list of ranks */
@@ -2312,10 +2317,15 @@ _exchange_cell_gnum(const cs_join_gset_t     *n2o_hist,
   for (rank = 0; rank < n_ranks; rank++)
     recv_shift[rank+1] = recv_shift[rank] + recv_count[rank];
 
-  BFT_MALLOC(recv_gbuf, recv_shift[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(recv_gbuf, recv_shift[n_ranks]*2, fvm_gnum_t);
 
   MPI_Alltoallv(send_gbuf, send_count, send_shift, FVM_MPI_GNUM,
                 recv_gbuf, recv_count, recv_shift, FVM_MPI_GNUM, mpi_comm);
+
+  /* Now switch from 1 to 2 entries in send and receive buffers */
+
+  for (i = recv_shift[n_ranks] - 1; i > -1; i--)
+    recv_gbuf[i*2] = recv_gbuf[i];
 
   /* Get the related global cell number for each received face */
 
@@ -2325,19 +2335,23 @@ _exchange_cell_gnum(const cs_join_gset_t     *n2o_hist,
 
       for (i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
 
-        compact_fgnum = recv_gbuf[i];
+        compact_fgnum = recv_gbuf[i*2];
 
         assert(loc_rank_s < compact_fgnum);
         assert(compact_fgnum <= loc_rank_e);
 
         /* Get the id in the original face selection */
 
-        if (compact_fgnum % 2 == 0) /* Periodic face */
-          fid = (compact_fgnum - loc_rank_s)/2 - 1;
-        else /* Original face */
-          fid = (compact_fgnum - loc_rank_s)/2;
-
-        recv_gbuf[i] = join_select->cell_gnum[fid];
+        if (compact_fgnum % 2 == 0) { /* Periodic face */
+          fid = join_select->faces[(compact_fgnum - loc_rank_s)/2 - 1] - 1;
+          recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+          recv_gbuf[i*2+1] = 0;
+        }
+        else { /* Original face */
+          fid = join_select->faces[(compact_fgnum - loc_rank_s)/2] - 1;
+          recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+          recv_gbuf[i*2+1] = mesh->b_face_family[fid];
+        }
 
       }
 
@@ -2350,19 +2364,31 @@ _exchange_cell_gnum(const cs_join_gset_t     *n2o_hist,
 
       for (i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
 
-        compact_fgnum = recv_gbuf[i];
-        fid = compact_fgnum - 1 - loc_rank_s;
+        compact_fgnum = recv_gbuf[i*2];
 
         assert(loc_rank_s < compact_fgnum);
         assert(compact_fgnum <= loc_rank_e);
 
-        recv_gbuf[i] = join_select->cell_gnum[fid];
+        fid = join_select->faces[compact_fgnum - 1 - loc_rank_s] - 1;
+        recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+        recv_gbuf[i*2+1] = mesh->b_face_family[fid];
 
       }
 
     } /* End of loop on ranks */
 
   } /* End if not a periodic case */
+
+  /* Update shifts */
+
+  for (rank = 0; rank < n_ranks; rank++) {
+    send_count[rank] *= 2;
+    recv_count[rank] *= 2;
+    send_shift[rank] *= 2;
+    recv_shift[rank] *= 2;
+  }
+  send_shift[n_ranks] *= 2;
+  recv_shift[n_ranks] *= 2;
 
   /* Return values to send ranks */
 
@@ -2371,8 +2397,10 @@ _exchange_cell_gnum(const cs_join_gset_t     *n2o_hist,
 
   /* Define cell_gnum */
 
-  for (i = 0; i < send_shift[n_ranks]; i++)
-    cell_gnum[parent[i]] = send_gbuf[i];
+  for (i = 0; i < send_shift[n_ranks] / 2; i++) {
+    cell_gnum[parent[i]] = send_gbuf[i*2];
+    face_family[parent[i]] = send_gbuf[i*2+1];
+  }
 
   /* Free memory */
 
@@ -2389,30 +2417,41 @@ _exchange_cell_gnum(const cs_join_gset_t     *n2o_hist,
 #endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
- * Get the related global cell numbers connected to the old face numbers.
+ * Get the related global cell numbers and face families associated
+ * to the old face numbers.
  *
  * parameters:
  *   join_select    <-- list of all implied entities in the joining op.
  *   join_param     <-- set of user-defined parameter
  *   n2o_face_hist  <-- face history structure (new -> old)
- *   cell_gnum      --> pointer to the created array
+ *   mesh           <--  pointer to the associated cs_mesh_t structure
+ *   cell_gnum      --> pointer to the created global cell number array
+ *   face_family    --> pointer to the created face family array
  *---------------------------------------------------------------------------*/
 
 static void
-_get_linked_cell_gnum(const cs_join_select_t  *join_select,
-                      const cs_join_param_t    join_param,
-                      const cs_join_gset_t    *n2o_face_hist,
-                      fvm_gnum_t              *p_cell_gnum[])
+_get_linked_cell_gnum_and_family(const cs_join_select_t  *join_select,
+                                 const cs_join_param_t    join_param,
+                                 const cs_join_gset_t    *n2o_face_hist,
+                                 const cs_mesh_t         *mesh,
+                                 fvm_gnum_t              *p_cell_gnum[],
+                                 cs_int_t                *p_face_family[])
 {
   cs_int_t  i, j, fid;
   fvm_gnum_t  compact_fgnum;
 
   fvm_gnum_t  *cell_gnum = NULL;
+  cs_int_t    *face_family = NULL;
 
   const int  n_ranks = cs_glob_n_ranks;
 
   BFT_MALLOC(cell_gnum,
-             n2o_face_hist->index[n2o_face_hist->n_elts], fvm_gnum_t);
+             n2o_face_hist->index[n2o_face_hist->n_elts],
+             fvm_gnum_t);
+
+  BFT_MALLOC(face_family,
+             n2o_face_hist->index[n2o_face_hist->n_elts],
+             cs_int_t);
 
   if (n_ranks == 1) {
 
@@ -2425,12 +2464,22 @@ _get_linked_cell_gnum(const cs_join_select_t  *join_select,
           compact_fgnum = n2o_face_hist->g_list[j];
 
           if (compact_fgnum % 2 == 0) { /* Periodic face */
-            fid = compact_fgnum/2 - 1;
-            cell_gnum[j] = join_select->cell_gnum[fid];
+            fid = join_select->faces[compact_fgnum/2 - 1] - 1;
+            if (mesh->global_cell_num != NULL)
+              cell_gnum[j]
+                = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+            else
+              cell_gnum[j] = mesh->b_face_cells[fid];
+            face_family[j] = 0;
           }
           else { /* Original face */
-            fid = compact_fgnum/2;
-            cell_gnum[j] = join_select->cell_gnum[fid];
+            fid = join_select->faces[compact_fgnum/2] - 1;
+            if (mesh->global_cell_num != NULL)
+              cell_gnum[j]
+                = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+            else
+              cell_gnum[j] = mesh->b_face_cells[fid];
+            face_family[j] = mesh->b_face_family[fid];
           }
 
         }
@@ -2440,14 +2489,30 @@ _get_linked_cell_gnum(const cs_join_select_t  *join_select,
     }
     else {
 
-      for (i = 0; i < n2o_face_hist->n_elts; i++) {
+      if (mesh->global_cell_num != NULL) {
 
-        for (j = n2o_face_hist->index[i]; j < n2o_face_hist->index[i+1]; j++) {
-          compact_fgnum = n2o_face_hist->g_list[j];
-          cell_gnum[j] = join_select->cell_gnum[compact_fgnum - 1];
-        }
+        for (i = 0; i < n2o_face_hist->n_elts; i++) {
+          for (j = n2o_face_hist->index[i]; j < n2o_face_hist->index[i+1]; j++) {
+            compact_fgnum = n2o_face_hist->g_list[j];
+            fid = join_select->faces[compact_fgnum - 1] - 1;
+            cell_gnum[j]
+              = mesh->global_cell_num[mesh->b_face_cells[fid] - 1];
+            face_family[j] = mesh->b_face_family[fid];
+          }
+        } /* End of loop on n2o_face_hist elements */
 
-      } /* End of loop on n2o_face_hist elements */
+      }
+      else {
+
+        for (i = 0; i < n2o_face_hist->n_elts; i++) {
+          for (j = n2o_face_hist->index[i]; j < n2o_face_hist->index[i+1]; j++) {
+            compact_fgnum = n2o_face_hist->g_list[j];
+            fid = join_select->faces[compact_fgnum - 1] - 1;
+            cell_gnum[j] = mesh->b_face_cells[fid];
+            face_family[j] = mesh->b_face_family[fid];
+          }
+        } /* End of loop on n2o_face_hist elements */
+      }
 
     } /* Not a periodic case */
 
@@ -2455,15 +2520,18 @@ _get_linked_cell_gnum(const cs_join_select_t  *join_select,
 
 #if defined(HAVE_MPI)
   if (n_ranks > 1)
-    _exchange_cell_gnum(n2o_face_hist,
-                        join_select,
-                        join_param,
-                        cell_gnum);
+    _exchange_cell_gnum_and_family(n2o_face_hist,
+                                   join_select,
+                                   mesh,
+                                   join_param,
+                                   cell_gnum,
+                                   face_family);
 #endif
 
   /* Return pointer */
 
   *p_cell_gnum = cell_gnum;
+  *p_face_family = face_family;
 
 }
 
@@ -2964,6 +3032,7 @@ _reorient(cs_int_t                jfnum,
  *   join2mesh_vtx_id <-- relation between vertices in join_mesh/mesh
  *   n_new_b_faces    <-- local number of border faces after the joining
  *   new_face_type    <-- type (border/interior) of new faces
+ *   new_face_family  <-- family of new faces
  *   n2o_face_hist    <-- face history structure (new -> old)
  *   mesh             <-> pointer of pointer to cs_mesh_t structure
  *---------------------------------------------------------------------------*/
@@ -2975,6 +3044,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
                       const cs_int_t              join2mesh_vtx_id[],
                       cs_int_t                    n_new_b_faces,
                       const cs_join_face_type_t   new_face_type[],
+                      const int                   new_face_family[],
                       const cs_join_gset_t       *n2o_face_hist,
                       cs_mesh_t                  *mesh)
 {
@@ -2985,7 +3055,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   cs_int_t  n_ib_faces = mesh->n_b_faces, n_fb_faces = 0;
   fvm_gnum_t  n_g_ib_faces = mesh->n_g_b_faces;
   cs_int_t  *new_f2v_idx = NULL, *new_f2v_lst = NULL, *ltmp = NULL;
-  cs_int_t  *new_face_family = NULL, *new_face_cells = NULL;
+  cs_int_t  *_new_face_family = NULL, *new_face_cells = NULL;
   fvm_gnum_t  *new_fgnum = NULL, *gtmp = NULL;
 
   const int  n_ranks = cs_glob_n_ranks;
@@ -2999,7 +3069,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
   BFT_MALLOC(new_f2v_idx, n_fb_faces + 1, cs_int_t);
   BFT_MALLOC(new_face_cells, n_fb_faces, cs_int_t);
-  BFT_MALLOC(new_face_family, n_fb_faces, cs_int_t);
+  BFT_MALLOC(_new_face_family, n_fb_faces, cs_int_t);
 
   if (n_ranks > 1)
     BFT_MALLOC(new_fgnum, n_fb_faces, fvm_gnum_t);
@@ -3040,7 +3110,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
         new_fgnum[n_fb_faces] = mesh->global_b_face_num[i];
 
       new_face_cells[n_fb_faces] = mesh->b_face_cells[i];
-      new_face_family[n_fb_faces] = mesh->b_face_family[i];
+      _new_face_family[n_fb_faces] = mesh->b_face_family[i];
 
       n_fb_faces++;
       n_face_vertices = mesh->b_face_vtx_idx[i+1] - mesh->b_face_vtx_idx[i];
@@ -3078,7 +3148,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
           fid = join_select->faces[compact_old_fgnum - rank_start] - 1;
 
         new_face_cells[n_fb_faces] = mesh->b_face_cells[fid];
-        new_face_family[n_fb_faces] = mesh->b_face_family[fid];
+        _new_face_family[n_fb_faces] = new_face_family[i];
 
         if (n_ranks > 1)
           new_fgnum[n_fb_faces] = jmesh->face_gnum[i] + n_g_ib_faces;
@@ -3137,7 +3207,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
               fid = join_select->faces[compact_old_fgnum - rank_start] - 1;
 
             new_face_cells[n_fb_faces] = mesh->b_face_cells[fid];
-            new_face_family[n_fb_faces] = mesh->b_face_family[fid];
+            _new_face_family[n_fb_faces] = new_face_family[i];
 
             /* Check orientation: fid forces the orientation */
 
@@ -3268,8 +3338,547 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   mesh->b_face_vtx_idx = new_f2v_idx;
   mesh->b_face_vtx_lst = new_f2v_lst;
   mesh->b_face_cells = new_face_cells;
-  mesh->b_face_family = new_face_family;
+  mesh->b_face_family = _new_face_family;
   mesh->b_face_vtx_connect_size = new_f2v_idx[n_fb_faces]-1;
+}
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Compare 2 family definitions
+ *
+ * parameters:
+ *   n0   <-- number of values in family 0
+ *   n1   <-- number of values in family 1
+ *   val0 <-- family 0 values
+ *   val1 <-- family 1 values
+ *
+ * returns:
+ *   -1 if family 0 is smaller than family 1, 0 if families are equal,
+ *   1 otherwise
+ *---------------------------------------------------------------------------*/
+
+inline static int
+_sync_compare_families(int        n0,
+                       int        n1,
+                       const int  val0[],
+                       const int  val1[])
+{
+  int i;
+  int retval = 0;
+
+  for (i = 0; i < n0 && i < n1; i++) {
+    if (val0[i] < val1[i]) {
+      retval = -1;
+      break;
+    }
+    else if (val0[i] > val1[i]) {
+      retval = 1;
+      break;
+    }
+  }
+
+  if (retval == 0) {
+    if (n0 < n1)
+      retval = -1;
+    else if (n0 > n1)
+      retval = 1;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Synchronize family combinations globally
+ *
+ * parameters:
+ *   n_fam       <-> number of families
+ *   family_idx  <-> index of element families
+ *   family      <-> element family ancestors
+ *
+ * returns:
+ *   renumbering from previous to synchronized family combinations
+ *---------------------------------------------------------------------------*/
+
+static int *
+_sync_family_combinations(int   *n_fam,
+                          int  **family_idx,
+                          int  **family)
+{
+  int i;
+  int sizes[2];
+  int rank_mult, rank_id, n_ranks;
+
+  int _n_fam = *n_fam;
+  int *_family_idx = NULL;
+  int *_family = NULL;
+
+  int *renum = NULL;
+
+  BFT_MALLOC(_family_idx, _n_fam+1, int);
+  memcpy(_family_idx, *family_idx, (_n_fam+1)*sizeof(int));
+
+  BFT_MALLOC(_family, _family_idx[_n_fam], int);
+  memcpy(_family, *family, _family_idx[_n_fam]*sizeof(int));
+
+  /* Merge all info by stages up to rank 0 */
+
+  for (rank_id = cs_glob_rank_id, n_ranks = cs_glob_n_ranks, rank_mult = 1;
+       n_ranks > 1;
+       rank_id /= 2, n_ranks /= 2, rank_mult *= 2) {
+
+    /* Even ranks receive and merge */
+
+    if (rank_id %2 == 0 && rank_id + 1 < n_ranks) {
+
+      MPI_Status status;
+      int recv_rank = (rank_id + 1)*rank_mult;
+
+      MPI_Recv(sizes, 2, MPI_INT, recv_rank, 1, cs_glob_mpi_comm, &status);
+
+      if (sizes[0] > 0) {
+
+        int j, k;
+        int n_fam_new = 0;
+        int *idx_recv = NULL, *fam_recv = NULL;
+        int *idx_new = NULL, *fam_new = NULL;
+
+        BFT_MALLOC(idx_recv, sizes[0] + 1, int);
+        MPI_Recv(idx_recv, sizes[0] + 1, MPI_INT, recv_rank, 2,
+                 cs_glob_mpi_comm, &status);
+        BFT_MALLOC(fam_recv, sizes[1], int);
+        MPI_Recv(fam_recv, sizes[1], MPI_INT, recv_rank, 3,
+                 cs_glob_mpi_comm, &status);
+
+        /* Merge data */
+
+        BFT_MALLOC(idx_new, _n_fam + sizes[0] + 1, int);
+        BFT_MALLOC(fam_new, _family_idx[_n_fam] + sizes[1], int);
+
+        idx_new[0] = 0;
+        i = 0; j = 0;
+
+        while (i < _n_fam && j < sizes[0]) {
+          int cmp;
+          int n0 = _family_idx[i+1] - _family_idx[i];
+          int n1 = idx_recv[j+1] - idx_recv[j];
+          cmp = _sync_compare_families(n0,
+                                       n1,
+                                       _family + _family_idx[i],
+                                       fam_recv + idx_recv[j]);
+          if (cmp <= 0) {
+            for (k = 0; k < n0; k++)
+              fam_new[idx_new[n_fam_new] + k] = _family[_family_idx[i] + k];
+            idx_new[n_fam_new + 1] = idx_new[n_fam_new] + n0;
+            n_fam_new += 1;
+            i += 1;
+            if (cmp == 0)
+              j += 1;
+          }
+          else if (cmp < 0) {
+            for (k = 0; k < n1; k++)
+              fam_new[idx_new[n_fam_new] + k] = fam_recv[idx_recv[j] + k];
+            idx_new[n_fam_new + 1] = idx_new[n_fam_new] + n1;
+            n_fam_new += 1;
+            j += 1;
+          }
+        }
+
+        while (i < _n_fam) {
+          int n0 = _family_idx[i+1] - _family_idx[i];
+          for (k = 0; k < n0; k++)
+            fam_new[idx_new[n_fam_new] + k] = _family[_family_idx[i] + k];
+          idx_new[n_fam_new + 1] = idx_new[n_fam_new] + n0;
+          n_fam_new += 1;
+          i += 1;
+        }
+        while (j < sizes[0]) {
+          int n1 = idx_recv[j+1] - idx_recv[j];
+          for (k = 0; k < n1; k++)
+            fam_new[idx_new[n_fam_new] + k] = fam_recv[idx_recv[j] + k];
+          idx_new[n_fam_new + 1] = idx_new[n_fam_new] + n1;
+          n_fam_new += 1;
+          j += 1;
+        }
+
+        BFT_FREE(fam_recv);
+        BFT_FREE(idx_recv);
+
+        BFT_REALLOC(idx_new, n_fam_new + 1, int);
+        BFT_REALLOC(fam_new, idx_new[n_fam_new], int);
+
+        BFT_FREE(_family_idx);
+        BFT_FREE(_family);
+
+        _family_idx = idx_new;
+        _family = fam_new;
+        _n_fam = n_fam_new;
+
+      } /* if (sizes[0] > 0) */
+
+    }
+
+    /* Odd ranks send once, then are finished for the merge step */
+
+    else if (rank_id % 2 == 1) {
+
+      int send_rank = (rank_id-1)*rank_mult;
+
+      sizes[0] = _n_fam;
+      sizes[1] = _family_idx[_n_fam];
+      MPI_Send(sizes, 2, MPI_INT, send_rank, 1, cs_glob_mpi_comm);
+
+      if (sizes[0] > 0) {
+        MPI_Send(_family_idx, sizes[0] + 1, MPI_INT, send_rank, 2,
+                 cs_glob_mpi_comm);
+        MPI_Send(_family, sizes[1], MPI_INT, send_rank, 3, cs_glob_mpi_comm);
+      }
+
+      break;
+
+    }
+
+  }
+
+  /* Now rank 0 broadcasts */
+
+  sizes[0] = _n_fam;
+  sizes[1] = _family_idx[_n_fam];
+  MPI_Bcast(sizes, 2, MPI_INT, 0, cs_glob_mpi_comm);
+
+  _n_fam = sizes[0];
+
+  if (cs_glob_rank_id != 0) {
+    BFT_REALLOC(_family_idx, sizes[0] + 1, int);
+    BFT_REALLOC(_family, sizes[1], int);
+  }
+
+  MPI_Bcast(_family_idx, sizes[0] + 1, MPI_INT, 0, cs_glob_mpi_comm);
+  MPI_Bcast(_family, sizes[1], MPI_INT, 0, cs_glob_mpi_comm);
+
+  /* Finally generate renumbering array */
+
+  BFT_MALLOC(renum, *n_fam, int);
+
+  for (i = 0; i < *n_fam; i++) {
+
+    int start_id, end_id, mid_id;
+    int cmp_ret = 1;
+    int n1 = (*family_idx)[i+1] - (*family_idx)[i];
+
+    /* Use binary search to find entry */
+
+    start_id = 0;
+    end_id = _n_fam - 1;
+    mid_id = start_id + ((end_id -start_id) / 2);
+
+    while (start_id <= end_id) {
+      int n0 = _family_idx[mid_id+1] - _family_idx[mid_id];
+      cmp_ret = _sync_compare_families(n0,
+                                       n1,
+                                       _family + _family_idx[mid_id],
+                                       (*family) + (*family_idx)[i]);
+      if (cmp_ret < 0)
+        start_id = mid_id + 1;
+      else if (cmp_ret > 0)
+        end_id = mid_id - 1;
+      else
+        break;
+      mid_id = start_id + ((end_id -start_id) / 2);
+    }
+
+    assert(cmp_ret == 0);
+
+    renum[i] = mid_id;
+  }
+
+  BFT_FREE(*family_idx);
+  BFT_FREE(*family);
+
+  *n_fam = _n_fam;
+  *family_idx = _family_idx;
+  *family = _family;
+
+  return renum;
+}
+
+#endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------
+ * Combine families.
+ *
+ * parameters:
+ *   mesh        <-> pointer to cs_mesh_t structure
+ *   family_idx  <-- index of element families
+ *   family      <-- element family numbers
+ *   n_elts      <-- number of local elements
+ *
+ * returns:
+ *   new element family values
+ *---------------------------------------------------------------------------*/
+
+static int *
+_combine_families(cs_mesh_t   *mesh,
+                  fvm_lnum_t  *family_idx,
+                  cs_int_t    *family,
+                  fvm_lnum_t   n_elts)
+{
+  int   n_fam = 0;
+  int  *_family_idx = NULL;
+  int  *_family = NULL;
+  int  *elt_family_num = NULL;
+
+  if (mesh->n_families == 0)
+    return NULL;
+
+  /* First, build families locally */
+
+  if (n_elts > 0) {
+
+    fvm_lnum_t i, j, j_prev, n_prev;
+    fvm_lnum_t *order = NULL;
+    fvm_gnum_t *tmp_family = NULL;
+    const fvm_lnum_t n_fam_values = family_idx[n_elts];
+
+    /* Build ordering of elements by associated families */
+
+    BFT_MALLOC(tmp_family, n_fam_values, fvm_gnum_t);
+
+    for (i = 0; i < n_fam_values; i++)
+      tmp_family[i] = family[i] + 1;
+
+    order = fvm_order_local_i(NULL, tmp_family, family_idx, n_elts);
+
+    BFT_FREE(tmp_family);
+
+    /* Build new family array, merging identical definitions */
+
+    BFT_MALLOC(elt_family_num, n_elts, int);
+
+    BFT_MALLOC(_family_idx, n_elts + 1, int);
+    BFT_MALLOC(_family, family_idx[n_elts], int);
+
+    _family_idx[0] = 0;
+
+    j_prev = -1;
+    n_prev = -1;
+
+    for (i = 0; i < n_elts; i++) {
+      fvm_lnum_t k, l, n;
+      _Bool is_same = true;
+      j = order[i];
+      n = family_idx[j+1] - family_idx[j];
+      if (n != n_prev)
+        is_same = false;
+      else {
+        for (k = family_idx[j], l = family_idx[j_prev];
+             k < family_idx[j + 1];
+             k++, l++) {
+          if (family[k] != family[l])
+            is_same = false;
+        }
+      }
+      if (is_same)
+        elt_family_num[j] = elt_family_num[j_prev];
+      else if (n == 0)
+        elt_family_num[j] = 0;
+      else if (n == 1)
+        elt_family_num[j] = family[family_idx[j]];
+      else {
+        elt_family_num[j] = mesh->n_families + 1 + n_fam;
+        for (k = family_idx[j], l = _family_idx[n_fam];
+             k < family_idx[j + 1];
+             k++, l++)
+          _family[l] = family[k];
+        _family_idx[n_fam+1] = _family_idx[n_fam] + n;
+        n_fam += 1;
+      }
+      j_prev = j;
+      n_prev = n;
+    }
+
+    BFT_FREE(order);
+
+    BFT_REALLOC(_family_idx, n_fam + 1, int);
+    BFT_REALLOC(_family, _family_idx[n_fam], int);
+
+  }
+  else {
+    BFT_MALLOC(_family_idx, 1, int);
+    _family_idx[0] = 0;
+  }
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+    fvm_lnum_t i;
+    int *renum = _sync_family_combinations(&n_fam,
+                                           &_family_idx,
+                                           &_family);
+
+    for (i = 0; i < n_elts; i++) {
+      int j = elt_family_num[i] - mesh->n_families - 1;
+      if (j >= 0)
+        elt_family_num[i] = mesh->n_families + renum[j] + 1;
+    }
+
+    BFT_FREE(renum);
+  }
+
+#endif
+
+  /* Update mesh definition */
+
+  {
+    int i, j, k, l;
+    int n_max_family_items = 0;
+
+    for (i = 0; i < n_fam; i++) {
+      int n_family_items = 0;
+      for (j = _family_idx[i]; j < _family_idx[i+1]; j++) {
+        int f_id = _family[j] - 1;
+        for (k = 0; k < mesh->n_max_family_items; k++) {
+          if (mesh->family_item[mesh->n_families*k + f_id] != 0)
+            n_family_items++;
+        }
+      }
+      if (n_family_items > n_max_family_items)
+        n_max_family_items = n_family_items;
+    }
+
+    /* Increase maximum number of definitions and pad it necessary */
+
+    if (n_max_family_items > mesh->n_max_family_items) {
+      BFT_REALLOC(mesh->family_item,
+                  mesh->n_families*n_max_family_items,
+                  cs_int_t);
+      for (i = mesh->n_max_family_items;
+           i < n_max_family_items;
+           i++) {
+        for (j = 0; j < mesh->n_families; j++)
+          mesh->family_item[mesh->n_families*i + j] = 0;
+      }
+      mesh->n_max_family_items = n_max_family_items;
+    }
+
+    /* Increase number of families */
+
+    mesh->n_families += n_fam;
+
+    BFT_REALLOC(mesh->family_item,
+                mesh->n_families * mesh->n_max_family_items,
+                cs_int_t);
+    for (j = mesh->n_max_family_items - 1; j > 0; j--) {
+      for (i = mesh->n_families - n_fam - 1; i > -1; i--)
+        mesh->family_item[mesh->n_families*j + i]
+          = mesh->family_item[(mesh->n_families - n_fam)*j + i];
+    }
+    for (i = mesh->n_families - n_fam, j = 0; i < mesh->n_families; i++, j++) {
+      int n_family_items = 0;
+      for (k = _family_idx[j]; k < _family_idx[j+1]; k++) {
+        int f_id = _family[k] - 1;
+        for (l = 0; l < mesh->n_max_family_items; l++) {
+          if (mesh->family_item[mesh->n_families*l + f_id] != 0) {
+            mesh->family_item[mesh->n_families*n_family_items + i]
+              = mesh->family_item[mesh->n_families*l + f_id];
+            n_family_items++;
+          }
+        }
+      }
+      for (k = n_family_items; k < mesh->n_max_family_items; k++)
+        mesh->family_item[mesh->n_families*k + i] = 0;
+    }
+
+  }
+
+  BFT_FREE(_family_idx);
+  BFT_FREE(_family);
+
+  return elt_family_num;
+}
+
+/*----------------------------------------------------------------------------
+ * Update mesh families based on combined faces.
+ *
+ * parameters:
+ *   n2o_face_hist   <-- relation between faces before/after the joining
+ *   join_mesh       <-> pointer to the local cs_join_mesh_t structure
+ *   mesh            <-> pointer of pointer to cs_mesh_t structure
+ *
+ * returns:
+ *   array of family numbers fo new faces
+ *---------------------------------------------------------------------------*/
+
+static int *
+_update_families(const cs_join_gset_t    *n2o_face_hist,
+                 cs_int_t                 old_face_family[],
+                 cs_join_mesh_t          *join_mesh,
+                 cs_mesh_t               *mesh)
+{
+  fvm_lnum_t  i, j, k;
+
+  int  null_family = 0;
+  fvm_lnum_t  *face_family_idx = NULL;
+  cs_int_t  *face_family = NULL;
+  int  *new_face_family = NULL;
+
+  assert(mesh != NULL);
+  assert(join_mesh != NULL);
+
+  /* Get new subfaces evolution */
+
+  assert(n2o_face_hist->n_elts == join_mesh->n_faces);
+
+  BFT_MALLOC(face_family_idx, join_mesh->n_faces + 1, fvm_lnum_t);
+  BFT_MALLOC(face_family, n2o_face_hist->index[join_mesh->n_faces], cs_int_t);
+
+  /* Compact numbering (remove zeroes) */
+
+  if (mesh->n_families > 0) {
+    if (mesh->family_item[0] == 0)
+      null_family = 1;
+  }
+
+  face_family_idx[0] = 0;
+  k = 0;
+
+  for (i = 0; i < join_mesh->n_faces; i++) {
+
+    int prev_fam = 0;
+    const fvm_lnum_t start_id = n2o_face_hist->index[i];
+    const fvm_lnum_t end_id = n2o_face_hist->index[i+1];
+
+    cs_sort_shell(start_id, end_id, old_face_family);
+
+    for (j = start_id; j < end_id; j++) {
+      if (old_face_family[j] != prev_fam) {
+        face_family[k] = old_face_family[j];
+        prev_fam = old_face_family[j];
+        k += 1;
+      }
+    }
+
+    /* Add null family if none other was added */
+
+    if (k == face_family_idx[i])
+      face_family[k++] = null_family;
+
+    face_family_idx[i+1] = k;
+  }
+
+  BFT_REALLOC(face_family, face_family_idx[join_mesh->n_faces], cs_int_t);
+
+  /* Build new combined families if necessary and flatten element families */
+
+  new_face_family = _combine_families(mesh,
+                                      face_family_idx,
+                                      face_family,
+                                      join_mesh->n_faces);
+
+  BFT_FREE(face_family);
+  BFT_FREE(face_family_idx);
+
+  return new_face_family;
 }
 
 /*----------------------------------------------------------------------------
@@ -3283,8 +3892,8 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
  *   join2mesh_vtx_id <-- relation between vertices in join_mesh/mesh
  *   cell_gnum        <-- global cell num. related to each initial face
  *   n_new_i_faces    <-- local number of interior faces after the joining
- *   default_family   <-- default family num to assign to each int. faces
  *   new_face_type    <-- type (border/interior) of new faces
+ *   new_face_family  <-- family of new faces
  *   n2o_face_hist    <-- face history structure (new -> old)
  *   mesh             <-> pointer of pointer to cs_mesh_t structure
  *---------------------------------------------------------------------------*/
@@ -3296,22 +3905,22 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
                         const cs_int_t              join2mesh_vtx_id[],
                         const fvm_gnum_t            cell_gnum[],
                         cs_int_t                    n_new_i_faces,
-                        cs_int_t                    default_family,
                         const cs_join_face_type_t   new_face_type[],
+                        const int                   new_face_family[],
                         const cs_join_gset_t       *n2o_face_hist,
                         cs_mesh_t                  *mesh)
 {
-  cs_int_t  i, j, k, vid, id, shift, fnum[2], max_size;
+  fvm_lnum_t  i, j, k, vid, id, shift, fnum[2], max_size;
   fvm_gnum_t  compact_fgnum, cgnum[2];
 
   fvm_gnum_t  *gtmp = NULL;
   double  *dtmp = NULL;
-  cs_int_t  *ltmp = NULL;
-  cs_int_t  n_fi_faces = 0, n_ii_faces = mesh->n_i_faces;
-  cs_int_t  *new_f2v_idx = mesh->i_face_vtx_idx;
-  cs_int_t  *new_f2v_lst = mesh->i_face_vtx_lst;
-  cs_int_t  *new_face_family = mesh->i_face_family;
-  cs_int_t  *new_face_cells = mesh->i_face_cells;
+  fvm_lnum_t  *ltmp = NULL;
+  fvm_lnum_t  n_fi_faces = 0, n_ii_faces = mesh->n_i_faces;
+  fvm_lnum_t  *new_f2v_idx = mesh->i_face_vtx_idx;
+  fvm_lnum_t  *new_f2v_lst = mesh->i_face_vtx_lst;
+  cs_int_t    *_new_face_family = mesh->i_face_family;
+  fvm_lnum_t  *new_face_cells = mesh->i_face_cells;
   fvm_gnum_t  n_g_ii_faces = mesh->n_g_i_faces;
   fvm_gnum_t  *new_fgnum = mesh->global_i_face_num;
 
@@ -3326,9 +3935,9 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   mesh->n_i_faces = n_fi_faces;
   mesh->n_g_i_faces = n_fi_faces;
 
-  BFT_REALLOC(new_f2v_idx, n_fi_faces + 1, cs_int_t);
-  BFT_REALLOC(new_face_cells, 2*n_fi_faces, cs_int_t);
-  BFT_REALLOC(new_face_family, n_fi_faces, cs_int_t);
+  BFT_REALLOC(new_f2v_idx, n_fi_faces + 1, fvm_lnum_t);
+  BFT_REALLOC(new_face_cells, 2*n_fi_faces, fvm_lnum_t);
+  BFT_REALLOC(_new_face_family, n_fi_faces, cs_int_t);
 
   max_size = 0;
   for (i = 0; i < jmesh->n_faces; i++)
@@ -3343,7 +3952,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
 
   BFT_MALLOC(dtmp, 6*(max_size+1), double);
   BFT_MALLOC(gtmp, 2*(max_size+1), fvm_gnum_t);
-  BFT_MALLOC(ltmp, max_size, cs_int_t);
+  BFT_MALLOC(ltmp, max_size, fvm_lnum_t);
 
   /* Add faces resulting from the joining operation
      - face -> vertex index
@@ -3361,7 +3970,8 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
       int  n_face_vertices = jme - jms;
 
       for (j = n2o_face_hist->index[i], k = 0;
-           j < n2o_face_hist->index[i+1]; j++, k++) {
+           j < n2o_face_hist->index[i+1];
+           j++, k++) {
 
         cgnum[k] = cell_gnum[j];
         compact_fgnum = n2o_face_hist->g_list[j];
@@ -3431,8 +4041,8 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
                       " Join face %d (%u) and related faces [%d, %d]\n"),
                     i+1, jmesh->face_gnum[i], fnum[0], fnum[1]);
 
-      /* Default value. TODO: Define real family */
-      new_face_family[n_fi_faces] = default_family;
+      _new_face_family[n_fi_faces] = new_face_family[i];
+
       n_fi_faces++;
       new_f2v_idx[n_fi_faces] = n_face_vertices;
 
@@ -3451,7 +4061,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   for (i = n_ii_faces; i < n_fi_faces; i++)
     new_f2v_idx[i+1] += new_f2v_idx[i];
 
-  BFT_REALLOC(new_f2v_lst, new_f2v_idx[n_fi_faces]-1, cs_int_t);
+  BFT_REALLOC(new_f2v_lst, new_f2v_idx[n_fi_faces]-1, fvm_lnum_t);
 
   /* Define the face -> vertex connectivity list */
 
@@ -3500,81 +4110,9 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   mesh->i_face_vtx_lst = new_f2v_lst;
   mesh->global_i_face_num = new_fgnum;
   mesh->i_face_cells = new_face_cells;
-  mesh->i_face_family = new_face_family;
+  mesh->i_face_family = _new_face_family;
   mesh->i_face_vtx_connect_size = new_f2v_idx[n_fi_faces]-1;
 
-}
-
-/*----------------------------------------------------------------------------
- * Get the family number to assign by default to the interior faces.
- *
- * parameters:
- *   mesh <-> pointer to cs_mesh_t structure
- *
- * returns:
- *   the value of the default family number.
- *---------------------------------------------------------------------------*/
-
-static cs_int_t
-_get_default_family(cs_mesh_t  *mesh)
-{
-  int  i, j, n_grp, grp_num, grp_idx, n_colors, new_size;
-
-  char **groups = NULL;
-  int  *colors = NULL, *items = NULL;
-  int  default_family = -1;
-
-  BFT_MALLOC(groups, mesh->n_max_family_items, char*);
-  BFT_MALLOC(colors, mesh->n_max_family_items, int);
-
-  for (i = 0; i < mesh->n_families; i++) {
-
-    n_colors = 0;
-    n_grp  = 0;
-
-    for (j = 0; j < mesh->n_max_family_items; j++) {
-
-      if (mesh->family_item[j * mesh->n_families + i] > 0)
-        colors[n_colors++] = mesh->family_item[j * mesh->n_families + i];
-
-      else if (mesh->family_item[j * cs_glob_mesh->n_families + i] < 0) {
-        grp_num = -mesh->family_item[j * mesh->n_families + i] - 1;
-        grp_idx = mesh->group_idx[grp_num];
-        groups[n_grp++] = mesh->group_lst + grp_idx -1;
-      }
-
-    }
-
-    if (n_grp == 0 && n_colors == 0)
-      default_family = i+1;
-
-  } /* End of loop on families */
-
-  BFT_FREE(groups);
-  BFT_FREE(colors);
-
-  if (default_family == -1) { /* Add a new family */
-
-    mesh->n_families += 1;
-    default_family = mesh->n_families;
-
-    new_size = mesh->n_max_family_items *mesh->n_families;
-    BFT_MALLOC(items, new_size, cs_int_t);
-
-    for (i = 0; i < mesh->n_families - 1; i++)
-      for (j = 0; j < mesh->n_max_family_items; j++)
-        items[j * mesh->n_families + i] =
-          mesh->family_item[j * mesh->n_families + i];
-
-    for (j = 0; j < mesh->n_max_family_items; j++)
-      items[j * (mesh->n_families-1) + (mesh->n_families-1)] = 0;
-
-    BFT_FREE(mesh->family_item);
-    mesh->family_item = items;
-
-  }
-
-  return default_family;
 }
 
 /*----------------------------------------------------------------------------
@@ -4038,7 +4576,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                                 cs_mesh_t               *mesh,
                                 cs_mesh_builder_t       *mesh_builder)
 {
-  int  i, j, n_matches, default_family;
+  int  i, j, n_matches;
 
   fvm_gnum_t  n_g_new_b_faces = 0, n_g_multiple_bfaces = 0;
   cs_int_t  n_new_i_faces = 0, n_new_b_faces = 0, n_undef_faces = 0;
@@ -4046,6 +4584,8 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
   cs_int_t  n_old_i_faces = mesh->n_i_faces, n_old_b_faces = mesh->n_b_faces;
   cs_int_t  *join2mesh_vtx_id = NULL;
   fvm_gnum_t  *cell_gnum = NULL;
+  int  *old_face_family = NULL;
+  int  *new_face_family = NULL;
   cs_join_face_type_t  *new_face_type = NULL;
 
   const int  n_ranks = cs_glob_n_ranks;
@@ -4056,6 +4596,7 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
   /* Get new subfaces evolution */
 
   assert(n2o_face_hist->n_elts == join_mesh->n_faces);
+
   BFT_MALLOC(new_face_type, join_mesh->n_faces, cs_join_face_type_t);
 
   for (i = 0; i < join_mesh->n_faces; i++) {
@@ -4173,14 +4714,6 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 
   }
 
-  /* Get the family number to assign by default to the interior faces */
-
-  default_family = _get_default_family(mesh);
-
-  if (join_param.verbosity > 1)
-    bft_printf("\n  Default family for interior joined faces: %d\n",
-               default_family);
-
   /* Define join2mesh_vtx_id and add new vertices (only in parallel mode)
      These vertices already exist but only on other ranks. During the face
      splitting op., these vertices are used to define the new face connect. */
@@ -4189,7 +4722,8 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 
   /* Get associated global cell number */
 
-  _get_linked_cell_gnum(join_select, join_param, n2o_face_hist, &cell_gnum);
+  _get_linked_cell_gnum_and_family(join_select, join_param, n2o_face_hist, mesh,
+                                   &cell_gnum, &old_face_family);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n  List of linked global cell number\n");
@@ -4198,6 +4732,13 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                i, n2o_face_hist->g_list[i], cell_gnum[i]);
   bft_printf_flush();
 #endif
+
+  new_face_family = _update_families(n2o_face_hist,
+                                     old_face_family,
+                                     join_mesh,
+                                     mesh);
+
+  BFT_FREE(old_face_family);
 
   /*  Update mesh structure:
         - Update first the interior faces because we need the global
@@ -4210,8 +4751,8 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                           join2mesh_vtx_id,
                           cell_gnum,
                           n_new_i_faces,
-                          default_family,
                           new_face_type,
+                          new_face_family,
                           n2o_face_hist,
                           mesh);
 
@@ -4221,8 +4762,11 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
                         join2mesh_vtx_id,
                         n_new_b_faces,
                         new_face_type,
+                        new_face_family,
                         n2o_face_hist,
                         mesh);
+
+  BFT_FREE(new_face_family);
 
   if (join_param.perio_type != FVM_PERIODICITY_NULL)
     cs_join_perio_split_update(join_param,

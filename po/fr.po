@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-10 12:20+0200\n"
+"POT-Creation-Date: 2010-09-10 12:27+0200\n"
 "PO-Revision-Date: 2010-07-29 19:13+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3290,7 +3290,7 @@ msgid ""
 "  New number of faces to treat locally: %8d\n"
 msgstr ""
 
-#: src/base/cs_join_perio.c:937 src/base/cs_join_util.c:2477
+#: src/base/cs_join_perio.c:937 src/base/cs_join_util.c:2456
 msgid ""
 "\n"
 "  Selected faces for the joining operation:\n"
@@ -3425,47 +3425,47 @@ msgid ""
 "  Impossible to continue the mesh update after the merge operation.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:2493
+#: src/base/cs_join_update.c:2561
 #, c-format
 msgid "  Join Face connectivity %d (%u): "
 msgstr ""
 
-#: src/base/cs_join_update.c:2524
+#: src/base/cs_join_update.c:2592
 msgid "  Cannot achieve to reorient the current joined face.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3106 src/base/cs_join_update.c:3158
+#: src/base/cs_join_update.c:3176 src/base/cs_join_update.c:3228
 #, c-format
 msgid ""
 "  Cannot achieve to reorient the current joined face with face %d (selected "
 "face).\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3429
+#: src/base/cs_join_update.c:4039
 #, c-format
 msgid ""
 " Incoherency found before interior face orientation checking.\n"
 " Join face %d (%u) and related faces [%d, %d]\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3621
+#: src/base/cs_join_update.c:4159
 #, c-format
 msgid "  Delete %d local vertices not used in mesh definition.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4078
+#: src/base/cs_join_update.c:4619
 #, c-format
 msgid ""
 "  Warning: Face %d (%u) has more than two ancestors.\n"
 "  Old faces implied:"
 msgstr ""
 
-#: src/base/cs_join_update.c:4097
+#: src/base/cs_join_update.c:4638
 #, c-format
 msgid "  Warning: Face %d (%u) has no ancestor.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4108
+#: src/base/cs_join_update.c:4649
 #, c-format
 msgid ""
 "\n"
@@ -3474,14 +3474,14 @@ msgid ""
 "    Number of border faces to add  : %9d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4135
+#: src/base/cs_join_update.c:4676
 #, c-format
 msgid ""
 " There are %u undefined faces with no ancestor.\n"
 " Cannot continue the joining algorithm.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4143
+#: src/base/cs_join_update.c:4684
 #, c-format
 msgid ""
 "\n"
@@ -3489,34 +3489,34 @@ msgid ""
 "     Global number of border faces to add: %10llu\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4151
+#: src/base/cs_join_update.c:4692
 #, c-format
 msgid "     Global number of multiple border faces: %10llu\n"
 msgstr "     Nombre global de faces de bord multiples : %10llu\n"
 
-#: src/base/cs_join_update.c:4359
+#: src/base/cs_join_update.c:4903
 #, c-format
 msgid "  Clean border face %d. New number of vertices: %d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4381
+#: src/base/cs_join_update.c:4925
 #, c-format
 msgid ""
 "\n"
 "  Degenerate connectivity for %d final local boundary faces.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4420
+#: src/base/cs_join_update.c:4964
 #, c-format
 msgid "  Clean interior face %d. New number of vertices: %d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4442
+#: src/base/cs_join_update.c:4986
 #, c-format
 msgid "  Degenerate connectivity for %d final local interior faces.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4492
+#: src/base/cs_join_update.c:5036
 #, c-format
 msgid ""
 "\n"
@@ -3525,126 +3525,126 @@ msgid ""
 "    Global number of cleaned border faces:   %8u\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2020
+#: src/base/cs_join_util.c:2019
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the fraction parameter.\n"
 "  It must be between [0.0, 1.0[ and is here: %f\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2027
+#: src/base/cs_join_util.c:2026
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the plane parameter.\n"
 "  It must be between [0, 90] and is here: %f\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2110
+#: src/base/cs_join_util.c:2109
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tml parameter.\n"
 "  It must be between > 0 and is here: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2121
+#: src/base/cs_join_util.c:2120
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tmb parameter.\n"
 "  It must be between > 0 and is here: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2132
+#: src/base/cs_join_util.c:2131
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tmr parameter.\n"
 "  It must be between > 0.0 and is here: %f\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2147
+#: src/base/cs_join_util.c:2146
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the merge tolerance factor.\n"
 "  It must be positive or nul and not: %f\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2157
+#: src/base/cs_join_util.c:2156
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the max. number of tolerance breaks.\n"
 "  It must be between >= 0 and not: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2174
+#: src/base/cs_join_util.c:2173
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the tcm parameter.\n"
 "  It must be between 1, 2 or 11, 12 and here is: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2184
+#: src/base/cs_join_util.c:2183
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for icm parameter.\n"
 "  It must be 1 or 2 and here is: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2194
+#: src/base/cs_join_util.c:2193
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the maxsf parameter.\n"
 "  It must be between > 0 and here is: %d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2327
+#: src/base/cs_join_util.c:2306
 #, c-format
 msgid "  Global number of boundary faces selected for joining: %10u\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2447
+#: src/base/cs_join_util.c:2426
 msgid ""
 "\n"
 "  Local information about selection structure:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2448
+#: src/base/cs_join_util.c:2427
 #, c-format
 msgid "    number of faces:               %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2450
+#: src/base/cs_join_util.c:2429
 #, c-format
 msgid "    number of vertices:            %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2452
+#: src/base/cs_join_util.c:2431
 #, c-format
 msgid "    number of adj. border faces:   %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2454
+#: src/base/cs_join_util.c:2433
 #, c-format
 msgid "    number of adj. interior faces: %8d\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2486
+#: src/base/cs_join_util.c:2465
 msgid ""
 "\n"
 "  Select vertices for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2493
+#: src/base/cs_join_util.c:2472
 msgid ""
 "\n"
 "  Contiguous border faces for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2500
+#: src/base/cs_join_util.c:2479
 msgid ""
 "\n"
 "  Contiguous interior faces for the joining operation:\n"
 msgstr ""
 
-#: src/base/cs_join_util.c:2718 src/base/cs_join_util.c:2734
+#: src/base/cs_join_util.c:2697 src/base/cs_join_util.c:2713
 #, c-format
 msgid ""
 "  Inconsistent mesh definition. Cannot build edges.\n"

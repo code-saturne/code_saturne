@@ -206,9 +206,6 @@ typedef struct {
   fvm_gnum_t   *compact_rank_index;   /* Distribution of the selected faces
                                          over the ranks */
 
-  fvm_gnum_t   *cell_gnum;       /* Global cell numbering of the cells
-                                    bearing the selected face */
-
   cs_int_t      n_vertices;      /* Number of vertices selected
                                     for the joining operation */
   fvm_gnum_t    n_g_vertices;    /* Global number of selected vertices */

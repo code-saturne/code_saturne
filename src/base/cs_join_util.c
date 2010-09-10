@@ -278,7 +278,6 @@ _join_select_destroy(cs_join_param_t     param,
 
     BFT_FREE(_js->faces);
     BFT_FREE(_js->compact_face_gnum);
-    BFT_FREE(_js->cell_gnum);
     BFT_FREE(_js->compact_rank_index);
     BFT_FREE(_js->vertices);
     BFT_FREE(_js->b_adj_faces);
@@ -2214,7 +2213,7 @@ cs_join_select_t *
 cs_join_select_create(const char  *selection_criteria,
                       int          verbosity)
 {
-  cs_int_t  i, fid, cid;
+  cs_int_t  i;
 
   cs_int_t  *vtx_tag = NULL;
   cs_join_select_t  *selection = NULL;
@@ -2240,8 +2239,6 @@ cs_join_select_create(const char  *selection_criteria,
   selection->faces = NULL;
   selection->compact_face_gnum = NULL;
   selection->compact_rank_index = NULL;
-
-  selection->cell_gnum = NULL;
 
   selection->n_vertices = 0;
   selection->n_g_vertices = 0;
@@ -2291,20 +2288,8 @@ cs_join_select_create(const char  *selection_criteria,
   BFT_FREE(selection->faces);
   selection->faces = ordered_faces;
 
-  /* Define cell_gnum: global numbers of the related cells */
-
-  BFT_MALLOC(selection->cell_gnum, selection->n_faces, fvm_gnum_t);
-
-  if (n_ranks == 1) { /* Serial treatment */
-
+  if (n_ranks == 1)
     selection->n_g_faces = selection->n_faces;
-
-    for (i = 0; i < selection->n_faces; i++) {
-      fid = selection->faces[i] - 1;
-      selection->cell_gnum[i] = mesh->b_face_cells[fid];
-    }
-
-  }
 
 #if defined(HAVE_MPI)
   if (n_ranks > 1) { /* Parallel treatment */
@@ -2313,12 +2298,6 @@ cs_join_select_create(const char  *selection_criteria,
 
     MPI_Allreduce(&n_l_faces, &(selection->n_g_faces),
                   1, FVM_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
-
-    for (i = 0; i < selection->n_faces; i++) {
-      fid = selection->faces[i] - 1;
-      cid = mesh->b_face_cells[fid] - 1;
-      selection->cell_gnum[i] = mesh->global_cell_num[cid];
-    }
 
   }
 #endif
