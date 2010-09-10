@@ -1,4 +1,9 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  French translation updates for Partitioner.
+  modified files:
+    po/fr.po
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Code can now be built with either CGNS 2.5 or CGNS 3.
   modified files:
     po/fr.po

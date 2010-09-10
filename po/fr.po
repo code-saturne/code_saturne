@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
 "POT-Creation-Date: 2010-09-10 17:08+0200\n"
-"PO-Revision-Date: 2010-09-10 16:59+0200\n"
+"PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "Language: fr\n"
@@ -4037,7 +4037,7 @@ msgstr " --scotch          utiliser SCOTCH pour le partitionnement.\n"
 
 #: src/apps/cs_partition.c:233
 msgid " --mpi             use MPI for parallelism or coupling\n"
-msgstr " --mpi             calcul parallèle ou couplé via MPI ;\n"
+msgstr " --mpi             partitionnement parallèle via MPI\n"
 
 #: src/apps/cs_partition.c:235 src/base/cs_opts.c:131
 #, c-format
@@ -4326,6 +4326,8 @@ msgid ""
 "\"%s\" is a directory. Run the Kernel to concatenate\n"
 "its contents into a single file before partitioning."
 msgstr ""
+"\"%s\" est un répertoire. Utilisez le Noyau pour concaténer\n"
+"son contenu en un seul fichier avant de partitionner."
 
 #: src/apps/cs_partition.c:2273
 msgid ""
