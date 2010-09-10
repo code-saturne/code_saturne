@@ -1,4 +1,11 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Switch to recommended definition method of LOCALEDIR for internationalization.
+  modified scripts:
+    configure.ac
+    preprocessor/appli/Makefile.am
+    src/apps/Makefile.am
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Added export of group classes to MED output.
   modified files:
     po/fr.po

@@ -21,7 +21,8 @@
 
 # Main part
 
-AM_CPPFLAGS = -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/pre-post -I$(top_srcdir)/preprocessor/util
+AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
+-I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/pre-post -I$(top_srcdir)/preprocessor/util
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 AM_LDFLAGS =
 

@@ -720,7 +720,6 @@ fi
 # Internationalization
 #------------------------------------------------------------------------------
 
-AC_DEFINE_UNQUOTED(LOCALEDIR, "${localedir}", LOCALEDIR)
 AM_GNU_GETTEXT([external])
 
 #------------------------------------------------------------------------------

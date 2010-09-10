@@ -34,7 +34,7 @@ endif
 
 # Main part
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/lagr \
