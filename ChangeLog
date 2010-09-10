@@ -1,4 +1,9 @@
 * 10/09/2010 - David Monfort <david.monfort@edf.fr>
+  Remove the file name and line number while looking for translatable strings.
+  modified script:
+    po/Makevars
+
+* 10/09/2010 - David Monfort <david.monfort@edf.fr>
   Add a missing comma to fix a bug introduced recently.
   modified scripts:
     bin/cs_case.py
