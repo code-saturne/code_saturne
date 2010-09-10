@@ -262,20 +262,17 @@ _sles_info_dump(cs_sles_info_t *this_info)
 
   if (cs_glob_n_ranks > 1) {
 
-    double cpu_min, cpu_max, cpu_tot;
+    double cpu_min, cpu_max;
     double cpu_loc = this_info->cpu_tot;
 
     MPI_Allreduce(&cpu_loc, &cpu_min, 1, MPI_DOUBLE, MPI_MIN,
                   cs_glob_mpi_comm);
     MPI_Allreduce(&cpu_loc, &cpu_max, 1, MPI_DOUBLE, MPI_MAX,
                   cs_glob_mpi_comm);
-    MPI_Allreduce(&cpu_loc, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
-                  cs_glob_mpi_comm);
 
     bft_printf(_("  Min local total CPU time:         %12.3f\n"
-                 "  Max local total CPU time:         %12.3f\n"
-                 "  Total CPU time:                   %12.3f\n"),
-               cpu_min, cpu_max, cpu_tot);
+                 "  Max local total CPU time:         %12.3f\n"),
+               cpu_min, cpu_max);
 
   }
 

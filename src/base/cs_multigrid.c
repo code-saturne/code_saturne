@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2010 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -345,7 +345,7 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
 
   if (cs_glob_n_ranks > 1) {
 
-    double cpu_min[2], cpu_max[2], cpu_tot[2], cpu_loc[2];
+    double cpu_min[2], cpu_max[2], cpu_loc[2];
     cpu_loc[0] = this_info->cpu_tot[0];
     cpu_loc[1] = this_info->cpu_tot[1];
 
@@ -353,14 +353,10 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
                   cs_glob_mpi_comm);
     MPI_Allreduce(cpu_loc, cpu_max, 2, MPI_DOUBLE, MPI_MAX,
                   cs_glob_mpi_comm);
-    MPI_Allreduce(cpu_loc, cpu_tot, 2, MPI_DOUBLE, MPI_SUM,
-                  cs_glob_mpi_comm);
 
     bft_printf(_("    Min local total CPU time:       %12.3f  %12.3f\n"
-                 "    Max local total CPU time:       %12.3f  %12.3f\n"
-                 "    Total CPU time:                 %12.3f  %12.3f\n"),
-               cpu_min[0], cpu_min[1], cpu_max[0], cpu_max[1],
-               cpu_tot[0], cpu_tot[1]);
+                 "    Max local total CPU time:       %12.3f  %12.3f\n"),
+               cpu_min[0], cpu_min[1], cpu_max[0], cpu_max[1]);
 
   }
 

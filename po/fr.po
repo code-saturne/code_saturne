@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-10 17:08+0200\n"
+"POT-Creation-Date: 2010-09-10 17:50+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4753,18 +4753,18 @@ msgstr ""
 "  Temps écoulé: %12.5e\n"
 "  CPU:          %12.5e\n"
 
-#: src/base/cs_benchmark.c:193
+#: src/base/cs_benchmark.c:190
 #, c-format
 msgid ""
-"               Min          Max          Total\n"
+"               Min          Max\n"
 "  Wall clock : %12.5e %12.5e\n"
-"  CPU :        %12.5e %12.5e %12.5e\n"
+"  CPU :        %12.5e %12.5e\n"
 msgstr ""
-"               Min          Max          Total\n"
+"               Min          Max\n"
 "  Écoulé :     %12.5e %12.5e\n"
-"  CPU :        %12.5e %12.5e %12.5e\n"
+"  CPU :        %12.5e %12.5e\n"
 
-#: src/base/cs_benchmark.c:221
+#: src/base/cs_benchmark.c:217
 #, c-format
 msgid ""
 "  N ops :      %12ld\n"
@@ -4777,37 +4777,37 @@ msgstr ""
 "  CPU :        %12.5e\n"
 "  GFLOPS :     %12.5e\n"
 
-#: src/base/cs_benchmark.c:268
+#: src/base/cs_benchmark.c:261
 #, c-format
 msgid ""
 "               Min          Max          Total\n"
 "  N ops :      %12ld %12ld %12ld\n"
 "  Wall clock : %12.5e %12.5e\n"
-"  CPU :        %12.5e %12.5e %12.5e\n"
+"  CPU :        %12.5e %12.5e\n"
 "  GFLOPS :     %12.5e %12.5e %12.5e\n"
 msgstr ""
 "               Min          Max          Total\n"
 "  N ops :      %12ld %12ld %12ld\n"
 "  Wall clock : %12.5e %12.5e\n"
-"  CPU :        %12.5e %12.5e %12.5e\n"
+"  CPU :        %12.5e %12.5e\n"
 "  GFLOPS :     %12.5e %12.5e %12.5e\n"
 
-#: src/base/cs_benchmark.c:280
+#: src/base/cs_benchmark.c:273
 #, c-format
 msgid ""
 "               Min          Max          Total        Single\n"
 "  N ops :      %12ld %12ld %12ld %12ld\n"
 "  Wall clock : %12.5e %12.5e\n"
-"  CPU :        %12.5e %12.5e %12.5e\n"
+"  CPU :        %12.5e %12.5e\n"
 "  GFLOPS :     %12.5e %12.5e %12.5e %12.5e\n"
 msgstr ""
 "               Min          Max          Total        Single\n"
 "  N ops :      %12ld %12ld %12ld %12ld\n"
 "  Wall clock : %12.5e %12.5e\n"
-"  CPU :        %12.5e %12.5e %12.5e\n"
+"  CPU :        %12.5e %12.5e\n"
 "  GFLOPS :     %12.5e %12.5e %12.5e %12.5e\n"
 
-#: src/base/cs_benchmark.c:356
+#: src/base/cs_benchmark.c:349
 #, c-format
 msgid ""
 "\n"
@@ -4818,7 +4818,7 @@ msgstr ""
 "Produit scalaire local simple %s avec BLAS\n"
 "------------------------------------------\n"
 
-#: src/base/cs_benchmark.c:361
+#: src/base/cs_benchmark.c:354
 #, c-format
 msgid ""
 "\n"
@@ -4829,18 +4829,18 @@ msgstr ""
 "Produit scalaire global simple %s avec BLAS\n"
 "--------------------------------------------\n"
 
-#: src/base/cs_benchmark.c:366 src/base/cs_benchmark.c:403
-#: src/base/cs_benchmark.c:458 src/base/cs_benchmark.c:483
-#: src/base/cs_benchmark.c:544 src/base/cs_benchmark.c:568
-#: src/base/cs_benchmark.c:998 src/base/cs_benchmark.c:1024
-#: src/base/cs_benchmark.c:1054 src/base/cs_benchmark.c:1084
-#: src/base/cs_benchmark.c:1136 src/base/cs_benchmark.c:1351
-#: src/base/cs_benchmark.c:1376 src/base/cs_benchmark.c:1404
+#: src/base/cs_benchmark.c:359 src/base/cs_benchmark.c:396
+#: src/base/cs_benchmark.c:451 src/base/cs_benchmark.c:476
+#: src/base/cs_benchmark.c:537 src/base/cs_benchmark.c:561
+#: src/base/cs_benchmark.c:991 src/base/cs_benchmark.c:1017
+#: src/base/cs_benchmark.c:1047 src/base/cs_benchmark.c:1077
+#: src/base/cs_benchmark.c:1129 src/base/cs_benchmark.c:1344
+#: src/base/cs_benchmark.c:1369 src/base/cs_benchmark.c:1397
 #, c-format
 msgid "  (calls: %d;  test sum: %12.5f)\n"
 msgstr "  (appels : %d;  somme test : %12.5f)\n"
 
-#: src/base/cs_benchmark.c:393
+#: src/base/cs_benchmark.c:386
 #, c-format
 msgid ""
 "\n"
@@ -4851,7 +4851,7 @@ msgstr ""
 "Produit scalaire local simple %s\n"
 "--------------------------------\n"
 
-#: src/base/cs_benchmark.c:398
+#: src/base/cs_benchmark.c:391
 #, c-format
 msgid ""
 "\n"
@@ -4862,7 +4862,7 @@ msgstr ""
 "Produit scalaire global simple %s\n"
 "---------------------------------\n"
 
-#: src/base/cs_benchmark.c:455
+#: src/base/cs_benchmark.c:448
 msgid ""
 "\n"
 "Double local dot product X.X, Y.Y with BLAS\n"
@@ -4872,7 +4872,7 @@ msgstr ""
 "Produit scalaire local double X.X, X.Y avec BLAS\n"
 "------------------------------------------------\n"
 
-#: src/base/cs_benchmark.c:479
+#: src/base/cs_benchmark.c:472
 msgid ""
 "\n"
 "Double local dot product X.X, Y.Y\n"
@@ -4882,7 +4882,7 @@ msgstr ""
 "Produit scalaire local double X.X, X.Y\n"
 "--------------------------------------\n"
 
-#: src/base/cs_benchmark.c:540
+#: src/base/cs_benchmark.c:533
 msgid ""
 "\n"
 "Y <- aX + Y with BLAS\n"
@@ -4892,7 +4892,7 @@ msgstr ""
 "Y <- aX + Y avec BLAS\n"
 "---------------------\n"
 
-#: src/base/cs_benchmark.c:564
+#: src/base/cs_benchmark.c:557
 msgid ""
 "\n"
 "Y <- aX + Y\n"
@@ -4902,7 +4902,7 @@ msgstr ""
 "Y <- aX + Y\n"
 "-----------\n"
 
-#: src/base/cs_benchmark.c:624
+#: src/base/cs_benchmark.c:617
 msgid ""
 "\n"
 "Division z = x/y\n"
@@ -4912,7 +4912,7 @@ msgstr ""
 "Division z = x/y\n"
 "----------------\n"
 
-#: src/base/cs_benchmark.c:645
+#: src/base/cs_benchmark.c:638
 msgid ""
 "\n"
 "Division y = 1/x\n"
@@ -4922,7 +4922,7 @@ msgstr ""
 "Division y = 1/x\n"
 "----------------\n"
 
-#: src/base/cs_benchmark.c:666
+#: src/base/cs_benchmark.c:659
 msgid ""
 "\n"
 "Division x <- 1/x\n"
@@ -4932,7 +4932,7 @@ msgstr ""
 "Division x <- 1/x\n"
 "-----------------\n"
 
-#: src/base/cs_benchmark.c:719
+#: src/base/cs_benchmark.c:712
 msgid ""
 "\n"
 "y = sqrt(x)\n"
@@ -4942,7 +4942,7 @@ msgstr ""
 "y = sqrt(x)\n"
 "-----------\n"
 
-#: src/base/cs_benchmark.c:740
+#: src/base/cs_benchmark.c:733
 msgid ""
 "\n"
 "x = sqrt(x)\n"
@@ -4952,7 +4952,7 @@ msgstr ""
 "x = sqrt(x)\n"
 "-----------\n"
 
-#: src/base/cs_benchmark.c:809
+#: src/base/cs_benchmark.c:802
 #, c-format
 msgid ""
 "\n"
@@ -4963,12 +4963,12 @@ msgstr ""
 "Construction / Destruction d'une matrice (%s)\n"
 "----------------------------------------\n"
 
-#: src/base/cs_benchmark.c:813 src/base/cs_benchmark.c:894
+#: src/base/cs_benchmark.c:806 src/base/cs_benchmark.c:887
 #, c-format
 msgid "  (calls: %d)\n"
 msgstr "  (appels : %d)\n"
 
-#: src/base/cs_benchmark.c:890
+#: src/base/cs_benchmark.c:883
 #, c-format
 msgid ""
 "\n"
@@ -4979,7 +4979,7 @@ msgstr ""
 "Affectation de valeurs à une matrice (%s)\n"
 "------------------------------------\n"
 
-#: src/base/cs_benchmark.c:994
+#: src/base/cs_benchmark.c:987
 #, c-format
 msgid ""
 "\n"
@@ -4990,7 +4990,7 @@ msgstr ""
 "Produit matrice.vecteur (%s)\n"
 "-----------------------\n"
 
-#: src/base/cs_benchmark.c:1020
+#: src/base/cs_benchmark.c:1013
 #, c-format
 msgid ""
 "\n"
@@ -5001,7 +5001,7 @@ msgstr ""
 "Produit matrice.vecteur local (%s)\n"
 "-----------------------------\n"
 
-#: src/base/cs_benchmark.c:1050
+#: src/base/cs_benchmark.c:1043
 #, c-format
 msgid ""
 "\n"
@@ -5012,7 +5012,7 @@ msgstr ""
 "Produit matrice.vecteur alpha.A.x + beta.y (%s)\n"
 "------------------------------------------\n"
 
-#: src/base/cs_benchmark.c:1080
+#: src/base/cs_benchmark.c:1073
 #, c-format
 msgid ""
 "\n"
@@ -5023,7 +5023,7 @@ msgstr ""
 "Produit (matrice-diagonale).vecteur (%s)\n"
 "-----------------------------------\n"
 
-#: src/base/cs_benchmark.c:1132
+#: src/base/cs_benchmark.c:1125
 #, c-format
 msgid ""
 "\n"
@@ -5034,7 +5034,7 @@ msgstr ""
 "Produit (matrice sans diagonale).vecteur (%s)\n"
 "----------------------------------------\n"
 
-#: src/base/cs_benchmark.c:1347
+#: src/base/cs_benchmark.c:1340
 msgid ""
 "\n"
 "Matrix.vector product, extradiagonal part, variant 0\n"
@@ -5044,7 +5044,7 @@ msgstr ""
 "Produit matrice.vecteur, partie extradiagonale, variante 0\n"
 "-----------------------\n"
 
-#: src/base/cs_benchmark.c:1372
+#: src/base/cs_benchmark.c:1365
 msgid ""
 "\n"
 "Matrix.vector product, extradiagonal part, variant 1\n"
@@ -5054,7 +5054,7 @@ msgstr ""
 "Produit matrice.vecteur, partie extradiagonale, variante 1\n"
 "-----------------------\n"
 
-#: src/base/cs_benchmark.c:1400
+#: src/base/cs_benchmark.c:1393
 msgid ""
 "\n"
 "Matrix.vector product, face values only\n"
@@ -5064,7 +5064,7 @@ msgstr ""
 "Produit matrice.vecteur, valeurs aux faces uniquement\n"
 "-----------------------\n"
 
-#: src/base/cs_benchmark.c:1483
+#: src/base/cs_benchmark.c:1476
 msgid ""
 "\n"
 "Benchmark mode activated\n"
@@ -5074,29 +5074,29 @@ msgstr ""
 "Activation du mode Benchmark\n"
 "============================\n"
 
-#: src/base/cs_benchmark.c:1525 src/base/cs_benchmark.c:1555
-#: src/base/cs_benchmark.c:1598 src/base/cs_matrix.c:316
+#: src/base/cs_benchmark.c:1518 src/base/cs_benchmark.c:1548
+#: src/base/cs_benchmark.c:1591 src/base/cs_matrix.c:316
 msgid "native"
 msgstr "native"
 
-#: src/base/cs_benchmark.c:1535 src/base/cs_benchmark.c:1571
-#: src/base/cs_benchmark.c:1612 src/base/cs_matrix.c:317
+#: src/base/cs_benchmark.c:1528 src/base/cs_benchmark.c:1564
+#: src/base/cs_benchmark.c:1605 src/base/cs_matrix.c:317
 msgid "CSR"
 msgstr "CSR"
 
-#: src/base/cs_benchmark.c:1543
+#: src/base/cs_benchmark.c:1536
 msgid "CSR sym"
 msgstr "CSR sym"
 
-#: src/base/cs_benchmark.c:1562 src/base/cs_benchmark.c:1605
+#: src/base/cs_benchmark.c:1555 src/base/cs_benchmark.c:1598
 msgid "native, sym coeffs"
 msgstr "native, sym coeffs"
 
-#: src/base/cs_benchmark.c:1578
+#: src/base/cs_benchmark.c:1571
 msgid "CSR, sym coeffs"
 msgstr "CSR, sym coeffs"
 
-#: src/base/cs_benchmark.c:1585 src/base/cs_benchmark.c:1619
+#: src/base/cs_benchmark.c:1578 src/base/cs_benchmark.c:1612
 msgid "CSR_sym"
 msgstr "CSR_sym"
 
@@ -5346,23 +5346,21 @@ msgstr ""
 "  Nombre d'appels :                 %d\n"
 "  Temps écoulé cumulé :             %12.3f\n"
 
-#: src/base/cs_gradient.c:201 src/base/cs_sles.c:275
+#: src/base/cs_gradient.c:200 src/base/cs_sles.c:273
 #, c-format
 msgid ""
 "  Min local total CPU time:         %12.3f\n"
 "  Max local total CPU time:         %12.3f\n"
-"  Total CPU time:                   %12.3f\n"
 msgstr ""
 "  Temps CPU cumulé local min :      %12.3f\n"
 "  Temps CPU cumulé local max :      %12.3f\n"
-"  Temps CPU cumulé total :          %12.3f\n"
 
-#: src/base/cs_gradient.c:211 src/base/cs_sles.c:285
+#: src/base/cs_gradient.c:209 src/base/cs_sles.c:282
 #, c-format
 msgid "  Total CPU time:                   %12.3f\n"
 msgstr "  Temps CPU cumulé :                %12.3f\n"
 
-#: src/base/cs_gradient.c:632
+#: src/base/cs_gradient.c:630
 #, c-format
 msgid ""
 " GRADIENT LIMITATION in %10d cells\n"
@@ -8125,23 +8123,21 @@ msgstr ""
 "  Temps associés (construction, résolution)\n"
 "    écoulé cumulé :                 %12.3f  %12.3f\n"
 
-#: src/base/cs_multigrid.c:359
+#: src/base/cs_multigrid.c:357
 #, c-format
 msgid ""
 "    Min local total CPU time:       %12.3f  %12.3f\n"
 "    Max local total CPU time:       %12.3f  %12.3f\n"
-"    Total CPU time:                 %12.3f  %12.3f\n"
 msgstr ""
-"    CPU cumulé local min :          %12.3f  %12.3f\n"
-"    CPU cumulé local max :          %12.3f  %12.3f\n"
-"    CPU cumulé total :              %12.3f  %12.3f\n"
+"    temps CPU total local min :     %12.3f  %12.3f\n"
+"    temps CPU total local max :     %12.3f  %12.3f\n"
 
-#: src/base/cs_multigrid.c:370
+#: src/base/cs_multigrid.c:366
 #, c-format
 msgid "    Total CPU time:                 %12.3f  %12.3f\n"
 msgstr "    CPU cumulé :                    %12.3f  %12.3f\n"
 
-#: src/base/cs_multigrid.c:746
+#: src/base/cs_multigrid.c:742
 msgid ""
 "  ---------------------------------------------------\n"
 "    n.     | Cumulative iterations | Norm. residual\n"
@@ -8153,23 +8149,23 @@ msgstr ""
 "    cycles | sur maillage fin     | maillage fin\n"
 "  ---------------------------------------------------\n"
 
-#: src/base/cs_multigrid.c:751
+#: src/base/cs_multigrid.c:747
 msgid "  ---------------------------------------------------\n"
 msgstr "  ---------------------------------------------------\n"
 
-#: src/base/cs_multigrid.c:753
+#: src/base/cs_multigrid.c:749
 #, c-format
 msgid "     %4d  |               %6d  |  %12.4e\n"
 msgstr "     %4d  |               %6d  |  %12.4e\n"
 
-#: src/base/cs_multigrid.c:756
+#: src/base/cs_multigrid.c:752
 #, c-format
 msgid ""
 "   N. cycles: %4d; Fine mesh cumulative iter: %5d; Norm. residual %12.4e\n"
 msgstr ""
 "   Nb. cycles : %4d ; Cumul iter maillage fin : %5d ; Residu norme %12.4e\n"
 
-#: src/base/cs_multigrid.c:792
+#: src/base/cs_multigrid.c:788
 #, c-format
 msgid ""
 " @@ Warning: algebraic multigrid for [%s]\n"
@@ -8180,7 +8176,7 @@ msgstr ""
 "    *********\n"
 "    Nombre de cycles maximal (%d) atteint\n"
 
-#: src/base/cs_multigrid.c:947
+#: src/base/cs_multigrid.c:943
 #, c-format
 msgid ""
 "algebraic multigrid [%s]: divergence after %d cycles:\n"
@@ -8189,7 +8185,7 @@ msgstr ""
 "multigrille algébrique [%s] : divergence après %d cycles :\n"
 "  résidu initial : %11.4e ; résidu courant : %11.4e"
 
-#: src/base/cs_multigrid.c:952
+#: src/base/cs_multigrid.c:948
 #, c-format
 msgid ""
 "algebraic multigrid [%s]: divergence after %d cycles\n"
@@ -8200,38 +8196,38 @@ msgstr ""
 "  au cours de la résolution au niveau %d:\n"
 "  résidu initial : %11.4e ; résidu courant : %11.4e"
 
-#: src/base/cs_multigrid.c:1114
+#: src/base/cs_multigrid.c:1110
 msgid "  Multigrid cycle: descent\n"
 msgstr "  Cycle multigrille : descente\n"
 
-#: src/base/cs_multigrid.c:1129 src/base/cs_multigrid.c:1313
+#: src/base/cs_multigrid.c:1125 src/base/cs_multigrid.c:1309
 #, c-format
 msgid "    level %3d: smoother\n"
 msgstr "    niveau %3d : lisseur\n"
 
-#: src/base/cs_multigrid.c:1235
+#: src/base/cs_multigrid.c:1231
 msgid "  Resolution on coarsest level\n"
 msgstr "  Résolution sur le niveau le plus grossier\n"
 
-#: src/base/cs_multigrid.c:1282
+#: src/base/cs_multigrid.c:1278
 msgid "  Multigrid cycle: ascent\n"
 msgstr "  Cycle multigrille : remontée\n"
 
-#: src/base/cs_multigrid.c:1450
+#: src/base/cs_multigrid.c:1446
 msgid "Multigrid"
 msgstr "Multigrille"
 
-#: src/base/cs_multigrid.c:1482
+#: src/base/cs_multigrid.c:1478
 #, c-format
 msgid "Multigrid [%s]:\n"
 msgstr "Multigrille [%s]:\n"
 
-#: src/base/cs_multigrid.c:1489
+#: src/base/cs_multigrid.c:1485
 #, c-format
 msgid "Multigrid [%s]: cycle %4d\n"
 msgstr "Multigrille [%s] : cycle %4d\n"
 
-#: src/base/cs_multigrid.c:1645
+#: src/base/cs_multigrid.c:1641
 #, c-format
 msgid ""
 "\n"
@@ -8240,7 +8236,7 @@ msgstr ""
 "\n"
 " Construction de la hiérarchie de grilles pour \"%s\"\n"
 
-#: src/base/cs_multigrid.c:1689
+#: src/base/cs_multigrid.c:1685
 #, c-format
 msgid ""
 " CLMLGA: maximum number of coarse grids (%d)\n"
@@ -8249,7 +8245,7 @@ msgstr ""
 " CLMLGA : nombre de maillages grossiers maximal (%d)\n"
 "          atteint pour \"%s\".\n"
 
-#: src/base/cs_multigrid.c:1700
+#: src/base/cs_multigrid.c:1696
 #, c-format
 msgid ""
 "\n"
@@ -8258,7 +8254,7 @@ msgstr ""
 "\n"
 "   construction de la grille de niveau %2d\n"
 
-#: src/base/cs_multigrid.c:1736
+#: src/base/cs_multigrid.c:1732
 #, c-format
 msgid ""
 "                                  total       min        max\n"
@@ -8269,7 +8265,7 @@ msgstr ""
 "     nombre de cellules : %12llu %10d %10d\n"
 "     nombre de faces :                 %10d %10d\n"
 
-#: src/base/cs_multigrid.c:1745
+#: src/base/cs_multigrid.c:1741
 #, c-format
 msgid ""
 "     number of cells:     %10d\n"
@@ -8278,7 +8274,7 @@ msgstr ""
 "     nombre de cellules : %10d\n"
 "     nombre de faces :    %10d\n"
 
-#: src/base/cs_multigrid.c:1768
+#: src/base/cs_multigrid.c:1764
 #, c-format
 msgid ""
 "   number of coarse grids:           %d\n"
@@ -9179,16 +9175,16 @@ msgstr ""
 "  Nombre d'itérations moyen :       %d\n"
 "  Temps écoulé cumulé :             %12.3f\n"
 
-#: src/base/cs_sles.c:394
+#: src/base/cs_sles.c:391
 msgid "  n_iter     res_abs     res_nor\n"
 msgstr "  n_iter     res_abs     res_nor\n"
 
-#: src/base/cs_sles.c:424 src/base/cs_sles.c:1362
+#: src/base/cs_sles.c:421 src/base/cs_sles.c:1359
 #, c-format
 msgid "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"
 msgstr "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"
 
-#: src/base/cs_sles.c:450
+#: src/base/cs_sles.c:447
 #, c-format
 msgid ""
 "\n"
@@ -9201,11 +9197,11 @@ msgstr ""
 "%s [%s] : divergence après %u itérations :\n"
 "  résidu initial : %11.4e ; résidu courant : %11.4e\n"
 
-#: src/base/cs_sles.c:468
+#: src/base/cs_sles.c:465
 msgid " @@ Warning: non convergence\n"
 msgstr " @@ Attention : non convergence\n"
 
-#: src/base/cs_sles.c:1374
+#: src/base/cs_sles.c:1371
 #, c-format
 msgid ""
 "\n"
@@ -9226,7 +9222,7 @@ msgstr ""
 "\n"
 "    La matrice ne peut plus être considérée come  inversible."
 
-#: src/base/cs_sles.c:1439
+#: src/base/cs_sles.c:1436
 #, c-format
 msgid ""
 "\n"
@@ -9249,12 +9245,12 @@ msgstr ""
 "\n"
 "    La résolution ne progresse plus."
 
-#: src/base/cs_sles.c:1747
+#: src/base/cs_sles.c:1744
 #, c-format
 msgid "%s: error (divergence) solving for %s"
 msgstr ""
 
-#: src/base/cs_sles.c:1862
+#: src/base/cs_sles.c:1859
 #, c-format
 msgid ""
 "%s [%s]:\n"

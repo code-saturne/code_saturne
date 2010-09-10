@@ -163,11 +163,11 @@ _print_overhead(double  wt,
   if (cs_glob_n_ranks == 1)
     bft_printf(_("  Wall clock : %12.5e\n"
                  "  CPU :        %12.5e\n"),
-               wt);
+               wt, cpu);
 
   else {
 
-    double loc_count[2], glob_min[2], glob_max[2], cpu_tot;
+    double loc_count[2], glob_min[2], glob_max[2];
 
     loc_count[0] = wt;
     loc_count[1] = cpu;
@@ -177,8 +177,6 @@ _print_overhead(double  wt,
                   cs_glob_mpi_comm);
     MPI_Allreduce(loc_count, glob_max, 2, MPI_DOUBLE, MPI_MAX,
                   cs_glob_mpi_comm);
-    MPI_Allreduce(&cpu, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
-                  cs_glob_mpi_comm);
 #else
     { /* We should never enter here unless we have an alternative to MPI */
       int i;
@@ -186,15 +184,13 @@ _print_overhead(double  wt,
         glob_min[i] = loc_count[i];
         glob_max[i] = loc_count[i];
       }
-      cpu_tot = cpu;
     }
 #endif
 
-    bft_printf(_("               Min          Max          Total\n"
+    bft_printf(_("               Min          Max\n"
                  "  Wall clock : %12.5e %12.5e\n"
-                 "  CPU :        %12.5e %12.5e %12.5e\n"),
-               glob_min[0], glob_max[0],
-               glob_min[1], glob_max[1], cpu_tot);
+                 "  CPU :        %12.5e %12.5e\n"),
+               glob_min[0], glob_max[0], glob_min[1], glob_max[1]);
   }
 }
 
@@ -227,7 +223,7 @@ _print_stats(long    n_ops,
   else {
 
     long n_ops_min, n_ops_max, n_ops_tot;
-    double loc_count[3], glob_min[3], glob_max[3], cpu_tot, fmg;
+    double loc_count[3], glob_min[3], glob_max[3], fmg;
 
     loc_count[0] = wt;
     loc_count[1] = cpu;
@@ -246,8 +242,6 @@ _print_stats(long    n_ops,
                   cs_glob_mpi_comm);
     MPI_Allreduce(loc_count, glob_max, 3, MPI_DOUBLE, MPI_MAX,
                   cs_glob_mpi_comm);
-    MPI_Allreduce(&cpu, &cpu_tot, 1, MPI_DOUBLE, MPI_SUM,
-                  cs_glob_mpi_comm);
 
 #else
     { /* We should never enter here unless we have an alternative to MPI */
@@ -257,7 +251,6 @@ _print_stats(long    n_ops,
         glob_min[i] = loc_count[i];
         glob_max[i] = loc_count[i];
       }
-      cpu_tot = cpu;
     }
 #endif
 
@@ -268,11 +261,11 @@ _print_stats(long    n_ops,
         (_("               Min          Max          Total\n"
            "  N ops :      %12ld %12ld %12ld\n"
            "  Wall clock : %12.5e %12.5e\n"
-           "  CPU :        %12.5e %12.5e %12.5e\n"
+           "  CPU :        %12.5e %12.5e\n"
            "  GFLOPS :     %12.5e %12.5e %12.5e\n"),
          n_ops_min, n_ops_max, n_ops_tot,
          glob_min[0], glob_max[0],
-         glob_min[1], glob_max[1], cpu_tot,
+         glob_min[1], glob_max[1],
          glob_min[2], glob_max[2], n_ops_tot*fmg);
 
     else
@@ -280,11 +273,11 @@ _print_stats(long    n_ops,
         (_("               Min          Max          Total        Single\n"
            "  N ops :      %12ld %12ld %12ld %12ld\n"
            "  Wall clock : %12.5e %12.5e\n"
-           "  CPU :        %12.5e %12.5e %12.5e\n"
+           "  CPU :        %12.5e %12.5e\n"
            "  GFLOPS :     %12.5e %12.5e %12.5e %12.5e\n"),
          n_ops_min, n_ops_max, n_ops_tot, n_ops_single,
          glob_min[0], glob_max[0],
-         glob_min[1], glob_max[1], cpu_tot,
+         glob_min[1], glob_max[1],
          glob_min[2], glob_max[2], n_ops_tot*fmg, n_ops_single*fmg);
   }
 }
