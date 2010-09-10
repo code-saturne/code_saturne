@@ -1,8 +1,12 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
-  Only print minimal mesh info (as in version 2.0) before and after mesh
-  joining.
+  Migrate private functions _clean_families() and _build_colors() to public
+  functions cs_mesh_clean_families() and cs_mesh_build_colors().
   modified files:
-    src/base/cs_join.c
+    po/fr.po
+    src/apps/cs_solver.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh.h
+    src/base/cs_preprocessor_data.c
 
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Switch to recommended definition method of LOCALEDIR for internationalization.

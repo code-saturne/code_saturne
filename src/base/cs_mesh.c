@@ -1887,10 +1887,7 @@ _print_mesh_info(cs_mesh_t  *mesh)
       (_(" Number of interior faces:                             %d\n"),
        mesh->n_i_faces);
 
-
   bft_printf("\n ----------------------------------------------------------\n");
-
-
 
   if (mesh->n_domains > 1) {
 
@@ -1910,7 +1907,6 @@ _print_mesh_info(cs_mesh_t  *mesh)
     bft_printf
       (_(" Number of boundary faces:                             %d\n"),
        mesh->n_b_faces);
-
 
   bft_printf("\n ----------------------------------------------------------\n");
 
@@ -2460,7 +2456,8 @@ cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
       }
     }
 
-    /* With periodicity, count faces bordering halo once for purely parallel halo */
+    /* With periodicity, count faces bordering halo once for purely parallel
+       halo */
 
     else {
 
@@ -2855,6 +2852,227 @@ cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh)
   }
 
   return n_g_ghost_cells;
+}
+
+/*----------------------------------------------------------------------------
+ * Order family numbers and remove duplicates
+ *
+ * parameters
+ *   mesh <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_clean_families(cs_mesh_t  *mesh)
+{
+  size_t i, j, gc_id, gc_id_prev;
+  int max_val = 0;
+  size_t gc_count = 0;
+  size_t n_gc = mesh->n_families;
+  size_t n_gc_vals = mesh->n_max_family_items;
+  size_t size_tot = n_gc * n_gc_vals;
+  fvm_gnum_t *interlaced = NULL;
+  int *order = NULL, *renum = NULL;
+
+  if (mesh->n_families < 2)
+    return;
+
+  /* Build and order interlaced copy with only positive values */
+
+  BFT_MALLOC(interlaced, size_tot, fvm_gnum_t);
+
+  for (i = 0; i < size_tot; i++) {
+    int val = mesh->family_item[i];
+    if (val > max_val)
+      max_val = val;
+  }
+
+  for (i = 0; i < n_gc; i++) {
+    for (j = 0; j < n_gc_vals; j++) {
+      int val = mesh->family_item[j*n_gc + i];
+      if (val < 0)
+        val = -val + max_val;
+      interlaced[i*n_gc_vals + j] = val;
+    }
+  }
+
+  order = fvm_order_local_s(NULL, interlaced, n_gc_vals, n_gc);
+
+  /* Prepare removal of duplicates and renumbering */
+
+  BFT_MALLOC(renum, n_gc, int);
+
+  gc_id = order[0];
+  gc_id_prev = gc_id;
+  gc_count = 1;
+  renum[gc_id] = 0;
+
+  for (i = 1; i < n_gc; i++) {
+    char is_same = '\1';
+    gc_id = order[i];
+    for (j = 0; j < n_gc_vals; j++) {
+      if (   interlaced[gc_id_prev*n_gc_vals + j]
+          != interlaced[gc_id*n_gc_vals + j])
+        is_same = '\0';
+    }
+    if (is_same != '\1') {
+      gc_id_prev = gc_id;
+      gc_count += 1;
+    }
+    renum[gc_id] = gc_count - 1;
+  }
+
+  /* Update definitions */
+
+  mesh->n_families = gc_count;
+  BFT_REALLOC(mesh->family_item, gc_count*n_gc_vals, cs_int_t);
+
+  for (i = 0; i < n_gc; i++) {
+    gc_id = renum[i];
+    for (j = 0; j < n_gc_vals; j++)
+      mesh->family_item[j*gc_count + gc_id] = interlaced[i*n_gc_vals + j];
+  }
+
+  size_tot = gc_count * n_gc_vals;
+  for (i = 0; i < size_tot; i++) {
+    int val = mesh->family_item[i];
+    if (val > max_val)
+      val = -(val - max_val);
+    mesh->family_item[i] = val;
+  }
+
+  BFT_FREE(interlaced);
+  BFT_FREE(order);
+
+  /* Update references */
+
+  if (mesh->cell_family != NULL) {
+    for (i = 0; i < (size_t)(mesh->n_cells); i++) {
+      int val = mesh->cell_family[i];
+      if (val != 0)
+        mesh->cell_family[i] = renum[val -1] + 1;
+    }
+  }
+
+  if (mesh->i_face_family != NULL) {
+    for (i = 0; i < (size_t)(mesh->n_i_faces); i++) {
+      int val = mesh->i_face_family[i];
+      if (val != 0)
+        mesh->i_face_family[i] = renum[val - 1] + 1;
+    }
+  }
+
+  if (mesh->b_face_family != NULL) {
+    for (i = 0; i < (size_t)(mesh->n_b_faces); i++) {
+      int val = mesh->b_face_family[i];
+      if (val != 0)
+        mesh->b_face_family[i] = renum[val - 1] + 1;
+    }
+  }
+
+  BFT_FREE(renum);
+}
+
+/*----------------------------------------------------------------------------
+ * Add colors to group class descriptions for group names which are
+ * convertible to integers.
+ *
+ * parameters
+ *   mesh <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_build_colors(cs_mesh_t  *mesh)
+{
+  cs_int_t  i, j;
+  int  n_max_family_items = mesh->n_max_family_items;
+  int  n_colors = 0;
+
+  if (mesh->n_groups == 0)
+    return;
+
+  /* Counting pass */
+
+  for (i = 0; i < mesh->n_families; i++) {
+    int n_add = 0;
+    int n_family_colors = 0;
+    int n_null = 0;
+    for (j = 0; j < mesh->n_max_family_items; j++) {
+      int gc_prop = mesh->family_item[mesh->n_families*j + i];
+      if (gc_prop < 0) {
+        int color_id;
+        int group_id = - mesh->family_item[mesh->n_families*j + i] - 1;
+        const char *group_name = mesh->group_lst + mesh->group_idx[group_id] - 1;
+        if (sscanf(group_name, "%d", &color_id) == 1) {
+          n_colors += 1;
+          n_family_colors += 1;
+        }
+      }
+      else if (gc_prop == 0)
+        n_null += 1;
+    }
+    n_add = n_family_colors - n_null;
+    if (n_add > 0)
+      n_max_family_items = CS_MAX(mesh->n_max_family_items + n_add,
+                                  n_max_family_items);
+  }
+
+  /* Update structure */
+
+  if (n_colors > 0) {
+
+    int *family_items = NULL;
+
+    /* Increase maximum number of definitions and pad it necessary */
+
+    if (n_max_family_items > mesh->n_max_family_items) {
+      BFT_REALLOC(mesh->family_item,
+                  mesh->n_families*n_max_family_items,
+                  cs_int_t);
+      for (i = mesh->n_max_family_items;
+           i < n_max_family_items;
+           i++) {
+        for (j = 0; j < mesh->n_families; j++)
+          mesh->family_item[mesh->n_families*i + j] = 0;
+      }
+      mesh->n_max_family_items = n_max_family_items;
+    }
+
+    /* Now insert color numbers before group numbers */
+
+    BFT_MALLOC(family_items, mesh->n_max_family_items, int);
+
+    for (i = 0; i < mesh->n_families; i++) {
+
+      int n_family_items = 0;
+      int n_family_colors = 0;
+
+      for (j = 0; j < mesh->n_max_family_items; j++) {
+        int gc_prop = mesh->family_item[mesh->n_families*j + i];
+        if (gc_prop != 0)
+          family_items[n_family_items++] = gc_prop;
+        if (gc_prop < 0) {
+          int color_id;
+          int group_id = - mesh->family_item[mesh->n_families*j + i] - 1;
+          const char *group_name
+            = mesh->group_lst + mesh->group_idx[group_id] - 1;
+          if (sscanf(group_name, "%d", &color_id) == 1) {
+            mesh->family_item[mesh->n_families*n_family_colors + i] = color_id;
+            n_family_colors += 1;
+          }
+        }
+      }
+
+      if (n_family_colors > 0) {
+        for (j = 0; j < n_family_items; j++)
+          mesh->family_item[mesh->n_families*(n_family_colors+j) + i]
+            = family_items[j];
+      }
+
+    }
+
+    BFT_FREE(family_items);
+
+  }
 }
 
 /*----------------------------------------------------------------------------

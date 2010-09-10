@@ -476,6 +476,27 @@ cs_mesh_sync_var_tens(cs_real_t  *var11,
                       cs_real_t  *var33);
 
 /*----------------------------------------------------------------------------
+ * Order family numbers and remove duplicates
+ *
+ * parameters
+ *   mesh <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_clean_families(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
+ * Add colors to group class descriptions for group names which are
+ * convertible to integers.
+ *
+ * parameters
+ *   mesh <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_build_colors(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
  * Define group classes for a mesh based on its family definitions.
  *
  * parameters:

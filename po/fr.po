@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-10 11:49+0200\n"
+"POT-Creation-Date: 2010-09-10 12:20+0200\n"
 "PO-Revision-Date: 2010-07-29 19:13+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -649,11 +649,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:373
+#: src/apps/cs_solver.c:378
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:388
+#: src/apps/cs_solver.c:392
 #, c-format
 msgid ""
 "\n"
@@ -662,7 +662,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:407
+#: src/apps/cs_solver.c:411
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -670,7 +670,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:429
+#: src/apps/cs_solver.c:433
 #, c-format
 msgid ""
 "\n"
@@ -685,7 +685,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:439
+#: src/apps/cs_solver.c:443
 #, c-format
 msgid ""
 "\n"
@@ -698,7 +698,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:445
+#: src/apps/cs_solver.c:449
 #, c-format
 msgid ""
 "\n"
@@ -713,7 +713,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:515
+#: src/apps/cs_solver.c:519
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -2564,7 +2564,22 @@ msgstr ""
 msgid "  Joining number %d is not defined.\n"
 msgstr "  Le recollement numéro %d n'est pas défini.\n"
 
-#: src/base/cs_join.c:1482
+#: src/base/cs_join.c:1413 src/base/cs_mesh.c:3538
+#, c-format
+msgid ""
+" %s\n"
+"     Number of cells:          %llu\n"
+"     Number of interior faces: %llu\n"
+"     Number of boundary faces: %llu\n"
+"     Number of vertices:       %llu\n"
+msgstr ""
+" %s\n"
+"     Nombre de cellules :       %llu\n"
+"     Nombre de faces internes : %llu\n"
+"     Nombre de faces de bord :  %llu\n"
+"     Nombre de sommets :        %llu\n"
+
+#: src/base/cs_join.c:1506
 #, c-format
 msgid ""
 "\n"
@@ -2577,12 +2592,12 @@ msgstr ""
 "  Recollement numéro %d :\n"
 "\n"
 
-#: src/base/cs_join.c:1488
+#: src/base/cs_join.c:1512
 #, c-format
 msgid "  Periodicity type: %s\n"
 msgstr "  Type de périodicité : %s\n"
 
-#: src/base/cs_join.c:1490
+#: src/base/cs_join.c:1514
 #, c-format
 msgid ""
 "  Transformation matrix:  %12.5g %12.5g %12.5g %12.5g\n"
@@ -2595,12 +2610,12 @@ msgstr ""
 "                               %12.5g %12.5g %12.5g %12.5g\n"
 "\n"
 
-#: src/base/cs_join.c:1498
+#: src/base/cs_join.c:1522
 #, c-format
 msgid "  Selection criteria: \"%s\"\n"
 msgstr "  Critère de sélection : \"%s\"\n"
 
-#: src/base/cs_join.c:1501
+#: src/base/cs_join.c:1525
 #, c-format
 msgid ""
 "\n"
@@ -2615,7 +2630,7 @@ msgstr ""
 "    Angle maximum entre plans de faces recollées :      %8.5f\n"
 "\n"
 
-#: src/base/cs_join.c:1507
+#: src/base/cs_join.c:1531
 #, c-format
 msgid ""
 "  Advanced joining parameters:\n"
@@ -2632,18 +2647,18 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/base/cs_join.c:1528
+#: src/base/cs_join.c:1552
 msgid " Before joining"
 msgstr " Avant recollement"
 
-#: src/base/cs_join.c:1573
+#: src/base/cs_join.c:1597
 #, c-format
 msgid ""
 "\n"
 "  Number of faces to treat locally: %10d\n"
 msgstr ""
 
-#: src/base/cs_join.c:1656
+#: src/base/cs_join.c:1680
 msgid ""
 "\n"
 "Stop joining algorithm: no face selected...\n"
@@ -2651,11 +2666,11 @@ msgstr ""
 "\n"
 "Arrêt du recollement: aucune face sélectionnée...\n"
 
-#: src/base/cs_join.c:1664
+#: src/base/cs_join.c:1688
 msgid " After joining"
 msgstr " Après recollement"
 
-#: src/base/cs_join.c:1671
+#: src/base/cs_join.c:1695
 #, c-format
 msgid ""
 "\n"
@@ -2668,7 +2683,7 @@ msgstr ""
 "    temps écoulé :              %10.3g\n"
 "    temps CPU :                 %10.3g\n"
 
-#: src/base/cs_join.c:1700
+#: src/base/cs_join.c:1724
 #, c-format
 msgid ""
 "\n"
@@ -3869,7 +3884,7 @@ msgstr ""
 msgid " Number of interior faces:                             %d\n"
 msgstr " Nombre de faces internes :                            %d\n"
 
-#: src/base/cs_mesh.c:1903
+#: src/base/cs_mesh.c:1900
 msgid ""
 "\n"
 " Histogram of the number of boundary faces per rank:\n"
@@ -3879,12 +3894,12 @@ msgstr ""
 " Histogramme de la distribution du nombre de faces de bord sur les rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:1911
+#: src/base/cs_mesh.c:1908
 #, c-format
 msgid " Number of boundary faces:                             %d\n"
 msgstr " Nombre de faces de bord :                             %d\n"
 
-#: src/base/cs_mesh.c:1932
+#: src/base/cs_mesh.c:1928
 msgid ""
 "\n"
 " Histogram of the number of neighboring domains per rank:\n"
@@ -3895,7 +3910,7 @@ msgstr ""
 "rangs :\n"
 "\n"
 
-#: src/base/cs_mesh.c:2541
+#: src/base/cs_mesh.c:2538
 msgid ""
 "\n"
 " Global definition of the number of elements (cells, vertices, faces...)\n"
@@ -3903,7 +3918,7 @@ msgstr ""
 "\n"
 " Définition globale du nombre d'éléments (cellules, sommets, faces...)\n"
 
-#: src/base/cs_mesh.c:2632
+#: src/base/cs_mesh.c:2629
 msgid ""
 "\n"
 " Halo construction with extended neighborhood\n"
@@ -3915,11 +3930,11 @@ msgstr ""
 " ==========================================\n"
 "\n"
 
-#: src/base/cs_mesh.c:2638
+#: src/base/cs_mesh.c:2635
 msgid " Composing periodicities\n"
 msgstr " Composition des périodicités\n"
 
-#: src/base/cs_mesh.c:2645
+#: src/base/cs_mesh.c:2642
 msgid ""
 "\n"
 " Halo construction with standard neighborhood\n"
@@ -3931,31 +3946,31 @@ msgstr ""
 " ============================================\n"
 "\n"
 
-#: src/base/cs_mesh.c:2659
+#: src/base/cs_mesh.c:2656
 msgid " Face interfaces creation\n"
 msgstr " Création de l'interface entre faces\n"
 
-#: src/base/cs_mesh.c:2710
+#: src/base/cs_mesh.c:2707
 msgid " Definition of periodic vertices\n"
 msgstr " Définition des sommets périodiques\n"
 
-#: src/base/cs_mesh.c:2731
+#: src/base/cs_mesh.c:2728
 msgid " Vertex interfaces creation\n"
 msgstr " Création de l'interface entre sommets\n"
 
-#: src/base/cs_mesh.c:2764
+#: src/base/cs_mesh.c:2761
 msgid " Halo creation\n"
 msgstr " Création des halos\n"
 
-#: src/base/cs_mesh.c:2769
+#: src/base/cs_mesh.c:2766
 msgid " Halo definition\n"
 msgstr " Définition des halos\n"
 
-#: src/base/cs_mesh.c:2795
+#: src/base/cs_mesh.c:2792
 msgid " Extended neighborhood structures definition\n"
 msgstr " Définition des structures pour le voisinage étendu\n"
 
-#: src/base/cs_mesh.c:2822
+#: src/base/cs_mesh.c:2819
 #, c-format
 msgid ""
 "\n"
@@ -3964,7 +3979,7 @@ msgstr ""
 "\n"
 " Création de la connectivité étendue (%.3g s)\n"
 
-#: src/base/cs_mesh.c:3310
+#: src/base/cs_mesh.c:3528
 #, c-format
 msgid ""
 "\n"
@@ -3978,21 +3993,6 @@ msgstr ""
 "                       X : %14.7e %14.7e\n"
 "                       Y : %14.7e %14.7e\n"
 "                       Z : %14.7e %14.7e\n"
-
-#: src/base/cs_mesh.c:3320
-#, c-format
-msgid ""
-" %s\n"
-"     Number of cells:          %llu\n"
-"     Number of interior faces: %llu\n"
-"     Number of boundary faces: %llu\n"
-"     Number of vertices:       %llu\n"
-msgstr ""
-" %s\n"
-"     Nombre de cellules :       %llu\n"
-"     Nombre de faces internes : %llu\n"
-"     Nombre de faces de bord :  %llu\n"
-"     Nombre de sommets :        %llu\n"
 
 #: src/base/cs_mesh_coherency.c:104
 msgid "    Checking the face -> cells connectivity coherency\n"
@@ -4993,7 +4993,7 @@ msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendue."
 
-#: src/base/cs_preprocessor_data.c:4025
+#: src/base/cs_preprocessor_data.c:3804
 #, c-format
 msgid ""
 "The algorithm selection indicator for domain partitioning\n"

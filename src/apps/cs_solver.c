@@ -368,13 +368,17 @@ cs_run(void)
 
   cs_mesh_builder_destroy(&cs_glob_mesh_builder);
 
+  /* Initialize group classes and insert colors if possible */
+
+  cs_mesh_build_colors(cs_glob_mesh);
+  cs_mesh_init_group_classes(cs_glob_mesh);
+
   /* Print info on mesh */
 
   cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
 
   /* Initialize meshes for the main post-processing */
 
-  cs_mesh_init_group_classes(cs_glob_mesh);
   cs_post_init_main_meshes();
 
   /* Compute geometric quantities related to the mesh */
