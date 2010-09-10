@@ -2429,7 +2429,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
 
   do {   /* Loop on sections with equivalent MED element type */
 
-    fvm_lnum_t  n_l_faces_section = 0, n_l_connect_section = 0;
+    fvm_gnum_t  n_l_faces_section = 0, n_l_connect_section = 0;
     fvm_gnum_t  n_g_faces_section = 0, n_g_connect_section = 0;
 
     fvm_lnum_t *_face_lengths = NULL;
@@ -2447,7 +2447,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
     MPI_Allreduce(&n_l_faces_section,
                   &n_g_faces_section,
                   1,
-                  FVM_MPI_LNUM,
+                  FVM_MPI_GNUM,
                   MPI_SUM,
                   writer->comm);
 
@@ -2520,7 +2520,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
     MPI_Allreduce(&n_l_connect_section,
                   &n_g_connect_section,
                   1,
-                  FVM_MPI_LNUM,
+                  FVM_MPI_GNUM,
                   MPI_SUM,
                   writer->comm);
 
@@ -2648,7 +2648,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
     med_export_faces_index = (med_int *)fvm_global_cell_lengths;
     _convert_fvm_gnum_to_med_int(fvm_global_cell_lengths,
                                  med_export_faces_index,
-                                 n_export_elements);
+                                 n_export_elements + 1);
 
     /* Create MED faces -> vertices index from fvm_global_face_lengths. */
 

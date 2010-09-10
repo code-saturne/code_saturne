@@ -1,3 +1,8 @@
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct MED export of polyhedra in parallel when using --enable-long-gnum.
+  modified file:
+    src/fvm/fvm_to_med.c
+
 * 07/09/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Change the order of config files when inquiring them in order to let the
   user change the defaults settings.
