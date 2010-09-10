@@ -1,4 +1,9 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update list of files with translations.
+  modified files:
+    po/POTFILES.in
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Update French dictionnary and improve some messages.
   modified files:
     po/fr.po
