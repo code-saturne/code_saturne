@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-10 15:51+0200\n"
+"POT-Creation-Date: 2010-09-10 15:57+0200\n"
 "PO-Revision-Date: 2010-09-10 14:53+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -19,46 +19,46 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: preprocessor/appli/ecs_cmd.c:386 preprocessor/appli/ecs_cmd.c:389
+#: preprocessor/appli/ecs_cmd.c:267 preprocessor/appli/ecs_cmd.c:270
 msgid "ECS   version"
 msgstr "ECS   version"
 
-#: preprocessor/appli/ecs_cmd.c:395
+#: preprocessor/appli/ecs_cmd.c:276
 #, c-format
 msgid "  STAR-CCM+ file format support\n"
 msgstr "  Support du format de fichiers STAR-CCM+\n"
 
-#: preprocessor/appli/ecs_cmd.c:405
+#: preprocessor/appli/ecs_cmd.c:286
 #, c-format
 msgid "  CGNS %d.%d.%d file format support\n"
 msgstr "  Support du format de fichiers CGNS %d.%d.%d\n"
 
-#: preprocessor/appli/ecs_cmd.c:408 preprocessor/appli/ecs_cmd.c:410
+#: preprocessor/appli/ecs_cmd.c:289 preprocessor/appli/ecs_cmd.c:291
 #, c-format
 msgid "  CGNS %d.%d file format support\n"
 msgstr "  Support du format de fichiers CGNS %d.%d\n"
 
-#: preprocessor/appli/ecs_cmd.c:420
+#: preprocessor/appli/ecs_cmd.c:301
 #, c-format
 msgid "  MED %d.%d (HDF5 %d.%d.%d) file format support\n"
 msgstr "  Support du format de fichiers MED %d.%d (HDF5 %d.%d.%d)\n"
 
-#: preprocessor/appli/ecs_cmd.c:425
+#: preprocessor/appli/ecs_cmd.c:306
 #, c-format
 msgid "  MED %d.%d.%d (HDF5 %d.%d.%d) file format support\n"
 msgstr "  Support du format de fichiers MED %d.%d.%d (HDF5 %d.%d.%d)\n"
 
-#: preprocessor/appli/ecs_cmd.c:433
+#: preprocessor/appli/ecs_cmd.c:314
 #, c-format
 msgid "  Reading of compressed files ('.gz') with Zlib %s\n"
 msgstr "  Lecture de fichiers compressés ('.gz') avec Zlib %s\n"
 
-#: preprocessor/appli/ecs_cmd.c:437
+#: preprocessor/appli/ecs_cmd.c:318
 #, c-format
 msgid "    (compiled with Zlib %s)\n"
 msgstr ""
 
-#: preprocessor/appli/ecs_cmd.c:477
+#: preprocessor/appli/ecs_cmd.c:358
 #, c-format
 msgid ""
 "\n"
@@ -77,7 +77,7 @@ msgstr ""
 "  |                                |\n"
 "  `--------------------------------'\n"
 
-#: preprocessor/appli/ecs_cmd.c:522
+#: preprocessor/appli/ecs_cmd.c:403
 #, c-format
 msgid ""
 "\n"
@@ -88,16 +88,16 @@ msgstr ""
 "\n"
 "USAGE:"
 
-#: preprocessor/appli/ecs_cmd.c:527
+#: preprocessor/appli/ecs_cmd.c:408
 #, c-format
 msgid "  %s [<options>]"
 msgstr "  %s [<options>]"
 
-#: preprocessor/appli/ecs_cmd.c:530
+#: preprocessor/appli/ecs_cmd.c:411
 msgid "file"
 msgstr "fichier"
 
-#: preprocessor/appli/ecs_cmd.c:536
+#: preprocessor/appli/ecs_cmd.c:417
 #, c-format
 msgid ""
 "\n"
@@ -112,36 +112,35 @@ msgstr ""
 "avec :\n"
 "\n"
 
-#: preprocessor/appli/ecs_cmd.c:539 preprocessor/appli/ecs_cmd.c:544
+#: preprocessor/appli/ecs_cmd.c:420 preprocessor/appli/ecs_cmd.c:425
 msgid "<file> [...]"
 msgstr "<fichier> [...]"
 
-#: preprocessor/appli/ecs_cmd.c:540
+#: preprocessor/appli/ecs_cmd.c:421
 msgid ": Preprocessor input mesh file"
 msgstr ": fichier de maillage en entrée du Préprocesseur"
 
-#: preprocessor/appli/ecs_cmd.c:541
+#: preprocessor/appli/ecs_cmd.c:422
 msgid "  (mesh file format determined"
 msgstr "  (format du fichier de maillage déterminé"
 
-#: preprocessor/appli/ecs_cmd.c:542
+#: preprocessor/appli/ecs_cmd.c:423
 msgid "   automatically by filename extension"
 msgstr "   automatiquement par l'extension du fichier"
 
-#: preprocessor/appli/ecs_cmd.c:543
-msgid "   or forced by \"-format\" sub-option)"
-msgstr "   ou forcé par sous-option \"-format\")"
+#: preprocessor/appli/ecs_cmd.c:424
+msgid "   or forced by \"--format\" sub-option)"
+msgstr "   ou forcé par sous-option \"--format\")"
 
-#: preprocessor/appli/ecs_cmd.c:544 preprocessor/appli/ecs_cmd.c:551
-#: preprocessor/appli/ecs_cmd.c:574 preprocessor/appli/ecs_cmd.c:585
+#: preprocessor/appli/ecs_cmd.c:425 preprocessor/appli/ecs_cmd.c:454
 msgid ": same"
 msgstr ": idem"
 
-#: preprocessor/appli/ecs_cmd.c:550
+#: preprocessor/appli/ecs_cmd.c:431
 msgid ": simulate messages without file output"
 msgstr ": simulation de messages sans envoi réel"
 
-#: preprocessor/appli/ecs_cmd.c:560
+#: preprocessor/appli/ecs_cmd.c:440
 #, c-format
 msgid ""
 "\n"
@@ -152,57 +151,48 @@ msgstr ""
 "options générales :\n"
 "\n"
 
-#: preprocessor/appli/ecs_cmd.c:565
+#: preprocessor/appli/ecs_cmd.c:445
 msgid "<directory>"
 msgstr "<répertoire>"
 
-#: preprocessor/appli/ecs_cmd.c:565
+#: preprocessor/appli/ecs_cmd.c:445
 msgid ": working directory"
 msgstr ": répertoire d'exécution du cas"
 
-#: preprocessor/appli/ecs_cmd.c:566
+#: preprocessor/appli/ecs_cmd.c:446
 msgid "  (if different from current directory !)"
 msgstr "  (si différent du répertoire courant !)"
 
-#: preprocessor/appli/ecs_cmd.c:573
+#: preprocessor/appli/ecs_cmd.c:453
 msgid ": this help message"
 msgstr ": ce message d'aide"
 
-#: preprocessor/appli/ecs_cmd.c:580 preprocessor/appli/ecs_cmd.c:585
-#: preprocessor/appli/ecs_cmd.c:591
+#: preprocessor/appli/ecs_cmd.c:460
 msgid "[<file>]"
 msgstr "[<fichier>]"
 
-#: preprocessor/appli/ecs_cmd.c:581
-msgid ": command line completed by a file"
-msgstr ": ligne de commande complétée par un fichier"
-
-#: preprocessor/appli/ecs_cmd.c:583
-msgid "  (default file: standard input)"
-msgstr "  (fichier par défaut : entrée standard)"
-
-#: preprocessor/appli/ecs_cmd.c:592
+#: preprocessor/appli/ecs_cmd.c:461
 msgid ": redirect terminal output to a file"
 msgstr ": redirection des impressions dans un fichier"
 
-#: preprocessor/appli/ecs_cmd.c:594
+#: preprocessor/appli/ecs_cmd.c:463
 #, c-format
 msgid "  (default file: \"%s\")"
 msgstr "  (fichier par défaut  : \"%s\")"
 
-#: preprocessor/appli/ecs_cmd.c:602
+#: preprocessor/appli/ecs_cmd.c:471
 msgid ": if necessary, correct orientation of"
 msgstr ": correction si nécessaire de l'orientation des"
 
-#: preprocessor/appli/ecs_cmd.c:603
+#: preprocessor/appli/ecs_cmd.c:472
 msgid "  cells and faces"
 msgstr "  cellules et faces"
 
-#: preprocessor/appli/ecs_cmd.c:610
+#: preprocessor/appli/ecs_cmd.c:479
 msgid ": print version number"
 msgstr ": affichage du numéro de version"
 
-#: preprocessor/appli/ecs_cmd.c:616
+#: preprocessor/appli/ecs_cmd.c:485
 #, c-format
 msgid ""
 "\n"
@@ -215,31 +205,31 @@ msgstr ""
 "options de POST-TRAITEMENT :\n"
 "\n"
 
-#: preprocessor/appli/ecs_cmd.c:620
+#: preprocessor/appli/ecs_cmd.c:489
 msgid "<name>"
 msgstr "<nom>"
 
-#: preprocessor/appli/ecs_cmd.c:621
+#: preprocessor/appli/ecs_cmd.c:490
 msgid ": case name (without this option,"
 msgstr ": nom du cas (en l'absence de cette option,"
 
-#: preprocessor/appli/ecs_cmd.c:624
+#: preprocessor/appli/ecs_cmd.c:493
 #, c-format
 msgid "  the default name is: \"%s\""
 msgstr "  le nom du par défaut est : \"%s\""
 
-#: preprocessor/appli/ecs_cmd.c:633 preprocessor/appli/ecs_cmd.c:642
-#: preprocessor/appli/ecs_cmd.c:651
+#: preprocessor/appli/ecs_cmd.c:502 preprocessor/appli/ecs_cmd.c:511
+#: preprocessor/appli/ecs_cmd.c:520
 #, c-format
 msgid ": %s geometry output"
 msgstr ": sortie de la géometrie au format %s"
 
-#: preprocessor/appli/ecs_cmd.c:634 preprocessor/appli/ecs_cmd.c:643
-#: preprocessor/appli/ecs_cmd.c:652
+#: preprocessor/appli/ecs_cmd.c:503 preprocessor/appli/ecs_cmd.c:512
+#: preprocessor/appli/ecs_cmd.c:521
 msgid "[<sub-options>]"
 msgstr "[<sous-options>]"
 
-#: preprocessor/appli/ecs_cmd.c:660
+#: preprocessor/appli/ecs_cmd.c:529
 #, c-format
 msgid ""
 "\n"
@@ -254,44 +244,44 @@ msgstr ""
 " (-m, --mesh) :\n"
 "\n"
 
-#: preprocessor/appli/ecs_cmd.c:664 preprocessor/appli/ecs_cmd.c:673
-#: preprocessor/appli/ecs_cmd.c:681
+#: preprocessor/appli/ecs_cmd.c:533 preprocessor/appli/ecs_cmd.c:542
+#: preprocessor/appli/ecs_cmd.c:550
 msgid "<keyword>"
 msgstr "<mot clé>"
 
-#: preprocessor/appli/ecs_cmd.c:665
+#: preprocessor/appli/ecs_cmd.c:534
 msgid ": selection of mesh file format"
 msgstr ": sélection du format du fichier de maillage"
 
-#: preprocessor/appli/ecs_cmd.c:669
+#: preprocessor/appli/ecs_cmd.c:538
 msgid ": selection of mesh number in file"
 msgstr ": sélection du numéro de maillage dans le"
 
-#: preprocessor/appli/ecs_cmd.c:671
+#: preprocessor/appli/ecs_cmd.c:540
 msgid "  (if the format allows it)"
 msgstr "  fichier (si le format le permet)"
 
-#: preprocessor/appli/ecs_cmd.c:674
+#: preprocessor/appli/ecs_cmd.c:543
 msgid ": add groups of cells"
 msgstr ": ajoute des groupes de cellules"
 
-#: preprocessor/appli/ecs_cmd.c:675 preprocessor/appli/ecs_cmd.c:683
+#: preprocessor/appli/ecs_cmd.c:544 preprocessor/appli/ecs_cmd.c:552
 msgid "   * based on sections: keyword \""
 msgstr "   * selon les sections : mot clé \""
 
-#: preprocessor/appli/ecs_cmd.c:677 preprocessor/appli/ecs_cmd.c:685
+#: preprocessor/appli/ecs_cmd.c:546 preprocessor/appli/ecs_cmd.c:554
 msgid "   * based on zones:    keyword \""
 msgstr "   * selon les zones    : mot clé \""
 
-#: preprocessor/appli/ecs_cmd.c:679 preprocessor/appli/ecs_cmd.c:687
+#: preprocessor/appli/ecs_cmd.c:548 preprocessor/appli/ecs_cmd.c:556
 msgid "  (based on format features/conventions)"
 msgstr "  (selon possibilités/conventions du format)"
 
-#: preprocessor/appli/ecs_cmd.c:682
+#: preprocessor/appli/ecs_cmd.c:551
 msgid ": add groups of faces"
 msgstr ": ajoute des groupes de faces"
 
-#: preprocessor/appli/ecs_cmd.c:690
+#: preprocessor/appli/ecs_cmd.c:559
 #, c-format
 msgid ""
 "\n"
@@ -304,12 +294,12 @@ msgstr ""
 "formats de maillage disponibles\n"
 " (-m, --mesh; -format):\n"
 
-#: preprocessor/appli/ecs_cmd.c:692
+#: preprocessor/appli/ecs_cmd.c:561
 #, c-format
 msgid "                                  extension:    keyword:\n"
 msgstr "                                  extension :   mot-clé :\n"
 
-#: preprocessor/appli/ecs_cmd.c:715
+#: preprocessor/appli/ecs_cmd.c:584
 #, c-format
 msgid ""
 "\n"
@@ -324,40 +314,40 @@ msgstr ""
 " (%s) :\n"
 "\n"
 
-#: preprocessor/appli/ecs_cmd.c:720
+#: preprocessor/appli/ecs_cmd.c:589
 msgid ": discard polygonal faces (with more"
 msgstr ": supprime les faces polygonales (à plus"
 
-#: preprocessor/appli/ecs_cmd.c:721
+#: preprocessor/appli/ecs_cmd.c:590
 msgid "  than 4 edges) or polyhedra"
 msgstr "  de 4 arêtes) ou les polyèdres"
 
-#: preprocessor/appli/ecs_cmd.c:726
+#: preprocessor/appli/ecs_cmd.c:595
 msgid ": force text output (EnSight)"
 msgstr ": force l'écriture texte (EnSight)"
 
-#: preprocessor/appli/ecs_cmd.c:729
+#: preprocessor/appli/ecs_cmd.c:598
 msgid ": force binary output to big-endian (EnSight)"
 msgstr ": écriture big-endian si binaire (EnSight)"
 
-#: preprocessor/appli/ecs_cmd.c:734
+#: preprocessor/appli/ecs_cmd.c:603
 msgid ": activate output of main mesh"
 msgstr ": active l'écriture du maillage principal"
 
-#: preprocessor/appli/ecs_cmd.c:735 preprocessor/appli/ecs_cmd.c:741
+#: preprocessor/appli/ecs_cmd.c:604 preprocessor/appli/ecs_cmd.c:610
 #, c-format
 msgid "  (by default if %s not given)"
 msgstr "  (par défaut si %s non précisé)"
 
-#: preprocessor/appli/ecs_cmd.c:740
+#: preprocessor/appli/ecs_cmd.c:609
 msgid ": activate output of information meshes"
 msgstr ": active l'écriture des maillages d'information"
 
-#: preprocessor/appli/ecs_cmd.c:749
+#: preprocessor/appli/ecs_cmd.c:618
 msgid "Environment variables"
 msgstr "Variables d'environnement"
 
-#: preprocessor/appli/ecs_cmd.c:751
+#: preprocessor/appli/ecs_cmd.c:620
 #, c-format
 msgid ""
 "  CS_PREPROCESS_MIN_EDGE_LEN    : length under which an edge is considered\n"
@@ -370,7 +360,7 @@ msgstr ""
 "e-15)\n"
 "\n"
 
-#: preprocessor/appli/ecs_cmd.c:756
+#: preprocessor/appli/ecs_cmd.c:625
 #, c-format
 msgid ""
 "  CS_PREPROCESS_MEM_LOG         : name of memory operations trace file\n"
@@ -379,7 +369,7 @@ msgstr ""
 "  CS_PREPROCESS_MEM_LOG         : nom du fichier de trace mémoire\n"
 "\n"
 
-#: preprocessor/appli/ecs_cmd.c:759
+#: preprocessor/appli/ecs_cmd.c:628
 #, c-format
 msgid ""
 "  CS_PREPROCESS_IGNORE_IDEAS_COO_SYS : ignore I-deas coordinate systems\n"
@@ -389,7 +379,7 @@ msgstr ""
 "deas\n"
 "\n"
 
-#: preprocessor/appli/ecs_cmd.c:780
+#: preprocessor/appli/ecs_cmd.c:649
 #, c-format
 msgid ""
 "Error in command line specification.\n"
@@ -400,7 +390,7 @@ msgstr ""
 "\n"
 "La même option \"%s\" est mentionnée au moins 2 fois."
 
-#: preprocessor/appli/ecs_cmd.c:801
+#: preprocessor/appli/ecs_cmd.c:670
 #, c-format
 msgid ""
 "Error in command line specification.\n"
@@ -411,7 +401,7 @@ msgstr ""
 "\n"
 "L'option \"%s\" nécessite un argument."
 
-#: preprocessor/appli/ecs_cmd.c:833
+#: preprocessor/appli/ecs_cmd.c:702
 #, c-format
 msgid ""
 "Error in command line specification.\n"
@@ -422,7 +412,7 @@ msgstr ""
 "\n"
 "Le mot clé \"%s\" de l'option \"%s\" n'est pas reconnu.\n"
 
-#: preprocessor/appli/ecs_cmd.c:1235
+#: preprocessor/appli/ecs_cmd.c:1104
 msgid ""
 "Case configuration\n"
 "------------------\n"
@@ -430,59 +420,59 @@ msgstr ""
 "Configuration du cas\n"
 "--------------------\n"
 
-#: preprocessor/appli/ecs_cmd.c:1240
+#: preprocessor/appli/ecs_cmd.c:1109
 msgid "Date"
 msgstr ""
 
-#: preprocessor/appli/ecs_cmd.c:1246
+#: preprocessor/appli/ecs_cmd.c:1115
 msgid "System"
 msgstr "Système"
 
-#: preprocessor/appli/ecs_cmd.c:1252
+#: preprocessor/appli/ecs_cmd.c:1121
 msgid "Machine"
 msgstr ""
 
-#: preprocessor/appli/ecs_cmd.c:1257
+#: preprocessor/appli/ecs_cmd.c:1126
 msgid "Processor"
 msgstr "Processeur"
 
-#: preprocessor/appli/ecs_cmd.c:1262
+#: preprocessor/appli/ecs_cmd.c:1131
 msgid "Memory"
 msgstr "Mémoire"
 
-#: preprocessor/appli/ecs_cmd.c:1268
+#: preprocessor/appli/ecs_cmd.c:1137
 msgid "User"
 msgstr "Utilisateur"
 
-#: preprocessor/appli/ecs_cmd.c:1274
+#: preprocessor/appli/ecs_cmd.c:1143
 msgid "Directory"
 msgstr "Répertoire"
 
-#: preprocessor/appli/ecs_cmd.c:1281
+#: preprocessor/appli/ecs_cmd.c:1150
 msgid "Case name"
 msgstr "Nom du cas"
 
-#: preprocessor/appli/ecs_cmd.c:1285
+#: preprocessor/appli/ecs_cmd.c:1154
 msgid "Mesh file"
 msgstr "Fichier de maillage"
 
-#: preprocessor/appli/ecs_cmd.c:1308
+#: preprocessor/appli/ecs_cmd.c:1177
 msgid "The file does not exist."
 msgstr "Le fichier n'existe pas."
 
-#: preprocessor/appli/ecs_cmd.c:1315
+#: preprocessor/appli/ecs_cmd.c:1184
 msgid "Read permission on this file is refused."
 msgstr "La permission de lecture sur le fichier est refusée."
 
-#: preprocessor/appli/ecs_cmd.c:1322
+#: preprocessor/appli/ecs_cmd.c:1191
 msgid "The filename is too long (system limit)."
 msgstr "Le nom du fichier est trop long (limitation système)."
 
-#: preprocessor/appli/ecs_cmd.c:1356
+#: preprocessor/appli/ecs_cmd.c:1225
 msgid "The file is not a regular file."
 msgstr "Le fichier n'est pas un fichier régulier."
 
-#: preprocessor/appli/ecs_cmd.c:1470
+#: preprocessor/appli/ecs_cmd.c:1339
 #, c-format
 msgid ""
 "Failed to switch to directory :\n"
@@ -491,7 +481,7 @@ msgstr ""
 "Impossible de se placer dans le répertoire :\n"
 "%s"
 
-#: preprocessor/appli/ecs_cmd.c:1484
+#: preprocessor/appli/ecs_cmd.c:1353
 #, c-format
 msgid ""
 "Error in command line specification.\n"
@@ -502,7 +492,7 @@ msgstr ""
 "\n"
 "L'option \"%s\" n'est pas disponible."
 
-#: preprocessor/appli/ecs_cmd.c:1622 src/base/cs_base.c:1767
+#: preprocessor/appli/ecs_cmd.c:1470 src/base/cs_base.c:1767
 #, c-format
 msgid ""
 "It is impossible to redirect the standard output to file:\n"
@@ -511,12 +501,12 @@ msgstr ""
 "Il est impossible de rediriger les sorties standard dans le fichier :\n"
 "%s"
 
-#: preprocessor/appli/ecs_cmd.c:1645
+#: preprocessor/appli/ecs_cmd.c:1493
 #, c-format
 msgid "Option \"%s\" is not recognized.\n"
 msgstr "L'option \"%s\" n'est pas reconnue.\n"
 
-#: preprocessor/appli/ecs_cmd.c:1697
+#: preprocessor/appli/ecs_cmd.c:1545
 #, c-format
 msgid ""
 "Error in command line specification.\n"
@@ -529,7 +519,7 @@ msgstr ""
 "L'option \"%s\" doit être obligatoirement renseignée.\n"
 "La spécification du nom du fichier de maillage en entrée est nécessaire."
 
-#: preprocessor/appli/ecs_cmd.c:1712
+#: preprocessor/appli/ecs_cmd.c:1560
 #, c-format
 msgid ""
 "Mesh file \"%s\" is not accessible.\n"
@@ -538,27 +528,27 @@ msgstr ""
 "Le fichier de maillage \"%s\" n'est pas accessible.\n"
 "%s"
 
-#: preprocessor/appli/ecs_main.c:133
+#: preprocessor/appli/ecs_main.c:131
 #, c-format
 msgid "  Theoretical mesh size:       %15.3f %cb\n"
 msgstr "  Taille maillage théorique  : %15.3f %co\n"
 
-#: preprocessor/appli/ecs_main.c:141
+#: preprocessor/appli/ecs_main.c:139
 #, c-format
 msgid "  Theoretical current memory:  %15.3f %cb\n"
 msgstr "  Mémoire courante théorique : %15.3f %co\n"
 
-#: preprocessor/appli/ecs_main.c:149
+#: preprocessor/appli/ecs_main.c:147
 #, c-format
 msgid "  Theoretical peak memory:     %15.3f %cb\n"
 msgstr "  Pic mémoire théorique :      %15.3f %co\n"
 
-#: preprocessor/appli/ecs_main.c:161
+#: preprocessor/appli/ecs_main.c:159
 #, c-format
 msgid "  Total memory used:           %15.3f %cb\n"
 msgstr "  Mémoire totale consommée :   %15.3f %co\n"
 
-#: preprocessor/appli/ecs_main.c:239
+#: preprocessor/appli/ecs_main.c:232
 #, c-format
 msgid ""
 "\n"
@@ -569,7 +559,7 @@ msgstr ""
 "Fin lecture maillage\n"
 "--------------------\n"
 
-#: preprocessor/appli/ecs_main.c:242
+#: preprocessor/appli/ecs_main.c:235
 #, c-format
 msgid ""
 "\n"
@@ -580,7 +570,7 @@ msgstr ""
 "Fin lecture et concaténation des maillages\n"
 "------------------------------------------\n"
 
-#: preprocessor/appli/ecs_main.c:375
+#: preprocessor/appli/ecs_main.c:368
 #, c-format
 msgid ""
 "\n"
@@ -595,27 +585,27 @@ msgstr ""
 "----------------------\n"
 "\n"
 
-#: preprocessor/appli/ecs_main.c:391
+#: preprocessor/appli/ecs_main.c:384
 msgid "User CPU time                       (sec)"
 msgstr "Temps CPU utilisateur               (sec)"
 
-#: preprocessor/appli/ecs_main.c:398
+#: preprocessor/appli/ecs_main.c:391
 msgid "System CPU time                     (sec)"
 msgstr "Temps CPU système                   (sec)"
 
-#: preprocessor/appli/ecs_main.c:408
+#: preprocessor/appli/ecs_main.c:401
 msgid "Total CPU time                      (sec)"
 msgstr "Temps CPU total                     (sec)"
 
-#: preprocessor/appli/ecs_main.c:422
+#: preprocessor/appli/ecs_main.c:415
 msgid "Total time                          (sec)"
 msgstr "Temps     total                     (sec)"
 
-#: preprocessor/appli/ecs_main.c:431
+#: preprocessor/appli/ecs_main.c:424
 msgid "Total CPU time / Total time              "
 msgstr "Temps CPU total / Temps total            "
 
-#: preprocessor/appli/ecs_main.c:501
+#: preprocessor/appli/ecs_main.c:494
 #, c-format
 msgid ""
 "This program was built with type \"ecs_int_32_t\"\n"
@@ -624,7 +614,7 @@ msgstr ""
 "Ce Programme a été compilé avec un type \"ecs_int_32_t\"\n"
 "de longueur %d octets au lieu de 4. (Erreur de portage)\n"
 
-#: preprocessor/appli/ecs_main.c:519 preprocessor/pre-post/ecs_post_cgns.c:301
+#: preprocessor/appli/ecs_main.c:512 preprocessor/pre-post/ecs_post_cgns.c:301
 #: preprocessor/pre-post/ecs_post_ens.c:424
 #: preprocessor/pre-post/ecs_post_ens.c:587
 #: preprocessor/pre-post/ecs_post_ens.c:681
@@ -632,19 +622,19 @@ msgstr ""
 msgid "Creating file:"
 msgstr "Création du fichier :"
 
-#: preprocessor/appli/ecs_main.c:568 preprocessor/base/ecs_maillage.c:1899
+#: preprocessor/appli/ecs_main.c:561 preprocessor/base/ecs_maillage.c:1898
 msgid "Fluid Domain"
 msgstr "Domaine fluide"
 
-#: preprocessor/appli/ecs_main.c:576
+#: preprocessor/appli/ecs_main.c:569
 msgid "Orientation Error"
 msgstr "Erreur orientation"
 
-#: preprocessor/appli/ecs_main.c:582
+#: preprocessor/appli/ecs_main.c:575
 msgid "Orientation Corrected"
 msgstr "Correction orientation"
 
-#: preprocessor/appli/ecs_main.c:617
+#: preprocessor/appli/ecs_main.c:610
 #, c-format
 msgid ""
 "\n"
@@ -655,7 +645,7 @@ msgstr ""
 "Fin de passage en connectivité descendante\n"
 "------------------------------------------\n"
 
-#: preprocessor/appli/ecs_main.c:633
+#: preprocessor/appli/ecs_main.c:626
 #, c-format
 msgid ""
 "\n"
@@ -670,7 +660,7 @@ msgstr ""
 "---------------------\n"
 "\n"
 
-#: preprocessor/appli/ecs_main.c:651
+#: preprocessor/appli/ecs_main.c:644
 #, c-format
 msgid ""
 "The mesh has face -> cell connectivity errors.\n"
@@ -679,7 +669,7 @@ msgstr ""
 "Le comporte des erreurs de connectivité face -> cellules.\n"
 "On ne peut pas aller plus loin."
 
-#: preprocessor/appli/ecs_main.c:662
+#: preprocessor/appli/ecs_main.c:655
 #, c-format
 msgid ""
 "The mesh does not contain volume elements.\n"
@@ -688,7 +678,7 @@ msgstr ""
 "Le maillage ne contient pas d'éléments volumiques.\n"
 "On ne peut pas aller plus loin."
 
-#: preprocessor/appli/ecs_main.c:720 src/base/cs_base.c:1372
+#: preprocessor/appli/ecs_main.c:713 src/base/cs_base.c:1372
 #, c-format
 msgid ""
 "\n"
@@ -699,17 +689,17 @@ msgstr ""
 "Bilan de l'occupation mémoire :\n"
 "\n"
 
-#: preprocessor/appli/ecs_main.c:728
+#: preprocessor/appli/ecs_main.c:721
 #, c-format
 msgid "  Total memory used:                         %15.3f %cb\n"
 msgstr "  Mémoire totale consommée :                 %15.3f %co\n"
 
-#: preprocessor/appli/ecs_main.c:735
+#: preprocessor/appli/ecs_main.c:728
 #, c-format
 msgid "  Theoretical instrumented dynamic memory:   %15.3f %cb\n"
 msgstr "  Mémoire dynamique instrumentée théorique : %15.3f %co\n"
 
-#: preprocessor/appli/ecs_main.c:748
+#: preprocessor/appli/ecs_main.c:741
 #, c-format
 msgid ""
 "\n"
@@ -881,7 +871,7 @@ msgstr ""
 "  Coordonnées minimales et maximales du domaine :\n"
 "\n"
 
-#: preprocessor/base/ecs_maillage.c:1850
+#: preprocessor/base/ecs_maillage.c:1849
 #, c-format
 msgid ""
 "\n"
@@ -896,7 +886,7 @@ msgstr ""
 "-------------------------------\n"
 "\n"
 
-#: preprocessor/base/ecs_maillage.c:1853
+#: preprocessor/base/ecs_maillage.c:1852
 #, c-format
 msgid ""
 "  Number of cells:                            %10d\n"
@@ -905,25 +895,25 @@ msgstr ""
 "  Nombre de cellules :                        %10d\n"
 "  Nombre de faces internes :                  %10d\n"
 
-#: preprocessor/base/ecs_maillage.c:1859
+#: preprocessor/base/ecs_maillage.c:1858
 #, c-format
 msgid "  Number of boundary faces:                   %10d\n"
 msgstr "  Nombre de faces de bord :                   %10d\n"
 
-#: preprocessor/base/ecs_maillage.c:1864
+#: preprocessor/base/ecs_maillage.c:1863
 #, c-format
 msgid "  Number of vertices:                         %10d\n"
 msgstr "  Nombre de sommets :                         %10d\n"
 
-#: preprocessor/base/ecs_maillage.c:1888
+#: preprocessor/base/ecs_maillage.c:1887
 msgid "Connectivity Error Faces"
 msgstr "Faces erreur connectivite"
 
-#: preprocessor/base/ecs_maillage.c:1900
+#: preprocessor/base/ecs_maillage.c:1899
 msgid "connectivity_error"
 msgstr "erreur_connectivite"
 
-#: preprocessor/base/ecs_maillage.c:1914
+#: preprocessor/base/ecs_maillage.c:1913
 msgid "Isolated Faces"
 msgstr "Faces isolees"
 
@@ -1372,11 +1362,7 @@ msgstr ""
 msgid "I-deas universal"
 msgstr "I-deas Universel"
 
-#: preprocessor/pre-post/ecs_pre.c:207
-msgid "Meta-mesh file"
-msgstr "Méta-fichier de maillage"
-
-#: preprocessor/pre-post/ecs_pre.c:329
+#: preprocessor/pre-post/ecs_pre.c:321
 #, c-format
 msgid ""
 "Error in file format specification.\n"
@@ -1391,7 +1377,7 @@ msgstr ""
 "Impossible de déterminer le format du fichier de maillage\n"
 "\"%s\"."
 
-#: preprocessor/pre-post/ecs_pre.c:339
+#: preprocessor/pre-post/ecs_pre.c:331
 #, c-format
 msgid ""
 "\n"
@@ -1410,7 +1396,7 @@ msgstr ""
 "Le mot clé est prioritaire.\n"
 "\n"
 
-#: preprocessor/pre-post/ecs_pre.c:352
+#: preprocessor/pre-post/ecs_pre.c:344
 #, c-format
 msgid ""
 "Mesh file \"%s\" does not have\n"
@@ -1421,7 +1407,7 @@ msgstr ""
 "n'a pas une extension connue. Un mot clé est nécessaire\n"
 "pour déterminer le format dans ce cas."
 
-#: preprocessor/pre-post/ecs_pre.c:359
+#: preprocessor/pre-post/ecs_pre.c:351
 #, c-format
 msgid ""
 "File format \"%s\" support not available in this\n"
@@ -1430,11 +1416,11 @@ msgstr ""
 "Le format de fichier \"%s\" n'est pas disponible dans cette\n"
 "installation (fichier \"%s\"). "
 
-#: preprocessor/pre-post/ecs_pre.c:450
+#: preprocessor/pre-post/ecs_pre.c:442
 msgid "Unknown mesh file format."
 msgstr "Format de fichier de maillage non reconnu."
 
-#: preprocessor/pre-post/ecs_pre.c:457
+#: preprocessor/pre-post/ecs_pre.c:449
 #, c-format
 msgid ""
 "\n"
@@ -3073,43 +3059,6 @@ msgid ""
 msgstr ""
 "  Nom du maillage : %s\n"
 "\n"
-
-#: preprocessor/pre-post/ecs_pre_meta.c:142
-#, c-format
-msgid ""
-"\n"
-"\n"
-"Reading mesh based on meta-mesh file\n"
-"------------------------------------\n"
-msgstr ""
-"\n"
-"\n"
-"Lecture du méta-fichier de maillage\n"
-"-----------------------------------\n"
-
-#: preprocessor/pre-post/ecs_pre_meta.c:146
-#, c-format
-msgid ""
-"  Meta-mesh file: %s\n"
-"\n"
-"\n"
-msgstr ""
-"  Méta-fichier de maillage : %s\n"
-"\n"
-"\n"
-
-#: preprocessor/pre-post/ecs_pre_meta.c:429
-#, c-format
-msgid ""
-"Error in mesh options specification on line %d of file \"%s\"\n"
-"\n"
-"\"%s\" should use a syntax of the form:\n"
-"opt1 = value1, opt2 = value2, ..."
-msgstr ""
-"Erreur dans les options de maillage ligne %d du fichier \"%s\"\n"
-"\n"
-"\"%s\" devrait avoir une syntaxe de la forme :\n"
-"opt2 = valeur1, opt2 = valeur2, ..."
 
 #: preprocessor/pre-post/ecs_pre_nopo.c:747
 #: preprocessor/pre-post/ecs_pre_nopo.c:844
@@ -11186,3 +11135,4 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
+

@@ -1,4 +1,18 @@
 * 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Removed preprocessor meta-file and command-line input file support.
+  modified files:
+    po/fr.po
+    po/POTFILES.in
+    preprocessor/appli/ecs_cmd.c
+    preprocessor/appli/ecs_cmd_priv.h
+    preprocessor/appli/ecs_main.c
+    preprocessor/base/ecs_maillage.c
+    preprocessor/base/ecs_maillage.h
+    preprocessor/pre-post/ecs_pre.c
+    preprocessor/pre-post/ecs_pre.h
+    preprocessor/pre-post/Makefile.am
+
+* 10/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Preprocessor now converts all colors to groups on mesh import.
   modified files:
     po/fr.po

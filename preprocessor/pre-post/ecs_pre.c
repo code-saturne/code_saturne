@@ -115,9 +115,9 @@ typedef struct {
 
 /* Nombre et description des formats supportés */
 
-static const int _ecs_pre_n_formats = 10;
+static const int _ecs_pre_n_formats = 9;
 
-static ecs_pre_format_desc_t _ecs_pre_formats[10] = {
+static ecs_pre_format_desc_t _ecs_pre_formats[9] = {
 
   {
     "CGNS",
@@ -201,14 +201,6 @@ static ecs_pre_format_desc_t _ecs_pre_formats[10] = {
     "des",
     1,
     ECS_PRE_FORMAT_NOPO
-  },
-
-  {
-    N_("Meta-mesh file"),
-    ".mesh",
-    "meta",
-    1,
-    ECS_PRE_FORMAT_META
   }
 
 };

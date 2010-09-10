@@ -55,8 +55,7 @@ ecs_pre_gambit.c \
 ecs_pre_gmsh.c \
 ecs_pre_ideas.c \
 ecs_pre_med.c \
-ecs_pre_nopo.c \
-ecs_pre_meta.c
+ecs_pre_nopo.c
 
 libprepostecs_la_LDFLAGS = -no-undefined
 

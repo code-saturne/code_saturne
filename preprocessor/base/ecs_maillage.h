@@ -248,15 +248,14 @@ void
 ecs_maillage__detruit_famille(ecs_maillage_t  *maillage);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui construit les attributs "groupe" et "couleur"
- *   a partir des familles
+ *  Fonction qui construit les attributs "groupe" a partir des familles
  *----------------------------------------------------------------------------*/
 
 void
 ecs_maillage__cree_attributs(ecs_maillage_t  *maillage);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui supprime les attributs "groupe" et "couleur"
+ *  Fonction qui supprime les attributs "groupe"
  *----------------------------------------------------------------------------*/
 
 void

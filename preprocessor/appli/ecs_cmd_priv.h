@@ -10,7 +10,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2010 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -98,8 +98,7 @@
 
 #define ECS_CMD_OPTION_CWD                                    "--cwd"
 #define ECS_CMD_OPTION_DUMP                                  "--dump"
-#define ECS_CMD_OPTION_NULL_COMM                         "--sim-comm"
-#define ECS_CMD_OPTION_NULL_COMM_1                              "-sc"
+#define ECS_CMD_OPTION_NULL_COMM                         "--no-write"
 #define ECS_CMD_OPTION_FMT_MESH_FILE                       "--format"
 #define ECS_CMD_OPTION_NUM_MESH                               "--num"
 #define ECS_CMD_OPTION_GRP_CEL_MESH                       "--grp-cel"
@@ -107,8 +106,6 @@
 
 #define ECS_CMD_OPTION_HELP                                  "--help"
 #define ECS_CMD_OPTION_HELP_1                                    "-h"
-#define ECS_CMD_OPTION_INPUT_FILE                              "--in"
-#define ECS_CMD_OPTION_INPUT_FILE_1                              "-i"
 
 #if defined(HAVE_CGNS)
 #define ECS_CMD_OPTION_POST_CGNS                             "--cgns"

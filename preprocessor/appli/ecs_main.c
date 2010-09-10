@@ -68,9 +68,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_post.h"
-
 #include "ecs_pre.h"
-#include "ecs_pre_meta.h"
 
 
 /*----------------------------------------------------------------------------
@@ -188,18 +186,13 @@ _lit_maillage(const ecs_cmd_t *cmd)
 
     /* Chargement de la structure */
 
-    if (cmd->liste_fmt_maillage[ific] == ECS_PRE_FORMAT_META)
-      maillage_lu
-        = ecs_pre_meta__lit_maillage(cmd->liste_fic_maillage.val[ific]);
-
-    else
-      maillage_lu = ecs_pre__lit_maillage(cmd->liste_fic_maillage.val[ific],
-                                          cmd->liste_fmt_maillage[ific],
-                                          cmd->liste_num_maillage[ific],
-                                          cmd->liste_grp_maillage[ific*4    ],
-                                          cmd->liste_grp_maillage[ific*4 + 1],
-                                          cmd->liste_grp_maillage[ific*4 + 2],
-                                          cmd->liste_grp_maillage[ific*4 + 3]);
+    maillage_lu = ecs_pre__lit_maillage(cmd->liste_fic_maillage.val[ific],
+                                        cmd->liste_fmt_maillage[ific],
+                                        cmd->liste_num_maillage[ific],
+                                        cmd->liste_grp_maillage[ific*4    ],
+                                        cmd->liste_grp_maillage[ific*4 + 1],
+                                        cmd->liste_grp_maillage[ific*4 + 2],
+                                        cmd->liste_grp_maillage[ific*4 + 3]);
 
     /* Affichage des infos maillage */
 

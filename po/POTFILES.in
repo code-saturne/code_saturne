@@ -31,7 +31,6 @@ preprocessor/pre-post/ecs_pre_gambit.c
 preprocessor/pre-post/ecs_pre_gmsh.c
 preprocessor/pre-post/ecs_pre_ideas.c
 preprocessor/pre-post/ecs_pre_med.c
-preprocessor/pre-post/ecs_pre_meta.c
 preprocessor/pre-post/ecs_pre_nopo.c
 preprocessor/util/ecs_backtrace.c
 preprocessor/util/ecs_comm.c

@@ -214,125 +214,6 @@ _sys_info_cpu(void)
 #endif /* ECS_ARCH */
 
 /*----------------------------------------------------------------------------
- *  Fonction qui complète la ligne de commande par les données d'un fichier
- *----------------------------------------------------------------------------*/
-
-static void
-ecs_loc_cmd__lit_arg_fic(char   *nomfic,
-                         int    *argc,
-                         char  **argv[])
-{
-  ecs_int_t    iarg;
-  ecs_int_t    ideb;
-  ecs_int_t    ifin;
-  ecs_int_t    ipos;
-
-  ecs_int_t    nbr_arg;
-  char       **lst_arg;
-
-  char         ligne[ECS_CMD_LIGNE_MAX + 1];
-  char        *res = NULL;
-
-  bool         bool_err;
-
-  FILE        *ptr = NULL;
-  ecs_file_t  *fic_cmd = NULL;
-
-  nbr_arg = *argc;
-  lst_arg = *argv;
-
-  bool_err = false;
-
-  if (nomfic != NULL) {
-
-    fic_cmd = ecs_file_open(nomfic,
-                            ECS_FILE_MODE_READ,
-                            ECS_FILE_TYPE_TEXT);
-
-  }
-  else {
-
-    ptr = stdin;
-
-  }
-
-
-  /* Recopie du début de la ligne de commande */
-
-  ECS_MALLOC(lst_arg, nbr_arg, char *);
-
-  for (iarg = 0; iarg < nbr_arg; iarg++) {
-    ECS_MALLOC(lst_arg[iarg], strlen((*argv)[iarg]) + 1, char);
-    strcpy(lst_arg[iarg], (*argv)[iarg]);
-  }
-
-  /* Lecture du fichier (ligne à ligne) */
-
-  do {
-
-    if (ptr != NULL)
-      res = fgets(ligne, ECS_CMD_LIGNE_MAX, ptr);
-
-    else if (fic_cmd != NULL)
-      res = ecs_file_gets_try(ligne, ECS_CMD_LIGNE_MAX, fic_cmd, NULL);
-
-    /*
-      Traitement de la ligne; on ignore ce qui se trouve après
-      le caractère '#' (commentaire)
-    */
-
-    if (res != NULL) {
-
-      ideb = 0;
-      ifin = 0;
-
-      while (   ligne[ifin] != '\0' && ligne[ifin] != '#'
-             && ligne[ifin] != '\n' && ligne[ifin] != '\r') {
-
-        for (ideb = ifin;
-             ligne[ideb] != '\0' && (ligne[ideb] == ' ' || ligne[ideb] == '\t');
-             ideb++);
-
-        for (ifin = ideb;
-             (   ligne[ifin] != '\0'  && ligne[ifin] != '#'
-              && ligne[ifin] != ' '   && ligne[ifin] != '\t'
-              && ligne[ifin] != '\n'  && ligne[ifin] != '\r');
-             ifin++);
-
-        if (   ligne[ideb] != '\0' && ligne[ideb] != '\n' && ligne[ideb] != '\r'
-            && ifin > ideb) {
-
-          ECS_REALLOC(lst_arg, nbr_arg + 1, char *);
-          ECS_MALLOC(lst_arg[nbr_arg], ifin - ideb + 1, char);
-
-          for (ipos = 0; ipos < ifin - ideb; ipos++)
-            lst_arg[nbr_arg][ipos] = ligne[ideb + ipos];
-          lst_arg[nbr_arg][ipos] = '\0';
-
-          nbr_arg++;
-
-        }
-
-      }
-
-    }
-
-  } while (res != NULL);
-
-
-  if (fic_cmd != NULL)
-    ecs_file_free(fic_cmd);
-
-
-  /* Valeurs de retour */
-
-  *argc = nbr_arg;
-  *argv = lst_arg;
-
-}
-
-
-/*----------------------------------------------------------------------------
  *  Fonction qui affiche le numero de version
  *----------------------------------------------------------------------------*/
 
@@ -540,15 +421,14 @@ static void ecs_loc_cmd__aff_aide
            _(": Preprocessor input mesh file"));
   _fct_prt("", "", _("  (mesh file format determined"));
   _fct_prt("", "", _("   automatically by filename extension"));
-  _fct_prt("", "", _("   or forced by \"-format\" sub-option)"));
+  _fct_prt("", "", _("   or forced by \"--format\" sub-option)"));
   _fct_prt(ECS_CMD_OPTION_MESH_FILE, _("<file> [...]"), _(": same"));
 
   printf("\n");
 
 
-  _fct_prt(ECS_CMD_OPTION_NULL_COMM_1, "",
+  _fct_prt(ECS_CMD_OPTION_NULL_COMM, "",
            _(": simulate messages without file output"));
-  _fct_prt(ECS_CMD_OPTION_NULL_COMM, "", _(": same"));
 
 
   printf("\n");
@@ -572,17 +452,6 @@ static void ecs_loc_cmd__aff_aide
 
   _fct_prt(ECS_CMD_OPTION_HELP_1, "", _(": this help message"));
   _fct_prt(ECS_CMD_OPTION_HELP, "", _(": same"));
-
-
-  printf("\n");
-
-
-  _fct_prt(ECS_CMD_OPTION_INPUT_FILE_1, _("[<file>]"),
-           _(": command line completed by a file"));
-
-  _fct_prt("", "", _("  (default file: standard input)"));
-
-  _fct_prt(ECS_CMD_OPTION_INPUT_FILE, _("[<file>]"), _(": same"));
 
 
   printf("\n");
@@ -1502,8 +1371,7 @@ ecs_cmd__lit_arg(int    argc,
 
       }
     }
-    else if (!strcmp (ECS_CMD_OPTION_NULL_COMM_1, argv[iarg]) ||
-             !strcmp (ECS_CMD_OPTION_NULL_COMM, argv[iarg])) {
+    else if (!strcmp (ECS_CMD_OPTION_NULL_COMM, argv[iarg])) {
 
       cmd->sim_comm = true;
 
@@ -1568,26 +1436,6 @@ ecs_cmd__lit_arg(int    argc,
                                     &iarg);
     }
 
-    else if (   !strcmp (ECS_CMD_OPTION_INPUT_FILE_1, argv[iarg])
-             || !strcmp (ECS_CMD_OPTION_INPUT_FILE, argv[iarg])) {
-
-      if (bool_cmd_option_input_file == false)
-        bool_cmd_option_input_file = true;
-      else
-        ecs_loc_cmd__aff_opt_en_double(argc, argv, argv[iarg]);
-
-      if (argc - 1 > iarg && strncmp(argv[iarg + 1], "-", 1)) {
-
-        ecs_loc_cmd__lit_arg_fic(argv[++iarg], &argc, &argv);
-
-      }
-      else {
-
-        ecs_loc_cmd__lit_arg_fic(NULL, &argc, &argv);
-
-      }
-
-    }
     else if (!strcmp (ECS_CMD_OPTION_OUTPUT_FILE, argv[iarg])) {
 
       const char * outfic;

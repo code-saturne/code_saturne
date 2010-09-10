@@ -1080,7 +1080,7 @@ ecs_maillage__nettoie_nodal(ecs_maillage_t  *maillage)
 
   /*
     Fusion d'éléments surfaciques confondus éventuels (issus par exemple,
-    de l'utilisation conjointe de couleurs de faces et faces de bord
+    de l'utilisation conjointe de references de faces et faces de bord
     sous Simail, double `surface coating' sous I-DEAS, ...)
   */
 
@@ -1699,8 +1699,7 @@ ecs_maillage__detruit_famille(ecs_maillage_t  *maillage)
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui construit les attributs "groupe" et "couleur"
- *   à partir des familles
+ *  Fonction qui construit les attributs "groupe" à partir des familles
  *----------------------------------------------------------------------------*/
 
 void
@@ -1735,7 +1734,7 @@ ecs_maillage__cree_attributs(ecs_maillage_t  *maillage)
 
         assert(maillage->champ_att[ient] == NULL);
 
-        /* Création des champs "couleur" et "groupe" */
+        /* Création du champ "groupe" */
 
         maillage->champ_att[ient]
           = ecs_champ_att__cree_att_fam
@@ -1755,7 +1754,7 @@ ecs_maillage__cree_attributs(ecs_maillage_t  *maillage)
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui supprime les attributs "groupe" et "couleur"
+ *  Fonction qui supprime les attributs "groupe"
  *----------------------------------------------------------------------------*/
 
 void
