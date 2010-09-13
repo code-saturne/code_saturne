@@ -274,10 +274,10 @@ class BatchRunningModel(Model):
                 l_args.append('--num ' + str(n))
             gc = sdm.getMeshGroupCells(m)
             if gc != 'off':
-                l_args.append('--grp-cel ' + gc)                
+                l_args.append('--grp-cel ' + gc)
             gf = sdm.getMeshGroupFaces(m)
             if gf != 'off':
-                l_args.append('--grp-fac ' + gf)                
+                l_args.append('--grp-fac ' + gf)
             if len(l_args) >  0:
                 l_args.insert(0, m)
                 self.dicoValues['MESHES'].append(tuple(l_args))
