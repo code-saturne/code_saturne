@@ -210,7 +210,7 @@ WelcomeForm.ui
 # PyQt Resources files
 
 QRCFILES = \
-resources_pages_rc.py
+resources_pages.qrc
 
 # Generated files
 
