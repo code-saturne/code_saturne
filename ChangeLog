@@ -1,4 +1,17 @@
 * 14/09/2010 - David Monfort <david.monfort@edf.fr>
+  Add a mesh module of which each member points to the mesh C structure
+  corresponding member.
+  added file:
+    src/base/mesh.f90
+  modified files:
+    src/apps/cs_solver.c
+    src/base/caltri.f90
+    src/base/cs_prototypes.h
+    src/base/majgeo.f90
+  modified script:
+    src/Makefile.am
+
+* 14/09/2010 - David Monfort <david.monfort@edf.fr>
   Remove the bison/yacc compilation from the bootstrap stage to the
   compilation stage. Also generate the corresponding C files at dist stage.
   modified scripts:

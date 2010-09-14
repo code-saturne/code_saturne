@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -30,7 +30,12 @@ subroutine majgeo &
 
  ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2 ,           &
    lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 , &
-   nthdi2 , nthdb2 , ngrpi2 , ngrpb2 , idxfi  , idxfb )
+   nthdi2 , nthdb2 , ngrpi2 , ngrpb2 , idxfi  , idxfb  , &
+   iface2 , ifabo2 , ifmfb2 , ifmce2 , iprfm2,           &
+   ipnfa2 , nodfa2 , ipnfb2 , nodfb2 ,                   &
+   xyzce2 , surfa2 , surfb2 , cdgfa2 , cdgfb2 , xyzno2 , &
+   volum2                                                &
+)
 
 !===============================================================================
 ! FONCTION :
@@ -76,6 +81,7 @@ use dimens
 use paramx
 use entsor
 use parall
+use mesh
 
 !===============================================================================
 
@@ -90,6 +96,21 @@ integer, intent(in) :: nthdi2, nthdb2
 integer, intent(in) :: ngrpi2, ngrpb2
 
 integer, dimension(*), intent(in) :: idxfi, idxfb
+
+integer, dimension(2,nfac2), target :: iface2
+integer, dimension(ncele2), target :: ifmce2
+integer, dimension(nfabo2), target :: ifabo2, ifmfb2
+integer, dimension(nfml,nprfml), target :: iprfm2
+integer, dimension(nfac2+1), target :: ipnfa2
+integer, dimension(lndfa2), target :: nodfa2
+integer, dimension(nfabo2+1), target :: ipnfb2
+integer, dimension(lndfb2), target :: nodfb2
+
+double precision, dimension(3,ncele2), target :: xyzce2
+double precision, dimension(3,nfac2), target :: surfa2, cdgfa2
+double precision, dimension(3,nfabo2), target :: surfb2, cdgfb2
+double precision, dimension(3,nsom2), target :: xyzno2
+double precision, dimension(ncele2), target :: volum2
 
 ! Local variables
 
@@ -142,6 +163,33 @@ nsomgb = nsomg2
 
 call init_fortran_omp(nfac, nfabor, &
                       nthdi2, nthdb2, ngrpi2, ngrpb2, idxfi, idxfb)
+
+!===============================================================================
+! 6. DEFINITION DES POINTEURS SUR LA STRUCTURE MAILLAGE
+!===============================================================================
+
+ifacel => iface2(1:2,1:nfac)
+ifabor => ifabo2(1:nfabor)
+
+ifmfbr => ifmfb2(1:nfabor)
+ifmcel => ifmce2(1:ncelet)
+iprfml => iprfm2(1:nfml,1:nprfml)
+
+ipnfac => ipnfa2(1:nfac+1)
+nodfac => nodfa2(1:lndfac)
+ipnfbr => ipnfb2(1:nfabor+1)
+nodfbr => nodfb2(1:lndfbr)
+
+xyzcen => xyzce2(1:3,1:ncelet)
+
+surfac => surfa2(1:3,1:nfac)
+surfbo => surfb2(1:3,1:nfabor)
+cdgfac => cdgfa2(1:3,1:nfac)
+cdgfbo => cdgfb2(1:3,1:nfabor)
+
+xyznod => xyzno2(1:3,1:nnod)
+
+volume => volum2(1:ncelet)
 
 return
 end subroutine

@@ -90,25 +90,9 @@ extern void CS_PROCF (caltri, CALTRI)
  const cs_int_t   *nrdeve,   /* <-- size of rdevel floating-point array */
  const cs_int_t   *nituse,   /* <-- size of ITUSER integer array */
  const cs_int_t   *nrtuse,   /* <-- size of RTUSER floating-point array */
- const cs_int_t   *ifacel,   /* <-- interior faces -> cells connectivity */
- const cs_int_t   *ifabor,   /* <-- boundary faces -> cells connectivity */
- const cs_int_t   *ifmfbr,   /* <-- boundary face family (group class) number */
- const cs_int_t   *ifmcel,   /* <-- cell family (group class) number */
- const cs_int_t   *iprfml,   /* <-- family (group class) properties */
- const cs_int_t   *ipnfac,   /* <-- interior faces -> vertices connect. index */
- const cs_int_t   *nodfac,   /* <-- interior faces -> vertices connectivity */
- const cs_int_t   *ipnfbr,   /* <-- boundary faces -> vertices connect. index */
- const cs_int_t   *nodfbr,   /* <-- boundary faces -> vertices connectivity */
  cs_int_t         *idevel,   /* --> IDEVEL integer array */
  cs_int_t         *ituser,   /* --> ITUSER integer array */
  cs_int_t         *ia,       /* --> IA integer array */
- cs_real_t        *xyzcen,   /* <-> points associated with cell centers */
- cs_real_t        *surfac,   /* <-> interior face surface vectors */
- cs_real_t        *surfbo,   /* <-> boundary face surface vectors */
- cs_real_t        *cdgfac,   /* <-> interior face centers */
- cs_real_t        *cdgfbr,   /* <-> boundary face vectors */
- cs_real_t        *xyznod,   /* <-> vertex coordinates (optional) */
- cs_real_t        *volume,   /* <-> cell volumes */
  cs_real_t        *rdevel,   /* --> RDEVEL floating-point array */
  cs_real_t        *rtuser,   /* --> RTUSER floating-point array */
  cs_real_t        *ra        /* --> RA floating-point array */
@@ -513,7 +497,23 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_int_t   *ngrpi,   /* <-- number of interior face groups */
  const cs_int_t   *ngrpb,   /* <-- number of boundary face groups */
  const cs_int_t   *idxfi,   /* <-- interior face group/thread start/end ids */
- const cs_int_t   *idxfb    /* <-- boundary face group/thread start/end ids */
+ const cs_int_t   *idxfb,   /* <-- boundary face group/thread start/end ids */
+ const cs_int_t    ifacel[],  /* --> interior faces -> cells connectivity */
+ const cs_int_t    ifabor[],  /* --> boundary faces -> cells connectivity */
+ const cs_int_t    ifmfbr[],  /* --> boundary face families */
+ const cs_int_t    ifmcel[],  /* --> cell families */
+ const cs_int_t    iprfml[],  /* --> list of family properties */
+ const cs_int_t    ipnfac[],  /* --> interior faces -> vertices index */
+ const cs_int_t    nodfac[],  /* --> interior faces -> vertices connectivity */
+ const cs_int_t    ipnfbr[],  /* --> boundary faces -> vertices index */
+ const cs_int_t    nodfbr[],  /* --> boundary faces -> vertices connectivity */
+ const cs_real_t   xyzcen[],  /* --> cell centers */
+ const cs_real_t   surfac[],  /* --> interior face surface vectors */
+ const cs_real_t   surfbo[],  /* --> boundary face surface vectors */
+ const cs_real_t   cdgfac[],  /* --> interior face centers */
+ const cs_real_t   cdgfbo[],  /* --> boundary face centers */
+ const cs_real_t   xyznod[],  /* --> vertex coordinates */
+ const cs_real_t   volume[]   /* <-- cell volumes */
 );
 
 /*----------------------------------------------------------------------------

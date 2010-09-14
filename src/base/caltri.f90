@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -30,11 +30,7 @@ subroutine caltri &
 
  ( iverif ,                                                       &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod ,          &
-   volume ,                                                       &
    rdevel , rtuser , ra     )
 
 !===============================================================================
@@ -51,34 +47,7 @@ subroutine caltri &
 ! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
-! (nfml,nprfml)    !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfac+1)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (lndfac)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfabor+1)     !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (lndfbr)       !    !     !  (optionnel)                                   !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds (optionnel)              !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-! (ndim,nnod)      !    !     !                                                !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________.____._____.________________________________________________.
 
@@ -114,6 +83,7 @@ use ihmpre
 use matiss
 use radiat
 use cplsat
+use mesh
 
 !===============================================================================
 
@@ -124,17 +94,7 @@ implicit none
 integer          nideve , nrdeve , nituse , nrtuse
 
 integer          iverif
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          idevel(nideve), ituser(nituse), ia(*)
-
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 

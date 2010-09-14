@@ -318,53 +318,6 @@ cs_run(void)
   cs_renumber_mesh(cs_glob_mesh,
                    cs_glob_mesh_quantities);
 
-  /* Update Fortran mesh sizes and quantities */
-
-  {
-    cs_int_t n_g_cells = cs_glob_mesh->n_g_cells;
-    cs_int_t n_g_i_faces = cs_glob_mesh->n_g_i_faces;
-    cs_int_t n_g_b_faces = cs_glob_mesh->n_g_b_faces;
-    cs_int_t n_g_vertices = cs_glob_mesh->n_g_vertices;
-    cs_int_t nthrdi = 1;
-    cs_int_t nthrdb = 1;
-    cs_int_t ngrpi = 1;
-    cs_int_t ngrpb = 1;
-    const cs_int_t *idxfi = NULL;
-    const cs_int_t *idxfb = NULL;
-
-    if (cs_glob_mesh->i_face_numbering != NULL) {
-      const cs_numbering_t *_n = cs_glob_mesh->i_face_numbering;
-      nthrdi = _n->n_threads;
-      ngrpi = _n->n_groups;
-      idxfi = _n->group_index;
-    }
-
-    if (cs_glob_mesh->b_face_numbering != NULL) {
-      const cs_numbering_t *_n = cs_glob_mesh->b_face_numbering;
-      nthrdb = _n->n_threads;
-      ngrpb = _n->n_groups;
-      idxfb = _n->group_index;
-    }
-
-    CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells),
-                              &(cs_glob_mesh->n_cells_with_ghosts),
-                              &(cs_glob_mesh->n_i_faces),
-                              &(cs_glob_mesh->n_b_faces),
-                              &(cs_glob_mesh->n_vertices),
-                              &(cs_glob_mesh->i_face_vtx_connect_size),
-                              &(cs_glob_mesh->b_face_vtx_connect_size),
-                              &n_g_cells,
-                              &n_g_i_faces,
-                              &n_g_b_faces,
-                              &n_g_vertices,
-                              &nthrdi,
-                              &nthrdb,
-                              &ngrpi,
-                              &ngrpb,
-                              idxfi,
-                              idxfb);
-  }
-
   /* Destroy the temporary structure used to build the main mesh */
 
   cs_mesh_builder_destroy(&cs_glob_mesh_builder);
@@ -419,6 +372,69 @@ cs_run(void)
   if (opts.benchmark > 0) {
     int mpi_trace_mode = (opts.benchmark == 2) ? 1 : 0;
     cs_benchmark(mpi_trace_mode);
+  }
+
+  /* Update Fortran mesh sizes and quantities */
+
+  {
+    cs_int_t n_g_cells = cs_glob_mesh->n_g_cells;
+    cs_int_t n_g_i_faces = cs_glob_mesh->n_g_i_faces;
+    cs_int_t n_g_b_faces = cs_glob_mesh->n_g_b_faces;
+    cs_int_t n_g_vertices = cs_glob_mesh->n_g_vertices;
+    cs_int_t nthrdi = 1;
+    cs_int_t nthrdb = 1;
+    cs_int_t ngrpi = 1;
+    cs_int_t ngrpb = 1;
+    const cs_int_t *idxfi = NULL;
+    const cs_int_t *idxfb = NULL;
+
+    if (cs_glob_mesh->i_face_numbering != NULL) {
+      const cs_numbering_t *_n = cs_glob_mesh->i_face_numbering;
+      nthrdi = _n->n_threads;
+      ngrpi = _n->n_groups;
+      idxfi = _n->group_index;
+    }
+
+    if (cs_glob_mesh->b_face_numbering != NULL) {
+      const cs_numbering_t *_n = cs_glob_mesh->b_face_numbering;
+      nthrdb = _n->n_threads;
+      ngrpb = _n->n_groups;
+      idxfb = _n->group_index;
+    }
+
+    CS_PROCF (majgeo, MAJGEO)(&(cs_glob_mesh->n_cells),
+                              &(cs_glob_mesh->n_cells_with_ghosts),
+                              &(cs_glob_mesh->n_i_faces),
+                              &(cs_glob_mesh->n_b_faces),
+                              &(cs_glob_mesh->n_vertices),
+                              &(cs_glob_mesh->i_face_vtx_connect_size),
+                              &(cs_glob_mesh->b_face_vtx_connect_size),
+                              &n_g_cells,
+                              &n_g_i_faces,
+                              &n_g_b_faces,
+                              &n_g_vertices,
+                              &nthrdi,
+                              &nthrdb,
+                              &ngrpi,
+                              &ngrpb,
+                              idxfi,
+                              idxfb,
+                              cs_glob_mesh->i_face_cells,
+                              cs_glob_mesh->b_face_cells,
+                              cs_glob_mesh->b_face_family,
+                              cs_glob_mesh->cell_family,
+                              cs_glob_mesh->family_item,
+                              cs_glob_mesh->i_face_vtx_idx,
+                              cs_glob_mesh->i_face_vtx_lst,
+                              cs_glob_mesh->b_face_vtx_idx,
+                              cs_glob_mesh->b_face_vtx_lst,
+                              cs_glob_mesh_quantities->cell_cen,
+                              cs_glob_mesh_quantities->i_face_normal,
+                              cs_glob_mesh_quantities->b_face_normal,
+                              cs_glob_mesh_quantities->i_face_cog,
+                              cs_glob_mesh_quantities->b_face_cog,
+                              cs_glob_mesh->vtx_coord,
+                              cs_glob_mesh_quantities->cell_vol);
   }
 
   if (opts.benchmark <= 0) {
@@ -478,23 +494,7 @@ cs_run(void)
 
     CS_PROCF(caltri, CALTRI)(&_verif,
                              &nideve, &nrdeve, &nituse, &nrtuse,
-                             cs_glob_mesh->i_face_cells,
-                             cs_glob_mesh->b_face_cells,
-                             cs_glob_mesh->b_face_family,
-                             cs_glob_mesh->cell_family,
-                             cs_glob_mesh->family_item,
-                             cs_glob_mesh->i_face_vtx_idx,
-                             cs_glob_mesh->i_face_vtx_lst,
-                             cs_glob_mesh->b_face_vtx_idx,
-                             cs_glob_mesh->b_face_vtx_lst,
                              idevel, ituser, ia,
-                             cs_glob_mesh_quantities->cell_cen,
-                             cs_glob_mesh_quantities->i_face_normal,
-                             cs_glob_mesh_quantities->b_face_normal,
-                             cs_glob_mesh_quantities->i_face_cog,
-                             cs_glob_mesh_quantities->b_face_cog,
-                             cs_glob_mesh->vtx_coord,
-                             cs_glob_mesh_quantities->cell_vol,
                              rdevel, rtuser, ra);
 
     /* Finalize sparse linear systems resolution */
