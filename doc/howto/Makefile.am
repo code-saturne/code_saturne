@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -71,3 +71,17 @@ install-pdf-local:
 
 distclean-local: clean-local
 	-rm -f $(PDFMAIN)
+
+# Generate the documentation at dist stage so that the user do not need
+# to have LaTeX (and mandatory tools).
+
+#dist-hook: pdf
+#	cp -p $(PDFMAIN) $(distdir)
+
+# Install the documentation if available
+
+install-data-local:
+	if test -f $(srcdir)/$(PDFMAIN); then \
+	  $(MKDIR_P) "$(DESTDIR)$(pdfdir)"; \
+	  cp -p $(srcdir)/$(PDFMAIN) $(DESTDIR)$(pdfdir); \
+	fi

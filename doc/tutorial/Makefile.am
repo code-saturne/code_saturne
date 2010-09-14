@@ -83,5 +83,16 @@ install-pdf-local:
 distclean-local: clean-local
 	-rm -f $(PDFMAIN)
 
-dist-hook:
-	-rm -rf `find $(distdir)/test_cases -name .svn`
+# Generate the documentation at dist stage so that the user do not need
+# to have LaTeX (and mandatory tools).
+
+dist-hook: pdf
+	cp -p $(PDFMAIN) $(distdir)
+
+# Install the documentation if available
+
+install-data-local:
+	if test -f $(srcdir)/$(PDFMAIN); then \
+	  $(MKDIR_P) "$(DESTDIR)$(pdfdir)"; \
+	  cp -p $(srcdir)/$(PDFMAIN) $(DESTDIR)$(pdfdir); \
+	fi

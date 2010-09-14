@@ -1,4 +1,16 @@
 * 14/09/2010 - David Monfort <david.monfort@edf.fr>
+  Generate the compilation at dist stage.
+  Install the documentation with install target if present.
+  modified scripts:
+    doc/developper/Makefile.am
+    doc/howto/Makefile.am
+    doc/install/Makefile.am
+    doc/refcard/Makefile.am
+    doc/theory/Makefile.am
+    doc/tutorial/Makefile.am
+    doc/user/Makefile.am
+
+* 14/09/2010 - David Monfort <david.monfort@edf.fr>
   Make the dist target functional.
   modified scripts:
     doc/developper/Makefile.am
