@@ -36,8 +36,13 @@ support.fig
 # Other files
 
 OTHERFILES = \
+clthermique.dat \
+clthermique.f \
 clthermique.pdf \
-loilog.pdf
+clthermique.xmgr \
+loilog.f \
+loilog.pdf \
+loilog.xmgr
 
 # Distributed files
 

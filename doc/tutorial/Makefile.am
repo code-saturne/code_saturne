@@ -39,7 +39,7 @@ tuto_case3.tex \
 tuto_case4.tex \
 tuto_case5.tex
 
-TEXINPUTFILES =
+TEXINPUTFILES = input
 
 # Distributed files
 

@@ -25,21 +25,32 @@ AUX_DIST = $(ac_aux_dir)/config.guess \
            $(ac_aux_dir)/install-sh \
            $(ac_aux_dir)/missing \
            $(ac_aux_dir)/mkinstalldirs \
-           $(ac_aux_dir)/ltmain.sh
+           $(ac_aux_dir)/ltmain.sh \
+           $(ac_aux_dir)/libtool.m4 \
+           $(ac_aux_dir)/lt~obsolete.m4 \
+           $(ac_aux_dir)/ltoptions.m4 \
+           $(ac_aux_dir)/ltsugar.m4
 
-MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure config-h.in stamp-h.in $(AUX_DIST)
+MAINTAINERCLEANFILES = aclocal.m4 configure $(AUX_DIST)
 
 # SUBDIRS = src tests doc intl m4 po
 
 SUBDIRS = src tests doc
 
-#EXTRA_SUBDIRS = include
-
 EXTRA_DIST = $(ac_aux_dir)/ple_auto_flags.sh \
              $(ac_aux_dir)/ple_config_info.m4 \
              $(ac_aux_dir)/ple_config_publ.m4 \
              $(ac_aux_dir)/ple_mpi.m4 \
-             $(ac_aux_dir)/ple_types.m4
+             $(ac_aux_dir)/ple_types.m4 \
+             sbin/backup \
+             sbin/bootstrap \
+             sbin/clean \
+             sbin/rmb
+
+# One adds the examples sub-directories and get rid of the .svn
+# directories with a dist-hook. The reason for this trick is that
+# the number of extra files or patches can grow and change a lot.
+EXTRA_DIST += examples
 
 bin_SCRIPTS = ple-config
 
@@ -49,9 +60,9 @@ dist_man_MANS = \
 doc/manpages/ple-config.1
 
 configincludedir = $(includedir)
-configinclude_HEADERS = ple_config.h
+nodist_configinclude_HEADERS = ple_config.h
 
-noinst_HEADERS = ple_config_priv.h
+nodist_noinst_HEADERS = ple_config_priv.h
 
 uninstall-local:
 	rmdir $(configincludedir) || exit 0
@@ -65,3 +76,6 @@ install-tests:
 
 uninstall-tests:
 	@cd tests ; $(MAKE) uninstall-tests
+
+dist-hook:
+	-rm -rf `find $(distdir)/examples -name .svn`

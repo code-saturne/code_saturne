@@ -35,22 +35,27 @@ endif
 SUBDIRS = $(PLE) $(PREPRO) src libsyrcs po doc $(GUI) tests
 
 MAINTAINERCLEANFILES = \
-$(top_srcdir)/Makefile.in \
 $(top_srcdir)/aclocal.m4 \
 $(top_srcdir)/configure \
-$(top_srcdir)/cs_config-h.in \
 $(ac_aux_dir)/compile \
 $(ac_aux_dir)/config.guess \
 $(ac_aux_dir)/config.sub \
 $(ac_aux_dir)/depcomp \
 $(ac_aux_dir)/install-sh \
 $(ac_aux_dir)/ltmain.sh \
+$(ac_aux_dir)/libtool.m4 \
+$(ac_aux_dir)/lt~obsolete.m4 \
+$(ac_aux_dir)/ltoptions.m4 \
+$(ac_aux_dir)/ltsugar.m4 \
+$(ac_aux_dir)/ltversion.m4 \
 $(ac_aux_dir)/missing \
 $(ac_aux_dir)/py-compile
 
 EXTRA_DIST = \
 COMPATIBILITY \
 QUALITY_ASSURANCE \
+po/Makevars.template \
+po/Rules-install \
 sbin/backup \
 sbin/bootstrap \
 sbin/clean \
@@ -72,7 +77,7 @@ $(ac_aux_dir)/cs_scotch.m4 \
 $(ac_aux_dir)/cs_syrthes.m4 \
 $(ac_aux_dir)/cs_zlib.m4
 
-# One adds two whole sub-directories and get rid of the .svn
+# One adds several sub-directories and get rid of the .svn
 # directories with a dist-hook. The reason for this trick is that
 # the number of extra files or patches can grow and change a lot.
 EXTRA_DIST += examples extras patches
@@ -124,6 +129,8 @@ $(edit_scripts): Makefile
 bin/code_saturne: $(srcdir)/bin/code_saturne.in 
 bin/cs_config.py: bin/cs_config.py.in 
 bin/runcase: $(srcdir)/bin/runcase.in 
+
+EXTRA_DIST += bin/code_saturne.in bin/cs_config.py.in bin/runcase.in
 
 # Install binary scripts
 
@@ -185,14 +192,11 @@ extras/batch/batch.SGE
 
 # Install man pages
 
-if HAVE_PARTITIONER
-CS_PARTITION_1=doc/manpages/cs_partition.1
-endif
-
 dist_man_MANS = \
 doc/manpages/code_saturne.1 \
 doc/manpages/cs_check_syntax.1 \
-doc/manpages/cs_io_dump.1 $(CS_PARTITION_1) \
+doc/manpages/cs_io_dump.1 \
+doc/manpages/cs_partition.1 \
 doc/manpages/cs_preprocess.1 \
 doc/manpages/cs_solver.1
 
@@ -227,6 +231,7 @@ install-data-hook:
 	done
 
 dist-hook:
+	-rm -rf `find $(distdir)/gui -name .svn`
 	-rm -rf `find $(distdir)/examples  -name .svn`
 	-rm -rf `find $(distdir)/extras  -name .svn`
 	-rm -rf `find $(distdir)/patches -name .svn`

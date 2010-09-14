@@ -27,6 +27,36 @@ AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 AM_LDFLAGS = \
 @HDF5_LDFLAGS@ @ADF_LDFLAGS@ @CCM_LDFLAGS@ @MED_LDFLAGS@ @CGNS_LDFLAGS@
 
+# Headers
+
+noinst_HEADERS = \
+ecs_champ_comm.h \
+ecs_champ_post_cgns.h \
+ecs_champ_post_ens.h \
+ecs_champ_post.h \
+ecs_champ_post_med.h \
+ecs_maillage_ncs.h \
+ecs_maillage_post.h \
+ecs_maillage_pre.h \
+ecs_med.h \
+ecs_med_priv.h \
+ecs_post_cgns.h \
+ecs_post_cgns_priv.h \
+ecs_post_ens.h \
+ecs_post_ens_priv.h \
+ecs_post.h \
+ecs_post_med.h \
+ecs_pre_ccm.h \
+ecs_pre_cgns.h \
+ecs_pre_comet.h \
+ecs_pre_ens.h \
+ecs_pre_gambit.h \
+ecs_pre_gmsh.h \
+ecs_pre.h \
+ecs_pre_ideas.h \
+ecs_pre_med.h \
+ecs_pre_nopo.h
+
 # Library source files
 
 noinst_LTLIBRARIES = libprepostecs.la

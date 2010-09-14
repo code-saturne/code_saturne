@@ -25,6 +25,22 @@ AM_CPPFLAGS = -I$(top_srcdir)/preprocessor/pre-post -I$(top_srcdir)/preprocessor
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 AM_LDFLAGS =
 
+# Headers
+
+noinst_HEADERS = \
+ecs_champ_att.h \
+ecs_champ_def.h \
+ecs_champ.h \
+ecs_champ_priv.h \
+ecs_descr_chaine.h \
+ecs_descr.h \
+ecs_descr_priv.h \
+ecs_famille_chaine.h \
+ecs_famille.h \
+ecs_famille_priv.h \
+ecs_maillage.h \
+ecs_maillage_priv.h
+
 # Library source files
 
 noinst_LTLIBRARIES = libbaseecs.la

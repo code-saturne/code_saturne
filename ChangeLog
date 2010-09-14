@@ -1,4 +1,25 @@
 * 14/09/2010 - David Monfort <david.monfort@edf.fr>
+  Make the dist target functional.
+  modified scripts:
+    doc/developper/Makefile.am
+    doc/howto/Makefile.am
+    doc/Makefile.am
+    doc/theory/graphics/Makefile.am
+    doc/theory/Makefile.am
+    doc/tutorial/graphics/Makefile.am
+    doc/tutorial/Makefile.am
+    gui/Base/Makefile.am
+    gui/Makefile.am
+    gui/Pages/Makefile.am
+    libsyrcs/Makefile.am
+    Makefile.am
+    preprocessor/appli/Makefile.am
+    preprocessor/base/Makefile.am
+    preprocessor/Makefile.am
+    preprocessor/pre-post/Makefile.am
+    preprocessor/util/Makefile.am
+
+* 14/09/2010 - David Monfort <david.monfort@edf.fr>
   Fix the definition of the number of inlet with vortex method activated.
   modified routine:
     src/base/vorinc.f90

@@ -22,7 +22,9 @@
 
 SUBDIRS = Base Pages
 
-# Install Python library
+EXTRA_DIST = \
+epydocConfig \
+sbin/unittests.py
 
 dist_pkgpython_PYTHON = \
 __init__.py \

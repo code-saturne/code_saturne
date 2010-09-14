@@ -212,6 +212,13 @@ WelcomeForm.ui
 QRCFILES = \
 resources_pages.qrc
 
+# Distribute icons directory, resources files and user interface files
+
+EXTRA_DIST = \
+icons \
+$(UIFILES) \
+$(QRCFILES)
+
 # Generated files
 
 FORMS = $(UIFILES:.ui=.py)
@@ -235,8 +242,10 @@ clean-local:
 # Install Python library
 
 pagesdir = $(pkgpythondir)/Pages
-pages_PYTHON = \
+dist_pages_PYTHON = \
 __init__.py \
-$(FORMS) \
-$(RESOURCES) \
 $(PYFILES)
+
+nodist_pages_PYTHON = \
+$(RESOURCES) \
+$(FORMS)

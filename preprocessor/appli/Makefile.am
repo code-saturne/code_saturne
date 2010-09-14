@@ -37,6 +37,11 @@ cs_preprocess_SOURCES = \
 ecs_cmd.c \
 ecs_main.c
 
+
+noinst_HEADERS = \
+ecs_cmd.h \
+ecs_cmd_priv.h
+
 cs_preprocess_LDADD = \
 $(top_builddir)/preprocessor/pre-post/libprepostecs.la \
 $(top_builddir)/preprocessor/base/libbaseecs.la \

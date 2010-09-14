@@ -50,7 +50,8 @@ V-57.png V-58.png V-59.png V-5.png V-60bis.png V-60.png V-61.png V-62.png \
 V-63.png V-64.png V-65.png V-66.png V-67.png V-68.png V-69bis.png V-69.png \
 V-6.png V-70.png V-71.png V-72.png V-73bis.png V-73.png V-74bis.png V-74.png \
 V-75.png V-76bis.png V-76.png V-7.png V-8.png V-9.png \
-viscosity_law.png
+viscosity_law.png \
+case3.cmd evotemp_case3.agr probe9.agr
 
 # Distributed files
 

@@ -1,3 +1,7 @@
+2010-09-14  David Monfort <david.monfort@edf.fr>
+
+	* Make the dist target functional.
+
 2010-08-23  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Update and clean-up default compiler flags.

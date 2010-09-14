@@ -25,6 +25,21 @@ AM_CPPFLAGS =
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 AM_LDFLAGS =
 
+# Headers
+
+noinst_HEADERS = \
+ecs_backtrace.h \
+ecs_comm.h \
+ecs_def.h \
+ecs_elt_typ_liste.h \
+ecs_fic.h \
+ecs_file.h \
+ecs_mem.h \
+ecs_mem_usage.h \
+ecs_tab_glob.h \
+ecs_tab.h \
+ecs_timer.h
+
 # Library source files
 
 noinst_LTLIBRARIES = libutilecs.la

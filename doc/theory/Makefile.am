@@ -63,7 +63,7 @@ visort.tex \
 vissec.tex \
 vortex.tex
 
-TEXINPUTFILES =
+TEXINPUTFILES = input
 
 # Distributed files
 

@@ -28,7 +28,7 @@ TEXMAIN = developper.tex
 
 TEXOTHERS =
 
-TEXINPUTFILES =
+TEXINPUTFILES = input
 
 # Distributed files
 

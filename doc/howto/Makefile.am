@@ -28,7 +28,7 @@ TEXMAIN = howto.tex
 
 TEXOTHERS =
 
-TEXINPUTFILES =
+TEXINPUTFILES = input
 
 # Distributed files
 
