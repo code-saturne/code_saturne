@@ -1,4 +1,9 @@
 * 14/09/2010 - David Monfort <david.monfort@edf.fr>
+  Fix the definition of the number of inlet with vortex method activated.
+  modified routine:
+    src/base/vorinc.f90
+
+* 14/09/2010 - David Monfort <david.monfort@edf.fr>
   Fix generation of PyQt resource files.
   modified routine:
     gui/Pages/Makefile.am

@@ -34,7 +34,7 @@ module vorinc
   ! --------------
   ! Parametres max
   ! --------------
-  integer entmx, ndatmx
+  integer    nentmx, ndatmx
   parameter (nentmx = 10)
   parameter (ndatmx = 10000)
 
