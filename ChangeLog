@@ -1,4 +1,12 @@
 * 14/09/2010 - David Monfort <david.monfort@edf.fr>
+  Remove the bison/yacc compilation from the bootstrap stage to the
+  compilation stage. Also generate the corresponding C files at dist stage.
+  modified scripts:
+    configure.ac
+    sbin/bootstrap
+    src/mei/Makefile.am
+
+* 14/09/2010 - David Monfort <david.monfort@edf.fr>
   Generate the compilation at dist stage.
   Install the documentation with install target if present.
   modified scripts:

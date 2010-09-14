@@ -24,6 +24,11 @@ AM_CPPFLAGS = -I$(top_srcdir)/src/bft
 AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
 AM_LDFLAGS =
 
+AM_LFLAGS = -l
+AM_YFLAGS = -d
+
+BUILT_SOURCES = mei_parser.h
+
 include_HEADERS = \
 mei_evaluate.h \
 mei_hash_table.h \
@@ -31,7 +36,6 @@ mei_node.h
 
 noinst_HEADERS = \
 mei_math_util.h \
-mei_parser.h \
 mei_parser_glob.h
 
 lib_LTLIBRARIES = libmei.la
@@ -40,8 +44,14 @@ mei_evaluate.c \
 mei_hash_table.c \
 mei_math_util.c \
 mei_node.c \
-mei_parser.c \
 mei_parser_glob.c \
-mei_scanner.c
+mei_parser.y \
+mei_scanner.l
 
 libmei_la_LDFLAGS = -no-undefined -version-info 0:0:0
+
+# Distribute generated files so that the user do not need to have
+# yacc/lex tools installed.
+
+dist-hook: mei_parser.c mei_scanner.c
+	cp -p mei_parser.c mei_parser.h mei_scanner.c $(distdir)
