@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2008  EDF
+  Copyright (C) 2004-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -72,7 +72,6 @@
 #include "fvm_to_med.h"
 #include "fvm_to_ensight.h"
 #include "fvm_to_ensight_v1.h"
-#include "fvm_to_text.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -93,27 +92,9 @@ extern "C" {
 
 /* Number and status of defined formats */
 
-static const int _fvm_writer_n_formats = 5;
+static const int _fvm_writer_n_formats = 4;
 
-static fvm_writer_format_t _fvm_writer_format_list[5] = {
-
-  /* Built-in text writer */
-  {
-    "text",
-    VERSION,
-    (  FVM_WRITER_FORMAT_HAS_POLYGON
-     | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
-    FVM_WRITER_TRANSIENT_CONNECT,
-    NULL,                              /* n_version_strings_func */
-    NULL,                              /* version_string_func */
-    fvm_to_text_init_writer,           /* init_func */
-    fvm_to_text_finalize_writer,       /* finalize_func */
-    NULL,                              /* set_mesh_time_func */
-    NULL,                              /* needs_tesselation_func */
-    fvm_to_text_export_nodal,          /* export_nodal_func */
-    NULL,                              /* export_field_func */
-    NULL                               /* flush_func */
-  },
+static fvm_writer_format_t _fvm_writer_format_list[4] = {
 
   /* Built-in EnSight Gold writer */
   {

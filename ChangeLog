@@ -1,4 +1,14 @@
 * 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove FVM-specific text format support for mesh output.
+  modified files:
+    po/POTFILES.in
+    src/fvm/Makefile.am
+    src/fvm/fvm_writer.c
+  removed files:
+    src/fvm/fvm_to_text.c
+    src/fvm/fvm_to_text.h
+
+* 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Preprocessor: removed postprocessing format options
   and additional minor source code cleanup.
   modified files:

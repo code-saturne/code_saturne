@@ -158,7 +158,6 @@ src/fvm/fvm_to_cgns.c
 src/fvm/fvm_to_ensight.c
 src/fvm/fvm_to_ensight_case.c
 src/fvm/fvm_to_med.c
-src/fvm/fvm_to_text.c
 src/fvm/fvm_trace.c
 src/fvm/fvm_triangulate.c
 src/fvm/fvm_writer.c
