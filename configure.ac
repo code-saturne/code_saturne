@@ -72,13 +72,6 @@ AM_GNU_GETTEXT_VERSION([0.18.1])
 AM_INIT_AUTOMAKE([-Wall])
 
 AM_MAINTAINER_MODE
-# Enable maintainer mode by default for developpers
-if test "${enable_maintainer_mode+set}" = set; then
-  if test -d "${top_srcdir}/.git" -o -d "${top_srcdir}/.svn"; then
-    enable_maintainer_mode=yes
-  fi
-fi
-
 
 # Enable silent rules with "./configure --enable-silent-rules" or "make V=0"
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
