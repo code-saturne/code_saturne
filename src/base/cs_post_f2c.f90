@@ -103,7 +103,7 @@ end subroutine
 subroutine pstcma &
 !=================
 
- ( nummai , nommai ,                                              &
+ ( nummai , nommai , indgrp ,                                     &
    nbrcel , nbrfac , nbrfbr , lstcel , lstfac , lstfbr )
 
 !===============================================================================
