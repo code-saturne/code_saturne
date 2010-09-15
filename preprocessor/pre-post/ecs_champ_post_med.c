@@ -198,7 +198,7 @@ ecs_loc_champ_post_med__cv_int(ecs_int_t   *val_ecs,
 /*----------------------------------------------------------------------------
  *  Fonction qui renvoie un pointeur sur un tableau de type `med_float'
  *   dont les valeurs sont converties si necessaire
- *   a partir du tableau `val_ecs' ayant `nbr_val' valeurs de type `ecs_real_t'
+ *   a partir du tableau `val_ecs' ayant `nbr_val' valeurs de type `double'
  *
  *  On convertit les premières `pas_med' valeurs toutes les `pas_ecs'
  *   valeurs (utile pour ne sortir que les deux premières coordonnées en 2D)

@@ -1,4 +1,19 @@
 * 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor Preprocessor source code cleanup.
+  modified files:
+    preprocessor/appli/ecs_cmd.c
+    preprocessor/appli/ecs_main.c
+    preprocessor/pre-post/ecs_champ_post_ens.c
+    preprocessor/pre-post/ecs_champ_post_med.c
+    preprocessor/pre-post/ecs_post_ens.c
+    preprocessor/pre-post/ecs_pre_comet.c
+    preprocessor/pre-post/ecs_pre_ens.c
+    preprocessor/pre-post/ecs_pre_med.c
+    preprocessor/util/ecs_def.h
+    preprocessor/util/ecs_mem.c
+    preprocessor/util/ecs_mem_usage.c
+
+* 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Preprocessor always defines ecs_size_t as size_t and ecs_int_t as int.
   modified files:
     configure.ac

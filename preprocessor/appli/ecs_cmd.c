@@ -146,7 +146,7 @@ static char _sys_info_cpu_string[81] = "";
  * \return Pointer to static string containing CPU info.
  */
 
-#if defined(ECS_ARCH_Linux)
+#if defined(__linux__) || defined(__linux) || defined(linux)
 
 static const char *
 _sys_info_cpu(void)

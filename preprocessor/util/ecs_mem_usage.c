@@ -32,10 +32,26 @@
 #include "cs_config.h"
 #include "ecs_def.h"
 
+/* OS type */
+
+#if defined(__linux__) || defined(__linux) || defined(linux)
+#define ECS_OS_Linux
+
+#elif defined(__sun__) || defined(__sun) || defined(sun)
+#define ECS_OS_SunOS
+
+#elif defined(__uxpv__) || defined(__uxpv) || defined(uxpv)
+#define ECS_OS_UNIX_System_V
+
+#elif defined(__osf__)
+#define ECS_OS_OSF1
+
+#endif
+
 /* On Solaris, procfs may not be compiled in a largefile environment,
  * so we redefine macros before including any system header file. */
 
-#if defined(ECS_ARCH_Solaris) && defined(HAVE_UNISTD_H) \
+#if defined(ECS_OS_Solaris) && defined(HAVE_UNISTD_H) \
  && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
 #define _STRUCTURED_PROC 1
 #undef _FILE_OFFSET_BITS
@@ -50,7 +66,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined (ECS_ARCH_Linux) && defined(HAVE_SYS_STAT_H) \
+#if defined (ECS_OS_Linux) && defined(HAVE_SYS_STAT_H) \
  && defined(HAVE_SYS_TYPES_H) && defined(HAVE_UNISTD_H) \
 
 #include <sys/types.h>
@@ -58,7 +74,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#elif defined(ECS_ARCH_OSF1) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
+#elif defined(ECS_OS_OSF1) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/signal.h>
@@ -67,13 +83,13 @@
 #include <sys/procfs.h>
 #include <unistd.h>
 
-#elif defined(ECS_ARCH_Solaris) && defined(HAVE_UNISTD_H) \
+#elif defined(ECS_OS_Solaris) && defined(HAVE_UNISTD_H) \
    && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
 #include <sys/types.h>
 #include <sys/procfs.h>
 #include <unistd.h>
 
-#elif (defined(ECS_ARCH_IRIX64) || defined(ECS_ARCH_UNIX_System_V))
+#elif (defined(ECS_OS_IRIX64) || defined(ECS_OS_UNIX_System_V))
 #if defined(HAVE_UNISTD_H) && defined(HAVE_SYS_TYPES_H) \
                            && defined(HAVE_SYS_STAT_H)
 #include <sys/stat.h>
@@ -81,7 +97,7 @@
 #include <unistd.h>
 #endif
 
-#elif defined (ECS_ARCH_AIX) && defined(HAVE_GETRUSAGE)
+#elif defined (ECS_OS_AIX) && defined(HAVE_GETRUSAGE)
 #include <sys/times.h>
 #include <sys/resource.h>
 
@@ -94,7 +110,7 @@
 #if defined(HAVE_UNISTD_H) && defined(HAVE_SBRK)
 #if defined(__blrts__) || defined(__bgp_)
 #define USE_SBRK 1
-#elif defined (ECS_ARCH_Linux)
+#elif defined (ECS_OS_Linux)
 #define __USE_MISC 1
 #endif
 #include <unistd.h>
@@ -135,7 +151,7 @@ static size_t _ecs_mem_usage_global_max_pr = 0;
 static void  *_ecs_mem_usage_global_init_sbrk = NULL;
 #endif
 
-#if defined (ECS_ARCH_Linux) && defined(HAVE_SYS_STAT_H) \
+#if defined (ECS_OS_Linux) && defined(HAVE_SYS_STAT_H) \
                              && defined(HAVE_SYS_TYPES_H)
 static int  _ecs_mem_usage_proc_file_init = 0;
 #endif
@@ -144,7 +160,7 @@ static int  _ecs_mem_usage_proc_file_init = 0;
  * Local function definitions
  *-----------------------------------------------------------------------------*/
 
-#if defined (ECS_ARCH_Linux) && defined(HAVE_SYS_STAT_H) \
+#if defined (ECS_OS_Linux) && defined(HAVE_SYS_STAT_H) \
                              && defined(HAVE_SYS_TYPES_H)
 
 /*!
@@ -220,12 +236,12 @@ _ecs_mem_usage_pr_size_end(void)
     return;
 }
 
-#else  /* defined (ECS_ARCH_Linux) && ... */
+#else  /* defined (ECS_OS_Linux) && ... */
 
 #define _ecs_mem_usage_pr_size_init()
 #define _ecs_mem_usage_pr_size_end()
 
-#endif /* defined (ECS_ARCH_Linux) && ... */
+#endif /* defined (ECS_OS_Linux) && ... */
 
 /*============================================================================
  * Public function definitions
@@ -289,7 +305,7 @@ ecs_mem_usage_initialized(void)
  * non-portable function calls), 0 is returned.
  */
 
-#if defined (ECS_ARCH_Linux) && defined(HAVE_SYS_STAT_H) \
+#if defined (ECS_OS_Linux) && defined(HAVE_SYS_STAT_H) \
                            && defined(HAVE_SYS_TYPES_H)
 
 size_t
@@ -356,7 +372,7 @@ ecs_mem_usage_pr_size(void)
   return sys_mem_usage;
 }
 
-#elif defined (ECS_ARCH_OSF1) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
+#elif defined (ECS_OS_OSF1) && defined(_OSF_SOURCE) && defined(HAVE_UNISTD_H)
 
 size_t
 ecs_mem_usage_pr_size(void)
@@ -392,7 +408,7 @@ ecs_mem_usage_pr_size(void)
   return sys_mem_usage;
 }
 
-#elif defined(ECS_ARCH_Solaris) && defined(HAVE_UNISTD_H) \
+#elif defined(ECS_OS_Solaris) && defined(HAVE_UNISTD_H) \
    && defined(HAVE_SYS_PROCFS_H) && !defined(__cplusplus)
 
 size_t
@@ -430,7 +446,7 @@ ecs_mem_usage_pr_size(void)
   return sys_mem_usage;
 }
 
-#elif (defined(ECS_ARCH_IRIX64) || defined(ECS_ARCH_UNIX_System_V))
+#elif (defined(ECS_OS_IRIX64) || defined(ECS_OS_UNIX_System_V))
 
 size_t
 ecs_mem_usage_pr_size(void)
@@ -511,7 +527,7 @@ ecs_mem_usage_pr_size(void)
   return 0;
 }
 
-#endif /* ECS_ARCH_Linux, ECS_ARCH_OSF1, ... */
+#endif /* ECS_OS_Linux, ECS_OS_OSF1, ... */
 
 /*
  * \brief Return maximum process memory use (in kB) depending on OS.

@@ -520,12 +520,12 @@ void
 ecs_post_ens__ecr_int(const ecs_file_t  *fic,
                       int                val)
 {
-  ecs_int_32_t _val;
+  int32_t _val;
 
   if (ecs_file_get_type(fic) != ECS_FILE_TYPE_TEXT) {
 
     _val = val;
-    ecs_file_write(&_val, sizeof(ecs_int_32_t), 1, fic);
+    ecs_file_write(&_val, sizeof(int32_t), 1, fic);
 
   }
   else {

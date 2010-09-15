@@ -151,7 +151,7 @@ static void
 ecs_loc_post_ens__ecr_buf_int(const ecs_file_t    *fic,
                               int                  nbr_col,
                               size_t               nbr_val,
-                              const ecs_int_32_t  *buf)
+                              const int32_t       *buf)
 {
   int  iloc;
   size_t ival;
@@ -159,7 +159,7 @@ ecs_loc_post_ens__ecr_buf_int(const ecs_file_t    *fic,
 
   if (ecs_file_get_type(fic) != ECS_FILE_TYPE_TEXT)
 
-    ecs_file_write(buf, sizeof(ecs_int_32_t), nbr_val, fic);
+    ecs_file_write(buf, sizeof(int32_t), nbr_val, fic);
 
   else {
 
@@ -332,7 +332,7 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
 
   ecs_file_t * fic_imp;
 
-  ecs_int_32_t  connect_buf[4096];
+  int32_t      connect_buf[4096];
 
   ecs_post_ens_part_t  * this_part = NULL;
 

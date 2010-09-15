@@ -227,7 +227,7 @@ ecs_loc_convert_connect_med_ecs(med_int          *val_med,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui renvoie un pointeur sur un tableau de type `ecs_real_t'
+ *  Fonction qui renvoie un pointeur sur un tableau de type `double'
  *   dont les valeurs sont converties si nécessaire
  *   à partir du tableau `val_med' ayant `nbr_val' valeurs de type `med_float'
  *

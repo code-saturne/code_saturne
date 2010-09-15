@@ -459,13 +459,7 @@ main(int    argc,
 
   ecs_init_gestion_erreur();
 
-#if defined(ECS_ARCH_Linux)
-
-  /*
-    setlocale() doit être appellé sous certaines distributions de Linux
-    pour que les accents apparaissent correctement dans les chaînes de
-    caractères.
-  */
+#if defined(ENABLE_NLS)
 
   if (getenv("LANG") != NULL)
      setlocale(LC_ALL,"");
@@ -473,11 +467,9 @@ main(int    argc,
      setlocale(LC_ALL,"C");
   setlocale(LC_NUMERIC,"C");
 
-#endif
-
-#if defined(ENABLE_NLS)
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);
+
 #endif
 
   /* Initialisation comptage et gestion mémoire */
@@ -485,15 +477,6 @@ main(int    argc,
   ecs_mem_usage_init();
 
   ecs_mem_init(getenv("CS_PREPROCESS_MEM_LOG"));
-
-
-  /* On vérifie que les dimensions de certains types sont valables */
-
-  if (sizeof(ecs_int_32_t) != 4)
-    ecs_error(__FILE__, __LINE__, 0,
-              _("This program was built with type \"ecs_int_32_t\"\n"
-                "of length %d bytes instead of 4. (porting error)\n"),
-              sizeof(ecs_int_32_t));
 
 
   /* Lecture de la ligne de commande */
@@ -529,6 +512,19 @@ main(int    argc,
 
   ecs_maillage__trie_typ_geo(maillage);
   printf("\n");
+
+  /*========================================================================*/
+  /* Passages des couleurs et groupes aux familles                          */
+  /* (se fait dès que tous les éléments pouvant porter des familles sont    */
+  /*  fusionnés)                                                            */
+  /*========================================================================*/
+
+  printf(_("\n\n"
+           "Defining families\n"
+           "-----------------\n\n"));
+
+  ecs_maillage__cree_famille(maillage);
+
 
   /*==========================================================================*/
   /* Préparation du Post-traitement                                           */
@@ -589,19 +585,6 @@ main(int    argc,
     ECS_FREE(liste_cel_correct.val);
     liste_cel_correct.nbr = 0;
   }
-
-
-  /*========================================================================*/
-  /* Passages des couleurs et groupes aux familles                          */
-  /* (se fait dès que tous les éléments pouvant porter des familles sont    */
-  /*  fusionnés)                                                            */
-  /*========================================================================*/
-
-  printf(_("\n\n"
-           "Defining families\n"
-           "-----------------\n\n"));
-
-  ecs_maillage__cree_famille(maillage);
 
 
   /*==========================================================================*/

@@ -112,10 +112,10 @@ typedef struct {
 typedef struct {
   ecs_int_t        nbr_ele;   /* Nombre d'éléments */
   ecs_elt_typ_t    elt_typ;   /* Type d'élément */
-  ecs_int_32_t    *nbr_n;     /* Nbr. sommets/faces (polygones/polyèdres) */
-  ecs_int_32_t    *nbr_f;     /* Nbr. faces/elem (polyèdres) */
-  ecs_int_32_t    *connect;   /* Connectivité sommets */
-  ecs_int_t        num_part;  /* Numéro de part associé */
+  int32_t         *nbr_n;     /* Nbr. sommets/faces (polygones/polyèdres) */
+  int32_t         *nbr_f;     /* Nbr. faces/elem (polyèdres) */
+  int32_t         *connect;   /* Connectivité sommets */
+  int              num_part;  /* Numéro de part associé */
 } ecs_loc_elems_ens_t;
 
 
@@ -135,7 +135,7 @@ ecs_loc_pre_ens__ouverture_fic_geo(const char  *nom_fic_geo)
 
   char  chaine[ECS_LOC_LNG_MAX_CHAINE_ENS];
 
-  ecs_int_32_t  test_endian;
+  int32_t  test_endian;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -170,7 +170,7 @@ ecs_loc_pre_ens__ouverture_fic_geo(const char  *nom_fic_geo)
 
     ecs_file_set_type(fic, ECS_FILE_TYPE_FORTRAN_BINARY);
 
-    test_endian = *((ecs_int_32_t *)chaine);
+    test_endian = *((int32_t *)chaine);
 
     if (test_endian == 80)
       ecs_file_set_swap_endian(fic, 0);
@@ -297,10 +297,10 @@ ecs_loc_pre_ens__lit_chaine_essai(const ecs_file_t  *fic_geo,
  *  responsabilité de le libérer.
  *----------------------------------------------------------------------------*/
 
-static ecs_int_32_t *
+static int32_t *
 ecs_loc_pre_ens__lit_int(const ecs_file_t  *fic_geo,
                          ecs_int_t          nbr,
-                         ecs_int_32_t      *val,
+                         int32_t           *val,
                          const int          l_format,
                          int               *num_ligne)
 {
@@ -311,16 +311,16 @@ ecs_loc_pre_ens__lit_int(const ecs_file_t  *fic_geo,
   int          val_lue;
 
   ecs_int_t    cpt_lus = 0;
-  ecs_int_32_t  * val_loc = val;
+  int32_t    * val_loc = val;
 
   assert(l_format <= 10);
 
   if (val_loc == NULL)
-    ECS_MALLOC(val_loc, nbr, ecs_int_32_t);
+    ECS_MALLOC(val_loc, nbr, int32_t);
 
 
   if (ecs_file_get_type(fic_geo) != ECS_FILE_TYPE_TEXT)
-    ecs_file_read(val_loc, sizeof(ecs_int_32_t), nbr, fic_geo);
+    ecs_file_read(val_loc, sizeof(int32_t), nbr, fic_geo);
 
   else {
 
@@ -348,7 +348,7 @@ ecs_loc_pre_ens__lit_int(const ecs_file_t  *fic_geo,
         pos_ligne++;
         if (ic == l_format) {
           val_lue = atoi(sub);
-          val_loc[cpt_lus] = (ecs_int_32_t)val_lue;
+          val_loc[cpt_lus] = (int32_t)val_lue;
           cpt_lus++;
           ic = 0;
         }
@@ -442,7 +442,7 @@ ecs_loc_pre_ens__lit_float(const ecs_file_t  *fic_geo,
 static void
 ecs_loc_pre_ens__lit_tab_coo_6(const ecs_file_t  *fic_geo,
                                ecs_int_t          nbr_lignes,
-                               ecs_int_32_t      *val_id,
+                               int32_t           *val_id,
                                float             *val_coord,
                                int               *num_ligne)
 {
@@ -462,7 +462,7 @@ ecs_loc_pre_ens__lit_tab_coo_6(const ecs_file_t  *fic_geo,
        (réels) ne sont pas entrelacés */
 
     if (val_id != NULL)
-      ecs_file_read(val_id, sizeof(ecs_int_32_t), nbr_lignes, fic_geo);
+      ecs_file_read(val_id, sizeof(int32_t), nbr_lignes, fic_geo);
 
     ecs_file_read(val_coord, sizeof(float), nbr_lignes * 3, fic_geo);
 
@@ -484,7 +484,7 @@ ecs_loc_pre_ens__lit_tab_coo_6(const ecs_file_t  *fic_geo,
         for (ic = 0; ic < l_format_int; ic++)
           sub[ic] = ligne[pos_ligne++];
         sub[l_format_int] = '\0';
-        val_id[cpt_lignes_lues] = (ecs_int_32_t)(atoi(sub));
+        val_id[cpt_lignes_lues] = (int32_t)(atoi(sub));
       }
 
       sub[l_format_real] = '\0';
@@ -511,8 +511,8 @@ ecs_loc_pre_ens__lit_tab_connect(const ecs_file_t  *fic_geo,
                                  ecs_int_t          nbr_lignes,
                                  bool               lit_id,
                                  ecs_int_t          nbr_som_elt,
-                                 ecs_int_32_t      *val_id,
-                                 ecs_int_32_t      *val_connect,
+                                 int32_t           *val_id,
+                                 int32_t           *val_connect,
                                  int               *num_ligne)
 {
   char         ligne[ECS_LOC_LNG_MAX_CHAINE_ENS];
@@ -532,9 +532,9 @@ ecs_loc_pre_ens__lit_tab_connect(const ecs_file_t  *fic_geo,
        ne sont pas entrelacés */
 
     if (lit_id == true)
-      ecs_file_read(val_id, sizeof(ecs_int_32_t), nbr_lignes, fic_geo);
+      ecs_file_read(val_id, sizeof(int32_t), nbr_lignes, fic_geo);
 
-    ecs_file_read(val_connect, sizeof(ecs_int_32_t),
+    ecs_file_read(val_connect, sizeof(int32_t),
                   nbr_lignes * nbr_som_elt, fic_geo);
 
   }
@@ -574,10 +574,10 @@ ecs_loc_pre_ens__lit_tab_connect(const ecs_file_t  *fic_geo,
           val_lue = atoi(sub);
 
           if (lit_id == true && cpt_val_ligne == 0)
-            val_id[cpt_lignes_lues] = (ecs_int_32_t)val_lue;
+            val_id[cpt_lignes_lues] = (int32_t)val_lue;
           else {
             val_connect[cpt_lignes_lues*nbr_som_elt + cpt_som_ligne]
-              = (ecs_int_32_t)val_lue;
+              = (int32_t)val_lue;
             cpt_som_ligne++;
           }
 
@@ -612,18 +612,18 @@ ecs_loc_pre_ens__lit_noeuds_gold(ecs_file_t             *fic,
                                  int                    *num_ligne)
 {
 
-  ecs_int_t          ind;
-  ecs_int_t          ind_coo;
-  ecs_int_t          nbr_noeuds;
+  ecs_int_t     ind;
+  ecs_int_t     ind_coo;
+  ecs_int_t     nbr_noeuds;
 
-  ecs_int_32_t       val_int_lue;
+  int32_t       val_int_lue;
 
   ecs_loc_noeuds_ens_t  *noeuds_loc;
 
-  ecs_int_32_t     *id_noeud_loc = NULL;
-  ecs_int_t        *id_noeud_tmp = NULL;
-  float            *coord_loc    = NULL;
-  ecs_coord_t      *coord_tmp    = NULL;
+  int32_t      *id_noeud_loc = NULL;
+  ecs_int_t    *id_noeud_tmp = NULL;
+  float        *coord_loc    = NULL;
+  ecs_coord_t  *coord_tmp    = NULL;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -661,8 +661,7 @@ ecs_loc_pre_ens__lit_noeuds_gold(ecs_file_t             *fic,
 
     /* Conversion des id noeuds */
 
-    if (   id_noeud_loc == NULL
-        || sizeof(ecs_int_32_t) == sizeof(ecs_int_t))
+    if (id_noeud_loc == NULL || sizeof(int32_t) == sizeof(ecs_int_t))
       id_noeud_tmp = (ecs_int_t *)id_noeud_loc;
 
     else {
@@ -709,15 +708,15 @@ ecs_loc_pre_ens__lit_noeuds_6(ecs_file_t             *fic,
                               char                    chaine[],
                               int                    *num_ligne)
 {
-  ecs_int_t         ind;
-  ecs_int_t         nbr_noeuds;
+  ecs_int_t    ind;
+  ecs_int_t    nbr_noeuds;
 
-  ecs_int_32_t      val_int_lue;
+  int32_t      val_int_lue;
 
-  ecs_int_32_t     *id_noeud_loc = NULL;
-  ecs_int_t        *id_noeud_tmp = NULL;
-  float            *coord_loc    = NULL;
-  ecs_coord_t      *coord_tmp    = NULL;
+  int32_t       *id_noeud_loc = NULL;
+  ecs_int_t     *id_noeud_tmp = NULL;
+  float         *coord_loc    = NULL;
+  ecs_coord_t   *coord_tmp    = NULL;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -733,7 +732,7 @@ ecs_loc_pre_ens__lit_noeuds_6(ecs_file_t             *fic,
   nbr_noeuds = val_int_lue;
 
   if (lire_id_noeud == true)
-    ECS_MALLOC(id_noeud_loc, nbr_noeuds,  ecs_int_32_t);
+    ECS_MALLOC(id_noeud_loc, nbr_noeuds,  int32_t);
   else
     id_noeud_loc = NULL;
 
@@ -756,8 +755,7 @@ ecs_loc_pre_ens__lit_noeuds_6(ecs_file_t             *fic,
 
   /* Conversion des id noeuds */
 
-  if (   id_noeud_loc == NULL
-      || sizeof(ecs_int_32_t) == sizeof(ecs_int_t))
+  if (id_noeud_loc == NULL || sizeof(int32_t) == sizeof(ecs_int_t))
     id_noeud_tmp = (ecs_int_t *)id_noeud_loc;
 
   else {
@@ -855,11 +853,11 @@ ecs_loc_pre_ens__type_elem(ecs_file_t     *fic,
  * Cette fonction renvoie un pointeur sur le tableau de connectivité réalloué.
  *----------------------------------------------------------------------------*/
 
-static ecs_int_32_t *
-ecs_loc_pre_ens__ele_lin(ecs_int_32_t  *connect_loc,
-                         ecs_int_t      nbr_ele,
-                         ecs_int_t      taille_ele,
-                         ecs_int_t      taille_ele_lin)
+static int32_t *
+ecs_loc_pre_ens__ele_lin(int32_t     *connect_loc,
+                         ecs_int_t    nbr_ele,
+                         ecs_int_t    taille_ele,
+                         ecs_int_t    taille_ele_lin)
 {
   ecs_int_t    ielt;
   ecs_int_t    iloc;
@@ -875,7 +873,7 @@ ecs_loc_pre_ens__ele_lin(ecs_int_32_t  *connect_loc,
     for (iloc = 0; iloc < taille_ele_lin; iloc++)
       connect_loc[ipos_lin++] = connect_loc[ipos_ens++];
 
-    ECS_REALLOC(connect_loc, ipos_lin, ecs_int_32_t);
+    ECS_REALLOC(connect_loc, ipos_lin, int32_t);
   }
 
   return connect_loc;
@@ -906,14 +904,14 @@ ecs_loc_pre_ens__lit_elem_gold(ecs_file_t                   *fic,
 
   ecs_elt_typ_t   elt_typ;
 
-  ecs_int_32_t  * id_elem;
+  int32_t     * id_elem;
 
   ecs_loc_elems_ens_t  *elems_loc;
 
-  ecs_int_32_t    nbr_elt_loc = 0;
-  ecs_int_32_t  * nbr_n_loc = NULL;
-  ecs_int_32_t  * nbr_f_loc = NULL;
-  ecs_int_32_t  * connect_loc = NULL;
+  int32_t    nbr_elt_loc = 0;
+  int32_t  * nbr_n_loc = NULL;
+  int32_t  * nbr_f_loc = NULL;
+  int32_t  * connect_loc = NULL;
 
   const ecs_int_t  l_fmt_int = 10;
 
@@ -1081,14 +1079,14 @@ ecs_loc_pre_ens__lit_elem_6(ecs_file_t            *fic,
 
   ecs_elt_typ_t   elt_typ;
 
-  ecs_int_32_t  * id_elem;
+  int32_t  * id_elem;
 
   ecs_loc_elems_ens_t  *elems_loc;
 
-  ecs_int_32_t    nbr_elt_loc = 0;
-  ecs_int_32_t  * nbr_n_loc = NULL;
-  ecs_int_32_t  * nbr_f_loc = NULL;
-  ecs_int_32_t  * connect_loc = NULL;
+  int32_t    nbr_elt_loc = 0;
+  int32_t  * nbr_n_loc = NULL;
+  int32_t  * nbr_f_loc = NULL;
+  int32_t  * connect_loc = NULL;
 
   const ecs_int_t  l_fmt_int = 8;
 
@@ -1117,8 +1115,8 @@ ecs_loc_pre_ens__lit_elem_6(ecs_file_t            *fic,
   /* et Lecture de la connectivité                  */
   /*------------------------------------------------*/
 
-  ECS_MALLOC(id_elem, nbr_elt_loc, ecs_int_32_t);
-  ECS_MALLOC(connect_loc, nbr_elt_loc * nbr_som_elt, ecs_int_32_t);
+  ECS_MALLOC(id_elem, nbr_elt_loc, int32_t);
+  ECS_MALLOC(connect_loc, nbr_elt_loc * nbr_som_elt, int32_t);
 
   ecs_loc_pre_ens__lit_tab_connect(fic ,
                                    nbr_elt_loc  ,
@@ -1747,14 +1745,14 @@ static void
 ecs_loc_pre_ens__c_bin_endian_6(ecs_file_t  *fic,
                                 bool         lire_id_noeud)
 {
-  char               chaine[ECS_LOC_LNG_MAX_CHAINE_ENS];
+  char          chaine[ECS_LOC_LNG_MAX_CHAINE_ENS];
 
-  ecs_int_t          nbr_noeuds;
-  ecs_int_32_t       val_int_lue;
+  ecs_int_t     nbr_noeuds;
+  int32_t       val_int_lue;
 
-  ecs_int_t          ret = 0;
+  ecs_int_t     ret = 0;
 
-  bool               swap_endian = false;
+  bool          swap_endian = false;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -1780,7 +1778,7 @@ ecs_loc_pre_ens__c_bin_endian_6(ecs_file_t  *fic,
 
     /* On revient en arrière pour la suite */
 
-    ret = ecs_file_seek(fic, -1 * sizeof(ecs_int_32_t), ECS_FILE_SEEK_CUR);
+    ret = ecs_file_seek(fic, -1 * sizeof(int32_t), ECS_FILE_SEEK_CUR);
 
     if (ret == 0)
       ret = ecs_file_seek(fic, -80 * sizeof(char), ECS_FILE_SEEK_CUR);
@@ -1793,7 +1791,7 @@ ecs_loc_pre_ens__c_bin_endian_6(ecs_file_t  *fic,
 
     if (lire_id_noeud == true)
       ret = ecs_file_seek(fic,
-                          nbr_noeuds * sizeof(ecs_int_32_t),
+                          nbr_noeuds * sizeof(int32_t),
                           ECS_FILE_SEEK_CUR);
 
     if (ret == 0)
@@ -1996,8 +1994,8 @@ ecs_loc_pre_ens__lit_geo_gold(const char       *nom_fic_geo,
 
   while (fin_lecture == false)  {
 
-    ecs_int_32_t  num_part_lu;
-    ecs_int_32_t  cpt_part_lu = 0;
+    int32_t  num_part_lu;
+    int32_t  cpt_part_lu = 0;
 
     /* Numéro de part */
 
@@ -2312,8 +2310,8 @@ ecs_loc_pre_ens__lit_geo_6(const char       *nom_fic_geo,
 
   while (fin_lecture == false)  {
 
-    ecs_int_32_t  num_part_lu;
-    ecs_int_32_t  cpt_part_lu = 0;
+    int32_t  num_part_lu;
+    int32_t  cpt_part_lu = 0;
 
     /* Numéro de part */
 

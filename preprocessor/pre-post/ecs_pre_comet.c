@@ -157,7 +157,7 @@ ecs_pre_comet__lit_chaine_xdr(ecs_file_t  *fic)
 
   char * chaine_lue;
   char * chaine;
-  ecs_int_32_t *type;
+  int32_t *type;
 
 
   /*Xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -165,7 +165,7 @@ ecs_pre_comet__lit_chaine_xdr(ecs_file_t  *fic)
 
   /* Longueur de la chaîne */
 
-  ECS_MALLOC(type, 1, ecs_int_32_t);
+  ECS_MALLOC(type, 1, int32_t);
   ecs_file_read(type, 4, 1, fic);
 
   l_chaine = (ecs_int_t) *type;
@@ -215,7 +215,7 @@ ecs_pre_comet__lit_vertex(ecs_file_t               *fic,
   char *tab_lec;
   ecs_int_t inoeud;
 
-  ecs_int_32_t *type = NULL;
+  int32_t *type = NULL;
 
   int couleur;
 
@@ -224,7 +224,7 @@ ecs_pre_comet__lit_vertex(ecs_file_t               *fic,
 
   /* Lecture */
 
-  ECS_MALLOC(type, 2, ecs_int_32_t);
+  ECS_MALLOC(type, 2, int32_t);
 
   ecs_file_read(type, 4, 2, fic);
   nbr_noeuds_loc = (ecs_int_t ) *type;
@@ -281,7 +281,7 @@ ecs_pre_comet__lit_vertex(ecs_file_t               *fic,
   for (inoeud = 0; inoeud < nbr_noeuds_loc; inoeud ++) {
 
     id_loc[inoeud]
-      = (ecs_int_t) *((ecs_int_32_t *)(tab_lec + taille_rec*inoeud));
+      = (ecs_int_t) *((int32_t *)(tab_lec + taille_rec*inoeud));
 
     coord_loc[inoeud*3]
       = (ecs_coord_t) *((float *) (tab_lec + taille_rec*inoeud + 4));
@@ -318,7 +318,7 @@ ecs_pre_comet__lit_vertex_dbl(ecs_file_t               *fic,
   char *tab_lec;
   ecs_int_t inoeud;
 
-  ecs_int_32_t *type = NULL;
+  int32_t *type = NULL;
 
   int couleur;
 
@@ -326,7 +326,7 @@ ecs_pre_comet__lit_vertex_dbl(ecs_file_t               *fic,
 
   /* Lecture */
 
-  ECS_MALLOC(type, 2, ecs_int_32_t);
+  ECS_MALLOC(type, 2, int32_t);
 
   ecs_file_read(type, 4, 2, fic);
   nbr_noeuds_loc = (ecs_int_t ) *type;
@@ -388,7 +388,7 @@ ecs_pre_comet__lit_vertex_dbl(ecs_file_t               *fic,
                           4,
                           1);
    id_loc[inoeud]
-     = (ecs_int_t) *((ecs_int_32_t *)(tab_lec + taille_rec*inoeud));
+     = (ecs_int_t) *((int32_t *)(tab_lec + taille_rec*inoeud));
 
    if (is_little_endian == true)
      ecs_file_swap_endian(tab_lec + taille_rec*inoeud + 4,
@@ -442,8 +442,8 @@ ecs_pre_comet__lit_face(ecs_file_t              *fic,
 
   int couleur;
 
-  ecs_int_32_t *tab_lec = NULL;
-  ecs_int_32_t *int_lec = NULL;
+  int32_t *tab_lec = NULL;
+  int32_t *int_lec = NULL;
 
 
   /*Xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -451,7 +451,7 @@ ecs_pre_comet__lit_face(ecs_file_t              *fic,
 
   /* Lecture */
 
-  ECS_MALLOC(int_lec, 3, ecs_int_32_t);
+  ECS_MALLOC(int_lec, 3, int32_t);
 
   ecs_file_read(int_lec, 4, 3, fic);
   nbr_fac_loc = (ecs_int_t ) *int_lec;
@@ -496,7 +496,7 @@ ecs_pre_comet__lit_face(ecs_file_t              *fic,
   nbr_n_loc = (*faces)->nbr_n;
   taille_connect_loc = (*faces)->taille_connect;
 
-  ECS_REALLOC(int_lec, 6 , ecs_int_32_t);
+  ECS_REALLOC(int_lec, 6 , int32_t);
 
   cpt_som = 0;
 
@@ -504,7 +504,7 @@ ecs_pre_comet__lit_face(ecs_file_t              *fic,
   /* Allocation du tableau temporaire */
 
   max_som_fac = 8;
-  ECS_MALLOC(tab_lec, max_som_fac , ecs_int_32_t);
+  ECS_MALLOC(tab_lec, max_som_fac , int32_t);
 
 
   /* lecture face par face */
@@ -561,7 +561,7 @@ ecs_pre_comet__lit_face(ecs_file_t              *fic,
     }
 
     if (max_som_fac < nbr_n_loc[nbr_fac_ini + ifac]) {
-      ECS_REALLOC(tab_lec, max_som_fac * 2, ecs_int_32_t);
+      ECS_REALLOC(tab_lec, max_som_fac * 2, int32_t);
       max_som_fac = max_som_fac * 2;
     }
 
@@ -618,14 +618,14 @@ ecs_pre_comet__lit_boundary(ecs_file_t              *fic,
 
   int couleur;
 
-  ecs_int_32_t *tab_lec = NULL;
-  ecs_int_32_t *int_lec = NULL;
+  int32_t *tab_lec = NULL;
+  int32_t *int_lec = NULL;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   /* Lecture */
 
-  ECS_MALLOC(int_lec, 3, ecs_int_32_t);
+  ECS_MALLOC(int_lec, 3, int32_t);
 
   ecs_file_read(int_lec, 4, 3, fic);
   nbr_fac_loc = (ecs_int_t ) *int_lec;
@@ -669,7 +669,7 @@ ecs_pre_comet__lit_boundary(ecs_file_t              *fic,
   nbr_n_loc = (*faces)->nbr_n;
   taille_connect_loc = (*faces)->taille_connect;
 
-  ECS_REALLOC(int_lec, 6 , ecs_int_32_t);
+  ECS_REALLOC(int_lec, 6 , int32_t);
 
   /* lecture face par face */
 
@@ -678,7 +678,7 @@ ecs_pre_comet__lit_boundary(ecs_file_t              *fic,
   /* Allocation du tableau temporaire */
 
   max_som_fac = 8;
-  ECS_MALLOC(tab_lec, max_som_fac , ecs_int_32_t);
+  ECS_MALLOC(tab_lec, max_som_fac , int32_t);
 
   for (ifac = 0; ifac < nbr_fac_loc; ifac ++) {
 
@@ -731,7 +731,7 @@ ecs_pre_comet__lit_boundary(ecs_file_t              *fic,
     }
 
     if (max_som_fac < nbr_n_loc[nbr_fac_ini + ifac]) {
-      ECS_REALLOC(tab_lec, max_som_fac * 2, ecs_int_32_t);
+      ECS_REALLOC(tab_lec, max_som_fac * 2, int32_t);
       max_som_fac = max_som_fac * 2;
     }
 
@@ -781,11 +781,11 @@ ecs_pre_comet__lit_cell(ecs_file_t             *fic,
 
   int couleur;
 
-  ecs_int_32_t *int_lec = NULL;
+  int32_t *int_lec = NULL;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  ECS_MALLOC(int_lec, 3, ecs_int_32_t);
+  ECS_MALLOC(int_lec, 3, int32_t);
 
   ecs_file_read(int_lec, 4, 3, fic);
   nbr_cel_loc = (ecs_int_t ) *int_lec;
@@ -817,7 +817,7 @@ ecs_pre_comet__lit_cell(ecs_file_t             *fic,
   id_loc = (*cels)->id;
   icoul_loc = (*cels)->icoul;
 
-  ECS_REALLOC(int_lec, nbr_cel_loc, ecs_int_32_t);
+  ECS_REALLOC(int_lec, nbr_cel_loc, int32_t);
 
   ecs_file_read(int_lec, 4, nbr_cel_loc, fic);
 
@@ -841,7 +841,7 @@ ecs_pre_comet__lit_shell(ecs_file_t  *fic)
   int couleur;
   ecs_int_t count;
 
-  ecs_int_32_t *int_lec = NULL;
+  int32_t *int_lec = NULL;
   ecs_int_t taille_lec;
   ecs_int_t nbr_shell_loc;
 
@@ -849,7 +849,7 @@ ecs_pre_comet__lit_shell(ecs_file_t  *fic)
 
   taille_lec = 3;
 
-  ECS_MALLOC(int_lec, taille_lec, ecs_int_32_t);
+  ECS_MALLOC(int_lec, taille_lec, int32_t);
 
   ecs_file_read(int_lec, 4, 3, fic);
   nbr_shell_loc = (ecs_int_t ) *int_lec;
@@ -863,7 +863,7 @@ ecs_pre_comet__lit_shell(ecs_file_t  *fic)
     ecs_file_read(int_lec, 4, 2, fic);
     count = (ecs_int_t ) *(int_lec + 1);
     if (taille_lec < count) {
-      ECS_MALLOC(int_lec, count, ecs_int_32_t);
+      ECS_MALLOC(int_lec, count, int32_t);
       taille_lec = count;
     }
     ecs_file_read(int_lec, 4, count, fic);
@@ -884,7 +884,7 @@ ecs_pre_comet__lit_map(ecs_file_t  *fic)
   int couleur;
   ecs_int_t tag;
 
-  ecs_int_32_t *int_lec = NULL;
+  int32_t *int_lec = NULL;
   ecs_int_t taille_lec;
   ecs_int_t nbr_map_loc;
 
@@ -894,7 +894,7 @@ ecs_pre_comet__lit_map(ecs_file_t  *fic)
 
   taille_lec = 3;
 
-  ECS_MALLOC(int_lec, taille_lec, ecs_int_32_t);
+  ECS_MALLOC(int_lec, taille_lec, int32_t);
 
   ecs_file_read(int_lec, 4, 3, fic);
   nbr_map_loc = (ecs_int_t ) *int_lec;
@@ -934,7 +934,7 @@ ecs_pre_comet__lit_interf(ecs_file_t  *fic,
 
   int couleur;
 
-  ecs_int_32_t *int_lec = NULL;
+  int32_t *int_lec = NULL;
   ecs_int_t taille_lec;
   ecs_int_t nbr_shell_loc;
 
@@ -942,7 +942,7 @@ ecs_pre_comet__lit_interf(ecs_file_t  *fic,
 
   taille_lec = 6;
 
-  ECS_MALLOC(int_lec, taille_lec, ecs_int_32_t);
+  ECS_MALLOC(int_lec, taille_lec, int32_t);
 
   ecs_file_read(int_lec, 4, 3, fic);
   nbr_shell_loc = (ecs_int_t ) *int_lec;
@@ -972,7 +972,7 @@ ecs_pre_comet__lit_scalar(ecs_file_t  *fic)
   ecs_int_t icel;
   int couleur;
 
-  ecs_int_32_t *int_lec = NULL;
+  int32_t *int_lec = NULL;
   ecs_int_t taille_lec;
   ecs_int_t nbr_shell_loc;
 
@@ -980,7 +980,7 @@ ecs_pre_comet__lit_scalar(ecs_file_t  *fic)
 
   taille_lec = 3;
 
-  ECS_MALLOC(int_lec, taille_lec, ecs_int_32_t);
+  ECS_MALLOC(int_lec, taille_lec, int32_t);
 
   ecs_file_read(int_lec, 4, 3, fic);
   nbr_shell_loc = (ecs_int_t ) *int_lec;
@@ -1401,7 +1401,7 @@ ecs_pre_comet__lit_maillage(const char  *nom_fic)
   ecs_loc_faces_comet_t  *liste_faces;
   ecs_loc_cels_comet_t   *liste_cels;
 
-  ecs_int_32_t * type = NULL;
+  int32_t * type = NULL;
   ecs_int_t nbr_elts_lus;
 
   ecs_int_t num_version;
@@ -1481,7 +1481,7 @@ ecs_pre_comet__lit_maillage(const char  *nom_fic)
 
   /* numero de version */
 
-  ECS_MALLOC(type, 1, ecs_int_32_t);
+  ECS_MALLOC(type, 1, int32_t);
 
   nbr_elts_lus = ecs_file_read_try(type, 4, 1, fic);
 

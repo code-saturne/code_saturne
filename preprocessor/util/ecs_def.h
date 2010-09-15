@@ -2,7 +2,7 @@
 #define _ECS_DEF_H_
 
 /*============================================================================
- * Définitions, variables globales, et fonctions de base
+ * Definitions, global variables, and base functions
  *============================================================================*/
 
 /*
@@ -30,43 +30,16 @@
   Boston, MA  02110-1301  USA
 */
 
-
-/*----------------------------------------------------------------------------
- *  Fichier  `include' associé à la configuration du cas
- *  (généré par le Makefile)
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 #include "cs_config.h"
 
+/*
+ * Standard C library headers
+ */
 
 /*============================================================================
- * Définition de l'architecture
- *============================================================================*/
-
-#if defined(__sgi__) || defined(__sgi) || defined(sgi)
-#define ECS_ARCH_IRIX_64
-
-#elif defined(__hpux__) || defined(__hpux) || defined(hpux)
-#define ECS_ARCH_HP_UX
-
-#elif defined(__linux__) || defined(__linux) || defined(linux)
-#define ECS_ARCH_Linux
-
-#elif defined(__sun__) || defined(__sun) || defined(sun)
-#define ECS_ARCH_SunOS
-
-#elif defined(__uxpv__) || defined(__uxpv) || defined(uxpv)
-#define ECS_ARCH_UNIX_System_V
-
-#elif defined(__osf__)
-#define ECS_ARCH_OSF1
-
-#endif
-
-
-/*============================================================================
- * Définitions de type C99 qui ne sont pas toujurs fournies par des
- * compilateurs ou environnements plus anciens.
+ * Definition of C99 type which may not be available with older tools.
  *============================================================================*/
 
 #if HAVE_STDDEF_H
@@ -76,8 +49,8 @@
 #endif
 
 /*
- * En général, stdint.h est inclus par inttypes.h, mais seulement inttypes.h
- * existe sur certains systèmes, tels que Tru64Unix.
+ * Usually, stdint.h is included by inttypes.h, but only inttypes.h
+ * may be found on some systems, such as Tru64Unix.
  */
 
 #if HAVE_STDINT_H
@@ -156,68 +129,49 @@ typedef unsigned long long uint64_t;
 # endif
 #endif
 
+/*-----------------------------------------------------------------------------
+ * Local type definitions
+ *----------------------------------------------------------------------------*/
 
-/*============================================================================
- * Définitions de types
- *============================================================================*/
+typedef int             ecs_int_t;      /* Integer */
+typedef size_t          ecs_size_t;     /* Index size */
+typedef double          ecs_coord_t;    /* Real (floating point) */
+typedef char            ecs_byte_t;     /* Byte (untyped memory) */
 
-/*  Types de dimension fixée. */
-
-#if (defined ECS_ARCH_Linux)
-#include <stdint.h>
-
-typedef int32_t         ecs_int_32_t;   /* Entier sur 4 octets */
-
-#else
-
-typedef int             ecs_int_32_t;   /* Entier sur 4 octets */
-
-#endif
-
-
-/* Types usuels */
-
-typedef int             ecs_int_t;      /* Entier */
-typedef size_t          ecs_size_t;     /* Taille pour les index */
-typedef double          ecs_coord_t;    /* Réel (virgule flottante) */
-typedef char            ecs_byte_t;     /* Octet (unité de mémoire non typée) */
-
-/* Énumération de type ("type de type") pour transmettre le type d'une donnée */
+/* Type enumeration */
 
 typedef enum {
-  ECS_TYPE_char,
   ECS_TYPE_bool,
-  ECS_TYPE_ecs_int_t,
-  ECS_TYPE_ecs_int_32_t,
+  ECS_TYPE_char,
   ECS_TYPE_ecs_coord_t,
+  ECS_TYPE_ecs_int_t,
   ECS_TYPE_ecs_size_t,
   ECS_TYPE_size_t,
   ECS_TYPE_void
 } ecs_type_t;
 
-/* Énumération liée au type d'élément */
+/* Element types */
 
 typedef enum {
 
-  ECS_ELT_TYP_NUL,         /*  Pas de type */
+  ECS_ELT_TYP_NUL,         /*  No type */
 
   ECS_ELT_TYP_FAC_TRIA,    /*  Triangle */
   ECS_ELT_TYP_FAC_QUAD,    /*  Quadrangle */
 
-  ECS_ELT_TYP_CEL_TETRA,   /*  Tétraèdre */
-  ECS_ELT_TYP_CEL_PYRAM,   /*  Pyramide */
-  ECS_ELT_TYP_CEL_PRISM,   /*  Prisme */
-  ECS_ELT_TYP_CEL_HEXA,    /*  Hexaedre */
+  ECS_ELT_TYP_CEL_TETRA,   /*  Tetrahedron */
+  ECS_ELT_TYP_CEL_PYRAM,   /*  Pyramid */
+  ECS_ELT_TYP_CEL_PRISM,   /*  Prism */
+  ECS_ELT_TYP_CEL_HEXA,    /*  Hexahedron */
 
-  ECS_ELT_TYP_FAC_POLY,    /*  Polygone quelconque */
-  ECS_ELT_TYP_CEL_POLY,    /*  Polyedre quelconque */
+  ECS_ELT_TYP_FAC_POLY,    /*  Polygon */
+  ECS_ELT_TYP_CEL_POLY,    /*  Polyhedron */
 
   ECS_ELT_TYP_FIN
 
 } ecs_elt_typ_t ;
 
-
-/* Qualificateurs de types restrict (existe en standard en C99) */
+/* Restrict qualifier (standard in C99) */
 
 #if defined(__GNUC__)
 #define restrict __restrict
@@ -225,19 +179,17 @@ typedef enum {
 #define restrict
 #endif
 
-
 /*=============================================================================
- * Définitions de macros
+ * Macro definitions
  *============================================================================*/
 
-/* Macros "classiques" */
+/* Classical macros */
 
-#define ECS_ABS(a)     ((a) <  0  ? -(a) : (a))  /* Valeur absolue de a */
-#define ECS_MIN(a,b)   ((a) > (b) ?  (b) : (a))  /* Minimum de a et b */
-#define ECS_MAX(a,b)   ((a) < (b) ?  (b) : (a))  /* Maximum de a et b */
+#define ECS_ABS(a)     ((a) <  0  ? -(a) : (a))  /* Absolute value */
+#define ECS_MIN(a, b)  ((a) > (b) ?  (b) : (a))  /* Minimum */
+#define ECS_MAX(a, b)  ((a) < (b) ?  (b) : (a))  /* Maximum */
 
-
-/* Définition du caractère de séparation de répertoires */
+/* Directory separator character */
 
 #define ECS_PATH_SEP             '/'
 
@@ -256,8 +208,7 @@ typedef enum {
 #define ECS_FMT_AFF_REE_PARAM     "%.15E"
 
 /*
- * Macros pour internationalisation éventuelle via gettext() ou une fonction
- * semblable (pour encadrer les chaînes de caractères imprimables)
+ * Internationalization macros.
  */
 
 #if defined(ENABLE_NLS)
@@ -277,54 +228,52 @@ typedef enum {
 #endif
 
 /*=============================================================================
- * Définitions de variables globales
+ * Global variable definitions
  *============================================================================*/
 
-extern char      ecs_glob_build_date[]; /* Date de compilation */
+extern char      ecs_glob_build_date[];
 
-extern int       ecs_glob_have_cgns;    /* Support du format CGNS */
+extern int       ecs_glob_have_cgns;    /* CGNS library support*/
 extern int       ecs_glob_cgns_ver_maj;
 extern int       ecs_glob_cgns_ver_min;
 extern int       ecs_glob_cgns_ver_rel;
 
-extern int       ecs_glob_have_med;     /* Support de la librairie d'échange de
-                                           maillages et champs MED */
+extern int       ecs_glob_have_med;     /* MED library support */
 
-/* Détermination du type d'élément en connectivité nodale en fonction du
-   nombre de ses sommets, pour des éléments de dimension 2 (faces)
-   ou 3 (cellules) ;
-   Au dessus de 8 sommets, on a toujours le type ECS_ELT_TYP_FAC_POLY pour
-   les faces et ECS_ELT_TYP_FAC_POLY pour les cellules */
+/* Element type determination based on an element's number of vertices,
+   for elements of dimension 2 (faces) or 3 (cells);
+   Beyond 8 vertices, we always have ECS_ELT_TYP_FAC_POLY for faces
+   and ECS_ELT_TYP_FAC_POLY for cells */
 
 extern  const ecs_elt_typ_t  ecs_glob_typ_elt[2][9];
 
 /*=============================================================================
- * Prototypes de fonctions
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Fonction d'initialisation de la gestion des erreurs
+ * Initialize error handling
  *----------------------------------------------------------------------------*/
 
 void
 ecs_init_gestion_erreur(void);
 
 /*----------------------------------------------------------------------------
- * Fonction d'arret
+ * Exit function.
  *----------------------------------------------------------------------------*/
 
 void
 ecs_exit(int  statut);
 
 /*----------------------------------------------------------------------------
- * Fonction d'impression d'un avertissement
+ * Print a warning.
  *----------------------------------------------------------------------------*/
 
 void
 ecs_warn(void);
 
 /*----------------------------------------------------------------------------
- * Fonction d'arrêt sur erreur
+ * Abort on error.
  *----------------------------------------------------------------------------*/
 
 void
@@ -335,8 +284,7 @@ ecs_error(const char  *file_name,
           ...);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui imprime une chaîne de caractères avec une largeur
- *  de colonne donnée.
+ * Print a string with a given column width.
  *----------------------------------------------------------------------------*/
 
 void
