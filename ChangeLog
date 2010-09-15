@@ -1,4 +1,9 @@
 * 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  French translation updates for Preprocessor.
+  modified files:
+    po/fr.po
+
+* 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove FVM-specific text format support for mesh output.
   modified files:
     po/POTFILES.in

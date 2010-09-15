@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-10 18:05+0200\n"
+"POT-Creation-Date: 2010-09-15 17:45+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -147,15 +147,6 @@ msgstr ""
 "options générales :\n"
 "\n"
 
-msgid "<directory>"
-msgstr "<répertoire>"
-
-msgid ": working directory"
-msgstr ": répertoire d'exécution du cas"
-
-msgid "  (if different from current directory !)"
-msgstr "  (si différent du répertoire courant !)"
-
 msgid ": this help message"
 msgstr ": ce message d'aide"
 
@@ -281,18 +272,6 @@ msgstr ""
 " (%s) :\n"
 "\n"
 
-msgid ": discard polygonal faces (with more"
-msgstr ": supprime les faces polygonales (à plus"
-
-msgid "  than 4 edges) or polyhedra"
-msgstr "  de 4 arêtes) ou les polyèdres"
-
-msgid ": force text output (EnSight)"
-msgstr ": force l'écriture texte (EnSight)"
-
-msgid ": force binary output to big-endian (EnSight)"
-msgstr ": écriture big-endian si binaire (EnSight)"
-
 msgid ": activate output of main mesh"
 msgstr ": active l'écriture du maillage principal"
 
@@ -413,24 +392,6 @@ msgstr "Le fichier n'est pas un fichier régulier."
 
 #, c-format
 msgid ""
-"Failed to switch to directory :\n"
-"%s"
-msgstr ""
-"Impossible de se placer dans le répertoire :\n"
-"%s"
-
-#, c-format
-msgid ""
-"Error in command line specification.\n"
-"\n"
-"Option \"%s\" is not available."
-msgstr ""
-"Erreur dans la spécification de la ligne de commande.\n"
-"\n"
-"L'option \"%s\" n'est pas disponible."
-
-#, c-format
-msgid ""
 "It is impossible to redirect the standard output to file:\n"
 "%s"
 msgstr ""
@@ -526,16 +487,22 @@ msgstr "Temps     total                     (sec)"
 msgid "Total CPU time / Total time              "
 msgstr "Temps CPU total / Temps total            "
 
-#, c-format
-msgid ""
-"This program was built with type \"ecs_int_32_t\"\n"
-"of length %d bytes instead of 4. (porting error)\n"
-msgstr ""
-"Ce Programme a été compilé avec un type \"ecs_int_32_t\"\n"
-"de longueur %d octets au lieu de 4. (Erreur de portage)\n"
-
 msgid "Creating file:"
 msgstr "Création du fichier :"
+
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Defining families\n"
+"-----------------\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"Création des familles\n"
+"---------------------\n"
+"\n"
 
 msgid "Fluid Domain"
 msgstr "Domaine fluide"
@@ -555,20 +522,6 @@ msgstr ""
 "\n"
 "Fin de passage en connectivité descendante\n"
 "------------------------------------------\n"
-
-#, c-format
-msgid ""
-"\n"
-"\n"
-"Defining families\n"
-"-----------------\n"
-"\n"
-msgstr ""
-"\n"
-"\n"
-"Création des familles\n"
-"---------------------\n"
-"\n"
 
 #, c-format
 msgid ""
@@ -680,8 +633,8 @@ msgid "%d elements of type %s were impossible to re-orient\n"
 msgstr "%d éléments de type %s n'ont pu être réorientés\n"
 
 #, c-format
-msgid "%d elements of type %s are mis-oriented\n"
-msgstr "%d éléments de type %s sont mal orientés\n"
+msgid "%d elements of type %s are mis-oriented or highly warped\n"
+msgstr "%d éléments de type %s sont mal orientés ou fortement déformés\n"
 
 #, c-format
 msgid ""
@@ -857,6 +810,14 @@ msgstr ""
 "CGNS : échec à l'écriture des coordonnées\n"
 "Nom du maillage à écrire : \"%s\"\n"
 "%s"
+
+#, c-format
+msgid ""
+"CGNS: in mesh: \"%s\",\n"
+"%d polygonal faces are ignored.\n"
+msgstr ""
+"CGNS : dans le maillage : \"%s\",\n"
+"%d faces polygonales sont ignorées.\n"
 
 #, c-format
 msgid ""
@@ -3117,19 +3078,7 @@ msgstr "Impossible d'allouer \"%s\" (%lu octets)"
 msgid "Failure to open memory log file \"%s\"\n"
 msgstr ""
 
-#, c-format
-msgid ""
-"       :     FILE NAME              : LINE  :  POINTER "
-"NAME                          : N BYTES   : (+- N BYTES) : TOTAL BYTES  : "
-"[    ADRESS]\n"
-"-------:----------------------------:-------:----------------------------------------:-----------:-----------------------------:--------------"
-msgstr ""
-
 msgid "ecs_mem_end() called before ecs_mem_init()"
-msgstr ""
-
-#, c-format
-msgid "Number of non freed pointers remaining: %lu\n"
 msgstr ""
 
 #, c-format
@@ -9584,10 +9533,6 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Option: %*s\n"
-msgstr ""
-
-#, c-format
 msgid ""
 "\n"
 "Memory use summary: %s\n"
@@ -9640,3 +9585,4 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
+
