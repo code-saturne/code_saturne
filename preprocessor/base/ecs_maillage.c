@@ -536,6 +536,111 @@ _maillage__concat_connect(ecs_maillage_t  *maillage,
 }
 
 /*----------------------------------------------------------------------------
+ *  Fonction réalisant transformation des familles
+ *   en fusionnant les familles des éléments qui sont identiquement
+ *   transformés par le vecteur de transformation donné.
+ *
+ *  Cette fonction inclut le prolongement du tableau des familles
+ *   d'une liste d'éléments initiale vers une liste à compacter,
+ *   ainsi que le compactage en question. Ceci permet de rendre ce
+ *   prolongement implicite, et réduire la taille de tableau intermédiaire.
+ *
+ *  Par construction préalable, on fait l'hypothèse qu'un seul un de chaque
+ *   ensemble d'éléments fusionnés porte une famille.
+ *----------------------------------------------------------------------------*/
+
+static void
+_maillage_elt_fam_fusionne(int                  **elt_fam,
+                           size_t                 nbr_elt_old,
+                           size_t                 nbr_elt_new,
+                           const ecs_tab_int_t    vect_transf)
+{
+  size_t       nbr_elt_ref;
+  ecs_int_t    ind_elt_transf;
+  int          val_ref;
+
+  size_t       ielt;
+  size_t       ielt_ref;
+
+  int         *elt_fam_new = NULL;
+
+  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
+
+  if (elt_fam == NULL)
+    return;
+
+  if (*elt_fam == NULL)
+    return;
+
+  nbr_elt_ref = vect_transf.nbr;
+
+  ECS_MALLOC(elt_fam_new, nbr_elt_new, int);
+  for (ielt = 0; ielt < nbr_elt_new; ielt++)
+    elt_fam_new[ielt] = 0;
+
+  for (ielt_ref = 0; ielt_ref < nbr_elt_old; ielt_ref++) {
+
+    ind_elt_transf = vect_transf.val[ielt_ref];
+    assert(ind_elt_transf > -1);
+
+    val_ref = (*elt_fam)[ielt_ref];
+
+    if (val_ref != 0 && elt_fam_new[ind_elt_transf] == 0)
+      elt_fam_new[ind_elt_transf] = val_ref;
+
+  }
+
+  ECS_FREE(*elt_fam);
+  *elt_fam = elt_fam_new;
+}
+
+/*----------------------------------------------------------------------------
+ *  Update element family numbers when elements are renumbered. Each
+ *   initial element has at most one matching element.
+ *----------------------------------------------------------------------------*/
+
+static void
+_maillage_elt_fam_compacte(int            **elt_fam,
+                           ecs_tab_int_t   *tab_old_new)
+{
+  size_t        ielt;
+  ecs_int_t     num_elt_new;
+
+  ecs_int_t     cpt_elt = 0;
+  int          *_elt_fam = NULL;
+
+  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
+
+  if (elt_fam == NULL)
+    return;
+
+  if (*elt_fam == NULL)
+    return;
+
+  /* Compact numbering */
+
+  _elt_fam = *elt_fam;
+
+  for (ielt = 0; ielt < tab_old_new->nbr; ielt++) {
+
+    num_elt_new = tab_old_new->val[ielt];
+
+    if (num_elt_new != 0) {
+      assert(num_elt_new == cpt_elt + 1);
+      _elt_fam[num_elt_new - 1] = _elt_fam[ielt];
+      cpt_elt += 1;
+    }
+
+  }
+
+  /* Update definitions */
+
+  ECS_REALLOC(_elt_fam, cpt_elt, int);
+
+  *elt_fam = _elt_fam;
+}
+
+/*----------------------------------------------------------------------------
  *  Fonction qui construit la liste des de bord, ainsi que les listes de faces
  *  avec erreur de connectivité (i.e. qui appartiennent à 2 cellules ou plus
  *  vu d'un même côté, ou qui sont à la fois entrante et sortante pour une
@@ -1157,14 +1262,16 @@ ecs_maillage__nettoie_descend(ecs_maillage_t  *maillage)
 
   if (tab_fac_old_new.nbr != 0) {
 
-    /* Inherit "attribute" or "family" fields */
+    /* Inherit "family" fields */
 
-    ecs_champ_att__herite(maillage->champ_att[ECS_ENTMAIL_FAC],
-                          &tab_fac_old_new);
+    assert(maillage->champ_att[ECS_ENTMAIL_FAC] == NULL);
+
+    _maillage_elt_fam_compacte(&(maillage->elt_fam[ECS_ENTMAIL_FAC]),
+                               &tab_fac_old_new);
 
     assert(maillage->elt_fam[ECS_ENTMAIL_FAC] == NULL);
 
-    /* Remplace des references in face definitions */
+    /* Replace references in face definitions */
 
     if (maillage->champ_def[ECS_ENTMAIL_CEL] != NULL)
       ecs_champ_def__remplace_ref(maillage->champ_def[ECS_ENTMAIL_CEL],
@@ -1254,12 +1361,7 @@ ecs_maillage__connect_descend(ecs_maillage_t * maillage)
 
   nbr_fac_new = ecs_champ__ret_elt_nbr(maillage->champ_def[ECS_ENTMAIL_FAC]);
 
-  if (maillage->champ_att[ECS_ENTMAIL_FAC] != NULL)
-    ecs_champ__prolonge(maillage->champ_att[ECS_ENTMAIL_FAC],
-                        0,
-                        nbr_fac_new - nbr_fac_old);
-
-  assert(maillage->elt_fam[ECS_ENTMAIL_FAC] == NULL);
+  assert(maillage->champ_att[ECS_ENTMAIL_FAC] == NULL);
 
   /* Fusion des sous-éléments ayant la même définition topologique */
   /*---------------------------------------------------------------*/
@@ -1276,11 +1378,12 @@ ecs_maillage__connect_descend(ecs_maillage_t * maillage)
   /* Application du vecteur de transformation sur les autres champs */
   /*----------------------------------------------------------------*/
 
-  ecs_champ_att__fusionne(maillage->champ_att[ECS_ENTMAIL_FAC],
-                          nbr_elt_new,
-                          vect_transf);
+  assert(maillage->champ_att[ECS_ENTMAIL_FAC] == NULL);
 
-  assert(maillage->elt_fam[ECS_ENTMAIL_FAC] == NULL);
+  _maillage_elt_fam_fusionne(&(maillage->elt_fam[ECS_ENTMAIL_FAC]),
+                             nbr_fac_old,
+                             nbr_elt_new,
+                             vect_transf);
 
   _maillage_renum_connect(maillage,
                           ECS_ENTMAIL_FAC,

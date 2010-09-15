@@ -591,6 +591,19 @@ main(int    argc,
   }
 
 
+  /*========================================================================*/
+  /* Passages des couleurs et groupes aux familles                          */
+  /* (se fait dès que tous les éléments pouvant porter des familles sont    */
+  /*  fusionnés)                                                            */
+  /*========================================================================*/
+
+  printf(_("\n\n"
+           "Defining families\n"
+           "-----------------\n\n"));
+
+  ecs_maillage__cree_famille(maillage);
+
+
   /*==========================================================================*/
   /* Création de la table de connectivité descendante                         */
   /*==========================================================================*/
@@ -616,18 +629,6 @@ main(int    argc,
   /* Nettoyage éventuel */
 
   ecs_maillage__nettoie_descend(maillage);
-
-
-  /*========================================================================*/
-  /* Passages des couleurs et groupes aux familles                          */
-  /* (se fait dès que le maillage est "figé")                               */
-  /*========================================================================*/
-
-  printf(_("\n\n"
-           "Defining families\n"
-           "-----------------\n\n"));
-
-  ecs_maillage__cree_famille(maillage);
 
 
   /*========================================================================*/

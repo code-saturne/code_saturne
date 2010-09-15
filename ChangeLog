@@ -1,4 +1,11 @@
 * 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Preprocessor builds families before switching to descending connectivity.
+  modified files:
+    preprocessor/appli/ecs_main.c
+    preprocessor/base/ecs_maillage.c
+    preprocessor/pre-post/ecs_maillage_post.c
+
+* 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Update FVM selector test relative to fvm_group API simplification.
   modified file:
     tests/fvm_selector_test.c

@@ -198,7 +198,6 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
 {
   int   ient;
   bool  bool_ecrit_maillage = false;
-  bool  bool_cree_famille = true;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -225,17 +224,6 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
 
   if (bool_ecrit_maillage == false)
     return;
-
-  /* Construction des familles si non encore présentes */
-  /*---------------------------------------------------*/
-
-  for (ient = 0; ient < ECS_N_ENTMAIL; ient++) {
-    if (maillage->famille[ient] != NULL)
-      bool_cree_famille = false;
-  }
-
-  if (bool_cree_famille == true)
-    ecs_maillage__cree_famille(maillage);
 
   /* Ajout du cas EnSight (si nécessaire) */
   /*--------------------------------------*/
@@ -306,12 +294,6 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
                             maillage,
                             type_post,
                             cas_post);
-
-  /* Suppression des familles temporaires */
-  /*--------------------------------------*/
-
-  if (bool_cree_famille == true)
-    ecs_maillage__detruit_famille(maillage);
 }
 
 /*----------------------------------------------------------------------------
