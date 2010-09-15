@@ -145,9 +145,6 @@ struct _ecs_med_t {
   ecs_int_t              nbr_maillages;   /* Nombre de maillages */
   ecs_med_maillage_t   **tab_maillages;   /* Descripteurs des maillages */
 
-  bool                   no_poly;         /* Ne pas écrire les polygones
-                                             ou polyèdres */
-
 };
 
 

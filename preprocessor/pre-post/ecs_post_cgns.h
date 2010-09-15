@@ -88,8 +88,7 @@ typedef struct _ecs_post_cgns_t ecs_post_cgns_t;
  *---------------------------------------------------------------------------*/
 
 ecs_post_cgns_t  *
-ecs_post_cgns__cree_cas(const char  *nom_cas,
-                        bool         no_poly);
+ecs_post_cgns__cree_cas(const char  *nom_cas);
 
 /*----------------------------------------------------------------------------
  *  Fonction détruisant une structure `ecs_cgns_t` utilisée en écriture.

@@ -83,19 +83,6 @@ typedef enum {
  *                             Structures de données
  *============================================================================*/
 
-/* Structure liée aux options amont de post-traitement */
-
-typedef struct {
-
-  bool     no_poly;          /* Suppression des polygones et des polyèdres */
-  bool     text;             /* Forcer la sortie en mode texte si disponible */
-  bool     big_endian;       /* Forcer la sortie binaire en mode big-endian
-                                si possible */
-  bool     ecr_type[3];      /* Indicateur de sortie des maillages par type */
-
-} ecs_post_opt_t;
-
-
 /* Structure liée aux cas de post-traitement */
 
 typedef struct {
@@ -103,13 +90,13 @@ typedef struct {
   char            *nom_cas;           /* Nom du cas par défaut */
 
   bool             post_ens;          /* Indicateur post-traitement Ensight */
-  ecs_post_opt_t   opt_ens;           /* Options pour EnSight */
+  bool             opt_ens[3];        /* Indicateur de sortie par type */
   ecs_post_ens_t  *cas_ens;           /* Cas EnSight associé */
 
 #if defined(HAVE_CGNS)
 
   bool             post_cgns;         /* Indicateur post-traitement CGNS */
-  ecs_post_opt_t   opt_cgns;          /* Options pour CGNS */
+  bool             opt_cgns[3];       /* Indicateur de sortie par type */
   ecs_post_cgns_t *cas_cgns;          /* Cas CGNS associé */
 
 #endif
@@ -117,7 +104,7 @@ typedef struct {
 #if defined(HAVE_MED)
 
   bool             post_med;          /* Indicateur post-traitement MED */
-  ecs_post_opt_t   opt_med;           /* Options pour MED */
+  bool             opt_med[3];        /* Indicateur de sortie par type */
   ecs_med_t       *cas_med;           /* Cas MED associé */
 
 #endif

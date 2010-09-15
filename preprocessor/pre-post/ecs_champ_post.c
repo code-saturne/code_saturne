@@ -284,7 +284,7 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
   /* ------------------------------------------------------------------- */
 
   if (   cas_post->cas_ens != NULL
-      && cas_post->opt_ens.ecr_type[type_post] == true) {
+      && cas_post->opt_ens[type_post] == true) {
 
     ecs_champ_post_ens__ecr_part(nom_maillage,
                                  n_vertices,
@@ -298,7 +298,7 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
 #if defined(HAVE_CGNS)
 
   if (   cas_post->cas_cgns != NULL
-      && cas_post->opt_cgns.ecr_type[type_post] == true) {
+      && cas_post->opt_cgns[type_post] == true) {
 
     ecs_post_cgns__ajoute_maillage(nom_maillage,
                                    dim_entite_max,
@@ -321,7 +321,7 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
 #if defined(HAVE_MED)
 
   if (   cas_post->cas_med != NULL
-      && cas_post->opt_med.ecr_type[type_post] == true) {
+      && cas_post->opt_med[type_post] == true) {
 
     ecs_post_med__ajoute_maillage(nom_maillage,
                                   dim_entite_max,

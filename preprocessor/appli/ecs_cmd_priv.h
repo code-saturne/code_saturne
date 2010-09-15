@@ -2,8 +2,7 @@
 #define _ECS_CMD_PRIV_H_
 
 /*============================================================================
- *  Définition privée de la structure `_ecs_cmd_t' decrivant
- *   les options de la ligne de commande
+ * Definition of a `_ecs_cmd_t' structure tracking command-line options
  *============================================================================*/
 
 /*
@@ -31,121 +30,35 @@
   Boston, MA  02110-1301  USA
 */
 
-
-/*============================================================================
- *                                 Visibilité
- *============================================================================*/
+/*----------------------------------------------------------------------------*/
 
 #include "cs_config.h"
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C
+ * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' publics  du  paquetage global "Utilitaire"
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "ecs_def.h"
 #include "ecs_tab_glob.h"
 
-
-/*----------------------------------------------------------------------------
- *  Fichiers `include' publics  des paquetages visibles
-*----------------------------------------------------------------------------*/
-
 #include "ecs_pre.h"
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' publics  du  paquetage courant
+ * Headers for the current file
  *----------------------------------------------------------------------------*/
-
 
 /*============================================================================
- *                       Définition de macros
- *============================================================================*/
-
-
-#define ECS_CMD_LIGNE_MAX                                        1024
-
-
-/*----------------------------------------------------------------------------
- * Définition des noms de fichiers et d'extensions
- *----------------------------------------------------------------------------*/
-
-#define ECS_CMD_EXEC_NAME                             "cs_preprocess"
-
-#define ECS_CMD_LOGFILE_NAME_DEFAULT               "preprocessor.log"
-#define ECS_CMD_OUTFILE_NAME_DEFAULT            "preprocessor_output"
-
-#define ECS_CMD_POST_CASE_DEFAULT                        "preprocess"
-#define ECS_CMD_POST_DIR_ENS_EXT                           ".ensight"
-
-/*----------------------------------------------------------------------------
- * Définition des mots-cles pour les options de la ligne de commande
- *----------------------------------------------------------------------------*/
-
-#define ECS_CMD_KEY_MESH_GRP_SECTION                        "section"
-#define ECS_CMD_KEY_MESH_GRP_ZONE                              "zone"
-
-/*----------------------------------------------------------------------------
- *  Définition des options de la ligne de commande
- *----------------------------------------------------------------------------*/
-
-#define ECS_CMD_OPTION_CASE                                  "--case"
-
-#define ECS_CMD_OPTION_CWD                                    "--cwd"
-#define ECS_CMD_OPTION_DUMP                                  "--dump"
-#define ECS_CMD_OPTION_NULL_COMM                         "--no-write"
-#define ECS_CMD_OPTION_FMT_MESH_FILE                       "--format"
-#define ECS_CMD_OPTION_NUM_MESH                               "--num"
-#define ECS_CMD_OPTION_GRP_CEL_MESH                       "--grp-cel"
-#define ECS_CMD_OPTION_GRP_FAC_MESH                       "--grp-fac"
-
-#define ECS_CMD_OPTION_HELP                                  "--help"
-#define ECS_CMD_OPTION_HELP_1                                    "-h"
-
-#if defined(HAVE_CGNS)
-#define ECS_CMD_OPTION_POST_CGNS                             "--cgns"
-#endif /* HAVE_CGNS */
-#define ECS_CMD_OPTION_POST_ENS                           "--ensight"
-#if defined(HAVE_MED)
-#define ECS_CMD_OPTION_POST_MED                               "--med"
-#endif /* HAVE_MED */
-
-#define ECS_CMD_OPTION_POST_NO_POLY                  "--discard-poly"
-#define ECS_CMD_OPTION_POST_TEXT                             "--text"
-#define ECS_CMD_OPTION_POST_BIG_ENDIAN                 "--big-endian"
-#define ECS_CMD_OPTION_POST_MAIN                           "--volume"
-#define ECS_CMD_OPTION_POST_INFO                             "--info"
-
-#define ECS_CMD_OPTION_MESH_FILE                             "--mesh"
-#define ECS_CMD_OPTION_MESH_FILE_1                               "-m"
-
-#define ECS_CMD_OPTION_OUTPUT_FILE                            "--out"
-#define ECS_CMD_OPTION_OUTPUT_FILE_1                             "-o"
-
-#define ECS_CMD_OPTION_ORIENT_CORREC                     "--reorient"
-#define ECS_CMD_OPTION_LOG_FILE                               "--log"
-
-#define ECS_CMD_OPTION_VERSION                            "--version"
-
-/*============================================================================
- *                       Définition des structures
+ * Type definitions
  *============================================================================*/
 
 struct _ecs_cmd_post_t {
 
-  bool       no_poly;        /* suppression des polygones et polyedres */
-  bool       simple;         /* pas de subdivision des "parts" (EnSight) */
-  bool       text;           /* version texte (EnSight) */
-  bool       big_endian;     /* binaire big-endian (EnSight) */
-
-  bool       volume;         /* sortie du volume */
-  bool       info;           /* sortie des maillages d'information */
+  bool       volume;         /* output volume mesh */
+  bool       info;           /* output information meshes */
 
 };
 

@@ -272,14 +272,8 @@ _init_post(const ecs_cmd_t *cmd)
 
     cas_post->post_ens = true;
 
-    cas_post->opt_ens.no_poly     = cmd->post_ens->no_poly;
-    cas_post->opt_ens.text        = cmd->post_ens->text;
-    cas_post->opt_ens.big_endian  = cmd->post_ens->big_endian;
-
-    cas_post->opt_ens.ecr_type[ECS_POST_TYPE_VOLUME]
-      = cmd->post_ens->volume;
-    cas_post->opt_ens.ecr_type[ECS_POST_TYPE_INFO]
-      = cmd->post_ens->info;
+    cas_post->opt_ens[ECS_POST_TYPE_VOLUME] = cmd->post_ens->volume;
+    cas_post->opt_ens[ECS_POST_TYPE_INFO] = cmd->post_ens->info;
 
   }
 
@@ -289,12 +283,8 @@ _init_post(const ecs_cmd_t *cmd)
 
     cas_post->post_cgns = true;
 
-    cas_post->opt_cgns.no_poly = cmd->post_cgns->no_poly;
-
-    cas_post->opt_cgns.ecr_type[ECS_POST_TYPE_VOLUME]
-      = cmd->post_cgns->volume;
-    cas_post->opt_cgns.ecr_type[ECS_POST_TYPE_INFO]
-      = cmd->post_cgns->info;
+    cas_post->opt_cgns[ECS_POST_TYPE_VOLUME] = cmd->post_cgns->volume;
+    cas_post->opt_cgns[ECS_POST_TYPE_INFO] = cmd->post_cgns->info;
 
   }
 
@@ -306,12 +296,8 @@ _init_post(const ecs_cmd_t *cmd)
 
     cas_post->post_med = true;
 
-    cas_post->opt_med.no_poly = cmd->post_med->no_poly;
-
-    cas_post->opt_med.ecr_type[ECS_POST_TYPE_VOLUME]
-      = cmd->post_med->volume;
-    cas_post->opt_med.ecr_type[ECS_POST_TYPE_INFO]
-      = cmd->post_med->info;
+    cas_post->opt_med[ECS_POST_TYPE_VOLUME] = cmd->post_med->volume;
+    cas_post->opt_med[ECS_POST_TYPE_INFO] = cmd->post_med->info;
 
   }
 

@@ -256,7 +256,6 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
                                  ecs_post_cgns_t       *cas_cgns)
 {
   size_t     ielt;
-  size_t     ival;
   size_t     ival_deb;
   size_t     isom;
   int        icoo;
@@ -440,32 +439,36 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
     }
     else if (elt_typ_ref == ECS_ELT_TYP_FAC_POLY) { /* Cas des polygones */
 
-      if (cas_cgns->no_poly == false) {
+#if 0
 
-        type_cgns_loc = CS_CG_ENUM(MIXED);
+      type_cgns_loc = CS_CG_ENUM(MIXED);
 
-        ECS_MALLOC(def_elt, nbr_val + cpt_elt_fin - cpt_elt, int);
+      ECS_MALLOC(def_elt, nbr_val + cpt_elt_fin - cpt_elt, int);
 
-        for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
+      for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
 
-          def_elt[ind++]
-            = def_pos_tab[ielt + 1] - def_pos_tab[ielt] + CS_CG_ENUM(NGON_n);
+        def_elt[ind++]
+          = def_pos_tab[ielt + 1] - def_pos_tab[ielt] + CS_CG_ENUM(NGON_n);
 
-          for (ival = def_pos_tab[ielt    ] - 1;
-               ival < def_pos_tab[ielt + 1] - 1;
-               ival++)
-            def_elt[ind++] = def_val_tab[ival];
-
-        }
+        for (ival = def_pos_tab[ielt    ] - 1;
+             ival < def_pos_tab[ielt + 1] - 1;
+             ival++)
+          def_elt[ind++] = def_val_tab[ival];
 
       }
-      else {
 
-        cpt_elt += nbr_elt_typ;
+#else
 
-        break;
+      cpt_elt += nbr_elt_typ;
 
-      }
+      ecs_warn();
+      printf(_("CGNS: in mesh: \"%s\",\n"
+               "%d polygonal faces are ignored.\n"),
+             base_cgns->nom_maillage, (int)nbr_elt_typ);
+
+      break;
+
+#endif
 
     }
 
@@ -473,12 +476,10 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
 
       cpt_elt += nbr_elt_typ;
 
-      if (cas_cgns->no_poly == false) {
-        ecs_warn();
-        printf(_("CGNS: in mesh: \"%s\",\n"
-                 "%d polyhedral cells are ignored.\n"),
-               base_cgns->nom_maillage, (int)nbr_elt_typ);
-      }
+      ecs_warn();
+      printf(_("CGNS: in mesh: \"%s\",\n"
+               "%d polyhedral cells are ignored.\n"),
+             base_cgns->nom_maillage, (int)nbr_elt_typ);
 
       break;
 

@@ -793,7 +793,7 @@ ecs_champ_post_med__ecr_elt(const char           *nom_maillage,
     /* Cas de éléments polygonaux */
     /*----------------------------*/
 
-    else if (typ_geo_med == MED_POLYGONE && cas_med->no_poly == false) {
+    else if (typ_geo_med == MED_POLYGONE) {
 
       nbr_som_med =   def_pos_tab[cpt_elt + nbr_elt_typ_geo]
                     - def_pos_tab[cpt_elt];
@@ -830,7 +830,7 @@ ecs_champ_post_med__ecr_elt(const char           *nom_maillage,
     /* Cas de éléments polyèdriques */
     /*------------------------------*/
 
-    else if (typ_geo_med == MED_POLYEDRE && cas_med->no_poly == false) {
+    else if (typ_geo_med == MED_POLYEDRE) {
 
       /* Convention : définition nodale cellule->sommets avec numéros de
          premiers sommets répétés en fin de liste pour marquer la fin
@@ -943,8 +943,7 @@ ecs_champ_post_med__ecr_elt(const char           *nom_maillage,
     /* Familles MED des éléments */
     /*---------------------------*/
 
-    if (   (typ_geo_med != MED_POLYGONE && typ_geo_med != MED_POLYEDRE)
-        || cas_med->no_poly == false) {
+    if (typ_geo_med != MED_POLYGONE && typ_geo_med != MED_POLYEDRE) {
 
       ret_med = MEDfamEcr(cas_med->fid,
                           maillage_med->nom_maillage_med,
@@ -1112,8 +1111,7 @@ ecs_champ_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
     if (cpt_elt + nbr_elt_typ_geo > nbr_elt)
       break;
 
-    if (   (typ_geo_med != MED_POLYGONE && typ_geo_med != MED_POLYEDRE)
-        || cas_med->no_poly == false) {
+    if (typ_geo_med != MED_POLYGONE && typ_geo_med != MED_POLYEDRE) {
 
       /* On écrit les valeurs correspondant à ce type géométrique */
 

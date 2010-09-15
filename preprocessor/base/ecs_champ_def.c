@@ -574,16 +574,14 @@ _orient_quad(const ecs_coord_t  coord[],
 
 /*----------------------------------------------------------------------------
  *  Correction si nécessaire de l'orientation d'un tétraèdre en connectivité
- *   nodale ; renvoie -1 si l'on ne parvient pas à corriger l'orientation
- *   ou que l'on demande une simple vérification (i.e. correc = false),
+ *   nodale ; renvoie -1 si l'on ne parvient pas à corriger l'orientation,
  *   0 si l'orientation initiale est bonne, et 1 en cas de correction de
  *   l'orientation par une permutation de la connectivité locale.
  *----------------------------------------------------------------------------*/
 
 static ecs_int_t
 _orient_tetra(const ecs_coord_t  coord[],
-              ecs_int_t          connect[],
-              const bool         correc)
+              ecs_int_t          connect[])
 {
   ecs_int_t   isom_tmp;
   ecs_coord_t  det;
@@ -620,8 +618,6 @@ _orient_tetra(const ecs_coord_t  coord[],
       break;
 
     case 1:
-      if (correc == false)
-        return -1;
       ECS_LOC_PERMUTE(2, 3);
       break;
 
@@ -2584,10 +2580,8 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
 
       case ECS_ELT_TYP_CEL_TETRA:
 
-        ret_orient
-          = _orient_tetra(vtx_coords,
-                          &(champ_def_cel->val[ipos_cel]),
-                          correc_orient);
+        ret_orient = _orient_tetra(vtx_coords,
+                                   &(champ_def_cel->val[ipos_cel]));
         break;
 
       case ECS_ELT_TYP_CEL_PYRAM:
@@ -2682,7 +2676,7 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
       }
       else {
         ecs_warn();
-        printf(_("%d elements of type %s are mis-oriented\n"),
+        printf(_("%d elements of type %s are mis-oriented or highly warped\n"),
                (int)(cpt_orient_erreur[typ_elt]),
                _(ecs_fic_elt_typ_liste_c[typ_elt].nom));
       }

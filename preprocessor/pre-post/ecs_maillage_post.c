@@ -196,7 +196,6 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
                        ecs_post_type_t   type_post,
                        ecs_post_t       *cas_post)
 {
-  int   ient;
   bool  bool_ecrit_maillage = false;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -207,18 +206,18 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
   /*--------------------------------------------------*/
 
   if (   cas_post->post_ens == true
-      && cas_post->opt_ens.ecr_type[type_post] == true)
+      && cas_post->opt_ens[type_post] == true)
     bool_ecrit_maillage = true;
 
 #if defined(HAVE_CGNS)
   if (   cas_post->post_cgns == true
-      && cas_post->opt_cgns.ecr_type[type_post] == true)
+      && cas_post->opt_cgns[type_post] == true)
     bool_ecrit_maillage = true;
 #endif
 
 #if defined(HAVE_MED)
   if (   cas_post->post_med == true
-      && cas_post->opt_med.ecr_type[type_post] == true)
+      && cas_post->opt_med[type_post] == true)
     bool_ecrit_maillage = true;
 #endif
 
@@ -229,18 +228,14 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
   /*--------------------------------------*/
 
   if (   cas_post->post_ens == true
-      && cas_post->opt_ens.ecr_type[type_post] == true) {
+      && cas_post->opt_ens[type_post] == true) {
 
     printf(_("\n\n"
              "EnSight output of mesh: %s\n"
              "-----------------------\n"), nom_maillage);
 
     if (cas_post->cas_ens == NULL)
-      cas_post->cas_ens
-        = ecs_post_ens__cree_cas(cas_post->nom_cas,
-                                 cas_post->opt_ens.no_poly,
-                                 cas_post->opt_ens.text,
-                                 cas_post->opt_ens.big_endian);
+      cas_post->cas_ens = ecs_post_ens__cree_cas(cas_post->nom_cas);
 
   }
 
@@ -250,7 +245,7 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
   /*-----------------------------------*/
 
   if (   cas_post->post_cgns == true
-      && cas_post->opt_cgns.ecr_type[type_post] == true) {
+      && cas_post->opt_cgns[type_post] == true) {
 
     printf(_("\n\n"
              "CGNS file output of mesh: %s\n"
@@ -258,9 +253,7 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
 
 
     if (cas_post->cas_cgns == NULL)
-      cas_post->cas_cgns
-        = ecs_post_cgns__cree_cas(cas_post->nom_cas,
-                                  cas_post->opt_cgns.no_poly);
+      cas_post->cas_cgns = ecs_post_cgns__cree_cas(cas_post->nom_cas);
   }
 
 #endif /* HAVE_CGNS */
@@ -271,15 +264,14 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
   /*----------------------------------*/
 
   if (   cas_post->post_med == true
-      && cas_post->opt_med.ecr_type[type_post] == true) {
+      && cas_post->opt_med[type_post] == true) {
 
     printf(_("\n\n"
              "MED file output of mesh: %s\n"
              "------------------------\n"), nom_maillage);
 
     if (cas_post->cas_med == NULL)
-      cas_post->cas_med = ecs_post_med__cree_cas(cas_post->nom_cas,
-                                                 cas_post->opt_med.no_poly);
+      cas_post->cas_med = ecs_post_med__cree_cas(cas_post->nom_cas);
 
   }
 

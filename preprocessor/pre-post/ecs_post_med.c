@@ -85,8 +85,7 @@
  *----------------------------------------------------------------------------*/
 
 ecs_med_t *
-ecs_post_med__cree_cas(const char  *nom_cas,
-                       bool         no_poly)
+ecs_post_med__cree_cas(const char  *nom_cas)
 {
   ecs_int_t    ind;
   ecs_int_t    lng_nom_fic;
@@ -119,8 +118,6 @@ ecs_post_med__cree_cas(const char  *nom_cas,
 
   cas_med->nbr_maillages = 0;
   cas_med->tab_maillages = NULL;
-
-  cas_med->no_poly = no_poly;
 
   cas_med->fid = 0;
 

@@ -7,7 +7,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2010 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -1685,42 +1685,6 @@ ecs_maillage__calc_coo_ext(ecs_maillage_t  *maillage)
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui modifie les coordonnées du maillage
- *----------------------------------------------------------------------------*/
-
-void
-ecs_maillage__transf_coo(ecs_maillage_t  *maillage,
-                         const double     matrice[3][4])
-{
-  size_t  icoo, ipos, isom, nbr;
-  ecs_coord_t  coo_tmp[3];
-
-  ecs_coord_t  *vertex_coords = NULL;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  assert(maillage != NULL);
-  assert(maillage->vertex_coords != NULL);
-
-  nbr = maillage->n_vertices;
-  vertex_coords = maillage->vertex_coords;
-
-  for (isom = 0; isom < nbr; isom++) {
-
-    ipos = 3 * isom;
-
-    for (icoo = 0; icoo < 3; icoo++)
-      coo_tmp[icoo] = vertex_coords[ipos + icoo];
-
-    for (icoo = 0; icoo < 3; icoo++)
-      vertex_coords[ipos + icoo] = (  matrice[icoo][0] * coo_tmp[0]
-                                 + matrice[icoo][1] * coo_tmp[1]
-                                 + matrice[icoo][2] * coo_tmp[2]
-                                 + matrice[icoo][3]);
-  }
-}
-
-/*----------------------------------------------------------------------------
  *  Fonction qui transforme les attributs en familles
  *----------------------------------------------------------------------------*/
 
@@ -1866,9 +1830,6 @@ ecs_maillage__supprime_attributs(ecs_maillage_t  *maillage)
   int  ient;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  /* Libération du contenu des entités */
-  /*-----------------------------------*/
 
   for (ient = 0; ient < ECS_N_ENTMAIL; ient++) {
 

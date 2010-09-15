@@ -88,10 +88,7 @@ typedef struct _ecs_post_ens_t ecs_post_ens_t;
  *----------------------------------------------------------------------------*/
 
 ecs_post_ens_t  *
-ecs_post_ens__cree_cas(const char  *nom_cas,
-                       bool         no_poly,
-                       bool         text,
-                       bool         big_endian);
+ecs_post_ens__cree_cas(const char  *nom_cas);
 
 /*----------------------------------------------------------------------------
  *  Fonction détruisant une structure `ecs_post_ens_t`.

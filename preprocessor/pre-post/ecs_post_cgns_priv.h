@@ -113,7 +113,6 @@ struct _ecs_post_cgns_t {
   ecs_int_t               nbr_bases;      /* Nombre de ``bases'' */
   ecs_post_cgns_base_t  **tab_bases;      /* Descripteurs des ``bases'' */
 
-  bool                    no_poly;        /* Ignorer polygones */
 };
 
 #endif /* HAVE_CGNS */

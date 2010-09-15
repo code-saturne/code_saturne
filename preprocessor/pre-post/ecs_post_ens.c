@@ -384,10 +384,7 @@ ecs_loc_post_ens__detruit_part(ecs_post_ens_part_t  *this_part)
  *----------------------------------------------------------------------------*/
 
 ecs_post_ens_t  *
-ecs_post_ens__cree_cas(const char  *nom_cas,
-                       bool         no_poly,
-                       bool         text,
-                       bool         big_endian)
+ecs_post_ens__cree_cas(const char  *nom_cas)
 {
   ecs_post_ens_t  *cas_ens;
 
@@ -397,8 +394,6 @@ ecs_post_ens__cree_cas(const char  *nom_cas,
   /*-------------------------------------------*/
 
   ECS_MALLOC(cas_ens, 1, ecs_post_ens_t);
-
-  cas_ens->no_poly = no_poly;
 
   /* Construction du nom */
   /*---------------------*/
@@ -428,9 +423,6 @@ ecs_post_ens__cree_cas(const char  *nom_cas,
   cas_ens->fic_geo  = NULL;
 
   cas_ens->modifie = false;
-
-  cas_ens->text = text;
-  cas_ens->big_endian = big_endian;
 
   return cas_ens;
 }
@@ -497,19 +489,9 @@ ecs_post_ens__ecr_chaine(const ecs_file_t  *fic,
 
   strncpy(ligne, chaine, 80);
 
-  if (ecs_file_get_type(fic) != ECS_FILE_TYPE_TEXT) {
-
-    for (ind = strlen(chaine); ind < 80; ind++)
-      ligne[ind] = ' ';
-    ecs_file_write(ligne, sizeof(char), 80, fic);
-
-  }
-  else {
-
-    ligne[80] = '\0';
-    ecs_file_printf(fic, "%s\n", ligne);
-
-  }
+  for (ind = strlen(chaine); ind < 80; ind++)
+    ligne[ind] = ' ';
+  ecs_file_write(ligne, sizeof(char), 80, fic);
 }
 
 /*----------------------------------------------------------------------------
@@ -520,19 +502,9 @@ void
 ecs_post_ens__ecr_int(const ecs_file_t  *fic,
                       int                val)
 {
-  int32_t _val;
+  int32_t _val = val;
 
-  if (ecs_file_get_type(fic) != ECS_FILE_TYPE_TEXT) {
-
-    _val = val;
-    ecs_file_write(&_val, sizeof(int32_t), 1, fic);
-
-  }
-  else {
-
-    ecs_file_printf(fic, "%10d\n", val);
-
-  }
+  ecs_file_write(&_val, sizeof(int32_t), 1, fic);
 }
 
 /*----------------------------------------------------------------------------
@@ -576,22 +548,11 @@ ecs_post_ens__ecrit_fic_geo(ecs_post_ens_t  *cas_ens)
   /* Ouverture du fichier contenant la géométrie */
   /*---------------------------------------------*/
 
-  if (cas_ens->text == false) {
+  cas_ens->fic_geo = ecs_file_open(nom_fic_geo,
+                                   ECS_FILE_MODE_WRITE,
+                                   ECS_FILE_TYPE_BINARY);
 
-    cas_ens->fic_geo = ecs_file_open(nom_fic_geo,
-                                     ECS_FILE_MODE_WRITE,
-                                     ECS_FILE_TYPE_BINARY);
-
-    if (cas_ens->big_endian == true)
-      ecs_file_set_big_endian(cas_ens->fic_geo);
-
-    ecs_post_ens__ecr_chaine(cas_ens->fic_geo, "C binary");
-
-  }
-  else
-    cas_ens->fic_geo = ecs_file_open(nom_fic_geo,
-                                     ECS_FILE_MODE_WRITE,
-                                     ECS_FILE_TYPE_TEXT);
+  ecs_post_ens__ecr_chaine(cas_ens->fic_geo, "C binary");
 
   /* Info sur la création du fichier contenant la géométrie */
   /*--------------------------------------------------------*/
@@ -672,20 +633,9 @@ ecs_post_ens__ecrit_fic_var(ecs_post_ens_t  *cas_ens,
   else
     mode_ouverture = ECS_FILE_MODE_WRITE;
 
-  if (cas_ens->text == false) {
-
-    fic_var = ecs_file_open(nom_fic_var,
-                            mode_ouverture,
-                            ECS_FILE_TYPE_BINARY);
-
-    if (cas_ens->big_endian == true)
-      ecs_file_set_big_endian(fic_var);
-
-  }
-  else
-    fic_var = ecs_file_open(nom_fic_var,
-                            mode_ouverture,
-                            ECS_FILE_TYPE_TEXT);
+  fic_var = ecs_file_open(nom_fic_var,
+                          mode_ouverture,
+                          ECS_FILE_TYPE_BINARY);
 
   /* Info sur la création du fichier contenant la variable */
   /*-------------------------------------------------------*/

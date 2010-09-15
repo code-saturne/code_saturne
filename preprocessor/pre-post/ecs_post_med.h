@@ -84,8 +84,7 @@
  *----------------------------------------------------------------------------*/
 
 ecs_med_t *
-ecs_post_med__cree_cas(const char  *nom_cas,
-                       bool         no_poly);
+ecs_post_med__cree_cas(const char  *nom_cas);
 
 /*----------------------------------------------------------------------------
  *  Fonction détruisant une structure `ecs_med_t` utilisée en écriture.

@@ -8,7 +8,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2010 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -108,121 +108,23 @@ ecs_loc_post_ens__ecr_coord(const ecs_file_t   *fic,
 
   float  cnv_val[4096];
 
-  if (ecs_file_get_type(fic) != ECS_FILE_TYPE_TEXT) {
+  for (icoo = 0; icoo < 3; icoo++) {
 
-    for (icoo = 0; icoo < 3; icoo++) {
+    isom_deb = 0;
 
-      isom_deb = 0;
+    while (isom_deb < nbr_som ) {
 
-      while (isom_deb < nbr_som ) {
+      for (isom = isom_deb, cpt_som = 0;
+           isom < nbr_som && cpt_som < 4096;
+           isom++, cpt_som++)
+        cnv_val[cpt_som] = coo_som[isom*3 + icoo];
 
-        for (isom = isom_deb, cpt_som = 0;
-             isom < nbr_som && cpt_som < 4096;
-             isom++, cpt_som++)
-          cnv_val[cpt_som] = coo_som[isom*3 + icoo];
+      ecs_file_write(cnv_val, sizeof(float), cpt_som, fic);
 
-        ecs_file_write(cnv_val, sizeof(float), cpt_som, fic);
-
-        isom_deb = isom;
-
-      }
+      isom_deb = isom;
 
     }
 
-  }
-  else {
-
-    for (icoo = 0; icoo < 3; icoo++) {
-
-      for (isom = 0; isom < nbr_som; isom++)
-        ecs_file_printf(fic, "%12.5E\n",
-                        (float)coo_som[isom * 3 + icoo]);
-
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- *  Écriture d'un tableau d'entiers dans un fichier EnSight Gold.
- *----------------------------------------------------------------------------*/
-
-static void
-ecs_loc_post_ens__ecr_buf_int(const ecs_file_t    *fic,
-                              int                  nbr_col,
-                              size_t               nbr_val,
-                              const int32_t       *buf)
-{
-  int  iloc;
-  size_t ival;
-
-
-  if (ecs_file_get_type(fic) != ECS_FILE_TYPE_TEXT)
-
-    ecs_file_write(buf, sizeof(int32_t), nbr_val, fic);
-
-  else {
-
-    switch (nbr_col) {
-
-    case 1:
-      for (ival = 0; ival < nbr_val; ival++) {
-        ecs_file_printf(fic, "%10d\n", buf[ival]);
-      }
-      break;
-
-    case 2:
-      for (ival = 0; ival < nbr_val; ival += 2) {
-        ecs_file_printf(fic, "%10d%10d\n", buf[ival], buf[ival+1]);
-      }
-      break;
-
-    case 3:
-      for (ival = 0; ival < nbr_val; ival += 3) {
-        ecs_file_printf(fic, "%10d%10d%10d\n",
-                        buf[ival], buf[ival+1], buf[ival+2]);
-      }
-      break;
-
-    case 4:
-      for (ival = 0; ival < nbr_val; ival += 4) {
-        ecs_file_printf(fic, "%10d%10d%10d%10d\n",
-                        buf[ival], buf[ival+1], buf[ival+2], buf[ival+3]);
-      }
-      break;
-
-    case 5:
-      for (ival = 0; ival < nbr_val; ival += 5) {
-        ecs_file_printf(fic, "%10d%10d%10d%10d%10d\n",
-                        buf[ival], buf[ival+1], buf[ival+2], buf[ival+3],
-                        buf[ival+4]);
-      }
-      break;
-
-    case 6:
-      for (ival = 0; ival < nbr_val; ival += 6) {
-        ecs_file_printf(fic, "%10d%10d%10d%10d%10d%10d\n",
-                        buf[ival], buf[ival+1], buf[ival+2], buf[ival+3],
-                        buf[ival+4], buf[ival+5]);
-      }
-      break;
-
-    case 8:
-      for (ival = 0; ival < nbr_val; ival += 8) {
-        ecs_file_printf(fic, "%10d%10d%10d%10d%10d%10d%10d%10d\n",
-                        buf[ival], buf[ival+1], buf[ival+2], buf[ival+3],
-                        buf[ival+4], buf[ival+5], buf[ival+6], buf[ival+7]);
-      }
-      break;
-
-    default:
-      for (ival = 0; ival < nbr_val; ival += nbr_col) {
-        for (iloc = 0; iloc < nbr_col; iloc++)
-          ecs_file_printf(fic, "%10d", buf[ival + iloc]);
-        ecs_file_printf(fic, "\n");
-      }
-
-    }
   }
 }
 
@@ -244,53 +146,34 @@ ecs_loc_post_ens__ecr_val_champ(const ecs_file_t  *fic,
   const ecs_int_t  *val_ptr;
   float  cnv_val[4096];
 
-  if (ecs_file_get_type(fic) != ECS_FILE_TYPE_TEXT) {
+  for (ind_deb = 0; ind_deb < nbr; ind_deb += 4096) {
 
-    for (ind_deb = 0; ind_deb < nbr; ind_deb += 4096) {
+    nbr_sub = 4096;
 
-      nbr_sub = 4096;
+    if (ind_deb + nbr_sub > nbr)
+      nbr_sub = nbr - ind_deb;
 
-      if (ind_deb + nbr_sub > nbr)
-        nbr_sub = nbr - ind_deb;
-
-      val_ptr = val + ind_deb;
-
-      if (lst != NULL) {
-
-        for (ind = 0; ind < nbr_sub; ind++)
-          cnv_val[ind] = val_ptr[lst[ind]];
-
-        ecs_file_write(cnv_val, sizeof(float), nbr_sub, fic);
-
-      }
-      else {
-
-        for (ind = 0; ind < nbr_sub; ind++)
-          cnv_val[ind] = val_ptr[ind];
-
-        ecs_file_write(cnv_val, sizeof(float), nbr_sub, fic);
-
-      }
-
-    }
-
-  }
-
-  else {
+    val_ptr = val + ind_deb;
 
     if (lst != NULL) {
 
-      for (ind = 0; ind < nbr; ind++)
-        ecs_file_printf(fic, "%12.5E\n", (double)(val[lst[ind]]));
+      for (ind = 0; ind < nbr_sub; ind++)
+        cnv_val[ind] = val_ptr[lst[ind]];
+
+      ecs_file_write(cnv_val, sizeof(float), nbr_sub, fic);
 
     }
     else {
 
-      for (ind = 0; ind < nbr; ind++)
-        ecs_file_printf(fic, "%12.5E\n", (double)(val[ind]));
+      for (ind = 0; ind < nbr_sub; ind++)
+        cnv_val[ind] = val_ptr[ind];
+
+      ecs_file_write(cnv_val, sizeof(float), nbr_sub, fic);
 
     }
+
   }
+
 }
 
 /*============================================================================
@@ -431,17 +314,13 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
     switch (elt_typ_ref) {
 
     case ECS_ELT_TYP_FAC_POLY:
-      if (cas_ens->no_poly == false) {
-        ecs_post_ens__ecr_chaine(fic_imp, "nsided");
-        ecs_post_ens__ecr_int(fic_imp, (int)nbr_elt_typ_geo);
-      }
+      ecs_post_ens__ecr_chaine(fic_imp, "nsided");
+      ecs_post_ens__ecr_int(fic_imp, (int)nbr_elt_typ_geo);
       break;
 
     case ECS_ELT_TYP_CEL_POLY:
-      if (cas_ens->no_poly == false) {
-        ecs_post_ens__ecr_chaine(fic_imp, "nfaced");
-        ecs_post_ens__ecr_int(fic_imp, (int)nbr_elt_typ_geo);
-      }
+      ecs_post_ens__ecr_chaine(fic_imp, "nfaced");
+      ecs_post_ens__ecr_int(fic_imp, (int)nbr_elt_typ_geo);
       break;
 
     default:
@@ -485,15 +364,12 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
 
     case ECS_ELT_TYP_FAC_POLY: /* Polygones */
 
-      if (cas_ens->no_poly == true)
-        break;
-
       /* Nombre de sommets par élément */
 
       for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
         connect_buf[cpt_buf++] = def_pos_tab[ielt + 1] - def_pos_tab[ielt];
         if (cpt_buf == 4096 || ielt + 1 == cpt_elt_fin) {
-          ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
+          ecs_file_write(connect_buf, sizeof(int32_t), cpt_buf, fic_imp);
           cpt_buf = 0;
         }
       }
@@ -506,15 +382,12 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
              ival > def_pos_tab[ielt    ];
              ival--)
           connect_buf[cpt_buf++] = def_val_tab[ival - 2];
-        ecs_loc_post_ens__ecr_buf_int(fic_imp, cpt_buf, cpt_buf, connect_buf);
+        ecs_file_write(connect_buf, sizeof(int32_t), cpt_buf, fic_imp);
       }
 
       break;
 
     case ECS_ELT_TYP_CEL_POLY: /* Polyèdres */
-
-      if (cas_ens->no_poly == true)
-        break;
 
       /* Convention : définition nodale cellule->sommets avec numéros de
          premiers sommets répétés en fin de liste pour marquer la fin
@@ -539,7 +412,7 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
         }
         connect_buf[cpt_buf++] = nbr_fac_loc;
         if (cpt_buf == 4096 || ielt + 1 == cpt_elt_fin) {
-          ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
+          ecs_file_write(connect_buf, sizeof(int32_t), cpt_buf, fic_imp);
           cpt_buf = 0;
         }
       }
@@ -564,7 +437,7 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
           marqueur_fin = -1;
           connect_buf[cpt_buf++] = nbr_som_loc;
           if (cpt_buf == 4096 || ival + 2 == def_pos_tab[cpt_elt_fin]) {
-            ecs_loc_post_ens__ecr_buf_int(fic_imp, 1, cpt_buf, connect_buf);
+            ecs_file_write(connect_buf, sizeof(int32_t), cpt_buf, fic_imp);
             cpt_buf = 0;
           }
           nbr_som_loc = 0;
@@ -588,10 +461,7 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
         }
         else {
           marqueur_fin = -1;
-          ecs_loc_post_ens__ecr_buf_int(fic_imp,
-                                        cpt_buf,
-                                        cpt_buf,
-                                        connect_buf);
+          ecs_file_write(connect_buf, sizeof(int32_t), cpt_buf, fic_imp);
           cpt_buf = 0;
         }
 
@@ -614,10 +484,7 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
           connect_buf[cpt_buf++] = def_val_tab[ival];
 
         if (cpt_buf >= (4096 - nbr_som_loc) || ielt + 1 == cpt_elt_fin) {
-          ecs_loc_post_ens__ecr_buf_int(fic_imp,
-                                        nbr_som_loc,
-                                        cpt_buf,
-                                        connect_buf);
+          ecs_file_write(connect_buf, sizeof(int32_t), cpt_buf, fic_imp);
           cpt_buf = 0;
         }
 
@@ -712,9 +579,8 @@ ecs_champ_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
          ind_typ_ele < part_loc->nbr_typ_ele;
          ind_typ_ele++) {
 
-      if (   cas_ens->no_poly == false
-          || (   strcmp(part_loc->nom_typ_ele[ind_typ_ele], "nsided") != 0
-              && strcmp(part_loc->nom_typ_ele[ind_typ_ele], "nfaced") != 0)) {
+      if (   strcmp(part_loc->nom_typ_ele[ind_typ_ele], "nsided") != 0
+          && strcmp(part_loc->nom_typ_ele[ind_typ_ele], "nfaced") != 0) {
 
         ecs_post_ens__ecr_chaine(fic_champ, part_loc->nom_typ_ele[ind_typ_ele]);
 

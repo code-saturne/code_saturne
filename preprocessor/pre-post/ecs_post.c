@@ -66,27 +66,6 @@
  *                              Fonctions privées
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- *  Fonction initialisant une structure `ecs_post_opts_t`
- *----------------------------------------------------------------------------*/
-
-static void
-ecs_loc_post__init_opts(ecs_post_opt_t  *opts)
-{
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  assert(opts != NULL);
-
-  opts->no_poly = false;
-  opts->text = false;
-  opts->big_endian = false;
-
-  opts->ecr_type[ECS_POST_TYPE_VOLUME] = true;
-  opts->ecr_type[ECS_POST_TYPE_INFO] = true;
-
-  opts->ecr_type[ECS_POST_TYPE_ERREUR] = true;
-}
-
 /*============================================================================
  *                             Fonctions publiques
  *============================================================================*/
@@ -98,7 +77,7 @@ ecs_loc_post__init_opts(ecs_post_opt_t  *opts)
 ecs_post_t *
 ecs_post__cree_cas(const char  *nom_cas)
 {
-  ecs_post_t * cas;
+  ecs_post_t *cas;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -109,23 +88,29 @@ ecs_post__cree_cas(const char  *nom_cas)
   ECS_MALLOC(cas->nom_cas, strlen(nom_cas) + 1, char);
   strcpy(cas->nom_cas, nom_cas);
 
-  cas->post_ens      = false;
-  cas->cas_ens       = NULL;
-  ecs_loc_post__init_opts(&(cas->opt_ens));
+  cas->post_ens = false;
+  cas->cas_ens = NULL;
+  cas->opt_ens[ECS_POST_TYPE_VOLUME] = true;
+  cas->opt_ens[ECS_POST_TYPE_INFO] = true;
+  cas->opt_ens[ECS_POST_TYPE_ERREUR] = true;
 
 #if defined(HAVE_CGNS)
 
-  cas->post_cgns      = false;
-  cas->cas_cgns       = NULL;
-  ecs_loc_post__init_opts(&(cas->opt_cgns));
+  cas->post_cgns = false;
+  cas->cas_cgns = NULL;
+  cas->opt_cgns[ECS_POST_TYPE_VOLUME] = true;
+  cas->opt_cgns[ECS_POST_TYPE_INFO] = true;
+  cas->opt_cgns[ECS_POST_TYPE_ERREUR] = true;
 
 #endif /* HAVE_CGNS */
 
 #if defined(HAVE_MED)
 
-  cas->post_med      = false;
-  cas->cas_med       = NULL;
-  ecs_loc_post__init_opts(&(cas->opt_med));
+  cas->post_med = false;
+  cas->cas_med = NULL;
+  cas->opt_med[ECS_POST_TYPE_VOLUME] = true;
+  cas->opt_med[ECS_POST_TYPE_INFO] = true;
+  cas->opt_med[ECS_POST_TYPE_ERREUR] = true;
 
 #endif /* HAVE_MED */
 

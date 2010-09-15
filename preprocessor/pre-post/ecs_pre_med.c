@@ -121,8 +121,6 @@ ecs_pre_med__cree(const char  *nom_fichier)
   fic->nbr_maillages = 0;
   fic->tab_maillages = NULL;
 
-  fic->no_poly = false;
-
   return fic;
 }
 

@@ -104,8 +104,7 @@ extern "C" {
  *---------------------------------------------------------------------------*/
 
 ecs_post_cgns_t  *
-ecs_post_cgns__cree_cas(const char  *nom_cas,
-                        bool         no_poly)
+ecs_post_cgns__cree_cas(const char  *nom_cas)
 {
   ecs_post_cgns_t  *cas_cgns;
 
@@ -121,8 +120,6 @@ ecs_post_cgns__cree_cas(const char  *nom_cas,
 
   cas_cgns->nbr_bases = 0;
   cas_cgns->tab_bases = NULL;
-
-  cas_cgns->no_poly = no_poly;
 
   return cas_cgns;
 }

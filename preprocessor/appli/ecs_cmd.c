@@ -1,7 +1,5 @@
 /*============================================================================
- *  Définitions des fonctions de base
- *   associées à la structure `ecs_cmd_t' décrivant
- *   les options de la ligne de commande
+ * Command line option parser and tracking.
  *============================================================================*/
 
 /*
@@ -29,16 +27,12 @@
   Boston, MA  02110-1301  USA
 */
 
-
-/*============================================================================
- *                                 Visibilite
- *============================================================================*/
+/*----------------------------------------------------------------------------*/
 
 #include "cs_config.h"
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C
+ * Standard C library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -49,11 +43,6 @@
 #include <stdlib.h>      /* atoi()             */
 #include <string.h>      /* strlen()           */
 #include <time.h>        /* time(), strftime() */
-
-
-/*----------------------------------------------------------------------------
- *  Fichiers `include' systeme
- *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MKDIR)
 #include <sys/stat.h>
@@ -90,15 +79,11 @@
 #endif
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' visibles du  paquetage global "Utilitaire"
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "ecs_file.h"
 #include "ecs_mem.h"
-
-/*----------------------------------------------------------------------------
- *  Fichiers `include' visibles des paquetages visibles
- *----------------------------------------------------------------------------*/
 
 #include "ecs_pre.h"
 
@@ -110,34 +95,82 @@
 #include "ecs_med.h"
 #endif
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' visibles du  paquetage courant
- *----------------------------------------------------------------------------*/
-
-
-/*----------------------------------------------------------------------------
- *  Fichier  `include' du  paquetage courant associe au fichier courant
+ * Headers for the current file
  *----------------------------------------------------------------------------*/
 
 #include "ecs_cmd.h"
-
-
-/*----------------------------------------------------------------------------
- *  Fichiers `include' prives   du  paquetage courant
- *----------------------------------------------------------------------------*/
-
 #include "ecs_cmd_priv.h"
 
+/*=============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Definitions of file names and extensions
+ *----------------------------------------------------------------------------*/
+
+#define ECS_CMD_EXEC_NAME                             "cs_preprocess"
+
+#define ECS_CMD_LOGFILE_NAME_DEFAULT               "preprocessor.log"
+#define ECS_CMD_OUTFILE_NAME_DEFAULT            "preprocessor_output"
+
+#define ECS_CMD_POST_CASE_DEFAULT                        "preprocess"
+
+/*----------------------------------------------------------------------------
+ * Définition des mots-cles pour les options de la ligne de commande
+ *----------------------------------------------------------------------------*/
+
+#define ECS_CMD_KEY_MESH_GRP_SECTION                        "section"
+#define ECS_CMD_KEY_MESH_GRP_ZONE                              "zone"
+
+/*----------------------------------------------------------------------------
+ *  Définition des options de la ligne de commande
+ *----------------------------------------------------------------------------*/
+
+#define ECS_CMD_OPTION_CASE                                  "--case"
+
+#define ECS_CMD_OPTION_DUMP                                  "--dump"
+#define ECS_CMD_OPTION_NULL_COMM                         "--no-write"
+#define ECS_CMD_OPTION_FMT_MESH_FILE                       "--format"
+#define ECS_CMD_OPTION_NUM_MESH                               "--num"
+#define ECS_CMD_OPTION_GRP_CEL_MESH                       "--grp-cel"
+#define ECS_CMD_OPTION_GRP_FAC_MESH                       "--grp-fac"
+
+#define ECS_CMD_OPTION_HELP                                  "--help"
+#define ECS_CMD_OPTION_HELP_1                                    "-h"
+
+#define ECS_CMD_OPTION_LOG_FILE                               "--log"
+
+#define ECS_CMD_OPTION_MESH_FILE                             "--mesh"
+#define ECS_CMD_OPTION_MESH_FILE_1                               "-m"
+
+#define ECS_CMD_OPTION_OUTPUT_FILE                            "--out"
+#define ECS_CMD_OPTION_OUTPUT_FILE_1                             "-o"
+
+#define ECS_CMD_OPTION_ORIENT_CORREC                     "--reorient"
+
+#if defined(HAVE_CGNS)
+#define ECS_CMD_OPTION_POST_CGNS                             "--cgns"
+#endif /* HAVE_CGNS */
+#define ECS_CMD_OPTION_POST_ENS                           "--ensight"
+#if defined(HAVE_MED)
+#define ECS_CMD_OPTION_POST_MED                               "--med"
+#endif /* HAVE_MED */
+
+#define ECS_CMD_OPTION_POST_MAIN                           "--volume"
+#define ECS_CMD_OPTION_POST_INFO                             "--info"
+
+#define ECS_CMD_OPTION_VERSION                            "--version"
 
 /*============================================================================
- *  Variables globales statiques
+ * Static global variables
  *============================================================================*/
 
 static char _sys_info_cpu_string[81] = "";
 
 /*============================================================================
- *                              Fonctions privées
+ * Private function definitions
  *============================================================================*/
 
 /*!
@@ -214,7 +247,7 @@ _sys_info_cpu(void)
 #endif /* ECS_ARCH */
 
 /*----------------------------------------------------------------------------
- *  Fonction qui affiche le numero de version
+ * Print version number
  *----------------------------------------------------------------------------*/
 
 static void
@@ -321,19 +354,15 @@ ecs_loc_cmd__aff_version(void)
 
 }
 
-
 /*----------------------------------------------------------------------------
- *  Fonction qui affiche la ligne de commande, le titre et la version
+ * Print command line, title, and version
  *----------------------------------------------------------------------------*/
 
 static void
 ecs_loc_cmd__aff_titre(int    argc,
                        char  *argv[])
 {
-
-  int       iarg;
-  int       ltot;
-
+  int  iarg, ltot;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -360,12 +389,10 @@ ecs_loc_cmd__aff_titre(int    argc,
            "  `------------------------------'\n"));
 
   ecs_loc_cmd__aff_version();
-
 }
 
-
 /*----------------------------------------------------------------------------
- *  Fonction utilitataire pour les affichages
+ * Utilitarian function for printing
  *----------------------------------------------------------------------------*/
 
 static void
@@ -381,38 +408,30 @@ _fct_prt(const char  *opt,
   printf(" %s\n", texte);
 }
 
-
 /*----------------------------------------------------------------------------
- *  Fonction qui affiche l'usage et les options
+ * Print usage
  *----------------------------------------------------------------------------*/
 
-static void ecs_loc_cmd__aff_aide
-(
- void
-)
+static void
+ecs_loc_cmd__aff_aide(void)
 {
-
   char opt_str[81];
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-
   printf(_("\n\nUSAGE:"));
 
-
-  /* Usage en PRE-TRAITEMENT */
+  /* Pre-processing */
 
   printf(_("  %s [<options>]"),
          ECS_CMD_EXEC_NAME);
   printf(" %s <%s>",
          ECS_CMD_OPTION_MESH_FILE_1, _("file"));
 
-
-  /* Arguments nécessaires */
-  /*-----------------------*/
+  /* Necessary arguments */
+  /*---------------------*/
 
   printf(_("\n\n\nwith :\n\n"));
-
 
   _fct_prt(ECS_CMD_OPTION_MESH_FILE_1, _("<file>"),
            _(": Preprocessor input mesh file"));
@@ -423,36 +442,20 @@ static void ecs_loc_cmd__aff_aide
 
   printf("\n");
 
-
   _fct_prt(ECS_CMD_OPTION_NULL_COMM, "",
            _(": do not write preprocessor output"));
 
-
   printf("\n");
 
-
-  /* Options generales */
-  /*-------------------*/
+  /* General options */
+  /*-----------------*/
 
   printf(_("\ngeneral options:\n\n"));
-
-
-#if defined(HAVE_CHDIR)
-
-  _fct_prt(ECS_CMD_OPTION_CWD, _("<directory>"), _(": working directory"));
-  _fct_prt("", "", _("  (if different from current directory !)"));
-
-  printf("\n");
-
-#endif
-
 
   _fct_prt(ECS_CMD_OPTION_HELP_1, "", _(": this help message"));
   _fct_prt(ECS_CMD_OPTION_HELP, "", _(": same"));
 
-
   printf("\n");
-
 
   _fct_prt(ECS_CMD_OPTION_LOG_FILE, _("[<file>]"),
            _(": redirect terminal output to a file"));
@@ -462,7 +465,6 @@ static void ecs_loc_cmd__aff_aide
   _fct_prt("", "", opt_str);
 
   printf("\n");
-
 
   _fct_prt(ECS_CMD_OPTION_OUTPUT_FILE_1, _("<file>"),
            _(": output file name"));
@@ -474,24 +476,19 @@ static void ecs_loc_cmd__aff_aide
 
   printf("\n");
 
-
   _fct_prt(ECS_CMD_OPTION_ORIENT_CORREC, "",
            _(": if necessary, correct orientation of"));
   _fct_prt("", "", _("  cells and faces"));
 
-
   printf("\n");
-
 
   _fct_prt(ECS_CMD_OPTION_VERSION, "",
            _(": print version number"));
 
-
-  /* Options de POST-TRAITEMENT */
-  /*----------------------------*/
+  /* Post-processing options */
+  /*-------------------------*/
 
   printf(_("\n\nPOSTPROCESSING options:\n\n"));
-
 
   _fct_prt(ECS_CMD_OPTION_CASE,
            _("<name>"),
@@ -514,7 +511,6 @@ static void ecs_loc_cmd__aff_aide
 
 #endif /* HAVE_CGNS */
 
-
   sprintf(opt_str,
           _(": %s geometry output"), "EnSight Gold");
   _fct_prt(ECS_CMD_OPTION_POST_ENS, _("[<sub-options>]"), opt_str);
@@ -525,22 +521,19 @@ static void ecs_loc_cmd__aff_aide
   printf("\n");
 
   sprintf(opt_str,
-          _(": %s geometry output"), "MED 2.3");
+          _(": %s geometry output"), "MED");
   _fct_prt(ECS_CMD_OPTION_POST_MED, _("[<sub-options>]"), opt_str);
 
 #endif /* HAVE_MED */
 
-
-  /* Sous-options de sélection de maillage */
-  /*---------------------------------------*/
+  /* Mesh selection sub-options */
+  /*----------------------------*/
 
   printf(_("\n\nmesh selection sub-options\n"
            " (-m, --mesh):\n\n"));
 
-
   _fct_prt(ECS_CMD_OPTION_FMT_MESH_FILE, _("<keyword>"),
            _(": selection of mesh file format"));
-
 
   _fct_prt(ECS_CMD_OPTION_NUM_MESH, "<n> [...]",
            _(": selection of mesh numbers in file"));
@@ -563,17 +556,14 @@ static void ecs_loc_cmd__aff_aide
                      ECS_CMD_KEY_MESH_GRP_ZONE"\""));
   _fct_prt("", "", _("  (based on format features/conventions)"));
 
-
   printf(_("\n\navailable mesh formats\n"
            " (-m, --mesh; --format):\n"));
   printf(_("                                  extension:    keyword:\n"));
 
-
   ecs_pre__aff_formats();
 
-
-  /* Sous-options de post traitement */
-  /*---------------------------------*/
+  /* Post-processign sub-options */
+  /*-----------------------------*/
 
   opt_str[0] = '\0';
 
@@ -592,21 +582,6 @@ static void ecs_loc_cmd__aff_aide
   printf(_("\n\npostprocessing selection sub-options\n"
            " (%s):\n\n"), opt_str);
 
-
-  _fct_prt(ECS_CMD_OPTION_POST_NO_POLY,
-           "", _(": discard polygonal faces (with more"));
-  _fct_prt("", "", _("  than 4 edges) or polyhedra"));
-
-  printf("\n");
-
-  _fct_prt(ECS_CMD_OPTION_POST_TEXT,
-           "", _(": force text output (EnSight)"));
-
-  _fct_prt(ECS_CMD_OPTION_POST_BIG_ENDIAN,
-           "", _(": force binary output to big-endian (EnSight)"));
-
-  printf("\n");
-
   _fct_prt(ECS_CMD_OPTION_POST_MAIN,
            "", _(": activate output of main mesh"));
   sprintf(opt_str, _("  (by default if %s not given)"),
@@ -619,8 +594,8 @@ static void ecs_loc_cmd__aff_aide
           ECS_CMD_OPTION_POST_MAIN);
   _fct_prt("", "", opt_str);
 
-  /* Variables d'environnement */
-  /*---------------------------*/
+  /* Environment variables */
+  /*-----------------------*/
 
   printf("\n\n%s:\n\n",
          _("Environment variables"));
@@ -850,36 +825,16 @@ ecs_loc_cmd__lit_arg_post(int    argc,
 
   ECS_MALLOC(cmd_post, 1, ecs_cmd_post_t);
 
-  cmd_post->no_poly        = false;
-  cmd_post->text           = false;
-  cmd_post->big_endian     = false;
-
   cmd_post->volume = false;
   cmd_post->info   = false;
 
   for (iarg = *argpos + 1; iarg < argc && bool_fin == false; iarg++) {
 
-    /* Sous-option de choix de format */
-
-    if      (!strcmp (ECS_CMD_OPTION_POST_NO_POLY, argv[iarg])) {
-      cmd_post->no_poly = true;
-    }
-
-    else if (!strcmp (ECS_CMD_OPTION_POST_TEXT, argv[iarg])) {
-      cmd_post->text = true;
-    }
-
-    else if (!strcmp (ECS_CMD_OPTION_POST_BIG_ENDIAN, argv[iarg])) {
-      cmd_post->big_endian = true;
-    }
-
-    else if (!strcmp (ECS_CMD_OPTION_POST_MAIN, argv[iarg])) {
+    if (!strcmp (ECS_CMD_OPTION_POST_MAIN, argv[iarg]))
       cmd_post->volume = true;
-    }
 
-    else if (!strcmp (ECS_CMD_OPTION_POST_INFO, argv[iarg])) {
+    else if (!strcmp (ECS_CMD_OPTION_POST_INFO, argv[iarg]))
       cmd_post->info = true;
-    }
 
     else {
 
@@ -894,8 +849,7 @@ ecs_loc_cmd__lit_arg_post(int    argc,
   /* Si aucune option de filtrage du post traitement n'est
      activée, tous les types post traitements sont actifs */
 
-  if (   cmd_post->volume == false
-      && cmd_post->info   == false) {
+  if (cmd_post->volume == false && cmd_post->info   == false) {
     cmd_post->volume = true;
     cmd_post->info   = true;
   }
@@ -1227,7 +1181,6 @@ ecs_cmd__lit_arg(int    argc,
   int        iarg;
   size_t     lng;
   bool       bool_cmd_option_case = false;
-  bool       bool_cmd_option_cwd = false;
   bool       bool_cmd_option_help = false;
   bool       bool_cmd_option_mesh_file = false;
   bool       bool_cmd_option_output_file = false;
@@ -1267,43 +1220,6 @@ ecs_cmd__lit_arg(int    argc,
       else {
         ecs_loc_cmd__aff_manque_arg(argc, argv, argv[iarg]);
       }
-    }
-    else if (!strcmp (ECS_CMD_OPTION_CWD, argv[iarg])) {
-
-      if (bool_cmd_option_cwd == false)
-        bool_cmd_option_cwd = true;
-      else
-        ecs_loc_cmd__aff_opt_en_double(argc, argv, argv[iarg]);
-
-#if defined(HAVE_CHDIR)
-
-      if (argc - 1 > iarg && strncmp(argv[iarg + 1], "-", 1)) {
-
-        if (chdir(argv[++iarg]) != 0) {
-
-          ecs_loc_cmd__aff_titre(argc, argv);
-
-          ecs_error(__FILE__, __LINE__, errno,
-                    _("Failed to switch to directory :\n%s"),
-                    &argv[iarg][2]);
-        }
-      }
-      else
-        ecs_loc_cmd__aff_manque_arg(argc, argv, argv[iarg]);
-
-#else
-
-      ecs_loc_cmd__aff_titre(argc, argv);
-
-      ecs_loc_cmd__aff_aide();
-
-      ecs_error(__FILE__, __LINE__, 0,
-                _("Error in command line specification.\n\n"
-                  "Option \"%s\" is not available."),
-                ECS_CMD_OPTION_CWD);
-
-#endif /* HAVE_CHDIR */
-
     }
     else if (!strcmp (ECS_CMD_OPTION_DUMP, argv[iarg])) {
 

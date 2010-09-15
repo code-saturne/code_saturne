@@ -226,14 +226,6 @@ void
 ecs_maillage__calc_coo_ext(ecs_maillage_t  *maillage);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui modifie les coordonnées du maillage
- *----------------------------------------------------------------------------*/
-
-void
-ecs_maillage__transf_coo(ecs_maillage_t  *maillage,
-                         const double     matrice[3][4]);
-
-/*----------------------------------------------------------------------------
  *  Fonction qui construit les familles
  *----------------------------------------------------------------------------*/
 

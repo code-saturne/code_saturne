@@ -9,7 +9,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2010 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -107,13 +107,8 @@ struct _ecs_post_ens_t {
 
   ecs_file_t            *fic_geo;        /* Pointeur sur fichier géométrie */
 
-  bool                   no_poly;        /* Ignorer polygones et polyèdres */
-
   bool                   modifie;        /* Modification depuis dernière
                                             écriture du fichier case */
-
-  bool                   text;           /* Fichiers texte et non binaires */
-  bool                   big_endian;     /* Fichiers binaires "big-endian" */
 
 };
 
