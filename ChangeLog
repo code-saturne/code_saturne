@@ -1,3 +1,8 @@
+* 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update FVM selector test relative to fvm_group API simplification.
+  modified file:
+    tests/fvm_selector_test.c
+
 * 15/09/2010 - David Monfort <david.monfort@edf.fr>
   Add missing argument to handle the post-processing of group names in the
   Fortran wrapper.

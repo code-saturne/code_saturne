@@ -43,20 +43,17 @@ test_1 (void)
 {
   fvm_group_class_set_t *gcset = NULL;
 
-  const char *grp_1[] = {"group_1", "g2", "g3"};
+  const char *grp_1[] = {"group_1", "g2", "g3", "12", "56"};
   const char *grp_2[] = {"group_4", "g2", "g5", "group_6"};
-  const char *grp_3[] = {"g7", "g8"};
-
-  const int att_1[] = {12, 56};
-  const int att_3[] = {57};
-  const int att_4[] = {12};
+  const char *grp_3[] = {"g7", "g8", "57"};
+  const char *grp_4[] = {"12"};
 
   gcset = fvm_group_class_set_create();
 
-  fvm_group_class_set_add(gcset, 3, 2, grp_1, att_1);
-  fvm_group_class_set_add(gcset, 4, 0, grp_2, NULL);
-  fvm_group_class_set_add(gcset, 2, 1, grp_3, att_3);
-  fvm_group_class_set_add(gcset, 0, 1, NULL, att_4);
+  fvm_group_class_set_add(gcset, 5, grp_1);
+  fvm_group_class_set_add(gcset, 4, grp_2);
+  fvm_group_class_set_add(gcset, 3, grp_3);
+  fvm_group_class_set_add(gcset, 1, grp_4);
 
   fvm_group_class_set_dump(gcset);
 
@@ -76,13 +73,13 @@ test_2 (void)
   fvm_lnum_t n_se = 0;
   fvm_lnum_t se[12];
 
-  const int att_02[] = {2};   /* 1 */
-  const int att_06[] = {6};   /* 2 */
-  const int att_10[] = {10};  /* 3 */
-  const int att_01[] = {1};   /* 4 */
-  const int att_05[] = {5};   /* 5 */
-  const int att_03[] = {3};   /* 6 */
-  const int att_11[] = {11};  /* 7 */
+  const char *att_02[] = {"2"};   /* 1 */
+  const char *att_06[] = {"6"};   /* 2 */
+  const char *att_10[] = {"10"};  /* 3 */
+  const char *att_01[] = {"1"};   /* 4 */
+  const char *att_05[] = {"5"};   /* 5 */
+  const char *att_03[] = {"3"};   /* 6 */
+  const char *att_11[] = {"11"};  /* 7 */
 
   const int f_gc_id[] = {5, 1, 2, 7, 7, 7, 3, 3, 4, 4, 8, 6};
 
@@ -114,14 +111,14 @@ test_2 (void)
 
   gcset = fvm_group_class_set_create();
 
-  fvm_group_class_set_add(gcset, 0, 1, NULL, att_02);
-  fvm_group_class_set_add(gcset, 0, 1, NULL, att_06);
-  fvm_group_class_set_add(gcset, 0, 1, NULL, att_10);
-  fvm_group_class_set_add(gcset, 0, 1, NULL, att_01);
-  fvm_group_class_set_add(gcset, 0, 1, NULL, att_05);
-  fvm_group_class_set_add(gcset, 0, 1, NULL, att_03);
-  fvm_group_class_set_add(gcset, 0, 1, NULL, att_11);
-  fvm_group_class_set_add(gcset, 0, 0, NULL, NULL);
+  fvm_group_class_set_add(gcset, 1, att_02);
+  fvm_group_class_set_add(gcset, 1, att_06);
+  fvm_group_class_set_add(gcset, 1, att_10);
+  fvm_group_class_set_add(gcset, 1, att_01);
+  fvm_group_class_set_add(gcset, 1, att_05);
+  fvm_group_class_set_add(gcset, 1, att_03);
+  fvm_group_class_set_add(gcset, 1, att_11);
+  fvm_group_class_set_add(gcset, 0, NULL);
 
   fvm_group_class_set_dump(gcset);
 
