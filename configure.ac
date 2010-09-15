@@ -1,8 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 #------------------------------------------------------------------------------
-#   This file is part of the Code_Saturne Kernel, element of the
-#   Code_Saturne CFD tool.
+#   This file is part of the Code_Saturne CFD tool.
 #
 #   Copyright (C) 2009-2010 EDF S.A., France
 #
@@ -17,7 +16,7 @@
 #   GNU General Public License for more details.
 #
 #   You should have received a copy of the GNU General Public Licence
-#   along with the Code_Saturne Preprocessor; if not, write to the
+#   along with the Code_Saturne Kernel; if not, write to the
 #   Free Software Foundation, Inc.,
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #------------------------------------------------------------------------------
@@ -297,23 +296,6 @@ AC_ARG_ENABLE(long-gnum,
 
 if test "x$have_long_gnum" = "xyes"; then
   AC_DEFINE([HAVE_LONG_GNUM],1,[Use 64-bit type if available for fvm_gnum_t.])
-fi
-
-# Use long int for mesh reading ?
-AC_ARG_ENABLE(long-int,
-  [AS_HELP_STRING([--enable-long-int], [use long integers for connectivity])],
-  [
-    case "${enableval}" in
-      yes) long_int=yes ;;
-      no)  long_int=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-long-int]) ;;
-    esac
-  ],
-  [ long_int=no ]
-)
-
-if test "x$long_int" = "xyes"; then
-  AC_DEFINE([USE_LONG_INT], [1], [Use long int for connectivity])
 fi
 
 # Check for Fortran 2003 flush feature

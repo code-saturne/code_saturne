@@ -9,7 +9,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2010 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -68,6 +68,12 @@
  * Définitions de type C99 qui ne sont pas toujurs fournies par des
  * compilateurs ou environnements plus anciens.
  *============================================================================*/
+
+#if HAVE_STDDEF_H
+# include <stddef.h>
+#else
+# include <stdio.h>
+#endif
 
 /*
  * En général, stdint.h est inclus par inttypes.h, mais seulement inttypes.h
@@ -171,18 +177,8 @@ typedef int             ecs_int_32_t;   /* Entier sur 4 octets */
 
 /* Types usuels */
 
-#if defined(USE_LONG_INT)
-
-typedef long            ecs_int_t;      /* Entier */
-typedef unsigned long   ecs_size_t;     /* Taille pour les index */
-
-#else
-
 typedef int             ecs_int_t;      /* Entier */
-typedef unsigned        ecs_size_t;     /* Taille pour les index */
-
-#endif
-
+typedef size_t          ecs_size_t;     /* Taille pour les index */
 typedef double          ecs_coord_t;    /* Réel (virgule flottante) */
 typedef char            ecs_byte_t;     /* Octet (unité de mémoire non typée) */
 

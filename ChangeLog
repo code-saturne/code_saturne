@@ -1,4 +1,10 @@
 * 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Preprocessor always defines ecs_size_t as size_t and ecs_int_t as int.
+  modified files:
+    configure.ac
+    preprocessor/util/ecs_def.h
+
+* 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Preprocessor builds families before switching to descending connectivity.
   modified files:
     preprocessor/appli/ecs_main.c
