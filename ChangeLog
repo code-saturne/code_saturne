@@ -1,3 +1,9 @@
+* 16/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Preprocessor: corrected bug when reading groups for UNV files with
+  overlapping cell and face labels.
+  modified files:
+    preprocessor/pre-post/ecs_pre_ideas.c
+
 * 15/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   French translation updates for Preprocessor.
   modified files:

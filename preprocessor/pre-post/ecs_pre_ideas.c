@@ -1506,13 +1506,11 @@ _ecs_pre_ideas__lit_groups(ecs_maillage_t   *maillage,
 
           if (tab_label_ent[ient_sup].nbr != 0) {
 
-            if (   (   min_val_ent[tab_ent[ient_sup]]<max_val_ent[tab_ent[ient]]
-                    && max_val_ent[tab_ent[ient_sup]]>max_val_ent[tab_ent[ient]])
-                || (   min_val_ent[tab_ent[ient_sup]]<min_val_ent[tab_ent[ient]]
-                    && max_val_ent[tab_ent[ient_sup]]>min_val_ent[tab_ent[ient]])){
+            /* Si les valeurs des labels entre entites se chevauchent,
+               il faut ordonner l'ensemble des labels sur les elements */
 
-              /* Les valeurs des labels entre entites se chevauchent :    */
-              /*  il faut ordonner l'ensemble des labels sur les elements */
+            if(! (   min_val_ent[tab_ent[ient_sup]] > max_val_ent[tab_ent[ient]]
+                  || max_val_ent[tab_ent[ient_sup]] < min_val_ent[tab_ent[ient]])) {
 
               bool_label_elt_a_trier = true;
 
