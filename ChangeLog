@@ -1,3 +1,8 @@
+* 17/09/2010 - David Monfort <david.monfort@edf.fr>
+  Enable maintainer mode by default when finding a .svn or .git directory.
+  modified script:
+    configure.ac
+
 * 16/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Preprocessor: corrected bug when reading groups for UNV files with
   overlapping cell and face labels.
