@@ -130,6 +130,7 @@ bin/code_saturne: $(srcdir)/bin/code_saturne.in
 bin/cs_config.py: bin/cs_config.py.in 
 bin/runcase: $(srcdir)/bin/runcase.in 
 
+CLEANFILES = $(edit_scripts)
 EXTRA_DIST += bin/code_saturne.in bin/cs_config.py.in bin/runcase.in
 
 # Install binary scripts

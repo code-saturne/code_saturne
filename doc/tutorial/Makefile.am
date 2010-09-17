@@ -96,3 +96,12 @@ install-data-local:
 	  $(MKDIR_P) "$(DESTDIR)$(pdfdir)"; \
 	  cp -p $(srcdir)/$(PDFMAIN) $(DESTDIR)$(pdfdir); \
 	fi
+
+uninstall-local:
+	@$(NORMAL_UNINSTALL)
+	files=$(PDFMAIN); \
+	test -d "$(DESTDIR)$(pdfdir)" || exit 0; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(pdfdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(pdfdir)" && rm -f $$files
+	rmdir $(pdfdir) || exit 0

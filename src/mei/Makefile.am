@@ -49,9 +49,3 @@ mei_parser.y \
 mei_scanner.l
 
 libmei_la_LDFLAGS = -no-undefined -version-info 0:0:0
-
-# Distribute generated files so that the user do not need to have
-# yacc/lex tools installed.
-
-dist-hook: mei_parser.c mei_scanner.c
-	cp -p mei_parser.c mei_parser.h mei_scanner.c $(distdir)
