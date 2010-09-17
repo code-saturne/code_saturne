@@ -1,3 +1,7 @@
+2010-09-17  David Monfort <david.monfort@edf.fr>
+
+	* Remove obsolete documentation.
+
 2010-09-14  David Monfort <david.monfort@edf.fr>
 
 	* Make the dist target functional.

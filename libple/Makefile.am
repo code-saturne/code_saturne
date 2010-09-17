@@ -35,7 +35,7 @@ MAINTAINERCLEANFILES = aclocal.m4 configure $(AUX_DIST)
 
 # SUBDIRS = src tests doc intl m4 po
 
-SUBDIRS = src tests doc
+SUBDIRS = src tests
 
 EXTRA_DIST = $(ac_aux_dir)/ple_auto_flags.sh \
              $(ac_aux_dir)/ple_config_info.m4 \

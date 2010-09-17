@@ -378,7 +378,7 @@ PLE_AC_CONFIG_INFO_FINALIZE
 # AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile doc/Makefile
 #                  intl/Makefile po/Makefile.in m4/Makefile])
 
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile doc/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
 
 #------------------------------------------------------------------------------
 
