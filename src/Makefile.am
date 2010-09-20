@@ -108,7 +108,7 @@ install-exec-local: $(libcsmodules_la_SOURCES)
 	test -n "$$files" || exit 0; \
 	for p in $$files; do \
 	  echo " $(INSTALL_HEADER) $$p '$(DESTDIR)$(saturneincludedir)'"; \
-	  cp -p $$p "$(DESTDIR)$(saturneincludedir)" || exit $$?; \
+	  $(INSTALL_HEADER) $$p "$(DESTDIR)$(saturneincludedir)" || exit $$?; \
 	done
 
 uninstall-local:

@@ -78,7 +78,7 @@ clean-local:
 
 install-pdf-local:
 	$(MKDIR_P) "$(DESTDIR)$(pdfdir)"
-	cp -p $(PDFMAIN) $(DESTDIR)$(pdfdir)
+	$(INSTALL_DATA) $(PDFMAIN) $(DESTDIR)$(pdfdir)
 
 distclean-local: clean-local
 	-rm -f $(PDFMAIN)
@@ -87,14 +87,14 @@ distclean-local: clean-local
 # to have LaTeX (and mandatory tools).
 
 dist-hook: pdf
-	cp -p $(PDFMAIN) $(distdir)
+	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
 
 # Install the documentation if available
 
 install-data-local:
 	if test -f $(srcdir)/$(PDFMAIN); then \
 	  $(MKDIR_P) "$(DESTDIR)$(pdfdir)"; \
-	  cp -p $(srcdir)/$(PDFMAIN) $(DESTDIR)$(pdfdir); \
+	  $(INSTALL_DATA) $(srcdir)/$(PDFMAIN) $(DESTDIR)$(pdfdir); \
 	fi
 
 uninstall-local:
