@@ -1,3 +1,8 @@
+* 22/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Preprocessor: extracted meshes should only contain connected vertices.
+  modified files:
+    preprocessor/base/ecs_maillage.c
+
 * 20/09/2010 - David Monfort <david.monfort@edf.fr>
   Use standard autoconf variables INSTALL_ instead of raw cp.
   modified scripts:

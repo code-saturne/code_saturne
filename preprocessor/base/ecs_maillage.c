@@ -428,7 +428,7 @@ _maillage__extrait(ecs_maillage_t         *maillage,
     bool_som_select.val[isom] = false;
 
   ecs_champ_def__cree_masque(bool_som_select,
-                             maillage->champ_def[entmail]);
+                             maillage_new->champ_def[entmail]);
 
   /* Extraction des sommets selectionnés
      Création d'un champ donnant
