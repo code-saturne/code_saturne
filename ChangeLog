@@ -1,4 +1,15 @@
 * 22/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Preprocessor: merging of coincident vertices or multiply-referenced
+  vertices in face definitions moved inside generation of descending
+  connectivity so as to handle cases where quadrangle faces transformed
+  into triangles by vertex merging may be identical with faces already
+  defined as triangles.
+  modified files:
+    preprocessor/appli/ecs_main.c
+    preprocessor/base/ecs_maillage.c
+    preprocessor/base/ecs_maillage.h
+
+* 22/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Preprocessor: extracted meshes should only contain connected vertices.
   modified files:
     preprocessor/base/ecs_maillage.c

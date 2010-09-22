@@ -140,13 +140,6 @@ void
 ecs_maillage__nettoie_nodal(ecs_maillage_t  *maillage);
 
 /*----------------------------------------------------------------------------
- *  Fusion des sommets confondus et suppression des éléments dégénérés
- *----------------------------------------------------------------------------*/
-
-void
-ecs_maillage__nettoie_descend(ecs_maillage_t  *maillage);
-
-/*----------------------------------------------------------------------------
  *  Correction si nécessaire de l'orientation des éléments en
  *   connectivité nodale.
  *

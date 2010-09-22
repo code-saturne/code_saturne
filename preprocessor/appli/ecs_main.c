@@ -595,11 +595,6 @@ main(int    argc,
   _aff_taille_maillage(maillage);
 
 
-  /* Nettoyage éventuel */
-
-  ecs_maillage__nettoie_descend(maillage);
-
-
   /*========================================================================*/
   /* Vérification du maillage                                               */
   /*========================================================================*/

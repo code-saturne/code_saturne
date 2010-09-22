@@ -641,6 +641,48 @@ _maillage_elt_fam_compacte(int            **elt_fam,
 }
 
 /*----------------------------------------------------------------------------
+ *  Suppression des éléments dégénérés
+ *----------------------------------------------------------------------------*/
+
+static void
+_maillage__nettoie_descend(ecs_maillage_t  *maillage)
+{
+  ecs_tab_int_t  tab_fac_old_new;
+
+  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
+
+  assert(maillage != NULL);
+
+  if (maillage->champ_def[ECS_ENTMAIL_FAC] == NULL)
+    return;
+
+  /* Faces */
+  /*-------*/
+
+  tab_fac_old_new
+    = ecs_champ_def__nettoie_fac(maillage->champ_def[ECS_ENTMAIL_FAC]);
+
+  if (tab_fac_old_new.nbr != 0) {
+
+    /* Inherit "family" fields */
+
+    assert(maillage->champ_att[ECS_ENTMAIL_FAC] == NULL);
+
+    _maillage_elt_fam_compacte(&(maillage->elt_fam[ECS_ENTMAIL_FAC]),
+                               &tab_fac_old_new);
+
+    /* Replace references in face definitions */
+
+    if (maillage->champ_def[ECS_ENTMAIL_CEL] != NULL)
+      ecs_champ_def__remplace_ref(maillage->champ_def[ECS_ENTMAIL_CEL],
+                                  &tab_fac_old_new);
+
+    tab_fac_old_new.nbr = 0;
+    ECS_FREE(tab_fac_old_new.val);
+  }
+}
+
+/*----------------------------------------------------------------------------
  *  Fonction qui construit la liste des de bord, ainsi que les listes de faces
  *  avec erreur de connectivité (i.e. qui appartiennent à 2 cellules ou plus
  *  vu d'un même côté, ou qui sont à la fois entrante et sortante pour une
@@ -1231,58 +1273,6 @@ ecs_maillage__nettoie_nodal(ecs_maillage_t  *maillage)
 }
 
 /*----------------------------------------------------------------------------
- *  Fusion des sommets confondus et suppression des éléments dégénérés
- *----------------------------------------------------------------------------*/
-
-void
-ecs_maillage__nettoie_descend(ecs_maillage_t  *maillage)
-{
-  ecs_tab_int_t  tab_fac_old_new;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  assert(maillage != NULL);
-
-  if (   maillage->vertex_coords == NULL
-      || maillage->champ_def[ECS_ENTMAIL_FAC] == NULL)
-    return;
-
-  /* Merge coincident vertices (update face connectivity ) */
-  /*-------------------------------------------------------*/
-
-  ecs_champ_def__nettoie_som_fac(&(maillage->n_vertices),
-                                 &(maillage->vertex_coords),
-                                 maillage->champ_def[ECS_ENTMAIL_FAC]);
-
-  /* Faces */
-  /*-------*/
-
-  tab_fac_old_new
-    = ecs_champ_def__nettoie_fac(maillage->champ_def[ECS_ENTMAIL_FAC]);
-
-  if (tab_fac_old_new.nbr != 0) {
-
-    /* Inherit "family" fields */
-
-    assert(maillage->champ_att[ECS_ENTMAIL_FAC] == NULL);
-
-    _maillage_elt_fam_compacte(&(maillage->elt_fam[ECS_ENTMAIL_FAC]),
-                               &tab_fac_old_new);
-
-    assert(maillage->elt_fam[ECS_ENTMAIL_FAC] == NULL);
-
-    /* Replace references in face definitions */
-
-    if (maillage->champ_def[ECS_ENTMAIL_CEL] != NULL)
-      ecs_champ_def__remplace_ref(maillage->champ_def[ECS_ENTMAIL_CEL],
-                                  &tab_fac_old_new);
-
-    tab_fac_old_new.nbr = 0;
-    ECS_FREE(tab_fac_old_new.val);
-  }
-}
-
-/*----------------------------------------------------------------------------
  *  Correction si nécessaire de l'orientation des éléments en
  *   connectivité nodale.
  *----------------------------------------------------------------------------*/
@@ -1350,8 +1340,8 @@ ecs_maillage__connect_descend(ecs_maillage_t * maillage)
   if (maillage->champ_def[ECS_ENTMAIL_CEL] == NULL)
     return;
 
-  /* Décomposition des cellules en leurs faces */
-  /*-------------------------------------------*/
+  /* Decompose cells into faces */
+  /*----------------------------*/
 
   if (maillage->champ_def[ECS_ENTMAIL_FAC] != NULL)
     nbr_fac_old = ecs_champ__ret_elt_nbr(maillage->champ_def[ECS_ENTMAIL_FAC]);
@@ -1363,8 +1353,15 @@ ecs_maillage__connect_descend(ecs_maillage_t * maillage)
 
   assert(maillage->champ_att[ECS_ENTMAIL_FAC] == NULL);
 
-  /* Fusion des sous-éléments ayant la même définition topologique */
-  /*---------------------------------------------------------------*/
+  /* Merge coincident vertices (update face connectivity ) */
+  /*-------------------------------------------------------*/
+
+  ecs_champ_def__nettoie_som_fac(&(maillage->n_vertices),
+                                 &(maillage->vertex_coords),
+                                 maillage->champ_def[ECS_ENTMAIL_FAC]);
+
+  /* Merge faces with the same definition */
+  /*--------------------------------------*/
 
   nbr_elt_new = 0;
 
@@ -1398,6 +1395,10 @@ ecs_maillage__connect_descend(ecs_maillage_t * maillage)
 
   ECS_FREE(signe_elt.val);
   ECS_FREE(vect_transf.val);
+
+  /* Remove degenerate (empty) faces if present */
+
+  _maillage__nettoie_descend(maillage);
 }
 
 /*----------------------------------------------------------------------------
