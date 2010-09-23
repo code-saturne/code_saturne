@@ -29,9 +29,8 @@
  *============================================================================*/
 
 /*============================================================================
- * Manage the exchange of data between Code_Saturne and the pre-processor
+ * Define conjuguate heat transfer couplings with the SYRTHES code
  *============================================================================*/
-
 
 #if defined(HAVE_CONFIG_H)
 #include "cs_config.h"
@@ -41,33 +40,20 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
 /*----------------------------------------------------------------------------
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
-
 /*----------------------------------------------------------------------------
  * FVM library headers
  *----------------------------------------------------------------------------*/
-
-#include "fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_preprocessor_data.h"
+#include "cs_sat_coupling.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -84,36 +70,60 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define mesh files to read and optional associated transformations.
+ * Define couplings with other instances of Code_Saturne.
+ *
+ * This is done by calling the cs_sat_coupling_define() function for each
+ * coupling to add.
+ *
+ * The arguments to cs_sat_coupling_define are:
+ *   saturne_name          <-- matching Code_Saturne application name
+ *   volume_sup_criteria   <-- cell selection criteria for support
+ *   boundary_sup_criteria <-- boundary face selection criteria for support
+ *                             (not functional)
+ *   volume_cpl_criteria   <-- cell selection criteria for coupled cells
+ *   boundary_cpl_criteria <-- boundary face selection criteria for coupled
+ *                             faces
+ *   verbosity             <-- verbosity level
+ *
+ * In the case of only 2 Code_Saturne instances, the 'saturne_name' argument
+ * is ignored, as there is only one matching possibility.
+ *
+ * In case of multiple couplings, a coupling will be matched with available
+ * Code_Saturne instances based on the 'saturne_name' argument.
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_input(void)
+cs_user_saturne_coupling(void)
 {
+  int  verbosity = 1;
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  /* Determine list of files to add */
-  /*--------------------------------*/
+  /*-------------------------------------------------------------------------
+   * Example 1: coupling with instance "SATURNE_01".
+   *
+   * - coupled faces of groups "3" or "4"
+   * - all cells available as location support
+   *-------------------------------------------------------------------------*/
 
-  /* Read input mesh with no modification */
-  {
-    cs_preprocessor_data_add_file("mesh_input/mesh_01", 0, NULL, NULL);
-  }
+  cs_sat_coupling_define("SATURNE_01",
+                         "all[]",
+                         NULL,
+                         NULL,
+                         "3 or 4",
+                         verbosity);
 
-  /* Add same mesh with transformations */
-  {
-    const char *renames[] = {"Inlet", "Injection_2",
-                             "Group_to_remove", NULL};
-    const double transf_matrix[3][4] = {{1., 0., 0., 5.},
-                                        {0., 1., 0., 0.},
-                                        {0., 0., 1., 0.}};
+  /*-------------------------------------------------------------------------
+   * Example 2: coupling with instance "SATURNE_03".
+   *
+   * - coupled faces of groups "coupled_faces"
+   * - coupled cells (every cell overlapping the distant mesh)
+   * - all cells available as location support
+   *-------------------------------------------------------------------------*/
 
-    cs_preprocessor_data_add_file("mesh_input/mesh_02",
-                                  2, renames,
-                                  transf_matrix);
-  }
+  cs_sat_coupling_define("SATURNE_03",
+                         "all[]",
+                         NULL,
+                         "all[]",
+                         "coupled_faces",
+                         verbosity);
 }
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS

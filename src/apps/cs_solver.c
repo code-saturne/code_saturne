@@ -214,10 +214,10 @@ cs_run(void)
      Must be done before initi1 for the sake of verification */
 
   cs_gui_mesh_define_joinings();
-  CS_PROCF (usjoin, USJOIN)();
+  cs_user_join();
 
   cs_gui_mesh_define_periodicities();
-  CS_PROCF (usperi, USPERI)();
+  cs_user_periodicity();
 
   /* Call main calculation initialization function or help */
 
@@ -276,26 +276,7 @@ cs_run(void)
 
   /* Possible geometry modification */
 
-  CS_PROCF (usmodg, USMODG)(&(cs_glob_mesh->dim),
-                            &(cs_glob_mesh->n_cells_with_ghosts),
-                            &(cs_glob_mesh->n_cells),
-                            &(cs_glob_mesh->n_i_faces),
-                            &(cs_glob_mesh->n_b_faces),
-                            &(cs_glob_mesh->n_families),
-                            &(cs_glob_mesh->n_max_family_items),
-                            &(cs_glob_mesh->n_vertices),
-                            &(cs_glob_mesh->i_face_vtx_connect_size),
-                            &(cs_glob_mesh->b_face_vtx_connect_size),
-                            cs_glob_mesh->i_face_cells,
-                            cs_glob_mesh->b_face_cells,
-                            cs_glob_mesh->b_face_family,
-                            cs_glob_mesh->cell_family,
-                            cs_glob_mesh->family_item,
-                            cs_glob_mesh->i_face_vtx_idx,
-                            cs_glob_mesh->i_face_vtx_lst,
-                            cs_glob_mesh->b_face_vtx_idx,
-                            cs_glob_mesh->b_face_vtx_lst,
-                            cs_glob_mesh->vtx_coord);
+  cs_user_mesh_modify(cs_glob_mesh);
 
   /* Triangulate warped faces if necessary */
 

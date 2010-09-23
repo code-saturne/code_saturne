@@ -75,6 +75,7 @@
 #endif
 
 #include "cs_parall.h"
+#include "cs_prototypes.h"
 
 #include "cs_syr3_coupling.h"
 #include "cs_syr3_messages.h"
@@ -545,78 +546,6 @@ _init_all_socket_syr(int port_num)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define new SYRTHES coupling.
- *
- * In the case of a single Code_Saturne and single SYRTHES instance, the
- * syrthes_name argument is ignored.
- *
- * In case of multiple couplings, a coupling will be matched with available
- * SYRTHES instances based on the syrthes_name argument.
- *
- * Fortran Interface:
- *
- * SUBROUTINE DEFSY1
- * *****************
- *
- * CHARACTER*     syrthes_name      : <-- : name of coupled SYRTHES instance
- * CHARACTER      projection_axis   : <-- : ' ' for 3D, 'x', 'y', or 'z'
- *                                  :     : for 2D projection
- * CHARACTER*     boundary_criteria : <-- : boundary face selection criteria,
- *                                  :     : empty if no boundary coupling
- * CHARACTER*     volume_criteria   : <-- : volume cell selection criteria,
- *                                  :     : empty if no volume coupling
- * INTEGER        verbosity         : <-- : verbosity level
- * INTEGER        syrthes_n_len     : <-- : length of syrthes_name
- * INTEGER        boundary_c_len    : <-- : length of boundary_criteria
- * INTEGER        volume_c_len      : <-- : length of volume_criteria
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(defsy1, DEFSY1)
-(
- const char  *syrthes_name,
- char        *projection_axis,
- const char  *boundary_criteria,
- const char  *volume_criteria,
- cs_int_t    *verbosity,
- cs_int_t    *syrthes_n_len,
- cs_int_t    *boundary_c_len,
- cs_int_t    *volume_c_len
- CS_ARGF_SUPP_CHAINE
-)
-{
-  char *_syrthes_name = NULL;
-  char *_boundary_criteria = NULL, *_volume_criteria = NULL;
-
-  if (syrthes_name != NULL && *syrthes_n_len > 0)
-    _syrthes_name = cs_base_string_f_to_c_create(syrthes_name, *syrthes_n_len);
-
-  if (boundary_criteria != NULL && *boundary_c_len > 0)
-    _boundary_criteria = cs_base_string_f_to_c_create(boundary_criteria,
-                                                      *boundary_c_len);
-  if (_boundary_criteria != NULL && strlen(_boundary_criteria) == 0)
-    cs_base_string_f_to_c_free(&_boundary_criteria);
-
-  if (volume_criteria != NULL && *volume_c_len > 0)
-    _volume_criteria = cs_base_string_f_to_c_create(volume_criteria,
-                                                    *volume_c_len);
-  if (_volume_criteria != NULL && strlen(_volume_criteria) == 0)
-    cs_base_string_f_to_c_free(&_volume_criteria);
-
-  cs_syr_coupling_define(_syrthes_name,
-                         _boundary_criteria,
-                         _volume_criteria,
-                         *projection_axis,
-                         *verbosity);
-
-  if (_syrthes_name != NULL)
-    cs_base_string_f_to_c_free(&_syrthes_name);
-  if (_boundary_criteria != NULL)
-    cs_base_string_f_to_c_free(&_boundary_criteria);
-  if (_volume_criteria != NULL)
-    cs_base_string_f_to_c_free(&_volume_criteria);
-}
-
-/*----------------------------------------------------------------------------
  * Get number of SYRTHES couplings.
  *
  * Fortran Interface:
@@ -831,6 +760,23 @@ void CS_PROCF(lfasyr, LFASYR)
       cs_syr4_coupling_get_face_list(syr_coupling, coupl_face_list);
     }
   }
+}
+
+/*----------------------------------------------------------------------------
+ * User function wrapper for definition of SYRTHES couplings
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE USSYRC
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ussyrc, USSYRC)
+(
+ void
+)
+{
+  cs_user_syrthes_coupling();
 }
 
 /*----------------------------------------------------------------------------

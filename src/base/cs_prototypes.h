@@ -37,6 +37,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -572,46 +573,6 @@ extern void CS_PROCF (tstvec, TSTVEC)
 );
 
 /*----------------------------------------------------------------------------
- * User function for mesh joining definition
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (usjoin, USJOIN) (void);
-
-/*----------------------------------------------------------------------------
- * User subroutine for geometry modification
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (usmodg, USMODG)
-(
- const cs_int_t  *ndim,      /* <-- spatial dimension */
- const cs_int_t  *ncelet,    /* <-- number of extended (real + ghost) cells */
- const cs_int_t  *ncel,      /* <-- number of cells */
- const cs_int_t  *nfac,      /* <-- number of interior faces */
- const cs_int_t  *nfabor,    /* <-- number of boundary faces */
- const cs_int_t  *nfml,      /* <-- number of families (group classes) */
- const cs_int_t  *nprfml,    /* <-- number of family (group class) properties */
- const cs_int_t  *nnod,      /* <-- number of vertices */
- const cs_int_t  *lndfac,    /* <-- size of nodfac */
- const cs_int_t  *lndfbr,    /* <-- size of nodfbr */
- const cs_int_t   ifacel[],  /* <-- interior faces / cells connectivity */
- const cs_int_t   ifabor[],  /* <-- boundary faces / cell connectivity */
- const cs_int_t   ifmfbr[],  /* <-- boundary face families */
- const cs_int_t   ifmcel[],  /* <-- cell families */
- const cs_int_t   iprfml[],  /* <-- list of family properties */
- const cs_int_t   ipnfac[],  /* <-- interior faces -> vertices connect. index */
- const cs_int_t   nodfac[],  /* <-- interior faces -> vertices connectivity */
- const cs_int_t   ipnfbr[],  /* <-- boundary faces -> vertices connect. index */
- const cs_int_t   nodfbr[],  /* <-- boundary faces -> vertices connectivity */
-       cs_real_t  xyznod[]   /* --> vertex coordinates */
-);
-
-/*----------------------------------------------------------------------------
- * User function for mesh periodicity definition
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (usperi, USPERI) (void);
-
-/*----------------------------------------------------------------------------
  * User function for modification of a post-processing mesh
  *----------------------------------------------------------------------------*/
 
@@ -790,11 +751,46 @@ extern void CS_PROCF (ustmgr, USTMGR)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Define mesh joinings.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_join(void);
+
+/*----------------------------------------------------------------------------
  * Define mesh files to read and optional associated transformations.
  *----------------------------------------------------------------------------*/
 
 void
 cs_user_mesh_input(void);
+
+/*----------------------------------------------------------------------------
+ * Modifiy geometry and mesh.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_mesh_modify(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
+ * Define periodic faces.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_periodicity(void);
+
+/*----------------------------------------------------------------------------
+ * Define couplings with other instances of Code_Saturne.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_saturne_coupling(void);
+
+/*----------------------------------------------------------------------------
+ * Define couplings with SYRTHES code.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_syrthes_coupling(void);
 
 /*----------------------------------------------------------------------------*/
 

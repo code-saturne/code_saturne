@@ -44,6 +44,8 @@
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
+#include "fvm_defs.h"
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -69,46 +71,6 @@ BEGIN_C_DECLS
 /*============================================================================
  *  Public function prototypes for Fortran API
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Define new SYRTHES coupling.
- *
- * In the case of a single Code_Saturne and single SYRTHES instance, the
- * syrthes_name argument is ignored.
- *
- * In case of multiple couplings, a coupling will be matched with available
- * SYRTHES instances based on the syrthes_name argument.
- *
- * Fortran Interface:
- *
- * SUBROUTINE DEFSY1
- * *****************
- *
- * CHARACTER*     syrthes_name      : <-- : name of coupled SYRTHES instance
- * CHARACTER      projection_axis   : <-- : ' ' for 3D, 'x', 'y', or 'z'
- *                                  :     : for 2D projection
- * CHARACTER*     boundary_criteria : <-- : boundary face selection criteria,
- *                                  :     : empty if no boundary coupling
- * CHARACTER*     volume_criteria   : <-- : volume cell selection criteria,
- *                                  :     : empty if no volume coupling
- * INTEGER        verbosity         : <-- : verbosity level
- * INTEGER        syrthes_n_len     : <-- : length of syrthes_name
- * INTEGER        boundary_c_len    : <-- : length of boundary_criteria
- * INTEGER        volume_c_len      : <-- : length of volume_criteria
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(defsy1, DEFSY1)
-(
- const char  *syrthes_name,
- char        *projection_axis,
- const char  *boundary_criteria,
- const char  *volume_criteria,
- cs_int_t    *verbosity,
- cs_int_t    *syrthes_n_len,
- cs_int_t    *boundary_c_len,
- cs_int_t    *volume_c_len
- CS_ARGF_SUPP_CHAINE
-);
 
 /*----------------------------------------------------------------------------
  * Get number of SYRTHES couplings.
@@ -229,6 +191,20 @@ void CS_PROCF(lfasyr, LFASYR)
 (
  const cs_int_t    *coupl_num,
        fvm_lnum_t  *coupl_face_list
+);
+
+/*----------------------------------------------------------------------------
+ * User function wrapper for definition of SYRTHES couplings
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE USSYRC
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (ussyrc, USSYRC)
+(
+ void
 );
 
 /*----------------------------------------------------------------------------

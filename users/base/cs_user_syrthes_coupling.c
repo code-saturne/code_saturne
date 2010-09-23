@@ -29,9 +29,8 @@
  *============================================================================*/
 
 /*============================================================================
- * Manage the exchange of data between Code_Saturne and the pre-processor
+ * Define conjuguate heat transfer couplings with the SYRTHES code
  *============================================================================*/
-
 
 #if defined(HAVE_CONFIG_H)
 #include "cs_config.h"
@@ -41,33 +40,20 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
 /*----------------------------------------------------------------------------
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
-
 /*----------------------------------------------------------------------------
  * FVM library headers
  *----------------------------------------------------------------------------*/
-
-#include "fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_preprocessor_data.h"
+#include "cs_syr_coupling.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -84,36 +70,69 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define mesh files to read and optional associated transformations.
+ * Define couplings with SYRTHES code.
+ *
+ * This is done by calling the cs_syr_coupling_define() function for each
+ * coupling to add.
+ *
+ * The arguments to cs_syr_coupling_define are:
+ *   syrthes_name      <-- matching SYRTHES application name
+ *   boundary_criteria <-- surface selection criteria
+ *   volume  _criteria <-- surface selection criteria
+ *   projection_axis   <-- ' ' : standard 3D coupling
+ *                         'x', 'y', or 'z': projection axis for coupling
+ *                                           with 2D SYRTHES.
+ *   verbosity         <-- verbosity level
+ *
+ * In the case of a single Code_Saturne and single SYRTHES instance, the
+ * 'syrthes_name' argument is ignored, as there is only one matching
+ * possibility.
+ *
+ * In case of multiple couplings, a coupling will be matched with available
+ * SYRTHES instances based on the 'syrthes_name' argument.
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_input(void)
+cs_user_syrthes_coupling(void)
 {
+  int  verbosity = 1;
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  /* Determine list of files to add */
-  /*--------------------------------*/
+  /*-------------------------------------------------------------------------
+   * Example 1:
+   *
+   * Boundary faces of group '3' coupled with instance named 'SYRTHES_01'.
+   *-------------------------------------------------------------------------*/
 
-  /* Read input mesh with no modification */
-  {
-    cs_preprocessor_data_add_file("mesh_input/mesh_01", 0, NULL, NULL);
-  }
+  cs_syr_coupling_define("SYRTHES_01",
+                         "3",             /* boundary criteria */
+                         NULL,            /* volume_criteria */
+                         ' ',             /* projection_axis */
+                         verbosity);
 
-  /* Add same mesh with transformations */
-  {
-    const char *renames[] = {"Inlet", "Injection_2",
-                             "Group_to_remove", NULL};
-    const double transf_matrix[3][4] = {{1., 0., 0., 5.},
-                                        {0., 1., 0., 0.},
-                                        {0., 0., 1., 0.}};
+  /*-------------------------------------------------------------------------
+   * Example 2:
+   *
+   * Boundary faces of group 'Wall' coupled with 2D SYRTHES instance
+   * named 'SYRTHES_02'.
+   *-------------------------------------------------------------------------*/
 
-    cs_preprocessor_data_add_file("mesh_input/mesh_02",
-                                  2, renames,
-                                  transf_matrix);
-  }
+  cs_syr_coupling_define("SYRTHES_02",
+                         "Wall",          /* boundary criteria */
+                         NULL,            /* volume_criteria */
+                         'z',             /* projection_axis */
+                         verbosity);
+
+  /*-------------------------------------------------------------------------
+   * Example 3:
+   *
+   * Cells in box with corners (0, 0, 0) and (1, 1, 1) coupled with
+   * SYRTHES instance named 'Solid' (volume coupling).
+   *-------------------------------------------------------------------------*/
+
+  cs_syr_coupling_define("Solid",
+                         NULL,                          /* boundary */
+                         "box[0., 0., 0., 1., 1., 1.]", /* volume */
+                         ' ',                           /* projection */
+                         verbosity);
 }
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS

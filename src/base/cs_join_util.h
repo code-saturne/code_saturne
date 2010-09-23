@@ -330,34 +330,6 @@ void
 cs_join_destroy(cs_join_t  **join);
 
 /*----------------------------------------------------------------------------
- * Set advanced parameters to user-defined values.
- *
- * parameters:
- *   join           <-> pointer a to cs_join_t struct. to update
- *   mtf            <-- merge tolerance coefficient
- *   pmf            <-- pre-merge factor
- *   tcm            <-- tolerance computation mode
- *   icm            <-- intersection computation mode
- *   maxbrk         <-- max number of equivalences to break (merge step)
- *   max_sub_faces  <-- max. possible number of sub-faces by splitting a face
- *   tml            <-- tree max level
- *   tmb            <-- tree max boxes
- *   tmr            <-- tree max ratio
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_set_advanced_param(cs_join_t   *join,
-                           cs_real_t    mtf,
-                           cs_real_t    pmf,
-                           cs_int_t     tcm,
-                           cs_int_t     icm,
-                           cs_int_t     maxbrk,
-                           cs_int_t     max_sub_faces,
-                           cs_int_t     tml,
-                           cs_int_t     tmb,
-                           cs_real_t    tmr);
-
-/*----------------------------------------------------------------------------
  * Create and initialize a cs_join_select_t structure.
  *
  * parameters:

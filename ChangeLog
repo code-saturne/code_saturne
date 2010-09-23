@@ -1,4 +1,38 @@
 * 23/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Transform user files for joining, periodicity, mesh modification,
+  SYRTHES and Code_Saturne coupling from Fortran to C.
+  added files:
+    users/base/cs_user_join.c
+    users/base/cs_user_mesh_modify.c
+    users/base/cs_user_periodicity.c
+    users/base/cs_user_saturne_coupling.c
+    users/base/cs_user_syrthes_coupling.c
+  modified files:
+    Makefile.am
+    src/apps/cs_solver.c
+    src/base/cs_join.c
+    src/base/cs_join.h
+    src/base/cs_join_perio.c
+    src/base/cs_join_perio.h
+    src/base/cs_join_util.c
+    src/base/cs_join_util.h
+    src/base/cs_prototypes.h
+    src/base/cs_sat_coupling.c
+    src/base/cs_sat_coupling.h
+    src/base/cs_syr_coupling.c
+    src/base/cs_syr_coupling.h
+    src/base/Makefile.am
+    users/base/cs_user_mesh_input.c
+  removed files:
+    src/base/cs_join_f2c.f90
+    src/base/cs_join_perio_f2c.f90
+    users/base/usjoin.f90
+    users/base/usmodg.f90
+    users/base/usperi.f90
+    users/base/ussatc.f90
+    users/base/ussyrc.f90
+
+* 23/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove obsolete TODO in comments.
   modified files:
     src/base/cs_io.c

@@ -40,6 +40,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "fvm_defs.h"
 #include "cs_base.h"
 
 /*----------------------------------------------------------------------------*/
@@ -57,40 +58,17 @@ typedef struct _cs_sat_coupling_t cs_sat_coupling_t;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define new Code_Saturne coupling.
+ * User function wrapper for definition of Code_Saturne couplings
  *
  * Fortran Interface:
  *
- * SUBROUTINE DEFSA1
+ * SUBROUTINE USSATC
  * *****************
- *
- * CHARACTER*     saturne_name      : <-- : name of coupled Code_Saturne instance
- * CHARACTER      projection_axis   : <-- : ' ' for 3D, 'x', 'y', or 'z'
- *                                  :     : for 2D projection
- * CHARACTER*     boundary_criteria : <-- : boundary face selection criteria,
- *                                  :     : empty if no boundary coupling
- * CHARACTER*     volume_criteria   : <-- : volume cell selection criteria,
- *                                  :     : empty if no volume coupling
- * INTEGER        verbosity         : <-- : verbosity level
- * INTEGER        saturne_n_len     : <-- : length of saturne_name
- * INTEGER        boundary_c_len    : <-- : length of boundary_criteria
- * INTEGER        volume_c_len      : <-- : length of volume_criteria
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(defsa1, DEFSA1)
+void CS_PROCF (ussatc, USSATC)
 (
- const char  *saturne_name,
- const char  *boundary_cpl_criteria,
- const char  *volume_cpl_criteria,
- const char  *boundary_sup_criteria,
- const char  *volume_sup_criteria,
- cs_int_t    *verbosity,
- cs_int_t    *saturne_n_len,
- cs_int_t    *boundary_cpl_c_len,
- cs_int_t    *volume_cpl_c_len,
- cs_int_t    *boundary_sup_c_len,
- cs_int_t    *volume_sup_c_len
- CS_ARGF_SUPP_CHAINE
+ void
 );
 
 /*----------------------------------------------------------------------------
@@ -365,7 +343,6 @@ void CS_PROCF (tbicpl, TBICPL)
        cs_int_t  *vardis,
        cs_int_t  *varloc
 );
-
 
 /*----------------------------------------------------------------------------
  * Array of reals exchange, associated to a given coupling.

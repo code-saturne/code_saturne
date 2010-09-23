@@ -74,6 +74,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_connect.h"
+#include "cs_prototypes.h"
 #include "cs_selector.h"
 
 /*----------------------------------------------------------------------------
@@ -830,88 +831,20 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define new Code_Saturne coupling.
+ * User function wrapper for definition of Code_Saturne couplings
  *
  * Fortran Interface:
  *
- * SUBROUTINE DEFSA1
+ * SUBROUTINE USSATC
  * *****************
- *
- * CHARACTER*     saturne_name      : <-- : name of coupled Code_Saturne instance
- * CHARACTER*     boundary_criteria : <-- : boundary face selection criteria,
- *                                  :     : empty if no boundary coupling
- * CHARACTER*     volume_criteria   : <-- : volume cell selection criteria,
- *                                  :     : empty if no volume coupling
- * INTEGER        verbosity         : <-- : verbosity level
- * INTEGER        saturne_n_len     : <-- : length of saturne_name
- * INTEGER        boundary_c_len    : <-- : length of boundary_criteria
- * INTEGER        volume_c_len      : <-- : length of volume_criteria
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(defsa1, DEFSA1)
+void CS_PROCF (ussatc, USSATC)
 (
- const char  *saturne_name,
- const char  *volume_sup_criteria,
- const char  *boundary_sup_criteria,
- const char  *volume_cpl_criteria,
- const char  *boundary_cpl_criteria,
- cs_int_t    *saturne_n_len,
- cs_int_t    *volume_sup_c_len,
- cs_int_t    *boundary_sup_c_len,
- cs_int_t    *volume_cpl_c_len,
- cs_int_t    *boundary_cpl_c_len,
- cs_int_t    *verbosity
- CS_ARGF_SUPP_CHAINE
+ void
 )
 {
-  char *_saturne_name = NULL;
-  char *_boundary_cpl_criteria = NULL, *_volume_cpl_criteria = NULL;
-  char *_boundary_sup_criteria = NULL, *_volume_sup_criteria = NULL;
-
-  if (saturne_name != NULL && *saturne_n_len > 0)
-    _saturne_name = cs_base_string_f_to_c_create(saturne_name, *saturne_n_len);
-
-  if (boundary_cpl_criteria != NULL && *boundary_cpl_c_len > 0)
-    _boundary_cpl_criteria = cs_base_string_f_to_c_create(boundary_cpl_criteria,
-                                                          *boundary_cpl_c_len);
-  if (_boundary_cpl_criteria != NULL && strlen(_boundary_cpl_criteria) == 0)
-    cs_base_string_f_to_c_free(&_boundary_cpl_criteria);
-
-  if (volume_cpl_criteria != NULL && *volume_cpl_c_len > 0)
-    _volume_cpl_criteria = cs_base_string_f_to_c_create(volume_cpl_criteria,
-                                                        *volume_cpl_c_len);
-  if (_volume_cpl_criteria != NULL && strlen(_volume_cpl_criteria) == 0)
-    cs_base_string_f_to_c_free(&_volume_cpl_criteria);
-
-  if (boundary_sup_criteria != NULL && *boundary_sup_c_len > 0)
-    _boundary_sup_criteria = cs_base_string_f_to_c_create(boundary_sup_criteria,
-                                                          *boundary_sup_c_len);
-  if (_boundary_sup_criteria != NULL && strlen(_boundary_sup_criteria) == 0)
-    cs_base_string_f_to_c_free(&_boundary_sup_criteria);
-
-  if (volume_sup_criteria != NULL && *volume_sup_c_len > 0)
-    _volume_sup_criteria = cs_base_string_f_to_c_create(volume_sup_criteria,
-                                                        *volume_sup_c_len);
-  if (_volume_sup_criteria != NULL && strlen(_volume_sup_criteria) == 0)
-    cs_base_string_f_to_c_free(&_volume_sup_criteria);
-
-  cs_sat_coupling_define(_saturne_name,
-                         _boundary_cpl_criteria,
-                         _volume_cpl_criteria,
-                         _boundary_sup_criteria,
-                         _volume_sup_criteria,
-                         *verbosity);
-
-  if (_saturne_name != NULL)
-    cs_base_string_f_to_c_free(&_saturne_name);
-  if (_boundary_cpl_criteria != NULL)
-    cs_base_string_f_to_c_free(&_boundary_cpl_criteria);
-  if (_volume_cpl_criteria != NULL)
-    cs_base_string_f_to_c_free(&_volume_cpl_criteria);
-  if (_boundary_sup_criteria != NULL)
-    cs_base_string_f_to_c_free(&_boundary_sup_criteria);
-  if (_volume_sup_criteria != NULL)
-    cs_base_string_f_to_c_free(&_volume_sup_criteria);
+  cs_user_saturne_coupling();
 }
 
 /*----------------------------------------------------------------------------

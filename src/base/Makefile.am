@@ -224,12 +224,10 @@ cs_gui_util.c \
 cs_halo.c \
 csinit.f90 \
 cs_join.c \
-cs_join_f2c.f90 \
 cs_join_intersect.c \
 cs_join_merge.c \
 cs_join_mesh.c \
 cs_join_perio.c \
-cs_join_perio_f2c.f90 \
 cs_join_post.c \
 cs_join_set.c \
 cs_join_split.c \
@@ -257,7 +255,6 @@ cs_proxy_comm.c \
 cs_renumber.c \
 cs_restart.c \
 cs_sat_coupling.c \
-cs_sat_f2c.f90 \
 cs_search.c \
 cs_selector.c \
 cs_selector_f2c.f90 \
@@ -267,7 +264,6 @@ cs_syr3_coupling.c \
 cs_syr3_messages.c \
 cs_syr4_coupling.c \
 cs_syr_coupling.c \
-cs_syr_f2c.f90 \
 cs_tpar1d.c \
 cs_ventil.c \
 csprnt.f90 \
@@ -408,19 +404,14 @@ $(top_srcdir)/users/base/usdpst.f90 \
 $(top_srcdir)/users/base/ushist.f90 \
 $(top_srcdir)/users/base/usini1.f90 \
 $(top_srcdir)/users/base/usiniv.f90 \
-$(top_srcdir)/users/base/usjoin.f90 \
 $(top_srcdir)/users/base/uskpdc.f90 \
-$(top_srcdir)/users/base/usmodg.f90 \
 $(top_srcdir)/users/base/usmpst.f90 \
 $(top_srcdir)/users/base/usnpst.f90 \
-$(top_srcdir)/users/base/usperi.f90 \
 $(top_srcdir)/users/base/usphyv.f90 \
 $(top_srcdir)/users/base/usproj.f90 \
 $(top_srcdir)/users/base/uspt1d.f90 \
-$(top_srcdir)/users/base/ussatc.f90 \
 $(top_srcdir)/users/base/ussmag.f90 \
 $(top_srcdir)/users/base/usstru.f90 \
-$(top_srcdir)/users/base/ussyrc.f90 \
 $(top_srcdir)/users/base/usthht.f90 \
 $(top_srcdir)/users/base/ustmgr.f90 \
 $(top_srcdir)/users/base/ustske.f90 \
@@ -434,7 +425,12 @@ $(top_srcdir)/users/base/usvima.f90 \
 $(top_srcdir)/users/base/usvist.f90 \
 $(top_srcdir)/users/base/usvort.f90 \
 $(top_srcdir)/users/base/usvpst.f90 \
-$(top_srcdir)/users/base/cs_user_mesh_input.c
+$(top_srcdir)/users/base/cs_user_join.c \
+$(top_srcdir)/users/base/cs_user_mesh_input.c \
+$(top_srcdir)/users/base/cs_user_mesh_modify.c \
+$(top_srcdir)/users/base/cs_user_periodicity.c \
+$(top_srcdir)/users/base/cs_user_saturne_coupling.c \
+$(top_srcdir)/users/base/cs_user_syrthes_coupling.c
 
 basedir = $(pkgdatadir)/users/base
 base_DATA = \
@@ -446,19 +442,14 @@ $(top_srcdir)/users/base/usdpst.f90 \
 $(top_srcdir)/users/base/ushist.f90 \
 $(top_srcdir)/users/base/usini1.f90 \
 $(top_srcdir)/users/base/usiniv.f90 \
-$(top_srcdir)/users/base/usjoin.f90 \
 $(top_srcdir)/users/base/uskpdc.f90 \
-$(top_srcdir)/users/base/usmodg.f90 \
 $(top_srcdir)/users/base/usmpst.f90 \
 $(top_srcdir)/users/base/usnpst.f90 \
-$(top_srcdir)/users/base/usperi.f90 \
 $(top_srcdir)/users/base/usphyv.f90 \
 $(top_srcdir)/users/base/usproj.f90 \
 $(top_srcdir)/users/base/uspt1d.f90 \
-$(top_srcdir)/users/base/ussatc.f90 \
 $(top_srcdir)/users/base/ussmag.f90 \
 $(top_srcdir)/users/base/usstru.f90 \
-$(top_srcdir)/users/base/ussyrc.f90 \
 $(top_srcdir)/users/base/usthht.f90 \
 $(top_srcdir)/users/base/ustmgr.f90 \
 $(top_srcdir)/users/base/ustske.f90 \
@@ -472,7 +463,12 @@ $(top_srcdir)/users/base/usvima.f90 \
 $(top_srcdir)/users/base/usvist.f90 \
 $(top_srcdir)/users/base/usvort.f90 \
 $(top_srcdir)/users/base/usvpst.f90 \
-$(top_srcdir)/users/base/cs_user_mesh_input.c
+$(top_srcdir)/users/base/cs_user_join.c \
+$(top_srcdir)/users/base/cs_user_mesh_input.c \
+$(top_srcdir)/users/base/cs_user_mesh_modify.c \
+$(top_srcdir)/users/base/cs_user_periodicity.c \
+$(top_srcdir)/users/base/cs_user_saturne_coupling.c \
+$(top_srcdir)/users/base/cs_user_syrthes_coupling.c
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

@@ -29,9 +29,8 @@
  *============================================================================*/
 
 /*============================================================================
- * Manage the exchange of data between Code_Saturne and the pre-processor
+ * User function for geometry and mesh modification.
  *============================================================================*/
-
 
 #if defined(HAVE_CONFIG_H)
 #include "cs_config.h"
@@ -41,33 +40,20 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
 /*----------------------------------------------------------------------------
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
-#include "bft_mem.h"
-#include "bft_printf.h"
-
 /*----------------------------------------------------------------------------
  * FVM library headers
  *----------------------------------------------------------------------------*/
-
-#include "fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_preprocessor_data.h"
+#include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -84,36 +70,41 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define mesh files to read and optional associated transformations.
+ * Modifiy geometry and mesh.
+ *
+ * The mesh structure is described in cs_mesh.h
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_input(void)
+cs_user_mesh_modify(cs_mesh_t  *mesh)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  /* Determine list of files to add */
-  /*--------------------------------*/
+  /* Example: modify vertex coordinates */
+  /*------------------------------------*/
 
-  /* Read input mesh with no modification */
+  /* Divide coordinates by 1000 (millimetres to metres).
+   *
+   * Warning:
+   *
+   *   This is incompatible with pre-processed periodicity,
+   *   as the periodicity transformation is not updated.
+   *
+   *   With periodicity, using a coordinate transformation matrix
+   *   in cs_user_mesh_input is preferred. */
+
   {
-    cs_preprocessor_data_add_file("mesh_input/mesh_01", 0, NULL, NULL);
-  }
+    fvm_lnum_t  vtx_id;
+    const double  coo_mult = 1. / 1000.;
 
-  /* Add same mesh with transformations */
-  {
-    const char *renames[] = {"Inlet", "Injection_2",
-                             "Group_to_remove", NULL};
-    const double transf_matrix[3][4] = {{1., 0., 0., 5.},
-                                        {0., 1., 0., 0.},
-                                        {0., 0., 1., 0.}};
+    for (vtx_id = 0; vtx_id < mesh->n_vertices; vtx_id++) {
+      mesh->vtx_coord[vtx_id*3]     *= coo_mult;
+      mesh->vtx_coord[vtx_id*3 + 1] *= coo_mult;
+      mesh->vtx_coord[vtx_id*3 + 2] *= coo_mult;
+    }
 
-    cs_preprocessor_data_add_file("mesh_input/mesh_02",
-                                  2, renames,
-                                  transf_matrix);
+    /* Set mesh modification flag it i should be saved for future re-use */
+
+    mesh->modified = 1;
   }
 }
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
