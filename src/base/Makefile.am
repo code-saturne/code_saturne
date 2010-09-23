@@ -311,6 +311,7 @@ memcs2.f90 \
 memdis.f90 \
 memdtv.f90 \
 memdyp.f90 \
+memfin.f90 \
 memini.f90 \
 memkep.f90 \
 memkom.f90 \

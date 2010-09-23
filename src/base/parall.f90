@@ -88,8 +88,8 @@ contains
 
     nthrdi = nthrdi_in
     nthrdb = nthrdb_in
-    ngrpi   = ngrpi_in
-    ngrpb   = ngrpb_in
+    ngrpi  = ngrpi_in
+    ngrpb  = ngrpb_in
 
     if (.not.allocated(iompli)) then
       allocate(iompli(2, ngrpi, nthrdi), stat=err)
@@ -148,6 +148,29 @@ contains
     return
 
   end subroutine init_fortran_omp
+
+  !=============================================================================
+
+  ! Free OpenMP-related arrays
+
+  subroutine finalize_fortran_omp
+
+    nthrdi = 0
+    nthrdb = 0
+    ngrpi  = 0
+    ngrpb  = 0
+
+    if (allocated(iompli)) then
+      deallocate(iompli)
+    endif
+
+    if (allocated(iomplb)) then
+      deallocate(iomplb)
+    endif
+
+    return
+
+  end subroutine finalize_fortran_omp
 
   !=============================================================================
 

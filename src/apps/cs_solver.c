@@ -503,6 +503,8 @@ cs_run(void)
   bft_printf(_("\n Destroying structures and ending computation\n"));
   bft_printf_flush();
 
+  CS_PROCF(memfin, MEMFIN)();
+
   /* Free coupling-related data */
 
   cs_syr_coupling_all_finalize();

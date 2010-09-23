@@ -1,4 +1,13 @@
 * 23/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Free memory allocated by Fortran code.
+  added files:
+    src/base/memfin.f90
+  modified files:
+    src/apps/cs_solver.c
+    src/base/Makefile.am
+    src/base/parall.f90
+
+* 23/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Add user Fortran modules file.
   added files:
     users/base/user_modules.f90
