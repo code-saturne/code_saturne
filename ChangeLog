@@ -1,4 +1,12 @@
 * 23/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add user Fortran modules file.
+  added files:
+    users/base/user_modules.f90
+  modified files:
+    bin/cs_compile.py
+    src/base/Makefile.am
+
+* 23/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Transform user files for joining, periodicity, mesh modification,
   SYRTHES and Code_Saturne coupling from Fortran to C.
   added files:

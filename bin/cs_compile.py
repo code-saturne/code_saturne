@@ -169,6 +169,11 @@ def compile_and_link(srcdir, destdir, optlibs,
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
+    user_mod_name = 'user_modules.f90'
+    if user_mod_name in f_files:
+        f_files.remove(user_mod_name)
+        f_files.insert(0, user_mod_name)
+
     for f in f_files:
         if (retval != 0 and not keep_going):
             break

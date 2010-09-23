@@ -439,6 +439,7 @@ $(top_srcdir)/users/base/usalin.f90 \
 $(top_srcdir)/users/base/usaste.f90 \
 $(top_srcdir)/users/base/usclim.f90 \
 $(top_srcdir)/users/base/usdpst.f90 \
+$(top_srcdir)/users/base/user_modules.f90 \
 $(top_srcdir)/users/base/ushist.f90 \
 $(top_srcdir)/users/base/usini1.f90 \
 $(top_srcdir)/users/base/usiniv.f90 \
