@@ -831,7 +831,7 @@ _file_legacy_add_sizes(cs_io_t     *inp,
       h.type_read = FVM_UINT64;
     h.elt_type = _type_read_to_elt_type(h.type_read);
 
-    /* Todo add to index */
+    /* Add to index */
 
     _update_index_and_shift(inp, &h);
 
@@ -1101,7 +1101,7 @@ _file_legacy_restart_index(cs_io_t     *inp,
 
       inp->type_size = fvm_datatype_size[h.type_read];
 
-      /* Todo add to index */
+      /* Add to index */
 
       _update_index_and_shift(inp, &h);
 

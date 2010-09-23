@@ -1,3 +1,8 @@
+* 23/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove obsolete TODO in comments.
+  modified files:
+    src/base/cs_io.c
+
 * 22/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Preprocessor: merging of coincident vertices or multiply-referenced
   vertices in face definitions moved inside generation of descending
