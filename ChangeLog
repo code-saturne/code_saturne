@@ -1,4 +1,9 @@
 * 23/09/2010 - David Monfort <david.monfort@edf.fr>
+  Add memfin subroutine to the list of prototypes.
+  modified routine:
+    src/base/cs_prototypes.h
+
+* 23/09/2010 - David Monfort <david.monfort@edf.fr>
   Add user_modules to the dist stage.
   modified script:
     src/base/Makefile.am
