@@ -1,3 +1,7 @@
+2010-09-23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Correct location of points on closest elements bug.
+
 2010-09-17  David Monfort <david.monfort@edf.fr>
 
 	* Remove obsolete documentation.

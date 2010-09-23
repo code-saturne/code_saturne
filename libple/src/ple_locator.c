@@ -748,7 +748,7 @@ _locate_closest_distant(ple_locator_t                *this_locator,
 
       if (distance[_point_id] < -0.1 || distance[_point_id] > _min_dist) {
 
-        send_index[n_coords_loc] = j;
+        send_index[n_coords_loc] = _point_id;
         for (k = 0; k < dim; k++)
           send_coords[n_coords_loc*dim + k]
             = point_coords[dim*coord_idx + k];
@@ -1066,7 +1066,7 @@ _locate_all_distant(ple_locator_t                *this_locator,
   /* If option activated, second search to associate points not yet
      located to the closest elements */
 
-  if (this_locator->locate_closest == true)
+  if (this_locator->locate_closest > 0)
     _locate_closest_distant(this_locator,
                             mesh,
                             dim,
