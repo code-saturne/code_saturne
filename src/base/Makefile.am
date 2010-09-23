@@ -47,6 +47,11 @@ AM_FCFLAGS = \
 
 AM_LDFLAGS =
 
+# Add user_modules file to distribution as it is not automatically accounted
+# for by automake
+
+EXTRA_DIST = $(top_srcdir)/users/base/user_modules.f90
+
 # Public header files (to be installed)
 
 saturneincludedir = $(includedir)
