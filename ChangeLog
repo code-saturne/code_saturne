@@ -9,6 +9,14 @@
     src/base/Makefile.am
 
 * 23/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update partitioner configuration for compatibility with SCOTCH 5.1.10.
+  Partitioner version information is also improved.
+  modified files:
+    config/cs_scotch.m4
+    src/appli/cs_partition.c
+    po/fr.po
+
+* 23/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Free memory allocated by Fortran code.
   added files:
     src/base/memfin.f90

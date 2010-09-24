@@ -80,8 +80,9 @@ if test "x$with_scotch" != "xno" ; then
 
   AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
+#include <stdint.h>
 #include <mpi.h>
-#include <scotch.h>]],
+#include <ptscotch.h>]],
 [[ SCOTCH_dgraphInit((void *)0, MPI_COMM_WORLD); ]])],
 [have_ptscotch=yes],
 [have_ptscotch=no])
@@ -97,6 +98,7 @@ if test "x$with_scotch" != "xno" ; then
 
     AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <stdio.h>
+#include <stdint.h>
 #include <scotch.h>]],
 [[ SCOTCH_graphInit((void *)0); ]])],
 [have_scotch=yes],

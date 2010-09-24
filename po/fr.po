@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-15 17:45+0200\n"
+"POT-Creation-Date: 2010-09-24 16:34+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3387,7 +3387,7 @@ msgstr " --scotch          utiliser PT-SCOTCH pour le partitionnement.\n"
 msgid " --scotch          use SCOTCH for partitioning.\n"
 msgstr " --scotch          utiliser SCOTCH pour le partitionnement.\n"
 
-msgid " --mpi             use MPI for parallelism or coupling\n"
+msgid " --mpi             use MPI for parallelism\n"
 msgstr " --mpi             partitionnement parallèle via MPI\n"
 
 #, c-format
@@ -3426,8 +3426,9 @@ msgstr ""
 "                         indépendants, type deboggeur)\n"
 "                     1 : sorties dans \"partition_n<rang>\"\n"
 
-msgid " -v, --version     print version number\n"
-msgstr " -v, --version     affiche le numéro de version\n"
+#, c-format
+msgid " --version         print version number\n"
+msgstr " --version         affiche le numéro de version\n"
 
 #, c-format
 msgid ""
@@ -3437,9 +3438,22 @@ msgstr ""
 " -h, --help        appel de l'aide (cet affichage)\n"
 "\n"
 
-#, c-format
-msgid "%s version %s\n"
-msgstr "%s version %s\n"
+msgid "  %s version %s\n"
+msgstr "  %s version %s\n"
+
+msgid ""
+"\n"
+"  External library:\n"
+msgstr ""
+"\n"
+"  Librairie externe :\n"
+
+msgid ""
+"\n"
+"  External libraries:\n"
+msgstr ""
+"\n"
+"  Librairies externes :\n"
 
 #, c-format
 msgid ""
@@ -3620,24 +3634,12 @@ msgid ""
 " .------------------------------.\n"
 " |   Code_Saturne Partitioner   |\n"
 " `------------------------------'\n"
+"\n"
 msgstr ""
 " .--------------------------------.\n"
 " |   Partitionneur Code_Saturne   |\n"
 " `--------------------------------'\n"
-
-msgid ""
 "\n"
-"  External library:\n"
-msgstr ""
-"\n"
-"  Librairie externe :\n"
-
-msgid ""
-"\n"
-"  External libraries:\n"
-msgstr ""
-"\n"
-"  Librairies externes :\n"
 
 #, c-format
 msgid ""
@@ -5275,10 +5277,6 @@ msgstr ""
 "    temps CPU :                 %10.3g\n"
 
 #, c-format
-msgid "  Joining number %d is not defined.\n"
-msgstr "  Le recollement numéro %d n'est pas défini.\n"
-
-#, c-format
 msgid ""
 " %s\n"
 "     Number of cells:          %llu\n"
@@ -5291,6 +5289,58 @@ msgstr ""
 "     Nombre de faces internes : %llu\n"
 "     Nombre de faces de bord :  %llu\n"
 "     Nombre de sommets :        %llu\n"
+
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the tml parameter.\n"
+"  It must be between > 0 and is here: %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the tmb parameter.\n"
+"  It must be between > 0 and is here: %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the tmr parameter.\n"
+"  It must be between > 0.0 and is here: %f\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the merge tolerance factor.\n"
+"  It must be positive or nul and not: %f\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the max. number of tolerance breaks.\n"
+"  It must be between >= 0 and not: %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the tcm parameter.\n"
+"  It must be between 1, 2 or 11, 12 and here is: %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for icm parameter.\n"
+"  It must be 1 or 2 and here is: %d\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Mesh joining:  Forbidden value for the maxsf parameter.\n"
+"  It must be between > 0 and here is: %d\n"
+msgstr ""
+
+#, c-format
+msgid "  Joining number %d is not defined.\n"
+msgstr "  Le recollement numéro %d n'est pas défini.\n"
 
 #, c-format
 msgid ""
@@ -6152,54 +6202,6 @@ msgstr ""
 msgid ""
 "Mesh joining:  Forbidden value for the plane parameter.\n"
 "  It must be between [0, 90] and is here: %f\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the tml parameter.\n"
-"  It must be between > 0 and is here: %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the tmb parameter.\n"
-"  It must be between > 0 and is here: %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the tmr parameter.\n"
-"  It must be between > 0.0 and is here: %f\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the merge tolerance factor.\n"
-"  It must be positive or nul and not: %f\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the max. number of tolerance breaks.\n"
-"  It must be between >= 0 and not: %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the tcm parameter.\n"
-"  It must be between 1, 2 or 11, 12 and here is: %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for icm parameter.\n"
-"  It must be 1 or 2 and here is: %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the maxsf parameter.\n"
-"  It must be between > 0 and here is: %d\n"
 msgstr ""
 
 #, c-format
@@ -7173,8 +7175,8 @@ msgstr ""
 "                   <port_num> numéro du port sur le rang 0\n"
 
 #, c-format
-msgid " --version         print version number\n"
-msgstr " --version         affiche le numéro de version\n"
+msgid "%s version %s\n"
+msgstr "%s version %s\n"
 
 #, c-format
 msgid ""
@@ -9586,3 +9588,5 @@ msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
 
+#~ msgid " -v, --version     print version number\n"
+#~ msgstr " -v, --version     affiche le numéro de version\n"

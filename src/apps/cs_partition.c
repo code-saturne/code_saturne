@@ -101,10 +101,12 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
  * SCOTCH library headers
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
-
+#if defined(HAVE_SCOTCH)
+#include <stdint.h>
 #include <scotch.h>
-
+#elif defined(HAVE_PTSCOTCH)
+#include <stdint.h>
+#include <ptscotch.h>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -230,7 +232,7 @@ _arg_env_help(const char  *name)
     (_(" --scotch          use SCOTCH for partitioning.\n"));
 #endif
   bft_printf
-    (_(" --mpi             use MPI for parallelism or coupling\n"));
+    (_(" --mpi             use MPI for parallelism\n"));
   bft_printf
     (_(" --mpi-io          <mode> set parallel I/O behavior\n"
        "                     off: do not use MPI-IO\n"
@@ -248,7 +250,7 @@ _arg_env_help(const char  *name)
        "                        terminals, debugger type)\n"
        "                     1: output in \"partition_n<rank>.log\"\n"));
   bft_printf
-    (_(" -v, --version     print version number\n"));
+    (_(" --version         print version number\n"));
   bft_printf
     (_(" -h, --help        this help message\n\n"));
 }
@@ -260,10 +262,57 @@ _arg_env_help(const char  *name)
 static void
 _print_version(void)
 {
+  int  n_ext_libs = 0;
+
   if (cs_glob_rank_id >= 1)
     return;
 
-  printf(_("%s version %s\n"), CS_APP_NAME, CS_APP_VERSION);
+  bft_printf(_("  %s version %s\n"), CS_APP_NAME, CS_APP_VERSION);
+
+#if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
+  n_ext_libs++;
+#endif
+#if defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
+  n_ext_libs++;
+#endif
+
+  if (n_ext_libs == 1)
+    bft_printf(_("\n  External library:\n"));
+  else if (n_ext_libs > 1)
+    bft_printf(_("\n  External libraries:\n"));
+
+#if defined(HAVE_METIS)
+#if defined(HAVE_METIS_H) && defined(METIS_VER_MAJOR)
+  bft_printf("    METIS %d.%d.%d\n",
+             METIS_VER_MAJOR, METIS_VER_MINOR, METIS_VER_SUBMINOR);
+#else
+  bft_printf("    METIS\n");
+#endif
+#elif defined(HAVE_PARMETIS)
+#if defined(PARMETIS_MAJOR_VERSION)
+  bft_printf("    ParMETIS %d.%d.%d\n",
+             PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION,
+             PARMETIS_SUBMINOR_VERSION);
+#else
+  bft_printf("    ParMETIS\n");
+#endif
+#endif
+
+#if defined(HAVE_SCOTCH)
+#if defined(SCOTCH_VERSION) && defined(SCOTCH_RELEASE)
+  bft_printf("    SCOTCH %d.%d.%d\n",
+             SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+#else
+  bft_printf("    SCOTCH\n");
+#endif
+#elif defined(HAVE_PTSCOTCH)
+#if defined(SCOTCH_VERSION) && defined(SCOTCH_RELEASE)
+  bft_printf("    PT-SCOTCH %d.%d.%d\n",
+             SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+#else
+  bft_printf("    PT-SCOTCH\n");
+#endif
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -338,7 +387,7 @@ _define_options(int     argc,
 
     /* Version number */
 
-    if (strcmp(s, "-v") == 0 || strcmp(s, "--version") == 0)
+    if (strcmp(s, "--version") == 0)
       argerr = 3;
 
     /* Usage */
@@ -2020,7 +2069,6 @@ int
 main(int    argc,
      char  *argv[])
 {
-  int  n_ext_libs = 0;
   int  alg_opt = 0;
   int  no_write = 0;
   int  no_perio = 0;
@@ -2084,41 +2132,9 @@ main(int    argc,
 
   bft_printf(_(" .------------------------------.\n"
                " |   Code_Saturne Partitioner   |\n"
-               " `------------------------------'\n"));
+               " `------------------------------'\n\n"));
 
-#if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
-  n_ext_libs++;
-#endif
-#if defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
-  n_ext_libs++;
-#endif
-
-  if (n_ext_libs == 1)
-    bft_printf(_("\n  External library:\n"));
-  else if (n_ext_libs > 1)
-    bft_printf(_("\n  External libraries:\n"));
-
-#if defined(HAVE_METIS)
-#if defined(HAVE_METIS_H) && defined(METIS_VER_MAJOR)
-  bft_printf("    METIS %d.%d.%d\n",
-             METIS_VER_MAJOR, METIS_VER_MINOR, METIS_VER_SUBMINOR);
-#else
-  bft_printf("    METIS\n");
-#endif
-#elif defined(HAVE_PARMETIS)
-#if defined(HAVE_METIS_H) && defined(METIS_VER_MAJOR)
-  bft_printf("    ParMETIS %d.%d.%d\n",
-             METIS_VER_MAJOR, METIS_VER_MINOR, METIS_VER_SUBMINOR);
-#else
-  bft_printf("    ParMETIS\n");
-#endif
-#endif
-
-#if defined(HAVE_SCOTCH)
-  bft_printf("    SCOTCH\n");
-#elif defined(HAVE_PTSCOTCH)
-  bft_printf("    PT-SCOTCH\n");
-#endif
+  _print_version();
 
   /* System information */
 
