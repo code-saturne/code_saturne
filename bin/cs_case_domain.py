@@ -808,7 +808,7 @@ class domain(base_domain):
                 mesh_id += 1
                 cmd += ' --log preprocessor_%02d.log' % (mesh_id)
                 cmd += ' --out ' + os.path.join('mesh_input',
-                                                'mesh_%02d.log' % (mesh_id))
+                                                'mesh_%02d' % (mesh_id))
             else:
                 cmd += ' --log'
                 cmd += ' --out mesh_input'
