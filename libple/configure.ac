@@ -278,7 +278,7 @@ PLE_AC_CHECK_SIZEOF([double], [ple])
 # Checks for library functions.
 #------------------------------------------------------------------------------
 
-AC_CHECK_FUNCS([snprintf])
+AC_CHECK_FUNCS([snprintf gettimeofday])
 
 #------------------------------------------------------------------------------
 # Checks for system services.
