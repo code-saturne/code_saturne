@@ -1,4 +1,11 @@
 * 26/10/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Handle processor list under LSF when LSB_MCPU_HOSTS is used instead
+  of LSB_HOSTS
+  modified scripts:
+    bin/cs_exec_environment.py
+    bin/runcase_mpi_env
+
+* 26/10/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Do not buffer standard output and error when executing subprocess.
   modified scripts:
     bin/cs_exec_environment.py

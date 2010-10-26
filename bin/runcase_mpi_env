@@ -4,7 +4,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2008 EDF S.A., France
+#     Copyright (C) 1998-2010 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -34,6 +34,10 @@ if [ -f "$TMPDIR/machines" ] ; then     # Univ Manchester queueing system
    MPIHOSTS="$TMPDIR/machines"
 elif [ ! -z "$PBS_NODEFILE" ] ; then    # PBS queueing system
    MPIHOSTS="$PBS_NODEFILE"
+elif [ ! -z "$LSB_MCPU_HOSTS" ] ; then       # LSF queueing system
+   \rm -f $RUN/hostsfile
+   echo $LSB_MCPU_HOSTS | awk '{ for (ii = 1; ii < NF+1; ii+=2) nn = ii+1; { for (jj = 1; jj < $nn; jj++ ) print $ii }}' >> $RUN/hostsfile
+   MPIHOSTS="$RUN/hostsfile"
 elif [ ! -z "$LSB_HOSTS" ] ; then       # LSF queueing system
    \rm -f $RUN/hostsfile
    echo $LSB_HOSTS | awk '{ for (ii = 1; ii < NF+1; ++ii) print $ii }' >> $RUN/hostsfile
@@ -48,13 +52,16 @@ fi
 # Check for the number of processors
 if [ -z  "${NUMBER_OF_PROCESSORS}" ] ; then
   if [ ! -z  "${NSLOTS}" ] ; then
-    # Univ Manchester queueing system
+    # Sun Grid Engine
     NUMBER_OF_PROCESSORS=$NSLOTS
   elif [ ! -z "${SLURM_NPROCS}" ] ; then
-    # LSF queueing system with Slurm
+    # SLURM
     NUMBER_OF_PROCESSORS=$SLURM_NPROCS
+  elif [ ! -z "${LSB_MCPU_HOSTS}" ] ; then
+    # LSF queueing system, using LSB_MCPU_HOSTS
+    NUMBER_OF_PROCESSORS=`echo $LSB_MCPU_HOSTS | awk 'BEGIN {CPUS=0} {for (ii=2; i <= NF;ii+=2) CPUS+=$ii} END {print(CPUS)}'`
   elif [ ! -z "${LSB_HOSTS}" ] ; then
-    # LSF queueing system without Slurm
+    # LSF queueing system, using LSB_HOSTS
     NUMBER_OF_PROCESSORS=`echo $LSB_HOSTS | wc -w`
   elif [ ! -z  "${MPIHOSTS}" ] ; then
     # PBS queueing system
