@@ -224,10 +224,20 @@ class resource_info(batch_info):
                 self.n_nodes = int(s)
 
         if self.manager == None and self.batch_type == 'LSF':
-            s = os.getenv('LSB_HOSTS')
             self.manager = 'LSF'
+            s = os.getenv('LSB_MCPU_HOSTS')
             if s != None:
-                self.hosts_list = s.split(' ')
+                mcpu_list = s.split(' ')
+                self.hosts_list = []
+                for i in range(len(mcpu_list)/2):
+                    host = mcpu_list[i*2]
+                    count = int(mcpu_list[i*2 + 1])
+                    for j in range(count):
+                        self.hosts_list.append(host)
+            else:
+                s = os.getenv('LSB_HOSTS')
+                if s != None:
+                    self.hosts_list = s.split(' ')
 
         if self.manager == None and self.batch_type == 'LOADL':
             s = os.getenv('LOADL_PROCESSOR_LIST')
@@ -768,6 +778,11 @@ class mpi_environment:
     def __init_hp_mpi__(self, p, resource_info=None, wdir = None):
         """
         Initialize for HP MPI environment.
+
+        The last version of HP MPI is version 2.3, released early 2009.
+        HP MPI was then acquired by Platform MPI (formerly Scali MPI),
+        which merged Scali MPI and HP MPI in Platform MPI 8.0.
+        Platform MPI still seems to use the mpirun launcher syntax.
         """
 
         # Determine base executable paths

@@ -1,3 +1,10 @@
+* 26/10/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Handle processor list under LSF when LSB_MCPU_HOSTS is used instead
+  of LSB_HOSTS.
+  modified scripts:
+    bin/cs_exec_environment.py
+    bin/runcase_mpi_env
+
 * 30/09/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor bug correction: do not add .log extension to
   preprocessed meshes when multiple meshes are used.
