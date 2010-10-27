@@ -21,7 +21,7 @@
 #-------------------------------------------------------------------------------
 
 #SUBDIRS = developper howto install refcard theory tutorial user
-SUBDIRS = refcard theory tutorial user
+SUBDIRS = refcard theory tutorial user developper
 
 DIST_SUBDIRS = $(SUBDIRS) developper howto install
 

@@ -1,3 +1,15 @@
+* 27/10/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a developpers guide with coding standards.
+  added file:
+    doc/developper/coding_standards.tex
+  modified files:
+    doc/style/csdoc.sty
+    doc/developper/developper.tex
+  modified scripts:
+    bin/cs_info.py
+    doc/developper/Makefile.am
+    doc/Makefile.am
+
 * 26/10/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Handle processor list under LSF when LSB_MCPU_HOSTS is used instead
   of LSB_HOSTS.
