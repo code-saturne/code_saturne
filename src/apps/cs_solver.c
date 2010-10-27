@@ -331,7 +331,8 @@ cs_run(void)
   /* Initialize selectors for the mesh */
   cs_mesh_init_selectors();
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG) /* For debug */
+#if 0
+  /* For debugging purposes */
   cs_mesh_dump(cs_glob_mesh);
   cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
 #endif
@@ -471,23 +472,6 @@ cs_run(void)
     /*----------------------------------------------
      * Call main calculation function (code Kernel)
      *----------------------------------------------*/
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-    {
-      int  base_len, len;
-      FILE  *dbg_file = NULL;
-      char  *filename = NULL;
-
-      len = strlen("MeshBeforeCaltri_.dat")+4;
-      BFT_MALLOC(filename, len+1, char);
-      sprintf(filename, "MeshBeforeCaltri_%04d.dat",
-              cs_glob_rank_id);
-      dbg_file = fopen(filename, "w");
-      cs_mesh_dump_file(dbg_file, cs_glob_mesh);
-      fflush(dbg_file);
-      BFT_FREE(filename);
-    }
-#endif
 
     CS_PROCF(caltri, CALTRI)(&_verif,
                              &nideve, &nrdeve, &nituse, &nrtuse,

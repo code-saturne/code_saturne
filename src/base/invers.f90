@@ -92,7 +92,7 @@ subroutine invers &
 ! niterf           ! e  ! --> ! nombre d'iterations effectuees                 !
 !                  !    !     !  (non multigrille)                             !
 ! icycle           ! e  ! --> ! nombre de cycles mgm effectues                 !
-! iinvpe           ! e  ! <-- ! indicateur pour annuler les increments         !
+! iinvpe           ! e  ! <-- ! indicateur pour annuler les increment          !
 !                  !    !     ! en periodicite de rotation (=2) ou             !
 !                  !    !     ! pour les echanger normalement de               !
 !                  !    !     ! maniere scalaire (=1)                          !

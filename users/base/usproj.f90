@@ -346,7 +346,7 @@ idebra = idbra0
 !-------------------------------------------------------------------------------
 
 ! To ensure calculations have physical meaning, it is best to use
-! a spatially uniform time step (idtvar = 0 or 1).
+! a spatially unifor time step (idtvar = 0 or 1).
 ! In addition, when restarting a calculation, the balance is
 ! incorrect if inpdt0 = 1 (visct not initialized and t(n-1) not known)
 
