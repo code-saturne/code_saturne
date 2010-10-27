@@ -35,6 +35,13 @@
 # cflags_default_ext     # Added to $CFLAGS for extended     (default: "")
 #                        # precision if available
 
+# cxxflags_default       # Base CXXFLAGS                       (default: "")
+# cxxflags_default_dbg   # Added to $CXXFLAGS for debugging    (default: "-g")
+# cxxflags_default_opt   # Added to $CXXFLAGS for optimization (default: "-O")
+# cxxflags_default_hot   # Optimization for specific files     (default: "-O")
+# cxxflags_default_prf   # Added to $CXXFLAGS for profiling    (default: "")
+# cxxflags_default_omp   # Added to $CXXFLAGS for OpenMP       (default: "")
+
 # fcflags_default        # Base FCFLAGS                       (default: "")
 # fcflags_default_dbg    # Added to $FCFLAGS for debugging    (default: "-g")
 # fcflags_default_opt    # Added to $FCFLAGS for optimization (default: "-O")
@@ -536,6 +543,382 @@ fi
 
 if test -f $outfile ; then
   cs_ac_cc_version_full=`sed -e '11,$d' $outfile`
+  rm -f $outfile
+fi
+
+
+##################
+#                #
+#  C++ compiler  #
+#                #
+##################
+
+cs_ac_cxx_version=unknown
+cs_cxx_compiler_known=no
+
+# Are we using g++ ?
+#-------------------
+
+cs_gxx=no
+
+if test "x$GXX" = "xyes"; then
+
+  # Intel compiler passes as GXX but may be recognized by version string
+  if test -n "`$CXX --version | grep icc`" ; then
+    cs_gxx=icc
+  else
+    cs_gxx=g++
+  fi
+
+fi
+
+if test "x$cs_gxx" = "xg++"; then
+
+  # Version strings for logging purposes and known compiler flag
+  $CXX -v > $outfile 2>&1
+  cs_ac_cxx_version=`$CXX --version 2>&1 | head -1`
+  cs_cxx_compiler_known=yes
+
+  # Practical version info for option setting
+  cs_cxx_version="`$CXX -v 2>&1 |grep 'g++ version' |\
+                  sed 's/.*g++ version \([-a-z0-9\.]*\).*/\1/'`"
+  cs_cxx_vendor=`echo $cxx_version |sed 's/\([a-z]*\).*/\1/'`
+  cs_cxx_version=`echo $cs_cxx_version |sed 's/[-a-z]//g'`
+
+  if test "x" = "x$cs_cxx_vendor" -a "x" != "x$cs_cxx_version"; then
+    cs_cxx_vendor=g++
+  fi
+  if test "-" != "$cs_cxx_vendor-$cs_cxx_version"; then
+    echo "compiler '$CXX' is GNU $cs_cxx_vendor-$cs_cxx_version"
+  fi
+
+  # Some version numbers
+  cs_cxx_vers_major=`echo $cxx_version | cut -f1 -d.`
+  cs_cxx_vers_minor=`echo $cxx_version | cut -f2 -d.`
+  cs_cxx_vers_patch=`echo $cxx_version | cut -f3 -d.`
+  test -n "$cs_cxx_vers_major" || cs_cxx_vers_major=0
+  test -n "$cs_cxx_vers_minor" || cs_cxx_vers_minor=0
+  test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
+
+  # Default compiler flags
+  cxxflags_default="-ansi -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused"
+  cxxflags_default_dbg="-g"
+  cxxflags_default_opt="-O2"
+  cxxflags_default_hot="-O3"
+  cxxflags_default_prf="-pg"
+  cxxflags_default_omp="-fopenmp"
+
+  # Modify default flags on certain systems
+
+  case "$host-os-$host_cpu" in
+
+    *i?86|*x86_64)
+      cxxflags_default_opt="-funroll-loops -O2 -Wuninitialized"
+      case "$host_cpu" in
+        i686)
+          case "$cs_cxx_vendor-$cs_cxx_version" in
+            g++-2.9[56]*|g++-3*|g++-4*)
+              cxxflags_default_opt="$cxxflags_default_opt -march=i686"
+            ;;
+          esac
+      esac
+      ;;
+
+    *alphaev6|*alphaev67|*alphaev68|*alphaev7)
+      cxxflags_default_opt="-mcpu=ev6 -O"
+      ;;
+
+  esac
+
+  # Modify default flags depending on g++ version (as older versions
+  # may not handle all flags)
+
+  case "$cs_cxx_vendor-$cs_cxx_version" in
+
+    g++-2.9[56]*)
+      cxxflags_default="$cxxflags_default -Wno-long-long"
+      ;;
+
+    g++-3.*|g++-4.*)
+      cxxflags_default="`echo $cxxflags_default | sed -e 's/-ansi/-std=c99/g'`"
+      cxxflags_default="$cxxflags_default -Wfloat-equal -Wpadded"
+      ;;
+
+  esac
+
+  case "$cs_cxx_vendor-$cs_cxx_version" in
+    g++-2.*|g++-3*|g++-4.[012]*)
+      cxxflags_default_omp=""
+      ;;
+  esac
+
+# Otherwise, are we using icc ?
+#------------------------------
+
+elif test "x$cs_g++" = "xicc"; then
+
+  cs_cxx_version=`echo $CXX --version | grep icc |sed 's/[a-zA-Z()]//g'`
+
+  echo "compiler '$CXX' is Intel ICC"
+
+  # Version strings for logging purposes and known compiler flag
+  $CXX -V conftest.c > $outfile 2>&1
+  cs_ac_cxx_version=`$CXX --version 2>&1 | head -1`
+  cs_cxx_compiler_known=yes
+
+  # Default compiler flags
+  cxxflags_default="-strict-ansi -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
+  cxxflags_default_opt="-O2"
+  cxxflags_default_hot="-O3"
+  cxxflags_default_prf="-p"
+  cxxflags_default_omp="-openmp"
+
+  # Modify default flags on certain systems
+
+  case "$host-os-$host_cpu" in
+    *ia64)
+      cxxflags_default_opt="-O2 -mcpu=itanium2-p9000"
+      ;;
+  esac
+
+# Otherwise, are we using pgcc ?
+#-------------------------------
+
+else
+
+  $CXX -V 2>&1 | grep 'The Portland Group' > /dev/null
+  if test "$?" = "0" ; then
+
+    echo "compiler '$CXX' is Portland Group pgCC"
+
+    # Version strings for logging purposes and known compiler flag
+    $CXX -V conftest.c > $outfile 2>&1
+    cs_ac_cxx_version=`grep -i pgcc $outfile`
+    cs_cxx_compiler_known=yes
+
+    # Default compiler flags
+    cxxflags_default="-Xa"
+    cxxflags_default_dbg="-g -Mbounds"
+    cxxflags_default_opt="-fast -fastsse"
+    cxxflags_default_prf="-Mprof=func,lines"
+    cxxflags_default_omp="-mp"
+
+  fi
+
+fi
+
+# Compiler still not identified
+#------------------------------
+
+if test "x$cs_cxx_compiler_known" != "xyes" ; then
+
+  case "$host_os" in
+
+    linux* | none)
+
+      # IBM Blue Gene
+      #--------------
+
+      $CXX -qversion 2>&1 | grep 'XL C' | grep 'Blue Gene' > /dev/null
+      if test "$?" = "0" ; then
+
+        echo "compiler '$CXX' is IBM XL C/C++ compiler for Blue Gene"
+
+        # Version strings for logging purposes and known compiler flag
+        $CXX -qversion > $outfile 2>&1
+        cs_ac_cxx_version=`grep 'XL C' $outfile`
+        cs_cxx_compiler_known=yes
+        cs_linker_set=yes
+
+        # Default compiler flags
+        cxxflags_default="-q64"
+        cxxflags_default_opt="-O3"
+        cxxflags_default_hot="-O3"
+        cxxflags_default_dbg="-g"
+        cxxflags_default_prf="-pg"
+        cxxflags_default_omp="-qsmp=omp"
+
+        # Default compiler flags
+        if test -d /bgl/BlueLight/ppcfloor/bglsys/include ; then
+          cxxflags_default=""
+          cxxflags_default_opt="-O3"
+          cxxflags_default_hot="-O3 -qhot"
+          cxxflags_default_dbg=""
+        elif test -d /bgsys/drivers/ppcfloor/comm/include ; then
+          cxxflags_default=""
+          cxxflags_default_opt="-O3"
+          cxxflags_default_hot="-O3 -qhot"
+          cxxflags_default_dbg=""
+        fi
+        cxxflags_default_prf="-pg"
+        cxxflags_default_omp="-qsmp=omp"
+
+      fi
+      ;;
+
+    osf*)
+
+      # Native Compaq Tru64 Unix C compiler
+      #------------------------------------
+
+      $CXX -V 2>&1 | grep 'Compaq Tru64' > /dev/null
+      if test "$?" = "0" ; then
+
+        echo "compiler '$CXX' is Compaq Tru64 compiler"
+
+        # Version strings for logging purposes and known compiler flag
+        $CXX -V conftest.c > $outfile 2>&1
+        cs_ac_cxx_version=`grep 'Compaq C' $outfile`
+        cs_cxx_compiler_known=yes
+        cs_linker_set=yes
+
+        # Default compiler flags
+        case "$host_cpu" in
+          alphaev6|alphaev67|alphaev68|alphaev7)
+            cxxflags_default="-arch host -tune host -ansi_alias -std -check_bounds -trapuv -check -msg_enable alignment -msg_enable noansi -msg_enable performance -portable -msg_enable c_to_cxx"
+            cxxflags_default_opt="-O"
+            cxxflags_default_hot="-O"
+            cxxflags_default_dbg="-g"
+            cxxflags_default_prf="-pg"
+            cxxflags_default_omp="-omp"
+          ;;
+        esac
+
+      fi
+      ;;
+
+    SUPER-UX*)
+
+      # Native NEC SX vectorizing C compiler (sxmpicc)
+      #-------------------------------------
+
+      $CXX -V conftest.c 2>&1 | grep 'NEC' | grep 'SX' > /dev/null
+      if test "$?" = "0" ; then
+
+        echo "compiler '$CXX' is NEC SX compiler"
+
+        # Version strings for logging purposes and known compiler flag
+        $CXX -V conftest.c > $outfile 2>&1
+        cs_ac_cxx_version=`grep ccom $outfile`
+        cs_cxx_compiler_known=yes
+        cs_linker_set=yes
+
+        # Default compiler flags
+        cxxflags_default="-ftrace --pvctl,loopcnt=2147483647"
+        cxxflags_default_opt=""
+        cxxflags_default_dbg=""
+        cxxflags_default_prf=""
+        cxxflags_default_omp=""
+
+      fi
+      ;;
+
+    irix5.*|irix6.*)
+
+      # Native SGI IRIX C compiler
+      #---------------------------
+
+      $CXX -version 2>&1 | grep 'MIPSpro' > /dev/null
+      if test "$?" = "0" ; then
+
+        echo "compiler '$CXX' is MIPSpro compiler"
+
+        # Version strings for logging purposes and known compiler flag
+        $CXX -version > $outfile 2>&1
+        cs_ac_cxx_version=`grep MIPSpro $outfile`
+        cs_cxx_compiler_known=yes
+
+        # Default compiler flags
+        cxxflags_default="-64"
+        cxxflags_default_opt="-O2 -woff 1521,1552,1096"
+        cxxflags_default_dbg="-g -woff 1429,1521,1209 -fullwarn"
+        cxxflags_default_prf="-fbexe"
+
+      fi
+      ;;
+
+    hpux*)
+
+      # Native HP-UX C compiler
+      #------------------------
+
+      $CXX -V conftest.c 2>&1 | grep 'HP' > /dev/null
+      if test "$?" = "0" ; then
+
+        echo "compiler '$CXX' is HP compiler"
+
+        # Version strings for logging purposes and known compiler flag
+        $CXX -V conftest.c > $outfile 2>&1
+        cs_ac_cxx_version=`grep ccom $outfile`
+        cs_cxx_compiler_known=yes
+        cs_linker_set=yes
+
+        # Default compiler flags
+        cxxflags_default="-Aa +e"
+        cxxflags_default_opt="+O2"
+        cxxflags_default_hot="+O3"
+        cxxflags_default_dbg="-g"
+        cxxflags_default_prf="-G"
+        cxxflags_default_omp="+Oopenmp" # most pragmas require +O3
+
+        if test "$host_cpu" = "ia64" ; then
+          cxxflags_default="$cxxflags_default +DD64"
+        else
+          cxxflags_default="$cxxflags_default +DA2.0w"
+        fi
+
+      fi
+      ;;
+
+    solaris2.*)
+
+      # Sun Workshop compiler
+      #----------------------
+
+      $CXX -V 2>&1 | grep 'WorkShop Compilers' > /dev/null
+      if test "$?" = "0" ; then
+
+        echo "compiler '$CXX' is Sun WorkShop Compilers"
+
+        # Version strings for logging purposes and known compiler flag
+        $CXX -V conftest.c > $outfile 2>&1
+        cs_ac_cxx_version=`grep cc $outfile`
+        cs_cxx_compiler_known=yes
+
+        # Default compiler flags
+        cxxflags_default="-Xa"
+        cxxflags_default_opt="-xO2"
+        cxxflags_default_hot="-xO3"
+        cxxflags_default_dbg="-g"
+        cxxflags_default_prf="-pg"
+        cxxflags_default_omp="-xopenmp"
+
+     fi
+     ;;
+
+    *)
+
+      # Unknown
+      #--------
+
+      cxxflags_default=""
+      cxxflags_default_opt="-O"
+      cxxflags_default_dbg="-g"
+      cxxflags_default_prf=""
+      cxxflags_default_omp=""
+      ;;
+
+  esac
+
+fi
+
+if test "x$cxxflags_default_hot" = "x" ; then
+  cxxflags_default_hot=$cxxflags_default_opt
+fi
+
+if test -f $outfile ; then
+  cs_ac_cxx_version_full=`sed -e '11,$d' $outfile`
   rm -f $outfile
 fi
 

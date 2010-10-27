@@ -87,11 +87,13 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 
 user_CPPFLAGS=$CPPFLAGS
 user_CFLAGS=$CFLAGS
+user_CXXFLAGS=$CXXFLAGS
 user_FCFLAGS=$FCFLAGS
 user_LDFLAGS=$LDFLAGS
 user_LIBS=$LIBS
 
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_FC
 
 # Search for Fortran 77 compilers just in case we have SYRTHES coupling
@@ -167,6 +169,7 @@ if test "x$auto_flags" = "xtrue" ; then
   # Default flags
   CPPFLAGS="$cppflags_default $user_CPPFLAGS"
   CFLAGS="$cflags_default $user_CFLAGS"
+  CXXFLAGS="$cxxflags_default $user_CXXFLAGS"
   FCFLAGS="$fcflags_default $user_FCFLAGS"
   LDFLAGS="$ldflags_default $user_LDFLAGS"
   LIBS="$libs_default $user_LIBS"
@@ -175,15 +178,18 @@ if test "x$auto_flags" = "xtrue" ; then
   if test "x$debug" = xtrue; then
     # Debug flags
     CFLAGS_DBG="$cflags_default_dbg"
+    CXXFLAGS_DBG="$cxxflags_default_dbg"
     FCFLAGS_DBG="$fcflags_default_dbg"
     # Add debug flags for linker
     LDFLAGS="$LDFLAGS $ldflags_default_dbg"
   else
     # Normal optimization flags
     CFLAGS_OPT="$cflags_default_opt"
+    CXXFLAGS_OPT="$cxxflags_default_opt"
     FCFLAGS_OPT="$fcflags_default_opt"
     # Hot optimization flags
     CFLAGS_HOT="$cflags_default_hot"
+    CXXFLAGS_HOT="$cxxflags_default_hot"
     FCFLAGS_HOT="$fcflags_default_hot"
     # Add optimization flags for linker
     LDFLAGS="$LDFLAGS $ldflags_default_opt"
@@ -194,6 +200,10 @@ if test "x$auto_flags" = "xtrue" ; then
   AC_SUBST(CFLAGS_OPT)
   AC_SUBST(CFLAGS_HOT)
   AC_SUBST(CFLAGS_EXT)
+
+  AC_SUBST(CXXFLAGS_DBG)
+  AC_SUBST(CXXFLAGS_OPT)
+  AC_SUBST(CXXFLAGS_HOT)
 
   AC_SUBST(FCFLAGS_DBG)
   AC_SUBST(FCFLAGS_OPT)
