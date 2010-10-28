@@ -906,6 +906,12 @@ _mpi_file_open(fvm_file_t       *f,
   if (retval != MPI_SUCCESS)
     _mpi_io_error_message(f->name, retval);
 
+  if (f->mode == FVM_FILE_MODE_APPEND) {
+    retval = MPI_File_get_position(f->fh, &(f->offset));
+    if (retval != MPI_SUCCESS)
+      _mpi_io_error_message(f->name, retval);
+  }
+
   return retval;
 }
 

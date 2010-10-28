@@ -1,3 +1,9 @@
+* 27/10/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Files opened in append mode were not handled correctly
+  when  using MPI-IO.
+  modified files:
+    src/fvm/fvm_file.c
+
 * 27/10/2010 - David Monfort <david.monfort@edf.fr>
   C++ compiler detection for a possible link with this compiler when linking
   with MED support and to ease NEPTUNE_CFD configury.
