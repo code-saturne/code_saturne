@@ -94,7 +94,11 @@ ACLOCAL_AMFLAGS = -I config
 # through Makefile targets rather than through configure, and
 # cites its own automate and autoheader as examples.
 
-edit = sed \
+edit_python = sed \
+	-e 's|@cs_python[@]|$(cs_python)|g' \
+	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g'
+
+edit_config = sed \
 	-e 's|@prefix[@]|$(prefix)|g' \
 	-e 's|@exec_prefix[@]|$(exec_prefix)|g' \
 	-e 's|@bindir[@]|$(bindir)|g' \
@@ -106,24 +110,55 @@ edit = sed \
 	-e 's|@docdir[@]|$(docdir)|g' \
 	-e 's|@pdfdir[@]|$(pdfdir)|g' \
 	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
-	-e 's|@cs_python[@]|$(cs_python)|g' \
-	-e 's|@pythondir[@]|$(pythondir)|g' \
-	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
 	-e 's|@syrthes_prefix[@]|$(syrthes_prefix)|g' \
 	-e 's|@mpi_type[@]|$(mpi_type)|g' \
 	-e 's|@mpi_bindir[@]|$(mpi_bindir)|g' \
 	-e 's|@mpi_libdir[@]|$(mpi_libdir)|g' \
-	-e 's|@PYTHON_VERSION[@]|$(PYTHON_VERSION)|g' \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
-	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g'
+	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g'\
+	-e 's|@ADF_CPPFLAGS[@]|$(ADF_CPPFLAGS)|g' \
+	-e 's|@ADF_LDFLAGS[@]|$(ADF_LDFLAGS)|g' \
+	-e 's|@ADF_LIBS[@]|$(ADF_LIBS)|g' \
+	-e 's|@BLAS_CPPFLAGS[@]|$(BLAS_CPPFLAGS)|g' \
+	-e 's|@BLAS_LDFLAGS[@]|$(BLAS_LDFLAGS)|g' \
+	-e 's|@BLAS_LIBS[@]|$(BLAS_LIBS)|g' \
+	-e 's|@CCM_CPPFLAGS[@]|$(CCM_CPPFLAGS)|g' \
+	-e 's|@CCM_LDFLAGS[@]|$(CCM_LDFLAGS)|g' \
+	-e 's|@CCM_LIBS[@]|$(CCM_LIBS)|g' \
+	-e 's|@CGNS_CPPFLAGS[@]|$(CGNS_CPPFLAGS)|g' \
+	-e 's|@CGNS_LDFLAGS[@]|$(CGNS_LDFLAGS)|g' \
+	-e 's|@CGNS_LIBS[@]|$(CGNS_LIBS)|g' \
+	-e 's|@HDF5_CPPFLAGS[@]|$(HDF5_CPPFLAGS)|g' \
+	-e 's|@HDF5_LDFLAGS[@]|$(HDF5_LDFLAGS)|g' \
+	-e 's|@HDF5_LIBS[@]|$(HDF5_LIBS)|g' \
+	-e 's|@LIBXML2_CPPFLAGS[@]|$(LIBXML2_CPPFLAGS)|g' \
+	-e 's|@LIBXML2_LDFLAGS[@]|$(LIBXML2_LDFLAGS)|g' \
+	-e 's|@LIBXML2_LIBS[@]|$(LIBXML2_LIBS)|g' \
+	-e 's|@MED_CPPFLAGS[@]|$(MED_CPPFLAGS)|g' \
+	-e 's|@MED_LDFLAGS[@]|$(MED_LDFLAGS)|g' \
+	-e 's|@MED_LIBS[@]|$(MED_LIBS)|g' \
+	-e 's|@METIS_CPPFLAGS[@]|$(METIS_CPPFLAGS)|g' \
+	-e 's|@METIS_LDFLAGS[@]|$(METIS_LDFLAGS)|g' \
+	-e 's|@METIS_LIBS[@]|$(METIS_LIBS)|g' \
+	-e 's|@MPI_CPPFLAGS[@]|$(MPI_CPPFLAGS)|g' \
+	-e 's|@MPI_LDFLAGS[@]|$(MPI_LDFLAGS)|g' \
+	-e 's|@MPI_LIBS[@]|$(MPI_LIBS)|g' \
+	-e 's|@SCOTCH_CPPFLAGS[@]|$(SCOTCH_CPPFLAGS)|g' \
+	-e 's|@SCOTCH_LDFLAGS[@]|$(SCOTCH_LDFLAGS)|g' \
+	-e 's|@SCOTCH_LIBS[@]|$(SCOTCH_LIBS)|g'
 
-edit_scripts = bin/code_saturne bin/cs_config.py bin/runcase
-
-$(edit_scripts): Makefile
+bin/code_saturne bin/runcase: Makefile
 	rm -f $@ $@.tmp
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
-	$(edit) $${srcdir}$@.in >$@.tmp
+	$(edit_python) $${srcdir}$@.in >$@.tmp
+	mv $@.tmp $@
+
+bin/cs_config.py: Makefile
+	rm -f $@ $@.tmp
+	srcdir=''; \
+	test -f ./$@.in || srcdir=$(srcdir)/; \
+	$(edit_config) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
 
 bin/code_saturne: $(srcdir)/bin/code_saturne.in 
