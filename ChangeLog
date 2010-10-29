@@ -1,4 +1,10 @@
 * 29/10/2010 - David Monfort <david.monfort@edf.fr>
+  Split the scripts edition in two different Makefile targets to avoid long
+  sed replacement command when useless.
+  modified scripts:
+    Makefile.am
+
+* 29/10/2010 - David Monfort <david.monfort@edf.fr>
   Standardize the Python command for Python modules.
   modified scripts:
     bin/cs_case_domain.py
