@@ -1,4 +1,4 @@
-#!@cs_python@
+#!/usr/bin/env python
 # Paths associated with Code_Saturne, generated from cs_config.py.in by make.
 #============================================================================
 #
