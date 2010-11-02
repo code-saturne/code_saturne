@@ -1,4 +1,9 @@
 * 02/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove unnecessary column in cs_halo_dump().
+  modified files:
+    src/base/cs_halo.c
+
+* 02/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct decoding of split polygons or polyhedra when all faces have
   4 edges or less.
   modified files:

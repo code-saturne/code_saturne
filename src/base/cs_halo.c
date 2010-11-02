@@ -1386,8 +1386,7 @@ cs_halo_dump(const cs_halo_t  *halo,
         if (print_level == 1 && list != NULL) {
           bft_printf("\n            id      cell number\n");
           for (j = index[2*i]; j < index[2*i+1]; j++)
-            bft_printf("    %10d %10d %10d\n",
-                       j, list[j]+1, halo->n_local_elts+j+1);
+            bft_printf("    %10d %10d\n", j, list[j]+1);
         }
 
       } /* there are elements on standard neighborhood */
