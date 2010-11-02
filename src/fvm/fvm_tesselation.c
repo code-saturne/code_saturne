@@ -1566,7 +1566,7 @@ _decode_polygons_tesselation_g(const fvm_tesselation_t  *this_tesselation,
             break;
       }
 
-      if (k == n_vertices - 2) {
+      if (k == n_vertices - 2 || ts->encoding == NULL) {
 
         /* Return previous element's end index if buffer size reached */
 
@@ -1699,7 +1699,7 @@ _decode_polygons_tesselation_l(const fvm_tesselation_t  *this_tesselation,
             break;
       }
 
-      if (j == n_vertices - 2) {
+      if (j == n_vertices - 2 || ts->encoding == NULL) {
 
         /* Return previous element's end index if buffer size reached */
 
@@ -1879,7 +1879,7 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
               break;
         }
 
-        if (l == n_vertices - 2) {
+        if (l == n_vertices - 2 || ts->encoding == NULL) {
 
           fvm_lnum_t stride = n_vertices + 1;
 
@@ -2058,7 +2058,7 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
               break;
         }
 
-        if (l == n_vertices - 2) {
+        if (l == n_vertices - 2 || ts->encoding == NULL) {
 
           fvm_lnum_t stride = n_vertices + 1;
 
