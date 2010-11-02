@@ -1356,7 +1356,7 @@ cs_base_mem_finalize(void)
 
 #if defined(HAVE_MPI)
   int  imax = 0, imin = 0;
-  double val_somme[2];
+  double val_sum[2];
   int  ind_min[2];
   _cs_base_mpi_double_int_t  val_in[2], val_min[2], val_max[2];
 #endif
@@ -1385,20 +1385,20 @@ cs_base_mem_finalize(void)
   if (cs_glob_n_ranks > 1) {
     MPI_Reduce(ind_val, ind_min, 2, MPI_INT, MPI_MIN,
                0, cs_glob_mpi_comm);
-    MPI_Reduce(valreal, val_somme, 2, MPI_DOUBLE, MPI_SUM,
+    MPI_Reduce(valreal, val_sum, 2, MPI_DOUBLE, MPI_SUM,
                0, cs_glob_mpi_comm);
     for (ind_bil = 0; ind_bil < 2; ind_bil++) {
       val_in[ind_bil].val = valreal[ind_bil];
       val_in[ind_bil].rank = cs_glob_rank_id;
     }
-    MPI_Reduce(&val_in, &val_min, 2, MPI_DOUBLE_INT, MPI_MINLOC,
+    MPI_Reduce(val_in, val_min, 2, MPI_DOUBLE_INT, MPI_MINLOC,
                0, cs_glob_mpi_comm);
-    MPI_Reduce(&val_in, &val_max, 2, MPI_DOUBLE_INT, MPI_MAXLOC,
+    MPI_Reduce(val_in, val_max, 2, MPI_DOUBLE_INT, MPI_MAXLOC,
                0, cs_glob_mpi_comm);
     if (cs_glob_rank_id == 0) {
       for (ind_bil = 0; ind_bil < 2; ind_bil++) {
         ind_val[ind_bil]  = ind_min[ind_bil];
-        valreal[ind_bil] = val_somme[ind_bil];
+        valreal[ind_bil] = val_sum[ind_bil];
       }
     }
   }
