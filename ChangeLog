@@ -1,3 +1,8 @@
+* 02/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Use ints for flag array to ensure portability of MPI_MAX in MPI_Allreduce.
+  modified files:
+    src/base/cs_post.c
+
 * 29/10/2010 - David Monfort <david.monfort@edf.fr>
   Split the scripts edition in two different Makefile targets to avoid long
   sed replacement command when useless.

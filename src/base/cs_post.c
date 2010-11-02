@@ -1001,7 +1001,8 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
   fvm_lnum_t n_cells, n_i_faces, n_b_faces;
   char part_name[81] ;
   int max_null_family = 0;
-  char *fam_flag = NULL, *group_flag = NULL;
+  int *fam_flag = NULL;
+  char *group_flag = NULL;
   const char *dir_name = NULL;
   fvm_lnum_t *cell_list = NULL, *i_face_list = NULL, *b_face_list = NULL;
   fvm_writer_t *writer = NULL;
@@ -1038,8 +1039,8 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
   /* Now detect which groups may be referenced */
 
-  BFT_MALLOC(fam_flag, (mesh->n_families + 1) * 3, char);
-  memset(fam_flag, 0, (mesh->n_families + 1) * 3);
+  BFT_MALLOC(fam_flag, (mesh->n_families + 1) * 3, int);
+  memset(fam_flag, 0, (mesh->n_families + 1) * sizeof(int) * 3);
 
   if (mesh->cell_family != NULL) {
     for (i = 0; i < mesh->n_cells; i++)
@@ -1056,10 +1057,10 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    char *_fam_flag = NULL;
-    BFT_MALLOC(_fam_flag, mesh->n_families * 3, char);
+    int *_fam_flag = NULL;
+    BFT_MALLOC(_fam_flag, (mesh->n_families + 1) * 3, int);
     MPI_Allreduce(fam_flag, _fam_flag, (mesh->n_families + 1) * 3,
-                  MPI_CHAR, MPI_MAX, cs_glob_mpi_comm);
+                  MPI_INT, MPI_MAX, cs_glob_mpi_comm);
     BFT_FREE(fam_flag);
     fam_flag = _fam_flag;
   }
@@ -1084,7 +1085,7 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
      Note that selector structures may not have been initialized yet,
      so to avoid issue, we use a direct selection here. */
 
-  BFT_REALLOC(fam_flag, mesh->n_families, char);
+  BFT_REALLOC(fam_flag, mesh->n_families, int);
 
   BFT_MALLOC(cell_list, mesh->n_cells, fvm_lnum_t);
 
@@ -1094,7 +1095,7 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
       const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
 
-      memset(fam_flag, 0, mesh->n_families);
+      memset(fam_flag, 0, mesh->n_families*sizeof(int));
       for (j = 0; j < mesh->n_families; j++) {
         for (k = 0; k < mesh->n_max_family_items; k++) {
           int g_id = - mesh->family_item[mesh->n_families*k + j] - 1;
@@ -1172,7 +1173,7 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
       const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
 
-      memset(fam_flag, 0, mesh->n_families);
+      memset(fam_flag, 0, mesh->n_families*sizeof(int));
       for (j = 0; j < mesh->n_families; j++) {
         for (k = 0; k < mesh->n_max_family_items; k++) {
           int g_id = - mesh->family_item[mesh->n_families*k + j] - 1;
@@ -1246,7 +1247,8 @@ _boundary_submeshes_by_group(const cs_mesh_t  *mesh,
   fvm_lnum_t n_b_faces;
   fvm_gnum_t n_no_group = 0;
   int max_null_family = 0;
-  char *fam_flag = NULL, *group_flag = NULL;
+  int *fam_flag = NULL;
+  char *group_flag = NULL;
   const char *dir_name = NULL;
   fvm_lnum_t *b_face_list = NULL;
   fvm_writer_t *writer = NULL;
@@ -1299,8 +1301,8 @@ _boundary_submeshes_by_group(const cs_mesh_t  *mesh,
 
   /* Now detect which groups may be referenced */
 
-  BFT_MALLOC(fam_flag, mesh->n_families + 1, char);
-  memset(fam_flag, 0, mesh->n_families + 1);
+  BFT_MALLOC(fam_flag, mesh->n_families + 1, int);
+  memset(fam_flag, 0, (mesh->n_families + 1)*sizeof(int));
 
   if (mesh->b_face_family != NULL) {
     for (i = 0; i < mesh->n_b_faces; i++)
@@ -1309,10 +1311,10 @@ _boundary_submeshes_by_group(const cs_mesh_t  *mesh,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    char *_fam_flag = NULL;
-    BFT_MALLOC(_fam_flag, mesh->n_families, char);
+    int *_fam_flag = NULL;
+    BFT_MALLOC(_fam_flag, mesh->n_families + 1, int);
     MPI_Allreduce(fam_flag, _fam_flag, mesh->n_families + 1,
-                  MPI_CHAR, MPI_MAX, cs_glob_mpi_comm);
+                  MPI_INT, MPI_MAX, cs_glob_mpi_comm);
     BFT_FREE(fam_flag);
     fam_flag = _fam_flag;
   }
@@ -1335,7 +1337,7 @@ _boundary_submeshes_by_group(const cs_mesh_t  *mesh,
      Note that selector structures may not have been initialized yet,
      so to avoid issue, we use a direct selection here. */
 
-  BFT_REALLOC(fam_flag, mesh->n_families, char);
+  BFT_REALLOC(fam_flag, mesh->n_families, int);
 
   BFT_MALLOC(b_face_list, mesh->n_b_faces, fvm_lnum_t);
 
@@ -1345,7 +1347,7 @@ _boundary_submeshes_by_group(const cs_mesh_t  *mesh,
 
       const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
 
-      memset(fam_flag, 0, mesh->n_families);
+      memset(fam_flag, 0, mesh->n_families*sizeof(int));
       for (j = 0; j < mesh->n_families; j++) {
         for (k = 0; k < mesh->n_max_family_items; k++) {
           int g_id = - mesh->family_item[mesh->n_families*k + j] - 1;
