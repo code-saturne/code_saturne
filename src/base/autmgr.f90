@@ -120,11 +120,12 @@ double precision w1(ncelfe), w2(ncelfe)
 
 double precision critr, epslon
 
-integer          ncelg, icel, ifac , ifac1, icelg
+integer          ncelg, ncelgg, icel, ifac , ifac1, icelg
 integer          nfacn,nfacnr,npass,npasmx
 integer          inditt, noaglo, ngros, incvoi
-integer          ihist(10)
 integer          i, j, imin, imax
+
+integer, allocatable, dimension(:) :: ihist
 
 !===============================================================================
 
@@ -282,9 +283,11 @@ do icelg =1,ncelg
   imin = min(imin, inombr(icelg))
 enddo
 
+ncelgg = ncelg
 if (irangp .ge. 0) then
   call parcmn(imin)
   call parcmx(imax)
+  call parcpt(ncelgg)
 endif
 
 if (iwarnp.gt.3) then
@@ -293,10 +296,7 @@ if (iwarnp.gt.3) then
   write(nfecra,2003)
   noaglo=imax-imin+1
   if (noaglo.gt.0) then
-    if (noaglo.gt.10) then
-      write(nfecra,*) ' ihist badly dimensioned in autmgr'
-      call csexit(1)
-    endif
+    allocate(ihist(noaglo))
     do i = 1, noaglo
       ihist(i) = 0
     enddo
@@ -311,9 +311,12 @@ if (iwarnp.gt.3) then
       call parism(noaglo, ihist)
     endif
     do i = 1, noaglo
-      epslon = 100.d0*ihist(i)/ncelg
+      epslon = 100.d0*ihist(i)/ncelgg
       write(nfecra,2004) imin+i-1, epslon
     enddo
+
+    deallocate(ihist)
+
   endif
 
 endif
@@ -354,7 +357,7 @@ endif
 !--------
 
  2001 format(&
-  '    autmgr: pass ', i3, 'nfacnr = ', i10, ' noaglo = ', i10)
+  '    autmgr: pass ', i3, ' nfacnr = ', i10, ' noaglo = ', i10)
  2002 format(&
   '    autmgr: inombr min = ', i10, ' max = ', i10, ' target = ', i10)
  2003 format(&

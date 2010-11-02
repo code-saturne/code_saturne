@@ -1,4 +1,10 @@
 * 02/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct minor bugs in parallel run when multigrid is very verbose.
+  modified files:
+    src/base/autmgr.f90
+    src/base/crstgr.f90
+
+* 02/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove unnecessary column in cs_halo_dump().
   modified files:
     src/base/cs_halo.c

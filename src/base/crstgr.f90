@@ -417,9 +417,9 @@ if (iwarnp .gt. 3) then
     w3(ig) = w4(ig)/w3(ig)
   enddo
 
-  anmin(1) = w1(1)
-  anmax(1) = w1(1)
-  do ii = 2, ncelf
+  anmin(1) = +1.d300
+  anmax(1) = -1.d300
+  do ii = 1, ncelf
     if (w1(ii) .lt. anmin(1)) then
       anmin(1) = w1(ii)
     else if (w1(ii) .gt. anmax(1)) then
@@ -427,9 +427,9 @@ if (iwarnp .gt. 3) then
     endif
   enddo
 
-  anmin(2) = w3(1)
-  anmax(2) = w3(1)
-  do ig = 2, ncelg
+  anmin(2) = +1.d300
+  anmax(2) = -1.d300
+  do ig = 1, ncelg
     if (w3(ig) .lt. anmin(2)) then
       anmin(2) = w3(ig)
     else if (w3(ig) .gt. anmax(2)) then
@@ -447,9 +447,9 @@ if (iwarnp .gt. 3) then
 
   if (interp .eq. 1) then
 
-    rmin = +1.d10
-    rmax = -1.d10
-    do ifacg=1,nfacg
+    rmin = +1.d300
+    rmax = -1.d300
+    do ifacg = 1, nfacg
       rmin = min(rmin, xag(ifacg,1)/xag0(ifacg))
       rmax = max(rmax, xag(ifacg,1)/xag0(ifacg))
     enddo
@@ -499,9 +499,9 @@ if (iwarnp .gt. 3) then
     w3(ig) = w3(ig) / abs(dag(ig))
   enddo
 
-  anmin(1) = w1(1)
-  anmax(1) = w1(1)
-  do ii = 2, ncelf
+  anmin(1) = +1.d300
+  anmax(1) = -1.d300
+  do ii = 1, ncelf
     if (w1(ii) .lt. anmin(1)) then
       anmin(1) = w1(ii)
     else if (w1(ii) .gt. anmax(1)) then
@@ -509,9 +509,9 @@ if (iwarnp .gt. 3) then
     endif
   enddo
 
-  anmin(2) = w3(1)
-  anmax(2) = w3(1)
-  do ig = 2, ncelg
+  anmin(2) = +1.d300
+  anmax(2) = -1.d300
+  do ig = 1, ncelg
     if (w3(ig) .lt. anmin(2)) then
       anmin(2) = w3(ig)
     else if (w3(ig) .gt. anmax(2)) then
