@@ -39,17 +39,27 @@ aclocal.m4 \
 configure \
 build-aux/compile \
 build-aux/config.guess \
+build-aux/config.rpath \
 build-aux/config.sub \
 build-aux/depcomp \
 build-aux/install-sh \
 build-aux/ltmain.sh \
+build-aux/missing \
+build-aux/py-compile \
+build-aux/ylwrap \
+m4/gettext.m4 \
+m4/iconv.m4 \
+m4/lib-ld.m4 \
+m4/lib-link.m4 \
+m4/lib-prefix.m4 \
 m4/libtool.m4 \
 m4/lt~obsolete.m4 \
 m4/ltoptions.m4 \
 m4/ltsugar.m4 \
 m4/ltversion.m4 \
-build-aux/missing \
-build-aux/py-compile
+m4/nls.m4 \
+m4/po.m4 \
+m4/progtest.m4
 
 EXTRA_DIST = \
 COMPATIBILITY \
@@ -60,8 +70,8 @@ sbin/backup \
 sbin/bootstrap \
 sbin/clean \
 sbin/rmb \
-m4/cs_adf.m4 \
 config/cs_auto_flags.sh \
+m4/cs_adf.m4 \
 m4/cs_blas.m4 \
 m4/cs_ccm.m4 \
 m4/cs_cgns.m4 \
@@ -86,7 +96,7 @@ nodist_include_HEADERS = cs_config.h
 
 DISTCLEANFILES = cs_config.h
 
-ACLOCAL_AMFLAGS = -I config
+ACLOCAL_AMFLAGS = -I m4
 
 # Replace paths in Python scripts.
 # The following command and targets are adapted from an example in
