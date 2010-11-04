@@ -28,12 +28,12 @@ if [ ! -f config/gettext.m4 ]; then
 fi
 
 echo "running aclocal"
-aclocal -I config
+aclocal -I m4
 
 echo "running autoconf"
 autoconf
 
-if [ ! -f config/ltmain.sh ]; then
+if [ ! -f build-aux/ltmain.sh ]; then
   echo "running libtoolize"
   libtoolize --force --copy
 fi

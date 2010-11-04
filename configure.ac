@@ -59,9 +59,8 @@ AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr])
 AC_CONFIG_SRCDIR([src/apps/cs_solver.c])
 
 # Use the config directory for libtool stuff ...
-AC_CONFIG_AUX_DIR(config)
-AC_CONFIG_MACRO_DIR(config)
-AC_SUBST(ac_aux_dir)
+AC_CONFIG_AUX_DIR(build-aux)
+AC_CONFIG_MACRO_DIR(m4)
 
 AC_CANONICAL_TARGET
 AC_CONFIG_HEADERS([cs_config.h])

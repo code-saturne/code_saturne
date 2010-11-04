@@ -35,21 +35,21 @@ endif
 SUBDIRS = $(PLE) $(PREPRO) src libsyrcs po doc $(GUI) tests
 
 MAINTAINERCLEANFILES = \
-$(top_srcdir)/aclocal.m4 \
-$(top_srcdir)/configure \
-$(ac_aux_dir)/compile \
-$(ac_aux_dir)/config.guess \
-$(ac_aux_dir)/config.sub \
-$(ac_aux_dir)/depcomp \
-$(ac_aux_dir)/install-sh \
-$(ac_aux_dir)/ltmain.sh \
-$(ac_aux_dir)/libtool.m4 \
-$(ac_aux_dir)/lt~obsolete.m4 \
-$(ac_aux_dir)/ltoptions.m4 \
-$(ac_aux_dir)/ltsugar.m4 \
-$(ac_aux_dir)/ltversion.m4 \
-$(ac_aux_dir)/missing \
-$(ac_aux_dir)/py-compile
+aclocal.m4 \
+configure \
+build-aux/compile \
+build-aux/config.guess \
+build-aux/config.sub \
+build-aux/depcomp \
+build-aux/install-sh \
+build-aux/ltmain.sh \
+m4/libtool.m4 \
+m4/lt~obsolete.m4 \
+m4/ltoptions.m4 \
+m4/ltsugar.m4 \
+m4/ltversion.m4 \
+build-aux/missing \
+build-aux/py-compile
 
 EXTRA_DIST = \
 COMPATIBILITY \
@@ -60,22 +60,22 @@ sbin/backup \
 sbin/bootstrap \
 sbin/clean \
 sbin/rmb \
-$(ac_aux_dir)/cs_adf.m4 \
-$(ac_aux_dir)/cs_auto_flags.sh \
-$(ac_aux_dir)/cs_blas.m4 \
-$(ac_aux_dir)/cs_ccm.m4 \
-$(ac_aux_dir)/cs_cgns.m4 \
-$(ac_aux_dir)/cs_config_info.m4 \
-$(ac_aux_dir)/cs_fortran.m4 \
-$(ac_aux_dir)/cs_hdf5.m4 \
-$(ac_aux_dir)/cs_libxml2.m4 \
-$(ac_aux_dir)/cs_med.m4 \
-$(ac_aux_dir)/cs_metis.m4 \
-$(ac_aux_dir)/cs_mpi.m4 \
-$(ac_aux_dir)/cs_ple.m4 \
-$(ac_aux_dir)/cs_scotch.m4 \
-$(ac_aux_dir)/cs_syrthes.m4 \
-$(ac_aux_dir)/cs_zlib.m4
+m4/cs_adf.m4 \
+config/cs_auto_flags.sh \
+m4/cs_blas.m4 \
+m4/cs_ccm.m4 \
+m4/cs_cgns.m4 \
+m4/cs_config_info.m4 \
+m4/cs_fortran.m4 \
+m4/cs_hdf5.m4 \
+m4/cs_libxml2.m4 \
+m4/cs_med.m4 \
+m4/cs_metis.m4 \
+m4/cs_mpi.m4 \
+m4/cs_ple.m4 \
+m4/cs_scotch.m4 \
+m4/cs_syrthes.m4 \
+m4/cs_zlib.m4
 
 # One adds several sub-directories and get rid of the .svn
 # directories with a dist-hook. The reason for this trick is that
