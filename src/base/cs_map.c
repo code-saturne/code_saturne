@@ -141,12 +141,19 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
 
     size_t min_size = m->keys_size + key_size + 1;
     size_t prev_size = m->max_keys_size;
+    char *old_addr = m->keys;
+    ptrdiff_t addr_shift = 0;
 
     m->max_keys_size*= 2;
     if (m->max_keys_size < min_size)
       m->max_keys_size = min_size;
 
     BFT_REALLOC(m->keys, m->max_keys_size, char);
+    addr_shift = m->keys - old_addr;
+
+    for (i = 0; i < m->size; i++) {
+      m->key[i] += addr_shift;
+    }
 
     for (i = prev_size; i < m->max_keys_size; i++)
       m->keys[i] = '\0';

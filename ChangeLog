@@ -1,3 +1,8 @@
+* 04/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct logging data corruption when a map requires reallocation.
+  modified files:
+    src/base/cs_map.c
+
 * 02/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct array arguments to MPI_Reduce for memory summary.
   modified files:
