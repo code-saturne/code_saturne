@@ -32,8 +32,7 @@ import sys
 # Trick so that one doesn't have to set the PYTHONPATH variable
 sys.path.insert(0, '@pkgpythondir@')
 
-import cs_config
-import cs_check_consistency
+from cs_package import package
 
 from cs_exec_environment import *
 from cs_case_domain import *
@@ -179,7 +178,8 @@ if __name__ == '__main__':
 
     # Values in case and associated domain set from global variables
 
-    d = domain(meshes = MESHES,
+    d = domain(package(),
+               meshes = MESHES,
                mesh_dir = MESHDIR,
                reorient = REORIENT,
                partition_list = PARTITION_LIST,
@@ -211,7 +211,8 @@ if __name__ == '__main__':
 
     # Now handle case for the corresponding calculation domain(s).
 
-    case = case(casedir,
+    case = case(package(),
+                casedir,
                 d,
                 sd,
                 results_by_suffix = False,

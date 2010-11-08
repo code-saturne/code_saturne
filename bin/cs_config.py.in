@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-# Paths associated with Code_Saturne, generated from cs_config.py.in by make.
+# Package config information, generated from cs_config.py.in by make.
 #============================================================================
 #
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 2009 EDF S.A., France
+#     Copyright (C) 2009-2010 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -28,31 +28,34 @@
 
 #-------------------------------------------------------------------------------
 
-import os.path
+@cs_config_comments@
 
-# Package Version
-#----------------
+#-------------------------------------------------------------------------------
 
-class package:
-    name="@PACKAGE_NAME@"
-    version="@PACKAGE_VERSION@"
+# Build tools, option, and libraries
+#-----------------------------------
 
-# Installation directories
-#-------------------------
+class build:
+    cc="@CC@"
+    cxx="@CXX@"
+    fc="@FC@"
+    cppflags="@CPPFLAGS@ @PLE_CPPFLAGS@ @CGNS_CPPFLAGS@ @HDF5_CPPFLAGS@ @MED_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@"
+    cflags="@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@"
+    cxxflags="@CXXFLAGS@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@"
+    fcflags="@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@"
+    fcmodinclude="@FCMODINCLUDE@"
+    ldflags="@PLE_LDFLAGS@ @CGNS_LDFLAGS@ @MED_LDFLAGS@ @HDF5_LDFLAGS@ @MPI_LDFLAGS@ @LIBXML2_LDFLAGS@ @BLAS_LDFLAGS@ @LDFLAGS@"
+    libs="@PLE_LIBS@ @CGNS_LIBS@ @MED_LIBS@ @HDF5_LIBS@ @MPI_LIBS@ @LIBXML2_LIBS@ @BLAS_LIBS@ @FCLIBS@ @LIBS@"
+    rpath="@LDRPATH@"
 
-class dirs:
-    prefix = "@prefix@"
-    exec_prefix = "@exec_prefix@"
-    bindir = "@bindir@"
-    includedir = "@includedir@"
-    libdir = "@libdir@"
-    datarootdir = "@datarootdir@"
-    datadir = "@datadir@"
-    pkgdatadir = "@pkgdatadir@"
-    docdir = "@docdir@"
-    pdfdir = "@pdfdir@"
-    sysconfdir = "@sysconfdir@"
-    syrthes_prefix = "@syrthes_prefix@"
+class build_syrthes:
+    cc="@SYRTHES_CC@"
+    fc="@SYRTHES_FC@"
+    cppflags="@SYRTHES_CPPFLAGS@"
+    cflags="@SYRTHES_CFLAGS@"
+    fcflags="@SYRTHES_FCFLAGS@"
+    ldflags="@SYRTHES_LDFLAGS@"
+    libs="@SYRTHES_LIBS@ @SYRTHES_FCLIBS@"
 
 # Optional MPI library info
 #--------------------------
@@ -69,21 +72,30 @@ def get_config():
     Get the configuration information.
     """
     msg = """\
-Directories:
-  dirs.prefix = %(prefix)s
-  dirs.exec_prefix = %(exec_prefix)s
-  dirs.bindir = %(bin)s
-  dirs.includedir = %(include)s
-  dirs.libdir = %(lib)s
-  dirs.datarootdir = %(dataroot)s
-  dirs.datadir = %(data)s
-  dirs.pkgdatadir = %(pkgdata)s
-  dirs.docdir = %(doc)s
-  dirs.pdfdir = %(pdf)s
+Compilers and associated options:
+  cc = %(cc)s
+  fc = %(fc)s
+  cppflags = %(cppflags)s
+  cflags = %(cflags)s
+  fcflags = %(fcflags)s
+  ldflags = %(ldflags)s
+  libs = %(libs)s
+  rpath = %(rpath)s\
+"""
 
-Auxiliary information:
-  dirs.syrthes_prefix = %(syrthes)s
+    return msg \
+        % { 'cc':build.cc, 'fc':build.fc,
+            'cppflags':build.cppflags, 'cflags':build.cflags,
+            'fcflags':build.fcflags, 'ldflags':build.ldflags,
+            'libs':build.libs, 'rpath':build.rpath }
 
+#-------------------------------------------------------------------------------
+
+def get_config_mpi():
+    """
+    Get the configuration information.
+    """
+    msg = """\
 MPI library information:
   mpi_lib.type = %(mpi_type)s
   mpi_lib.bindir = %(mpi_bindir)s
@@ -91,28 +103,45 @@ MPI library information:
 """
 
     return msg \
-        % { 'prefix':dirs.prefix, 'exec_prefix':dirs.exec_prefix,
-            'bin':dirs.bindir, 'include': dirs.includedir, 'lib':dirs.libdir,
-            'dataroot':dirs.datarootdir, 'data':dirs.datadir,
-            'pkgdata':dirs.pkgdatadir, 'doc':dirs.docdir, 'pdf':dirs.pdfdir,
-            'syrthes':dirs.syrthes_prefix,
-            'mpi_type':mpi_lib.type, 'mpi_bindir':mpi_lib.bindir,
+        % { 'mpi_type':mpi_lib.type, 'mpi_bindir':mpi_lib.bindir,
             'mpi_libdir':mpi_lib.libdir }
 
 #-------------------------------------------------------------------------------
 
-def main(argv):
+def get_config_syrthes():
+    """
+    Get the configuration information.
+    """
+    msg = """\
+Compilers and associated options for SYRTHES build:
+  cc = %(cc)s
+  fc = %(fc)s
+  cppflags = %(cppflags)s
+  cflags = %(cflags)s
+  fcflags = %(fcflags)s
+  ldflags = %(ldflags)s
+  libs = %(libs)s\
+"""
+
+    return msg \
+        % { 'cc':build_syrthes.cc, 'fc':build_syrthes.fc,
+            'cppflags':build_syrthes.cppflags, 'cflags':build_syrthes.cflags,
+            'fcflags':build_syrthes.fcflags, 'ldflags':build_syrthes.ldflags,
+            'libs':build_syrthes.libs }
+
+#-------------------------------------------------------------------------------
+
+def main(argv, pkg):
     """
     Main configuration info function.
     """
     import sys
-    import cs_config_build
-    sys.stdout.write("%(d)s\n\n%(b)s\n\n%(s)s\n" %
-                     {'d':get_config(),
-                      'b':cs_config_build.get_config(),
-                      's':cs_config_build.get_config_syrthes()})
+    sys.stdout.write("%(c)s\n\n%(m)s\n\n%(s)s\n" %
+                     {'c':get_config(),
+                      'm':get_config_mpi(),
+                      's':get_config_syrthes()})
 
 if __name__ == '__main__':
     import sys
-    main(sys.argv[1:])
+    main(sys.argv[1:], pkg)
 

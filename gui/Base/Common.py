@@ -54,8 +54,8 @@ base_path = os.path.dirname(os.path.abspath(__file__))
 icon_base_path = os.path.join(base_path, 'icons')
 
 # Test if MEI syntax checking is available
-import cs_config
-cs_check_syntax = os.path.join(cs_config.dirs.bindir, 'cs_check_syntax')
+from cs_package import package
+cs_check_syntax = package().get_check_syntax()
 if not os.path.isfile(cs_check_syntax):
     cs_check_syntax = None
 

@@ -28,7 +28,7 @@ from optparse import OptionParser
 
 #-------------------------------------------------------------------------------
 
-def process_cmd_line(argv):
+def process_cmd_line(argv, pkg):
     """
     Processes the passed command line arguments.
 
@@ -79,16 +79,16 @@ def plot(f):
 
 #-------------------------------------------------------------------------------
 
-def main(argv):
+def main(argv, main):
     """
     Main function.
     """
 
-    file = process_cmd_line(argv)
+    file = process_cmd_line(argv, pkg)
 
     retcode = plot(file)
 
     sys.exit(retcode)
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main(sys.argv[1:], None)

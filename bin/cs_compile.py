@@ -27,14 +27,13 @@ import tempfile
 
 from optparse import OptionParser
 
-from cs_config import dirs
-from cs_config_build import build, build_syrthes
+from cs_config import build, build_syrthes
 
 from cs_exec_environment import run_command
 
 #-------------------------------------------------------------------------------
 
-def process_cmd_line(argv):
+def process_cmd_line(argv, pkg):
     """
     Processes the passed command line arguments.
 
@@ -130,7 +129,7 @@ def so_dirs_path(flags):
 
 #-------------------------------------------------------------------------------
 
-def compile_and_link(srcdir, destdir, optlibs,
+def compile_and_link(pkg, srcdir, destdir, optlibs,
                      force_link = False, keep_going = False,
                      stdout = sys.stdout, stderr = sys.stderr):
     """
@@ -162,7 +161,7 @@ def compile_and_link(srcdir, destdir, optlibs,
         cmd = build.cc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
-        cmd = cmd + " -I" + dirs.includedir
+        cmd = cmd + " -I" + pkg.includedir
         cmd = cmd + " -DHAVE_CONFIG_H"
         cmd = cmd + " " + build.cppflags
         cmd = cmd + " " + build.cflags
@@ -182,21 +181,21 @@ def compile_and_link(srcdir, destdir, optlibs,
         cmd = cmd + " -I" + srcdir
         if build.fcmodinclude != "-I":
             cmd += " " + build.fcmodinclude + srcdir
-        cmd = cmd + " -I" + dirs.includedir
+        cmd = cmd + " -I" + pkg.includedir
         if build.fcmodinclude != "-I":
-            cmd += " " + build.fcmodinclude + dirs.includedir
+            cmd += " " + build.fcmodinclude + pkg.includedir
         cmd = cmd + " " + build.fcflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
     if retval == 0 and (force_link or (len(c_files) + len(f_files)) > 0):
-        cmd = build.cc
+        cmd = pkg.ld
         cmd = cmd + " -o " + exec_name
         if (len(c_files) + len(f_files)) > 0:
           cmd = cmd + " *.o"
-        cmd = cmd + " -L" + os.path.join(dirs.prefix, "lib")
-        cmd = cmd + " -lsaturne -lmei -lfvm -lbft"
+        cmd = cmd + " -L" + pkg.libdir
+        cmd = cmd + " " + pkg.libs
         if optlibs != None:
             if len(optlibs) > 0:
                 cmd = cmd + " " + optlibs
@@ -220,7 +219,7 @@ def compile_and_link(srcdir, destdir, optlibs,
 
 #-------------------------------------------------------------------------------
 
-def compile_and_link_syrthes(srcdir, destdir,
+def compile_and_link_syrthes(pkg, srcdir, destdir,
                              stdout = sys.stdout, stderr = sys.stderr):
     """
     Compilation and link function.
@@ -270,11 +269,11 @@ def compile_and_link_syrthes(srcdir, destdir,
 
     if retval == 0:
         # Link with Code_Saturne C compiler
-        cmd = build.cc
+        cmd = pkg.ld
         cmd = cmd + " -o " + exec_name
         if (len(f_files)) > 0:
           cmd = cmd + " *.o"
-        cmd = cmd + " -L" + os.path.join(dirs.prefix, "lib")
+        cmd = cmd + " -L" + pkg.libdir
         cmd = cmd + " -lsyrcs"
         cmd = cmd + " " + build_syrthes.ldflags
         cmd = cmd + " " + build_syrthes.libs
@@ -299,28 +298,28 @@ def compile_and_link_syrthes(srcdir, destdir,
 # Main
 #-------------------------------------------------------------------------------
 
-def main(argv):
+def main(argv, pkg):
     """
     Main function.
     """
 
     test_mode, force_link, keep_going, \
-        src_dir, dest_dir, opt_libs, link_syrthes = process_cmd_line(argv)
+        src_dir, dest_dir, opt_libs, link_syrthes = process_cmd_line(argv, pkg)
 
     if test_mode == True:
         dest_dir = None
 
     if link_syrthes == True:
-        retcode = compile_and_link_syrthes(src_dir, dest_dir)
+        retcode = compile_and_link_syrthes(pkg, src_dir, dest_dir)
     else:
-        retcode = compile_and_link(src_dir, dest_dir, opt_libs,
+        retcode = compile_and_link(pkg, src_dir, dest_dir, opt_libs,
                                    force_link, keep_going)
 
     sys.exit(retcode)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main(sys.argv[1:], None)
 
 #-------------------------------------------------------------------------------
 # End

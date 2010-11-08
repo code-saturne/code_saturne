@@ -50,37 +50,37 @@ Options:
 
     print(usage % {'prog':sys.argv[0]})
 
-def check_consistency(argv):
+def check_consistency(argv, pkg):
     import cs_check_consistency
-    cs_check_consistency.main(argv)
+    cs_check_consistency.main(argv, pkg)
 
-def check_mesh(argv):
+def check_mesh(argv, pkg):
     import cs_check_mesh
-    cs_check_mesh.main(argv)
+    cs_check_mesh.main(argv, pkg)
 
-def compile(argv):
+def compile(argv, pkg):
     import cs_compile
-    cs_compile.main(argv)
+    cs_compile.main(argv, pkg)
 
-def config(argv):
+def config(argv, pkg):
     import cs_config
-    cs_config.main(argv)
+    cs_config.main(argv, pkg)
 
-def create(argv):
+def create(argv, pkg):
     import cs_create
-    cs_create.main(argv)
+    cs_create.main(argv, pkg)
 
-def gui(argv):
+def gui(argv, pkg):
     import cs_gui
     cs_gui.main(argv)
 
-def info(argv):
+def info(argv, pkg):
     import cs_info
-    cs_info.main(argv)
+    cs_info.main(argv, pkg)
 
-def plot_probes(argv):
+def plot_probes(argv, pkg):
     import cs_plot_probes
-    cs_plot_probes.main(argv)
+    cs_plot_probes.main(argv, pkg)
 
 #-------------------------------------------------------------------------------
 
@@ -104,10 +104,14 @@ def main(argv):
     if (len(argv) < 1) or (argv[0] not in commands):
         usage(argv)
     else:
+        # Retrieve package information (name, version, installation dirs, ...)
+        from cs_package import package
+        pkg = package()
+        # Run command
         command = argv[0]
         sys.argv[0] = sys.argv[0] + ' ' + command
         sys.argv.remove(command)
-        commands[command](argv[1:])
+        commands[command](argv[1:], pkg)
 
     sys.exit(retcode)
 

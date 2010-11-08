@@ -44,15 +44,12 @@ import types, string, re, fnmatch
 from optparse import OptionParser
 import ConfigParser
 
-import cs_config
-
-
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
 #-------------------------------------------------------------------------------
 
 
-def process_cmd_line(argv):
+def process_cmd_line(argv, pkg):
     """
     Processes the passed command line arguments.
     """
@@ -89,7 +86,7 @@ def process_cmd_line(argv):
 
     parser.add_option("--nsat", dest="n_sat", type="int",
                       metavar="<nsat>",
-                      help="specify the number of Code_Saturne instances")
+                      help="specify the number of instances")
 
     parser.add_option("--nsyr", dest="n_syr", type="int",
                       metavar="<nsyr>",
@@ -112,7 +109,8 @@ def process_cmd_line(argv):
         else:
             options.cases_name = ["CASE1"]
 
-    return Study(options.study_name,
+    return Study(pkg,
+                 options.study_name,
                  options.cases_name,
                  options.copy,
                  options.use_gui,
@@ -192,11 +190,15 @@ def comments(filename, use_gui):
 class Study:
 
 
-    def __init__(self, name, cases, copy, use_gui, use_ref,
+    def __init__(self, package, name, cases, copy, use_gui, use_ref,
                  verbose, n_sat, n_syr):
         """
         Initialize the structure for a study.
         """
+
+        # Package specific information
+
+        self.package = package
 
         self.name = name
         self.cases = []
@@ -242,7 +244,7 @@ class Study:
         if self.verbose > 0:
             sys.stdout.write("  o Creating case  '%s'...\n" % casename)
 
-        datadir = os.path.join(cs_config.dirs.pkgdatadir)
+        datadir = self.package.pkgdatadir
         data_distpath  = os.path.join(datadir, 'data')
         users_distpath = os.path.join(datadir, 'users')
 
@@ -271,12 +273,15 @@ class Study:
                 thch_distpath = os.path.join(data_distpath, 'thch')
                 thch          = os.path.join(data, 'THCH')
                 os.mkdir(thch)
-                for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE', 'meteo']:
-                    shutil.copy(os.path.join(thch_distpath, f), thch)
+                for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE',
+                          'meteo']:
+                    abs_f = os.path.join(thch_distpath, f)
+                    if os.path.isfile(abs_f):
+                        shutil.copy(abs_f, thch)
 
             if self.use_gui:
 
-                csguiname = 'SaturneGUI'
+                csguiname = self.package.guiname
                 csguiscript = os.path.join(datadir, csguiname)
 
                 shutil.copy(csguiscript, data)
@@ -298,7 +303,8 @@ class Study:
 
                 for file in ['usini1.f90','usalin.f90']:
                     f = os.path.join(users, 'base', file)
-                    comments(f, self.use_gui)
+                    if os.path.isfile(f):
+                        comments(f, self.use_gui)
 
             # Copy data and source files from another case
 
@@ -309,7 +315,8 @@ class Study:
                 for f in data_files:
                     abs_f = os.path.join(ref_data, f)
                     if os.path.isfile(abs_f) and \
-                            f not in ['SaturneGUI', 'preprocessor_output']:
+                            f not in [self.package.guiname,
+                                      'preprocessor_output']:
                         shutil.copy(os.path.join(ref_data, abs_f), data)
 
 
@@ -339,7 +346,7 @@ class Study:
 
             if self.use_ref:
                 data_ref_syr = os.path.join(data_syr, 'REFERENCE')
-                shutil.copytree(os.path.join(cs_config.dirs.syrthes_prefix,
+                shutil.copytree(os.path.join(self.package.syrthes_prefix,
                                              'data'),
                                 data_ref_syr)
 
@@ -354,8 +361,7 @@ class Study:
 
             if self.use_ref:
                 users_syr = os.path.join(src_syr, 'REFERENCE')
-                shutil.copytree(os.path.join(cs_config.dirs.syrthes_prefix,
-                                             'usr'),
+                shutil.copytree(os.path.join(self.package.syrthes_prefix, 'usr'),
                                 users_syr)
 
         # Results directory (only one for all instances)
@@ -393,15 +399,14 @@ class Study:
         # On clusters, also copy the batch card (if defined)
 
         config = ConfigParser.ConfigParser()
-        config.read([os.path.join(cs_config.dirs.sysconfdir,
-                                  'code_saturne.cfg'),
-                     os.path.expanduser('~/.code_saturne.cfg')])
+        config.read([self.package.get_configfile(),
+                     os.path.expanduser('~/.' + self.package.configfile)])
 
         if config.has_option('install', 'batch'):
 
             batchfile = 'batch.' + config.get('install', 'batch')
 
-            shutil.copy(os.path.join(datadir, 'batch', batchfile),
+            shutil.copy(os.path.join(self.package.get_batchdir(), batchfile),
                         os.path.join(scripts, 'batch'))
 
             kwd = re.compile('nameandcase')
@@ -439,7 +444,7 @@ class Study:
         print("Use the GUI:", self.use_gui)
         print("Copy references:", self.use_ref)
         if self.n_sat > 1:
-            print("Number of Code_Saturne instances:", self.n_sat)
+            print("Number of instances:", self.n_sat)
         if self.n_syr > 0:
             print("Number of SYRTHES instances:", self.n_syr)
         print()
@@ -449,19 +454,19 @@ class Study:
 # Creation of the study directory
 #-------------------------------------------------------------------------------
 
-def main(argv):
+def main(argv, pkg):
     """
     Main function.
     """
 
     welcome = """\
-Code_Saturne %s study/case generation
+%(name)s %(vers)s study/case generation
 """
 
-    study = process_cmd_line(argv)
+    study = process_cmd_line(argv, pkg)
 
     if study.verbose > 0:
-        sys.stdout.write(welcome % cs_config.package.version)
+        sys.stdout.write(welcome % {'name':pkg.name, 'vers': pkg.version})
 
     study.create()
 
@@ -470,7 +475,7 @@ Code_Saturne %s study/case generation
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main(sys.argv[1:], None)
 
 
 #-------------------------------------------------------------------------------

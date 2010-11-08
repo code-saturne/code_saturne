@@ -827,16 +827,16 @@ class MainView(QMainWindow, Ui_MainForm):
          - version
          - contact
         """
-        import cs_config
+        from cs_package import package
 
-        msg = "Code_Saturne\n"                                +\
-              "version " + cs_config.package.version + "\n\n" +\
-              "For information about this application "       +\
-              "please contact:\n\n"                           +\
-              "saturne-support@edf.fr\n\n"                    +\
-              "Please visit our site:\n"                      +\
+        msg = package().name + "\n"                      +\
+              "version " + package().version + "\n\n"    +\
+              "For information about this application "  +\
+              "please contact:\n\n"                      +\
+              "saturne-support@edf.fr\n\n"               +\
+              "Please visit our site:\n"                 +\
               "http://www.code-saturne.org"
-        QMessageBox.about(self, 'Code_Saturne Interface', msg)
+        QMessageBox.about(self, package().name + ' Interface', msg)
 
 
     @pyqtSignature("")

@@ -650,7 +650,7 @@ Calculation management
         Configures the browser with users data.
         """
         try:
-            import cs_config
+            import cs_package
         except:
             self.setRowClose(self.tr('Mesh quality criteria'))
 

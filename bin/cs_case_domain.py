@@ -29,7 +29,6 @@ import sys
 import shutil
 import stat
 
-import cs_config
 import cs_compile
 
 from cs_exec_environment import run_command
@@ -86,9 +85,14 @@ class base_domain:
     #---------------------------------------------------------------------------
 
     def __init__(self,
+                 package,
                  n_procs = None,          # recommended number of processes
                  n_procs_min = 1,         # min. number of processes
                  n_procs_max = None):     # max. number of processes
+
+        # Package specific information
+
+        self.package = package
 
         # Names, directories, and files in case structure
 
@@ -342,6 +346,7 @@ class domain(base_domain):
     #---------------------------------------------------------------------------
 
     def __init__(self,
+                 package,
                  n_procs = None,              # recommended number of processes
                  n_procs_min = None,          # min. number of processes
                  n_procs_max = None,          # max. number of processes
@@ -361,7 +366,7 @@ class domain(base_domain):
                  lib_add = None,              # linker command-line options
                  adaptation = None):          # HOMARD adaptation script
 
-        base_domain.__init__(self, n_procs, n_procs_min, n_procs_max)
+        base_domain.__init__(self, package, n_procs, n_procs_min, n_procs_max)
 
         # Names, directories, and files in case structure
 
@@ -373,8 +378,7 @@ class domain(base_domain):
 
         # Default executable
 
-        self.solver_path = os.path.join(cs_config.dirs.bindir,
-                                        solver_base_name)
+        self.solver_path = self.package.get_solver()
 
         # Preprocessor options
 
@@ -541,7 +545,7 @@ class domain(base_domain):
             # Copy source files to execution directory
 
             if (self.exec_dir != self.result_dir):
-                exec_src = os.path.join(self.exec_dir, 'src_saturne')
+                exec_src = os.path.join(self.exec_dir, self.package.srcdir)
                 os.mkdir(exec_src)
                 for f in src_files:
                     src_file = os.path.join(self.src_dir, f)
@@ -568,7 +572,7 @@ class domain(base_domain):
 
             if retval == 0:
                 self.solver_path = os.path.join(self.exec_dir,
-                                                solver_base_name)
+                                                self.package.solver)
             else:
                 raise RunCaseError('Compile or link error.')
 
@@ -597,11 +601,11 @@ class domain(base_domain):
 
         # User config file
         u_cfg = ConfigParser.ConfigParser()
-        u_cfg.read(os.path.expanduser('~/.code_saturne.cfg'))
+        u_cfg.read(os.path.expanduser('~/.' + self.package.configfile))
 
         # Global config file
         g_cfg = ConfigParser.ConfigParser()
-        g_cfg.read(os.path.join(cs_config.dirs.sysconfdir, 'code_saturne.cfg'))
+        g_cfg.read(self.package.get_configfile())
 
         # A mesh can be found in different mesh database directories
         # (case, study, user, global -- in this order)
@@ -736,7 +740,7 @@ class domain(base_domain):
                                 'dp_thch',
                                 'thermochemistry')
             if not os.path.isfile('JANAF'):
-                self.copy_data_file(os.path.join(cs_config.dirs.pkgdatadir,
+                self.copy_data_file(os.path.join(self.package.pkgdatadir,
                                                  'data',
                                                  'thch',
                                                  'JANAF'),
@@ -790,7 +794,7 @@ class domain(base_domain):
 
             # Build command
 
-            cmd = os.path.join(cs_config.dirs.bindir, 'cs_preprocess')
+            cmd = self.package.get_preprocessor()
 
             if (type(m) == tuple):
                 cmd += ' --mesh ' + os.path.basename(m[0])
@@ -846,7 +850,7 @@ class domain(base_domain):
         if (self.exec_partition == False or self.partition_n_procs == None):
             return
 
-        partitioner = os.path.join(cs_config.dirs.bindir, 'cs_partition')
+        partitioner = self.package.get_partitioner()
         if not os.path.isfile(partitioner):
             if self.n_procs > 1:
                 w_str = \
@@ -890,7 +894,7 @@ class domain(base_domain):
 
         # Build command
 
-        cmd = os.path.join(cs_config.dirs.bindir, 'cs_partition')
+        cmd = self.package.get_partitioner()
 
         if self.partition_opts != None:
             cmd += ' ' + self.partition_opts
@@ -938,7 +942,7 @@ class domain(base_domain):
         # Working directory and executable path
 
         wd = self.exec_dir
-        exec_path = os.path.join(cs_config.dirs.bindir, 'cs_partition')
+        exec_path = self.package.get_partitioner()
 
         # Build kernel command-line arguments
 
@@ -1204,7 +1208,7 @@ class syrthes3_domain(base_domain):
                                                # if n_domains > 1
 
 
-        base_domain.__init__(self, 1, 1, 1)
+        base_domain.__init__(self, package, 1, 1, 1)
 
         self.log_file = 'syrthes.log'
 
@@ -1414,7 +1418,7 @@ class syrthes3_domain(base_domain):
 
         syrthes_env = os.path.join(self.data_dir, 'syrthes.env')
 
-        cmd = os.path.join(cs_config.dirs.pkgdatadir, 'runcase_syrthes')
+        cmd = self.package.get_runcase_script('runcase_syrthes')
         cmd += ' -copy-data -syrthes-env=' + syrthes_env
 
         if run_command(cmd) != 0:
@@ -1439,7 +1443,7 @@ class syrthes3_domain(base_domain):
         if self.exec_dir == self.result_dir and self.result_suffix == None:
             return
 
-        cmd = os.path.join(cs_config.dirs.pkgdatadir, 'runcase_syrthes') \
+        cmd = self.package.get_runcase_script('runcase_syrthes') \
             + ' -copy-results -result-dir=' + self.result_dir
 
         if self.result_suffix != None:

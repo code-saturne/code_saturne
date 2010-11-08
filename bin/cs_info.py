@@ -45,15 +45,12 @@ This module defines the following functions:
 import os, sys, pwd, shutil, stat
 from optparse import OptionParser
 
-import cs_config
-
-
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
 #-------------------------------------------------------------------------------
 
 
-def process_cmd_line(argv):
+def process_cmd_line(argv, pkg):
     """
     Processes the passed command line arguments.
 
@@ -76,7 +73,7 @@ def process_cmd_line(argv):
 
     parser.add_option("--version", dest="version",
                       action="store_true",
-                      help="print Code_Saturne version number")
+                      help="print version number")
 
     parser.set_defaults(pdf_reader=None)
     parser.set_defaults(guides=[])
@@ -85,7 +82,7 @@ def process_cmd_line(argv):
     (options, args) = parser.parse_args(argv)
 
     if options.version:
-        print_version()
+        print_version(pkg)
         sys.exit(0)
 
     if len(args) > 0 or len(options.guides) == 0:
@@ -100,12 +97,12 @@ def process_cmd_line(argv):
 #-------------------------------------------------------------------------------
 
 
-def print_version():
+def print_version(pkg):
     """
     Print Code_Saturne version.
     """
 
-    print("Code_Saturne version: %s" % cs_config.package.version)
+    print(pkg.name + " version: " + pkg.version)
 
 
 #-------------------------------------------------------------------------------
@@ -113,7 +110,7 @@ def print_version():
 #-------------------------------------------------------------------------------
 
 
-def launch_manual(reader, m):
+def launch_manual(reader, m, pkg):
     """
     Launch the corresponding PDF manual.
     """
@@ -126,7 +123,7 @@ def launch_manual(reader, m):
 
     readers = ["evince", "gpdf", "kpdf", "xpdf", "acroread"]
 
-    manual = os.path.join(cs_config.dirs.pdfdir, m) + '.pdf'
+    manual = os.path.join(pkg.pdfdir, m) + '.pdf'
 
     if not os.path.isfile(manual):
         print("File %s not found." % manual)
@@ -157,19 +154,19 @@ def launch_manual(reader, m):
 #-------------------------------------------------------------------------------
 
 
-def main(argv):
+def main(argv, pkg):
     """
     Main function.
     """
 
-    manuals, reader = process_cmd_line(argv)
+    manuals, reader = process_cmd_line(argv, pkg)
 
     for m in manuals:
-        launch_manual(reader, m)
+        launch_manual(reader, m, pkg)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main(sys.argv[1:], None)
 
 #-------------------------------------------------------------------------------
 # End

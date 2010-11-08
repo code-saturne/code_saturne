@@ -27,8 +27,7 @@ import os.path
 import sys
 import stat
 
-import cs_config
-import cs_config_build
+from cs_config import mpi_lib, build
 import cs_exec_environment
 
 from cs_case_domain import *
@@ -69,6 +68,7 @@ class case:
     #---------------------------------------------------------------------------
 
     def __init__(self,
+                 package,
                  case_dir,
                  domains,
                  syr_domains = None,
@@ -76,6 +76,10 @@ class case:
                  exec_preprocess = True,
                  exec_partition = True,
                  exec_solver = True):
+
+        # Package specific information
+
+        self.package = package
 
         # Names, directories, and files in case structure
 
@@ -179,16 +183,18 @@ class case:
 
         # Print process info
 
+        name = self.package.name
+
         if len(self.domains) == 1:
             if self.domains[0].n_procs > 1:
-                msg = ' Parallel Code_Saturne on ' \
+                msg = ' Parallel ' + name + ' on ' \
                     + str(self.domains[0].n_procs) + ' processes.\n'
             else:
-                msg = ' Single processor Code_Saturne simulation.\n'
+                msg = ' Single processor ' + name + ' simulation.\n'
             sys.stdout.write(msg)
         else:
             for d in self.domains:
-                msg = ' Code_Saturne domain ' + str(d.tag) + ' on ' \
+                msg = ' ' + name + ' domain ' + str(d.tag) + ' on ' \
                     + str(d.n_procs) + ' process(es).\n'
                 sys.stdout.write(msg)
 
@@ -450,13 +456,13 @@ class case:
         s_path = os.path.join(self.exec_dir, 'summary')
         s = open(s_path, 'w')
 
-        preprocessor = os.path.join(cs_config.dirs.bindir, 'cs_preprocess')
-        partitioner = os.path.join(cs_config.dirs.bindir, 'cs_partition')
+        preprocessor = self.package.get_preprocessor()
+        partitioner = self.package.get_partitioner()
         if not os.path.isfile(partitioner):
             partitioner = ''
-        solver = os.path.join(self.exec_dir, 'cs_solver')
+        solver = os.path.join(self.exec_dir, self.package.solver)
         if not os.path.isfile(solver):
-            solver = os.path.join(cs_config.dirs.bindir, 'cs_solver')
+            solver = self.package.get_solver()
 
         r = exec_env.resources
 
@@ -475,17 +481,17 @@ class case:
         s.write(dhline)
         s.write('  Start time       : ' + date + '\n')
         s.write(hline)
-        s.write('    Solver          : ' + cs_config.dirs.exec_prefix + '\n')
+        s.write('    Solver          : ' + self.package.bindir + '\n')
         s.write('    Preprocessor    : ' + preprocessor + '\n')
         s.write('    Partitioner     : ' + partitioner + '\n')
         s.write(hline)
-        s.write('    SYRTHES         : ' + cs_config.dirs.syrthes_prefix + '\n')
+        s.write('    SYRTHES         : ' + self.package.syrthes_prefix + '\n')
         if homard_prefix != None:
             s.write('    HOMARD          : ' + homard_prefix + '\n')
         s.write(hline)
-        s.write('    MPI path        : ' + cs_config.mpi_lib.bindir + '\n')
-        if len(cs_config.mpi_lib.type) > 0:
-            s.write('    MPI type        : ' + cs_config.mpi_lib.type + '\n')
+        s.write('    MPI path        : ' + mpi_lib.bindir + '\n')
+        if len(mpi_lib.type) > 0:
+            s.write('    MPI type        : ' + mpi_lib.type + '\n')
         s.write(hline)
         s.write('    User            : ' + exec_env.user  + '\n')
         s.write(dhline)
@@ -609,10 +615,10 @@ class case:
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')
-        if len(cs_config.mpi_lib.bindir) > 0:
-            s.write('export PATH='+ cs_config.mpi_lib.bindir + ':$PATH\n')
-        if len(cs_config.mpi_lib.libdir) > 0:
-            s.write('export LD_LIBRARY_PATH='+ cs_config.mpi_lib.libdir \
+        if len(mpi_lib.bindir) > 0:
+            s.write('export PATH='+ mpi_lib.bindir + ':$PATH\n')
+        if len(mpi_lib.libdir) > 0:
+            s.write('export LD_LIBRARY_PATH='+ mpi_lib.libdir \
                         + ':$LD_LIBRARY_PATH\n')
         s.write('\n')
 
@@ -759,8 +765,8 @@ class case:
                 + ' to the executable files.\n\n')
 
         e.write('MPI_RANK=`'
-                + cs_config.dirs.pkgdatadir
-                + '/runcase_mpi_rank $@`\n')
+                + self.package.get_runcase_script('runcase_mpi_rank')
+                + ' $@`\n')
 
         app_id = 0
         nr = 0
@@ -900,7 +906,7 @@ class case:
 
         e.close()
 
-        cmd = cs_config_build.build.cc + ' -o ' + o_path + ' -g ' + e_path
+        cmd = build.cc + ' -o ' + o_path + ' -g ' + e_path
 
         sys.stdout.write('\n'
                          'Generating MPMD launcher:\n\n')
@@ -976,10 +982,10 @@ fi
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')
-        if len(cs_config.mpi_lib.bindir) > 0:
-            s.write('export PATH='+ cs_config.mpi_lib.bindir + ':$PATH\n')
-        if len(cs_config.mpi_lib.libdir) > 0:
-            s.write('export LD_LIBRARY_PATH='+ cs_config.mpi_lib.libdir \
+        if len(mpi_lib.bindir) > 0:
+            s.write('export PATH='+ mpi_lib.bindir + ':$PATH\n')
+        if len(mpi_lib.libdir) > 0:
+            s.write('export LD_LIBRARY_PATH='+ mpi_lib.libdir \
                         + ':$LD_LIBRARY_PATH\n')
         s.write('\n')
 
@@ -1218,14 +1224,13 @@ fi
 
         msg = \
             '\n' \
-            + '                      Code_Saturne is running\n' \
+            + '                      ' + self.package.name + ' is running\n' \
             + '                      ***********************\n' \
             + '\n' \
             + ' Working directory (to be periodically cleaned):\n' \
             + '   ' +  str(self.exec_dir) + '\n\n' \
-            + ' Kernel version:  ' + cs_config.package.version + '\n' \
-            + ' Preprocessor:    ' + os.path.join(cs_config.dirs.bindir,
-                                                  'cs_preprocess') + '\n\n'
+            + ' Kernel version:  ' + self.package.version + '\n' \
+            + ' Preprocessor:    ' + self.package.get_preprocessor() + '\n\n'
         sys.stdout.write(msg)
 
         self.print_procs_distribution()
@@ -1458,10 +1463,12 @@ fi
 
         # Update error codes
 
+        name = self.package.name
+
         if retcode != 0:
             self.error = 'solver'
             err_str = \
-                'Code_Saturne solver script exited with status ' \
+                name + ' solver script exited with status ' \
                 + str(retcode) + '.\n\n'
             sys.stderr.write(err_str)
 
@@ -1469,13 +1476,13 @@ fi
             if len(self.syr_domains) > 0:
                 err_str = \
                     'Error running the coupled calculation.\n\n' \
-                    'Either Code_Saturne or SYRTHES may have failed.\n\n' \
-                    'Check Code_Saturne log (listing) and SYRTHES log (syrthes.log)\n' \
+                    'Either ' + name + ' or SYRTHES may have failed.\n\n' \
+                    'Check ' + name + ' log (listing) and SYRTHES log (syrthes.log)\n' \
                     'for details, as well as error* files.\n\n'
             else:
                 err_str = \
                     'Error running the calculation.\n\n' \
-                    'Check Code_Saturne log (listing) and error* files for details.\n\n'
+                    'Check ' + name + ' log (listing) and error* files for details.\n\n'
             sys.stderr.write(err_str)
 
         # Indicate status using temporary file for SALOME.
@@ -1571,16 +1578,15 @@ fi
                 username = os.getenv('USER')
 
             config = ConfigParser.ConfigParser({'user':username})
-            config.read([os.path.join(cs_config.dirs.sysconfdir,
-                                      'code_saturne.cfg'),
-                         os.path.expanduser('~/.code_saturne.cfg')])
+            config.read([self.package.get_configfile(),
+                         os.path.expanduser('~/.' + self.package.configfile)])
 
             if config.has_option('run', 'tmpdir'):
                 tmpdir = os.path.expanduser(config.get('run', 'tmpdir'))
                 tmpdir = os.path.expandvars(tmpdir)
 
         if tmpdir != None:
-            self.exec_prefix = os.path.join(tmpdir, 'tmp_Saturne')
+            self.exec_prefix = os.path.join(tmpdir, self.package.tmpdir)
 
         if suffix != None:
             self.suffix = suffix

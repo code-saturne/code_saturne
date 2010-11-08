@@ -33,7 +33,7 @@ from optparse import OptionParser
 # Process command line
 #-------------------------------------------------------------------------------
 
-def process_cmd_line(argv):
+def process_cmd_line(argv, pkg):
     """
     Processes the passed command line arguments.
 
@@ -193,19 +193,19 @@ def check_consistency(param, src_dir, n_procs):
 # Main
 #-------------------------------------------------------------------------------
 
-def main(argv):
+def main(argv, pkg):
     """
     Main function.
     """
 
-    n_procs, param, src_dir = process_cmd_line(argv)
+    n_procs, param, src_dir = process_cmd_line(argv, pkg)
 
     ret_val = check_consistency(param, src_dir, n_procs)
     sys.exit(ret_val)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main(sys.argv[1:], None)
 
 #-------------------------------------------------------------------------------
 # End

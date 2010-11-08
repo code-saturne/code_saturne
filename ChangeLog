@@ -1,4 +1,34 @@
 * 08/11/2010 - David Monfort <david.monfort@edf.fr>
+  Introduce a package-specific Python module to avoid too many overloading of
+  Python classes by NEPTUNE_CFD. It replaces the cs_config.dirs class and adds
+  some useful specific information like the package name, version, ...
+  Some work remains to be done in the graphical user interface code, because
+  the cs_package module is directly used instead of being passed on.
+  added script:
+    bin/cs_package.py.in
+  removed script:
+    bin/cs_config_build.py.in
+  modified scripts:
+    bin/code_saturne.in
+    bin/cs_case_domain.py
+    bin/cs_case.py
+    bin/cs_check_consistency.py
+    bin/cs_check_mesh.py
+    bin/cs_compile.py
+    bin/cs_config.py.in
+    bin/cs_create.py
+    bin/cs_info.py
+    bin/cs_plot_probes.py
+    bin/runcase.in
+    configure.ac
+    gui/Base/BrowserView.py
+    gui/Base/Common.py
+    gui/Base/MainView.py
+    gui/cs_gui.py
+    gui/Pages/SolutionVerifView.py
+    Makefile.am
+
+* 08/11/2010 - David Monfort <david.monfort@edf.fr>
   Fix the check_mesh tool behaviour.
   modified script:
     bin/cs_check_mesh.py

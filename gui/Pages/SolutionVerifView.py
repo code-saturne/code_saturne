@@ -46,7 +46,7 @@ import string, shutil, cStringIO
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
-import cs_config
+from cs_package import package
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -88,7 +88,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         self.setWindowTitle(self.tr("Run mesh quality criteria"))
         self.pushButton.setEnabled(False)
 
-        self.cs = os.path.join(cs_config.dirs.bindir, "cs_solver")
+        self.cs = package().get_solver()
 
         self.case = case
         self.case2 = case2
@@ -121,7 +121,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
         for meshNode in nodeList:
 
-            cmd = os.path.join(cs_config.dirs.bindir, "cs_preprocess")
+            cmd = package().get_preprocessor()
 
             name   = meshNode['name']
             format = meshNode['format']

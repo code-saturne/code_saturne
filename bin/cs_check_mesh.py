@@ -26,8 +26,6 @@ import sys, shutil
 import string
 import tempfile
 
-import cs_config
-
 from cs_exec_environment import run_command
 
 #-------------------------------------------------------------------------------
@@ -57,7 +55,7 @@ def subst_name(s):
 
 #-------------------------------------------------------------------------------
 
-def run_check(opts):
+def run_check(opts, pkg):
     """
     Run Code_Saturne preprocessor and solver.
     """
@@ -65,7 +63,7 @@ def run_check(opts):
 
     cur_dir = os.getcwd()
 
-    cmd = os.path.join(cs_config.dirs.bindir, 'cs_preprocess')
+    cmd = pkg.get_preprocessor()
 
     for o in ('-h', '--help'):
         if o in opts:
@@ -84,7 +82,7 @@ def run_check(opts):
 
     retval = 0
 
-    cmd = os.path.join(cs_config.dirs.bindir, 'cs_solver')
+    cmd = pkg.get_solver()
     cmd += " --quality --log 0"
     retval = run_command(cmd)
 
@@ -104,14 +102,14 @@ def run_check(opts):
 
 #-------------------------------------------------------------------------------
 
-def main(argv):
+def main(argv, pkg):
     """
     Main function.
     """
 
-    retcode = run_check(argv)
+    retcode = run_check(argv, pkg)
     sys.exit(retcode)
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main(sys.argv[1:], None)

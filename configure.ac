@@ -786,7 +786,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  doc/tutorial/Makefile doc/tutorial/graphics/Makefile
                  doc/user/Makefile doc/user/graphics/Makefile
                  tests/Makefile
-                 bin/cs_config_build.py bin/SaturneGUI])
+                 bin/cs_config.py bin/SaturneGUI])
 
 #------------------------------------------------------------------------------
 
