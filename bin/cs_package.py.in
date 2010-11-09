@@ -101,14 +101,3 @@ class package:
         return os.path.join(runcasedir, script)
 
 #-------------------------------------------------------------------------------
-
-def main(argv):
-    """
-    Main configuration info function.
-    """
-    return
-
-if __name__ == '__main__':
-    import sys
-    main(sys.argv[1:])
-

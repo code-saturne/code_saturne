@@ -137,7 +137,7 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
     """
     retval = 0
 
-    exec_name = "cs_solver"
+    exec_name = pkg.solver
     if destdir != None:
         exec_name = os.path.join(destdir, exec_name)
 
@@ -153,6 +153,8 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
 
     c_files = fnmatch.filter(dir_files, '*.c')
     h_files = fnmatch.filter(dir_files, '*.h')
+    cxx_files = fnmatch.filter(dir_files, '*.cxx') + fnmatch.filter(dir_files, '*.cpp')
+    hxx_files = fnmatch.filter(dir_files, '*.hxx') + fnmatch.filter(dir_files, '*.hpp')
     f_files = fnmatch.filter(dir_files, '*.[fF]90')
 
     for f in c_files:
@@ -165,6 +167,20 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         cmd = cmd + " -DHAVE_CONFIG_H"
         cmd = cmd + " " + build.cppflags
         cmd = cmd + " " + build.cflags
+        cmd = cmd + " -c " + os.path.join(srcdir, f)
+        if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
+            retval = 1
+
+    for f in cxx_files:
+        if (retval != 0 and not keep_going):
+            break
+        cmd = build.cxx
+        if len(hxx_files) > 0:
+            cmd = cmd + " -I" + srcdir
+        cmd = cmd + " -I" + pkg.includedir
+        cmd = cmd + " -DHAVE_CONFIG_H"
+        cmd = cmd + " " + build.cppflags
+        cmd = cmd + " " + build.cxxflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
@@ -189,10 +205,10 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
-    if retval == 0 and (force_link or (len(c_files) + len(f_files)) > 0):
+    if retval == 0 and (force_link or (len(c_files) + len(cxx_files) + len(f_files)) > 0):
         cmd = pkg.ld
         cmd = cmd + " -o " + exec_name
-        if (len(c_files) + len(f_files)) > 0:
+        if (len(c_files) + len(cxx_files) + len(f_files)) > 0:
           cmd = cmd + " *.o"
         cmd = cmd + " -L" + pkg.libdir
         cmd = cmd + " " + pkg.libs
@@ -269,7 +285,7 @@ def compile_and_link_syrthes(pkg, srcdir, destdir,
 
     if retval == 0:
         # Link with Code_Saturne C compiler
-        cmd = pkg.ld
+        cmd = build.cc
         cmd = cmd + " -o " + exec_name
         if (len(f_files)) > 0:
           cmd = cmd + " *.o"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Package config information, generated from cs_config.py.in by make.
+# @configure_input@
 #============================================================================
 #
 #     This file is part of the Code_Saturne Kernel, element of the
@@ -74,9 +74,11 @@ def get_config():
     msg = """\
 Compilers and associated options:
   cc = %(cc)s
+  cxx = %(cxx)s
   fc = %(fc)s
   cppflags = %(cppflags)s
   cflags = %(cflags)s
+  cxxflags = %(cxxflags)s
   fcflags = %(fcflags)s
   ldflags = %(ldflags)s
   libs = %(libs)s
@@ -84,8 +86,9 @@ Compilers and associated options:
 """
 
     return msg \
-        % { 'cc':build.cc, 'fc':build.fc,
+        % { 'cc':build.cc, 'cxx': build.cxx, 'fc':build.fc,
             'cppflags':build.cppflags, 'cflags':build.cflags,
+            'cxxflags':build.cxxflags,
             'fcflags':build.fcflags, 'ldflags':build.ldflags,
             'libs':build.libs, 'rpath':build.rpath }
 

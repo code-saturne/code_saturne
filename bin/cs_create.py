@@ -324,10 +324,15 @@ class Study:
                 src_files = os.listdir(ref_src)
 
                 c_files = fnmatch.filter(src_files, '*.c')
+                cxx_files = fnmatch.filter(src_files, '*.cxx')
+                cpp_files = fnmatch.filter(src_files, '*.cpp')
                 h_files = fnmatch.filter(src_files, '*.h')
+                hxx_files = fnmatch.filter(src_files, '*.hxx')
+                hpp_files = fnmatch.filter(src_files, '*.hpp')
                 f_files = fnmatch.filter(src_files, '*.[fF]90')
 
-                for f in c_files + h_files + f_files:
+                for f in c_files + h_files + f_files + \
+                        cxx_files + cpp_files + hxx_files + hpp_files:
                     shutil.copy(os.path.join(ref_src, f), src)
 
 

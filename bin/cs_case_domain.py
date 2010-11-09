@@ -495,6 +495,8 @@ class domain(base_domain):
         dir_files = os.listdir(self.src_dir)
 
         src_files = (fnmatch.filter(dir_files, '*.c')
+                     + fnmatch.filter(dir_files, '*.cxx')
+                     + fnmatch.filter(dir_files, '*.cpp')
                      + fnmatch.filter(dir_files, '*.[fF]90'))
 
         if len(src_files) > 0:
@@ -513,13 +515,17 @@ class domain(base_domain):
         dir_files = os.listdir(self.src_dir)
 
         src_files = (fnmatch.filter(dir_files, '*.c')
+                     + fnmatch.filter(dir_files, '*.cxx')
+                     + fnmatch.filter(dir_files, '*.cpp')
                      + fnmatch.filter(dir_files, '*.[fF]90'))
 
         if len(src_files) > 0:
 
             # Add header files to list so as not to forget to copy them
 
-            src_files = src_files + fnmatch.filter(dir_files, '*.h')
+            src_files = src_files + ( fnmatch.filter(dir_files, '*.h')
+                                    + fnmatch.filter(dir_files, '*.hxx')
+                                    + fnmatch.filter(dir_files, '*.hpp'))
 
             # Copy source files to result directory
 

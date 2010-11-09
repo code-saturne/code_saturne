@@ -30,7 +30,7 @@ if os.path.isdir(cspath) and not cspath in sys.path:
 
 #-------------------------------------------------------------------------------
 
-def usage(argv):
+def usage(argv, pkg):
     usage = \
     """Usage: %(prog)s <topic>
 

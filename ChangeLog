@@ -1,4 +1,15 @@
 * 08/11/2010 - David Monfort <david.monfort@edf.fr>
+  Fix minor remaining issues and add the possibility of compiling user C++
+  files for NEPTUNE_CFD use.
+  modified scripts:
+    bin/code_saturne.in
+    bin/cs_case_domain.py
+    bin/cs_compile.py
+    bin/cs_config.py.in
+    bin/cs_create.py
+    bin/cs_package.py.in
+
+* 08/11/2010 - David Monfort <david.monfort@edf.fr>
   Introduce a package-specific Python module to avoid too many overloading of
   Python classes by NEPTUNE_CFD. It replaces the cs_config.dirs class and adds
   some useful specific information like the package name, version, ...
