@@ -3320,16 +3320,17 @@ _read_data(int              file_id,
       else if (strncmp(header.sec_name, "face_vertices",
                        CS_IO_NAME_LEN) == 0) {
 
-        n_vals = header.n_vals;
-        n_g_face_connect_size  = n_vals;
+        n_vals = 0;
+        n_g_face_connect_size = header.n_vals;
 
-        if (n_vals + mr->n_g_faces_connect_read > mr->n_g_face_connect_size)
+        if (  (fvm_gnum_t)(header.n_vals) + mr->n_g_faces_connect_read
+            > mr->n_g_face_connect_size)
           bft_error
             (__FILE__, __LINE__, 0,
              _("Section of type <%s> on <%s>\n"
                "has incorrect size (current: %llu, read: %llu, total: %llu."),
              header.sec_name, cs_io_get_name(pp_in),
-             (unsigned long long)n_vals,
+             (unsigned long long)(header.n_vals),
              (unsigned long long)mr->n_g_faces_connect_read,
              (unsigned long long)mr->n_g_face_connect_size);
 
