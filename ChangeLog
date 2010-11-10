@@ -1,4 +1,9 @@
 * 10/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  sbin/clean now removed autom4te.cache.
+  modified scripts:
+    sbin/clean
+
+* 10/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct per group interior face counts in parallel.
   modified files:
     src/base/cs_mesh.c
