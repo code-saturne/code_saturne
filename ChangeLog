@@ -1,4 +1,10 @@
 * 10/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Enable reading of mesh input with degnerate faces or cells even
+  when partitioning uses a space-filling curve.
+  modified files:
+    src/base/cs_preprocessor_data.c
+
+* 10/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Output modified mesh before building colors so as to avoid saving
   those colors in 2 different (group and color) forms. 
   modified files:

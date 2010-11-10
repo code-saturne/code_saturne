@@ -215,8 +215,6 @@ _align_size(size_t  min_size)
 static void
 _set_default_input_if_needed(void)
 {
-  int ret = 0;
-
 #if defined(WIN32) || defined(_WIN32)
   const char dir_separator[] = "\\";
 #else
@@ -1416,6 +1414,8 @@ _cell_center(fvm_lnum_t        n_cells,
   cs_point_t *face_vtx_coord = NULL;
   fvm_coord_t *weight = NULL;
 
+  const double surf_epsilon = 1e-24;
+
   assert(face_vtx_idx[0] == 0);
 
   BFT_MALLOC(weight, n_cells, fvm_coord_t);
@@ -1448,6 +1448,7 @@ _cell_center(fvm_lnum_t        n_cells,
 
     fvm_lnum_t cell_id_0 = face_cells[face_id*2] -1;
     fvm_lnum_t cell_id_1 = face_cells[face_id*2 + 1] -1;
+    fvm_coord_t unweighted_center[3] = {0.0, 0.0, 0.0};
     fvm_coord_t face_surface = 0.0;
 
     n_face_vertices = 0;
@@ -1528,13 +1529,22 @@ _cell_center(fvm_lnum_t        n_cells,
 
       face_surface += tri_surface;
 
-      for (i = 0; i < 3; i++)
+      for (i = 0; i < 3; i++) {
         face_center[i] += tri_surface * tri_center[i];
+        unweighted_center[i] = tri_center[i];
+      }
 
     } /* End of loop  on triangles of the face */
 
-    for (i = 0; i < 3; i++)
-      face_center[i] /= face_surface;
+    if (face_surface > surf_epsilon) {
+      for (i = 0; i < 3; i++)
+        face_center[i] /= face_surface;
+    }
+    else {
+      face_surface = surf_epsilon;
+for (i = 0; i < 3; i++)
+        face_center[i] = unweighted_center[i] * face_surface / n_face_vertices;
+    }
 
     /* Now contribute to cell centers */
 
