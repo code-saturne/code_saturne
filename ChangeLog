@@ -1,4 +1,9 @@
 * 10/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct per group interior face counts in parallel.
+  modified files:
+    src/base/cs_mesh.c
+
+* 10/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Enable reading of mesh input with degnerate faces or cells even
   when partitioning uses a space-filling curve.
   modified files:

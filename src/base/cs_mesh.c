@@ -1603,7 +1603,7 @@ _prepare_mesh_group_stats(const cs_mesh_t  *mesh,
      purely parallel faces only once, but periodic faces twice.
      The flag is defined to the periodicity number for periodic faces,
      0 for regular or purely parallel faces with an "outside" ghost cell,
-     -1 for purely parallel faces with and "inside" ghost cell. */
+     -1 for purely parallel faces with an "inside" ghost cell. */
 
   if (mesh->halo != NULL) {
 
@@ -1622,7 +1622,7 @@ _prepare_mesh_group_stats(const cs_mesh_t  *mesh,
 
     for (i = 0; i < mesh->n_i_faces; i++) {
       fvm_lnum_t c_num_0 = mesh->i_face_cells[i*2];
-      if (i_face_flag[i] == 0 && c_num_0 >= mesh->n_cells)
+      if (i_face_flag[i] == 0 && c_num_0 > mesh->n_cells)
         i_face_flag[i] = -1;
     }
 
