@@ -303,6 +303,12 @@ cs_run(void)
 
   cs_mesh_builder_destroy(&cs_glob_mesh_builder);
 
+  /* Now that mesh modification is finished, save mesh if modified
+     (do this before building colors, which adds internal groups) */
+
+  if (cs_glob_mesh->modified == 1)
+    cs_mesh_save(cs_glob_mesh, "mesh_output");
+
   /* Initialize group classes and insert colors if possible */
 
   cs_mesh_build_colors(cs_glob_mesh);
@@ -336,11 +342,6 @@ cs_run(void)
   cs_mesh_dump(cs_glob_mesh);
   cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
 #endif
-
-  /* Now that mesh modification is finished, save mesh if modified */
-
-  if (cs_glob_mesh->modified == 1)
-    cs_mesh_save(cs_glob_mesh, "mesh_output");
 
   /* Compute iterations or quality criteria depending on verification options */
 

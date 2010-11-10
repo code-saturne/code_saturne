@@ -1,4 +1,10 @@
 * 10/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Output modified mesh before building colors so as to avoid saving
+  those colors in 2 different (group and color) forms. 
+  modified files:
+    src/apps/cs_solver.c
+
+* 10/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct type cast bug leading to false error reading very large meshes.
   modified files:
     src/base/cs_preprocessor_data.c
