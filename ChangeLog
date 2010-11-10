@@ -1,4 +1,18 @@
 * 10/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI does not handle size of deprecated user arrays anymore.
+  modified files:
+    gui/Base/BrowserView.py
+    gui/Base/Toolbox.py
+    gui/Pages/Makefile.am
+    gui/sbin/unittests.py
+    src/base/cs_gui.c
+    src/base/memini.f90
+  removed files:
+    gui/Pages/UserArraysView.py
+    gui/Pages/UserArraysForm.ui
+    gui/Pages/UserArraysModel.py
+
+* 10/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct bug in which runcase was not saved in results.
   modified scripts:
     bin/cs_case.py

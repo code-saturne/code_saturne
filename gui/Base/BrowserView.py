@@ -460,7 +460,6 @@ Calculation control
     Surface solution control
     Profiles
 Calculation management
-    User arrays
     Memory management
     Start/Restart
     Prepare batch calculation

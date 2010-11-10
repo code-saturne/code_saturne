@@ -276,10 +276,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.NumericalParamGlobalView as Page
         thisPage = Page.NumericalParamGlobalView(root, case)
 
-    elif page_name == tr("User arrays"):
-        import Pages.UserArraysView as Page
-        thisPage = Page.UserArraysView(root, case)
-
     elif page_name == tr("Memory management"):
         import Pages.MemoryAllocationView as Page
         thisPage = Page.MemoryAllocationView(root, case)

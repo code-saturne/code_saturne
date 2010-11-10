@@ -75,7 +75,7 @@ integer nideve , nrdeve , nituse , nrtuse
 ! Local variables
 
 integer ii, iok
-integer icoftu(16)
+integer icoftu(8)
 
 !===============================================================================
 
@@ -98,7 +98,7 @@ nrdeve = 0
 nituse = 0
 nrtuse = 0
 
-do ii = 1, 16
+do ii = 1, 8
   icoftu(ii) = 0
 enddo
 
@@ -109,19 +109,13 @@ enddo
 !   - Interface Code_Saturne
 !     ======================
 
-if(iihmpr.eq.1) then
+if (iihmpr.eq.1) then
 
   call uiusar(icoftu)
   !==========
 
-  nituse = icoftu(1)*ncelet + icoftu(2)*nfac + icoftu(3)*nfabor   &
-         + icoftu(4)
-  nrtuse = icoftu(5)*ncelet + icoftu(6)*nfac + icoftu(7)*nfabor   &
-         + icoftu(8)
-  longia = icoftu( 9)*ncelet + icoftu(10)*nfac + icoftu(11)*nfabor&
-         + icoftu(12)
-  longra = icoftu(13)*ncelet + icoftu(14)*nfac + icoftu(15)*nfabor&
-         + icoftu(16)
+  longia = icoftu(1)*ncelet + icoftu(2)*nfac + icoftu(3)*nfabor + icoftu(4)
+  longra = icoftu(5)*ncelet + icoftu(6)*nfac + icoftu(7)*nfabor + icoftu(8)
 
 endif
 

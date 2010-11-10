@@ -128,8 +128,6 @@ TimeStepModel.py \
 TimeStepView.py \
 TurbulenceModel.py \
 TurbulenceView.py \
-UserArraysModel.py \
-UserArraysView.py \
 UserScalarPropertiesView.py \
 VerifyExistenceLabelDialogView.py \
 WelcomeView.py
@@ -202,7 +200,6 @@ TimeAveragesForm.ui \
 TimeStepForm.ui \
 TurbulenceAdvancedOptionsDialogForm.ui \
 TurbulenceForm.ui \
-UserArraysForm.ui \
 UserScalarPropertiesForm.ui \
 VerifyExistenceLabelDialogForm.ui \
 WelcomeForm.ui

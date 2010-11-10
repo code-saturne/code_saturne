@@ -157,10 +157,6 @@ def starttest31():
     from Pages.NumericalParamGlobalModel import runTest
     runTest()
 
-def starttest32():
-    from Pages.UserArraysModel import runTest
-    runTest()
-
 def starttest33():
     from Pages.StartRestartModel import runTest
     runTest()
@@ -255,7 +251,6 @@ if __name__ == '__main__':
     starttest29()
     starttest30()
     starttest31()
-    starttest32()
     starttest33()
     starttest34()
     starttest35()
