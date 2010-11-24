@@ -566,7 +566,8 @@ class domain(base_domain):
             #       source is later modified, possible debug information in an
             #       executable file will reference the correct (saved) version.
 
-            retval = cs_compile.compile_and_link(copy_dir,
+            retval = cs_compile.compile_and_link(self.package,
+                                                 copy_dir,
                                                  self.exec_dir,
                                                  self.lib_add,
                                                  keep_going=True,
@@ -1326,7 +1327,8 @@ class syrthes3_domain(base_domain):
         #       source is later modified, possible debug information in an
         #       executable file will reference the correct (saved) version.
 
-        retval = cs_compile.compile_and_link_syrthes(copy_dir,
+        retval = cs_compile.compile_and_link_syrthes(self.package,
+                                                     copy_dir,
                                                      self.exec_dir,
                                                      stdout=log,
                                                      stderr=log)
@@ -1460,4 +1462,6 @@ class syrthes3_domain(base_domain):
         if run_command(cmd) != 0:
             raise RunCaseError
 
+#-------------------------------------------------------------------------------
+# End
 #-------------------------------------------------------------------------------
