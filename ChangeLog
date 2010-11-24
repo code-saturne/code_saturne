@@ -1,4 +1,9 @@
 * 24/11/2010 - David Monfort <david.monfort@edf.fr>
+  Fix the user files compilation from the runcase script.
+  modified script:
+    bin/cs_case_domain.py
+
+* 24/11/2010 - David Monfort <david.monfort@edf.fr>
   Add a Code_Saturne namespace and some autoconf substitutions in the m4 code
   detection to improve the configuration setup.
   removed script:
