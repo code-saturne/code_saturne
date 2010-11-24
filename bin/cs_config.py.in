@@ -105,7 +105,7 @@ class config:
 
         self.optfeatures = ['debug', 'shared',
                             'gui', 'prepro',
-                            'openmp', 'sockets',
+                            'openmp', 'socket',
                             'long-gnum'] 
         self.features = {}
 
@@ -128,7 +128,7 @@ class config:
         self.features['gui'] = "@cs_have_gui@"
         self.features['prepro'] = "@cs_have_prepro@"
         self.features['openmp'] = "@cs_have_openmp@"
-        self.features['sockets'] = "@cs_have_socket@"
+        self.features['socket'] = "@cs_have_socket@"
         self.features['long-gnum'] = "@cs_have_long_gnum@"
 
         # Setup the optionnal libraries
