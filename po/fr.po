@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-09-24 16:34+0200\n"
+"POT-Creation-Date: 2010-11-15 11:18+0100\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3438,6 +3438,7 @@ msgstr ""
 " -h, --help        appel de l'aide (cet affichage)\n"
 "\n"
 
+#, c-format
 msgid "  %s version %s\n"
 msgstr "  %s version %s\n"
 
@@ -9587,6 +9588,3 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
-
-#~ msgid " -v, --version     print version number\n"
-#~ msgstr " -v, --version     affiche le numéro de version\n"
