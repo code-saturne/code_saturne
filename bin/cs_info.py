@@ -148,11 +148,9 @@ def launch_manual(reader, m, pkg):
                 if os.system(cmd) == 0:
                     return
 
-
 #-------------------------------------------------------------------------------
-# Creation of the study directory
+# Main
 #-------------------------------------------------------------------------------
-
 
 def main(argv, pkg):
     """
@@ -163,10 +161,6 @@ def main(argv, pkg):
 
     for m in manuals:
         launch_manual(reader, m, pkg)
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:], None)
 
 #-------------------------------------------------------------------------------
 # End

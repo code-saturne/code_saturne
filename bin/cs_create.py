@@ -454,9 +454,8 @@ class Study:
             print("Number of SYRTHES instances:", self.n_syr)
         print()
 
-
 #-------------------------------------------------------------------------------
-# Creation of the study directory
+# Main
 #-------------------------------------------------------------------------------
 
 def main(argv, pkg):
@@ -477,11 +476,6 @@ def main(argv, pkg):
 
     if study.verbose > 1:
         study.dump()
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:], None)
-
 
 #-------------------------------------------------------------------------------
 # End
