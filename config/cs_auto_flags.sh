@@ -601,7 +601,7 @@ if test "x$cs_gxx" = "xg++"; then
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
 
   # Default compiler flags
-  cxxflags_default="-ansi -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused"
+  cxxflags_default="-ansi -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wmissing-declarations -Wunused"
   cxxflags_default_dbg="-g"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
@@ -655,7 +655,7 @@ if test "x$cs_gxx" = "xg++"; then
 # Otherwise, are we using icc ?
 #------------------------------
 
-elif test "x$cs_g++" = "xicc"; then
+elif test "x$cs_gxx" = "xicc"; then
 
   cs_cxx_version=`echo $CXX --version | grep icc |sed 's/[a-zA-Z()]//g'`
 
