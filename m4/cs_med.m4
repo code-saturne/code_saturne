@@ -22,13 +22,13 @@ dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_MED
 #---------------
-# modifies or sets have_med, MED_CPPFLAGS, MED_LDFLAGS, and MED_LIBS
+# modifies or sets cs_have_med, MED_CPPFLAGS, MED_LDFLAGS, and MED_LIBS
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_MED], [
 
-have_med=no
-have_med_headers=no
+cs_have_med=no
+cs_have_med_headers=no
 
 AC_ARG_WITH(med,
             [AS_HELP_STRING([--with-med=PATH],
@@ -85,7 +85,7 @@ AC_ARG_WITH(med-dep-dirs,
             [])
 
 
-if test "x$with_med" != "xno" -a "x$have_hdf5" = "xno"; then
+if test "x$with_med" != "xno" -a "x$cs_have_hdf5" = "xno"; then
   if test "x$with_med" = "xcheck"; then
     with_med=no
     AC_MSG_WARN([no hdf5 library found; will not search for MED])
@@ -141,12 +141,12 @@ if test "x$with_med" != "xno" ; then
 #endif
 ]])],
                     [AC_MSG_RESULT([MED >= 2.3.4 headers found])
-                     have_med_headers=yes
+                     cs_have_med_headers=yes
                     ],
                     [AC_MSG_RESULT([MED >= 2.3.4 headers not found])
                     ])
 
-  if test "x$have_med_headers" = "xno"; then
+  if test "x$cs_have_med_headers" = "xno"; then
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 [[#include <med.h>]],
 [[med_int med_int_test = 1;
@@ -155,24 +155,24 @@ if test "x$with_med" != "xno" ; then
 #endif
 ]])],
                     [AC_MSG_RESULT([compatible MED headers found])
-                     have_med_headers=yes
+                     cs_have_med_headers=yes
                     ],
                     [AC_MSG_RESULT([compatible MED headers not found])
                     ])
 
-  fi # end of test on have_med_headers
+  fi # end of test on cs_have_med_headers
 
-  if test "x$have_med_headers" = "xyes"; then
+  if test "x$cs_have_med_headers" = "xyes"; then
 
     AC_CHECK_LIB(medC, MEDfamCr, 
                  [ AC_DEFINE([HAVE_MED], 1, [MED file support])
-                   have_med=yes
+                   cs_have_med=yes
                  ], 
                  [ AC_MSG_WARN([no MED file support with C only API])
                  ],
                  )
 
-    if test "x$have_med" = "xno"; then
+    if test "x$cs_have_med" = "xno"; then
   
       # try with libmed instead of libmedC to work around MED 2.3.2 bug
 
@@ -181,13 +181,13 @@ if test "x$with_med" != "xno" ; then
 
       AC_CHECK_LIB(med, MEDfamCr, 
                    [ AC_DEFINE([HAVE_MED], 1, [MED file support])
-                     have_med=yes
+                     cs_have_med=yes
                    ], 
                    [],
                    )
     fi
 
-    if test "x$have_med" = "xno" ; then
+    if test "x$cs_have_med" = "xno" ; then
       if test "x$with_med" != "xcheck" ; then
         AC_MSG_FAILURE([MED support is requested, but test for MED failed!])
       else
@@ -195,9 +195,9 @@ if test "x$with_med" != "xno" ; then
       fi
     fi
 
-  fi # end of test on have_med_headers
+  fi # end of test on cs_have_med_headers
 
-  if test "x$have_med" = "xno"; then
+  if test "x$cs_have_med" = "xno"; then
     MED_LIBS=""
   fi
 
@@ -211,8 +211,9 @@ if test "x$with_med" != "xno" ; then
 
 fi
 
-AM_CONDITIONAL(HAVE_MED, test x$have_med = xyes)
+AM_CONDITIONAL(HAVE_MED, test x$cs_have_med = xyes)
 
+AC_SUBST(cs_have_med)
 AC_SUBST(MED_CPPFLAGS)
 AC_SUBST(MED_LDFLAGS)
 AC_SUBST(MED_LIBS)

@@ -22,13 +22,13 @@ dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_SCOTCH
 #-----------------
-# modifies or sets have_scotch, SCOTCH_CPPFLAGS, SCOTCH_LDFLAGS, and SCOTCH_LIBS
+# modifies or sets cs_have_scotch, SCOTCH_CPPFLAGS, SCOTCH_LDFLAGS, and SCOTCH_LIBS
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_SCOTCH], [
 
-have_ptscotch=no
-have_scotch=no
+cs_have_ptscotch=no
+cs_have_scotch=no
 
 AC_ARG_WITH(scotch,
             [AS_HELP_STRING([--with-scotch=PATH],
@@ -84,12 +84,12 @@ if test "x$with_scotch" != "xno" ; then
 #include <mpi.h>
 #include <ptscotch.h>]],
 [[ SCOTCH_dgraphInit((void *)0, MPI_COMM_WORLD); ]])],
-[have_ptscotch=yes],
-[have_ptscotch=no])
+[cs_have_ptscotch=yes],
+[cs_have_ptscotch=no])
 
   # Test for SCOTCH second
 
-  if test "x$have_ptscotch" = "xno"; then
+  if test "x$cs_have_ptscotch" = "xno"; then
 
     CPPFLAGS="${saved_CPPFLAGS} ${SCOTCH_CPPFLAGS}"
     LDFLAGS="${saved_LDFLAGS} ${SCOTCH_LDFLAGS}"
@@ -101,15 +101,15 @@ if test "x$with_scotch" != "xno" ; then
 #include <stdint.h>
 #include <scotch.h>]],
 [[ SCOTCH_graphInit((void *)0); ]])],
-[have_scotch=yes],
-[have_scotch=no])
+[cs_have_scotch=yes],
+[cs_have_scotch=no])
 
   fi
 
-  if test "x$have_ptscotch" = "xyes"; then
+  if test "x$cs_have_ptscotch" = "xyes"; then
     AC_DEFINE([HAVE_PTSCOTCH], 1, [use SCOTCH])
     SCOTCH_LIBS="-lptscotch -lm" # libptscotcherr functions in cs_partition    
-  elif test "x$have_scotch" = "xyes"; then
+  elif test "x$cs_have_scotch" = "xyes"; then
     AC_DEFINE([HAVE_SCOTCH], 1, [use SCOTCH])
     SCOTCH_LIBS="-lscotch -lm" # libscotcherr functions in cs_partition    
   else
@@ -128,6 +128,7 @@ unset saved_CPPFLAGS
 unset saved_LDFLAGS
 unset saved_LIBS
 
+AC_SUBST(cs_have_scotch)
 AC_SUBST(SCOTCH_CPPFLAGS)
 AC_SUBST(SCOTCH_LDFLAGS)
 AC_SUBST(SCOTCH_LIBS)

@@ -114,13 +114,14 @@ AC_ARG_ENABLE(debug,
   [AS_HELP_STRING([--enable-debug], [enable debugging (reduces optimization)])],
   [
     case "${enableval}" in
-      yes) debug=true ;;
-      no)  debug=false ;;
+      yes) debug=yes ;;
+      no)  debug=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
     esac
   ],
-  [ debug=false ]
+  [ debug=no ]
 )
+AC_SUBST(debug)
 
 # Optionally deactivate automatic determination of flags on known systems
 
@@ -128,12 +129,12 @@ AC_ARG_ENABLE(auto-flags,
   [AS_HELP_STRING([--disable-auto-flags], [do not define *FLAGS on known systems])],
   [
     case "${enableval}" in
-      yes) auto_flags=true ;;
-      no)  auto_flags=false ;;
+      yes) auto_flags=yes ;;
+      no)  auto_flags=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-auto-flags]) ;;
     esac
   ],
-  [ auto_flags=true ]
+  [ auto_flags=yes ]
 )
 
 # Optionally activate French translation of Fortran logs (compile-time)
@@ -142,19 +143,19 @@ AC_ARG_ENABLE(french,
   [AS_HELP_STRING([--enable-french], [enable French translation of Fortran logs])],
   [
     case "${enableval}" in
-      yes) french=true ;;
-      no)  french=false ;;
+      yes) french=yes ;;
+      no)  french=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-french]) ;;
     esac
   ],
-  [ french=false ]
+  [ french=no ]
 )
 
 # Default compiler options (may be modified
 # by defining CFLAGS in the environment)
 #------------------------------------------
 
-if test "x$auto_flags" = "xtrue" ; then
+if test "x$auto_flags" = "xyes" ; then
 
   # Source associated recommended compiler options
 
@@ -174,7 +175,7 @@ if test "x$auto_flags" = "xtrue" ; then
   LIBS="$libs_default $user_LIBS"
   LDRPATH="$ldflags_rpath"
 
-  if test "x$debug" = xtrue; then
+  if test "x$debug" = xyes; then
     # Debug flags
     CFLAGS_DBG="$cflags_default_dbg"
     CXXFLAGS_DBG="$cxxflags_default_dbg"
@@ -235,7 +236,7 @@ esac
 
 # Preprocessor flags for debugging purposes
 
-if test "x$debug" = "xtrue"; then
+if test "x$debug" = "xyes"; then
   CPPFLAGS="${CPPFLAGS} -DDEBUG"
 else
   CPPFLAGS="${CPPFLAGS} -DNDEBUG"
@@ -243,7 +244,7 @@ fi
   
 # Fortran flags for French translation
 
-if test "x$french" = "xtrue"; then
+if test "x$french" = "xyes"; then
   if test "x$cs_ibm_bg_type" != "x" ; then
     FCFLAGS="${FCFLAGS} -WF,-D_CS_LANG_FR"
   else
@@ -263,6 +264,7 @@ fi
 if test "x$cs_ibm_bg_type" != "x" ; then
    enable_shared=no
 fi
+AC_SUBST(enable_shared)
 
 LT_INIT
 
@@ -298,17 +300,18 @@ AC_ARG_ENABLE(long-gnum,
   [AS_HELP_STRING([--enable-long-gnum],[use long global numbers])],
   [
     case "${enableval}" in
-      yes) have_long_gnum=yes ;;
-      no)  have_long_gnum=no ;;
+      yes) cs_have_long_gnum=yes ;;
+      no)  cs_have_long_gnum=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-long-gnum]) ;;
     esac
   ],
-  [ have_long_gnum=no ]
+  [ cs_have_long_gnum=no ]
 )
 
-if test "x$have_long_gnum" = "xyes"; then
+if test "x$cs_have_long_gnum" = "xyes"; then
   AC_DEFINE([HAVE_LONG_GNUM],1,[Use 64-bit type if available for fvm_gnum_t.])
 fi
+AC_SUBST(cs_have_long_gnum)
 
 # Check for Fortran 2003 flush feature
 CS_AC_TEST_FC_FLUSH
@@ -380,6 +383,7 @@ if test "x$cs_have_openmp" = "xyes" ; then
     LDFLAGS="$saved_LDFLAGS"
   fi
 fi
+AC_SUBST(cs_have_openmp)
 
 #------------------------------------------------------------------------------
 # Checks for libraries.
@@ -387,8 +391,8 @@ fi
 
 CS_AC_TEST_PLE(["1.0.0"])
 
-AM_CONDITIONAL(HAVE_INTERNAL_PLE, test x$have_internal_ple = xyes)
-if test "x$have_internal_ple" = xyes; then
+AM_CONDITIONAL(HAVE_INTERNAL_PLE, test x$cs_have_internal_ple = xyes)
+if test "x$cs_have_internal_ple" = xyes; then
   AC_CONFIG_SUBDIRS([libple])
 fi
 
@@ -405,17 +409,17 @@ CS_AC_TEST_CCM
 CS_AC_TEST_ZLIB
 CS_AC_TEST_SYRTHES
 
-have_partitioner=no
-if test x$have_parmetis = xyes -o x$have_metis = xyes ; then
-  have_partitioner=yes
+cs_have_partitioner=no
+if test x$cs_have_parmetis = xyes -o x$cs_have_metis = xyes ; then
+  cs_have_partitioner=yes
 fi
-if test x$have_ptscotch = xyes -o x$have_scotch = xyes ; then
-  have_partitioner=yes
+if test x$cs_have_ptscotch = xyes -o x$cs_have_scotch = xyes ; then
+  cs_have_partitioner=yes
 fi
 
-AM_CONDITIONAL(HAVE_PARTITIONER, test x$have_partitioner = xyes)
+AM_CONDITIONAL(HAVE_PARTITIONER, test x$cs_have_partitioner = xyes)
 
-unset have_partitioner
+unset cs_have_partitioner
 
 #------------------------------------------------------------------------------
 # Enables Code_Saturne preprocessor
@@ -425,14 +429,15 @@ AC_ARG_ENABLE(prepro, [AS_HELP_STRING([--disable-prepro],
                                       [disable the Preprocessor])],
   [
     case "${enableval}" in
-      yes) have_prepro=yes ;;
-      no)  have_prepro=no ;;
+      yes) cs_have_prepro=yes ;;
+      no)  cs_have_prepro=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-prepro]) ;;
     esac
   ],
-  [ have_prepro=yes ]
+  [ cs_have_prepro=yes ]
 )
-AM_CONDITIONAL(HAVE_PREPROCESSOR, test x$have_prepro = xyes)
+AM_CONDITIONAL(HAVE_PREPROCESSOR, test x$cs_have_prepro = xyes)
+AC_SUBST(cs_have_prepro)
 
 #------------------------------------------------------------------------------
 # Enables Code_Saturne graphical user interface
@@ -442,12 +447,12 @@ AC_ARG_ENABLE(gui, [AS_HELP_STRING([--disable-gui],
                                    [disable the Graphical User Interface])],
   [
     case "${enableval}" in
-      yes) have_gui=yes ;;
-      no)  have_gui=no ;;
+      yes) cs_have_gui=yes ;;
+      no)  cs_have_gui=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-gui]) ;;
     esac
   ],
-  [ have_gui=yes ]
+  [ cs_have_gui=yes ]
 )
 
 #------------------------------------------------------------------------------
@@ -472,7 +477,7 @@ unset cs_python_basename
 cs_python=${PYTHON}
 AC_SUBST(cs_python)
 
-if test "x$have_gui" = xyes; then
+if test "x$cs_have_gui" = xyes; then
   cs_python_version="2.4"
 else
   cs_python_version="2.3"
@@ -490,7 +495,7 @@ AC_ARG_WITH(pyqt4-exec, [AS_HELP_STRING([--with-pyqt4-exec=PATH],
                         [PYQT4_EXE=none])dnl
 
 # Test for PyQt4
-if test "x$have_gui" = "xyes" ; then
+if test "x$cs_have_gui" = "xyes" ; then
 
   AC_MSG_CHECKING([for PyQt4 version >= 4.3])
 
@@ -508,7 +513,7 @@ sys.exit(0)]"
   if test $retval -ne 0 ; then
     AC_MSG_RESULT([no])
     AC_MSG_FAILURE([cannot find PyQt4 support (>= 4.3), Graphical User Interface cannot be installed])
-    have_gui=no
+    cs_have_gui=no
   else
     AC_MSG_RESULT([yes])
   fi
@@ -516,7 +521,7 @@ sys.exit(0)]"
 fi
 
 # Test for PyQt4 developper tools
-if test "x$have_gui" = "xyes" ; then
+if test "x$cs_have_gui" = "xyes" ; then
 
   if test "x${PYQT4_EXE}" = "xnone" ; then
 
@@ -538,12 +543,16 @@ sys.stdout.write(path)]"
 
   if test "x$PYUIC4" = "xno" -o "x$PYRCC4" = "xno" ; then
     AC_MSG_FAILURE([cannot find PyQt4 dev tools, Graphical User Interface cannot be installed])
-    have_gui=no
+    cs_have_gui=no
   fi
 
 fi
 
-AM_CONDITIONAL(HAVE_GUI, [test "x$have_gui" = "xyes"])
+AC_SUBST(PYUIC4)
+AC_SUBST(PYRCC4)
+
+AM_CONDITIONAL(HAVE_GUI, [test "x$cs_have_gui" = "xyes"])
+AC_SUBST(cs_have_gui)
 
 #------------------------------------------------------------------------------
 # Checks for header files.
@@ -586,41 +595,42 @@ AC_CHECK_SIZEOF([off_t])
 # Optional socket support
 #------------------------
 
-have_socket=no
+cs_have_socket=no
 
 AC_ARG_ENABLE(sockets,
   [AS_HELP_STRING([--disable-sockets], [disable communications through IP sockets])],
   [
     case "${enableval}" in
-      yes) have_socket=yes ;;
-      no)  have_socket=no ;;
+      yes) cs_have_socket=yes ;;
+      no)  cs_have_socket=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-sockets]) ;;
     esac
   ],
-  [ have_socket=yes ]
+  [ cs_have_socket=yes ]
 )
-if test "x$have_socket" = "xyes" ; then
+if test "x$cs_have_socket" = "xyes" ; then
   AC_DEFINE([HAVE_SOCKET], 1, [sockets support])
 fi
+AC_SUBST(cs_have_socket)
 
 # Optional shared library support
 #--------------------------------
 
-have_dlloader=no
+cs_have_dlloader=no
 
 AC_ARG_ENABLE(dlloader,
   [AS_HELP_STRING([--disable-dlloader], [disable dynamic shared library loading])],
   [
     case "${enableval}" in
-      yes) have_dlloader=yes ;;
-      no)  have_dlloader=no ;;
+      yes) cs_have_dlloader=yes ;;
+      no)  cs_have_dlloader=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-dlloader]) ;;
     esac
   ],
-  [ have_dlloader=yes ]
+  [ cs_have_dlloader=yes ]
 )
 
-if test "x$have_dlloader" = "xyes" ; then
+if test "x$cs_have_dlloader" = "xyes" ; then
 
   saved_LIBS="$LIBS"
   LIBS="$LIBS -ldl"
@@ -628,14 +638,14 @@ if test "x$have_dlloader" = "xyes" ; then
   AC_MSG_CHECKING([for dlopen])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <dlfcn.h>]],
                  [[ dlopen("none.so", RTLD_LAZY);]])],
-                 [have_dlloader=yes],
-                 [have_dlloader=no])
-  AC_MSG_RESULT($have_dlloader)
-  if test "x$have_dlloader" = "xyes" ; then
+                 [cs_have_dlloader=yes],
+                 [cs_have_dlloader=no])
+  AC_MSG_RESULT($cs_have_dlloader)
+  if test "x$cs_have_dlloader" = "xyes" ; then
     AC_DEFINE([HAVE_DLOPEN], 1, [dlopen support])
   else
     LIBS="$saved_LIBS"
-    have_dlloader=no
+    cs_have_dlloader=no
   fi
 
 fi
@@ -643,35 +653,35 @@ fi
 # Optional malloc hooks support (for glibc)
 #------------------------------
 
-have_malloc_hooks=no
+cs_have_malloc_hooks=no
 
 AC_ARG_ENABLE(malloc_hooks,
   [AS_HELP_STRING([--disable-malloc-hooks], [Do not use malloc hooks when available])],
   [
     case "${enableval}" in
-      yes) malloc_hooks=true ;;
-      no)  malloc_hooks=false ;;
+      yes) malloc_hooks=yes ;;
+      no)  malloc_hooks=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-malloc-hooks]) ;;
     esac
   ],
-  [ malloc_hooks=true ]
+  [ malloc_hooks=yes ]
 )
 
 # If we use malloc hooks, we may need to add a -lmalloc link flag.
 
-if test "x$malloc_hooks" = "xtrue" ; then
+if test "x$malloc_hooks" = "xyes" ; then
 
   # Basic test
   AC_MSG_CHECKING([for malloc hooks])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],
                  [[ int __malloc_hook(); __malloc_hook(); ]])],
-                 [have_malloc_hooks=yes],
-                 [have_malloc_hooks=no])
-  AC_MSG_RESULT($have_malloc_hooks)
+                 [cs_have_malloc_hooks=yes],
+                 [cs_have_malloc_hooks=no])
+  AC_MSG_RESULT($cs_have_malloc_hooks)
 
 fi
 
-if test "x$have_malloc_hooks" = "xyes"; then
+if test "x$cs_have_malloc_hooks" = "xyes"; then
   AC_DEFINE(HAVE_MALLOC_HOOKS, 1, HAVE_MALLOC_HOOKS)
 fi
 
@@ -680,7 +690,7 @@ fi
 
 # Basic backtrace functionnality
 
-have_glibc_backtrace=no
+cs_have_glibc_backtrace=no
 
 AC_MSG_CHECKING([for glibc backtrace])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#if defined(__GNUC__)
@@ -689,26 +699,26 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#if defined(__GNUC__)
 #include <execinfo.h>
 #endif]],
                [[ void *tr_array[10]; backtrace(tr_array, 10); ]])],
-               [have_glibc_backtrace=yes],
-               [have_glibc_backtrace=no])
-AC_MSG_RESULT($have_glibc_backtrace)
+               [cs_have_glibc_backtrace=yes],
+               [cs_have_glibc_backtrace=no])
+AC_MSG_RESULT($cs_have_glibc_backtrace)
 
-if test "x$have_glibc_backtrace" = "xyes"; then
+if test "x$cs_have_glibc_backtrace" = "xyes"; then
   AC_DEFINE(HAVE_GLIBC_BACKTRACE, 1, HAVE_GLIBC_BACKTRACE)
 fi
 
 # C++ demangling
 
-have_cplus_demangle=no
+cs_have_cplus_demangle=no
 
 AC_MSG_CHECKING([for glibc cplus_demangle])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <demangle.h>]],
                [[ const char *s; cplus_demangle(s, auto_demangling); ]])],
-               [have_cplus_demangle=yes],
-               [have_cplus_demangle=no])
-AC_MSG_RESULT($have_cplus_demangle)
+               [cs_have_cplus_demangle=yes],
+               [cs_have_cplus_demangle=no])
+AC_MSG_RESULT($cs_have_cplus_demangle)
 
-if test "x$have_cplus_demangle" = "xyes"; then
+if test "x$cs_have_cplus_demangle" = "xyes"; then
   AC_DEFINE(HAVE_CPLUS_DEMANGLE, 1, HAVE_CPLUS_DEMANGLE)
 fi
 
@@ -731,36 +741,6 @@ AC_SUBST(LIBS)
 #------------------------------------------------------------------------------
 # Output
 #------------------------------------------------------------------------------
-
-# Output configuration info
-
-CS_AC_CONFIG_INFO_INIT([cs_config_comments_include])
-
-CS_AC_CONFIG_INFO_EXTRA([
-# use debugging code:                              "$debug"
-# use malloc hooks:                                "$have_malloc_hooks"
-# use graphical user interface:                    "$have_gui"
-# MPI (Message Passing Interface) support:         "$cs_have_mpi"
-# OpenMP support:                                  "$cs_have_openmp"
-# BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas"
-# Libxml2 (XML Reader) support:                    "$have_libxml2"
-# Zlib (gzipped file) support:                     "$have_zlib"
-# ADF support:                                     "$have_adf"
-# CCM support:                                     "$have_ccm"
-# HDF5 (Hierarchical Data Format) support:         "$have_hdf5"
-# CGNS (CFD General Notation System) support:      "$have_cgns"
-# MED (Model for Exchange of Data) support:        "$have_med"
-# IP socket support (for SYRTHES 3 or CFD_Proxy):  "$have_socket"
-# Dynamic loader support (for YACS):               "$have_dlloader"
-])
-
-CS_AC_CONFIG_INFO_CC([${cs_ac_cc_version}], [${cs_ac_cc_version_full}])
-CS_AC_CONFIG_INFO_FC([${cs_ac_fc_version}], [${cs_ac_fc_version_full}])
-
-CS_AC_CONFIG_INFO_FINALIZE
-
-AC_SUBST_FILE([cs_config_comments])
-cs_config_comments=cs_config_comments_include
 
 # Main configuration
 
@@ -811,16 +791,14 @@ fi
 
 #------------------------------------------------------------------------------
 
-rm -f cs_config_comments_include
-
 echo
 echo "Configuration options:"
 echo " use debugging code: "$debug""
-echo " use malloc hooks: "$have_malloc_hooks""
-echo " use graphical user interface: "$have_gui""
-echo " use preprocessor: "$have_prepro""
+echo " use malloc hooks: "$cs_have_malloc_hooks""
+echo " use graphical user interface: "$cs_have_gui""
+echo " use preprocessor: "$cs_have_prepro""
 echo " use long integers: "$long_int""
-echo " Zlib (gzipped file) support: "$have_zlib""
+echo " Zlib (gzipped file) support: "$cs_have_zlib""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 if (test x$cs_have_mpi = xyes) ; then
   echo "   MPI I/O support: "$cs_have_mpi_io""
@@ -828,23 +806,23 @@ if (test x$cs_have_mpi = xyes) ; then
 fi
 echo " OpenMP support: "$cs_have_openmp""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
-echo " Libxml2 (XML Reader) support: "$have_libxml2""
-echo " ParMETIS (Parallel Graph Partitioning) support: "$have_parmetis""
-if test x$have_parmetis = xno ; then
-  echo " METIS (Graph Partitioning) support: "$have_metis""
+echo " Libxml2 (XML Reader) support: "$cs_have_libxml2""
+echo " ParMETIS (Parallel Graph Partitioning) support: "$cs_have_parmetis""
+if test x$cs_have_parmetis = xno ; then
+  echo " METIS (Graph Partitioning) support: "$cs_have_metis""
 fi
-echo " PT-SCOTCH (Parallel Graph Partitioning) support: "$have_ptscotch""
-if test x$have_ptscotch = xno ; then
-  echo " SCOTCH (Graph Partitioning) support: "$have_scotch""
+echo " PT-SCOTCH (Parallel Graph Partitioning) support: "$cs_have_ptscotch""
+if test x$cs_have_ptscotch = xno ; then
+  echo " SCOTCH (Graph Partitioning) support: "$cs_have_scotch""
 fi
-echo " ADF support: "$have_adf""
-echo " CCM support: "$have_ccm""
-echo " HDF (Hierarchical Data Format) support: "$have_hdf5""
-echo " CGNS (CFD General Notation System) support: "$have_cgns""
-echo " MED (Model for Exchange of Data) support: "$have_med""
-echo " SYRTHES 3 coupling support: "$have_syrthes""
-echo " IP socket support (for SYRTHES 3 or CFD_Proxy): "$have_socket""
-echo " Dynamic loader support (for YACS): "$have_dlloader""
+echo " ADF support: "$cs_have_adf""
+echo " CCM support: "$cs_have_ccm""
+echo " HDF (Hierarchical Data Format) support: "$cs_have_hdf5""
+echo " CGNS (CFD General Notation System) support: "$cs_have_cgns""
+echo " MED (Model for Exchange of Data) support: "$cs_have_med""
+echo " SYRTHES 3 coupling support: "$cs_have_syrthes""
+echo " IP socket support (for SYRTHES 3 or CFD_Proxy): "$cs_have_socket""
+echo " Dynamic loader support (for YACS): "$cs_have_dlloader""
 echo
 echo "The package has been configured. Type:"
 echo " make"

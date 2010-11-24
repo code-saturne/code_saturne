@@ -22,12 +22,12 @@ dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_LIBXML2
 #-------------------
-# modifies or sets have_libxml2, LIBXML2_CPPFLAGS, LIBXML2_LDFLAGS, and LIBXML2_LIBS
+# modifies or sets cs_have_libxml2, LIBXML2_CPPFLAGS, LIBXML2_LDFLAGS, and LIBXML2_LIBS
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_LIBXML2], [
 
-have_libxml2=no
+cs_have_libxml2=no
 
 AC_ARG_WITH(libxml2,
             [AS_HELP_STRING([--with-libxml2=PATH],
@@ -82,7 +82,7 @@ if test "x$with_libxml2" != "xno" ; then
 
   AC_CHECK_LIB(xml2, xmlInitParser, 
                [ AC_DEFINE([HAVE_LIBXML2], 1, [LIBXML2 support])
-                 have_libxml2=yes
+                 cs_have_libxml2=yes
                ], 
                [if test "x$with_libxml2" != "xcheck" ; then
                   AC_MSG_FAILURE([LIBXML2 support is requested, but test for LIBXML2 failed!])
@@ -92,7 +92,7 @@ if test "x$with_libxml2" != "xno" ; then
                ],
               )
 
-  if test "x$have_libxml2" != "xyes"; then
+  if test "x$cs_have_libxml2" != "xyes"; then
     LIBXML2_LIBS=""
   fi
 
@@ -106,8 +106,9 @@ if test "x$with_libxml2" != "xno" ; then
 
 fi
 
-AM_CONDITIONAL(HAVE_LIBXML2, test x$have_libxml2 = xyes)
+AM_CONDITIONAL(HAVE_LIBXML2, test x$cs_have_libxml2 = xyes)
 
+AC_SUBST(cs_have_libxml2)
 AC_SUBST(LIBXML2_CPPFLAGS)
 AC_SUBST(LIBXML2_LDFLAGS)
 AC_SUBST(LIBXML2_LIBS)

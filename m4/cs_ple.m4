@@ -27,7 +27,7 @@ dnl-----------------------------------------------------------------------------
 
 AC_DEFUN([CS_AC_TEST_PLE], [
 
-have_internal_ple=yes
+cs_have_internal_ple=yes
 
 AC_ARG_WITH(ple,
             [AS_HELP_STRING([--with-ple=PATH],
@@ -147,7 +147,7 @@ if test "x$with_ple" != "xno" ; then
 #  endif
 #endif
   ]])],
-                 [have_internal_ple=no
+                 [cs_have_internal_ple=no
                   AC_MSG_RESULT([using external PLE library])],
                  [AC_MSG_RESULT([external PLE library not found, using internal])])
 

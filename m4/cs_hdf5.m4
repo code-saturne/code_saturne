@@ -22,12 +22,12 @@ dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_HDF5
 #----------------
-# modifies or sets have_hdf5, HDF_CPPFLAGS, HDF_LDFLAGS, and HDF_LIBS
+# modifies or sets cs_have_hdf5, HDF_CPPFLAGS, HDF_LDFLAGS, and HDF_LIBS
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_HDF5], [
 
-have_hdf5=no
+cs_have_hdf5=no
 
 AC_ARG_WITH(hdf5,
             [AS_HELP_STRING([--with-hdf5=PATH],
@@ -76,7 +76,7 @@ if test "x$with_hdf5" != "xno" ; then
 
   AC_CHECK_LIB(hdf5, H5Fopen, 
                [ AC_DEFINE([HAVE_HDF5], 1, [HDF5 file support])
-                 have_hdf5=yes
+                 cs_have_hdf5=yes
                ], 
                [if test "x$with_hdf5" != "xcheck" ; then
                   AC_MSG_FAILURE([HDF5 support is requested, but test for HDF5 failed!])
@@ -86,7 +86,7 @@ if test "x$with_hdf5" != "xno" ; then
                ],
                )
 
-  if test "x$have_hdf5" = "xno"; then
+  if test "x$cs_have_hdf5" = "xno"; then
     HDF5_LIBS=""
   fi
 
@@ -100,6 +100,7 @@ if test "x$with_hdf5" != "xno" ; then
 
 fi
 
+AC_SUBST(cs_have_hdf5)
 AC_SUBST(HDF5_CPPFLAGS)
 AC_SUBST(HDF5_LDFLAGS)
 AC_SUBST(HDF5_LIBS)

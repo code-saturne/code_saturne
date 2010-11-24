@@ -22,12 +22,12 @@ dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_CGNS
 #----------------
-# modifies or sets have_cgns, CGNS_CPPFLAGS, CGNS_LDFLAGS, and CGNS_LIBS
+# modifies or sets cs_have_cgns, CGNS_CPPFLAGS, CGNS_LDFLAGS, and CGNS_LIBS
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_CGNS], [
 
-have_cgns=no
+cs_have_cgns=no
 
 AC_ARG_WITH(cgns,
             [AS_HELP_STRING([--with-cgns=PATH],
@@ -75,7 +75,7 @@ if test "x$with_cgns" != "xno" ; then
 
   AC_CHECK_LIB(cgns, cg_coord_partial_write, 
                [ AC_DEFINE([HAVE_CGNS], 1, [CGNS file support])
-                 have_cgns=yes
+                 cs_have_cgns=yes
                ], 
                [if test "x$with_cgns" != "xcheck" ; then
                   AC_MSG_FAILURE([CGNS support is requested (requires CGNS >= 2.4), but test for CGNS failed!])
@@ -85,7 +85,7 @@ if test "x$with_cgns" != "xno" ; then
                ],
                )
 
-  if test "x$have_cgns" != "xyes"; then
+  if test "x$cs_have_cgns" != "xyes"; then
     CGNS_LIBS=""
   fi
 
@@ -99,8 +99,9 @@ if test "x$with_cgns" != "xno" ; then
 
 fi
 
-AM_CONDITIONAL(HAVE_CGNS, test x$have_cgns = xyes)
+AM_CONDITIONAL(HAVE_CGNS, test x$cs_have_cgns = xyes)
 
+AC_SUBST(cs_have_cgns)
 AC_SUBST(CGNS_CPPFLAGS)
 AC_SUBST(CGNS_LDFLAGS)
 AC_SUBST(CGNS_LIBS)

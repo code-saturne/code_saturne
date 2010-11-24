@@ -333,6 +333,7 @@ if test "x$with_blas" != "xno" ; then
 
 fi
 
+AC_SUBST(cs_have_blas)
 AC_SUBST(BLAS_CPPFLAGS)
 AC_SUBST(BLAS_LDFLAGS)
 AC_SUBST(BLAS_LIBS)

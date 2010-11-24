@@ -22,13 +22,13 @@ dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_METIS
 #-----------------
-# modifies or sets have_metis, METIS_CPPFLAGS, METIS_LDFLAGS, and METIS_LIBS
+# modifies or sets cs_have_metis, METIS_CPPFLAGS, METIS_LDFLAGS, and METIS_LIBS
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_METIS], [
 
-have_parmetis=no
-have_metis=no
+cs_have_parmetis=no
+cs_have_metis=no
 
 AC_ARG_WITH(metis,
             [AS_HELP_STRING([--with-metis=PATH],
@@ -87,12 +87,12 @@ if test "x$with_metis" != "xno" ; then
                       (void *)0, (void *)0, (void *)0, (void *)0, (void *)0,
                       (void *)0, (void *)0, (void *)0, (void *)0, (void *)0,
                       &comm); ]])],
-[have_parmetis=yes],
-[have_parmetis=no])
+[cs_have_parmetis=yes],
+[cs_have_parmetis=no])
 
   # Test for METIS second
 
-  if test "x$have_parmetis" = "xno"; then
+  if test "x$cs_have_parmetis" = "xno"; then
 
     METIS_LIBS="-lmetis -lm"
     CPPFLAGS="${saved_CPPFLAGS} ${METIS_CPPFLAGS}"
@@ -108,13 +108,13 @@ if test "x$with_metis" != "xno" ; then
 
     AC_CHECK_LIB(metis, METIS_PartGraphKway, 
                  [ AC_DEFINE([HAVE_METIS], 1, [use METIS ])
-                   have_metis=yes
+                   cs_have_metis=yes
                  ], 
                  [ AC_MSG_WARN([do not use METIS])
                  ],
                  )
 
-    if test "x$have_metis" = "xno"; then
+    if test "x$cs_have_metis" = "xno"; then
       METIS_CPPFLAGS=""
       METIS_LDFLAGS=""
       METIS_LIBS=""
@@ -131,9 +131,9 @@ unset saved_CPPFLAGS
 unset saved_LDFLAGS
 unset saved_LIBS
 
-if test "x$have_parmetis" = "xyes"; then
+if test "x$cs_have_parmetis" = "xyes"; then
   AC_DEFINE([HAVE_PARMETIS], 1, [use ParMetis])
-elif test "x$have_metis" = "xyes"; then
+elif test "x$cs_have_metis" = "xyes"; then
   AC_DEFINE([HAVE_METIS], 1, [use METIS])
 else
   METIS_CPPFLAGS=""
@@ -141,6 +141,7 @@ else
   METIS_LIBS=""
 fi
 
+AC_SUBST(cs_have_metis)
 AC_SUBST(METIS_CPPFLAGS)
 AC_SUBST(METIS_LDFLAGS)
 AC_SUBST(METIS_LIBS)

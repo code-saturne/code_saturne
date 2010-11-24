@@ -23,12 +23,12 @@ dnl-----------------------------------------------------------------------------
 # CS_AC_TEST_ZLIB
 #----------------
 # Checks for Zlib support
-# modifies or sets have_zlib, ZLIB_CPPFLAGS, ZLIB_LDFLAGS, and ZLIB_LIBS
+# modifies or sets cs_have_zlib, ZLIB_CPPFLAGS, ZLIB_LDFLAGS, and ZLIB_LIBS
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_ZLIB],[
 
-have_zlib=no
+cs_have_zlib=no
 
 AC_ARG_WITH(zlib,
             [AS_HELP_STRING([--with-zlib=PATH],
@@ -76,7 +76,7 @@ if test "x$with_zlib" != "xno" ; then
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <zlib.h>]],
                  [[ gzFile *f; f = gzopen("filename", "r"); ]])],
                  [ AC_DEFINE([HAVE_ZLIB], 1, [gzipped file support])
-                   have_zlib=yes
+                   cs_have_zlib=yes
                  ],
                  [if test "x$with_zlib" != "xcheck" ; then
                     AC_MSG_FAILURE([gzipped file support is requested, but test for Zlib failed!])
@@ -84,16 +84,16 @@ if test "x$with_zlib" != "xno" ; then
                     AC_MSG_WARN([no gzipped file support])
                   fi
                  ])
-  AC_MSG_RESULT($have_zlib)
+  AC_MSG_RESULT($cs_have_zlib)
 
-  if test "x$have_zlib" = "xno"; then
+  if test "x$cs_have_zlib" = "xno"; then
     LIBS="$saved_LIBS"
   fi
 
   # Additional test if zlib found to check for type sizes
   #------------------------------------------------------
 
-  if test "x$have_zlib" = "xyes"; then
+  if test "x$cs_have_zlib" = "xyes"; then
 
     /bin/rm -f conftestval
 
@@ -154,7 +154,7 @@ AC_MSG_WARN([unable to test for zlibCompileFlags when cross-compiling])
 
     /bin/rm -f conftest*]
 
-  fi # "x$have_zlib" = "xyes"
+  fi # "x$cs_have_zlib" = "xyes"
 
 fi)dnl
 

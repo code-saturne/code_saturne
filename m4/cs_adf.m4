@@ -22,12 +22,12 @@ dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_ADF
 #---------------
-# modifies or sets have_adf, ADF_LDFLAGS, and ADF_LIBS
+# modifies or sets cs_have_adf, ADF_LDFLAGS, and ADF_LIBS
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_ADF], [
 
-have_adf=no
+cs_have_adf=no
 
 AC_ARG_WITH(adf,
             [AS_HELP_STRING([--with-adf=DIR],
@@ -61,7 +61,7 @@ if test "x$with_adf" != "xno" ; then
 
   AC_CHECK_LIB(adf, ADF_Database_Open, 
                [ AC_DEFINE([HAVE_ADF], 1, [ADF file support])
-                 have_adf=yes
+                 cs_have_adf=yes
                ], 
                [if test "x$with_adf" != "xcheck" ; then
                   AC_MSG_FAILURE([ADF support is requested, but test for ADF failed!])
@@ -71,7 +71,7 @@ if test "x$with_adf" != "xno" ; then
                ],
                )
 
-  if test "x$have_adf" = "xno"; then
+  if test "x$cs_have_adf" = "xno"; then
     ADF_LIBS=""
   fi
 
@@ -83,6 +83,7 @@ if test "x$with_adf" != "xno" ; then
 
 fi
 
+AC_SUBST(cs_have_adf)
 AC_SUBST(ADF_LDFLAGS)
 AC_SUBST(ADF_LIBS)
 

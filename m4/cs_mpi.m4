@@ -301,6 +301,7 @@ if test "x$with_mpi" != "xno" ; then
 
 fi
 
+AC_SUBST(cs_have_mpi)
 AC_SUBST(MPI_CPPFLAGS)
 AC_SUBST(MPI_LDFLAGS)
 AC_SUBST(MPI_LIBS)

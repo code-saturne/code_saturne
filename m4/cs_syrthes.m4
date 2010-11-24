@@ -35,20 +35,20 @@ AC_ARG_WITH(syrthes, [AS_HELP_STRING([--with-syrthes=PATH], [specify prefix dire
 
 AC_MSG_CHECKING([for SYRTHES support])
 if test -f $with_syrthes/bin/syrthes.profile ; then
-  have_syrthes=yes
+  cs_have_syrthes=yes
   syrthes_prefix=$with_syrthes
   AC_MSG_RESULT([sourcing $syrthes_prefix/bin/syrthes.profile])
   . "$syrthes_prefix/bin/syrthes.profile"
 elif test -f $with_syrthes/bin/syrthes_create_case ; then
-  have_syrthes=yes
+  cs_have_syrthes=yes
   syrthes_prefix=$with_syrthes
   AC_MSG_RESULT([found $syrthes_prefix/bin/syrthes_create_case])
 else
-  have_syrthes=no
+  cs_have_syrthes=no
   AC_MSG_WARN([cannot find syrthes.profile])
 fi
 
-if test "x$have_syrthes" = "xyes"; then
+if test "x$cs_have_syrthes" = "xyes"; then
 
 # Get SYRTHES compilers
 

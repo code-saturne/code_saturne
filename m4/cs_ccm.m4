@@ -22,13 +22,13 @@ dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_CCM
 #---------------
-# modifies or sets have_ccm, CCM_CPPFLAGS, CCM_LDFLAGS, and CCM_LIBS
+# modifies or sets cs_have_ccm, CCM_CPPFLAGS, CCM_LDFLAGS, and CCM_LIBS
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_CCM], [
 
-have_ccm=no
-have_ccm_headers=no
+cs_have_ccm=no
+cs_have_ccm_headers=no
 
 AC_ARG_WITH(ccm,
             [AS_HELP_STRING([--with-ccm=DIR],
@@ -65,7 +65,7 @@ AC_ARG_WITH(ccm-lib,
 # ADF may be provided directly (patched ADF with libccmio)
 # or through CGNS
 
-if test "x$with_ccm" != "xno" -a "x$have_adf" = "xno" -a "x$have_cgns" = "xno"
+if test "x$with_ccm" != "xno" -a "x$cs_have_adf" = "xno" -a "x$cs_have_cgns" = "xno"
 then
   if test "x$with_ccm" = "xcheck"; then
     with_ccm=no
@@ -98,15 +98,15 @@ if test "x$with_ccm" != "xno" ; then
 [[#include <libccmio/ccmio.h>]],
 [[int i = kCCMIONoErr;]])],
                     [AC_MSG_RESULT([CCMIO headers found])
-                     have_ccm_headers=yes
+                     cs_have_ccm_headers=yes
                     ],
                     [AC_MSG_RESULT([CCMIO headers not found])
                     ])
 
-  if test "x$have_ccm_headers" = "xyes"; then
+  if test "x$cs_have_ccm_headers" = "xyes"; then
     AC_CHECK_LIB(ccmio, CCMIOOpenFile, 
                  [ AC_DEFINE([HAVE_CCM], 1, [CCM file support])
-                   have_ccm=yes
+                   cs_have_ccm=yes
                  ], 
                  [if test "x$with_ccm" != "xcheck" ; then
                     AC_MSG_FAILURE([CCM support is requested, but test for CCM failed!])
@@ -117,7 +117,7 @@ if test "x$with_ccm" != "xno" ; then
                  )
   fi
 
-  if test "x$have_ccm" != "xyes"; then
+  if test "x$cs_have_ccm" != "xyes"; then
     CCM_LIBS=""
   fi
 
@@ -131,8 +131,9 @@ if test "x$with_ccm" != "xno" ; then
 
 fi
 
-AM_CONDITIONAL(HAVE_CCM, test x$have_ccm = xyes)
+AM_CONDITIONAL(HAVE_CCM, test x$cs_have_ccm = xyes)
 
+AC_SUBST(cs_have_ccm)
 AC_SUBST(CCM_CPPFLAGS)
 AC_SUBST(CCM_LDFLAGS)
 AC_SUBST(CCM_LIBS)
