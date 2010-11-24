@@ -27,9 +27,9 @@ if HAVE_INTERNAL_PLE
   LDFLAGS_PLE =
   LIBS_PLE = $(top_builddir)/libple/src/libple.la
 else
-  CPPFLAGS_PLE = @PLE_CPPFLAGS@
-  LDFLAGS_PLE = @PLE_LDFLAGS@
-  LIBS_PLE = @PLE_LIBS@
+  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
+  LDFLAGS_PLE = $(PLE_LDFLAGS)
+  LIBS_PLE = $(PLE_LIBS)
 endif
 
 # Main part
@@ -41,9 +41,9 @@ AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 $(CPPFLAGS_PLE) \
-@MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@
+$(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS) $(BLAS_CPPFLAGS)
 
-AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
 AM_LDFLAGS =
 
@@ -93,13 +93,13 @@ $(top_builddir)/src/mei/libmei.la \
 $(top_builddir)/src/fvm/libfvm.la \
 $(top_builddir)/src/bft/libbft.la \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
-@CGNS_LDFLAGS@ @CGNS_LIBS@ \
-@MED_LDFLAGS@ @MED_LIBS@ \
-@HDF5_LDFLAGS@ @HDF5_LIBS@ \
-@MPI_LDFLAGS@ @MPI_LIBS@ \
-@LIBXML2_LDFLAGS@ @LIBXML2_LIBS@ \
-@BLAS_LDFLAGS@ @BLAS_LIBS@ \
-@FCLIBS@
+$(CGNS_LDFLAGS) $(CGNS_LIBS) \
+$(MED_LDFLAGS) $(MED_LIBS) \
+$(HDF5_LDFLAGS) $(HDF5_LIBS) \
+$(MPI_LDFLAGS) $(MPI_LIBS) \
+$(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
+$(BLAS_LDFLAGS) $(BLAS_LIBS) \
+$(FCLIBS)
 
 # Code_Saturne IO utility (minimal dependencies)
 
@@ -122,17 +122,17 @@ if HAVE_PARTITIONER
 
 cs_partition_CPPFLAGS = $(AM_CPPFLAGS) \
 -I$(top_srcdir)/src/bft \
-@METIS_CPPFLAGS@ @SCOTCH_CPPFLAGS@
+$(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
 cs_partition_SOURCES = cs_partition.c
 cs_partition_LDADD = $(top_builddir)/src/base/libcscore.la \
 $(top_builddir)/src/fvm/libfvm.la \
 $(top_builddir)/src/bft/libbft.la \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
-@METIS_LDFLAGS@ @METIS_LIBS@ \
-@SCOTCH_LDFLAGS@ @SCOTCH_LIBS@ \
-@CGNS_LDFLAGS@ @CGNS_LIBS@ \
-@MED_LDFLAGS@ @MED_LIBS@ \
-@HDF5_LDFLAGS@ @HDF5_LIBS@ \
-@MPI_LDFLAGS@ @MPI_LIBS@
+$(METIS_LDFLAGS) $(METIS_LIBS) \
+$(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) \
+$(CGNS_LDFLAGS) $(CGNS_LIBS) \
+$(MED_LDFLAGS) $(MED_LIBS) \
+$(HDF5_LDFLAGS) $(HDF5_LIBS) \
+$(MPI_LDFLAGS) $(MPI_LIBS)
 
 endif

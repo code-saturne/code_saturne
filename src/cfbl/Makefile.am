@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -23,8 +23,8 @@
 # Main part
 
 AM_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_OPT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
@@ -61,7 +61,7 @@ memcft.f90 \
 memcfv.f90
 libcscfbl_la_LDFLAGS = -no-undefined
 
-libcscfbl_la_SOURCES += \
+cfblusers = \
 $(top_srcdir)/users/cfbl/uscfcl.f90 \
 $(top_srcdir)/users/cfbl/uscfpv.f90 \
 $(top_srcdir)/users/cfbl/uscfth.f90 \
@@ -69,14 +69,10 @@ $(top_srcdir)/users/cfbl/uscfx1.f90 \
 $(top_srcdir)/users/cfbl/uscfx2.f90 \
 $(top_srcdir)/users/cfbl/uscfxi.f90
 
+libcscfbl_la_SOURCES += $(cfblusers)
+
 cfbldir = $(pkgdatadir)/users/cfbl
-cfbl_DATA = \
-$(top_srcdir)/users/cfbl/uscfcl.f90 \
-$(top_srcdir)/users/cfbl/uscfpv.f90 \
-$(top_srcdir)/users/cfbl/uscfth.f90 \
-$(top_srcdir)/users/cfbl/uscfx1.f90 \
-$(top_srcdir)/users/cfbl/uscfx2.f90 \
-$(top_srcdir)/users/cfbl/uscfxi.f90
+cfbl_DATA = $(cfblusers)
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

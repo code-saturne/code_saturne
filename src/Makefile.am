@@ -26,8 +26,8 @@ SUBDIRS = . bft fvm mei base pprt atmo cfbl cogz cplv ctwr elec fuel lagr \
 # General flags
 
 AM_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_OPT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS = -no-undefined
 
@@ -103,7 +103,7 @@ install-exec-local: $(libcsmodules_la_SOURCES)
 	@$(NORMAL_INSTALL)
 	test -z "$(saturneincludedir)" || $(MKDIR_P) "$(DESTDIR)$(saturneincludedir)"
 	@list='$(libcsmodules_la_SOURCES)'; test -n "$(saturneincludedir)" || list=; \
-	modlist=`for p in $$list; do echo $$p; done | $(SED) -e 's|.f90|.@FCMODEXT@|g'`; \
+	modlist=`for p in $$list; do echo $$p; done | $(SED) -e 's|.f90|.$(FCMODEXT)|g'`; \
 	files=`for p in $$modlist; do echo $$p; done | $(SED) -e 's|^.*/||'`; \
 	test -n "$$files" || exit 0; \
 	for p in $$files; do \
@@ -114,7 +114,7 @@ install-exec-local: $(libcsmodules_la_SOURCES)
 uninstall-local:
 	@$(NORMAL_UNINSTALL)
 	@list='$(libcsmodules_la_SOURCES)'; test -n "$(saturneincludedir)" || list=; \
-	modlist=`for p in $$list; do echo $$p; done | $(SED) -e 's|.f90|.@FCMODEXT@|g'`; \
+	modlist=`for p in $$list; do echo $$p; done | $(SED) -e 's|.f90|.$(FCMODEXT)|g'`; \
 	files=`for p in $$modlist; do echo $$p; done | $(SED) -e 's|^.*/||'`; \
 	test -d "$(DESTDIR)$(saturneincludedir)" || exit 0; \
 	test -n "$$files" || exit 0; \

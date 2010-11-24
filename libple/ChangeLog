@@ -1,3 +1,7 @@
+2010-11-24  David Monfort <david.monfort@edf.fr>
+
+	* Makefile.am improvements.
+
 2010-10-12  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Add missing detection of gettimeofday().

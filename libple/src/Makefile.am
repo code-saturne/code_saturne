@@ -19,13 +19,6 @@
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-# To disable dependency tracking
-# AUTOMAKE_OPTIONS = no-dependencies
-
-#include directories
-
-#INCLUDES = -I$(top_srcdir)/include
-
 # Add any debug flags
 
 if DEBUG
@@ -36,9 +29,9 @@ endif
 
 # Main part
 
-AM_CPPFLAGS = $(DEBUG_CPPFLAGS) @MPI_CPPFLAGS@
+AM_CPPFLAGS = $(DEBUG_CPPFLAGS) $(MPI_CPPFLAGS)
 AM_CFLAGS =
-AM_LDFLAGS = @MPI_LDFLAGS@
+AM_LDFLAGS = $(MPI_LDFLAGS)
 
 # Public header files (to be installed)
 

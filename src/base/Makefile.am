@@ -25,7 +25,7 @@
 if HAVE_INTERNAL_PLE
   CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
 else
-  CPPFLAGS_PLE = @PLE_CPPFLAGS@
+  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
 endif
 
 # Main part
@@ -37,13 +37,13 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mei \
 $(CPPFLAGS_PLE) \
-@MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@
+$(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS) $(BLAS_CPPFLAGS)
 
-AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
 AM_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_OPT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
@@ -136,10 +136,10 @@ noinst_LTLIBRARIES = libcshot.la \
 
 ###
 
-libcshot_la_CFLAGS = @CFLAGS_DBG@ @CFLAGS_HOT@
+libcshot_la_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_HOT)
 libcshot_la_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_HOT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_HOT)
 libcshot_la_SOURCES = \
 cs_benchmark.c \
 cs_blas.c \
@@ -401,7 +401,8 @@ vorver.f90 \
 vorvit.f90 \
 zufall.f90
 
-libcsbase_la_SOURCES += \
+
+baseusers = \
 $(top_srcdir)/users/base/usalcl.f90 \
 $(top_srcdir)/users/base/usalin.f90 \
 $(top_srcdir)/users/base/usaste.f90 \
@@ -438,44 +439,11 @@ $(top_srcdir)/users/base/cs_user_periodicity.c \
 $(top_srcdir)/users/base/cs_user_saturne_coupling.c \
 $(top_srcdir)/users/base/cs_user_syrthes_coupling.c
 
+libcsbase_la_SOURCES += $(baseusers)
+
 basedir = $(pkgdatadir)/users/base
-base_DATA = \
-$(top_srcdir)/users/base/usalcl.f90 \
-$(top_srcdir)/users/base/usalin.f90 \
-$(top_srcdir)/users/base/usaste.f90 \
-$(top_srcdir)/users/base/usclim.f90 \
-$(top_srcdir)/users/base/usdpst.f90 \
-$(top_srcdir)/users/base/user_modules.f90 \
-$(top_srcdir)/users/base/ushist.f90 \
-$(top_srcdir)/users/base/usini1.f90 \
-$(top_srcdir)/users/base/usiniv.f90 \
-$(top_srcdir)/users/base/uskpdc.f90 \
-$(top_srcdir)/users/base/usmpst.f90 \
-$(top_srcdir)/users/base/usnpst.f90 \
-$(top_srcdir)/users/base/usphyv.f90 \
-$(top_srcdir)/users/base/usproj.f90 \
-$(top_srcdir)/users/base/uspt1d.f90 \
-$(top_srcdir)/users/base/ussmag.f90 \
-$(top_srcdir)/users/base/usstru.f90 \
-$(top_srcdir)/users/base/usthht.f90 \
-$(top_srcdir)/users/base/ustmgr.f90 \
-$(top_srcdir)/users/base/ustske.f90 \
-$(top_srcdir)/users/base/ustskw.f90 \
-$(top_srcdir)/users/base/ustsma.f90 \
-$(top_srcdir)/users/base/ustsns.f90 \
-$(top_srcdir)/users/base/ustsri.f90 \
-$(top_srcdir)/users/base/ustssc.f90 \
-$(top_srcdir)/users/base/ustsv2.f90 \
-$(top_srcdir)/users/base/usvima.f90 \
-$(top_srcdir)/users/base/usvist.f90 \
-$(top_srcdir)/users/base/usvort.f90 \
-$(top_srcdir)/users/base/usvpst.f90 \
-$(top_srcdir)/users/base/cs_user_join.c \
-$(top_srcdir)/users/base/cs_user_mesh_input.c \
-$(top_srcdir)/users/base/cs_user_mesh_modify.c \
-$(top_srcdir)/users/base/cs_user_periodicity.c \
-$(top_srcdir)/users/base/cs_user_saturne_coupling.c \
-$(top_srcdir)/users/base/cs_user_syrthes_coupling.c
+base_DATA = $(baseusers) \
+$(top_srcdir)/users/base/user_modules.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

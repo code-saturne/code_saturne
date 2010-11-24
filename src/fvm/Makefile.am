@@ -21,14 +21,14 @@
 
 # Main part
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/bft @MPI_CPPFLAGS@
-AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
-AM_LDFLAGS = @CGNS_LDFLAGS@ @MED_LDFLAGS@ @HDF5_LDFLAGS@ @MPI_LDFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/src/bft $(MPI_CPPFLAGS)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_LDFLAGS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
 
 # Conditionally compiled extensions
 
-libfvm_cgns_la_CPPFLAGS = -I$(top_srcdir)/src/bft @CGNS_CPPFLAGS@ @MPI_CPPFLAGS@
-libfvm_med_la_CPPFLAGS = -I$(top_srcdir)/src/bft @HDF5_CPPFLAGS@ @MED_CPPFLAGS@ @MPI_CPPFLAGS@
+libfvm_cgns_la_CPPFLAGS = -I$(top_srcdir)/src/bft $(CGNS_CPPFLAGS) $(MPI_CPPFLAGS)
+libfvm_med_la_CPPFLAGS = -I$(top_srcdir)/src/bft $(HDF5_CPPFLAGS) $(MED_CPPFLAGS) $(MPI_CPPFLAGS)
 
 # Public header files (to be installed)
 

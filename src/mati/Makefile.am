@@ -23,8 +23,8 @@
 # Main part
 
 AM_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_OPT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 

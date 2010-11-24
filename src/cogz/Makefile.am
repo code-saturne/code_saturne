@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -23,8 +23,8 @@
 # Main part
 
 AM_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_OPT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
@@ -65,7 +65,7 @@ pdfpp3.f90 \
 pdfpp4.f90
 libcscogz_la_LDFLAGS = -no-undefined
 
-libcscogz_la_SOURCES += \
+cogzusers = \
 $(top_srcdir)/users/cogz/usd3p1.f90 \
 $(top_srcdir)/users/cogz/usd3pc.f90 \
 $(top_srcdir)/users/cogz/usd3pi.f90 \
@@ -76,17 +76,10 @@ $(top_srcdir)/users/cogz/uslwc1.f90 \
 $(top_srcdir)/users/cogz/uslwcc.f90 \
 $(top_srcdir)/users/cogz/uslwci.f90
 
+libcscogz_la_SOURCES += $(cogzusers)
+
 cogzdir = $(pkgdatadir)/users/cogz
-cogz_DATA = \
-$(top_srcdir)/users/cogz/usd3p1.f90 \
-$(top_srcdir)/users/cogz/usd3pc.f90 \
-$(top_srcdir)/users/cogz/usd3pi.f90 \
-$(top_srcdir)/users/cogz/usebu1.f90 \
-$(top_srcdir)/users/cogz/usebuc.f90 \
-$(top_srcdir)/users/cogz/usebui.f90 \
-$(top_srcdir)/users/cogz/uslwc1.f90 \
-$(top_srcdir)/users/cogz/uslwcc.f90 \
-$(top_srcdir)/users/cogz/uslwci.f90
+cogz_DATA = $(cogzusers)
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

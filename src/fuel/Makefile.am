@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -23,8 +23,8 @@
 # Main part
 
 AM_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_OPT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
@@ -62,16 +62,15 @@ fuveri.f90 \
 memfu1.f90
 libcsfuel_la_LDFLAGS = -no-undefined
 
-libcsfuel_la_SOURCES += \
+fuelusers = \
 $(top_srcdir)/users/fuel/usfucl.f90 \
 $(top_srcdir)/users/fuel/usfui1.f90 \
 $(top_srcdir)/users/fuel/usfuiv.f90
 
+libcsfuel_la_SOURCES += $(fuelusers)
+
 fueldir = $(pkgdatadir)/users/fuel
-fuel_DATA = \
-$(top_srcdir)/users/fuel/usfucl.f90 \
-$(top_srcdir)/users/fuel/usfui1.f90 \
-$(top_srcdir)/users/fuel/usfuiv.f90
+fuel_DATA = $(fuelusers)
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

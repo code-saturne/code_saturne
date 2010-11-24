@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@
 if HAVE_INTERNAL_PLE
   CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
 else
-  CPPFLAGS_PLE = @PLE_CPPFLAGS@
+  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
 endif
 
 # Main part
@@ -35,13 +35,13 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 $(CPPFLAGS_PLE) \
-@MPI_CPPFLAGS@
+$(MPI_CPPFLAGS)
 
-AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
 AM_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_OPT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
@@ -70,18 +70,16 @@ cttssc.f90 \
 ctvarp.f90
 libcsctwr_la_LDFLAGS = -no-undefined
 
-libcsctwr_la_SOURCES += \
+ctwrusers = \
 $(top_srcdir)/users/ctwr/usctcl.f90 \
 $(top_srcdir)/users/ctwr/usctdz.f90 \
 $(top_srcdir)/users/ctwr/uscti1.f90 \
 $(top_srcdir)/users/ctwr/usctiv.f90
 
+libcsctwr_la_SOURCES += $(ctwrusers)
+
 ctwrdir = $(pkgdatadir)/users/ctwr
-ctwr_DATA = \
-$(top_srcdir)/users/ctwr/usctcl.f90 \
-$(top_srcdir)/users/ctwr/usctdz.f90 \
-$(top_srcdir)/users/ctwr/uscti1.f90 \
-$(top_srcdir)/users/ctwr/usctiv.f90
+ctwr_DATA = $(ctwrusers)
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

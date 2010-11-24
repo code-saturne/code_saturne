@@ -22,7 +22,7 @@
 # Main part
 
 AM_CPPFLAGS =
-AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS =
 
 # Public header files (to be installed)

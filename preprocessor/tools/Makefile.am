@@ -38,14 +38,14 @@ endif
 if HAVE_MED
 
 igghexa_to_med_CPPFLAGS = $(AM_CPPFLAGS) \
-@HDF5_CPPFLAGS@ @MED_CPPFLAGS@
+$(HDF5_CPPFLAGS) $(MED_CPPFLAGS)
 igghexa_to_med_SOURCES = igghexa_to_med.c
 igghexa_to_med_LDADD = \
 $(top_builddir)/preprocessor/pre-post/libprepostecs.la \
 $(top_builddir)/preprocessor/base/libbaseecs.la \
 $(top_builddir)/preprocessor/util/libutilecs.la $(LTLIBINTL) \
-@HDF5_LDFLAGS@ @HDF5_LIBS@ @MED_LDFLAGS@ @MED_LIBS@ \
-@CGNS_LDFLAGS@ @CGNS_LIBS@ \
+$(HDF5_LDFLAGS) $(HDF5_LIBS) $(MED_LDFLAGS) $(MED_LIBS) \
+$(CGNS_LDFLAGS) $(CGNS_LIBS) \
 -lm
 
 endif

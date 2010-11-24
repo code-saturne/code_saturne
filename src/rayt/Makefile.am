@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -23,8 +23,8 @@
 # Main part
 
 AM_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_OPT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
@@ -54,20 +54,17 @@ raysol.f90 \
 rmodak.f90
 libcsrayt_la_LDFLAGS = -no-undefined
 
-libcsrayt_la_SOURCES += \
+raytusers = \
 $(top_srcdir)/users/rayt/usray1.f90 \
 $(top_srcdir)/users/rayt/usray2.f90 \
 $(top_srcdir)/users/rayt/usray3.f90 \
 $(top_srcdir)/users/rayt/usray4.f90 \
 $(top_srcdir)/users/rayt/usray5.f90
 
+libcsrayt_la_SOURCES += $(raytusers)
+
 raytdir = $(pkgdatadir)/users/rayt
-rayt_DATA = \
-$(top_srcdir)/users/rayt/usray1.f90 \
-$(top_srcdir)/users/rayt/usray2.f90 \
-$(top_srcdir)/users/rayt/usray3.f90 \
-$(top_srcdir)/users/rayt/usray4.f90 \
-$(top_srcdir)/users/rayt/usray5.f90
+rayt_DATA = $(raytusers)
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -23,8 +23,8 @@
 # Main part
 
 AM_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_OPT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
@@ -49,7 +49,7 @@ elvarp.f90 \
 elveri.f90
 libcselec_la_LDFLAGS = -no-undefined
 
-libcselec_la_SOURCES += \
+elecusers = \
 $(top_srcdir)/users/elec/uselcl.f90 \
 $(top_srcdir)/users/elec/uselen.f90 \
 $(top_srcdir)/users/elec/useli1.f90 \
@@ -58,15 +58,10 @@ $(top_srcdir)/users/elec/uselph.f90 \
 $(top_srcdir)/users/elec/uselrc.f90 \
 $(top_srcdir)/users/elec/usetcl.f90
 
+libcselec_la_SOURCES += $(elecusers)
+
 elecdir = $(pkgdatadir)/users/elec
-elec_DATA = \
-$(top_srcdir)/users/elec/uselcl.f90 \
-$(top_srcdir)/users/elec/uselen.f90 \
-$(top_srcdir)/users/elec/useli1.f90 \
-$(top_srcdir)/users/elec/useliv.f90 \
-$(top_srcdir)/users/elec/uselph.f90 \
-$(top_srcdir)/users/elec/uselrc.f90 \
-$(top_srcdir)/users/elec/usetcl.f90
+elec_DATA = $(elecusers)
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

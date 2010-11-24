@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -23,8 +23,8 @@
 # Main part
 
 AM_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_OPT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
@@ -57,12 +57,13 @@ pptycl.f90 \
 ppvarp.f90
 libcspprt_la_LDFLAGS = -no-undefined
 
-libcspprt_la_SOURCES += \
+pprtusers = \
 $(top_srcdir)/users/pprt/usppmo.f90
 
+libcspprt_la_SOURCES += $(pprtusers)
+
 pprtdir = $(pkgdatadir)/users/pprt
-pprt_DATA = \
-$(top_srcdir)/users/pprt/usppmo.f90
+pprt_DATA = $(pprtusers)
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

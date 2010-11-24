@@ -76,11 +76,11 @@ fvm_selector_postfix_test \
 fvm_sizes_test
 
 CPPFLAGS_FVM_TESTS = -I$(top_srcdir)/src/bft -I$(top_srcdir)/src/fvm \
-        @MPI_CPPFLAGS@
-LDFLAGS_FVM_TESTS = @CGNS_LDFLAGS@ @MED_LDFLAGS@ @HDF5_LDFLAGS@ @MPI_LDFLAGS@
+        $(MPI_CPPFLAGS)
+LDFLAGS_FVM_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
 LDADD_FVM_TESTS = $(top_builddir)/src/fvm/libfvm.la \
         $(top_builddir)/src/bft/libbft.la \
-        @CGNS_LIBS@ @MED_LIBS@ @HDF5_LIBS@ @MPI_LIBS@
+        $(CGNS_LIBS) $(MED_LIBS) $(HDF5_LIBS) $(MPI_LIBS)
 
 fvm_file_test_SOURCES  = fvm_file_test.c
 fvm_file_test_CPPFLAGS = $(CPPFLAGS_FVM_TESTS)

@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2010 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -26,13 +26,13 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
-@MPI_CPPFLAGS@
+$(MPI_CPPFLAGS)
 
-AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@ @CFLAGS_EXT@
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_EXT)
 
 AM_FCFLAGS = \
-@FCMODINCLUDE@$(top_builddir)/src \
-@FCFLAGS_DBG@ @FCFLAGS_OPT@
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
@@ -94,7 +94,7 @@ memla2.f90 \
 ouestu.f90
 libcslagr_la_LDFLAGS = -no-undefined
 
-libcslagr_la_SOURCES += \
+lagrusers = \
 $(top_srcdir)/users/lagr/uslabo.f90 \
 $(top_srcdir)/users/lagr/usladp.f90 \
 $(top_srcdir)/users/lagr/uslaed.f90 \
@@ -109,21 +109,10 @@ $(top_srcdir)/users/lagr/uslast.f90 \
 $(top_srcdir)/users/lagr/uslatc.f90 \
 $(top_srcdir)/users/lagr/uslatp.f90
 
+libcslagr_la_SOURCES += $(lagrusers)
+
 lagrdir = $(pkgdatadir)/users/lagr
-lagr_DATA = \
-$(top_srcdir)/users/lagr/uslabo.f90 \
-$(top_srcdir)/users/lagr/usladp.f90 \
-$(top_srcdir)/users/lagr/uslaed.f90 \
-$(top_srcdir)/users/lagr/uslaen.f90 \
-$(top_srcdir)/users/lagr/uslafe.f90 \
-$(top_srcdir)/users/lagr/uslag1.f90 \
-$(top_srcdir)/users/lagr/uslag2.f90 \
-$(top_srcdir)/users/lagr/uslain.f90 \
-$(top_srcdir)/users/lagr/uslapr.f90 \
-$(top_srcdir)/users/lagr/uslaru.f90 \
-$(top_srcdir)/users/lagr/uslast.f90 \
-$(top_srcdir)/users/lagr/uslatc.f90 \
-$(top_srcdir)/users/lagr/uslatp.f90
+lagr_DATA = $(lagrusers)
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

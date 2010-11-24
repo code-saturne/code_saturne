@@ -23,7 +23,7 @@
 
 AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
 -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/pre-post -I$(top_srcdir)/preprocessor/util
-AM_CFLAGS = @CFLAGS_DBG@ @CFLAGS_OPT@
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS =
 
 # Main program
@@ -31,7 +31,7 @@ AM_LDFLAGS =
 bin_PROGRAMS = cs_preprocess
 
 cs_preprocess_CPPFLAGS = $(AM_CPPFLAGS) \
-@HDF5_CPPFLAGS@ @MED_CPPFLAGS@ @CGNS_CPPFLAGS@
+$(HDF5_CPPFLAGS) $(MED_CPPFLAGS) $(CGNS_CPPFLAGS)
 
 cs_preprocess_SOURCES = \
 ecs_cmd.c \
@@ -46,8 +46,8 @@ cs_preprocess_LDADD = \
 $(top_builddir)/preprocessor/pre-post/libprepostecs.la \
 $(top_builddir)/preprocessor/base/libbaseecs.la \
 $(top_builddir)/preprocessor/util/libutilecs.la $(LTLIBINTL) \
-@HDF5_LDFLAGS@ @HDF5_LIBS@ @ADF_LDFLAGS@ @ADF_LIBS@ \
-@CCM_LDFLAGS@ @CCM_LIBS@ @MED_LDFLAGS@ @MED_LIBS@ \
-@CGNS_LDFLAGS@ @CGNS_LIBS@ \
+$(HDF5_LDFLAGS) $(HDF5_LIBS) $(ADF_LDFLAGS) $(ADF_LIBS) \
+$(CCM_LDFLAGS) $(CCM_LIBS) $(MED_LDFLAGS) $(MED_LIBS) \
+$(CGNS_LDFLAGS) $(CGNS_LIBS) \
 -lm
 
