@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009  EDF
+#   Copyright (C) 2009-2010 EDF
 #
 #   The Code_Saturne Preprocessor is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -20,100 +20,32 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-import os
-import sys
+import os, sys
 
 # Trick so that one doesn't have to set the PYTHONPATH variable
 cspath = '@pkgpythondir@'
 if os.path.isdir(cspath) and not cspath in sys.path:
     sys.path.insert(0, cspath)
 
-#-------------------------------------------------------------------------------
-
-def usage(argv, pkg):
-    usage = \
-    """Usage: %(prog)s <topic>
-
-Topics:
-  help
-  check_consistency
-  check_mesh
-  compile
-  config
-  create
-  gui
-  info
-  plot_probes
-
-Options:
-  -h, --help  show this help message and exit"""
-
-    print(usage % {'prog':sys.argv[0]})
-
-def check_consistency(argv, pkg):
-    import cs_check_consistency
-    cs_check_consistency.main(argv, pkg)
-
-def check_mesh(argv, pkg):
-    import cs_check_mesh
-    cs_check_mesh.main(argv, pkg)
-
-def compile(argv, pkg):
-    import cs_compile
-    cs_compile.main(argv, pkg)
-
-def config(argv, pkg):
-    import cs_config
-    cs_config.main(argv, pkg)
-
-def create(argv, pkg):
-    import cs_create
-    cs_create.main(argv, pkg)
-
-def gui(argv, pkg):
-    import cs_gui
-    cs_gui.main(argv)
-
-def info(argv, pkg):
-    import cs_info
-    cs_info.main(argv, pkg)
-
-def plot_probes(argv, pkg):
-    import cs_plot_probes
-    cs_plot_probes.main(argv, pkg)
+from cs_script import master_script
 
 #-------------------------------------------------------------------------------
-
-def main(argv):
-    """
-    Main function.
-    """
-
-    commands = {'help':usage, '--help':usage, '-h':usage,
-                'check_consistency':check_consistency,
-                'check_mesh':check_mesh,
-                'compile':compile,
-                'config':config,
-                'create':create,
-                'gui':gui,
-                'info':info,
-                'plot_probes':plot_probes}
-
-    retcode = 1
-
-    if (len(argv) < 1) or (argv[0] not in commands):
-        usage(argv)
-    else:
-        # Retrieve package information (name, version, installation dirs, ...)
-        from cs_package import package
-        pkg = package()
-        # Run command
-        command = argv[0]
-        sys.argv[0] = sys.argv[0] + ' ' + command
-        sys.argv.remove(command)
-        commands[command](argv[1:], pkg)
-
-    sys.exit(retcode)
+# Main
+#-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+
+    # Retrieve package information (name, version, installation dirs, ...)
+    from cs_package import package
+    pkg = package()
+
+    # Create an instance of the main script
+    cs = master_script(sys.argv[1:], pkg)
+
+    retcode = 1
+    cs.execute()
+    sys.exit(retcode)
+
+#-------------------------------------------------------------------------------
+# End
+#-------------------------------------------------------------------------------

@@ -26,10 +26,6 @@ EXTRA_DIST = \
 epydocConfig \
 sbin/unittests.py
 
-dist_pkgpython_PYTHON = \
-__init__.py \
-cs_gui.py
-
 # Install data
 
 nobase_pkgpython_DATA = \

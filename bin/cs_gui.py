@@ -67,11 +67,6 @@ if map(int, string.split(PYQT_VERSION_STR, ".")) < [4, 3, 0]:
 # Application modules import
 #-------------------------------------------------------------------------------
 
-try:
-    import code_saturne
-except:
-    pass
-
 from Base.Common import icon_base_path
 from Base.MainView import MainView
 
@@ -145,10 +140,10 @@ def process_cmd_line(argv):
         batch_window, options.batch_file, options.tree_window, options.read_only
 
 #-------------------------------------------------------------------------------
-# Start point of the Graphical User Interface
+# Main
 #-------------------------------------------------------------------------------
 
-def main(argv):
+def main(argv, pkg):
     """
     Start Qt and a session of the application.
     """
@@ -191,9 +186,6 @@ def main(argv):
         sys.exit(0)
 
     sys.exit(app.exec_())
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
 
 #-------------------------------------------------------------------------------
 # End
