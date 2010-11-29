@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -354,7 +354,7 @@ if (nbaste.gt.0) then
     if (ia(itrav+inod-1).gt.0) nbnast = nbnast + 1
   enddo
 
-  ilstfa = ifinia
+  ilstfa = ifnia2
   iidflo = ilstfa + nbfast
   iidnlo = iidflo + nbfast
   ifnia2 = iidnlo + nbnast
