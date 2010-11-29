@@ -1,3 +1,18 @@
+* 29/11/2010 - David Monfort <david.monfort@edf.fr>
+  Minor changes (version number in user files and blanks removal).
+  modified files:
+    bin/cs_config.py.in
+    bin/cs_script.py
+    users/cogz/usd3p1.f90
+    users/cogz/usd3pc.f90
+    users/cogz/usd3pi.f90
+    users/cogz/usebu1.f90
+    users/cogz/usebuc.f90
+    users/cogz/usebui.f90
+    users/cogz/uslwc1.f90
+    users/cogz/uslwcc.f90
+    users/cogz/uslwci.f90
+
 * 29/11/2010 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
   Fix a memory bug in the Code_Aster coupling.
   modified routine:

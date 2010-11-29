@@ -1,7 +1,6 @@
 !-------------------------------------------------------------------------------
 
-!                      Code_Saturne version 2.0.0-beta2
-!                      --------------------------
+!VERS
 
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.

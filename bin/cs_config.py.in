@@ -106,7 +106,7 @@ class config:
         self.optfeatures = ['debug', 'shared',
                             'gui', 'prepro',
                             'openmp', 'socket',
-                            'long-gnum'] 
+                            'long-gnum']
         self.features = {}
 
         # List of optionnal libraries
@@ -208,7 +208,7 @@ class config:
         for lib in self.optlibs:
             self.libs[lib].print_config()
 
-        
+
 # Optional MPI library info
 #--------------------------
 

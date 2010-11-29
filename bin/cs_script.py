@@ -48,7 +48,7 @@ class master_script:
         if (len(self.command) < 1):
             self.usage()
             sys.exit(0)
-            
+
         command = self.command[0]
 
         if command in help_commands:
