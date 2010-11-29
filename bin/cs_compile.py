@@ -164,6 +164,7 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
         cmd = cmd + " -I" + pkg.includedir
+        cmd = cmd + " " + pkg.cppflags
         cmd = cmd + " -DHAVE_CONFIG_H"
         cmd = cmd + " " + build.cppflags
         cmd = cmd + " " + build.cflags
@@ -178,6 +179,7 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if len(hxx_files) > 0:
             cmd = cmd + " -I" + srcdir
         cmd = cmd + " -I" + pkg.includedir
+        cmd = cmd + " " + pkg.cppflags
         cmd = cmd + " -DHAVE_CONFIG_H"
         cmd = cmd + " " + build.cppflags
         cmd = cmd + " " + build.cxxflags
@@ -211,6 +213,7 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if (len(c_files) + len(cxx_files) + len(f_files)) > 0:
           cmd = cmd + " *.o"
         cmd = cmd + " -L" + pkg.libdir
+        cmd = cmd + " " + pkg.ldflags
         cmd = cmd + " " + pkg.libs
         if optlibs != None:
             if len(optlibs) > 0:

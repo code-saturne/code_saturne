@@ -50,7 +50,9 @@ class package:
         self.srcdir = 'src_saturne'
 
         self.ld = "@CC@"
-        self.libs = "-lsaturne -lmei -lfvm -lbft"
+        self.cppflags = "@PLE_CPPFLAGS@"
+        self.ldflags = "@PLE_LDFLAGS@"
+        self.libs = "-lsaturne -lmei -lfvm -lbft @PLE_LIBS@ @FCLIBS@"
 
         self.prefix = "@prefix@"
         self.exec_prefix = "@exec_prefix@"

@@ -122,6 +122,10 @@ edit_config = sed \
 	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
 	-e 's|@syrthes_prefix[@]|$(syrthes_prefix)|g' \
 	-e 's|@CC[@]|$(CC)|g' \
+	-e 's|@PLE_CPPFLAGS[@]|$(PLE_CPPFLAGS)|g' \
+	-e 's|@PLE_LDFLAGS[@]|$(PLE_LDFLAGS)|g' \
+	-e 's|@PLE_LIBS[@]|$(PLE_LIBS)|g' \
+	-e 's|@FCLIBS[@]|$(FCLIBS)|g' \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g'
 

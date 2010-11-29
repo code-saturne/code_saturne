@@ -39,13 +39,13 @@ class build:
     cc="@CC@"
     cxx="@CXX@"
     fc="@FC@"
-    cppflags="@CPPFLAGS@ @PLE_CPPFLAGS@ @CGNS_CPPFLAGS@ @HDF5_CPPFLAGS@ @MED_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@"
+    cppflags="@CPPFLAGS@ @CGNS_CPPFLAGS@ @HDF5_CPPFLAGS@ @MED_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@"
     cflags="@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@"
     cxxflags="@CXXFLAGS@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@"
     fcflags="@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@"
     fcmodinclude="@FCMODINCLUDE@"
-    ldflags="@PLE_LDFLAGS@ @CGNS_LDFLAGS@ @MED_LDFLAGS@ @HDF5_LDFLAGS@ @MPI_LDFLAGS@ @LIBXML2_LDFLAGS@ @BLAS_LDFLAGS@ @LDFLAGS@"
-    libs="@PLE_LIBS@ @CGNS_LIBS@ @MED_LIBS@ @HDF5_LIBS@ @MPI_LIBS@ @LIBXML2_LIBS@ @BLAS_LIBS@ @FCLIBS@ @LIBS@"
+    ldflags="@CGNS_LDFLAGS@ @MED_LDFLAGS@ @HDF5_LDFLAGS@ @MPI_LDFLAGS@ @LIBXML2_LDFLAGS@ @BLAS_LDFLAGS@ @LDFLAGS@"
+    libs="@CGNS_LIBS@ @MED_LIBS@ @HDF5_LIBS@ @MPI_LIBS@ @LIBXML2_LIBS@ @BLAS_LIBS@ @LIBS@"
     rpath="@LDRPATH@"
 
 class build_syrthes:
@@ -413,7 +413,7 @@ def main(argv, pkg):
         if opts.cppflags == "saturne":
             import cs_package
             pkg = cs_package.package()
-            print("-I" + pkg.includedir + " @CPPFLAGS@ @PLE_CPPFLAGS@")
+            print(pkg.cppflags + "-I" + pkg.includedir + " @CPPFLAGS@")
         else:
             print(cfg.libs[opts.cppflags].cppflags)
 
@@ -421,7 +421,7 @@ def main(argv, pkg):
         if opts.ldflags == "saturne":
             import cs_package
             pkg = cs_package.package()
-            print("-L" + pkg.libdir + " @PLE_LDFLAGS@ @LDFLAGS@")
+            print(pkg.ldflags + "-L" + pkg.libdir + " @LDFLAGS@")
         else:
             print(cfg.libs[opts.ldflags].ldflags)
 
@@ -429,7 +429,7 @@ def main(argv, pkg):
         if opts.libs == "saturne":
             import cs_package
             pkg = cs_package.package()
-            print(pkg.libs + " @PLE_LIBS@ @FCLIBS@ @LIBS@")
+            print(pkg.libs + " @LIBS@")
         else:
             print(cfg.libs[opts.libs].libs)
 
