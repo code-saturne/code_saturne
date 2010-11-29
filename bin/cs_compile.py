@@ -219,6 +219,7 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
             if len(optlibs) > 0:
                 cmd = cmd + " " + optlibs
         cmd = cmd + " " + build.ldflags + " " + build.libs
+        cmd = cmd + " " + pkg.deplibs
         if build.rpath != "":
             cmd = cmd + " " + so_dirs_path(cmd)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:

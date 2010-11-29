@@ -39,13 +39,13 @@ class build:
     cc="@CC@"
     cxx="@CXX@"
     fc="@FC@"
-    cppflags="@CPPFLAGS@ @CGNS_CPPFLAGS@ @HDF5_CPPFLAGS@ @MED_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@"
+    cppflags="@CGNS_CPPFLAGS@ @HDF5_CPPFLAGS@ @MED_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@"
     cflags="@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@"
     cxxflags="@CXXFLAGS@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@"
     fcflags="@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@"
     fcmodinclude="@FCMODINCLUDE@"
-    ldflags="@CGNS_LDFLAGS@ @MED_LDFLAGS@ @HDF5_LDFLAGS@ @MPI_LDFLAGS@ @LIBXML2_LDFLAGS@ @BLAS_LDFLAGS@ @LDFLAGS@"
-    libs="@CGNS_LIBS@ @MED_LIBS@ @HDF5_LIBS@ @MPI_LIBS@ @LIBXML2_LIBS@ @BLAS_LIBS@ @LIBS@"
+    ldflags="@CGNS_LDFLAGS@ @MED_LDFLAGS@ @HDF5_LDFLAGS@ @MPI_LDFLAGS@ @LIBXML2_LDFLAGS@ @BLAS_LDFLAGS@"
+    libs="@CGNS_LIBS@ @MED_LIBS@ @HDF5_LIBS@ @MPI_LIBS@ @LIBXML2_LIBS@ @BLAS_LIBS@"
     rpath="@LDRPATH@"
 
 class build_syrthes:
@@ -285,6 +285,9 @@ def process_cmd_line(argv):
     parser.add_option("--libs", dest="libs", metavar="<lib>",
                       help="librairies used (e.g. -l<libname>, ...)")
 
+    parser.add_option("--deplibs", dest="deplibs", metavar="<lib>",
+                      help="dependency librairies used (e.g. -l<libname>, ...)")
+
     parser.set_defaults(print_cc=False)
     parser.set_defaults(print_cxx=False)
     parser.set_defaults(print_fc=False)
@@ -303,6 +306,7 @@ def process_cmd_line(argv):
     parser.set_defaults(cppflags=None)
     parser.set_defaults(ldflags=None)
     parser.set_defaults(libs=None)
+    parser.set_defaults(deplibs=None)
 
     (options, args) = parser.parse_args(argv)
 
@@ -414,7 +418,7 @@ def main(argv, pkg):
         if opts.cppflags == "saturne":
             import cs_package
             pkg = cs_package.package()
-            print(pkg.cppflags + "-I" + pkg.includedir + " @CPPFLAGS@")
+            print(pkg.cppflags + "-I" + pkg.includedir)
         else:
             print(cfg.libs[opts.cppflags].cppflags)
 
@@ -422,7 +426,7 @@ def main(argv, pkg):
         if opts.ldflags == "saturne":
             import cs_package
             pkg = cs_package.package()
-            print(pkg.ldflags + "-L" + pkg.libdir + " @LDFLAGS@")
+            print(pkg.ldflags + "-L" + pkg.libdir)
         else:
             print(cfg.libs[opts.ldflags].ldflags)
 
@@ -430,9 +434,17 @@ def main(argv, pkg):
         if opts.libs == "saturne":
             import cs_package
             pkg = cs_package.package()
-            print(pkg.libs + " @LIBS@")
+            print(pkg.libs)
         else:
             print(cfg.libs[opts.libs].libs)
+
+    if opts.deplibs is not None:
+        if opts.deplibs == "saturne":
+            import cs_package
+            pkg = cs_package.package()
+            print(pkg.deplibs)
+        else:
+            print(cfg.libs[opts.deplibs].deplibs)
 
 if __name__ == '__main__':
     import sys
