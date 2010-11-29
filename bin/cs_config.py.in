@@ -106,7 +106,7 @@ class config:
         self.optfeatures = ['debug', 'shared',
                             'gui', 'prepro',
                             'openmp', 'socket',
-                            'long-gnum']
+                            'long-gnum', 'nls']
         self.features = {}
 
         # List of optionnal libraries
@@ -130,6 +130,7 @@ class config:
         self.features['openmp'] = "@cs_have_openmp@"
         self.features['socket'] = "@cs_have_socket@"
         self.features['long-gnum'] = "@cs_have_long_gnum@"
+        self.features['nls'] = '@USE_NLS@'
 
         # Setup the optionnal libraries
 

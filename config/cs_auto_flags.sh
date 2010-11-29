@@ -601,7 +601,7 @@ if test "x$cs_gxx" = "xg++"; then
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
 
   # Default compiler flags
-  cxxflags_default="-ansi -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wmissing-declarations -Wunused"
+  cxxflags_default="-ansi -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wunused -Wno-long-long"
   cxxflags_default_dbg="-g"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"

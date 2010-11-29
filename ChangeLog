@@ -1,4 +1,12 @@
 * 29/11/2010 - David Monfort <david.monfort@edf.fr>
+  Small modifications to account for NLS support and suppress annoying
+  warnings during C++ compilation.
+  modified scripts:
+    bin/cs_config.py.in
+    config/cs_auto_flags.sh
+    Makefile.am
+
+* 29/11/2010 - David Monfort <david.monfort@edf.fr>
   Adapt the user compilation scripts so that it can better handle code-specific
   libraries (e.g. for NEPTUNE_CFD libraries). One should perhaps add the
   CPPFLAGS, LDFLAGS and LIBS user-defined variables in cs_package.py too.

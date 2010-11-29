@@ -126,6 +126,7 @@ edit_config = sed \
 	-e 's|@PLE_LDFLAGS[@]|$(PLE_LDFLAGS)|g' \
 	-e 's|@PLE_LIBS[@]|$(PLE_LIBS)|g' \
 	-e 's|@FCLIBS[@]|$(FCLIBS)|g' \
+	-e 's|@USE_NLS[@]|$(USE_NLS)|g' \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g'
 
