@@ -1,3 +1,11 @@
+* 01/12/2010 - Cyril Baudry <cyril.baudry@edf.fr>
+  Add members to the cs_vars_t structure to account for the number of phases,
+  in order for NEPTUNE_CFD to be able to link against Code_Saturne source code.
+  modified routines:
+    src/base/cs_gui.c
+    src/base/cs_gui.h
+    src/base/iniusi.f90
+
 * 29/11/2010 - David Monfort <david.monfort@edf.fr>
   Fix the user compilation, this time with the correct link order.
   modified scripts:

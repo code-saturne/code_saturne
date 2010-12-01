@@ -2534,6 +2534,8 @@ void CS_PROCF (uiinit, UIINIT) (void)
     cs_glob_var->name            = NULL;
     cs_glob_var->label           = NULL;
     cs_glob_var->rtp             = NULL;
+    cs_glob_var->rphas           = 0;
+    cs_glob_var->pphas           = 0;
     cs_glob_var->nvar            = 0;
     cs_glob_var->nscaus          = 0;
     cs_glob_var->nscapp          = 0;
@@ -2885,10 +2887,10 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
  * SUBROUTINE CSVNUM
  * *****************
  *
- * INTEGER          IPHYDR  <--   hydrostatic pressure
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
+                                const int *const nphas,
                                 const int *const iu,
                                 const int *const iv,
                                 const int *const iw,
@@ -2926,6 +2928,11 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
   /*                         vars->nscapp is already fill in UIPPMO */
 
   cs_glob_var->nvar   = *nvar;
+
+  /* Phase number */
+
+  cs_glob_var->rphas = *nphas;
+  cs_glob_var->pphas = *nphas;
 
   /* 1) pressure and velocity variables */
 
