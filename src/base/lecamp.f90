@@ -1053,7 +1053,7 @@ if (iale.eq.1 .and. jale.eq.1) then
     enddo
   endif
 
-  write(nfecra,1599)
+  write(nfecra,1600)
 
 endif
 

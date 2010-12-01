@@ -265,27 +265,6 @@ endif
 ! FORMATS
 !--------
 
- 1110 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : LECTURE DU FICHIER SUITE RAYONNEMENT        ',/,&
-'@    =========                                               ',/,&
-'@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
-'@                                                            ',/,&
-'@    Le de phases qui rayonnent a ete modifie                ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier le fichier suite rayonnement.                  ',/,&
-'@                                                            ',/,&
-'@               NPHAS                                        ',/,&
-'@  AMONT : ',I10                                              ,/,&
-'@  ACTUEL: ',I10                                              ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
  6000 FORMAT (   3X,'** INFORMATIONS SUR LE MODULE DE RAYONNEMENT   ',/,&
            3X,'   ------------------------------------------  ',/,&
            3X,' Lecture d''un fichier suite                   '  )

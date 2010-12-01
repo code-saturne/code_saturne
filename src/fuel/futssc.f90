@@ -659,7 +659,7 @@ if ( ieqco2 .ge. 1 ) then
           nberic = nberic +1
 
         endif
- 20          continue
+
        err1mx = max(err1mx,abs(ddelta))
 
        xco2e = anmr

@@ -426,12 +426,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7000 format(                                                           &
-'                                                             ',/,&
-' Module de rayonnement :                                     ',/,&
-'     Ecriture du fichier Ensight de bord non disponible      ',/,&
-'     en parallele.                                           ',/,&
-'                                                             ',/)
 
 !----
 ! FIN

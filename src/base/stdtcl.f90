@@ -274,24 +274,6 @@ nozapm = izonem
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : LES CONDITIONS AUX LIMITES DONNEES PAR      ',/,&
-'@    =========                                               ',/,&
-'@         L''INTERFACE SONT INCOMPLETES OU INEXISTANTES      ',/,&
-'@                                                            ',/,&
-'@  Il y a ',I10,' faces pour lesquelles aucune zone          ',/,&
-'@  n''est définie.                                           ',/,&
-'@                                                            ',/,&
-'@  Le calcul continue.                                       ',/,&
-'@                                                            ',/,&
-'@  Compléter les conditions aux limites dans le              ',/,&
-'@  sous-programme usclim.F.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  1001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -317,22 +299,6 @@ nozapm = izonem
 
 #else
 
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: THE BOUNDARY CONDITIONS GIVEN BY THE           ',/,&
-'@    ========                                                ',/,&
-'@         INTERFACE ARE INCOMPLETE OR NON-EXISTANT           ',/,&
-'@                                                            ',/,&
-'@  There are ',I10,' faces for which no zone is defined.     ',/,&
-'@                                                            ',/,&
-'@  The calulation will run.                                  ',/,&
-'@                                                            ',/,&
-'@  Complete the boundary conditions in the subroutine usclim.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  1001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

@@ -1652,29 +1652,6 @@ enddo
 
 #if defined(_CS_LANG_FR)
 
- 1099 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
-'@    =========                                               ',/,&
-'@    CONDITIONS AUX LIMITES INCORRECTES OU INCOMPLETES       ',/,&
-'@                                                            ',/,&
-'@    La valeur du type ITYPFB des conditions aux limites doit',/,&
-'@      etre superieure ou egale a          1                 ',/,&
-'@        et inferieure ou egale a ',I10                       ,/,&
-'@    Une ou plusieurs erreurs sont listees ci-dessus.        ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Verifier le codage du sous-programme de definition des  ',/,&
-'@    aux limites.                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
  2010 format(/,' PHASE  : ',I10)
  2020 format(/,'   IFINTY : ',I10)
  2030 format(/,'   IDEBTY : ',I10)
@@ -1829,29 +1806,6 @@ enddo
 !-------------------------------------------------------------------------------
 
 #else
-
- 1099 format(                                                     &
-'@'                                                            ,/,&
-'@'                                                            ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ WARNING: ABORT BY BOUNDARY CONDITION CHECK'              ,/,&
-'@    ========'                                                ,/,&
-'@    INCORRECT OR INCOMPLETE BOUNDARY CONDITIONS'             ,/,&
-'@'                                                            ,/,&
-'@    Value of type ITYPFB for boundary conditions must be'    ,/,&
-'@          greater or equal to          1'                    ,/,&
-'@      and less than or equal to ', I10                       ,/,&
-'@    One or more errors are listed above.'                    ,/,&
-'@'                                                            ,/,&
-'@    The calculation will not be run.'                        ,/,&
-'@'                                                            ,/,&
-'@    Verify the boundary condition definitions in the'        ,/,&
-'@    appropriate user subroutine.'                            ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
 
  2010 format(/,' PHASE  : ',I10)
  2020 format(/,'   IFINTY : ',I10)
