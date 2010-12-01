@@ -89,12 +89,14 @@ module entsor
   !              11 : comme indmod = 1, avec champ de deplacement,
   !              12 : comme indmod = 2, avec champ de deplacement.
   !     ntchr  : frequence de sortie par defaut ( > 0 ou -1 (a la fin) )
+  !     frchr  : frequence de sortie en secondes ( > 0 ou -1.0 )
   !     ichrvr : on sort la variable (1) ou non (0) ou non initialise
   !     fmtchr : format de sortie ('EnSight Gold', 'MED_fichier', 'CGNS')
   !     optchr : options associees au format de sortie
 
   integer, save :: ichrvl, ichrbo, ichrsy, ichrze,                 &
                    ichrmd, ntchr, ichrvr(nvppmx)
+  double precision, save :: frchr
 
   character*32, save :: fmtchr
   character*96, save :: optchr
@@ -148,6 +150,7 @@ module entsor
   !     ncapt  : nombre de sondes total (limite a ncaptm)
   !     nthist : frequence de sortie
   !         ( > 0 ou -1 (jamais) ou non initialise -999)
+  !     frhist : frequence de sortie en secondes
   !     nthsav : Frequence de sauvegarde
   !         ( > 0 ou -1 (a la fin) ou non initialise -999)
   !     ihisvr : nb de sonde et numero par variable
@@ -163,7 +166,7 @@ module entsor
                    ihisvr(nvppmx,ncaptm+1), ihistr,        &
                    nodcap(ncaptm), ndrcap(ncaptm)
 
-  double precision, save :: xyzcap(3,ncaptm)
+  double precision, save :: xyzcap(3,ncaptm), frhist
 
   ! --- Fichiers Lagrangiens
 

@@ -116,7 +116,8 @@ typedef void
  * integer          lopfmt      : <-- : format options string length
  * integer          indmod      : <-- : 0 if fixed, 1 if deformable,
  *                              :     : 2 if topology changes
- * integer          ntchr       : <-- : default output frequency
+ * integer          ntchr       : <-- : default output frequency in time-steps
+ * double precision frchr       : <-- : default output frequency in seconds
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstcw1, PSTCW1)
@@ -131,7 +132,8 @@ void CS_PROCF (pstcw1, PSTCW1)
  const cs_int_t  *lnmfmt,
  const cs_int_t  *lopfmt,
  const cs_int_t  *indmod,
- const cs_int_t  *ntchr
+ const cs_int_t  *ntchr,
+ const cs_real_t *frchr
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 );
@@ -280,15 +282,17 @@ void CS_PROCF (pstass, PSTASS)
  *
  * Fortran interface:
  *
- * subroutine pstntc (ntcabs)
+ * subroutine pstntc (ntcabs, ttcabs)
  * *****************
  *
  * integer          ntcabs      : <-- : current time step number
+ * double precision ttcabs      : <-- : absolute time at the current time step
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstntc, PSTNTC)
 (
- const cs_int_t  *ntcabs
+ const cs_int_t  *ntcabs,
+ const cs_real_t *ttcabs
 );
 
 /*----------------------------------------------------------------------------
@@ -297,7 +301,7 @@ void CS_PROCF (pstntc, PSTNTC)
  *
  * Fortran interface:
  *
- * subroutine pstntc (numwri, indact)
+ * subroutine pstact (numwri, indact)
  * *****************
  *
  * integer          numwri      : <-- : writer number, or 0 for all writers
@@ -521,14 +525,15 @@ void CS_PROCF (pstev1, PSTEV1)
  * frequency for associated variables.
  *
  * parameters:
- *   writer_id <-- id of writer to create (< 0 reserved, > 0 for user)
- *   case_name <-- associated case name
- *   dir_name  <-- associated directory name
- *   fmt_name  <-- associated format name
- *   fmt_opts  <-- associated format options
- *   mod_flag  <-- 0 if fixed, 1 if deformable, 2 if topolygy changes,
- *                 +10 add a displacement field
- *   frequency <-- default output frequency
+ *   writer_id   <-- number of writer to create (< 0 reserved, > 0 for user)
+ *   case_name   <-- associated case name
+ *   dir_name    <-- associated directory name
+ *   fmt_name    <-- associated format name
+ *   fmt_opts    <-- associated format options
+ *   mod_flag    <-- 0 if fixed, 1 if deformable, 2 if topolygy changes,
+ *                   +10 add a displacement field
+ *   frequency_n <-- default output frequency in time-steps
+ *   frequency_t <-- default output frequency in seconds
  *----------------------------------------------------------------------------*/
 
 void
@@ -538,7 +543,8 @@ cs_post_add_writer(int          writer_id,
                    const char  *fmt_name,
                    const char  *fmt_opts,
                    cs_int_t     mod_flag,
-                   cs_int_t     frequency);
+                   cs_int_t     frequency_n,
+                   cs_real_t    frequency_s);
 
 /*----------------------------------------------------------------------------
  * Create a post-processing mesh; lists of cells or faces to extract are
@@ -797,10 +803,12 @@ cs_post_associate(int  mesh_id,
  *
  * parameters:
  *   nt_cur_abs <-- current time step number
+ *   t_cur_abs  <-- absolute time at the current time step
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_activate_if_default(int  nt_cur_abs);
+cs_post_activate_if_default(int     nt_cur_abs,
+                            double  t_cur_abs);
 
 /*----------------------------------------------------------------------------
  * Force the "active" or "inactive" flag for a specific writer or for all

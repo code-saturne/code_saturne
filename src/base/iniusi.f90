@@ -548,10 +548,10 @@ if(iihmpr.eq.1) then
 
   call csenso                                                     &
   !==========
-     ( nvppmx, ncapt,  nthist, ntlist,                            &
+     ( nvppmx, ncapt,  nthist, frhist, ntlist,                    &
        ichrvl, ichrbo, ichrsy, ichrmd,                            &
        fmtchr, len(fmtchr), optchr, len(optchr),                  &
-       ntchr,  iecaux,                                            &
+       ntchr,  frchr , iecaux,                                    &
        ipstdv, ipstyp, ipstcl, ipstft, ipstfo,                    &
        ichrvr, ilisvr, ihisvr, isca, iscapp,                      &
        ipprtp, xyzcap )

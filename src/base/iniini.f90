@@ -196,6 +196,7 @@ impli2 = 82
 !       NTCHR  : Periode   de sortie Post
 !         -1 : une seule sortie a la fin
 !         >0 : periode
+!       FRCHR  : frequence de sortie (en secondes)
 !       ICHRVR  : Variables a sortir
 !         (1 oui, 0 non, sinon : non initialise)
 
@@ -206,6 +207,7 @@ ichrze = 0
 
 ichrmd = 0
 ntchr  = -1
+frchr  = -1.d0
 
 do ii = 1, nvppmx
   ichrvr(ii )   = -999
@@ -274,6 +276,7 @@ enddo
 !     NCAPT  : nombre de sondes total (limite a NCAPTM)
 !     NTHIST : Periode de sortie
 !         ( > 0 ou -1 (jamais))
+!     FRHIST : frequence de sortie (en secondes)
 !     NTHSAV : Periode de sauvegarde
 !         ( > 0 ou -1 (a la fin) ou 0 (NTMABS/4))
 !     IHISVR : nb de sonde et numero par variable
@@ -288,6 +291,7 @@ enddo
 ncapt = 0
 
 nthist = 1
+frhist = -1.d0
 nthsav = 0
 
 do ii = 1, nvppmx

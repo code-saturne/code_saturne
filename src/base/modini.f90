@@ -164,8 +164,19 @@ icompt = 0
 do ii = 2, nvppmx
   if(ichrvr(ii).eq.1) icompt = icompt+1
 enddo
-if(icompt.eq.0) ntchr = -1
+if(icompt.eq.0) then
+  ntchr = -1
+  frchr = -1.d0
+endif
 
+! Adapt the output frequency parameters according to the time scheme.
+if (idtvar.lt.0.or.idtvar.eq.2) then
+  frchr = -1.d0
+else
+  if (frchr > 0.d0) then
+    ntchr = -1
+  endif
+endif
 
 !---> sorties historiques ?
 !      Si une valeur non modifiee par l'utilisateur (=-999)
@@ -221,6 +232,16 @@ if (iale.eq.0) then
   enddo
 
   if(icompt.eq.0.or.ncapt.eq.0) then
+    nthist = -1
+    frhist = -1.d0
+  endif
+endif
+
+! Adapt the output frequency parameters according to the time scheme.
+if (idtvar.lt.0.or.idtvar.eq.2) then
+  frhist = -1.d0
+else
+  if (frhist > 0.d0) then
     nthist = -1
   endif
 endif

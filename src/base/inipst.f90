@@ -29,7 +29,7 @@ subroutine inipst &
 !=================
 
  ( ipstvl , ipstbo , ipstsy , ipstze,                             &
-   ipstmd , ntpst  , fmtpst , optpst )
+   ipstmd , ntpst  , frpst  , fmtpst , optpst )
 
 !===============================================================================
 ! FONCTION :
@@ -60,6 +60,7 @@ subroutine inipst &
 !                  !    !     ! 12 : idem que 2 avec ecriture d'un             !
 !                  !    !     !                      champ de deplact          !
 ! ntpst            ! e  ! --> ! frequence des sorties post-traitement          !
+! frpst            ! e  ! --> ! frequence des sorties post-traitement (en s)   !
 ! fmtpst           ! a  ! --> ! nom du format de post-traitement               !
 ! fmtpst           ! a  ! --> ! options du format de post-traitement           !
 !__________________!____!_____!________________________________________________!
@@ -85,6 +86,7 @@ implicit none
 
 integer          ipstvl , ipstbo , ipstsy , ipstze
 integer          ipstmd , ntpst
+double precision frpst
 
 character        fmtpst(32)
 character        optpst(96)
@@ -104,6 +106,7 @@ ipstze = ichrze
 
 ipstmd = ichrmd
 ntpst = ntchr
+frpst = frchr
 
 ll = len(fmtchr)
 call cssf2c(ll, fmtchr, fmtpst)

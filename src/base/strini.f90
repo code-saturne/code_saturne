@@ -408,6 +408,7 @@ do ii = 2, nvppmx
 enddo
 if( (icompt.eq.0.or.ncapt.eq.0) .and. ihistr.eq.0 ) then
   nthist = -1
+  frhist = -1.d0
 endif
 
 if (ihistr.ne.0 .and. ihistr.ne.1) then

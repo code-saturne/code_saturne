@@ -429,6 +429,7 @@ void CS_PROCF (inipst, INIPST)
                               *     1: deformable post processing meshes
                               *     2: output of a displacement field */
  const cs_int_t  *ntchr,     /* <-- frequency of post processing output */
+ const cs_real_t *frchr,     /* <-- frequency of post processing output */
  const char      *fmtchr,    /* <-- name of main output format */
  const char      *optchr     /* <-- options for main output format */
 );

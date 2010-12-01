@@ -164,6 +164,7 @@ integer          iflag1, iflag2, iel1, iel2
 character*32     nomcas, nomfmt, nommai
 character*96     nomrep, optfmt
 
+double precision frchrl
 double precision xfac  , yfac  , zfac
 
 integer, allocatable, dimension(:) :: fam_list, fam_mask
@@ -251,8 +252,12 @@ do icas = 1, nbcas
   !     11: as indmod = 1, with a vertex displacement field
   !     12: as indmod = 2, with a vertex displacement field
 
-  ! 'ntchrl' defines the default output frequency (output at a specific
-  ! time may still be forced or inhibited using the 'usnpst' user subroutine).
+  ! 'ntchrl' defines the default output frequency (in time-steps)
+  ! 'frchrl' defines the default output frequency (in seconds)
+  ! Output at a specific time may still be forced or inhibited using the
+  ! 'usnpst' user subroutine).
+
+  frchrl = -1.d0
 
   if (icas .eq. 1) then
 
@@ -295,7 +300,7 @@ do icas = 1, nbcas
 
   ! Create writer
 
-  call pstcwr (icas  , nomcas, nomrep, nomfmt, optfmt, indmod, ntchrl)
+  call pstcwr (icas  , nomcas, nomrep, nomfmt, optfmt, indmod, ntchrl, frchrl)
   !==========
 
 enddo

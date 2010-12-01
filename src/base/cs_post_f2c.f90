@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -28,7 +28,7 @@
 subroutine pstcwr &
 !=================
 
- ( numgep , nomcas , nomrep , nomfmt , optfmt , indmod , ntchr )
+ ( numgep , nomcas , nomrep , nomfmt , optfmt , indmod , ntchr , frchr )
 
 !===============================================================================
 ! FONCTION :
@@ -59,6 +59,7 @@ subroutine pstcwr &
 !                  !    !     ! 1 : maillages deformables                      !
 !                  !    !     ! 2 : maillages modifiables                      !
 ! ntchr            ! e  ! <-- ! frequence de sortie par defaut                 !
+! frchr            ! r  ! <-- ! frequence de sortie par defaut (en secondes)   !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -80,6 +81,7 @@ implicit none
 character*32     nomcas , nomfmt
 character*96     nomrep , optfmt
 integer          numgep , indmod , ntchr
+double precision frchr
 
 ! Local variables
 
@@ -95,7 +97,7 @@ lopfmt = len(optfmt)
 call pstcw1 (numgep, nomcas, nomrep, nomfmt, optfmt,              &
 !==========
              lnmcas, lnmrep, lnmfmt, lopfmt,                      &
-             indmod, ntchr)
+             indmod, ntchr , frchr )
 
 return
 

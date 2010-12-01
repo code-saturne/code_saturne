@@ -2273,7 +2273,7 @@ write(nfecra,7510) ntsuit
 
 !   - Fichiers Ensight
 
-write(nfecra,7520) ntchr
+write(nfecra,7520) ntchr,frchr
 do ii = 2, nvppmx
   if(ichrvr(ii).eq.1) then
     name = nomvar(ii)
@@ -2283,8 +2283,7 @@ enddo
 write(nfecra,7522)
 
 !   - Fichiers historiques
-
-write(nfecra,7530) nthist,ncapt,nthsav
+write(nfecra,7530) nthist,frhist,ncapt,nthsav
 do ii = 2, nvppmx
   if(ihisvr(ii,1).ne.0) then
     name = nomvar(ii)
@@ -2334,6 +2333,7 @@ write(nfecra,9900)
  7520 format(                                                           &
 ' --- Fichiers EnSight, MED, ou CGNS'                          ,/,&
 '       NTCHR  = ',4X,I10,    ' (Periode de sortie    )'       ,/,&
+'       FRCHR  = ',4X,E11.5,  ' (Periode de sortie (s))'       ,/,&
                                                                 /,&
 '       Numero Nom'                                              )
  7521 format(                                                           &
@@ -2343,6 +2343,7 @@ write(nfecra,9900)
  7530 format(                                                           &
 ' --- Fichiers historiques'                                    ,/,&
 '       NTHIST = ',4X,I10,    ' (Periode de sortie    )'       ,/,&
+'       FRHIST = ',4X,E11.5,  ' (Periode de sortie (s))'       ,/,&
 '       NCAPT  = ',4X,I10,    ' (Nombre de capteurs   )'       ,/,&
 '       NTHSAV = ',4X,I10,    ' (Periode de sauvegarde)'       ,/,&
                                                                 /,&
@@ -2379,6 +2380,7 @@ write(nfecra,9900)
  7520 format(                                                           &
 ' --- EnSight, MED, or CGNS output'                            ,/,&
 '       NTCHR  = ',4X,I10,    ' (Output frequency     )'       ,/,&
+'       FRCHR  = ',4X,E11.5,  ' (Output frequency (s) )'       ,/,&
                                                                 /,&
 '       Number Name'                                             )
  7521 format(                                                           &
@@ -2388,6 +2390,7 @@ write(nfecra,9900)
  7530 format(                                                           &
 ' --- Probe history files'                                     ,/,&
 '       NTHIST = ',4X,I10,    ' (Output frequency     )'       ,/,&
+'       FRHIST = ',4X,E11.5,  ' (Output frequency (s) )'       ,/,&
 '       NCAPT  = ',4X,I10,    ' (Number of probes     )'       ,/,&
 '       NTHSAV = ',4X,I10,    ' (Checkpoint frequency )'       ,/,&
                                                                 /,&

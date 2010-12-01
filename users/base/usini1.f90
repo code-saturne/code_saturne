@@ -1739,12 +1739,13 @@ optchr = 'binary'
 
 
 ! --- chronological output step
-!       (-1: only one valua at calculation end)
-!       (strictly positive valeu: output periodicity)
+!       (-1: only one value at calculation end)
+!       (strictly positive value: output periodicity)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ntchr = -1
+frchr = -1.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
@@ -1754,6 +1755,7 @@ ntchr = -1
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 nthist = 1
+frhist = -1.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 

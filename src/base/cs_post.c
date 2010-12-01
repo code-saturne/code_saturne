@@ -104,7 +104,8 @@ typedef struct {
 
   int            id;           /* Identifier (< 0 for "reservable" writer,
                                 * > 0 for user writer */
-  int            frequency;    /* Default output frequency */
+  int            frequency_n;  /* Default output frequency in time-steps */
+  double         frequency_t;  /* Default output frequency in seconds */
   cs_bool_t      write_displ;  /* Write displacement field if true */
 
   int            active;       /* 0 if no output at current time step,
@@ -147,6 +148,8 @@ typedef struct {
   int                    *writer_id;     /* Array of associated writer ids */
   int                     nt_last;       /* Time step number for the last
                                             output (-1 before first output) */
+  double                  t_last;        /* Time value number for the last
+                                            output (-1.0 before first output) */
 
   cs_int_t                n_i_faces;     /* N. associated interior faces */
   cs_int_t                n_b_faces;     /* N. associated boundary faces */
@@ -388,6 +391,7 @@ _cs_post_add_mesh(int  mesh_id)
   post_mesh->writer_id = NULL;
 
   post_mesh->nt_last = -1;
+  post_mesh->t_last = -1.0;
 
   post_mesh->add_groups = false;
 
@@ -851,8 +855,10 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
 
   }
 
-  if (write_mesh == true)
+  if (write_mesh == true) {
     post_mesh->nt_last = nt_cur_abs;
+    post_mesh->t_last = t_cur_abs;
+  }
 
   if (   post_mesh->mod_flag_max == FVM_WRITER_FIXED_MESH
       && post_mesh->_exp_mesh != NULL)
@@ -1452,7 +1458,8 @@ _boundary_submeshes_by_group(const cs_mesh_t  *mesh,
  * integer          lopfmt      : <-- : format options string length
  * integer          indmod      : <-- : 0 if fixed, 1 if deformable,
  *                              :     : 2 if topology changes
- * integer          ntchr       : <-- : default output frequency
+ * integer          ntchr       : <-- : default output frequency in time-steps
+ * double precision frchr       : <-- : default output frequency in seconds
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstcw1, PSTCW1)
@@ -1467,7 +1474,8 @@ void CS_PROCF (pstcw1, PSTCW1)
  const cs_int_t  *lnmfmt,
  const cs_int_t  *lopfmt,
  const cs_int_t  *indmod,
- const cs_int_t  *ntchr
+ const cs_int_t  *ntchr,
+ const cs_real_t *frchr
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 )
@@ -1494,7 +1502,8 @@ void CS_PROCF (pstcw1, PSTCW1)
                      nom_format,
                      opt_format,
                      *indmod,
-                     *ntchr);
+                     *ntchr,
+                     *frchr);
 
   /* Free temporary C strings */
 
@@ -1690,14 +1699,16 @@ void CS_PROCF (pstass, PSTASS)
  * *****************
  *
  * integer          ntcabs      : <-- : current time step number
+ * double precision ttcabs      : <-- : absolute time at the current time step
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstntc, PSTNTC)
 (
- const cs_int_t  *ntcabs
+ const cs_int_t  *ntcabs,
+ const cs_real_t *ttcabs
 )
 {
-  cs_post_activate_if_default(*ntcabs);
+  cs_post_activate_if_default(*ntcabs, *ttcabs);
 }
 
 /*----------------------------------------------------------------------------
@@ -1706,7 +1717,7 @@ void CS_PROCF (pstntc, PSTNTC)
  *
  * Fortran interface:
  *
- * subroutine pstntc (numwri, indact)
+ * subroutine pstact (numwri, indact)
  * *****************
  *
  * integer          numwri      : <-- : writer number, or 0 for all writers
@@ -2383,14 +2394,15 @@ void CS_PROCF (pstev1, PSTEV1)
  * frequency for associated variables.
  *
  * parameters:
- *   writer_id <-- number of writer to create (< 0 reserved, > 0 for user)
- *   case_name <-- associated case name
- *   dir_name  <-- associated directory name
- *   fmt_name  <-- associated format name
- *   fmt_opts  <-- associated format options
- *   mod_flag  <-- 0 if fixed, 1 if deformable, 2 if topolygy changes,
- *                 +10 add a displacement field
- *   frequency <-- default output frequency
+ *   writer_id   <-- number of writer to create (< 0 reserved, > 0 for user)
+ *   case_name   <-- associated case name
+ *   dir_name    <-- associated directory name
+ *   fmt_name    <-- associated format name
+ *   fmt_opts    <-- associated format options
+ *   mod_flag    <-- 0 if fixed, 1 if deformable, 2 if topolygy changes,
+ *                   +10 add a displacement field
+ *   frequency_n <-- default output frequency in time-steps
+ *   frequency_t <-- default output frequency in seconds
  *----------------------------------------------------------------------------*/
 
 void
@@ -2400,7 +2412,8 @@ cs_post_add_writer(int          writer_id,
                    const char  *fmt_name,
                    const char  *fmt_opts,
                    cs_int_t     mod_flag,
-                   cs_int_t     frequency)
+                   cs_int_t     frequency_n,
+                   cs_real_t    frequency_t)
 {
   /* local variables */
 
@@ -2448,7 +2461,8 @@ cs_post_add_writer(int          writer_id,
   writer = _cs_post_writers + _cs_post_n_writers - 1;
 
   writer->id = writer_id;
-  writer->frequency = frequency;
+  writer->frequency_n = frequency_n;
+  writer->frequency_t = frequency_t;
   writer->write_displ = false;
   writer->active = 0;
 
@@ -3084,6 +3098,7 @@ cs_post_associate(int  mesh_id,
 
     post_mesh->writer_id[post_mesh->n_writers - 1] = _writer_id;
     post_mesh->nt_last = - 1;
+    post_mesh->t_last = - 1.0;
 
     /* Update structure */
 
@@ -3140,10 +3155,12 @@ cs_post_associate(int  mesh_id,
  *
  * parameters:
  *   nt_cur_abs <-- current time step number
+ *   t_cur_abs  <-- absolute time at the current time step
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_activate_if_default(int  nt_cur_abs)
+cs_post_activate_if_default(int     nt_cur_abs,
+                            double  t_cur_abs)
 {
   int  i;
   cs_post_writer_t  *writer;
@@ -3152,8 +3169,8 @@ cs_post_activate_if_default(int  nt_cur_abs)
 
     writer = _cs_post_writers + i;
 
-    if (writer->frequency > 0) {
-      if (nt_cur_abs % (writer->frequency) == 0)
+    if (writer->frequency_n > 0) {
+      if (nt_cur_abs % (writer->frequency_n) == 0)
         writer->active = 1;
       else
         writer->active = 0;
@@ -3826,6 +3843,7 @@ cs_post_init_main_writer(void)
   char  fmtchr[32 + 1] = "";
   char  optchr[96 + 1] = "";
   cs_int_t  ntchr = -1;
+  cs_real_t frchr = -1.0;
 
   const char  nomcas[] = "chr";
   const char *nomrep = NULL;
@@ -3840,6 +3858,7 @@ cs_post_init_main_writer(void)
                            &indic_ze,
                            &indic_mod,
                            &ntchr,
+                           &frchr,
                            fmtchr,
                            optchr);
 
@@ -3862,7 +3881,8 @@ cs_post_init_main_writer(void)
                      fmtchr,
                      optchr,
                      indic_mod,
-                     ntchr);
+                     ntchr,
+                     frchr);
 
 }
 
@@ -3891,6 +3911,7 @@ cs_post_init_main_meshes(int check_mask)
   char  fmtchr[32 + 1] = "";
   char  optchr[96 + 1] = "";
   cs_int_t  ntchr = -1;
+  cs_real_t frchr = -1.0;
 
   cs_int_t  mesh_id = -1;
 
@@ -3904,6 +3925,7 @@ cs_post_init_main_meshes(int check_mask)
                            &indic_ze,
                            &indic_mod,
                            &ntchr,
+                           &frchr,
                            fmtchr,
                            optchr);
 
@@ -4003,6 +4025,7 @@ cs_post_init_error_writer(void)
   char  fmtchr[32 + 1] = "";
   char  optchr[96 + 1] = "";
   cs_int_t  ntchr = -1;
+  cs_real_t frchr = -1.0;
 
   const char  nomcas[] = "error";
   const char  nomrep_ens[] = "error.ensight";
@@ -4022,6 +4045,7 @@ cs_post_init_error_writer(void)
                            &indic_ze,
                            &indic_mod,
                            &ntchr,
+                           &frchr,
                            fmtchr,
                            optchr);
 
@@ -4041,7 +4065,8 @@ cs_post_init_error_writer(void)
                      fmtchr,
                      optchr,
                      -1, /* No time dependency here */
-                     ntchr);
+                     ntchr,
+                     frchr);
 }
 
 /*----------------------------------------------------------------------------

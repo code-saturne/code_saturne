@@ -116,6 +116,7 @@ _init_join_writer(void)
   char  fmtchr[32 + 1] = "";
   char  optchr[96 + 1] = "";
   cs_int_t  ntchr = -1;
+  cs_real_t  frchr = -1.0;
 
   const char  casename[] = "joining";
   const char  dirname_ens[] = "joining.ensight";
@@ -130,6 +131,7 @@ _init_join_writer(void)
                            &indic_ze,
                            &indic_mod,
                            &ntchr,
+                           &frchr,
                            fmtchr,
                            optchr);
 
@@ -151,7 +153,8 @@ _init_join_writer(void)
                      fmtchr,
                      optchr,
                      -1, /* No time dependency here */
-                     ntchr);
+                     ntchr,
+                     frchr);
 
   return  writer_id;
 }

@@ -1,4 +1,30 @@
 * 01/12/2010 - Cyril Baudry <cyril.baudry@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Add user variables to have a possible time-dependant output frequency (in
+  seconds) for both the 3d-outputs and the time-monitoring outputs.
+  The graphical user interface has not yet been adapted, as well as the code
+  activating the outputs (only the skeleton is present at the moment).
+  modified routines:
+    src/base/cs_gui.c
+    src/base/cs_gui.h
+    src/base/cs_join_post.c
+    src/base/cs_post.c
+    src/base/cs_post_f2c.f90
+    src/base/cs_post.h
+    src/base/cs_prototypes.h
+    src/base/entsor.f90
+    src/base/impini.f90
+    src/base/iniini.f90
+    src/base/inipst.f90
+    src/base/iniusi.f90
+    src/base/modini.f90
+    src/base/strini.f90
+    src/rayt/rayopt.f90
+    users/base/usdpst.f90
+    users/base/usini1.f90
+    users/base/usnpst.f90
+
+* 01/12/2010 - Cyril Baudry <cyril.baudry@edf.fr>
   Add members to the cs_vars_t structure to account for the number of phases,
   in order for NEPTUNE_CFD to be able to link against Code_Saturne source code.
   modified routines:

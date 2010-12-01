@@ -1086,6 +1086,31 @@ static void cs_gui_output_value(const char *const param,
 }
 
 /*----------------------------------------------------------------------------
+ * Get output control value parameters for frequency output
+ *
+ * parameters:
+ *   param                -->  name of the parameter
+ *   keyword             <--   output control parameter
+ *----------------------------------------------------------------------------*/
+
+static void cs_gui_output_time_value(const char *const param,
+                                      double  *const keyword)
+{
+  char *path = NULL;
+  char *choice = NULL;
+  double result = 0.0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "analysis_control", "output", param);
+
+  cs_xpath_add_function_text(&path);
+  if (cs_gui_get_double(path, &result)) *keyword = result;
+
+  BFT_FREE(choice);
+  BFT_FREE(path);
+}
+
+/*----------------------------------------------------------------------------
  * Return the output format and options for postprocessing.
  *
  * parameters:
@@ -3921,6 +3946,7 @@ void CS_PROCF (csenso, CSENSO)
  const    int *const nvppmx,
           int *const ncapt,
           int *const nthist,
+       double *const frhist,
           int *const ntlist,
           int *const ichrvl,
           int *const ichrbo,
@@ -3931,6 +3957,7 @@ void CS_PROCF (csenso, CSENSO)
          char *const optchr,
           int *const size_opt,
           int *const ntchr,
+       double *const frchr,
           int *const iecaux,
           int *const ipstdv,
           int *const ipstyp,
@@ -3956,7 +3983,9 @@ void CS_PROCF (csenso, CSENSO)
   cs_gui_output_value("auxiliary_restart_file_writing", iecaux);
   cs_gui_output_value("listing_printing_frequency", ntlist);
   cs_gui_output_value("postprocessing_frequency", ntchr);
+  cs_gui_output_time_value("postprocessing_frequency_time", frchr);
   cs_gui_output_value("probe_recording_frequency", nthist);
+  cs_gui_output_time_value("probe_recording_frequency_time", frhist);
   cs_gui_output_value("postprocessing_mesh_options", ichrmd);
   cs_gui_output_choice("postprocessing_format", fmtchr, size_fmt);
   cs_gui_output_choice("postprocessing_options", optchr, size_opt);
@@ -4038,7 +4067,9 @@ void CS_PROCF (csenso, CSENSO)
   bft_printf("--optchr = %s\n", "need to be checked in Fortran");
   bft_printf("--ntlist = %i\n", *ntlist);
   bft_printf("--ntchr  = %i\n", *ntchr);
+  bft_printf("--frchr  = %i\n", *frchr);
   bft_printf("--nthist = %i\n", *nthist);
+  bft_printf("--frhist = %i\n", *frhist);
   bft_printf("--ncapt  = %i\n", *ncapt);
   for (i = 0; i < *ncapt; i++) {
     bft_printf("--xyzcap[%i][0] = %f\n", i, xyzcap[0 +i*3]);

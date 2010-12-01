@@ -187,9 +187,10 @@ integer          indwri, indact
 !===============================================================================
 
 ! For any given writer, default output is activated for time steps which are
-! multiples of the writer's output frequency.
+! multiples of the writer's output frequency (likewise for the absolute
+! time)
 
-call pstntc(ntcabs)
+call pstntc(ntcabs, ttcabs)
 !==========
 
 ! We may force the activation or deactivation of a given writer at a
