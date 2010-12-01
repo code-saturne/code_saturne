@@ -4,6 +4,7 @@
   modified routines:
     src/base/cs_gui.c
     src/base/cs_gui.h
+    src/base/cs_gui_variables.h
     src/base/iniusi.f90
 
 * 29/11/2010 - David Monfort <david.monfort@edf.fr>
