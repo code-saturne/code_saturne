@@ -145,7 +145,7 @@ do npt = nbpart,1,-1
 !        ---> c'est la derniere particule, on la supprime seulement
 
       nbp  = nbp - 1
-      dnbp = dnbp - tepa(nbp,jrpoi)
+      dnbp = dnbp - tepa(npt,jrpoi)
 
       do i = 1,nliste
         if ( liste(i).eq.npt ) then
@@ -158,9 +158,11 @@ do npt = nbpart,1,-1
 !        ---> la particule NPT est supprime et on met a la place la
 !             particule NBP
 
+      dnbp = dnbp - tepa(npt,jrpoi)
+
       do ivar = 1,nvp
         ettp(npt,ivar) = ettp(nbp,ivar)
-        enddo
+      enddo
 
       do ivar = 1,nvp
         ettpa(npt,ivar) = ettpa(nbp,ivar)
@@ -187,7 +189,6 @@ do npt = nbpart,1,-1
       enddo
 
       nbp  = nbp - 1
-      dnbp = dnbp - tepa(nbp,jrpoi)
 
     endif
 
