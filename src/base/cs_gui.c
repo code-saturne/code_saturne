@@ -4707,9 +4707,9 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
                 for (j = 0; j < cells; j++)
                 {
                     iel = cells_list[j];
-                    vit = rtpa[vars->rtp[1]*(*ncelet) + iel] * rtpa[vars->rtp[1]*(*ncelet) + iel] \
-                        + rtpa[vars->rtp[2]*(*ncelet) + iel] * rtpa[vars->rtp[2]*(*ncelet) + iel] \
-                        + rtpa[vars->rtp[3]*(*ncelet) + iel] * rtpa[vars->rtp[3]*(*ncelet) + iel] ;
+                    vit = rtpa[vars->rtp[1]*(*ncelet) + iel-1] * rtpa[vars->rtp[1]*(*ncelet) + iel-1] \
+                        + rtpa[vars->rtp[2]*(*ncelet) + iel-1] * rtpa[vars->rtp[2]*(*ncelet) + iel-1] \
+                        + rtpa[vars->rtp[3]*(*ncelet) + iel-1] * rtpa[vars->rtp[3]*(*ncelet) + iel-1] ;
                     vit = sqrt(vit);
                     ckupdc[0 * ncepdp[*iphas-1] + ielpdc] = 0.5 * c11 * vit;
                     ckupdc[1 * ncepdp[*iphas-1] + ielpdc] = 0.5 * c22 * vit;
