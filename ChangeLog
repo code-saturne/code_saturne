@@ -1,3 +1,8 @@
+* 03/12/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove calls to deprecated bft_fp_trap_set() function.
+  modified files:
+    src/base/cs_solver.c
+
 * 26/10/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Handle processor list under LSF when LSB_MCPU_HOSTS is used instead
   of LSB_HOSTS

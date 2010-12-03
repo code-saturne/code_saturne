@@ -70,10 +70,6 @@
 #include <bft_printf.h>
 #include <bft_timer.h>
 
-#if !defined(_GNU_SOURCE)
-#include <bft_fp_trap.h>
-#endif
-
 /*----------------------------------------------------------------------------
  * FVM library headers
  *----------------------------------------------------------------------------*/
@@ -580,8 +576,6 @@ main(int    argc,
       /* To revert to initial behavior: fesetenv(&_fenv_old); */
     }
   }
-#else
-  bft_fp_trap_set();
 #endif
 
   /* Initialize memory management and signals */
