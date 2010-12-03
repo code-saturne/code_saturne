@@ -55,10 +55,14 @@ AC_ARG_WITH(cgns-lib,
             [if test "x$with_cgns" = "xcheck"; then
                with_cgns=yes
              fi
-             CGNS_LDFLAGS="-L$with_cgns_lib"],
+             CGNS_LDFLAGS="-L$with_cgns_lib"
+             # Add the libdir to the runpath as CGNS is not libtoolized
+             CGNSRUNPATH="-R$with_cgns_lib"],
             [if test "x$with_cgns" != "xno" -a "x$with_cgns" != "xyes" \
 	          -a "x$with_cgns" != "xcheck"; then
                CGNS_LDFLAGS="-L$with_cgns/lib"
+               # Add the libdir to the runpath as CGNS is not libtoolized
+               CGNSRUNPATH="-R$with_cgns/lib"
              fi])
 
 
@@ -105,6 +109,7 @@ AC_SUBST(cs_have_cgns)
 AC_SUBST(CGNS_CPPFLAGS)
 AC_SUBST(CGNS_LDFLAGS)
 AC_SUBST(CGNS_LIBS)
+AC_SUBST(CGNSRUNPATH)
 
 ])dnl
 

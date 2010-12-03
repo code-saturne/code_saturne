@@ -1,3 +1,13 @@
+* 03/12/2010 - David Monfort <david.monfort@edf.fr>
+  Add runpath directive to libtool so as to find shared libraries at runtime
+  for CGNS, CCM and ADF libraries (non-libtoolized ones).
+  modified scripts:
+    m4/cs_adf.m4
+    m4/cs_ccm.m4
+    m4/cs_cgns.m4
+    preprocessor/appli/Makefile.am
+    src/apps/Makefile.am
+
 * 03/12/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix issues when removing the a particle which has exited the fluid domain.
   modified routine:

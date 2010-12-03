@@ -56,10 +56,14 @@ AC_ARG_WITH(ccm-lib,
             [if test "x$with_ccm" = "xcheck"; then
                with_ccm=yes
              fi
-             CCM_LDFLAGS="-L$with_ccm_lib"],
+             CCM_LDFLAGS="-L$with_ccm_lib"
+             # Add the libdir to the runpath as CCM is not libtoolized
+             CCMRUNPATH="-R$with_ccm_lib"],
             [if test "x$with_ccm" != "xno" -a "x$with_ccm" != "xyes" \
 	          -a "x$with_ccm" != "xcheck"; then
                CCM_LDFLAGS="-L$with_ccm/lib"
+               # Add the libdir to the runpath as CCM is not libtoolized
+               CCMRUNPATH="-R$with_ccm/lib"
              fi])
 
 # ADF may be provided directly (patched ADF with libccmio)
@@ -137,6 +141,7 @@ AC_SUBST(cs_have_ccm)
 AC_SUBST(CCM_CPPFLAGS)
 AC_SUBST(CCM_LDFLAGS)
 AC_SUBST(CCM_LIBS)
+AC_SUBST(CCMRUNPATH)
 
 ])dnl
 

@@ -43,10 +43,14 @@ AC_ARG_WITH(adf-lib,
             [if test "x$with_adf" = "xcheck"; then
                with_adf=yes
              fi
-             ADF_LDFLAGS="-L$with_adf_lib"],
+             ADF_LDFLAGS="-L$with_adf_lib"
+             # Add the libdir to the runpath as ADF is not libtoolized
+             ADFRUNPATH="-R$with_adf_lib"],
             [if test "x$with_adf" != "xno" -a "x$with_adf" != "xyes" \
 	          -a "x$with_adf" != "xcheck"; then
                ADF_LDFLAGS="-L$with_adf/lib"
+               # Add the libdir to the runpath as ADF is not libtoolized
+               ADFRUNPATH="-R$with_adf/lib"
              fi])
 
 
@@ -86,6 +90,7 @@ fi
 AC_SUBST(cs_have_adf)
 AC_SUBST(ADF_LDFLAGS)
 AC_SUBST(ADF_LIBS)
+AC_SUBST(ADFRUNPATH)
 
 ])dnl
 
