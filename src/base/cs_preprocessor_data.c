@@ -2244,8 +2244,10 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
       if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
-      else
+      else {
+        cs_io_set_fvm_lnum(&header, pp_in);
         cs_io_read_global(&header, (void *) &(mesh->dim), pp_in);
+      }
 
     }
     else if (strncmp(header.sec_name, "n_cells",
@@ -2301,8 +2303,10 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
       if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
-      else
+      else {
+        cs_io_set_fvm_lnum(&header, pp_in);
         cs_io_read_global(&header, (void *) &(mesh->n_families), pp_in);
+      }
 
     }
     else if (strncmp(header.sec_name, "n_group_class_props_max",
@@ -2311,9 +2315,11 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
       if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
-      else
+      else {
+        cs_io_set_fvm_lnum(&header, pp_in);
         cs_io_read_global(&header,
                           (void *) &(mesh->n_max_family_items), pp_in);
+      }
 
     }
     else if (strncmp(header.sec_name, "n_groups",
@@ -2322,8 +2328,10 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
       if (dim_read != true || header.n_vals != 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
-      else
+      else {
+        cs_io_set_fvm_lnum(&header, pp_in);
         cs_io_read_global(&header, (void *) &(mesh->n_groups), pp_in);
+      }
 
     }
     else if (strncmp(header.sec_name, "group_name_index",
@@ -2333,6 +2341,7 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
+        cs_io_set_fvm_lnum(&header, pp_in);
         BFT_MALLOC(mesh->group_idx, mesh->n_groups + 1, cs_int_t);
         cs_io_read_global(&header, (void *) mesh->group_idx, pp_in);
       }
@@ -2361,6 +2370,7 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
+        cs_io_set_fvm_lnum(&header, pp_in);
         BFT_MALLOC(mesh->family_item, n_elts, cs_int_t);
         cs_io_read_global(&header, (void *) mesh->family_item, pp_in);
       }
@@ -2378,6 +2388,7 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
+        cs_io_set_fvm_lnum(&header, pp_in);
         cs_io_read_global(&header, (void *) &(mesh->n_init_perio), pp_in);
 
         assert(mesh->n_init_perio > 0);
@@ -2408,6 +2419,7 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
+        cs_io_set_fvm_lnum(&header, pp_in);
         cs_io_read_global(&header, (void *) iperot, pp_in);
         if (*iperot > 0)
           mesh->have_rotation_perio = 1;
