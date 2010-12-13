@@ -1,3 +1,10 @@
+* 13/12/2010 - David Monfort <david.monfort@edf.fr>
+  Fix the XML definition for boundary conditions with exterior exchange
+  coefficient.
+  modified routines:
+    gui/Pages/BoundaryConditionsScalarsView.py
+    gui/Pages/Boundary.py
+
 * 06/12/2010 - David Monfort <david.monfort@edf.fr>
   Do not exclude build* and arch* to avoid missing the build-aux directory.
   modified script:
