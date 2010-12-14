@@ -1,3 +1,9 @@
+* 14/12/2010 - David Monfort <david.monfort@edf.fr>
+  Add the -noswitcherror option to PGI compilers to by-pass a libtool bug on
+  pthread library (detected when OpenMPI has been compiled with GCC).
+  modified script:
+    config/cs_auto_flags.sh
+
 * 14/12/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove memory usage field from PBS batch template and
   fix handling of PBS batch directives by GUI.

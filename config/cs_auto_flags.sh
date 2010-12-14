@@ -290,7 +290,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cs_cc_compiler_known=yes
 
     # Default compiler flags
-    cflags_default="-c99"
+    cflags_default="-c99 -noswitcherror"
     cflags_default_dbg="-g -Mbounds"
     cflags_default_opt="-O2"
     cflags_default_hot="-fast"
@@ -698,7 +698,7 @@ else
     cs_cxx_compiler_known=yes
 
     # Default compiler flags
-    cxxflags_default="-Xa"
+    cxxflags_default="-Xa -noswitcherror"
     cxxflags_default_dbg="-g -Mbounds"
     cxxflags_default_opt="-fast -fastsse"
     cxxflags_default_prf="-Mprof=func,lines"
@@ -1043,7 +1043,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     cs_fc_compiler_known=yes
 
     # Default compiler flags
-    fcflags_default="-Mpreprocess"
+    fcflags_default="-Mpreprocess -noswitcherror"
     fcflags_default_dbg="-g -Mbounds"
     fcflags_default_opt="-O2"
     fcflags_default_hot="-fast"
