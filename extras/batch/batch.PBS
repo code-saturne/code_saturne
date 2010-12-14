@@ -5,7 +5,6 @@
 #
 #PBS -l nodes=4:ppn=2
 #PBS -l walltime=1:00:00
-#PBS -l mem=320mb
 #
 #PBS -j eo
 #PBS -N nameandcase
@@ -13,7 +12,6 @@
 #  nodes    : number of nodes
 #  ppn      : number of process per node
 #  walltime : wall clock time (hh:mm:ss)
-#  mem      : memory
 #
 #-------------------------------------------------------------------------------
 
