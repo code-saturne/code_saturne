@@ -206,17 +206,6 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
  const cs_int_t  *numtyp,    /* <-- number or post-processing type
                               *     (-1 as volume, -2 as boundary, or nummai) */
- const cs_int_t  *ndim,      /* <-- spatial dimension */
- const cs_int_t  *ncelet,    /* <-- number of extended (real + ghost) cells */
- const cs_int_t  *ncel,      /* <-- number of cells */
- const cs_int_t  *nfac,      /* <-- number of interior faces */
- const cs_int_t  *nfabor,    /* <-- number of boundary faces */
- const cs_int_t  *nfml,      /* <-- number of families (group classes) */
- const cs_int_t  *nprfml,    /* <-- number of family (group class) properties */
- const cs_int_t  *nnod,      /* <-- number of vertices */
- const cs_int_t  *lndfac,    /* <-- size of nodfac */
- const cs_int_t  *lndfbr,    /* <-- size of nodfbr */
- const cs_int_t  *ncelbr,    /* <-- number of cells on boundary */
  const cs_int_t  *nvar,      /* <-- number of variables */
  const cs_int_t  *nscal,     /* <-- number of scalars */
  const cs_int_t  *nphas,     /* <-- nulber of phases */
@@ -230,29 +219,12 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_int_t  *nituse,    /* <-- size of ITUSER integer array */
  const cs_int_t  *nrtuse,    /* <-- size of RTUSER floating-point array */
  const cs_int_t   itypps[3], /* <-- flag (0 or 1) for presence of cells, */
-                             /*     interior faces, and boundary faces */
- const cs_int_t   ifacel[],  /* <-- interior faces / cells connectivity */
- const cs_int_t   ifabor[],  /* <-- boundary faces / cell connectivity */
- const cs_int_t   ifmfbr[],  /* <-- boundary face families */
- const cs_int_t   ifmcel[],  /* <-- cell families */
- const cs_int_t   iprfml[],  /* <-- list of family properties */
- const cs_int_t   ipnfac[],  /* <-- interior faces -> vertices connect. index */
- const cs_int_t   nodfac[],  /* <-- interior faces -> vertices connectivity */
- const cs_int_t   ipnfbr[],  /* <-- boundary faces -> vertices connect. index */
- const cs_int_t   nodfbr[],  /* <-- boundary faces -> vertices connectivity */
  const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
  const cs_int_t   lstfac[],  /* <-- list of post-processed interior faces */
  const cs_int_t   lstfbr[],  /* <-- list of post-processed boundary faces */
  const cs_int_t   idevel[],  /* <-- IDEVEL integer array */
  cs_int_t         ituser[],  /* <-- ITUSER integer array */
  cs_int_t         ia[],      /* <-- IA integer array */
- const cs_real_t  xyzcen[],  /* <-- points associated with cell centers */
- const cs_real_t  surfac[],  /* <-- interior face surface vectors */
- const cs_real_t  surfbo[],  /* <-- boundary face surface vectors */
- const cs_real_t  cdgfac[],  /* <-- interior face centers */
- const cs_real_t  cdgfbr[],  /* <-- boundary face vectors */
- const cs_real_t  xyznod[],  /* <-- vertex coordinates (optional) */
- const cs_real_t  volume[],  /* <-- cell volumes */
  const cs_real_t  dt[],      /* <-- local time step */
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
  const cs_real_t  rtp[],     /* <-- cell variables */
@@ -588,17 +560,6 @@ void CS_PROCF (usmpst, USMPST)
  const cs_int_t  *idbia0,    /* <-> number of first free position in IA */
  const cs_int_t  *idbra0,    /* <-> number of first free position in RA */
  const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
- const cs_int_t  *ndim,      /* <-- spatial dimension */
- const cs_int_t  *ncelet,    /* <-- number of extended (real + ghost) cells */
- const cs_int_t  *ncel,      /* <-- number of cells */
- const cs_int_t  *nfac,      /* <-- number of interior faces */
- const cs_int_t  *nfabor,    /* <-- number of boundary faces */
- const cs_int_t  *nfml,      /* <-- number of families (group classes) */
- const cs_int_t  *nprfml,    /* <-- number of family (group class) properties */
- const cs_int_t  *nnod,      /* <-- number of vertices */
- const cs_int_t  *lndfac,    /* <-- size of nodfac */
- const cs_int_t  *lndfbr,    /* <-- size of nodfbr */
- const cs_int_t  *ncelbr,    /* <-- number of cells on boundary */
  const cs_int_t  *nvar,      /* <-- number of variables */
  const cs_int_t  *nscal,     /* <-- number of scalars */
  const cs_int_t  *nphas,     /* <-- number of phases */
@@ -613,28 +574,12 @@ void CS_PROCF (usmpst, USMPST)
  cs_int_t        *imodif,    /* <-> 1 if mesh is modified, 0 otherwise */
  const cs_int_t   itypps[3], /* <-- flag (0 or 1) for presence of cells, */
                              /*     interior faces, and boundary faces */
- const cs_int_t   ifacel[],  /* <-- interior faces / cells connectivity */
- const cs_int_t   ifabor[],  /* <-- boundary faces / cell connectivity */
- const cs_int_t   ifmfbr[],  /* <-- boundary face families */
- const cs_int_t   ifmcel[],  /* <-- cell families */
- const cs_int_t   iprfml[],  /* <-- list of family properties */
- const cs_int_t   ipnfac[],  /* <-- interior faces -> vertices connect. index */
- const cs_int_t   nodfac[],  /* <-- interior faces -> vertices connectivity */
- const cs_int_t   ipnfbr[],  /* <-- boundary faces -> vertices connect. index */
- const cs_int_t   nodfbr[],  /* <-- boundary faces -> vertices connectivity */
  cs_int_t         lstcel[],  /* <-> list of post-processed cells */
  cs_int_t         lstfac[],  /* <-> list of post-processed interior faces */
  cs_int_t         lstfbr[],  /* <-> list of post-processed boundary faces */
  const cs_int_t   idevel[],  /* <-- IDEVEL integer array */
  cs_int_t         ituser[],  /* <-- ITUSER integer array */
  cs_int_t         ia[],      /* <-- IA integer array */
- const cs_real_t  xyzcen[],  /* <-- points associated with cell centers */
- const cs_real_t  surfac[],  /* <-- interior face surface vectors */
- const cs_real_t  surfbo[],  /* <-- boundary face surface vectors */
- const cs_real_t  cdgfac[],  /* <-- interior face centers */
- const cs_real_t  cdgfbr[],  /* <-- boundary face vectors */
- const cs_real_t  xyznod[],  /* <-- vertex coordinates (optional) */
- const cs_real_t  volume[],  /* <-- cell volumes */
  const cs_real_t  dt[],      /* <-- local time step */
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
  const cs_real_t  rtp[],     /* <-- cell variables */
@@ -661,17 +606,6 @@ void CS_PROCF (usvpst, USVPST)
  const cs_int_t  *idbia0,    /* <-> number of first free position in IA */
  const cs_int_t  *idbra0,    /* <-> number of first free position in RA */
  const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
- const cs_int_t  *ndim,      /* <-- spatial dimension */
- const cs_int_t  *ncelet,    /* <-- number of extended (real + ghost) cells */
- const cs_int_t  *ncel,      /* <-- number of cells */
- const cs_int_t  *nfac,      /* <-- number of interior faces */
- const cs_int_t  *nfabor,    /* <-- number of boundary faces */
- const cs_int_t  *nfml,      /* <-- number of families (group classes) */
- const cs_int_t  *nprfml,    /* <-- number of family (group class) properties */
- const cs_int_t  *nnod,      /* <-- number of vertices */
- const cs_int_t  *lndfac,    /* <-- size of nodfac */
- const cs_int_t  *lndfbr,    /* <-- size of nodfbr */
- const cs_int_t  *ncelbr,    /* <-- number of cells on boundary */
  const cs_int_t  *nvar,      /* <-- number of variables */
  const cs_int_t  *nscal,     /* <-- number of scalars */
  const cs_int_t  *nphas,     /* <-- number of phases */
@@ -685,28 +619,12 @@ void CS_PROCF (usvpst, USVPST)
  const cs_int_t  *nrtuse,    /* <-- size of RTUSER floating-point array */
  const cs_int_t   itypps[3], /* <-- flag (0 or 1) for presence of cells, */
                              /*     interior faces, and boundary faces */
- const cs_int_t   ifacel[],  /* <-- interior faces / cells connectivity */
- const cs_int_t   ifabor[],  /* <-- boundary faces / cell connectivity */
- const cs_int_t   ifmfbr[],  /* <-- boundary face families */
- const cs_int_t   ifmcel[],  /* <-- cell families */
- const cs_int_t   iprfml[],  /* <-- list of family properties */
- const cs_int_t   ipnfac[],  /* <-- interior faces -> vertices connect. index */
- const cs_int_t   nodfac[],  /* <-- interior faces -> vertices connectivity */
- const cs_int_t   ipnfbr[],  /* <-- boundary faces -> vertices connect. index */
- const cs_int_t   nodfbr[],  /* <-- boundary faces -> vertices connectivity */
  const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
  const cs_int_t   lstfac[],  /* <-- list of post-processed interior faces */
  const cs_int_t   lstfbr[],  /* <-- list of post-processed boundary faces */
  const cs_int_t   idevel[],  /* <-- IDEVEL integer array */
  cs_int_t         ituser[],  /* <-- ITUSER integer array */
  cs_int_t         ia[],      /* <-- IA integer array */
- const cs_real_t  xyzcen[],  /* <-- points associated with cell centers */
- const cs_real_t  surfac[],  /* <-- interior face surface vectors */
- const cs_real_t  surfbo[],  /* <-- boundary face surface vectors */
- const cs_real_t  cdgfac[],  /* <-- interior face centers */
- const cs_real_t  cdgfbr[],  /* <-- boundary face vectors */
- const cs_real_t  xyznod[],  /* <-- vertex coordinates (optional) */
- const cs_real_t  volume[],  /* <-- cell volumes */
  const cs_real_t  dt[],      /* <-- local time step */
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
  const cs_real_t  rtp[],     /* <-- cell variables */

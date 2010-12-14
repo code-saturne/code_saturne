@@ -29,16 +29,10 @@ subroutine cou1do &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , ncp    , nfpt1d ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml,                    &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    ientha , ifpt1d , iclt1d ,                                     &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-   xyznod , volume ,                                              &
    tppt1d , tept1d , hept1d , fept1d ,                            &
    xlmbt1 , rcpt1d , dtpt1d , dt     , rtpa   ,                   &
    propce , propfa , propfb ,                                     &
@@ -70,7 +64,6 @@ subroutine cou1do &
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ientha           ! e  ! <-- ! 1 si tparoi est une enthalpie                  !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifpt1d           ! te ! <-- ! numero de la face en traitement                !
 !                  !    !     ! thermique en paroi                             !
 ! iclt1d           ! te ! <-- ! type de condition limite                       !
@@ -113,6 +106,7 @@ use cstphy
 use cstnum
 use parall
 use period
+use mesh
 
 !===============================================================================
 
@@ -120,26 +114,14 @@ implicit none
 
 ! Arguments
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
 integer          nfpt1d
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas  , ncp
 integer          nideve , nrdeve , nituse , nrtuse
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          ifpt1d(nfpt1d), iclt1d(nfpt1d)
 integer          ientha
 integer          idevel(nideve), ituser(nituse), ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
@@ -215,16 +197,11 @@ call iasize('cou1do',idbia1)
 call  uspt1d                                                      &
 !===========
  ( idbia1 , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , nfpt1d , iphas  , iappel ,          &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   maxelt , ia(ils),                                              &
    ifpt1d , ia(idebia), iclt1d ,                                  &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-   xyznod , volume ,                                              &
    tppt1d , ra(idebra), ra(idebra),                               &
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &

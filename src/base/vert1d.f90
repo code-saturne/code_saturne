@@ -60,11 +60,7 @@ subroutine vert1d &
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -82,10 +78,6 @@ subroutine vert1d &
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml, nprfml)  !    !     !                                                !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !

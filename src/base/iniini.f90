@@ -70,6 +70,7 @@ use mltgrd
 use ihmpre
 use matiss
 use cplsat
+use mesh
 
 !===============================================================================
 
@@ -452,7 +453,6 @@ tmarus = -1.d0
 
 !---> LECTURE SELON UTILISATION PREPROCESSEUR OU ANCIEN FICHIER
 
-   ndim   = 0
    ncel   = 0
    ncelet = 0
    nfac   = 0

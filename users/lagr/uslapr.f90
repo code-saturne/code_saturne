@@ -33,19 +33,14 @@ subroutine uslapr &
 
  ( idbia0 , idbra0 ,                                              &
    idvar  , iepart , izone  , iclass ,                            &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    itypfb , itrifb , itepa  , ifrlag ,                            &
    idevel , ituser , ia     ,                                     &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart  ,         &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   ,                                              &
@@ -81,18 +76,6 @@ subroutine uslapr &
 ! iepart           ! i  ! <-- ! number of the particle cell                    !
 ! izone            ! i  ! <-- ! number of the particle zone                    !
 ! iclass           ! i  ! <-- ! number of the particle class                   !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
-!                  !    !     !                                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -106,25 +89,6 @@ subroutine uslapr &
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-!                  !    !     !                                                !
-! ifacel           ! ia ! <-- ! interior faces -> cells connectivity           !
-! (2, nfac)        !    !     !                                                !
-! ifabor           ! ia ! <-- ! boundary faces -> cells connectivity           !
-! (nfabor)         !    !     !                                                !
-! ifmfbr           ! ia ! <-- ! boundary face family numbers                   !
-! (nfabor)         !    !     !                                                !
-! ifmcel           ! ia ! <-- ! cell family numbers                            !
-! (ncelet)         !    !     !                                                !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml,nprfml    !    !     !                                                !
-! ipnfac           ! ia ! <-- ! interior faces -> vertices index (optional)    !
-!   (lndfac)       !    !     !                                                !
-! nodfac           ! ia ! <-- ! interior faces -> vertices list (optional)     !
-!   (nfac+1)       !    !     !                                                !
-! ipnfbr           ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-!   (lndfbr)       !    !     !                                                !
-! nodfbr           ! ia ! <-- ! boundary faces -> vertices list  (optional)    !
-!   (nfabor+1)     !    !     !                                                !
 ! itrifb(nfabor    ! ia ! <-- ! indirection for the sorting of the             !
 !  nphas      )    !    !     ! boundary faces                                 !
 ! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
@@ -143,21 +107,7 @@ subroutine uslapr &
 ! vvpart           !  r ! <-- ! y-component of particle velocity               !
 ! wwpart           !  r ! <-- ! z-component of particle velocity               !
 ! ddpart           !  r ! <-- ! particle diameter                              !
-! ttpart           !  r ! <-- ! particle temperature                           !                                         !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-! (ndim,nnod)      !    !     !                                                !
-! volume           ! ra ! <-- ! cell volumes                                   !
-! (ncelet          !    !     !                                                !
+! ttpart           !  r ! <-- ! particle temperature                           !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! transported variables at the previous          !
 ! (ncelet,*)       !    !     ! time step                                      !
@@ -199,6 +149,7 @@ use lagran
 use ppppar
 use ppthch
 use cpincl
+use mesh
 
 !===============================================================================
 
@@ -210,19 +161,11 @@ integer          idbia0 , idbra0
 
 integer          idvar  , iepart , izone  , iclass
 
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          nideve , nrdeve , nituse , nrtuse
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1) , nodfac(lndfac)
-integer          ipnfbr(nfabor+1) , nodfbr(lndfbr)
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 integer          idevel(nideve) , ituser(nituse)
@@ -232,10 +175,6 @@ double precision xxpart , yypart , zzpart
 double precision tvpart , uupart , vvpart , wwpart
 double precision ddpart , ttpart
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac) , surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac) , cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod) , volume(ncelet)
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)

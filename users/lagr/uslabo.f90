@@ -32,18 +32,14 @@ subroutine uslabo &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndnod , lndfac , lndfbr , ncelbr ,                   &
+   lndnod ,                                                       &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    kface  , nbpt   , isuivi ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    itypfb , itrifb , ifrlag , itepa  , indep  ,                   &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    surfbn , dt     , rtpa   , rtp    , propce , propfa , propfb , &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , vitpar , vitflu , auxl   , &
@@ -118,19 +114,7 @@ subroutine uslabo &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndnod           ! i  ! <-- ! dim connectivity cell->faces                   !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
-!                  !    !     !                                                !
+! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -147,24 +131,6 @@ subroutine uslabo &
 ! isuivi           ! i  ! <-- ! flag to follow (or not) the particle           !
 ! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel           ! ia ! <-- ! interior faces -> cells connectivity           !
-! (2, nfac)        !    !     !                                                !
-! ifabor           ! ia ! <-- ! boundary faces -> cells connectivity           !
-! (nfabor)         !    !     !                                                !
-! ifmfbr           ! ia ! <-- ! boundary face family numbers                   !
-! (nfabor)         !    !     !                                                !
-! ifmcel           ! ia ! <-- ! cell family numbers                            !
-! (ncelet)         !    !     !                                                !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml,nprfml    !    !     !                                                !
-! ipnfac           ! ia ! <-- ! interior faces -> vertices index (optional)    !
-!   (lndfac)       !    !     !                                                !
-! nodfac           ! ia ! <-- ! interior faces -> vertices list (optional)     !
-!   (nfac+1)       !    !     !                                                !
-! ipnfbr           ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-!   (lndfbr)       !    !     !                                                !
-! nodfbr           ! ia ! <-- ! boundary faces -> vertices list  (optional)    !
-!   (nfabor+1)     !    !     !                                                !
 ! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
 !  nphas)          !    !     !                                                !
 ! itrifb(nfabor    ! ia ! <-- ! indirection array for the sorting of the faces !
@@ -178,19 +144,6 @@ subroutine uslabo &
 ! idevel(nideve    ! ia ! <-- ! dev. complementary integer array               !
 ! ituser(nituse    ! ia ! <-- ! user complementary integer array               !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! surfbn(nfabor    ! ra ! <-- ! area of the boundary faces                     !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers          !
@@ -245,6 +198,7 @@ use lagran
 use ppppar
 use ppthch
 use cpincl
+use mesh
 
 !===============================================================================
 
@@ -253,29 +207,19 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndnod , lndfac , lndfbr , ncelbr
+integer          lndnod
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          kface  , nbpt   , isuivi
 integer          nideve , nrdeve , nituse , nrtuse
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1) , nodfac(lndfac)
-integer          ipnfbr(nfabor+1) , nodfbr(lndfbr)
+
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
 integer          indep(nbpmax)
 integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac) , surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac) , cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod) , volume(ncelet)
 double precision surfbn(nfabor)
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)

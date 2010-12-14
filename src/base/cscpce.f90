@@ -29,17 +29,12 @@ subroutine cscpce &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nptdis , ityloc ,                                              &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , iphas  ,                                              &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    locpts ,                                                       &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
@@ -83,6 +78,7 @@ use entsor
 use parall
 use period
 use cplsat
+use mesh
 
 !===============================================================================
 
@@ -91,28 +87,16 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          ivar   , iphas
 integer          nptdis , ityloc
 integer          nideve , nrdeve , nituse , nrtuse
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          locpts(nptdis)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
@@ -156,16 +140,12 @@ extrap = extrag(ivar)
 call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml , nprfml,    &
-   nnod   , lndfac , lndfbr , ncelbr , nphas  ,                   &
+   nphas  ,                                                       &
    nideve , nrdeve ,  nituse , nrtuse ,                           &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume,  &
    w4     , w4     , w4     ,                                     &
    rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
    w1     , w2     , w3     ,                                     &

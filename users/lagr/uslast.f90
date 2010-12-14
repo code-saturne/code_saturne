@@ -32,16 +32,12 @@ subroutine uslast &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , itepa  ,                   &
+   itepa  ,                                                       &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
@@ -92,18 +88,6 @@ subroutine uslast &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
-!                  !    !     !                                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -117,42 +101,11 @@ subroutine uslast &
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel           ! ia ! <-- ! interior faces -> cells connectivity           !
-! (2, nfac)        !    !     !                                                !
-! ifabor           ! ia ! <-- ! boundary faces -> cells connectivity           !
-! (nfabor)         !    !     !                                                !
-! ifmfbr           ! ia ! <-- ! boundary face family numbers                   !
-! (nfabor)         !    !     !                                                !
-! ifmcel           ! ia ! <-- ! cell family numbers                            !
-! (ncelet)         !    !     !                                                !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-! nfml  ,nprfml    !    !     !                                                !
-! ipnfac           ! ia ! <-- ! interior faces -> vertices index (optional)    !
-!   (nfac+1)       !    !     !                                                !
-! nodfac           ! ia ! <-- ! interior faces -> vertices list (optional)     !
-!   (lndfac)       !    !     !                                                !
-! ipnfbr           ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-!  (nfabor+1)      !    !     !                                                !
-! nodfbr           ! ia ! <-- ! boundary faces -> vertices list  (optional)    !
-!   (lndfbr  )     !    !     !                                                !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
 ! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
 ! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers at       !
 ! (ncelet,*)       !    !     ! the current and previous time step             !
@@ -206,6 +159,7 @@ use cstphy
 use ppppar
 use ppthch
 use cpincl
+use mesh
 
 !===============================================================================
 
@@ -214,26 +168,15 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          nideve , nrdeve , nituse , nrtuse
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1) , nodfac(lndfac)
-integer          ipnfbr(nfabor+1) , nodfbr(lndfbr)
+
 integer          itepa(nbpmax,nivep)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac) , surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac) , cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod) , volume(ncelet)
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
@@ -481,15 +424,10 @@ if (1.eq.0) then
         call uslaen                                               &
         !==========
  ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , nvlsta ,                            &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statis , stativ , ra(itabvr) ,               &
    rdevel , rtuser , ra     )

@@ -29,14 +29,10 @@ subroutine tridim &
 !================
 
  ( idbia0 , idbra0 , itrale ,                                     &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , isostd ,                   &
+   isostd ,                                                       &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  , frcxt  ,                            &
    rdevel , rtuser ,                                              &
@@ -57,54 +53,16 @@ subroutine tridim &
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! itrale           ! e  ! <-- ! numero d'iteration pour l'ale                  !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml, nprfml)  !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfac+1)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (lndfac)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfabor+1)     !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (lndfbr)       !    !     !  (optionnel)                                   !
 ! isostd           ! te ! <-- ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-!  (ndim, nnod)    !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -158,6 +116,7 @@ use ihmpre
 use matiss
 use radiat
 use cplsat
+use mesh
 
 ! les " use pp* " ne servent que pour recuperer le pointeur IIZFPP
 
@@ -168,25 +127,13 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0 , itrale
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          nideve , nrdeve , nituse , nrtuse
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          isostd(nfabor+1,nphas)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
@@ -582,14 +529,10 @@ if (itrale.gt.0) then
   call schtmp                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , iappel ,                            &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , isostd ,                   &
+   isostd ,                                                       &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    rdevel , rtuser ,                                              &
@@ -635,13 +578,8 @@ if (imobil.eq.1) then
   call calgeo &
   !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    volmin , volmax , voltot ,                                     &
    rdevel , rtuser , ra     )
 
@@ -685,14 +623,9 @@ call memphy                                                       &
 call phyvar                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
@@ -705,14 +638,10 @@ if (itrale.gt.0) then
   call schtmp                                                     &
 !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , iappel ,                            &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , isostd ,                   &
+   isostd ,                                                       &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    rdevel , rtuser ,                                              &
@@ -736,15 +665,11 @@ do iphas = 1, nphas
       call mtkpdc                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ncepdc(iphas) , iphas  , iappel ,                              &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , ia(iicepd(iphas)) ,        &
+   ia(iicepd(iphas)) ,                                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)) ,                          &
    rdevel , rtuser , ra     )
@@ -765,15 +690,12 @@ do iphas = 1, nphas
       call uskpdc                                                 &
       !==========
  ( idbia1 , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ncepdc(iphas) , iphas  , iappel ,                              &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
-   ipnfac , nodfac , ipnfbr , nodfbr , ia(iicepd(iphas)) ,        &
+   maxelt , ia(ils),                                              &
+   ia(iicepd(iphas)) ,                                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)) ,                          &
    rdevel , rtuser , ra     )
@@ -808,17 +730,13 @@ do iphas = 1, nphas
     call  ustsma                                                  &
 !         ============
  ( idbia1 , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , ncepdc(iphas)   ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ncetsm(iphas)   , iphas  , iappel ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   maxelt , ia(ils),                                              &
    ia(iicepd(iphas)) ,                                            &
    ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,                        &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
    rdevel , rtuser , ra     )
@@ -839,8 +757,6 @@ endif
 call memdtv                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    iviscf , iviscb , idam   , icofbd , iw1    , iw2    , iw3    , &
    icofbr , igrarx , igrary , igrarz , iwcf   ,                   &
@@ -852,16 +768,11 @@ iphas = 1
 call dttvar                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc(iphas)   , ncetsm(iphas)   ,                            &
    nideve , nrdeve , nituse , nrtuse , iwarni(iu(1))   ,          &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    ia(iicepd(iphas)), ia(iicesm(iphas)), ia(iitpsm(iphas)) ,      &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)),       &
    ra(iviscf)      , ra(iviscb)      , ra(idam)      ,            &
@@ -898,17 +809,12 @@ if (ivrtex.eq.1) then
   call usvort &
   !==========
  ( ifnia1 , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    iphas  , iappel ,                                              &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml, maxelt , ia(ils),  &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   maxelt , ia(ils),                                              &
    ia(iirepv)      ,                                              &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-   xyznod , volume ,                                              &
    dt     , rtpa   ,                                              &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  ,                                              &
@@ -1004,8 +910,6 @@ do while (iterns.le.nterup)
   call memcli &
   !==========
 ( idbia1 , idbra1 ,                                              &
-  ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-  nnod   , lndfac , lndfbr , ncelbr ,                            &
   nvar   , nscal  , nphas  ,                                     &
   isvhb  , isvtb  ,                                              &
   iicodc , ircodc ,                                              &
@@ -1016,15 +920,10 @@ do while (iterns.le.nterup)
   call precli &
   !==========
 ( ifinia , ifinra ,                                              &
-  ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-  nnod   , lndfac , lndfbr , ncelbr ,                            &
   nvar   , nscal  , nphas  ,                                     &
   nideve , nrdeve , nituse , nrtuse ,                            &
-  ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-  ipnfac , nodfac , ipnfbr , nodfbr ,                            &
   ia(iicodc)      , ia(iizfpp)      ,                            &
   idevel , ituser , ia     ,                                     &
-  xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
   ra(ircodc) , ra(icoefu) ,                                      &
@@ -1073,16 +972,11 @@ do while (iterns.le.nterup)
         call stdtcl &
         !==========
       ( ifnia1 , ifnra1 ,                                              &
-        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-        nnod   , lndfac , lndfbr , ncelbr ,                            &
         nvar   , nscal  , nphas  , nbzfmx , nozfmx ,                   &
         nideve , nrdeve , nituse , nrtuse ,                            &
-        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-        ipnfac , nodfac , ipnfbr , nodfbr ,                            &
         iqimp  , icalke , qimp   , dh , xintur,                        &
         ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp)   , &
         ia(iilzfb)      , idevel , ituser , ia     ,                   &
-        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
         dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
         coefa  , coefb  , ra(ircodc)      ,                            &
         ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
@@ -1105,15 +999,11 @@ do while (iterns.le.nterup)
       call usclim &
       !==========
     ( ifnia1 , ifinra ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       nideve , nrdeve , nituse , nrtuse ,                            &
-      ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
-      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+      maxelt , ia(ils),                                              &
       ia(iicodc)      , ia(iitrif)   , ia(iitypf)   ,                &
       idevel , ituser , ia     ,                                     &
-      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  , ra(ircodc)      ,                            &
       ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
@@ -1127,15 +1017,10 @@ do while (iterns.le.nterup)
       call ppclim &
       !==========
     ( ifinia , ifinra ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       nideve , nrdeve , nituse , nrtuse ,                            &
-      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
       ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp) ,   &
       idevel , ituser , ia     ,                                     &
-      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  , ra(ircodc)      ,                            &
       ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
@@ -1167,15 +1052,10 @@ do while (iterns.le.nterup)
     call vor2cl &
     !==========
   ( ifinia , ifinra ,                                              &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-    nnod   , lndfac , lndfbr , ncelbr ,                            &
     nvar   , nscal  , nphas  ,                                     &
     nideve , nrdeve , nituse , nrtuse ,                            &
-    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
     ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
     idevel , ia(iirepv)      , ituser , ia     ,                   &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , ra(ircodc)      ,                            &
     ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
@@ -1193,15 +1073,10 @@ do while (iterns.le.nterup)
     call cscfbr &
     !==========
   ( ifinia , ifinra ,                                              &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-    nnod   , lndfac , lndfbr , ncelbr ,                            &
     nvar   , nscal  , nphas  ,                                     &
     nideve , nrdeve , nituse , nrtuse ,                            &
-    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
     ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
     idevel , ituser , ia    ,                                      &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , ra(ircodc)      ,                            &
     ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
@@ -1243,16 +1118,12 @@ do while (iterns.le.nterup)
     call usalcl &
     !==========
   ( ifnia1 , ifinra , itrale ,                                     &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-    nnod   , lndfac , lndfbr , ncelbr ,                            &
     nvar   , nscal  , nphas  ,                                     &
     nideve , nrdeve , nituse , nrtuse ,                            &
-    ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , ia(ils), &
-    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+    maxelt , ia(ils),                                              &
     ia(iicodc)      , ia(iitypf)      , ia(iialty)      ,          &
     ia(iimpal)      ,                                              &
     idevel , ituser , ia     ,                                     &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , ra(ircodc)      ,                            &
     ra(ixyzn0)      , ra(idepal)      ,                            &
@@ -1274,15 +1145,9 @@ do while (iterns.le.nterup)
       call strpre &
       !==========
     ( ifinia , ifinra , itrale , italim , ineefl ,                   &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nideve , nrdeve , nituse , nrtuse ,                            &
-      ifacel , ifabor , ifmfbr , ifmcel , iprfml,                    &
-      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
       ia(iimpal)      ,                                              &
       idevel , ituser , ia     ,                                     &
-      xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-      xyznod , volume ,                                              &
       rtp    , rtpa   , propce , propfa , propfb ,                   &
       coefa  , coefb  ,                                              &
       ra(iflalf), ra(iflalb), ra(iprale), ra(icoale), ra(idepal),    &
@@ -1330,8 +1195,6 @@ do while (iterns.le.nterup)
     call memra3 &
     !==========
   ( ifinia , ifinra ,                                              &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-    nnod   , lndfac , lndfbr , ncelbr ,                            &
     nvar   , nscal  , nphas  ,                                     &
     iisoth , itek   , itext  , itint  ,                            &
     ifinib , ifinrb )
@@ -1339,18 +1202,13 @@ do while (iterns.le.nterup)
     call raycli &
     !==========
   ( ifinib , ifinrb ,                                              &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-    nnod   , lndfac , lndfbr , ncelbr ,                            &
     nvar   , nscal  , nphas  ,                                     &
     nideve , nrdeve , nituse , nrtuse , isvhb  , isvtb  ,          &
-    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
     ia(iicodc) , ia(iitrif)   , ia(iitypf)   ,                     &
 
     ia(iizfrd) , ia(iisoth)      ,                                 &
 
     idevel , ituser , ia     ,                                     &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     ra(ircodc)      ,                                              &
     coefa  , coefb  , ra(ihbord)      , ra(itbord)      ,          &
@@ -1367,15 +1225,10 @@ do while (iterns.le.nterup)
   call condli &
   !==========
 ( ifinia , ifinra ,                                              &
-  ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-  nnod   , lndfac , lndfbr , ncelbr ,                            &
   nvar   , nscal  , nphas  ,                                     &
   nideve , nrdeve , nituse , nrtuse , isvhb  , isvtb  ,          &
-  ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-  ipnfac , nodfac , ipnfbr , nodfbr ,                            &
   ia(iicodc)      , isostd ,                                     &
   idevel , ituser , ia     ,                                     &
-  xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   ra(ircodc)      ,                                              &
   coefa  , coefb  , ra(iuetbo) , ra(ivsvdr)  ,                   &
@@ -1453,14 +1306,9 @@ do while (iterns.le.nterup)
     call coupbo &
     !==========
   ( ifinia , ifinra ,                                              &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-    nnod   , lndfac , lndfbr , ncelbr ,                            &
     nvar   , nscal  , nphas  , isvtb  ,                            &
     nideve , nrdeve , nituse , nrtuse , ncp  , ncv , ientha ,      &
-    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
     idevel , ituser , ia     ,                                     &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
     cpcst  , propce(1,ippcp) , cvcst  , propce(1,ippcv),           &
@@ -1472,16 +1320,10 @@ do while (iterns.le.nterup)
       call cou1do &
       !==========
     ( ifinia , ifinra ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  , ncp    , nfpt1d ,                   &
       nideve , nrdeve , nituse , nrtuse ,                            &
-      ifacel , ifabor , ifmfbr , ifmcel , iprfml,                    &
-      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
       ientha , ia(iifpt1), ia(iiclt1),                               &
       idevel , ituser , ia     ,                                     &
-      xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-      xyznod , volume ,                                              &
       ra(itppt1), ra(itept1), ra(ihept1),                            &
       ra(ifept1), ra(ixlmt1), ra(ircpt1), ra(idtpt1),                &
       dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -1554,8 +1396,6 @@ do while (iterns.le.nterup)
         call memdis &
         !==========
     ( ifinia , ifinra ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       nideve , nrdeve , nituse , nrtuse ,                            &
       iviscf , iviscb , idam   , ixam   , ismbr  , irovsd ,          &
@@ -1567,14 +1407,10 @@ do while (iterns.le.nterup)
         call distpr &
         !==========
     ( ifinib , ifinrb ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       nideve , nrdeve , nituse , nrtuse ,                            &
-      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-      ipnfac , nodfac , ipnfbr , nodfbr , ia(iitypf)      ,          &
+      ia(iitypf)      ,                                              &
       idevel , ituser , ia     ,                                     &
-      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
       ra(idipar)      ,                                              &
       ra(iviscf)      , ra(iviscb)      ,                            &
       ra(idam)        , ra(ixam)        ,                            &
@@ -1619,8 +1455,6 @@ do while (iterns.le.nterup)
         call memdyp &
         !==========
       ( ifinia , ifinra ,                                              &
-        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-        nnod   , lndfac , lndfbr , ncelbr ,                            &
         nvar   , nscal  , nphas  ,                                     &
         nideve , nrdeve , nituse , nrtuse ,                            &
         idam   , ixam   , ismbr  , irovsd ,                            &
@@ -1635,15 +1469,10 @@ do while (iterns.le.nterup)
         call distyp                                                 &
         !==========
       ( ifinib , ifinrb ,                                              &
-        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-        nnod   , lndfac , lndfbr , ncelbr ,                            &
         nvar   , nscal  , nphas  , iphass ,                            &
         nideve , nrdeve , nituse , nrtuse ,                            &
-        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-        ipnfac , nodfac , ipnfbr , nodfbr ,                            &
         ia(iitypf) , ia(iismph),                                       &
         idevel , ituser , ia     ,                                     &
-        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
         ra(idipar), propce    , ra(iuetbo), ra(iyppar),                &
         ra(idam  ), ra(ixam  ), ra(ismbr ), ra(irovsd),                &
         ra(irtdp ), ra(idrtdp),                                        &
@@ -1712,8 +1541,6 @@ do while (iterns.le.nterup)
       call memale &
       !==========
     ( idbia1 , idbra1 ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       nideve , nrdeve , nituse , nrtuse ,                            &
       iviscf , iviscb , idam   , ixam   ,                            &
@@ -1725,14 +1552,9 @@ do while (iterns.le.nterup)
       call alelap &
       !==========
     ( ifinia , ifinra ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       nideve , nrdeve , nituse , nrtuse ,                            &
-      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
       idevel , ituser , ia     ,                                     &
-      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  ,                                              &
       ra(iviscf) , ra(iviscb) ,                                      &
@@ -1772,8 +1594,6 @@ do while (iterns.le.nterup)
       call memcfm &
       !==========
     ( idbia1 , idbra1 ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       nideve , nrdeve , nituse , nrtuse ,                            &
       idtr   , iviscf , iviscb , idam   , ixam   ,                   &
@@ -1791,17 +1611,12 @@ do while (iterns.le.nterup)
         call cfmsvl &
         !==========
       ( ifinia , ifinra ,                                              &
-        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-        nnod   , lndfac , lndfbr , ncelbr ,                            &
         nvar   , nscal  , nphas  ,                                     &
         ncepdc(iphas)   , ncetsm(iphas)   ,                            &
         nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
-        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-        ipnfac , nodfac , ipnfbr , nodfbr ,                            &
         ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
         ia(iitpsm(iphas))        ,                                     &
         idevel , ituser , ia     ,                                     &
-        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
         dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
         coefa  , coefb  ,                                              &
         ra(ickupd(iphas))        , ra(ismace(iphas))        ,          &
@@ -1831,8 +1646,6 @@ do while (iterns.le.nterup)
     call memnav &
     !==========
   ( idbia1 , idbra1 ,                                              &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-    nnod   , lndfac , lndfbr , ncelbr ,                            &
     nvar   , nscal  , nphas  ,                                     &
     nideve , nrdeve , nituse , nrtuse ,                            &
     iviscf , iviscb , ivisfi , ivisbi ,                            &
@@ -1856,17 +1669,12 @@ do while (iterns.le.nterup)
         call cfqdmv &
         !==========
       ( ifinia , ifinra ,                                              &
-        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-        nnod   , lndfac , lndfbr , ncelbr ,                            &
         nvar   , nscal  , nphas  ,                                     &
         ncepdc(iphas)   , ncetsm(iphas)   ,                            &
         nideve , nrdeve , nituse , nrtuse , iph    ,                   &
-        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-        ipnfac , nodfac , ipnfbr , nodfbr ,                            &
         ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
         ia(iitpsm(iphas))        ,                                     &
         idevel , ituser , ia     ,                                     &
-        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
         dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
         propfa(1,iflmas), propfb(1,iflmab),                            &
         coefa  , coefb  ,                                              &
@@ -1888,15 +1696,10 @@ do while (iterns.le.nterup)
       call navsto &
       !==========
     ( ifinia , ifinra ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  , iterns , icvrge ,                   &
       nideve , nrdeve , nituse , nrtuse ,                            &
-      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
       isostd ,                                                       &
       idevel , ituser , ia     ,                                     &
-      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       tslagr , coefa  , coefb  , frcxt  ,                            &
       ra(itrava) , ra(iximpa) , ra(iuvwk ) ,                         &
@@ -1953,14 +1756,10 @@ do while (iterns.le.nterup)
         call schtmp &
         !==========
       ( idbia1 , idbra1 ,                                              &
-        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-        nnod   , lndfac , lndfbr , ncelbr ,                            &
         nvar   , nscal  , nphas  , iappel ,                            &
         nideve , nrdeve , nituse , nrtuse ,                            &
-        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-        ipnfac , nodfac , ipnfbr , nodfbr , isostd ,                   &
+        isostd ,                                                       &
         idevel , ituser , ia     ,                                     &
-        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
         dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
         coefa  , coefb  ,                                              &
         rdevel , rtuser ,                                              &
@@ -1992,13 +1791,9 @@ if (iccvfg.eq.0) then
     call strdep &
     !==========
   ( idbia1 , idbra1 , itrale , italim , itrfin ,                   &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-    nnod   , lndfac , lndfbr , ncelbr , nvar   ,                   &
+    nvar   ,                                                       &
     nideve , nrdeve , nituse , nrtuse ,                            &
-    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-    ipnfac , nodfac , ipnfbr , nodfbr ,                            &
     idevel , ituser , ia     ,                                     &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
     ra(iflalf), ra(iflalb), ra(icoale), ra(iprale), ra(idepal),    &
@@ -2024,14 +1819,10 @@ if (iccvfg.eq.0) then
     call schtmp &
     !==========
   ( idebia , idebra ,                                              &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-    nnod   , lndfac , lndfbr , ncelbr ,                            &
     nvar   , nscal  , nphas  , iappel ,                            &
     nideve , nrdeve , nituse , nrtuse ,                            &
-    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-    ipnfac , nodfac , ipnfbr , nodfbr , isostd ,                   &
+    isostd ,                                                       &
     idevel , ituser , ia     ,                                     &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
     dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
     rdevel , rtuser ,                                              &
@@ -2076,8 +1867,6 @@ if (iccvfg.eq.0) then
       call memkep &
       !==========
     ( idbia1 , idbra1 ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       nideve , nrdeve , nituse , nrtuse ,                            &
       idtr   , iviscf , iviscb , idam   , ixam   ,                   &
@@ -2099,16 +1888,11 @@ if (iccvfg.eq.0) then
       call turbke &
       !==========
     ( ifinia , ifinra ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       ncepdc(iphas) , ncetsm(iphas) ,                                &
       nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
-      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
       ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
       idevel , ituser , ia     ,                                     &
-      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
       ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
       tslagr   ,                                                     &
       coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
@@ -2126,8 +1910,6 @@ if (iccvfg.eq.0) then
         call memv2f &
         !==========
       ( idbia1 , idbra1 ,                                              &
-        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-        nnod   , lndfac , lndfbr , ncelbr ,                            &
         nvar   , nscal  , nphas  ,                                     &
         nideve , nrdeve , nituse , nrtuse ,                            &
         idtr   , iviscf , iviscb , idam   , ixam   ,                   &
@@ -2149,16 +1931,11 @@ if (iccvfg.eq.0) then
         call resv2f &
         !==========
       ( ifinia , ifinra ,                                              &
-        ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-        nnod   , lndfac , lndfbr , ncelbr ,                            &
         nvar   , nscal  , nphas  ,                                     &
         ncepdc(iphas) , ncetsm(iphas) ,                                &
         nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
-        ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-        ipnfac , nodfac , ipnfbr , nodfbr ,                            &
         ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
         idevel , ituser , ia     ,                                     &
-        xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
         ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
         coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
         ra(iviscf) , ra(iviscb) , ra(iprv2f),                          &
@@ -2189,8 +1966,6 @@ if (iccvfg.eq.0) then
       call memrij &
       !==========
     ( idebia , idebra ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       nideve , nrdeve , nituse , nrtuse , iturb(iphas) ,             &
       idtr   , iviscf , iviscb , icoefx ,                            &
@@ -2213,16 +1988,11 @@ if (iccvfg.eq.0) then
       call turrij &
       !==========
     ( ifinia , ifinra ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       ncepdc(iphas) , ncetsm(iphas) ,                                &
       nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
-      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
       ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
       idevel , ituser , ia     ,                                     &
-      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
       ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
       tslagr   ,                                                     &
       coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
@@ -2241,8 +2011,6 @@ if (iccvfg.eq.0) then
       call memkom &
       !==========
     ( idebia , idebra ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       nideve , nrdeve , nituse , nrtuse ,                            &
       idtr   , iviscf , iviscb , idam   , ixam   ,                   &
@@ -2264,16 +2032,11 @@ if (iccvfg.eq.0) then
       call turbkw                                                 &
       !==========
     ( ifinia , ifinra ,                                              &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-      nnod   , lndfac , lndfbr , ncelbr ,                            &
       nvar   , nscal  , nphas  ,                                     &
       ncepdc(iphas) , ncetsm(iphas) ,                                &
       nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
-      ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-      ipnfac , nodfac , ipnfbr , nodfbr ,                            &
       ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
       idevel , ituser , ia     ,                                     &
-      xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
       ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
       tslagr   ,                                                     &
       coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
@@ -2320,8 +2083,6 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
   call memra2                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
@@ -2337,15 +2098,11 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
   call raydom                                                     &
   !==========
  ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , ia(iitypf) ,      &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   ia(iitypf) ,                                                   &
    ia(iizfrd) ,                                                   &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(icorua) , ra(icorub) ,                                      &
@@ -2371,8 +2128,6 @@ if (nscal.ge.1) then
   call memsca                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
@@ -2384,14 +2139,9 @@ if (nscal.ge.1) then
   call scalai                                                     &
   !==========
  ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  ,                                     &
    ra(idtr)   , ra(iviscf) , ra(iviscb) ,                         &
@@ -2415,14 +2165,10 @@ iappel = 5
 call schtmp                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , iappel ,                            &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , isostd ,                   &
+   isostd ,                                                       &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    rdevel , rtuser ,                                              &

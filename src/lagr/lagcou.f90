@@ -29,14 +29,13 @@ subroutine lagcou &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   ,          &
-   nprfml , nvar   , nscal  , nphas  ,                            &
+   nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  , indep  , ibord  ,                                     &
    idevel , ituser , ia     ,                                     &
-   volume , rtp    , propce ,                                     &
+   rtp    , propce ,                                              &
    ettp   , ettpa  , tepa   , taup   , tempct , tsfext , tslagr , &
    cpgd1  , cpgd2  , cpght  ,                                     &
    tslag  , volp   , volm   ,                                     &
@@ -73,13 +72,6 @@ subroutine lagcou &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -102,7 +94,6 @@ subroutine lagcou &
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -158,6 +149,7 @@ use ppppar
 use ppthch
 use ppincl
 use radiat
+use mesh
 
 !===============================================================================
 
@@ -166,8 +158,6 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
@@ -176,7 +166,7 @@ integer          itepa(nbpmax,nivep), indep(nbpmax), ibord(nbpmax)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision volume(ncelet) , propce(ncelet,*) , rtp(ncelet,*)
+double precision propce(ncelet,*) , rtp(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tempct(nbpmax,2)

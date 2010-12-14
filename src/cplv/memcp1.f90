@@ -29,7 +29,7 @@ subroutine memcp1 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , ncelet , ncel   , nfac   , nfabor ,                   &
+   nvar   ,                                                       &
    ntbcpi , icpwi  ,                                              &
    ntbcpr , icpwr  ,                                              &
    ntbmci , imcwi  ,                                              &
@@ -53,10 +53,6 @@ subroutine memcp1 &
 ! idbia0/idbra0    ! e  ! <-- ! pointeur de la premiere cas libre des          !
 !                  !    !     !  tableaux ia/ra                                !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! ntbcpi           ! e  ! <-- ! taille du macro tableau cp entiers             !
 ! icpwi            ! e  ! --> ! pointeur  macro tableau cp entiers             !
 ! ntbcpr           ! e  ! <-- ! taille du macro tableau cp reels               !
@@ -85,6 +81,7 @@ subroutine memcp1 &
 
 use paramx
 use optcal
+use mesh
 
 !===============================================================================
 
@@ -94,7 +91,6 @@ implicit none
 
 integer          idbia0 ,idbra0
 integer          nvar
-integer          ncelet , ncel   , nfac   , nfabor
 integer          ntbcpi , icpwi  , ntbcpr , icpwr
 integer          ntbmci , imcwi  , ntbmcr , imcwr
 integer          ntbwoi , iwori  , ntbwor , iworr

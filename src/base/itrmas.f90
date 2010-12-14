@@ -29,17 +29,12 @@ subroutine itrmas &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iphydp , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp , viscf  , viscb  ,                   &
    viselx , visely , viselz ,                                     &
@@ -67,17 +62,6 @@ subroutine itrmas &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -138,6 +122,7 @@ use pointe
 use numvar
 use parall
 use period
+use mesh
 
 !===============================================================================
 
@@ -146,9 +131,6 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          nideve , nrdeve , nituse , nrtuse
 integer          init   , inc    , imrgra , iccocg
@@ -156,18 +138,9 @@ integer          nswrgp , imligp
 integer          iwarnp , iphydp , nfecra
 double precision epsrgp , climgp , extrap
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision viselx(ncelet), visely(ncelet), viselz(ncelet)
@@ -265,15 +238,11 @@ if( nswrgp.gt.1 ) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr , nphas  ,                   &
+   nphas  ,                                                       &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ipr(1) , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &

@@ -339,15 +339,11 @@ void CS_PROCF (pstema, PSTEMA)
  *
  * subroutine pstvar (idbia0, idbra0,
  * *****************
- *                    ndim,   ntcabs, ncelet, ncel,   nfac,   nfabor,
- *                    nfml,   nprfml, nnod,   lndfac, lndfbr, ncelbr,
+ *                    ntcabs,
  *                    nvar,   nscal,  nphas,  nvlsta, nvisbr,
  *                    nideve, nrdeve, nituse, nrtuse,
- *                    ifacel, ifabor, ifmfbr, ifmcel, iprfml,
- *                    ipnfac, nodfac, ipnfbr, nodfbr,
  *                    idevel, ituser, ia,
- *                    ttcabs, xyzcen, surfac, surfbo, cdgfac, cdgfbo,
- *                    xyznod, volume,
+ *                    ttcabs,
  *                    dt,     rtpa,   rtp,    propce, propfa, propfb,
  *                    coefa,  coefb,
  *                    statce, stativ, statfb,
@@ -355,17 +351,7 @@ void CS_PROCF (pstema, PSTEMA)
  *
  * integer          idbia0      : <-- : number of first free position in ia
  * integer          idbra0      : <-- : number of first free position in ra
- * integer          ndim        : <-- : spatial dimension
  * integer          ntcabs      : --> : current time step number
- * integer          ncelet      : <-- : number of extended (real + ghost) cells
- * integer          nfac        : <-- : number of interior faces
- * integer          nfabor      : <-- : number of boundary faces
- * integer          nfml        : <-- : number of families (group classes)
- * integer          nprfml      : <-- : number of family properties
- * integer          nnod        : <-- : number of vertices
- * integer          lndfac      : <-- : size of nodfac
- * integer          lndfbr      : <-- : size of nodfbr
- * integer          ncelbr      : <-- : number of cells on boundary
  * integer          nvar        : <-- : number of variables
  * integer          nscal       : <-- : number of scalars
  * integer          nphas       : <-- : number of phases
@@ -375,26 +361,10 @@ void CS_PROCF (pstema, PSTEMA)
  * integer          nrdeve      : <-- : size of rdevel floating-point array
  * integer          nituse      : <-- : size of ituser integer array
  * integer          nrtuse      : <-- : size of rtuser floating-point array
- * integer          ifacel      : <-- : interior faces -> cells connectivity
- * integer          ifabor      : <-- : boundary faces -> cell connectivity
- * integer          ifmfbr      : <-- : boundary face families
- * integer          ifmcel      : <-- : cell families
- * integer          iprfml      : <-- : list of family properties
- * integer          ipnfac      : <-- : interior faces -> vertices connect. idx.
- * integer          nodfac      : <-- : interior faces -> vertices connectivity
- * integer          ipnfbr      : <-- : boundary faces -> vertices connect. idx.
- * integer          nodfbr      : <-- : boundary faces -> vertices connectivity
  * integer          idevel      : <-- : idevel integer array
  * integer          ituser      : <-- : ituser integer array
  * integer          ia          : <-- : ia integer array
  * double precision ttcabs      : <-- : current physical time
- * double precision xyzcen      : <-- : points associated with cell centers
- * double precision surfac      : <-- : interior face surface vectors
- * double precision surfbo      : <-- : boundary face surface vectors
- * double precision cdgfac      : <-- : interior face centers
- * double precision cdgfbo      : <-- : boundary face vectors
- * double precision xyznod      : <-- : vertex coordinates (optional)
- * double precision volume      : <-- : cell volumes
  * double precision dt          : <-- : local time step
  * double precision rtpa        : <-- : cell variables at previous time step
  * double precision rtp         : <-- : cell variables
@@ -415,18 +385,7 @@ void CS_PROCF (pstvar, PSTVAR)
 (
  const cs_int_t   *idbia0,
  const cs_int_t   *idbra0,
- const cs_int_t   *ndim,
  const cs_int_t   *ntcabs,
- const cs_int_t   *ncelet,
- const cs_int_t   *ncel,
- const cs_int_t   *nfac,
- const cs_int_t   *nfabor,
- const cs_int_t   *nfml,
- const cs_int_t   *nprfml,
- const cs_int_t   *nnod,
- const cs_int_t   *lndfac,
- const cs_int_t   *lndfbr,
- const cs_int_t   *ncelbr,
  const cs_int_t   *nvar,
  const cs_int_t   *nscal,
  const cs_int_t   *nphas,
@@ -436,26 +395,10 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_int_t   *nrdeve,
  const cs_int_t   *nituse,
  const cs_int_t   *nrtuse,
- const cs_int_t    ifacel[],
- const cs_int_t    ifabor[],
- const cs_int_t    ifmfbr[],
- const cs_int_t    ifmcel[],
- const cs_int_t    iprfml[],
- const cs_int_t    ipnfac[],
- const cs_int_t    nodfac[],
- const cs_int_t    ipnfbr[],
- const cs_int_t    nodfbr[],
  const cs_int_t    idevel[],
        cs_int_t    ituser[],
        cs_int_t    ia[],
  const cs_real_t  *ttcabs,
- const cs_real_t   xyzcen[],
- const cs_real_t   surfac[],
- const cs_real_t   surfbo[],
- const cs_real_t   cdgfac[],
- const cs_real_t   cdgfbo[],
- const cs_real_t   xyznod[],
- const cs_real_t   volume[],
  const cs_real_t   dt[],
  const cs_real_t   rtpa[],
  const cs_real_t   rtp[],

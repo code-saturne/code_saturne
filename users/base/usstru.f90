@@ -57,14 +57,11 @@ subroutine usstr1 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , lstelt , &
-   ipnfac , nodfac , ipnfbr , nodfbr , idfstr ,                   &
+   maxelt , lstelt ,                                              &
+   idfstr ,                                                       &
    idevel , ituser , ia     ,                                     &
    aexxst , bexxst , cfopre ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    xstr0  , vstr0  , xstreq ,                                     &
    rdevel , rtuser , ra     )
 
@@ -84,50 +81,16 @@ subroutine usstr1 &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml, nprfml)  !    !     !                                                !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
-! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
-! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
-! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
 ! idfstr(nfabor)   ! ia ! <-- ! boundary faces -> structure definition         !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! aexxst,bexxst    ! r  ! <-- ! prediction coefficients of structural data     !
 ! cfopre           ! r  ! <-- ! prediction coefficients of fluid forces        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-!  (ndim, nnod)    !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! xstr0(ndim,      ! ra ! <-- ! initial displacement of internal structures    !
 !       nbstru)    !    !     !                                                !
 ! vstr0(ndim,      ! ra ! <-- ! initial velocity of internal structures        !
@@ -156,6 +119,7 @@ use pointe
 use albase
 use parall
 use period
+use mesh
 
 !===============================================================================
 
@@ -164,27 +128,15 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nbstru
 integer          nideve , nrdeve , nituse , nrtuse
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
 integer          maxelt, lstelt(maxelt)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          idfstr(nfabor)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision aexxst, bexxst, cfopre
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision xstr0(3,nstrmx), xstreq(3,nstrmx)
 double precision vstr0(3,nstrmx)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
@@ -330,13 +282,10 @@ subroutine usstr2 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr , nbstru ,                   &
+   nbstru ,                                                       &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , idfstr ,                   &
+   idfstr ,                                                       &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dtcel  ,                                                       &
    xmstru , xcstru , xkstru , xstreq , xstr   , vstr   , forstr , &
    dtstr  ,                                                       &
@@ -359,54 +308,16 @@ subroutine usstr2 &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nbstru           ! e  ! <-- ! nombre de structures definies                  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml, nprfml)  !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfac+1)       !    !     !  face interne dans nodfac (optionnel)          !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (lndfac)       !    !     !  (optionnel)                                   !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (nfabor+1)     !    !     !  face de bord dans nodfbr (optionnel)          !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (lndfbr)       !    !     !  (optionnel)                                   !
 ! idfstr(nfabor    ! te ! <-- ! definition des structures                      !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-!  (ndim, nnod)    !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dtcel(ncelet)    ! ra ! <-- ! time step (per cell)                           !
 ! xmstru(ndim,     ! ra ! --> ! matrix of structural mass                      !
 !  ndim,nbstru)    !    !     !                                                !
@@ -444,6 +355,7 @@ use pointe
 use albase
 use parall
 use period
+use mesh
 
 !===============================================================================
 
@@ -452,25 +364,13 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nbstru
 integer          nideve , nrdeve , nituse , nrtuse
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          idfstr(nfabor)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision dtcel(ncelet)
 double precision xmstru(3,3,nstrmx)
 double precision xcstru(3,3,nstrmx)

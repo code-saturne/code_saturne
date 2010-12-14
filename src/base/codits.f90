@@ -29,8 +29,6 @@ subroutine codits &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
@@ -39,10 +37,7 @@ subroutine codits &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    pvara  , pvark  ,                                              &
    coefap , coefbp , cofafp , cofbfp , flumas , flumab ,          &
    viscfm , viscbm , viscfs , viscbs ,                            &
@@ -109,17 +104,6 @@ subroutine codits &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -168,32 +152,9 @@ subroutine codits &
 !                  !    !     !   totalement centre en temps (mixage           !
 !                  !    !     !   entre crank-nicolson et adams-               !
 !                  !    !     !   bashforth)                                   !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml, nprfml)  !    !     !                                                !
-! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
-! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
-! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-!  (ndim, nnod)    !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! pvara(ncelet     ! tr ! <-- ! variable resolue (instant precedent)           !
 ! pvark(ncelet     ! tr ! <-- ! variable de la sous-iteration                  !
 !                  !    !     !  precedente. pour un point fixe sur            !
@@ -243,6 +204,7 @@ use parall
 use period
 use mltgrd
 use optcal, only: rlxp1
+use mesh
 
 !===============================================================================
 
@@ -251,9 +213,6 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          nideve , nrdeve , nituse , nrtuse
 integer          idtvar , ivar   , iconvp , idiffp , ndircp
@@ -265,18 +224,9 @@ integer          ipp    , iwarnp
 double precision blencp , epsilp , epsrgp , climgp , extrap
 double precision relaxp , thetap , epsrsp
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision pvara(ncelet), pvark(ncelet)
 double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
@@ -448,18 +398,13 @@ if(abs(thetex).gt.epzero) then
   call bilsc2                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    pvara  , pvara  ,  coefap , coefbp , cofafp , cofbfp ,         &
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
@@ -522,18 +467,13 @@ do 100 isweep = 1, nswmod
   call bilsc2                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
@@ -579,17 +519,12 @@ do 100 isweep = 1, nswmod
   call invers                                                     &
   !==========
  ( cnom   , idebia , idebra ,                                     &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nideve , nrdeve , nituse , nrtuse ,                            &
    isym   , ipol   , ireslq , nitmap , imgrp  ,                   &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dam    , xam    , smbrp  , dpvar  ,                            &
    w3     , w4     , w5     , w6     , w7     , w8     ,          &
    rdevel , rtuser , ra     )
@@ -675,18 +610,13 @@ if (iescap.gt.0) then
   call bilsc2                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &

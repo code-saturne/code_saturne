@@ -32,14 +32,11 @@ subroutine uslatp &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   ,          &
-   nprfml , nnod   , lndfac , lndfbr , ncelbr ,                   &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
    numpt  , itepa  , idevel , ituser , ia     ,                   &
    rep    , uvwr   , romf   , romp   , xnul   , taup   ,          &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   ,                                     &
    rdevel , rtuser , ra     )
@@ -97,18 +94,6 @@ subroutine uslatp &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
-!                  !    !     !                                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -135,20 +120,6 @@ subroutine uslatp &
 ! xnul             ! r  ! <-- ! kinematic viscosity of the fluid at            !
 !                  !    !     ! particle position                              !
 ! taup             ! r  ! --> ! particle relaxation time                       !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-! (ndim,nnod)      !    !     !                                                !
-! volume           ! ra ! <-- ! cell volumes                                   !
-! (ncelet          !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! ra ! <-- ! transported variables at cells centers         !
 ! (ncelet,*)       !    !     ! at the previous time step                      !
@@ -191,6 +162,7 @@ use ppppar
 use ppthch
 use ppincl
 use cpincl
+use mesh
 
 !===============================================================================
 
@@ -199,22 +171,17 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          nideve , nrdeve , nituse , nrtuse
 integer          numpt
+
 integer          itepa(nbpmax,nivep)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision rep    , uvwr   , romf   , romp   , xnul  , taup
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac) , surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac) , cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod) , volume(ncelet)
+
 double precision dt(ncelet) , rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)

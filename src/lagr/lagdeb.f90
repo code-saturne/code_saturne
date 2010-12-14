@@ -29,11 +29,8 @@ subroutine lagdeb &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndnod , lndfac , lndfbr , ncelbr ,                   &
+   lndnod ,                                                       &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    icocel , itycel ,                                              &
    idevel , ituser , ia     ,                                     &
    rdevel , rtuser , ra     )
@@ -94,34 +91,9 @@ subroutine lagdeb &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
-!  (nfml,nprfml    !    !     !                                                !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfac)       !    !     !  face interne dans nodfac                      !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (nfac+1)       !    !     !                                                !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfbr)       !    !     !  face de bord dans nodfbr                      !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (nfabor+1)     !    !     !                                                !
 ! icocel           ! te ! --> ! connectivite cellules -> faces                 !
 ! (lndnod)         !    !     !    face de bord si numero negatif              !
 ! itycel           ! te ! --> ! connectivite cellules -> faces                 !
@@ -153,6 +125,7 @@ use parall
 use period
 use lagpar
 use lagran
+use mesh
 
 !===============================================================================
 
@@ -161,15 +134,9 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndnod , lndfac , lndfbr , ncelbr
+integer          lndnod
 integer          nideve , nrdeve , nituse , nrtuse
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1) , nodfac(lndfac)
-integer          ipnfbr(nfabor+1) , nodfbr(lndfbr)
+
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)

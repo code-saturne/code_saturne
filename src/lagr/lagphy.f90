@@ -29,14 +29,11 @@ subroutine lagphy &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  , ibord  ,                                              &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , volume ,          &
    dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , taup   , tlag   ,                   &
    tempct , tsvar  , auxl   ,                                     &
@@ -68,13 +65,6 @@ subroutine lagphy &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -95,19 +85,6 @@ subroutine lagphy &
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
-! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -155,6 +132,7 @@ use optcal
 use entsor
 use lagpar
 use lagran
+use mesh
 
 !===============================================================================
 
@@ -163,20 +141,15 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          nideve , nrdeve , nituse , nrtuse
+
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac) , surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac) , cdgfbo(ndim,nfabor)
-double precision volume(ncelet)
 double precision dt(ncelet) , rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
@@ -218,12 +191,10 @@ if ( iphyla.eq.2 .or. (iphyla.eq.1 .and. itpvar.eq.1) ) then
   call lagitf                                                     &
   !==========
   ( idebia , idebra ,                                             &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   ,         &
-    nprfml , nvar   , nscal  , nphas  ,                           &
+    nvar   , nscal  , nphas  ,                                    &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  , ia     ,                                    &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , volume ,         &
     dt     , rtp    , propce , propfa , propfb ,                  &
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
     tsvar  , auxl(1,1) , auxl(1,2)  , w1     ,                    &
@@ -240,12 +211,10 @@ if ( iphyla.eq.1 .and. itpvar.eq.1 ) then
   call lagitp                                                     &
   !==========
   ( idebia , idebra ,                                             &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   ,         &
-    nprfml , nvar   , nscal  , nphas  ,                           &
+    nvar   , nscal  , nphas  ,                                    &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  , ia     ,                                    &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , volume ,         &
     dt     , rtp    , propce , propfa , propfb ,                  &
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
     tsvar  , auxl(1,1) , auxl(1,2)  ,                             &
@@ -262,12 +231,10 @@ if ( iphyla.eq.1 .and. idpvar.eq.1 ) then
   call lagidp                                                     &
   !==========
   ( idebia , idebra ,                                             &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   ,         &
-    nprfml , nvar   , nscal  , nphas  ,                           &
+    nvar   , nscal  , nphas  ,                                    &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  , ia     ,                                    &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , volume ,         &
     dt     , rtp    , propce , propfa , propfb ,                  &
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
     tsvar  , auxl(1,1) , auxl(1,2)  ,                             &
@@ -284,12 +251,10 @@ if (iphyla.eq.1 .and. impvar.eq.1) then
   call lagimp                                                     &
   !==========
   ( idebia , idebra ,                                             &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   ,         &
-    nprfml , nvar   , nscal  , nphas  ,                           &
+    nvar   , nscal  , nphas  ,                                    &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  , ia     ,                                    &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , volume ,         &
     dt     , rtp    , propce , propfa , propfb ,                  &
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
     tsvar  , auxl(1,1) , auxl(1,2)  ,                             &
@@ -313,12 +278,10 @@ if (iphyla.eq.2) then
   call lagich                                                     &
   !==========
   ( ifinia , ifinra ,                                             &
-    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   ,         &
-    nprfml , nvar   , nscal  , nphas  ,                           &
+    nvar   , nscal  , nphas  ,                                    &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  , ia     ,                                    &
-    xyzcen , surfac , surfbo , cdgfac , cdgfbo , volume ,         &
     dt     , rtp    , propce , propfa , propfb ,                  &
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  ,&
     cpgd1  , cpgd2  , cpght  ,                                    &
@@ -336,14 +299,12 @@ if (nvls.ge.1) then
   call uslaed                                                     &
   !==========
     ( idebia , idebra ,                                           &
-      ndim   , ncelet , ncel   , nfac   , nfabor , nfml   ,       &
-      nprfml , nvar   , nscal  , nphas  ,                         &
+      nvar   , nscal  , nphas  ,                                  &
       nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
       nideve , nrdeve , nituse , nrtuse ,                         &
       itepa  , ibord  ,                                           &
       idevel , ituser , ia     ,                                  &
-      xyzcen , surfac , surfbo , cdgfac , cdgfbo , volume ,       &
       dt     , rtp    , propce , propfa , propfb ,                &
       ettp   , ettpa  , tepa   , taup   , tlag   ,                &
       tempct , tsvar  ,                                           &

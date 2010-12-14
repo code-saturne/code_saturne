@@ -80,7 +80,7 @@ CS_PROCF (algdom, ALGDOM)(cs_int_t  *iopt);
  * subroutine ledevi(ndim   , nfml  , nprfml, iperio, iperot)
  * *****************
  *
- * integer          ndim        : <-- : Spacial dimension (3)
+ * integer          ndim        : --> : Spacial dimension (3)
  * integer          nfml        : <-- : Number of families
  * integer          nprfml      : <-- : Number of properties per family
  * integer          iperio      : <-- : Periodicity indicator
@@ -88,11 +88,11 @@ CS_PROCF (algdom, ALGDOM)(cs_int_t  *iopt);
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
-                         cs_int_t   *nfml,
-                         cs_int_t   *nprfml,
-                         cs_int_t   *iperio,
-                         cs_int_t   *iperot);
+CS_PROCF(ledevi, LEDEVI)(const cs_int_t   *ndim,
+                         cs_int_t         *nfml,
+                         cs_int_t         *nprfml,
+                         cs_int_t         *iperio,
+                         cs_int_t         *iperot);
 
 /*----------------------------------------------------------------------------
  * Define preprocessed mesh to read.

@@ -29,7 +29,6 @@ subroutine memra1 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
    nvar   , nscal  , nphas  ,                                     &
    ifinia , ifinra )
 
@@ -49,11 +48,6 @@ subroutine memra1 &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -77,6 +71,7 @@ use numvar
 use optcal
 use ppppar
 use radiat
+use mesh
 
 !===============================================================================
 
@@ -85,7 +80,6 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
 integer          nvar   , nscal  , nphas
 integer          ifinia , ifinra
 

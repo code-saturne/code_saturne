@@ -32,14 +32,12 @@ subroutine uslaed &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  , ibord  ,                                              &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , volume ,          &
    dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
    auxl1  , auxl2  , auxl3  , w1     , w2     , w3     ,          &
@@ -90,13 +88,6 @@ subroutine uslaed &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -117,19 +108,6 @@ subroutine uslaed &
 ! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
 ! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-! (ndim,nnod)      !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! ra ! <-- ! transported variables at the current           !
 ! (ncelet,*)       !    !     ! and previous time step                         !
@@ -179,6 +157,7 @@ use optcal
 use entsor
 use lagpar
 use lagran
+use mesh
 
 !===============================================================================
 
@@ -187,20 +166,15 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          nideve , nrdeve , nituse , nrtuse
+
 integer          itepa(nbpmax,nivep)  , ibord(nbpmax)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac) , surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac) , cdgfbo(ndim,nfabor)
-double precision volume(ncelet)
 double precision dt(ncelet) , rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)

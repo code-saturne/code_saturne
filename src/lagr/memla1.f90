@@ -29,7 +29,6 @@ subroutine memla1 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
    lndnod ,                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
@@ -62,11 +61,6 @@ subroutine memla1 &
 !                  !    !     !  dans ia en entree                             !
 ! idbra0           ! e  ! <-- ! pointeur de la premiere cas libre              !
 !                  !    !     !  dans ra en entree                             !
-! ndim             ! e  ! <-- ! dimension (3)                                  !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
@@ -103,6 +97,7 @@ use paramx
 use entsor
 use lagpar
 use lagran
+use mesh
 
 !===============================================================================
 
@@ -111,7 +106,6 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
 integer          lndnod
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr

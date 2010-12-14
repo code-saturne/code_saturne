@@ -29,18 +29,14 @@ subroutine inimas &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    ivar1  , ivar2  , ivar3  , imaspe , iphas  ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgu , imligu , &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu , extrau ,                                     &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr , isympa ,                   &
+   isympa ,                                                       &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    rom    , romb   ,                                              &
    ux     , uy     , uz     ,                                     &
    coefax , coefay , coefaz , coefbx , coefby , coefbz ,          &
@@ -76,17 +72,6 @@ subroutine inimas &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -119,35 +104,12 @@ subroutine inimas &
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgu           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrau           ! r  ! <-- ! coef extrap gradient                           !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml, nprfml)  !    !     !                                                !
-! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
-! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
-! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
 ! isympa           ! te ! <-- ! zero pour annuler le flux de masse             !
 ! (nfabor     )    !    !     !(symetries et parois avec cl couplees)          !
 !                  !    !     ! un sinon                                       !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-!  (ndim, nnod)    !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! rom(ncelet       ! tr ! <-- ! masse volumique aux cellules                   !
 ! romb(nfabor)     ! tr ! <-- ! masse volumique aux bords                      !
 ! ux,y,z(ncelet    ! tr ! <-- ! vitesse                                        !
@@ -180,6 +142,7 @@ use dimens, only: ndimfb
 use pointe
 use parall
 use period
+use mesh
 
 !===============================================================================
 
@@ -188,9 +151,6 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          nideve , nrdeve , nituse , nrtuse
 integer          ivar1  , ivar2  , ivar3  , imaspe , iphas
@@ -199,18 +159,10 @@ integer          nswrgu , imligu
 integer          iwarnu , nfecra
 double precision epsrgu , climgu , extrau
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr), isympa(nfabor)
+integer          isympa(nfabor)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision rom(ncelet), romb(nfabor)
 double precision ux(ncelet), uy(ncelet), uz(ncelet)
 double precision coefax(nfabor), coefay(nfabor), coefaz(nfabor)
@@ -350,15 +302,11 @@ if( nswrgu.gt.1 ) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr , nphas  ,                   &
+   nphas  ,                                                       &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ivar1  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dpdxa  , dpdxa  , dpdxa  ,                                     &
    qdmx   , coefqa(1,1) , coefbx ,                                &
    dpdx   , dpdy   , dpdz   ,                                     &
@@ -420,15 +368,11 @@ if( nswrgu.gt.1 ) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr , nphas  ,                   &
+   nphas  ,                                                       &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ivar2  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dpdxa  , dpdxa  , dpdxa  ,                                     &
    qdmy   , coefqa(1,2) , coefby ,                                &
    dpdx   , dpdy   , dpdz   ,                                     &
@@ -491,15 +435,11 @@ if( nswrgu.gt.1 ) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr , nphas  ,                   &
+   nphas  ,                                                       &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ivar3  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dpdxa  , dpdxa  , dpdxa  ,                                     &
    qdmz     , coefqa(1,3) , coefbz ,                              &
    dpdx   , dpdy   , dpdz   ,                                     &

@@ -29,8 +29,6 @@ subroutine memclg &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
    ifinia , ifinra )
 
@@ -49,16 +47,6 @@ subroutine memclg &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
@@ -76,6 +64,7 @@ subroutine memclg &
 
 use paramx
 use pointe
+use mesh
 
 !===============================================================================
 
@@ -84,8 +73,6 @@ implicit none
 ! Arguments
 
 integer idbia0 , idbra0
-integer ndim   , ncelet , ncel , nfac , nfabor , nfml , nprfml
-integer nnod   , lndfac , lndfbr
 integer nideve , nrdeve , nituse , nrtuse
 integer ifinia , ifinra
 

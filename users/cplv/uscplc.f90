@@ -32,15 +32,11 @@ subroutine uscplc &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , lstelt , &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   maxelt , lstelt ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
    w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
@@ -394,43 +390,13 @@ subroutine uscplc &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
 ! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
-! ndim             ! e  ! <-- ! dimension de l'espace                          !
-! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
-! ncel             ! e  ! <-- ! nombre d'elements actifs                       !
-! nfac             ! e  ! <-- ! nombre de faces internes                       !
-! nfabor           ! e  ! <-- ! nombre de faces de bord                        !
-! nfml             ! e  ! <-- ! nombre de familles d entites                   !
-! nprfml           ! e  ! <-- ! nombre de proprietese des familles             !
-! nnod             ! e  ! <-- ! nombre de sommets                              !
-! lndfac           ! e  ! <-- ! longueur du tableau nodfac                     !
-! lndfbr           ! e  ! <-- ! longueur du tableau nodfbr                     !
-! ncelbr           ! e  ! <-- ! nombre d'elements ayant au moins une           !
-!                  !    !     ! face de bord                                   !
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
 ! nphas            ! e  ! <-- ! nombre de phases                               !
 ! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
 ! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
-! ifacel           ! te ! <-- ! elements voisins d'une face interne            !
-! (2, nfac)        !    !     !                                                !
-! ifabor           ! te ! <-- ! element  voisin  d'une face de bord            !
-! (nfabor)         !    !     !                                                !
-! ifmfbr           ! te ! <-- ! numero de famille d'une face de bord           !
-! (nfabor)         !    !     !                                                !
-! ifmcel           ! te ! <-- ! numero de famille d'une cellule                !
-! (ncelet)         !    !     !                                                !
-! iprfml           ! te ! <-- ! proprietes d'une famille                       !
-! nfml  ,nprfml    !    !     !                                                !
 ! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
 ! lstelt(maxelt) te ! --- ! tableau de travail                             !
-! ipnfac           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfac)       !    !     !  face interne dans nodfac                      !
-! nodfac           ! te ! <-- ! connectivite faces internes/noeuds             !
-!   (nfac+1)       !    !     !                                                !
-! ipnfbr           ! te ! <-- ! position du premier noeud de chaque            !
-!   (lndfbr)       !    !     !  face de bord dans nodfbr                      !
-! nodfbr           ! te ! <-- ! connectivite faces de bord/noeuds              !
-!   (nfabor+1)     !    !     !                                                !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -449,20 +415,6 @@ subroutine uscplc &
 ! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
 ! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
-! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
-! (ndim,ncelet     !    !     !                                                !
-! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
-! (ndim,nfac)      !    !     !                                                !
-! surfbo           ! tr ! <-- ! vecteur surface des faces de bord              !
-! (ndim,nfabor)    !    !     !                                                !
-! cdgfac           ! tr ! <-- ! centre de gravite des faces internes           !
-! (ndim,nfac)      !    !     !                                                !
-! cdgfbo           ! tr ! <-- ! centre de gravite des faces de bord            !
-! (ndim,nfabor)    !    !     !                                                !
-! xyznod           ! tr ! <-- ! coordonnes des noeuds                          !
-! (ndim,nnod)      !    !     !                                                !
-! volume           ! tr ! <-- ! volume d'un des ncelet elements                !
-! (ncelet          !    !     !                                                !
 ! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -519,6 +471,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use mesh
 
 !===============================================================================
 
@@ -527,27 +480,15 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          nideve , nrdeve , nituse , nrtuse
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
 integer          maxelt, lstelt(maxelt)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
 integer          izfppp(nfabor)
 integer          idevel(nideve), ituser(nituse), ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)

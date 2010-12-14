@@ -29,8 +29,6 @@ subroutine memcfe &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nideve , nrdeve , nituse , nrtuse ,                            &
    iwb    ,                                                       &
    ifinia , ifinra )
@@ -49,16 +47,6 @@ subroutine memcfe &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iwb              ! e  ! --> ! pointeur de wb (tab travail nfabor)            !
@@ -76,6 +64,8 @@ subroutine memcfe &
 ! Module files
 !===============================================================================
 
+use mesh
+
 !===============================================================================
 
 implicit none
@@ -83,9 +73,6 @@ implicit none
 !     - REMARQUE : INTERDICTION DE TOUCHER A IDBIA0 IDBRA0
 
 integer idbia0 , idbra0
-integer ndim   , ncelet , ncel   , nfac   , nfabor
-integer nfml   , nprfml
-integer nnod   , lndfac , lndfbr , ncelbr
 integer nideve , nrdeve , nituse , nrtuse
 integer iwb
 integer ifinia , ifinra

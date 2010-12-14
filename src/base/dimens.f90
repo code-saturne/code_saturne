@@ -35,11 +35,6 @@ module dimens
 
   !=============================================================================
 
-  integer, save :: ncelet, ncel, nfac, nfabor, ncelbr,   &
-                   nprfml, nfml, nnod, lndfac, lndfbr
-
-  integer, save :: ndim
-
   integer, save :: nvar, nscal, nvisls, nphas
 
   integer, save :: ncofab

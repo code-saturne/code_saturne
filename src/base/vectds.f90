@@ -28,9 +28,8 @@
 subroutine vectds &
 !================
 
- ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
-   ifacel , ifabor , ia     ,                                     &
-   surfac , surfbo , pond   ,                                     &
+ ( ia     ,                                                       &
+   pond   ,                                                       &
    vectx  , vecty  , vectz  ,                                     &
    valf   , valb   , ra     )
 
@@ -48,17 +47,7 @@ subroutine vectds &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! e  ! <-- ! nombre de cellules                             !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! ifacel(2,nfac    ! te ! <-- ! no des elts voisins d'une face intern          !
-! ifabor(nfabor    ! te ! <-- ! no de l'elt voisin d'une face de bord          !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! surfac(3,nfac    ! tr ! <-- ! surf vectorielle des surfaces interne          !
-! surfbo(          ! tr ! <-- ! surf vectorielle des surfaces                  !
-!  (3,nfabor       !    !     !                               de bord          !
 ! pond(nfac        ! tr ! <-- ! ponderation pour interpolation faces           !
 ! vectx (ncelet    ! tr ! <-- ! composante x du vecteur   entre                !
 ! vecty (ncelet    ! tr ! <-- ! composante y du vecteur   entre                !
@@ -82,6 +71,7 @@ use paramx
 use pointe
 use parall
 use period
+use mesh
 
 !===============================================================================
 
@@ -89,10 +79,7 @@ implicit none
 
 ! Arguments
 
-integer          ndim, ncelet, ncel, nfac, nfabor
-integer          ifacel(2,nfac), ifabor(nfabor)
 integer          ia(*)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
 double precision pond(nfac)
 double precision vectx(ncelet), vecty(ncelet), vectz(ncelet)
 double precision valf(nfac), valb(nfabor)

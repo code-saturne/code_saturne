@@ -33,6 +33,33 @@ module mesh
 
   ! Mesh Fortran structure, pointers to the C structure
 
+  ! ndim : spatial dimension
+
+  integer :: ndim
+  parameter(ndim=3)
+
+  ! ncelet : number of extended (real + ghost) cells
+  ! ncel   : number of cells
+  ! nfac   : number of interior faces
+  ! nfabor : number of boundary faces
+  ! nnod   : number of vertices
+
+  integer, save :: ncelet, ncel, nfac, nfabor, nnod
+
+  ! ncelbr : number of cells with faces on boundary
+
+  integer, save :: ncelbr
+
+  ! lndfac : size of nodfac indexed array
+  ! lndfbr : size of nodfbr indexed array
+
+  integer, save :: lndfac, lndfbr
+
+  ! nfml   : number of families (group classes)
+  ! nprfml : number of properties per family (group class)
+
+  integer, save :: nprfml, nfml
+
   ! ifacel : interior faces -> cells connectivity
   ! ifabor : boundary faces -> cells connectivity
 

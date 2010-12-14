@@ -32,16 +32,11 @@ subroutine uspt1d &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , nfpt1d , iphas  , iappel ,          &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , lstelt , &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   maxelt , lstelt ,                                              &
    ifpt1d , nppt1d , iclt1d ,                                     &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-   xyznod , volume ,                                              &
    tppt1d , rgpt1d , eppt1d ,                                     &
    tept1d , hept1d , fept1d ,                                     &
    xlmt1d , rcpt1d , dtpt1d ,                                     &
@@ -97,17 +92,6 @@ subroutine uspt1d &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
@@ -115,61 +99,33 @@ subroutine uspt1d &
 ! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
 ! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iappel           ! i  ! <-- ! data type to send                              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml, nprfml)  !    !     !                                                !
 ! maxelt           !  i ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ifpt1d           ! ia ! <-- ! number of the face treated                     !
 ! nppt1d           ! ia ! <-- ! number of discretized points                   !
 ! iclt1d           ! ia ! <-- ! boundary condition type                        !
-!--begin. obsolesence ---------------------------------------------------------!
-! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
-! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
-! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfac(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
-!--end obsolesence ------------------------------------------------------------!
 ! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
 ! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-!--new ------------------------------------------------------------------------!
-! eppt1d           ! ra ! <-- ! wall thickness                                 !<--new
-! rgpt1d           ! ra ! <-- ! geometric ratio of the meshing refinement      !<--new
-! tppt1d           ! ra ! <-- ! wall temperature initialization                !<--new
-! tept1d           ! ra ! <-- ! exterior temperature                           !<--new
-! hept1d           ! ra ! <-- ! exterior exchange coefficient                  !<--new
-! fept1d           ! ra ! <-- ! flux applied to the exterior                   !<--new
-! xlmt1d           ! ra ! <-- ! lambda wall conductivity coefficient           !<--new
-! rcpt1d           ! ra ! <-- ! rhoCp wall coefficient                         !<--new
-! dtpt1d           ! ra ! <-- ! wall time step                                 !<--new
-!--begin. obsolesence ---------------------------------------------------------!--!
-! xyzcen           ! ra ! <-- ! cell centers                                   !  !
-!  (ndim, ncelet)  !    !     !                                                !  !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !  !
-!  (ndim, nfac)    !    !     !                                                !  !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !  !
-!  (ndim, nfavor)  !    !     !                                                !  !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !  !
-!  (ndim, nfac)    !    !     !                                                !  !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !  !
-!  (ndim, nfabor)  !    !     !                                                !  !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !  !
-!  (ndim, nnod)    !    !     !                                                !  !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !  !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !  !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !  !
-!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !  !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !  !
-! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !  !
-! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !  !
-! coefa, coefb     ! ra ! <-- ! boundary conditions                            !  !
-!  (nfabor, *)     !    !     !                                                !  !
-! coefu            ! ra ! --- ! work array                                     !  !
-!  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !  !
-!-end obsolesence--------------------------------------------------------------!--!
+! eppt1d           ! ra ! <-- ! wall thickness                                 !
+! rgpt1d           ! ra ! <-- ! geometric ratio of the meshing refinement      !
+! tppt1d           ! ra ! <-- ! wall temperature initialization                !
+! tept1d           ! ra ! <-- ! exterior temperature                           !
+! hept1d           ! ra ! <-- ! exterior exchange coefficient                  !
+! fept1d           ! ra ! <-- ! flux applied to the exterior                   !
+! xlmt1d           ! ra ! <-- ! lambda wall conductivity coefficient           !
+! rcpt1d           ! ra ! <-- ! rhoCp wall coefficient                         !
+! dtpt1d           ! ra ! <-- ! wall time step                                 !
+! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
+! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
+!  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
+! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
+! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
+! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
+! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
+!  (nfabor, *)     !    !     !                                                !
+! coefu            ! ra ! --- ! work array                                     !
+!  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
 ! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
 ! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -192,6 +148,7 @@ use cstphy
 use cstnum
 use parall
 use period
+use mesh
 
 !===============================================================================
 
@@ -200,26 +157,14 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas  , nfpt1d
 integer          nideve , nrdeve , nituse , nrtuse
 integer          iphas  , iappel
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
 integer          maxelt, lstelt(maxelt)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          ifpt1d(nfpt1d), nppt1d(nfpt1d), iclt1d(nfpt1d)
 integer          idevel(nideve), ituser(nituse), ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)

@@ -84,7 +84,6 @@ integer          ntetra , npyram , nprism , nhexae
 
 !===============================================================================
 
-ndim = 0
 ncel = 0
 nfac = 0
 nfabor = 0
@@ -104,8 +103,6 @@ lndfbr = 0
 OPEN (FILE=FICGEO,UNIT=IMPGEO,FORM='formatted',ERR=9000)
 
 !---> Ecriture avec rubrique ... avant
-
-ndim = 3
 
 read (impgeo,   *,err=9002,end=9003)
 read (impgeo,   *,err=9002,end=9003)

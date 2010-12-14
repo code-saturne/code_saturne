@@ -29,7 +29,6 @@ subroutine memla2 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nfabor , ncelet , nfac   ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    iindep , iibord , iettpa , iauxl  , iauxl2 ,                   &
    itaup  , iitlag , ipiil  ,                                     &
@@ -58,9 +57,6 @@ subroutine memla2 &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! idbia0/idbra0    ! tr ! <-- ! pointeur de la premiere cas libre des          !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! ncelet           ! e  ! <-- ! nombre d'elements                              !
-! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -112,6 +108,7 @@ use paramx
 use entsor
 use lagpar
 use lagran
+use mesh
 
 !===============================================================================
 
@@ -120,7 +117,6 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nfabor , ncelet , nfac
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          iindep , iibord , iettpa , iauxl , iauxl2
 integer          itaup  , iitlag , ipiil

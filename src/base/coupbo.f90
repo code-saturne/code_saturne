@@ -29,14 +29,9 @@ subroutine coupbo &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  , isvtb  ,                            &
    nideve , nrdeve , nituse , nrtuse , ncp , ncv , ientha ,       &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cpcst  , cp     , cvcst  , cv     ,                            &
@@ -69,7 +64,6 @@ subroutine coupbo &
 ! ientha           ! e  ! <-- ! 1 si tparoi est une enthalpie                  !
 !                  ! e  ! <-- ! 2 si tparoi est une energie                    !
 !                  !    !     !    (compressible)                              !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
 ! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -100,6 +94,7 @@ use paramx
 use numvar
 use entsor
 use cstphy
+use mesh
 
 !===============================================================================
 
@@ -108,27 +103,15 @@ implicit none
 ! Arguments
 
 integer          idbia0, idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
 integer          nvar   , nscal  , nphas
 integer          isvtb
 integer          nideve , nrdeve , nituse , nrtuse
 integer          ncp    , ncv    , ientha
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          idevel(nideve), ituser(nituse), ia(*)
 
 double precision cpcst  , cvcst
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
@@ -273,15 +256,10 @@ do inbcou = 1, nbccou
     call uscfth                                                   &
     !==========
  ( ifinia , ifinra ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
-   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
    idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(iepsel) , ra(iepsfa) , ra(igamag) , ra(ixmasm) ,            &
