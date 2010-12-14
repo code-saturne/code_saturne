@@ -1,4 +1,10 @@
 * 14/12/2010 - David Monfort <david.monfort@edf.fr>
+  Remove no-more used Fortran wrappers for code coupling.
+  removed routines:
+    src/base/cs_sat_f2c.f90
+    src/base/cs_syr_f2c.f90
+
+* 14/12/2010 - David Monfort <david.monfort@edf.fr>
   Remove all the mesh-related arguments in the Fortran prototypes definition.
   Use instead the mesh module everywhere. A few subroutines have still some
   mesh-related arguments.
