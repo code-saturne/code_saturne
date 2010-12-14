@@ -110,6 +110,10 @@ typedef struct {
 
   int            active;       /* 0 if no output at current time step,
                                   1 in case of output */
+  int            n_last;       /* Time step number for the last
+                                  activation (-1 before first output) */
+  double         t_last;       /* Time value number for the last
+                                  activation (0.0 before first output) */
 
   fvm_writer_t  *writer;       /* Associated FVM writer */
 
@@ -148,8 +152,6 @@ typedef struct {
   int                    *writer_id;     /* Array of associated writer ids */
   int                     nt_last;       /* Time step number for the last
                                             output (-1 before first output) */
-  double                  t_last;        /* Time value number for the last
-                                            output (-1.0 before first output) */
 
   cs_int_t                n_i_faces;     /* N. associated interior faces */
   cs_int_t                n_b_faces;     /* N. associated boundary faces */
@@ -391,7 +393,6 @@ _cs_post_add_mesh(int  mesh_id)
   post_mesh->writer_id = NULL;
 
   post_mesh->nt_last = -1;
-  post_mesh->t_last = -1.0;
 
   post_mesh->add_groups = false;
 
@@ -843,22 +844,35 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
        allowing only fixed meshes; for other writers, output it */
 
     if (write_mesh == true && time_dep != FVM_WRITER_FIXED_MESH) {
+
       fvm_writer_set_mesh_time(writer->writer, nt_cur_abs, t_cur_abs);
       fvm_writer_export_nodal(writer->writer, post_mesh->exp_mesh);
+
+      if (nt_cur_abs >= 0) {
+        writer->n_last = nt_cur_abs;
+        writer->t_last = t_cur_abs;
+      }
+
     }
 
-    if (write_mesh == true && (post_mesh->id == -1 || post_mesh->id == -2))
+    if (write_mesh == true && (post_mesh->id == -1 || post_mesh->id == -2)) {
+
       _cs_post_write_domain(writer->writer,
                             post_mesh->exp_mesh,
                             nt_cur_abs,
                             t_cur_abs);
 
+      if (nt_cur_abs >= 0) {
+        writer->n_last = nt_cur_abs;
+        writer->t_last = t_cur_abs;
+      }
+
+    }
+
   }
 
-  if (write_mesh == true) {
+  if (write_mesh == true)
     post_mesh->nt_last = nt_cur_abs;
-    post_mesh->t_last = t_cur_abs;
-  }
 
   if (   post_mesh->mod_flag_max == FVM_WRITER_FIXED_MESH
       && post_mesh->_exp_mesh != NULL)
@@ -977,6 +991,11 @@ _cs_post_write_displacements(int     nt_cur_abs,
                                 (int)nt_cur_abs,
                                 (double)t_cur_abs,
                                 (const void * *)var_ptr);
+
+        if (nt_cur_abs >= 0) {
+          writer->n_last = nt_cur_abs;
+          writer->t_last = t_cur_abs;
+        }
 
       }
 
@@ -2396,6 +2415,8 @@ cs_post_add_writer(int          writer_id,
   writer->frequency_t = frequency_t;
   writer->write_displ = false;
   writer->active = 0;
+  writer->n_last = -1;
+  writer->t_last = 0.0;
 
   if (mod_flag >= 10) {
     writer->write_displ = true;
@@ -3029,7 +3050,6 @@ cs_post_associate(int  mesh_id,
 
     post_mesh->writer_id[post_mesh->n_writers - 1] = _writer_id;
     post_mesh->nt_last = - 1;
-    post_mesh->t_last = - 1.0;
 
     /* Update structure */
 
@@ -3100,7 +3120,22 @@ cs_post_activate_if_default(int     nt_cur_abs,
 
     writer = _cs_post_writers + i;
 
-    if (writer->frequency_n > 0) {
+    /* In case of previous calls for a given time step,
+       a writer's status may not be changed */
+
+    if (writer->n_last == nt_cur_abs) {
+      writer->active = 1;
+      continue;
+    }
+
+    if (writer->frequency_t > 0) {
+      double  delta_t = t_cur_abs - writer->t_last;
+      if (delta_t >= writer->frequency_t*(1-1e-6))
+        writer->active = 1;
+      else
+        writer->active = 0;
+    }
+    else if (writer->frequency_n > 0) {
       if (nt_cur_abs % (writer->frequency_n) == 0)
         writer->active = 1;
       else
@@ -3397,7 +3432,8 @@ cs_post_write_var(int              mesh_id,
 
     writer = _cs_post_writers + post_mesh->writer_id[i];
 
-    if (writer->active == 1)
+    if (writer->active == 1) {
+
       fvm_writer_export_field(writer->writer,
                               post_mesh->exp_mesh,
                               var_name,
@@ -3410,6 +3446,13 @@ cs_post_write_var(int              mesh_id,
                               (int)nt_cur_abs,
                               (double)t_cur_abs,
                               (const void * *)var_ptr);
+
+      if (nt_cur_abs >= 0) {
+        writer->n_last = nt_cur_abs;
+        writer->t_last = t_cur_abs;
+      }
+
+    }
 
   }
 
@@ -3504,7 +3547,8 @@ cs_post_write_vertex_var(int              mesh_id,
 
     writer = _cs_post_writers + post_mesh->writer_id[i];
 
-    if (writer->active == 1)
+    if (writer->active == 1) {
+
       fvm_writer_export_field(writer->writer,
                               post_mesh->exp_mesh,
                               var_name,
@@ -3517,6 +3561,13 @@ cs_post_write_vertex_var(int              mesh_id,
                               (int)nt_cur_abs,
                               (double)t_cur_abs,
                               (const void * *)var_ptr);
+
+      if (nt_cur_abs >= 0) {
+        writer->n_last = nt_cur_abs;
+        writer->t_last = t_cur_abs;
+      }
+
+    }
 
   }
 
