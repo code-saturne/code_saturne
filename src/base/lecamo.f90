@@ -31,11 +31,10 @@ subroutine lecamo &
  ( idbia0 , idbra0 ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
    coefa  , coefb  , frcxt  ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 
@@ -59,10 +58,6 @@ subroutine lecamo &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! --> ! pas de temps                                   !
 ! rtp              ! tr ! --> ! variables de calcul au centre des              !
@@ -77,8 +72,6 @@ subroutine lecamo &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! frcxt(ncelet,    ! tr ! --> ! force exterieure generant la pression          !
 !   3,nphas)       !    !     !  hydrostatique                                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -110,16 +103,15 @@ implicit none
 integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor, nnod
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision frcxt(ncelet,3,nphas)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -147,10 +139,9 @@ call lecamp (idebia , idebra ,                                    &
 !     ==========
              ncelet , ncel   ,                                    &
              nvar   , nscal  , nphas  ,                           &
-             nideve , nrdeve , nituse , nrtuse ,                  &
-             idevel , ituser , ia     ,                           &
+             ia     ,                                             &
              rtp    ,                                             &
-             rdevel , rtuser , ra     )
+             ra     )
 
 
 !===============================================================================
@@ -163,11 +154,10 @@ if (ileaux.eq.1) then
 !       ==========
                ndim   , ncelet , ncel   , nfac   , nfabor ,       &
                nnod   , nvar   , nscal  , nphas  ,                &
-               nideve , nrdeve , nituse , nrtuse ,                &
-               idevel , ituser , ia     ,                         &
+               ia     ,                                           &
                dt     , rtp    , propce , propfa , propfb ,       &
                coefa  , coefb  , frcxt  ,                         &
-               rdevel , rtuser , ra     )
+               ra     )
 
 endif
 

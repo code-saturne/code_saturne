@@ -30,15 +30,15 @@ subroutine raycli &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , isvhb  , isvtb  ,          &
+   isvhb  , isvtb  ,                                              &
    icodcl , itrifb , itypfb ,                                     &
    izfrad , isothm ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  , hbord  , tbord  ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    text   , tint   , tempk  ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -61,8 +61,6 @@ subroutine raycli &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
 !                  !    !     !  coefficients d'echange aux bords              !
 ! isvtb            ! e  ! <-- ! indicateur de sauvegarde des                   !
@@ -82,8 +80,6 @@ subroutine raycli &
 !  (nfabor, nphas) !    !     !                                                !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
 ! isothm(nfabor    ! te ! <-- ! type de condition de paroi                     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -114,8 +110,6 @@ subroutine raycli &
 ! text (nfabor     ! tr ! --> ! temperature de bord externe                    !
 ! tint (nfabor     ! tr ! --> ! temperature de bord interne                    !
 ! tempk(ncelet)    ! tr ! --> ! temperature en kelvin                          !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -152,12 +146,11 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          isvhb  , isvtb
 
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 integer          izfrad(nfabor),isothm(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -172,7 +165,7 @@ double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision tempk(ncelet)
 double precision text(nfabor), tint(nfabor)
 
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -305,16 +298,14 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
       !==========
  ( idbia1 , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb ,                                                       &
    maxelt , ia(ils),                                              &
    icodcl , izfrad , isothm ,                                     &
    tmin   , tmax   , tx     ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser ,                                              &
    tbord  , propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ihconv))  ,&
    propfb(1,ipprob(ifconv)),                                      &
    propfb(1,ipprob(ixlam)) , propfb(1,ipprob(iepa)) ,             &
@@ -388,16 +379,14 @@ endif
   !==========
  ( idbia1 , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb ,                                                       &
    maxelt , ia(ils),                                              &
    icodcl , izfrad , isothm ,                                     &
    tmin   , tmax   , tx     ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser ,                                              &
    tbord  , propfb(1,ipprob(ifnet)) ,  propfb(1,ipprob(ifconv))  ,&
    propfb(1,ipprob(ifconv)) , propfb(1,ipprob(ixlam)),            &
    propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps)) ,            &
@@ -653,16 +642,14 @@ endif
       !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    mode   ,                                                       &
    itypfb(1,irapha) ,                                             &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , tbord  , tempk  ,                   &
 !                                   Resultat : T en K
-   rdevel , rtuser ,                                              &
    ra     )
 
     else
@@ -671,18 +658,16 @@ endif
       !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
 
    mode   ,                                                       &
 
    itypfb(1,irapha) ,                                             &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , tbord  , tempk  ,                   &
 !                                   Resultat : T en K
-   rdevel , rtuser ,                                              &
    ra     )
 
     endif
@@ -740,17 +725,15 @@ endif
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb(1,irapha) ,                                             &
 
    icodcl , isothm , izfrad ,                                     &
 
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
 
    tmin   , tmax   , tx     ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
-   rdevel , rtuser ,                                              &
 
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
    text   , tint   ,                                              &
@@ -830,17 +813,15 @@ endif
         !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    mode   ,                                                       &
    itypfb(1,irapha) ,                                             &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
    tempk  ,                                                       &
 !                          HPAROI
-   rdevel , rtuser ,                                              &
    ra     )
 
       else
@@ -849,19 +830,17 @@ endif
         !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
 
    mode   ,                                                       &
 
    itypfb(1,irapha) ,                                             &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
    tempk  ,                                                       &
 !                          HPAROI
-   rdevel , rtuser ,                                              &
    ra     )
 
       endif
@@ -884,16 +863,14 @@ endif
         !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    mode   ,                                                       &
    itypfb(1,irapha) ,                                             &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    text   , tbord  , tempk  ,                                     &
 !                       HEXT
-   rdevel , rtuser ,                                              &
    ra     )
 
       else
@@ -902,18 +879,16 @@ endif
         !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
 
    mode   ,                                                       &
 
    itypfb(1,irapha) ,                                             &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    text   , tbord  , tempk  ,                                     &
 !                       HEXT
-   rdevel , rtuser ,                                              &
    ra     )
 
       endif

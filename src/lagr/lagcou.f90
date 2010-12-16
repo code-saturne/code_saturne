@@ -32,15 +32,14 @@ subroutine lagcou &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  , indep  , ibord  ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtp    , propce ,                                              &
    ettp   , ettpa  , tepa   , taup   , tempct , tsfext , tslagr , &
    cpgd1  , cpgd2  , cpght  ,                                     &
    tslag  , volp   , volm   ,                                     &
    auxl1  , auxl2  , auxl3  ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -83,16 +82,12 @@ subroutine lagcou &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! indep            ! te ! <-- ! pour chaque particule :                        !
 !  (nbpmax)        !    !     !    numero de la cellule de depart              !
 ! ibord            ! te ! <-- ! contient le numero de la                       !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
@@ -119,8 +114,6 @@ subroutine lagcou &
 ! auxl1(nbpmax)    ! tr ! --- ! tableau de travail                             !
 ! auxl2(nbpmax)    ! tr ! --- ! tableau de travail                             !
 ! auxl3(nbpmax)    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -161,9 +154,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 integer          itepa(nbpmax,nivep), indep(nbpmax), ibord(nbpmax)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision propce(ncelet,*) , rtp(ncelet,*)
@@ -176,7 +167,6 @@ double precision tslag(ncelet,ntersl)
 double precision volp(ncelet) , volm(ncelet)
 double precision tslagr(ncelet,ntersl)
 double precision auxl1(nbpmax) , auxl2(nbpmax) , auxl3(nbpmax)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

@@ -30,17 +30,17 @@ subroutine mttssc &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    iconra ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    crvexp , crvimp ,                                              &
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    , w11    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -92,8 +92,6 @@ subroutine mttssc &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
@@ -101,8 +99,6 @@ subroutine mttssc &
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! iconra           ! te ! <-- ! tab de connectivite pour                       !
 ! (ncelet+1)       !    !     !  le rayonnement et les panaches                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -123,8 +119,6 @@ subroutine mttssc &
 ! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
 ! xam(nfac,2)      ! tr ! --- ! tableau de travail    faces de bord            !
 ! w1..11(ncelet    ! tr ! --- ! tableau de travail    cellules                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -159,13 +153,12 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iscal
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          iconra(ncelet)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -179,7 +172,7 @@ double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision w10(ncelet), w11(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

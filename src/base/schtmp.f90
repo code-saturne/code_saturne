@@ -30,12 +30,10 @@ subroutine schtmp &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , iappel ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    isostd ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -58,12 +56,8 @@ subroutine schtmp &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! iappel           ! e  ! <-- ! numero de l'appel (avant ou apres              !
 !                  !    !     ! phyvar                                         !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! isostd           ! te ! <-- ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -73,8 +67,6 @@ subroutine schtmp &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -106,17 +98,15 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , iappel
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          isostd(nfabor+1,nphas)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

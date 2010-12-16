@@ -34,13 +34,13 @@ subroutine uselen &
  ( idbia0 , idbra0 , nummai ,                                     &
    nvar   , nscal  , nphas  ,                                     &
    ncelps , nfacps , nfbrps ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    lstcel , lstfac , lstfbr ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     ,                                              &
-   tracel , trafac , trafbr , rdevel , rtuser , ra     )
+   tracel , trafac , trafbr ,                                     &
+   ra     )
 
 !===============================================================================
 ! Purpose :
@@ -62,13 +62,9 @@ subroutine uselen &
 ! ncelps           ! e  ! <-- ! nombre de cellules du maillage post            !
 ! nfacps           ! e  ! <-- ! nombre de faces interieur post                 !
 ! nfbrps           ! e  ! <-- ! nombre de faces de bord post                   !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
 ! lstcel(ncelps    ! te ! <-- ! liste des cellules du maillage post            !
 ! lstfac(nfacps    ! te ! <-- ! liste des faces interieures post               !
 ! lstfbr(nfbrps    ! te ! <-- ! liste des faces de bord post                   !
-! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
-! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
 ! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
@@ -86,8 +82,6 @@ subroutine uselen &
 ! trafbr(*)        ! tr ! <-- ! tab reel valeurs faces bord post               !
 ! w1-w2            ! tr ! --- ! tab reel pour calcul gradient                  !
 ! (ncelet,3)       !    !     !                                                !
-! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
-! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
 ! ra(*)            ! tr ! --- ! macro tableau reel                             !
 !__________________!____!_____!________________________________________________!
 
@@ -129,11 +123,10 @@ integer          idbia0 , idbra0
 integer          nummai
 integer          nvar   , nscal  , nphas
 integer          ncelps , nfacps , nfbrps
-integer          nideve , nrdeve , nituse , nrtuse
 integer          idimt
 
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -142,7 +135,7 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision tracel(ncelps*3)
 double precision trafac(nfacps*3), trafbr(nfbrps*3)
 double precision w1(ncelet,3), w2(ncelet,3)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -198,17 +191,16 @@ if(nummai.eq.-1) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTR
    w1(1,1) , w1(1,2) , w1(1,3) ,                                  &
 !       d POTR /dx   d POTR /dy   d POTR /dz
    w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !
   ientla = 0
@@ -247,17 +239,16 @@ if(nummai.eq.-1) then
     !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
    w1(1,1) , w1(1,2) , w1(1,3) ,                                  &
 !       d POTI /dx   d POTI /dy   d POTI /dz
    w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !
     ientla = 0
@@ -301,17 +292,16 @@ if(nummai.eq.-1) then
     !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
    w1(1,1) , w1(1,2) , w1(1,3) ,                                  &
 !       d POTI /dx   d POTI /dy   d POTI /dz
    w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
-   rdevel , rtuser , ra     )
+   ra     )
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
@@ -359,16 +349,15 @@ if(nummai.eq.-1) then
     !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
    w1(1,1) , w1(1,2) , w1(1,3) ,                                  &
 !       d Ax /dx   d Ax /dy   d Ax /dz
    w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !       B = rot A ( B = curl A)
 
@@ -400,16 +389,15 @@ if(nummai.eq.-1) then
     !==========
   ( idbia0 , idbra0 ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                                      &
     ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     w1(1,1) , w1(1,2) , w1(1,3) ,                                 &
 !       d Ay /dx   d Ay /dy   d Ay /dz
     w2(1,1) , w2(1,2) , w2(1,3) ,                                 &
-    rdevel , rtuser , ra     )
+    ra     )
 
 !       B = rot A (B = curl A)
 
@@ -441,16 +429,15 @@ if(nummai.eq.-1) then
     !==========
   ( idbia0 , idbra0 ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                                      &
     ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     w1(1,1) , w1(1,2) , w1(1,3) ,                                 &
 !       d Az /dx   d Az /dy   d Az /dz
     w2(1,1) , w2(1,2) , w2(1,3) ,                                 &
-    rdevel , rtuser , ra     )
+    ra     )
 
 !       B = rot A (B = curl A)
 

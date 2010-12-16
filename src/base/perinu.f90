@@ -30,13 +30,11 @@ subroutine perinu &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , iphas  ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser ,                                              &
    dudxyz  ,                                                      &
    ra     )
 
@@ -67,10 +65,6 @@ subroutine perinu &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! iphas            ! i  ! <-- ! phase number                                   !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -81,8 +75,6 @@ subroutine perinu &
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! dudxyz           ! tr ! <-- ! gradient de u aux cellules halo pour           !
 !                  !    !     ! l'approche explicite en periodicite            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -117,9 +109,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , iphas
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -128,7 +118,6 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
 double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision dudxyz(ncelet-ncel,3,3,nphas)
 double precision ra(*)
 
@@ -186,16 +175,15 @@ do isou = 1,3
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ipiph  , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtp(1,ipiph)  , coefa(1,ipiph) , coefb(1,ipiph) ,              &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
   isou1 = isou
   call peinu1                                                     &

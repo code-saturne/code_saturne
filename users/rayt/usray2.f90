@@ -33,16 +33,14 @@ subroutine usray2 &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb ,                                                       &
    maxelt , lstelt ,                                              &
    icodcl , izfrdp , isothp ,                                     &
    tmin   , tmax   , tx     ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser ,                                              &
    tparop , qincid , hfcnvp , flcnvp ,                            &
    xlamp  , epap   , epsp   , textp  , tintp  ,                   &
    ra     )
@@ -145,8 +143,6 @@ subroutine usray2 &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iphas            ! i  ! <-- ! current phase number                           !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
 ! maxelt           !  e ! <-- ! max number of cells and faces (int/boundary)   !
@@ -171,8 +167,6 @@ subroutine usray2 &
 !                  !    !     !                               conduction flux  !
 ! tmin             ! r  !     ! min value of the wall temperature              !
 ! tmax             ! r  !     ! max value of the wall temperature              !
-! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
-! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -187,8 +181,6 @@ subroutine usray2 &
 !  (nfabor, *)     !    !     !                                                !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !                                                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
-! rtuser(nituse)   ! ra ! <-- ! user-reserved real work array                  !
 ! tparop(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
 ! qincid(nfabor)   ! ra ! <-- ! radiative incident flux  (W/m2)                !
 ! hfcnvp(nfabor)   ! ra ! <-- ! convective exchange coefficient (W/m2/K)       !
@@ -232,11 +224,10 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , iphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypfb(nfabor,*)
 integer          maxelt, lstelt(maxelt)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 integer          icodcl(nfabor,nvar)
 integer          izfrdp(nfabor), isothp(nfabor)
@@ -258,7 +249,7 @@ double precision xlamp(nfabor), epap(nfabor)
 double precision epsp(nfabor)
 double precision textp(nfabor), tintp(nfabor)
 
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

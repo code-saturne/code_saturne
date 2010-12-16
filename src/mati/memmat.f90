@@ -31,7 +31,6 @@ subroutine memmat &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncofab , nproce , nprofa , nprofb ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ifinia , ifinra )
 
 !===============================================================================
@@ -57,8 +56,6 @@ subroutine memmat &
 ! nproce           ! e  ! <-- ! nombre de prop phy aux centres                 !
 ! nprofa           ! e  ! <-- ! nombre de prop phy aux faces internes          !
 ! nprofb           ! e  ! <-- ! nombre de prop phy aux faces de bord           !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
 ! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
@@ -87,7 +84,6 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncofab , nproce , nprofa , nprofb
-integer          nideve , nrdeve , nituse , nrtuse
 integer          ifinia , ifinra
 
 ! Local variables

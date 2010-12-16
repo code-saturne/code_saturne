@@ -30,17 +30,16 @@ subroutine cfbsc3 &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    pvar   , coefap , coefbp , cofafp , cofbfp ,                   &
    flumas , flumab , viscf  , viscb  ,                            &
    flvarf , flvarb ,                                              &
    dpdx   , dpdy   , dpdz   , dpdxa  , dpdya  , dpdza  ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -69,8 +68,6 @@ subroutine cfbsc3 &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ivar             ! e  ! <-- ! numero de la variable                          !
 ! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
 ! idiffp           ! e  ! <-- ! indicateur = 1 diffusion , 0 sinon             !
@@ -97,8 +94,6 @@ subroutine cfbsc3 &
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! te ! --- ! macro tableau entier                           !
 ! pvar (ncelet     ! tr ! <-- ! variable resolue (instant precedent)           !
 ! coefap, b        ! tr ! <-- ! tableaux des cond lim pour p                   !
@@ -119,8 +114,6 @@ subroutine cfbsc3 &
 !    (ncelet)      !    !     !                                                !
 ! dpdxa,ya,za      ! tr ! --- ! tableau de travail pour le grad de p           !
 !    (ncelet)      !    !     !  avec decentrement amont                       !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -149,14 +142,12 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , iccocg
 integer          iwarnp , ipp
 double precision blencp , epsrgp , climgp, extrap
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision pvar (ncelet), coefap(nfabor), coefbp(nfabor)
@@ -166,7 +157,7 @@ double precision viscf (nfac), viscb (nfabor)
 double precision flvarf(nfac), flvarb(nfabor)
 double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
 double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -216,16 +207,15 @@ if( idiffp.ne.0 .and. ircflp.eq.1 ) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dpdxa  , dpdxa  , dpdxa  ,                                     &
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
    dpdxa  , dpdya  , dpdza  ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 else
   do iel = 1, ncelet

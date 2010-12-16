@@ -30,14 +30,13 @@ subroutine ppprcl &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    icodcl , izfppp ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    rcodcl , coefu  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -58,8 +57,6 @@ subroutine ppprcl &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -71,8 +68,6 @@ subroutine ppprcl &
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -98,8 +93,6 @@ subroutine ppprcl &
 !  nfabor,3        !    !     !  (vitesse en i'                 )              !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -138,11 +131,10 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          icodcl(nfabor,nvar)
 integer          izfppp(nfabor)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -152,7 +144,7 @@ double precision rcodcl(nfabor,nvar,3)
 double precision coefu(nfabor,3)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

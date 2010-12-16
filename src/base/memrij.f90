@@ -30,7 +30,7 @@ subroutine memrij &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , iturbp ,                   &
+   iturbp ,                                                       &
    idtr   , iviscf , iviscb , icoefx ,                            &
    idam   , ixam   , idrtp  ,                                     &
    ismbr  , irovsd , igrdvt , iprodu , igrarx , igrary , igrarz , &
@@ -54,8 +54,6 @@ subroutine memrij &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! idtr             ! e  ! --> ! "pointeur" sur dtr                             !
 ! iviscf, b        ! e  ! --> ! "pointeur" sur viscf, viscb                    !
 ! icoefx           ! e  ! --> ! "pointeur" sur coefax                          !
@@ -96,7 +94,6 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iturbp
 
 integer          idtr

@@ -32,14 +32,14 @@ subroutine lagesp &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   itepa  , ibord  , idevel , ituser , ia     ,                   &
+   itepa  , ibord  ,                                              &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf , brgaus , terbru , romp   , auxl2  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -69,14 +69,10 @@ subroutine lagesp &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! ibord            ! te ! --> ! si nordre=2, contient le numero de la          !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -111,8 +107,6 @@ subroutine lagesp &
 ! romp             ! tr ! --- ! masse volumique des particules                 !
 ! auxl2            ! tr ! --- ! tableau de travail                             !
 !    (nbpmax,7)    !    !     !                                                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -148,10 +142,8 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
@@ -168,7 +160,6 @@ double precision vagaus(nbpmax,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
 double precision romp(nbpmax) , auxl2(nbpmax,7)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -220,15 +211,15 @@ call uslafe                                                       &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   itepa  , ibord  , idevel , ituser , ia     ,                   &
+   itepa  , ibord  ,                                              &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
    romp   , ra(ifexla) ,                                          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 3.  PRISE EN COMPTE DES FORCES CHIMIQUES
@@ -244,15 +235,15 @@ if ( ladlvo .eq. 1 ) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   itepa  , ibord  , idevel , ituser , ia     ,                   &
+   itepa  , ibord  ,                                              &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
    romp   , ra(ifexla)      ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
  endif
 
@@ -268,14 +259,14 @@ if (nordre.eq.1) then
      nvar   , nscal  , nphas  ,                                   &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
-     nideve , nrdeve , nituse , nrtuse ,                          &
-     itepa  , idevel , ituser , ia     ,                          &
+     itepa  ,                                                     &
+     ia     ,                                                     &
      dt     , rtpa   , propce , propfa , propfb ,                 &
      ettp   , ettpa  , tepa   ,                                   &
      statis , taup   , tlag   , piil   ,                          &
      bx     , vagaus , gradpr , gradvf , romp   ,                 &
      brgaus , terbru , ra(ifexla) ,                               &
-     rdevel , rtuser , ra     )
+     ra     )
 
 !===============================================================================
 ! 5.  ORDRE 2
@@ -289,15 +280,15 @@ else
      nvar   , nscal  , nphas  ,                                   &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
-     nideve , nrdeve , nituse , nrtuse ,                          &
-     itepa  , ibord  , idevel , ituser , ia     ,                 &
+     itepa  , ibord  ,                                            &
+     ia     ,                                                     &
      dt     , rtpa   , rtp    , propce , propfa , propfb ,        &
      ettp   , ettpa  , tepa   ,                                   &
      statis , taup   , tlag   , piil   ,                          &
      tsuf   , tsup   , bx     , tsfext , vagaus ,                 &
      auxl2  , gradpr , gradvf ,                                   &
      romp   , brgaus , terbru , ra(ifexla) ,                      &
-     rdevel , rtuser , ra     )
+     ra     )
 
 endif
 

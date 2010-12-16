@@ -30,10 +30,9 @@ subroutine raydom &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb ,                                                       &
    izfrad ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
@@ -43,7 +42,6 @@ subroutine raydom &
    drtp   , smbrs  , rovsdt , tempk  ,                            &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    ,                   &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -70,13 +68,9 @@ subroutine raydom &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -101,8 +95,6 @@ subroutine raydom &
 ! tempk(ncelet)    ! tr ! --> ! temperature en kelvin                          !
 !   ,nphasc)       !    !     !                                                !
 ! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -145,11 +137,9 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypfb(nfabor,nphas)
 integer          izfrad(nfabor)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -172,7 +162,7 @@ double precision w10(ncelet)
 
 double precision tempk(ncelet,nphasc)
 
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -247,13 +237,11 @@ unspi = 1.d0/pi
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb(1,irapha),                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser ,                                              &
    ra    )
 
 !-----> W10 SERT A STOCKER TEMPORAIREMENT
@@ -354,14 +342,12 @@ unspi = 1.d0/pi
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha , iappel ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb(1,irapha),                                              &
    izfrad ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    propce(1,ipproc(icak(1))),                                &
    w1     , w2     , w3     , w4     , w5     ,  w6    ,          &
-   rdevel , rtuser ,                                              &
    ra     )
 
   endif
@@ -434,10 +420,9 @@ unspi = 1.d0/pi
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  , iappel ,                           &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb(1,irapha),                                              &
    izfrad ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
@@ -446,7 +431,6 @@ unspi = 1.d0/pi
    propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ixlam))  ,          &
    propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps))   ,          &
    propce(1,ipproc(icak(1)))    ,                            &
-   rdevel , rtuser ,                                              &
    ra     )
 
 
@@ -535,15 +519,13 @@ unspi = 1.d0/pi
         !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    mode   ,                                                       &
    itypfb(1,irapha),                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  ,              &
-   rdevel , rtuser ,                                              &
    ra     )
 
       else
@@ -552,15 +534,13 @@ unspi = 1.d0/pi
         !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  ,                                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    mode   ,                                                       &
    itypfb(1,irapha),                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  ,              &
-   rdevel , rtuser ,                                              &
    ra     )
 
       endif
@@ -769,9 +749,8 @@ unspi = 1.d0/pi
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , irapha  ,                           &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
@@ -788,7 +767,7 @@ unspi = 1.d0/pi
 
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 5.2 RESOLUTION DE L'EQUATION DES TRANSFERTS RADIATIFS
@@ -871,9 +850,8 @@ unspi = 1.d0/pi
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , irapha  ,                           &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
@@ -887,7 +865,6 @@ unspi = 1.d0/pi
    propce(1,ipproc(itsre(1))),propce(1,ipproc(iqx))         ,&
    propce(1,ipproc(iqy))    , propce(1,ipproc(iqz))   ,           &
    propfb(1,ipprob(iqinci) ), propfb(1,ipprob(ifnet)) ,           &
-   rdevel , rtuser ,                                              &
    ra     )
 
 
@@ -928,10 +905,9 @@ unspi = 1.d0/pi
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , irapha  , iappel ,                           &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb(1,irapha),                                              &
    izfrad ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
@@ -940,7 +916,6 @@ unspi = 1.d0/pi
    propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ixlam))  ,          &
    propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps))   ,          &
    propce(1,ipproc(icak(1)))  ,                              &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !---> VERIFICATION DE FLUNET
@@ -1231,15 +1206,14 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    propce(1,ipproc(iqx))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
     do iel = 1,ncel
       propce(iel,ipproc(itsre(1))) = - w1(iel)
@@ -1262,15 +1236,14 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    propce(1,ipproc(iqy))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
     do iel = 1,ncel
       propce(iel,ipproc(itsre(1))) = propce(iel,ipproc(itsre(1))) - w2(iel)
@@ -1293,15 +1266,14 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    propce(1,ipproc(iqz))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
     do iel = 1,ncel
       propce(iel,ipproc(itsre(1))) =                         &

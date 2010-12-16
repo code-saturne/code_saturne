@@ -30,14 +30,14 @@ subroutine divrij &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , idim   , ivar   , iphas  , &
-   idevel , ituser , ia     ,                                     &
+   idim   , ivar   , iphas  ,                                     &
+   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  ,                                              &
    viscf  , viscb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , coefu  ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -63,13 +63,9 @@ subroutine divrij &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! idim             ! e  ! <-- ! composante traitee                             !
 ! ivar             ! e  ! <-- ! numero de variable courante                    !
 ! iphas            ! i  ! <-- ! phase number                                   !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec)                     !
@@ -82,8 +78,6 @@ subroutine divrij &
 ! viscb(nfabor)    ! tr ! --> ! resultat du calcul                             !
 ! w1-w9(ncelet)    ! tr ! --- ! tableau de travail                             !
 ! coefu(nfab,4)    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -114,10 +108,8 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          idim   , ivar   , iphas
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision rtpa(ncelet,*)
@@ -129,7 +121,7 @@ double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision coefu(nfabor,3)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -214,12 +206,11 @@ call inimas                                                       &
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ivar1  , ivar2  , ivar3  , imaspe , iphas  ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtpa(1,ivar1)   , rtpa(1,ivar2)   , rtpa(1,ivar3)   ,          &
    coefa(1,iclva1) , coefa(1,iclva2) , coefa(1,iclva3) ,          &
@@ -227,7 +218,7 @@ call inimas                                                       &
    viscf  , viscb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , coefu  ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !     Calcul des efforts aux bords (partie 5/5), si necessaire

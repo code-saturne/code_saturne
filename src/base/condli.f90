@@ -30,14 +30,14 @@ subroutine condli &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , isvhb  , isvtb  ,          &
+   isvhb  , isvtb  ,                                              &
    icodcl , isostd ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  , uetbor , visvdr , hbord  , thbord , frcxt  , &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    coefu  , rijipb ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -76,8 +76,6 @@ subroutine condli &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
 !                  !    !     !  coefficients d'echange aux bords              !
 ! isvtb            ! e  ! <-- ! indicateur de sauvegarde des                   !
@@ -93,8 +91,6 @@ subroutine condli &
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! isostd           ! te ! --> ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -132,8 +128,6 @@ subroutine condli &
 ! (nfabor,3   )    !    !     !  des comp de la vitesse au bord                !
 ! rijipb           ! tr ! --- ! tab de trav pour valeurs en iprime             !
 ! (nfabor,6   )    !    !     !  des rij au bord                               !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -173,12 +167,10 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          isvhb  , isvtb
 
 integer          icodcl(nfabor,nvar)
 integer          isostd(nfabor+1,nphas)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -192,7 +184,7 @@ double precision hbord(nfabor),thbord(nfabor)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision coefu(nfabor,ndim), rijipb(nfabor,6)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -297,13 +289,12 @@ if(ippmod(iphpar).ge.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    icodcl , ia(iitrif) , ia(iitypf)  , ia(iizfpp) ,               &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
    w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 if (imatis.eq.1) then
@@ -311,13 +302,12 @@ if (imatis.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iitypf)      , ia(iitrif)      , icodcl , isostd ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl , frcxt  ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 if (iale.eq.1) then
@@ -325,13 +315,12 @@ if (iale.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iitypf)      , ia(iialty)      , icodcl , ia(iimpal)      , &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    rcodcl , ra(ixyzn0)      , ra(idepal)      ,                   &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 if (imobil.eq.1) then
@@ -340,13 +329,12 @@ if (imobil.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iitypf)      , icodcl ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    rcodcl ,                                                       &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -354,13 +342,12 @@ call typecl                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iitypf)      , ia(iitrif)      , icodcl , isostd ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl , frcxt  ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 2.  VERIFICATION DE LA CONSISTANCE DES CL
@@ -370,12 +357,11 @@ call vericl                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    icodcl ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 4. DISTANCE A LA PAROI ANCIEN MODELE
@@ -632,17 +618,16 @@ do iphas = 1, nphas
       !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
@@ -722,17 +707,16 @@ do iphas = 1, nphas
         !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
         do ifac = 1, nfabor
           iel = ifabor(ifac)
@@ -791,17 +775,16 @@ do iphas = 1, nphas
         !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! CALCUL DE LA VALEUR EN I' DE Rij
@@ -860,14 +843,14 @@ do iphas = 1, nphas
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , iphas  , isvhb  ,          &
+   iphas  , isvhb  ,                                              &
    icodcl ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  , uetbor , visvdr ,          &
    hbord  , thbord ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -878,14 +861,14 @@ do iphas = 1, nphas
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , iphas  , isvhb  ,          &
+   iphas  , isvhb  ,                                              &
    icodcl ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  , uetbor , visvdr ,          &
    hbord  , thbord ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -907,13 +890,13 @@ do iphas = 1, nphas
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+   iphas  ,                                                       &
    icodcl , ia(iismph) ,                                          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 

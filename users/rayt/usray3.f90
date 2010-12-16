@@ -33,13 +33,11 @@ subroutine usray3 &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , iphas  , iappel ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb ,                                                       &
    izfrdp ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    ck     , w1     , w2     , w3     , w4     , w5     ,  w6    , &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -82,13 +80,9 @@ subroutine usray3 &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iphas            ! i  ! <-- ! phase number                                   !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
 ! izfrdp(nfabor    ! te ! <-- ! numero de zone pour les faces de bord          !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -98,9 +92,7 @@ subroutine usray3 &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ck (ncelet)      ! tr ! --> ! coefficient d'absorption du milieu             !
 !                  !    !     ! (nul si transparent)                           !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
 ! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -138,11 +130,10 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , iphas  , iappel
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypfb(nfabor)
 integer          izfrdp(nfabor)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -153,7 +144,7 @@ double precision w4(ncelet), w5(ncelet), w6(ncelet)
 
 double precision ck(ncelet)
 
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 
 ! Local variables

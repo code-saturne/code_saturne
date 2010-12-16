@@ -30,14 +30,14 @@ subroutine vissst &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel , s2kw   , divukw ,          &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -71,15 +71,11 @@ subroutine vissst &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -98,8 +94,6 @@ subroutine vissst &
 ! divukw(ncelet    ! tr ! --> ! divergence du u pour utilisation dans          !
 !                  !    !     ! turbkw                                         !
 ! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -132,11 +126,10 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse , iphas
+integer          iphas
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -147,7 +140,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision s2kw(ncelet), divukw(ncelet)
 double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
 double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -212,16 +205,15 @@ call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iuiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w6     , w6     , w6     ,                                     &
    rtpa(1,iuiph)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w6     , w7     , w8     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! S2KW    = (S11)**2
@@ -245,16 +237,15 @@ call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iviph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w6     , w6     , w6     ,                                     &
    rtpa(1,iviph)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,          &
    w1     , w4     , w5     ,                                     &
 !        ------   ------   ------
    w6     , w7     , w8     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! S2KW    = 2 (S11)**2 + 2 (S22)**2 + (2 S12)**2
@@ -278,16 +269,15 @@ call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iwiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w6     , w6     , w6     ,                                     &
    rtpa(1,iwiph)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,          &
    w1     , w2     , w4     ,                                     &
 !        ------   ------   ------
    w6     , w7     , w8     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! S2KW    =  2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
 !        + (2 S12)**2 + (2 S13)**2 + (2 S23)**2 )

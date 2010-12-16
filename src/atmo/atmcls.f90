@@ -30,16 +30,16 @@ subroutine atmcls &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , iphas  , ifac   , iel    , &
+   iphas  , ifac   , iel    ,                                     &
    uk     , utau   , yplus  ,                                     &
    uet    ,                                                       &
    gredu  , q0     , e0     , rib    , lmo    ,                   &
    cfnnu ,  cfnns  , cfnnk  , cfnne  ,                            &
    icodcl ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    ,          propce , propfa , propfb , rcodcl , &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FUNCTION :
@@ -58,8 +58,6 @@ subroutine atmcls &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! ifac             ! e  ! <-- ! face de bord traitee                           !
 ! iel              ! e  ! <-- ! cellule de bord en regard de la face           !
@@ -83,8 +81,6 @@ subroutine atmcls &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
@@ -106,8 +102,6 @@ subroutine atmcls &
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -144,11 +138,10 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iphas  , ifac   , iel
 
 integer          icodcl(nfabor,nvar)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision uk, utau, yplus, uet
 double precision gredu, rib, lmo, q0, e0
@@ -160,7 +153,7 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

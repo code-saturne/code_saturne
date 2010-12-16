@@ -30,10 +30,9 @@ subroutine testel &
 
  ( idbia0 , idbra0 ,                                              &
    nphas  , nvar   ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtp    , coefa  , coefb  ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -49,10 +48,6 @@ subroutine testel &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -60,8 +55,6 @@ subroutine testel &
 !  (nfabor, *)     !    !     !                                                !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -93,14 +86,12 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nphas , nvar
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision rtp(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -220,16 +211,15 @@ call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(iw1), ra(iw1), ra(iw1),                                     &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    ra(iw1), ra(iw2), ra(iw3),                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! On sort le gradient
 
@@ -271,16 +261,15 @@ call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(iw1), ra(iw1), ra(iw1),                                     &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    ra(iw1), ra(iw2), ra(iw3),                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! On sort le gradient
@@ -323,16 +312,15 @@ call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(iw1), ra(iw1), ra(iw1),                                     &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    ra(iw1), ra(iw2), ra(iw3),                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! On sort le gradient
 
@@ -374,16 +362,15 @@ call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(iw1), ra(iw1), ra(iw1),                                     &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    ra(iw1), ra(iw2), ra(iw3),                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! On sort le gradient
 
@@ -430,16 +417,15 @@ call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(iw1), ra(iw1), ra(iw1),                                     &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    ra(iw1), ra(iw2), ra(iw3),                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! On sort le gradient
 

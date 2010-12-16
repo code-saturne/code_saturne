@@ -30,10 +30,9 @@ subroutine lagdeb &
 
  ( idbia0 , idbra0 ,                                              &
    lndnod ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    icocel , itycel ,                                              &
-   idevel , ituser , ia     ,                                     &
-   rdevel , rtuser , ra     )
+   ia     ,                                                       &
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -92,17 +91,11 @@ subroutine lagdeb &
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! icocel           ! te ! --> ! connectivite cellules -> faces                 !
 ! (lndnod)         !    !     !    face de bord si numero negatif              !
 ! itycel           ! te ! --> ! connectivite cellules -> faces                 !
 ! (ncelet+1)       !    !     !    pointeur du tableau icocel                  !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -135,14 +128,11 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          lndnod
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          icocel(lndnod) , itycel(ncelet+1)
-integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 
-double precision rdevel(nrdeve) , rtuser(nrtuse) , ra(*)
-
+double precision ra(*)
 
 ! Local variables
 

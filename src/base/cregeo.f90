@@ -29,9 +29,8 @@ subroutine cregeo &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
-   rdevel , rtuser , ra     )
+   ia     ,                                                       &
+   ra     )
 
 !===============================================================================
 !  FONCTION
@@ -46,13 +45,7 @@ subroutine cregeo &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -82,12 +75,10 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -124,10 +115,9 @@ call iasize ('cregeo', ifinia)
 call usdpst                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(ilcel) , ia(ilfaci) , ia(ilfacb)  ,                         &
-   idevel , ituser , ia     ,                                     &
-   rdevel , rtuser , ra     )
+   ia     ,                                                       &
+   ra     )
 
 
 !===============================================================================
@@ -162,10 +152,9 @@ if (ippmod(iaeros).ge.0) then
   call usctdz                                                     &
   !==========
  ( ifinia , ifinra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , ia(ils),                                              &
-   idevel , ituser , ia     ,                                     &
-   rdevel , rtuser , ra     )
+   ia     ,                                                       &
+   ra     )
 
   call nbzect(nbzech)
   !==========
@@ -202,10 +191,9 @@ call pstema (ntcabs, ttcabs)
 call calgeo                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    volmin , volmax , voltot ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 return
 end subroutine

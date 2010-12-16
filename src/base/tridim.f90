@@ -30,12 +30,10 @@ subroutine tridim &
 
  ( idbia0 , idbra0 , itrale ,                                     &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    isostd ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  , frcxt  ,                            &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -56,12 +54,8 @@ subroutine tridim &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! isostd           ! te ! <-- ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -75,8 +69,6 @@ subroutine tridim &
 !(ncelet,*)        !    !     !     lagrangien                                 !
 ! frcxt(ncelet,    ! tr ! <-- ! force exterieure generant la pression          !
 !   3,nphas)       !    !     !  hydrostatique                                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -128,10 +120,8 @@ implicit none
 
 integer          idbia0 , idbra0 , itrale
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          isostd(nfabor+1,nphas)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -140,7 +130,7 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision frcxt(ncelet,3,nphas)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -530,12 +520,10 @@ if (itrale.gt.0) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , iappel ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    isostd ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   rdevel , rtuser ,                                              &
    ra     )
 endif
 
@@ -578,10 +566,9 @@ if (imobil.eq.1) then
   call calgeo &
   !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    volmin , volmax , voltot ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -624,14 +611,13 @@ call phyvar                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
    ra(iw7), ra(iw8), ra(iw9), ra(iw10), ra(iw11), ra(iw12),       &
    ra(ixmij) ,                                                    &
-   rdevel , rtuser , ra     )
+   ra     )
 
 if (itrale.gt.0) then
   iappel = 2
@@ -639,12 +625,10 @@ if (itrale.gt.0) then
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , iappel ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    isostd ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   rdevel , rtuser ,                                              &
    ra     )
 endif
 
@@ -666,13 +650,12 @@ do iphas = 1, nphas
       !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ncepdc(iphas) , iphas  , iappel ,                              &
    ia(iicepd(iphas)) ,                                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)) ,                          &
-   rdevel , rtuser , ra     )
+   ra     )
 
     else
 
@@ -691,14 +674,13 @@ do iphas = 1, nphas
       !==========
  ( idbia1 , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ncepdc(iphas) , iphas  , iappel ,                              &
    maxelt , ia(ils),                                              &
    ia(iicepd(iphas)) ,                                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)) ,                          &
-   rdevel , rtuser , ra     )
+   ra     )
 
     endif
 
@@ -731,15 +713,14 @@ do iphas = 1, nphas
 !         ============
  ( idbia1 , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdc(iphas)   ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ncetsm(iphas)   , iphas  , iappel ,                            &
    maxelt , ia(ils),                                              &
    ia(iicepd(iphas)) ,                                            &
    ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,                        &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -770,16 +751,16 @@ call dttvar                                                       &
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc(iphas)   , ncetsm(iphas)   ,                            &
-   nideve , nrdeve , nituse , nrtuse , iwarni(iu(1))   ,          &
+   iwarni(iu(1))   ,                                              &
    ia(iicepd(iphas)), ia(iicesm(iphas)), ia(iitpsm(iphas)) ,      &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)),       &
    ra(iviscf)      , ra(iviscb)      , ra(idam)      ,            &
    ra(icofbd)      , ra(iw1)         , ra(iw2)       , ra(iw3)   ,&
    ra(icofbr)      , ra(igrarx)      , ra(igrary)    , ra(igrarz),&
    ra(iwcf),                                                      &
-   rdevel , rtuser , ra     )
+   ra     )
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
   ntrela = ntcabs - ntpabs
@@ -810,15 +791,14 @@ if (ivrtex.eq.1) then
   !==========
  ( ifnia1 , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iphas  , iappel ,                                              &
    maxelt , ia(ils),                                              &
    ia(iirepv)      ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   ,                                              &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     Verification des donnees entrees par l'utilisateur
 !       (au premier passage seulement)
@@ -921,15 +901,14 @@ do while (iterns.le.nterup)
   !==========
 ( ifinia , ifinra ,                                              &
   nvar   , nscal  , nphas  ,                                     &
-  nideve , nrdeve , nituse , nrtuse ,                            &
   ia(iicodc)      , ia(iizfpp)      ,                            &
-  idevel , ituser , ia     ,                                     &
+  ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
   ra(ircodc) , ra(icoefu) ,                                      &
   ra(iw1   ) , ra(iw2   ) , ra(iw3   ) ,                         &
   ra(iw4   ) , ra(iw5   ) , ra(iw6   ) ,                         &
-  rdevel , rtuser , ra     )
+  ra     )
 
 
   if (imatis.eq.0) then
@@ -973,15 +952,15 @@ do while (iterns.le.nterup)
         !==========
       ( ifnia1 , ifnra1 ,                                              &
         nvar   , nscal  , nphas  , nbzfmx , nozfmx ,                   &
-        nideve , nrdeve , nituse , nrtuse ,                            &
         iqimp  , icalke , qimp   , dh , xintur,                        &
         ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp)   , &
-        ia(iilzfb)      , idevel , ituser , ia     ,                   &
+        ia(iilzfb)      ,                                              &
+        ia     ,                                                       &
         dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
         coefa  , coefb  , ra(ircodc)      ,                            &
         ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
         ra(icoefu)      , ra(iqcalc)      ,                            &
-        rdevel , rtuser , ra     )
+        ra     )
 
       endif
 
@@ -1000,15 +979,14 @@ do while (iterns.le.nterup)
       !==========
     ( ifnia1 , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       maxelt , ia(ils),                                              &
       ia(iicodc)      , ia(iitrif)   , ia(iitypf)   ,                &
-      idevel , ituser , ia     ,                                     &
+      ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  , ra(ircodc)      ,                            &
       ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
       ra(icoefu)      ,                                              &
-      rdevel , rtuser , ra     )
+      ra     )
 
     else
 
@@ -1018,14 +996,13 @@ do while (iterns.le.nterup)
       !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp) ,   &
-      idevel , ituser , ia     ,                                     &
+      ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  , ra(ircodc)      ,                            &
       ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
       ra(icoefu)      ,                                              &
-      rdevel , rtuser , ra     )
+      ra     )
 
     endif
 
@@ -1053,14 +1030,14 @@ do while (iterns.le.nterup)
     !==========
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  , nphas  ,                                     &
-    nideve , nrdeve , nituse , nrtuse ,                            &
     ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
-    idevel , ia(iirepv)      , ituser , ia     ,                   &
+    ia(iirepv)      ,                                              &
+    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , ra(ircodc)      ,                            &
     ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
     ra(icoefu)       ,                                             &
-    rdevel , rtuser , ra     )
+    ra     )
 
   endif
 
@@ -1074,14 +1051,13 @@ do while (iterns.le.nterup)
     !==========
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  , nphas  ,                                     &
-    nideve , nrdeve , nituse , nrtuse ,                            &
     ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
-    idevel , ituser , ia    ,                                      &
+    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , ra(ircodc)      ,                            &
     ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
     ra(icoefu)      ,                                              &
-    rdevel , rtuser , ra     )
+    ra     )
 
   endif
 
@@ -1119,15 +1095,14 @@ do while (iterns.le.nterup)
     !==========
   ( ifnia1 , ifinra , itrale ,                                     &
     nvar   , nscal  , nphas  ,                                     &
-    nideve , nrdeve , nituse , nrtuse ,                            &
     maxelt , ia(ils),                                              &
     ia(iicodc)      , ia(iitypf)      , ia(iialty)      ,          &
     ia(iimpal)      ,                                              &
-    idevel , ituser , ia     ,                                     &
+    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , ra(ircodc)      ,                            &
     ra(ixyzn0)      , ra(idepal)      ,                            &
-    rdevel , rtuser , ra     )
+    ra     )
 
     !     Au cas ou l'utilisateur aurait touche DEPALE sans mettre IMPALE=1, on
     !       remet le deplacement initial
@@ -1145,13 +1120,12 @@ do while (iterns.le.nterup)
       call strpre &
       !==========
     ( ifinia , ifinra , itrale , italim , ineefl ,                   &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       ia(iimpal)      ,                                              &
-      idevel , ituser , ia     ,                                     &
+      ia     ,                                                       &
       rtp    , rtpa   , propce , propfa , propfb ,                   &
       coefa  , coefb  ,                                              &
       ra(iflalf), ra(iflalb), ra(iprale), ra(icoale), ra(idepal),    &
-      rdevel , rtuser , ra  )
+      ra     )
 
     endif
 
@@ -1168,11 +1142,10 @@ do while (iterns.le.nterup)
   ( ifinia , ifinra ,                                              &
     nfabor ,                                                       &
     nvar   , nscal  , nphas  ,                                     &
-    nideve , nrdeve , nituse , nrtuse ,                            &
     ia(iicodc) ,                                                   &
-    idevel , ituser , ia     ,                                     &
+    ia     ,                                                       &
     ra(ircodc) ,                                                   &
-    rdevel , rtuser , ra     )
+    ra     )
 
     if (nfpt1t.gt.0) then
       call cou1di &
@@ -1180,11 +1153,10 @@ do while (iterns.le.nterup)
     ( ifinia , ifinra ,                                              &
       nfabor ,                                                       &
       nvar   , nscal  , nphas  ,                                     &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       isvtb  , ia(iicodc) ,                                          &
-      idevel , ituser , ia     ,                                     &
+      ia     ,                                                       &
       ra(ircodc) ,                                                   &
-      rdevel , rtuser , ra     )
+      ra     )
     endif
 
   endif
@@ -1203,12 +1175,12 @@ do while (iterns.le.nterup)
     !==========
   ( ifinib , ifinrb ,                                              &
     nvar   , nscal  , nphas  ,                                     &
-    nideve , nrdeve , nituse , nrtuse , isvhb  , isvtb  ,          &
+    isvhb  , isvtb  ,                                              &
     ia(iicodc) , ia(iitrif)   , ia(iitypf)   ,                     &
 
     ia(iizfrd) , ia(iisoth)      ,                                 &
 
-    idevel , ituser , ia     ,                                     &
+    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     ra(ircodc)      ,                                              &
     coefa  , coefb  , ra(ihbord)      , ra(itbord)      ,          &
@@ -1216,7 +1188,7 @@ do while (iterns.le.nterup)
 
     ra(itext)  , ra(itint) ,  ra(itek)   ,                         &
 
-    rdevel , rtuser , ra     )
+    ra     )
 
   endif
 
@@ -1226,9 +1198,9 @@ do while (iterns.le.nterup)
   !==========
 ( ifinia , ifinra ,                                              &
   nvar   , nscal  , nphas  ,                                     &
-  nideve , nrdeve , nituse , nrtuse , isvhb  , isvtb  ,          &
+  isvhb  , isvtb  ,                                              &
   ia(iicodc)      , isostd ,                                     &
-  idevel , ituser , ia     ,                                     &
+  ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   ra(ircodc)      ,                                              &
   coefa  , coefb  , ra(iuetbo) , ra(ivsvdr)  ,                   &
@@ -1236,7 +1208,7 @@ do while (iterns.le.nterup)
   frcxt  ,                                                       &
   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
   ra(icoefu)      , ra(irijip)      ,                            &
-  rdevel , rtuser , ra     )
+  ra     )
 
 
   !     UNE FOIS LES COEFFICIENTS CALCULES, ON PEUT EN DEDUIRE PLUS
@@ -1307,13 +1279,13 @@ do while (iterns.le.nterup)
     !==========
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  , nphas  , isvtb  ,                            &
-    nideve , nrdeve , nituse , nrtuse , ncp  , ncv , ientha ,      &
-    idevel , ituser , ia     ,                                     &
+    ncp  , ncv , ientha ,                                          &
+    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
     cpcst  , propce(1,ippcp) , cvcst  , propce(1,ippcv),           &
     ra(ihbord)      , ra(itbord)      ,                            &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
     if (nfpt1t.gt.0) then
@@ -1321,15 +1293,14 @@ do while (iterns.le.nterup)
       !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  , ncp    , nfpt1d ,                   &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       ientha , ia(iifpt1), ia(iiclt1),                               &
-      idevel , ituser , ia     ,                                     &
+      ia     ,                                                       &
       ra(itppt1), ra(itept1), ra(ihept1),                            &
       ra(ifept1), ra(ixlmt1), ra(ircpt1), ra(idtpt1),                &
       dt     , rtpa   , propce , propfa , propfb ,                   &
       coefa  , coefb  ,                                              &
       cpcst  , propce(1,ippcp) , ra(ihbord) , ra(itbord)  ,          &
-      rdevel , rtuser , ra     )
+      ra     )
     endif
   endif
 
@@ -1397,7 +1368,6 @@ do while (iterns.le.nterup)
         !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       iviscf , iviscb , idam   , ixam   , ismbr  , irovsd ,          &
       irtdp  , icofay , icofby ,                                     &
       iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -1408,9 +1378,8 @@ do while (iterns.le.nterup)
         !==========
     ( ifinib , ifinrb ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       ia(iitypf)      ,                                              &
-      idevel , ituser , ia     ,                                     &
+      ia     ,                                                       &
       ra(idipar)      ,                                              &
       ra(iviscf)      , ra(iviscb)      ,                            &
       ra(idam)        , ra(ixam)        ,                            &
@@ -1418,7 +1387,7 @@ do while (iterns.le.nterup)
       ra(irtdp)       , ra(icofay)      , ra(icofby)      ,          &
       ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6), ra(iw7), &
       ra(iw8), ra(iw9),                                              &
-      rdevel , rtuser , ra     )
+      ra     )
 
         !     La distance n'a plus a etre mise a jour sauf en ALE
         if (iale.eq.0) imajdy = 1
@@ -1456,7 +1425,6 @@ do while (iterns.le.nterup)
         !==========
       ( ifinia , ifinra ,                                              &
         nvar   , nscal  , nphas  ,                                     &
-        nideve , nrdeve , nituse , nrtuse ,                            &
         idam   , ixam   , ismbr  , irovsd ,                            &
         irtdp  , idrtdp ,                                              &
         iqfx   , iqfy   , iqfz   , icoefq , iirho  , iirhob ,          &
@@ -1470,9 +1438,8 @@ do while (iterns.le.nterup)
         !==========
       ( ifinib , ifinrb ,                                              &
         nvar   , nscal  , nphas  , iphass ,                            &
-        nideve , nrdeve , nituse , nrtuse ,                            &
         ia(iitypf) , ia(iismph),                                       &
-        idevel , ituser , ia     ,                                     &
+        ia     ,                                                       &
         ra(idipar), propce    , ra(iuetbo), ra(iyppar),                &
         ra(idam  ), ra(ixam  ), ra(ismbr ), ra(irovsd),                &
         ra(irtdp ), ra(idrtdp),                                        &
@@ -1483,7 +1450,7 @@ do while (iterns.le.nterup)
         ra(icoaz ), ra(icobz ),                            &
         ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6), ra(iw7), &
         ra(iw8), ra(iw9),                                              &
-        rdevel , rtuser , ra     )
+        ra     )
 
       endif
 
@@ -1501,11 +1468,12 @@ do while (iterns.le.nterup)
         call vandri &
         !==========
       ( ndim   , ncelet , ncel   , nfac   , nfabor , nphas ,         &
-        nideve , nrdeve , nituse , nrtuse , iphass ,                 &
+        iphass ,                                                     &
         ia(iitypf) , ifabor, ia(iiifap),                             &
-        idevel , ituser , ia     ,                                   &
+        ia     ,                                                     &
         xyzcen , cdgfbo , ra(iuetbo) , ra(ivsvdr) , ra(iyppar) ,     &
-        propce , rdevel , rtuser , ra     )
+        propce ,                                                     &
+        ra     )
       endif
 
     endif
@@ -1542,7 +1510,6 @@ do while (iterns.le.nterup)
       !==========
     ( idbia1 , idbra1 ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       iviscf , iviscb , idam   , ixam   ,                            &
       idrtp  , ismbr  , irovsd ,                                     &
       iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -1553,8 +1520,7 @@ do while (iterns.le.nterup)
       !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      nideve , nrdeve , nituse , nrtuse ,                            &
-      idevel , ituser , ia     ,                                     &
+      ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  ,                                              &
       ra(iviscf) , ra(iviscb) ,                                      &
@@ -1562,7 +1528,7 @@ do while (iterns.le.nterup)
       ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,                         &
       ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),             &
       ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
-      rdevel , rtuser , ra     )
+      ra     )
 
     endif
 
@@ -1595,7 +1561,6 @@ do while (iterns.le.nterup)
       !==========
     ( idbia1 , idbra1 ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       idtr   , iviscf , iviscb , idam   , ixam   ,                   &
       idrtp  , ismbr  , irovsd ,                                     &
       iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &
@@ -1613,10 +1578,10 @@ do while (iterns.le.nterup)
       ( ifinia , ifinra ,                                              &
         nvar   , nscal  , nphas  ,                                     &
         ncepdc(iphas)   , ncetsm(iphas)   ,                            &
-        nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+        iscal  ,                                                       &
         ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
         ia(iitpsm(iphas))        ,                                     &
-        idevel , ituser , ia     ,                                     &
+        ia     ,                                                       &
         dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
         coefa  , coefb  ,                                              &
         ra(ickupd(iphas))        , ra(ismace(iphas))        ,          &
@@ -1629,7 +1594,7 @@ do while (iterns.le.nterup)
         ra(iw10  ) , ra(iw11  )  , ra(iw12  ) ,                        &
         ra(iwflms) , ra(iwflmb)  ,                                     &
         ra(icoefu) ,                                                   &
-        rdevel , rtuser , ra     )
+        ra     )
 
       enddo
 
@@ -1647,7 +1612,6 @@ do while (iterns.le.nterup)
     !==========
   ( idbia1 , idbra1 ,                                              &
     nvar   , nscal  , nphas  ,                                     &
-    nideve , nrdeve , nituse , nrtuse ,                            &
     iviscf , iviscb , ivisfi , ivisbi ,                            &
     idam   , ixam   ,                                              &
     idrtp  , igrdp  , ismbr  , irovsd ,                            &
@@ -1671,10 +1635,10 @@ do while (iterns.le.nterup)
       ( ifinia , ifinra ,                                              &
         nvar   , nscal  , nphas  ,                                     &
         ncepdc(iphas)   , ncetsm(iphas)   ,                            &
-        nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+        iph    ,                                                       &
         ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
         ia(iitpsm(iphas))        ,                                     &
-        idevel , ituser , ia     ,                                     &
+        ia     ,                                                       &
         dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
         propfa(1,iflmas), propfb(1,iflmab),                            &
         coefa  , coefb  ,                                              &
@@ -1687,7 +1651,7 @@ do while (iterns.le.nterup)
         ra(iw4   ) , ra(iw5   )  , ra(iw6   ) ,                        &
         ra(iw7   ) , ra(iw8   )  , ra(iw9   ) ,                        &
         ra(icoefu) ,                                                   &
-        rdevel , rtuser , ra     )
+        ra     )
 
       enddo
 
@@ -1697,9 +1661,8 @@ do while (iterns.le.nterup)
       !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  , iterns , icvrge ,                   &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       isostd ,                                                       &
-      idevel , ituser , ia     ,                                     &
+      ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       tslagr , coefa  , coefb  , frcxt  ,                            &
       ra(itrava) , ra(iximpa) , ra(iuvwk ) ,                         &
@@ -1711,7 +1674,7 @@ do while (iterns.le.nterup)
       ra(iw7   ) , ra(iw8   ) , ra(iw9   ) , ra(iw10  ) ,            &
       ra(idfrcx) , ra(ifrchy) , ra(idfrhy) ,                         &
       ra(icoefu) , ra(iesflm) , ra(iesflb),                          &
-      rdevel , rtuser , ra     )
+      ra     )
 
       !     Mise a jour de la pression si on utilise un couplage vitesse/pression
       !       par point fixe
@@ -1757,12 +1720,10 @@ do while (iterns.le.nterup)
         !==========
       ( idbia1 , idbra1 ,                                              &
         nvar   , nscal  , nphas  , iappel ,                            &
-        nideve , nrdeve , nituse , nrtuse ,                            &
         isostd ,                                                       &
-        idevel , ituser , ia     ,                                     &
+        ia     ,                                                       &
         dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
         coefa  , coefb  ,                                              &
-        rdevel , rtuser ,                                              &
         ra     )
       endif
 
@@ -1792,12 +1753,10 @@ if (iccvfg.eq.0) then
     !==========
   ( idbia1 , idbra1 , itrale , italim , itrfin ,                   &
     nvar   ,                                                       &
-    nideve , nrdeve , nituse , nrtuse ,                            &
-    idevel , ituser , ia     ,                                     &
+    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
     ra(iflalf), ra(iflalb), ra(icoale), ra(iprale), ra(idepal),    &
-    rdevel , rtuser ,                                              &
     ra     )
 
     !     On boucle eventuellement sur de deplacement des structures
@@ -1820,12 +1779,10 @@ if (iccvfg.eq.0) then
     !==========
   ( idebia , idebra ,                                              &
     nvar   , nscal  , nphas  , iappel ,                            &
-    nideve , nrdeve , nituse , nrtuse ,                            &
     isostd ,                                                       &
-    idevel , ituser , ia     ,                                     &
+    ia     ,                                                       &
     dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
-    rdevel , rtuser ,                                              &
     ra     )
   endif
 
@@ -1868,7 +1825,6 @@ if (iccvfg.eq.0) then
       !==========
     ( idbia1 , idbra1 ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       idtr   , iviscf , iviscb , idam   , ixam   ,                   &
       idrtp  , ismbr  , irovsd , itinsk , itinse , idivu ,           &
       iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -1890,9 +1846,9 @@ if (iccvfg.eq.0) then
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
       ncepdc(iphas) , ncetsm(iphas) ,                                &
-      nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+      iphas  ,                                                       &
       ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
-      idevel , ituser , ia     ,                                     &
+      ia     ,                                                       &
       ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
       tslagr   ,                                                     &
       coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
@@ -1901,7 +1857,7 @@ if (iccvfg.eq.0) then
       ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itinsk) , ra(itinse),&
       ra(idivu ) , ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),&
       ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
-      rdevel , rtuser , ra     )
+      ra     )
 
       if( iturb(iphas).eq.50 )  then
 
@@ -1911,7 +1867,6 @@ if (iccvfg.eq.0) then
         !==========
       ( idbia1 , idbra1 ,                                              &
         nvar   , nscal  , nphas  ,                                     &
-        nideve , nrdeve , nituse , nrtuse ,                            &
         idtr   , iviscf , iviscb , idam   , ixam   ,                   &
         idrtp  , ismbr  , irovsd ,                                     &
         iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -1933,9 +1888,9 @@ if (iccvfg.eq.0) then
       ( ifinia , ifinra ,                                              &
         nvar   , nscal  , nphas  ,                                     &
         ncepdc(iphas) , ncetsm(iphas) ,                                &
-        nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+        iphas  ,                                                       &
         ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
-        idevel , ituser , ia     ,                                     &
+        ia     ,                                                       &
         ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
         coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
         ra(iviscf) , ra(iviscb) , ra(iprv2f),                          &
@@ -1943,7 +1898,8 @@ if (iccvfg.eq.0) then
         ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,                         &
         ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),             &
         ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
-        ra(iw10  ) , rdevel , rtuser , ra     )
+        ra(iw10  ) ,                                                   &
+        ra     )
 
       endif
 
@@ -1967,7 +1923,7 @@ if (iccvfg.eq.0) then
       !==========
     ( idebia , idebra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      nideve , nrdeve , nituse , nrtuse , iturb(iphas) ,             &
+      iturb(iphas) ,                                                 &
       idtr   , iviscf , iviscb , icoefx ,                            &
       idam   , ixam   , idrtp  ,                                     &
       ismbr  , irovsd , igrdvt , iprodu , igrarx , igrary , igrarz , &
@@ -1990,9 +1946,9 @@ if (iccvfg.eq.0) then
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
       ncepdc(iphas) , ncetsm(iphas) ,                                &
-      nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+      iphas  ,                                                       &
       ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
-      idevel , ituser , ia     ,                                     &
+      ia     ,                                                       &
       ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
       tslagr   ,                                                     &
       coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
@@ -2002,7 +1958,7 @@ if (iccvfg.eq.0) then
       ra(iprodu) , ra(igrarx) , ra(igrary) , ra(igrarz) ,            &
       ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ) ,            &
       ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
-      rdevel , rtuser , ra     )
+      ra     )
 
     else if( iturb(iphas).eq.60 ) then
 
@@ -2012,7 +1968,6 @@ if (iccvfg.eq.0) then
       !==========
     ( idebia , idebra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      nideve , nrdeve , nituse , nrtuse ,                            &
       idtr   , iviscf , iviscb , idam   , ixam   ,                   &
       idrtp  , ismbr  , irovsd , itinsk , itinse , idivu  ,          &
       iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -2034,9 +1989,9 @@ if (iccvfg.eq.0) then
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
       ncepdc(iphas) , ncetsm(iphas) ,                                &
-      nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+      iphas  ,                                                       &
       ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
-      idevel , ituser , ia     ,                                     &
+      ia     ,                                                       &
       ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
       tslagr   ,                                                     &
       coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
@@ -2046,7 +2001,7 @@ if (iccvfg.eq.0) then
       ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itinsk) , ra(itinse),&
       ra(idivu ) , ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),&
       ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
-      rdevel , rtuser , ra     )
+      ra     )
 
       !  RELAXATION DE K ET OMEGA SI IKECOU=0
       if (ikecou(iphas).eq.0 .and. idtvar.ge.0) then
@@ -2084,7 +2039,6 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
    idrtp  , ismbr  , irovsd ,                                     &
 
@@ -2099,10 +2053,9 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
   !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iitypf) ,                                                   &
    ia(iizfrd) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(icorua) , ra(icorub) ,                                      &
@@ -2113,7 +2066,6 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
    ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ) , ra(iw5   ),&
    ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ) ,            &
    ra(iw10  ) ,                                                   &
-   rdevel , rtuser ,                                              &
    ra     )
 
 endif
@@ -2129,7 +2081,6 @@ if (nscal.ge.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
    idrtp  , ismbr  , irovsd ,                                     &
    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -2140,8 +2091,7 @@ if (nscal.ge.1) then
   !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  ,                                     &
    ra(idtr)   , ra(iviscf) , ra(iviscb) ,                         &
@@ -2149,7 +2099,6 @@ if (nscal.ge.1) then
                 ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,            &
    ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ) , ra(iw5   ),&
    ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ) ,            &
-   rdevel     , rtuser ,                                          &
    ra     )
 
 endif
@@ -2166,12 +2115,10 @@ call schtmp                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , iappel ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    isostd ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================

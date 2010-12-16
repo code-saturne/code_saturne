@@ -30,15 +30,15 @@ subroutine cfdttv &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iwarnp ,                   &
+   iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wcf    ,                                                       &
    wflmas , wflmab , viscb  , w1     , w2     , w3     ,          &
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -58,15 +58,11 @@ subroutine cfdttv &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -86,8 +82,6 @@ subroutine cfdttv &
 ! wflmab(nfabor    ! tr ! --- ! tab de trav aux faces de bord                  !
 ! viscb(nfabor     ! tr ! --- ! tab de trav aux faces de bord                  !
 ! w1..6 (ncelet    ! tr ! --- ! tableaux de travail                            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -122,11 +116,10 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse , iwarnp
+integer          iwarnp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -138,7 +131,7 @@ double precision wcf(ncelet)
 double precision wflmas(nfac), wflmab(nfabor), viscb(nfabor)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -193,16 +186,15 @@ call cfmsfl                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wflmas , wflmab ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra(iw7), ra(iw8), ra(iw9), ra(iw10) , ra(iw11) , ra(iw12) ,    &
    ra(iviscf) , viscb , ra(icoefu) , ra(ixam) ,                   &
-   rdevel , rtuser ,                                              &
    ra     )
 
 ! ---> Sommation sur les faces (depend de si l'on explicite ou non

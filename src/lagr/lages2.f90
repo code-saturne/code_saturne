@@ -32,14 +32,14 @@ subroutine lages2 &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   itepa  , ibord  , idevel , ituser , ia     ,                   &
+   itepa  , ibord  ,                                              &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , ettpa  , tepa   , statis , taup   , tlag   , piil   , &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , auxl   , gradpr , gradvf ,                            &
    romp   , brgaus , terbru , fextla ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -73,14 +73,10 @@ subroutine lages2 &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! ibord            ! te ! --> ! si nordre=2, contient le numero de la          !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
@@ -113,8 +109,6 @@ subroutine lages2 &
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! fextla           ! tr ! <-- ! champ de forces exterieur                      !
 !(ncelet,3)        !    !     !    utilisateur (m/s2)                          !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -151,9 +145,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
@@ -170,7 +162,6 @@ double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision romp(nbpmax)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
 double precision fextla(nbpmax,3)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -349,13 +340,13 @@ if (nor.eq.1) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   itepa  , idevel , ituser , ia     ,                            &
+   itepa  ,                                                       &
+   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , statis , taup   , tlag   , piil   , &
    bx     , vagaus , gradpr , gradvf , romp   ,                   &
    brgaus , terbru , fextla ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 else
 

@@ -36,13 +36,12 @@ subroutine uslain &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    nptnew ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb , itrifb , itepa  , ifrlag , injfac ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , w1     , w2     , w3     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -81,8 +80,6 @@ subroutine uslain &
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! nptnew           ! i  ! <-- ! total number of new particles for all the      !
 !                  !    !     ! injection zones                                !
-! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itrifb(nfabor    ! ia ! <-- ! indirection for the sorting of the boundary    !
 !  nphas      )    !    !     ! faces                                          !
 ! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
@@ -91,8 +88,6 @@ subroutine uslain &
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
 ! injfac(nptnew    ! ia ! <-- ! number of the injection boundary face          !
-! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
-! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! transported variables at the previous timestep !
@@ -112,8 +107,6 @@ subroutine uslain &
 ! vagaus           ! ra ! --> ! Gaussian random variables                      !
 !(nbpmax,nvgaus    !    !     !                                                !
 ! w1..w3(ncelet    ! ra ! --- ! work arrays                                    !
-! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
-! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
@@ -151,12 +144,10 @@ integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          nptnew
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 integer          injfac(nbpnew)
-integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet) , rtpa(ncelet,*)
@@ -166,7 +157,6 @@ double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -299,13 +289,12 @@ if ( 1.eq.0 ) then
     ncelet , ncel   ,                                             &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npar1  , npar2  ,                                             &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     itepa  ,                                                      &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                                      &
     rtpa   ,                                                      &
     ettp   , tepa   , vagaus ,                                    &
     w1     , w2     , w3     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 endif
 

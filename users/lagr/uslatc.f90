@@ -34,13 +34,13 @@ subroutine uslatc &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   numpt  , itepa  , idevel , ituser , ia     ,                   &
+   numpt  , itepa  ,                                              &
+   ia     ,                                                       &
    rep    , uvwr   , romf   , romp   , xnul   ,                   &
    xcp    , xrkl   , tauc   ,                                     &
    dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   ,                                     &
-   rdevel , rtuser , ra        )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -116,13 +116,9 @@ subroutine uslatc &
 ! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
 ! nvep             ! i  ! <-- ! number of particle properties (integer)        !
 ! nivep            ! i  ! <-- ! number of particle properties (integer)        !
-! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! numpt            ! i  ! <-- !                                                !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
-! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
-! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! rep              ! r  ! <-- ! particle Reynolds number                       !
 !                  !    !     ! rep = uvwr * ettp(numpt,jdp) / xnul            !
@@ -153,8 +149,6 @@ subroutine uslatc &
 !  (nbpmax,nvp)    !    !     ! the particles at the previous time step        !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
 ! (nbpmax,nvep)    !    !     !                                                !
-! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
-! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
@@ -191,11 +185,9 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          nideve , nrdeve , nituse , nrtuse
 integer          numpt
 
 integer          itepa(nbpmax,nivep)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision rep    , uvwr   , romf   , romp   , xnul
@@ -206,7 +198,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

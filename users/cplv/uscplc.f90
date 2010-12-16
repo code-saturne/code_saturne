@@ -33,14 +33,13 @@ subroutine uscplc &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
    w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -393,8 +392,6 @@ subroutine uscplc &
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
 ! nphas            ! e  ! <-- ! nombre de phases                               !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
 ! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
 ! lstelt(maxelt) te ! --- ! tableau de travail                             !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
@@ -412,8 +409,6 @@ subroutine uscplc &
 !  nphas      )    !    !     !                                                !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
-! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
 ! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
@@ -442,8 +437,6 @@ subroutine uscplc &
 !  (ncelet         !    !     !  (calcul du gradient de pression)              !
 ! coefu            ! tr ! --- ! tab de trav                                    !
 !  (nfabor,3)      !    !     !  (calcul du gradient de pression)              !
-! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
-! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
 ! ra(*)            ! tr ! --- ! macro tableau reel                             !
 !__________________!____!_____!________________________________________________!
 
@@ -481,13 +474,12 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
 integer          izfppp(nfabor)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -497,7 +489,7 @@ double precision rcodcl(nfabor,nvar,3)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision coefu(nfabor,ndim)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! VARIABLES LOCALES
 

@@ -30,11 +30,10 @@ subroutine ppiniv &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -84,12 +83,8 @@ subroutine ppiniv &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
@@ -99,8 +94,6 @@ subroutine ppiniv &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -134,15 +127,14 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          maxelt, lstelt(maxelt)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -171,11 +163,10 @@ idebra = idbra0
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
   endif
 
 ! ---> Combustion gaz
@@ -186,11 +177,10 @@ idebra = idbra0
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! ---> Combustion gaz
@@ -201,11 +191,10 @@ endif
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! ---> Combustion charbon pulverise
@@ -215,11 +204,10 @@ if ( ippmod(icp3pl).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! ---> Combustion charbon pulverise couples Lagrangien
@@ -229,11 +217,10 @@ if ( ippmod(icpl3c).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! ---> Combustion fuel
@@ -243,11 +230,10 @@ if  (ippmod(icfuel).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! ---> Compressible
@@ -257,11 +243,10 @@ if ( ippmod(icompf).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! ---> Version electrique
@@ -276,11 +261,10 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -292,11 +276,10 @@ if ( ippmod(iatmos).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -308,11 +291,10 @@ if ( ippmod(iaeros).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 

@@ -33,14 +33,13 @@ subroutine ustsma &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ncesmp , iphas  , iappel ,                                     &
    maxelt , lstelt ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -158,8 +157,6 @@ subroutine ustsma &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
 ! iphas            ! i  ! <-- ! index number of the current phase              !
 ! iappel           ! i  ! <-- ! indicates which at which stage the routine is  !
@@ -170,8 +167,6 @@ subroutine ustsma &
 ! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
 ! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
 !  (ncesmp,nvar)   !    !     !  (see uttsma.f90)                              !
-! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
-! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
@@ -184,8 +179,6 @@ subroutine ustsma &
 ! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
 ! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
 !  (ncesmp,nvar)   !    !     !  source terms or mass rate                     !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
-! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -218,13 +211,12 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iphas  , iappel
 
 integer          maxelt, lstelt(maxelt)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -232,7 +224,7 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6)
 double precision smacel(ncesmp,nvar)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

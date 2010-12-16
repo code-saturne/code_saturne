@@ -30,9 +30,9 @@ subroutine covofi &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  , itspdv ,          &
+   iscal  , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
@@ -40,7 +40,6 @@ subroutine covofi &
    drtp   , smbrs  , rovsdt ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     ,                            &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -62,8 +61,6 @@ subroutine covofi &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
 !                  !    !     !  (0 : non , 1 : oui)                           !
@@ -71,8 +68,6 @@ subroutine covofi &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -97,8 +92,6 @@ subroutine covofi &
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -140,12 +133,10 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iscal  , itspdv
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -161,7 +152,6 @@ double precision rovsdt(ncelet)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -299,10 +289,10 @@ if (imatis.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscala ,                   &
+   iscala ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia(iiconr) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
@@ -310,7 +300,7 @@ if (imatis.eq.1) then
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , drtp   , dam    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 else
 
@@ -325,10 +315,10 @@ else
   !==========
  ( idbia1 , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscala ,                   &
+   iscala ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
@@ -336,7 +326,7 @@ else
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , drtp   , dam    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -380,9 +370,9 @@ if (ippmod(iphpar).ge.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscala ,                   &
+   iscala ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt , tslagr ,                                     &
@@ -390,7 +380,7 @@ if (ippmod(iphpar).ge.1) then
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , drtp   , dam    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! --> Rayonnement
@@ -572,18 +562,17 @@ if (itspdv.eq.1) then
     !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iii    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,iii) , coefa(1,iclrtp(iii,icoef)) ,                     &
                  coefb(1,iclrtp(iii,icoef)) ,                     &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     Traitement de la production
 !     On utilise MAX(PROPCE,ZERO) car en LES dynamique on fait un clipping
@@ -673,11 +662,11 @@ if( idiff(ivar).ge. 1 ) then
   call viscfa                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse , imvisf ,                   &
-   idevel , ituser , ia     ,                                     &
+   imvisf ,                                                       &
+   ia     ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 else
 
@@ -724,14 +713,13 @@ call codits                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
                      coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
@@ -741,7 +729,7 @@ call codits                                                       &
    dam    , xam    , drtp   ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 4. IMPRESSIONS ET CLIPPINGS

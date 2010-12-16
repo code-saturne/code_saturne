@@ -30,21 +30,20 @@ subroutine cfcdts &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , iconvp , idiffp , ireslp , ndircp , nitmap ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , iifbru ,                            &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap , thetap , &
    ifrusb ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    pvara  , coefap , coefbp , cofafp , cofbfp , flumas , flumab , &
    viscfm , viscbm , viscfs , viscbs ,                            &
    rovsdt , smbrp  , pvar   ,                                     &
    dam    , xam    , dpvar  ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , smbini ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -90,8 +89,6 @@ subroutine cfcdts &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
 ! idiffp           ! e  ! <-- ! indicateur = 1 diffusion , 0 sinon             !
 ! ndircp           ! e  ! <-- ! indicateur = 0 si decalage diagonale           !
@@ -127,8 +124,6 @@ subroutine cfcdts &
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
 ! ifrusb(nfabor    ! te ! <-- ! indicateur flux de rusanov                     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! pvara(ncelet     ! tr ! <-- ! variable resolue (instant precedent)           !
 ! coefap, b        ! tr ! <-- ! tableaux des cond lim pour p                   !
@@ -151,8 +146,6 @@ subroutine cfcdts &
 ! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
 ! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
 ! smbini(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -182,7 +175,6 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          ivar   , iconvp , idiffp , ndircp
 integer          nitmap
 integer          imrgra , nswrsp , nswrgp , imligp , ircflp
@@ -193,7 +185,6 @@ double precision blencp , epsilp , epsrgp , climgp , extrap
 double precision thetap , epsrsp
 
 integer          ifrusb(nfabor)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision pvara(ncelet), coefap(nfabor), coefbp(nfabor)
@@ -208,7 +199,7 @@ double precision dpvar(ncelet)
 double precision w1(ncelet), w2(ncelet), w3(ncelet), w4(ncelet)
 double precision w5(ncelet), w6(ncelet), w7(ncelet), w8(ncelet)
 double precision smbini(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -362,19 +353,18 @@ do 100 isweep = 1, nswmod
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg , iifbru ,          &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
    ifrusb ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    pvar   , coefap , coefbp , cofafp , cofbfp ,                   &
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
 !        ------
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
   call prodsc(ncelet,ncel,isqrt,smbrp,smbrp,residu)
@@ -415,15 +405,14 @@ do 100 isweep = 1, nswmod
   call invers                                                     &
   !==========
  ( cnom   , idebia , idebra ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    isym   , ipol   , ireslq , nitmap , imgrp  ,                   &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dam    , xam    , smbrp  , dpvar  ,                            &
    w3     , w4     , w5     , w6     , w7     , w8     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
   nbivar(ipp) = niterf
@@ -505,19 +494,18 @@ if (iescap.gt.0) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg , iifbru ,          &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
    ifrusb ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    pvar   , coefap , coefbp , cofafp , cofbfp ,                   &
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
 !        ------
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     CONTRIBUTION DES NORMES L2 DES DIFFERENTES COMPOSANTES
 !       DANS LE TABLEAU DAM QUI EST ICI DISPONIBLE.

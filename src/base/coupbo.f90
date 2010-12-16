@@ -30,13 +30,13 @@ subroutine coupbo &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , isvtb  ,                            &
-   nideve , nrdeve , nituse , nrtuse , ncp , ncv , ientha ,       &
-   idevel , ituser , ia     ,                                     &
+   ncp , ncv , ientha ,                                           &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cpcst  , cp     , cvcst  , cv     ,                            &
    hbord  , tbord  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -59,13 +59,9 @@ subroutine coupbo &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ientha           ! e  ! <-- ! 1 si tparoi est une enthalpie                  !
 !                  ! e  ! <-- ! 2 si tparoi est une energie                    !
 !                  !    !     !    (compressible)                              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! cpcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! cvcst            ! r  ! <-- ! chaleur specifique si constante                !
@@ -75,8 +71,6 @@ subroutine coupbo &
 ! (nfabor)         !    !     !                                                !
 ! tbord            ! tr ! <-- ! temperatures aux bords                         !
 ! (nfabor)         !    !     !                                                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -105,10 +99,9 @@ implicit none
 integer          idbia0, idbra0
 integer          nvar   , nscal  , nphas
 integer          isvtb
-integer          nideve , nrdeve , nituse , nrtuse
 integer          ncp    , ncv    , ientha
 
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision cpcst  , cvcst
 
@@ -117,7 +110,7 @@ double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision cp(ncp), cv(ncv)
 double precision hbord(nfabor),tbord(nfabor)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -258,13 +251,12 @@ do inbcou = 1, nbccou
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(iepsel) , ra(iepsfa) , ra(igamag) , ra(ixmasm) ,            &
 !        ----------   ---------
-   rdevel , rtuser , ra     )
+   ra     )
 
     do iloc = 1, nbfcou
       ifac  = ia(ipfcou+iloc-1)

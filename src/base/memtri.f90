@@ -31,7 +31,6 @@ subroutine memtri &
  ( idbia0 , idbra0 , iverif ,                                     &
    nvar   , nscal  , nphas  ,                                     &
    ncofab , nproce , nprofa , nprofb ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iisstd , ifrcx  ,                                              &
    idt    , irtp   , irtpa  , ipropc , ipropf , ipropb ,          &
    icoefa , icoefb ,                                              &
@@ -58,8 +57,6 @@ subroutine memtri &
 ! nproce           ! e  ! <-- ! nombre de prop phy aux centres                 !
 ! nprofa           ! e  ! <-- ! nombre de prop phy aux faces internes          !
 ! nprofb           ! e  ! <-- ! nombre de prop phy aux faces de bord           !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iisstd           ! e  ! --> ! "pointeur" sur isostd(reperage sortie          !
 ! idt              ! e  ! --> ! "pointeur" sur dt                              !
 ! irtp, irtpa      ! e  ! --> ! "pointeur" sur rtp, rtpa                       !
@@ -112,7 +109,6 @@ integer          idbia0 , idbra0
 integer          iverif
 integer          nvar   , nscal  , nphas
 integer          ncofab , nproce , nprofa , nprofb
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iisstd , ifrcx
 integer          idt
 integer          irtp   , irtpa

@@ -32,11 +32,10 @@ subroutine usaste &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
    idfstr ,                                                       &
-   idevel , ituser , ia     ,                                     &
-   rdevel , rtuser , ra     )
+   ia     ,                                                       &
+   ra     )
 
 
 
@@ -64,16 +63,10 @@ subroutine usaste &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! idfstr(nfabor)   ! ia ! <-- ! boundary faces -> structure definition         !
-! idevel(nideve)   ! ia ! <-- ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -105,14 +98,12 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nbstru
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          maxelt, lstelt(maxelt)
 integer          idfstr(nfabor)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

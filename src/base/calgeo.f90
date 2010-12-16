@@ -29,10 +29,9 @@ subroutine calgeo &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    volmin , volmax , voltot ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 !  FONCTION  :
@@ -48,16 +47,10 @@ subroutine calgeo &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! volmin           ! r  ! --> ! volume de controle minimal                     !
 ! volmax           ! r  ! --> ! volume de controle maximal                     !
 ! voltot           ! r  ! --> ! volume total du domaine                        !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -83,12 +76,11 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision volmin, volmax, voltot
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

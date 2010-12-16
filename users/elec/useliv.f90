@@ -33,11 +33,10 @@ subroutine useliv &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose :
@@ -94,12 +93,8 @@ subroutine useliv &
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
 ! nphas            ! e  ! <-- ! nombre de phases                               !
-! nideve nrdeve    ! e  ! <-- ! longueur de idevel rdevel                      !
-! nituse nrtuse    ! e  ! <-- ! longueur de ituser rtuser                      !
 ! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
 ! lstelt(maxelt) te ! --- ! tableau de travail                             !
-! idevel(nideve    ! te ! <-- ! tab entier complementaire developemt           !
-! ituser(nituse    ! te ! <-- ! tab entier complementaire utilisateur          !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
@@ -112,8 +107,6 @@ subroutine useliv &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! rdevel(nrdeve    ! tr ! <-- ! tab reel complementaire developemt             !
-! rtuser(nrtuse    ! tr ! <-- ! tab reel complementaire utilisateur            !
 ! ra(*)            ! tr ! --- ! macro tableau reel                             !
 !__________________!____!_____!________________________________________________!
 
@@ -148,15 +141,14 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          maxelt, lstelt(maxelt)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 
 ! Local variables

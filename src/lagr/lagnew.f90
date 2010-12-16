@@ -32,12 +32,11 @@ subroutine lagnew &
    lndnod ,                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npt    , nptnew , new    ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    izone  ,                                                       &
    ifrlag , isorti , iworkp ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    surfbn , ettp   ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !===============================================================================
@@ -75,8 +74,6 @@ subroutine lagnew &
 !                  !    !     ! pour toutes les zones d'injection              !
 ! new              ! e  ! <-- ! nombre de nouvelles part a injecter            !
 !                  !    !     ! pour la zone d'injection courante              !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! izone            ! e  ! <-- ! numero  de la zone d'injection                 !
 ! ifrlag           ! te ! <-- ! numero de zone de la face de bord              !
 !   (nfabor)       !    !     !  pour le module lagrangien                     !
@@ -84,14 +81,10 @@ subroutine lagnew &
 !   (nbpmax)       !    !     !    * numero de sa cellule                      !
 !                  !    !     !    * 0 si sortie du domaine                    !
 ! iworkp(nbpmax    ! te ! --> ! numero de la face d'injection                  !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! surfbn(nfabor    ! tr ! <-- ! surface des faces de bord                      !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -123,16 +116,13 @@ integer          idbia0 , idbra0
 integer          lndnod
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          npt    , nptnew , new
-integer          nideve , nrdeve , nituse , nrtuse
 integer          izone
 
 integer          ifrlag(nfabor) , isorti(nbpmax) , iworkp(nbpmax)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision surfbn(nfabor)
 double precision ettp(nbpmax,nvp)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

@@ -35,15 +35,14 @@ subroutine uslaru &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb , itrifb , itepa  ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    surfbn , dt     , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , croule , auxl  ,                    &
    distpa , distyp ,                                              &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -75,16 +74,12 @@ subroutine uslaru &
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
 !  nphas)          !    !     !                                                !
 ! itrifb(nfabor    ! ia ! --> ! indirection for the sorting of the             !
 !  nphas)          !    !     ! boundary faces                                 !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
-! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
-! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! surfbn(nfabor    ! ra ! <-- !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -107,8 +102,6 @@ subroutine uslaru &
 ! croule(ncelet    ! ra ! --> ! function of significance for                   !
 !                  !    !     ! the Russian roulette                           !
 ! auxl(nbpmax,3    ! ra ! --- !                                                !
-! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
-! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 ! distpa(ncelet    ! ra ! <-- ! wall-normal distance arrays                    !
 ! disty(ncelet)    ! ra ! <-- ! y+ distance                                    !
@@ -147,11 +140,9 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          itepa(nbpmax,nivep)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision surfbn(nfabor)
@@ -164,7 +155,7 @@ double precision vagaus(nbpmax,*) , croule(ncelet)
 double precision auxl(nbpmax,3)
 double precision distpa(ncelet) , distyp(ncelet)
 double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

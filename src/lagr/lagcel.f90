@@ -33,14 +33,14 @@ subroutine lagcel &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb , itrifb , icocel , itycel , ifrlag , itepa  , ibord  , &
-   indep  , idevel , ituser , ia     ,                            &
+   indep  ,                                                       &
+   ia     ,                                                       &
    surfbn ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , auxl   ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -73,8 +73,6 @@ subroutine lagcel &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
 ! itrifb(nfabor    ! te ! --> ! tab d'indirection pour tri des faces           !
@@ -91,8 +89,6 @@ subroutine lagcel &
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
 ! indep            ! te ! --> ! pour chaque particule :                        !
 !   (nbpmax)       !    !     !   numero de la cellule de depart               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! surfbn(nfabor    ! tr ! ->  ! surface des faces de bord                      !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -112,8 +108,6 @@ subroutine lagcel &
 ! parbor(nfabor    ! tr ! <-- ! cumul des statistiques aux frontieres          !
 !    nvisbr)       !    !     !                                                !
 ! auxl(nbpmax,3    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -150,14 +144,12 @@ integer          lndnod
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
 integer          ibord(nbpmax)
 integer          indep(nbpmax)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision surfbn(nfabor)
@@ -168,7 +160,6 @@ double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision parbor(nfabor,nvisbr) , auxl(nbpmax,3)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -703,14 +694,13 @@ do ip = 1,nbpart
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    ifac   , ip     , isuivi ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb , itrifb , ifrlag , itepa  , indep  ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    surfbn , dt     , rtpa   , rtp    , propce , propfa , propfb , &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , ettp(1,jup) ,              &
                                        ettp(1,juf) , auxl   ,     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !--> Si la particule continue sa route (ex : rebond) apres l'interaction
 !    avec la frontiere, il faut continuer a la suivre donc GOTO 100

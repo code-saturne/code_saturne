@@ -32,13 +32,12 @@ subroutine lagipn &
    ncelet , ncel   ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npar1  , npar2  ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtp    ,                                                       &
    ettp   , tepa   , vagaus ,                                     &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -66,12 +65,8 @@ subroutine lagipn &
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! npar1 ,npar2     ! e  ! <-- ! borne min et max des particules                !
 !                  !    !     !    a initialiser                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -82,8 +77,6 @@ subroutine lagipn &
 ! vagaus           ! tr ! --> ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
 ! w1...w3(ncel)    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -119,16 +112,13 @@ integer          idbia0 , idbra0
 integer          ncelet , ncel
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          npar1 , npar2
-integer          nideve , nrdeve , nituse , nrtuse
 integer          itepa(nbpmax,nivep)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision rtp(ncelet,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

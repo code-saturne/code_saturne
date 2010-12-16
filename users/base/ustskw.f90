@@ -33,17 +33,17 @@ subroutine ustskw &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+   iphas  ,                                                       &
    maxelt , lstelt ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel , s2kw   , divukw ,          &
    gkgw   , ggrho  , xf1    ,                                     &
    crkexp , crwexp , crkimp , crwimp ,                            &
    viscf  , viscb  , xam    , w1     , w2     ,                   &
    w3     , w4     , w5     , w6     , w7     ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 !===============================================================================
@@ -123,8 +123,6 @@ subroutine ustskw &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
 ! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! index number of the current phase              !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
@@ -132,8 +130,6 @@ subroutine ustskw &
 ! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
 ! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
 !  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
-! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
-! ituser(nituse    ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
@@ -160,8 +156,6 @@ subroutine ustskw &
 ! xam(nfac,2)      ! ra ! --- ! work array                                     !
 ! w1 to w7         ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
-! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -193,12 +187,12 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse , iphas
+integer          iphas
 
 integer          maxelt, lstelt(maxelt)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -212,7 +206,7 @@ double precision crwexp(ncelet), crwimp(ncelet)
 double precision viscf(nfac), viscb(nfabor), xam(nfac,2)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet), w7(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

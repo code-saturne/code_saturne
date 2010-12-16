@@ -30,14 +30,14 @@ subroutine d3pphy &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , nphmx  ,                   &
+   nphmx  ,                                                       &
    ibrom  , izfppp ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    dirmin , dirmax , fdeb   , ffin   , hrec   ,                   &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra      )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -57,15 +57,11 @@ subroutine d3pphy &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! nphmx            ! e  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
 !   (nphmx   )     !    !     !                                                !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -81,8 +77,6 @@ subroutine d3pphy &
 ! ffin             ! tr ! --- ! pdf : abscisse fin rectangle                   !
 ! hrec             ! tr ! --- ! pdf : hauteur rectangle                        !
 ! w1-w3(ncelet)    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 ! rpp              ! tr ! --- ! macro tableau reel pp                          !
 !__________________!____!_____!________________________________________________!
@@ -120,11 +114,11 @@ implicit none
 integer          idbia0 , idbra0
 integer          iinpdf
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse , nphmx
+integer          nphmx
 
 integer          ibrom(nphmx)
 integer          izfppp(nfabor)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -134,7 +128,7 @@ double precision dirmin(ncelet),dirmax(ncelet)
 double precision fdeb(ncelet),ffin(ncelet)
 double precision hrec(ncelet)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

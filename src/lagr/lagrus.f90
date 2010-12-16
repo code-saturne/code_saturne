@@ -31,11 +31,10 @@ subroutine lagrus &
  ( idbia0 , idbra0 ,                                              &
    ncelet , ncel   ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  , indep  ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ettp   , ettpa  , tepa  , croule ,                             &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -63,13 +62,9 @@ subroutine lagrus &
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! indep(nbpmax)    ! te ! <-- ! numero de sa cellule de depart                 !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
@@ -78,8 +73,6 @@ subroutine lagrus &
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! croule(ncelet    ! tr ! <-- ! critere d'importance                           !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -110,15 +103,12 @@ implicit none
 integer          idbia0 , idbra0
 integer          ncelet , ncel
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          nideve , nrdeve , nituse , nrtuse
 integer          itepa(nbpmax,nivep) , indep(nbpmax)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision croule(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -272,12 +262,11 @@ call lageli                                                       &
 !==========
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npars  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  ,                                                       &
-   idevel , ituser , ia    ,                                      &
+   ia     ,                                                       &
    dnpars ,                                                       &
    ettp   , ettpa  , tepa   ,                                     &
-   rdevel , rtuser , ra    )
+   ra     )
 
 if ( npars.ne.(npkill+npcsup) ) then
   write(nfecra,9000)

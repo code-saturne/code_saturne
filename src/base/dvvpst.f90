@@ -31,13 +31,14 @@ subroutine dvvpst &
  ( idbia0 , idbra0 , nummai , numtyp ,                            &
    nvar   , nscal  , nphas  , nvlsta , nvisbr ,                   &
    ncelps , nfacps , nfbrps ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypps ,                                                       &
    lstcel , lstfac , lstfbr ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statce , stativ , statfb ,                   &
-   tracel , trafac , trafbr , rdevel , rtuser , ra     )
+   tracel , trafac , trafbr ,                                     &
+   ra     )
+
 !===============================================================================
 ! FONCTION :
 ! --------
@@ -63,16 +64,12 @@ subroutine dvvpst &
 ! ncelps           ! e  ! <-- ! nombre de cellules du maillage post            !
 ! nfacps           ! e  ! <-- ! nombre de faces interieur post                 !
 ! nfbrps           ! e  ! <-- ! nombre de faces de bord post                   !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypps(3)        ! te ! <-- ! indicateur de presence (0 ou 1) de             !
 !                  !    !     ! cellules (1), faces (2), ou faces de           !
 !                  !    !     ! de bord (3) dans le maillage post              !
 ! lstcel(ncelps    ! te ! <-- ! liste des cellules du maillage post            !
 ! lstfac(nfacps    ! te ! <-- ! liste des faces interieures post               !
 ! lstfbr(nfbrps    ! te ! <-- ! liste des faces de bord post                   !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! te ! --- ! macro tableau entier                           !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -91,8 +88,6 @@ subroutine dvvpst &
 ! tracel(*)        ! tr ! <-- ! tab reel valeurs cellules post                 !
 ! trafac(*)        ! tr ! <-- ! tab reel valeurs faces int. post               !
 ! trafbr(*)        ! tr ! <-- ! tab reel valeurs faces bord post               !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -134,11 +129,10 @@ integer          idbia0 , idbra0
 integer          nummai , numtyp
 integer          nvar   , nscal  , nphas  , nvlsta , nvisbr
 integer          ncelps , nfacps , nfbrps
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypps(3)
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
 double precision propce(ncelet,*)
@@ -148,7 +142,6 @@ double precision statce(ncelet,nvlsta), statfb(nfabor,nvisbr)
 double precision stativ(ncelet,nvlsta)
 double precision tracel(ncelps*3)
 double precision trafac(nfacps*3), trafbr(nfbrps*3)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -699,17 +692,16 @@ else if  (numtyp .eq. -2) then
         !==========
  ( ifinia , ifinra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(itravx) , ra(itravx) , ra(itravx) ,                         &
    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
    ra(igradx) , ra(igrady) , ra(igradz) ,                         &
 !        ----------   ----------   ----------
    ra(itravx) , ra(itravy) , ra(itravz) ,                         &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !          Calcul de la valeur reconstruite dans les cellules de bord
@@ -892,12 +884,11 @@ if (nummai .eq. -1) then
         !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  , nvlsta ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statce , stativ , tracel ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !           La variable est deja definie sur le maillage volumique
 !           global ; on utilise donc l'indirection  (donc IVARPR = 1)
@@ -935,12 +926,11 @@ if (nummai .eq. -1) then
         !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  , nvlsta ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statce , stativ , tracel ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !           La variable est deja definie sur le maillage volumique
 !           global ; on utilise donc l'indirection  (donc IVARPR = 1)
@@ -1123,13 +1113,13 @@ if (     ippmod(ieljou).ge.1                                      &
  ( ifinia , ifinra , nummai ,                                     &
    nvar   , nscal  , nphas  ,                                     &
    ncelps , nfacps , nfbrps ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    lstcel , lstfac , lstfbr ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(iw1) , ra(iw2) ,                                            &
-   tracel , trafac , trafbr , rdevel , rtuser , ra     )
+   tracel , trafac , trafbr ,                                     &
+   ra     )
 
 endif
 

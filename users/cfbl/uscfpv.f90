@@ -33,13 +33,13 @@ subroutine uscfpv &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , nphmx  ,                   &
+   nphmx  ,                                                       &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -121,13 +121,9 @@ subroutine uscfpv &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! nphmx            ! i  ! <-- ! nphsmx                                         !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary developpement !
-! ituser(nituse    ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -138,8 +134,6 @@ subroutine uscfpv &
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! w1...3(ncelet    ! ra ! --- ! work arrays                                    !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
-! rtuser(nituse    ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -172,17 +166,17 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse , nphmx
+integer          nphmx
 
 integer          maxelt, lstelt(maxelt)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -443,13 +437,12 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    propce(1, ipproc(icv(iphas)) )    , w1     , w2     , w3     , &
 !  ---------------------------------
-   rdevel , rtuser , ra     )
+   ra     )
 
 enddo
 ! --- End of the loop on iphas

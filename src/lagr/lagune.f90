@@ -33,9 +33,8 @@ subroutine lagune &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    icocel , itycel , ifrlag , itepa  , indep  , ibord  ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor , &
@@ -43,7 +42,7 @@ subroutine lagune &
    tsvar  , tempct , tsfext , cpgd1  , cpgd2  , cpght  ,          &
    gradpr , gradvf , croule , brgaus , terbru ,                   &
    w1     , w2     , w3     , auxl   , auxl2  ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -74,8 +73,6 @@ subroutine lagune &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! icocel           ! te ! --> ! connectivite cellules -> faces                 !
 !   (lndnod)       !    !     !    face de bord si numero negatif              !
 ! itycel           ! te ! --> ! connectivite cellules -> faces                 !
@@ -88,8 +85,6 @@ subroutine lagune &
 !   (nbpmax)       !    !     !   numero de la cellule de depart               !
 ! ibord            ! te ! --> ! contient le numero de la                       !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
@@ -140,8 +135,6 @@ subroutine lagune &
 ! auxl(nbpmax,3    ! tr ! --- ! tableau de travail                             !
 ! auxl2            ! tr ! --- ! tableau de travail                             !
 !    (nbpmax,7)    !    !     !                                                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -179,12 +172,10 @@ integer          lndnod
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
 integer          indep(nbpmax) , ibord(nbpmax)
-integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
@@ -208,7 +199,6 @@ double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision croule(ncelet)
 double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
 double precision auxl(nbpmax,3) , auxl2(nbpmax,7)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -285,10 +275,9 @@ if (iplar.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    lndnod ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    icocel , itycel ,                                              &
-   idevel , ituser , ia     ,                                     &
-   rdevel , rtuser , ra     )
+   ia     ,                                                       &
+   ra     )
 
 endif
 
@@ -309,14 +298,13 @@ if ( ntcabs.eq.1 ) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itycel     , icocel      ,                                     &
    ia(iitypf) , ia(iitrif)  , ifrlag , itepa  ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(isrfbn) , dt     , rtp    , propce , propfa , propfb ,      &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 else
 
@@ -327,14 +315,13 @@ else
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itycel     , icocel      ,                                     &
    ia(iitypf) , ia(iitrif)  , ifrlag , itepa  ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(isrfbn) , dt     , rtpa   , propce , propfa , propfb ,      &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     , &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 !===============================================================================
@@ -349,15 +336,14 @@ if (iroule.ge.1) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iitypf) , ia(iitrif)  , itepa ,                             &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(isrfbn)  , dt     , rtpa   , propce , propfa , propfb ,     &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , croule , auxl ,                     &
    ra(idipar) , ra(iyppar) ,                                      &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
   iok = 0
   do iel = 1,ncel
@@ -406,12 +392,11 @@ if ( ntcabs.eq.1 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtp    , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 else
 
@@ -419,12 +404,11 @@ else
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpa   , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -488,12 +472,11 @@ if (nor.eq.2 .and. iilagr.ne.3) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtp    , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -509,13 +492,13 @@ if (nor.eq.1) then
      nvar   , nscal  , nphas  ,                                   &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
-     nideve , nrdeve , nituse , nrtuse ,                          &
-     itepa  , idevel , ituser , ia     ,                          &
+     itepa  ,                                                     &
+     ia     ,                                                     &
      dt     , rtpa   , propce , propfa , propfb ,                 &
      ettp   , ettpa  , tepa   , taup   , tlag   ,                 &
      piil   , bx     , tempct , statis ,                          &
      gradpr , gradvf , w1     , w2     , auxl(1,1)  ,             &
-     rdevel , rtuser , ra     )
+     ra     )
 
 else
 
@@ -527,13 +510,13 @@ else
      nvar   , nscal  , nphas  ,                                   &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
-     nideve , nrdeve , nituse , nrtuse ,                          &
-     itepa  , idevel , ituser , ia     ,                          &
+     itepa  ,                                                     &
+     ia     ,                                                     &
      dt     , rtp    , propce , propfa , propfb ,                 &
      ettp   , ettpa  , tepa   , taup   , tlag   ,                 &
      piil   , bx     , tempct , statis ,                          &
      gradpr , gradvf , w1     , w2     , auxl(1,1) ,              &
-     rdevel , rtuser , ra     )
+     ra     )
 
 endif
 
@@ -547,14 +530,15 @@ call lagesp                                                       &
      nvar   , nscal  , nphas  ,                                   &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
-     nideve , nrdeve , nituse , nrtuse ,                          &
-     itepa  , ibord  , idevel , ituser , ia     ,                 &
+     itepa  , ibord  ,                                            &
+     ia     ,                                                     &
      dt     , rtpa   , rtp    , propce , propfa , propfb ,        &
      ettp   , ettpa  , tepa   ,                                   &
      statis , stativ , taup   , tlag   , piil   ,                 &
      tsuf   , tsup   , bx     , tsfext ,                          &
      vagaus , gradpr , gradvf , brgaus , terbru ,                 &
-     auxl(1,1) , auxl2 , rdevel , rtuser , ra     )
+     auxl(1,1) , auxl2 ,                                          &
+     ra     )
 
 !---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
 !     LIEES AUX PHYSIQUES PARTICULIERES PARTICULAIRES
@@ -567,28 +551,26 @@ if ( iphyla.eq.1 .or. iphyla.eq.2 ) then
     ( idebia , idebra ,                                           &
       nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
-      nideve , nrdeve , nituse , nrtuse ,                         &
       itepa  , ibord  ,                                           &
-      idevel , ituser , ia     ,                                  &
+      ia     ,                                                    &
       dt     , rtpa   , propce , propfa , propfb ,                &
       ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,       &
       tsvar  , auxl   , cpgd1  , cpgd2  , cpght  ,                &
       w1     , w2     , w3     ,                                  &
-      rdevel , rtuser , ra     )
+      ra     )
   else
     call lagphy                                                   &
     !==========
     ( idebia , idebra ,                                           &
       nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
-      nideve , nrdeve , nituse , nrtuse ,                         &
       itepa  , ibord  ,                                           &
-      idevel , ituser , ia     ,                                  &
+      ia     ,                                                    &
       dt     , rtp    , propce , propfa , propfb ,                &
       ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,       &
       tsvar  , auxl   , cpgd1  , cpgd2  , cpght  ,                &
       w1     , w2     , w3     ,                                  &
-      rdevel , rtuser , ra     )
+      ra     )
   endif
 
 endif
@@ -611,16 +593,15 @@ if (iilagr.eq.2 .and. nor.eq.nordre) then
      nvar   , nscal  , nphas  ,                                   &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
-     nideve , nrdeve , nituse , nrtuse ,                          &
      itepa  , indep  , ibord  ,                                   &
-     idevel , ituser , ia     ,                                   &
+     ia     ,                                                     &
      rtp    , propce ,                                            &
      ettp   , ettpa  , tepa   , taup   ,                          &
      tempct , tsfext , tslagr ,                                   &
      cpgd1  , cpgd2  , cpght  ,                                   &
      ra(iitslg)      , w1     , w2   ,                            &
      auxl(1,1) , auxl(1,2)   , auxl(1,3) ,                        &
-     rdevel , rtuser , ra     )
+     ra     )
 
 endif
 
@@ -638,15 +619,14 @@ if (nor.eq.1) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iitypf)      , ia(iitrif)      ,                            &
    icocel , itycel , ifrlag , itepa  , ibord  , indep  ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(isrfbn)      ,                                              &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , auxl   ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
   if (ierr.eq.1) then
     call lagerr
@@ -669,12 +649,11 @@ if (nor.eq.nordre) then
   !==========
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npars  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dnpars ,                                                       &
    ettp   , ettpa  , tepa   ,                                     &
-   rdevel , rtuser , ra )
+   ra     )
 
   nbpout = npars
   dnbpou = dnpars
@@ -707,13 +686,12 @@ if (nor.eq.nordre .and. istala.eq.1 .and. iplas.ge.idstnt) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , tepa   , statis , stativ ,                            &
    w1     ,                                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -730,14 +708,13 @@ if (nor.eq.nordre .and. ilapoi.eq.1) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    icocel , itycel , ifrlag , itepa  ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , statis ,                                     &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -752,11 +729,10 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
    ( idebia , idebra ,                                            &
      ncelet , ncel   ,                                            &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
-     nideve , nrdeve , nituse , nrtuse ,                          &
      itepa  , indep  ,                                            &
-     idevel , ituser , ia     ,                                   &
+     ia     ,                                                     &
      ettp   , ettpa  , tepa   , croule ,                          &
-     rdevel , rtuser , ra     )
+     ra     )
 
   if (npclon.gt.0) then
 
@@ -769,13 +745,12 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
       ncelet , ncel   ,                                           &
       nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       npar1  , npar2  ,                                           &
-      nideve , nrdeve , nituse , nrtuse ,                         &
       itepa  ,                                                    &
-      idevel , ituser , ia     ,                                  &
+      ia     ,                                                    &
       rtp    ,                                                    &
       ettp   , tepa   , vagaus ,                                  &
       w1     , w2     , w3     ,                                  &
-      rdevel , rtuser , ra     )
+      ra     )
 
   endif
 
@@ -798,15 +773,14 @@ call uslast                                                       &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
    statis , stativ ,                                              &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 16. Visualisations
@@ -872,14 +846,13 @@ if (modntl.eq.0) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , statis , &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 

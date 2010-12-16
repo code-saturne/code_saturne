@@ -33,17 +33,16 @@ subroutine uspt1d &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , nfpt1d , iphas  , iappel ,          &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
    ifpt1d , nppt1d , iclt1d ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    tppt1d , rgpt1d , eppt1d ,                                     &
    tept1d , hept1d , fept1d ,                                     &
    xlmt1d , rcpt1d , dtpt1d ,                                     &
    dt     , rtpa   ,                                              &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -96,16 +95,12 @@ subroutine uspt1d &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nfpt1d           ! i  ! <-- ! number of faces with the 1-D thermic module    !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iappel           ! i  ! <-- ! data type to send                              !
 ! maxelt           !  i ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ifpt1d           ! ia ! <-- ! number of the face treated                     !
 ! nppt1d           ! ia ! <-- ! number of discretized points                   !
 ! iclt1d           ! ia ! <-- ! boundary condition type                        !
-! idevel(nideve)   ! ia ! <-- ! integer work array for temporary developpement !
-! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! eppt1d           ! ra ! <-- ! wall thickness                                 !
 ! rgpt1d           ! ra ! <-- ! geometric ratio of the meshing refinement      !
@@ -126,8 +121,6 @@ subroutine uspt1d &
 !  (nfabor, *)     !    !     !                                                !
 ! coefu            ! ra ! --- ! work array                                     !
 !  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary developpement    !
-! rtuser(nituse    ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -158,12 +151,11 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , nfpt1d
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iphas  , iappel
 
 integer          maxelt, lstelt(maxelt)
 integer          ifpt1d(nfpt1d), nppt1d(nfpt1d), iclt1d(nfpt1d)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -172,7 +164,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision eppt1d(nfpt1d) , rgpt1d(nfpt1d) , tppt1d(nfpt1d)
 double precision tept1d(nfpt1d) , hept1d(nfpt1d) , fept1d(nfpt1d)
 double precision xlmt1d(nfpt1d) , rcpt1d(nfpt1d) , dtpt1d(nfpt1d)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 !-------------------------------------------------------------------

@@ -29,7 +29,6 @@ subroutine memclg &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ifinia , ifinra )
 
 !===============================================================================
@@ -47,8 +46,6 @@ subroutine memclg &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
 ! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !!__________________.____._____.________________________________________________.
 
@@ -73,7 +70,6 @@ implicit none
 ! Arguments
 
 integer idbia0 , idbra0
-integer nideve , nrdeve , nituse , nrtuse
 integer ifinia , ifinra
 
 ! Local variables

@@ -30,10 +30,10 @@ subroutine ecrlis &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nphas  , ndim   , ncelet , ncel   ,                   &
-   nideve , nrdeve , nituse , nrtuse , irtp   ,                   &
-   idevel , ituser , ia     ,                                     &
+   irtp   ,                                                       &
+   ia     ,                                                       &
    rtp    , rtpa   , dt     , volume , xyzcen ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 !  FONCTION  :
@@ -53,11 +53,7 @@ subroutine ecrlis &
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! irtp             ! e  ! <-- ! indice de rtp dans ra                          !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
 ! (ncelet,nvar)    !    !     !                                                !
@@ -68,8 +64,6 @@ subroutine ecrlis &
 ! (ncelet)         !    !     !                                                !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -100,14 +94,12 @@ use ppincl
 implicit none
 
 integer          idbia0, idbra0, nvar, nphas, ndim, ncelet, ncel
-integer          nideve , nrdeve , nituse , nrtuse
 integer          irtp
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 double precision rtpa(ncelet,nvar), rtp(ncelet,nvar)
 double precision dt(ncelet), volume(ncelet)
 double precision xyzcen(ndim,ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

@@ -31,19 +31,18 @@ subroutine inimas &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ivar1  , ivar2  , ivar3  , imaspe , iphas  ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgu , imligu , &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu , extrau ,                                     &
    isympa ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rom    , romb   ,                                              &
    ux     , uy     , uz     ,                                     &
    coefax , coefay , coefaz , coefbx , coefby , coefbz ,          &
    flumas , flumab ,                                              &
    dpdx   , dpdy   , dpdz   , dpdxa  , dpdya  , dpdza  ,          &
    qdmx   , qdmy   , qdmz   , coefqa ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -82,8 +81,6 @@ subroutine inimas &
 !                  !    !     ! = 1 si appel de navsto resolp                  !
 !                  !    !     ! = 2 si appel de divrij                         !
 ! iphas            ! i  ! <-- ! phase number                                   !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iflmb0           ! e  ! <-- ! =1 : flux de masse annule sym-paroi            !
 ! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
 ! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
@@ -107,8 +104,6 @@ subroutine inimas &
 ! isympa           ! te ! <-- ! zero pour annuler le flux de masse             !
 ! (nfabor     )    !    !     !(symetries et parois avec cl couplees)          !
 !                  !    !     ! un sinon                                       !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rom(ncelet       ! tr ! <-- ! masse volumique aux cellules                   !
 ! romb(nfabor)     ! tr ! <-- ! masse volumique aux bords                      !
@@ -122,8 +117,6 @@ subroutine inimas &
 !                  !    !     !  avec decentrement amont                       !
 ! qdm.(ncelet)     ! tr ! --- ! tableau de travail pour la qdm                 !
 ! coefqa(nfab,3    ! tr ! --- ! tableau de travail cl de la qdm                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -152,7 +145,6 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          ivar1  , ivar2  , ivar3  , imaspe , iphas
 integer          iflmb0 , init   , inc    , imrgra , iccocg
 integer          nswrgu , imligu
@@ -160,7 +152,6 @@ integer          iwarnu , nfecra
 double precision epsrgu , climgu , extrau
 
 integer          isympa(nfabor)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision rom(ncelet), romb(nfabor)
@@ -172,7 +163,7 @@ double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
 double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
 double precision qdmx(ncelet),qdmy(ncelet),qdmz(ncelet)
 double precision coefqa(ndimfb,3)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -303,16 +294,15 @@ if( nswrgu.gt.1 ) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar1  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dpdxa  , dpdxa  , dpdxa  ,                                     &
    qdmx   , coefqa(1,1) , coefbx ,                                &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
    dpdxa  , dpdya  , dpdza  ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! ---> FLUX DE MASSE SUR LES FACETTES FLUIDES
@@ -369,16 +359,15 @@ if( nswrgu.gt.1 ) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar2  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dpdxa  , dpdxa  , dpdxa  ,                                     &
    qdmy   , coefqa(1,2) , coefby ,                                &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
    dpdxa  , dpdya  , dpdza  ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! ---> FLUX DE MASSE SUR LES FACETTES FLUIDES
@@ -436,16 +425,15 @@ if( nswrgu.gt.1 ) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar3  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dpdxa  , dpdxa  , dpdxa  ,                                     &
    qdmz     , coefqa(1,3) , coefbz ,                              &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
    dpdxa  , dpdya  , dpdza  ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     FLUX DE MASSE SUR LES FACETTES FLUIDES
 

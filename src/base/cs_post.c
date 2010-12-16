@@ -1782,13 +1782,12 @@ void CS_PROCF (pstema, PSTEMA)
  * *****************
  *                    ntcabs,
  *                    nvar,   nscal,  nphas,  nvlsta, nvisbr,
- *                    nideve, nrdeve, nituse, nrtuse,
- *                    idevel, ituser, ia,
+ *                    ia,
  *                    ttcabs,
  *                    dt,     rtpa,   rtp,    propce, propfa, propfb,
  *                    coefa,  coefb,
  *                    statce, stativ, statfb,
- *                    rdevel, rtuser, ra)
+ *                    ra)
  *
  * integer          idbia0      : <-- : number of first free position in ia
  * integer          idbra0      : <-- : number of first free position in ra
@@ -1798,12 +1797,6 @@ void CS_PROCF (pstema, PSTEMA)
  * integer          nphas       : <-- : number of phases
  * integer          nvlsta      : <-- : number of statistical variables (lagr)
  * integer          nvisbr      : <-- : number of boundary stat. variables (lagr)
- * integer          nideve      : <-- : size of idevel integer array
- * integer          nrdeve      : <-- : size of rdevel floating-point array
- * integer          nituse      : <-- : size of ituser integer array
- * integer          nrtuse      : <-- : size of rtuser floating-point array
- * integer          idevel      : <-- : idevel integer array
- * integer          ituser      : <-- : ituser integer array
  * integer          ia          : <-- : ia integer array
  * double precision ttcabs      : <-- : current physical time
  * double precision dt          : <-- : local time step
@@ -1817,8 +1810,6 @@ void CS_PROCF (pstema, PSTEMA)
  * double precision statce      : <-- : cell statistics (lagrangian)
  * double precision stativ      : <-- : cell variance statistics (lagrangian)
  * double precision statfb      : <-- : boundary face statistics (lagrangian)
- * double precision rdevel      : <-- : rdevel floating-point array
- * double precision rtuser      : <-- : rtuser floating-point array
  * double precision ra          : <-- : ra floating-point array
  *----------------------------------------------------------------------------*/
 
@@ -1832,12 +1823,6 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_int_t   *nphas,
  const cs_int_t   *nvlsta,
  const cs_int_t   *nvisbr,
- const cs_int_t   *nideve,
- const cs_int_t   *nrdeve,
- const cs_int_t   *nituse,
- const cs_int_t   *nrtuse,
- const cs_int_t    idevel[],
-       cs_int_t    ituser[],
        cs_int_t    ia[],
  const cs_real_t  *ttcabs,
  const cs_real_t   dt[],
@@ -1851,8 +1836,6 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_real_t   statce[],
  const cs_real_t   stativ[],
  const cs_real_t   statfb[],
- const cs_real_t   rdevel[],
-       cs_real_t   rtuser[],
        cs_real_t   ra[]
 )
 {
@@ -1998,14 +1981,14 @@ void CS_PROCF (pstvar, PSTVAR)
       CS_PROCF(usmpst, USMPST) (idbia0, idbra0, &nummai,
                                 nvar, nscal, nphas, nvlsta,
                                 &n_cells, &n_i_faces, &n_b_faces,
-                                nideve, nrdeve, nituse, nrtuse, &imodif,
+                                &imodif,
                                 itypps,
                                 cell_list, i_face_list, b_face_list,
-                                idevel, ituser, ia,
+                                ia,
                                 dt, rtpa, rtp, propce, propfa, propfb,
                                 coefa, coefb, statce,
                                 cel_vals, i_face_vals, b_face_vals,
-                                rdevel, rtuser, ra);
+                                ra);
 
       if (imodif > 0)
         cs_post_modify_mesh(post_mesh->id,
@@ -2203,28 +2186,26 @@ void CS_PROCF (pstvar, PSTVAR)
         CS_PROCF(dvvpst, DVVPST) (idbia0, idbra0, &nummai, &numtyp,
                                   nvar, nscal, nphas, nvlsta, nvisbr,
                                   &n_cells, &n_i_faces, &n_b_faces,
-                                  nideve, nrdeve, nituse, nrtuse,
                                   itypps,
                                   cell_list, i_face_list, b_face_list,
-                                  idevel, ituser, ia,
+                                  ia,
                                   dt, rtpa, rtp, propce, propfa, propfb,
                                   coefa, coefb, statce, stativ , statfb ,
                                   cel_vals, i_face_vals, b_face_vals,
-                                  rdevel, rtuser, ra);
+                                  ra);
 
       /* Call to user subroutine for additional post-processing */
 
       CS_PROCF(usvpst, USVPST) (idbia0, idbra0, &nummai,
                                 nvar, nscal, nphas, nvlsta,
                                 &n_cells, &n_i_faces, &n_b_faces,
-                                nideve, nrdeve, nituse, nrtuse,
                                 itypps,
                                 cell_list, i_face_list, b_face_list,
-                                idevel, ituser, ia,
+                                ia,
                                 dt, rtpa, rtp, propce, propfa, propfb,
                                 coefa, coefb, statce,
                                 cel_vals, i_face_vals, b_face_vals,
-                                rdevel, rtuser, ra);
+                                ra);
 
       /* In case of mixed interior and boundary faces, free
          additional arrays */

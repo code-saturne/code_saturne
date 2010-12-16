@@ -30,9 +30,8 @@ subroutine raypun &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , iphas  ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
@@ -45,7 +44,7 @@ subroutine raypun &
    qincid , eps    , tparoi ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , ckmel  ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -68,12 +67,8 @@ subroutine raypun &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! iphas            ! i  ! --> ! phase number                                   !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -106,8 +101,6 @@ subroutine raypun &
 ! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ckmel(ncelet)    ! tr ! <-- ! coeff d'absorption du melange                  !
 !                  !    !     !   gaz-particules de charbon                    !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -145,10 +138,8 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , iphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypfb(nfabor,nphas)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -174,7 +165,7 @@ double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ckmel(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 
 ! Local variables
@@ -275,10 +266,10 @@ enddo
 call viscfa                                                       &
 !==========
    ( idebia , idebra ,                                            &
-     nideve , nrdeve , nituse , nrtuse , imvisf ,                 &
-     idevel , ituser , ia     ,                                   &
+     imvisf ,                                                     &
+     ia     ,                                                     &
      ckmel  , viscf  , viscb  ,                                   &
-     rdevel , rtuser , ra     )
+     ra     )
 
 !===============================================================================
 ! 3.  RESOLUTION
@@ -297,14 +288,13 @@ call codits                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgr1  , ncymap , nitmgp , inum   , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    thetaa , thetaa , cofrua , cofrub , cofrua , cofrub ,          &
    flurds , flurdb ,                                              &
    viscf  , viscb  , viscf  , viscb  ,                            &
@@ -312,7 +302,7 @@ call codits                                                       &
    dam    , xam    , drtp   ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 4. Vecteur densite de flux radiatif
@@ -341,16 +331,15 @@ call grdcel                                                       &
 !==========
    ( idebia , idebra ,                                            &
      nphas  ,                                                     &
-     nideve , nrdeve , nituse , nrtuse ,                          &
      ivar0  , imrgra , inc    , iccocg , nswrgp , imligp,         &
      iphydp ,                                                     &
      iwarnp , nfecra , epsrgp , climgp , extrap ,                 &
-     idevel , ituser , ia     ,                                   &
+     ia     ,                                                     &
      w7     , w7     , w7     ,                                   &
      theta4 , cofrua , cofrub ,                                   &
      w1     , w2     , w3     ,                                   &
      w4     , w5     , w6     ,                                   &
-     rdevel , rtuser , ra     )
+     ra     )
 
 aa = - stephn * 4.d0 / 3.d0
 

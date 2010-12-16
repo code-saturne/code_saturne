@@ -29,11 +29,11 @@ subroutine viscfa &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nideve , nrdeve , nituse , nrtuse , imvisf ,                   &
-   idevel , ituser , ia     ,                                     &
+   imvisf ,                                                       &
+   ia     ,                                                       &
    vistot ,                                                       &
    viscf  , viscb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -52,19 +52,13 @@ subroutine viscfa &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! imvisf           ! e  ! <-- ! methode de calcul de la visc face              !
 !                  !    !     !  = 0 arithmetique                              !
 !                  !    !     !  = 1 harmonique                                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! vistot(ncelet    ! tr ! <-- ! valeur de la viscosite                         !
 ! viscf(nfac)      ! tr ! --> ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --> ! visc*surface/dist aux faces de bord            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -91,14 +85,13 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nideve , nrdeve , nituse , nrtuse , imvisf
+integer          imvisf
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision vistot(ncelet)
 double precision viscf(nfac), viscb(nfabor)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

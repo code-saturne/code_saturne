@@ -30,16 +30,16 @@ subroutine pptssc &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt , tslagr ,                                     &
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    , w11    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -86,15 +86,11 @@ subroutine pptssc &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -117,8 +113,6 @@ subroutine pptssc &
 ! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
 ! xam(nfac,2)      ! tr ! --- ! tableau de travail    faces de bord            !
 ! w1..11(ncelet    ! tr ! --- ! tableau de travail    cellules                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -157,13 +151,11 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iscal
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          idevel(nideve)
-integer          ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -178,7 +170,7 @@ double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision w10(ncelet), w11(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -205,17 +197,17 @@ if ( ippmod(icoebu).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia(iizfpp) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    , w11    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 
@@ -231,17 +223,17 @@ if ( ippmod(icolwc).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia(iizfpp) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    , w11    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! ---> Flamme charbon pulverise
@@ -251,18 +243,18 @@ if ( ippmod(icp3pl).ge.0 ) then
    !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    ia(iitypf)      ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia(iizfpp) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    , w11    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! ---> Flamme charbon pulverise couplee Transport Lagrangien
@@ -273,18 +265,18 @@ if ( ippmod(icpl3c).ge.0 .and. iilagr.eq.2 ) then
    !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    ia(iitypf)      ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia(iizfpp) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt , tslagr ,                                     &
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    , w11    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! ---> Flamme fuel
@@ -294,18 +286,18 @@ if ( ippmod(icfuel).ge.0 ) then
    !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    ia(iitypf)      ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia(iizfpp) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    , w11    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! ---> Versions electriques :
@@ -320,18 +312,18 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
    !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    ia(iitypf)      ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia(iizfpp) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    , w11    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 ! ---> Version aerorefrigerant :
@@ -341,18 +333,18 @@ if ( ippmod(iaeros).ge.0 ) then
    !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    ia(iitypf)      ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia(iizfpp) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
    viscf  , viscb  , xam    ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    , w11    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 endif
 
 !----

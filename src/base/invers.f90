@@ -29,15 +29,14 @@ subroutine invers &
 !================
 
  ( cnom   , idbia0 , idbra0 ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    isym   , ipol   , ireslp , nitmap , imgrp  ,                   &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dam    , xam    , smbrp  , vx     ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -58,8 +57,6 @@ subroutine invers &
 ! cnom             ! a  ! <-- ! nom de la variable                             !
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! isym             ! e  ! <-- ! indicateur = 1 matrice sym                     !
 !                  !    !     !            = 2 matrice non sym                 !
 ! ipol             ! e  ! <-- ! degre du polynome pour precond                 !
@@ -83,8 +80,6 @@ subroutine invers &
 ! epsilp           ! r  ! <-- ! precision pour resol iter                      !
 ! rnorm            ! r  ! <-- ! normalisation du residu                        !
 ! residu           ! r  ! --> ! residu final non norme                         !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dam(ncelet       ! tr ! <-- ! diagonale (maillage fin si mgm)                !
 ! xam(nfac,isym    ! tr ! <-- ! extradiagonale (maillage fin si mgm)           !
@@ -92,8 +87,6 @@ subroutine invers &
 ! vx   (ncelet     ! tr ! <-- ! solution du systeme                            !
 ! w1,2,3,4,5,6     ! tr ! --- ! auxiliaires de travail                         !
 !      (ncelet     !    !     !                                                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -119,14 +112,12 @@ implicit none
 
 character*8      cnom
 integer          idbia0 , idbra0
-integer          nideve , nrdeve , nituse , nrtuse
 integer          isym   , ipol   , ireslp , nitmap
 integer          imgrp  , ncymxp , nitmfp
 integer          iwarnp , nfecra
 integer          niterf , icycle , iinvpe
 double precision epsilp , rnorm  , residu
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dam(ncelet), xam(nfac ,2)
@@ -134,7 +125,7 @@ double precision smbrp(ncelet)
 double precision vx(ncelet)
 double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
 double precision w5(ncelet),w6(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 
 ! Local variables

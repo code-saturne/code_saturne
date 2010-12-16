@@ -179,20 +179,14 @@ cs_run(void)
   double  t1, t2;
 
   cs_int_t  iasize, rasize;
-  cs_int_t  nituse, nrtuse, nideve, nrdeve;
 
   int  _verif = -1;
   int  check_mask = 0;
   int  cwf_post = 0;
   double  cwf_threshold = -1.0;
 
-  cs_int_t  *ia = NULL;
-  cs_int_t  *ituser = NULL;
-  cs_int_t  *idevel = NULL;
-
+  cs_int_t   *ia = NULL;
   cs_real_t  *ra = NULL;
-  cs_real_t  *rtuser = NULL;
-  cs_real_t  *rdevel = NULL;
 
   /* System information */
 
@@ -428,8 +422,7 @@ cs_run(void)
 
     /* Allocate Fortran working arrays */
 
-    CS_PROCF(memini, MEMINI)(&iasize, &rasize,
-                             &nideve, &nrdeve, &nituse, &nrtuse);
+    CS_PROCF(memini, MEMINI)(&iasize, &rasize);
 
     bft_printf(_("\n"
                  " --- Main Fortran work arrays:\n"
@@ -440,26 +433,7 @@ cs_run(void)
                sizeof(cs_int_t)/sizeof(char),
                sizeof(cs_real_t)/sizeof(char));
 
-    if (nideve > 0 || nrdeve >0)
-      bft_printf(_("\n"
-                   " --- Developer Fortran work arrays:\n"
-                   "       nideve =   %10d (Number of integer)\n"
-                   "       nrdeve =   %10d (Number of reals)\n"),
-                 nideve, nrdeve);
-
-    bft_printf(_("\n"
-                 " --- User Fortran work arrays:\n"
-                 "       nituse =   %10d (Number of integers)\n"
-                 "       nrtuse =   %10d (Number of reals)\n\n"),
-               nituse, nrtuse);
-
     cs_base_mem_init_work(iasize, rasize, &ia, &ra);
-
-    BFT_MALLOC(ituser, nituse, cs_int_t);
-    BFT_MALLOC(rtuser, nrtuse, cs_real_t);
-
-    BFT_MALLOC(idevel, nideve, cs_int_t);
-    BFT_MALLOC(rdevel, nrdeve, cs_real_t);
 
     /* Initialize gradient computation */
 
@@ -474,10 +448,7 @@ cs_run(void)
      * Call main calculation function (code Kernel)
      *----------------------------------------------*/
 
-    CS_PROCF(caltri, CALTRI)(&_verif,
-                             &nideve, &nrdeve, &nituse, &nrtuse,
-                             idevel, ituser, ia,
-                             rdevel, rtuser, ra);
+    CS_PROCF(caltri, CALTRI)(&_verif, ia, ra);
 
     /* Finalize sparse linear systems resolution */
 
@@ -492,12 +463,6 @@ cs_run(void)
 
     BFT_FREE(ia);
     BFT_FREE(ra);
-
-    BFT_FREE(ituser);
-    BFT_FREE(rtuser);
-
-    BFT_FREE(idevel);
-    BFT_FREE(rdevel);
 
   }
 

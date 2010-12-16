@@ -30,12 +30,11 @@ subroutine recvmc &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rom    , flumas , flumab ,                                     &
    ux     , uy     , uz     ,                                     &
    bx     , by     , bz     , cocg   ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -54,10 +53,6 @@ subroutine recvmc &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rom(ncelet       ! tr ! <-- ! masse volumique aux cellules                   !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
@@ -67,8 +62,6 @@ subroutine recvmc &
 ! bx,y,z(ncelet    ! tr ! --- ! tableau de travail                             !
 ! cocg             ! tr ! --- ! tableau de travail                             !
 !   (ncelet,3,3    !    !     !                                                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -93,16 +86,15 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision rom(ncelet)
 double precision flumas(nfac), flumab(nfabor)
 double precision ux  (ncelet), uy  (ncelet), uz  (ncelet)
 double precision bx(ncelet),   by(ncelet),   bz(ncelet)
 double precision cocg(ncelet,3,3)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

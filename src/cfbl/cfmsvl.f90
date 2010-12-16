@@ -30,9 +30,9 @@ subroutine cfmsvl &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
@@ -42,7 +42,6 @@ subroutine cfmsvl &
    w7     , w8     , w9     , w10    , w11    , w12    ,          &
    wflmas , wflmab ,                                              &
    coefu  ,                                                       &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -65,8 +64,6 @@ subroutine cfmsvl &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
 !                  !    !     !  (0 : non , 1 : oui)                           !
@@ -74,8 +71,6 @@ subroutine cfmsvl &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -103,8 +98,6 @@ subroutine cfmsvl &
 ! wflmas(nfac)     ! tr ! --- ! tableau de w flux de masse aux faces           !
 ! wflmab(nfabor    ! tr ! --- ! tableau de w flux de masse aux bords           !
 ! coefu(nfabo,3    ! tr ! --- ! tableau de travail cl de la qdm                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -141,12 +134,10 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iscal
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -164,7 +155,6 @@ double precision w7(ncelet) , w8(ncelet) , w9(ncelet)
 double precision w10(ncelet), w11(ncelet), w12(ncelet)
 double precision wflmas(nfac), wflmab(nfabor)
 double precision coefu(nfabor,3)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -270,9 +260,9 @@ call cfmsgs                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wflmas , wflmab , ra(iwfabg) , ra(iwfbbg) ,                    &
@@ -280,7 +270,6 @@ call cfmsgs                                                       &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , w10    , w11    , w12    ,          &
    viscf  , viscb  , coefu  , xam    ,                            &
-   rdevel , rtuser ,                                              &
    ra     )
 
 
@@ -305,17 +294,16 @@ if(ircflp.gt.0) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,ivar)    ,                                              &
    coefa(1,iclrtp(ivar,icoef)) , coefb(1,iclrtp(ivar,icoef)) ,    &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
   else
     do ii = 1, ncelet
@@ -442,14 +430,13 @@ call cfmsvs                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
-   idevel , ituser , ia     ,                                     &
+   iscal  ,                                                       &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    viscf  , viscb  ,                                              &
 !        ------   ------
    w1     , w9     , w10    ,                                     &
-   rdevel , rtuser ,                                              &
    ra     )
 
 
@@ -502,14 +489,13 @@ call codits                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
@@ -519,7 +505,7 @@ call codits                                                       &
    dam    , xam    , drtp   ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 5. IMPRESSIONS ET CLIPPINGS
@@ -545,12 +531,11 @@ call clpsca                                                       &
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w7     , w8     , w9     , w10    ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! --- Bilan explicite (voir codits : on enleve l'increment)
@@ -593,12 +578,11 @@ call cfbsc3                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      wflmas          , wflmab          ,          &
@@ -606,7 +590,7 @@ call cfbsc3                                                       &
    propfa(1,iflmas), propfb(1,iflmab),                            &
 !        ----------------  ----------------
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !     Si ICONV = 0, le terme convectif n'est pas traite par CFBSC3
@@ -643,13 +627,12 @@ if(igrdpp(iphas).gt.0) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    rtp(1,ipr(iphas))        , w8     , w9     , w10    ,          &
 !        -----------------
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 9. COMMUNICATION DE LA PRESSION

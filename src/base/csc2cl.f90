@@ -31,15 +31,14 @@ subroutine csc2cl &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    nvcp   , nvcpto , nfbcpl , nfbncp ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    icodcl , itrifb , itypfb ,                                     &
    lfbcpl , lfbncp ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
    w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    rvcpfb , pndcpl , dofcpl ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -57,8 +56,6 @@ subroutine csc2cl &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -76,8 +73,6 @@ subroutine csc2cl &
 !  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -100,8 +95,6 @@ subroutine csc2cl &
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -135,14 +128,12 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          nvcp   , nvcpto
 integer          nfbcpl , nfbncp
 
 integer          icodcl(nfabor,nvar)
 integer          lfbcpl(nfbcpl)  , lfbncp(nfbncp)
 integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -155,7 +146,6 @@ double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision coefu(nfabor,ndim)
 double precision rvcpfb(nfbcpl,nvcpto), pndcpl(nfbcpl)
 double precision dofcpl(3,nfbcpl)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -213,17 +203,16 @@ do ivar = 1, nvcp
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w4     , w4     , w4     ,                                     &
    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
   ! For a specific face to face coupling, geometric assumptions are made

@@ -87,15 +87,7 @@ extern void CS_PROCF (autmgr, AUTMGR)
 extern void CS_PROCF (caltri, CALTRI)
 (
  const cs_int_t   *iverif,   /* <-- activate elementary tests */
- const cs_int_t   *nideve,   /* <-- size of IDEVEL integer array */
- const cs_int_t   *nrdeve,   /* <-- size of rdevel floating-point array */
- const cs_int_t   *nituse,   /* <-- size of ITUSER integer array */
- const cs_int_t   *nrtuse,   /* <-- size of RTUSER floating-point array */
- cs_int_t         *idevel,   /* --> IDEVEL integer array */
- cs_int_t         *ituser,   /* --> ITUSER integer array */
  cs_int_t         *ia,       /* --> IA integer array */
- cs_real_t        *rdevel,   /* --> RDEVEL floating-point array */
- cs_real_t        *rtuser,   /* --> RTUSER floating-point array */
  cs_real_t        *ra        /* --> RA floating-point array */
 );
 
@@ -214,16 +206,10 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_int_t  *ncelps,    /* <-- number of post-processed cells */
  const cs_int_t  *nfacps,    /* <-- number of post processed interior faces */
  const cs_int_t  *nfbrps,    /* <-- number of post processed boundary faces */
- const cs_int_t  *nideve,    /* <-- size of IDEVEL integer array */
- const cs_int_t  *nrdeve,    /* <-- size of rdevel floating-point array */
- const cs_int_t  *nituse,    /* <-- size of ITUSER integer array */
- const cs_int_t  *nrtuse,    /* <-- size of RTUSER floating-point array */
  const cs_int_t   itypps[3], /* <-- flag (0 or 1) for presence of cells, */
  const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
  const cs_int_t   lstfac[],  /* <-- list of post-processed interior faces */
  const cs_int_t   lstfbr[],  /* <-- list of post-processed boundary faces */
- const cs_int_t   idevel[],  /* <-- IDEVEL integer array */
- cs_int_t         ituser[],  /* <-- ITUSER integer array */
  cs_int_t         ia[],      /* <-- IA integer array */
  const cs_real_t  dt[],      /* <-- local time step */
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
@@ -239,8 +225,6 @@ extern void CS_PROCF (dvvpst, DVVPST)
  cs_real_t        tracel[],  /* --- work array for output cells */
  cs_real_t        trafac[],  /* --- work array for output interior faces */
  cs_real_t        trafbr[],  /* --- work array for output boundary faces */
- const cs_real_t  rdevel[],  /* <-- RDEVEL floating-point array */
- cs_real_t        rtuser[],  /* <-- RTUSER floating-point array */
  cs_real_t        ra[]       /* <-- RA floating-point array */
 );
 
@@ -497,11 +481,7 @@ extern void CS_PROCF (majgeo, MAJGEO)
 extern void CS_PROCF (memini, MEMINI)
 (
  cs_int_t  *iasize,         /* --- size of IA integer array */
- cs_int_t  *rasize,         /* --- size of RA integer array */
- cs_int_t  *nideve,         /* --- size of IDEVEL integer array */
- cs_int_t  *nrdeve,         /* --- size of rdevel floating-point array */
- cs_int_t  *nituse,         /* --- size of ITUSER integer array */
- cs_int_t  *nrtuse          /* --- size of RTUSER floating-point array */
+ cs_int_t  *rasize          /* --- size of RA integer array */
 );
 
 /*----------------------------------------------------------------------------
@@ -567,18 +547,12 @@ void CS_PROCF (usmpst, USMPST)
  cs_int_t        *ncelps,    /* <-> number of post-processed cells */
  cs_int_t        *nfacps,    /* <-> number of post processed interior faces */
  cs_int_t        *nfbrps,    /* <-> number of post processed boundary faces */
- const cs_int_t  *nideve,    /* <-- size of IDEVEL integer array */
- const cs_int_t  *nrdeve,    /* <-- size of rdevel floating-point array */
- const cs_int_t  *nituse,    /* <-- size of ITUSER integer array */
- const cs_int_t  *nrtuse,    /* <-- size of RTUSER floating-point array */
  cs_int_t        *imodif,    /* <-> 1 if mesh is modified, 0 otherwise */
  const cs_int_t   itypps[3], /* <-- flag (0 or 1) for presence of cells, */
                              /*     interior faces, and boundary faces */
  cs_int_t         lstcel[],  /* <-> list of post-processed cells */
  cs_int_t         lstfac[],  /* <-> list of post-processed interior faces */
  cs_int_t         lstfbr[],  /* <-> list of post-processed boundary faces */
- const cs_int_t   idevel[],  /* <-- IDEVEL integer array */
- cs_int_t         ituser[],  /* <-- ITUSER integer array */
  cs_int_t         ia[],      /* <-- IA integer array */
  const cs_real_t  dt[],      /* <-- local time step */
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
@@ -592,8 +566,6 @@ void CS_PROCF (usmpst, USMPST)
  cs_real_t        tracel[],  /* --- work array for output cells */
  cs_real_t        trafac[],  /* --- work array for output interior faces */
  cs_real_t        trafbr[],  /* --- work array for output boundary faces */
- const cs_real_t  rdevel[],  /* <-- RDEVEL floating-point array */
- cs_real_t        rtuser[],  /* <-- RTUSER floating-point array */
  cs_real_t        ra[]       /* <-- RA floating-point array */
 );
 
@@ -613,17 +585,11 @@ void CS_PROCF (usvpst, USVPST)
  const cs_int_t  *ncelps,    /* <-- number of post-processed cells */
  const cs_int_t  *nfacps,    /* <-- number of post processed interior faces */
  const cs_int_t  *nfbrps,    /* <-- number of post processed boundary faces */
- const cs_int_t  *nideve,    /* <-- size of IDEVEL integer array */
- const cs_int_t  *nrdeve,    /* <-- size of RDEVEL floating-point array */
- const cs_int_t  *nituse,    /* <-- size of ITUSER integer array */
- const cs_int_t  *nrtuse,    /* <-- size of RTUSER floating-point array */
  const cs_int_t   itypps[3], /* <-- flag (0 or 1) for presence of cells, */
                              /*     interior faces, and boundary faces */
  const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
  const cs_int_t   lstfac[],  /* <-- list of post-processed interior faces */
  const cs_int_t   lstfbr[],  /* <-- list of post-processed boundary faces */
- const cs_int_t   idevel[],  /* <-- IDEVEL integer array */
- cs_int_t         ituser[],  /* <-- ITUSER integer array */
  cs_int_t         ia[],      /* <-- IA integer array */
  const cs_real_t  dt[],      /* <-- local time step */
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
@@ -637,8 +603,6 @@ void CS_PROCF (usvpst, USVPST)
  cs_real_t        tracel[],  /* --- work array for output cells */
  cs_real_t        trafac[],  /* --- work array for output interior faces */
  cs_real_t        trafbr[],  /* --- work array for output boundary faces */
- const cs_real_t  rdevel[],  /* <-- RDEVEL floating-point array */
- cs_real_t        rtuser[],  /* <-- RTUSER floating-point array */
  cs_real_t        ra[]       /* <-- RA floating-point array */
 );
 

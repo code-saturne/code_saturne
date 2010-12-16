@@ -30,15 +30,14 @@ subroutine cou1do &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncp    , nfpt1d ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ientha , ifpt1d , iclt1d ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    tppt1d , tept1d , hept1d , fept1d ,                            &
    xlmbt1 , rcpt1d , dtpt1d , dt     , rtpa   ,                   &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  ,                                              &
    cpcst  , cp     , hbord  , tbord  ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -61,14 +60,10 @@ subroutine cou1do &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nfpt1d           ! e  ! <-- ! nombre de faces avec module therm 1d           !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ientha           ! e  ! <-- ! 1 si tparoi est une enthalpie                  !
 ! ifpt1d           ! te ! <-- ! numero de la face en traitement                !
 !                  !    !     ! thermique en paroi                             !
 ! iclt1d           ! te ! <-- ! type de condition limite                       !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! cpcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! cp(ncp)          ! tr ! <-- ! chaleur specifique si variable                 !
@@ -83,8 +78,6 @@ subroutine cou1do &
 ! xlmbt1           ! tr ! <-- ! diffusivite thermique                          !
 ! rcpt1d           ! tr ! <-- ! rocp                                           !
 ! dtpt1d           ! tr ! <-- ! pas de temps                                   !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -116,11 +109,10 @@ implicit none
 integer          idbia0 , idbra0
 integer          nfpt1d
 integer          nvar   , nscal  , nphas  , ncp
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          ifpt1d(nfpt1d), iclt1d(nfpt1d)
 integer          ientha
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -131,7 +123,7 @@ double precision cpcst, cp(ncp)
 double precision tppt1d(nfpt1d)
 double precision tept1d(nfpt1d), hept1d(nfpt1d), fept1d(nfpt1d)
 double precision xlmbt1(nfpt1d), rcpt1d(nfpt1d), dtpt1d(nfpt1d)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 !     VARIABLES LOCALES
 
@@ -198,17 +190,16 @@ call  uspt1d                                                      &
 !===========
  ( idbia1 , idebra ,                                              &
    nvar   , nscal  , nphas  , nfpt1d , iphas  , iappel ,          &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , ia(ils),                                              &
    ifpt1d , ia(idebia), iclt1d ,                                  &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    tppt1d , ra(idebra), ra(idebra),                               &
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &
    dt     , rtpa   ,                                              &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 iappel = 3
 call vert1d                                                       &

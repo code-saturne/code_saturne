@@ -30,17 +30,16 @@ subroutine itrgrp &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iphydp , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp , viscf  , viscb  ,                   &
    viselx , visely , viselz ,                                     &
    diverg ,                                                       &
    dpdx   , dpdy   , dpdz   , dpdxa  , dpdya  , dpdza  ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -65,8 +64,6 @@ subroutine itrgrp &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
 ! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
 !                  !    !     !              1 sinon                           !
@@ -102,8 +99,6 @@ subroutine itrgrp &
 ! dpd.(ncelet      ! tr ! --- ! tableau de travail pour le grad de p           !
 ! dpdxa,y,z        ! tr ! --- ! tableau de travail pour le grad de p           !
 !    (ncelet       !    !     !  avec decentrement amont                       !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -131,13 +126,11 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          init   , inc    , imrgra , iccocg
 integer          nswrgp , imligp
 integer          iwarnp , iphydp , nfecra
 double precision epsrgp , climgp , extrap
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
@@ -147,7 +140,7 @@ double precision diverg(ncelet)
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
 double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -242,17 +235,16 @@ if( nswrgp.gt.1 ) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
 
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
    dpdxa  , dpdya  , dpdza  ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 

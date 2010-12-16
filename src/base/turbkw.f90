@@ -30,9 +30,9 @@ subroutine turbkw &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  , ckupdc , smacel ,                   &
    s2kw   , divukw , viscf  , viscb  ,                            &
@@ -40,7 +40,7 @@ subroutine turbkw &
    drtp   , smbrk  , smbrw  , tinstk , tinstw ,                   &
    xf1    , w1     , w2     , w3     , w4     ,                   &
    w5     , w6     , w7     , w8     , w9     ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -61,15 +61,11 @@ subroutine turbkw &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -97,8 +93,6 @@ subroutine turbkw &
 ! tinst.(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! xf1(ncelet)      ! tr ! --- ! tableau de travail pour coef f1                !
 ! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -134,11 +128,10 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse , iphas
+integer          iphas
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -155,7 +148,7 @@ double precision tinstk(ncelet), tinstw(ncelet), xf1(ncelet)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -262,16 +255,15 @@ call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ikiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w7     , w7     , w7     ,                                     &
    rtpa(1,ikiph)   , coefa(1,iclikp) , coefb(1,iclikp) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w7     , w8     , xf1    ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 nswrgp = nswrgr(iomgip)
@@ -286,16 +278,15 @@ call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iomgip , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w7     , w7     , w7     ,                                     &
    rtpa(1,iomgip)  , coefa(1,iclomg) , coefb(1,iclomg) ,          &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------
    w7     , w8     , xf1    ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 do iel = 1, ncel
   w1(iel) = w1(iel)*w4(iel)+w2(iel)*w5(iel)+w3(iel)*w6(iel)
@@ -396,16 +387,15 @@ if(igrake(iphas).eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iivar  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w5     , w5     , w5     ,                                     &
    propce(1,ipcroo), propfb(1,ipbroo), viscb  ,                   &
    w2     , w3     , w4     ,                                     &
 !        ------   ------   ------
    w5     , w6     , w7     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !      Production et terme de gravite
@@ -450,10 +440,10 @@ call ustskw                                                       &
 !==========
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+   iphas  ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel , s2kw   , divukw ,          &
    w1     , w2     , xf1    ,                                     &
@@ -461,7 +451,7 @@ call ustskw                                                       &
 !        ------   ------   ------   ------
    viscf  , viscb  , xam    , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , drtp   ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 6. TERME D'ACCUMULATION DE MASSE -(dRO/dt)*Volume
@@ -615,11 +605,11 @@ if (ikecou(iphas).eq.1) then
     call viscfa                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse , imvisf ,                   &
-   idevel , ituser , ia     ,                                     &
+   imvisf ,                                                       &
+   ia     ,                                                       &
    w7     ,                                                       &
    viscf  , viscb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
   else
 
@@ -653,12 +643,11 @@ if (ikecou(iphas).eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
@@ -666,7 +655,7 @@ if (ikecou(iphas).eq.1) then
    w5  ,                                                          &
 !        --
    w7     , w8     , w1     , tinstk , tinstw , drtp ,            &
-   rdevel , rtuser , ra     )
+   ra     )
 
   if (iwarni(ivar).ge.2) then
     isqrt = 1
@@ -695,11 +684,11 @@ if (ikecou(iphas).eq.1) then
     call viscfa                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse , imvisf ,                   &
-   idevel , ituser , ia     ,                                     &
+   imvisf ,                                                       &
+   ia     ,                                                       &
    w7     ,                                                       &
    viscf  , viscb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
   else
 
@@ -733,12 +722,11 @@ if (ikecou(iphas).eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
@@ -746,7 +734,7 @@ if (ikecou(iphas).eq.1) then
    w6  ,                                                          &
 !        --
    w7     , w8     , w1     , tinstk , tinstw , drtp ,            &
-   rdevel , rtuser , ra     )
+   ra     )
 
   if (iwarni(ivar).ge.2) then
     isqrt = 1
@@ -989,11 +977,11 @@ if( idiff(ivar).ge. 1 ) then
   call viscfa                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse , imvisf ,                   &
-   idevel , ituser , ia     ,                                     &
+   imvisf ,                                                       &
+   ia     ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 else
 
@@ -1038,14 +1026,13 @@ call codits                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
                      coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
@@ -1055,7 +1042,7 @@ call codits                                                       &
    dam    , xam    , drtp   ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! ---> Traitement de omega
@@ -1079,11 +1066,11 @@ if( idiff(ivar).ge. 1 ) then
   call viscfa                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse , imvisf ,                   &
-   idevel , ituser , ia     ,                                     &
+   imvisf ,                                                       &
+   ia     ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 else
 
@@ -1128,14 +1115,13 @@ call codits                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
                      coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
@@ -1145,7 +1131,7 @@ call codits                                                       &
    dam    , xam    , drtp   ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !===============================================================================

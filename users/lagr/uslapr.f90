@@ -36,15 +36,14 @@ subroutine uslapr &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart  ,         &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -87,8 +86,6 @@ subroutine uslapr &
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itrifb(nfabor    ! ia ! <-- ! indirection for the sorting of the             !
 !  nphas      )    !    !     ! boundary faces                                 !
 ! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
@@ -96,8 +93,6 @@ subroutine uslapr &
 ! ifrlag(nfabor    ! ia ! --> ! type of the Lagrangian boundary faces          !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
-! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
-! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! xxpart           !  r ! <-- ! x-coordinate of the particle                   !
 ! yypart           !  r ! <-- ! y-coordinate of the particle                   !
@@ -123,8 +118,6 @@ subroutine uslapr &
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
 ! (nbpmax,nvep)    !    !     !                                                !
-! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
-! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
@@ -164,11 +157,9 @@ integer          idvar  , iepart , izone  , iclass
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
-integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 
 double precision xxpart , yypart , zzpart
@@ -180,7 +171,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
 double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

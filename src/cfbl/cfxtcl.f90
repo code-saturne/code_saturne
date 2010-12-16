@@ -30,13 +30,12 @@ subroutine cfxtcl &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
    w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -57,8 +56,6 @@ subroutine cfxtcl &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -73,8 +70,6 @@ subroutine cfxtcl &
 !  (nfabor, nphas) !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -100,8 +95,6 @@ subroutine cfxtcl &
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! coefu            ! ra ! --- ! work array                                     !
 !  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -139,12 +132,11 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
 integer          izfppp(nfabor)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -154,7 +146,7 @@ double precision rcodcl(nfabor,nvar,3)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision coefu(nfabor,ndim)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -232,13 +224,12 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w5     , coefu(1,1) , w3 , w4     ,                            &
 !        ------   ---------
-   rdevel , rtuser , ra     )
+   ra     )
   endif
 
 
@@ -262,12 +253,11 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w6     , w4     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
     if(ieos(iphas).eq.1) then
       gammag = w6(1)
@@ -339,12 +329,11 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !       En outre, il faut appliquer une pre-correction pour compenser
 !        le traitement fait dans condli... Si on pouvait remplir COEFA
@@ -474,12 +463,11 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !     Pression :
@@ -558,12 +546,11 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !     Rusanov, flux de masse et type de conditions aux limites :
@@ -617,12 +604,11 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !               flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -675,12 +661,11 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     Rusanov, flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -733,12 +718,11 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     Rusanov, flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -853,13 +837,12 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ifac   , iphas  ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    gammag ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
       endif
 

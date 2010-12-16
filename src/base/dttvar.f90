@@ -30,14 +30,14 @@ subroutine dttvar &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iwarnp ,                   &
+   iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  , dam    , cofbdt , w1     , w2     , w3     , &
    coefbr , grarox , graroy , graroz , wcf    ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -63,15 +63,11 @@ subroutine dttvar &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -93,8 +89,6 @@ subroutine dttvar &
 ! w1,2,3(ncelet    ! tr ! --- ! tableaux de travail                            !
 ! graro.(ncelet    ! tr ! --- ! tableaux de travail (iptlro=1)                 !
 ! coefbr(nfabor    ! tr ! --- ! tableau de travail (iptlro=1)                  !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -130,11 +124,10 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse , iwarnp
+integer          iwarnp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -152,7 +145,7 @@ double precision coefbr(nfabor)
 double precision grarox(ncelet),graroy(ncelet),graroz(ncelet)
 !   Attention, WCF n'est defini qu'en compressible
 double precision wcf(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -245,16 +238,16 @@ enddo
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iwarnp ,                   &
+   iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wcf    ,                                                       &
 !        ---
    viscf  , viscb  , cofbdt , w1     , w2     , dam    ,          &
    grarox , graroy , graroz ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -276,11 +269,11 @@ if( idiff(iuiph).ge. 1 ) then
   call viscfa                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse , imvisf ,                   &
-   idevel , ituser , ia     ,                                     &
+   imvisf ,                                                       &
+   ia     ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 else
   do ifac = 1, nfac
@@ -326,16 +319,15 @@ if (idtvar.ge.0) then
     !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iivar  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom), coefbr ,                   &
    grarox , graroy , graroz ,                                     &
 !        ------   ------   ------
    w1     , w2     , dam    ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
     do iel = 1, ncel
       w3(iel) = (grarox(iel)*gx + graroy(iel)*gy + graroz(iel)*gz)&
@@ -373,12 +365,11 @@ if (idtvar.ge.0) then
       call matrdt                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iconv(iuiph)    , idiff0          , isym   ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    ,                                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
       do iel = 1, ncel
         rom = propce(iel,ipcrom)
@@ -428,12 +419,11 @@ if (idtvar.ge.0) then
       call matrdt                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iconv0          , idiff(iuiph)    , isym   ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    ,                                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
       do iel = 1, ncel
         rom = propce(iel,ipcrom)
@@ -666,12 +656,11 @@ if (idtvar.ge.0) then
     call matrdt                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iconv(iuiph)    , idiff0          , isym   ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    ,                                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
     do iel = 1, ncel
       rom = propce(iel,ipcrom)
@@ -753,12 +742,11 @@ if (idtvar.ge.0) then
     call matrdt                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iconv0          , idiff(iuiph)    , isym   ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    ,                                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
     do iel = 1, ncel
       rom = propce(iel,ipcrom)
@@ -844,12 +832,11 @@ if (idtvar.ge.0) then
     call matrdt                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iconv(iuiph)    , idiff(iuiph)    , isym   ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    ,                                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
     do iel = 1, ncel
       rom = propce(iel,ipcrom)
@@ -989,12 +976,12 @@ else
   call matrdt                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iconv(iuiph)    , idiff(iuiph)    , isym,                      &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    coefb(1,iuiph)  , propfa(1,iflmas), propfb(1,iflmab),          &
                                                 viscf  , viscb  , &
-   dt     , rdevel , rtuser , ra )
+   dt     ,                                                       &
+   ra     )
 
   do iel = 1, ncel
     dt(iel) = relaxv(iuiph)*propce(iel,ipcrom)                    &

@@ -29,10 +29,9 @@ subroutine calmom &
 !================
 
  ( idbia0 , idbra0 , ncel   , ncelet ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtp    , dt     , propce ,                                     &
-   rdevel , rtuser , ra )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -49,17 +48,11 @@ subroutine calmom &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
 ! (ncelet,*   )    !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -84,11 +77,9 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0 , ncel   , ncelet
-integer          nideve , nrdeve , nituse , nrtuse
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 double precision rtp(ncelet,*) , dt(ncelet), propce(ncelet,*)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

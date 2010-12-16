@@ -30,17 +30,16 @@ subroutine bilsc2 &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscf  , viscb  ,                            &
    smbrp  ,                                                       &
    dpdx   , dpdy   , dpdz   , dpdxa  , dpdya  , dpdza  ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -71,8 +70,6 @@ subroutine bilsc2 &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! idtvar           ! e  ! <-- ! indicateur du schema temporel                  !
 ! ivar             ! e  ! <-- ! numero de la variable                          !
 ! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
@@ -108,8 +105,6 @@ subroutine bilsc2 &
 !                  !    !     !   totalement centre en temps (mixage           !
 !                  !    !     !   entre crank-nicolson et adams-               !
 !                  !    !     !   bashforth)                                   !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! te ! --- ! macro tableau entier                           !
 ! pvar (ncelet     ! tr ! <-- ! variable resolue (instant courant)             !
 ! pvar (ncelet     ! tr ! <-- ! variable resolue (instant precedent)           !
@@ -128,8 +123,6 @@ subroutine bilsc2 &
 !    (ncelet)      !    !     !                                                !
 ! dpdxa,ya,za      ! tr ! --- ! tableau de travail pour le grad de p           !
 !    (ncelet)      !    !     !  avec decentrement amont                       !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -159,14 +152,12 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          idtvar
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , iccocg
 integer          iwarnp , ipp
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision blencp , epsrgp , climgp, extrap, relaxp , thetap
@@ -179,7 +170,7 @@ double precision viscf (nfac), viscb (nfabor)
 double precision smbrp(ncelet)
 double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
 double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -267,16 +258,15 @@ if( (idiffp.ne.0 .and. ircflp.eq.1) .or.                          &
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dpdxa  , dpdxa  , dpdxa  ,                                     &
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
    dpdxa  , dpdya  , dpdza  ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 else
   do iel = 1, ncelet

@@ -33,14 +33,13 @@ subroutine lagpoi &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    icocel , itycel , ifrlag , itepa  ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , statis ,                                     &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -73,8 +72,6 @@ subroutine lagpoi &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! icocel           ! te ! --> ! connectivite cellules -> faces                 !
 ! (lndnod)         !    !     !    face de bord si numero negatif              !
 ! itycel           ! te ! --> ! connectivite cellules -> faces                 !
@@ -83,8 +80,6 @@ subroutine lagpoi &
 ! (nfabor)         !    !     !  pour le module lagrangien                     !
 ! itepa            ! te ! --> ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -101,8 +96,6 @@ subroutine lagpoi &
 ! statis           ! tr ! <-- ! moyennes statistiques                          !
 !(ncelet,nvlsta    !    !     !                                                !
 ! w1...w3(ncel)    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -140,11 +133,9 @@ integer          lndnod
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          ifrlag(nfabor) ,  itepa(nbpmax,nivep)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -154,7 +145,6 @@ double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
 double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -234,8 +224,7 @@ call lageqp                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , propce , propfa , propfb ,                            &
    ra(iviscf) , ra(iviscb) ,                                      &
    ra(idam) , ra(ixam) ,                                          &
@@ -247,7 +236,6 @@ call lageqp                                                       &
    w1     , w2     , w3     , ra(iw1) , ra(iw2) ,                 &
    ra(iw3) , ra(iw4) , ra(iw5) , ra(iw6) ,                        &
    ra(iw7) , ra(iw8) , ra(iw9) ,                                  &
-   rdevel , rtuser ,                                              &
    ra     )
 
 ! Calcul du gradient du Correcteur PHI
@@ -296,15 +284,14 @@ iphydp = 0
 call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(iphil) , ra(iphil) , ra(iphil)    ,                         &
    ra(iphil) , ra(icoefap) , ra(icoefbp) ,                        &
    w1       , w2    , w3 ,                                        &
    ra(iw1)  , ra(iw2) , ra(iw3) ,                                 &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! CORRECTION DES VITESSES MOYENNES ET RETOUR AU CUMUL
 

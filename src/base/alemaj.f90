@@ -30,12 +30,10 @@ subroutine alemaj &
 
  ( idbia0 , idbra0 , itrale ,                                     &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    impale ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , depale , xyzno0 ,                            &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -55,11 +53,7 @@ subroutine alemaj &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! impale(nnod)     ! te ! <-- ! indicateur de delacement impose                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -71,8 +65,6 @@ subroutine alemaj &
 !  (nfabor, *)     !    !     !                                                !
 ! depale(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
 ! xyzno0(3,nnod    ! tr ! <-- ! coordonnees noeuds maillage initial            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -106,10 +98,8 @@ implicit none
 
 integer          idbia0 , idbra0 , itrale
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          impale(nnod)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -117,7 +107,7 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision depale(nnod,3), xyzno0(3,nnod)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -193,10 +183,9 @@ call algrma
 call calgeo                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    volmin , volmax , voltot ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! Si on est a l'iteration d'initialisation, on remet les vitesses de maillage
 !   a leur valeur initiale

@@ -35,14 +35,13 @@ subroutine uslag2 &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -83,8 +82,6 @@ subroutine uslag2 &
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! maxelt           !  i ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! itrifb(nfabor    ! ia ! <-- ! indirection for the sorting of the             !
@@ -94,8 +91,6 @@ subroutine uslag2 &
 ! ifrlag(nfabor    ! ia ! --> ! type of the Lagrangian boundary faces          !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
-! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
-! ituser(nituse    ! ia ! --- ! complementary user array of integers           !
 ! ia(*)            ! ia ! <-- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! transported variables at the previous          !
@@ -112,8 +107,6 @@ subroutine uslag2 &
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
 ! (nbpmax,nvep)    !    !     !                                                !
-! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
-! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
@@ -150,12 +143,10 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          maxelt, lstelt(maxelt)
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
-integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet) , rtpa(ncelet,*)
@@ -163,7 +154,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
 double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

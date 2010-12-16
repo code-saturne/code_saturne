@@ -32,10 +32,9 @@ subroutine usctdz &
 !=================
 
  ( idbia0 , idbra0 ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
-   rdevel , rtuser , ra     )
+   ia     ,                                                       &
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -51,8 +50,6 @@ subroutine usctdz &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ia(*)            ! te ! --- ! macro tableau entier                           !
@@ -87,13 +84,10 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          maxelt, lstelt(maxelt)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

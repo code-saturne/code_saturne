@@ -30,8 +30,7 @@ subroutine lageqp &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , propce , propfa , propfb ,                            &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
@@ -40,7 +39,6 @@ subroutine lageqp &
    ul     , vl     , wl     , alphal , phia   , phi    ,          &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10     , w11    , w12 ,   &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -64,10 +62,6 @@ subroutine lageqp &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -90,8 +84,6 @@ subroutine lageqp &
 ! phi , phia       ! tr ! --> ! terme de correction en n et n-1                !
 ! (ncelet)         !    !     !                                                !
 ! w1..w9(ncelet    ! tr ! --- ! tableaux de travail                            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -124,9 +116,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision ul(ncelet), vl(ncelet), wl(ncelet)
@@ -143,7 +133,6 @@ double precision w1(ncelet),  w2(ncelet),  w3(ncelet)
 double precision w4(ncelet),  w5(ncelet),  w6(ncelet)
 double precision w7(ncelet),  w8(ncelet),  w9(ncelet)
 double precision w10(ncelet), w11(ncelet), w12(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -197,11 +186,11 @@ enddo
   call viscfa                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse , imvisf ,                   &
-   idevel , ituser , ia     ,                                     &
+   imvisf ,                                                       &
+   ia     ,                                                       &
    alphal ,                                                       &
    viscf  , viscb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! CALCUL  de div(Alpha Up) avant correction
 
@@ -245,15 +234,13 @@ call diverv                                                       &
 !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     ,                                                       &
    smbrs  , w1     , w2     , w3     ,                            &
    ra(icoefax) , ra(icoefay) , ra(icoefaz) ,                      &
    ra(icoefbx) , ra(icoefby) , ra(icoefbz) ,                      &
    w4     , w5     , w6     , w7     , w8     ,                   &
    w9     , w10    , w11    , w12    ,                            &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !      On libere la place dans RA
@@ -379,14 +366,13 @@ call codits                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    phia   , phia   , ra(icefap) , ra(icefbp) ,                    &
              ra(icefap) , ra(icefbp) ,                            &
              fmala       , fmalb       ,                          &
@@ -395,7 +381,7 @@ call codits                                                       &
    dam    , xam    , drtp   ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !--------

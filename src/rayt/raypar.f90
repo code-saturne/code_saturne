@@ -30,14 +30,12 @@ subroutine raypar &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb ,                                                       &
    icodcl , isothp , izfrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    tmin   , tmax   , tx     ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
-   rdevel , rtuser ,                                              &
    tparop , qincip , textp  , tintp  ,                            &
    xlamp  , epap   , epsp   ,                                     &
    hfconp , flconp , tempkp ,                                     &
@@ -63,8 +61,6 @@ subroutine raypar &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iphas            ! i  ! <-- ! phase number                                   !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
@@ -77,8 +73,6 @@ subroutine raypar &
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! isothp(nfabor    ! te ! <-- ! liste des frontieres isothermes                !
 ! izfrap(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -114,8 +108,6 @@ subroutine raypar &
 !                  !    !     ! faces de bord                                  !
 ! flconp(nfabor    ! tr ! <-- ! densite de flux convectif aux faces            !
 ! tempkp(ncelet    ! tr ! <-- ! temperature en kelvin                          !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -149,10 +141,9 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , iphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypfb(nfabor)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 integer          isothp(nfabor), izfrap(nfabor)
 integer          icodcl(nfabor,nvar)
@@ -170,7 +161,7 @@ double precision xlamp(nfabor), epap(nfabor), epsp(nfabor)
 double precision hfconp(nfabor) , flconp(nfabor)
 double precision tempkp(ncelet)
 
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 
 ! Local variables

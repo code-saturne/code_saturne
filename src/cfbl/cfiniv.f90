@@ -30,11 +30,10 @@ subroutine cfiniv &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -85,12 +84,8 @@ subroutine cfiniv &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
@@ -100,8 +95,6 @@ subroutine cfiniv &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -134,15 +127,14 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          maxelt, lstelt(maxelt)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -174,7 +166,6 @@ idebra = idbra0
 call memcfv                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iwcel1 , iwcel2 , iwcel3 , iwcel4 ,                            &
    ifinia , ifinra )
 
@@ -208,12 +199,11 @@ if ( isuite.eq.0 ) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4),                &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     On initialise la diffusivite thermique
       visls0(ienerg(iphas)) = visls0(itempk(iphas))/cv0(iphas)
@@ -248,12 +238,11 @@ if ( isuite.eq.0 ) then
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4),                &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! ----- Initialisation des proprietes physiques ROM et ROMB
 
@@ -308,12 +297,11 @@ else
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4),                &
-   rdevel , rtuser , ra     )
+   ra     )
 
     enddo
 

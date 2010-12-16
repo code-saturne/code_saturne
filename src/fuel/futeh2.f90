@@ -28,8 +28,8 @@
 subroutine futeh2 &
 !================
 
- ( ncelet , ncel   , nrtuse ,                                     &
-   rtp    , propce , rtuser )
+ ( ncelet , ncel   ,                                              &
+   rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -79,9 +79,8 @@ implicit none
 
 ! Arguments
 
-integer          ncelet, ncel , nrtuse
+integer          ncelet, ncel
 double precision rtp(ncelet,*), propce(ncelet,*)
-double precision rtuser(nrtuse)
 
 ! Local variables
 

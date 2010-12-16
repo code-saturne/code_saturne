@@ -30,15 +30,14 @@ subroutine grdcel &
 
  ( idbia0 , idbra0 ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
    dpdxa  , dpdya  , dpdza  ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -54,8 +53,6 @@ subroutine grdcel &
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ivar             ! e  ! <-- ! numero de la variable                          !
 !                  !    !     !   destine a etre utilise pour la               !
 !                  !    !     !   periodicite uniquement (pering)              !
@@ -88,8 +85,6 @@ subroutine grdcel &
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! pvar  (ncelet    ! tr ! <-- ! variable (pression)                            !
 ! coefap,coefbp    ! tr ! <-- ! tableaux des cond lim pour pvar                !
@@ -99,8 +94,6 @@ subroutine grdcel &
 ! dpdx,dpdy        ! tr ! --> ! gradient de pvar                               !
 ! dpdz (ncelet     !    !     !                                                !
 ! dpdxa (ncelet    ! tr ! --- ! tableau de travail pour le grad de p           !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -128,19 +121,17 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          ivar   , imrgra , inc    , iccocg , nswrgp
 integer          imligp ,iwarnp  , iphydp , nfecra
 double precision epsrgp , climgp , extrap
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
 double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

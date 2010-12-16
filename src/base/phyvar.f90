@@ -30,14 +30,13 @@ subroutine phyvar &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , w10    , w11    , w12    ,          &
    xmij   ,                                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -57,10 +56,6 @@ subroutine phyvar &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -72,8 +67,6 @@ subroutine phyvar &
 !  (nfabor, *)     !    !     !                                                !
 ! w1..12(ncelet    ! tr ! --- ! tableau de travail                             !
 ! xmij(ncelet,6    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -112,9 +105,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -125,7 +116,7 @@ double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
 double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
 double precision w9(ncelet),w10(ncelet),w11(ncelet),w12(ncelet)
 double precision xmij(ncelet,6)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -171,13 +162,11 @@ if(iperot.gt.0) then
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , iph    ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser ,                                              &
    ra(idudxy) ,                                                   &
    ra     )
 
@@ -193,13 +182,11 @@ if(iperot.gt.0) then
       !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , iph    ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser ,                                              &
    ra(idrdxy) ,                                                   &
    ra     )
 
@@ -225,14 +212,14 @@ if (ippmod(iphpar).ge.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , nphmx  ,                   &
+   nphmx  ,                                                       &
    ibrom  ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -244,15 +231,15 @@ if (imatis.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , nphmx  ,                   &
+   nphmx  ,                                                       &
    ibrom  ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 else
 
@@ -273,15 +260,15 @@ else
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , nphmx  ,                   &
+   nphmx  ,                                                       &
    ibrom  ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -383,14 +370,14 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc(iphas) , ncetsm(iphas) ,                                &
-   nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+   iph    ,                                                       &
    ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
   elseif (itytur(iphas).eq.2) then
 
@@ -438,15 +425,15 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc(iphas) , ncetsm(iphas) ,                                &
-   nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+   iph    ,                                                       &
    ia(iicepd(iphas)) ,                                            &
    ia(iicesm(iphas)) , ia(iitpsm(iphas)),                         &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
   elseif(iturb(iphas).eq.41) then
 
@@ -460,16 +447,16 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc(iphas) , ncetsm(iphas) ,                                &
-   nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+   iph    ,                                                       &
    ia(iicepd(iphas)) ,                                            &
    ia(iicesm(iphas)) , ia(iitpsm(iphas)),                         &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
    propce(1,ipproc(ismago(iphas))) ,                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     , w10    , xmij   , &
-   rdevel , rtuser , ra     )
+   ra     )
 
   elseif (iturb(iphas).eq.42) then
 
@@ -483,16 +470,16 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc(iphas) , ncetsm(iphas) ,                                &
-   nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+   iph    ,                                                       &
    ia(iicepd(iphas)) ,                                            &
    ia(iicesm(iphas)) , ia(iitpsm(iphas)),                         &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
    w9     , w10    , w11    , w12    ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
   elseif (iturb(iphas).eq.50) then
 
@@ -528,15 +515,15 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc(iphas) , ncetsm(iphas) ,                                &
-   nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+   iph    ,                                                       &
    ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
    ra(is2kw(iphas)), ra(idvukw(iphas)),                           &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -555,14 +542,14 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc(iphas)   , ncetsm(iphas)   ,                            &
-   nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+   iph    ,                                                       &
    ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 enddo
 
@@ -623,14 +610,13 @@ if (iale.eq.1.and.ntcabs.eq.0) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , propce(1,ipproc(ivisma(1))) ,                &
    propce(1,ipproc(ivisma(2))) , propce(1,ipproc(ivisma(3))) ,    &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 

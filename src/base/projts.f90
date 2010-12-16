@@ -30,16 +30,15 @@ subroutine projts &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    init   , inc    , imrgra , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    coefbp ,                                                       &
    flumas , flumab , viscf  , viscb  ,                            &
    viselx , visely , viselz ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -64,8 +63,6 @@ subroutine projts &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
 ! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
 !                  !    !     !              1 sinon                           !
@@ -84,14 +81,10 @@ subroutine projts &
 ! epsrgu           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgu           ! r  ! <-- ! coef gradient*distance/ecart                   !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! coefbp(nfabor    ! tr ! <-- ! tableaux des cond lim de pression              !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -117,13 +110,12 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          init   , inc    , imrgra , iccocg
 integer          nswrgu , imligu
 integer          iwarnu , nfecra
 double precision epsrgu , climgu
 
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision pond
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
@@ -131,7 +123,7 @@ double precision viscf(nfac), viscb(nfabor)
 double precision viselx(ncelet), visely(ncelet), viselz(ncelet)
 double precision coefbp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

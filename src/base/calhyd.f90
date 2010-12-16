@@ -30,9 +30,9 @@ subroutine calhyd &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+   iphas  ,                                                       &
    indhyd ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    dfextx , dfexty , dfextz ,                                     &
    phydr  , flumas , flumab ,                                     &
@@ -42,7 +42,7 @@ subroutine calhyd &
    drtp   , smbr   ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , w10    ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -61,11 +61,7 @@ subroutine calhyd &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! phase number                                   !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! indhyd           ! e  ! --> ! indicateur de mise a jour de phydr             !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -86,8 +82,6 @@ subroutine calhyd &
 ! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbr  (ncelet    ! tr ! --- ! tableau de travail pour sec mem                !
 ! w1..10(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -120,11 +114,9 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse , iphas
-
+integer          iphas
 
 integer          indhyd
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
@@ -140,7 +132,7 @@ double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision w10(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -258,11 +250,11 @@ enddo
 call viscfa                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse , imvisf ,                   &
-   idevel , ituser , ia     ,                                     &
+   imvisf ,                                                       &
+   ia     ,                                                       &
    w10    ,                                                       &
    viscf  , viscb  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 iconvp = 0
@@ -302,17 +294,16 @@ call projts                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dfextx , dfexty , dfextz ,                                     &
    coefb     ,                                                    &
    flumas, flumab ,                                               &
    viscf  , viscb  ,                                              &
    w10    , w10    , w10    ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 init = 1
 call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
@@ -407,15 +398,14 @@ do isweep = 1, nswmpr
   call invers                                                     &
   !==========
  ( chaine(1:8)     , idebia , idebra ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    isym   , ipol   , ireslp , nitmap , imgrp  ,                   &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dam    , xam    , smbr   , drtp   ,                            &
    w3     , w4     , w5     , w6     , w8     , w9     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
   if( isweep.eq.nswmpr ) then
@@ -451,11 +441,10 @@ do isweep = 1, nswmpr
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dfextx , dfexty , dfextz ,                                     &
    phydr  ,                                                       &
    coefa  , coefb  ,                                              &
@@ -463,7 +452,7 @@ do isweep = 1, nswmpr
    w10         , w10         , w10         ,                      &
    smbr   ,                                                       &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 

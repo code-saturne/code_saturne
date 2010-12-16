@@ -31,10 +31,11 @@ subroutine lageli &
 !      -------------------------------------------------
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npars  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   itepa  , idevel , ituser , ia     ,                            &
+   itepa  ,                                                       &
+   ia     ,                                                       &
    dnpars ,                                                       &
-   ettp   , ettpa  , tepa   , rdevel , rtuser , ra )
+   ettp   , ettpa  , tepa   ,                                     &
+   ra     )
 !      -------------------------------------------------
 !===============================================================================
 ! FONCTION :
@@ -58,12 +59,8 @@ subroutine lageli &
 ! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! npars            ! e  ! --> ! nombre max de particules sorties               !
 !                  !    !     !   eliminees                                    !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dnpars           ! e  ! --> ! nombre max de particules sorties               !
 !                  !    !     !   eliminees  (poids stat inclus)               !
@@ -73,8 +70,6 @@ subroutine lageli &
 !  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -104,15 +99,13 @@ implicit none
 
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          npars
-integer          nideve , nrdeve , nituse , nrtuse
 integer          itepa(nbpmax,nivep)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dnpars
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 !  VARIABLES LOCALES
 

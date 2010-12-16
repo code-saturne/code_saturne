@@ -28,8 +28,7 @@
 subroutine memini &
 !================
 
- ( longia , longra ,                                              &
-   nideve , nrdeve , nituse , nrtuse )
+ ( longia , longra )
 
 !===============================================================================
 !  FONCTION
@@ -44,8 +43,6 @@ subroutine memini &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! longia longra    ! e  ! <-- ! longueur de ia     ra                          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -71,7 +68,6 @@ implicit none
 ! Arguments
 
 integer longia , longra
-integer nideve , nrdeve , nituse , nrtuse
 
 ! Local variables
 
@@ -88,16 +84,6 @@ integer icoftu(8)
 
 longia = 0
 longra = 0
-
-! --- Dimension des tableaux utilisateurs et developpeurs
-!      supplementaires (entiers et reels) generalement un multiple
-!      de NCEL, NFABOR ...
-
-nideve = 0
-nrdeve = 0
-
-nituse = 0
-nrtuse = 0
 
 do ii = 1, 8
   icoftu(ii) = 0
@@ -123,11 +109,9 @@ endif
 !   - Sous-programme utilisateur
 !     ==========================
 
-call ustbtr                                                       &
+call ustbtr  &
 !==========
- ( ncel   , ncelet , nfac   , nfabor , nnod  ,                    &
-   longia , longra ,                                              &
-   nideve , nituse , nrdeve , nrtuse )
+ ( ncel   , ncelet , nfac   , nfabor , nnod  ,  longia , longra )
 
 
 !===============================================================================
@@ -142,23 +126,6 @@ if (longia.lt.0) then
 endif
 if (longra.lt.0) then
   WRITE(NFECRA,1000)'LONGRA',LONGIA
-  iok = iok + 1
-endif
-
-if (nideve.lt.0) then
-  WRITE(NFECRA,1000)'NIDEVE',NIDEVE
-  iok = iok + 1
-endif
-if (nrdeve.lt.0) then
-  WRITE(NFECRA,1000)'NRDEVE',NRDEVE
-  iok = iok + 1
-endif
-if (nituse.lt.0) then
-  WRITE(NFECRA,1000)'NITUSE',NITUSE
-  iok = iok + 1
-endif
-if (nrtuse.lt.0) then
-  WRITE(NFECRA,1000)'NRTUSE',NRTUSE
   iok = iok + 1
 endif
 

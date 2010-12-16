@@ -35,13 +35,12 @@ subroutine uslaed &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  , ibord  ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
    auxl1  , auxl2  , auxl3  , w1     , w2     , w3     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose :
@@ -99,14 +98,10 @@ subroutine uslaed &
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
 ! ibord            ! ia ! <-- ! number of the boundary face of part./wall      !
 !   (nbpmax)       !    !     ! interaction                                    !
-! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
-! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! ra ! <-- ! transported variables at the current           !
@@ -134,8 +129,6 @@ subroutine uslaed &
 ! auxl2(nbpmax)    ! ra ! --- ! work array                                     !
 ! auxl3(nbpmax)    ! ra ! --- ! work array                                     !
 ! w1..w3(ncelet    ! ra ! --- ! work arrays                                    !
-! rdevel(nrdeve    ! ra ! <-- ! dev complementary array of reals               !
-! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
@@ -169,10 +162,8 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itepa(nbpmax,nivep)  , ibord(nbpmax)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*)
@@ -184,7 +175,6 @@ double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
 double precision auxl1(nbpmax), auxl2(nbpmax), auxl3(nbpmax)
 double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

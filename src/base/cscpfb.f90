@@ -31,15 +31,14 @@ subroutine cscpfb &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    nptdis , ityloc , nvcp   , numcpl , nvcpto,                    &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    locpts ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    coopts , djppts , pndpts ,                                     &
    rvdis  , dofpts ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -89,10 +88,8 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nptdis , nvcp   , numcpl , nvcpto , ityloc
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          locpts(nptdis)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 
@@ -105,7 +102,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision coopts(3,nptdis), djppts(3,nptdis)
 double precision pndpts(nptdis), dofpts(3,nptdis)
 double precision rvdis(nptdis,nvcpto)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -254,17 +251,16 @@ do iphas = 1, nphas
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,ipriph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
     ! For a specific face to face coupling, geometric assumptions are made
 
@@ -375,17 +371,16 @@ do iphas = 1, nphas
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
     ! For a specific face to face coupling, geometric assumptions are made
@@ -512,17 +507,16 @@ do iphas = 1, nphas
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
     ! For a specific face to face coupling, geometric assumptions are made
@@ -585,17 +579,16 @@ do iphas = 1, nphas
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
     ! For a specific face to face coupling, geometric assumptions are made
@@ -708,17 +701,16 @@ do iphas = 1, nphas
         !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
         do ipt = 1, nptdis
@@ -857,17 +849,16 @@ do iphas = 1, nphas
       !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
       if (isou.eq.1) itrav = itrav1
       if (isou.eq.2) itrav = itrav2
@@ -938,17 +929,16 @@ do iphas = 1, nphas
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
     ! For a specific face to face coupling, geometric assumptions are made
@@ -1116,17 +1106,16 @@ do iphas = 1, nphas
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
     ! For a specific face to face coupling, geometric assumptions are made
@@ -1189,17 +1178,16 @@ do iphas = 1, nphas
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
     ! For a specific face to face coupling, geometric assumptions are made
@@ -1262,17 +1250,16 @@ do iphas = 1, nphas
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     iphiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,iphiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
     do ipt = 1, nptdis
@@ -1312,17 +1299,16 @@ do iphas = 1, nphas
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ifbiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,ifbiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
     ! For a specific face to face coupling, geometric assumptions are made
@@ -1446,17 +1432,16 @@ do iphas = 1, nphas
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
     ! For a specific face to face coupling, geometric assumptions are made
@@ -1519,17 +1504,16 @@ do iphas = 1, nphas
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     iomiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,iomiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
     ! For a specific face to face coupling, geometric assumptions are made
 
@@ -1662,17 +1646,16 @@ do iphas = 1, nphas
         !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
         do ipt = 1, nptdis
@@ -1783,17 +1766,16 @@ if (nscal.gt.0) then
     !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     w4     , w4     , w4     ,                                    &
     rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,         &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     w4     , w5     , w6     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
     ! For a specific face to face coupling, geometric assumptions are made
 

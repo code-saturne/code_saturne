@@ -31,13 +31,12 @@ subroutine cfrusb &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    imodif , iphas  ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    gammag ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    sorti1 , sorti2 , gamagr , masmor ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -63,10 +62,6 @@ subroutine cfrusb &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! imodif           ! e  ! <-- ! modification directe de rtp (imodif=1          !
 ! iphas            ! i  ! <-- ! phase number                                   !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! gammag           ! r  ! <-- ! gamma du gaz                                   !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
@@ -80,8 +75,6 @@ subroutine cfrusb &
 ! sorti1,2(*)      ! tr ! --> ! variables de sortie                            !
 ! gamagr(*)        ! tr ! --- ! constante gamma equivalent du gaz              !
 ! masmor(*)        ! tr ! --- ! masse molaire des constituants du gaz          !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -118,9 +111,8 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          imodif , iphas
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision gammag
 
@@ -128,7 +120,7 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision sorti1(*), sorti2(*), gamagr(*), masmor(*)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 
 ! Local variables

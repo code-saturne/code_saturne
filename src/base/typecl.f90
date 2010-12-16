@@ -30,13 +30,12 @@ subroutine typecl &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb , itrifb , icodcl , isostd ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl , frcxt  ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Function :
@@ -54,8 +53,6 @@ subroutine typecl &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
 ! itrifb(nfabor    ! te ! --> ! tab d'indirection pour tri des faces           !
@@ -71,8 +68,6 @@ subroutine typecl &
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! isostd           ! te ! --> ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -100,8 +95,6 @@ subroutine typecl &
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! rijipb           ! tr ! --- ! tab de trav pour valeurs en iprime             !
 ! (nfabor,6   )    !    !     !  des rij au bord                               !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -138,12 +131,10 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          icodcl(nfabor,nvar)
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          isostd(nfabor+1,nphas)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -155,7 +146,7 @@ double precision frcxt(ncelet,3,nphas)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision coefu(nfabor,3)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -641,16 +632,15 @@ do iphas = 1, nphas
     !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    frcxt(1,1,iphas), frcxt(1,2,iphas), frcxt(1,3,iphas),          &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !  Put in coefu the value at I' or F (depending on iphydr) of the

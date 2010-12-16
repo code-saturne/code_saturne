@@ -34,14 +34,13 @@ subroutine usproj &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
    itepa  ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -127,14 +126,10 @@ subroutine usproj &
 ! ntersl           ! i  ! <-- ! number of return coupling source terms         !
 ! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! itepa            ! ia ! <-- ! integer particle attributes                    !
 !  (nbpmax, nivep) !    !     !   (containing cell, ...)                       !
-! idevel(nideve)   ! ia ! <-- ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -156,8 +151,6 @@ subroutine usproj &
 !  (ncelet, ntersl)!    !     !  on carrier phase                              !
 ! parbor           ! ra ! <-- ! particle interaction properties                !
 !  (nfabor, nvisbr)!    !     !  on boundary faces                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-- ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -197,11 +190,9 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          maxelt, lstelt(maxelt)
 integer          itepa(nbpmax,nivep)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -213,7 +204,7 @@ double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta), stativ(ncelet,nvlsta-1)
 double precision tslagr(ncelet,ntersl)
 double precision parbor(nfabor,nvisbr)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -546,17 +537,16 @@ if (inpdt0.eq.0) then
     !==========
       ( ifinia , ifinra ,                                              &
         nphas  ,                                                       &
-        nideve , nrdeve , nituse , nrtuse ,                            &
         ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
         iwarnp , nfecra ,                                              &
         epsrgp , climgp , extrap ,                                     &
-        idevel , ituser , ia     ,                                     &
+        ia     ,                                                       &
         ra(itravx) , ra(itravx) , ra(itravx) ,                         &
         rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
         ra(igradx) , ra(igrady) , ra(igradz) ,                         &
         !---------   ----------   ----------
         ra(itravx) , ra(itravy) , ra(itravz) ,                         &
-        rdevel , rtuser , ra     )
+        ra     )
 
     ! - Compute reconstructed value in boundary cells
 

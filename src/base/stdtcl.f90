@@ -30,15 +30,14 @@ subroutine stdtcl &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , nbzfmx , nozfmx ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iqimp  , icalke , qimp   , dh     , xintur ,                   &
    icodcl , itrifb , itypfb , iznfbr , ilzfbr ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    coefu  , qcalc  ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -61,8 +60,6 @@ subroutine stdtcl &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nbzfmx           ! e  ! <-- ! nb max de zones de faces de bord               !
 ! nozfmx           ! e  ! <-- ! numero max de zones de faces de bord           !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -79,8 +76,6 @@ subroutine stdtcl &
 ! iznfbr           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !                                                !
 ! ilzfbr(nbzfmx    ! te ! <-- ! tableau de travail                             !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -107,8 +102,6 @@ subroutine stdtcl &
 ! coefu            ! ra ! --- ! work array                                     !
 !  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
 ! qcalc(nozfmx)    ! tr ! --- ! tab de travail (debit par zone)                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -140,13 +133,12 @@ implicit none
 integer          idbia0 , idbra0
 integer          nozfmx
 integer          nvar   , nscal  , nphas  , nbzfmx
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          iqimp(nozfmx), icalke(nozfmx)
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
 integer          iznfbr(nfabor), ilzfbr(nbzfmx)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision qimp(nozfmx), dh(nozfmx), xintur(nozfmx)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -158,7 +150,7 @@ double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision coefu(nfabor,ndim)
 double precision qcalc(nozfmx)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

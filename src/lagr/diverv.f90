@@ -30,15 +30,13 @@ subroutine diverv &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     ,                                                       &
    div    , ux     , vy     , wz     ,                            &
    coefax , coefay , coefaz ,                                     &
    coefbx , coefby , coefbz ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     ,                            &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -62,10 +60,6 @@ subroutine diverv &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! div(ncelet)      ! tr ! --> ! divergence du vecteur                          !
@@ -75,8 +69,6 @@ subroutine diverv &
 ! coefbz           !    !     ! faces de bord                                  !
 ! (nfabor)         !    !     !                                                !
 ! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -110,9 +102,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet)
@@ -123,7 +113,6 @@ double precision coefbx(nfabor) , coefby(nfabor) , coefbz(nfabor)
 double precision w1(ncelet) , w2(ncelet) , w3(ncelet)
 double precision w4(ncelet) , w5(ncelet) , w6(ncelet)
 double precision w7(ncelet) , w8(ncelet) , w9(ncelet)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -176,15 +165,14 @@ call grdcel                                                       &
 !==========
 ( idebia , idebra ,                                               &
   nphas  ,                                                        &
-  nideve , nrdeve , nituse , nrtuse ,                             &
   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
-  idevel , ituser , ia     ,                                      &
+  ia     ,                                                        &
   ux     , ux     , ux     ,                                      &
   ux     , coefax , coefbx ,                                      &
   w1     , w4     , w5     ,                                      &
   w6     , w7     , w8     ,                                      &
-  rdevel , rtuser , ra     )
+  ia     )
 
 !===============================================================================
 ! 2. Calcul du gradient de VY DANS W2
@@ -194,15 +182,14 @@ call grdcel                                                       &
 !==========
 ( idebia , idebra ,                                               &
   nphas  ,                                                        &
-  nideve , nrdeve , nituse , nrtuse ,                             &
   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
-  idevel , ituser , ia     ,                                      &
+  ia     ,                                                        &
   vy     , vy     , vy     ,                                      &
   vy     , coefay , coefby ,                                      &
   w4     , w2     , w5     ,                                      &
   w6     , w7     , w8     ,                                      &
-  rdevel , rtuser , ra     )
+  ra     )
 
 !===============================================================================
 ! 3. Calcul du gradient de VZ DANS W3
@@ -212,15 +199,14 @@ call grdcel                                                       &
 !==========
 ( idebia , idebra ,                                               &
   nphas  ,                                                        &
-  nideve , nrdeve , nituse , nrtuse ,                             &
   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
-  idevel , ituser , ia     ,                                      &
+  ia     ,                                                        &
   wz     , wz     , wz     ,                                      &
   wz     , coefaz , coefbz ,                                      &
   w5     , w6     , w3     ,                                      &
   w7     , w8     , w9     ,                                      &
-  rdevel , rtuser , ra     )
+  ra     )
 
 !===============================================================================
 ! 4. Calcul de la divergence du vecteur (UX,VY,WZ)

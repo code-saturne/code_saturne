@@ -29,10 +29,11 @@ subroutine vandri &
 !================
 
  (  ndim   , ncelet , ncel   , nfac   , nfabor , nphas ,          &
-    nideve , nrdeve , nituse , nrtuse , iphas  ,                  &
-    itypfb , ifabor , ifapat , idevel , ituser , ia    ,          &
+    iphas  ,                                                      &
+    itypfb , ifabor , ifapat ,                                    &
+    ia    ,                                                       &
     xyzcen , cdgfbo , uetbor , visvdr , yplusc , propce ,         &
-    rdevel , rtuser , ra    )
+    ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -52,16 +53,12 @@ subroutine vandri &
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifapat           ! te ! <-- ! no de face de brd code 5 la + proche           !
 ! (ncelet)         !    !     !    (rij et echo de paroi      )                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
@@ -74,8 +71,6 @@ subroutine vandri &
 ! yplusc           ! tr ! <-- ! valeur de yplus aux cellules                   !
 ! (ncelet  )       !    !     !    dans le cas abs(icdpar).eq.1                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -104,18 +99,16 @@ implicit none
 ! Arguments
 
 integer          ndim, ncelet , ncel   , nfac   , nfabor, nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iphas
 integer          itypfb(nfabor,nphas),ifabor(nfabor)
 integer          ifapat(ncelet)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision xyzcen(ndim,ncelet),cdgfbo(ndim,nfabor)
 double precision uetbor(nfabor,nphas), visvdr(ncelet,nphas)
 double precision yplusc(ncelet)
 double precision propce(ncelet,*)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

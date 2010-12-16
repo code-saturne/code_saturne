@@ -34,13 +34,14 @@ subroutine usmpst &
  ( idbia0 , idbra0 , ipart  ,                                     &
    nvar   , nscal  , nphas  , nvlsta ,                            &
    ncelps , nfacps , nfbrps ,                                     &
-   nideve , nrdeve , nituse , nrtuse , imodif ,                   &
+   imodif ,                                                       &
    itypps ,                                                       &
    lstcel , lstfac , lstfbr ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statis ,                                     &
-   tracel , trafac , trafbr , rdevel , rtuser , ra     )
+   tracel , trafac , trafbr ,                                     &
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -69,8 +70,6 @@ subroutine usmpst &
 ! ncelps           ! i  ! <-- ! number of cells in post-processing mesh        !
 ! nfacps           ! i  ! <-- ! number of interior faces in post-process. mesh !
 ! nfbrps           ! i  ! <-- ! number of boundary faces in post-process. mesh !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! imodif           ! i  ! --> ! 0 if the mesh was not modified by this call,   !
 !                  !    !     ! 1 if it has been modified.                     !
 ! itypps(3)        ! ia ! <-- ! global presence flag (0 or 1) for cells (1),   !
@@ -79,8 +78,6 @@ subroutine usmpst &
 ! lstcel(ncelps)   ! ia ! --> ! list of cells in post-processing mesh          !
 ! lstfac(nfacps)   ! ia ! --> ! list of interior faces in post-processing mesh !
 ! lstfbr(nfbrps)   ! ia ! --> ! list of boundary faces in post-processing mesh !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -95,8 +92,6 @@ subroutine usmpst &
 ! tracel(*)        ! ra ! --- ! work array for post-processed cell values      !
 ! trafac(*)        ! ra ! --- ! work array for post-processed face values      !
 ! trafbr(*)        ! ra ! --- ! work array for post-processed boundary face v. !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -128,11 +123,11 @@ integer          idbia0 , idbra0
 integer          ipart
 integer          nvar   , nscal  , nphas  , nvlsta
 integer          ncelps , nfacps , nfbrps
-integer          nideve , nrdeve , nituse , nrtuse, imodif
+integer          imodif
 
 integer          itypps(3)
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
 double precision propce(ncelet,*)
@@ -141,7 +136,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision statis(ncelet,nvlsta)
 double precision tracel(ncelps*3)
 double precision trafac(nfacps*3), trafbr(nfbrps*3)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

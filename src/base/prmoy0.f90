@@ -30,10 +30,10 @@ subroutine prmoy0 &
 
  ( idbia0 , idbra0 ,                                              &
    ncelet , ncel   , nfac   , nfabor ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   iphas  , idevel , ituser , ia     ,                            &
+   iphas  ,                                                       &
+   ia     ,                                                       &
    volume , pvar   ,                                              &
-   rdevel , rtuser , ra    )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -53,16 +53,10 @@ subroutine prmoy0 &
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! phase number                                   !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! volume(ncelet    ! tr ! <-- ! volume des elements                            !
 ! pvar             ! tr ! <-- ! tableau de valeurs au cellules                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -88,12 +82,10 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          ncelet , ncel   , nfac , nfabor
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          iphas, idevel(nideve), ituser(nituse)
+integer          iphas
 integer          ia(*)
 double precision volume(ncelet), pvar(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

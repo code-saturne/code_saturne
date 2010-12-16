@@ -30,11 +30,10 @@ subroutine strdep &
 
  ( idbia0 , idbra0 , itrale , italim , itrfin ,                   &
    nvar   ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   flmalf , flmalb , cofale , xprale , depale , rdevel , rtuser , &
+   flmalf , flmalb , cofale , xprale , depale ,                   &
    ra     )
 
 !===============================================================================
@@ -55,10 +54,6 @@ subroutine strdep &
 ! itrfin           ! e  ! <-- ! indicateur de derniere iteration de            !
 !                  !    !     !                    couplage implicite          !
 ! nvar             ! i  ! <-- ! total number of variables                      !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -74,8 +69,6 @@ subroutine strdep &
 !    (nfabor,8)    !    !     !                                                !
 ! xprale(ncelet    ! tr ! --> ! sauvegarde de la pression, si nterup           !
 !                  !    !     !    est >1                                      !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -113,9 +106,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          itrale , italim , itrfin
 integer          nvar
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision depale(nnod,3)
@@ -125,7 +116,7 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,8)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -236,13 +227,11 @@ if (nbstru.gt.0) then
   !==========
  ( idebia , idebra ,                                              &
    nbstru ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iidfst),                                                    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     ,                                                       &
    xmstru , xcstru , xkstru , xstreq , xstr   , xpstr  , forstp , &
    dtstr  ,                                                       &
-   rdevel , rtuser ,                                              &
    ra     )
 
 endif

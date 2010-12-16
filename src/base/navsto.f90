@@ -30,9 +30,8 @@ subroutine navsto &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , iterns , icvrge ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    isostd ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  , frcxt  ,                            &
    trava  , ximpa  , uvwk   ,                                     &
@@ -42,7 +41,7 @@ subroutine navsto &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , w10    , dfrcxt , frchy  , dfrchy , &
    coefu  , esflum , esflub ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -63,12 +62,8 @@ subroutine navsto &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! iterns           ! e  ! <-- ! numero d'iteration sur navsto                  !
 ! icvrge           ! e  ! <-- ! indicateur de convergence du pnt fix           !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! isostd           ! te ! <-- ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -107,8 +102,6 @@ subroutine navsto &
 ! coefu(nfab,3)    ! tr ! --- ! tableau de travail                             !
 ! esflum(nfac)     ! tr ! --- ! tableau de travail (iestot  )                  !
 ! esflub(nfabor    ! tr ! --- ! tableau de travail (iestot  )                  !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -148,10 +141,8 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , iterns , icvrge
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          isostd(nfabor+1,nphas)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -174,7 +165,7 @@ double precision dfrcxt(ncelet,3,nphas)
 double precision frchy(ncelet,ndim), dfrchy(ncelet,ndim)
 double precision coefu(nfabor,3)
 double precision esflum(nfac), esflub(nfabor)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -304,10 +295,10 @@ do iphas = 1, nphas
  ( idebia , idebra , iappel ,                                     &
    nvar   , nscal  , nphas  , iterns ,                            &
    ncepdc(iphas)   , ncetsm(iphas)   ,                            &
-   nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+   iph    ,                                                       &
    ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
    ia(iitpsm(iphas))        ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    propfa(1,iflmas), propfb(1,iflmab),                            &
    tslagr , coefa  , coefb  ,                                     &
@@ -318,7 +309,7 @@ do iphas = 1, nphas
    drtp   , smbr   , rovsdt ,                                     &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , w10    , coefu  ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 enddo
 
@@ -366,12 +357,11 @@ if( iprco.le.0 ) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iuiph  , iviph  , iwiph  , imaspe , iph    ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtp(1,iuiph) , rtp(1,iviph) , rtp(1,iwiph) ,                   &
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
@@ -379,7 +369,7 @@ if( iprco.le.0 ) then
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , coefu  ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
   enddo
 
@@ -442,12 +432,11 @@ if( iprco.le.0 ) then
  ( idebia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iuiph  , iviph  , iwiph  , imaspe , iph    ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtp(1,iuma )    , rtp(1,ivma )    , rtp(1,iwma)     ,          &
    coefa(1,icluma), coefa(1,iclvma), coefa(1,iclwma),             &
@@ -455,7 +444,7 @@ if( iprco.le.0 ) then
    ra(iflint)     , propfb(1,iflmab) ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , coefu  ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
     enddo
 
@@ -569,10 +558,10 @@ call resolp                                                       &
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc(iphas)   , ncetsm(iphas)   ,                            &
-   nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+   iph    ,                                                       &
    ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
    ia(iitpsm(iphas))        , isostd , idtsca ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(ickupd(iphas))        , ra(ismace(iphas))        ,          &
@@ -582,7 +571,7 @@ call resolp                                                       &
    drtp   , smbr   , rovsdt , tslagr ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , frchy  , dfrchy , coefu  , trava ,  &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! Si on est en polyphasique, il faudra de toutes maniere modifier
@@ -692,12 +681,11 @@ do iphas = 1, nphas
  ( idebia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iuiph  , iviph  , iwiph  , imaspe , iph    ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
@@ -705,7 +693,7 @@ do iphas = 1, nphas
    ra(iflint), ra(iflbrd),                                        &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , coefu  ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
     do ifac = 1, nfac
       ra(iflint+ifac-1) = propfa(ifac,iflmas) - ra(iflint+ifac-1)
@@ -718,12 +706,11 @@ do iphas = 1, nphas
     !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    propce(1,ipcrom), ra(iflint)      , ra(iflbrd)      ,          &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     , ra(icocgv)      ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
     do iel = 1, ncel
       rtp(iel,iuiph) = rtp(iel,iuiph) + w1(iel)
@@ -746,12 +733,11 @@ do iphas = 1, nphas
     !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    propce(1,ipcrom), propfa(1,iflmas), propfb(1,iflmab),          &
    rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph),                      &
    w4     , w5     , w6     , ra(icocgv)   ,                      &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
   else
@@ -794,16 +780,15 @@ do iphas = 1, nphas
     !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
    drtp   , coefa(1,iclipf) , coefb(1,iclipr)  ,                  &
    trav(1,1)       , trav(1,2)       , trav(1,3) ,                &
 !        ---------         ---------         ---------
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     REACTUALISATION DU CHAMP DE VITESSES
 
@@ -941,12 +926,11 @@ if (iale.eq.1) then
  ( idebia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iuiph  , iviph  , iwiph  , imaspe , iph    ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtp(1,iuma )    , rtp(1,ivma )    , rtp(1,iwma)     ,          &
    coefa(1,icluma), coefa(1,iclvma), coefa(1,iclwma),             &
@@ -954,7 +938,7 @@ if (iale.eq.1) then
    ra(iflint)     , propfb(1,iflmab) ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , coefu  ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
   enddo
 
@@ -1123,12 +1107,11 @@ do iphas = 1, nphas
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iuiph  , iviph  , iwiph  , imaspe , iph    ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
@@ -1136,7 +1119,7 @@ do iphas = 1, nphas
    esflum , esflub ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , coefu  ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! ---> CALCUL DE L'ESTIMATEUR CORRECTION : DIVERGENCE DE ROM * U (N + 1)
@@ -1193,10 +1176,10 @@ do iphas = 1, nphas
  ( idebia , idebra , iappel ,                                     &
    nvar   , nscal  , nphas  , iterns ,                            &
    ncepdc(iphas)   , ncetsm(iphas)   ,                            &
-   nideve , nrdeve , nituse , nrtuse , iph    ,                   &
+   iph    ,                                                       &
    ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
    ia(iitpsm(iphas))        ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    esflum , esflub ,                                              &
    tslagr , coefa  , coefb  ,                                     &
@@ -1207,7 +1190,7 @@ do iphas = 1, nphas
    drtp   , smbr   , rovsdt ,                                     &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , w10    , coefu  ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
     endif
 
@@ -1272,10 +1255,10 @@ do iphas = 1, nphas
     !==========
     ( idebia , idebra ,                                           &
       ncelet , ncel   , nfac   , nfabor ,                         &
-      nideve , nrdeve , nituse , nrtuse ,                         &
-      iphas  , idevel , ituser , ia     ,                         &
+      iphas  ,                                                    &
+      ia     ,                                                    &
       volume , rtp(1,ipriph) ,                                    &
-      rdevel , rtuser , ra     )
+      ra     )
   endif
 
 ! Calcul de la pression totale IPRTOT : (definie comme propriete )

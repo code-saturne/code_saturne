@@ -35,15 +35,14 @@ subroutine uslast &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itepa  ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
    statis , stativ ,                                              &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -99,12 +98,8 @@ subroutine uslast &
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
-! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
-! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers at       !
@@ -133,8 +128,6 @@ subroutine uslast &
 !(ncelet,          !    !     !                                                !
 !   nvlsta-1)      !    !     !                                                !
 ! w1..w3(ncelet    ! ra ! --- ! work arrays                                    !
-! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
-! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
@@ -171,10 +164,8 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itepa(nbpmax,nivep)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
@@ -187,7 +178,6 @@ double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -207,6 +197,8 @@ integer          iplan
 integer          ii, ind, il
 integer          inoeud, irang0, indic
 integer          ist(6)
+
+integer, allocatable, dimension(:) :: node_mask
 
 double precision zz(4), zzz(8), xlist(nxlist,8), xyzpt(3)
 
@@ -405,6 +397,10 @@ if (1.eq.0) then
     CALL RASIZE('USLAST',IFINRA)
     !==========
 
+    ! Allocate a temporary array to mark the nodes already used
+    allocate(node_mask(nnod))
+    node_mask = 0
+
     do iplan = 1,8
 
 !  Concerning the following file:
@@ -425,12 +421,11 @@ if (1.eq.0) then
         !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  , nvlsta ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statis , stativ , ra(itabvr) ,               &
-   rdevel , rtuser , ra     )
+   ra     )
 
         ind = 0
         do ii = 1, npts
@@ -443,8 +438,8 @@ if (1.eq.0) then
           (ncelet, ncel, xyzcen,                                  &
            xyzpt(1), xyzpt(2), xyzpt(3), inoeud, irang0)
 
-          indic = ituser(inoeud)
-          ituser(inoeud) = 1
+          indic = node_mask(inoeud)
+          node_mask(inoeud) = 1
           if (indic.eq.1) then
             ind = ind +1
             xlist(ind,1) = xyzcen(1,inoeud)
@@ -461,6 +456,9 @@ if (1.eq.0) then
       close(impusr(1))
 
     enddo
+
+    ! Free the temporary array
+    deallocate(node_mask)
 
   endif
 

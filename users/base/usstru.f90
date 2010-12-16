@@ -57,13 +57,12 @@ subroutine usstr1 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , lstelt ,                                              &
    idfstr ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    aexxst , bexxst , cfopre ,                                     &
    xstr0  , vstr0  , xstreq ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 
@@ -81,13 +80,9 @@ subroutine usstr1 &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! idfstr(nfabor)   ! ia ! <-- ! boundary faces -> structure definition         !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! aexxst,bexxst    ! r  ! <-- ! prediction coefficients of structural data     !
 ! cfopre           ! r  ! <-- ! prediction coefficients of fluid forces        !
@@ -97,8 +92,6 @@ subroutine usstr1 &
 !       nbstru)    !    !     !                                                !
 ! xstreq(ndim,     ! ra ! <-- ! displacement of initial mesh compared to       !
 !       nbstru)    !    !     ! the structures position at equilibrium         !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -129,17 +122,15 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nbstru
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          maxelt, lstelt(maxelt)
 integer          idfstr(nfabor)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision aexxst, bexxst, cfopre
 double precision xstr0(3,nstrmx), xstreq(3,nstrmx)
 double precision vstr0(3,nstrmx)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -283,13 +274,11 @@ subroutine usstr2 &
 
  ( idbia0 , idbra0 ,                                              &
    nbstru ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idfstr ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dtcel  ,                                                       &
    xmstru , xcstru , xkstru , xstreq , xstr   , vstr   , forstr , &
    dtstr  ,                                                       &
-   rdevel , rtuser ,                                              &
    ra     )
 
 
@@ -312,11 +301,7 @@ subroutine usstr2 &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! idfstr(nfabor    ! te ! <-- ! definition des structures                      !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dtcel(ncelet)    ! ra ! <-- ! time step (per cell)                           !
 ! xmstru(ndim,     ! ra ! --> ! matrix of structural mass                      !
@@ -334,8 +319,6 @@ subroutine usstr2 &
 ! forstr(ndim      ! ra ! <-- ! forces acting on structures (take forces       !
 !       nbstru)    !    !     !         due to fluid effects into account   )  !
 ! dtstr(nbstru)    ! ra ! --> ! structural time step                           !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -365,10 +348,8 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nbstru
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          idfstr(nfabor)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dtcel(ncelet)
@@ -380,7 +361,7 @@ double precision xstr(3,nstrmx)
 double precision vstr(3,nstrmx)
 double precision forstr(3,nstrmx)
 double precision dtstr(nstrmx)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! VARIABLES LOCALES
 

@@ -31,9 +31,10 @@ subroutine cou1di &
  ( idbia0 , idbra0 ,                                              &
    nfabor ,                                                       &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   isvtb  , icodcl , idevel , ituser , ia     ,                   &
-   rcodcl , rdevel , rtuser , ra     )
+   isvtb  , icodcl ,                                              &
+   ia     ,                                                       &
+   rcodcl ,                                                       &
+   ra     )
 
 !===============================================================================
 
@@ -53,8 +54,6 @@ subroutine cou1di &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! isvtb            ! e  ! <-- ! numero du scalaire couple                      !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
@@ -65,8 +64,6 @@ subroutine cou1di &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
@@ -80,8 +77,6 @@ subroutine cou1di &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -112,12 +107,9 @@ implicit none
 integer          idbia0, idbra0
 integer          nfabor
 integer          nvar , nscal , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          isvtb  , icodcl(nfabor,nvar)
-integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 double precision rcodcl(nfabor,nvar,3)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

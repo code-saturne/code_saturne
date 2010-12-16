@@ -30,12 +30,11 @@ subroutine laggra &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtp    , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -58,10 +57,6 @@ subroutine laggra &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -71,8 +66,6 @@ subroutine laggra &
 ! gradpr(ncel,3    ! tr ! --> ! gradient de pression                           !
 ! gradvf(ncel,9    ! tr ! --> ! gradient de vitesse fluide                     !
 ! w1...w3(ncel)    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -110,9 +103,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision coefa(ndimfb,*) , coefb(ndimfb,*)
@@ -120,7 +111,7 @@ double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -186,17 +177,16 @@ call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ipriph , imrgra , inc    , iccocg ,                            &
    nswrgr(ipriph)  , imligr(ipriph)  , iphydp ,                   &
    iwarni(ipriph)  , nfecra ,                                     &
    epsrgr(ipriph)  , climgr(ipriph)  , extrag(ipriph)  ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtp(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,           &
    gradpr(1,1)     , gradpr(1,2)     , gradpr(1,3)     ,          &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
 
@@ -246,17 +236,16 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iuiph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iuiph)   , imligr(iuiph)  , iphydp ,                    &
    iwarni(iuiph)   , nfecra ,                                     &
    epsrgr(iuiph)   , climgr(iuiph)  , extrag(iuiph)  ,            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtp(1,iuiph)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,           &
    gradvf(1,1)     , gradvf(1,2)     , gradvf(1,3)     ,          &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     COMPOSANTE Y
 !     ============
@@ -269,17 +258,16 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iviph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iviph)   , imligr(iviph)  , iphydp ,                    &
    iwarni(iviph)   , nfecra ,                                     &
    epsrgr(iviph)   , climgr(iviph)  , extrag(iviph)  ,            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtp(1,iviph)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,           &
    gradvf(1,4)     , gradvf(1,5)     , gradvf(1,6)     ,          &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     COMPOSANTE Z
 !     ============
@@ -292,17 +280,16 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iwiph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iwiph)   , imligr(iwiph)  , iphydp ,                    &
    iwarni(iwiph)   , nfecra ,                                     &
    epsrgr(iwiph)   , climgr(iwiph)  , extrag(iwiph)  ,            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtp(1,iwiph)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,           &
    gradvf(1,7)     , gradvf(1,8)     , gradvf(1,9)     ,          &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 

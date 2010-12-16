@@ -2121,17 +2121,13 @@ end subroutine
 subroutine ustbtr &
 !================
 
- ( ncel   , ncelet , nfac   , nfabor , nnod   ,                   &
-   longia , longra ,                                              &
-   nideve , nituse , nrdeve , nrtuse )
+ ( ncel   , ncelet , nfac   , nfabor , nnod   , longia , longra )
 
 !===============================================================================
 ! Purpose:
 ! -------
 
-! User subroutine to define the sizes of macro-arrays ia and ra,
-!   of user arrays ituser and rtuser,
-!   of developper arrays idevel and rdevel.
+! User subroutine to define the sizes of macro-arrays ia and ra.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -2145,10 +2141,6 @@ subroutine ustbtr &
 ! nnod             ! i  ! <-- ! number of vertices                             !
 ! longia           ! i  ! --> ! size of array ia                               !
 ! longra           ! i  ! --> ! size of array ra                               !
-! nideve           ! i  ! --> ! size of array idevel                           !
-! nituse           ! i  ! --> ! size of array ituser                           !
-! nrdeve           ! i  ! --> ! size of array rdevel                           !
-! nrtuse           ! i  ! --> ! size of array rtuser                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -2168,7 +2160,6 @@ implicit none
 
 integer          ncel  , ncelet, nfac  , nfabor, nnod
 integer          longia, longra
-integer          nideve, nituse, nrdeve, nrtuse
 
 !===============================================================================
 
@@ -2218,23 +2209,6 @@ longia = 0
 longra = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
-!===============================================================================
-! 2. Size of macro arrays ituser and rtuser:
-!===============================================================================
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-! Size user-reserved integer array 'ituser'
-
-nituse = 0
-
-! Size user-reserved real array 'rtuser'
-
-nrtuse = 0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
 
 !----
 ! Formats

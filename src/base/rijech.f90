@@ -30,14 +30,13 @@ subroutine rijech &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iphas  , ivar   , isou   , ipp    ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , produc , smbr   ,                            &
    coefax , coefbx ,                                              &
    produk , w2     , w3     , w4     , epsk   , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -58,14 +57,10 @@ subroutine rijech &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! ivar             ! i  ! <-- ! variable number                                !
 ! isou             ! e  ! <-- ! numero de passage                              !
 ! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -82,8 +77,6 @@ subroutine rijech &
 ! produk(ncelet    ! tr ! --- ! tableau de travail production                  !
 ! epsk  (ncelet    ! tr ! --- ! tableau de travail epsilon/k                   !
 ! w2...6(ncelet    ! tr ! --- ! tableau de travail production                  !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -116,10 +109,9 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iphas  , ivar   , isou   , ipp
 
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -130,7 +122,7 @@ double precision smbr(ncelet)
 double precision coefax(nfabor), coefbx(nfabor)
 double precision produk(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),epsk(ncelet),w6(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -252,17 +244,16 @@ elseif(abs(icdpar).eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
    ra(idipar) , coefax , coefbx ,                                 &
    w2     , w3     , w4     ,                                     &
 !        ------   ------   ------
    produk , epsk   , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !     Normalisation (attention, le gradient peut etre nul, parfois)

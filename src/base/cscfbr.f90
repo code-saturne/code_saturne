@@ -30,13 +30,12 @@ subroutine cscfbr &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    icodcl , itrifb , itypfb ,                                     &
-   idevel , ituser , ia    ,                                      &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
    w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -55,11 +54,7 @@ subroutine cscfbr &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ivar             ! i  ! <-- ! variable number                                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
@@ -74,8 +69,6 @@ subroutine cscfbr &
 ! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
 ! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
 ! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -109,11 +102,10 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -123,7 +115,7 @@ double precision rcodcl(nfabor,nvar,3)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision coefu(nfabor,ndim)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -230,15 +222,14 @@ do numcpl = 1, nbrcpl
     nvar   , nscal  , nphas  ,                                    &
     nfbdis , ityloc , nvarcp(numcpl) , numcpl ,                   &
     nvarto(numcpl) ,                                              &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ia(ilocpt) ,                                                  &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                                      &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,         &
     coefa  , coefb  ,                                             &
     w1     , w2     , w3     , w4     , w5     , w6     ,         &
     ra(icoopt)      , ra(idjppt)      , ra(ipndpt)      ,         &
     ra(irvdis)      , ra(idofpt)      ,                           &
-    rdevel , rtuser , ra     )
+    ra     )
 
   endif
 
@@ -274,15 +265,14 @@ do numcpl = 1, nbrcpl
   ( ifinia , ifinra ,                                             &
     nvar   , nscal  , nphas  ,                                    &
     nvarcp(numcpl), nvarto(numcpl) , nfbcpl , nfbncp ,            &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     icodcl , itrifb , itypfb ,                                    &
     ia(ilfbcp) , ia(ilfbnc) ,                                     &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                                      &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,         &
     coefa  , coefb  , rcodcl ,                                    &
     w1     , w2     , w3     , w4     , w5     , w6     , coefu  ,&
     ra(irvfbr)      , ra(ipndcp)      , ra(idofcp)      ,         &
-    rdevel , rtuser , ra     )
+    ra     )
 
   endif
 

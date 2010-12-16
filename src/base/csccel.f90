@@ -30,15 +30,14 @@ subroutine csccel &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , iphas  ,                                              &
-   idevel , ituser , ia    ,                                      &
+   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    crvexp , crvimp ,                                              &
    dam    , xam    ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -57,12 +56,8 @@ subroutine csccel &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ivar             ! i  ! <-- ! variable number                                !
 ! iphas            ! i  ! <-- ! phase number                                   !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
@@ -77,8 +72,6 @@ subroutine csccel &
 ! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
 ! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
 ! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -112,10 +105,9 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          ivar   , iphas
 
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -125,7 +117,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 double precision dam(ncelet ),xam(nfac ,2)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -226,15 +218,14 @@ do numcpl = 1, nbrcpl
   ( ifinia , ifinra ,                                             &
     nvar   , nscal  , nphas  ,                                    &
     ncedis , ityloc ,                                             &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ivar   , iphas  ,                                             &
     ia(ilocpt) ,                                                  &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     dt     , rtpa   , propce , propfa , propfb ,                  &
     coefa  , coefb  ,                                             &
     w1     , w2     , w3     , w4     , w5     , w6     ,         &
     ra(icoopt)      , ra(irvdis)      ,                           &
-    rdevel , rtuser , ra     )
+    ra     )
 
   endif
 
@@ -261,11 +252,10 @@ do numcpl = 1, nbrcpl
     !==========
   ( ifinia , ifinra ,                                             &
     nvar   , nscal  , nphas  ,                                    &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ncecpl ,                                                      &
     ivar   , iphas  ,                                             &
     ia(ilcecp)      ,                                             &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     dt     , rtpa   , propce , propfa , propfb ,                  &
     coefa  , coefb  ,                                             &
     crvexp , crvimp ,                                             &
@@ -273,7 +263,7 @@ do numcpl = 1, nbrcpl
     dam    , xam    ,                                             &
     ra(irvcel)      ,                                             &
     w1     , w2     , w3     , w4     , w5     , w6     ,         &
-    rdevel , rtuser , ra     )
+    ra     )
 
   endif
 

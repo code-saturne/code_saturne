@@ -29,9 +29,8 @@ subroutine caltri &
 !================
 
  ( iverif ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
-   rdevel , rtuser , ra     )
+   ia     ,                                                       &
+   ra     )
 
 !===============================================================================
 !  FONCTION  :
@@ -45,8 +44,6 @@ subroutine caltri &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________.____._____.________________________________________________.
@@ -91,12 +88,11 @@ implicit none
 
 ! Arguments
 
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          iverif
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -153,30 +149,6 @@ idebra = 1
 call zufalli(0)
 !===========
 
-!---> MISE A ZERO DES TABLEAUX UTILISATEUR ET DEVELOPPEUR
-
-if(nituse.gt.0) then
-  do iiii = 1, nituse
-    ituser(iiii) = 0
-  enddo
-endif
-if(nrtuse.gt.0) then
-  do iiii = 1, nrtuse
-    rtuser(iiii) = 0.d0
-  enddo
-endif
-
-if(nideve.gt.0) then
-  do iiii = 1, nideve
-    idevel(iiii) = 0
-  enddo
-endif
-if(nrdeve.gt.0) then
-  do iiii = 1, nrdeve
-    rdevel(iiii) = 0.d0
-  enddo
-endif
-
 !---> Test d'arret mis a 1 si le rayonnement P-1 voit trop de cellules
 !       a epaisseur optique superieure a l'unite (voir ppcabs)
 istpp1 = 0
@@ -194,7 +166,6 @@ maxelt = max(ncelet,nfac,nfabor)
 call memclg                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ifinia , ifinra )
 
 !---> La memoire sera conservee jusqu'a la fin.
@@ -205,9 +176,8 @@ idebra = ifinra
 call cregeo                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
-   rdevel , rtuser , ra     )
+   ia     ,                                                       &
+   ra     )
 
 
 
@@ -271,7 +241,6 @@ call memtri                                                       &
  ( idebia , idebra , iverif ,                                     &
    nvar   , nscal  , nphas  ,                                     &
    ncofab , nproce , nprofa , nprofb ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iisstd , ifrcx  ,                                              &
    idt    , irtp   , irtpa  , ipropc , ipropf , ipropb ,          &
    icoefa , icoefb ,                                              &
@@ -290,7 +259,6 @@ if (imatis.eq.1) then
  ( idbia1 , idbra1 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncofab , nproce , nprofa , nprofb ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ifinia , ifinra )
 
 endif
@@ -357,10 +325,9 @@ if (iverif.eq.1) then
   !==========
  ( ifinia , ifinra ,                                              &
    nphas  , nvar   ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(irtp) , ra(icoefa) , ra(icoefb) ,                           &
-   rdevel , rtuser , ra     )
+   ra     )
 
   goto 200
 
@@ -374,11 +341,10 @@ call iniva0                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  , ncofab ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
    ra(icoefa) , ra(icoefb) , ra(ifrcx ) ,                         &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 6. CALCUL SUITE EVENTUEL
@@ -391,11 +357,10 @@ if (isuite.eq.1) then
  ( ifinia , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
    ra(icoefa) , ra(icoefb) , ra(ifrcx ) ,                         &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     En ALE, il faut recalculer les parametres geometriques
   if (iale.eq.1) then
@@ -412,10 +377,9 @@ if (isuite.eq.1) then
     call calgeo                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    volmin , volmax , voltot ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -431,11 +395,10 @@ call inivar                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  , ncofab ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
    ra(icoefa) , ra(icoefb) , ra(ifrcx ) ,                         &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 8.1 MODULE DE RAYONNEMENT : CALCUL SUITE EVENTUEL
@@ -447,10 +410,9 @@ if (iirayo.gt.0 .and. isuird.eq.1) then
   !==========
  ( ifinia , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(ipropc) , ra(ipropb) ,                                      &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -497,17 +459,16 @@ call uspt1d                                                       &
 !==========
  ( ifnia2 , idbra1 ,                                              &
    nvar   , nscal  , nphas  , nfpt1d , iphas  , iappel ,          &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , ia(ils),                                              &
    ia(idbia1) , ia(idbia1) , ia(idbia1) ,                         &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idbra1) , ra(idbra1) , ra(idbra1) ,                         &
    ra(idbra1) , ra(idbra1) , ra(idbra1) ,                         &
    ra(idbra1) , ra(idbra1) , ra(idbra1) ,                         &
    ra(idt)    , ra(irtpa)  ,                                      &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
-   rdevel , rtuser , ra     )
+   ra     )
 
 iappel = 1
 call vert1d                                                       &
@@ -538,17 +499,16 @@ if (nfpt1t.gt.0) then
   !===========
  ( ifnia3 , ifinra ,                                              &
    nvar   , nscal  , nphas  , nfpt1d , iphas  , iappel ,          &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , ia(ils),                                              &
    ia(iifpt1) , ia(inppt1) , ia(iiclt1) ,                         &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(itppt1) , ra(irgpt1) , ra(ieppt1) ,                         &
    ra(itept1) , ra(ihept1) , ra(ifept1) ,                         &
    ra(ixlmt1) , ra(ircpt1) , ra(idtpt1) ,                         &
    ra(idt)    , ra(irtpa)  ,                                      &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
-   rdevel , rtuser , ra     )
+   ra     )
 
   iappel = 2
   call vert1d                                                     &
@@ -620,14 +580,13 @@ do iphas = 1, nphas
     !===========
  ( idbia1 , idbra1 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ncepdc(iphas) , iphas  , iappel ,                              &
    ia(idbia1),                                                    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) , ra(idbra1) ,                         &
-   rdevel , rtuser , ra     )
+   ra     )
 
   else
 
@@ -646,15 +605,14 @@ do iphas = 1, nphas
     !===========
  ( idbia2 , idbra1 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ncepdc(iphas) , iphas  , iappel ,                              &
    maxelt , ia(ils),                                              &
    ia(idbia1),                                                    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) , ra(idbra1) ,                         &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -683,14 +641,13 @@ do iphas = 1, nphas
       !===========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ncepdc(iphas) , iphas  , iappel ,                              &
    ia(iicepd(iphas)),                                             &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) , ra(ickupd(iphas)) ,                  &
-   rdevel , rtuser , ra     )
+   ra     )
 
     else
 
@@ -709,15 +666,14 @@ do iphas = 1, nphas
       !===========
  ( ifnia2 , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ncepdc(iphas) , iphas  , iappel ,                              &
    maxelt , ia(ils),                                              &
    ia(iicepd(iphas)),                                             &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) , ra(ickupd(iphas)) ,                  &
-   rdevel , rtuser , ra     )
+   ra     )
 
     endif
 
@@ -739,16 +695,15 @@ do iphas = 1, nphas
   !===========
  ( idbia2 , idbra1 ,                                              &
    nvar   , nscal  , nphas  , ncepdc(iphas)   ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ncetsm(iphas) ,   iphas  , iappel ,                            &
    maxelt , ia(ils),                                              &
    ia(iicepd(iphas)) ,                                            &
    ia(idbia1) , ia(idbia1),                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  ,                                      &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) , ra(ickupd(iphas))       , ra(idbra1),&
-   rdevel , rtuser , ra     )
+   ra     )
 
 enddo
 
@@ -777,16 +732,15 @@ do iphas = 1, nphas
     !===========
  ( ifnia2 , ifinra ,                                              &
    nvar   , nscal  , nphas  , ncepdc(iphas)   ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ncetsm(iphas) ,   iphas  , iappel ,                            &
    maxelt , ia(ils),                                              &
    ia(iicepd(iphas)) ,                                            &
    ia(iicesm(iphas)) , ia(iitpsm(iphas)),                         &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  ,                                      &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) , ra(ickupd(iphas)), ra(ismace(iphas)),&
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -821,15 +775,14 @@ if (ivrtex.eq.1) then
   !==========
  ( ifnia2 , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iphas  , iappel ,                                              &
    maxelt , ia(ils),                                              &
    ia(iirepv)      ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  ,                                      &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
-   rdevel , rtuser , ra     )
+   ra     )
 
   call vorver ( nfabor , ia(iirepv)  , iappel )
   !==========
@@ -844,11 +797,10 @@ if (ivrtex.eq.1) then
   !==========
  ( idbia1 , idbra1 , ifinia , ifinra ,                            &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iirepv),                                                    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -866,10 +818,9 @@ if (iale.eq.1) then
   call strini                                                     &
   !==========
  ( idbia1 , idbra1 , ifinia , ifinra ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt),                                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -881,9 +832,8 @@ call cscini                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
-   rdevel , rtuser , ra     )
+   ia     ,                                                       &
+   ra     )
 
 
 !===============================================================================
@@ -975,14 +925,13 @@ call tridim                                                       &
 !==========
  ( ifinia , ifinra , itrale ,                                     &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iisstd),                                                    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(itslag) , ra(icoefa) , ra(icoefb) ,                         &
    ra(ifrcx)  ,                                                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 12. CALCUL DES MOYENNES TEMPORELLES (ACCUMULATION)
@@ -993,10 +942,9 @@ if(inpdt0.eq.0 .and. itrale.gt.0) then
 call calmom                                                       &
 !==========
      ( ifinia , ifinra , ncel   , ncelet ,                        &
-       nideve , nrdeve , nituse , nrtuse ,                        &
-       idevel , ituser , ia     ,                                 &
+       ia     ,                                 &
        ra(irtp  ) , ra(idt   ) , ra(ipropc) ,                     &
-       rdevel , rtuser , ra     )
+       ra     )
 endif
 
 
@@ -1027,10 +975,9 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iicoce) , ia(iityce) , ia(iifrla) , ia(iiitep) ,            &
    ia(iindep) , ia(iibord) ,                                      &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
@@ -1043,7 +990,7 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
    ra(igradp) , ra(igradv) , ra(icroul) ,                         &
    ra(ibrgau) , ra(itebru) ,                                      &
    ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iauxl)  , ra(iauxl2),&
-   rdevel , rtuser , ra     )
+   ra     )
 
 !--> Ici on libere la memoire reserve par MEMLA2
 !      (i.e. on oublie ILAGIA et ILAGRA)
@@ -1062,15 +1009,14 @@ if (imatis.eq.1 .and. itrale.gt.0) then
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iiitep),                                                    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
    ra(iettp)  , ra(iettpa) , ra(iitepa) , ra(istatc) , ra(itslag),&
    ra(istatf) ,                                                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -1095,16 +1041,15 @@ if (itrale.gt.0) then
  ( ifnia2 , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , ia(ils),                                              &
    ia(iiitep),                                                    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
    ra(iettp)  , ra(iettpa) , ra(iitepa) , ra(istatc) , ra(istatv),&
    ra(itslag) , ra(istatf) ,                                      &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -1120,14 +1065,13 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
     !==========
  ( ifinia , ifinra , itrale ,                                     &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iimpal)      ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
    ra(idepal) , ra(ixyzn0) ,                                      &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -1194,12 +1138,11 @@ if (iisuit.eq.1) then
  ( ifinia , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    xyzcen     , surfac     , surfbo     , cdgfac     , cdgfbo    ,&
    ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
    ra(icoefa) , ra(icoefb) , ra(ifrcx)  ,                         &
-   rdevel , rtuser , ra     )
+   ra     )
 
   if (nfpt1t.gt.0) then
     ficsui = '1dwall_module'
@@ -1223,15 +1166,14 @@ if (iisuit.eq.1) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iicoce) , ia(iityce) , ia(iiitep) ,                         &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
    ra(iettp)  , ra(iitepa) , ra(istatf) ,                         &
    ra(istatc) , ra(istatv) , ra(itslag) ,                         &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -1240,12 +1182,11 @@ if (iisuit.eq.1) then
     !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
-   rdevel , rtuser , ra     )
+   ra     )
   endif
 
   call dmtmps(tecrf2)
@@ -1263,12 +1204,11 @@ call usnpst                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  , nvlsta ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) , ra(istatc) ,                         &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 21. SORTIE DES FICHIERS POST STANDARDS
@@ -1288,14 +1228,13 @@ call pstvar                                                       &
  ( ifinia , ifinra ,                                              &
    ntcabs ,                                                       &
    nvar   , nscal  , nphas  , nvlsta , nvisbr ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ttcabs ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
    ra(istatc) , ra(istatv) , ra(istatf) ,                         &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 22. HISTORIQUES
@@ -1326,32 +1265,29 @@ if(nthist.gt.0 .and. itrale.gt.0) then
     call ecrhis                                                   &
     !==========
    (ifinia , ifinra , ndim   , ncelet , ncel,                     &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     modhis ,                                                      &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                                      &
     xyzcen ,                                                      &
-    rdevel , rtuser , ra     )
+    ra     )
 
     if (iilagr.gt.0) then
       call laghis                                                 &
       !==========
      (ifinia , ifinra , ndim   , ncelet , ncel,                   &
-      nideve , nrdeve , nituse , nrtuse ,                         &
       modhis , nvlsta ,                                           &
-      idevel , ituser , ia     ,                                  &
+      ia     ,                                                    &
       xyzcen , volume ,                                           &
       ra(istatc) , ra(istatv) ,                                   &
-      rdevel , rtuser , ra     )
+      ra     )
     endif
 
     if (ihistr.eq.1) then
       call strhis                                                 &
       !==========
      (ifinia , ifinra , ncelet , ncel,                            &
-      nideve , nrdeve , nituse , nrtuse ,                         &
       modhis ,                                                    &
-      idevel , ituser , ia     ,                                  &
-      rdevel , rtuser , ra     )
+      ia     ,                                                    &
+      ra     )
     endif
 
   endif
@@ -1361,12 +1297,11 @@ call ushist                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !===============================================================================
@@ -1385,10 +1320,10 @@ if(modntl.eq.0) then
   !==========
   ( ifinia , ifinra ,                                             &
     nvar   , nphas  , ndim   , ncelet , ncel   ,                  &
-    nideve , nrdeve , nituse , nrtuse , irtp   ,                  &
-    idevel , ituser , ia     ,                                    &
+    irtp   ,                                                      &
+    ia     ,                                                      &
     ra(irtp  ) , ra(irtpa ) , ra(idt ) , volume , xyzcen,         &
-    rdevel , rtuser , ra     )
+    ra     )
 
   if (iilagr.gt.0) then
 
@@ -1398,15 +1333,14 @@ if(modntl.eq.0) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ia(iiitep),                                                    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &
    ra(iettp)  , ra(iitepa) , ra(istatc) ,  ra(istatv) ,           &
    ra(itslag) , ra(istatf),                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -1456,31 +1390,28 @@ modhis = 2
 call ecrhis                                                       &
 !==========
 (  ifinia , ifinra , ndim   , ncelet , ncel,                      &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    modhis ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    xyzcen ,                                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
 if (iilagr.gt.0) then
     call laghis                                                   &
     !==========
    (ifinia , ifinra , ndim   , ncelet , ncel,                     &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     modhis , nvlsta ,                                             &
-   idevel , ituser , ia     ,                                     &
+    ia     ,                                                      &
     xyzcen , volume ,                                             &
     ra(istatc) , ra(istatv) ,                                     &
-   rdevel , rtuser , ra     )
+    ra     )
 endif
 if (ihistr.eq.1) then
   call strhis                                                     &
   !==========
  (ifinia , ifinra , ncelet , ncel,                                &
-  nideve , nrdeve , nituse , nrtuse ,                             &
   modhis ,                                                        &
-  idevel , ituser , ia     ,                                      &
-  rdevel , rtuser , ra     )
+  ia     ,                                                        &
+  ra     )
 endif
 
 !     LE CAS ECHEANT, ON LIBERE LES STRUCTURES C DU MODULE THERMIQUE 1D

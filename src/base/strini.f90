@@ -29,9 +29,8 @@ subroutine strini &
 !================
 
  ( idbia0 , idbra0 , ifinia , ifinra ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
-   dt     , rdevel , rtuser ,                                     &
+   ia     ,                                                       &
+   dt     ,                                                       &
    ra     )
 
 !===============================================================================
@@ -52,14 +51,8 @@ subroutine strini &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -93,13 +86,11 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0 , ifinia , ifinra
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -186,13 +177,12 @@ endif
 call usstr1                                                       &
 !==========
  ( ifnia2 , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , ia(ils),                                              &
    ia(iidfst),                                                    &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    aexxst , bexxst , cfopre ,                                     &
    xstp   , xpstr  , xstreq ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! 2.2 STRUCTURES EXTERNES : COUPLAGE CODE_SATURNE / CODE_ASTER
 ! -----------------------
@@ -200,11 +190,10 @@ call usstr1                                                       &
 call usaste                                                       &
 !==========
  ( ifnia2 , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    maxelt , ia(ils),                                              &
    ia(iidfst),                                                    &
-   idevel , ituser , ia     ,                                     &
-   rdevel , rtuser , ra     )
+   ia     ,                                                       &
+   ra     )
 
 
 !===============================================================================

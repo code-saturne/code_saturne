@@ -32,13 +32,13 @@ subroutine lagcar &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   itepa  , idevel , ituser , ia     ,                            &
-   dt     , rtp    , propce , propfa , propfb ,          &
+   itepa  ,                                                       &
+   ia     ,                                                       &
+   dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , taup   , tlag   ,                   &
    piil   , bx     , tempct , statis ,                            &
    gradpr , gradvf , energi , dissip , romp   ,                   &
-   rdevel , rtuser , ra        )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -67,12 +67,8 @@ subroutine lagcar &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! te ! --- ! macro tableau entier                           !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
@@ -101,8 +97,6 @@ subroutine lagcar &
 ! energi(ncelet    ! tr ! --- ! tableau de travail                             !
 ! dissip(ncelet    ! tr ! --- ! tableau de travail                             !
 ! romp(nbpmax)     ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -139,9 +133,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 integer          itepa(nbpmax,nivep)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*)
@@ -155,7 +147,7 @@ double precision tempct(nbpmax,2)
 double precision statis(ncelet,nvlsta)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision energi(ncelet) , dissip(ncelet), romp(nbpmax)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -271,12 +263,12 @@ do ip = 1,nbpart
      ( idebia , idebra ,                                          &
        nvar   , nscal  , nphas  ,                                 &
        nbpmax , nvp    , nvp1   , nvep   , nivep  ,               &
-       nideve , nrdeve , nituse , nrtuse ,                        &
-       ip     , itepa  , idevel , ituser , ia     ,               &
+       ip     , itepa  ,                                          &
+       ia     ,                                                   &
        rep    , uvwr   , rom    , romp(ip) , xnul , taup(ip) ,    &
        dt     , rtp    , propce , propfa , propfb ,               &
        ettp   , ettpa  , tepa   ,                                 &
-       rdevel , rtuser , ra     )
+       ra     )
 
 !--->  CALCUL DE Tc
 
@@ -331,13 +323,13 @@ do ip = 1,nbpart
      ( idebia , idebra ,                                          &
        nvar   , nscal  , nphas  ,                                 &
        nbpmax , nvp    , nvp1   , nvep   , nivep  ,               &
-       nideve , nrdeve , nituse , nrtuse ,                        &
-       ip     , itepa  , idevel , ituser , ia     ,               &
+       ip     , itepa  ,                                          &
+       ia     ,                                                   &
        rep    , uvwr   , rom    , romp(ip) , xnul ,               &
        xcp    , xrkl   , tempct(ip,1) ,                           &
        dt     , rtp    , propce , propfa , propfb ,               &
        ettp   , ettpa  , tepa   ,                                 &
-       rdevel , rtuser , ra     )
+       ra     )
 
 ! Terme source implicite pour le couplage retour thermique
 

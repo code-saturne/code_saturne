@@ -30,9 +30,9 @@ subroutine turrij &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr ,                                                       &
    coefa  , coefb  , ckupdc , smacel ,                            &
@@ -41,7 +41,7 @@ subroutine turrij &
    smbr   , rovsdt , grdvit , produc , grarox , graroy , graroz , &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -62,15 +62,11 @@ subroutine turrij &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -107,8 +103,6 @@ subroutine turrij &
 ! grarox,y,z       ! tr ! --- ! tableau de travail pour grad rom               !
 !  (ncelet)        !    !     !                                                !
 ! w?(ncelet)       ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -141,11 +135,10 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse , iphas
+integer          iphas
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -162,7 +155,7 @@ double precision grarox(ncelet), graroy(ncelet), graroz(ncelet)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -258,16 +251,15 @@ if (iturb(iphas).eq.30) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iuiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,iuiph)   , coefa(1,icliup) , coefb(1,icliup) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
   do iel = 1 , ncel
@@ -303,16 +295,15 @@ if (iturb(iphas).eq.30) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iviph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,iviph)   , coefa(1,iclivp) , coefb(1,iclivp) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
   do iel = 1 , ncel
 
@@ -347,16 +338,15 @@ if (iturb(iphas).eq.30) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iwiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,iwiph)   , coefa(1,icliwp) , coefb(1,icliwp) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
   do iel = 1 , ncel
 
@@ -403,16 +393,15 @@ else
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iuiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,iuiph)   , coefa(1,icliup) , coefb(1,icliup) ,          &
    grdvit(1,1,1)   , grdvit(1,1,2)   , grdvit(1,1,3)   ,          &
 !        -------------     -------------     -------------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! Gradient suivant Y
@@ -429,16 +418,15 @@ else
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iviph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,iviph)   , coefa(1,iclivp) , coefb(1,iclivp) ,          &
    grdvit(1,2,1)   , grdvit(1,2,2)   , grdvit(1,2,3)   ,          &
 !        -------------     -------------     -------------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! Gradient suivant Z
@@ -455,16 +443,15 @@ else
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iwiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,iwiph)   , coefa(1,icliwp) , coefb(1,icliwp) ,          &
    grdvit(1,3,1)   , grdvit(1,3,2)   , grdvit(1,3,3)   ,          &
 !        -------------     -------------     -------------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -507,16 +494,15 @@ if(igrari(iphas).eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    propce(1,ipcroo), propfb(1,ipbroo), viscb           ,          &
    grarox , graroy , graroz ,                                     &
 !        ------   ------   ------
    w4     , w5     , w6     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 endif
 
@@ -564,10 +550,9 @@ do isou = 1, 6
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iphas  , ivar   , isou   , ipp    ,                            &
    icepdc , icetsm , itpsmp ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , produc , grarox , graroy , graroz ,          &
    ckupdc , smcelp , gammap ,                                     &
@@ -576,7 +561,7 @@ do isou = 1, 6
    dam    , xam    , drtp   , smbr   , rovsdt ,                   &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
   else
     !     Rij-epsilon SSG
@@ -584,10 +569,9 @@ do isou = 1, 6
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iphas  , ivar   , isou   , ipp    ,                            &
    icepdc , icetsm , itpsmp ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , grdvit , grarox , graroy , graroz ,          &
    ckupdc , smcelp , gammap ,                                     &
@@ -596,7 +580,7 @@ do isou = 1, 6
    dam    , xam    , drtp   , smbr   , rovsdt ,                   &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
   endif
 
 enddo
@@ -619,10 +603,9 @@ call reseps                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iphas  , ivar   , isou   , ipp    ,                            &
    icepdc , icetsm , itpsmp ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , grdvit , produc ,grarox , graroy , graroz ,  &
    ckupdc , smcelp , gammap ,                                     &
@@ -631,7 +614,7 @@ call reseps                                                       &
    dam    , xam    , drtp   , smbr   , rovsdt ,                   &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! 6. CLIPPING

@@ -30,13 +30,12 @@ subroutine elflux &
 
  ( idbia0 , idbra0 , iappel ,                                     &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -60,12 +59,8 @@ subroutine elflux &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -81,8 +76,6 @@ subroutine elflux &
 ! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
 ! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
 ! w1..9(ncelet     ! tr ! --- ! tableau de travail    cellules                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -119,10 +112,8 @@ implicit none
 
 integer          idbia0 , idbra0 , iappel
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve)
-integer          ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -132,7 +123,7 @@ double precision viscf(nfac), viscb(nfabor)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 
@@ -247,17 +238,16 @@ if(iappel.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTR
    w4     , w5     , w6     ,                                     &
 !       d POTR /dx   d POTR /dy   d POTR /dz
    w7     , w8     , w9    ,                                      &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !   2.2 Calcul du champ electrique E = - grad (potR) : (-W4, -W5, -W6)
@@ -425,16 +415,15 @@ if(iappel.eq.1) then
     !==========
   ( idbia0 , idbra0 ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     w4     , w5     , w6     ,                                    &
 !       d POTI /dx   d POTI /dy   d POTI /dz
     w7     , w8     , w9     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 
 !   3.2 Calcul du champ electrique Ei = - grad (potI) : (-W4, -W5, -W6)
@@ -634,16 +623,15 @@ if (iappel.eq.2) then
     !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
    w4     , w5     , w6     ,                                     &
 !       d Ax /dx   d Ax /dy   d Ax /dz
    w7     , w8     , w9    ,                                      &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !       B = rot A
 
@@ -687,16 +675,15 @@ if (iappel.eq.2) then
     !==========
   ( idbia0 , idbra0 ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     w4     , w5     , w6     ,                                    &
 !       d Ay /dx   d Ay /dy   d Ay /dz
     w7     , w8     , w9     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 !       B = rot A
 
@@ -740,16 +727,15 @@ if (iappel.eq.2) then
     !==========
   ( idbia0 , idbra0 ,                                             &
     nphas  ,                                                      &
-    nideve , nrdeve , nituse , nrtuse ,                           &
     ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    idevel , ituser , ia     ,                                    &
+    ia     ,                                    &
     ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     w4     , w5     , w6     ,                                    &
 !       d Az /dx   d Az /dy   d Az /dz
     w7     , w8     , w9     ,                                    &
-    rdevel , rtuser , ra     )
+    ra     )
 
 !       B = rot A
 

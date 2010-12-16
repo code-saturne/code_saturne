@@ -30,7 +30,6 @@ subroutine memsca &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
    idrtp  , ismbr  , irovsd ,                                     &
    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -53,8 +52,6 @@ subroutine memsca &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! idtr             ! e  ! --> ! "pointeur" sur dtr                             !
 ! iviscf, b        ! e  ! --> ! "pointeur" sur viscf, viscb                    !
 ! idam, ixam       ! e  ! --> ! "pointeur" sur dam, xam                        !
@@ -89,7 +86,6 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          idtr
 integer          iviscf , iviscb , idam   , ixam

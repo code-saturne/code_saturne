@@ -29,12 +29,11 @@ subroutine strpre &
 !================
 
  ( idbia0 , idbra0 , itrale , italim , ineefl ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    impale ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   flmalf , flmalb , xprale , cofale , depale , rdevel , rtuser , &
+   flmalf , flmalb , xprale , cofale , depale ,                   &
    ra     )
 
 !===============================================================================
@@ -56,10 +55,6 @@ subroutine strpre &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -75,8 +70,6 @@ subroutine strpre &
 ! xprale(ncelet    ! tr ! --> ! sauvegarde de la pression, si nterup           !
 !                  !    !     !    est >1                                      !
 ! depale(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -110,10 +103,8 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0 , itrale , italim , ineefl
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          impale(nnod)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
@@ -123,7 +114,7 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,8)
 double precision depale(nnod,3)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

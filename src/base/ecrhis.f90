@@ -29,9 +29,10 @@ subroutine ecrhis &
 !================
 
  ( idbia0 , idbra0 , ndim   , ncelet , ncel ,                     &
-   nideve , nrdeve , nituse , nrtuse , modhis ,                   &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , rdevel , rtuser , ra )
+   modhis ,                                                       &
+   ia     ,                                                       &
+   xyzcen ,                                                       &
+   ra     )
 
 !===============================================================================
 !  FONCTION  :
@@ -49,17 +50,11 @@ subroutine ecrhis &
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! modhis           ! e  ! <-- ! indicateur valant 0,1 ou 2                     !
 !                  !    !     ! 1,2 = ecriture intermediaire, finale           !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
 ! (ndim,ncelet)    !    !     !                                                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra               ! tr !  -- ! tableau des reels                              !
 !__________________!____!_____!________________________________________________!
 
@@ -88,11 +83,10 @@ implicit none
 
 integer          idbia0, idbra0
 integer          ndim, ncelet, ncel
-integer          nideve , nrdeve , nituse , nrtuse
 integer          modhis
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 double precision xyzcen(ndim,ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

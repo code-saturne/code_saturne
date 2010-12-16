@@ -37,13 +37,12 @@ subroutine uslabo &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    kface  , nbpt   , isuivi ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb , itrifb , ifrlag , itepa  , indep  ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    surfbn , dt     , rtpa   , rtp    , propce , propfa , propfb , &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , vitpar , vitflu , auxl   , &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -129,8 +128,6 @@ subroutine uslabo &
 ! kface            ! i  ! <-- ! number of the interaction face                 !
 ! nbpt             ! i  ! <-- ! number of the treated particle                 !
 ! isuivi           ! i  ! <-- ! flag to follow (or not) the particle           !
-! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
 !  nphas)          !    !     !                                                !
 ! itrifb(nfabor    ! ia ! <-- ! indirection array for the sorting of the faces !
@@ -141,8 +138,6 @@ subroutine uslabo &
 ! (nbpmax,nivep    !    !     !                                                !
 ! indep            ! ia ! --> ! for each cell, number of the departure cell    !
 !   (nbpmax)       !    !     !                                                !
-! idevel(nideve    ! ia ! <-- ! dev. complementary integer array               !
-! ituser(nituse    ! ia ! <-- ! user complementary integer array               !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! surfbn(nfabor    ! ra ! <-- ! area of the boundary faces                     !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -169,8 +164,6 @@ subroutine uslabo &
 ! vitflu           ! ra ! <-- ! flow velocity for the treatment of the         !
 !   (nbpmax,3)     !    !     ! particle/wall interactions                     !
 ! auxl(nbpmax,3    ! ra ! --- ! work array                                     !
-! rdevel(nrdeve    ! ra ! <-- ! Development complementary real array           !
-! rtuser(nrtuse    ! ra ! <-- ! Complementary user real array                  !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
@@ -212,12 +205,10 @@ integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          kface  , nbpt   , isuivi
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
 integer          indep(nbpmax)
-integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 
 double precision surfbn(nfabor)
@@ -229,7 +220,6 @@ double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision parbor(nfabor,nvisbr) , auxl(nbpmax,3)
 double precision vitpar(nbpmax,3) , vitflu(nbpmax,3)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

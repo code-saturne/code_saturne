@@ -31,10 +31,9 @@ subroutine lecamp &
  ( idbia0 , idbra0 ,                                              &
    ncelet , ncel   ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtp    ,                                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 
@@ -61,16 +60,10 @@ subroutine lecamp &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! jphas            ! e  ! <-- ! nombre de phases du calcul precedent           !
 ! ljtu             ! e  ! <-- ! longueur de jturb                              !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! jturb            ! te ! <-- ! modeles de turb calcul precedent               !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! --> ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -103,12 +96,11 @@ implicit none
 integer          idbia0 , idbra0
 integer          ncelet , ncel
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision rtp(ncelet,*)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

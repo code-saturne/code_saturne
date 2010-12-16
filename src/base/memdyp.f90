@@ -30,7 +30,6 @@ subroutine memdyp &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idam   , ixam   , ismbr  , irovsd ,                            &
    irtdp  , idrtdp ,                                              &
    iqfx   , iqfy   , iqfz   , icoefq , irho   , irhob  ,          &
@@ -56,8 +55,6 @@ subroutine memdyp &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! idam, ixam       ! e  ! --> ! "pointeur" sur dam, xam                        !
 ! ismbr            ! e  ! --> ! "pointeur" sur smbr                            !
 ! irovsd           ! e  ! --> ! "pointeur" sur rovsdt                          !
@@ -96,7 +93,6 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          idam   , ixam   , ismbr  , irovsd
 integer          irtdp  , idrtdp

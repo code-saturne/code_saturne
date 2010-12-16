@@ -29,12 +29,11 @@ subroutine matrdt &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iconvp , idiffp , isym   ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    coefbp , flumas , flumab , viscf  , viscb  ,                   &
    da     ,                                                       &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -52,14 +51,10 @@ subroutine matrdt &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
 ! idiffp           ! e  ! <-- ! indicateur = 1 diffusion , 0 sinon             !
 ! isym             ! e  ! <-- ! indicateur = 1 matrice symetrique              !
 !                  !    !     !              2 matrice non symetrique          !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! coefbp(nfabor    ! tr ! <-- ! tab b des cl pour le pdt considere             !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
@@ -67,8 +62,6 @@ subroutine matrdt &
 ! viscf(nfac)      ! tr ! <-- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! <-- ! visc*surface/dist aux faces de bord            !
 ! da (ncelet       ! tr ! --> ! partie diagonale de la matrice                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -94,16 +87,15 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iconvp , idiffp , isym
 
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision coefbp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision da(ncelet )
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

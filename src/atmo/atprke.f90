@@ -30,14 +30,14 @@ subroutine atprke &
 
  ( idbia0 , idbra0 ,                                              &
    nscal  , nphas  ,                                              &
-   nideve , nrdeve , nituse , nrtuse , iphas  , ipcvto,           &
-   idevel , ituser , ia     ,                                     &
+   iphas  , ipcvto,                                               &
+   ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3    ,                                      &
    w4     , w5     , w6    ,                                      &
    tinstk , tinste ,                                              &
-   rdevel , rtuser , ra )
+   ra     )
 
 
 !===============================================================================
@@ -56,14 +56,10 @@ subroutine atprke &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! irespr(ncelet    ! te ! --- ! tab entier multigrille                         !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -76,8 +72,6 @@ subroutine atprke &
 ! w1...6(ncelet    ! tr ! --- ! tableaux de travail                            !
 !tinstk(ncelet)    ! tr ! <-- ! prod et terme de gravite pour eq k             !
 !tinste(ncelet)    ! tr ! <-- ! prod et terme de gravite pour eq eps           !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -114,11 +108,9 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse, iphas
-integer          ipcvto
+integer          iphas  , ipcvto
 
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision coefa(nfabor,*), coefb(nfabor,*)
@@ -128,7 +120,7 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision tinstk(ncelet), tinste(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 integer         idebra, idebia
@@ -182,16 +174,15 @@ if (ippmod(iatmos).eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iivar  , imrgra , inc    , iccocg , nswrgp ,imligp, iphydp,    &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !      Production et terme de gravite

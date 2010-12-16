@@ -30,9 +30,8 @@ subroutine distyp &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , iphas  ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    itypfb , isympa ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    distpa , propce , uetbor , disty  ,                            &
    dam    , xam    , smbdp  , rovsdp ,                            &
    rtpdp  , drtp   ,                                              &
@@ -41,7 +40,7 @@ subroutine distyp &
    coefax , coefbx , coefay , coefby , coefaz , coefbz ,          &
    w1     , w2     , w3     , w4     , w5     , w6     , w7     , &
    w8     , w9     ,                                              &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -72,14 +71,10 @@ subroutine distyp &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! iphas            ! i  ! <-- ! phase number                                   !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
 ! isympa           ! te ! <-- ! zero pour annuler le flux de masse             !
 ! (nfabor     )    !    !     ! (transmis mais non utilise)                    !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! distpa(ncelet    ! tr ! <-- ! tab des distances a la paroi                   !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -104,8 +99,6 @@ subroutine distyp &
 ! coefax,y,z, b    ! tr ! --- ! tableaux des cond lim pour qx, qy, qz          !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
 ! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -140,10 +133,8 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , iphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          itypfb(nfabor,nphas),isympa(nfabor)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision distpa(ncelet),propce(ncelet,*)
@@ -162,7 +153,6 @@ double precision coefaz(nfabor),coefbz(nfabor)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -255,16 +245,15 @@ call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar   , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
    distpa , coefax , coefbx ,                                     &
    qx     , qy     , qz     ,                                     &
 !        ------   ------   ------
    w2     , w3     , w4     ,                                     &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !     Normalisation (attention, le gradient peut etre nul, parfois)
@@ -341,19 +330,18 @@ call inimas                                                       &
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ivar   , ivar   , ivar   , imaspe , iphas  ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgy , imligy , &
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &
    isympa ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rom    , romb   ,                                              &
    qx     , qy     , qz     ,                                     &
    coefax , coefay , coefaz , coefbx , coefby , coefbz ,          &
    flumas , flumab ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , coefq  ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 
@@ -404,11 +392,10 @@ isym   = 2
 call matrdt                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iconvp , idiffp , isym   ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    coefbx , flumas , flumab , flumas , flumab , w2     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     Le Courant est COUMXY = DT W2 / VOLUME
 !         d'ou DTMINY = MIN(COUMXY * VOLUME/W2)
@@ -596,14 +583,13 @@ do ntcont = 1, ntcmxy
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmay , &
    imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
    ischcy , isstpy , iescap ,                                     &
    imgrpy , ncymxp , nitmfp , ipp    , iwarny ,                   &
    blency , epsily , epsrsy , epsrgy , climgy , extray ,          &
    relaxp , thetap ,                                              &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpdp  , rtpdp  ,                                              &
    coefax , coefbx , coefax , coefbx , flumas , flumab ,          &
    flumas , flumab , flumas , flumab ,                            &
@@ -611,7 +597,7 @@ do ntcont = 1, ntcmxy
    dam    , xam    , drtp   ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !     Clipping (indispensable si on initialise par u*/nu du pas de

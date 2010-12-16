@@ -139,12 +139,11 @@ if ( ippmod(icompf).ge.0 ) then
  ( ii , ii ,                                                      &
    ii , ii , ii ,                                                 &
    iccfth , imodif  , iphas   ,                                   &
-   ii , ii , ii , ii ,                                            &
-   iit , iit , iit ,                                              &
+   iit ,                                                          &
    dblpre , dblpre , dblpre , dblpre , dblpre , dblpre ,          &
    dblpre , dblpre ,                                              &
    dblpre , dblpre , dblpre , dblpre ,                            &
-   dblpre , dblpre , dblpre )
+   dblpre )
 
 ! --> Utilisation d'un flux de masse specifique pour la vitesse
 

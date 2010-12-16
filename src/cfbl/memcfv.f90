@@ -29,7 +29,6 @@ subroutine memcfv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iwcel1 , iwcel2 , iwcel3 , iwcel4 ,                            &
    ifinia , ifinra )
 
@@ -47,8 +46,6 @@ subroutine memcfv &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iwcel1           ! e  ! --> ! pointeur de w1 (tab travail ncelet)            !
 ! iwceli           ! e  ! --> ! pointeur de wi (tab travail ncelet)            !
 ! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
@@ -74,7 +71,6 @@ implicit none
 !     - REMARQUE : INTERDICTION DE TOUCHER A IDBIA0 IDBRA0
 
 integer idbia0 , idbra0
-integer nideve , nrdeve , nituse , nrtuse
 integer iwcel1 , iwcel2 , iwcel3 , iwcel4
 integer ifinia , ifinra
 

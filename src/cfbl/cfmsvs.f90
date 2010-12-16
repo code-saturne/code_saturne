@@ -30,13 +30,12 @@ subroutine cfmsvs &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
-   idevel , ituser , ia     ,                                     &
+   iscal  ,                                                       &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    viscf  , viscb  ,                                              &
    w1     , w2     , w3     ,                                     &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -56,13 +55,9 @@ subroutine cfmsvs &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
 !                  !    !     !  (0 : non , 1 : oui)                           !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -77,8 +72,6 @@ subroutine cfmsvs &
 ! viscf(nfac)      ! tr ! --> ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --> ! visc*surface/dist aux faces de bord            !
 ! w1..3(ncelet)    ! tr ! --- ! tableau de travail                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -114,10 +107,8 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iscal
 
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -126,7 +117,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision viscf(nfac), viscb(nfabor)
 double precision w1(ncelet) , w2(ncelet) , w3(ncelet)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -168,13 +158,12 @@ call uscfth                                                       &
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , ra(1)  , w2     , w3     ,                            &
 !        ------
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! --- "Vitesse" de diffusion de RHO = dt*c2
 do iel = 1, ncel
@@ -189,12 +178,12 @@ imvis1 = 1
 call viscfa                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse , imvis1 ,                   &
-   idevel , ituser , ia     ,                                     &
+   imvis1 ,                                                       &
+   ia     ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  ,                                              &
 !        ------   ------
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 !     Au bord, voir le sous-programme appelant.

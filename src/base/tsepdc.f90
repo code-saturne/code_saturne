@@ -30,13 +30,13 @@ subroutine tsepdc &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp ,                            &
-   nideve , nrdeve , nituse , nrtuse , iphas  , idiaex ,          &
+   iphas  , idiaex ,                                              &
    icepdc ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , trav   ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -55,14 +55,10 @@ subroutine tsepdc &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! idiaex           ! e  ! <-- ! indicateur de traitement de la                 !
 !                  !    !     ! diagonale (=1) ou extradiagonale (=2)          !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec)                     !
@@ -75,8 +71,6 @@ subroutine tsepdc &
 !  (ncepdp,6)      !    !     !                                                !
 ! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
 ! trav(ncelet,3    ! tr ! <-- ! tableau des second membres                     !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -104,11 +98,10 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp
-integer          nideve , nrdeve , nituse , nrtuse , iphas
-integer          idiaex
+integer          iphas, idiaex
 
 integer          icepdc(ncepdp)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -118,7 +111,7 @@ double precision ckupdc(ncepdp,6)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision trav(ncelet,3)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 ! Local variables
 

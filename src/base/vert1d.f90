@@ -75,14 +75,8 @@ subroutine vert1d &
 ! xlmbt1           ! r  ! <-- ! diffusivite thermique                          !
 ! rcpt1d           ! r  ! <-- ! rocp                                           !
 ! dtpt1d           ! tr ! <-- ! pas de temps                                   !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 

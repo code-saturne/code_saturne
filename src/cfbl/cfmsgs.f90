@@ -30,16 +30,15 @@ subroutine cfmsgs &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iscal  ,                   &
+   iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    flumas , flumab , flabgs , flbbgs ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , w10    , w11    , w12    ,          &
    trflms , trflmb , coefu  , xam    ,                            &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -59,13 +58,9 @@ subroutine cfmsgs &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
 !                  !    !     !  (0 : non , 1 : oui)                           !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -84,8 +79,6 @@ subroutine cfmsgs &
 ! trflmb(nfabor    ! tr ! --- ! tableau de travail                             !
 ! coefu(nfabo,3    ! tr ! --- ! tableau de travail cl de la qdm                !
 ! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -122,12 +115,10 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          nideve , nrdeve , nituse , nrtuse
 integer          iscal
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -143,7 +134,6 @@ double precision w7(ncelet) , w8(ncelet) , w9(ncelet)
 double precision w10(ncelet), w11(ncelet), w12(ncelet)
 double precision trflms(nfac), trflmb(nfabor)
 double precision coefu(nfabor,3), xam(nfac,2)
-double precision rdevel(nrdeve), rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables
@@ -270,54 +260,51 @@ call iasize('cfmsgs',ifinia)
   !==========
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iuiph  , iphas  ,                                              &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    w10    , w9     ,                                              &
 !        ------   ------
    w8     , xam    ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     Suivant Y
   call ustsns                                                     &
   !==========
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iviph  , iphas  ,                                              &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    w11    , w9     ,                                              &
 !        ------   ------
    w8     , xam    ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     Suivant Z
   call ustsns                                                     &
   !==========
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iwiph  , iphas  ,                                              &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
    w12    , w9     ,                                              &
 !        ------   ------
    w8     , xam    ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! --- Terme de convection de quantite de mouvement
@@ -347,12 +334,11 @@ call iasize('cfmsgs',ifinia)
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iuiph  , iviph  , iwiph  , imaspe , iphas  ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    propce(1,iirom) , propfb(1,iiromb),                            &
    rtpa (1,iuiph)  , rtpa (1,iviph)  , rtpa (1,iwiph)  ,          &
    coefa(1,icliup) , coefa(1,iclivp) , coefa(1,icliwp) ,          &
@@ -361,7 +347,7 @@ call iasize('cfmsgs',ifinia)
 !        ------   ------
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , coefu  ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !     Calcul du terme convecte suivant les 3 directions
 !       sans reconstruction
@@ -420,46 +406,46 @@ call iasize('cfmsgs',ifinia)
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    w10    , w8     , w9     , w9     ,                            &
 !        ------
    w7     ,                                                       &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
     call cfdivs                                                   &
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    w11    , w9     , w8     , w9     ,                            &
 !        ------
    w7     ,                                                       &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
     call cfdivs                                                   &
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   nideve , nrdeve , nituse , nrtuse , iphas  ,                   &
+   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    w12    , w9     , w9     , w8     ,                            &
 !        ------
    w7     ,                                                       &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
   endif
 
@@ -534,13 +520,12 @@ call uscfth                                                       &
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w8     , w9     , w10    ,                            &
 !        ------
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! --- Communication de l'entropie
 if (irangp.ge.0.or.iperio.eq.1) then
@@ -556,13 +541,12 @@ call uscfth                                                       &
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w2     , w8     , w9     , w10    ,                            &
 !        ------
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! --- Pour la condition au bord sur l'entropie
 !     COEFA=COEFA(.,ITEMPK) et COEFB=COEFB(.,ITEMPK)
@@ -578,12 +562,12 @@ imvis1 = 1
 call viscfa                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nideve , nrdeve , nituse , nrtuse , imvis1 ,                   &
-   idevel , ituser , ia     ,                                     &
+   imvis1 ,                                                       &
+   ia     ,                                                       &
    w2     ,                                                       &
    trflms , trflmb ,                                              &
 !        ------   ------
-   rdevel , rtuser , ra     )
+   ra     )
 
 ! --- Calcul du flux de diffusion
 
@@ -615,19 +599,18 @@ call cfbsc3                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , coefu(1,1)      , coefu(1,2)      ,                   &
             coefu(1,1)      , coefu(1,2)      ,                   &
    trflms , trflmb , trflms , trflmb ,                            &
    flabgs , flbbgs ,                                              &
 !        ------   ------
    w2     , w3     , w4     , w8     , w9     , w10    ,          &
-   rdevel , rtuser , ra     )
+   ra     )
 
 
 ! 2.3 CALCUL DU FLUX DE MASSE AUX FACES
@@ -687,12 +670,11 @@ call inimas                                                       &
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ivar0  , ivar0  , ivar0  , imaspe , iphas  ,                   &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    w1     , trflmb ,                                              &
    w10    , w11    , w12    ,                                     &
    coefa(1,icliup) , coefa(1,iclivp) , coefa(1,icliwp) ,          &
@@ -701,7 +683,7 @@ call inimas                                                       &
 !        ------   ------
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , coefu  ,                            &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !--------
 ! FORMATS

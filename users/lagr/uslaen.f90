@@ -33,12 +33,11 @@ subroutine uslaen &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , nvlsta ,                            &
-   nideve , nrdeve , nituse , nrtuse ,                            &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statis , stativ , tracel ,                   &
-   rdevel , rtuser , ra     )
+   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -64,10 +63,6 @@ subroutine uslaen &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
-! nideve nrdeve    ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse nrtuse    ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! idevel(nideve    ! ia ! <-- ! complementary dev. array of integers           !
-! ituser(nituse    ! ia ! <-- ! complementary user array of integers           !
 ! ivarl            !  i ! <-- ! number of the stat (between 1 and nvlsta)      !
 ! ivarl1           !  i ! <-- ! number of the global stat + group              !
 !                  !    !     ! (average or variance)                          !
@@ -96,8 +91,6 @@ subroutine uslaen &
 !(ncelet,          !    !     ! volume statistics                              !
 !   nvlsta-1)      !    !     !                                                !
 ! tracel(ncelet    ! ra ! <-- ! real array, values cells post                  !
-! rdevel(nrdeve    ! ra ! <-- ! dev. complementary array of reals              !
-! rtuser(nrtuse    ! ra ! <-- ! user complementary array of reals              !
 !                  !    !     !                                                !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
@@ -133,10 +126,8 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , nvlsta
-integer          nideve , nrdeve , nituse , nrtuse
 integer          ivarl , ivarl1 , ivarlm , iflu , ilpd1 , icla
 
-integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
@@ -146,7 +137,6 @@ double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision tracel(ncelet)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
-double precision rdevel(nrdeve) , rtuser(nrtuse)
 double precision ra(*)
 
 ! Local variables

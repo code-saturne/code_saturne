@@ -30,17 +30,15 @@ subroutine ppray4 &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , iphas  ,                                     &
-   nideve , nrdeve , nituse , nrtuse ,                            &
 
    mode   ,                                                       &
 
    itypfb ,                                                       &
-   idevel , ituser , ia     ,                                     &
+   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    tparop , hparop , tempk  ,                                     &
-   rdevel , rtuser ,                                              &
    ra     )
 
 !===============================================================================
@@ -76,12 +74,8 @@ subroutine ppray4 &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iphas            ! i  ! <-- ! phase number                                   !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
 ! mode             ! e  ! <-- ! type de conversion enthal<->tempk              !
 ! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-! idevel(nideve)   ! ia ! <-> ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-> ! user-reserved integer work array               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -98,8 +92,6 @@ subroutine ppray4 &
 ! hparop(nfabor    ! tr ! --> ! enthalpie massique de paroi en j/kg            !
 !                  !    !     ! (en degres celsius ou kelvin)                  !
 ! tparop(nfabor    ! tr ! <-- ! temperature de paroi en kelvin                 !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-> ! user-reserved real work array                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -137,12 +129,11 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , iphas
-integer          nideve , nrdeve , nituse , nrtuse
 
 integer          mode
 
 integer          itypfb(nfabor)
-integer          idevel(nideve), ituser(nituse), ia(*)
+integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -154,7 +145,7 @@ double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision tempk(ncelet)
 double precision tparop(nfabor), hparop(nfabor)
 
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+double precision ra(*)
 
 
 ! Local variables
