@@ -1115,9 +1115,9 @@ cs_base_mem_fin(void)
       val_in[ind_bil].val = valreal[ind_bil];
       val_in[ind_bil].rank = cs_glob_rank_id;
     }
-    MPI_Reduce(&val_in, &val_min, 2, MPI_DOUBLE_INT, MPI_MINLOC,
+    MPI_Reduce(val_in, val_min, 2, MPI_DOUBLE_INT, MPI_MINLOC,
                0, cs_glob_mpi_comm);
-    MPI_Reduce(&val_in, &val_max, 2, MPI_DOUBLE_INT, MPI_MAXLOC,
+    MPI_Reduce(val_in, val_max, 2, MPI_DOUBLE_INT, MPI_MAXLOC,
                0, cs_glob_mpi_comm);
     if (cs_glob_rank_id == 0) {
       for (ind_bil = 0; ind_bil < 2; ind_bil++) {

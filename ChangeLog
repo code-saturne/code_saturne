@@ -3,6 +3,11 @@
   modified script:
     config/cs_auto_flags.sh
 
+* 02/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct array arguments to MPI_Reduce for memory summary.
+  modified files:
+    src/base/cs_base.c
+
 * 30/08/2010 - David Monfort <david.monfort@edf.fr>
   Fix EXTRA_DIST variables in the documentation.
   modified scripts:
