@@ -4,6 +4,11 @@
     config/cs_auto_flags.sh
 
 * 03/12/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix issues when removing the a particle which has exited the fluid domain.
+  modified routine:
+    src/lagr/lageli.f90
+
+* 03/12/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix a wrong indirection (using Fortran numbering instead of C) when
   calculating the head loss coefficients from the graphical user interface.
   modified routine:
