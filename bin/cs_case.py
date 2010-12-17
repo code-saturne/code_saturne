@@ -530,17 +530,12 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def copy_result(self, name):
+    def copy_result(self, src):
         """
         Retrieve result from the execution directory
         """
 
-        if os.path.isabs(name):
-            src = name
-        else:
-            src = os.path.join(self.exec_dir, name)
-
-        dest = os.path.join(self.result_dir, os.path.basename(name))
+        dest = os.path.join(self.result_dir, os.path.basename(src))
 
         if (self.results_suffix != None):
             dest += '.' + self.results_suffix
@@ -1336,7 +1331,7 @@ fi
 
         self.summary_finalize()
 
-        self.copy_result('summary')
+        self.copy_result(os.path.join(self.exec_dir, 'summary'))
 
         # Remove the Salome temporary file
 
