@@ -3,6 +3,11 @@
   modified script:
     config/cs_auto_flags.sh
 
+* 29/11/2010 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
+  Fix a memory bug in the Code_Aster coupling.
+  modified routine:
+    src/base/strini.f90
+
 * 10/11/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct bug in which runcase was not saved in results.
   modified scripts:
