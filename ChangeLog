@@ -3,6 +3,12 @@
   modified script:
     config/cs_auto_flags.sh
 
+* 03/12/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix a wrong indirection (using Fortran numbering instead of C) when
+  calculating the head loss coefficients from the graphical user interface.
+  modified routine:
+    src/base/cs_gui.c
+
 * 29/11/2010 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
   Fix a memory bug in the Code_Aster coupling.
   modified routine:
