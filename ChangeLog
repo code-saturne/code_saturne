@@ -3,6 +3,13 @@
   modified script:
     config/cs_auto_flags.sh
 
+* 13/12/2010 - David Monfort <david.monfort@edf.fr>
+  Fix the XML definition for boundary conditions with exterior exchange
+  coefficient.
+  modified routines:
+    gui/Pages/BoundaryConditionsScalarsView.py
+    gui/Pages/Boundary.py
+
 * 03/12/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix issues when removing the a particle which has exited the fluid domain.
   modified routine:

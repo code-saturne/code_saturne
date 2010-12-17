@@ -198,7 +198,7 @@ class StandardItemModelScalars(QStandardItemModel):
                 line[2] = self.boundary.getScalarImposedFlux(s_label)
                 if (row,3) not in self._disabled: self._disabled.append((row,3))
             elif choice == 'exchange_coefficient':
-                line[2] = self.boundary.getScalarImposedFlux(s_label)
+                line[2] = self.boundary.getScalarImposedValue(s_label)
                 line[3] = self.boundary.getScalarExchangeCoefficient(s_label)
                 if (row,3) in self._disabled: self._disabled.remove((row,3))
 
@@ -290,7 +290,7 @@ class StandardItemModelScalars(QStandardItemModel):
 
             elif type == 'exchange_coefficient':
                 if (row,3) in self._disabled: self._disabled.remove((row,3))
-                self._data[row][2] = self.boundary.getScalarImposedFlux(s_label)
+                self._data[row][2] = self.boundary.getScalarImposedValue(s_label)
                 self._data[row][3] = self.boundary.getScalarExchangeCoefficient(s_label)
 
         # value(s) associated to the choice
@@ -302,9 +302,9 @@ class StandardItemModelScalars(QStandardItemModel):
             if self.nature == 'inlet':
                 self.boundary.setScalar(s_label, val)
             elif self.nature == 'wall':
-                if choice == 'dirichlet':
+                if choice == 'dirichlet' or choice == 'exchange_coefficient':
                     self.boundary.setScalarImposedValue(s_label, val)
-                elif choice == 'neumann' or choice == 'exchange_coefficient':
+                elif choice == 'neumann':
                     self.boundary.setScalarImposedFlux(s_label, val)
             elif self.nature == 'outlet':
                 self.boundary.setScalar(s_label, val)

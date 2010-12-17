@@ -1180,7 +1180,7 @@ class WallBoundary(Boundary) :
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
         if tag == 'exchange_coefficient':
-            scalarNode.xmlRemoveChild('dirichlet')
+            scalarNode.xmlRemoveChild('neumann')
         else:
             for tt in ('dirichlet', 'neumann'):
                 if tt != tag:
@@ -1386,7 +1386,7 @@ class WallBoundary(Boundary) :
             self.getScalarImposedFlux(label)
             self.__deleteScalarNodes(label, 'neumann')
         elif choice == 'exchange_coefficient':
-            self.getScalarImposedFlux(label)
+            self.getScalarImposedValue(label)
             self.getScalarExchangeCoefficient(label)
             self.__deleteScalarNodes(label, 'exchange_coefficient')
 
@@ -1405,7 +1405,7 @@ class WallBoundary(Boundary) :
 
         choice = self.getScalarChoice(label)
         if choice == 'exchange_coefficient':
-            choice = 'neumann'
+            choice = 'dirichlet'
 
         value = scalarNode.xmlGetChildDouble(choice)
         if value == None :
@@ -1428,7 +1428,7 @@ class WallBoundary(Boundary) :
 
         choice = self.getScalarChoice(label)
         if choice == 'exchange_coefficient':
-            choice = 'neumann'
+            choice = 'dirichlet'
 
         scalarNode.xmlSetData(choice, value)
 
@@ -1438,7 +1438,7 @@ class WallBoundary(Boundary) :
         Get scalar dirichlet value
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
-        Model().isInList(self.getScalarChoice(label), ('dirichlet',))
+        Model().isInList(self.getScalarChoice(label), ('dirichlet', 'exchange_coefficient'))
 
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
@@ -1459,7 +1459,7 @@ class WallBoundary(Boundary) :
         """
         Model().isFloat(value)
         Model().isInList(label, self.sca_model.getScalarLabelsList())
-        Model().isInList(self.getScalarChoice(label), ('dirichlet',))
+        Model().isInList(self.getScalarChoice(label), ('dirichlet', 'exchange_coefficient'))
 
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
@@ -1474,7 +1474,7 @@ class WallBoundary(Boundary) :
         Get scalar neumann value
         """
         Model().isInList(label, self.sca_model.getScalarLabelsList())
-        Model().isInList(self.getScalarChoice(label), ('neumann', 'exchange_coefficient'))
+        Model().isInList(self.getScalarChoice(label), ('neumann',))
 
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
@@ -1495,7 +1495,7 @@ class WallBoundary(Boundary) :
         """
         Model().isFloat(value)
         Model().isInList(label, self.sca_model.getScalarLabelsList())
-        Model().isInList(self.getScalarChoice(label), ('neumann', 'exchange_coefficient'))
+        Model().isInList(self.getScalarChoice(label), ('neumann',))
 
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
 
@@ -3018,7 +3018,7 @@ class WallBoundaryTestCase(ModelTest):
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
                         <scalar choice="exchange_coefficient" label="sca1" name="scalar1" type="user">
-                            <neumann>0.0</neumann>
+                            <dirichlet>0.0</dirichlet>
                             <exchange_coefficient>0.0</exchange_coefficient>
                         </scalar>
                         <scalar choice="dirichlet" label="sca2" name="scalar2" type="user">
@@ -3034,14 +3034,14 @@ class WallBoundaryTestCase(ModelTest):
            'Could not get scalar choice for wall boundary'
 
 
-    def checkSetAndGetScalarImposedValueFluxAndExchangeCoefficient(self):
+    def checkSetAndGetScalarImposedValueAndExchangeCoefficient(self):
         """Check whether the scalar values could be set and get for wall boundary."""
         model = Boundary("wall", "mur", self.case)
         model.sca_model.addUserScalar('1', 'sca1')
         model.sca_model.addUserScalar('1', 'sca2')
         model.setScalarChoice('sca1', 'exchange_coefficient')
         model.setScalarChoice('sca2', 'dirichlet')
-        model.setScalarImposedFlux('sca1', 130.)
+        model.setScalarImposedValue('sca1', 130.)
         model.setScalarExchangeCoefficient('sca1', 0.130)
         model.setScalarImposedValue('sca2', 55.)
         node =  model._XMLBoundaryConditionsNode
@@ -3050,7 +3050,7 @@ class WallBoundaryTestCase(ModelTest):
                     <wall label="mur">
                         <velocity_pressure choice="off"/>
                         <scalar choice="exchange_coefficient" label="sca1" name="scalar1" type="user">
-                            <neumann>130.0</neumann>
+                            <dirichlet>130.0</dirichlet>
                             <exchange_coefficient>0.130</exchange_coefficient>
                         </scalar>
                         <scalar choice="dirichlet" label="sca2" name="scalar2" type="user">
@@ -3065,7 +3065,7 @@ class WallBoundaryTestCase(ModelTest):
         assert model.getScalarImposedValue('sca2') == 55.,\
            'Could not get scalar imposed value for wall boundary'
 
-        assert model.getScalarImposedFlux('sca1') == 130.,\
+        assert model.getScalarImposedValue('sca1') == 130.,\
             'Could not get scalar imposed value for wall boundary'
 
         assert model.getScalarExchangeCoefficient('sca1') == 0.130,\
