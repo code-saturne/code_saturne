@@ -3,6 +3,16 @@
   modified script:
     config/cs_auto_flags.sh
 
+* 14/12/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove memory usage field from PBS batch template and
+  fix handling of PBS batch directives by GUI.
+  modified routines:
+    bin/runcase.in
+    bin/runcase.py.in
+    gui/Pages/BatchRunningPBSJobManagementDialogForm.ui
+    gui/Pages/BatchRunningView.py
+    gui/Pages/BatchRunningModel.py
+
 * 13/12/2010 - David Monfort <david.monfort@edf.fr>
   Fix the XML definition for boundary conditions with exterior exchange
   coefficient.

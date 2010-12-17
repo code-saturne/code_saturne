@@ -379,13 +379,12 @@ class BatchRunningPBSJobManagementDialogView(QDialog, Ui_BatchRunningPBSJobManag
         self.result  = self.default.copy()
 
         # Validators
-        validatorJobName  = RegExpValidator(rx, self.lineEditJobName, QRegExp("[_A-Za-z0-9]*"))
+        validatorJobName  = RegExpValidator(self.lineEditJobName, QRegExp("[_A-Za-z0-9]*"))
         validatorNodes    = IntValidator(self.lineEditNodes, min=1)
-        validatorCPUNodes = IntValidator(self.lineEditCPUNodes, min=1, max=2)
+        validatorCPUNodes = IntValidator(self.lineEditCPUNodes, min=1, max=32)
         validatorHours    = IntValidator(self.lineEditHours, min=0, max=999)
         validatorMinutes  = IntValidator(self.lineEditMinutes, min=0, max=59)
         validatorSeconds  = IntValidator(self.lineEditSeconds, min=0, max=59)
-        validatorMemory   = IntValidator(self.lineEditMemory, min=1, max=9999999)
 
         self.lineEditJobName.setValidator(validatorJobName)
         self.lineEditNodes.setValidator(validatorNodes)
@@ -394,13 +393,11 @@ class BatchRunningPBSJobManagementDialogView(QDialog, Ui_BatchRunningPBSJobManag
         self.lineEditHours.setValidator(validatorHours)
         self.lineEditMinutes.setValidator(validatorMinutes)
         self.lineEditSeconds.setValidator(validatorSeconds)
-        self.lineEditMemory.setValidator(validatorMemory)
 
         # Previous values
         self.job_name     = self.default['PBS_JOB_NAME']
         self.cluster_node = self.default['PBS_nodes']
         self.cluster_ppn  = self.default['PBS_ppn']
-        self.job_mem      = self.default['PBS_mem']
         L = string.split(self.default['PBS_walltime'], ":")
         self.h_cput = L[0]
         self.m_cput = L[1]
@@ -413,7 +410,6 @@ class BatchRunningPBSJobManagementDialogView(QDialog, Ui_BatchRunningPBSJobManag
         self.lineEditHours.setText(QString(str(self.h_cput)))
         self.lineEditMinutes.setText(QString(str(self.m_cput)))
         self.lineEditSeconds.setText(QString(str(self.s_cput)))
-        self.lineEditMemory.setText(QString(str(self.job_mem)))
 
 
     def get_result(self):
@@ -439,8 +435,6 @@ class BatchRunningPBSJobManagementDialogView(QDialog, Ui_BatchRunningPBSJobManag
             m_cput = str(self.lineEditMinutes.text())
             s_cput = str(self.lineEditSeconds.text())
             self.result['PBS_walltime'] = h_cput + ":" + m_cput + ":" + s_cput
-        if self.lineEditMemory.validator().state == QValidator.Acceptable:
-            self.result['PBS_mem']  = str(self.lineEditMemory.text())
 
         QDialog.accept(self)
 
@@ -862,7 +856,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Get PBS card informations.
         """
         default = {}
-        list = ['PBS_JOB_NAME', 'PBS_nodes', 'PBS_ppn', 'PBS_walltime', 'PBS_mem']
+        list = ['PBS_JOB_NAME', 'PBS_nodes', 'PBS_ppn', 'PBS_walltime']
         for opt in list:
             default[opt] = self.mdl.dicoValues[opt]
         log.debug("pbsJobManagement -> %s" % str(default))
@@ -887,14 +881,12 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 ##        default['job_name'] = self.mdl.dicoValues['PBS_JOB_NAME']
 ##        default['NQS_cput'] =
 ##        default['NQS_cpuT'] =
-##        default['NQS_mem'] =
 ##        windowTitle = self.tr("CaThy")
 ##        dialog = LSFJobManagementDialog(self.myPage, title=t.CATHY, default=default)
 ##
 ##        self.job_name = dialog.result['job_name']
 ##        self.NQS_cpult = dialog.result['NQS_cput']
 ##        self.NQS_cpulT = dialog.result['NQS_cpuT'] + dialog.result['NQS_cput']
-##        self.job_memory = dialog.result['NQS_mem']
 ##
 ##        self.mdl.updateBatchScriptFile()
 

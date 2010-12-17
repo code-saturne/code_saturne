@@ -130,7 +130,6 @@ class BatchRunningModel(Model):
         self.dicoValues['PBS_nodes'] = '1'
         self.dicoValues['PBS_ppn'] = '2'
         self.dicoValues['PBS_walltime'] = '1:00:00'
-        self.dicoValues['PBS_mem'] = '320'
         self.dicoValues['EXEC_PREPROCESS'] = "yes"
         self.dicoValues['EXEC_PARTITION'] = "yes"
         self.dicoValues['EXEC_KERNEL'] = "yes"
@@ -243,7 +242,7 @@ class BatchRunningModel(Model):
         """
         lines = self.lines
 
-        list = ['PBS_JOB_NAME','PBS_nodes','PBS_ppn','PBS_walltime','PBS_mem']
+        list = ['PBS_JOB_NAME','PBS_nodes','PBS_ppn','PBS_walltime']
 
         for k in self.dicoValues.keys():
             if k not in list and k not in ('THERMOCHEMISTRY_DATA', 'METEO_DATA'):
@@ -264,24 +263,39 @@ class BatchRunningModel(Model):
                                 #
                                 pass
 
-        if self.case['computer'] == "pbs":
-            for (word, ind, lab) in [('#PBS -j eo -N ', 0, 'PBS_JOB_NAME')]:
-                for i in range(len(lines)):
-                    index = string.rfind(lines[i], word)
-                    if index == ind:
-                        self.dicoValues[lab] = self._removeQuotes(lines[i], ind, word)
+        # TODO: specialize for PBS Professional and TORQUE (OpenPBS has not been
+        # maintained since 2004, so we do not expect to encounter it).
+        # We use the "-l nodes=N:ppn=P" syntax here, which common to all PBS
+        # variants, but PBS Pro considers the syntax depecated, and prefers its
+        # own "-l select=N:ncpus=P:mpiprocs=P" syntax.
+        # We do not have access to a PBS Professional system, but according to
+        # its documentation, it has commands such as "pbs-report" or "pbs_probe"
+        # which are not part of TORQUE, while the latter has "pbsnodelist" or
+        # #pbs-config". The presence of either could help determine which
+        # system is available.
 
-            for (word, next, lab) in [('#PBS -l nodes', ':ppn'    , 'PBS_nodes'),
-                                      (':ppn'         ,',walltime', 'PBS_ppn'),
-                                      (',walltime'    ,',mem'    , 'PBS_walltime'),
-                                      (',mem'        , 'mb'     , 'PBS_mem')]:
-                word = word + "="
-                for i in range(len(lines)):
-                    ind1 = string.rfind(lines[i], word)
-                    ind2 = string.rfind(lines[i], next)
-                    if ind1 != -1 and ind2 != -1:
-                        ch = lines[i][ind1+len(word):ind2]
-                        self.dicoValues[lab] = ch
+        if self.case['computer'] == "pbs":
+            for i in range(len(lines)):
+                if lines[i][0:4] == "#PBS":
+                    try:
+                        batch_args = lines[i][4:]
+                        index = string.rfind(batch_args, '\n')
+                        batch_args = batch_args[0:index]
+                        index = string.rfind(batch_args, ' -')
+                        while index > -1:
+                            arg = batch_args[index+1:]
+                            batch_args = batch_args[0:index]
+                            if arg[0:2] == "-N":
+                                self.dicoValues['PBS_JOB_NAME'] = arg.split()[1]
+                            elif arg[0:9] == "-l nodes=":
+                                arg_tmp = arg[9:].split(':')
+                                self.dicoValues['PBS_nodes'] = arg_tmp[0]
+                                self.dicoValues['PBS_ppn'] = arg_tmp[1].split('=')[1]
+                            elif arg[0:12] == "-l walltime=":
+                                self.dicoValues['PBS_walltime'] = arg.split('=')[1]
+                            index = string.rfind(batch_args, ' -')
+                    except Exception:
+                        pass
 
         self.initializeBatchScriptFile()
 
@@ -367,27 +381,28 @@ class BatchRunningModel(Model):
 
         #  keywords only for the PBS Cluster
         if self.case['computer'] == "pbs":
-            for (word, ind, var) in [('#PBS -j eo -N ', 0, self.dicoValues['PBS_JOB_NAME'])]:
-                for i in range(len(lines)):
-                    index = string.rfind(lines[i], word)
-                    if index == ind:
-                        if type(var) != types.StringType :
-                            var = str(var)
-                            if var == "0" : var=""
-                        lines[i] = word + var + '\n'
-
-            for (word, ind, next) in [('#PBS -l nodes', 0, ':ppn')]:
-                for i in range(len(lines)):
-                    ind1 = string.rfind(lines[i], word)
-                    ind2 = string.rfind(lines[i], next)
-                    if ind1 == ind and ind2 != -1:
-                        ch = ""
-                        for (w, dic) in [('#PBS -l nodes=', self.dicoValues['PBS_nodes']),
-                                         (':ppn=',          self.dicoValues['PBS_ppn']),
-                                         (',walltime=',     self.dicoValues['PBS_walltime']),
-                                         (',mem=',          self.dicoValues['PBS_mem'])]:
-                            ch = ch + w + str(dic)
-                        lines[i] = ch + "mb\n"
+            for i in range(len(lines)):
+                if lines[i][0:4] == "#PBS":
+                    ch = "\n"
+                    batch_args = lines[i][4:]
+                    index = string.rfind(batch_args, '\n')
+                    batch_args = batch_args[0:index]
+                    index = string.rfind(batch_args, ' -')
+                    while index > -1:
+                        arg = batch_args[index+1:]
+                        batch_args = batch_args[0:index]
+                        if arg[0:2] == "-N":
+                            ch = " -N " + self.dicoValues['PBS_JOB_NAME'] + ch
+                        elif arg[0:9] == "-l nodes=":
+                            ch = " -l nodes=" + self.dicoValues['PBS_nodes'] \
+                                +  ":ppn=" + self.dicoValues['PBS_ppn'] + ch
+                        elif arg[0:12] == "-l walltime=":
+                            ch = " -l walltime=" + self.dicoValues['PBS_walltime'] + ch
+                        else:
+                            ch = ' ' + arg + ch
+                        index = string.rfind(batch_args, ' -')
+                    ch = "#PBS" + ch
+                    lines[i] = ch
 
         f = open(self.script1, 'w')
         f.writelines(lines)
@@ -454,7 +469,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         '#\n'\
         '#                  CARTES BATCH POUR CLUSTERS sous PBS\n'\
         '#\n'\
-        '#PBS -l nodes=16:ppn=1,walltime=34:77:22,mem=832mb\n'\
+        '#PBS -l nodes=16:ppn=1,walltime=34:77:22\n'\
         '#PBS -j eo -N super_toto\n'
 
         lance_LSF = '# test \n'\
@@ -591,7 +606,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'CS_TMP_PREFIX': '/home/toto',
         'PBS_ppn': '2',
         'PBS_walltime': '1:00:00',
-        'PBS_mem': '320',
         'COMMAND_PERIO': '',
         'EXEC_PREPROCESS':'yes',
         'EXEC_PARTITION':'yes',
@@ -639,7 +653,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'CS_TMP_PREFIX': '',
         'PBS_ppn': '1',
         'PBS_walltime': '34:77:22',
-        'PBS_mem': '832',
         'COMMAND_PERIO': ''}
 
         for k in dico_PBS.keys():
@@ -667,7 +680,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         """ Check whether the BatchRunningModel class could update file"""
         mdl = BatchRunningModel(self.case)
         mdl.readBatchScriptFile()
-        mdl.dicoValues['PBS_mem']='512'
         mdl.dicoValues['PBS_walltime']='12:42:52'
         dicoPBS_updated = mdl.dicoValues
         mdl.updateBatchScriptFile()

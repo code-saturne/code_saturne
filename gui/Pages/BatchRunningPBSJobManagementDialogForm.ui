@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>290</width>
-    <height>214</height>
+    <width>385</width>
+    <height>190</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -39,13 +39,6 @@
          <widget class="QLabel" name="labelCPUTime" >
           <property name="text" >
            <string>CPU time</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_8" >
-          <property name="text" >
-           <string>Memory (Mb)</string>
           </property>
          </widget>
         </item>
@@ -180,9 +173,6 @@
            </widget>
           </item>
          </layout>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="lineEditMemory" />
         </item>
        </layout>
       </item>
