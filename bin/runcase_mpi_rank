@@ -32,7 +32,7 @@
 # In order to get the MPI rank from a script launched
 # by mpirun (or prun, mpijob, or equivalent):
 #
-# MPI_RANK=`cs_runcase_mpi_rank $@`
+# MPI_RANK=`runcase_mpi_rank $@`
 #
 # Mainly useful to launch MPMD applications
 # like coupling within MPI 1.2 environment
