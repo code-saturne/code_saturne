@@ -26,7 +26,8 @@ TEXMAIN = developper.tex
 
 # Other LaTex document
 
-TEXOTHERS =
+TEXOTHERS = \
+coding_standards.tex
 
 TEXINPUTFILES =
 

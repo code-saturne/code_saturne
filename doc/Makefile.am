@@ -21,7 +21,7 @@
 #-------------------------------------------------------------------------------
 
 #SUBDIRS = developper howto install refcard theory tutorial user
-SUBDIRS = refcard theory tutorial user
+SUBDIRS = refcard theory tutorial user developper
 
 EXTRA_DIST = \
 style/csdoc.sty \
