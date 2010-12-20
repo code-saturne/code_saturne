@@ -3,18 +3,6 @@
   modified script:
     config/cs_auto_flags.sh
 
-* 27/10/2010 - Yvan Fournier <yvan.fournier@edf.fr>
-  Add a developpers guide with coding standards.
-  added file:
-    doc/developper/coding_standards.tex
-  modified files:
-    doc/style/csdoc.sty
-    doc/developper/developper.tex
-  modified scripts:
-    bin/cs_info.py
-    doc/developper/Makefile.am
-    doc/Makefile.am
-
 * 14/12/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove memory usage field from PBS batch template and
   fix handling of PBS batch directives by GUI.
@@ -43,6 +31,16 @@
   modified routine:
     src/base/cs_gui.c
 
+* 03/12/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct mesh reading bug when FVM is compiled with --enable-long-gnum.
+  modified files:
+    src/base/cs_preprocessor_data.c
+
+* 03/12/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove calls to deprecated bft_fp_trap_set() function.
+  modified files:
+    src/apps/cs_solver.c
+
 * 29/11/2010 - Mickael Hassanaly <mickael.hassanaly@edf.fr>
   Fix a memory bug in the Code_Aster coupling.
   modified routine:
@@ -58,22 +56,17 @@
   modified files:
     src/base/cs_base.c
 
-* 30/08/2010 - David Monfort <david.monfort@edf.fr>
-  Fix EXTRA_DIST variables in the documentation.
+* 27/10/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a developpers guide with coding standards.
+  added file:
+    doc/developper/coding_standards.tex
+  modified files:
+    doc/style/csdoc.sty
+    doc/developper/developper.tex
   modified scripts:
-    doc/tutorial/graphics/Makefile.am
-    doc/tutorial/Makefile.am
-    doc/user/Makefile.am
-
-* 03/12/2010 - Yvan Fournier <yvan.fournier@edf.fr>
-  Correct mesh reading bug when FVM is compiled with --enable-long-gnum.
-  modified files:
-    src/base/cs_preprocessor_data.c
-
-* 03/12/2010 - Yvan Fournier <yvan.fournier@edf.fr>
-  Remove calls to deprecated bft_fp_trap_set() function.
-  modified files:
-    src/apps/cs_solver.c
+    bin/cs_info.py
+    doc/developper/Makefile.am
+    doc/Makefile.am
 
 * 26/10/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Handle processor list under LSF when LSB_MCPU_HOSTS is used instead
@@ -102,6 +95,13 @@
   compiler).
   modified file:
     extras/installer/install_saturne.py
+
+* 30/08/2010 - David Monfort <david.monfort@edf.fr>
+  Fix EXTRA_DIST variables in the documentation.
+  modified scripts:
+    doc/tutorial/graphics/Makefile.am
+    doc/tutorial/Makefile.am
+    doc/user/Makefile.am
 
 * 24/08/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix the info command of code_saturne.
