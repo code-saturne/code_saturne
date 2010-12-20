@@ -71,7 +71,7 @@ def preprocessorFile(parent, initdir):
     """
     file_name = ""
     title = tr("Select a Code_Saturne Preprocessor listing")
-    filetypes = "Preprocessor listing (listpre.*);;All Files (*)"
+    filetypes = "Preprocessor listing (*.log);;All Files (*)"
     filt = "All files (*)"
     file_name = QFileDialog.getOpenFileName(parent, title, initdir, filetypes, filt)
     file_name = str(file_name)
@@ -83,7 +83,7 @@ def preprocessorFile(parent, initdir):
 
         j=0
         for i in range(len(lines)):
-            index = string.rfind(lines[i], "ECS   version")
+            index = string.rfind(lines[i], "Code_Saturne")
             if index != -1:
                 j = i
                 break

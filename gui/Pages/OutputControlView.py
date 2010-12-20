@@ -269,6 +269,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelPostProcessing.addItem(self.tr("Only at the end of calculation"), 'At the end')
         self.modelPostProcessing.addItem(self.tr("At each time step"), 'At each step')
         self.modelPostProcessing.addItem(self.tr("Post-processing every 'n' time steps"), 'Frequency_c')
+        self.modelPostProcessing.addItem(self.tr("Post-processing every 'x' second(s)"), 'Frequency_c_x')
 
         self.modelMeshes.addItem(self.tr("fixed"), '0')
         self.modelMeshes.addItem(self.tr("deformable"), '1')
@@ -277,11 +278,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelMeshes.addItem(self.tr("deformable (with displacement)"), '11')
         self.modelMeshes.addItem(self.tr("modifiable (with displacement)"), '12')
 
-        ale = MobileMeshModel(self.case).getMethod()
-        if ale == 'off':
-            self.modelMeshes.disableItem(str_model='10')
-            self.modelMeshes.disableItem(str_model='11')
-            self.modelMeshes.disableItem(str_model='12')
+        ale = self.ale()
 
         self.modelFMTCHR.addItem(self.tr("EnSight Gold"), 'EnSight')
         self.modelFMTCHR.addItem(self.tr("MED"), 'MED_fichier')
@@ -301,6 +298,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelHisto.addItem(self.tr("No monitoring points file"), 'None')
         self.modelHisto.addItem(self.tr("Monitoring points files at each time step"), 'At each step')
         self.modelHisto.addItem(self.tr("Monitoring points file every 'n' time steps"), 'Frequency_h')
+        self.modelHisto.addItem(self.tr("Monitoring points file every 'x' second(s)"), 'Frequency_h_x')
 
         # Model for QTableView
 
@@ -322,6 +320,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.connect(self.lineEditNTLIST, SIGNAL("textChanged(const QString &)"), self.slotListingFrequency)
         self.connect(self.comboBoxPostProcessing, SIGNAL("activated(const QString&)"), self.slotOutputPostpro)
         self.connect(self.lineEditNTCHR, SIGNAL("textChanged(const QString &)"), self.slotPostproFrequency)
+        self.connect(self.lineEditFRCHR, SIGNAL("textChanged(const QString &)"), self.slotPostproFrequencyTime)
         self.connect(self.checkBoxICHRVL, SIGNAL("clicked()"), self.slotVolumeOuput)
         self.connect(self.checkBoxICHRBO, SIGNAL("clicked()"), self.slotBoundaryOuput)
         self.connect(self.checkBoxICHRSY, SIGNAL("clicked()"), self.slotSyrthesOutput)
@@ -337,15 +336,20 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.connect(self.toolButtonDelete, SIGNAL("clicked()"), self.slotDeleteMonitoringPoints)
         self.connect(self.comboBoxHisto, SIGNAL("activated(const QString&)"), self.slotMonitoringPoint)
         self.connect(self.lineEditHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequency)
+        self.connect(self.lineEditFRHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequencyTime)
 
         # Validators
 
         validatorNTLIST = QtPage.IntValidator(self.lineEditNTLIST, min=1)
         validatorNTCHR  = QtPage.IntValidator(self.lineEditNTCHR, min=1)
         validatorNTHIST = QtPage.IntValidator(self.lineEditHisto, min=1)
+        validatorFRCHR  = QtPage.DoubleValidator(self.lineEditFRCHR)
+        validatorFRHIST = QtPage.DoubleValidator(self.lineEditFRHisto)
         self.lineEditNTLIST.setValidator(validatorNTLIST)
         self.lineEditNTCHR.setValidator(validatorNTCHR)
         self.lineEditHisto.setValidator(validatorNTHIST)
+        self.lineEditFRCHR.setValidator(validatorFRCHR)
+        self.lineEditFRHisto.setValidator(validatorFRHIST)
 
         # Initialisation of the listing frequency
 
@@ -363,30 +367,28 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # Initialisation of the post-pro output frequency
 
-        ntchr = self.mdl.getPostprocessingFrequency()
-        if ntchr == -1:
-            m = "At the end"
-        elif ntchr == 1:
-            m = "At each step"
-        else:
-            m = "Frequency_c"
+        m = self.mdl.getPostprocessingType()
+        if m == 'Frequency_c_x' :
+            frchr = self.mdl.getPostprocessingFrequencyTime()
+            self.lineEditFRCHR.setText(QString(str(frchr)))
+        else :
+            ntchr = self.mdl.getPostprocessingFrequency()
+            self.lineEditNTCHR.setText(QString(str(ntchr)))
         self.modelPostProcessing.setItem(str_model=m)
         t = self.modelPostProcessing.dicoM2V[m]
-        self.lineEditNTCHR.setText(QString(str(ntchr)))
         self.slotOutputPostpro(t)
 
         # Initialisation of the monitoring points files
 
-        nthist = self.mdl.getMonitoringPointFrequency()
-        if nthist == -1:
-            m = "None"
-        elif nthist == 1:
-            m = "At each step"
-        else:
-            m = "Frequency_h"
+        m = self.mdl.getMonitoringPointType()
+        if m == 'Frequency_h_x' :
+            frhist = self.mdl.getMonitoringPointFrequencyTime()
+            self.lineEditFRHisto.setText(QString(str(frhist)))
+        else :
+            nthist = self.mdl.getMonitoringPointFrequency()
+            self.lineEditHisto.setText(QString(str(nthist)))
         self.modelHisto.setItem(str_model=m)
         t = self.modelHisto.dicoM2V[m]
-        self.lineEditHisto.setText(QString(str(nthist)))
         self.slotMonitoringPoint(t)
 
         # ICHRVL, ICHRBO, ICHRSY
@@ -481,24 +483,39 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         chrono = self.modelPostProcessing.dicoV2M[str(text)]
         log.debug("slotOutputPostpro-> chrono = %s" % chrono)
+        self.mdl.setPostprocessingType(chrono)
 
         if chrono == "At the end":
             ntchr = -1
             self.mdl.setPostprocessingFrequency(ntchr)
+            self.lineEditNTCHR.show()
             self.lineEditNTCHR.setText(QString(str(ntchr)))
             self.lineEditNTCHR.setEnabled(False)
+            self.lineEditFRCHR.hide()
 
         elif chrono == "At each step":
             ntchr = 1
+            self.mdl.setPostprocessingFrequency(ntchr)
+            self.lineEditNTCHR.show()
             self.lineEditNTCHR.setText(QString(str(ntchr)))
             self.lineEditNTCHR.setEnabled(False)
+            self.lineEditFRCHR.hide()
 
         elif chrono == "Frequency_c":
+            self.lineEditNTCHR.show()
             self.lineEditNTCHR.setEnabled(True)
-            ntchr, ok = self.lineEditNTCHR.text().toInt()
+            ntchr = self.mdl.getPostprocessingFrequency()
             if ntchr < 1:
                 ntchr = 1
-                self.lineEditNTCHR.setText(QString(str(ntchr)))
+                self.mdl.setPostprocessingFrequency(ntchr)
+            self.lineEditNTCHR.setText(QString(str(ntchr)))
+            self.lineEditFRCHR.hide()
+
+        elif chrono == "Frequency_c_x":
+            self.lineEditNTCHR.hide()
+            self.lineEditFRCHR.show()
+            frchr = self.mdl.getPostprocessingFrequencyTime()
+            self.lineEditFRCHR.setText(QString(str(frchr)))
 
 
     @pyqtSignature("const QString &")
@@ -513,30 +530,56 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
 
     @pyqtSignature("const QString &")
+    def slotPostproFrequencyTime(self, text):
+        """
+        Input the frequency of the post-processing output
+        """
+        n, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            log.debug("slotPostproFrequencyTime-> FRCHR = %s" % n)
+            self.mdl.setPostprocessingFrequencyTime(n)
+
+
+    @pyqtSignature("const QString &")
     def slotMonitoringPoint(self, text):
         """
         Input choice of the output of monitoring points files
         """
         histo = self.modelHisto.dicoV2M[str(text)]
         log.debug("slotMonitoringPoint-> histo = %s" % histo)
+        self.mdl.setMonitoringPointType(histo)
 
         if histo == "None":
             nthist = -1
             self.mdl.setMonitoringPointFrequency(nthist)
+            self.lineEditHisto.show()
             self.lineEditHisto.setText(QString(str(nthist)))
             self.lineEditHisto.setEnabled(False)
+            self.lineEditFRHisto.hide()
 
         if histo == "At each step":
             nthist = 1
+            self.mdl.setMonitoringPointFrequency(nthist)
+            self.lineEditHisto.show()
             self.lineEditHisto.setText(QString(str(nthist)))
             self.lineEditHisto.setEnabled(False)
+            self.lineEditFRHisto.hide()
 
         if histo == "Frequency_h":
+            self.lineEditHisto.show()
             self.lineEditHisto.setEnabled(True)
-            nthist, ok = self.lineEditHisto.text().toInt()
+            nthist = self.mdl.getMonitoringPointFrequency()
             if nthist < 1:
                 nthist = 1
-                self.lineEditHisto.setText(QString(str(nthist)))
+                self.mdl.setMonitoringPointFrequency(nthist)
+            self.lineEditHisto.setText(QString(str(nthist)))
+            self.lineEditFRHisto.hide()
+
+        if histo == "Frequency_h_x":
+            self.lineEditHisto.hide()
+            self.lineEditFRHisto.show()
+            frlist = self.mdl.getMonitoringPointFrequencyTime()
+            self.lineEditFRHisto.setText(QString(str(frlist)))
 
 
     @pyqtSignature("const QString &")
@@ -548,6 +591,17 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if self.sender().validator().state == QValidator.Acceptable:
             log.debug("slotMonitoringPointFrequency-> NTHIST = %s" % n)
             self.mdl.setMonitoringPointFrequency(n)
+
+
+    @pyqtSignature("const QString &")
+    def slotMonitoringPointFrequencyTime(self, text):
+        """
+        Input the frequency of the monitoring point output
+        """
+        n, ok = text.toDouble()
+        if self.sender().validator().state == QValidator.Acceptable:
+            log.debug("slotMonitoringPointFrequencyTime-> FRHIST = %s" % n)
+            self.mdl.setMonitoringPointFrequencyTime(n)
 
 
     @pyqtSignature("")
@@ -726,6 +780,17 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             name = str(n+1)
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
             self.__insertMonitoringPoint(name, X, Y, Z)
+
+
+    def ale(self):
+        """
+        """
+        ale = MobileMeshModel(self.case).getMethod()
+        if ale == 'off':
+            self.modelMeshes.disableItem(str_model='10')
+            self.modelMeshes.disableItem(str_model='11')
+            self.modelMeshes.disableItem(str_model='12')
+        return ale
 
 
     def tr(self, text):
