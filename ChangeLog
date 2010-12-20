@@ -1,4 +1,9 @@
 * 20/12/2010 - David Monfort <david.monfort@edf.fr>
+  Fix configure outut when defining fvm_gnum as long integers.
+  modified scripts:
+    configure.ac
+
+* 20/12/2010 - David Monfort <david.monfort@edf.fr>
   Add missing CGNSRUNPATH in the cs_solver compilation.
   modified script:
     src/apps/Makefile.am

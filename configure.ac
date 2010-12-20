@@ -797,7 +797,7 @@ echo " use debugging code: "$debug""
 echo " use malloc hooks: "$cs_have_malloc_hooks""
 echo " use graphical user interface: "$cs_have_gui""
 echo " use preprocessor: "$cs_have_prepro""
-echo " use long integers: "$long_int""
+echo " use long integers: "$cs_have_long_gnum""
 echo " Zlib (gzipped file) support: "$cs_have_zlib""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 if (test x$cs_have_mpi = xyes) ; then
