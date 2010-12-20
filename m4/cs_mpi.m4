@@ -291,6 +291,12 @@ if test "x$with_mpi" != "xno" ; then
     fi
   fi
 
+  # Add a specific preprocessor directive to skip the MPI C++ bindings
+  case $mpi_type in
+    OpenMPI) MPI_CPPFLAGS="$MPI_CPPFLAGS -DOMPI_SKIP_MPICXX" ;;
+    MPICH2)  MPI_CPPFLAGS="$MPI_CPPFLAGS -DMPICH_SKIP_MPICXX" ;;
+  esac
+
   CPPFLAGS="$saved_CPPFLAGS"
   LDFLAGS="$saved_LDFLAGS"
   LIBS="$saved_LIBS"
