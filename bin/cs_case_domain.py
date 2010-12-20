@@ -1110,9 +1110,10 @@ class domain(base_domain):
         # User files
 
         if self.user_output_files != None:
+            import glob
             user_files = []
-            for f in self.user_output_files:
-                if f in dir_files:
+            for pattern in self.user_output_files:
+                for f in glob.glob(pattern):
                     user_files.append(f)
             if len(user_files) > 0:
                 self.copy_results_to_dir(user_files, 'RES_USER')
