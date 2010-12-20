@@ -1,4 +1,10 @@
 * 20/12/2010 - David Monfort <david.monfort@edf.fr>
+  Automatically check for SCOTCH and METIS presence at configure stage.
+  modified scripts:
+    m4/cs_metis.m4
+    m4/cs_scotch.m4
+
+* 20/12/2010 - David Monfort <david.monfort@edf.fr>
   Remove the developper documentation directory from the DIST_SUBDIR list as
   it is now compile by default.
   modified script:
