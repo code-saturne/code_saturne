@@ -1,4 +1,13 @@
 * 20/12/2010 - David Monfort <david.monfort@edf.fr>
+  Fix the rphas/pphas member of the cs_var_t structure. They were arrays and
+  not scalars.
+  modified routines:
+    src/base/cs_gui.c
+    src/base/cs_gui.h
+    src/base/cs_gui_variables.h
+    src/base/iniusi.f90
+
+* 20/12/2010 - David Monfort <david.monfort@edf.fr>
   Add a preprocessor directive to skip MPI C++ bindings if one compiles with a
   C++ compiler.
   modified script:

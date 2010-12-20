@@ -173,7 +173,6 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr);
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
-                                const int *const nphas,
                                 const int *const iu,
                                 const int *const iv,
                                 const int *const iw,

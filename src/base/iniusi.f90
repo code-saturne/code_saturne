@@ -422,7 +422,7 @@ if(iihmpr.eq.1) then
 
   call csvnum                                                     &
   !==========
-            (nvar, nphas,                                         &
+            (nvar,                                                &
              iu, iv, iw, ipr,                                     &
              iturb, ik, iep,                                      &
              ir11, ir22, ir33,                                    &

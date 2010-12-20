@@ -2559,8 +2559,8 @@ void CS_PROCF (uiinit, UIINIT) (void)
     cs_glob_var->name            = NULL;
     cs_glob_var->label           = NULL;
     cs_glob_var->rtp             = NULL;
-    cs_glob_var->rphas           = 0;
-    cs_glob_var->pphas           = 0;
+    cs_glob_var->rphas           = NULL;
+    cs_glob_var->pphas           = NULL;
     cs_glob_var->nvar            = 0;
     cs_glob_var->nscaus          = 0;
     cs_glob_var->nscapp          = 0;
@@ -2915,7 +2915,6 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
-                                const int *const nphas,
                                 const int *const iu,
                                 const int *const iv,
                                 const int *const iw,
@@ -2956,8 +2955,13 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
 
   /* Phase number */
 
-  cs_glob_var->rphas = *nphas;
-  cs_glob_var->pphas = *nphas;
+  BFT_MALLOC(cs_glob_var->rphas, *nvar, int);
+  BFT_MALLOC(cs_glob_var->pphas, *nvar, int);
+
+  for (i = 0; i < *nvar; i++) {
+    cs_glob_var->rphas[i] = iphas;
+    cs_glob_var->pphas[i] = iphas;
+  }
 
   /* 1) pressure and velocity variables */
 
@@ -5415,6 +5419,8 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
     BFT_FREE(cs_glob_var->model);
     BFT_FREE(cs_glob_var->model_value);
     BFT_FREE(cs_glob_var->rtp);
+    BFT_FREE(cs_glob_var->rphas);
+    BFT_FREE(cs_glob_var->pphas);
     BFT_FREE(cs_glob_var->name);
     BFT_FREE(cs_glob_var->type);
     BFT_FREE(cs_glob_var->head);
