@@ -9,16 +9,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-07-21 19:14+0200\n"
+"POT-Creation-Date: 2010-12-20 12:07+0100\n"
 "PO-Revision-Date: 2010-01-11 12:50+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: src/apps/cs_solver.c:297
+#: src/apps/cs_solver.c:293
 #, c-format
 msgid ""
 "\n"
@@ -27,7 +28,7 @@ msgstr ""
 "\n"
 " Découpage des faces gauches (%.3g s)\n"
 
-#: src/apps/cs_solver.c:303
+#: src/apps/cs_solver.c:299
 msgid ""
 "\n"
 " Renumbering mesh:\n"
@@ -35,11 +36,11 @@ msgstr ""
 "\n"
 " Renumérotation du maillage:\n"
 
-#: src/apps/cs_solver.c:359
+#: src/apps/cs_solver.c:355
 msgid "Mesh"
 msgstr "Maillage"
 
-#: src/apps/cs_solver.c:373
+#: src/apps/cs_solver.c:369
 #, c-format
 msgid ""
 "\n"
@@ -48,7 +49,7 @@ msgstr ""
 "\n"
 " Calcul des grandeurs géométriques (%.3g s)\n"
 
-#: src/apps/cs_solver.c:389
+#: src/apps/cs_solver.c:385
 msgid ""
 "\n"
 " Computing quality criteria\n"
@@ -56,7 +57,7 @@ msgstr ""
 "\n"
 " Calcul des critères de qualité\n"
 
-#: src/apps/cs_solver.c:411
+#: src/apps/cs_solver.c:407
 #, c-format
 msgid ""
 "\n"
@@ -71,7 +72,7 @@ msgstr ""
 "       longra =   %10d (Nombre de réels)\n"
 "       (%d octets/entier, %d octets/réel)\n"
 
-#: src/apps/cs_solver.c:421
+#: src/apps/cs_solver.c:417
 #, c-format
 msgid ""
 "\n"
@@ -84,7 +85,7 @@ msgstr ""
 "       nideve =   %10d (Nombre d'entiers)\n"
 "       nrdeve =   %10d (Nombre de réels)\n"
 
-#: src/apps/cs_solver.c:427
+#: src/apps/cs_solver.c:423
 #, c-format
 msgid ""
 "\n"
@@ -99,7 +100,7 @@ msgstr ""
 "       nrtuse =   %10d (Nombre de réels)\n"
 "\n"
 
-#: src/apps/cs_solver.c:489
+#: src/apps/cs_solver.c:485
 msgid ""
 "\n"
 " Destroying structures and ending computation\n"
@@ -2593,8 +2594,8 @@ msgstr ""
 #, c-format
 msgid ""
 " Joining operation : split face %d\n"
-" Problem in the connectivity. Could not find a connection with the vertex %"
-"d\n"
+" Problem in the connectivity. Could not find a connection with the vertex "
+"%d\n"
 msgstr ""
 
 #: src/base/cs_join_split.c:1195
@@ -3497,7 +3498,7 @@ msgstr ""
 msgid "Fluid volume"
 msgstr "Volume fluide"
 
-#: src/base/cs_mesh_warping.c:1028
+#: src/base/cs_mesh_warping.c:1031
 msgid ""
 "The faces have been renumbered before cutting.\n"
 "This case should not arise, because the mesh entities\n"
@@ -3507,12 +3508,12 @@ msgstr ""
 "Ce cas ne devrait pas se produire, car on devrait découper\n"
 "les entités de maillage avant de les renuméroter."
 
-#: src/base/cs_mesh_warping.c:1036
+#: src/base/cs_mesh_warping.c:1039
 #, c-format
 msgid "\t%12d global faces before cutting\n"
 msgstr "\t%12d faces globales avant découpage\n"
 
-#: src/base/cs_mesh_warping.c:1056
+#: src/base/cs_mesh_warping.c:1059
 #, c-format
 msgid ""
 "\t%12d global faces after cutting\n"
@@ -3521,19 +3522,19 @@ msgstr ""
 "\t%12d faces globales après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1102
+#: src/base/cs_mesh_warping.c:1105
 msgid "Warped faces to cut"
 msgstr "Faces gauche a decouper"
 
-#: src/base/cs_mesh_warping.c:1123
+#: src/base/cs_mesh_warping.c:1126
 msgid "Face warping"
 msgstr "Gauchissement des faces"
 
-#: src/base/cs_mesh_warping.c:1163
+#: src/base/cs_mesh_warping.c:1166
 msgid "Warped faces after cutting"
 msgstr "Faces gauche apres decoupage"
 
-#: src/base/cs_mesh_warping.c:1218
+#: src/base/cs_mesh_warping.c:1221
 #, c-format
 msgid ""
 "\n"
@@ -3552,7 +3553,7 @@ msgstr ""
 " Angle maximal autorisé (rad) :\t%7.4f\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1281
+#: src/base/cs_mesh_warping.c:1284
 msgid ""
 "\n"
 " No face to cut. Verify the criterion if necessary.\n"
@@ -3560,7 +3561,7 @@ msgstr ""
 "\n"
 " Aucune face à découper. Revoir le critère si nécessaire.\n"
 
-#: src/base/cs_mesh_warping.c:1328
+#: src/base/cs_mesh_warping.c:1331
 #, c-format
 msgid ""
 " Interior faces:\n"
@@ -3577,7 +3578,7 @@ msgstr ""
 "\t%12d faces localement après découpage\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1335 src/base/cs_mesh_warping.c:1375
+#: src/base/cs_mesh_warping.c:1338 src/base/cs_mesh_warping.c:1378
 #, c-format
 msgid ""
 " Size of the new face -> vertices connectivity: %12d\n"
@@ -3586,7 +3587,7 @@ msgstr ""
 " Taille de la nouvelle connectivité face -> sommets :%12d\n"
 "\n"
 
-#: src/base/cs_mesh_warping.c:1368
+#: src/base/cs_mesh_warping.c:1371
 #, c-format
 msgid ""
 " Boundary faces:\n"
@@ -4260,7 +4261,7 @@ msgstr ""
 "Le nombre de cellules pour le rang %d est nul.\n"
 "(rapport nombre de cellules / nombre de processeurs trop faible)."
 
-#: src/base/cs_preprocessor_data.c:2482
+#: src/base/cs_preprocessor_data.c:2494
 #, c-format
 msgid ""
 "The algorithm selection indicator for domain partitioning\n"
@@ -4275,7 +4276,7 @@ msgstr ""
 "  2: partition basée sur une courbe fractale\n"
 "et non %d."
 
-#: src/base/cs_preprocessor_data.c:2527
+#: src/base/cs_preprocessor_data.c:2539
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
