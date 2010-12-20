@@ -1,4 +1,9 @@
 * 20/12/2010 - David Monfort <david.monfort@edf.fr>
+  Add missing CGNSRUNPATH in the cs_solver compilation.
+  modified script:
+    src/apps/Makefile.am
+
+* 20/12/2010 - David Monfort <david.monfort@edf.fr>
   Fix the rphas/pphas member of the cs_var_t structure. They were arrays and
   not scalars.
   modified routines:

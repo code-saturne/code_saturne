@@ -93,7 +93,7 @@ $(top_builddir)/src/mei/libmei.la \
 $(top_builddir)/src/fvm/libfvm.la \
 $(top_builddir)/src/bft/libbft.la \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
-$(CGNS_LDFLAGS) $(CGNS_LIBS) \
+$(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
 $(MED_LDFLAGS) $(MED_LIBS) \
 $(HDF5_LDFLAGS) $(HDF5_LIBS) \
 $(MPI_LDFLAGS) $(MPI_LIBS) \
