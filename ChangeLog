@@ -1,4 +1,9 @@
 * 20/12/2010 - David Monfort <david.monfort@edf.fr>
+  Minor correction in the refcard.
+  modified file:
+    doc/refcard/refcard.tex
+
+* 20/12/2010 - David Monfort <david.monfort@edf.fr>
   Fix configure outut when defining fvm_gnum as long integers.
   modified scripts:
     configure.ac
