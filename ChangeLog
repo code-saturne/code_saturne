@@ -1,3 +1,9 @@
+* 20/12/2010 - David Monfort <david.monfort@edf.fr>
+  Remove the developper documentation directory from the DIST_SUBDIR list as
+  it is now compile by default.
+  modified script:
+    doc/Makefile.am
+
 * 15/12/2010 - David Monfort <david.monfort@edf.fr>
   Remove all the occurences of the user and developper arrays. User should now
   use the user_modules.f90 suggested in the user files, and developpers should

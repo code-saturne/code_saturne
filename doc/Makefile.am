@@ -23,7 +23,7 @@
 #SUBDIRS = developper howto install refcard theory tutorial user
 SUBDIRS = refcard theory tutorial user developper
 
-DIST_SUBDIRS = $(SUBDIRS) developper howto install
+DIST_SUBDIRS = $(SUBDIRS) howto install
 
 EXTRA_DIST = \
 style/csdoc.sty \
