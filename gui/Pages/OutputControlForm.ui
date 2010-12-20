@@ -5,14 +5,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>440</width>
-    <height>521</height>
+    <width>450</width>
+    <height>522</height>
    </rect>
   </property>
   <property name="windowTitle" >
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_4" >
+  <layout class="QGridLayout" >
+   <property name="margin" >
+    <number>0</number>
+   </property>
+   <property name="spacing" >
+    <number>0</number>
+   </property>
    <item row="0" column="0" >
     <widget class="QTabWidget" name="tabWidget" >
      <property name="font" >
@@ -29,15 +35,15 @@
       <attribute name="title" >
        <string>Output Control</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_3" >
+      <layout class="QGridLayout" >
        <item row="0" column="0" >
         <widget class="QGroupBox" name="groupBoxListings" >
          <property name="title" >
           <string>Outputs listings</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout" >
+         <layout class="QGridLayout" >
           <item row="0" column="0" >
-           <layout class="QHBoxLayout" name="horizontalLayout" >
+           <layout class="QHBoxLayout" >
             <item>
              <spacer>
               <property name="orientation" >
@@ -84,7 +90,7 @@
              </widget>
             </item>
             <item>
-             <spacer name="spacer" >
+             <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
@@ -106,9 +112,9 @@
          <property name="title" >
           <string>Post-processing</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_2" >
+         <layout class="QGridLayout" >
           <item row="0" column="0" >
-           <layout class="QHBoxLayout" name="horizontalLayout_2" >
+           <layout class="QHBoxLayout" >
             <item>
              <spacer>
               <property name="orientation" >
@@ -155,20 +161,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditFRCHR" >
-              <property name="maximumSize" >
-               <size>
-                <width>60</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="toolTip" >
-               <string>Code_Saturne key word: NTCHR</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="spacer_2" >
+             <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
               </property>
@@ -514,16 +507,16 @@
       <attribute name="title" >
        <string>Monitoring Points Coordinates</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_6" >
+      <layout class="QGridLayout" >
        <item row="0" column="0" >
         <widget class="QGroupBox" name="groupBoxMonitoring" >
          <property name="title" >
           <string>Monitoring points recording</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_5" >
+         <layout class="QGridLayout" >
           <item row="0" column="0" >
-           <layout class="QHBoxLayout" name="horizontalLayout_3" >
-            <item>
+           <layout class="QGridLayout" >
+            <item row="0" column="0" >
              <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
@@ -536,7 +529,7 @@
               </property>
              </spacer>
             </item>
-            <item>
+            <item row="0" column="1" >
              <widget class="QComboBox" name="comboBoxHisto" >
               <property name="minimumSize" >
                <size>
@@ -546,7 +539,7 @@
               </property>
              </widget>
             </item>
-            <item>
+            <item row="0" column="2" >
              <widget class="QLineEdit" name="lineEditHisto" >
               <property name="maximumSize" >
                <size>
@@ -559,20 +552,7 @@
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="QLineEdit" name="lineEditFRHisto" >
-              <property name="maximumSize" >
-               <size>
-                <width>40</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="toolTip" >
-               <string>Code_Saturne key word: NTHIST</string>
-              </property>
-             </widget>
-            </item>
-            <item>
+            <item row="0" column="3" >
              <spacer>
               <property name="orientation" >
                <enum>Qt::Horizontal</enum>
