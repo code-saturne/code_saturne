@@ -1548,7 +1548,7 @@ void CS_PROCF (pstcw1, PSTCW1)
  *
  * Fortran interface: use pstcma (see cs_post_f2c.f90)
  *
- * subroutine pstcm1 (nummai, nommai, lnmmai,
+ * subroutine pstcm1 (nummai, nommai, lnmmai, indgrp,
  * *****************
  *                    nbrcel, nbrfac, nbrfbr, lstcel, lstfac, lstfbr)
  *
@@ -1570,8 +1570,8 @@ void CS_PROCF (pstcm1, PSTCM1)
 (
  const cs_int_t  *nummai,
  const char      *nommai,
- const cs_int_t  *indgrp,
  const cs_int_t  *lnmmai,
+ const cs_int_t  *indgrp,
  const cs_int_t  *nbrcel,
  const cs_int_t  *nbrfac,
  const cs_int_t  *nbrfbr,
