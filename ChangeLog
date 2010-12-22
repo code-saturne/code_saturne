@@ -1,3 +1,9 @@
+* 21/12/2010 - Cyril Baudry <cyril.baudry@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Fix the behaviour when importing the groups and references from a log file.
+  modified routine:
+    gui/Pages/PreProcessingInformationsView.py
+
 * 21/12/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix inverted arguments in mesh creation function.
   modified routines:

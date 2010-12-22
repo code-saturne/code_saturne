@@ -38,6 +38,7 @@ This module contains the following classes and function:
 #-------------------------------------------------------------------------------
 
 import sys, re, os, string, logging
+import os.path
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -62,7 +63,7 @@ log = logging.getLogger("PreprocessingInformationsView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Function for select the Preprocessor listing
+# Function to select the Preprocessor log
 #-------------------------------------------------------------------------------
 
 def preprocessorFile(parent, initdir):
@@ -71,8 +72,9 @@ def preprocessorFile(parent, initdir):
     """
     file_name = ""
     title = tr("Select a Code_Saturne Preprocessor listing")
-    filetypes = "Preprocessor listing (listpre.*);;All Files (*)"
+    filetypes = "Preprocessor log (*.log);;All Files (*)"
     filt = "All files (*)"
+    initdir = os.path.join(initdir, 'check_mesh')
     file_name = QFileDialog.getOpenFileName(parent, title, initdir, filetypes, filt)
     file_name = str(file_name)
 
@@ -83,7 +85,7 @@ def preprocessorFile(parent, initdir):
 
         j=0
         for i in range(len(lines)):
-            index = string.rfind(lines[i], "ECS   version")
+            index = string.rfind(lines[i], "Code_Saturne")
             if index != -1:
                 j = i
                 break
@@ -118,7 +120,7 @@ class Informations:
 
         lines = self.readFile(file)
         if not lines:
-            raise ValueError("Code_Saturne Preprocessor listing language unknown.")
+            raise ValueError("Code_Saturne Preprocessor log language unknown.")
 
         refList, groupList = self.getListes(lines)
 
@@ -145,15 +147,14 @@ class Informations:
                     break
 
             if lang == 'fr':
-                self.str1 = "finition des familles de faces et cellules"
+                self.str1 = "Définition des familles de faces et cellules"
                 if self.chain == 'faces':
                    self.str2 = "Nombre de faces de bord"
                 elif self.chain == 'cells':
                    self.str2 = "Nombre de cellules"
                 self.str3 = 'Famille'
-                self.str4 = 'Couleur'
-                self.str5 = 'Groupe'
-                self.str6 = 'DÃ©finition des couleurs et groupes en fonction des familles'
+                self.str4 = 'Groupe'
+                self.str5 = 'Configuration locale du cas'
             else:
                 self.str1 = "Definition of face and cell families"
                 if self.chain == 'faces':
@@ -161,9 +162,8 @@ class Informations:
                 elif self.chain == 'cells':
                     self.str2 = "Number of cells"
                 self.str3 = 'Family'
-                self.str4 = 'Color'
-                self.str5 = 'Group'
-                self.str6 = 'Definition of colors and groups beyond families'
+                self.str4 = 'Group'
+                self.str5 = 'Local case configuration'
 
             return lines
 
@@ -178,7 +178,7 @@ class Informations:
                 break
 
         for n in range(j,len(lines),1):
-            if re.search(self.str6, lines[n]): break
+            if re.search(self.str5, lines[n]): break
             index = re.search(self.str3, lines[n])
             if index != None:
                 familyList =[]
@@ -189,13 +189,7 @@ class Informations:
                         p = m
                         for p in range(p-1,p-m,-1):
                             if re.search(self.str4, lines[p]) != None:
-                                coul = re.split(self.str4 + ' ', lines[p])
-                                for cl in coul[1:]:
-                                    ref = re.split('\n', cl)[0]
-                                    if ref:
-                                        if ref not in refList: refList.append(ref)
-                            if re.search(self.str5, lines[p]) != None:
-                                gr = re.split(self.str5 + ' ', lines[p])
+                                gr = re.split(self.str4 + ' ', lines[p])
                                 for g in gr[1:]:
                                     group = re.split('\n', g)[0]
                                     group = re.split('"',group)[1]
