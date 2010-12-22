@@ -75,7 +75,9 @@ class OutputControlModel(Model):
         default = {}
         default['listing_printing_frequency'] = 1
         default['postprocessing_frequency'] = -1
+        default['postprocessing_frequency_time'] = 0.1
         default['probe_recording_frequency'] = 1
+        default['probe_recording_frequency_time'] = 0.1
         default['postprocessing_options'] = "binary"
         default['postprocessing_format'] = "EnSight"
         if self.case['salome']:
@@ -126,6 +128,38 @@ class OutputControlModel(Model):
         self.node_out.xmlSetData('listing_printing_frequency', freq)
 
 
+    def getPostprocessingType(self):
+        """
+        Return the type of output for printing listing
+        """
+        node = self.node_out.xmlGetNode('postprocessing_frequency_time')
+        if node != None :
+            return 'Frequency_c_x'
+        val = self.getPostprocessingFrequency()
+        if val == -1 :
+            return 'At the end'
+        elif val == 1 :
+            return 'At each step'
+        else :
+            return 'Frequency_c'
+
+
+    def setPostprocessingType(self, type):
+        """
+        Set the type of output for printing listing
+        """
+        self.isInList(type, ['At the end', 'At each step', 'Frequency_c', 'Frequency_c_x'])
+
+        if type == 'Frequency_c_x' :
+            childNode = self.node_out.xmlGetNode('postprocessing_frequency')
+            if childNode != None :
+                childNode.xmlRemoveNode()
+        else :
+            childNode = self.node_out.xmlGetNode('postprocessing_frequency_time')
+            if childNode != None :
+                childNode.xmlRemoveNode()
+
+
     def getPostprocessingFrequency(self):
         """
         Return the frequency for post processing output
@@ -143,6 +177,25 @@ class OutputControlModel(Model):
         """
         self.isInt(freq)
         self.node_out.xmlSetData('postprocessing_frequency', freq)
+
+
+    def getPostprocessingFrequencyTime(self):
+        """
+        Return the frequency for post processing output
+        """
+        f = self.node_out.xmlGetDouble('postprocessing_frequency_time')
+        if f == None:
+            f = self.defaultInitialValues()['postprocessing_frequency_time']
+            self.setPostprocessingFrequencyTime(f)
+        return f
+
+
+    def setPostprocessingFrequencyTime(self, freq):
+        """
+        Set the frequency for post processing output
+        """
+        self.isFloat(freq)
+        self.node_out.xmlSetData('postprocessing_frequency_time', freq)
 
 
     def getFluidDomainPostProStatus(self):
@@ -272,6 +325,38 @@ class OutputControlModel(Model):
         n['choice'] = line
 
 
+    def getMonitoringPointType(self):
+        """
+        Return the type of output for printing listing
+        """
+        node = self.node_out.xmlGetNode('probe_recording_frequency')
+        if node != None :
+            return 'Frequency_h_x'
+        val = self.getMonitoringPointFrequency()
+        if val == -1 :
+            return 'At the end'
+        elif val == 1 :
+            return 'At each step'
+        else :
+            return 'Frequency_h'
+
+
+    def setMonitoringPointType(self, type):
+        """
+        Set the type of output for printing listing
+        """
+        self.isInList(type, ['None', 'At each step', 'Frequency_h', 'Frequency_h_x'])
+
+        if type == 'Frequency_h_x' :
+            childNode = self.node_out.xmlGetNode('probe_recording_frequency')
+            if childNode != None :
+                childNode.xmlRemoveNode()
+        else :
+            childNode = self.node_out.xmlGetNode('probe_recording_frequency_time')
+            if childNode != None :
+                childNode.xmlRemoveNode()
+
+
     def getMonitoringPointFrequency(self):
         """
         Return the frequency for recording probes
@@ -289,6 +374,25 @@ class OutputControlModel(Model):
         """
         self.isInt(freq)
         self.node_out.xmlSetData('probe_recording_frequency', freq)
+
+
+    def getMonitoringPointFrequencyTime(self):
+        """
+        Return the frequency for recording probes
+        """
+        f = self.node_out.xmlGetInt('probe_recording_frequency_time')
+        if f == None:
+            f = self.defaultInitialValues()['probe_recording_frequency_time']
+            self.setMonitoringPointFrequencyTime(f)
+        return f
+
+
+    def setMonitoringPointFrequencyTime(self, freq):
+        """
+        Set the frequency for recording probes
+        """
+        self.isFloat(freq)
+        self.node_out.xmlSetData('probe_recording_frequency_time', freq)
 
 
     def addMonitoringPoint(self, x=0.0, y=0.0, z=0.0):

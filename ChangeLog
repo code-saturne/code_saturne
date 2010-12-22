@@ -1,4 +1,12 @@
 * 21/12/2010 - Cyril Baudry <cyril.baudry@edf.fr>
+  Add the possibility of setting up a frequency output in seconds in the
+  graphical interface.
+  modified routines:
+    gui/Pages/OutputControlForm.ui
+    gui/Pages/OutputControlModel.py
+    gui/Pages/OutputControlView.py
+
+* 21/12/2010 - Cyril Baudry <cyril.baudry@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Fix the behaviour when importing the groups and references from a log file.
   modified routine:
