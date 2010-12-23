@@ -1,3 +1,8 @@
+* 23/12/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix incorrect array type in example code.
+  modified routines:
+    users/base/user_modules.f90
+
 * 21/12/2010 - Cyril Baudry <cyril.baudry@edf.fr>
   Add the possibility of setting up a frequency output in seconds in the
   graphical interface.

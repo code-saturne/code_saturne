@@ -42,8 +42,8 @@ module user_module
 
   ! Example: allocatable user arrays
 
-  integer, dimension(:), allocatable :: iwork
-  integer, dimension(:,:), allocatable :: rwork
+  integer,          dimension(:), allocatable :: iwork
+  double precision, dimension(:,:), allocatable :: rwork
 
 contains
 
