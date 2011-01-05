@@ -1,6 +1,6 @@
 /*============================================================================
  *  Définitions des fonctions de base
- *   associées à la structure `ecs_champ_t' décrivant un champ
+ *   associées à la structure `ecs_table_t' décrivant une table
  *============================================================================*/
 
 /*
@@ -68,14 +68,14 @@
  *  Fichier  `include' du  paquetage courant associé au fichier courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 
 /*----------------------------------------------------------------------------
  *  Fichiers `include' privés   du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ_priv.h"
+#include "ecs_table_priv.h"
 
 
 /*============================================================================
@@ -83,7 +83,7 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction d'impression d'un champ avec position réglée en ASCII
+ *  Fonction d'impression d'une table avec position réglée en ASCII
  *----------------------------------------------------------------------------*/
 
 static void
@@ -158,8 +158,8 @@ _imprime_pos_pas(FILE             *fic_imp,
 
 
 /*----------------------------------------------------------------------------
- *  Fonction d'impression d'un champ avec position non réglée en ASCII
- *  (Champ entier uniquement)
+ *  Fonction d'impression d'une table avec position non réglée en ASCII
+ *  (Table entier uniquement)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -232,21 +232,21 @@ _imprime_pos_tab(FILE             *fic_imp,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui concatène dans un champ récepteur donné,
- *   un champ à concaténer donné
+ *  Fonction qui concatène dans une table réceptrice donnée,
+ *   une table à concaténer donnée
  *
- *  La concaténation de 2 champs consiste à concaténer :
- *  - les tables des positions des 2 champs;
- *  - les tables des valeurs   des 2 champs;
- *  - les listes chaînées des descripteurs des 2 champs
- *    (nécessaire uniquement pour des champs de type "attribut")
+ *  La concaténation de 2 tables consiste à concaténer :
+ *  - les tables des positions des 2 tables;
+ *  - les tables des valeurs   des 2 tables;
+ *  - les listes chaînées des descripteurs des 2 tables
+ *    (nécessaire uniquement pour des tables de type "attribut")
  *
- *  Les autres membres de la structure du champ récepteur ne sont pas modifiés
+ *  Les autres membres de la table réceptrice ne sont pas modifiés
  *----------------------------------------------------------------------------*/
 
 static void
-_champ__concatene(ecs_champ_t  *champ_recept,
-                  ecs_champ_t  *champ_concat)
+_table__concatene(ecs_table_t  *table_recept,
+                  ecs_table_t  *table_concat)
 {
   size_t    ipos;
   size_t    ival;
@@ -260,14 +260,14 @@ _champ__concatene(ecs_champ_t  *champ_recept,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(champ_recept != NULL);
-  assert(champ_concat != NULL);
+  assert(table_recept != NULL);
+  assert(table_concat != NULL);
 
   /* Dimensions avant concaténation */
 
-  nbr_elt_recept = champ_recept->nbr;
-  nbr_val_recept = ecs_champ__ret_val_nbr(champ_recept);
-  nbr_val_concat = ecs_champ__ret_val_nbr(champ_concat);
+  nbr_elt_recept = table_recept->nbr;
+  nbr_val_recept = ecs_table__ret_val_nbr(table_recept);
+  nbr_val_concat = ecs_table__ret_val_nbr(table_concat);
 
   /* Pour les attributs,                                 */
   /*  il faut renuméroter les descripteurs               */
@@ -276,69 +276,69 @@ _champ__concatene(ecs_champ_t  *champ_recept,
   tab_renum_descr.nbr = 0;
   tab_renum_descr.val = NULL;
 
-  if (champ_concat->descr != NULL) {
+  if (table_concat->descr != NULL) {
 
     /* Unification des descripteurs d'attributs */
 
-    descr_concat_copie = ecs_descr_chaine__copie(champ_concat->descr);
+    descr_concat_copie = ecs_descr_chaine__copie(table_concat->descr);
 
-    tab_renum_descr = ecs_descr_chaine__concatene(&champ_recept->descr,
+    tab_renum_descr = ecs_descr_chaine__concatene(&table_recept->descr,
                                                   &descr_concat_copie);
   }
 
-  /* Membres restant à modifier pour le champ recepteur : */
-  /* - `nbr_elt'                                          */
-  /* - `pos*'                                             */
-  /* - `val*'                                             */
+  /* Membres restant à modifier pour la table receptrice : */
+  /* - `nbr_elt'                                           */
+  /* - `pos*'                                              */
+  /* - `val*'                                              */
 
-  champ_recept->nbr += champ_concat->nbr;
+  table_recept->nbr += table_concat->nbr;
 
   /* Traitement de la table des positions; si l'on n'a pas
      une REGLE identique de part et d'autre, on doit la reconstruire */
 
   /* Si l'on a un pas identique de part et d'autre, on n'a rien à faire */
 
-  if (   champ_recept->pos != NULL
-      || champ_concat->pos != NULL
-      || champ_recept->pas != champ_concat->pas) {
+  if (   table_recept->pos != NULL
+      || table_concat->pos != NULL
+      || table_recept->pas != table_concat->pas) {
 
     /* 1ère étape : construire ou agrandir le tableau des positions,
-       et le remplir des valeurs du champ initial */
+       et le remplir des valeurs de la table initiale */
 
-    if (champ_recept->pos == NULL) {
+    if (table_recept->pos == NULL) {
 
-      ECS_MALLOC(champ_recept->pos, champ_recept->nbr + 1, ecs_size_t);
-      champ_recept->pos[0] = 1;
+      ECS_MALLOC(table_recept->pos, table_recept->nbr + 1, ecs_size_t);
+      table_recept->pos[0] = 1;
       for (ipos = 0; ipos <= nbr_elt_recept; ipos++)
-        champ_recept->pos[ipos] = (champ_recept->pas * ipos) + 1;
+        table_recept->pos[ipos] = (table_recept->pas * ipos) + 1;
 
     }
     else
-      ECS_REALLOC(champ_recept->pos, champ_recept->nbr + 1, ecs_size_t);
+      ECS_REALLOC(table_recept->pos, table_recept->nbr + 1, ecs_size_t);
 
     /* 2ème étape : ajouter les positions à concaténer */
 
-    pos_recept_fin = champ_recept->pos[nbr_elt_recept];
+    pos_recept_fin = table_recept->pos[nbr_elt_recept];
 
-    if (champ_concat->pos == NULL) {
+    if (table_concat->pos == NULL) {
 
-      for (ipos = 1; ipos <= champ_concat->nbr; ipos++)
-        champ_recept->pos[nbr_elt_recept + ipos]
-          = pos_recept_fin + (ipos * champ_concat->pas);
+      for (ipos = 1; ipos <= table_concat->nbr; ipos++)
+        table_recept->pos[nbr_elt_recept + ipos]
+          = pos_recept_fin + (ipos * table_concat->pas);
 
     }
-    else { /* if (champ_concat->pos != NULL) */
+    else { /* if (table_concat->pos != NULL) */
 
-      for (ipos = 1; ipos <= champ_concat->nbr; ipos++)
-        champ_recept->pos[nbr_elt_recept + ipos]
-          = pos_recept_fin - 1 + champ_concat->pos[ipos];
+      for (ipos = 1; ipos <= table_concat->nbr; ipos++)
+        table_recept->pos[nbr_elt_recept + ipos]
+          = pos_recept_fin - 1 + table_concat->pos[ipos];
 
     }
 
   }
 
-  if (champ_recept->pos != NULL)
-    champ_recept->pas = 0;
+  if (table_recept->pos != NULL)
+    table_recept->pas = 0;
 
   /* Traitement de la table des valeurs */
   /*------------------------------------*/
@@ -346,20 +346,20 @@ _champ__concatene(ecs_champ_t  *champ_recept,
   /* On concatène les tables de valeurs,
      en renumérotant éventuellement des attributs */
 
-  if (champ_recept->nbr > 0) {
+  if (table_recept->nbr > 0) {
 
     /* 1ère étape : construire ou agrandir le tableau des valeurs,
-       et le remplir des valeurs du champ initial */
+       et le remplir des valeurs de la table initiale */
 
     if (nbr_elt_recept == 0) {
-      assert(champ_recept->val == NULL);
-      ECS_MALLOC(champ_recept->val,
+      assert(table_recept->val == NULL);
+      ECS_MALLOC(table_recept->val,
                  nbr_val_recept + nbr_val_concat,
                  ecs_int_t);
     }
     else {
-      assert(champ_recept->val != NULL);
-      ECS_REALLOC(champ_recept->val,
+      assert(table_recept->val != NULL);
+      ECS_REALLOC(table_recept->val,
                   nbr_val_recept + nbr_val_concat,
                   ecs_int_t);
     }
@@ -369,14 +369,14 @@ _champ__concatene(ecs_champ_t  *champ_recept,
 
     if (tab_renum_descr.nbr == 0 && nbr_val_concat > 0)
 
-      memcpy(((ecs_int_t *)champ_recept->val) + nbr_val_recept,
-             champ_concat->val,
+      memcpy(((ecs_int_t *)table_recept->val) + nbr_val_recept,
+             table_concat->val,
              nbr_val_concat * sizeof(ecs_int_t));
 
     else {
 
-      ecs_int_t *tab_val_recept = champ_recept->val;
-      ecs_int_t *tab_val_concat = champ_concat->val;
+      ecs_int_t *tab_val_recept = table_recept->val;
+      ecs_int_t *tab_val_concat = table_concat->val;
 
       for (ival = 0; ival < nbr_val_concat; ival++)
         tab_val_recept[nbr_val_recept + ival]
@@ -398,151 +398,151 @@ _champ__concatene(ecs_champ_t  *champ_recept,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui crée une structure `ecs_champ_t'
+ *  Fonction qui crée une structure `ecs_table_t'
  *
  *  La structure devient propriétaire des tableaux tab_pos et tab_val
  *   fournis en argument.
  *
  *   nbr      : Nombre d'éléments à remplir
  *   pas      : Pas des positions  si REGLE
- *   pos      : Positions du champ si non REGLE
- *   val      : Valeurs du champ
+ *   pos      : Positions de la table si non REGLE
+ *   val      : Valeurs de la table
  *   descr    : Pointeur sur le descripteur
  *   statut_e : Statut dans une transformation
  *----------------------------------------------------------------------------*/
 
-ecs_champ_t *
-ecs_champ__cree(size_t                nbr,
+ecs_table_t *
+ecs_table__cree(size_t                nbr,
                 size_t                pas,
                 ecs_size_t           *pos,
                 ecs_int_t            *val,
                 ecs_descr_t          *descr)
 {
-  ecs_champ_t  *this_champ;
+  ecs_table_t  *this_table;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  /* Allocation de la structure `ecs_champ_t' */
+  /* Allocation de la structure `ecs_table_t' */
   /*------------------------------------------*/
 
-  ECS_MALLOC(this_champ, 1, ecs_champ_t);
+  ECS_MALLOC(this_table, 1, ecs_table_t);
 
-  this_champ->nbr = nbr;
+  this_table->nbr = nbr;
 
   /* Définition des positions des valeurs (itérateur) */
   /*--------------------------------------------------*/
 
-  this_champ->pas = pas;
-  this_champ->pos = pos;
+  this_table->pas = pas;
+  this_table->pos = pos;
 
-  ecs_champ__pos_en_regle(this_champ);
+  ecs_table__pos_en_regle(this_table);
 
   /* Définition de la table des valeurs (conteneur) */
   /*------------------------------------------------*/
 
-  this_champ->val = val;
+  this_table->val = val;
 
-  /* Affectation du descripteur de champ */
+  /* Affectation du descripteur de table */
   /*-------------------------------------*/
 
-  this_champ->descr = descr;
+  this_table->descr = descr;
 
-  return this_champ;
+  return this_table;
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui crée une structure `ecs_champ_t'
+ *  Fonction qui crée une structure `ecs_table_t'
  *
  *   nbr      : Nombre d'éléments à remplir
  *   nbr_val  : Nombre de valeurs à remplir
  *----------------------------------------------------------------------------*/
 
-ecs_champ_t *
-ecs_champ__alloue(size_t  nbr,
+ecs_table_t *
+ecs_table__alloue(size_t  nbr,
                   size_t  nbr_val)
 {
-  ecs_champ_t  *this_champ;
+  ecs_table_t  *this_table;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  /* Allocation de la structure `ecs_champ_t' */
+  /* Allocation de la structure `ecs_table_t' */
   /*------------------------------------------*/
 
-  ECS_MALLOC(this_champ, 1, ecs_champ_t);
+  ECS_MALLOC(this_table, 1, ecs_table_t);
 
-  this_champ->nbr = nbr;
+  this_table->nbr = nbr;
 
   /* Définition des positions des valeurs (itérateur) */
   /*--------------------------------------------------*/
 
-  this_champ->pas = 0;
+  this_table->pas = 0;
 
-  ECS_MALLOC(this_champ->pos, nbr + 1, ecs_size_t);
+  ECS_MALLOC(this_table->pos, nbr + 1, ecs_size_t);
 
   /* Définition de la table des valeurs (conteneur) */
   /*------------------------------------------------*/
 
-  ECS_MALLOC(this_champ->val, nbr_val, ecs_int_t);
+  ECS_MALLOC(this_table->val, nbr_val, ecs_int_t);
 
-  /* Affectation du descripteur de champ */
+  /* Affectation du descripteur de table */
   /*-------------------------------------*/
 
-  this_champ->descr = NULL;
+  this_table->descr = NULL;
 
-  return this_champ;
+  return this_table;
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction libérant une structure `ecs_champ_t' donnée en argument.
+ *  Fonction libérant une structure `ecs_table_t' donnée en argument.
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__detruit(ecs_champ_t  **this_champ)
+ecs_table__detruit(ecs_table_t  **this_table)
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  if (this_champ == NULL)
+  if (this_table == NULL)
     return;
 
-  if (*this_champ == NULL)
+  if (*this_table == NULL)
     return;
 
-  /* Libération du contenu de la structure `ecs_champ_t' */
+  /* Libération du contenu de la structure `ecs_table_t' */
   /*=================================================*/
 
   /* Libération de la structure des positions */
   /*------------------------------------------*/
 
-  if ((*this_champ)->pos != NULL)
-    ECS_FREE((*this_champ)->pos);
+  if ((*this_table)->pos != NULL)
+    ECS_FREE((*this_table)->pos);
 
   /* Libération de la structure des valeurs */
   /*----------------------------------------*/
 
-  if ((*this_champ)->val != NULL)
-    ECS_FREE((*this_champ)->val);
+  if ((*this_table)->val != NULL)
+    ECS_FREE((*this_table)->val);
 
-  /* Libération du descripteur de champ */
+  /* Libération du descripteur de table */
   /*------------------------------------*/
 
-  /* Appel à la fonction de libération d'un descripteur de champ */
+  /* Appel à la fonction de libération d'un descripteur de table */
 
-  if ((*this_champ)->descr != NULL)
-    ecs_descr_chaine__detruit(&((*this_champ)->descr));
+  if ((*this_table)->descr != NULL)
+    ecs_descr_chaine__detruit(&((*this_table)->descr));
 
-  /* Libération de la structure `ecs_champ_t' */
+  /* Libération de la structure `ecs_table_t' */
   /*==========================================*/
 
-  ECS_FREE(*this_champ);
+  ECS_FREE(*this_table);
 }
 
 /*----------------------------------------------------------------------------
  *  Fonction qui convertit, si possible,
- *   le tableau des positions d'un champ en REGLE
+ *   le tableau des positions d'une table en REGLE
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__pos_en_regle(ecs_champ_t  *this_champ)
+ecs_table__pos_en_regle(ecs_table_t  *this_table)
 {
   size_t      ipos;
   size_t      pos_pas;
@@ -550,19 +550,19 @@ ecs_champ__pos_en_regle(ecs_champ_t  *this_champ)
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_champ != NULL);
+  assert(this_table != NULL);
 
   bool_regle = true;
 
-  if (this_champ->pos != NULL && this_champ->nbr > 0) {
+  if (this_table->pos != NULL && this_table->nbr > 0) {
 
-    this_champ->pas = 0;
+    this_table->pas = 0;
 
-    pos_pas = this_champ->pos[1] - this_champ->pos[0];
+    pos_pas = this_table->pos[1] - this_table->pos[0];
 
-    for (ipos = 1; ipos < this_champ->nbr; ipos++) {
+    for (ipos = 1; ipos < this_table->nbr; ipos++) {
 
-      if (this_champ->pos[ipos + 1] - this_champ->pos[ipos] != pos_pas) {
+      if (this_table->pos[ipos + 1] - this_table->pos[ipos] != pos_pas) {
         bool_regle = false;
         break;
       }
@@ -571,9 +571,9 @@ ecs_champ__pos_en_regle(ecs_champ_t  *this_champ)
 
     if (bool_regle == true) {
 
-      this_champ->pas = pos_pas;
+      this_table->pas = pos_pas;
 
-      ECS_FREE(this_champ->pos);
+      ECS_FREE(this_table->pos);
 
     }
   }
@@ -586,88 +586,88 @@ ecs_champ__pos_en_regle(ecs_champ_t  *this_champ)
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__regle_en_pos(ecs_champ_t  *this_champ)
+ecs_table__regle_en_pos(ecs_table_t  *this_table)
 {
   size_t ipos;
   ecs_size_t *tab_pos;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_champ != NULL);
+  assert(this_table != NULL);
 
-  if (this_champ->pos == NULL) {
+  if (this_table->pos == NULL) {
 
-    ECS_MALLOC(tab_pos, this_champ->nbr + 1, ecs_size_t);
+    ECS_MALLOC(tab_pos, this_table->nbr + 1, ecs_size_t);
 
-    for (ipos = 0; ipos <= this_champ->nbr; ipos++)
-      tab_pos[ipos] = (ipos * this_champ->pas) + 1;
+    for (ipos = 0; ipos <= this_table->nbr; ipos++)
+      tab_pos[ipos] = (ipos * this_table->pas) + 1;
 
-    this_champ->pos = tab_pos;
+    this_table->pos = tab_pos;
   }
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui libère, si possible, le tableau des positions d'un champ.
+ *  Fonction qui libère, si possible, le tableau des positions d'une table.
  *  Ce tableau ne doit pas avoir été modifié.
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__libere_pos(ecs_champ_t  *this_champ)
+ecs_table__libere_pos(ecs_table_t  *this_table)
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_champ != NULL);
+  assert(this_table != NULL);
 
-  if (this_champ->pas != 0 && this_champ->pos != NULL)
-    ECS_FREE(this_champ->pos);
+  if (this_table->pas != 0 && this_table->pos != NULL)
+    ECS_FREE(this_table->pos);
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction imprimant le contenu d'une structure `ecs_champ_t' donnée
+ *  Fonction imprimant le contenu d'une structure `ecs_table_t' donnée
  *   sur le flux décrit par la structure `FILE'
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__imprime(const ecs_champ_t  *this_champ,
+ecs_table__imprime(const ecs_table_t  *this_table,
                    size_t              imp_col,
                    size_t              nbr_imp,
                    FILE               *fic_imp)
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_champ   != NULL);
+  assert(this_table   != NULL);
   assert(fic_imp      != NULL);
 
   imp_col++;
 
-  /* Impression des champs d'information du champ */
-  /*----------------------------------------------*/
+  /* Impression des tables d'information de la table */
+  /*-------------------------------------------------*/
 
   ecs_fic__imprime_val(fic_imp, imp_col, "nbr_elt", ECS_TYPE_size_t,
-                       &this_champ->nbr);
+                       &this_table->nbr);
 
   ecs_fic__imprime_val(fic_imp, imp_col, "pos_pas", ECS_TYPE_size_t,
-                       &this_champ->pas);
+                       &this_table->pas);
 
-  ecs_fic__imprime_ptr(fic_imp, imp_col, "pos_tab", this_champ->pos);
-  ecs_fic__imprime_ptr(fic_imp, imp_col, "val_tab", this_champ->val);
+  ecs_fic__imprime_ptr(fic_imp, imp_col, "pos_tab", this_table->pos);
+  ecs_fic__imprime_ptr(fic_imp, imp_col, "val_tab", this_table->val);
 
 
   /* Impression des positions et des valeurs */
   /*-----------------------------------------*/
 
-  if (this_champ->pos == NULL && this_champ->val != NULL)
+  if (this_table->pos == NULL && this_table->val != NULL)
     _imprime_pos_pas(fic_imp,
-                     this_champ->nbr,
-                     this_champ->pas,
-                     this_champ->val,
+                     this_table->nbr,
+                     this_table->pas,
+                     this_table->val,
                      nbr_imp);
 
-  else if (this_champ->pos != NULL)
+  else if (this_table->pos != NULL)
     _imprime_pos_tab(fic_imp,
-                     this_champ->nbr,
-                     this_champ->pos,
-                     this_champ->val,
+                     this_table->nbr,
+                     this_table->pos,
+                     this_table->val,
                      nbr_imp);
 
   /* Impression de la liste chaînée des descripteurs */
@@ -676,13 +676,13 @@ ecs_champ__imprime(const ecs_champ_t  *this_champ,
   /* Impression du pointeur sur le descripteur de tête */
 
   ecs_fic__imprime_val(fic_imp, imp_col, "descr_tete", ECS_TYPE_void,
-                       this_champ->descr);
+                       this_table->descr);
 
-  if (this_champ->descr != NULL) {
+  if (this_table->descr != NULL) {
 
-    /* Appel à la fonction d'impression d'une chaîne de descripteurs de champ */
+    /* Appel à la fonction d'impression d'une chaîne de descripteurs de table */
 
-    ecs_descr_chaine__imprime(this_champ->descr,
+    ecs_descr_chaine__imprime(this_table->descr,
                               imp_col + 1,
                               fic_imp);
   }
@@ -690,94 +690,94 @@ ecs_champ__imprime(const ecs_champ_t  *this_champ,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui renvoie la taille en octets d'une structure `ecs_champ_t'
+ *  Fonction qui renvoie la taille en octets d'une structure `ecs_table_t'
  *----------------------------------------------------------------------------*/
 
 size_t
-ecs_champ__ret_taille(const ecs_champ_t  *this_champ)
+ecs_table__ret_taille(const ecs_table_t  *this_table)
 {
   size_t        nbr_val;
   size_t        taille;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  if (this_champ == NULL)
+  if (this_table == NULL)
     return 0;
 
-  taille = sizeof(*this_champ);
+  taille = sizeof(*this_table);
 
-  if (this_champ->pos != NULL)
-    taille += (sizeof(ecs_int_t) * (this_champ->nbr + 1));
+  if (this_table->pos != NULL)
+    taille += (sizeof(ecs_int_t) * (this_table->nbr + 1));
 
-  if (this_champ->val != NULL) {
-    nbr_val = ecs_champ__ret_val_nbr(this_champ);
+  if (this_table->val != NULL) {
+    nbr_val = ecs_table__ret_val_nbr(this_table);
     taille += (sizeof(ecs_int_t) * nbr_val);
   }
 
-  if (this_champ->descr != NULL)
-    taille += ecs_descr_chaine__ret_taille(this_champ->descr);
+  if (this_table->descr != NULL)
+    taille += ecs_descr_chaine__ret_taille(this_table->descr);
 
   return taille;
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui renvoie un champ entièrement réalloué
- *   dont le contenu est copié à partir du champ donné
+ *  Fonction qui renvoie une table entièrement réallouée
+ *   dont le contenu est copié à partir de la table donnée
  *
- *  Le membre donnant le lien sur un champ suivant `l_champ_sui'
+ *  Le membre donnant le lien sur une table suivant `l_table_sui'
  *   n'est pas copié et est mis à `NULL'
  *----------------------------------------------------------------------------*/
 
-ecs_champ_t *
-ecs_champ__copie(ecs_champ_t  *champ_init)
+ecs_table_t *
+ecs_table__copie(ecs_table_t  *table_init)
 {
   size_t        nbr_val;
-  ecs_champ_t * this_champ;
+  ecs_table_t * this_table;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(champ_init != NULL);
+  assert(table_init != NULL);
 
-  ECS_MALLOC(this_champ, 1, ecs_champ_t);
+  ECS_MALLOC(this_table, 1, ecs_table_t);
 
-  this_champ->nbr = champ_init->nbr;
+  this_table->nbr = table_init->nbr;
 
-  this_champ->pas = champ_init->pas;
+  this_table->pas = table_init->pas;
 
-  if (champ_init->pos != NULL) {
-    ECS_MALLOC(this_champ->pos, champ_init->nbr + 1, ecs_size_t);
-    memcpy(this_champ->pos,
-           champ_init->pos,
-           (champ_init->nbr + 1) * sizeof(ecs_size_t));
+  if (table_init->pos != NULL) {
+    ECS_MALLOC(this_table->pos, table_init->nbr + 1, ecs_size_t);
+    memcpy(this_table->pos,
+           table_init->pos,
+           (table_init->nbr + 1) * sizeof(ecs_size_t));
   }
   else
-    this_champ->pos = NULL;
+    this_table->pos = NULL;
 
-  if (champ_init->val != NULL) {
-    nbr_val = ecs_champ__ret_val_nbr(champ_init);
-    ECS_MALLOC(this_champ->val, nbr_val, ecs_int_t);
-    memcpy(this_champ->val,
-           champ_init->val,
+  if (table_init->val != NULL) {
+    nbr_val = ecs_table__ret_val_nbr(table_init);
+    ECS_MALLOC(this_table->val, nbr_val, ecs_int_t);
+    memcpy(this_table->val,
+           table_init->val,
            sizeof(ecs_int_t) * nbr_val);
   }
   else
-    this_champ->val = NULL;
+    this_table->val = NULL;
 
-  this_champ->descr  = ecs_descr_chaine__copie(champ_init->descr);
+  this_table->descr  = ecs_descr_chaine__copie(table_init->descr);
 
-  return this_champ;
+  return this_table;
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui créé une structure `ecs_champ_t'
- *   à partir d'un tableau `tab_elt' contenant les valeurs du champ.
+ *  Fonction qui créé une structure `ecs_table_t'
+ *   à partir d'un tableau `tab_elt' contenant les valeurs de la table.
  *
  *  Si un élément n'a pas de valeur associée, la valeur correspondante
  *   dans `tab_elt' est `0'
  *----------------------------------------------------------------------------*/
 
-ecs_champ_t *
-ecs_champ__transforme_tableau(size_t                nbr_elt,
+ecs_table_t *
+ecs_table__transforme_tableau(size_t                nbr_elt,
                               const ecs_int_t      *tab_elt,
                               ecs_descr_t          *descr)
 {
@@ -786,19 +786,19 @@ ecs_champ__transforme_tableau(size_t                nbr_elt,
   size_t cpt_val;
   size_t ielt;
 
-  ecs_champ_t * this_champ;
+  ecs_table_t * this_table;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   assert(nbr_elt != 0);
   assert(tab_elt != NULL);
 
-  /* Allocation de la structure `ecs_champ_t' */
+  /* Allocation de la structure `ecs_table_t' */
   /*--------------------------------------*/
 
-  ECS_MALLOC(this_champ, 1, ecs_champ_t);
+  ECS_MALLOC(this_table, 1, ecs_table_t);
 
-  this_champ->nbr = nbr_elt;
+  this_table->nbr = nbr_elt;
 
   /* Construction des tableaux de positions et de valeurs */
   /*------------------------------------------------------*/
@@ -825,156 +825,156 @@ ecs_champ__transforme_tableau(size_t                nbr_elt,
   /* Création de la table des positions des valeurs (itérateur) */
   /*------------------------------------------------------------*/
 
-  this_champ->pas = 0;
-  this_champ->pos = pos_tab;
+  this_table->pas = 0;
+  this_table->pos = pos_tab;
 
-  ecs_champ__pos_en_regle(this_champ);
+  ecs_table__pos_en_regle(this_table);
 
   /* Création de la table des valeurs (conteneur) */
   /*----------------------------------------------*/
 
-  this_champ->val = val_tab;
+  this_table->val = val_tab;
 
-  /* Affectation du descripteur de champ */
+  /* Affectation du descripteur de table */
   /*-------------------------------------*/
 
-  this_champ->descr = descr;
+  this_table->descr = descr;
 
-  return this_champ;
+  return this_table;
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction renvoyant le nombre d'éléments associés à un champ donné
+ *  Fonction renvoyant le nombre d'éléments associés à une table donnée
  *----------------------------------------------------------------------------*/
 
 size_t
-ecs_champ__ret_elt_nbr(const ecs_champ_t  *this_champ)
+ecs_table__ret_elt_nbr(const ecs_table_t  *this_table)
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_champ   != NULL);
+  assert(this_table   != NULL);
 
-  return this_champ->nbr;
+  return this_table->nbr;
 }
 
 
 /*----------------------------------------------------------------------------
- *  Fonction renvoyant le nombre de valeurs associées à un champ donné
+ *  Fonction renvoyant le nombre de valeurs associées à une table donnée
  *----------------------------------------------------------------------------*/
 
 size_t
- ecs_champ__ret_val_nbr(const ecs_champ_t  *this_champ)
+ ecs_table__ret_val_nbr(const ecs_table_t  *this_table)
 {
   size_t  nbr_val;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_champ   != NULL);
+  assert(this_table   != NULL);
 
-  if (this_champ->pos != NULL)
-    nbr_val = this_champ->pos[this_champ->nbr] - 1;
+  if (this_table->pos != NULL)
+    nbr_val = this_table->pos[this_table->nbr] - 1;
   else
-    nbr_val = (this_champ->pas * this_champ->nbr);
+    nbr_val = (this_table->pas * this_table->nbr);
 
   return nbr_val;
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction retournant le nombre de descripteurs d'un champ donné
+ *  Fonction retournant le nombre de descripteurs d'une table donnée
  *----------------------------------------------------------------------------*/
 
 size_t
-ecs_champ__ret_descr_nbr(const ecs_champ_t  *this_champ)
+ecs_table__ret_descr_nbr(const ecs_table_t  *this_table)
 {
-  assert(this_champ != NULL);
+  assert(this_table != NULL);
 
-  return ecs_descr_chaine__ret_nbr(this_champ->descr);
+  return ecs_descr_chaine__ret_nbr(this_table->descr);
 }
 
 /*----------------------------------------------------------------------------
  *  Fonction libérant un pointeur sur le tableau des positions d'une
- *   structure `ecs_champ_t' donnée.
+ *   structure `ecs_table_t' donnée.
  *
  *  Si les positions correspondent à une REGLE, le tableau est libéré.
- *   Sinon, il est conservé par la structure ecs_champ_t.
+ *   Sinon, il est conservé par la structure ecs_table_t.
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__libere_pos_tab(const ecs_champ_t  *this_champ,
+ecs_table__libere_pos_tab(const ecs_table_t  *this_table,
                           ecs_size_t         *pos_tab)
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_champ != NULL);
-  assert(this_champ->pos == NULL || this_champ->pos == pos_tab);
+  assert(this_table != NULL);
+  assert(this_table->pos == NULL || this_table->pos == pos_tab);
 
-  if (this_champ->pos == NULL)
+  if (this_table->pos == NULL)
     ECS_FREE(pos_tab);
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui concatène deux champs, et supprime le champ à concaténer
+ *  Fonction qui concatène deux tables, et supprime la table à concaténer
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__concatene(ecs_champ_t  **this_champ,
-                     ecs_champ_t  **concat_champ,
+ecs_table__concatene(ecs_table_t  **this_table,
+                     ecs_table_t  **concat_table,
                      size_t         nbr_elt_init,
                      size_t         nbr_elt_concat)
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_champ != NULL);
-  assert(concat_champ != NULL);
+  assert(this_table != NULL);
+  assert(concat_table != NULL);
 
   /* ------------------------------------------------------------------ */
   /* PARTIE REALISEE PENDANT LA FUSION                                  */
   /* ------------------------------------------------------------------ */
-  /*    Si le champ n'existe pas dans l'entité de maillage à concaténer */
-  /* et si c'est un champ de type "attribut"                            */
+  /*    Si la table n'existe pas dans l'entité de maillage à concaténer */
+  /* et si c'est une table de type "attribut"                           */
   /* (pour lequel tous les éléments doivent être renseignes)            */
-  /* on initialise les valeurs de l'attribut pour le champ à concaténer */
+  /* on initialise les valeurs de l'attribut pour la table à concaténer */
   /* ------------------------------------------------------------------ */
 
-  /* Le champ existe dans l'entité de maillage à concaténer */
+  /* La table existe dans l'entité de maillage à concaténer */
 
-  if (*concat_champ != NULL) {
+  if (*concat_table != NULL) {
 
     /* On le concatène */
 
-    if (*this_champ != NULL) {
-      _champ__concatene(*this_champ, *concat_champ);
-      ecs_champ__detruit(concat_champ);
+    if (*this_table != NULL) {
+      _table__concatene(*this_table, *concat_table);
+      ecs_table__detruit(concat_table);
     }
     else {
-      ecs_champ__prolonge(*concat_champ,
+      ecs_table__prolonge(*concat_table,
                           nbr_elt_init,
                           0);
-      *this_champ = *concat_champ;
-      *concat_champ = NULL;
+      *this_table = *concat_table;
+      *concat_table = NULL;
     }
   }
 
-  /* Le champ n'existe pas dans l'entité de maillage à concaténer */
+  /* La table n'existe pas dans l'entité de maillage à concaténer */
 
   else {
-    ecs_champ__prolonge(*this_champ,
+    ecs_table__prolonge(*this_table,
                         0,
                         nbr_elt_concat);
 
-  } /* Fin : boucle sur les champs de l'entité de maillage receptrice */
+  } /* Fin : boucle sur les tables de l'entité de maillage receptrice */
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui prolonge un champ récepteur donné
+ *  Fonction qui prolonge une table réceptrice donné
  *
- *  Il s'agit en fait de concaténer le champ avec un champ vide. Seule la
- *  table des positions est modifiée. Les autres membres de la structure du
- *  champ récepteur ne sont pas modifiés.
+ *  Il s'agit en fait de concaténer la table avec une table vide. Seule la
+ *  table des positions est modifiée. Les autres membres de la structure de
+ *  la table réceptrice ne sont pas modifiés.
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__prolonge(ecs_champ_t  *this_champ,
+ecs_table__prolonge(ecs_table_t  *this_table,
                     size_t        nbr_elt_prec,
                     size_t        nbr_elt_suiv)
 {
@@ -985,60 +985,60 @@ ecs_champ__prolonge(ecs_champ_t  *this_champ,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  if (this_champ == NULL)
+  if (this_table == NULL)
     return;
 
-  ecs_champ__regle_en_pos(this_champ);
+  ecs_table__regle_en_pos(this_table);
 
-  nbr_elt_ini = this_champ->nbr;
+  nbr_elt_ini = this_table->nbr;
 
 #if defined(SX) && defined(_SX) /* NEC SX compiler may bug on : operator */
-  if (this_champ->pos != NULL)
+  if (this_table->pos != NULL)
     bool_pos_ini = true;
   else
     bool_pos_ini = false;
 #else
-  bool_pos_ini = (this_champ->pos != NULL) ? true : false;
+  bool_pos_ini = (this_table->pos != NULL) ? true : false;
 #endif
 
   /* Mise à jour du nombre d'éléments */
 
-  this_champ->nbr += nbr_elt_prec + nbr_elt_suiv;
+  this_table->nbr += nbr_elt_prec + nbr_elt_suiv;
 
-  /* Si le champ n'est pas déjà vide, la table des positions ne
+  /* Si la table n'est pas déjà vide, la table des positions ne
      correspondra pas à une REGLE, et devra être construite */
 
-  if (this_champ->pos != NULL || this_champ->pas != 0) {
+  if (this_table->pos != NULL || this_table->pas != 0) {
 
-    ECS_REALLOC(this_champ->pos, this_champ->nbr + 1, ecs_size_t);
+    ECS_REALLOC(this_table->pos, this_table->nbr + 1, ecs_size_t);
 
     if (bool_pos_ini == true) {
-      memmove(this_champ->pos + (nbr_elt_prec * sizeof(ecs_int_t)),
-              this_champ->pos,
-              (this_champ->nbr + 1) * sizeof(ecs_int_t));
+      memmove(this_table->pos + (nbr_elt_prec * sizeof(ecs_int_t)),
+              this_table->pos,
+              (this_table->nbr + 1) * sizeof(ecs_int_t));
     }
     else {
       for (ipos = 0; ipos <= nbr_elt_ini; ipos++)
-        this_champ->pos[nbr_elt_prec + ipos]
-          = (ipos * this_champ->pas) + 1;
+        this_table->pos[nbr_elt_prec + ipos]
+          = (ipos * this_table->pas) + 1;
     }
 
-    this_champ->pos[0] = 1;
+    this_table->pos[0] = 1;
 
     for (ipos = 0; ipos < nbr_elt_prec; ipos++)
-      this_champ->pos[ipos + 1] = 1;
+      this_table->pos[ipos + 1] = 1;
 
-    pos_fin = this_champ->pos[nbr_elt_prec + nbr_elt_ini];
+    pos_fin = this_table->pos[nbr_elt_prec + nbr_elt_ini];
     for (ipos = 0; ipos < nbr_elt_suiv; ipos++)
-      this_champ->pos[nbr_elt_prec + nbr_elt_ini + ipos + 1] = pos_fin;
+      this_table->pos[nbr_elt_prec + nbr_elt_ini + ipos + 1] = pos_fin;
 
   }
 
-  ecs_champ__pos_en_regle(this_champ);
+  ecs_table__pos_en_regle(this_table);
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction réalisant la transformation d'un champ
+ *  Fonction réalisant la transformation d'un table
  *   en appliquant directement le vecteur de transformation donné
  *   sur ses positions
  *
@@ -1047,11 +1047,11 @@ ecs_champ__prolonge(ecs_champ_t  *this_champ,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__transforme_pos(ecs_champ_t          *this_champ,
+ecs_table__transforme_pos(ecs_table_t          *this_table,
                           size_t                nbr_elt_ref,
                           const ecs_tab_int_t   vect_transf)
 {
-  ecs_champ_t  *champ_ref;
+  ecs_table_t  *table_ref;
   size_t       nbr_val_ref;
   ecs_int_t    ival;
   size_t       ielt_ref;
@@ -1063,58 +1063,58 @@ ecs_champ__transforme_pos(ecs_champ_t          *this_champ,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  if (this_champ == NULL)
+  if (this_table == NULL)
     return;
 
-  ecs_champ__regle_en_pos(this_champ);
+  ecs_table__regle_en_pos(this_table);
 
   assert(vect_transf.nbr == nbr_elt_ref);
-  assert(this_champ->nbr == nbr_elt_ref);
+  assert(this_table->nbr == nbr_elt_ref);
 
-  nbr_val_ref = ecs_champ__ret_val_nbr(this_champ);
+  nbr_val_ref = ecs_table__ret_val_nbr(this_table);
 
-  champ_ref = ecs_champ__alloue(nbr_elt_ref, nbr_val_ref);
+  table_ref = ecs_table__alloue(nbr_elt_ref, nbr_val_ref);
 
   for (ielt_ref = 0; ielt_ref < nbr_elt_ref + 1; ielt_ref++)
-    champ_ref->pos[ielt_ref] = this_champ->pos[ielt_ref];
+    table_ref->pos[ielt_ref] = this_table->pos[ielt_ref];
 
   for (ival_ref = 0; ival_ref < nbr_val_ref; ival_ref++)
-    champ_ref->val[ival_ref] = this_champ->val[ival_ref];
+    table_ref->val[ival_ref] = this_table->val[ival_ref];
 
-  this_champ->pos[0] = 1;
+  this_table->pos[0] = 1;
 
   cpt_val = 0;
 
   for (ielt_transf = 0; ielt_transf < nbr_elt_ref; ielt_transf++) {
 
-    pre_pos = champ_ref->pos[vect_transf.val[ielt_transf]];
+    pre_pos = table_ref->pos[vect_transf.val[ielt_transf]];
 
     elt_nbr_val
-      = champ_ref->pos[vect_transf.val[ielt_transf] + 1] - pre_pos;
+      = table_ref->pos[vect_transf.val[ielt_transf] + 1] - pre_pos;
 
-    this_champ->pos[ielt_transf + 1]
-      = this_champ->pos[ielt_transf] + elt_nbr_val;
+    this_table->pos[ielt_transf + 1]
+      = this_table->pos[ielt_transf] + elt_nbr_val;
 
     for (ival = 0; ival < elt_nbr_val; ival++) {
 
-      this_champ->val[cpt_val++]
-        = champ_ref->val[pre_pos - 1 + ival];
+      this_table->val[cpt_val++]
+        = table_ref->val[pre_pos - 1 + ival];
 
     }
   }
 
-  ecs_champ__detruit(&champ_ref);
+  ecs_table__detruit(&table_ref);
 
-  ecs_champ__pos_en_regle(this_champ);
+  ecs_table__pos_en_regle(this_table);
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui incrémente les valeurs d'un champ donné
+ *  Fonction qui incrémente les valeurs d'une table donnée
  *   d'une constante donnée
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__incremente_val(ecs_champ_t      *this_champ,
+ecs_table__incremente_val(ecs_table_t      *this_table,
                           const ecs_int_t   increment)
 {
   size_t     nbr_val;
@@ -1122,17 +1122,17 @@ ecs_champ__incremente_val(ecs_champ_t      *this_champ,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  if (this_champ == NULL)
+  if (this_table == NULL)
     return;
 
-  nbr_val = ecs_champ__ret_val_nbr(this_champ);
+  nbr_val = ecs_table__ret_val_nbr(this_table);
 
   for (ival = 0; ival < nbr_val; ival++) {
 
-    if (this_champ->val[ival] > 0)
-      this_champ->val[ival] += increment;
-    else if (this_champ->val[ival] < 0)
-      this_champ->val[ival] -= increment;
+    if (this_table->val[ival] > 0)
+      this_table->val[ival] += increment;
+    else if (this_table->val[ival] < 0)
+      this_table->val[ival] -= increment;
   }
 }
 
@@ -1143,11 +1143,11 @@ ecs_champ__incremente_val(ecs_champ_t      *this_champ,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__renumerote(ecs_champ_t          *this_champ,
+ecs_table__renumerote(ecs_table_t          *this_table,
                       const ecs_tab_int_t   vect_transf,
                       const ecs_tab_int_t   signe_elt)
 {
-  ecs_champ_t *champ_ref;
+  ecs_table_t *table_ref;
   size_t       nbr_val_ref;
   ecs_int_t    val_ref;
   ecs_int_t    sgn_ref;
@@ -1155,38 +1155,38 @@ ecs_champ__renumerote(ecs_champ_t          *this_champ,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  if (this_champ == NULL)
+  if (this_table == NULL)
     return;
 
-  nbr_val_ref = ecs_champ__ret_val_nbr(this_champ);
+  nbr_val_ref = ecs_table__ret_val_nbr(this_table);
 
-  champ_ref = ecs_champ__alloue(0, nbr_val_ref);
+  table_ref = ecs_table__alloue(0, nbr_val_ref);
 
   for (ival_ref = 0; ival_ref < nbr_val_ref; ival_ref++)
-    champ_ref->val[ival_ref] = this_champ->val[ival_ref];
+    table_ref->val[ival_ref] = this_table->val[ival_ref];
 
   for (ival_ref = 0; ival_ref < nbr_val_ref; ival_ref++) {
 
-    val_ref = ECS_ABS(champ_ref->val[ival_ref]);
-    sgn_ref = champ_ref->val[ival_ref] / val_ref;
+    val_ref = ECS_ABS(table_ref->val[ival_ref]);
+    sgn_ref = table_ref->val[ival_ref] / val_ref;
 
-    this_champ->val[ival_ref]  = vect_transf.val[val_ref - 1] + 1;
+    this_table->val[ival_ref]  = vect_transf.val[val_ref - 1] + 1;
 
-    this_champ->val[ival_ref] *= signe_elt.val[val_ref - 1] * sgn_ref;
+    this_table->val[ival_ref] *= signe_elt.val[val_ref - 1] * sgn_ref;
 
   }
 
-  ecs_champ__detruit(&champ_ref);
+  ecs_table__detruit(&table_ref);
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui détermine un nouveau champ à partir d'un champ de référence
- *   en extrayant de ce dernier les éléments sélectionnés
+ *  Fonction qui détermine une nouvelle table à partir d'une table de
+ *   référence en extrayant de ce dernier les éléments sélectionnés
  *   par le tableau de booléens
  *----------------------------------------------------------------------------*/
 
-ecs_champ_t *
-ecs_champ__extrait(ecs_champ_t            *champ_ref,
+ecs_table_t *
+ecs_table__extrait(ecs_table_t            *table_ref,
                    const ecs_tab_bool_t    bool_elt_select)
 {
   size_t        cpt_elt_new;
@@ -1200,24 +1200,24 @@ ecs_champ__extrait(ecs_champ_t            *champ_ref,
   size_t        ielt_ref;
   size_t        ipos_ref;
 
-  ecs_champ_t  *champ_new;
+  ecs_table_t  *table_new;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  ecs_champ__regle_en_pos(champ_ref);
+  ecs_table__regle_en_pos(table_ref);
 
-  nbr_elt_ref = champ_ref->nbr;
-  nbr_val_ref = ecs_champ__ret_val_nbr(champ_ref);
+  nbr_elt_ref = table_ref->nbr;
+  nbr_val_ref = ecs_table__ret_val_nbr(table_ref);
 
-  champ_new = ecs_champ__alloue(nbr_elt_ref,
+  table_new = ecs_table__alloue(nbr_elt_ref,
                                 nbr_val_ref);
 
-  /* Extraction du champ */
+  /* Extraction de la table */
 
-  nbr_elt_ref = champ_ref->nbr;
-  nbr_val_ref = ecs_champ__ret_val_nbr(champ_ref);
+  nbr_elt_ref = table_ref->nbr;
+  nbr_val_ref = ecs_table__ret_val_nbr(table_ref);
 
-  champ_new->pos[0] = 1;
+  table_new->pos[0] = 1;
   cpt_elt_new           = 0;
   cpt_val_new           = 0;
   cpt_val_old_new       = 0;
@@ -1228,27 +1228,27 @@ ecs_champ__extrait(ecs_champ_t            *champ_ref,
 
       /* L'élément est à extraire */
 
-      pos_ref_inf = champ_ref->pos[ielt_ref    ] - 1;
-      pos_ref_sup = champ_ref->pos[ielt_ref + 1] - 1;
+      pos_ref_inf = table_ref->pos[ielt_ref    ] - 1;
+      pos_ref_sup = table_ref->pos[ielt_ref + 1] - 1;
 
       for (ipos_ref = pos_ref_inf; ipos_ref < pos_ref_sup; ipos_ref++)
-        champ_new->val[cpt_val_new++] = champ_ref->val[ipos_ref];
+        table_new->val[cpt_val_new++] = table_ref->val[ipos_ref];
 
-      champ_new->pos[cpt_elt_new + 1] = cpt_val_new + 1;
+      table_new->pos[cpt_elt_new + 1] = cpt_val_new + 1;
 
       cpt_elt_new++;
 
     }
   }
 
-  ECS_REALLOC(champ_new->pos, cpt_elt_new + 1, ecs_size_t);
-  ECS_REALLOC(champ_new->val, cpt_val_new,     ecs_int_t);
+  ECS_REALLOC(table_new->pos, cpt_elt_new + 1, ecs_size_t);
+  ECS_REALLOC(table_new->val, cpt_val_new,     ecs_int_t);
 
-  champ_new->nbr = cpt_elt_new;
+  table_new->nbr = cpt_elt_new;
 
-  ecs_champ__pos_en_regle(champ_ref);
+  ecs_table__pos_en_regle(table_ref);
 
-  return champ_new;
+  return table_new;
 }
 
 /*----------------------------------------------------------------------------*/

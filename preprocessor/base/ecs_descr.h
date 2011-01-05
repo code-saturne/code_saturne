@@ -3,7 +3,7 @@
 
 /*============================================================================
  *  Prototypes des fonctions de base
- *   associées à la structure `ecs_descr_t' décrivant un descripteur de champ
+ *   associées à la structure `ecs_descr_t' décrivant un descripteur de table
  *============================================================================*/
 
 /*
@@ -83,7 +83,7 @@ typedef struct _ecs_descr_t ecs_descr_t;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction de création d'une structure de descripteur de champ
+ *  Fonction de création d'une structure de descripteur de table
  *----------------------------------------------------------------------------*/
 
 ecs_descr_t *

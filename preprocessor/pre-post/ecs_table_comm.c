@@ -1,6 +1,6 @@
 /*============================================================================
  *  Definitions des fonctions
- *   associees a la structure `ecs_champ_t' decrivant un champ
+ *   associees a la structure `ecs_table_t' decrivant une table
  *   et realisant les sorties pour la communication
  *============================================================================*/
 
@@ -66,21 +66,21 @@
  *  Fichiers `include' visibles du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 
 /*----------------------------------------------------------------------------
  *  Fichier  `include' du  paquetage courant associe au fichier courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ_comm.h"
+#include "ecs_table_comm.h"
 
 
 /*----------------------------------------------------------------------------
  *  Fichiers `include' prives   du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ_priv.h"
+#include "ecs_table_priv.h"
 
 
 /*============================================================================
@@ -92,12 +92,12 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui ecrit le tableau des positions d'un champ
+ *  Fonction qui ecrit le tableau des positions d'une table
  *   dans le fichier d'interface pour le Noyau
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_comm__ecr_pos(ecs_champ_t  *this_champ,
+ecs_table_comm__ecr_pos(ecs_table_t  *this_table,
                         const char   *comm_nom_rubrique,
                         size_t        location_id,
                         size_t        index_id,
@@ -105,30 +105,30 @@ ecs_champ_comm__ecr_pos(ecs_champ_t  *this_champ,
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_champ != NULL);
+  assert(this_table != NULL);
 
-  ecs_champ__regle_en_pos(this_champ);
+  ecs_table__regle_en_pos(this_table);
 
   ecs_comm_write_section(comm_nom_rubrique,
-                         this_champ->nbr + 1,
+                         this_table->nbr + 1,
                          location_id,
                          index_id,
                          1,
                          false,
-                         this_champ->pos,
+                         this_table->pos,
                          ECS_TYPE_ecs_size_t,
                          comm);
 
-  ecs_champ__pos_en_regle(this_champ);
+  ecs_table__pos_en_regle(this_table);
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui ecrit le contenu d'un champ
+ *  Fonction qui ecrit le contenu d'une table
  *   dans le fichier d'interface pour le Noyau
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_comm__ecr(ecs_champ_t  *this_champ,
+ecs_table_comm__ecr(ecs_table_t  *this_table,
                     const char   *comm_nom_rubrique,
                     size_t        location_id,
                     size_t        index_id,
@@ -139,9 +139,9 @@ ecs_champ_comm__ecr(ecs_champ_t  *this_champ,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_champ != NULL);
+  assert(this_table != NULL);
 
-  nbr_val = ecs_champ__ret_val_nbr(this_champ);
+  nbr_val = ecs_table__ret_val_nbr(this_table);
 
   assert(nbr_val > 0);
 
@@ -151,7 +151,7 @@ ecs_champ_comm__ecr(ecs_champ_t  *this_champ,
                          index_id,
                          n_location_values,
                          false,
-                         this_champ->val,
+                         this_table->val,
                          ECS_TYPE_ecs_int_t,
                          comm);
 }

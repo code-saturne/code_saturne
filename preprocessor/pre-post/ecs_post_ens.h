@@ -130,7 +130,7 @@ ecs_post_ens__ecrit_fic_geo(ecs_post_ens_t  *cas_ens);
 
 ecs_file_t  *
 ecs_post_ens__ecrit_fic_var(ecs_post_ens_t  *cas_ens,
-                            const char      *nom_champ);
+                            const char      *nom_var);
 
 /*----------------------------------------------------------------------------*/
 

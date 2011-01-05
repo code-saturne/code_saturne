@@ -44,7 +44,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_tab_glob.h"
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 #include "ecs_post.h"
 
@@ -63,10 +63,10 @@
  *---------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
+ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
                                  size_t                 n_vertices,
                                  const ecs_coord_t      vertex_coords[],
-                                 ecs_champ_t           *champ_def,
+                                 ecs_table_t           *table_def,
                                  const int              elt_fam[],
                                  const ecs_tab_int_t   *tab_elt_typ_geo,
                                  ecs_post_cgns_t       *cas_cgns);
@@ -78,9 +78,9 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
  *---------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
+ecs_table_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
                              const char           *nom_maillage,
-                             const char           *nom_champ,
+                             const char           *nom_table,
                              ecs_post_cgns_t      *cas_cgns);
 
 
@@ -88,4 +88,4 @@ ecs_champ_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* _ECS_CHAMP_POST_CGNS_H_ */
+#endif /* _ECS_TABLE_POST_CGNS_H_ */

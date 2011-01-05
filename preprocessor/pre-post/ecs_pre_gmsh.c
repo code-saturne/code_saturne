@@ -55,7 +55,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_descr.h"
-#include "ecs_champ.h"
 #include "ecs_maillage.h"
 #include "ecs_maillage_priv.h"
 

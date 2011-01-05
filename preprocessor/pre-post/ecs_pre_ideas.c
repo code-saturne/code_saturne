@@ -55,8 +55,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_descr.h"
-#include "ecs_champ.h"
-#include "ecs_champ_att.h"
+#include "ecs_table.h"
+#include "ecs_table_att.h"
 #include "ecs_maillage.h"
 #include "ecs_maillage_priv.h"
 
@@ -1114,7 +1114,7 @@ _ecs_pre_ideas__lit_elements(ecs_maillage_t   *maillage,
 
     if (ityp == ECS_IDEAS_IGNORE_BEAM) {
 
-      /* On saute la ligne qui contient les champs propres aux `beam' */
+      /* On saute la ligne qui contient les tables propres aux `beam' */
 
       /* Format Ideas : 3I10 */
 
@@ -1398,7 +1398,7 @@ _ecs_pre_ideas__lit_groups(ecs_maillage_t   *maillage,
   int        * ideas_typ_entity;       /* Types Ideas des entites du groupe   */
   ecs_int_t  * ideas_tag_entity;       /* Etiquettes Ideas des entites du grp */
 
-  ecs_descr_t  * descr_grp;            /* Pointeur sur descripteur de champ   */
+  ecs_descr_t  * descr_grp;            /* Pointeur sur descripteur de table   */
   unsigned     nbr_entities_lues;      /* Nbr d'entites du groupe lues        */
   unsigned     nbr_entities_ligne;     /* Nbr d'entites  par ligne lue        */
   ecs_int_t    num_ent;                /* Numero de l'entite                  */
@@ -1438,7 +1438,7 @@ _ecs_pre_ideas__lit_groups(ecs_maillage_t   *maillage,
   ecs_int_t   *ent_val_grp[ECS_N_ENTMAIL]; /* Reference /entite et /groupe,
                                               les elts. appart. au groupe  */
 
-  ecs_champ_t  *champ_grp = NULL;
+  ecs_table_t  *table_grp = NULL;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -1446,7 +1446,7 @@ _ecs_pre_ideas__lit_groups(ecs_maillage_t   *maillage,
   /*=================*/
 
   for (ient = 0; ient < ECS_N_ENTMAIL; ient++)
-    ent_nbr_elt[ient] = ecs_champ__ret_elt_nbr(maillage->champ_def[ient]);
+    ent_nbr_elt[ient] = ecs_table__ret_elt_nbr(maillage->table_def[ient]);
 
   tab_tag.nbr = 1;
   tab_num.nbr = 1;
@@ -1750,7 +1750,7 @@ _ecs_pre_ideas__lit_groups(ecs_maillage_t   *maillage,
 
         assert(ent_cpt_elt[ient] <= ent_nbr_elt[ient]);
 
-        /* Creation du descripteur de champ correspondant au groupe lu */
+        /* Creation du descripteur de table correspondant au groupe lu */
         /*-------------------------------------------------------------*/
 
         descr_grp = ecs_descr__cree(ECS_DESCR_IDE_NUL,
@@ -1759,15 +1759,15 @@ _ecs_pre_ideas__lit_groups(ecs_maillage_t   *maillage,
         /* Transformation du tableau referencant le groupe en une table */
         /*--------------------------------------------------------------*/
 
-        champ_grp = ecs_champ__transforme_tableau(ent_nbr_elt[ient],
+        table_grp = ecs_table__transforme_tableau(ent_nbr_elt[ient],
                                                   ent_val_grp[ient],
                                                   descr_grp);
 
-        if (maillage->champ_att[ient] == NULL)
-          maillage->champ_att[ient] = champ_grp;
+        if (maillage->table_att[ient] == NULL)
+          maillage->table_att[ient] = table_grp;
         else
-          ecs_champ_att__assemble(maillage->champ_att[ient],
-                                  champ_grp);
+          ecs_table_att__assemble(maillage->table_att[ient],
+                                  table_grp);
 
       } /* Fin si le nombre d'elements referencant le groupe n'est pas nul */
 

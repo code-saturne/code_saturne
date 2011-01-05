@@ -1,6 +1,6 @@
 /*============================================================================
  *  Definitions des fonctions
- *   associees a la structure `ecs_champ_t' decrivant un champ
+ *   associees a la structure `ecs_table_t' decrivant une table
  *   et realisant les sorties au format MED
  *============================================================================*/
 
@@ -106,14 +106,14 @@ extern "C" {
  *  Fichiers `include' visibles du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 
 /*----------------------------------------------------------------------------
  *  Fichier  `include' du  paquetage courant associe au fichier courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ_post_med.h"
+#include "ecs_table_post_med.h"
 
 
 /*----------------------------------------------------------------------------
@@ -121,7 +121,7 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 #include "ecs_med_priv.h"
-#include "ecs_champ_priv.h"
+#include "ecs_table_priv.h"
 
 
 /*============================================================================
@@ -141,7 +141,7 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 static med_int *
-ecs_loc_champ_post_med__cv_int(ecs_int_t   *val_ecs,
+ecs_loc_table_post_med__cv_int(ecs_int_t   *val_ecs,
                                size_t       nbr_val,
                                size_t       pas_ecs,
                                size_t       pas_med,
@@ -208,7 +208,7 @@ ecs_loc_champ_post_med__cv_int(ecs_int_t   *val_ecs,
  *----------------------------------------------------------------------------*/
 
 static med_float *
-ecs_loc_champ_post_med__cv_real(ecs_coord_t  *val_ecs,
+ecs_loc_table_post_med__cv_real(ecs_coord_t  *val_ecs,
                                 size_t        nbr_val,
                                 size_t        pas_ecs,
                                 size_t        pas_med,
@@ -268,7 +268,7 @@ ecs_loc_champ_post_med__cv_real(ecs_coord_t  *val_ecs,
  *---------------------------------------------------------------------------*/
 
 static ecs_med_maillage_t  *
-ecs_loc_champ_post_med__maillage(const ecs_med_t  *cas_med,
+ecs_loc_table_post_med__maillage(const ecs_med_t  *cas_med,
                                  const char       *nom_maillage)
 {
   ecs_int_t  ind;
@@ -299,7 +299,7 @@ ecs_loc_champ_post_med__maillage(const ecs_med_t  *cas_med,
  *----------------------------------------------------------------------------*/
 
 static void
-ecs_loc_champ_post_med__ecr_fam(const char           *prefixe_nom_fam,
+ecs_loc_table_post_med__ecr_fam(const char           *prefixe_nom_fam,
                                 char                 *nom_maillage_med,
                                 const med_int         num_fam_med,
                                 const ecs_famille_t  *ptr_fam,
@@ -407,7 +407,7 @@ ecs_loc_champ_post_med__ecr_fam(const char           *prefixe_nom_fam,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_med__ecr_famille(const char           *nom_maillage,
+ecs_table_post_med__ecr_famille(const char           *nom_maillage,
                                 const ecs_famille_t  *famille_elt,
                                 const ecs_famille_t  *famille_inf,
                                 ecs_med_t            *cas_med)
@@ -493,7 +493,7 @@ ecs_champ_post_med__ecr_famille(const char           *nom_maillage,
     for (; ptr_fam != NULL; ptr_fam  = ptr_fam->l_famille_sui) {
 
       num_fam_med = - (ptr_fam->num);
-      ecs_loc_champ_post_med__ecr_fam("FAMILLE_ELEMENT_",
+      ecs_loc_table_post_med__ecr_fam("FAMILLE_ELEMENT_",
                                       maillage_med->nom_maillage_med,
                                       num_fam_med,
                                       ptr_fam,
@@ -508,7 +508,7 @@ ecs_champ_post_med__ecr_famille(const char           *nom_maillage,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_med__ecr_som(const char         *nom_maillage,
+ecs_table_post_med__ecr_som(const char         *nom_maillage,
                             size_t              n_vertices,
                             ecs_coord_t         vertex_coords[],
                             const ecs_med_t    *cas_med)
@@ -541,7 +541,7 @@ ecs_champ_post_med__ecr_som(const char         *nom_maillage,
   /* Recherche du maillage med */
   /*---------------------------*/
 
-  maillage_med = ecs_loc_champ_post_med__maillage(cas_med,
+  maillage_med = ecs_loc_table_post_med__maillage(cas_med,
                                                   nom_maillage);
 
   /* Nombre de noeuds */
@@ -577,7 +577,7 @@ ecs_champ_post_med__ecr_som(const char         *nom_maillage,
   /* Coordonnées des noeuds */
   /*------------------------*/
 
-  coo_noe_med = ecs_loc_champ_post_med__cv_real(vertex_coords,
+  coo_noe_med = ecs_loc_table_post_med__cv_real(vertex_coords,
                                                 n_vertices,
                                                 3,
                                                 3,
@@ -621,8 +621,8 @@ ecs_champ_post_med__ecr_som(const char         *nom_maillage,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_med__ecr_elt(const char           *nom_maillage,
-                            ecs_champ_t          *champ_def,
+ecs_table_post_med__ecr_elt(const char           *nom_maillage,
+                            ecs_table_t          *table_def,
                             const int             elt_fam[],
                             const ecs_tab_int_t  *tab_elt_typ_geo,
                             const ecs_med_t      *cas_med)
@@ -667,14 +667,14 @@ ecs_champ_post_med__ecr_elt(const char           *nom_maillage,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(champ_def != NULL);
+  assert(table_def != NULL);
 
-  nbr_elt = champ_def->nbr;
+  nbr_elt = table_def->nbr;
 
   /* Recherche du maillage med */
   /*---------------------------*/
 
-  maillage_med = ecs_loc_champ_post_med__maillage(cas_med,
+  maillage_med = ecs_loc_table_post_med__maillage(cas_med,
                                                   nom_maillage);
 
   /* Familles MED des elements */
@@ -696,10 +696,10 @@ ecs_champ_post_med__ecr_elt(const char           *nom_maillage,
 
   mdim_med = maillage_med->dim_entite;
 
-  ecs_champ__regle_en_pos(champ_def);
+  ecs_table__regle_en_pos(table_def);
 
-  def_pos_tab = champ_def->pos;
-  def_val_tab = champ_def->val;
+  def_pos_tab = table_def->pos;
+  def_val_tab = table_def->val;
 
   /* Boucle sur les éléments ayant le même type géométrique */
   /*--------------------------------------------------------*/
@@ -966,7 +966,7 @@ ecs_champ_post_med__ecr_elt(const char           *nom_maillage,
 
   ECS_FREE(fam_ele_med);
 
-  ecs_champ__libere_pos_tab(champ_def, def_pos_tab);
+  ecs_table__libere_pos_tab(table_def, def_pos_tab);
 }
 
 /*----------------------------------------------------------------------------
@@ -975,7 +975,7 @@ ecs_champ_post_med__ecr_elt(const char           *nom_maillage,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_med__cpt_elt_typ(const ecs_tab_int_t  *tab_elt_typ_geo,
+ecs_table_post_med__cpt_elt_typ(const ecs_tab_int_t  *tab_elt_typ_geo,
                                 const char           *nom_maillage,
                                 ecs_med_t            *cas_med)
 {
@@ -990,7 +990,7 @@ ecs_champ_post_med__cpt_elt_typ(const ecs_tab_int_t  *tab_elt_typ_geo,
   /* Recherche du maillage med */
   /*---------------------------*/
 
-  maillage_med = ecs_loc_champ_post_med__maillage(cas_med,
+  maillage_med = ecs_loc_table_post_med__maillage(cas_med,
                                                   nom_maillage);
 
   if (maillage_med == NULL)
@@ -1041,13 +1041,13 @@ ecs_champ_post_med__cpt_elt_typ(const ecs_tab_int_t  *tab_elt_typ_geo,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction ecrivant un champ au format MED
+ *  Fonction ecrivant une table au format MED
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
+ecs_table_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
                             const char           *nom_maillage,
-                            const char           *nom_champ,
+                            const char           *nom_table,
                             const ecs_med_t      *cas_med)
 {
   bool        bool_libere_val;
@@ -1081,20 +1081,20 @@ ecs_champ_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
   /* Recherche du maillage med */
   /*---------------------------*/
 
-  maillage_med = ecs_loc_champ_post_med__maillage(cas_med,
+  maillage_med = ecs_loc_table_post_med__maillage(cas_med,
                                                   nom_maillage);
 
   if (maillage_med == NULL)
     return;
 
-  /* Nom du champ */
-  /*--------------*/
+  /* Nom de la table */
+  /*-----------------*/
 
-  ECS_MALLOC(nom_champ_med, strlen(nom_champ) + 1, char);
-  strcpy(nom_champ_med, nom_champ);
+  ECS_MALLOC(nom_champ_med, strlen(nom_table) + 1, char);
+  strcpy(nom_champ_med, nom_table);
 
-  /* Valeurs du champ suivant le type des elements */
-  /*-----------------------------------------------*/
+  /* Valeurs de la table suivant le type des elements */
+  /*--------------------------------------------------*/
 
   nbr_elt = tab_val->nbr;
   cpt_elt = 0;
@@ -1115,7 +1115,7 @@ ecs_champ_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
 
       /* On écrit les valeurs correspondant à ce type géométrique */
 
-      val_med = ecs_loc_champ_post_med__cv_int(tab_val->val + cpt_elt,
+      val_med = ecs_loc_table_post_med__cv_int(tab_val->val + cpt_elt,
                                                1,
                                                1,
                                                nbr_elt_typ_geo,

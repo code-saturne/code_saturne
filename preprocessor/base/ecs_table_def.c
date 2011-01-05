@@ -1,7 +1,7 @@
 /*============================================================================
  *  Definitions des fonctions
- *   associees a la structure `ecs_champ_t' decrivant un champ
- *   et propres aux champs principaux de type "definition"
+ *   associees a la structure `ecs_table_t' decrivant un table
+ *   et propres aux tables principaux de type "definition"
  *============================================================================*/
 
 /*
@@ -62,21 +62,21 @@
  *  Fichiers `include' visibles du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 
 /*----------------------------------------------------------------------------
  *  Fichier  `include' du  paquetage courant associe au fichier courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ_def.h"
+#include "ecs_table_def.h"
 
 
 /*----------------------------------------------------------------------------
  *  Fichiers `include' prives   du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ_priv.h"
+#include "ecs_table_priv.h"
 
 
 /*============================================================================
@@ -116,7 +116,7 @@ prod_vect[2] = vect1[0] * vect2[1] - vect2[0] * vect1[1]   )
  *----------------------------------------------------------------------------*/
 
 static void
-_champ_def__maj_fac_som(ecs_champ_t          *champ_def_fac,
+_table_def__maj_fac_som(ecs_table_t          *table_def_fac,
                         const ecs_tab_int_t  *tab_som_old_new)
 {
   size_t     cpt_val;
@@ -138,19 +138,19 @@ _champ_def__maj_fac_som(ecs_champ_t          *champ_def_fac,
   /* Initialisations */
   /* --------------- */
 
-  nbr_fac = champ_def_fac->nbr;
+  nbr_fac = table_def_fac->nbr;
 
-  nbr_val_ini = champ_def_fac->pos[nbr_fac];
+  nbr_val_ini = table_def_fac->pos[nbr_fac];
 
   /* Mise à jour de la définition des faces */
   /*----------------------------------------*/
 
   for (ind_som = 0;
-       ind_som < champ_def_fac->pos[champ_def_fac->nbr] - 1;
+       ind_som < table_def_fac->pos[table_def_fac->nbr] - 1;
        ind_som++)
 
-    champ_def_fac->val[ind_som]
-      = tab_som_old_new->val[champ_def_fac->val[ind_som] - 1];
+    table_def_fac->val[ind_som]
+      = tab_som_old_new->val[table_def_fac->val[ind_som] - 1];
 
   /* Suppression de sommets confondus de la définition des faces */
   /*-------------------------------------------------------------*/
@@ -164,38 +164,38 @@ _champ_def__maj_fac_som(ecs_champ_t          *champ_def_fac,
 
     ind_fac_mod = 0;
 
-    ipos_fin = champ_def_fac->pos[ind_fac + 1] - 1;
+    ipos_fin = table_def_fac->pos[ind_fac + 1] - 1;
 
     nbr_som_fac = ipos_fin - ipos_deb;
 
-    num_som_prev = champ_def_fac->val[ipos_deb + nbr_som_fac - 1];
+    num_som_prev = table_def_fac->val[ipos_deb + nbr_som_fac - 1];
 
     for (ind_som = 0; ind_som < nbr_som_fac; ind_som++) {
 
-      num_som = champ_def_fac->val[ipos_deb + ind_som];
+      num_som = table_def_fac->val[ipos_deb + ind_som];
 
       if (num_som != num_som_prev) {
         num_som_prev = num_som;
-        champ_def_fac->val[cpt_val++] = num_som;
+        table_def_fac->val[cpt_val++] = num_som;
       }
       else
         ind_fac_mod = 1;
     }
 
-    champ_def_fac->pos[ind_fac + 1] = cpt_val + 1;
+    table_def_fac->pos[ind_fac + 1] = cpt_val + 1;
 
     ipos_deb = ipos_fin;
 
     nbr_fac_mod += ind_fac_mod;
   }
 
-  nbr_val_fin = champ_def_fac->pos[nbr_fac];
+  nbr_val_fin = table_def_fac->pos[nbr_fac];
 
   assert(nbr_val_fin <= nbr_val_ini);
 
   if (nbr_val_fin != nbr_val_ini) {
 
-    ECS_REALLOC(champ_def_fac->val, nbr_val_fin, ecs_int_t);
+    ECS_REALLOC(table_def_fac->val, nbr_val_fin, ecs_int_t);
     printf(_("\nMesh verification:\n\n"
              "  %d faces modified due to merged vertices.\n"),
            (int)nbr_fac_mod);
@@ -207,7 +207,7 @@ _champ_def__maj_fac_som(ecs_champ_t          *champ_def_fac,
  *----------------------------------------------------------------------------*/
 
 static void
-_champ_def__transf_equiv(size_t          nbr_som,
+_table_def__transf_equiv(size_t          nbr_som,
                          ecs_tab_int_t  *tab_equiv_som)
 {
   size_t     ind_som;
@@ -288,7 +288,7 @@ _champ_def__transf_equiv(size_t          nbr_som,
  *----------------------------------------------------------------------------*/
 
 static ecs_tab_int_t
-_champ_def__fusion_som(size_t          *n_vertices,
+_table_def__fusion_som(size_t          *n_vertices,
                        ecs_coord_t    **coords,
                        ecs_tab_int_t   *tab_equiv_som)
 {
@@ -308,7 +308,7 @@ _champ_def__fusion_som(size_t          *n_vertices,
 
   /* Transform vertex equivalences array into simple linked list. */
 
-  _champ_def__transf_equiv(nbr_som_old, tab_equiv_som);
+  _table_def__transf_equiv(nbr_som_old, tab_equiv_som);
 
   printf(_("    Initial number of vertices        : %10d\n"), (int)nbr_som_old);
 
@@ -426,7 +426,7 @@ _champ_def__fusion_som(size_t          *n_vertices,
  *----------------------------------------------------------------------------*/
 
 static void
-_champ_def__maj_equiv_som(size_t          ind_som_0,
+_table_def__maj_equiv_som(size_t          ind_som_0,
                           size_t          ind_som_1,
                           ecs_tab_int_t  *tab_equiv_som)
 {
@@ -1325,7 +1325,7 @@ _orient_polyhedron(const ecs_coord_t   coord[],
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__trie_typ(ecs_champ_t  *this_champ_def,
+ecs_table_def__trie_typ(ecs_table_t  *this_table_def,
                         int           dim_elt)
 {
   size_t       ielt;
@@ -1344,12 +1344,12 @@ ecs_champ_def__trie_typ(ecs_champ_t  *this_champ_def,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_champ_def != NULL);
+  assert(this_table_def != NULL);
 
   vect_renum.nbr = 0   ;
   vect_renum.val = NULL;
 
-  nbr_elt = this_champ_def->nbr;
+  nbr_elt = this_table_def->nbr;
 
   if (nbr_elt == 0)
     return vect_renum;
@@ -1363,10 +1363,10 @@ ecs_champ_def__trie_typ(ecs_champ_t  *this_champ_def,
   /* Si tous les éléments sont de même type, rien à faire */
   /*------------------------------------------------------*/
 
-  if (this_champ_def->pos == NULL) {
+  if (this_table_def->pos == NULL) {
 
-    if (this_champ_def->pas < 9)
-      typ_geo = typ_geo_base[this_champ_def->pas];
+    if (this_table_def->pas < 9)
+      typ_geo = typ_geo_base[this_table_def->pas];
     else if (dim_elt == 2)
       typ_geo = ECS_ELT_TYP_FAC_POLY;
     else if (dim_elt == 3)
@@ -1394,8 +1394,8 @@ ecs_champ_def__trie_typ(ecs_champ_t  *this_champ_def,
 
     for (ielt = 0; ielt < nbr_elt; ielt++) {
 
-      nbr_som =   this_champ_def->pos[ielt + 1]
-                - this_champ_def->pos[ielt];
+      nbr_som =   this_table_def->pos[ielt + 1]
+                - this_table_def->pos[ielt];
 
       if (nbr_som < 9)
         tab_typ_geo.val[ielt] = typ_geo_base[nbr_som];
@@ -1494,12 +1494,12 @@ ecs_champ_def__trie_typ(ecs_champ_t  *this_champ_def,
 
 /*----------------------------------------------------------------------------
  *  Fonction qui construit
- *   les définitions des faces par décomposition des champs des cellules
+ *   les définitions des faces par décomposition des tables des cellules
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
-                             ecs_champ_t   *champ_def_cel)
+ecs_table_def__decompose_cel(ecs_table_t  **table_def_fac,
+                             ecs_table_t   *table_def_cel)
 {
   size_t      nbr_cel;
   size_t      nbr_def;
@@ -1542,19 +1542,19 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
   /* Initialisations */
   /*=================*/
 
-  nbr_cel  = champ_def_cel->nbr;
+  nbr_cel  = table_def_cel->nbr;
 
-  ecs_champ__regle_en_pos(champ_def_cel);
+  ecs_table__regle_en_pos(table_def_cel);
 
-  /* Construction, pour les cellules, des champs principaux */
+  /* Construction, pour les cellules, des tables principaux */
   /*--------------------------------------------------------*/
 
   /* Boucle de comptage pour l'allocation des sous-éléments */
   /*--------------------------------------------------------*/
 
-  if (*champ_def_fac != NULL) {
-    nbr_fac_old = (*champ_def_fac)->nbr;
-    nbr_val_fac_old = ecs_champ__ret_val_nbr(*champ_def_fac);
+  if (*table_def_fac != NULL) {
+    nbr_fac_old = (*table_def_fac)->nbr;
+    nbr_val_fac_old = ecs_table__ret_val_nbr(*table_def_fac);
   }
   else {
     nbr_fac_old = 0;
@@ -1567,9 +1567,9 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
 
   for (icel = 0; icel < nbr_cel; icel++ ) {
 
-    ind_pos_cel = champ_def_cel->pos[icel] - 1;
+    ind_pos_cel = table_def_cel->pos[icel] - 1;
 
-    nbr_val_cel = champ_def_cel->pos[icel + 1] - 1 - ind_pos_cel;
+    nbr_val_cel = table_def_cel->pos[icel + 1] - 1 - ind_pos_cel;
 
     /* Traitement des cellules "classiques" */
     /*--------------------------------------*/
@@ -1604,7 +1604,7 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
 
     else {
 
-      ind_pos_sui = champ_def_cel->pos[icel + 1] - 1;
+      ind_pos_sui = table_def_cel->pos[icel + 1] - 1;
       nbr_pos_loc = ind_pos_sui - ind_pos_cel;
 
       /* Convention : définition nodale cellule->sommets avec numéros de
@@ -1615,10 +1615,10 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
 
       for (isom = ind_pos_cel; isom < ind_pos_sui; isom++) {
 
-        if (champ_def_cel->val[isom] != marqueur_fin) {
+        if (table_def_cel->val[isom] != marqueur_fin) {
           nbr_val_fac += 1;
           if (marqueur_fin == -1)
-            marqueur_fin = champ_def_cel->val[isom];
+            marqueur_fin = table_def_cel->val[isom];
         }
         else {
           marqueur_fin = -1;
@@ -1638,16 +1638,16 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
   nbr_fac += nbr_fac_old;
   nbr_val_fac += nbr_val_fac_old;
 
-  if (*champ_def_fac != NULL) {
-    ecs_champ__regle_en_pos(*champ_def_fac);
-    (*champ_def_fac)->nbr = nbr_fac;
-    ECS_REALLOC((*champ_def_fac)->pos, nbr_fac + 1, ecs_size_t);
-    ECS_REALLOC((*champ_def_fac)->val, nbr_val_fac, ecs_int_t);
+  if (*table_def_fac != NULL) {
+    ecs_table__regle_en_pos(*table_def_fac);
+    (*table_def_fac)->nbr = nbr_fac;
+    ECS_REALLOC((*table_def_fac)->pos, nbr_fac + 1, ecs_size_t);
+    ECS_REALLOC((*table_def_fac)->val, nbr_val_fac, ecs_int_t);
   }
   else {
-    *champ_def_fac = ecs_champ__alloue(nbr_fac,
+    *table_def_fac = ecs_table__alloue(nbr_fac,
                                        nbr_val_fac);
-    (*champ_def_fac)->pos[0] = 1;
+    (*table_def_fac)->pos[0] = 1;
   }
 
   ECS_MALLOC(def_cel_fac_pos, nbr_cel + 1, ecs_size_t);
@@ -1664,9 +1664,9 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
 
   for (icel = 0; icel < nbr_cel; icel++ ) {
 
-    ind_pos_cel = champ_def_cel->pos[icel] - 1;
+    ind_pos_cel = table_def_cel->pos[icel] - 1;
 
-    nbr_val_cel = champ_def_cel->pos[icel + 1] - 1 - ind_pos_cel;
+    nbr_val_cel = table_def_cel->pos[icel + 1] - 1 - ind_pos_cel;
 
     /*--------------------------------------*/
     /* Traitement des éléments "classiques" */
@@ -1697,16 +1697,16 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
 
           num_def = sous_elt->som[idef];
 
-          (*champ_def_fac)->val[nbr_def++]
-            = champ_def_cel->val[ind_pos_cel + num_def - 1];
+          (*table_def_fac)->val[nbr_def++]
+            = table_def_cel->val[ind_pos_cel + num_def - 1];
 
         }
 
         /* Position de la face dans sa définition en fonction des sommets */
         /*----------------------------------------------------------------*/
 
-        (*champ_def_fac)->pos[cpt_fac + 1]
-          = (*champ_def_fac)->pos[cpt_fac] + idef;
+        (*table_def_fac)->pos[cpt_fac + 1]
+          = (*table_def_fac)->pos[cpt_fac] + idef;
 
         /* Détermination de la cellule en fonction des faces */
         /*---------------------------------------------------*/
@@ -1732,19 +1732,19 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
       ifac = 0;
       marqueur_fin = -1;
 
-      nbr_pos_loc = champ_def_cel->pos[icel + 1] - 1 - ind_pos_cel;
+      nbr_pos_loc = table_def_cel->pos[icel + 1] - 1 - ind_pos_cel;
 
       for (ind_pos_loc = 0; ind_pos_loc < nbr_pos_loc; ind_pos_loc++) {
 
         /* Définition de la face en fonction des sommets */
 
-        if (champ_def_cel->val[ind_pos_cel + ind_pos_loc] != marqueur_fin) {
+        if (table_def_cel->val[ind_pos_cel + ind_pos_loc] != marqueur_fin) {
 
-          (*champ_def_fac)->val[nbr_def++]
-            = champ_def_cel->val[ind_pos_cel + ind_pos_loc];
+          (*table_def_fac)->val[nbr_def++]
+            = table_def_cel->val[ind_pos_cel + ind_pos_loc];
 
           if (marqueur_fin == -1)
-            marqueur_fin = champ_def_cel->val[ind_pos_cel + ind_pos_loc];
+            marqueur_fin = table_def_cel->val[ind_pos_cel + ind_pos_loc];
 
         }
 
@@ -1752,7 +1752,7 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
 
         else {
 
-          (*champ_def_fac)->pos[cpt_fac + 1] = nbr_def + 1;
+          (*table_def_fac)->pos[cpt_fac + 1] = nbr_def + 1;
 
           marqueur_fin = -1;
 
@@ -1770,7 +1770,7 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
     }
 
     /* A ce point, on a : ifac
-       = ecs_fic_elt_typ_liste_c[champ_typ_geo_cel->val[icel]].nbr_sous_elt
+       = ecs_fic_elt_typ_liste_c[table_typ_geo_cel->val[icel]].nbr_sous_elt
        pour des éléments classiques, et ifac est égal au nombre de faces pour
        des éléments polyédriques. */
 
@@ -1778,17 +1778,17 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
 
   } /* Fin de la boucle sur les éléments */
 
-  /* Mise à jour du champ */
-  /*----------------------*/
+  /* Mise à jour de la table */
+  /*-------------------------*/
 
-  ECS_FREE(champ_def_cel->pos);
-  ECS_FREE(champ_def_cel->val);
+  ECS_FREE(table_def_cel->pos);
+  ECS_FREE(table_def_cel->val);
 
-  champ_def_cel->pos = def_cel_fac_pos;
-  champ_def_cel->val = def_cel_fac_val;
+  table_def_cel->pos = def_cel_fac_pos;
+  table_def_cel->val = def_cel_fac_val;
 
-  /* ecs_champ__pos_en_regle(*champ_def_fac); */
-  ecs_champ__pos_en_regle(champ_def_cel);
+  /* ecs_table__pos_en_regle(*table_def_fac); */
+  ecs_table__pos_en_regle(table_def_cel);
 }
 
 /*----------------------------------------------------------------------------
@@ -1796,7 +1796,7 @@ ecs_champ_def__decompose_cel(ecs_champ_t  **champ_def_fac,
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
+ecs_table_def__fusionne(ecs_table_t    *table_def,
                         size_t         *nbr_elt_cpct,
                         ecs_tab_int_t  *signe_elt)
 {
@@ -1831,7 +1831,7 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  ecs_champ__regle_en_pos(champ_def);
+  ecs_table__regle_en_pos(table_def);
 
   /* Fusion des definitions des elements sur la liste initiale  */
   /*------------------------------------------------------------*/
@@ -1841,13 +1841,13 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
   tab_transf.nbr = 0;
   tab_transf.val = NULL;
 
-  if (champ_def == NULL)
+  if (table_def == NULL)
     return tab_transf;
 
-  if (champ_def == NULL)
+  if (table_def == NULL)
     return tab_transf;
 
-  nbr_sup_ini = champ_def->nbr;
+  nbr_sup_ini = table_def->nbr;
   cpt_sup_fin = 0;
 
   if (nbr_sup_ini < 1)
@@ -1863,9 +1863,9 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
   nbr_inf = 0;
 
   for (ind_sup = 0;
-       ind_sup < champ_def->pos[nbr_sup_ini] - 1;
+       ind_sup < table_def->pos[nbr_sup_ini] - 1;
        ind_sup++) {
-    num_inf = champ_def->val[ind_sup];
+    num_inf = table_def->val[ind_sup];
     if ((size_t)(ECS_ABS(num_inf)) > nbr_inf)
       nbr_inf = ECS_ABS(num_inf);
   }
@@ -1874,7 +1874,7 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
   /*-------------------------------------------------------*/
 
   ECS_MALLOC(pos_recherche, nbr_inf + 1, ecs_size_t);
-  ECS_MALLOC(val_recherche, champ_def->nbr, ecs_int_t);
+  ECS_MALLOC(val_recherche, table_def->nbr, ecs_int_t);
 
   /*
     Comptage pour chaque élément de l'entité inférieure du nombre de fois où il
@@ -1883,13 +1883,13 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
 
   cpt_ref_inf = ecs_tab_int__cree_init(nbr_inf, 0);
 
-  for (ind_sup = 0; ind_sup < champ_def->nbr; ind_sup++) {
+  for (ind_sup = 0; ind_sup < table_def->nbr; ind_sup++) {
 
-    ind_pos_loc = champ_def->pos[ind_sup] - 1;
+    ind_pos_loc = table_def->pos[ind_sup] - 1;
 
-    num_inf_min = ECS_ABS(champ_def->val[ind_pos_loc]);
-    while (++ind_pos_loc < champ_def->pos[ind_sup + 1] -1) {
-      num_inf_loc = ECS_ABS(champ_def->val[ind_pos_loc]);
+    num_inf_min = ECS_ABS(table_def->val[ind_pos_loc]);
+    while (++ind_pos_loc < table_def->pos[ind_sup + 1] -1) {
+      num_inf_loc = ECS_ABS(table_def->val[ind_pos_loc]);
       if (num_inf_loc < num_inf_min)
         num_inf_min = num_inf_loc;
     }
@@ -1914,13 +1914,13 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
   }
 
 
-  for (ind_sup = 0; ind_sup < champ_def->nbr; ind_sup++) {
+  for (ind_sup = 0; ind_sup < table_def->nbr; ind_sup++) {
 
-    ind_pos_loc = champ_def->pos[ind_sup] - 1;
+    ind_pos_loc = table_def->pos[ind_sup] - 1;
 
-    num_inf_min = ECS_ABS(champ_def->val[ind_pos_loc]);
-    while (ind_pos_loc < champ_def->pos[ind_sup + 1] -1) {
-      num_inf_loc = ECS_ABS(champ_def->val[ind_pos_loc]);
+    num_inf_min = ECS_ABS(table_def->val[ind_pos_loc]);
+    while (ind_pos_loc < table_def->pos[ind_sup + 1] -1) {
+      num_inf_loc = ECS_ABS(table_def->val[ind_pos_loc]);
       ind_pos_loc++;
       if (num_inf_loc < num_inf_min)
         num_inf_min = num_inf_loc;
@@ -1966,19 +1966,19 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
 
   cpt_sup_fin       = 1;
 
-  for (ind_sup = 1; ind_sup < champ_def->nbr; ind_sup++) {
+  for (ind_sup = 1; ind_sup < table_def->nbr; ind_sup++) {
 
     /* Recherche élement entité inférieure de plus petit numéro référencé */
 
-    ind_pos_sup[0] = champ_def->pos[ind_sup    ] - 1; /* début */
-    ind_pos_sup[1] = champ_def->pos[ind_sup + 1] - 1; /* fin */
-    ind_pos_sup[2] = champ_def->pos[ind_sup    ] - 1; /* plus petit */
+    ind_pos_sup[0] = table_def->pos[ind_sup    ] - 1; /* début */
+    ind_pos_sup[1] = table_def->pos[ind_sup + 1] - 1; /* fin */
+    ind_pos_sup[2] = table_def->pos[ind_sup    ] - 1; /* plus petit */
 
     ind_pos_loc = ind_pos_sup[0];
 
-    num_inf_min = ECS_ABS(champ_def->val[ind_pos_loc]);
+    num_inf_min = ECS_ABS(table_def->val[ind_pos_loc]);
     while (++ind_pos_loc < ind_pos_sup[1]) {
-      num_inf_loc = ECS_ABS(champ_def->val[ind_pos_loc]);
+      num_inf_loc = ECS_ABS(table_def->val[ind_pos_loc]);
       if (num_inf_loc < num_inf_min) {
         num_inf_min    = num_inf_loc;
         ind_pos_sup[2] = ind_pos_loc;
@@ -2004,19 +2004,19 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
 
       if (ind_cmp < ind_sup) {
 
-        ind_pos_cmp[0] = champ_def->pos[ind_cmp    ] - 1; /* début */
-        ind_pos_cmp[1] = champ_def->pos[ind_cmp + 1] - 1; /* fin */
-        ind_pos_cmp[2] = champ_def->pos[ind_cmp    ] - 1; /* plus petit */
+        ind_pos_cmp[0] = table_def->pos[ind_cmp    ] - 1; /* début */
+        ind_pos_cmp[1] = table_def->pos[ind_cmp + 1] - 1; /* fin */
+        ind_pos_cmp[2] = table_def->pos[ind_cmp    ] - 1; /* plus petit */
 
         assert(ind_pos_cmp[1] > ind_pos_cmp[0]);
 
-        ind_pos_cmp[1] = champ_def->pos[ind_cmp + 1] - 1;  /* fin */
+        ind_pos_cmp[1] = table_def->pos[ind_cmp + 1] - 1;  /* fin */
 
         ind_pos_loc = ind_pos_cmp[0];
 
-        num_inf_min_cmp = ECS_ABS(champ_def->val[ind_pos_loc]);
+        num_inf_min_cmp = ECS_ABS(table_def->val[ind_pos_loc]);
         while ((++ind_pos_loc) < ind_pos_cmp[1]) {
-          num_inf_loc = ECS_ABS(champ_def->val[ind_pos_loc]);
+          num_inf_loc = ECS_ABS(table_def->val[ind_pos_loc]);
           if (num_inf_loc < num_inf_min_cmp) {
             num_inf_min_cmp = num_inf_loc;
             ind_pos_cmp[2]  = ind_pos_loc;
@@ -2043,8 +2043,8 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
                      || ind_loc_cmp > ind_pos_cmp[1])
               ind_loc_cmp = ind_pos_cmp[1] - 1;
 
-          } while (   (   ECS_ABS(champ_def->val[ind_loc_sup])
-                       == ECS_ABS(champ_def->val[ind_loc_cmp]))
+          } while (   (   ECS_ABS(table_def->val[ind_loc_sup])
+                       == ECS_ABS(table_def->val[ind_loc_cmp]))
                    && ind_loc_sup != ind_pos_sup[2]
                    && ind_loc_cmp != ind_pos_cmp[2]);
 
@@ -2082,8 +2082,8 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
           que soit le signe; on le corrige si nécessaire
         */
 
-        if (   ECS_ABS(champ_def->val[ind_pos_sup[0]])
-            != ECS_ABS(champ_def->val[ind_pos_cmp[0]]))
+        if (   ECS_ABS(table_def->val[ind_pos_sup[0]])
+            != ECS_ABS(table_def->val[ind_pos_cmp[0]]))
           sgn = -1;
 
       }
@@ -2121,39 +2121,39 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
 
   cpt_sup_fin       = 1;
 
-  for (ind_sup = 1; ind_sup < champ_def->nbr; ind_sup++) {
+  for (ind_sup = 1; ind_sup < table_def->nbr; ind_sup++) {
 
     if (tab_transf.val[ind_sup] > (ecs_int_t)(cpt_sup_fin - 1)) {
 
       /* Recopie définition sur partie compactée du tableau */
 
-      for (pos_cpt = champ_def->pos[cpt_sup_fin],
-             pos_sup = champ_def->pos[ind_sup];
-           pos_sup < champ_def->pos[ind_sup + 1];
+      for (pos_cpt = table_def->pos[cpt_sup_fin],
+             pos_sup = table_def->pos[ind_sup];
+           pos_sup < table_def->pos[ind_sup + 1];
            pos_cpt++, pos_sup++)
-        champ_def->val[pos_cpt - 1] = champ_def->val[pos_sup - 1];
+        table_def->val[pos_cpt - 1] = table_def->val[pos_sup - 1];
 
       cpt_sup_fin += 1;
 
-      champ_def->pos[cpt_sup_fin] = pos_cpt;
+      table_def->pos[cpt_sup_fin] = pos_cpt;
 
     }
   }
 
   /* Redimensionnement de l'entité compactée */
 
-  champ_def->nbr = cpt_sup_fin;
-  ECS_REALLOC(champ_def->pos, cpt_sup_fin + 1, ecs_size_t);
-  ECS_REALLOC(champ_def->val,
-              champ_def->pos[cpt_sup_fin] - 1,
+  table_def->nbr = cpt_sup_fin;
+  ECS_REALLOC(table_def->pos, cpt_sup_fin + 1, ecs_size_t);
+  ECS_REALLOC(table_def->val,
+              table_def->pos[cpt_sup_fin] - 1,
               ecs_int_t);
 
-  ecs_champ__pos_en_regle(champ_def);
+  ecs_table__pos_en_regle(table_def);
 
   /* Affectation de la nouvelle liste compactee */
   /*--------------------------------------------*/
 
-  *nbr_elt_cpct = champ_def->nbr;
+  *nbr_elt_cpct = table_def->nbr;
 
   /* Renvoi du tableau de transformation */
   /*-------------------------------------*/
@@ -2167,8 +2167,8 @@ ecs_champ_def__fusionne(ecs_champ_t    *champ_def,
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__liste_cel_fac(const size_t          nbr_fac,
-                             ecs_champ_t          *champ_def_cel,
+ecs_table_def__liste_cel_fac(const size_t          nbr_fac,
+                             ecs_table_t          *table_def_cel,
                              const ecs_tab_int_t   liste_fac)
 {
   size_t      cpt_cel;
@@ -2185,15 +2185,15 @@ ecs_champ_def__liste_cel_fac(const size_t          nbr_fac,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(champ_def_cel != NULL);
+  assert(table_def_cel != NULL);
 
-  ecs_champ__regle_en_pos(champ_def_cel);
+  ecs_table__regle_en_pos(table_def_cel);
 
   /* Initialisations */
 
   cpt_cel = 0;
 
-  nbr_cel = champ_def_cel->nbr;
+  nbr_cel = table_def_cel->nbr;
 
   /* Indicateurs */
 
@@ -2214,14 +2214,14 @@ ecs_champ_def__liste_cel_fac(const size_t          nbr_fac,
   for (icel = 0; icel < nbr_cel; icel++) {
 
     nbr_fac_cel
-      = champ_def_cel->pos[icel + 1]
-      - champ_def_cel->pos[icel];
+      = table_def_cel->pos[icel + 1]
+      - table_def_cel->pos[icel];
 
-    ipos = champ_def_cel->pos[icel] - 1;
+    ipos = table_def_cel->pos[icel] - 1;
 
     for (iloc = 0; iloc < nbr_fac_cel; iloc++) {
 
-      ifac = ECS_ABS(champ_def_cel->val[ipos]) - 1;
+      ifac = ECS_ABS(table_def_cel->val[ipos]) - 1;
 
       ipos++;
 
@@ -2251,7 +2251,7 @@ ecs_champ_def__liste_cel_fac(const size_t          nbr_fac,
 
   ECS_FREE(indic_cel);
 
-  ecs_champ__libere_pos(champ_def_cel);
+  ecs_table__libere_pos(table_def_cel);
 
   return liste_cel;
 }
@@ -2263,45 +2263,45 @@ ecs_champ_def__liste_cel_fac(const size_t          nbr_fac,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__remplace_ref(ecs_champ_t    *champ_def,
+ecs_table_def__remplace_ref(ecs_table_t    *table_def,
                             ecs_tab_int_t  *tab_old_new)
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  if (champ_def != NULL && tab_old_new != NULL) {
+  if (table_def != NULL && tab_old_new != NULL) {
 
     ecs_int_t  num_old, num_new;
     ecs_size_t ielt;
     ecs_size_t ival, ival_deb, ival_fin;
     ecs_size_t cpt_val = 0;
-    size_t nbr_elt = champ_def->nbr;
+    size_t nbr_elt = table_def->nbr;
 
-    ecs_champ__regle_en_pos(champ_def);
+    ecs_table__regle_en_pos(table_def);
 
     ival_deb = 0;
 
     for (ielt = 0; ielt < nbr_elt; ielt++) {
 
-      ival_fin = champ_def->pos[ielt+1] - 1;
+      ival_fin = table_def->pos[ielt+1] - 1;
 
       for (ival = ival_deb; ival < ival_fin; ival++) {
         num_new = 0;
-        num_old = champ_def->val[ival];
+        num_old = table_def->val[ival];
         if (num_old > 0)
           num_new = tab_old_new->val[num_old -1];
         else
           num_new = -tab_old_new->val[-num_old -1];
         if (num_new != 0)
-          champ_def->val[cpt_val++] = num_new;
+          table_def->val[cpt_val++] = num_new;
       }
 
-      ival_deb = champ_def->pos[ielt+1] - 1;
-      champ_def->pos[ielt+1] = cpt_val + 1;
+      ival_deb = table_def->pos[ielt+1] - 1;
+      table_def->pos[ielt+1] = cpt_val + 1;
     }
 
-    ECS_REALLOC(champ_def->val, cpt_val, ecs_int_t);
+    ECS_REALLOC(table_def->val, cpt_val, ecs_int_t);
 
-    ecs_champ__pos_en_regle(champ_def);
+    ecs_table__pos_en_regle(table_def);
   }
 }
 
@@ -2313,8 +2313,8 @@ ecs_champ_def__remplace_ref(ecs_champ_t    *champ_def,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__cree_masque(ecs_tab_bool_t   bool_sselt_select,
-                           ecs_champ_t     *champ_def_elt)
+ecs_table_def__cree_masque(ecs_tab_bool_t   bool_sselt_select,
+                           ecs_table_t     *table_def_elt)
 {
   size_t  nbr_elt;
   size_t  num_sselt;
@@ -2326,18 +2326,18 @@ ecs_champ_def__cree_masque(ecs_tab_bool_t   bool_sselt_select,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  ecs_champ__regle_en_pos(champ_def_elt);
+  ecs_table__regle_en_pos(table_def_elt);
 
-  nbr_elt = champ_def_elt->nbr;
+  nbr_elt = table_def_elt->nbr;
 
   for (ielt = 0; ielt < nbr_elt; ielt++) {
 
-    pos_inf = champ_def_elt->pos[ielt    ] - 1;
-    pos_sup = champ_def_elt->pos[ielt + 1] - 1;
+    pos_inf = table_def_elt->pos[ielt    ] - 1;
+    pos_sup = table_def_elt->pos[ielt + 1] - 1;
 
     for (ipos = pos_inf; ipos < pos_sup; ipos++) {
 
-      num_sselt = ECS_ABS(champ_def_elt->val[ipos]) - 1;
+      num_sselt = ECS_ABS(table_def_elt->val[ipos]) - 1;
 
       /* If the sub-element has not yet been accounted for, mark it */
 
@@ -2347,7 +2347,7 @@ ecs_champ_def__cree_masque(ecs_tab_bool_t   bool_sselt_select,
     }
   }
 
-  ecs_champ__libere_pos(champ_def_elt);
+  ecs_table__libere_pos(table_def_elt);
 }
 
 /*----------------------------------------------------------------------------
@@ -2356,10 +2356,10 @@ ecs_champ_def__cree_masque(ecs_tab_bool_t   bool_sselt_select,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__nettoie_nodal(size_t        *n_vertices,
+ecs_table_def__nettoie_nodal(size_t        *n_vertices,
                              ecs_coord_t  **vtx_coords,
-                             ecs_champ_t   *champ_def_fac,
-                             ecs_champ_t   *champ_def_cel)
+                             ecs_table_t   *table_def_fac,
+                             ecs_table_t   *table_def_cel)
 {
   size_t  cpt_som;
   size_t  iloc;
@@ -2388,22 +2388,22 @@ ecs_champ_def__nettoie_nodal(size_t        *n_vertices,
 
   /* faces */
 
-  if (champ_def_fac != NULL) {
+  if (table_def_fac != NULL) {
 
-    nbr_val = ecs_champ__ret_val_nbr(champ_def_fac);
+    nbr_val = ecs_table__ret_val_nbr(table_def_fac);
 
     for (ival = 0; ival < nbr_val; ival++)
-      tab_som_old_new.val[champ_def_fac->val[ival] - 1] = 1;
+      tab_som_old_new.val[table_def_fac->val[ival] - 1] = 1;
   }
 
   /* cellules */
 
-  if (champ_def_cel != NULL) {
+  if (table_def_cel != NULL) {
 
-    nbr_val = ecs_champ__ret_val_nbr(champ_def_cel);
+    nbr_val = ecs_table__ret_val_nbr(table_def_cel);
 
     for (ival = 0; ival < nbr_val; ival++)
-      tab_som_old_new.val[champ_def_cel->val[ival] - 1] = 1;
+      tab_som_old_new.val[table_def_cel->val[ival] - 1] = 1;
   }
 
   /* Préparation de la renumérotation */
@@ -2450,12 +2450,12 @@ ecs_champ_def__nettoie_nodal(size_t        *n_vertices,
 
   /* Mise à jour de la connectivité nodale */
 
-  if (champ_def_fac != NULL)
-    ecs_champ_def__remplace_ref(champ_def_fac,
+  if (table_def_fac != NULL)
+    ecs_table_def__remplace_ref(table_def_fac,
                                 &tab_som_old_new);
 
-  if (champ_def_cel != NULL)
-    ecs_champ_def__remplace_ref(champ_def_cel,
+  if (table_def_cel != NULL)
+    ecs_table_def__remplace_ref(table_def_cel,
                                 &tab_som_old_new);
 
   tab_som_old_new.nbr = 0;
@@ -2468,9 +2468,9 @@ ecs_champ_def__nettoie_nodal(size_t        *n_vertices,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
-                            ecs_champ_t     *champ_def_fac,
-                            ecs_champ_t     *champ_def_cel,
+ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
+                            ecs_table_t     *table_def_fac,
+                            ecs_table_t     *table_def_cel,
                             ecs_tab_int_t   *liste_cel_err,
                             ecs_tab_int_t   *liste_cel_cor,
                             bool             correc_orient)
@@ -2506,11 +2506,11 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
   if (vtx_coords == NULL)
     return;
 
-  if (champ_def_fac != NULL)
-    ecs_champ__regle_en_pos(champ_def_fac);
+  if (table_def_fac != NULL)
+    ecs_table__regle_en_pos(table_def_fac);
 
-  if (champ_def_cel != NULL)
-    ecs_champ__regle_en_pos(champ_def_cel);
+  if (table_def_cel != NULL)
+    ecs_table__regle_en_pos(table_def_cel);
 
   assert(vtx_coords != NULL);
 
@@ -2523,20 +2523,20 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
 
   /* faces */
 
-  if (champ_def_fac != NULL) {
+  if (table_def_fac != NULL) {
 
-    nbr_fac = champ_def_fac->nbr;
+    nbr_fac = table_def_fac->nbr;
 
     for (ifac = 0; ifac < nbr_fac; ifac++) {
 
-      ipos_fac    = champ_def_fac->pos[ifac    ] - 1;
-      nbr_som_loc = champ_def_fac->pos[ifac + 1] - 1 - ipos_fac;
+      ipos_fac    = table_def_fac->pos[ifac    ] - 1;
+      nbr_som_loc = table_def_fac->pos[ifac + 1] - 1 - ipos_fac;
 
       if (nbr_som_loc == 4) {
 
         ret_orient
           = _orient_quad(vtx_coords,
-                         &(champ_def_fac->val[ipos_fac]),
+                         &(table_def_fac->val[ipos_fac]),
                          correc_orient);
 
         if (ret_orient < 0)
@@ -2550,7 +2550,7 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
 
   /* cellules */
 
-  if (champ_def_cel != NULL) {
+  if (table_def_cel != NULL) {
 
     ecs_tab_int_t face_index, face_marker, edges;
 
@@ -2563,13 +2563,13 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
     edges.nbr = 0;
     edges.val = NULL;
 
-    nbr_cel = champ_def_cel->nbr;
+    nbr_cel = table_def_cel->nbr;
 
     for (icel = 0; icel < nbr_cel; icel++) {
 
-      ipos_cel = champ_def_cel->pos[icel] - 1;
+      ipos_cel = table_def_cel->pos[icel] - 1;
 
-      nbr_som_loc = champ_def_cel->pos[icel + 1] - 1 - ipos_cel;
+      nbr_som_loc = table_def_cel->pos[icel + 1] - 1 - ipos_cel;
 
       if (nbr_som_loc < 9)
         typ_elt = typ_cel_base[nbr_som_loc];
@@ -2581,14 +2581,14 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
       case ECS_ELT_TYP_CEL_TETRA:
 
         ret_orient = _orient_tetra(vtx_coords,
-                                   &(champ_def_cel->val[ipos_cel]));
+                                   &(table_def_cel->val[ipos_cel]));
         break;
 
       case ECS_ELT_TYP_CEL_PYRAM:
 
         ret_orient
           = _orient_pyram(vtx_coords,
-                          &(champ_def_cel->val[ipos_cel]),
+                          &(table_def_cel->val[ipos_cel]),
                           correc_orient);
         break;
 
@@ -2596,7 +2596,7 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
 
         ret_orient
           = _orient_prism(vtx_coords,
-                          &(champ_def_cel->val[ipos_cel]),
+                          &(table_def_cel->val[ipos_cel]),
                           correc_orient);
 
         break;
@@ -2605,7 +2605,7 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
 
         ret_orient
           = _orient_hexa(vtx_coords,
-                         &(champ_def_cel->val[ipos_cel]),
+                         &(table_def_cel->val[ipos_cel]),
                          correc_orient);
 
         break;
@@ -2613,9 +2613,9 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
       default: /* ECS_ELT_TYP_CEL_POLY */
 
         ret_orient = _orient_polyhedron(vtx_coords,
-                                        &(champ_def_cel->val[ipos_cel]),
-                                        (  champ_def_cel->pos[icel + 1]
-                                         - champ_def_cel->pos[icel]),
+                                        &(table_def_cel->val[ipos_cel]),
+                                        (  table_def_cel->pos[icel + 1]
+                                         - table_def_cel->pos[icel]),
                                         correc_orient,
                                         &face_index,
                                         &face_marker,
@@ -2698,11 +2698,11 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
     }
   }
 
-  if (champ_def_fac != NULL)
-    ecs_champ__libere_pos(champ_def_fac);
+  if (table_def_fac != NULL)
+    ecs_table__libere_pos(table_def_fac);
 
-  if (champ_def_cel != NULL)
-    ecs_champ__libere_pos(champ_def_cel);
+  if (table_def_cel != NULL)
+    ecs_table__libere_pos(table_def_cel);
 }
 
 /*----------------------------------------------------------------------------
@@ -2711,9 +2711,9 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__nettoie_som_fac(size_t        *n_vertices,
+ecs_table_def__nettoie_som_fac(size_t        *n_vertices,
                                ecs_coord_t  **vtx_coords,
-                               ecs_champ_t   *champ_def_fac)
+                               ecs_table_t   *table_def_fac)
 {
   size_t     cpt_fusion;
 
@@ -2740,12 +2740,12 @@ ecs_champ_def__nettoie_som_fac(size_t        *n_vertices,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  if (vtx_coords == NULL || champ_def_fac == NULL)
+  if (vtx_coords == NULL || table_def_fac == NULL)
     return;
 
-  ecs_champ__regle_en_pos(champ_def_fac);
+  ecs_table__regle_en_pos(table_def_fac);
 
-  nbr_fac = champ_def_fac->nbr;
+  nbr_fac = table_def_fac->nbr;
   nbr_som = *n_vertices;
 
   lng_are_min = 1.0e-15;
@@ -2766,13 +2766,13 @@ ecs_champ_def__nettoie_som_fac(size_t        *n_vertices,
 
   for (ifac = 0; ifac < nbr_fac; ifac++) {
 
-    ipos_deb = champ_def_fac->pos[ifac] - 1;
-    nbr_som_fac = (champ_def_fac->pos[ifac + 1] - 1) - ipos_deb;
+    ipos_deb = table_def_fac->pos[ifac] - 1;
+    nbr_som_fac = (table_def_fac->pos[ifac + 1] - 1) - ipos_deb;
 
     for (isom = 0; isom < nbr_som_fac; isom++) {
 
-      isom_0 = champ_def_fac->val[ipos_deb + isom] - 1;
-      isom_1 = champ_def_fac->val[  ipos_deb + ((isom + 1)%nbr_som_fac)] -1;
+      isom_0 = table_def_fac->val[ipos_deb + isom] - 1;
+      isom_1 = table_def_fac->val[  ipos_deb + ((isom + 1)%nbr_som_fac)] -1;
       ipos_0 = isom_0 * 3;
       ipos_1 = isom_1 * 3;
 
@@ -2787,7 +2787,7 @@ ecs_champ_def__nettoie_som_fac(size_t        *n_vertices,
       /* Sommets confondus détectés */
 
       if (lng_are_2 < lng_min_2) {
-        _champ_def__maj_equiv_som(isom_0, isom_1, &tab_equiv_som);
+        _table_def__maj_equiv_som(isom_0, isom_1, &tab_equiv_som);
         cpt_fusion += 1;
       }
 
@@ -2806,11 +2806,11 @@ ecs_champ_def__nettoie_som_fac(size_t        *n_vertices,
              "  using the CS_PREPROCESS_MIN_EDGE_LEN environment variable).\n"),
            (int)cpt_fusion, lng_are_min);
 
-    tab_som_old_new = _champ_def__fusion_som(n_vertices,
+    tab_som_old_new = _table_def__fusion_som(n_vertices,
                                              vtx_coords,
                                              &tab_equiv_som);
 
-    _champ_def__maj_fac_som(champ_def_fac, &tab_som_old_new);
+    _table_def__maj_fac_som(table_def_fac, &tab_som_old_new);
 
     ECS_FREE(tab_som_old_new.val);
 
@@ -2821,7 +2821,7 @@ ecs_champ_def__nettoie_som_fac(size_t        *n_vertices,
 
   ECS_FREE(tab_equiv_som.val);
 
-  ecs_champ__pos_en_regle(champ_def_fac);
+  ecs_table__pos_en_regle(table_def_fac);
 }
 
 /*----------------------------------------------------------------------------
@@ -2829,7 +2829,7 @@ ecs_champ_def__nettoie_som_fac(size_t        *n_vertices,
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__nettoie_fac(ecs_champ_t  *champ_def_fac)
+ecs_table_def__nettoie_fac(ecs_table_t  *table_def_fac)
 {
   ecs_int_t  nbr_fac_old;
   ecs_int_t  nbr_fac_new;
@@ -2849,14 +2849,14 @@ ecs_champ_def__nettoie_fac(ecs_champ_t  *champ_def_fac)
   tab_fac_old_new.nbr = 0;
   tab_fac_old_new.val = NULL;
 
-  if (champ_def_fac == NULL)
+  if (table_def_fac == NULL)
     return tab_fac_old_new;
 
-  ecs_champ__regle_en_pos(champ_def_fac);
+  ecs_table__regle_en_pos(table_def_fac);
 
   /* Initialisations */
 
-  nbr_fac_old = champ_def_fac->nbr;
+  nbr_fac_old = table_def_fac->nbr;
 
   /* Boucle sur les faces (renumérotation) */
   /* ------------------------------------- */
@@ -2869,17 +2869,17 @@ ecs_champ_def__nettoie_fac(ecs_champ_t  *champ_def_fac)
 
   for (ind_fac = 0; ind_fac < nbr_fac_old; ind_fac++) {
 
-    ind_val_deb = champ_def_fac->pos[ind_fac    ] - 1;
-    ind_val_fin = champ_def_fac->pos[ind_fac + 1] - 1;
+    ind_val_deb = table_def_fac->pos[ind_fac    ] - 1;
+    ind_val_fin = table_def_fac->pos[ind_fac + 1] - 1;
 
     if (ind_val_fin - ind_val_deb > 2) {
 
       for (ind_val = ind_val_deb; ind_val < ind_val_fin; ind_val++)
-        champ_def_fac->val[cpt_val++] = champ_def_fac->val[ind_val];
+        table_def_fac->val[cpt_val++] = table_def_fac->val[ind_val];
 
       tab_fac_old_new.val[ind_fac] = 1 + cpt_fac++;
 
-      champ_def_fac->pos[cpt_fac] = cpt_val + 1;
+      table_def_fac->pos[cpt_fac] = cpt_val + 1;
 
     }
     else
@@ -2896,7 +2896,7 @@ ecs_champ_def__nettoie_fac(ecs_champ_t  *champ_def_fac)
     tab_fac_old_new.nbr = 0;
     ECS_FREE(tab_fac_old_new.val);
 
-    ecs_champ__pos_en_regle(champ_def_fac);
+    ecs_table__pos_en_regle(table_def_fac);
 
     return tab_fac_old_new;
   }
@@ -2909,11 +2909,11 @@ ecs_champ_def__nettoie_fac(ecs_champ_t  *champ_def_fac)
 
   /* On redimensionne le tableau des faces */
 
-  champ_def_fac->nbr = nbr_fac_new;
-  ECS_REALLOC(champ_def_fac->pos, nbr_fac_new + 1, ecs_size_t);
-  ECS_REALLOC(champ_def_fac->val, cpt_val, ecs_int_t);
+  table_def_fac->nbr = nbr_fac_new;
+  ECS_REALLOC(table_def_fac->pos, nbr_fac_new + 1, ecs_size_t);
+  ECS_REALLOC(table_def_fac->val, cpt_val, ecs_int_t);
 
-  ecs_champ__pos_en_regle(champ_def_fac);
+  ecs_table__pos_en_regle(table_def_fac);
 
   return tab_fac_old_new;
 }
@@ -2932,8 +2932,8 @@ ecs_champ_def__nettoie_fac(ecs_champ_t  *champ_def_fac)
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__typ_fac_cel(ecs_champ_t  *champ_def_cel,
-                           ecs_champ_t  *champ_def_fac)
+ecs_table_def__typ_fac_cel(ecs_table_t  *table_def_cel,
+                           ecs_table_t  *table_def_fac)
 {
   size_t      nbr_cel;
   size_t      nbr_fac;
@@ -2949,15 +2949,15 @@ ecs_champ_def__typ_fac_cel(ecs_champ_t  *champ_def_cel,
   typ_fac.nbr = 0;
   typ_fac.val = NULL;
 
-  if (champ_def_cel == NULL)
+  if (table_def_cel == NULL)
     return typ_fac;
 
   /* Initialisations */
 
-  ecs_champ__regle_en_pos(champ_def_cel);
+  ecs_table__regle_en_pos(table_def_cel);
 
-  nbr_cel = champ_def_cel->nbr;
-  nbr_fac = champ_def_fac->nbr;
+  nbr_cel = table_def_cel->nbr;
+  nbr_fac = table_def_fac->nbr;
 
   /* Type de face selon le nombre de cellules voisines : 0 pour face isolée,
      1 ou 2 pour face de bord, 3 pour faces internes, et 4 pour tous les
@@ -2975,11 +2975,11 @@ ecs_champ_def__typ_fac_cel(ecs_champ_t  *champ_def_cel,
 
   for (icel = 0; icel < nbr_cel; icel++ ) {
 
-    for (ipos = champ_def_cel->pos[icel] - 1;
-         ipos < champ_def_cel->pos[icel+1] - 1;
+    for (ipos = table_def_cel->pos[icel] - 1;
+         ipos < table_def_cel->pos[icel+1] - 1;
          ipos++) {
 
-      num_fac = champ_def_cel->val[ipos];
+      num_fac = table_def_cel->val[ipos];
 
       ifac = ECS_ABS(num_fac) - 1;
 
@@ -3000,7 +3000,7 @@ ecs_champ_def__typ_fac_cel(ecs_champ_t  *champ_def_cel,
 
   }
 
-  ecs_champ__libere_pos(champ_def_cel);
+  ecs_table__libere_pos(table_def_cel);
 
   return typ_fac;
 }
@@ -3017,8 +3017,8 @@ ecs_champ_def__typ_fac_cel(ecs_champ_t  *champ_def_cel,
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__fac_cel(ecs_champ_t  *champ_def_cel,
-                       ecs_champ_t  *champ_def_fac)
+ecs_table_def__fac_cel(ecs_table_t  *table_def_cel,
+                       ecs_table_t  *table_def_fac)
 {
   size_t      nbr_cel;
   size_t      nbr_fac;
@@ -3034,15 +3034,15 @@ ecs_champ_def__fac_cel(ecs_champ_t  *champ_def_cel,
   fac_cel.nbr = 0;
   fac_cel.val = NULL;
 
-  if (champ_def_cel == NULL)
+  if (table_def_cel == NULL)
     return fac_cel;
 
   /* Initialisations */
 
-  ecs_champ__regle_en_pos(champ_def_cel);
+  ecs_table__regle_en_pos(table_def_cel);
 
-  nbr_cel = champ_def_cel->nbr;
-  nbr_fac = champ_def_fac->nbr;
+  nbr_cel = table_def_cel->nbr;
+  nbr_fac = table_def_fac->nbr;
 
   /* Allocation et mise à zéro des connectivités */
 
@@ -3058,11 +3058,11 @@ ecs_champ_def__fac_cel(ecs_champ_t  *champ_def_cel,
 
   for (icel = 0; icel < nbr_cel; icel++ ) {
 
-    for (ipos = champ_def_cel->pos[icel] - 1;
-         ipos < champ_def_cel->pos[icel+1] - 1;
+    for (ipos = table_def_cel->pos[icel] - 1;
+         ipos < table_def_cel->pos[icel+1] - 1;
          ipos++) {
 
-      num_fac = champ_def_cel->val[ipos];
+      num_fac = table_def_cel->val[ipos];
 
       ifac = ECS_ABS(num_fac) - 1;
 
@@ -3079,7 +3079,7 @@ ecs_champ_def__fac_cel(ecs_champ_t  *champ_def_cel,
 
   }
 
-  ecs_champ__libere_pos(champ_def_cel);
+  ecs_table__libere_pos(table_def_cel);
 
   return fac_cel;
 }
@@ -3092,7 +3092,7 @@ ecs_champ_def__fac_cel(ecs_champ_t  *champ_def_cel,
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__err_cel_connect(ecs_champ_t          *champ_def_cel,
+ecs_table_def__err_cel_connect(ecs_table_t          *table_def_cel,
                                const ecs_tab_int_t  *typ_fac_cel)
 {
   size_t      nbr_cel;
@@ -3108,14 +3108,14 @@ ecs_champ_def__err_cel_connect(ecs_champ_t          *champ_def_cel,
   typ_cell_connect.nbr = 0;
   typ_cell_connect.val = NULL;
 
-  if (champ_def_cel == NULL)
+  if (table_def_cel == NULL)
     return typ_cell_connect;
 
-  ecs_champ__regle_en_pos(champ_def_cel);
+  ecs_table__regle_en_pos(table_def_cel);
 
   /* Initialisations */
 
-  nbr_cel = champ_def_cel->nbr;
+  nbr_cel = table_def_cel->nbr;
 
   /* Allocation et mise à zéro du tableau */
 
@@ -3131,11 +3131,11 @@ ecs_champ_def__err_cel_connect(ecs_champ_t          *champ_def_cel,
 
   for (icel = 0; icel < nbr_cel; icel++ ) {
 
-    for (ipos = champ_def_cel->pos[icel] - 1;
-         ipos < champ_def_cel->pos[icel+1] - 1;
+    for (ipos = table_def_cel->pos[icel] - 1;
+         ipos < table_def_cel->pos[icel+1] - 1;
          ipos++) {
 
-      num_fac = champ_def_cel->val[ipos];
+      num_fac = table_def_cel->val[ipos];
 
       ifac = ECS_ABS(num_fac) - 1;
 
@@ -3151,7 +3151,7 @@ ecs_champ_def__err_cel_connect(ecs_champ_t          *champ_def_cel,
     }
   }
 
-  ecs_champ__libere_pos(champ_def_cel);
+  ecs_table__libere_pos(table_def_cel);
 
   return typ_cell_connect;
 }

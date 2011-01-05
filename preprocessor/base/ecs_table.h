@@ -3,7 +3,7 @@
 
 /*============================================================================
  *  Prototypes des fonctions de base
- *   associées à la structure `ecs_champ_t' décrivant un champ
+ *   associées à la structure `ecs_table_t' décrivant une table
  *============================================================================*/
 
 /*
@@ -66,7 +66,7 @@
  *                         Déclaration de la structure
  *============================================================================*/
 
-typedef struct _ecs_champ_t  ecs_champ_t;
+typedef struct _ecs_table_t  ecs_table_t;
 
 
 /*============================================================================
@@ -75,17 +75,17 @@ typedef struct _ecs_champ_t  ecs_champ_t;
 
 typedef enum {
 
-  ECS_CHAMP_NUL = -1,
-  ECS_CHAMP_DEF,
-  ECS_CHAMP_ATT,
-  ECS_CHAMP_FAM,
-  ECS_CHAMP_CNN,
-  ECS_CHAMP_FIN
+  ECS_TABLE_NUL = -1,
+  ECS_TABLE_DEF,
+  ECS_TABLE_ATT,
+  ECS_TABLE_FAM,
+  ECS_TABLE_CNN,
+  ECS_TABLE_FIN
 
-} ECS_CHAMP_E;
+} ECS_TABLE_E;
 
 
-#define ECS_CHAMP_DEB ECS_CHAMP_DEF
+#define ECS_TABLE_DEB ECS_TABLE_DEF
 
 
 /*============================================================================
@@ -98,51 +98,51 @@ typedef enum {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui crée une structure `ecs_champ_t'
+ *  Fonction qui crée une structure `ecs_table_t'
  *
  *  La structure devient propriétaire des tableaux tab_pos et tab_val
  *   fournis en argument.
  *
  *   nbr      : Nombre d'éléments à remplir
  *   pas      : Pas des positions  si REGLE
- *   pos      : Positions du champ si non REGLE
- *   val      : Valeurs du champ
+ *   pos      : Positions des éléments si non REGLE
+ *   val      : Valeurs des éléments
  *   descr    : Pointeur sur le descripteur
  *   statut_e : Statut dans une transformation
  *----------------------------------------------------------------------------*/
 
-ecs_champ_t *
-ecs_champ__cree(size_t         nbr,
+ecs_table_t *
+ecs_table__cree(size_t         nbr,
                 size_t         pas,
                 ecs_size_t    *pos,
                 ecs_int_t     *val,
                 ecs_descr_t   *descr);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui crée une structure `ecs_champ_t'
+ *  Fonction qui crée une structure `ecs_table_t'
  *
  *   nbr      : Nombre d'éléments à remplir
  *   nbr_val  : Nombre de valeurs à remplir
  *----------------------------------------------------------------------------*/
 
-ecs_champ_t *
-ecs_champ__alloue(size_t  nbr,
+ecs_table_t *
+ecs_table__alloue(size_t  nbr,
                   size_t  nbr_val);
 
 /*----------------------------------------------------------------------------
- *  Fonction libérant une structure `ecs_champ_t' donnée en argument.
+ *  Fonction libérant une structure `ecs_table_t' donnée en argument.
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__detruit(ecs_champ_t  **this_champ);
+ecs_table__detruit(ecs_table_t  **this_table);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui convertit, si possible,
- *   le tableau des positions d'un champ en REGLE
+ *   le tableau des positions d'une table en REGLE
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__pos_en_regle(ecs_champ_t  *this_champ);
+ecs_table__pos_en_regle(ecs_table_t  *this_table);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui construit, si nécessaire, un tableau des positions à
@@ -150,134 +150,134 @@ ecs_champ__pos_en_regle(ecs_champ_t  *this_champ);
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__regle_en_pos(ecs_champ_t  *this_champ);
+ecs_table__regle_en_pos(ecs_table_t  *this_table);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui libère, si possible, le tableau des positions d'un champ.
+ *  Fonction qui libère, si possible, le tableau des positions d'un table.
  *  Ce tableau ne doit pas avoir été modifié.
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__libere_pos(ecs_champ_t  *this_champ);
+ecs_table__libere_pos(ecs_table_t  *this_table);
 
 /*----------------------------------------------------------------------------
- *  Fonction imprimant le contenu d'une structure `ecs_champ_t' donnée
+ *  Fonction imprimant le contenu d'une structure `ecs_table_t' donnée
  *   sur le flux décrit par la structure `FILE'
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__imprime(const ecs_champ_t  *this_champ,
+ecs_table__imprime(const ecs_table_t  *this_table,
                    size_t              imp_col,
                    size_t              nbr_imp,
                    FILE               *fic_imp);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui renvoie la taille en octets d'une structure `ecs_champ_t'
+ *  Fonction qui renvoie la taille en octets d'une structure `ecs_table_t'
  *----------------------------------------------------------------------------*/
 
 size_t
-ecs_champ__ret_taille(const ecs_champ_t  *this_champ);
+ecs_table__ret_taille(const ecs_table_t  *this_table);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui renvoie un champ entièrement réalloué
- *   dont le contenu est copié à partir du champ donné
+ *  Fonction qui renvoie une table entièrement réallouée
+ *   dont le contenu est copié à partir de la table donnée
  *
- *  Le membre donnant le lien sur un champ suivant `l_champ_sui'
+ *  Le membre donnant le lien sur une table suivante `l_table_sui'
  *   n'est pas copié et est mis à `NULL'
  *----------------------------------------------------------------------------*/
 
-ecs_champ_t *
-ecs_champ__copie(ecs_champ_t  *champ_init);
+ecs_table_t *
+ecs_table__copie(ecs_table_t  *table_init);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui créé une structure `ecs_champ_t'
- *   à partir d'un tableau `tab_elt' contenant les valeurs du champ.
+ *  Fonction qui créé une structure `ecs_table_t'
+ *   à partir d'un tableau `tab_elt' contenant les valeurs du table.
  *
  *  Si un élément n'a pas de valeur associée, la valeur correspondante
  *   dans `tab_elt' est `0'
  *----------------------------------------------------------------------------*/
 
-ecs_champ_t *
-ecs_champ__transforme_tableau(size_t                nbr_elt,
+ecs_table_t *
+ecs_table__transforme_tableau(size_t                nbr_elt,
                               const ecs_int_t      *tab_elt,
                               ecs_descr_t          *descr);
 
 /*----------------------------------------------------------------------------
- *  Fonction renvoyant le nombre d'éléments associés à un champ donné
+ *  Fonction renvoyant le nombre d'éléments associés à une table donnée
  *----------------------------------------------------------------------------*/
 
 size_t
-ecs_champ__ret_elt_nbr(const ecs_champ_t  *this_champ);
+ecs_table__ret_elt_nbr(const ecs_table_t  *this_table);
 
 /*----------------------------------------------------------------------------
- *  Fonction renvoyant le nombre de valeurs associées à un champ donné
+ *  Fonction renvoyant le nombre de valeurs associées à une table donnée
  *----------------------------------------------------------------------------*/
 
 size_t
-ecs_champ__ret_val_nbr(const ecs_champ_t  *this_champ);
+ecs_table__ret_val_nbr(const ecs_table_t  *this_table);
 
 /*----------------------------------------------------------------------------
- *  Fonction retournant le nombre de descripteurs d'un champ donné
+ *  Fonction retournant le nombre de descripteurs d'une table donnée
  *----------------------------------------------------------------------------*/
 
 size_t
-ecs_champ__ret_descr_nbr(const ecs_champ_t  *this_champ);
+ecs_table__ret_descr_nbr(const ecs_table_t  *this_table);
 
 /*----------------------------------------------------------------------------
- *  Fonction retournant le type des valeurs d'un champ donné
+ *  Fonction retournant le type des valeurs d'une table donnée
  *----------------------------------------------------------------------------*/
 
 ecs_type_t
-ecs_champ__ret_val_typ(const ecs_champ_t  *this_champ);
+ecs_table__ret_val_typ(const ecs_table_t  *this_table);
 
 /*----------------------------------------------------------------------------
  *  Fonction libérant un pointeur sur le tableau des positions d'une
- *   structure `ecs_champ_t' donnée.
+ *   structure `ecs_table_t' donnée.
  *
  *  Si les positions correspondent à une REGLE, le tableau est libéré.
- *   Sinon, il est conservé par la structure ecs_champ_t.
+ *   Sinon, il est conservé par la structure ecs_table_t.
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__libere_pos_tab(const ecs_champ_t  *this_champ,
+ecs_table__libere_pos_tab(const ecs_table_t  *this_table,
                           ecs_size_t         *pos_tab);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui concatène deux champs, et supprime le champ à concaténer
+ *  Fonction qui concatène deux tables, et supprime la table à concaténer
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__concatene(ecs_champ_t  **this_champ,
-                     ecs_champ_t  **concat_champ,
+ecs_table__concatene(ecs_table_t  **this_table,
+                     ecs_table_t  **concat_table,
                      size_t         nbr_elt_init,
                      size_t         nbr_elt_ent_concat);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui concatène deux champs de type connectivité,
- *   et supprime le champ à concaténer
+ *  Fonction qui concatène deux tables de type connectivité,
+ *   et supprime la table à concaténer
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__concatene_connect(ecs_champ_t  **this_champ,
-                             ecs_champ_t  **concat_champ,
+ecs_table__concatene_connect(ecs_table_t  **this_table,
+                             ecs_table_t  **concat_table,
                              size_t         nbr_elt_init,
                              size_t         nbr_elt_concat);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui prolonge un champ récepteur donné
+ *  Fonction qui prolonge une table réceptrice donnée
  *
- *  Il s'agit en fait de concaténer le champ avec un champ vide. Seule la
+ *  Il s'agit en fait de concaténer le table avec une table vide. Seule la
  *  table des positions est modifiée. Les autres membres de la structure du
- *  champ récepteur ne sont pas modifiés.
+ *  table récepteur ne sont pas modifiés.
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__prolonge(ecs_champ_t  *this_champ,
+ecs_table__prolonge(ecs_table_t  *this_table,
                     size_t        nbr_elt_prec,
                     size_t        nbr_elt_suiv);
 
 /*----------------------------------------------------------------------------
- *  Fonction réalisant la transformation d'un champ
+ *  Fonction réalisant la transformation d'une table
  *   en appliquant directement le vecteur de transformation donné
  *   sur ses positions
  *
@@ -286,17 +286,17 @@ ecs_champ__prolonge(ecs_champ_t  *this_champ,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__transforme_pos(ecs_champ_t          *this_champ,
+ecs_table__transforme_pos(ecs_table_t          *this_table,
                           size_t                nbr_elt_ref,
                           const ecs_tab_int_t   vect_transf);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui incrémente les valeurs d'un champ donné
+ *  Fonction qui incrémente les valeurs d'une table donnée
  *   d'une constante donnée
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__incremente_val(ecs_champ_t      *this_champ,
+ecs_table__incremente_val(ecs_table_t      *this_table,
                           const ecs_int_t   increment);
 
 /*----------------------------------------------------------------------------
@@ -306,20 +306,20 @@ ecs_champ__incremente_val(ecs_champ_t      *this_champ,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ__renumerote(ecs_champ_t          *this_champ,
+ecs_table__renumerote(ecs_table_t          *this_table,
                       const ecs_tab_int_t   vect_transf,
                       const ecs_tab_int_t   signe_elt);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui détermine un nouveau champ à partir d'un champ de référence
+ *  Fonction qui détermine une nouvelle table à partir d'une table de référence
  *   en extrayant de ce dernier les éléments sélectionnés
  *   par le tableau de booléens
  *----------------------------------------------------------------------------*/
 
-ecs_champ_t *
-ecs_champ__extrait(ecs_champ_t            *champ_ref,
+ecs_table_t *
+ecs_table__extrait(ecs_table_t            *table_ref,
                    const ecs_tab_bool_t    bool_elt_select);
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* _ECS_CHAMP_H_ */
+#endif /* _ECS_TABLE_H_ */

@@ -61,7 +61,6 @@
  *  Fichiers `include' visibles des paquetages visibles
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
 #include "ecs_descr.h"
 #include "ecs_descr_chaine.h"
 #include "ecs_famille.h"

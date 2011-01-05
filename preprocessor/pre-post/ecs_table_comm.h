@@ -1,9 +1,9 @@
-#ifndef _ECS_CHAMP_COMM_H_
-#define _ECS_CHAMP_COMM_H_
+#ifndef _ECS_TABLE_COMM_H_
+#define _ECS_TABLE_COMM_H_
 
 /*============================================================================
  *  Prototypes des fonctions
- *   associées à la structure `ecs_champ_t' décrivant un champ
+ *   associées à la structure `ecs_table_t' décrivant une table
  *   et réalisant des communications
  *============================================================================*/
 
@@ -63,7 +63,7 @@
  *  Fichiers `include' publics  du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 
 /*============================================================================
@@ -71,23 +71,23 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui ecrit le tableau des positions d'un champ
+ *  Fonction qui ecrit le tableau des positions d'une table
  *   dans le fichier d'interface pour le Noyau
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_comm__ecr_pos(ecs_champ_t  *this_champ,
+ecs_table_comm__ecr_pos(ecs_table_t  *this_table,
                         const char   *comm_nom_rubrique,
                         size_t        location_id,
                         size_t        index_id,
                         ecs_comm_t   *comm);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui écrit le contenu d'un champ
+ *  Fonction qui écrit le contenu d'une table
  *   dans le fichier d'interface pour le Noyau
  *----------------------------------------------------------------------------*/
 
-void ecs_champ_comm__ecr(ecs_champ_t  *this_champ,
+void ecs_table_comm__ecr(ecs_table_t  *this_table,
                          const char   *comm_nom_rubrique,
                          size_t        location_id,
                          size_t        index_id,
@@ -96,4 +96,4 @@ void ecs_champ_comm__ecr(ecs_champ_t  *this_champ,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* _ECS_CHAMP_COMM_H_ */
+#endif /* _ECS_TABLE_COMM_H_ */

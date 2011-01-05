@@ -75,10 +75,10 @@
  *  Fichiers `include' visibles des paquetages visibles
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
-#include "ecs_champ_att.h"
-#include "ecs_champ_def.h"
-#include "ecs_champ_post.h"
+#include "ecs_table.h"
+#include "ecs_table_att.h"
+#include "ecs_table_def.h"
+#include "ecs_table_post.h"
 #include "ecs_famille.h"
 
 #include "ecs_maillage.h"
@@ -118,8 +118,8 @@ _maillage_post__ecr_elt(const char            *nom_maillage,
                         ecs_post_t            *cas_post)
 {
   int             dim_entite_max = 2;
-  ecs_champ_t    *champ_def_sup = NULL;
-  ecs_champ_t    *champ_def_inf = NULL;
+  ecs_table_t    *table_def_sup = NULL;
+  ecs_table_t    *table_def_inf = NULL;
   int            *elt_fam_sup = NULL;
   int            *elt_fam_inf = NULL;
   ecs_famille_t  *famille_sup = NULL;
@@ -134,15 +134,15 @@ _maillage_post__ecr_elt(const char            *nom_maillage,
 
   /* Connectivité et familles inférieures pour les cellules */
 
-  if (maillage->champ_def[ECS_ENTMAIL_CEL] != NULL) {
+  if (maillage->table_def[ECS_ENTMAIL_CEL] != NULL) {
 
     dim_entite_max = 3;
 
-    champ_def_sup = maillage->champ_def[ECS_ENTMAIL_CEL];
+    table_def_sup = maillage->table_def[ECS_ENTMAIL_CEL];
     elt_fam_sup = maillage->elt_fam[ECS_ENTMAIL_CEL];
     famille_sup = maillage->famille[ECS_ENTMAIL_CEL];
 
-    champ_def_inf = maillage->champ_def[ECS_ENTMAIL_FAC];
+    table_def_inf = maillage->table_def[ECS_ENTMAIL_FAC];
 
     if (maillage->elt_fam[ECS_ENTMAIL_FAC] != NULL) {
       elt_fam_inf = maillage->elt_fam[ECS_ENTMAIL_FAC];
@@ -154,7 +154,7 @@ _maillage_post__ecr_elt(const char            *nom_maillage,
 
     dim_entite_max = 2;
 
-    champ_def_sup = maillage->champ_def[ECS_ENTMAIL_FAC];
+    table_def_sup = maillage->table_def[ECS_ENTMAIL_FAC];
 
     if (maillage->elt_fam[ECS_ENTMAIL_FAC] != NULL) {
       elt_fam_sup = maillage->elt_fam[ECS_ENTMAIL_FAC];
@@ -165,13 +165,13 @@ _maillage_post__ecr_elt(const char            *nom_maillage,
 
   /* Écriture du maillage */
 
-  ecs_champ_post__ecr_elt(nom_maillage,
+  ecs_table_post__ecr_elt(nom_maillage,
                           dim_entite_max,
                           maillage->n_vertices,
                           maillage->vertex_coords,
-                          champ_def_sup,
+                          table_def_sup,
                           elt_fam_sup,
-                          champ_def_inf,
+                          table_def_inf,
                           elt_fam_inf,
                           famille_sup,
                           famille_inf,
@@ -280,8 +280,8 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
   /* Appel a la fonction réalisant l'ecriture des élements */
   /*-------------------------------------------------------*/
 
-  if (   maillage->champ_def[ECS_ENTMAIL_FAC] != NULL
-      || maillage->champ_def[ECS_ENTMAIL_CEL] != NULL)
+  if (   maillage->table_def[ECS_ENTMAIL_FAC] != NULL
+      || maillage->table_def[ECS_ENTMAIL_CEL] != NULL)
     _maillage_post__ecr_elt(nom_maillage,
                             maillage,
                             type_post,

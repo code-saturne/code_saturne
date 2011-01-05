@@ -81,10 +81,10 @@
  *  Fichiers `include' visibles du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
-#include "ecs_champ_def.h"
-#include "ecs_champ_att.h"
-#include "ecs_champ_post.h"
+#include "ecs_table.h"
+#include "ecs_table_def.h"
+#include "ecs_table_att.h"
+#include "ecs_table_post.h"
 #include "ecs_maillage_post.h"
 
 
@@ -107,7 +107,7 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction d'impression d'un champ avec position réglée en ASCII
+ *  Fonction d'impression d'une table avec position réglée en ASCII
  *----------------------------------------------------------------------------*/
 
 static void
@@ -266,9 +266,9 @@ _maillage__selectionne_lst(ecs_maillage_t       *maillage,
   bool_elt_select.val = NULL;
   bool_elt_select.nbr = 0;
 
-  if (maillage->champ_def[entmail_sel] != NULL) {
+  if (maillage->table_def[entmail_sel] != NULL) {
 
-    nbr_elt = ecs_champ__ret_elt_nbr(maillage->champ_def[entmail_sel]);
+    nbr_elt = ecs_table__ret_elt_nbr(maillage->table_def[entmail_sel]);
 
     ECS_MALLOC(bool_elt_select.val, nbr_elt, bool);
     bool_elt_select.nbr = nbr_elt;
@@ -280,7 +280,7 @@ _maillage__selectionne_lst(ecs_maillage_t       *maillage,
 
   if (liste_filtre == NULL) {
 
-    nbr_elt = ecs_champ__ret_elt_nbr(maillage->champ_def[entmail_sel]);
+    nbr_elt = ecs_table__ret_elt_nbr(maillage->table_def[entmail_sel]);
 
     for (ielt = 0; ielt < nbr_elt; ielt++)
       bool_elt_select.val[ielt] = true;
@@ -297,12 +297,12 @@ _maillage__selectionne_lst(ecs_maillage_t       *maillage,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui détermine un nouveau champ à partir d'un champ de référence
+ *  Fonction qui détermine un nouveau table à partir d'une table de référence
  *   en extrayant de ce dernier les éléments sélectionnés
  *   par le tableau de booléens
  *
  *  Cette fonction renvoie le tableau qui définit les anciens éléments
- *   du champ de référence en fonction des nouveaux éléments du champ renvoyé
+ *   du table de référence en fonction des nouveaux éléments du table renvoyé
  *----------------------------------------------------------------------------*/
 
 static ecs_tab_int_t
@@ -408,12 +408,12 @@ _maillage__extrait(ecs_maillage_t         *maillage,
   /* Extraction des elements sélectionnés de l'entite de maillage
      (qui sont renumerotés à partir de 1 mais qui sont toujours
      définis par les sous-éléments non renumérotés)
-     Creation d'un champ donnant pour chaque ancien numero de l'élément
+     Creation d'une table donnant pour chaque ancien numero de l'élément
      avant extraction le nouveau numéro de l'élément selectionné et
      renumeroté a partir de 1  */
 
-  maillage_new->champ_def[entmail]
-    = ecs_champ__extrait(maillage->champ_def[entmail],
+  maillage_new->table_def[entmail]
+    = ecs_table__extrait(maillage->table_def[entmail],
                          bool_elt_select);
 
   /* Traitement des sommets */
@@ -427,11 +427,11 @@ _maillage__extrait(ecs_maillage_t         *maillage,
   for (isom = 0; isom < bool_som_select.nbr; isom++)
     bool_som_select.val[isom] = false;
 
-  ecs_champ_def__cree_masque(bool_som_select,
-                             maillage_new->champ_def[entmail]);
+  ecs_table_def__cree_masque(bool_som_select,
+                             maillage_new->table_def[entmail]);
 
   /* Extraction des sommets selectionnés
-     Création d'un champ donnant
+     Création d'une table donnant
      pour chaque ancien numéro du sommet avant extraction
      le nouveau numéro du sommet selectionné et renumeroté à partir de 1 */
 
@@ -446,7 +446,7 @@ _maillage__extrait(ecs_maillage_t         *maillage,
      par les nouveaux numéros (numérotés à partir de 1)
      dans la définition des éléments */
 
-  ecs_champ_def__remplace_ref(maillage_new->champ_def[entmail],
+  ecs_table_def__remplace_ref(maillage_new->table_def[entmail],
                               &tab_som_old_new);
 
   tab_som_old_new.nbr = 0;
@@ -512,7 +512,7 @@ _maillage__concat_connect(ecs_maillage_t  *maillage,
 
     size_t i;
     size_t n_couples = maillage->n_connect_couples[entmail];
-    size_t concat_shift = ecs_champ__ret_elt_nbr(maillage->champ_def[entmail]);
+    size_t concat_shift = ecs_table__ret_elt_nbr(maillage->table_def[entmail]);
     ecs_int_t  *dest = NULL;
     const ecs_int_t  *src = maillage_concat->connect_couples[entmail];
 
@@ -653,28 +653,28 @@ _maillage__nettoie_descend(ecs_maillage_t  *maillage)
 
   assert(maillage != NULL);
 
-  if (maillage->champ_def[ECS_ENTMAIL_FAC] == NULL)
+  if (maillage->table_def[ECS_ENTMAIL_FAC] == NULL)
     return;
 
   /* Faces */
   /*-------*/
 
   tab_fac_old_new
-    = ecs_champ_def__nettoie_fac(maillage->champ_def[ECS_ENTMAIL_FAC]);
+    = ecs_table_def__nettoie_fac(maillage->table_def[ECS_ENTMAIL_FAC]);
 
   if (tab_fac_old_new.nbr != 0) {
 
     /* Inherit "family" fields */
 
-    assert(maillage->champ_att[ECS_ENTMAIL_FAC] == NULL);
+    assert(maillage->table_att[ECS_ENTMAIL_FAC] == NULL);
 
     _maillage_elt_fam_compacte(&(maillage->elt_fam[ECS_ENTMAIL_FAC]),
                                &tab_fac_old_new);
 
     /* Replace references in face definitions */
 
-    if (maillage->champ_def[ECS_ENTMAIL_CEL] != NULL)
-      ecs_champ_def__remplace_ref(maillage->champ_def[ECS_ENTMAIL_CEL],
+    if (maillage->table_def[ECS_ENTMAIL_CEL] != NULL)
+      ecs_table_def__remplace_ref(maillage->table_def[ECS_ENTMAIL_CEL],
                                   &tab_fac_old_new);
 
     tab_fac_old_new.nbr = 0;
@@ -923,8 +923,8 @@ ecs_maillage__cree_nodal(void)
   maillage->vertex_coords = NULL;
 
   for (ient = 0; ient < 2; ient++) {
-    maillage->champ_def[ient] = NULL;
-    maillage->champ_att[ient] = NULL;
+    maillage->table_def[ient] = NULL;
+    maillage->table_att[ient] = NULL;
     maillage->elt_fam[ient] = NULL;
     maillage->n_connect_couples[ient] = 0;
     maillage->connect_couples[ient] = NULL;
@@ -953,10 +953,10 @@ ecs_maillage__detruit(ecs_maillage_t  **maillage)
     ECS_FREE(m->vertex_coords);
 
   for (ient = 0; ient < 2; ient++) {
-    if (m->champ_def[ient] != NULL)
-      ecs_champ__detruit(&m->champ_def[ient]);
-    if (m->champ_att[ient] != NULL)
-      ecs_champ__detruit(&m->champ_att[ient]);
+    if (m->table_def[ient] != NULL)
+      ecs_table__detruit(&m->table_def[ient]);
+    if (m->table_att[ient] != NULL)
+      ecs_table__detruit(&m->table_att[ient]);
     if (m->elt_fam[ient] != NULL)
       ECS_FREE(m->elt_fam[ient]);
     if (m->connect_couples[ient] != NULL)
@@ -985,12 +985,12 @@ ecs_maillage__imprime(const ecs_maillage_t  *maillage,
     "ECS_MAILLAGE_CONNECT_DESCENDANTE"
   };
 
-  const char *nom_champ_def[2] = {
+  const char *nom_table_def[2] = {
     "FACE_DEFS",
     "CELL_DEFS"
   };
 
-  const char *nom_champ_att[2] = {
+  const char *nom_table_att[2] = {
     "FACE_GROUPS",
     "CELL_GROUPS"
   };
@@ -1070,11 +1070,11 @@ ecs_maillage__imprime(const ecs_maillage_t  *maillage,
     /* Main definitions */
 
     ecs_fic__imprime_ptr(f, imp_col,
-                         nom_champ_def[ient],
-                         maillage->champ_def[ient]);
+                         nom_table_def[ient],
+                         maillage->table_def[ient]);
 
-    if (maillage->champ_def[ient] != NULL)
-      ecs_champ__imprime(maillage->champ_def[ient],
+    if (maillage->table_def[ient] != NULL)
+      ecs_table__imprime(maillage->table_def[ient],
                          imp_col+1,
                          nbr_imp,
                          f);
@@ -1082,11 +1082,11 @@ ecs_maillage__imprime(const ecs_maillage_t  *maillage,
     /* Groups */
 
     ecs_fic__imprime_ptr(f, imp_col,
-                         nom_champ_att[ient],
-                         maillage->champ_att[ient]);
+                         nom_table_att[ient],
+                         maillage->table_att[ient]);
 
-    if (maillage->champ_att[ient] != NULL)
-      ecs_champ__imprime(maillage->champ_att[ient],
+    if (maillage->table_att[ient] != NULL)
+      ecs_table__imprime(maillage->table_att[ient],
                          imp_col+1,
                          nbr_imp,
                          f);
@@ -1099,7 +1099,7 @@ ecs_maillage__imprime(const ecs_maillage_t  *maillage,
 
     if (maillage->elt_fam[ient] != NULL)
       _dump_elt_fam(f,
-                    ecs_champ__ret_elt_nbr(maillage->champ_def[ient]),
+                    ecs_table__ret_elt_nbr(maillage->table_def[ient]),
                     maillage->elt_fam[ient],
                     nbr_imp);
 
@@ -1156,8 +1156,8 @@ ecs_maillage__ret_entmail_max(const ecs_maillage_t  *maillage)
   ecs_int_t ient;
 
   for (ient = 0; ient < ECS_N_ENTMAIL; ient++) {
-    if (maillage->champ_def[ient] != NULL) {
-      if (ecs_champ__ret_elt_nbr(maillage->champ_def[ient]) > 0)
+    if (maillage->table_def[ient] != NULL) {
+      if (ecs_table__ret_elt_nbr(maillage->table_def[ient]) > 0)
         entmail_max = (ecs_entmail_t) ient;
     }
   }
@@ -1183,14 +1183,14 @@ ecs_maillage__ret_taille(const ecs_maillage_t  *maillage)
 
   for (ient = 0; ient < ECS_N_ENTMAIL; ient++) {
 
-    if (maillage->champ_def[ient] != NULL)
-      taille += ecs_champ__ret_taille(maillage->champ_def[ient]);
+    if (maillage->table_def[ient] != NULL)
+      taille += ecs_table__ret_taille(maillage->table_def[ient]);
 
-    if (maillage->champ_att[ient] != NULL)
-      taille += ecs_champ__ret_taille(maillage->champ_att[ient]);
+    if (maillage->table_att[ient] != NULL)
+      taille += ecs_table__ret_taille(maillage->table_att[ient]);
 
     if (maillage->elt_fam[ient] != NULL)
-      taille += (  ecs_champ__ret_elt_nbr(maillage->champ_def[ient])
+      taille += (  ecs_table__ret_elt_nbr(maillage->table_def[ient])
                  * sizeof(int));
 
     if (maillage->n_connect_couples[ient] != 0)
@@ -1220,10 +1220,10 @@ ecs_maillage__nettoie_nodal(ecs_maillage_t  *maillage)
   /* Suppression des sommets inutiles */
 
   if (maillage->vertex_coords != NULL)
-    ecs_champ_def__nettoie_nodal(&(maillage->n_vertices),
+    ecs_table_def__nettoie_nodal(&(maillage->n_vertices),
                                  &(maillage->vertex_coords),
-                                 maillage->champ_def[ECS_ENTMAIL_FAC],
-                                 maillage->champ_def[ECS_ENTMAIL_CEL]);
+                                 maillage->table_def[ECS_ENTMAIL_FAC],
+                                 maillage->table_def[ECS_ENTMAIL_CEL]);
 
   /*
     Fusion d'éléments surfaciques confondus éventuels (issus par exemple,
@@ -1244,23 +1244,23 @@ ecs_maillage__nettoie_nodal(ecs_maillage_t  *maillage)
   signe_elt.nbr = 0;
   signe_elt.val = NULL;
 
-  if (maillage->champ_def[ECS_ENTMAIL_FAC] == NULL)
+  if (maillage->table_def[ECS_ENTMAIL_FAC] == NULL)
     return;
 
-  vect_transf = ecs_champ_def__fusionne(maillage->champ_def[ECS_ENTMAIL_FAC],
+  vect_transf = ecs_table_def__fusionne(maillage->table_def[ECS_ENTMAIL_FAC],
                                         &nbr_elt_new,
                                         &signe_elt);
 
-  /* Champs de type attribut ou famille */
+  /* Tables de type attribut ou famille */
   /*------------------------------------*/
 
-  ecs_champ_att__fusionne(maillage->champ_att[ECS_ENTMAIL_FAC],
+  ecs_table_att__fusionne(maillage->table_att[ECS_ENTMAIL_FAC],
                           nbr_elt_new,
                           vect_transf);
 
   assert(maillage->elt_fam[ECS_ENTMAIL_FAC] == NULL);
 
-  /* Champ de type connectivité supplémentaire. */
+  /* Table de type connectivité supplémentaire. */
   /*--------------------------------------------*/
 
   if (maillage->n_connect_couples[ECS_ENTMAIL_FAC] != 0)
@@ -1288,9 +1288,9 @@ ecs_maillage__orient_nodal(ecs_maillage_t    *maillage,
   if (maillage->vertex_coords == NULL)
     return;
 
-  ecs_champ_def__orient_nodal(maillage->vertex_coords,
-                              maillage->champ_def[ECS_ENTMAIL_FAC],
-                              maillage->champ_def[ECS_ENTMAIL_CEL],
+  ecs_table_def__orient_nodal(maillage->vertex_coords,
+                              maillage->table_def[ECS_ENTMAIL_FAC],
+                              maillage->table_def[ECS_ENTMAIL_CEL],
                               liste_cel_err,
                               liste_cel_cor,
                               correc_orient);
@@ -1337,28 +1337,28 @@ ecs_maillage__connect_descend(ecs_maillage_t * maillage)
 
   maillage->typ_connect = ECS_MAILLAGE_CONNECT_DESCENDANTE;
 
-  if (maillage->champ_def[ECS_ENTMAIL_CEL] == NULL)
+  if (maillage->table_def[ECS_ENTMAIL_CEL] == NULL)
     return;
 
   /* Decompose cells into faces */
   /*----------------------------*/
 
-  if (maillage->champ_def[ECS_ENTMAIL_FAC] != NULL)
-    nbr_fac_old = ecs_champ__ret_elt_nbr(maillage->champ_def[ECS_ENTMAIL_FAC]);
+  if (maillage->table_def[ECS_ENTMAIL_FAC] != NULL)
+    nbr_fac_old = ecs_table__ret_elt_nbr(maillage->table_def[ECS_ENTMAIL_FAC]);
 
-  ecs_champ_def__decompose_cel(&maillage->champ_def[ECS_ENTMAIL_FAC],
-                               maillage->champ_def[ECS_ENTMAIL_CEL]);
+  ecs_table_def__decompose_cel(&maillage->table_def[ECS_ENTMAIL_FAC],
+                               maillage->table_def[ECS_ENTMAIL_CEL]);
 
-  nbr_fac_new = ecs_champ__ret_elt_nbr(maillage->champ_def[ECS_ENTMAIL_FAC]);
+  nbr_fac_new = ecs_table__ret_elt_nbr(maillage->table_def[ECS_ENTMAIL_FAC]);
 
-  assert(maillage->champ_att[ECS_ENTMAIL_FAC] == NULL);
+  assert(maillage->table_att[ECS_ENTMAIL_FAC] == NULL);
 
   /* Merge coincident vertices (update face connectivity ) */
   /*-------------------------------------------------------*/
 
-  ecs_champ_def__nettoie_som_fac(&(maillage->n_vertices),
+  ecs_table_def__nettoie_som_fac(&(maillage->n_vertices),
                                  &(maillage->vertex_coords),
-                                 maillage->champ_def[ECS_ENTMAIL_FAC]);
+                                 maillage->table_def[ECS_ENTMAIL_FAC]);
 
   /* Merge faces with the same definition */
   /*--------------------------------------*/
@@ -1368,14 +1368,14 @@ ecs_maillage__connect_descend(ecs_maillage_t * maillage)
   signe_elt.nbr = 0;
   signe_elt.val = NULL;
 
-  vect_transf = ecs_champ_def__fusionne(maillage->champ_def[ECS_ENTMAIL_FAC],
+  vect_transf = ecs_table_def__fusionne(maillage->table_def[ECS_ENTMAIL_FAC],
                                         &nbr_elt_new,
                                         &signe_elt);
 
-  /* Application du vecteur de transformation sur les autres champs */
+  /* Application du vecteur de transformation sur les autres tables */
   /*----------------------------------------------------------------*/
 
-  assert(maillage->champ_att[ECS_ENTMAIL_FAC] == NULL);
+  assert(maillage->table_att[ECS_ENTMAIL_FAC] == NULL);
 
   _maillage_elt_fam_fusionne(&(maillage->elt_fam[ECS_ENTMAIL_FAC]),
                              nbr_fac_old,
@@ -1389,7 +1389,7 @@ ecs_maillage__connect_descend(ecs_maillage_t * maillage)
   /* Application du vecteur de transformation et du signe des elements
      sur la definition des cellules */
 
-  ecs_champ__renumerote(maillage->champ_def[ECS_ENTMAIL_CEL],
+  ecs_table__renumerote(maillage->table_def[ECS_ENTMAIL_CEL],
                         vect_transf,
                         signe_elt);
 
@@ -1425,12 +1425,12 @@ ecs_maillage__trie_typ_geo(ecs_maillage_t  *maillage)
     vect_renum.nbr = 0;
     vect_renum.val = NULL;
 
-    if (maillage->champ_def[ient] != NULL)
+    if (maillage->table_def[ient] != NULL)
 
-      vect_renum = ecs_champ_def__trie_typ(maillage->champ_def[ient],
+      vect_renum = ecs_table_def__trie_typ(maillage->table_def[ient],
                                            dim_elt[ient]);
 
-    /* Application du vecteur de renumerotation sur les autres champs */
+    /* Application du vecteur de renumerotation sur les autres tables */
     /*----------------------------------------------------------------*/
 
     if (vect_renum.val != NULL) {
@@ -1439,15 +1439,15 @@ ecs_maillage__trie_typ_geo(ecs_maillage_t  *maillage)
 
       ecs_tab_int__inverse(&vect_renum);
 
-      /* Traitement du champ representant les définitions */
+      /* Traitement de la table representant les définitions */
 
-      ecs_champ__transforme_pos(maillage->champ_def[ient],
+      ecs_table__transforme_pos(maillage->table_def[ient],
                                 vect_renum.nbr,
                                 vect_renum);
 
-      /* Traitement des champs "attribut" */
+      /* Traitement des tables "attribut" */
 
-      ecs_champ__transforme_pos(maillage->champ_att[ient],
+      ecs_table__transforme_pos(maillage->table_att[ient],
                                 vect_renum.nbr,
                                 vect_renum);
 
@@ -1554,43 +1554,43 @@ ecs_maillage__concatene_nodal(ecs_maillage_t  *maillage_recept,
 
     /* Décalage des références des sommets */
 
-    if (maillage_concat->champ_def[ient] != NULL) {
+    if (maillage_concat->table_def[ient] != NULL) {
 
-      ecs_champ__incremente_val(maillage_concat->champ_def[ient],
+      ecs_table__incremente_val(maillage_concat->table_def[ient],
                                 nbr_som_recept);
 
-      nbr_elt_recept = ecs_champ__ret_elt_nbr(maillage_recept->champ_def[ient]);
-      nbr_elt_concat = ecs_champ__ret_elt_nbr(maillage_concat->champ_def[ient]);
+      nbr_elt_recept = ecs_table__ret_elt_nbr(maillage_recept->table_def[ient]);
+      nbr_elt_concat = ecs_table__ret_elt_nbr(maillage_concat->table_def[ient]);
 
       if (nbr_elt_recept != 0) {
 
         /* Définitions */
 
-        ecs_champ__concatene(&maillage_recept->champ_def[ient],
-                             &maillage_concat->champ_def[ient],
+        ecs_table__concatene(&maillage_recept->table_def[ient],
+                             &maillage_concat->table_def[ient],
                              nbr_elt_recept,
                              nbr_elt_concat);
 
-        ecs_champ__detruit(&maillage_concat->champ_def[ient]);
+        ecs_table__detruit(&maillage_concat->table_def[ient]);
 
         /* Groupes */
 
-        ecs_champ__concatene(&maillage_recept->champ_att[ient],
-                             &maillage_concat->champ_att[ient],
+        ecs_table__concatene(&maillage_recept->table_att[ient],
+                             &maillage_concat->table_att[ient],
                              nbr_elt_recept,
                              nbr_elt_concat);
 
-        ecs_champ__detruit(&maillage_concat->champ_att[ient]);
+        ecs_table__detruit(&maillage_concat->table_att[ient]);
 
       }
       else {
 
-        maillage_recept->champ_def[ient] = maillage_concat->champ_def[ient];
-        maillage_recept->champ_att[ient] = maillage_concat->champ_att[ient];
+        maillage_recept->table_def[ient] = maillage_concat->table_def[ient];
+        maillage_recept->table_att[ient] = maillage_concat->table_att[ient];
         maillage_recept->elt_fam[ient] = maillage_concat->elt_fam[ient];
 
-        maillage_concat->champ_def[ient] = NULL;
-        maillage_concat->champ_att[ient] = NULL;
+        maillage_concat->table_def[ient] = NULL;
+        maillage_concat->table_att[ient] = NULL;
         maillage_concat->elt_fam[ient] = NULL;
 
       }
@@ -1622,14 +1622,14 @@ ecs_maillage__liste_cel_fac(ecs_maillage_t       *maillage,
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   assert(maillage != NULL);
-  assert(maillage->champ_def[ECS_ENTMAIL_CEL] != NULL);
-  assert(maillage->champ_def[ECS_ENTMAIL_FAC] != NULL);
+  assert(maillage->table_def[ECS_ENTMAIL_CEL] != NULL);
+  assert(maillage->table_def[ECS_ENTMAIL_FAC] != NULL);
 
-  nbr_fac = ecs_champ__ret_elt_nbr
-             (maillage->champ_def[ECS_ENTMAIL_FAC]);
+  nbr_fac = ecs_table__ret_elt_nbr
+             (maillage->table_def[ECS_ENTMAIL_FAC]);
 
-  return ecs_champ_def__liste_cel_fac(nbr_fac,
-                                      maillage->champ_def[ECS_ENTMAIL_CEL],
+  return ecs_table_def__liste_cel_fac(nbr_fac,
+                                      maillage->table_def[ECS_ENTMAIL_CEL],
                                       liste_fac);
 }
 
@@ -1696,7 +1696,7 @@ ecs_maillage__cree_famille(ecs_maillage_t  *maillage)
   ecs_int_t       num_fam_deb;
   ecs_int_t       ifam_ent;
 
-  ecs_champ_t     *champ_att = NULL;
+  ecs_table_t     *table_att = NULL;
 
   ecs_famille_t  *vect_famille[2] = {NULL, NULL};
   int             nbr_fam_ent[2] = {0, 0};
@@ -1713,28 +1713,28 @@ ecs_maillage__cree_famille(ecs_maillage_t  *maillage)
 
   for (ient = ECS_ENTMAIL_CEL; ient >= ECS_ENTMAIL_FAC; ient--) {
 
-    /* Recuperation de l'adresse du champ des groupes */
+    /* Recuperation de l'adresse de la table des groupes */
 
-    champ_att = maillage->champ_att[ient];
+    table_att = maillage->table_att[ient];
 
-    if (champ_att != NULL) {
+    if (table_att != NULL) {
 
-      maillage->champ_att[ient] = NULL;
+      maillage->table_att[ient] = NULL;
 
       /*------------------------------------*/
       /* Construction des familles à partir */
-      /*  des champs "attribut" de l'entité */
+      /*  des tables "attribut" de l'entité */
       /*------------------------------------*/
 
       maillage->elt_fam[ient]
-        = ecs_champ_att__construit_fam(&champ_att,
+        = ecs_table_att__construit_fam(&table_att,
                                        &(vect_famille[ient]),
                                        num_fam_deb,
                                        &(nbr_fam_ent[ient]));
 
       num_fam_deb += nbr_fam_ent[ient];
 
-    } /* Fin : si il y a des champs "attribut" pour cette entité */
+    } /* Fin : si il y a des tables "attribut" pour cette entité */
 
   } /* Fin : boucle sur les entités de maillage */
 
@@ -1755,7 +1755,7 @@ ecs_maillage__detruit_famille(ecs_maillage_t  *maillage)
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  /* Destruction des champs "famille" et des familles */
+  /* Destruction des tables "famille" et des familles */
   /*-------------------------------------------------*/
 
   for (ient = 0; ient < ECS_N_ENTMAIL; ient++) {
@@ -1800,13 +1800,13 @@ ecs_maillage__cree_attributs(ecs_maillage_t  *maillage)
 
       if (maillage->elt_fam[ient] != NULL ) {
 
-        assert(maillage->champ_att[ient] == NULL);
+        assert(maillage->table_att[ient] == NULL);
 
-        /* Création du champ "groupe" */
+        /* Création de la table "groupe" */
 
-        maillage->champ_att[ient]
-          = ecs_champ_att__cree_att_fam
-              (ecs_champ__ret_elt_nbr(maillage->champ_def[ient]),
+        maillage->table_att[ient]
+          = ecs_table_att__cree_att_fam
+              (ecs_table__ret_elt_nbr(maillage->table_def[ient]),
                maillage->elt_fam[ient],
                famille);
 
@@ -1834,8 +1834,8 @@ ecs_maillage__supprime_attributs(ecs_maillage_t  *maillage)
 
   for (ient = 0; ient < ECS_N_ENTMAIL; ient++) {
 
-    if (maillage->champ_att[ient] != NULL)
-      ecs_champ__detruit(&(maillage->champ_att[ient]));
+    if (maillage->table_att[ient] != NULL)
+      ecs_table__detruit(&(maillage->table_att[ient]));
   }
 }
 
@@ -1882,22 +1882,22 @@ ecs_maillage__verif(ecs_maillage_t  *maillage,
   assert(maillage->typ_connect == ECS_MAILLAGE_CONNECT_DESCENDANTE);
 
   assert(maillage->vertex_coords != NULL);
-  assert(maillage->champ_def[ECS_ENTMAIL_FAC] != NULL);
+  assert(maillage->table_def[ECS_ENTMAIL_FAC] != NULL);
 
-  if (maillage->champ_def[ECS_ENTMAIL_CEL] == NULL)
+  if (maillage->table_def[ECS_ENTMAIL_CEL] == NULL)
     return false;
 
   /* Détermination du nombre de cellules et de faces */
 
-  nbr_cel = ecs_champ__ret_elt_nbr(maillage->champ_def[ECS_ENTMAIL_CEL]);
-  nbr_fac = ecs_champ__ret_elt_nbr(maillage->champ_def[ECS_ENTMAIL_FAC]);
+  nbr_cel = ecs_table__ret_elt_nbr(maillage->table_def[ECS_ENTMAIL_CEL]);
+  nbr_fac = ecs_table__ret_elt_nbr(maillage->table_def[ECS_ENTMAIL_FAC]);
   nbr_som = maillage->n_vertices;
 
   /* Determination du type de connectivité associé à chaque face */
 
   typ_fac_cel
-    = ecs_champ_def__typ_fac_cel(maillage->champ_def[ECS_ENTMAIL_CEL],
-                                 maillage->champ_def[ECS_ENTMAIL_FAC]);
+    = ecs_table_def__typ_fac_cel(maillage->table_def[ECS_ENTMAIL_CEL],
+                                 maillage->table_def[ECS_ENTMAIL_FAC]);
 
   _maillage__compte_typ_fac(&typ_fac_cel,
                             &nbr_fac_erreur,
@@ -1956,10 +1956,10 @@ ecs_maillage__verif(ecs_maillage_t  *maillage,
                                        cas_post);
 
       indic_erreur_cel
-        = ecs_champ_def__err_cel_connect(maillage->champ_def[ECS_ENTMAIL_CEL],
+        = ecs_table_def__err_cel_connect(maillage->table_def[ECS_ENTMAIL_CEL],
                                          &typ_fac_cel);
 
-      ecs_champ_post__ecr_val(&indic_erreur_cel,
+      ecs_table_post__ecr_val(&indic_erreur_cel,
                               _("Fluid Domain"),
                               _("connectivity_error"),
                               cas_post);

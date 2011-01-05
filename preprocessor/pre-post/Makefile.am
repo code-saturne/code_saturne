@@ -30,11 +30,11 @@ $(HDF5_LDFLAGS) $(ADF_LDFLAGS) $(CCM_LDFLAGS) $(MED_LDFLAGS) $(CGNS_LDFLAGS)
 # Headers
 
 noinst_HEADERS = \
-ecs_champ_comm.h \
-ecs_champ_post_cgns.h \
-ecs_champ_post_ens.h \
-ecs_champ_post.h \
-ecs_champ_post_med.h \
+ecs_table_comm.h \
+ecs_table_post_cgns.h \
+ecs_table_post_ens.h \
+ecs_table_post.h \
+ecs_table_post_med.h \
 ecs_maillage_ncs.h \
 ecs_maillage_post.h \
 ecs_maillage_pre.h \
@@ -62,11 +62,11 @@ ecs_pre_nopo.h
 noinst_LTLIBRARIES = libprepostecs.la
 
 libprepostecs_la_SOURCES = \
-ecs_champ_comm.c \
-ecs_champ_post.c \
-ecs_champ_post_cgns.c \
-ecs_champ_post_ens.c \
-ecs_champ_post_med.c \
+ecs_table_comm.c \
+ecs_table_post.c \
+ecs_table_post_cgns.c \
+ecs_table_post_ens.c \
+ecs_table_post_med.c \
 ecs_maillage_ncs.c \
 ecs_maillage_post.c \
 ecs_maillage_pre.c \

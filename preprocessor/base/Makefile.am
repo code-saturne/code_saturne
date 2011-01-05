@@ -28,10 +28,10 @@ AM_LDFLAGS =
 # Headers
 
 noinst_HEADERS = \
-ecs_champ_att.h \
-ecs_champ_def.h \
-ecs_champ.h \
-ecs_champ_priv.h \
+ecs_table_att.h \
+ecs_table_def.h \
+ecs_table.h \
+ecs_table_priv.h \
 ecs_descr_chaine.h \
 ecs_descr.h \
 ecs_descr_priv.h \
@@ -46,9 +46,9 @@ ecs_maillage_priv.h
 noinst_LTLIBRARIES = libbaseecs.la
 
 libbaseecs_la_SOURCES = \
-ecs_champ.c \
-ecs_champ_att.c \
-ecs_champ_def.c \
+ecs_table.c \
+ecs_table_att.c \
+ecs_table_def.c \
 ecs_descr.c \
 ecs_descr_chaine.c \
 ecs_famille.c \

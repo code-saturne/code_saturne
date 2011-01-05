@@ -53,8 +53,6 @@
 
 #include "ecs_descr.h"
 #include "ecs_descr_chaine.h"
-#include "ecs_champ.h"
-#include "ecs_champ_att.h"
 #include "ecs_maillage.h"
 #include "ecs_maillage_priv.h"
 

@@ -4,7 +4,7 @@
 /*============================================================================
  *  Prototypes des fonctions de base
  *   associées à une liste chaînée de structures `ecs_descr_t' décrivant
- *   un descripteur de champ
+ *   un descripteur de table
  *============================================================================*/
 
 /*
@@ -74,7 +74,7 @@ ecs_descr_chaine__detruit(ecs_descr_t  **descr_noeud);
 
 /*----------------------------------------------------------------------------
  *  Fonction imprimant à partir d'un noeud `ecs_descr_t' donné
- *   une liste chaînée de champs
+ *   une liste chaînée de tables
  *   sur le flux décrit par la structure `ecs_file_t'
  *----------------------------------------------------------------------------*/
 
@@ -91,10 +91,9 @@ float
 ecs_descr_chaine__ret_taille(const ecs_descr_t  *descr_noeud);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui ajoute à la fin d'une liste chaînée de descripteurs de champ
- *   réceptrice dont la tête est donnée,
- *   une liste chaînée de descripteurs de champ à concaténer
- *    dont la tête est donnée
+ *  Fonction qui ajoute à la fin d'une liste chaînée de descripteurs
+ *   réceptrice dont la tête est donnée, une liste chaînée de descripteurs
+ *   à concaténer dont la tête est donnée
  *
  *  Les numéros des descripteurs de la liste à concaténer sont incrementés
  *   à partir du nombre de descripteur de la liste réceptrice

@@ -1,6 +1,6 @@
 /*============================================================================
  *  Définitions des fonctions
- *   associées à la structure `ecs_champ_t' décrivant un champ
+ *   associées à la structure `ecs_table_t' décrivant une table
  *   et réalisant les sorties pour post-traitement
  *============================================================================*/
 
@@ -72,13 +72,13 @@
  *  Fichiers `include' visibles des paquetages visibles
  *---------------------------------------------------------------------------*/
 
-#include "ecs_champ_post_ens.h"
+#include "ecs_table_post_ens.h"
 
 #if defined(HAVE_CGNS)
-#include "ecs_champ_post_cgns.h"
+#include "ecs_table_post_cgns.h"
 #endif /* HAVE_CGNS */
 #if defined(HAVE_MED)
-#include "ecs_champ_post_med.h"
+#include "ecs_table_post_med.h"
 #endif /* HAVE_MED */
 
 
@@ -86,21 +86,21 @@
  *  Fichiers `include' visibles du  paquetage courant
  *---------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 
 /*----------------------------------------------------------------------------
  *  Fichier  `include' du  paquetage courant associe au fichier courant
  *---------------------------------------------------------------------------*/
 
-#include "ecs_champ_post.h"
+#include "ecs_table_post.h"
 
 
 /*----------------------------------------------------------------------------
  *  Fichiers `include' prives   du  paquetage courant
  *---------------------------------------------------------------------------*/
 
-#include "ecs_champ_priv.h"
+#include "ecs_table_priv.h"
 #include "ecs_post_ens_priv.h"
 
 #if defined(HAVE_CGNS)
@@ -129,7 +129,7 @@
  *---------------------------------------------------------------------------*/
 
 static ecs_tab_int_t
-ecs_loc_champ_post__cpt_elt_typ(const ecs_champ_t  *champ_def,
+ecs_loc_table_post__cpt_elt_typ(const ecs_table_t  *table_def,
                                 int                 dim_entite)
 {
   size_t       cpt_elt;
@@ -149,7 +149,7 @@ ecs_loc_champ_post__cpt_elt_typ(const ecs_champ_t  *champ_def,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert (champ_def != NULL);
+  assert (table_def != NULL);
   assert(dim_entite >=1 && dim_entite <= 3);
 
   /* Initialisations */
@@ -172,13 +172,13 @@ ecs_loc_champ_post__cpt_elt_typ(const ecs_champ_t  *champ_def,
   /* On utilise les tailles des éléments */
   /*-------------------------------------*/
 
-  nbr_elt     = champ_def->nbr;
-  elt_def_pos = champ_def->pos;
+  nbr_elt     = table_def->nbr;
+  elt_def_pos = table_def->pos;
 
   if (elt_def_pos == NULL) {
 
-    if (champ_def->pas < 9)
-      elt_typ_ref = typ_geo_base[champ_def->pas];
+    if (table_def->pas < 9)
+      elt_typ_ref = typ_geo_base[table_def->pas];
     else if (dim_entite == 2)
       elt_typ_ref = ECS_ELT_TYP_FAC_POLY;
     else
@@ -247,19 +247,19 @@ ecs_loc_champ_post__cpt_elt_typ(const ecs_champ_t  *champ_def,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction ecrivant les elements d'un champ donne pour le post traitement
+ *  Fonction ecrivant les elements d'une table donne pour le post traitement
  *
  *  Les elements doivent avoir ete tries suivant leur type geometrique
  *---------------------------------------------------------------------------*/
 
 void
-ecs_champ_post__ecr_elt(const char            *nom_maillage,
+ecs_table_post__ecr_elt(const char            *nom_maillage,
                         int                    dim_entite_max,
                         size_t                 n_vertices,
                         ecs_coord_t            vertex_coords[],
-                        ecs_champ_t           *champ_def,
+                        ecs_table_t           *table_def,
                         const int              elt_fam[],
-                        ecs_champ_t           *champ_def_inf,
+                        ecs_table_t           *table_def_inf,
                         const int              elt_fam_inf[],
                         const ecs_famille_t   *famille_elt,
                         const ecs_famille_t   *famille_inf,
@@ -275,9 +275,9 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
     return;
 
   assert(vertex_coords != NULL);
-  assert(champ_def != NULL);
+  assert(table_def != NULL);
 
-  tab_elt_typ_geo = ecs_loc_champ_post__cpt_elt_typ(champ_def,
+  tab_elt_typ_geo = ecs_loc_table_post__cpt_elt_typ(table_def,
                                                     dim_entite_max);
 
   /* Les elements ayant deja ete tries suivant leur type geometrique ... */
@@ -286,10 +286,10 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
   if (   cas_post->cas_ens != NULL
       && cas_post->opt_ens[type_post] == true) {
 
-    ecs_champ_post_ens__ecr_part(nom_maillage,
+    ecs_table_post_ens__ecr_part(nom_maillage,
                                  n_vertices,
                                  vertex_coords,
-                                 champ_def,
+                                 table_def,
                                  &tab_elt_typ_geo,
                                  cas_post->cas_ens);
 
@@ -304,10 +304,10 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
                                    dim_entite_max,
                                    cas_post->cas_cgns);
 
-    ecs_champ_post_cgns__ecr_connect(nom_maillage,
+    ecs_table_post_cgns__ecr_connect(nom_maillage,
                                      n_vertices,
                                      vertex_coords,
-                                     champ_def,
+                                     table_def,
                                      elt_fam,
                                      &tab_elt_typ_geo,
                                      cas_post->cas_cgns);
@@ -329,20 +329,20 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
 
     /* Écriture des familles */
 
-    ecs_champ_post_med__ecr_famille(nom_maillage,
+    ecs_table_post_med__ecr_famille(nom_maillage,
                                     famille_elt,
                                     famille_inf,
                                     cas_post->cas_med);
 
     /* Écriture du maillage principal */
 
-    ecs_champ_post_med__ecr_som(nom_maillage,
+    ecs_table_post_med__ecr_som(nom_maillage,
                                 n_vertices,
                                 vertex_coords,
                                 cas_post->cas_med);
 
-    ecs_champ_post_med__ecr_elt(nom_maillage,
-                                champ_def,
+    ecs_table_post_med__ecr_elt(nom_maillage,
+                                table_def,
                                 elt_fam,
                                 &tab_elt_typ_geo,
                                 cas_post->cas_med);
@@ -350,13 +350,13 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
 
     /* Écriture des faces (et de leurs familles) */
 
-    if (champ_def_inf != NULL) {
+    if (table_def_inf != NULL) {
 
-      tab_elt_typ_geo_inf = ecs_loc_champ_post__cpt_elt_typ(champ_def_inf,
+      tab_elt_typ_geo_inf = ecs_loc_table_post__cpt_elt_typ(table_def_inf,
                                                             dim_entite_max-1);
 
-      ecs_champ_post_med__ecr_elt(nom_maillage,
-                                  champ_def_inf,
+      ecs_table_post_med__ecr_elt(nom_maillage,
+                                  table_def_inf,
                                   elt_fam_inf,
                                   &tab_elt_typ_geo_inf,
                                   cas_post->cas_med);
@@ -368,7 +368,7 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
     /* Mise à jour de la structure maillage_med pour y indiquer le nombre
        d'éléments principaux de chaque type MED */
 
-    ecs_champ_post_med__cpt_elt_typ(&tab_elt_typ_geo,
+    ecs_table_post_med__cpt_elt_typ(&tab_elt_typ_geo,
                                     nom_maillage,
                                     cas_post->cas_med);
 
@@ -381,13 +381,13 @@ ecs_champ_post__ecr_elt(const char            *nom_maillage,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction ecrivant les valeurs d'un champ donne pour le post traitement
+ *  Fonction ecrivant les valeurs d'une table donne pour le post traitement
  *---------------------------------------------------------------------------*/
 
 void
-ecs_champ_post__ecr_val(const ecs_tab_int_t  *tab_val,
+ecs_table_post__ecr_val(const ecs_tab_int_t  *tab_val,
                         const char           *nom_maillage,
-                        const char           *nom_champ,
+                        const char           *nom_table,
                         ecs_post_t           *cas_post)
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -396,9 +396,9 @@ ecs_champ_post__ecr_val(const ecs_tab_int_t  *tab_val,
 
   if (cas_post->cas_ens != NULL) {
 
-    ecs_champ_post_ens__ecr_val(tab_val,
+    ecs_table_post_ens__ecr_val(tab_val,
                                 nom_maillage,
-                                nom_champ,
+                                nom_table,
                                 cas_post->cas_ens);
 
   }
@@ -407,11 +407,11 @@ ecs_champ_post__ecr_val(const ecs_tab_int_t  *tab_val,
 
   if (cas_post->cas_cgns != NULL) {
 
-    /* Sortie du champ sur fichier CGNS */
+    /* Sortie de la table sur fichier CGNS */
 
-    ecs_champ_post_cgns__ecr_val(tab_val,
+    ecs_table_post_cgns__ecr_val(tab_val,
                                  nom_maillage,
-                                 nom_champ,
+                                 nom_table,
                                  cas_post->cas_cgns);
   }
 
@@ -428,7 +428,7 @@ ecs_champ_post__ecr_val(const ecs_tab_int_t  *tab_val,
 
     /* Création du champ si première instance */
 
-    if (ecs_post_med__test_champ_liste(nom_champ,
+    if (ecs_post_med__test_champ_liste(nom_table,
                                        cas_post->cas_med) == false) {
 
       char   nom_champ_med[MED_TAILLE_NOM + 1];
@@ -437,10 +437,10 @@ ecs_champ_post__ecr_val(const ecs_tab_int_t  *tab_val,
 
       /* Nom du champ */
 
-      strncpy(nom_champ_med, nom_champ, MED_TAILLE_NOM);
+      strncpy(nom_champ_med, nom_table, MED_TAILLE_NOM);
       nom_champ_med[MED_TAILLE_NOM] = '\0';
 
-      if (ecs_post_med__test_champ_liste(nom_champ,
+      if (ecs_post_med__test_champ_liste(nom_table,
                                          cas_post->cas_med) == false) {
 
         /* Nom et unite */
@@ -452,7 +452,7 @@ ecs_champ_post__ecr_val(const ecs_tab_int_t  *tab_val,
         nom_comp_med[MED_TAILLE_PNOM] = '\0';
         uni_comp_med[MED_TAILLE_PNOM] = '\0';
 
-        ecs_post_med__ajoute_champ_liste(nom_champ, cas_post->cas_med);
+        ecs_post_med__ajoute_champ_liste(nom_table, cas_post->cas_med);
 
         if (sizeof(med_int) == 8)
           type_champ_med = MED_INT64;
@@ -476,11 +476,11 @@ ecs_champ_post__ecr_val(const ecs_tab_int_t  *tab_val,
       }
     }
 
-    /* Ecriture des valeurs du champ */
+    /* Ecriture des valeurs de la table */
 
-    ecs_champ_post_med__ecr_val(tab_val,
+    ecs_table_post_med__ecr_val(tab_val,
                                 nom_maillage,
-                                nom_champ,
+                                nom_table,
                                 cas_post->cas_med);
   }
 

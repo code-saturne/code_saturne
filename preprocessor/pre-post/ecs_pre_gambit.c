@@ -55,8 +55,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_descr.h"
-#include "ecs_champ.h"
-#include "ecs_champ_att.h"
+#include "ecs_table.h"
+#include "ecs_table_att.h"
 #include "ecs_maillage.h"
 #include "ecs_maillage_priv.h"
 
@@ -1499,7 +1499,7 @@ ecs_loc_pre_gambit__cree_groupes(ecs_maillage_t  *maillage,
                                  char            *nom_grp[],
                                  ecs_int_t       *num_elt_grp[])
 {
-  ecs_descr_t  *descr_grp; /* Pointeur sur descripteur de champ */
+  ecs_descr_t  *descr_grp; /* Pointeur sur descripteur de table */
   ecs_int_t     num_label; /* Numéro d'indice de l'étiquette */
 
   size_t       ielgrp;
@@ -1518,8 +1518,8 @@ ecs_loc_pre_gambit__cree_groupes(ecs_maillage_t  *maillage,
   ecs_int_t  * ent_val_grp[ECS_N_ENTMAIL]; /* Reference /entite et /groupe,
                                               les elts. appart. au groupe  */
 
-  ecs_champ_t  *ent_champ_grp[ECS_N_ENTMAIL];
-  ecs_champ_t  *champ_grp;
+  ecs_table_t  *ent_table_grp[ECS_N_ENTMAIL];
+  ecs_table_t  *table_grp;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -1529,9 +1529,9 @@ ecs_loc_pre_gambit__cree_groupes(ecs_maillage_t  *maillage,
   for (ient = 0; ient < ECS_N_ENTMAIL; ient++) {
 
     ent_cpt_elt[ient] = 0;
-    nbr_elt_ent[ient] = ecs_champ__ret_elt_nbr(maillage->champ_def[ient]);
+    nbr_elt_ent[ient] = ecs_table__ret_elt_nbr(maillage->table_def[ient]);
 
-    ent_champ_grp[ient] = NULL;
+    ent_table_grp[ient] = NULL;
 
   }
 
@@ -1614,7 +1614,7 @@ ecs_loc_pre_gambit__cree_groupes(ecs_maillage_t  *maillage,
 
         assert(ent_cpt_elt[ient] <= nbr_elt_ent[ient]);
 
-        /* Création du descripteur de champ correspondant au groupe lu */
+        /* Création du descripteur de table correspondant au groupe lu */
         /*-------------------------------------------------------------*/
 
         descr_grp = ecs_descr__cree(ECS_DESCR_IDE_NUL,
@@ -1623,16 +1623,16 @@ ecs_loc_pre_gambit__cree_groupes(ecs_maillage_t  *maillage,
         /* Transformation du tableau référencant le groupe en une table */
         /*--------------------------------------------------------------*/
 
-        champ_grp = ecs_champ__transforme_tableau(nbr_elt_ent[ient],
+        table_grp = ecs_table__transforme_tableau(nbr_elt_ent[ient],
                                                   ent_val_grp[ient],
                                                   descr_grp);
 
-        if (ent_champ_grp[ient] != NULL)
-          ecs_champ_att__assemble(ent_champ_grp[ient],
-                                  champ_grp);
+        if (ent_table_grp[ient] != NULL)
+          ecs_table_att__assemble(ent_table_grp[ient],
+                                  table_grp);
 
         else
-          ent_champ_grp[ient] = champ_grp;
+          ent_table_grp[ient] = table_grp;
 
 
       } /* Fin si le nombre d'éléments référencant le groupe n'est pas nul */
@@ -1663,15 +1663,15 @@ ecs_loc_pre_gambit__cree_groupes(ecs_maillage_t  *maillage,
   } /* Fin de la boucle sur les groupes */
 
 
-  /* Transfert des champs groupe dans les entités de maillage correspondantes */
+  /* Transfert des tables groupe dans les entités de maillage correspondantes */
   /*==========================================================================*/
 
   for (ient = ECS_ENTMAIL_FAC; ient < ECS_N_ENTMAIL; ient++) {
 
-    assert(maillage->champ_att[ient] == NULL);
+    assert(maillage->table_att[ient] == NULL);
 
-    if (ent_champ_grp[ient] != NULL)
-      maillage->champ_att[ient] = ent_champ_grp[ient];
+    if (ent_table_grp[ient] != NULL)
+      maillage->table_att[ient] = ent_table_grp[ient];
   }
 }
 

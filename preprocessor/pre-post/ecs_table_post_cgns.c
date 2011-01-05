@@ -74,15 +74,13 @@
  *  Fichiers `include' visibles du  paquetage courant
  *---------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
-
 
 /*----------------------------------------------------------------------------
  *  Fichier  `include' du  paquetage courant associé au fichier courant
  *---------------------------------------------------------------------------*/
 
 #include "ecs_post_cgns.h"
-#include "ecs_champ_post_cgns.h"
+#include "ecs_table_post_cgns.h"
 
 
 /*----------------------------------------------------------------------------
@@ -90,7 +88,7 @@
  *---------------------------------------------------------------------------*/
 
 #include "ecs_post_cgns_priv.h"
-#include "ecs_champ_priv.h"
+#include "ecs_table_priv.h"
 
 
 /*============================================================================
@@ -116,7 +114,7 @@
  *---------------------------------------------------------------------------*/
 
 static ecs_post_cgns_base_t *
-ecs_loc_champ_post_cgns__base(const ecs_post_cgns_t  *cas_cgns,
+ecs_loc_table_post_cgns__base(const ecs_post_cgns_t  *cas_cgns,
                               const char             *nom_maillage)
 {
   ecs_int_t  ind;
@@ -160,7 +158,7 @@ ecs_loc_champ_post_cgns__base(const ecs_post_cgns_t  *cas_cgns,
  *---------------------------------------------------------------------------*/
 
 static void
-_champ_post_cgns__ecr_fam(const int        *elt_fam,
+_table_post_cgns__ecr_fam(const int        *elt_fam,
                           const char       *nom_maillage,
                           ecs_post_cgns_t  *cas_cgns)
 {
@@ -169,12 +167,12 @@ _champ_post_cgns__ecr_fam(const int        *elt_fam,
   /* Declarations des variables pour CGNS */
   /*-------------------------------------*/
 
-  char  nom_champ_cgns[ECS_CGNS_TAILLE_NOM + 1];
+  char  nom_table_cgns[ECS_CGNS_TAILLE_NOM + 1];
 
   CS_CG_ENUM(DataType_t)  type_val_cgns;
 
   int  num_sol;
-  int  num_champ;
+  int  num_table;
   int  ret_cgns;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -184,7 +182,7 @@ _champ_post_cgns__ecr_fam(const int        *elt_fam,
   /* Recherche de la base CGNS */
   /*---------------------------*/
 
-  base_cgns = ecs_loc_champ_post_cgns__base(cas_cgns,
+  base_cgns = ecs_loc_table_post_cgns__base(cas_cgns,
                                             nom_maillage);
 
   if (base_cgns == NULL)
@@ -210,13 +208,13 @@ _champ_post_cgns__ecr_fam(const int        *elt_fam,
     base_cgns->num_sol_stat = num_sol;
   }
 
-  /* Nom du champ */
+  /* Nom de la table */
 
-  strncpy(nom_champ_cgns, _("Family"), ECS_CGNS_TAILLE_NOM);
-  nom_champ_cgns[ECS_CGNS_TAILLE_NOM] = '\0';
+  strncpy(nom_table_cgns, _("Family"), ECS_CGNS_TAILLE_NOM);
+  nom_table_cgns[ECS_CGNS_TAILLE_NOM] = '\0';
 
-  /* Écriture du champ */
-  /*-------------------*/
+  /* Écriture de la table */
+  /*----------------------*/
 
   type_val_cgns = CS_CG_ENUM(Integer);
 
@@ -225,14 +223,14 @@ _champ_post_cgns__ecr_fam(const int        *elt_fam,
                             1,
                             base_cgns->num_sol_stat,
                             type_val_cgns,
-                            nom_champ_cgns,
+                            nom_table_cgns,
                             elt_fam,
-                            &num_champ);
+                            &num_table);
 
   if (ret_cgns != CG_OK)
     ecs_error(__FILE__, __LINE__, 0,
               _("CGNS: error writing field \"%s\"\n%s"),
-              nom_champ_cgns, cg_get_error());
+              nom_table_cgns, cg_get_error());
 }
 
 /*============================================================================
@@ -247,10 +245,10 @@ _champ_post_cgns__ecr_fam(const int        *elt_fam,
  *---------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
+ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
                                  size_t                 n_vertices,
                                  const ecs_coord_t      vertex_coords[],
-                                 ecs_champ_t           *champ_def,
+                                 ecs_table_t           *table_def,
                                  const int              elt_fam[],
                                  const ecs_tab_int_t   *tab_elt_typ_geo,
                                  ecs_post_cgns_t       *cas_cgns)
@@ -299,21 +297,21 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   assert(vertex_coords != NULL);
-  assert(champ_def != NULL);
+  assert(table_def != NULL);
 
   assert(cas_cgns != NULL);
 
   /* Recherche de la base CGNS */
   /*---------------------------*/
 
-  base_cgns = ecs_loc_champ_post_cgns__base(cas_cgns,
+  base_cgns = ecs_loc_table_post_cgns__base(cas_cgns,
                                             nom_maillage);
 
   /* Dimensions */
   /*------------*/
 
   nbr_som = n_vertices;
-  nbr_elt = champ_def->nbr;
+  nbr_elt = table_def->nbr;
 
   isize[0] = nbr_som;
   isize[1] = nbr_elt - tab_elt_typ_geo->val[ECS_ELT_TYP_CEL_POLY];
@@ -368,10 +366,10 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
   /* Écriture des éléments */
   /*------------------------*/
 
-  ecs_champ__regle_en_pos(champ_def);
+  ecs_table__regle_en_pos(table_def);
 
-  def_pos_tab = champ_def->pos;
-  def_val_tab = champ_def->val;
+  def_pos_tab = table_def->pos;
+  def_val_tab = table_def->val;
 
   cpt_section = 0;
 
@@ -511,13 +509,13 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
   /* Nettoyage avant la sortie */
   /*---------------------------*/
 
-  ecs_champ__libere_pos_tab(champ_def, def_pos_tab);
+  ecs_table__libere_pos_tab(table_def, def_pos_tab);
 
   /* Familles des éléments */
   /*-----------------------*/
 
   if (elt_fam != NULL)
-    _champ_post_cgns__ecr_fam(elt_fam,
+    _table_post_cgns__ecr_fam(elt_fam,
                               nom_maillage,
                               cas_cgns);
 }
@@ -529,9 +527,9 @@ ecs_champ_post_cgns__ecr_connect(const char            *nom_maillage,
  *---------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
+ecs_table_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
                              const char           *nom_maillage,
-                             const char           *nom_champ,
+                             const char           *nom_table,
                              ecs_post_cgns_t      *cas_cgns)
 {
   ecs_post_cgns_base_t  *base_cgns;
@@ -539,12 +537,12 @@ ecs_champ_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
   /* Declarations des variables pour CGNS */
   /*-------------------------------------*/
 
-  char               nom_champ_cgns[ECS_CGNS_TAILLE_NOM + 1];
+  char               nom_table_cgns[ECS_CGNS_TAILLE_NOM + 1];
 
   CS_CG_ENUM(DataType_t)  type_val_cgns;
 
   int                num_sol;
-  int                num_champ;
+  int                num_table;
   int                ret_cgns;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -554,7 +552,7 @@ ecs_champ_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
   /* Recherche de la base CGNS */
   /*---------------------------*/
 
-  base_cgns = ecs_loc_champ_post_cgns__base(cas_cgns,
+  base_cgns = ecs_loc_table_post_cgns__base(cas_cgns,
                                             nom_maillage);
 
   if (base_cgns == NULL)
@@ -581,13 +579,13 @@ ecs_champ_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
 
   }
 
-  /* Nom du champ */
+  /* Nom de la table */
 
-  strncpy(nom_champ_cgns, nom_champ, ECS_CGNS_TAILLE_NOM);
-  nom_champ_cgns[ECS_CGNS_TAILLE_NOM] = '\0';
+  strncpy(nom_table_cgns, nom_table, ECS_CGNS_TAILLE_NOM);
+  nom_table_cgns[ECS_CGNS_TAILLE_NOM] = '\0';
 
-  /* Écriture du champ */
-  /*-------------------*/
+  /* Écriture de la table */
+  /*----------------------*/
 
   assert(sizeof(ecs_int_t) == sizeof(int));
 
@@ -600,14 +598,14 @@ ecs_champ_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
                               1,
                               base_cgns->num_sol_stat,
                               type_val_cgns,
-                              nom_champ_cgns,
+                              nom_table_cgns,
                               (void *)tab_val->val,
-                              &num_champ);
+                              &num_table);
 
     if (ret_cgns != CG_OK)
       ecs_error(__FILE__, __LINE__, 0,
                 _("CGNS: error writing field \"%s\"\n%s"),
-                nom_champ_cgns, cg_get_error());
+                nom_table_cgns, cg_get_error());
 
   }
 }

@@ -3,8 +3,8 @@
 
 /*============================================================================
  *  Prototypes des fonctions
- *   associees a la structure `ecs_champ_t' decrivant un champ
- *   et propres aux champs principaux de type "definition"
+ *   associees a la structure `ecs_table_t' decrivant un table
+ *   et propres aux tables principaux de type "definition"
  *============================================================================*/
 
 /*
@@ -61,7 +61,7 @@
  *  Fichiers `include' publics  du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 
 /*============================================================================
@@ -74,24 +74,24 @@
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__trie_typ(ecs_champ_t  *this_champ_def,
+ecs_table_def__trie_typ(ecs_table_t  *this_table_def,
                         int           dim_elt);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui construit
- *   les définitions des faces par décomposition des champs des cellules
+ *   les définitions des faces par décomposition des tables des cellules
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__decompose_cel(ecs_champ_t  *vect_champ_fac[],
-                             ecs_champ_t  *champ_def_cel);
+ecs_table_def__decompose_cel(ecs_table_t  *vect_table_fac[],
+                             ecs_table_t  *table_def_cel);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui realise la fusion des definitions des elements
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__fusionne(ecs_champ_t    *this_champ_def,
+ecs_table_def__fusionne(ecs_table_t    *this_table_def,
                         size_t         *nbr_elt_cpct,
                         ecs_tab_int_t  *signe_elt);
 
@@ -101,8 +101,8 @@ ecs_champ_def__fusionne(ecs_champ_t    *this_champ_def,
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__liste_cel_fac(const size_t          nbr_fac,
-                             ecs_champ_t          *champ_def_cel,
+ecs_table_def__liste_cel_fac(const size_t          nbr_fac,
+                             ecs_table_t          *table_def_cel,
                              const ecs_tab_int_t   liste_fac);
 
 /*----------------------------------------------------------------------------
@@ -112,7 +112,7 @@ ecs_champ_def__liste_cel_fac(const size_t          nbr_fac,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__remplace_ref(ecs_champ_t    *champ_def,
+ecs_table_def__remplace_ref(ecs_table_t    *table_def,
                             ecs_tab_int_t  *tab_old_new);
 
 /*----------------------------------------------------------------------------
@@ -123,8 +123,8 @@ ecs_champ_def__remplace_ref(ecs_champ_t    *champ_def,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__cree_masque(ecs_tab_bool_t   bool_sselt_select,
-                           ecs_champ_t     *champ_def_elt);
+ecs_table_def__cree_masque(ecs_tab_bool_t   bool_sselt_select,
+                           ecs_table_t     *table_def_elt);
 
 /*----------------------------------------------------------------------------
  * Suppression des sommets ne participant pas à la connectivité
@@ -132,10 +132,10 @@ ecs_champ_def__cree_masque(ecs_tab_bool_t   bool_sselt_select,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__nettoie_nodal(size_t        *n_vertices,
+ecs_table_def__nettoie_nodal(size_t        *n_vertices,
                              ecs_coord_t  **vtx_coords,
-                             ecs_champ_t   *champ_def_fac,
-                             ecs_champ_t   *champ_def_cel);
+                             ecs_table_t   *table_def_fac,
+                             ecs_table_t   *table_def_cel);
 
 /*----------------------------------------------------------------------------
  *  Correction si nécessaire de l'orientation des éléments en connectivité
@@ -143,9 +143,9 @@ ecs_champ_def__nettoie_nodal(size_t        *n_vertices,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
-                            ecs_champ_t     *champ_def_fac,
-                            ecs_champ_t     *champ_def_cel,
+ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
+                            ecs_table_t     *table_def_fac,
+                            ecs_table_t     *table_def_cel,
                             ecs_tab_int_t   *liste_cel_err,
                             ecs_tab_int_t   *liste_cel_cor,
                             bool             correc_orient);
@@ -156,16 +156,16 @@ ecs_champ_def__orient_nodal(ecs_coord_t     *vtx_coords,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_def__nettoie_som_fac(size_t        *n_vertices,
+ecs_table_def__nettoie_som_fac(size_t        *n_vertices,
                                ecs_coord_t  **vtx_coords,
-                               ecs_champ_t   *champ_def_fac);
+                               ecs_table_t   *table_def_fac);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui supprime les éventuelles faces dégénérées
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__nettoie_fac(ecs_champ_t  *champ_def_fac);
+ecs_table_def__nettoie_fac(ecs_table_t  *table_def_fac);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui renvoie un tableau associant un type à chaque face, sous
@@ -181,8 +181,8 @@ ecs_champ_def__nettoie_fac(ecs_champ_t  *champ_def_fac);
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__typ_fac_cel(ecs_champ_t  *champ_def_cel,
-                           ecs_champ_t  *champ_def_fac);
+ecs_table_def__typ_fac_cel(ecs_table_t  *table_def_cel,
+                           ecs_table_t  *table_def_fac);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui renvoie un tableau associant un type à chaque face les
@@ -196,8 +196,8 @@ ecs_champ_def__typ_fac_cel(ecs_champ_t  *champ_def_cel,
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__fac_cel(ecs_champ_t  *champ_def_cel,
-                       ecs_champ_t  *champ_def_fac);
+ecs_table_def__fac_cel(ecs_table_t  *table_def_cel,
+                       ecs_table_t  *table_def_fac);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui renvoie un tableau associant à chaque cellule un code
@@ -207,9 +207,9 @@ ecs_champ_def__fac_cel(ecs_champ_t  *champ_def_cel,
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_def__err_cel_connect(ecs_champ_t          *champ_def_cel,
+ecs_table_def__err_cel_connect(ecs_table_t          *table_def_cel,
                                const ecs_tab_int_t  *typ_fac_cel);
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* _ECS_CHAMP_DEF_H_ */
+#endif /* _ECS_TABLE_DEF_H_ */

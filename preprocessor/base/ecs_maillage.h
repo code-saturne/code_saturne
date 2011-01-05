@@ -61,7 +61,6 @@
  *  Fichiers `include' publics  des paquetages visibles
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
 #include "ecs_famille.h"
 
 

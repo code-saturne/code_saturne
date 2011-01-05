@@ -58,7 +58,7 @@
 #include "ecs_descr.h"
 #include "ecs_descr_chaine.h"
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 
 /*----------------------------------------------------------------------------
@@ -200,7 +200,7 @@ _ecs_maillage_pre__aff_info_ent(ecs_entmail_t      entite,
     for (icoul = 1; icoul < nbr_coul; icoul++)
       max_coul_val = ECS_MAX(max_coul_val, coul_val[icoul]);
 
-    /* On affiche au minimum sur 2 champs le numéro de couleur */
+    /* On affiche au minimum sur 2 tables le numéro de couleur */
     if (max_coul_val < 10)
       max_coul_val = 10;
 
@@ -293,7 +293,7 @@ _ecs_maillage_pre__aff_info_fam(ecs_entmail_t  entite,
 
   if (nbr_fam_loc != 0) {
 
-    /* On affiche au minimum sur 2 champs le numéro de famille */
+    /* On affiche au minimum sur 2 tables le numéro de famille */
 
     sprintf(str_num_fam, "%d", ECS_MAX(10, max_fam_val));
 
@@ -397,7 +397,7 @@ ecs_maillage_pre__cree_elt(ecs_maillage_t   *maillage,
 
       assert(elt_val_som_ent[ient] != NULL);
 
-      maillage->champ_def[ient] = ecs_champ__cree(nbr_elt_ent[ient],
+      maillage->table_def[ient] = ecs_table__cree(nbr_elt_ent[ient],
                                                   ECS_PAS_NUL,
                                                   elt_pos_som_ent[ient],
                                                   elt_val_som_ent[ient],
@@ -423,7 +423,7 @@ ecs_maillage_pre__cree_elt(ecs_maillage_t   *maillage,
 
           /* Si les numéros de famille sont tous égaux */
           /*  au numéro de la famille par defaut (`0') */
-          /*  on ne crée pas le champ famille          */
+          /*  on ne crée pas le table famille          */
 
           ielt = 0;
           while (ielt < nbr_elt_ent[ient] &&
@@ -434,7 +434,7 @@ ecs_maillage_pre__cree_elt(ecs_maillage_t   *maillage,
 
             /* Tous les numéros de famille ne sont pas égaux   */
             /*  au numéro de la famille par defaut (`0')     : */
-            /*  on crée le champ famille                       */
+            /*  on crée le table famille                       */
 
             /* Familles des éléments */
             /*-----------------------*/
@@ -458,7 +458,7 @@ ecs_maillage_pre__cree_elt(ecs_maillage_t   *maillage,
         /* Couleurs des éléments */
         /*-----------------------*/
 
-        /* Création des descripteurs de champ "couleur" */
+        /* Création des descripteurs de table "couleur" */
 
         descr_couleur_tete = NULL;
 
@@ -474,8 +474,8 @@ ecs_maillage_pre__cree_elt(ecs_maillage_t   *maillage,
 
         if (elt_val_couleur_ent[ient] != NULL) {
 
-          maillage->champ_att[ient]
-            = ecs_champ__cree(nbr_elt_ent[ient],
+          maillage->table_att[ient]
+            = ecs_table__cree(nbr_elt_ent[ient],
                               ECS_PAS_UNITE,
                               NULL,
                               elt_val_couleur_ent[ient],

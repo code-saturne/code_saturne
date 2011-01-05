@@ -166,7 +166,7 @@ ecs_famille_chaine__detruit(ecs_famille_t  **this_fam_noeud)
 
 /*----------------------------------------------------------------------------
  *  Fonction imprimant à partir d'un noeud `ecs_famille_t' donné
- *   une liste chaînée de champs
+ *   une liste chaînée de tables
  *   sur le flux décrit par la structure `FILE'
  *----------------------------------------------------------------------------*/
 

@@ -71,7 +71,7 @@
  *  Fichiers `include' visibles du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 
 /*----------------------------------------------------------------------------
@@ -79,7 +79,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_post_ens.h"
-#include "ecs_champ_post_ens.h"
+#include "ecs_table_post_ens.h"
 
 
 /*----------------------------------------------------------------------------
@@ -87,7 +87,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_post_ens_priv.h"
-#include "ecs_champ_priv.h"
+#include "ecs_table_priv.h"
 
 
 /*============================================================================
@@ -134,7 +134,7 @@ ecs_loc_post_ens__ecr_coord(const ecs_file_t   *fic,
  *----------------------------------------------------------------------------*/
 
 static void
-ecs_loc_post_ens__ecr_val_champ(const ecs_file_t  *fic,
+ecs_loc_post_ens__ecr_val_table(const ecs_file_t  *fic,
                                 size_t             nbr,
                                 const ecs_int_t   *lst,
                                 const ecs_int_t   *val)
@@ -188,10 +188,10 @@ ecs_loc_post_ens__ecr_val_champ(const ecs_file_t  *fic,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
+ecs_table_post_ens__ecr_part(const char            *nom_maillage,
                              size_t                 n_vertices,
                              const ecs_coord_t      vertex_coords[],
-                             ecs_champ_t           *champ_def,
+                             ecs_table_t           *table_def,
                              const ecs_tab_int_t   *tab_elt_typ_geo,
                              ecs_post_ens_t        *cas_ens)
 {
@@ -222,7 +222,7 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   assert(vertex_coords != NULL);
-  assert(champ_def != NULL);
+  assert(table_def != NULL);
 
   assert(cas_ens != NULL);
 
@@ -248,11 +248,11 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
 
   assert(cas_ens->fic_geo != NULL);
 
-  ecs_champ__regle_en_pos(champ_def);
+  ecs_table__regle_en_pos(table_def);
 
   nbr_som = n_vertices;
-  def_pos_tab = champ_def->pos;
-  def_val_tab = champ_def->val;
+  def_pos_tab = table_def->pos;
+  def_val_tab = table_def->val;
 
   /* Écriture de l'entête */
   /*----------------------*/
@@ -285,7 +285,7 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
   this_part->nom_typ_ele = NULL;
 
   cpt_elt = 0;
-  nbr_elt = champ_def->nbr;
+  nbr_elt = table_def->nbr;
 
   cpt_elt_tot = 0;
 
@@ -506,7 +506,7 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
   /* Nettoyage avant la sortie */
   /*---------------------------*/
 
-  ecs_champ__libere_pos_tab(champ_def, def_pos_tab);
+  ecs_table__libere_pos_tab(table_def, def_pos_tab);
 
   /* Fermeture du fichier de géométrie */
 
@@ -514,13 +514,13 @@ ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction écrivant le champ à sortir au format Ensight
+ *  Fonction écrivant la table à sortir au format Ensight
  *---------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
+ecs_table_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
                             const char           *nom_maillage,
-                            const char           *nom_champ,
+                            const char           *nom_table,
                             ecs_post_ens_t       *cas_ens)
 {
   size_t     ielt;
@@ -531,7 +531,7 @@ ecs_champ_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
 
   ecs_post_ens_part_t * part_loc;
 
-  ecs_file_t        * fic_champ;
+  ecs_file_t        * fic_table;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -549,7 +549,7 @@ ecs_champ_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
   if (ind_part >= cas_ens->nbr_part)
     return;
 
-  fic_champ = ecs_post_ens__ecrit_fic_var(cas_ens, nom_champ);
+  fic_table = ecs_post_ens__ecrit_fic_var(cas_ens, nom_table);
 
   while (   ind_part < cas_ens->nbr_part
          && strcmp((cas_ens->tab_part[ind_part])->nom_part,
@@ -561,9 +561,9 @@ ecs_champ_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
     /* Écriture de l'entête */
     /*----------------------*/
 
-    ecs_post_ens__ecr_chaine(fic_champ, "part");
+    ecs_post_ens__ecr_chaine(fic_table, "part");
 
-    ecs_post_ens__ecr_int(fic_champ, part_loc->num_part);
+    ecs_post_ens__ecr_int(fic_table, part_loc->num_part);
 
     /* Initialisations */
     /*-----------------*/
@@ -582,11 +582,11 @@ ecs_champ_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
       if (   strcmp(part_loc->nom_typ_ele[ind_typ_ele], "nsided") != 0
           && strcmp(part_loc->nom_typ_ele[ind_typ_ele], "nfaced") != 0) {
 
-        ecs_post_ens__ecr_chaine(fic_champ, part_loc->nom_typ_ele[ind_typ_ele]);
+        ecs_post_ens__ecr_chaine(fic_table, part_loc->nom_typ_ele[ind_typ_ele]);
 
         /* Écriture des valeurs */
 
-        ecs_loc_post_ens__ecr_val_champ(fic_champ,
+        ecs_loc_post_ens__ecr_val_table(fic_table,
                                         part_loc->nbr_ele_typ[ind_typ_ele],
                                         part_loc->lst_parents,
                                         tab_val->val + ielt);
@@ -599,7 +599,7 @@ ecs_champ_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
 
   } /* Fin de la boucle sur les parts associés au maillage */
 
-  ecs_file_free(fic_champ);
+  ecs_file_free(fic_table);
 }
 
 /*----------------------------------------------------------------------------*/

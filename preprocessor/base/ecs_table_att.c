@@ -1,7 +1,7 @@
 /*============================================================================
  *  Définitions des fonctions
- *   associées à la structure `ecs_champ_t' décrivant un champ
- *   et propres aux champs auxiliaires de type "attribut"
+ *   associées à la structure `ecs_table_t' décrivant une table
+ *   et propres aux tables auxiliaires de type "attribut"
  *============================================================================*/
 
 /*
@@ -65,7 +65,7 @@
  *  Fichiers `include' visibles du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 #include "ecs_descr_chaine.h"
 #include "ecs_descr.h"
 #include "ecs_famille_chaine.h"
@@ -75,14 +75,14 @@
  *  Fichier  `include' du  paquetage courant associé au fichier courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ_att.h"
+#include "ecs_table_att.h"
 
 
 /*----------------------------------------------------------------------------
  *  Fichiers `include' prives   du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ_priv.h"
+#include "ecs_table_priv.h"
 
 
 /*============================================================================
@@ -101,7 +101,7 @@
  *----------------------------------------------------------------------------*/
 
 static ecs_tab_int_t
-_champ_att__renum_descr(ecs_champ_t      *champ_att,
+_table_att__renum_descr(ecs_table_t      *table_att,
                         const ecs_int_t   num_descr_defaut,
                         size_t            nbr_descr_old)
 {
@@ -116,7 +116,7 @@ _champ_att__renum_descr(ecs_champ_t      *champ_att,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(champ_att != NULL);
+  assert(table_att != NULL);
 
   ECS_MALLOC(renum_descr_old_new, nbr_descr_old, ecs_int_t);
   ECS_MALLOC(vect_transf_num_descr_new_old.val, nbr_descr_old, ecs_int_t);
@@ -125,23 +125,23 @@ _champ_att__renum_descr(ecs_champ_t      *champ_att,
   for (idescr_old = 0; idescr_old < nbr_descr_old; idescr_old++)
     renum_descr_old_new[idescr_old] = num_descr_defaut;
 
-  nbr_val = ecs_champ__ret_val_nbr(champ_att);
+  nbr_val = ecs_table__ret_val_nbr(table_att);
 
   cpt_descr = 0;
 
   for (ival = 0; ival < nbr_val; ival++) {
 
-    num_descr_old = champ_att->val[ival] - 1;
+    num_descr_old = table_att->val[ival] - 1;
 
     if (renum_descr_old_new[num_descr_old] == num_descr_defaut) {
 
       renum_descr_old_new[num_descr_old] = cpt_descr;
-      champ_att->val[ival] = cpt_descr + 1;
+      table_att->val[ival] = cpt_descr + 1;
       vect_transf_num_descr_new_old.val[cpt_descr++] = num_descr_old;
 
     }
     else
-      champ_att->val[ival] = renum_descr_old_new[num_descr_old] + 1;
+      table_att->val[ival] = renum_descr_old_new[num_descr_old] + 1;
 
   }
 
@@ -162,7 +162,7 @@ _champ_att__renum_descr(ecs_champ_t      *champ_att,
  *----------------------------------------------------------------------------*/
 
 static void
-_champ_att__herite(ecs_champ_t          *champ_att_elt,
+_table_att__herite(ecs_table_t          *table_att_elt,
                    const ecs_tab_int_t  *tab_old_new)
 {
   int           ival_elt;
@@ -186,7 +186,7 @@ _champ_att__herite(ecs_champ_t          *champ_att_elt,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(champ_att_elt != NULL);
+  assert(table_att_elt != NULL);
 
   /* Count values */
 
@@ -203,8 +203,8 @@ _champ_att__herite(ecs_champ_t          *champ_att_elt,
       num_elt_new = ECS_ABS(num_elt_new); /* 1 to n */
       if (num_elt_new > (ecs_int_t)nbr_new)
         nbr_new = num_elt_new;
-      pos_att_new[num_elt_new] +=   champ_att_elt->pos[ielt+1]
-                                  - champ_att_elt->pos[ielt];
+      pos_att_new[num_elt_new] +=   table_att_elt->pos[ielt+1]
+                                  - table_att_elt->pos[ielt];
     }
   }
 
@@ -235,13 +235,13 @@ _champ_att__herite(ecs_champ_t          *champ_att_elt,
         ielt_new = ECS_ABS(num_elt_new) - 1;
         ival_att_new = pos_att_new[ielt_new] - 1;
 
-        for (pos_val_att = champ_att_elt->pos[ielt];
-             pos_val_att < champ_att_elt->pos[ielt+1];
+        for (pos_val_att = table_att_elt->pos[ielt];
+             pos_val_att < table_att_elt->pos[ielt+1];
              pos_val_att++) {
 
           /* Value to add */
 
-          val_elt = champ_att_elt->val[pos_val_att - 1];
+          val_elt = table_att_elt->val[pos_val_att - 1];
 
           /* Add it only if it is not already present */
 
@@ -280,15 +280,15 @@ _champ_att__herite(ecs_champ_t          *champ_att_elt,
 
   /* Update definitions */
 
-  ECS_FREE(champ_att_elt->pos);
-  ECS_FREE(champ_att_elt->val);
+  ECS_FREE(table_att_elt->pos);
+  ECS_FREE(table_att_elt->val);
 
   ECS_REALLOC(pos_att_new, nbr_new + 1, ecs_size_t);
   ECS_REALLOC(val_att_new, nbr_val_new, ecs_int_t);
 
-  champ_att_elt->nbr = nbr_new;
-  champ_att_elt->pos = pos_att_new;
-  champ_att_elt->val = val_att_new;
+  table_att_elt->nbr = nbr_new;
+  table_att_elt->pos = pos_att_new;
+  table_att_elt->val = val_att_new;
 }
 
 /*----------------------------------------------------------------------------
@@ -298,12 +298,12 @@ _champ_att__herite(ecs_champ_t          *champ_att_elt,
  *  contenir la valeur 0
  *----------------------------------------------------------------------------*/
 
-static ecs_champ_t *
-_champ_att__famille_en_groupe(size_t               n_elts,
+static ecs_table_t *
+_table_att__famille_en_groupe(size_t               n_elts,
                               const int           *elt_fam,
-                              const ecs_champ_t   *champ_def)
+                              const ecs_table_t   *table_def)
 {
-  ecs_champ_t  *champ_rep_new;
+  ecs_table_t  *table_rep_new;
 
   size_t        cpt_val_rep;
   size_t        ielt_rep;
@@ -330,8 +330,8 @@ _champ_att__famille_en_groupe(size_t               n_elts,
 
     if (num_val_def > 0) {
 
-      pos_deb_def = champ_def->pos[num_val_def - 1] - 1;
-      pos_fin_def = champ_def->pos[num_val_def    ] - 1;
+      pos_deb_def = table_def->pos[num_val_def - 1] - 1;
+      pos_fin_def = table_def->pos[num_val_def    ] - 1;
 
       nbr_pos_def = pos_fin_def - pos_deb_def;
     }
@@ -350,10 +350,10 @@ _champ_att__famille_en_groupe(size_t               n_elts,
 
   /* Traitement effectif */
 
-  champ_rep_new = ecs_champ__alloue(nbr_elt_rep,
+  table_rep_new = ecs_table__alloue(nbr_elt_rep,
                                     nbr_val_rep_new);
 
-  champ_rep_new->pos[0] = 1;
+  table_rep_new->pos[0] = 1;
 
   cpt_val_rep = 0;
 
@@ -363,14 +363,14 @@ _champ_att__famille_en_groupe(size_t               n_elts,
 
     if (num_val_def > 0) {
 
-      pos_deb_def = champ_def->pos[num_val_def - 1] - 1;
-      pos_fin_def = champ_def->pos[num_val_def    ] - 1;
+      pos_deb_def = table_def->pos[num_val_def - 1] - 1;
+      pos_fin_def = table_def->pos[num_val_def    ] - 1;
 
       nbr_pos_def = pos_fin_def - pos_deb_def;
 
       for (ipos_def = 0; ipos_def < nbr_pos_def; ipos_def++)
-        champ_rep_new->val[cpt_val_rep + ipos_def]
-          = champ_def->val[pos_deb_def + ipos_def];
+        table_rep_new->val[cpt_val_rep + ipos_def]
+          = table_def->val[pos_deb_def + ipos_def];
 
     }
     else if (num_val_def == 0) {
@@ -382,10 +382,10 @@ _champ_att__famille_en_groupe(size_t               n_elts,
 
     cpt_val_rep += nbr_pos_def;
 
-    champ_rep_new->pos[ielt_rep + 1] = cpt_val_rep + 1;
+    table_rep_new->pos[ielt_rep + 1] = cpt_val_rep + 1;
   }
 
-  return champ_rep_new;
+  return table_rep_new;
 }
 
 /*----------------------------------------------------------------------------
@@ -404,7 +404,7 @@ _champ_att__famille_en_groupe(size_t               n_elts,
  *----------------------------------------------------------------------------*/
 
 static int *
-_champ__attribue_fam(const ecs_champ_t      *champ_att_unifie,
+_table__attribue_fam(const ecs_table_t      *table_att_unifie,
                      const ecs_tab_int_t     tab_idem,
                      ecs_int_t            ***def_fam_descr,
                      ecs_int_t             **nbr_descr_fam,
@@ -424,7 +424,7 @@ _champ__attribue_fam(const ecs_champ_t      *champ_att_unifie,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  nbr_elt = champ_att_unifie->nbr;
+  nbr_elt = table_att_unifie->nbr;
 
   ECS_MALLOC(elt_fam, nbr_elt, int);
 
@@ -449,9 +449,9 @@ _champ__attribue_fam(const ecs_champ_t      *champ_att_unifie,
 
     if (tab_idem.val[ielt] == (ecs_int_t)ielt) {
 
-      pos_elt = champ_att_unifie->pos[ielt] - 1;
+      pos_elt = table_att_unifie->pos[ielt] - 1;
       (*nbr_descr_fam)[cpt_fam]
-        = champ_att_unifie->pos[ielt + 1] - 1 - pos_elt;
+        = table_att_unifie->pos[ielt + 1] - 1 - pos_elt;
 
       cpt_fam++;
     }
@@ -474,12 +474,12 @@ _champ__attribue_fam(const ecs_champ_t      *champ_att_unifie,
 
       /* Définition de la famille en fonction des numéros d'attribut */
 
-      pos_elt     = champ_att_unifie->pos[ielt    ] - 1;
-      nbr_att_elt = champ_att_unifie->pos[ielt + 1] - 1 - pos_elt;
+      pos_elt     = table_att_unifie->pos[ielt    ] - 1;
+      nbr_att_elt = table_att_unifie->pos[ielt + 1] - 1 - pos_elt;
 
       for (idescr = 0; idescr < nbr_att_elt; idescr++)
         (*def_fam_descr)[cpt_fam][idescr]
-          = champ_att_unifie->val[pos_elt + idescr];
+          = table_att_unifie->val[pos_elt + idescr];
 
       cpt_fam++;
     }
@@ -513,7 +513,7 @@ _champ__attribue_fam(const ecs_champ_t      *champ_att_unifie,
  *----------------------------------------------------------------------------*/
 
 static ecs_tab_int_t
-_champ_att__compare_val_pos(const ecs_champ_t  *this_champ)
+_table_att__compare_val_pos(const ecs_table_t  *this_table)
 {
   bool          bool_diff;
 
@@ -535,14 +535,14 @@ _champ_att__compare_val_pos(const ecs_champ_t  *this_champ)
   /* Initialisations */
   /*=================*/
 
-  tab_idem.nbr = this_champ->nbr;
+  tab_idem.nbr = this_table->nbr;
   ECS_MALLOC(tab_idem.val, tab_idem.nbr, ecs_int_t);
 
-  max_val_pos = this_champ->pos[1] - this_champ->pos[0];
+  max_val_pos = this_table->pos[1] - this_table->pos[0];
   for (ipos = 1; ipos < tab_idem.nbr; ipos++)
     max_val_pos = ECS_MAX(max_val_pos,
-                          this_champ->pos[ipos + 1] -
-                          this_champ->pos[ipos    ]   );
+                          this_table->pos[ipos + 1] -
+                          this_table->pos[ipos    ]   );
 
   ECS_MALLOC(val_pos_ref, max_val_pos, ecs_int_t);
 
@@ -557,11 +557,11 @@ _champ_att__compare_val_pos(const ecs_champ_t  *this_champ)
 
   /* Ensemble servant de référence au 1er tour */
 
-  pos_val         = this_champ->pos[0] - 1;
-  nbr_val_pos_ref = this_champ->pos[1] - 1 - pos_val;
+  pos_val         = this_table->pos[0] - 1;
+  nbr_val_pos_ref = this_table->pos[1] - 1 - pos_val;
 
   for (ival = 0; ival < nbr_val_pos_ref; ival++)
-    val_pos_ref[ival] = this_champ->val[pos_val + ival];
+    val_pos_ref[ival] = this_table->val[pos_val + ival];
 
   pos_ref = 0;
 
@@ -576,14 +576,14 @@ _champ_att__compare_val_pos(const ecs_champ_t  *this_champ)
 
   for (ipos = 1; ipos < tab_idem.nbr; ipos++) {
 
-    pos_val     = this_champ->pos[ipos    ] - 1;
-    nbr_val_pos = this_champ->pos[ipos + 1] - 1 - pos_val;
+    pos_val     = this_table->pos[ipos    ] - 1;
+    nbr_val_pos = this_table->pos[ipos + 1] - 1 - pos_val;
 
     if (nbr_val_pos == nbr_val_pos_ref) {
 
       ival = 0;
       while (ival < nbr_val_pos                                &&
-             ECS_ABS(this_champ->val[pos_val + ival]) ==
+             ECS_ABS(this_table->val[pos_val + ival]) ==
              ECS_ABS(val_pos_ref[ival])                           )
         ival++;
 
@@ -622,7 +622,7 @@ _champ_att__compare_val_pos(const ecs_champ_t  *this_champ)
       nbr_val_pos_ref = nbr_val_pos;
 
       for (ival = 0; ival < nbr_val_pos; ival++)
-        val_pos_ref[ival] = this_champ->val[pos_val + ival];
+        val_pos_ref[ival] = this_table->val[pos_val + ival];
 
       pos_ref = ipos;
 
@@ -646,7 +646,7 @@ _champ_att__compare_val_pos(const ecs_champ_t  *this_champ)
  *----------------------------------------------------------------------------*/
 
 static void
-_champ_att__desc_arbre(const ecs_size_t  *pos_tab,
+_table_att__desc_arbre(const ecs_size_t  *pos_tab,
                        const ecs_int_t   *val_tab,
                        size_t             ltree,
                        size_t             ntree,
@@ -778,7 +778,7 @@ _champ_att__desc_arbre(const ecs_size_t  *pos_tab,
  *----------------------------------------------------------------------------*/
 
 static void
-_champ_att__trie(const ecs_champ_t  *this_champ,
+_table_att__trie(const ecs_table_t  *this_table,
                  ecs_tab_int_t      *vect_renum)
 {
   ecs_int_t i, i_save;
@@ -789,8 +789,8 @@ _champ_att__trie(const ecs_champ_t  *this_champ,
 
   for (i = (vect_renum->nbr / 2) - 1; i >= 0; i--) {
 
-    _champ_att__desc_arbre(this_champ->pos,
-                           this_champ->val,
+    _table_att__desc_arbre(this_table->pos,
+                           this_table->val,
                            i,
                            vect_renum->nbr,
                            vect_renum->val);
@@ -804,8 +804,8 @@ _champ_att__trie(const ecs_champ_t  *this_champ,
     *(vect_renum->val    ) = *(vect_renum->val + i);
     *(vect_renum->val + i) = i_save;
 
-    _champ_att__desc_arbre(this_champ->pos,
-                           this_champ->val,
+    _table_att__desc_arbre(this_table->pos,
+                           this_table->val,
                            0,
                            i,
                            vect_renum->val);
@@ -840,8 +840,8 @@ _champ_att__trie(const ecs_champ_t  *this_champ,
  *----------------------------------------------------------------------------*/
 
 static void
-_champ_att__trie_et_renvoie(const ecs_champ_t  *this_champ,
-                            ecs_champ_t        *champ_trie,
+_table_att__trie_et_renvoie(const ecs_table_t  *this_table,
+                            ecs_table_t        *table_trie,
                             ecs_tab_int_t      *vect_renum_pos)
 {
   size_t      pos_nbr_val;
@@ -853,26 +853,26 @@ _champ_att__trie_et_renvoie(const ecs_champ_t  *this_champ,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  _champ_att__trie(this_champ, vect_renum_pos);
+  _table_att__trie(this_table, vect_renum_pos);
 
   cpt_val = 0;
 
-  champ_trie->nbr = vect_renum_pos->nbr;
+  table_trie->nbr = vect_renum_pos->nbr;
 
-  champ_trie->pos[0] = 1;
+  table_trie->pos[0] = 1;
 
   for (ipos = 0; ipos < vect_renum_pos->nbr; ipos++) {
 
     pos_nbr_val
-      = this_champ->pos[vect_renum_pos->val[ipos] + 1]
-      - this_champ->pos[vect_renum_pos->val[ipos]];
+      = this_table->pos[vect_renum_pos->val[ipos] + 1]
+      - this_table->pos[vect_renum_pos->val[ipos]];
 
-    champ_trie->pos[ipos + 1] = champ_trie->pos[ipos] + pos_nbr_val;
+    table_trie->pos[ipos + 1] = table_trie->pos[ipos] + pos_nbr_val;
 
-    ival_deb = this_champ->pos[vect_renum_pos->val[ipos]] - 1;
+    ival_deb = this_table->pos[vect_renum_pos->val[ipos]] - 1;
 
     for (ival = 0; ival < pos_nbr_val; ival++)
-      champ_trie->val[cpt_val++] = this_champ->val[ival_deb+ival];
+      table_trie->val[cpt_val++] = this_table->val[ival_deb+ival];
   }
 
   /* `vect_renum_pos' prend pour indice les indices nouveaux,       */
@@ -898,7 +898,7 @@ _champ_att__trie_et_renvoie(const ecs_champ_t  *this_champ,
  *----------------------------------------------------------------------------*/
 
 static void
-_champ_att__desc_arbre_val(ecs_int_t  ltree,
+_table_att__desc_arbre_val(ecs_int_t  ltree,
                            ecs_int_t  ntree,
                            ecs_int_t  elem_ord[])
 {
@@ -931,10 +931,10 @@ _champ_att__desc_arbre_val(ecs_int_t  ltree,
  *   entre 2 positions
  *----------------------------------------------------------------------------*/
 
-static ecs_champ_t  *
-_champ_att__trie_val_pos(const ecs_champ_t  *this_champ)
+static ecs_table_t  *
+_table_att__trie_val_pos(const ecs_table_t  *this_table)
 {
-  ecs_champ_t *champ_ord;
+  ecs_table_t *table_ord;
 
   ecs_int_t    nbr_elt;
   ecs_int_t    nbr_def;
@@ -954,13 +954,13 @@ _champ_att__trie_val_pos(const ecs_champ_t  *this_champ)
   /* Initialisations */
   /*=================*/
 
-  nbr_elt = this_champ->nbr;
-  nbr_def = this_champ->pos[nbr_elt] - 1;
+  nbr_elt = this_table->nbr;
+  nbr_def = this_table->pos[nbr_elt] - 1;
 
-  champ_ord = ecs_champ__alloue(nbr_elt,
+  table_ord = ecs_table__alloue(nbr_elt,
                                 nbr_def);
 
-  champ_ord->pos[0] = 1;
+  table_ord->pos[0] = 1;
 
   /*=========================*/
   /* Boucle sur les éléments */
@@ -970,27 +970,27 @@ _champ_att__trie_val_pos(const ecs_champ_t  *this_champ)
 
     /* Les positions restent inchangées */
 
-    champ_ord->pos[ielt + 1] = this_champ->pos[ielt + 1];
+    table_ord->pos[ielt + 1] = this_table->pos[ielt + 1];
 
-    ipos_deb = this_champ->pos[ielt    ] - 1;
-    ipos_fin = this_champ->pos[ielt + 1] - 1;
+    ipos_deb = this_table->pos[ielt    ] - 1;
+    ipos_fin = this_table->pos[ielt + 1] - 1;
 
     /* On commence par recopier les valeurs */
 
     for (ipos = ipos_deb; ipos < ipos_fin; ipos++)
-      champ_ord->val[ipos] = this_champ->val[ipos];
+      table_ord->val[ipos] = this_table->val[ipos];
 
     /* Tri des valeurs de la copie */
     /*-----------------------------*/
 
     nbr_def_loc = ipos_fin -ipos_deb;
 
-    tab_val_loc = champ_ord->val + ipos_deb;
+    tab_val_loc = table_ord->val + ipos_deb;
 
-    /* Création de l'arbre binaire champ_renum->val[vect_renum->nbr] */
+    /* Création de l'arbre binaire table_renum->val[vect_renum->nbr] */
 
     for (i = (nbr_def_loc / 2) - 1; i >= 0; i--)
-      _champ_att__desc_arbre_val(i, nbr_def_loc, tab_val_loc);
+      _table_att__desc_arbre_val(i, nbr_def_loc, tab_val_loc);
 
     /* Tri de l'arbre binaire */
 
@@ -1000,7 +1000,7 @@ _champ_att__trie_val_pos(const ecs_champ_t  *this_champ)
       tab_val_loc[0] = tab_val_loc[i];
       tab_val_loc[i] = i_save;
 
-      _champ_att__desc_arbre_val(0, i, tab_val_loc);
+      _table_att__desc_arbre_val(0, i, tab_val_loc);
     }
 
   } /* Fin : boucle sur les éléments */
@@ -1008,7 +1008,7 @@ _champ_att__trie_val_pos(const ecs_champ_t  *this_champ)
   /* Renvoi de la structure des définitions ordonnées */
   /*--------------------------------------------------*/
 
-  return champ_ord;
+  return table_ord;
 }
 
 /*----------------------------------------------------------------------------
@@ -1018,10 +1018,10 @@ _champ_att__trie_val_pos(const ecs_champ_t  *this_champ)
  *----------------------------------------------------------------------------*/
 
 static ecs_tab_int_t
-_champ_att__trie_val(ecs_champ_t  **this_champ)
+_table_att__trie_val(ecs_table_t  **this_table)
 {
-  ecs_champ_t  *champ_def_ord;
-  ecs_champ_t  *champ_elt_ord;
+  ecs_table_t  *table_def_ord;
+  ecs_table_t  *table_elt_ord;
   ecs_tab_int_t   vect_transf;
   size_t   nbr_elt;
   size_t   nbr_val;
@@ -1029,37 +1029,37 @@ _champ_att__trie_val(ecs_champ_t  **this_champ)
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  nbr_elt = (*this_champ)->nbr;
+  nbr_elt = (*this_table)->nbr;
 
   /* Tri sur les définitions des éléments */
 
-  champ_def_ord = _champ_att__trie_val_pos(*this_champ);
+  table_def_ord = _table_att__trie_val_pos(*this_table);
 
   /* Tri des éléments en fonction de leurs définitions ordonnées */
 
-  nbr_val = ecs_champ__ret_val_nbr(champ_def_ord);
+  nbr_val = ecs_table__ret_val_nbr(table_def_ord);
 
   vect_transf.nbr = nbr_elt;
   ECS_MALLOC(vect_transf.val, nbr_elt, ecs_int_t);
   for (ielt = 0; ielt < nbr_elt; ielt++)
     vect_transf.val[ielt] = ielt;
 
-  champ_elt_ord = ecs_champ__alloue(nbr_elt,  nbr_val);
+  table_elt_ord = ecs_table__alloue(nbr_elt,  nbr_val);
 
-  champ_elt_ord->descr = (*this_champ)->descr;
-  (*this_champ)->descr = NULL;
+  table_elt_ord->descr = (*this_table)->descr;
+  (*this_table)->descr = NULL;
 
-  ecs_champ__detruit(this_champ);
+  ecs_table__detruit(this_table);
 
-  _champ_att__trie_et_renvoie(champ_def_ord,
-                              champ_elt_ord,
+  _table_att__trie_et_renvoie(table_def_ord,
+                              table_elt_ord,
                               &vect_transf);
 
-  ecs_champ__detruit(&champ_def_ord);
+  ecs_table__detruit(&table_def_ord);
 
   /* Affectation de la nouvelle liste compactée */
 
-  *this_champ = champ_elt_ord;
+  *this_table = table_elt_ord;
 
   /* Renvoi du vecteur de transformation */
 
@@ -1067,27 +1067,27 @@ _champ_att__trie_val(ecs_champ_t  **this_champ)
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui trie les descripteurs d'un champ de type "attribut"
+ *  Fonction qui trie les descripteurs d'une table de type "attribut"
  *   et met à jour le numérotation correspondante des valeurs.
  *----------------------------------------------------------------------------*/
 
 static void
-_champ_att__trie_descr(ecs_champ_t  *champ_att)
+_table_att__trie_descr(ecs_table_t  *table_att)
 {
   ecs_int_t      nbr_val, ival;
   ecs_tab_int_t  tab_renum_descr;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(champ_att != NULL);
+  assert(table_att != NULL);
 
-  tab_renum_descr = ecs_descr_chaine__trie(champ_att->descr);
+  tab_renum_descr = ecs_descr_chaine__trie(table_att->descr);
 
-  nbr_val = ecs_champ__ret_val_nbr(champ_att);
+  nbr_val = ecs_table__ret_val_nbr(table_att);
 
   for (ival = 0; ival < nbr_val; ival++) {
-    ecs_int_t idescr = champ_att->val[ival] -1;
-    champ_att->val[ival] = tab_renum_descr.val[idescr];
+    ecs_int_t idescr = table_att->val[ival] -1;
+    table_att->val[ival] = tab_renum_descr.val[idescr];
   }
 
   tab_renum_descr.nbr = 0;
@@ -1100,7 +1100,7 @@ _champ_att__trie_descr(ecs_champ_t  *champ_att)
  *----------------------------------------------------------------------------*/
 
 static ecs_tab_int_t
-_champ_att__ret_reference(size_t   n_elts,
+_table_att__ret_reference(size_t   n_elts,
                           int     *elt_fam)
 {
   size_t        cpt_ref;
@@ -1159,14 +1159,14 @@ _champ_att__ret_reference(size_t   n_elts,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui créé une structure `ecs_champ_t'
+ *  Fonction qui créé une structure `ecs_table_t'
  *   à partir d'un tableau bi-dimensionnel `tab_elt' contenant
  *   pour chaque élément un ensemble de valeurs
  *  Si un élément `ielt' n'a pas de valeur associée, `tab_elt[ielt].nbr = 0'
  *----------------------------------------------------------------------------*/
 
-static ecs_champ_t *
-_champ_att__transforme_bi_tab(const ecs_tab_int_t  *tab_elt,
+static ecs_table_t *
+_table_att__transforme_bi_tab(const ecs_tab_int_t  *tab_elt,
                               size_t                nbr_elt,
                               size_t                nbr_val)
 {
@@ -1174,7 +1174,7 @@ _champ_att__transforme_bi_tab(const ecs_tab_int_t  *tab_elt,
   size_t        ielt;
   size_t        ival;
 
-  ecs_champ_t * this_champ;
+  ecs_table_t * this_table;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -1183,27 +1183,27 @@ _champ_att__transforme_bi_tab(const ecs_tab_int_t  *tab_elt,
   /* Construction des tableaux de positions et de valeurs */
   /*------------------------------------------------------*/
 
-  this_champ = ecs_champ__alloue(nbr_elt, nbr_val);
+  this_table = ecs_table__alloue(nbr_elt, nbr_val);
 
-  this_champ->pos[0] = 1;
+  this_table->pos[0] = 1;
   cpt_val = 0;
 
   for (ielt = 0; ielt < nbr_elt; ielt++) {
 
     if (tab_elt[ielt].nbr != 0) {
 
-      this_champ->pos[ielt + 1]
-        = this_champ->pos[ielt] + tab_elt[ielt].nbr;
+      this_table->pos[ielt + 1]
+        = this_table->pos[ielt] + tab_elt[ielt].nbr;
 
       for (ival = 0; ival < tab_elt[ielt].nbr; ival++)
-        this_champ->val[cpt_val++] = tab_elt[ielt].val[ival];
+        this_table->val[cpt_val++] = tab_elt[ielt].val[ival];
 
     }
     else
-      this_champ->pos[ielt + 1]  = this_champ->pos[ielt];
+      this_table->pos[ielt + 1]  = this_table->pos[ielt];
   }
 
-  return this_champ;
+  return this_table;
 }
 
 /*----------------------------------------------------------------------------
@@ -1215,7 +1215,7 @@ _champ_att__transforme_bi_tab(const ecs_tab_int_t  *tab_elt,
  *----------------------------------------------------------------------------*/
 
 static void
-_ecs_champ__transforme_fam(size_t                n_elts,
+_ecs_table__transforme_fam(size_t                n_elts,
                            int                  *elt_fam,
                            const ecs_tab_int_t   vect_transf)
 {
@@ -1250,17 +1250,17 @@ _ecs_champ__transforme_fam(size_t                n_elts,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui assemble un champ donné dans un champ récepteur donné
+ *  Fonction qui assemble une table donnée dans une table réceptrice donnée
  *
  *  L'assemblage consiste à :
- *  - regrouper sous la même position les valeurs des 2 champs
- *    (cela suppose donc que les 2 champs ont le même nombre de positions)
- *  - assembler les membres des descripteurs des 2 champs
- *    Les descripteurs des 2 champs peuvent être à `NULL'
- *    et si le descripteur du champ récepteur est à `NULL',
- *          le descripteur du champ assemblé est celui du champ à assembler
+ *  - regrouper sous la même position les valeurs des 2 tables
+ *    (cela suppose donc que les 2 tables ont le même nombre de positions)
+ *  - assembler les membres des descripteurs des 2 tables
+ *    Les descripteurs des 2 tables peuvent être à `NULL'
+ *    et si le descripteur de la table réceptrice est à `NULL',
+ *    le descripteur de la table assemblée est celui de la table à assembler
  *
- *  Le champ à assembler est détruit apres assemblage
+ *  La table à assembler est détruite apres assemblage
  * ----------------------------------------------------------------------------
  *
  *  Exemple :
@@ -1310,8 +1310,8 @@ _ecs_champ__transforme_fam(size_t                n_elts,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_att__assemble(ecs_champ_t  *champ_recept,
-                        ecs_champ_t  *champ_assemb)
+ecs_table_att__assemble(ecs_table_t  *table_recept,
+                        ecs_table_t  *table_assemb)
 {
   size_t    ipos;
   size_t    ival;
@@ -1329,27 +1329,27 @@ ecs_champ_att__assemble(ecs_champ_t  *champ_recept,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(champ_recept != NULL);
-  assert(champ_assemb != NULL);
-  assert(champ_recept->nbr == champ_assemb->nbr);
+  assert(table_recept != NULL);
+  assert(table_assemb != NULL);
+  assert(table_recept->nbr == table_assemb->nbr);
 
-  /* Récupération du nombre de descripteurs du premier champ si lieu */
+  /* Récupération du nombre de descripteurs du premier table si lieu */
 
-  incr_num_descr = ecs_champ__ret_descr_nbr(champ_recept);
+  incr_num_descr = ecs_table__ret_descr_nbr(table_recept);
 
   /* Assemblage des valeurs */
 
-  ecs_champ__regle_en_pos(champ_recept);
-  ecs_champ__regle_en_pos(champ_assemb);
+  ecs_table__regle_en_pos(table_recept);
+  ecs_table__regle_en_pos(table_assemb);
 
   /* Allocation des nouveaux tableaux de la structure receptrice */
   /*-------------------------------------------------------------*/
 
-  recept_val_nbr = champ_recept->pos[champ_recept->nbr] - 1;
-  assemb_val_nbr = champ_assemb->pos[champ_assemb->nbr] - 1;
+  recept_val_nbr = table_recept->pos[table_recept->nbr] - 1;
+  assemb_val_nbr = table_assemb->pos[table_assemb->nbr] - 1;
 
   ECS_MALLOC(recept_pos_tab_new,
-             champ_recept->nbr + 1,
+             table_recept->nbr + 1,
              ecs_size_t);
 
   ECS_MALLOC(recept_val_tab_new,
@@ -1362,45 +1362,45 @@ ecs_champ_att__assemble(ecs_champ_t  *champ_recept,
   cpt_val = 0;
   recept_pos_tab_new[0] = 1;
 
-  for (ipos = 0; ipos < champ_recept->nbr; ipos++) {
+  for (ipos = 0; ipos < table_recept->nbr; ipos++) {
 
     recept_pos_tab_new[ipos + 1]
       =   recept_pos_tab_new[ipos]
-        + champ_recept->pos[ipos + 1] - champ_recept->pos[ipos]
-        + champ_assemb->pos[ipos + 1] - champ_assemb->pos[ipos];
+        + table_recept->pos[ipos + 1] - table_recept->pos[ipos]
+        + table_assemb->pos[ipos + 1] - table_assemb->pos[ipos];
 
-    for (ival = (champ_recept->pos[ipos    ] - 1);
-         ival < (champ_recept->pos[ipos + 1] - 1);
+    for (ival = (table_recept->pos[ipos    ] - 1);
+         ival < (table_recept->pos[ipos + 1] - 1);
          ival++) {
 
-      recept_val_tab_new[cpt_val++] = champ_recept->val[ival];
+      recept_val_tab_new[cpt_val++] = table_recept->val[ival];
 
     }
 
-    for (ival = (champ_assemb->pos[ipos    ] - 1);
-         ival < (champ_assemb->pos[ipos + 1] - 1);
+    for (ival = (table_assemb->pos[ipos    ] - 1);
+         ival < (table_assemb->pos[ipos + 1] - 1);
          ival++)
       recept_val_tab_new[cpt_val++]
-        = champ_assemb->val[ival] + incr_num_descr;
+        = table_assemb->val[ival] + incr_num_descr;
 
   }
 
-  ECS_FREE(champ_recept->pos);
-  ECS_FREE(champ_recept->val);
+  ECS_FREE(table_recept->pos);
+  ECS_FREE(table_recept->val);
 
-  champ_recept->pos = recept_pos_tab_new;
-  champ_recept->val = recept_val_tab_new;
+  table_recept->pos = recept_pos_tab_new;
+  table_recept->val = recept_val_tab_new;
 
-  ecs_champ__pos_en_regle(champ_recept);
+  ecs_table__pos_en_regle(table_recept);
 
-  /* Ajout des descripteurs du champ à assembler au champ récepteur */
+  /* Ajout des descripteurs de la table à assembler à la table réceptrice */
 
-  descr_tete_loc = ecs_descr_chaine__copie(champ_assemb->descr);
+  descr_tete_loc = ecs_descr_chaine__copie(table_assemb->descr);
 
-  ecs_descr_chaine__ajoute(&champ_recept->descr,
+  ecs_descr_chaine__ajoute(&table_recept->descr,
                            descr_tete_loc);
 
-  ecs_champ__detruit(&champ_assemb);
+  ecs_table__detruit(&table_assemb);
 }
 
 /*----------------------------------------------------------------------------
@@ -1412,44 +1412,44 @@ ecs_champ_att__assemble(ecs_champ_t  *champ_recept,
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_att__herite(ecs_champ_t    *champ_att_elt,
+ecs_table_att__herite(ecs_table_t    *table_att_elt,
                       ecs_tab_int_t  *tab_old_new)
 {
   ecs_tab_int_t   vect_transf_num_descr;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  if (champ_att_elt == NULL)
+  if (table_att_elt == NULL)
     return;
 
-  ecs_champ__regle_en_pos(champ_att_elt);
+  ecs_table__regle_en_pos(table_att_elt);
 
   /* Construction, pour les éléments,                    */
-  /*  du vecteur `ecs_champ_t' associé au champ attribut */
+  /*  du vecteur `ecs_table_t' associé au table attribut */
   /*-----------------------------------------------------*/
 
-  _champ_att__herite(champ_att_elt, tab_old_new);
+  _table_att__herite(table_att_elt, tab_old_new);
 
   /* Allocation et initialisation pour les sous-éléments,   */
-  /*  des vecteurs `ecs_champ_t' associé au champ attribut  */
+  /*  des vecteurs `ecs_table_t' associé au table attribut  */
   /*--------------------------------------------------------*/
 
-  if (champ_att_elt->descr != NULL) {
+  if (table_att_elt->descr != NULL) {
 
     const ecs_int_t nbr_descr_old
-      = ecs_descr_chaine__ret_nbr(champ_att_elt->descr);
+      = ecs_descr_chaine__ret_nbr(table_att_elt->descr);
 
-    ecs_descr_t *descr_old = champ_att_elt->descr;
+    ecs_descr_t *descr_old = table_att_elt->descr;
 
     /* Renumérotation des numéros de descripteur */
     /*-------------------------------------------*/
 
-    vect_transf_num_descr = _champ_att__renum_descr(champ_att_elt,
+    vect_transf_num_descr = _table_att__renum_descr(table_att_elt,
                                                     ECS_DESCR_NUM_NUL,
                                                     nbr_descr_old);
 
-    champ_att_elt->descr
-      = ecs_descr_chaine__renumerote(champ_att_elt->descr,
+    table_att_elt->descr
+      = ecs_descr_chaine__renumerote(table_att_elt->descr,
                                      vect_transf_num_descr );
 
     ecs_descr_chaine__detruit(&descr_old);
@@ -1457,17 +1457,17 @@ ecs_champ_att__herite(ecs_champ_t    *champ_att_elt,
     ECS_FREE(vect_transf_num_descr.val);
   }
 
-  ecs_champ__pos_en_regle(champ_att_elt);
+  ecs_table__pos_en_regle(table_att_elt);
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction réalisant la transformation d'un champ
+ *  Fonction réalisant la transformation d'une table
  *   en fusionnant les propriétés de ses éléments
  *   qui sont identiquement transformes par le vecteur de transformation donné
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_att__fusionne(ecs_champ_t          *this_champ_att,
+ecs_table_att__fusionne(ecs_table_t          *this_table_att,
                         size_t                nbr_elt_new,
                         const ecs_tab_int_t   vect_transf)
 {
@@ -1492,12 +1492,12 @@ ecs_champ_att__fusionne(ecs_champ_t          *this_champ_att,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  if (this_champ_att == NULL)
+  if (this_table_att == NULL)
     return;
 
-  ecs_champ__regle_en_pos(this_champ_att);
+  ecs_table__regle_en_pos(this_table_att);
 
-  nbr_elt_ref = this_champ_att->nbr;
+  nbr_elt_ref = this_table_att->nbr;
 
   elt_nbr_val_max = 0;
 
@@ -1505,8 +1505,8 @@ ecs_champ_att__fusionne(ecs_champ_t          *this_champ_att,
 
   for (ielt_ref = 0; ielt_ref < nbr_elt_ref; ielt_ref++)
     elt_nbr_val_max = ECS_MAX(elt_nbr_val_max,
-                              (  this_champ_att->pos[ielt_ref + 1]
-                               - this_champ_att->pos[ielt_ref]));
+                              (  this_table_att->pos[ielt_ref + 1]
+                               - this_table_att->pos[ielt_ref]));
 
   /* On suppose qu'une fusion ne concerne qu'au maximum 2 éléments       */
   /* Le nombre maximal de propriétés pour un élément fusionne est donc : */
@@ -1528,12 +1528,12 @@ ecs_champ_att__fusionne(ecs_champ_t          *this_champ_att,
 
     num_elt_transf  = vect_transf.val[ielt_ref];
 
-    pos_inf = this_champ_att->pos[ielt_ref]     - 1;
-    pos_sup = this_champ_att->pos[ielt_ref + 1] - 1;
+    pos_inf = this_table_att->pos[ielt_ref]     - 1;
+    pos_sup = this_table_att->pos[ielt_ref + 1] - 1;
 
     for (ipos_ref = pos_inf; ipos_ref < pos_sup; ipos_ref++) {
 
-      val_ref = this_champ_att->val[ipos_ref];
+      val_ref = this_table_att->val[ipos_ref];
 
       ipos_transf = 0;
       while (ipos_transf < pos_tab_transf[num_elt_transf]           &&
@@ -1555,25 +1555,25 @@ ecs_champ_att__fusionne(ecs_champ_t          *this_champ_att,
 
   } /* Fin : boucle sur les éléments de référence */
 
-  this_champ_att->nbr = nbr_elt_new;
+  this_table_att->nbr = nbr_elt_new;
 
-  ECS_REALLOC(this_champ_att->pos, nbr_elt_new + 1, ecs_size_t);
+  ECS_REALLOC(this_table_att->pos, nbr_elt_new + 1, ecs_size_t);
 
-  ECS_REALLOC(this_champ_att->val, nbr_val_transf, ecs_int_t);
+  ECS_REALLOC(this_table_att->val, nbr_val_transf, ecs_int_t);
 
-  this_champ_att->pos[0] = 1;
+  this_table_att->pos[0] = 1;
   cpt_val_transf = 0;
 
   for (ielt_transf = 0; ielt_transf < nbr_elt_new; ielt_transf++) {
 
-    this_champ_att->pos[ielt_transf + 1]
-      = this_champ_att->pos[ielt_transf] + pos_tab_transf[ielt_transf];
+    this_table_att->pos[ielt_transf + 1]
+      = this_table_att->pos[ielt_transf] + pos_tab_transf[ielt_transf];
 
     for (ipos_transf = 0;
          ipos_transf < pos_tab_transf[ielt_transf];
          ipos_transf++) {
 
-      this_champ_att->val[cpt_val_transf++]
+      this_table_att->val[cpt_val_transf++]
         = val_tab_transf[ielt_transf][ipos_transf];
     }
   }
@@ -1582,7 +1582,7 @@ ecs_champ_att__fusionne(ecs_champ_t          *this_champ_att,
   ECS_FREE(val_tab_transf);
   ECS_FREE(val_tab_unidim);
 
-  ecs_champ__pos_en_regle(this_champ_att);
+  ecs_table__pos_en_regle(this_table_att);
 }
 
 /*----------------------------------------------------------------------------
@@ -1593,7 +1593,7 @@ ecs_champ_att__fusionne(ecs_champ_t          *this_champ_att,
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
-ecs_champ_att__fam_elt(size_t          n_elts,
+ecs_table_att__fam_elt(size_t          n_elts,
                        int            *elt_fam,
                        ecs_tab_int_t  *tab_nbr_elt_fam)
 {
@@ -1635,12 +1635,12 @@ ecs_champ_att__fam_elt(size_t          n_elts,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui renvoie un tableau donnant pour chaque valeur du champ
+ *  Fonction qui renvoie un tableau donnant pour chaque valeur de la table
  *   le nombre d'éléments ayant cette valeur
  *----------------------------------------------------------------------------*/
 
 ecs_int_t *
-ecs_champ_att__ret_nbr_elt_fam(size_t        n_elts,
+ecs_table_att__ret_nbr_elt_fam(size_t        n_elts,
                                int          *elt_fam,
                                size_t        nbr_val_fam)
 {
@@ -1668,18 +1668,18 @@ ecs_champ_att__ret_nbr_elt_fam(size_t        n_elts,
 
 /*----------------------------------------------------------------------------
  *  Fonction qui construit les familles à partir
- *   de la liste chaînée de tous les champs de type "attribut"
+ *   de la liste chaînée de tous les tables de type "attribut"
  *   pour toutes des entités ; ces familles sont ajoutées à la liste
  *   chaînée fournie en argument ;
  *
- *  Elle remplace le champ attribut par un champ "famille" par entité
+ *  Elle remplace la table attribut par une table "famille" par entité
  *
  *  Elle détermine aussi :
  *   - le nombre de familles
  *----------------------------------------------------------------------------*/
 
 int *
-ecs_champ_att__construit_fam(ecs_champ_t     **champ_att,
+ecs_table_att__construit_fam(ecs_table_t     **table_att,
                              ecs_famille_t   **vect_fam_tete,
                              int               num_fam_deb,
                              int              *nbr_fam)
@@ -1696,30 +1696,30 @@ ecs_champ_att__construit_fam(ecs_champ_t     **champ_att,
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  if (champ_att == NULL)
+  if (table_att == NULL)
     return NULL;
 
-  if (*champ_att == NULL)
+  if (*table_att == NULL)
     return NULL;
 
-  n_elts = ecs_champ__ret_elt_nbr(*champ_att);
+  n_elts = ecs_table__ret_elt_nbr(*table_att);
 
-  /* Tri des valeurs du champ unifie */
-  /*---------------------------------*/
+  /* Tri des valeurs de la table unifiee */
+  /*-------------------------------------*/
 
-  _champ_att__trie_descr(*champ_att);
+  _table_att__trie_descr(*table_att);
 
-  ecs_champ__regle_en_pos(*champ_att);
+  ecs_table__regle_en_pos(*table_att);
 
-  tab_renum_elt = _champ_att__trie_val(champ_att);
+  tab_renum_elt = _table_att__trie_val(table_att);
 
   /* Tous les éléments ayant des listes de numéros de descripteurs d'attribut */
   /*  identiques appartiennent à la même famille                              */
   /*  (famille définie par la liste de descripteurs d'attribut)               */
 
-  tab_idem = _champ_att__compare_val_pos(*champ_att);
+  tab_idem = _table_att__compare_val_pos(*table_att);
 
-  elt_fam = _champ__attribue_fam(*champ_att,
+  elt_fam = _table__attribue_fam(*table_att,
                                  tab_idem,
                                  &def_fam_descr,
                                  &nbr_descr_fam,
@@ -1728,11 +1728,11 @@ ecs_champ_att__construit_fam(ecs_champ_t     **champ_att,
 
   ECS_FREE(tab_idem.val);
 
-  ecs_champ__pos_en_regle(*champ_att);
+  ecs_table__pos_en_regle(*table_att);
 
   /* Retour à la numérotation initiale des éléments pour les familles */
 
-  _ecs_champ__transforme_fam(n_elts,
+  _ecs_table__transforme_fam(n_elts,
                              elt_fam,
                              tab_renum_elt);
 
@@ -1749,9 +1749,9 @@ ecs_champ_att__construit_fam(ecs_champ_t     **champ_att,
                                             nbr_descr_fam,
                                             num_fam_deb,
                                             *nbr_fam,
-                                            (*champ_att)->descr);
+                                            (*table_att)->descr);
 
-  ecs_champ__detruit(champ_att);
+  ecs_table__detruit(table_att);
 
   for (ifam = 0; ifam < *nbr_fam; ifam++)
     ECS_FREE(def_fam_descr[ifam]);
@@ -1763,12 +1763,12 @@ ecs_champ_att__construit_fam(ecs_champ_t     **champ_att,
 
 
 /*----------------------------------------------------------------------------
- *  Fonction qui crée le champ "groupe" à partir
- *   du champ "famille" et de la liste chaînée des familles
+ *  Fonction qui crée la table "groupe" à partir
+ *   de la table "famille" et de la liste chaînée des familles
  *----------------------------------------------------------------------------*/
 
-ecs_champ_t *
-ecs_champ_att__cree_att_fam(size_t           n_elts,
+ecs_table_t *
+ecs_table_att__cree_att_fam(size_t           n_elts,
                             int             *elt_fam,
                             ecs_famille_t   *famille)
 {
@@ -1782,9 +1782,9 @@ ecs_champ_att__cree_att_fam(size_t           n_elts,
   ecs_tab_int_t   tab_fam;
   ecs_tab_int_t  *tab_groupe_fam;
 
-  ecs_champ_t    *champ_fam_groupe;
+  ecs_table_t    *table_fam_groupe;
 
-  ecs_champ_t    *champ_groupe = NULL;
+  ecs_table_t    *table_groupe = NULL;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -1792,10 +1792,10 @@ ecs_champ_att__cree_att_fam(size_t           n_elts,
     return NULL;
 
   /* Création de la liste des numéros de famille référencés */
-  /*  dans le champ "famille"                               */
+  /*  dans le table "famille"                               */
   /*--------------------------------------------------------*/
 
-  tab_fam = _champ_att__ret_reference(n_elts, elt_fam);
+  tab_fam = _table_att__ret_reference(n_elts, elt_fam);
 
   num_fam_max = 0;
   for (ifam = 0; ifam < tab_fam.nbr; ifam++) {
@@ -1810,7 +1810,7 @@ ecs_champ_att__cree_att_fam(size_t           n_elts,
     tab_groupe_fam [ifam].nbr = 0;
   }
 
-  /* Création d'une liste chaînée de descripteurs pour le champ "groupe" */
+  /* Création d'une liste chaînée de descripteurs pour le table "groupe" */
   /*---------------------------------------------------------------------*/
 
   ecs_famille_chaine__cree_descr(famille,
@@ -1828,23 +1828,23 @@ ecs_champ_att__cree_att_fam(size_t           n_elts,
 
   if (nbr_groupe != 0) {
 
-    /* Création du champ "groupe" */
-    /*----------------------------*/
+    /* Création da la table "groupe" */
+    /*-------------------------------*/
 
-    champ_fam_groupe  = _champ_att__transforme_bi_tab(tab_groupe_fam,
+    table_fam_groupe  = _table_att__transforme_bi_tab(tab_groupe_fam,
                                                       num_fam_max,
                                                       nbr_groupe);
-    ecs_champ__regle_en_pos(champ_fam_groupe);
+    ecs_table__regle_en_pos(table_fam_groupe);
 
-    champ_groupe = _champ_att__famille_en_groupe(n_elts,
+    table_groupe = _table_att__famille_en_groupe(n_elts,
                                                  elt_fam,
-                                                 champ_fam_groupe);
+                                                 table_fam_groupe);
 
-    ecs_champ__detruit(&champ_fam_groupe);
+    ecs_table__detruit(&table_fam_groupe);
 
-    champ_groupe->descr = descr_tete_groupe;
+    table_groupe->descr = descr_tete_groupe;
 
-    ecs_champ__pos_en_regle(champ_groupe);
+    ecs_table__pos_en_regle(table_groupe);
 
     for (ifam = 0; ifam < (size_t)num_fam_max; ifam++)
       if (tab_groupe_fam[ifam].val != NULL)
@@ -1852,13 +1852,13 @@ ecs_champ_att__cree_att_fam(size_t           n_elts,
   }
   else {
 
-    champ_groupe = NULL;
+    table_groupe = NULL;
 
   }
 
   ECS_FREE(tab_groupe_fam);
 
-  return champ_groupe;
+  return table_groupe;
 }
 
 /*----------------------------------------------------------------------------*/

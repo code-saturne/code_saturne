@@ -1,10 +1,10 @@
-#ifndef _ECS_CHAMP_POST_ENS_H_
-#define _ECS_CHAMP_POST_ENS_H_
+#ifndef _ECS_TABLE_POST_MED_H_
+#define _ECS_TABLE_POST_MED_H_
 
 /*============================================================================
  *  Prototypes des fonctions
- *   associées à la structure `ecs_champ_t' décrivant un champ
- *   et réalisant les sorties pour post-traitement EnSight
+ *   associées à la structure `ecs_table_t' décrivant une table
+ *   et réalisant les sorties au format MED
  *============================================================================*/
 
 /*
@@ -37,12 +37,13 @@
  *                                 Visibilité
  *============================================================================*/
 
+#include "cs_config.h"
+
+#if defined(HAVE_MED)
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C ou BFT
+ *  Fichiers `include' librairie standard C
  *----------------------------------------------------------------------------*/
-
-#include <ecs_file.h>
 
 
 /*----------------------------------------------------------------------------
@@ -57,6 +58,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_post.h"
+#include "ecs_med.h"
 
 
 /*----------------------------------------------------------------------------
@@ -70,12 +72,7 @@
  *  Fichiers `include' publics  du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
-
-
-/*============================================================================
- *                       Définition de macro
- *============================================================================*/
+#include "ecs_table.h"
 
 
 /*============================================================================
@@ -83,31 +80,61 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui écrit les connectivités des éléments
- *   selon leur type géometrique
- *
- *  Les éléments doivent avoir été triés suivant leur type géometrique
+ *  Fonction écrivant les familles
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_ens__ecr_part(const char            *nom_maillage,
-                             size_t                 n_vertices,
-                             const ecs_coord_t      vertex_coords[],
-                             ecs_champ_t           *champ_def,
-                             const ecs_tab_int_t   *tab_elt_typ_geo,
-                             ecs_post_ens_t        *cas_ens);
+ecs_table_post_med__ecr_famille(const char           *nom_maillage,
+                                const ecs_famille_t  *famille_elt,
+                                const ecs_famille_t  *famille_inf,
+                                ecs_med_t            *cas_med);
 
 /*----------------------------------------------------------------------------
- *  Fonction écrivant le champ à sortir au format Ensight
- *---------------------------------------------------------------------------*/
+ *  Fonction imprimant le contenu des tables asociees aux sommets
+ *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
+ecs_table_post_med__ecr_som(const char         *nom_maillage,
+                            size_t              n_vertices,
+                            ecs_coord_t         vertex_coords[],
+                            const ecs_med_t    *cas_med);
+
+/*----------------------------------------------------------------------------
+ *  Fonction qui écrit les connectivités des éléments
+ *   selon leur type géometrique
+ *
+ *  Les éléments doivent avoir ete triés suivant leur type géometrique
+ *----------------------------------------------------------------------------*/
+
+void
+ecs_table_post_med__ecr_elt(const char           *nom_maillage,
+                            ecs_table_t          *table_def,
+                            const int             elt_fam[],
+                            const ecs_tab_int_t  *tab_elt_typ_geo,
+                            const ecs_med_t      *cas_med);
+
+/*----------------------------------------------------------------------------
+ *  Fonction qui ajoute à une structure maillage_med les informations
+ *   sur le nombre d'éléments de chaque type d'un maillage
+ *----------------------------------------------------------------------------*/
+
+void
+ecs_table_post_med__cpt_elt_typ(const ecs_tab_int_t  *tab_elt_typ_geo,
+                                const char           *nom_maillage,
+                                ecs_med_t            *cas_med);
+
+/*----------------------------------------------------------------------------
+ *  Fonction qui écrit les valeurs par élément pour un tableau donné.
+ *----------------------------------------------------------------------------*/
+
+void
+ecs_table_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
                             const char           *nom_maillage,
-                            const char           *nom_champ,
-                            ecs_post_ens_t       *cas_ens);
+                            const char           *nom_table,
+                            const ecs_med_t      *cas_med);
+
+#endif /* HAVE_MED */
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* _ECS_CHAMP_POST_ENS_H_ */
-
+#endif /* _ECS_TABLE_POST_MED_H_ */

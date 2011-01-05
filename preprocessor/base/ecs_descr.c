@@ -1,13 +1,13 @@
 /*============================================================================
- *  Définitions des fonctions de base
- *   associées à la structure `ecs_descr_t' décrivant un descripteur de champ
+ * Definitions of base functions associated to the `ecs_descr_t' structure
+ * describing an array (ecs_table_t) descriptor.
  *============================================================================*/
 
 /*
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2010 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -28,70 +28,56 @@
   Boston, MA  02110-1301  USA
 */
 
-
-/*============================================================================
- *                                 Visibilité
- *============================================================================*/
-
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C
+ * Standard C library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <stdio.h>
-#include <string.h>  /* memcmp() */
-
-
-/*----------------------------------------------------------------------------
- *  Fichiers `include' système
- *----------------------------------------------------------------------------*/
-
+#include <string.h>
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' visibles du  paquetage global "Utilitaire"
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "ecs_def.h"
 #include "ecs_fic.h"
 #include "ecs_mem.h"
 
-
 /*----------------------------------------------------------------------------
- *  Fichiers `include' visibles des paquetages visibles
- *----------------------------------------------------------------------------*/
-
-
-/*----------------------------------------------------------------------------
- *  Fichiers `include' visibles du  paquetage courant
- *----------------------------------------------------------------------------*/
-
-
-/*----------------------------------------------------------------------------
- *  Fichier  `include' du  paquetage courant associé au fichier courant
+ *  Headers for the current file
  *----------------------------------------------------------------------------*/
 
 #include "ecs_descr.h"
-
-
-/*----------------------------------------------------------------------------
- *  Fichiers `include' privés   du  paquetage courant
- *----------------------------------------------------------------------------*/
-
 #include "ecs_descr_priv.h"
 
+/*----------------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+extern "C" {
+#if 0
+} /* Fake brace to force Emacs auto-indentation back to column 0 */
+#endif
+#endif /* __cplusplus */
 
 /*============================================================================
- *                              Fonctions privées
+ * Local function defintions
  *============================================================================*/
 
+/*=============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*=============================================================================
+ * Local type definitions
+ *============================================================================*/
 
 /*============================================================================
- *                             Fonctions publiques
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction de création d'une structure de descripteur de champ
+ *  Fonction de création d'une structure de descripteur de table
  *----------------------------------------------------------------------------*/
 
 ecs_descr_t *
@@ -100,7 +86,7 @@ ecs_descr__cree(int          ide,
 {
   ecs_descr_t * descr_loc;
 
-  /* Allocation de la structure globale du descripteur de champ */
+  /* Allocation de la structure globale du descripteur de table */
 
   ECS_MALLOC(descr_loc, 1, ecs_descr_t);
 
@@ -294,4 +280,8 @@ ecs_descr__ret_nom(const ecs_descr_t  *descr)
 }
 
 /*----------------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 

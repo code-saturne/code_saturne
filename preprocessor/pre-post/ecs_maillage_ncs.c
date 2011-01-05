@@ -59,9 +59,9 @@
  *  Fichiers `include' visibles des paquetages visibles
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ_att.h"
-#include "ecs_champ_def.h"
-#include "ecs_champ_comm.h"
+#include "ecs_table_att.h"
+#include "ecs_table_def.h"
+#include "ecs_table_comm.h"
 #include "ecs_famille_chaine.h"
 
 
@@ -279,7 +279,7 @@ _maillage_ncs__aff_nbr_ent(ecs_int_t  nbr_elt_cel,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui renvoie la liste des champs "famille"
+ *  Fonction qui renvoie la liste des tables "famille"
  *   pour toutes les entités de maillage
  *  et qui détermine :
  *  - le nombre   de familles à transférer au Noyau
@@ -385,7 +385,7 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
 
   if (maillage->elt_fam[ECS_ENTMAIL_CEL] != NULL && nbr_cel != 0) {
 
-    *tab_fam_cel = ecs_champ_att__fam_elt(nbr_cel,
+    *tab_fam_cel = ecs_table_att__fam_elt(nbr_cel,
                                           maillage->elt_fam[ECS_ENTMAIL_CEL],
                                           &tab_nbr_cel_fam);
 
@@ -417,7 +417,7 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
 
   if (maillage->elt_fam[ECS_ENTMAIL_FAC] != NULL) {
 
-    *tab_fam_fac = ecs_champ_att__fam_elt(nbr_fac,
+    *tab_fam_fac = ecs_table_att__fam_elt(nbr_fac,
                                           maillage->elt_fam[ECS_ENTMAIL_FAC],
                                           &tab_nbr_fac_fam);
 
@@ -502,8 +502,8 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
 
         /* Nombre d'éléments par entité et par famille */
         cpt_elt_ent_fam
-          = ecs_champ_att__ret_nbr_elt_fam
-              (ecs_champ__ret_elt_nbr(maillage->champ_def[ient]),
+          = ecs_table_att__ret_nbr_elt_fam
+              (ecs_table__ret_elt_nbr(maillage->table_def[ient]),
                maillage->elt_fam[ient],
                nbr_fam_tot);
 
@@ -742,15 +742,15 @@ ecs_maillage_ncs__ecr(const char      *output,
 
   assert(maillage != NULL);
   assert(maillage->vertex_coords != NULL);
-  assert(maillage->champ_def[ECS_ENTMAIL_FAC] != NULL);
-  assert(maillage->champ_def[ECS_ENTMAIL_CEL] != NULL);
+  assert(maillage->table_def[ECS_ENTMAIL_FAC] != NULL);
+  assert(maillage->table_def[ECS_ENTMAIL_CEL] != NULL);
 
-  n_cells = ecs_champ__ret_elt_nbr(maillage->champ_def[ECS_ENTMAIL_CEL]);
-  n_faces = ecs_champ__ret_elt_nbr(maillage->champ_def[ECS_ENTMAIL_FAC]);
+  n_cells = ecs_table__ret_elt_nbr(maillage->table_def[ECS_ENTMAIL_CEL]);
+  n_faces = ecs_table__ret_elt_nbr(maillage->table_def[ECS_ENTMAIL_FAC]);
   n_vertices = maillage->n_vertices;
 
   face_vertices_size
-    = ecs_champ__ret_val_nbr(maillage->champ_def[ECS_ENTMAIL_FAC]);
+    = ecs_table__ret_val_nbr(maillage->table_def[ECS_ENTMAIL_FAC]);
 
   /*--------------------------------------------------*/
   /* Détermination :                                  */
@@ -761,8 +761,8 @@ ecs_maillage_ncs__ecr(const char      *output,
   /*--------------------------------------------------*/
 
   typ_fac_cel
-    = ecs_champ_def__typ_fac_cel(maillage->champ_def[ECS_ENTMAIL_CEL],
-                                 maillage->champ_def[ECS_ENTMAIL_FAC]);
+    = ecs_table_def__typ_fac_cel(maillage->table_def[ECS_ENTMAIL_CEL],
+                                 maillage->table_def[ECS_ENTMAIL_FAC]);
 
   _maillage_ncs__liste_fac_bord(&typ_fac_cel,
                                 &liste_fac_de_bord);
@@ -975,8 +975,8 @@ ecs_maillage_ncs__ecr(const char      *output,
   /* Écriture de la connectivité faces -> cellules voisines */
 
   connect_fac_cel
-    = ecs_champ_def__fac_cel(maillage->champ_def[ECS_ENTMAIL_CEL],
-                             maillage->champ_def[ECS_ENTMAIL_FAC]);
+    = ecs_table_def__fac_cel(maillage->table_def[ECS_ENTMAIL_CEL],
+                             maillage->table_def[ECS_ENTMAIL_FAC]);
 
   ecs_comm_write_section("face_cells",
                          n_faces * 2,
@@ -1008,14 +1008,14 @@ ecs_maillage_ncs__ecr(const char      *output,
 
   /* Écriture des positions des sommets des faces */
 
-  ecs_champ_comm__ecr_pos(maillage->champ_def[ECS_ENTMAIL_FAC],
+  ecs_table_comm__ecr_pos(maillage->table_def[ECS_ENTMAIL_FAC],
                           "face_vertices_index",
                           2, 1,
                           comm);
 
   /* Écriture de la connectivité "faces -> sommets" */
 
-  ecs_champ_comm__ecr(maillage->champ_def[ECS_ENTMAIL_FAC],
+  ecs_table_comm__ecr(maillage->table_def[ECS_ENTMAIL_FAC],
                       "face_vertices",
                       2, 1, 1,
                       comm);

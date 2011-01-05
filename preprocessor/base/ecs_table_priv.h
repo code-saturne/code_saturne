@@ -2,7 +2,7 @@
 #define _ECS_CHAMP_PRIV_H_
 
 /*============================================================================
- *  Définition privée de la structure `_ecs_champ_t' décrivant un champ
+ *  Définition privée de la structure `_ecs_table_t' décrivant une table
  *============================================================================*/
 
 /*
@@ -52,7 +52,7 @@
  *  Fichiers `include' publics  du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 
 /*============================================================================
@@ -64,19 +64,19 @@
  *                       Définition des structures
  *============================================================================*/
 
-struct _ecs_champ_t {
+struct _ecs_table_t {
 
   size_t                nbr;           /* Nombre d'éléments associés */
 
   size_t                pas;           /* Pas des positions si elles
                                           forment une REGLE (0 sinon) */
-  ecs_size_t           *pos;           /* Positions des valeurs du champ
+  ecs_size_t           *pos;           /* Positions des valeurs du table
                                           (NULL si elles forment une REGLE) */
 
-  ecs_int_t            *val;           /* Valeurs du champ */
+  ecs_int_t            *val;           /* Valeurs du table */
 
   ecs_descr_t          *descr;         /* Tête de la liste chaînée des
-                                          descripteurs de champ "attribut" */
+                                          descripteurs de table "attribut" */
 };
 
 /*============================================================================
@@ -106,4 +106,4 @@ struct _ecs_champ_t {
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* _ECS_CHAMP_PRIV_H_ */
+#endif /* _ECS_TABLE_PRIV_H_ */

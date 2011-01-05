@@ -78,9 +78,9 @@
  *----------------------------------------------------------------------------*/
 
 static char *
-ecs_loc_post_ens__ajout_var(ecs_post_ens_t  *cas_ens,
-                            const char      *nom_champ,
-                            ecs_int_t       *num_sor_prec)
+ecs_loc_post_ens__ajout_table(ecs_post_ens_t  *cas_ens,
+                              const char      *nom_table,
+                              ecs_int_t       *num_sor_prec)
 {
   size_t      ind;
   char       *nom_var;
@@ -111,11 +111,11 @@ ecs_loc_post_ens__ajout_var(ecs_post_ens_t  *cas_ens,
 
   lng_nom_var /= 2; /* Division entière */
 
-  lng_nom_var = ECS_MIN(lng_nom_var, strlen(nom_champ));
+  lng_nom_var = ECS_MIN(lng_nom_var, strlen(nom_table));
 
   ECS_MALLOC(nom_var, lng_nom_var + 1, char);
 
-  sprintf(nom_var, "%*.*s", (int)lng_nom_var, (int)lng_nom_var, nom_champ);
+  sprintf(nom_var, "%*.*s", (int)lng_nom_var, (int)lng_nom_var, nom_table);
 
   for (ind = 0; ind < lng_nom_var; ind++) {
     if (nom_var[ind] == '-')
@@ -597,7 +597,7 @@ ecs_post_ens__ecrit_fic_geo(ecs_post_ens_t  *cas_ens)
 
 ecs_file_t  *
 ecs_post_ens__ecrit_fic_var(ecs_post_ens_t  *cas_ens,
-                            const char      *nom_champ)
+                            const char      *nom_table)
 {
   ecs_file_t       * fic_var;
   ecs_file_mode_t    mode_ouverture;
@@ -612,9 +612,9 @@ ecs_post_ens__ecrit_fic_var(ecs_post_ens_t  *cas_ens,
   /* Construction du nom de la variable à partir du nom du champ */
   /*-------------------------------------------------------------*/
 
-  nom_var = ecs_loc_post_ens__ajout_var(cas_ens,
-                                        nom_champ,
-                                        &num_sor_prec);
+  nom_var = ecs_loc_post_ens__ajout_table(cas_ens,
+                                          nom_table,
+                                          &num_sor_prec);
 
   /* Création du descripteur du fichier contenant la variable */
   /*----------------------------------------------------------*/

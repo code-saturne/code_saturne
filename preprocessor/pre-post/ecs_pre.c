@@ -59,8 +59,6 @@
 #include "ecs_descr.h"
 #include "ecs_descr_chaine.h"
 
-#include "ecs_champ.h"
-
 
 #ifdef HAVE_CGNS
 #include "ecs_pre_cgns.h"

@@ -1,10 +1,10 @@
-#ifndef _ECS_CHAMP_POST_MED_H_
-#define _ECS_CHAMP_POST_MED_H_
+#ifndef _ECS_TABLE_POST_H_
+#define _ECS_TABLE_POST_H_
 
 /*============================================================================
  *  Prototypes des fonctions
- *   associées à la structure `ecs_champ_t' décrivant un champ
- *   et réalisant les sorties au format MED
+ *   associées à la structure `ecs_table_t' décrivant une table
+ *   et réalisant les sorties pour post-traitement
  *============================================================================*/
 
 /*
@@ -39,7 +39,6 @@
 
 #include "cs_config.h"
 
-#if defined(HAVE_MED)
 
 /*----------------------------------------------------------------------------
  *  Fichiers `include' librairie standard C
@@ -50,15 +49,19 @@
  *  Fichiers `include' publics  du  paquetage global "Utilitaire"
  *----------------------------------------------------------------------------*/
 
-#include "ecs_tab_glob.h"
+#include "ecs_tab.h"
 
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' visibles du  paquetage global "Post-Traitement"
+ *  Fichiers `include' publics  du  paquetage global "Post-Traitement"
  *----------------------------------------------------------------------------*/
 
 #include "ecs_post.h"
+#include "ecs_post_ens.h"
+
+#if defined(HAVE_MED)
 #include "ecs_med.h"
+#endif
 
 
 /*----------------------------------------------------------------------------
@@ -72,7 +75,7 @@
  *  Fichiers `include' publics  du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 
 
 /*============================================================================
@@ -80,61 +83,35 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction écrivant les familles
- *----------------------------------------------------------------------------*/
-
-void
-ecs_champ_post_med__ecr_famille(const char           *nom_maillage,
-                                const ecs_famille_t  *famille_elt,
-                                const ecs_famille_t  *famille_inf,
-                                ecs_med_t            *cas_med);
-
-/*----------------------------------------------------------------------------
- *  Fonction imprimant le contenu des champs asociees aux sommets
- *----------------------------------------------------------------------------*/
-
-void
-ecs_champ_post_med__ecr_som(const char         *nom_maillage,
-                            size_t              n_vertices,
-                            ecs_coord_t         vertex_coords[],
-                            const ecs_med_t    *cas_med);
-
-/*----------------------------------------------------------------------------
- *  Fonction qui écrit les connectivités des éléments
- *   selon leur type géometrique
+ *  Fonction ecrivant les elements d'une table donne pour le post traitement
  *
- *  Les éléments doivent avoir ete triés suivant leur type géometrique
+ *  Les elements doivent avoir ete tries suivant leur type geometrique
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_med__ecr_elt(const char           *nom_maillage,
-                            ecs_champ_t          *champ_def,
-                            const int             elt_fam[],
-                            const ecs_tab_int_t  *tab_elt_typ_geo,
-                            const ecs_med_t      *cas_med);
+ecs_table_post__ecr_elt(const char            *nom_maillage,
+                        int                    dim_entite_max,
+                        size_t                 n_vertices,
+                        ecs_coord_t            vertex_coords[],
+                        ecs_table_t           *table_def,
+                        const int              elt_fam[],
+                        ecs_table_t           *table_def_inf,
+                        const int              elt_fam_inf[],
+                        const ecs_famille_t   *famille_elt,
+                        const ecs_famille_t   *famille_inf,
+                        ecs_post_type_t        type_post,
+                        ecs_post_t            *cas_post);
 
 /*----------------------------------------------------------------------------
- *  Fonction qui ajoute à une structure maillage_med les informations
- *   sur le nombre d'éléments de chaque type d'un maillage
- *----------------------------------------------------------------------------*/
+ *  Fonction ecrivant les valeurs d'une table donnée pour le post traitement
+ *---------------------------------------------------------------------------*/
 
 void
-ecs_champ_post_med__cpt_elt_typ(const ecs_tab_int_t  *tab_elt_typ_geo,
-                                const char           *nom_maillage,
-                                ecs_med_t            *cas_med);
-
-/*----------------------------------------------------------------------------
- *  Fonction qui écrit les valeurs par élément pour un tableau donné.
- *----------------------------------------------------------------------------*/
-
-void
-ecs_champ_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
-                            const char           *nom_maillage,
-                            const char           *nom_champ,
-                            const ecs_med_t      *cas_med);
-
-#endif /* HAVE_MED */
+ecs_table_post__ecr_val(const ecs_tab_int_t  *tab_val,
+                        const char           *nom_maillage,
+                        const char           *nom_table,
+                        ecs_post_t           *cas_post);
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* _ECS_CHAMP_POST_MED_H_ */
+#endif /* _ECS_TABLE_POST_H_ */

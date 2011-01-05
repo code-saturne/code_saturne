@@ -478,10 +478,3 @@ BONNES PRATIQUES (POUR MEMOIRE)
   by similar mpi_io_num functions so as to allow for
   subcommunicators.
 
-
-=========
- Prepro
-=========
-- Renommer les champs en tables (delicat).
-  --> Rendrait le vocabulaire plus coherent avec les usages.
-

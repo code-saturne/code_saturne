@@ -52,7 +52,7 @@
  *  Fichiers `include' publics  des paquetages visibles
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
 #include "ecs_famille.h"
 
 
@@ -86,8 +86,8 @@ struct _ecs_maillage_t {
   size_t            n_vertices;             /* Number of vertices */
   ecs_coord_t      *vertex_coords;          /* Vertex coordinates */
 
-  ecs_champ_t      *champ_def[2];           /* Face and cell connectivity */
-  ecs_champ_t      *champ_att[2];           /* Face and cell attributes */
+  ecs_table_t      *table_def[2];           /* Face and cell connectivity */
+  ecs_table_t      *table_att[2];           /* Face and cell attributes */
 
   int              *elt_fam[2];             /* Face and cell families
                                                (size: n_faces/n_cells) */

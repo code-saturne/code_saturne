@@ -1,4 +1,52 @@
 * 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Renamed preprocessor field to table for consistency with usual definitions.
+  renamed files:
+    preprocessor/base/ecs_champ_att.c -> ecs_table_att.c
+    preprocessor/base/ecs_champ_att.h -> ecs_table_att.h
+    preprocessor/base/ecs_champ.c -> ecs_table.c
+    preprocessor/base/ecs_champ_def.c -> ecs_table_def.c
+    preprocessor/base/ecs_champ_def.h -> ecs_table_def.h
+    preprocessor/base/ecs_champ.h -> ecs_table.h
+    preprocessor/base/ecs_champ_priv.h -> ecs_table_priv.h
+    preprocessor/pre-post/ecs_champ_comm.c -> ecs_table_comm.c
+    preprocessor/pre-post/ecs_champ_comm.h -> ecs_table_comm.h
+    preprocessor/pre-post/ecs_champ_post.c -> ecs_table_post.c
+    preprocessor/pre-post/ecs_champ_post_cgns.c -> ecs_table_post_cgns.c
+    preprocessor/pre-post/ecs_champ_post_cgns.h -> ecs_table_post_cgns.h
+    preprocessor/pre-post/ecs_champ_post_ens.c -> ecs_table_post_ens.c
+    preprocessor/pre-post/ecs_champ_post_ens.h -> ecs_table_post_ens.h
+    preprocessor/pre-post/ecs_champ_post.h -> ecs_table_post.h
+    preprocessor/pre-post/ecs_champ_post_med.c -> ecs_table_post_med.c
+    preprocessor/pre-post/ecs_champ_post_med.h -> ecs_table_post_med.h
+  modified files:
+    TODO
+    preprocessor/base/ecs_descr.c
+    preprocessor/base/ecs_descr_chaine.c
+    preprocessor/base/ecs_descr_chaine.h
+    preprocessor/base/ecs_descr.h
+    preprocessor/base/ecs_famille.c
+    preprocessor/base/ecs_famille_chaine.c
+    preprocessor/base/ecs_famille_chaine.h
+    preprocessor/base/ecs_maillage.c
+    preprocessor/base/ecs_maillage.h
+    preprocessor/base/ecs_maillage_priv.h
+    preprocessor/base/Makefile.am
+    preprocessor/pre-post/ecs_maillage_ncs.c
+    preprocessor/pre-post/ecs_maillage_post.c
+    preprocessor/pre-post/ecs_maillage_pre.c
+    preprocessor/pre-post/ecs_post_ens.c
+    preprocessor/pre-post/ecs_post_ens.h
+    preprocessor/pre-post/ecs_pre.c
+    preprocessor/pre-post/ecs_pre_ccm.c
+    preprocessor/pre-post/ecs_pre_cgns.c
+    preprocessor/pre-post/ecs_pre_gambit.c
+    preprocessor/pre-post/ecs_pre_gmsh.c
+    preprocessor/pre-post/ecs_pre_ideas.c
+    preprocessor/pre-post/ecs_pre_med.c
+    preprocessor/pre-post/ecs_pre_nopo.c
+    preprocessor/pre-post/Makefile.am
+
+* 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Simplification of test and workaround for gcc 4.5.1 optimizing bug.
   modified files:
     src/bft/bft_mem_usage.c

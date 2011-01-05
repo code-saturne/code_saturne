@@ -176,7 +176,7 @@ ecs_famille__imprime(const ecs_famille_t  *this_fam,
   ecs_fic__imprime_val(fic_imp, imp_col, ECS_FCT_IMP_FAMILLE_DESCR,
                        ECS_TYPE_void, this_fam->descr);
 
-  /* Appel à la fonction d'impression d'une chaine de descripteurs de champ */
+  /* Appel à la fonction d'impression d'une chaine de descripteurs */
 
   ecs_descr_chaine__imprime(this_fam->descr,
                             imp_col + 1,

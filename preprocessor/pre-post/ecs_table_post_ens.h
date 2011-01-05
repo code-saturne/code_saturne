@@ -1,10 +1,10 @@
-#ifndef _ECS_CHAMP_POST_H_
-#define _ECS_CHAMP_POST_H_
+#ifndef _ECS_CHAMP_POST_ENS_H_
+#define _ECS_CHAMP_POST_ENS_H_
 
 /*============================================================================
  *  Prototypes des fonctions
  *   associées à la structure `ecs_champ_t' décrivant un champ
- *   et réalisant les sorties pour post-traitement
+ *   et réalisant les sorties pour post-traitement EnSight
  *============================================================================*/
 
 /*
@@ -37,31 +37,26 @@
  *                                 Visibilité
  *============================================================================*/
 
-#include "cs_config.h"
-
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C
+ *  Fichiers `include' librairie standard C ou BFT
  *----------------------------------------------------------------------------*/
+
+#include <ecs_file.h>
 
 
 /*----------------------------------------------------------------------------
  *  Fichiers `include' publics  du  paquetage global "Utilitaire"
  *----------------------------------------------------------------------------*/
 
-#include "ecs_tab.h"
+#include "ecs_tab_glob.h"
 
 
 /*----------------------------------------------------------------------------
- *  Fichiers `include' publics  du  paquetage global "Post-Traitement"
+ *  Fichiers `include' visibles du  paquetage global "Post-Traitement"
  *----------------------------------------------------------------------------*/
 
 #include "ecs_post.h"
-#include "ecs_post_ens.h"
-
-#if defined(HAVE_MED)
-#include "ecs_med.h"
-#endif
 
 
 /*----------------------------------------------------------------------------
@@ -75,7 +70,12 @@
  *  Fichiers `include' publics  du  paquetage courant
  *----------------------------------------------------------------------------*/
 
-#include "ecs_champ.h"
+#include "ecs_table.h"
+
+
+/*============================================================================
+ *                       Définition de macro
+ *============================================================================*/
 
 
 /*============================================================================
@@ -83,35 +83,31 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction ecrivant les elements d'un champ donne pour le post traitement
+ *  Fonction qui écrit les connectivités des éléments
+ *   selon leur type géometrique
  *
- *  Les elements doivent avoir ete tries suivant leur type geometrique
+ *  Les éléments doivent avoir été triés suivant leur type géometrique
  *----------------------------------------------------------------------------*/
 
 void
-ecs_champ_post__ecr_elt(const char            *nom_maillage,
-                        int                    dim_entite_max,
-                        size_t                 n_vertices,
-                        ecs_coord_t            vertex_coords[],
-                        ecs_champ_t           *champ_def,
-                        const int              elt_fam[],
-                        ecs_champ_t           *champ_def_inf,
-                        const int              elt_fam_inf[],
-                        const ecs_famille_t   *famille_elt,
-                        const ecs_famille_t   *famille_inf,
-                        ecs_post_type_t        type_post,
-                        ecs_post_t            *cas_post);
+ecs_table_post_ens__ecr_part(const char            *nom_maillage,
+                             size_t                 n_vertices,
+                             const ecs_coord_t      vertex_coords[],
+                             ecs_table_t           *table_def,
+                             const ecs_tab_int_t   *tab_elt_typ_geo,
+                             ecs_post_ens_t        *cas_ens);
 
 /*----------------------------------------------------------------------------
- *  Fonction ecrivant les valeurs d'un champ donne pour le post traitement
+ *  Fonction écrivant la table à sortir au format Ensight
  *---------------------------------------------------------------------------*/
 
 void
-ecs_champ_post__ecr_val(const ecs_tab_int_t  *tab_val,
-                        const char           *nom_maillage,
-                        const char           *nom_champ,
-                        ecs_post_t           *cas_post);
+ecs_table_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
+                            const char           *nom_maillage,
+                            const char           *nom_table,
+                            ecs_post_ens_t       *cas_ens);
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* _ECS_CHAMP_POST_H_ */
+#endif /* _ECS_TABLE_POST_ENS_H_ */
+
