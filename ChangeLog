@@ -1,4 +1,9 @@
 * 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update path in bootstrap script.
+  modified script:
+    sbin/bootstrap
+
+* 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix logging of file open time for files opened multiple times.
   modified files:
     src/base/cs_io.c

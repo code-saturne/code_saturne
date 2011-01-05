@@ -7,12 +7,12 @@ fi
 
 # To add gettext support, use :
 # gettextize -f -c --no-changelog --intl
-# rm -f config/gettext.m4
+# rm -f m4/gettext.m4
 
 # To use an external gettext version, do not use --intl
 # To use a link instead of copy, do not use -c
 
-if [ ! -f config/gettext.m4 ]; then
+if [ ! -f m4/gettext.m4 ]; then
   echo "running gettextize"
   \rm -rf configure.ac~ Makefile.am~
   sed -e "s/read dummy/# read dummy/" `which gettextize` > ./tmp_gettextize
