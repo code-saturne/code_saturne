@@ -34,6 +34,26 @@ has evolved over the years, but unless you are ready to update a whole
 file to a more current style (in which case the other guidelines should be
 followed), try to remain consistent with the style in the current file.
 
+\subsection{General rules}
+
+The following general rules are strongly recommended:
+
+\begin{itemize}
+\item Except for files in which they have a special meaning (such as
+      Makefiles), use spaces, not tabs. \emph{Absolutely} avoid this in
+      Python code \footnote{Keeping to Python's humoristic example style,
+      anybody doing this should learn ``how not to be seen''}. Most importantly,
+      use a decent text editor that does not randomly mix spaces and tabs.
+      \CS has a \texttt{sbin/rmb} script which removes trailing
+      white-space and replaces tabs with spaces, but this may appear to damage
+      indentation when it was defined with an odd mix of spaces and tabs.
+\item 80 characters maximum line length; split lines longer than this
+      to ensure readability on small screens, or when viewing code side-by-side
+      on wider screens. This rule is less important for \LaTeX documentation
+      sources (one could argue that using one line per paragraph and relying
+      on line wrapping would actually make revision merging simpler). 
+\end{itemize}
+
 \subsection{C coding style}
 
 \subsubsection{Punctuation}
@@ -58,14 +78,7 @@ followed:
 The following presentation rules are strongly recommended:
 \begin{itemize}
 \item indentation step: 2 characters (4 characters in \texttt{cs\_gui\_*}
-      files). When saving files, use spaces, not tabs. Most importantly,
-      use a decent text editor that does not randomly mix spaces and
-      tabs. \CS has a \texttt{sbin/rmb} script which removes trailing
-      white-space and replaces tabs with spaces, but this may appear to damage
-      indentation when it was defined with an odd mix of spaces and tabs.
-\item 80 characters maximum line length; split lines longer than this
-      to ensure readability on small screens, or when viewing code side-by-side
-      on wider screens.
+      files).
 \item always use lowercase characters for instructions and identifiers,
       except for enumerations and macros which should be in uppercase.
 \end{itemize}
@@ -336,5 +349,72 @@ than the number of output columns it uses. In the preprocessor, the
 and padding it with the correct number of white spaces so as to meet
 a given format width. No such function is used or currently needed in the
 main code, though it could be added if needed.
+
+\subsection{Fortran coding style}
+
+\subsubsection{Conventions inherited from Fortran 77}
+
+The following coding conventions were applied when the code used
+Fortran 77, prior to conversion to Fortran 95. Some of them should be
+updated, as long as we maintain consistency within a given
+file.
+
+\begin{itemize}
+
+\item one routine per file (except if all routines except the first
+      are ``private''). This rule has a few exceptions, such as the
+      \texttt{usini1.f90} user file which contains several subroutines
+      (it initially followed the rule, but subroutines were split,
+      while the file was not), and Fortran wrappers for several C
+      functions defined in a single C file are also usually defined
+      in a single source, as they are a consistent whole.
+ 
+\item exactly 6 characters per routine name, with no underscores.
+      As Fortran 95 allows longer identifiers, the 6 character limit is
+      obsolete, buy avoiding \texttt{\_} characters is still recommendend,
+      as most compilers add an underscore character to the routine name,
+      and often add a second underscore if no special options are given,
+      while the C \texttt{CS\_PROCF} macro does not handle this situation,
+      possibly leading to link issues.
+
+\item at least 2 characters per variable names 
+      (banish variables \texttt{i}, \texttt{j}, or \texttt{k},
+       preferring \texttt{ii}, \texttt{jj}, or \texttt{kk}).
+
+\item avoid commented example lines in user subroutines; otherwise,
+      the code is never compiled and thus probably incorrect.
+      Using a \texttt{if (iuse) ... endif} construct with
+      \texttt{iuse = 0} instead is recommended.
+
+\item assign integer variable names starting with i, j, k, l, m, and n. 
+
+\item use \texttt{do}~/~\texttt{enddo} constructs instead of
+      for where \texttt{do}~/~\texttt{continue}.
+
+\item avoid \texttt{goto} constructs for where \texttt{select}~/~\texttt{case}
+      would be more appropriate.
+
+\item avoid using ``pointer'' of ``pointer'' of ``pointer'' indices
+      in loops. Compute the pointer integer first (for example,
+      \texttt{ivar = ipr(iphas)}. This makes things more readable and
+      may help the compiler optimize the loop, leading to faster
+      code.
+
+\item avoid print statements using \texttt{write(format, *)},
+      or \texttt{print} constructs, or use \texttt{\#ifdef debug}
+      around debugging code using them, to ensure that output is redirected
+      correctly in parallel mode.
+
+\item use \texttt{d} and not \texttt{e} to define double-precision
+      floating-point constant definitions. Especially avoid
+      constants with exponents such as \texttt{e50}, which are impossible
+      in single precision (the limit is \texttt{e38}), and may thus not
+      be accepted by ``strict'' compilers, or worst, lead to run-time
+      exceptions.
+
+\item avoid \texttt{a = 3.d0*b}, preferring \texttt{three = 3.d0} followed
+      by \texttt{a = three * b}.  
+
+\end{itemize}
 
 

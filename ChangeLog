@@ -1,4 +1,10 @@
 * 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add Fortran coding standards.
+  modified files:
+    TODO
+    doc/developper/coding_standards.tex
+
+* 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve integration with resource managers.
   modified script:
     bin/cs_exec_environment.py

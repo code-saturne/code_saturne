@@ -411,54 +411,6 @@ REMARQUES POUR MEMOIRE
 * Attention au thetav dans le bilsc2 pour les estim
 
 
-
-=======================================================================
-=======================================================================
-BONNES PRATIQUES (POUR MEMOIRE)
-=======================================================================
-=======================================================================
-
-* Une routine par fichier (sauf eventuellement si elles 
- 			sont toutes "privees", sauf la premiere), 
-  6 lettre par nom de routine exactement 
-  6 lettres au plus et 2 lettres au moins par nom de variable 
- 			(bannir les variables I, N, J ou K )
-
-* Ne pas mettre de tabs dans les fortrans ou C, et encore moins en
-  en Python (penser au script sbin/rmb, et utilisez un éditeur digne
-  de ce nom afin de ne pas mélanger automatiquement tabulations et
-  espaces). 
-
-* Eviter les lignes de fortran commentees dans les us* : 
- 		sinon jamais compile donc forcement faux
-
-* Continuation character : & et pas de + (on utilise un caractere 
- 		qui ne veut rien dire en fortran afin de ne pas le confondre)
-
-* Donner aux entiers des noms commencant par I, J, K, L, M, N 
-
-* Eviter les goto a la mode case 
-  Mettre des do enddo et pas de do continue 
-  Virer les do while si possible (mettre un goto si necessaire) 
-
-* Eviter l'acces a des pointeurs de pointeurs de pointeur dans les boucles 
- 	mettre un entier avant, c'est plus lisible et ca va probablement
-        plus vite. 
-
-* Encadrer les write et print sauvages par ifdef debug 
- 		(ex de cpcym1 : le test doit il etre conserve ?) 
- 		Attention : verifier que ce qui est dans les tests 
- 		ne sert pas ailleurs 
-
-
-* Mettre des reels en D et pas en E 
-  Pas de E50 (ca n'existe pas sur IRIX : out of range) 
-
-* Eviter a = 3.d0*b 
-  preferer si possible double precision trois
-                       trois = 3.d0
-                       a = trois * b  
-
 ======
  FVM
 ======
