@@ -1,3 +1,8 @@
+* 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve integration with resource managers.
+  modified script:
+    bin/cs_exec_environment.py
+
 * 05/01/2011 - David Monfort <david.monfort@edf.fr>
   Move the XML reader source files for the graphical interface in their own
   directory.

@@ -123,6 +123,24 @@ def get_command_output(cmd):
 
 #-------------------------------------------------------------------------------
 
+def get_command_outputs(cmd):
+    """
+    Run a command and return it's standard and error outputs.
+    """
+    if have_subprocess == True:
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+        return p.communicate()[0]
+
+    else:
+        p = popen2.Popen4(cmd)
+        returncode = p.wait()
+        return p.fromchild.read()
+
+#-------------------------------------------------------------------------------
+
 class batch_info:
 
     #---------------------------------------------------------------------------
@@ -163,7 +181,7 @@ class batch_info:
                 self.batch_type = 'LOADL'
 
         if self.batch_type == None:
-            s = os.getenv('SGE_TASKID') # Sun Grid Engine
+            s = os.getenv('SGE_TASK_ID') # Sun Grid Engine
             if s != None:
                 self.batch_type = 'SGE'
                 self.job_name = os.getenv('JOB_NAME')
@@ -212,7 +230,12 @@ class resource_info(batch_info):
         self.hosts_file = None
         self.hosts_list = None
 
-        # Check for resource manager and eventual hostsfile
+        # Check for resource manager
+
+        # Test for SLURM (Simple Linux Utility for Resource Management).
+        # We assume that SLURM_NPROCS is available across SLURM
+        # versions. Note that we could also use SLURM_CPUS_PER_TASK
+        # to determine Open MP behavior when that is ready.
 
         s = os.getenv('SLURM_NPROCS')
         if s != None:
@@ -221,35 +244,47 @@ class resource_info(batch_info):
             s = os.getenv('SLURM_NNODES')
             if s != None:
                 self.n_nodes = int(s)
+                s = os.getenv('SLURM_TASKS_PER_NODE')
+                if s != None:
+                    self.n_procs = self.n_nodes * int(s)
+
+        # Test for Platform LSF.
 
         if self.manager == None and self.batch_type == 'LSF':
             self.manager = 'LSF'
+            self.n_procs = 0
+            self.n_nodes = 0
             s = os.getenv('LSB_MCPU_HOSTS')
             if s != None:
                 mcpu_list = s.split(' ')
-                self.hosts_list = []
-                for i in range(len(mcpu_list)/2):
-                    host = mcpu_list[i*2]
-                    count = int(mcpu_list[i*2 + 1])
-                    for j in range(count):
-                        self.hosts_list.append(host)
+                self.n_nodes = len(mcpu_list)/2
+                for i in range(self.n_nodes):
+                    self.n_procs += int(mcpu_list[i*2 + 1])
             else:
                 s = os.getenv('LSB_HOSTS')
                 if s != None:
-                    self.hosts_list = s.split(' ')
+                    hl = s.split(' ')
+                    self.n_procs = len(hl)
+                    self.n_nodes = 1
+                    for i in range(self.n_nodes - 1):
+                        if hl[i] != hl[i+1]:
+                            self.n_nodes += 1
+
+        # Test for IBM LoadLeveler.
 
         if self.manager == None and self.batch_type == 'LOADL':
             s = os.getenv('LOADL_PROCESSOR_LIST')
             self.manager = 'LOADL'
-            if s != None:
-                self.hosts_list = s.split(' ')
+
+        # Test for TORQUE or PBS Pro.
 
         if self.manager == None and self.batch_type == 'PBS':
             s = os.getenv('PBS_NODEFILE')
             if s != None:
                 self.manager = 'PBS'
                 self.n_procs_from_hosts_file(s)
-                self.hosts_file = '$PBS_NODEFILE'
+
+        # Test for Oracle Grid Engine.
 
         if self.manager == None and self.batch_type == 'SGE':
             s = os.getenv('NSLOTS')
@@ -265,6 +300,12 @@ class resource_info(batch_info):
                     s.manager = 'SGE'
                     self.n_procs_from_hosts_file(s)
                     self.hosts_file = '$TMPDIR/machines'
+            else:
+                s = os.getenv('PE_HOSTFILE')
+                if s != None:
+                    self.hosts_file = s
+
+        self.hosts_list = self.get_hosts_list()
 
         # Set an optional list of hosts if we are not running under
         # a resource manager.
@@ -276,7 +317,7 @@ class resource_info(batch_info):
                                  + ' resource manager (' + self.manager
                                  + ') is in use.\n\n')
             else:
-                self.resources.hosts_list = hosts_list
+                self.hosts_list = hosts_list
 
         # Determine number of processors from hosts file or list
 
@@ -315,6 +356,53 @@ class resource_info(batch_info):
         for line in f:
             self.n_procs += 1
         f.close()
+
+    #---------------------------------------------------------------------------
+
+    def get_hosts_list(self):
+
+        """
+        Get execution resources information.
+        """
+
+        hosts_list = None
+
+        # Check for resource manager and eventual hostsfile
+
+        if self.manager == 'SLURM':
+            hosts_list = []
+            s = os.getenv('SLURM_NODELIST')
+            if s != None:
+                node_list = s.split(' ')
+                tasks_per_node = 1
+                t = os.getenv('SLURM_TASKS_PER_NODE')
+                if t != None:
+                    tasks_per_node = int(t)
+                for i in range(len(node_list)):
+                    host = node_list[i]
+                    for j in range(tasks_per_node):
+                        hosts_list.append(host)
+
+        elif self.manager == 'LSF':
+            s = os.getenv('LSB_MCPU_HOSTS')
+            if s != None:
+                mcpu_list = s.split(' ')
+                hosts_list = []
+                for i in range(len(mcpu_list)/2):
+                    host = mcpu_list[i*2]
+                    count = int(mcpu_list[i*2 + 1])
+                    for j in range(count):
+                        hosts_list.append(host)
+            else:
+                s = os.getenv('LSB_HOSTS')
+                if s != None:
+                    hosts_list = s.split(' ')
+
+        elif self.manager == 'LOADL':
+            hosts_list = []
+            s = os.getenv('LOADL_PROCESSOR_LIST')
+            if s != None:
+                hosts_list = s.split(' ')
 
     #---------------------------------------------------------------------------
 
@@ -453,21 +541,39 @@ class mpi_environment:
         # is a Python script, while other MPICH2 mpiexec's are binary.
         # We could have a false positive if another wrapper is used,
         # but we still need to find mpdboot.
+        # In a similar fashion, we may determine if we are using the
+        # Hydra process manager, as the 'mpiexec --help' will contain
+        # a 'Hydra' string.
 
-        launcher_names = ['mpiexec', 'mpirun']
-        mpd_setup = False
+        # Also, mpirun is a wrapper to mpdboot + mpiexec + mpiallexec,
+        # so it does not require running mpdboot and mpdallexit separately.
+
+        launcher_names = ['mpiexec.mpich2', 'mpiexec',
+                          'mpiexec.hydra', 'mpiexec.mpd', 'mpiexec.gforker',
+                          'mpirun.mpich2', 'mpirun']
+        pm = ''
 
         for name in launcher_names:
             for d in p:
                 absname = os.path.join(d, name)
                 if os.path.isfile(absname):
-                    # Determine if the launcher is a Python script
-                    f = open(absname, 'r')
-                    if f.read(2) == '#!':
-                        l = f.readline()
-                        if l.find('python') > 0:
-                            mpd_setup = True
-                    f.close()
+                    # Try to determine launcher type
+                    basename = os.path.basename(name)
+                    if basename in ['mpiexec.mpich2', 'mpiexec',
+                                    'mpirun.mpich2', 'mpirun']:
+                        info = get_command_outputs(absname)
+                        if info.find('Hydra') > -1:
+                            pm = 'hydra'
+                        elif info.find(' mpd ') > -1:
+                            pm = 'mpd'
+                        elif info.find('-usize') > -1:
+                            pm = 'gforker'
+                    elif basename == 'mpiexec.hydra':
+                        pm = 'hydra'
+                    elif basename == 'mpiexec.mpd':
+                        pm = 'mpd'
+                    elif basename == 'mpiexec.gforker':
+                        pm = 'gforker'
                     # Set launcher name
                     if d == mpi_lib.bindir:
                         self.mpiexec = absname
@@ -477,28 +583,31 @@ class mpi_environment:
             if self.mpiexec != None:
                 break
 
-        # If we are using a root MPD, no need for setup
+        # Determine if MPD should be handled
+        # (if we are using a root MPD, no need for setup)
 
-        s = os.getenv('MPD_USE_ROOT_MPD')
-        if s != None and int(s) != 0:
-            mpd_setup = False
+        if pm == 'mpd' and basename[:6] != 'mpirun':
 
-        # If a setup seems necessary, check paths
+            mpd_setup = True
+            s = os.getenv('MPD_USE_ROOT_MPD')
+            if s != None and int(s) != 0:
+                mpd_setup = False
 
-        if mpd_setup:
-            for d in p:
-                if os.path.isfile(os.path.join(d, 'mpdboot')):
-                    if d == mpi_lib.bindir:
-                        self.mpiboot = os.path.join(d, 'mpdboot')
-                        self.mpihalt = os.path.join(d, 'mpdallexit')
-                        mpdtrace = os.path.join(d, 'mpdtrace')
-                        mpdlistjobs = os.path.join(d, 'mpdlistjobs')
-                    else:
-                        self.mpiboot = 'mpdboot'
-                        self.mpihalt = 'mpdallexit'
-                        mpdtrace = 'mpdtrace'
-                        mpdlistjobs = 'mpdlistjobs'
-                break
+            # If a setup seems necessary, check paths
+            if mpd_setup:
+                for d in p:
+                    if os.path.isfile(os.path.join(d, 'mpdboot')):
+                        if d == mpi_lib.bindir:
+                            self.mpiboot = os.path.join(d, 'mpdboot')
+                            self.mpihalt = os.path.join(d, 'mpdallexit')
+                            mpdtrace = os.path.join(d, 'mpdtrace')
+                            mpdlistjobs = os.path.join(d, 'mpdlistjobs')
+                        else:
+                            self.mpiboot = 'mpdboot'
+                            self.mpihalt = 'mpdallexit'
+                            mpdtrace = 'mpdtrace'
+                            mpdlistjobs = 'mpdlistjobs'
+                        break
 
         # Determine processor count and MPMD handling
 
@@ -507,7 +616,7 @@ class mpi_environment:
         if launcher_base[:7] == 'mpiexec':
             self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_configfile | MPI_MPMD_script
             self.mpiexec_n = ' -n '
-        elif launcher_base[:7] == 'mpirun':
+        elif launcher_base[:6] == 'mpirun':
             self.mpiexec_n = ' -np '
             self.mpmd = MPI_MPMD_script
 
@@ -515,8 +624,12 @@ class mpi_environment:
 
         # Resource manager info
 
+        rm = None
         if resource_info != None:
-            if resource_info.manager == 'SLURM':
+            rm = resource_info.manager
+
+        if pm == 'mpd':
+            if rm == 'SLURM':
                 # This requires linking with SLURM's implementation
                 # of the PMI library.
                 self.mpiexec = 'srun'
@@ -524,7 +637,7 @@ class mpi_environment:
                 self.mpmd = MPI_MPMD_script
                 self.mpiboot = None
                 self.mpihalt = None
-            elif resource_info.manager == 'PBS':
+            elif rm == 'PBS':
                 # Convert PBS to MPD format (based on MPICH2 documentation)
                 # before MPI boot.
                 if self.mpiboot != None:
@@ -535,10 +648,27 @@ class mpi_environment:
             else:
                 hostsfile = resource_info.get_hosts_file(wdir)
                 if hostsfile != None:
-                    if self.mpiboot != None:
-                        self.mpiboot += ' --file ' + hostsfile
-                    else:
-                        self.mpiexec += ' --machinefile ' + hostsfile
+                    self.mpiboot += ' --file ' + hostsfile
+
+        elif pm == 'hydra':
+            # Nothing to do for resource managers directly handled by Hydra
+            if rm not in ['PBS', 'LOADL', 'LSF', 'SGE', 'SLURM']:
+                hostsfile = resource_info.get_hosts_file(wdir)
+                if hostsfile != None:
+                    self.mpiexec += ' -f ' + hostsfile
+
+        elif pm == 'gforker':
+            hosts = False
+            if resource_info.hosts_list != None:
+                hosts = True
+            else:
+                hostsfile = resource_info.get_hosts_file(wdir)
+                if hostsfile != None:
+                    hosts = True
+            if hosts == True:
+                sys.stderr.write('Warning:\n'
+                                 + '   Hosts list will be ignored by'
+                                 + ' MPICH2 gforker program manager.\n\n')
 
         # Finalize mpiboot and mpihalt commands.
         # We use 'mpdtrace' to determine if a ring is already running,
@@ -619,6 +749,7 @@ class mpi_environment:
 
         launcher_names = ['mpiexec.openmpi', 'mpirun.openmpi',
                           'mpiexec', 'mpirun']
+        info_name = ''
 
         for name in launcher_names:
             for d in p:
@@ -628,6 +759,7 @@ class mpi_environment:
                         self.mpiexec = absname
                     else:
                         self.mpiexec = name
+                    info_name = os.path.join(d, 'ompi_info')
                     break
             if self.mpiexec != None:
                 break
@@ -644,12 +776,22 @@ class mpi_environment:
 
         # Other options to add
 
-        # Resource manager info (SLURM and PBS Pro/Torque are
-        # handled automatically by OpenMPI, so there is
-        # nothing to do in this case).
+        # Detect if resource manager is known by this Open MPI build
 
         if resource_info != None:
-            if not resource_info.manager in ['SLURM', 'PBS']:
+            known_manager = False
+            if resource_info.manager == 'PBS':
+                known_manager = True
+            elif os.path.isfile(info_name):
+                rc_mca_by_type = {'SLURM':' slurm ',
+                                  'LSF':' lsf ',
+                                  'LOADL':' loadleveler ',
+                                  'SGE':' gridengine '}
+                if resource_info.manager in rc_mca_by_type:
+                    info = get_command_output(info_name)
+                    if info.find(rc_mca_by_type[resource_info.manager]) > -1:
+                        known_manager = True
+            if known_manager == False:
                 hostsfile = resource_info.get_hosts_file(wdir)
                 if hostsfile != None:
                     self.mpiexec += ' --machinefile ' + hostsfile
