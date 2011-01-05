@@ -1,4 +1,9 @@
 * 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add missing change from preprocessor file renames to POTFILES.in.
+  modified file:
+    po/POTFILES.in
+
+* 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update path in bootstrap script.
   modified script:
     sbin/bootstrap
