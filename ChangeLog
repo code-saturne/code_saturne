@@ -1,3 +1,8 @@
+* 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Simplification of test and workaround for gcc 4.5.1 optimizing bug.
+  modified files:
+    src/bft/bft_mem_usage.c
+
 * 23/12/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix incorrect array type in example code.
   modified routines:

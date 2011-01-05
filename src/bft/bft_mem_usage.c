@@ -293,10 +293,7 @@ _bft_mem_usage_set_hooks(void)
 
     old_malloc_hook = __malloc_hook;
     __malloc_hook = _bft_mem_usage_malloc_hook_test;
-    ptr_test = malloc(128);
-    /* We have really allocated ptr_test if hooks are not active */
-    if (ptr_test != NULL && _bft_mem_usage_global_use_hooks == 0)
-      free(ptr_test);
+    ptr_test = malloc(0);
     __malloc_hook = old_malloc_hook;
 
   }
