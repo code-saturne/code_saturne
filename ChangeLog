@@ -1,4 +1,9 @@
 * 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove unneeded array initializations.
+  modified file:
+    src/base/cs_sles.c
+
+* 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove single-processor optimized conjuguate gradient (no
   significant performance gain).
   modified file:

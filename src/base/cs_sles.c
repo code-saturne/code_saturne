@@ -768,15 +768,6 @@ _conjugate_gradient(const char             *var_name,
   for (ii = 0; ii < n_rows; ii++)
     ad_inv[ii] = 1.0 / ad_inv[ii];
 
-  /* Initialize work arrays (not necessary, just for debugging) */
-
-  for (ii = 0; ii < n_rows; ii++) {
-    rk[ii] = 0.0;
-    dk[ii] = 0.0;
-    gk[ii] = 0.0;
-    zk[ii] = 0.0;
-  }
-
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
@@ -1097,16 +1088,8 @@ _bi_cgstab(const char             *var_name,
   for (ii = 0; ii < n_rows; ii++)
     ad_inv[ii] = 1.0 / ad_inv[ii];
 
-  /* Initialize work arrays (not necessary, just for debugging) */
-
-  for (ii = 0; ii < n_rows; ii++) {
-    res0[ii] = 0.0;
-    rk[ii] = 0.0;
-    pk[ii] = 0.0;
-    zk[ii] = 0.0;
+  for (ii = 0; ii < n_rows; ii++)
     uk[ii] = 0.0;
-    vk[ii] = 0.0;
-  }
 
   /* Initialize iterative calculation */
   /*----------------------------------*/
