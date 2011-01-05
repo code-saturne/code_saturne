@@ -1181,7 +1181,7 @@ _file_close(cs_io_t  *cs_io)
   if (cs_io->log_id > -1) {
     double t_end = bft_timer_wtime();
     cs_io_log_t *log = _cs_io_log[cs_io->mode] + cs_io->log_id;
-    log->wtimes[2] = t_end - cs_io->start_time;
+    log->wtimes[2] += t_end - cs_io->start_time;
   }
 }
 

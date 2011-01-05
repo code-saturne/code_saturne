@@ -1,4 +1,9 @@
 * 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix logging of file open time for files opened multiple times.
+  modified files:
+    src/base/cs_io.c
+
+* 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Renamed preprocessor field to table for consistency with usual definitions.
   renamed files:
     preprocessor/base/ecs_champ_att.c -> ecs_table_att.c
