@@ -679,205 +679,6 @@ _polynomial_preconditionning(cs_int_t            n_cells,
 /*----------------------------------------------------------------------------
  * Solution of (ad+ax).vx = Rhs using preconditioned conjugate gradient.
  *
- * Single-processor-optimized version.
- *
- * On entry, vx is considered initialized.
- *
- * parameters:
- *   var_name      <-- Variable name
- *   a             <-- Matrix
- *   ax            <-- Non-diagonal part of linear equation matrix
- *                     (only necessary if poly_degree > 0)
- *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   convergence   <-- Convergence information structure
- *   rhs           <-- Right hand side
- *   vx            --> System solution
- *   aux_size      <-- Number of elements in aux_vectors
- *   aux_vectors   --- Optional working area (allocation otherwise)
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
-
-static int
-_conjugate_gradient_sp(const char             *var_name,
-                       const cs_matrix_t      *a,
-                       const cs_matrix_t      *ax,
-                       int                     poly_degree,
-                       cs_perio_rota_t         rotation_mode,
-                       cs_sles_convergence_t  *convergence,
-                       const cs_real_t        *rhs,
-                       cs_real_t              *restrict vx,
-                       size_t                  aux_size,
-                       void                   *aux_vectors)
-{
-  const char *sles_name;
-  int cvg;
-  cs_int_t  n_cols, n_rows, ii;
-  double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, beta, residue;
-  cs_real_t  *_aux_vectors;
-  cs_real_t  *restrict rk, *restrict dk, *restrict gk;
-  cs_real_t *restrict zk, *restrict wk, *restrict ad_inv;
-
-  unsigned n_iter = 1;
-
-  /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*rhs, *vx, *rk, *dk, *gk, *zk, *wk, *ad_inv)
-#endif
-
-  /* Preliminary calculations */
-  /*--------------------------*/
-
-  sles_name = _(cs_sles_type_name[CS_SLES_PCG]);
-
-  n_cols = cs_matrix_get_n_columns(a);
-  n_rows = cs_matrix_get_n_rows(a);
-
-  /* Allocate work arrays */
-
-  {
-    size_t  n_wa = 5;
-    size_t  wa_size = n_cols;
-
-    if (poly_degree > 0)
-      n_wa += 1;
-
-    if (aux_vectors == NULL || aux_size < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
-    else
-      _aux_vectors = aux_vectors;
-
-    ad_inv = _aux_vectors;
-
-    rk = _aux_vectors + wa_size;
-    dk = _aux_vectors + wa_size*2;
-    gk = _aux_vectors + wa_size*3;
-    zk = _aux_vectors + wa_size*4;
-
-    if (poly_degree > 0)
-      wk = _aux_vectors + wa_size*5;
-    else
-      wk = NULL;
-  }
-
-  cs_matrix_get_diagonal(a, ad_inv);
-  for (ii = 0; ii < n_rows; ii++)
-    ad_inv[ii] = 1.0 / ad_inv[ii];
-
-  /* Initialize work arrays (not necessary, just for debugging) */
-
-  for (ii = 0; ii < n_rows; ii++) {
-    rk[ii] = 0.0;
-    dk[ii] = 0.0;
-    gk[ii] = 0.0;
-    zk[ii] = 0.0;
-  }
-
-  /* Initialize iterative calculation */
-  /*----------------------------------*/
-
-  /* Residue and descent direction */
-
-  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);
-
-  for (ii = 0; ii < n_rows; ii++) {
-    rk[ii] = rk[ii] - rhs[ii];
-    dk[ii] = rk[ii];
-  }
-
-  /* Polynomial preconditionning of order poly_degre */
-
-  _polynomial_preconditionning(n_rows,
-                               poly_degree,
-                               rotation_mode,
-                               ad_inv,
-                               ax,
-                               rk,
-                               gk,
-                               wk);
-
-  /* Descent direction */
-  /*-------------------*/
-
-  memcpy(dk, gk, n_rows * sizeof(cs_real_t));
-
-  rk_gkm1 = _dot_product(n_rows, rk, gk);
-
-  cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
-
-  /* Descent parameter */
-
-  _dot_products_2(n_rows, rk, dk, dk, zk, &ro_0, &ro_1);
-
-  alpha =  - ro_0 / ro_1;
-
-  cblas_daxpy(n_rows, alpha, dk, 1, vx, 1);
-  cblas_daxpy(n_rows, alpha, zk, 1, rk, 1);
-
-  /* Convergence test */
-
-  residue = sqrt(_dot_product(n_rows, rk, rk));
-
-  cvg = _convergence_test(sles_name, var_name,
-                          n_iter, residue, convergence);
-
-  /* Current Iteration */
-  /*-------------------*/
-
-  while (cvg == 0) {
-
-    n_iter += 1;
-
-    _polynomial_preconditionning(n_rows,
-                                 poly_degree,
-                                 rotation_mode,
-                                 ad_inv,
-                                 ax,
-                                 rk,
-                                 gk,
-                                 wk);
-
-    /* Descent parameter */
-
-    rk_gk = _dot_product(n_rows, rk, gk);
-
-    /* Complete descent parameter computation and matrix.vector product */
-
-    beta = rk_gk / rk_gkm1;
-    rk_gkm1 = rk_gk;
-
-    _y_aypx(n_rows, beta, gk, dk);  /* dk <- gk + (beta.dk) */
-
-    cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
-
-    _dot_products_2(n_rows, rk, dk, dk, zk, &ro_0, &ro_1);
-
-    alpha =  - ro_0 / ro_1;
-
-    cblas_daxpy(n_rows, alpha, dk, 1, vx, 1);
-    cblas_daxpy(n_rows, alpha, zk, 1, rk, 1);
-
-    /* Convergence test */
-
-    residue = sqrt(_dot_product(n_rows, rk, rk));
-
-    cvg = _convergence_test(sles_name, var_name,
-                            n_iter, residue, convergence);
-
-  }
-
-  if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
-
-  return cvg;
-}
-
-/*----------------------------------------------------------------------------
- * Solution of (ad+ax).vx = Rhs using preconditioned conjugate gradient.
- *
  * Parallel-optimized version, groups dot products, at the cost of
  * computation of the preconditionning for n+1 iterations instead of n.
  *
@@ -902,16 +703,16 @@ _conjugate_gradient_sp(const char             *var_name,
  *----------------------------------------------------------------------------*/
 
 static int
-_conjugate_gradient_mp(const char             *var_name,
-                       const cs_matrix_t      *a,
-                       const cs_matrix_t      *ax,
-                       int                     poly_degree,
-                       cs_perio_rota_t         rotation_mode,
-                       cs_sles_convergence_t  *convergence,
-                       const cs_real_t        *rhs,
-                       cs_real_t              *restrict vx,
-                       size_t                  aux_size,
-                       void                   *aux_vectors)
+_conjugate_gradient(const char             *var_name,
+                    const cs_matrix_t      *a,
+                    const cs_matrix_t      *ax,
+                    int                     poly_degree,
+                    cs_perio_rota_t         rotation_mode,
+                    cs_sles_convergence_t  *convergence,
+                    const cs_real_t        *rhs,
+                    cs_real_t              *restrict vx,
+                    size_t                  aux_size,
+                    void                   *aux_vectors)
 {
   const char *sles_name;
   int cvg;
@@ -1991,28 +1792,16 @@ cs_sles_solve(const char         *var_name,
 
     switch (solver_type) {
     case CS_SLES_PCG:
-      if (cs_glob_n_ranks == 1)
-        cvg = _conjugate_gradient_sp(var_name,
-                                     _a,
-                                     _ax,
-                                     poly_degree,
-                                     rotation_mode,
-                                     &convergence,
-                                     rhs,
-                                     vx,
-                                     aux_size,
-                                     aux_vectors);
-      else
-        cvg = _conjugate_gradient_mp(var_name,
-                                     _a,
-                                     _ax,
-                                     poly_degree,
-                                     rotation_mode,
-                                     &convergence,
-                                     rhs,
-                                     vx,
-                                     aux_size,
-                                     aux_vectors);
+      cvg = _conjugate_gradient(var_name,
+                                _a,
+                                _ax,
+                                poly_degree,
+                                rotation_mode,
+                                &convergence,
+                                rhs,
+                                vx,
+                                aux_size,
+                                aux_vectors);
       break;
     case CS_SLES_JACOBI:
       cvg = _jacobi(var_name,
