@@ -1,3 +1,13 @@
+* 05/01/2011 - David Monfort <david.monfort@edf.fr>
+  Move the XML reader source files for the graphical interface in their own
+  directory.
+  modified scripts:
+    configure.ac
+    po/POTFILES.in
+    src/apps/Makefile.am
+    src/base/Makefile.am
+    src/Makefile.am
+
 * 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove unneeded array initializations.
   modified file:

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-12-22 10:28+0100\n"
+"POT-Creation-Date: 2011-01-05 19:18+0100\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -579,6 +579,76 @@ msgstr ""
 "\n"
 "\n"
 
+msgid "Group"
+msgstr "Groupe"
+
+msgid "Family"
+msgstr "Famille"
+
+#, c-format
+msgid ""
+"There are %lu faces of which one same side belongs\n"
+"to at least 2 cells --> bad connectivity."
+msgstr ""
+"On compte %lu faces dont un même côté appartient à\n"
+"2 cellules au moins --> mauvaise connectivité."
+
+#, c-format
+msgid "There is/are %lu isolated face(s)\n"
+msgstr "On compte %lu face(s) isolée(s)\n"
+
+msgid "Dump mesh structure to file"
+msgstr "Dump de la structure maillage dans le fichier"
+
+#, c-format
+msgid ""
+"\n"
+"  Domain coordinate extents:\n"
+"\n"
+msgstr ""
+"\n"
+"  Coordonnées minimales et maximales du domaine :\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Main mesh properties\n"
+"--------------------\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"Données principales du maillage\n"
+"-------------------------------\n"
+"\n"
+
+#, c-format
+msgid ""
+"  Number of cells:                            %10d\n"
+"  Number of internal faces:                   %10d\n"
+msgstr ""
+"  Nombre de cellules :                        %10d\n"
+"  Nombre de faces internes :                  %10d\n"
+
+#, c-format
+msgid "  Number of boundary faces:                   %10d\n"
+msgstr "  Nombre de faces de bord :                   %10d\n"
+
+#, c-format
+msgid "  Number of vertices:                         %10d\n"
+msgstr "  Nombre de sommets :                         %10d\n"
+
+msgid "Connectivity Error Faces"
+msgstr "Faces erreur connectivite"
+
+msgid "connectivity_error"
+msgstr "erreur_connectivite"
+
+msgid "Isolated Faces"
+msgstr "Faces isolees"
+
 #, c-format
 msgid ""
 "\n"
@@ -668,255 +738,6 @@ msgstr ""
 "  On supprime %d faces dégénérées :\n"
 "    Nombre de faces initial           : %10d\n"
 "    Nombre de faces après traitement  : %10d\n"
-
-msgid "Group"
-msgstr "Groupe"
-
-msgid "Family"
-msgstr "Famille"
-
-#, c-format
-msgid ""
-"There are %lu faces of which one same side belongs\n"
-"to at least 2 cells --> bad connectivity."
-msgstr ""
-"On compte %lu faces dont un même côté appartient à\n"
-"2 cellules au moins --> mauvaise connectivité."
-
-#, c-format
-msgid "There is/are %lu isolated face(s)\n"
-msgstr "On compte %lu face(s) isolée(s)\n"
-
-msgid "Dump mesh structure to file"
-msgstr "Dump de la structure maillage dans le fichier"
-
-#, c-format
-msgid ""
-"\n"
-"  Domain coordinate extents:\n"
-"\n"
-msgstr ""
-"\n"
-"  Coordonnées minimales et maximales du domaine :\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-"\n"
-"Main mesh properties\n"
-"--------------------\n"
-"\n"
-msgstr ""
-"\n"
-"\n"
-"Données principales du maillage\n"
-"-------------------------------\n"
-"\n"
-
-#, c-format
-msgid ""
-"  Number of cells:                            %10d\n"
-"  Number of internal faces:                   %10d\n"
-msgstr ""
-"  Nombre de cellules :                        %10d\n"
-"  Nombre de faces internes :                  %10d\n"
-
-#, c-format
-msgid "  Number of boundary faces:                   %10d\n"
-msgstr "  Nombre de faces de bord :                   %10d\n"
-
-#, c-format
-msgid "  Number of vertices:                         %10d\n"
-msgstr "  Nombre de sommets :                         %10d\n"
-
-msgid "Connectivity Error Faces"
-msgstr "Faces erreur connectivite"
-
-msgid "connectivity_error"
-msgstr "erreur_connectivite"
-
-msgid "Isolated Faces"
-msgstr "Faces isolees"
-
-msgid ""
-"Elements of the mesh to post-process have\n"
-"not been sorted by type."
-msgstr ""
-"Les éléments du maillage à post-traiter n'ont\n"
-"pas été triés selon leurs types."
-
-#, c-format
-msgid ""
-"MED: error writing file \"%s\".\n"
-"Error creating field \"%s\"\n"
-msgstr ""
-"MED : erreur a l'écriture du fichier \"%s\".\n"
-"Erreur à la création du champ \"%s\"\n"
-
-#, c-format
-msgid ""
-"CGNS: no mesh named \"%s\".\n"
-"is associated to file: \"%s\"\n"
-msgstr ""
-"CGNS : aucun maillage nommé \"%s\".\n"
-"n'est associé au fichier : \"%s\"\n"
-
-#, c-format
-msgid ""
-"CGNS: error re-opening file \"%s\":\n"
-"%s"
-msgstr ""
-"CGNS : échec à la réouverture du fichier \"%s\" :\n"
-"%s"
-
-msgid "Mesh_values"
-msgstr "Grandeurs_maillage"
-
-#, c-format
-msgid ""
-"CGNS: error writing a solution node\n"
-"File name: \"%s\"; base : \"1\"\n"
-"%s"
-msgstr ""
-"CGNS : échec à l'écriture d'un noeud solution\n"
-"Nom du fichier : \"%s\" ; base : \"1\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"CGNS: error writing field \"%s\"\n"
-"%s"
-msgstr ""
-"CGNS : échec à l'écriture du champ \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"CGNS: error writing file \"%s\":\n"
-"Name of mesh to write: \"%s\"\n"
-"%s"
-msgstr ""
-"CGNS : échec à l'écriture du fichier \"%s\":\n"
-"Nom du maillage à écrire : \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"CGNS: error writing coordinates\n"
-"Name of mesh to write: \"%s\"\n"
-"%s"
-msgstr ""
-"CGNS : échec à l'écriture des coordonnées\n"
-"Nom du maillage à écrire : \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"CGNS: in mesh: \"%s\",\n"
-"%d polygonal faces are ignored.\n"
-msgstr ""
-"CGNS : dans le maillage : \"%s\",\n"
-"%d faces polygonales sont ignorées.\n"
-
-#, c-format
-msgid ""
-"CGNS: in mesh: \"%s\",\n"
-"%d polyhedral cells are ignored.\n"
-msgstr ""
-"CGNS : dans le maillage : \"%s\",\n"
-"%d cellules polyèdriques sont ignorées.\n"
-
-#, c-format
-msgid ""
-"MED: no mesh named \"%s\".\n"
-"is associated with file: \"%s\"\n"
-msgstr ""
-"MED : aucun maillage nommé \"%s\".\n"
-"n'est associé au fichier : \"%s\"\n"
-
-#, c-format
-msgid ""
-"MED: error writing file \"%s\".\n"
-"Name   of family to write: \"%s\"\n"
-"Number of family to write: \"%d\""
-msgstr ""
-"MED : erreur a l'écriture du fichier \"%s\".\n"
-"Nom    de la famille à écrire : \"%s\"\n"
-"Numéro de la famille à écrire : \"%d\""
-
-#, c-format
-msgid ""
-"MED: error writing file \"%s\".\n"
-"Error writing coordinates."
-msgstr ""
-"MED : erreur à l'écriture du fichier \"%s\".\n"
-"Erreur à l'écriture des coordonnées."
-
-#, c-format
-msgid ""
-"MED: error writing file \"%s\".\n"
-"The element geometric type has no MED equivalent.\n"
-"Element geometric type: \"%d\""
-msgstr ""
-"MED : erreur à l'écriture du fichier \"%s\".\n"
-"Le type géométrique de l'élément\n"
-"n'a pas d'équivalent pour MED.\n"
-"Type géometrique de l'élément : \"%d\""
-
-#, c-format
-msgid ""
-"MED: error writing file \"%s\".\n"
-"Error writing connectivity."
-msgstr ""
-"MED : erreur a l'écriture du fichier \"%s\".\n"
-"Erreur à l'écriture de la connectivité."
-
-#, c-format
-msgid ""
-"MED: error writing file \"%s\".\n"
-"Error writing polygons connectivity."
-msgstr ""
-"MED : erreur a l'écriture du fichier \"%s\".\n"
-"Erreur à l'écriture de la connectivité des polygones."
-
-#, c-format
-msgid ""
-"MED: error writing file \"%s\".\n"
-"Error writing polyhedra connectivity."
-msgstr ""
-"MED : erreur a l'écriture du fichier \"%s\".\n"
-"Erreur à l'écriture de la connectivité des polyèdres."
-
-#, c-format
-msgid ""
-"MED: error writing file \"%s\".\n"
-"Error writing families."
-msgstr ""
-"MED : erreur a l'écriture du fichier \"%s\".\n"
-"Erreur à l'écriture des familles."
-
-#, c-format
-msgid "Geometric type \"%d\" has no MED equivalent."
-msgstr "Le type géométrique \"%d\" n'a pas d'équivalent MED."
-
-#, c-format
-msgid ""
-"MED: error writing file \"%s\".\n"
-"Error writing field \"%s\"."
-msgstr ""
-"MED : erreur à l'écriture du fichier \"%s\".\n"
-"Erreur a l'écriture du champ \"%s\"."
-
-#, c-format
-msgid ""
-"MED: error writing field \"%s\".\n"
-"Incompatibility between the number of elements to write (%d)\n"
-"and the dimensions of mesh \"%s\"."
-msgstr ""
-"MED : erreur à l'écriture du champ \"%s\".\n"
-"Incohérence entre les nombre d'élements à écrire (%d) et\n"
-"les dimensions su maillage \"%s\"."
 
 msgid "Number of cells"
 msgstr "Nombre de cellules"
@@ -1058,6 +879,16 @@ msgid ""
 "%s"
 msgstr ""
 "CGNS : échec à l'ouverture du fichier \"%s\" :\n"
+"%s"
+
+#, c-format
+msgid ""
+"CGNS: error writing file \"%s\":\n"
+"Name of mesh to write: \"%s\"\n"
+"%s"
+msgstr ""
+"CGNS : échec à l'écriture du fichier \"%s\":\n"
+"Nom du maillage à écrire : \"%s\"\n"
 "%s"
 
 #, c-format
@@ -2715,6 +2546,175 @@ msgstr ""
 "\"%s\" ;\n"
 "Le système de coordonnés est cylindrique ou sphérique, ce\n"
 "qui n'est pas prévu dans la version actuelle"
+
+msgid ""
+"Elements of the mesh to post-process have\n"
+"not been sorted by type."
+msgstr ""
+"Les éléments du maillage à post-traiter n'ont\n"
+"pas été triés selon leurs types."
+
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error creating field \"%s\"\n"
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Erreur à la création du champ \"%s\"\n"
+
+#, c-format
+msgid ""
+"CGNS: no mesh named \"%s\".\n"
+"is associated to file: \"%s\"\n"
+msgstr ""
+"CGNS : aucun maillage nommé \"%s\".\n"
+"n'est associé au fichier : \"%s\"\n"
+
+#, c-format
+msgid ""
+"CGNS: error re-opening file \"%s\":\n"
+"%s"
+msgstr ""
+"CGNS : échec à la réouverture du fichier \"%s\" :\n"
+"%s"
+
+msgid "Mesh_values"
+msgstr "Grandeurs_maillage"
+
+#, c-format
+msgid ""
+"CGNS: error writing a solution node\n"
+"File name: \"%s\"; base : \"1\"\n"
+"%s"
+msgstr ""
+"CGNS : échec à l'écriture d'un noeud solution\n"
+"Nom du fichier : \"%s\" ; base : \"1\"\n"
+"%s"
+
+#, c-format
+msgid ""
+"CGNS: error writing field \"%s\"\n"
+"%s"
+msgstr ""
+"CGNS : échec à l'écriture du champ \"%s\"\n"
+"%s"
+
+#, c-format
+msgid ""
+"CGNS: error writing coordinates\n"
+"Name of mesh to write: \"%s\"\n"
+"%s"
+msgstr ""
+"CGNS : échec à l'écriture des coordonnées\n"
+"Nom du maillage à écrire : \"%s\"\n"
+"%s"
+
+#, c-format
+msgid ""
+"CGNS: in mesh: \"%s\",\n"
+"%d polygonal faces are ignored.\n"
+msgstr ""
+"CGNS : dans le maillage : \"%s\",\n"
+"%d faces polygonales sont ignorées.\n"
+
+#, c-format
+msgid ""
+"CGNS: in mesh: \"%s\",\n"
+"%d polyhedral cells are ignored.\n"
+msgstr ""
+"CGNS : dans le maillage : \"%s\",\n"
+"%d cellules polyèdriques sont ignorées.\n"
+
+#, c-format
+msgid ""
+"MED: no mesh named \"%s\".\n"
+"is associated with file: \"%s\"\n"
+msgstr ""
+"MED : aucun maillage nommé \"%s\".\n"
+"n'est associé au fichier : \"%s\"\n"
+
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Name   of family to write: \"%s\"\n"
+"Number of family to write: \"%d\""
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Nom    de la famille à écrire : \"%s\"\n"
+"Numéro de la famille à écrire : \"%d\""
+
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing coordinates."
+msgstr ""
+"MED : erreur à l'écriture du fichier \"%s\".\n"
+"Erreur à l'écriture des coordonnées."
+
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"The element geometric type has no MED equivalent.\n"
+"Element geometric type: \"%d\""
+msgstr ""
+"MED : erreur à l'écriture du fichier \"%s\".\n"
+"Le type géométrique de l'élément\n"
+"n'a pas d'équivalent pour MED.\n"
+"Type géometrique de l'élément : \"%d\""
+
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing connectivity."
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Erreur à l'écriture de la connectivité."
+
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing polygons connectivity."
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Erreur à l'écriture de la connectivité des polygones."
+
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing polyhedra connectivity."
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Erreur à l'écriture de la connectivité des polyèdres."
+
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing families."
+msgstr ""
+"MED : erreur a l'écriture du fichier \"%s\".\n"
+"Erreur à l'écriture des familles."
+
+#, c-format
+msgid "Geometric type \"%d\" has no MED equivalent."
+msgstr "Le type géométrique \"%d\" n'a pas d'équivalent MED."
+
+#, c-format
+msgid ""
+"MED: error writing file \"%s\".\n"
+"Error writing field \"%s\"."
+msgstr ""
+"MED : erreur à l'écriture du fichier \"%s\".\n"
+"Erreur a l'écriture du champ \"%s\"."
+
+#, c-format
+msgid ""
+"MED: error writing field \"%s\".\n"
+"Incompatibility between the number of elements to write (%d)\n"
+"and the dimensions of mesh \"%s\"."
+msgstr ""
+"MED : erreur à l'écriture du champ \"%s\".\n"
+"Incohérence entre les nombre d'élements à écrire (%d) et\n"
+"les dimensions su maillage \"%s\"."
 
 #, c-format
 msgid ""
@@ -4534,339 +4534,6 @@ msgid ""
 msgstr ""
 "Erreur de connectivité :\n"
 "La face %d voit la cellule %d des deux cotés."
-
-#, c-format
-msgid "Invalid number of coal-> dp_FCP: %i xml: %i\n"
-msgstr ""
-
-#, c-format
-msgid "Error: can not interpret expression: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Error: can not find the required symbol: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"@                                                            \n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@                                                            \n"
-"@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
-"@    *******                                                 \n"
-"@                                                            \n"
-"@    In the zone %s has a face already marked                \n"
-"@    with a zone number.                                     \n"
-"@                                                            \n"
-"@    new zone number:             %i                         \n"
-"@    previous zone number:        %i                         \n"
-"@                                                            \n"
-"@    It seems that zones definitions are overlapping.        \n"
-"@                                                            \n"
-"@    The calculation will stop.                              \n"
-"@                                                            \n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@                                                            \n"
-msgstr ""
-
-#, c-format
-msgid "zone's label number %i is greater than %i, the maximum allowed \n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The group or attribute \"%s\" in the selection\n"
-"criteria:\n"
-"\"%s\"\n"
-" does not correspond to any boundary face.\n"
-msgstr ""
-"Le groupe ou attribut \"%s\" figurant dans le\n"
-"critère de sélection:\n"
-"\"%s\"\n"
-" ne correspond à aucune face de bord.\n"
-
-#, c-format
-msgid "boundary nature %s is unknown \n"
-msgstr ""
-
-#, c-format
-msgid ""
-"@                                                            \n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@                                                            \n"
-"@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
-"@    *******                                                 \n"
-"@                                                            \n"
-"@    The zone %s does not have the same id number            \n"
-"@    in the GUI and in the user subroutine.                  \n"
-"@                                                            \n"
-"@    GUI zone number:             %i                         \n"
-"@    USER SUBROUTINE zone number: %i                         \n"
-"@                                                            \n"
-"@    The id number given in the GUI cannot be modified       \n"
-"@    in the user subroutine (fortran array IZFPPP).          \n"
-"@                                                            \n"
-"@    The calculation will stop.                              \n"
-"@                                                            \n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@                                                            \n"
-msgstr ""
-
-#, c-format
-msgid ""
-"@                                                            \n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@                                                            \n"
-"@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
-"@    *******                                                 \n"
-"@                                                            \n"
-"@    The zone %s does not have the same nature               \n"
-"@    in the GUI and in the user subroutine.                  \n"
-"@                                                            \n"
-"@    GUI zone nature:             %s                         \n"
-"@    USER SUBROUTINE ITYPFB:      %i                         \n"
-"@                                                            \n"
-"@    The nature given in the GUI cannot be modified          \n"
-"@    in the user subroutine (fortran array ITYPFB).          \n"
-"@                                                            \n"
-"@    The calculation will stop.                              \n"
-"@                                                            \n"
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-"@                                                            \n"
-msgstr ""
-
-#, c-format
-msgid "Variable index %d out of bounds (1 to %d)"
-msgstr ""
-
-#, c-format
-msgid "Invalid xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Invalid thermal model: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Coordinate %s of the monitoring probe number %i not found.\n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Invalid xpath: %s\n"
-" name not found"
-msgstr ""
-
-#, c-format
-msgid ""
-"Invalid markup name: %s\n"
-" label not found"
-msgstr ""
-
-#, c-format
-msgid "Invalid turbulence model: %s.\n"
-msgstr ""
-
-#, c-format
-msgid "Scalar: %i and its variance: %i are the same.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The kernel variables number %i and the calculated one by the GUI %i are not "
-"the same.\n"
-msgstr ""
-
-msgid "Specific heat value is zero or not found in the xml file.\n"
-msgstr ""
-
-msgid "mass molar value is zero or not found in the xml file.\n"
-msgstr ""
-
-msgid "Density value is zero or not found in the xml file.\n"
-msgstr ""
-
-#, c-format
-msgid "number of properties is not correct: %i instead of: %i\n"
-msgstr ""
-
-#, c-format
-msgid "Name of variable %i was never set.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The group or attribute \"%s\" in the selection\n"
-"criteria:\n"
-"\"%s\"\n"
-" does not correspond to any cell.\n"
-msgstr ""
-"Le groupe ou attribut \"%s\" figurant dans le\n"
-"critère de sélection:\n"
-"\"%s\"\n"
-" ne correspond à aucune cellule.\n"
-
-#, c-format
-msgid "Unable to open the file: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Missing 'min' markup for xpath : %s\n"
-msgstr ""
-
-#, c-format
-msgid "Missing 'max' markup for xpath : %s\n"
-msgstr ""
-
-#, c-format
-msgid "Missing 'value' markup for xpath : %s\n"
-msgstr ""
-
-msgid "Number of periodicities (%d) and modes (%) do not match."
-msgstr ""
-
-#, c-format
-msgid "Periodicity mode \"%s\" unknown."
-msgstr "Mode de périodicité \"%s\" inconnu."
-
-#, c-format
-msgid "Unknow ale property choice %s.\n"
-msgstr ""
-
-#, c-format
-msgid "Boundary nature formula is null for %s.\n"
-msgstr ""
-
-#, c-format
-msgid "cannot get value for %s %s %s"
-msgstr ""
-
-#, c-format
-msgid "Formula is null for %s %s"
-msgstr ""
-
-msgid "Formula is null for ale.\n"
-msgstr ""
-
-#, c-format
-msgid "Variable index %i out of bounds (1 to %i)"
-msgstr ""
-
-#, c-format
-msgid "unknow type %s\n"
-msgstr "type inconnu %s \n"
-
-#, c-format
-msgid "Xpath request failed %s \n"
-msgstr ""
-
-#, c-format
-msgid "--output boundary faces: %s value %i \n"
-msgstr ""
-
-msgid ""
-"One tries to define radiative boundary conditions on boundary which is not a "
-"wall.\n"
-"The definition of the boundaries natures given in GUI (wall, inlet, "
-"outlet,...) \n"
-"is modified in a users subroutine (like USCLIM, USCPCL,...). \n"
-"The radiative boundary conditions given in GUI must be coherent \n"
-"with these new natures.\n"
-msgstr ""
-
-#, c-format
-msgid "Invalid coal model: %s.\n"
-msgstr ""
-
-#, c-format
-msgid "Invalid atmospheric flow model: %s.\n"
-msgstr ""
-
-#, c-format
-msgid "Unable to parse the file: %s\n"
-msgstr ""
-
-msgid "Code_Saturne has been compiled without XML support."
-msgstr ""
-
-#, c-format
-msgid ""
-"========================================================\n"
-"   ** Invalid version of the XML file\n"
-"      -------------------------------------- \n"
-"      XML file version: %.1f  \n"
-"      XML reader version: %.1f \n"
-"========================================================\n"
-msgstr ""
-"========================================================\n"
-"   ** Version invalide du fichier XML\n"
-"      ------------------------------------------------ \n"
-"      Version du fichier XML : %.1f\n"
-"      version du lecteur XML : %.1f\n"
-"========================================================\n"
-
-#, c-format
-msgid ""
-"========================================================\n"
-"   ** Unexpected version XML file version\n"
-"      -----------------------------------\n"
-"      XML file version: %.1f  \n"
-"      XML reader version: %.1f \n"
-"\n"
-"      It is recommenende to rebuild a new XML file.\n"
-"========================================================\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The node type is not XML_ATTRIBUTE_NODE.\n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Several attributes found: %i \n"
-"The first one is %s \n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The node type is not XML_ELEMENT_NODE.\n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Several nodes name found: %i \n"
-"The first one is %s \n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The node type is not XML_TEXT_NODE.\n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Several text node found: %i \n"
-"The first one is %s \n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid "No markup found: %s \n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Invalid attribute value: %s \n"
-"Xpath: %s\n"
-msgstr ""
 
 #, c-format
 msgid ""
@@ -9549,6 +9216,339 @@ msgstr ""
 msgid ""
 "Output buffer too small:\n"
 "Current size = %lu, minimum size required = %lu."
+msgstr ""
+
+#, c-format
+msgid "Invalid number of coal-> dp_FCP: %i xml: %i\n"
+msgstr ""
+
+#, c-format
+msgid "Error: can not interpret expression: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Error: can not find the required symbol: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"@                                                            \n"
+"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+"@                                                            \n"
+"@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
+"@    *******                                                 \n"
+"@                                                            \n"
+"@    In the zone %s has a face already marked                \n"
+"@    with a zone number.                                     \n"
+"@                                                            \n"
+"@    new zone number:             %i                         \n"
+"@    previous zone number:        %i                         \n"
+"@                                                            \n"
+"@    It seems that zones definitions are overlapping.        \n"
+"@                                                            \n"
+"@    The calculation will stop.                              \n"
+"@                                                            \n"
+"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+"@                                                            \n"
+msgstr ""
+
+#, c-format
+msgid "zone's label number %i is greater than %i, the maximum allowed \n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The group or attribute \"%s\" in the selection\n"
+"criteria:\n"
+"\"%s\"\n"
+" does not correspond to any boundary face.\n"
+msgstr ""
+"Le groupe ou attribut \"%s\" figurant dans le\n"
+"critère de sélection:\n"
+"\"%s\"\n"
+" ne correspond à aucune face de bord.\n"
+
+#, c-format
+msgid "boundary nature %s is unknown \n"
+msgstr ""
+
+#, c-format
+msgid ""
+"@                                                            \n"
+"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+"@                                                            \n"
+"@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
+"@    *******                                                 \n"
+"@                                                            \n"
+"@    The zone %s does not have the same id number            \n"
+"@    in the GUI and in the user subroutine.                  \n"
+"@                                                            \n"
+"@    GUI zone number:             %i                         \n"
+"@    USER SUBROUTINE zone number: %i                         \n"
+"@                                                            \n"
+"@    The id number given in the GUI cannot be modified       \n"
+"@    in the user subroutine (fortran array IZFPPP).          \n"
+"@                                                            \n"
+"@    The calculation will stop.                              \n"
+"@                                                            \n"
+"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+"@                                                            \n"
+msgstr ""
+
+#, c-format
+msgid ""
+"@                                                            \n"
+"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+"@                                                            \n"
+"@ @@ WARNING: BOUNDARY CONDITIONS ERROR                      \n"
+"@    *******                                                 \n"
+"@                                                            \n"
+"@    The zone %s does not have the same nature               \n"
+"@    in the GUI and in the user subroutine.                  \n"
+"@                                                            \n"
+"@    GUI zone nature:             %s                         \n"
+"@    USER SUBROUTINE ITYPFB:      %i                         \n"
+"@                                                            \n"
+"@    The nature given in the GUI cannot be modified          \n"
+"@    in the user subroutine (fortran array ITYPFB).          \n"
+"@                                                            \n"
+"@    The calculation will stop.                              \n"
+"@                                                            \n"
+"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+"@                                                            \n"
+msgstr ""
+
+#, c-format
+msgid "Variable index %d out of bounds (1 to %d)"
+msgstr ""
+
+#, c-format
+msgid "Invalid xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid thermal model: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Coordinate %s of the monitoring probe number %i not found.\n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Invalid xpath: %s\n"
+" name not found"
+msgstr ""
+
+#, c-format
+msgid ""
+"Invalid markup name: %s\n"
+" label not found"
+msgstr ""
+
+#, c-format
+msgid "Invalid turbulence model: %s.\n"
+msgstr ""
+
+#, c-format
+msgid "Scalar: %i and its variance: %i are the same.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The kernel variables number %i and the calculated one by the GUI %i are not "
+"the same.\n"
+msgstr ""
+
+msgid "Specific heat value is zero or not found in the xml file.\n"
+msgstr ""
+
+msgid "mass molar value is zero or not found in the xml file.\n"
+msgstr ""
+
+msgid "Density value is zero or not found in the xml file.\n"
+msgstr ""
+
+#, c-format
+msgid "number of properties is not correct: %i instead of: %i\n"
+msgstr ""
+
+#, c-format
+msgid "Name of variable %i was never set.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The group or attribute \"%s\" in the selection\n"
+"criteria:\n"
+"\"%s\"\n"
+" does not correspond to any cell.\n"
+msgstr ""
+"Le groupe ou attribut \"%s\" figurant dans le\n"
+"critère de sélection:\n"
+"\"%s\"\n"
+" ne correspond à aucune cellule.\n"
+
+#, c-format
+msgid "Unable to open the file: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Missing 'min' markup for xpath : %s\n"
+msgstr ""
+
+#, c-format
+msgid "Missing 'max' markup for xpath : %s\n"
+msgstr ""
+
+#, c-format
+msgid "Missing 'value' markup for xpath : %s\n"
+msgstr ""
+
+msgid "Number of periodicities (%d) and modes (%) do not match."
+msgstr ""
+
+#, c-format
+msgid "Periodicity mode \"%s\" unknown."
+msgstr "Mode de périodicité \"%s\" inconnu."
+
+#, c-format
+msgid "Unknow ale property choice %s.\n"
+msgstr ""
+
+#, c-format
+msgid "Boundary nature formula is null for %s.\n"
+msgstr ""
+
+#, c-format
+msgid "cannot get value for %s %s %s"
+msgstr ""
+
+#, c-format
+msgid "Formula is null for %s %s"
+msgstr ""
+
+msgid "Formula is null for ale.\n"
+msgstr ""
+
+#, c-format
+msgid "Variable index %i out of bounds (1 to %i)"
+msgstr ""
+
+#, c-format
+msgid "unknow type %s\n"
+msgstr "type inconnu %s \n"
+
+#, c-format
+msgid "Xpath request failed %s \n"
+msgstr ""
+
+#, c-format
+msgid "--output boundary faces: %s value %i \n"
+msgstr ""
+
+msgid ""
+"One tries to define radiative boundary conditions on boundary which is not a "
+"wall.\n"
+"The definition of the boundaries natures given in GUI (wall, inlet, "
+"outlet,...) \n"
+"is modified in a users subroutine (like USCLIM, USCPCL,...). \n"
+"The radiative boundary conditions given in GUI must be coherent \n"
+"with these new natures.\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid coal model: %s.\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid atmospheric flow model: %s.\n"
+msgstr ""
+
+#, c-format
+msgid "Unable to parse the file: %s\n"
+msgstr ""
+
+msgid "Code_Saturne has been compiled without XML support."
+msgstr ""
+
+#, c-format
+msgid ""
+"========================================================\n"
+"   ** Invalid version of the XML file\n"
+"      -------------------------------------- \n"
+"      XML file version: %.1f  \n"
+"      XML reader version: %.1f \n"
+"========================================================\n"
+msgstr ""
+"========================================================\n"
+"   ** Version invalide du fichier XML\n"
+"      ------------------------------------------------ \n"
+"      Version du fichier XML : %.1f\n"
+"      version du lecteur XML : %.1f\n"
+"========================================================\n"
+
+#, c-format
+msgid ""
+"========================================================\n"
+"   ** Unexpected version XML file version\n"
+"      -----------------------------------\n"
+"      XML file version: %.1f  \n"
+"      XML reader version: %.1f \n"
+"\n"
+"      It is recommenende to rebuild a new XML file.\n"
+"========================================================\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The node type is not XML_ATTRIBUTE_NODE.\n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Several attributes found: %i \n"
+"The first one is %s \n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The node type is not XML_ELEMENT_NODE.\n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Several nodes name found: %i \n"
+"The first one is %s \n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The node type is not XML_TEXT_NODE.\n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Several text node found: %i \n"
+"The first one is %s \n"
+"Xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid "No markup found: %s \n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Invalid attribute value: %s \n"
+"Xpath: %s\n"
 msgstr ""
 
 #, c-format

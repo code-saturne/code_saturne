@@ -36,8 +36,9 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mei \
+-I$(top_srcdir)/src/gui \
 $(CPPFLAGS_PLE) \
-$(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS) $(BLAS_CPPFLAGS)
+$(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
@@ -68,17 +69,6 @@ cs_coupling.h \
 cs_ext_neighborhood.h \
 cs_gradient.h \
 cs_grid.h \
-cs_gui.h \
-cs_gui_boundary_conditions.h \
-cs_gui_conjugate_heat_transfer.h \
-cs_gui_matisse.h \
-cs_gui_mesh.h \
-cs_gui_mobile_mesh.h \
-cs_gui_particles.h \
-cs_gui_radiative_transfer.h \
-cs_gui_specific_physics.h \
-cs_gui_util.h \
-cs_gui_variables.h \
 cs_halo.h \
 cs_io.h \
 cs_join.h \
@@ -216,16 +206,6 @@ cs_ext_neighborhood.c \
 csflsh.f90 \
 cs_gradient.c \
 cs_grid.c \
-cs_gui.c \
-cs_gui_boundary_conditions.c \
-cs_gui_conjugate_heat_transfer.c \
-cs_gui_matisse.c \
-cs_gui_mesh.c \
-cs_gui_mobile_mesh.c \
-cs_gui_particles.c \
-cs_gui_radiative_transfer.c \
-cs_gui_specific_physics.c \
-cs_gui_util.c \
 cs_halo.c \
 csinit.f90 \
 cs_join.c \

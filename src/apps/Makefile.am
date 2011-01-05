@@ -40,6 +40,7 @@ AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/gui \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS) $(BLAS_CPPFLAGS)
 
@@ -63,6 +64,7 @@ $(top_builddir)/src/cplv/libcscplv.la \
 $(top_builddir)/src/ctwr/libcsctwr.la \
 $(top_builddir)/src/elec/libcselec.la \
 $(top_builddir)/src/fuel/libcsfuel.la \
+$(top_builddir)/src/gui/libcsgui.la \
 $(top_builddir)/src/lagr/libcslagr.la \
 $(top_builddir)/src/mati/libcsmati.la \
 $(top_builddir)/src/rayt/libcsrayt.la \
