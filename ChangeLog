@@ -1,3 +1,8 @@
+* 06/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Handle case where execution and result directory are the same.
+  modified script:
+    bin/cs_case_domain.py
+
 * 05/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add Fortran coding standards.
   modified files:

@@ -529,26 +529,28 @@ class domain(base_domain):
 
             # Copy source files to result directory
 
-            copy_dir = os.path.join(self.result_dir, 'SRC')
-            if (self.result_suffix != None):
-                if (self.tag != None):
-                    copy_dir += '.' + self.tag
-                copy_dir += '.' + self.result_suffix
+            if self.exec_dir != self.result_dir:
 
-            os.makedirs(copy_dir)
+                copy_dir = os.path.join(self.result_dir, 'SRC')
+                if (self.result_suffix != None):
+                    if (self.tag != None):
+                        copy_dir += '.' + self.tag
+                    copy_dir += '.' + self.result_suffix
 
-            for f in src_files:
-                src_file = os.path.join(self.src_dir, f)
-                dest_file = os.path.join(copy_dir, f)
-                shutil.copy2(src_file, dest_file)
-                try:
-                    oldmode = (os.stat(dest_file)).stmode
-                    newmode = oldmode & (stat.IRUSR | stat.IRGRP | stat.IROTH)
-                    os.chmod(dest_file, newmode)
-                except Exception:
-                    pass
+                os.makedirs(copy_dir)
 
-            # Copy source files to execution directory
+                for f in src_files:
+                    src_file = os.path.join(self.src_dir, f)
+                    dest_file = os.path.join(copy_dir, f)
+                    shutil.copy2(src_file, dest_file)
+                    try:
+                        oldmode = (os.stat(dest_file)).stmode
+                        newmode = oldmode & (stat.IRUSR | stat.IRGRP | stat.IROTH)
+                        os.chmod(dest_file, newmode)
+                    except Exception:
+                        pass
+
+                # Copy source files to execution directory
 
             if (self.exec_dir != self.result_dir):
                 exec_src = os.path.join(self.exec_dir, self.package.srcdir)
