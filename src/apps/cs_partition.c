@@ -289,10 +289,13 @@ _print_version(void)
   bft_printf("    METIS\n");
 #endif
 #elif defined(HAVE_PARMETIS)
-#if defined(PARMETIS_MAJOR_VERSION)
+#if defined(PARMETIS_MAJOR_VERSION) && defined(PARMETIS_SUBMINOR_VERSION)
   bft_printf("    ParMETIS %d.%d.%d\n",
              PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION,
              PARMETIS_SUBMINOR_VERSION);
+#elif defined(PARMETIS_MAJOR_VERSION)
+  bft_printf("    ParMETIS %d.%d\n",
+             PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION);
 #else
   bft_printf("    ParMETIS\n");
 #endif
