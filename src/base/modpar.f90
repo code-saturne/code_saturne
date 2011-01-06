@@ -31,25 +31,23 @@ subroutine modpar &
  ( ntcabs , ntmabs )
 
 !===============================================================================
+! Purpose:
+! -------
 
-! FONCTION :
-! --------
-!          MODIFICATION DE NTMABS AU COURS DU CALCUL
-!          POUR ARRET INTERACTIF
+!    Modify ntmabs during the calculation for interactive stop.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ntcabs           ! e  ! <-- ! numero absolu du pas de temps courant          !
-! ntmabs           ! e  ! <-- ! numero absolu du pas de temps final            !
+! ntcabs           ! i  ! <-- ! absolute current time step number              !
+! ntmabs           ! i  ! <-> ! absolute final time step number                !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -66,53 +64,55 @@ implicit none
 
 ! Arguments
 
-integer          ntcabs , ntmabs
+integer ntcabs , ntmabs
 
 ! Local variables
 
-integer          irangs, lng, itmp(1)
+integer irangs, lng, itmp(1)
 logical exstp
 
 !===============================================================================
 
-! On passe ici en sequentiel, ou en parallele avec le proc 0.
+! Only one rank needs to test this (and broadcast later).
+
 if (irangp.le.0) then
-!---> ARRET D'URGENCE
 
-  inquire (file=ficstp,exist=exstp)
+  !---> Emergency stop
 
-!       SI UN FICHIER FICSTP EXISTE
+  inquire (file=ficstp, exist=exstp)
+
+  ! If a ficstp file is present
 
   if (exstp) then
 
-!         LIRE LE NOMBRE MAX D'ITERATIONS (ABSOLU)
+    ! Read the (absolute) number of iterations
 
-    open (file=ficstp,unit=impstp)
-    read (impstp,*,err=5200,end=5200)
+    open(file=ficstp, unit=impstp)
+    read(impstp, *, err=5200, end=5200)
  5200     read (impstp,*,err=5100,end=5100)ntmabs
  5100     continue
-    CLOSE (IMPSTP,STATUS='DELETE')
+    close (impstp,status='delete')
 
-!         COMPARER LE TEMPS ECOULE ET LE TEMPS MAX
-!          MODIFIER FICSTP SI BESOIN
+    ! Compare elapsed and maximum available time;
+    ! modify ficstp if necessary.
 
     if(ntcabs.gt.ntmabs)then
       ntmabs = ntcabs
     endif
 
-!         SORTIES
+    ! Output
 
     write (nfecra,1000) ntcabs,ntmabs
 
-    OPEN (FILE=FICSTP//'.mod',UNIT=IMPSTP)
+    open (file=ficstp//'_updated', unit=impstp)
     write (impstp,1000) ntcabs,ntmabs
     close (impstp)
   endif
 
 endif
 
-! En parallele, bcast.
-if(irangp.ge.0) then
+! In parallel, broadcast
+if (irangp.ge.0) then
   irangs  = 0
   lng     = 1
   itmp(1) = ntmabs
@@ -124,20 +124,18 @@ endif
 
  1000 format(/,                                                   &
 '=============================================================',/,&
-'            NTCABS COURANT  = ',I10                           ,/,&
-'            NTMABS RESET TO = ',I10                           ,/,&
+'            NTCABS COURANT  = ', i10,                          /,&
+'            NTMABS RESET TO = ', i10,                          /,&
 '=============================================================',/,&
                                                                 /)
-
 #else
 
  1000 format(/,                                                   &
 '=============================================================',/,&
-'            NTCABS CURRENT  = ',I10                           ,/,&
-'            NTMABS RESET TO = ',I10                           ,/,&
+'            NTCABS CURRENT  = ', i10,                          /,&
+'            NTMABS RESET TO = ', i10,                          /,&
 '=============================================================',/,&
                                                                 /)
-
 #endif
 
 end subroutine

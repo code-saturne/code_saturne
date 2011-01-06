@@ -1,4 +1,9 @@
 * 06/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  ficstp.MOD renamed to ficstp_updated to avoid confusion with Fortran modules.
+  modified routine:
+    src/base/modpar.f90
+
+* 06/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Handle case where execution and result directory are the same.
   modified script:
     bin/cs_case_domain.py
