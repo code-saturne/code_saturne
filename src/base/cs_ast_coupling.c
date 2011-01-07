@@ -243,24 +243,24 @@ void CS_PROCF(astgeo, ASTGEO)
     geom[1] = n_nodes;
 
     cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
-                         "dongeo", 2, &(geom[0]));
+                         "DONGEO", 2, &(geom[0]));
 
     BFT_FREE(geom);
 
     cs_calcium_write_double(comp_id, time_dep, cur_time, 0,
-                            "almaxi", 1, almax);
+                            "ALMAXI", 1, almax);
 
     cs_calcium_write_double(comp_id, time_dep, cur_time, 0,
-                            "coofac", 3*n_faces,&(faces_coords[0]));
+                            "COOFAC", 3*n_faces,&(faces_coords[0]));
 
     cs_calcium_write_double(comp_id, time_dep, cur_time, 0,
-                            "coonod", 3*n_nodes,&(nodes_coords[0]));
+                            "COONOD", 3*n_nodes,&(nodes_coords[0]));
 
     cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
-                         "colfac", n_faces, &(faces_color[0]));
+                         "COLFAC", n_faces, &(faces_color[0]));
 
     cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
-                         "colnod", n_nodes, &(nodes_color[0]));
+                         "COLNOD", n_nodes, &(nodes_color[0]));
 
   }
 
@@ -322,7 +322,7 @@ void CS_PROCF(astfor, ASTFOR)
   if (cs_glob_rank_id <= 0) {
 
     cs_calcium_write_double(comp_id, time_dep, cur_time, *ntcast,
-                            "forsat", 3*n_g_faces, _forast);
+                            "FORSAT", 3*n_g_faces, _forast);
 
     BFT_FREE(_forast);
 
@@ -371,7 +371,7 @@ void CS_PROCF(astcin, ASTCIN)
 
     cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
                            ntcast,
-                           "depsat", 3*n_g_nodes,
+                           "DEPSAT", 3*n_g_nodes,
                            &n_val_read, _xast);
 
     assert(n_val_read == 3*n_g_nodes);
@@ -480,31 +480,31 @@ void CS_PROCF(astpar, ASTPAR)
     /* commande reception nb iterations */
     cs_calcium_read_int(comp_id, time_dep, &min_time, &max_time,
                         &iteration,
-                        "nbpdtm", 1, &n_val_read, nbpdt);
+                        "NBPDTM", 1, &n_val_read, nbpdt);
     /* commande reception nb sous-it.  */
     cs_calcium_read_int(comp_id, time_dep, &min_time, &max_time,
                         &iteration,
-                        "nbssit",1,&n_val_read, nbsspdt);
+                        "NBSSIT",1,&n_val_read, nbsspdt);
     /* commande reception de la variable epsilo */
     cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
                            &iteration,
-                           "epsilo",1,&n_val_read, delta);
+                           "EPSILO",1,&n_val_read, delta);
     /* commande reception de la variable isyncp */
     cs_calcium_read_int(comp_id, time_dep, &min_time, &max_time,
                         &iteration,
-                        "isyncp",1,&n_val_read, ihi);
+                        "ISYNCP",1,&n_val_read, ihi);
     /* commande reception de la variable ntchr  */
     cs_calcium_read_int(comp_id, time_dep, &min_time, &max_time,
                         &iteration,
-                        "ntchro",1,&n_val_read, chro);
+                        "NTCHRO",1,&n_val_read, chro);
     /* commande reception de la variable ttinit */
     cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
                            &iteration,
-                           "ttinit",1,&n_val_read, &ttanc);
+                           "TTINIT",1,&n_val_read, &ttanc);
     /* commande reception de la variable dtref */
     cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
                            &iteration,
-                           "pdtref",1,&n_val_read, dt);
+                           "PDTREF",1,&n_val_read, dt);
 
     if (fabs(*tt - ttanc) > 1.e-16)
       bft_error(__FILE__, __LINE__, 0,
@@ -575,12 +575,12 @@ void CS_PROCF(astpdt, ASTPDT)
 
     /* Send time step (calculated in "ddtvar" Subroutine) to'Milieu'*/
     cs_calcium_write_double(comp_id, time_dep, 0.0, *nbpdt,
-                            "dtsat", 1, &dttmp);
+                            "DTSAT", 1, &dttmp);
 
     /* Receive time step sent by 'Milieu' */
     cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
                            nbpdt,
-                           "dtcalc", 1, &n_val_read, &(dtloc));
+                           "DTCALC", 1, &n_val_read, &(dtloc));
 
     assert(n_val_read == 1);
 
@@ -641,7 +641,7 @@ void CS_PROCF(astcv1, ASTCV1)
     int  n_val_read = 0;
 
     cs_calcium_read_int(comp_id, time_dep, &min_time, &max_time, ntcast,
-                        "icvext", 1, &n_val_read, icv);
+                        "ICVEXT", 1, &n_val_read, icv);
 
     assert(n_val_read == 1);
 
@@ -669,7 +669,7 @@ void CS_PROCF(astcv2, ASTCV2)
   if (cs_glob_rank_id <= 0) {
 
     cs_calcium_write_int(comp_id, time_dep, cur_time, *ntcast,
-                         "icv", 1, icv);
+                         "ICV", 1, icv);
 
   }
 }
