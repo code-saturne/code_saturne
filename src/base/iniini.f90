@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -118,7 +118,7 @@ write(nfecra, 900)
 #endif
 
 !===============================================================================
-! 2. ENTREES SORTIES entsor.h
+! 2. ENTREES SORTIES entsor.f90
 !===============================================================================
 
 ! ---> Impressions standard
@@ -132,7 +132,7 @@ enddo
 ! ---> Geometrie
 
 impgeo = 10
-FICGEO = 'geomet'
+ficgeo = 'geomet'
 
 !    Methode des vortex : on utilise la meme unite
 !                  Pour le fichier de donnees, on specifie l'unite ici, mais le
@@ -145,7 +145,7 @@ impdvo = 20
 ! ---> Fichier stop
 
 impstp = 12
-FICSTP = 'ficstp'
+ficstp = 'ficstp'
 
 ! ---> Fichier aval
 
@@ -165,14 +165,8 @@ impvvo = 20
 !    Fichier listing Lagrangien
 
 implal = 80
-FICLAL = 'listla'
+ficlal = 'listla'
 ntlal  = 1
-
-!    Fichier historique Lagrangien
-
-impli1 = 81
-impli2 = 82
-
 
 !    Post traitement
 
@@ -182,7 +176,7 @@ impli2 = 82
 !         (1 oui, 0 non)
 !       ICHRSY : Post traitement des zones couplees avec SYRTHES
 !         (1 oui, 0 non)
-!       ICHRZE: Post traitement des zones d'échange aerorefrigerants
+!       ICHRZE: Post traitement des zones d'echange aerorefrigerants
 !         (1 oui, 0 non)
 
 !       ICHRMD : indique si les maillages ecrits seront :
@@ -190,9 +184,9 @@ impli2 = 82
 !         1 : deformables a topologie constante,
 !         2 : modifiables (pourront etre completement redefinis en
 !             cours de calcul via le sous-programme USMPST).
-!        10 : comme INDMOD = 0, avec champ de déplacement
-!        11 : comme INDMOD = 1, avec champ de déplacement
-!        12 : comme INDMOD = 2, avec champ de déplacement
+!        10 : comme INDMOD = 0, avec champ de deplacement
+!        11 : comme INDMOD = 1, avec champ de deplacement
+!        12 : comme INDMOD = 2, avec champ de deplacement
 
 !       NTCHR  : Periode   de sortie Post
 !         -1 : une seule sortie a la fin
@@ -217,8 +211,8 @@ enddo
 !       FMTCHR : format ('EnSight Gold', 'MED_fichier', ou 'CGNS')
 !       OPTCHR : options associees au format de sortie
 
-FMTCHR = 'EnSight Gold'
-OPTCHR = 'binary'
+fmtchr = 'EnSight Gold'
+optchr = 'binary'
 
 ! ---> Fichier thermochinie
 !        FPP : utilisateur
@@ -228,16 +222,16 @@ OPTCHR = 'binary'
 !      En prime, INDJON (janaf=1 ou non=0)
 
 impfpp = 25
-FICFPP = 'dp_tch'
+ficfpp = 'dp_tch'
 
 impjnf = impfpp
-FICJNF = 'JANAF'
+ficjnf = 'JANAF'
 
 indjon = 1
 
 ! ---> Fichiers module atmospherique
 impmet = 26
-FICMET = 'meteo'
+ficmet = 'meteo'
 
 ! ---> Fichier resuMatisse
 impmat = 28
@@ -245,7 +239,6 @@ impmat = 28
 
 ! ---> Fichiers historiques
 
-!     IMPHIS : fichier stock + unite d'ecriture des variables
 !     EMPHIS : EMPlacement
 !     PREHIS : PREfixe
 !     EXTHIS : EXTension
@@ -254,46 +247,41 @@ impmat = 28
 !     IMPSTH : fichier stock + unite d'ecriture des variables
 !              des structures mobiles
 
-imphis(1) = 30
-imphis(2) = 31
-impsth(1) = 32
-!     Les fichiers d'ecriture ne sont pas ouverts en meme temps
-impsth(2) = imphis(2)
+impsth(1) = 30
+impsth(2) = 31
 
 emphis = 'monitoring/'
 prehis = 'probes_'
-exthis = 'dat'
 
 do ii = 1, nushmx
   impush(ii) = 32+ii
   if (irangp .le. 0) then
-     WRITE(FICUSH(II),'(1A3,I3.3)')'ush',II
+    write(ficush(ii),'(1a3,i3.3)')'ush',ii
   else
-     WRITE(FICUSH(II),'(1A3,I3.3,1A3,I4.4)')'ush',II,             &
-                                            '.n_',IRANGP+1
+    write(ficush(ii),'(1a3,i3.3,1a3,i4.4)')'ush',ii,'.n_',irangp+1
   endif
 enddo
 
-!     NCAPT  : nombre de sondes total (limite a NCAPTM)
-!     NTHIST : Periode de sortie
-!         ( > 0 ou -1 (jamais))
-!     FRHIST : frequence de sortie (en secondes)
-!     NTHSAV : Periode de sauvegarde
-!         ( > 0 ou -1 (a la fin) ou 0 (NTMABS/4))
-!     IHISVR : nb de sonde et numero par variable
-!         (-999 non initialise)
-!     IHISTR : indicateur d'ecriture des historiques des structures
-!              mobiles internes (=0 ou 1)
-!     NCAPT  : nombre de sondes total (limite a NCAPTM)
-!     NODCAP : element correspondant aux sondes
-!     NDRCAP : rang du processus contenant NODCAP (parallelisme)
-!     XYZCAP : position demandee des sondes
+! tplfmt : time plot format (1: .dat, 2: .csv, 3: both)
+! ncapt  : nombre de sondes total (limite a ncaptm)
+! nthist : periode de sortie (> 0 ou -1 (jamais))
+! frhist : frequence de sortie, en secondes (prioritaire sur nthist si > 0)
+! nthsav : periode de sauvegarde (> 0 (fichiers ouverts et refermes) ou -1 )
+! ihisvr : nb de sonde et numero par variable (-999 non initialise)
+! ihistr : indicateur d'ecriture des historiques des structures
+!          mobiles internes (=0 ou 1)
+! ncapt  : nombre de sondes total (limite a ncaptm)
+! nodcap : element correspondant aux sondes
+! ndrcap : rang du processus contenant nodcap (parallelisme)
+! xyzcap : position demandee des sondes
+! tplflw : time plot flush wall-time interval (none if <= 0)
 
+tplfmt = 1
 ncapt = 0
 
 nthist = 1
 frhist = -1.d0
-nthsav = 0
+nthsav = -1
 
 do ii = 1, nvppmx
   do jj = 1, ncaptm+1
@@ -314,7 +302,7 @@ do ii = 1, ncaptm
   xyzcap(3,ii) = 0.d0
 enddo
 
-
+tplflw = -1
 
 ! ---> Fichiers Lagrangiens
 
@@ -350,10 +338,9 @@ impla5(15) = 68
 do ii = 1, nusrmx
   impusr(ii) = 69+ii
   if (irangp .le. 0) then
-     WRITE(FICUSR(II),'(1A4,I2.2)')'usrf',II
+    write(ficusr(ii),'(1a4,i2.2)')'usrf',ii
   else
-     WRITE(FICUSR(II),'(1A4,I2.2,1A3,I4.4)')'usrf',II,            &
-                                            '.n_',IRANGP+1
+    write(ficusr(ii),'(1a4,i2.2,1a3,i4.4)')'usrf',ii,'.n_',irangp+1
   endif
 enddo
 
@@ -385,7 +372,7 @@ do ii = 1, nvppmx
 enddo
 
 do ii = 1, nvppmx
-  NOMVAR(II)    = ' '
+  nomvar(ii)    = ' '
   ilisvr(ii)    = -999
   itrsvr(ii)    = 0
 enddo
@@ -443,10 +430,10 @@ endif
 tmarus = -1.d0
 
 
-! Ici entsor.h est completement initialise
+! Ici entsor.f90 est completement initialise
 
 !===============================================================================
-! 3. DIMENSIONS DE dimens.h (GEOMETRIE, sauf NCELBR)
+! 3. DIMENSIONS DE dimens.f90 (GEOMETRIE, sauf NCELBR)
 !===============================================================================
 
 !---> GEOMETRIE
@@ -504,7 +491,7 @@ endif
 
 
 !===============================================================================
-! 4. DIMENSIONS de dimens.h (PHYSIQUE)
+! 4. DIMENSIONS de dimens.f90 (PHYSIQUE)
 !===============================================================================
 
 ! --- Nombre de phases, de scalaires, de scalaires a diffusivite
@@ -529,7 +516,7 @@ ncofab = 0
 
 
 !===============================================================================
-! 5. POSITION DES VARIABLES DE numvar.h
+! 5. POSITION DES VARIABLES DE numvar.f90
 !===============================================================================
 
 ! --- Variables de calcul resolues (RTP, RTPA)
@@ -601,7 +588,7 @@ enddo
 ! --- Ici tout numvar est initialise.
 
 !===============================================================================
-! 6. POSITION DES VARIABLES DE pointe.h
+! 6. POSITION DES VARIABLES DE pointe.f90
 !===============================================================================
 
 ! --- Geometrie
@@ -664,10 +651,10 @@ idrdxy =0
 iwdudx =0
 iwdrdx =0
 
-! --- Ici tout pointe.h est initialise
+! --- Ici tout pointe.f90 est initialise
 
 !===============================================================================
-! 7. OPTIONS DU CALCUL : TABLEAUX DE optcal.h
+! 7. OPTIONS DU CALCUL : TABLEAUX DE optcal.f90
 !===============================================================================
 
 ! --- Definition des equations
@@ -1204,10 +1191,10 @@ ivrtex = 0
 ! --- Calcul des efforts aux parois
 ineedf = 0
 
-! --- Ici tout optcal.h est initialise
+! --- Ici tout optcal.f90 est initialise
 
 !===============================================================================
-! 8. TABLEAUX DE cstphy.h
+! 8. TABLEAUX DE cstphy.f90
 !===============================================================================
 
 ! --- Gravite
@@ -1395,14 +1382,14 @@ ivecti = -1
 ivectb = -1
 
 !===============================================================================
-! 10. INITIALISATION DES PARAMETRES DE PERIODICITE de period.h
+! 10. INITIALISATION DES PARAMETRES DE PERIODICITE de period.f90
 !===============================================================================
 
 iguper = 0
 igrper = 0
 
 !===============================================================================
-! 11. INITIALISATION DES PARAMETRES DE IHM de ihmpre.h
+! 11. INITIALISATION DES PARAMETRES DE IHM de ihmpre.f90
 !===============================================================================
 
 !     Par defaut, pas de fichier IHM consulte (on regarde ensuite si on
@@ -1411,7 +1398,7 @@ igrper = 0
 iihmpr = 0
 
 !===============================================================================
-! 12. INITIALISATION DES PARAMETRES ALE de albase.h et alstru.h
+! 12. INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90
 !===============================================================================
 
 ! --- Methode ALE

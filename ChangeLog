@@ -1,3 +1,19 @@
+* 07/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added C API to handle probes.
+  This allows not writing to a temporary file anymore and enabling both
+  the legacy .dat (XmGrace) format and CSV files.
+  added files:
+    src/base/cs_time_plot.c
+    src/base/cs_time_plot.h
+  modified files:
+    src/base/Makefile.am
+    src/base/caltri.f90
+    src/base/ecrhis.f90
+    src/base/entsor.f90
+    src/base/iniini.f90
+    src/base/strhis.f90
+    src/lagr/laghis.f90
+
 * 07/01/2011 - Julien Berland <julien-j.berland@edf.fr>
   The variables exchanged via YACS for Code_Aster coupling are now uppercase.
   modified routine:

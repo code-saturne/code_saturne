@@ -124,10 +124,8 @@ module entsor
   ! --- Fichiers historiques
 
   !     nushmx : nombre max de fichiers utilisateur pour historiques
-  !     imphis : fichier stock + unite d'ecriture des variables
   !     emphis : emplacement
   !     prehis : prefixe des fichiers
-  !     exthis : extension des fichiers
   !     impush : unite fichiers specifiques ushist
   !     ficush : nom   fichiers specifiques ushist
   !     impsth : fichier stock + unite d'ecriture des variables
@@ -136,10 +134,10 @@ module entsor
   integer    nushmx
   parameter(nushmx=16)
 
-  character*80, save :: emphis, prehis, exthis
+  character*80, save :: emphis, prehis
   character*13, save :: ficush(nushmx)
 
-  integer, save :: imphis(2), impush(nushmx), impsth(2)
+  integer, save :: impush(nushmx), impsth(2)
 
   ! ncaptm : nombre max de sondes (pour historiques)
   !          voir le format associe dans ecrhis
@@ -147,26 +145,25 @@ module entsor
   integer    ncaptm
   parameter(ncaptm=100)
 
-  !     ncapt  : nombre de sondes total (limite a ncaptm)
-  !     nthist : frequence de sortie
-  !         ( > 0 ou -1 (jamais) ou non initialise -999)
-  !     frhist : frequence de sortie en secondes
-  !     nthsav : Frequence de sauvegarde
-  !         ( > 0 ou -1 (a la fin) ou non initialise -999)
-  !     ihisvr : nb de sonde et numero par variable
-  !         (-999 non initialise)
-  !     ihistr : indicateur d'ecriture des historiques des structures
-  !              mobiles internes (=0 ou 1)
-  !     ncapt  : nombre de sondes total (limite a ncaptm)
-  !     nodcap : element correspondant aux sondes
-  !     ndrcap : rang processus contenant nodcap (parallelisme)
-  !     xyzcap : position demandee des sondes
+  ! tplfmt : time plot format (1: .dat, 2: .csv, 3: both)
+  ! ncapt  : nombre de sondes total (limite a ncaptm)
+  ! nthist : frequence de sortie: > 0 ou -1 (jamais) ou non initialise -999
+  ! frhist : frequence de sortie en secondes
+  ! nthsav : periode de sauvegarde (> 0 (fichiers ouverts et refermes) ou -1 )
+  ! ihisvr : nb de sonde et numero par variable (-999 non initialise)
+  ! ihistr : indicateur d'ecriture des historiques des structures
+  !          mobiles internes (=0 ou 1)
+  ! ncapt  : nombre de sondes total (limite a ncaptm)
+  ! nodcap : element correspondant aux sondes
+  ! ndrcap : rang processus contenant nodcap (parallelisme)
+  ! xyzcap : position demandee des sondes
+  ! tplflw : time plot flush wall-time interval (none if <= 0)
 
-  integer, save :: ncapt, nthist, nthsav,                  &
+  integer, save :: tplfmt, ncapt, nthist, nthsav,          &
                    ihisvr(nvppmx,ncaptm+1), ihistr,        &
                    nodcap(ncaptm), ndrcap(ncaptm)
 
-  double precision, save :: xyzcap(3,ncaptm), frhist
+  double precision, save :: tplflw, frhist, xyzcap(3,ncaptm)
 
   ! --- Fichiers Lagrangiens
 
@@ -188,11 +185,7 @@ module entsor
 
   integer, save :: implal, ntlal
 
-  !   - Fichier historique Lagrangien
-
-  integer, save :: impli1, impli2
-
-  !   - Autres fichiers Lagrangien
+  !   - Fichiers Lagrangien
 
   integer, save :: impla1 , impla2 , impla3 , impla4 , impla5(15)
 

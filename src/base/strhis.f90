@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -28,36 +28,25 @@
 subroutine strhis &
 !================
 
- ( idbia0 , idbra0 , ncelet , ncel ,                              &
-   modhis ,                                                       &
-   ia     ,                                                       &
-   ra     )
+ ( modhis )
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-! ROUTINE D'ECRITURE DES HISTORIQUES
+! Write time data for structures
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! modhis           ! e  ! <-- ! indicateur valant 0,1 ou 2                     !
-!                  !    !               ! 1,2 = ecriture intermediaire, finale |
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! ra               ! tr !  -- ! tableau des reels                              !
+! modhis           ! i  ! <-- ! 0 or 1: initialize/output; 2: finalize         !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -76,272 +65,216 @@ implicit none
 
 ! Arguments
 
-integer          idbia0, idbra0
-integer          ncelet, ncel
 integer          modhis
-integer          ia(*)
-double precision ra(*)
 
 ! Local variables
 
 integer          nbname
 parameter        (nbname=12)
-character        nomfic*300, nenvar*300
+character        nompre*300, nenvar*300
 character*80     namevr(nbname)
-integer          ii, jj, istr, ii1, ii2, lpos, inam1, inam2
-integer          nbpdte, jtcabs
-integer          idebia, idebra
-double precision xtcabs
-double precision vartmp(nstrmx)
+integer          ii, jj, istr, ii1, ii2, lpre, lnam, tplnum
+double precision, dimension(:), allocatable :: vartmp
 
-! NOMBRE DE PASSAGES DANS LA ROUTINE
+! Time plot number shift (in case multiple routines define plots)
+
+integer  nptpl
+data     nptpl /0/
+save     nptpl
+
+! Number of passes in this routine
 
 integer          ipass
 data             ipass /0/
 save             ipass
 
 !===============================================================================
-! 0. INITIALISATIONS LOCALES
+! 0. Local initializations
 !===============================================================================
-
-!     Seul le processeur 0 ecrit, on n'ecrit rien si pas de structure
-if (irangp.gt.0 .or. nbstru.le.0) return
 
 ipass = ipass + 1
 
-idebia = idbia0
-idebra = idbra0
+!--> Only rank 0 outputs, and nothing to do if we have no structure
 
-namevr(1 ) = "deplacement x"
-namevr(2 ) = "deplacement y"
-namevr(3 ) = "deplacement z"
-namevr(4 ) = "vitesse x"
-namevr(5 ) = "vitesse y"
-namevr(6 ) = "vitesse z"
-namevr(7 ) = "acceleration x"
-namevr(8 ) = "acceleration y"
-namevr(9 ) = "acceleration z"
-namevr(10) = "force x"
-namevr(11) = "force y"
-namevr(12) = "force z"
+if (irangp.gt.0 .or. nbstru.le.0) return
 
-!--> Il n'y a pas eu d'historiques
-if(ipass.eq.1.and.modhis.eq.2) return
+!--> If no history was output
+if (ipass.eq.1.and.modhis.eq.2) return
 
-!===============================================================================
-! 2. OUVERTURE DU FICHIER DE STOCKAGE hist.tmp
-!===============================================================================
-
-if(ipass.eq.1) then
-  NOMFIC = ' '
-  nomfic = emphis
-  call verlon ( nomfic,ii1,ii2,lpos)
+if (ipass.eq.1) then
+  call tplnbr(nptpl)
   !==========
-
-  NOMFIC(II2+1:II2+11) = 'histstr.tmp'
-  ii2 = ii2+11
-  open ( unit=impsth(1), file=nomfic (ii1:ii2),                   &
-         STATUS='UNKNOWN', FORM='UNFORMATTED',                    &
-         ACCESS='SEQUENTIAL')
 endif
 
 !===============================================================================
-! 3. ECRITURE DES RESULTATS dans le FICHIER DE STOCKAGE
+! 2. Initialize output
 !===============================================================================
 
-if(modhis.eq.0.or.modhis.eq.1) then
+if (ipass.eq.1 .and. irangp.le.0) then
 
-  write(impsth(1)) ntcabs, ttcabs, (xstr  (1,ii),ii=1,nbstru)
-  write(impsth(1)) ntcabs, ttcabs, (xstr  (2,ii),ii=1,nbstru)
-  write(impsth(1)) ntcabs, ttcabs, (xstr  (3,ii),ii=1,nbstru)
-  write(impsth(1)) ntcabs, ttcabs, (xpstr (1,ii),ii=1,nbstru)
-  write(impsth(1)) ntcabs, ttcabs, (xpstr (2,ii),ii=1,nbstru)
-  write(impsth(1)) ntcabs, ttcabs, (xpstr (3,ii),ii=1,nbstru)
-  write(impsth(1)) ntcabs, ttcabs, (xppstr(1,ii),ii=1,nbstru)
-  write(impsth(1)) ntcabs, ttcabs, (xppstr(2,ii),ii=1,nbstru)
-  write(impsth(1)) ntcabs, ttcabs, (xppstr(3,ii),ii=1,nbstru)
-  write(impsth(1)) ntcabs, ttcabs, (forstr(1,ii),ii=1,nbstru)
-  write(impsth(1)) ntcabs, ttcabs, (forstr(2,ii),ii=1,nbstru)
-  write(impsth(1)) ntcabs, ttcabs, (forstr(3,ii),ii=1,nbstru)
+  namevr(1 ) = "displacement x"
+  namevr(2 ) = "displacement y"
+  namevr(3 ) = "displacement z"
+  namevr(4 ) = "velocity x"
+  namevr(5 ) = "velocity y"
+  namevr(6 ) = "velocity z"
+  namevr(7 ) = "acceleration x"
+  namevr(8 ) = "acceleration y"
+  namevr(9 ) = "acceleration z"
+  namevr(10) = "force x"
+  namevr(11) = "force y"
+  namevr(12) = "force z"
 
-endif
+  ! --> write one file per structure info type
 
-
-!===============================================================================
-! 4. EN CAS DE SAUVEGARDE INTERMEDIAIRE OU FINALE,
-!    TRANSMISSION DES INFORMATIONS DANS LES DIFFERENTS FICHIERS
-!===============================================================================
-
-! On sauve aussi au premier passage pour permettre une
-!     verification des le debut du calcul
-
-if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
-
-!       --> nombre de pas de temps enregistres
-
-  if(modhis.eq.2) then
-    nbpdte = ipass - 1
-  else
-    nbpdte = ipass
-  endif
-
-!       --> ecriture un fichier par variable
   do ii = 1, nbname
 
-!         --> nom du fichier
-    NOMFIC = ' '
-    nomfic = emphis
-    call verlon ( nomfic,ii1,ii2,lpos)
+    ! plot prefix
+    nompre = ' '
+    call verlon(emphis, ii1, ii2, lpre)
     !==========
-    NENVAR = 'str_'//NAMEVR(II)
-    call verlon(nenvar,inam1,inam2,lpos)
+    nompre(1:lpre) = emphis(ii1:ii2)
+    call verlon(prehis, ii1, ii2, lnam)
     !==========
-    call undscr(inam1,inam2,nenvar)
+    nompre(lpre+1:lpre+lnam) = prehis(ii1:ii2)
+    call verlon(nompre, ii1, ii2, lpre)
     !==========
-    nomfic(ii2+1:ii2+lpos) = nenvar(inam1:inam2)
-    ii2 = ii2+lpos
-    NOMFIC(II2+1:II2+1) = '.'
-    ii2 = ii2+1
-    nenvar = exthis
-    call verlon(nenvar,inam1,inam2,lpos)
+    nompre(lpre+1:lpre+4) = 'str_'
+    call verlon(nompre, ii1, ii2, lpre)
     !==========
-    call undscr(inam1,inam2,nenvar)
-    !==========
-    nomfic(ii2+1:ii2+lpos) = nenvar(inam1:inam2)
-    ii2 = ii2+lpos
-!         --> ouverture
-    open ( unit=impsth(2), file=nomfic (ii1:ii2),                 &
-         STATUS='UNKNOWN', FORM='FORMATTED',                      &
-         ACCESS='SEQUENTIAL')
-!         --> entete
-    write(impsth(2),1000)namevr(ii),nbstru,nbpdte,nbstru+2
-    write(impsth(2),2000) (istr,istr=1,nbstru)
-    write(impsth(2),2005)
-!         --> impression des matrices de masse
-    write(impsth(2),2001) ((xmstru(1,jj,istr),jj=1,3),            &
-         istr=1,nbstru)
-    write(impsth(2),2004) ((xmstru(2,jj,istr),jj=1,3),            &
-         istr=1,nbstru)
-    write(impsth(2),2004) ((xmstru(3,jj,istr),jj=1,3),            &
-         istr=1,nbstru)
-    write(impsth(2),2005)
-!         --> impression des matrices d'amortissement
-    write(impsth(2),2002) ((xcstru(1,jj,istr),jj=1,3),            &
-         istr=1,nbstru)
-    write(impsth(2),2004) ((xcstru(2,jj,istr),jj=1,3),            &
-         istr=1,nbstru)
-    write(impsth(2),2004) ((xcstru(3,jj,istr),jj=1,3),            &
-         istr=1,nbstru)
-    write(impsth(2),2005)
-!         --> impression des matrices de raideur
-    write(impsth(2),2003) ((xkstru(1,jj,istr),jj=1,3),            &
-         istr=1,nbstru)
-    write(impsth(2),2004) ((xkstru(2,jj,istr),jj=1,3),            &
-         istr=1,nbstru)
-    write(impsth(2),2004) ((xkstru(3,jj,istr),jj=1,3),            &
-         istr=1,nbstru)
-    write(impsth(2),2005)
-!         --> impression de fin de section
-    write(impsth(2),2006)
 
+    ! plot name
+    nenvar = namevr(ii)
+    call verlon(nenvar,ii1,ii2,lnam)
+    !==========
 
-!         --> boucle sur les differents enregistrements
-!             et les variables
-    rewind(impsth(1))
-    do jj = 1, nbpdte
-      do ii1 = 1, nbname
-        read(impsth(1))                                           &
-             jtcabs, xtcabs, (vartmp(istr),istr=1,nbstru)
-        if(ii1.eq.ii)                                             &
-             write(impsth(2),3000)                                &
-             jtcabs, xtcabs, (vartmp(istr),istr=1,nbstru)
-      enddo
-    enddo
+    tplnum = nptpl + ii
 
-!         --> fermeture fichier
-    close(impsth(2))
+    call tpsini(tplnum, nenvar, nompre, tplfmt, idtvar, nthsav, tplflw, &
+    !==========
+                nbstru, xmstru, xcstru, xkstru, lnam, lpre)
 
   enddo
 
 endif
 
+!===============================================================================
+! 3. Output results
+!===============================================================================
 
-!----
-! FORMATS
-!----
-#if defined(_CS_LANG_FR)
+if ((modhis.eq.0 .or. modhis.eq.1) .and. irangp.le.0) then
 
- 1000 format(                                                           &
-'# ---------------------------------------------------',/,  &
-'#      FICHIER HISTORIQUE EN TEMPS                   ',/,  &
-'#      VARIABLE ',A30                                 ,/,  &
-'# ---------------------------------------------------',/,  &
-'# ',/,                                                     &
-'#      NOMBRE DE STRUCTURES      : ',I8,/,                 &
-'# ',/,                                                     &
-'#      NOMBRE D''ENREGISTREMENTS  : ',I8,/,                &
-'# ',/,                                                     &
-'# ',/,                                                     &
-'# COLONNE 1        : NUMERO DU PAS DE TEMPS',/,            &
-'#         2        : TEMPS PHYSIQUE (ou No pas de temps*DTREF',/,&
-'#                               en pas de temps non uniforme)',/,&
-'#         3 A ',I4,' : VALEUR POUR CHAQUE STRUCTURE          ',/,&
-'# ',/,                                                     &
-'# ---------------------------------------------------',/,  &
-'# ')
- 2000 format('# STRUCTURE    |',20(21X,I3,22X,'|'))
- 2001 format('# MASSE        |',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
- 2002 format('# AMORTISSEMENT|',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
- 2003 format('# RAIDEUR      |',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
- 2004 format('#              |',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
- 2005 format('#')
- 2006 format(                                                           &
-'# (dans le cas ou les caracteristiques des structures sont   ',/,&
-'#  variables, les valeurs ci-dessus correspondent au dernier ',/,&
-'#  pas de temps d''ecriture dans le fichier',/,            &
-'#',/,                                                      &
-'# ---------------------------------------------------',/,  &
-'# ')
- 3000 format ( 1x,i7,1x,21(1x,e14.7))
+  allocate(vartmp(nbstru))
 
-#else
+  do ii = 1, nbname
 
- 1000 format (                                                          &
-'# ---------------------------------------------------',/,  &
-'#      TIME MONITORING FILE                          ',/,  &
-'#      VARIABLE ',A30                                 ,/,  &
-'# ---------------------------------------------------',/,  &
-'# ',/,                                                     &
-'#      NUMBER OF STRUCTURES  : ',I8,/,                     &
-'# ',/,                                                     &
-'#      NUMBER OF RECORDS     : ',I8,/,                     &
-'# ',/,                                                     &
-'# ',/,                                                     &
-'# COLUMN 1        : TIME STEP NUMBER ',/,                  &
-'#        2        : PHYSICAL TIME (or Nb of time steps*DTREF ',/,&
-'#                                with non uniform time step)',/, &
-'#        3 TO ',I4,' : VALUE FOR EACH STRUCTURE              ',/,&
-'# ',/,                                                     &
-'# ---------------------------------------------------',/,  &
-'# ')
- 2000 format('# STRUCTURE    |',20(21X,I3,22X,'|'))
- 2001 format('# MASS         |',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
- 2002 format('# DAMPING      |',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
- 2003 format('# STIFNESS     |',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
- 2004 format('#              |',20(1X,G14.7,1X,G14.7,1X,G14.7,' |'))
- 2005 format('#')
- 2006 format(                                                           &
-'# (in the case where the structures characteristics are      ',/,&
-'#  variables, these values correspond to the latest time step',/,&
-'#  written in the file',/,                                 &
-'#',/,                                                      &
-'# ---------------------------------------------------',/,  &
-'# ')
- 3000 format ( 1x,i7,1x,21(1x,e14.7))
+    tplnum = nptpl + 1
+    do jj = 1, nbstru
+      vartmp(jj) = xstr(1, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
 
-#endif
+    tplnum = nptpl + 2
+    do jj = 1, nbstru
+      vartmp(jj) = xstr(2, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
+
+    tplnum = nptpl + 3
+    do jj = 1, nbstru
+      vartmp(jj) = xstr(3, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
+
+    tplnum = nptpl + 4
+    do jj = 1, nbstru
+      vartmp(jj) = xpstr(1, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
+
+    tplnum = nptpl + 5
+    do jj = 1, nbstru
+      vartmp(jj) = xpstr(2, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
+
+    tplnum = nptpl + 6
+    do jj = 1, nbstru
+      vartmp(jj) = xpstr(3, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
+
+    tplnum = nptpl + 7
+    do jj = 1, nbstru
+      vartmp(jj) = xppstr(1, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
+
+    tplnum = nptpl + 8
+    do jj = 1, nbstru
+      vartmp(jj) = xppstr(2, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
+
+    tplnum = nptpl + 9
+    do jj = 1, nbstru
+      vartmp(jj) = xppstr(3, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
+
+    tplnum = nptpl + 10
+    do jj = 1, nbstru
+      vartmp(jj) = forstr(1, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
+
+    tplnum = nptpl + 11
+    do jj = 1, nbstru
+      vartmp(jj) = forstr(2, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
+
+    tplnum = nptpl + 12
+    do jj = 1, nbstru
+      vartmp(jj) = forstr(3, jj)
+    enddo
+    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+    !==========
+
+  enddo
+
+  deallocate(vartmp)
+
+endif
+
+!===============================================================================
+! 4. Close output
+!===============================================================================
+
+if (modhis.eq.2 .and. irangp.le.0) then
+
+  do ii = 1, nbname
+    tplnum = nptpl + ii
+    call tplend(tplnum, tplfmt)
+    !==========
+  enddo
+
+endif
+
+!===============================================================================
+! 5. End
+!===============================================================================
 
 return
 end subroutine
-
-

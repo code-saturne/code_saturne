@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -28,40 +28,31 @@
 subroutine laghis &
 !================
 
- ( idbia0 , idbra0 , ndim   , ncelet , ncel ,                     &
-   modhis , nvlsta ,                                              &
-   ia     ,                                                       &
-   xyzcen , volume , statis , stativ ,                            &
-   ra     )
+ ( ndim   , ncelet , ncel   , modhis , nvlsta ,  &
+   xyzcen , volume , statis , stativ )
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! -------
 
-! ROUTINE D'ECRITURE DES HISTORIQUES POUR LE LAGRANGIEN
+! Write plot data for the Lagrangian module
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! modhis           ! e  ! <-- ! indicateur valant 0,1 ou 2                     !
-!                  !    !               ! 1,2 = ecriture intermediaire, finale |
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
-! (ndim,ncelet)    !    !     !                                                !
-! ra               ! tr !  -- ! tableau des reels                              !
+! modhis           ! i  ! <-- ! 0 or 1: initialize/output; 2: finalize         !
+! xyzcen           ! ra ! <-- ! cell centers                                   !
+!  (ndim, ncelet)  !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -83,426 +74,317 @@ implicit none
 
 ! Arguments
 
-integer          idbia0, idbra0
 integer          ndim, ncelet, ncel
-integer          modhis, nvlsta
-integer          ia(*)
+integer          nvlsta
+integer          modhis
 double precision xyzcen(ndim,ncelet) , volume(ncelet)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
-double precision ra(*)
 
 ! Local variables
 
-character        nomfic*300, nenvar*300
-integer          ii, ii1, ii2, lpos, inam1, inam2, lng
-integer          icap,ncap,ipp,ipp2,nbpdte, jtcabs
-integer          idmoyd, idebia, idebra, ifinia ,ifinra
-integer          iel   , ivarl
-integer          nbcap(nvppmx)
-integer          ipas  , ilpd1 , il , ilfv1 , icla , ilts1
+character        nomhis*300, nompre*300
+integer          ii, ii1, ii2, lpre, lnom, inam1, inam2, lng
+integer          icap, ncap, ipp, ipp2, nbpdte, jtcabs
+integer          iel, ivarl, tplnum
+integer          ipas, ilpd1, il, ilfv1, icla
 integer          iokhis, iok2
 
-double precision xtcabs,xyztmp(3)
+double precision xtcabs
 double precision varcap(ncaptm)
 double precision dmoy
 
-! NOMBRE DE PASSAGES DANS LA ROUTINE
+integer, dimension(:), allocatable :: lsttmp
+double precision, dimension(:), allocatable, target :: moytmp
+double precision, dimension(:,:), allocatable :: xyztmp
+
+! Time plot number shift (in case multiple routines define plots)
+
+integer  nptpl
+data     nptpl /0/
+save     nptpl
+
+! Number of passes in this routine
 
 integer          ipass
 data             ipass /0/
 save             ipass
 
 !===============================================================================
-!===============================================================================
-! 0. INITIALISATIONS LOCALES
+! 0. Local initializations
 !===============================================================================
 
 ipass = ipass + 1
 
-idebia = idbia0
-idebra = idbra0
+!--> If no probe data has been output or there are no probes, return
+if ((ipass.eq.1 .and. modhis.eq.2) .or. ncapt.eq.0) return
 
-! Test : Si il n'y a pas de capteur ====> On ne fait rien
-
-if(ncapt.le.0) return
-
-!===============================================================================
-! 2. OUVERTURE DU FICHIER DE STOCKAGE histla.tmp
-!===============================================================================
-
-if(ipass.eq.1 .and. irangp.le.0) then
-  NOMFIC = ' '
-  nomfic = emphis
-  call verlon ( nomfic,ii1,ii2,lpos)
+if (ipass.eq.1) then
+  call tplnbr(nptpl)
   !==========
-
-  NOMFIC(II2+1:II2+10) = 'histla.tmp'
-  ii2 = ii2+10
-  open ( unit=impli1, file=nomfic (ii1:ii2),                      &
-         STATUS='UNKNOWN', FORM='UNFORMATTED',                    &
-         ACCESS='SEQUENTIAL')
 endif
 
 !===============================================================================
-! 3. ECRITURE DES RESULTATS dans le FICHIER DE STOCKAGE
+! 2. Initialize output
 !===============================================================================
 
-if(modhis.eq.0.or.modhis.eq.1) then
+if (ipass.eq.1) then
 
-  ifinia = idebia
-  idmoyd = idebra
-  ifinra = idmoyd + ncelet
-  call rasize('laghis',ifinra)
-  !==========
+  allocate(lsttmp(ncapt))
+  allocate(xyztmp(3, ncapt))
 
-  do ipas  = 1,1+nbclst
-
-!   Moyenne
-
-  do il = 1,nvlsta
-
-    ivarl = (ipas-1)*nvlsta+il
-    ilpd1 = (ipas-1)*nvlsta+ilpd
-    ilfv1 = (ipas-1)*nvlsta+ilfv
-    icla  = ipas -1
-
-! Pour l'instant on fait des chrono sur toutes les variables Stat. Lag.
-! et sur tout les capteurs
-
-   if ( ihslag(ivarl).ge. 1 ) then
-
-     if ( ivarl .ne. ilpd1 .and. ivarl .ne. ilfv1 ) then
-       do iel=1,ncel
-         if ( statis(iel,ilpd1) .gt. seuil ) then
-           ra(idmoyd+iel-1) = statis(iel,ivarl)                   &
-                             /statis(iel,ilpd1)
-         else
-           ra(idmoyd+iel-1) = 0.d0
-         endif
-       enddo
-
-     else if (ivarl.eq.ilpd1) then
-       do iel=1,ncel
-         ra(idmoyd+iel-1) = statis(iel,ivarl)
-       enddo
-     else
-       do iel=1,ncel
-         if (npst.gt.0) then
-           ra(idmoyd+iel-1) = statis(iel,ivarl)                   &
-                             /(dble(npst)*volume(iel))
-         else
-           ra(idmoyd+iel-1) = 0.d0
-         endif
-       enddo
-     endif
-
-     do icap = 1, ncapt
-       if (irangp.lt.0) then
-         varcap(icap) = ra(idmoyd+nodcap(icap)-1)
-       else
-         call parhis(nodcap(icap), ndrcap(icap),                  &
-         !==========
-                     ra(idmoyd), varcap(icap))
-       endif
-     enddo
-     ncap = ncapt
-
-     if (irangp.le.0) then
-       write(impli1) ntcabs, ttcabs, (varcap(icap),               &
-                                           icap=1,ncap)
-
-
-     endif
-
-   endif
-  enddo
-
-!   Variance
-
-  do il = 1,nvlsta-1
-
-   ivarl = (ipas-1)*nvlsta+il
-   ilpd1 = (ipas-1)*nvlsta+ilpd
-   ilfv1 = (ipas-1)*nvlsta+ilfv
-   ilts1 = (ipas-1)*nvlsta+ilts
-   icla  = ipas -1
-
-! Pour l'instant on fait des chrono sur toutes les variables Stat. Lag.
-! et sur tout les capteurs
-
-   if ( ihslag(ivarl).eq. 2 ) then
-     do iel = 1, ncel
-
-      if ( ivarl.ne.ilfv ) then
-        if ( statis(iel,ilpd1).gt.seuil ) then
-          ra(idmoyd+iel-1) = stativ(iel,ivarl)/statis(iel,ilpd1)  &
-                       -( statis(iel,ivarl)/statis(iel,ilpd1)     &
-                         *statis(iel,ivarl)/statis(iel,ilpd1) )
-        else
-          ra(idmoyd+iel-1) = zero
-        endif
-      else
-        if ( statis(iel,ilpd1).gt.seuil .and. npst.gt.0 ) then
-          dmoy = statis(iel,ivarl)                                &
-                /(dble(npst)*volume(iel))
-          ra(idmoyd+iel-1) = stativ(iel,ivarl)                    &
-                             /( dble(npst) * volume(iel) )        &
-                             -dmoy*dmoy
-
-        else if ( statis(iel,ilpd1).gt.seuil .and.                &
-                  iplas.ge.idstnt                  ) then
-          dmoy =  statis(iel,ivarl) / volume(iel)
-          ra(idmoyd+iel-1) = stativ(iel,ilfv) / volume(iel)       &
-                            -dmoy*dmoy
-        else
-          ra(idmoyd+iel-1) = zero
-        endif
-      endif
-      ra(idmoyd+iel-1) = sqrt( max(zero,ra(idmoyd+iel-1)))
-    enddo
-
-    do icap = 1, ncapt
-      if (irangp.lt.0) then
-        varcap(icap) = ra(idmoyd+nodcap(icap)-1)
-      else
-        call parhis(nodcap(icap), ndrcap(icap),                   &
-        !==========
-                    ra(idmoyd), varcap(icap))
-      endif
-    enddo
-    ncap = ncapt
-
-    if (irangp.le.0) then
-      write(impli1) ntcabs, ttcabs, (varcap(icap),                &
-                                         icap=1,ncap)
+  do ii=1, ncapt
+    lsttmp(ii) = ii
+    if (irangp.lt.0 .or. irangp.eq.ndrcap(ii)) then
+      xyztmp(1, ii) = xyzcen(1, nodcap(ii))
+      xyztmp(2, ii) = xyzcen(2, nodcap(ii))
+      xyztmp(3, ii) = xyzcen(3, nodcap(ii))
     endif
-
-   endif
+    if (irangp.ge.0) then
+      lng = 3
+      call parbcr(ndrcap(ii), lng , xyztmp(1, ii))
+      !==========
+    endif
   enddo
 
+  ! Initialize one output per variable
+
+  do ipas  = 1, 1+nbclst
+
+    do ipp = 1, 2*nvlsta
+
+      if (ipp .le. nvlsta) then
+        ivarl = (ipas-1)*nvlsta+il
+        ilpd1 = (ipas-1)*nvlsta+ilpd
+        ilfv1 = (ipas-1)*nvlsta+ilfv
+        icla  = ipas -1
+      else
+        ivarl = (ipas-1)*nvlsta+(il-nvlsta)
+        ilpd1 = (ipas-1)*nvlsta+ilpd
+        ilfv1 = (ipas-1)*nvlsta+ilfv
+        icla  = ipas -1
+      endif
+
+      iokhis = 0
+      if (ipp.le.nvlsta) then
+        if (ihslag(ipp).ge.1) iokhis = 1
+      else
+        if ((ipp-nvlsta).ne.ilpd .and. ihslag(ipp-nvlsta).eq.2) iokhis = 1
+      endif
+
+      if (iokhis.eq.1) then
+
+        if (irangp.le.0) then
+
+          ! plot prefix
+          nompre = ' '
+          call verlon(emphis, ii1, ii2, lpre)
+          !==========
+          nompre(1:lpre) = emphis(ii1:ii2)
+          call verlon(prehis, ii1, ii2, lnom)
+          !==========
+          nompre(lpre+1:lpre+lnom) = prehis(ii1:ii2)
+          call verlon(nompre, ii1, ii2, lpre)
+          !==========
+          nompre(lpre+1:lpre+4) = 'Lag_'
+          call verlon(nompre, ii1, ii2, lpre)
+          !==========
+
+          ! plot name
+          nomhis = ' '
+          if (ipas.eq.1) then
+            if (ipp.le.nvlsta) then
+              nomhis = nomlag(ipp)
+            else
+              nomhis = nomlav(ipp-nvlsta)
+            endif
+          else
+            if (ipp.le.nvlsta) then
+              write(nomhis, '(a8, a4, i3)') nomlag(ipp), '_grp', icla
+            else
+              write(nomhis, '(a8, a4, i3)') nomlav(ipp-nvlsta), '_grp', icla
+            endif
+          endif
+          call verlon(nomhis, inam1, inam2, lnom)
+          !==========
+          call undscr(inam1, inam2, nomhis)
+          !==========
+
+          tplnum = nptpl +(ipas-1)*2*nvlsta + ipp
+
+          call tppini(tplnum, nomhis, nompre, tplfmt, idtvar, nthsav, tplflw, &
+          !==========
+                      ncapt, lsttmp(1), xyzcap(1,1), lnom, lpre)
+
+        endif
+
+      endif
+
+    enddo
+
   enddo
+
+  deallocate(lsttmp)
+  deallocate(xyztmp)
 
 endif
 
 !===============================================================================
-! 4. EN CAS DE SAUVEGARDE INTERMEDIAIRE OU FINALE,
-!    TRANSMISSION DES INFORMATIONS DANS LES DIFFERENTS FICHIERS
+! 3. Output results
 !===============================================================================
 
-! On sauve aussi au premier passage pour permettre une
-!     verification des le debut du calcul
+if (modhis.eq.0 .or. modhis.eq.1) then
 
-if(modhis.eq.1.or.modhis.eq.2.or.ipass.eq.1) then
+  allocate(moytmp(ncel))
 
-!       --> nombre de pas de temps enregistres
+  do ipas  = 1, 1+nbclst
 
-  if(modhis.eq.2) then
-    nbpdte = ipass - 1
-  else
-    nbpdte = ipass
-  endif
+    ! Mean
 
-!       --> nombre de capteur par variable
-  do ipp = 1, 2*nvlsta
-    nbcap(ipp) = ncapt
-  enddo
+    do il = 1, nvlsta
 
-!       --> ecriture un fichier par variable
-
-
-  do ipas  = 1,1+nbclst
-
-   do ipp = 1, 2*nvlsta
-
-    if ( ipp .le. nvlsta) then
       ivarl = (ipas-1)*nvlsta+il
       ilpd1 = (ipas-1)*nvlsta+ilpd
       ilfv1 = (ipas-1)*nvlsta+ilfv
-      ilts1 = (ipas-1)*nvlsta+ilts
       icla  = ipas -1
-    else
-      ivarl = (ipas-1)*nvlsta+(il-nvlsta)
+
+      ! Pour l'instant on fait des chrono sur toutes les variables Stat. Lag.
+      ! et sur tout les capteurs
+
+      if (ihslag(ivarl).ge. 1) then
+
+        if (ivarl .ne. ilpd1 .and. ivarl .ne. ilfv1) then
+          do iel = 1, ncel
+            if (statis(iel, ilpd1) .gt. seuil) then
+              moytmp(iel) = statis(iel, ivarl) / statis(iel, ilpd1)
+            else
+              moytmp(iel) = 0.d0
+            endif
+          enddo
+
+        else if (ivarl.eq.ilpd1) then
+          do iel=1, ncel
+            moytmp(iel) = statis(iel, ivarl)
+          enddo
+        else
+          do iel=1, ncel
+            if (npst.gt.0) then
+              moytmp(iel) = statis(iel, ivarl) / (dble(npst)*volume(iel))
+            else
+              moytmp(iel) = 0.d0
+            endif
+          enddo
+        endif
+
+        do icap = 1, ncapt
+          if (irangp.lt.0) then
+            varcap(icap) = moytmp(nodcap(icap))
+          else
+            call parhis(nodcap(icap), ndrcap(icap), moytmp, varcap(icap))
+            !==========
+          endif
+        enddo
+        ncap = ncapt
+
+        if (irangp.le.0 .and. ncap.gt.0) then
+          tplnum = nptpl + (ipas-1)*2*nvlsta + il
+          call tplwri(tplnum, tplfmt, ncap, ntcabs, ttcabs, varcap)
+          !==========
+        endif
+
+      endif
+    enddo
+
+    ! Variance
+
+    do il = 1, nvlsta-1
+
+      ivarl = (ipas-1)*nvlsta+il
       ilpd1 = (ipas-1)*nvlsta+ilpd
       ilfv1 = (ipas-1)*nvlsta+ilfv
-      ilts1 = (ipas-1)*nvlsta+ilts
       icla  = ipas -1
-    endif
 
-    iokhis = 0
-    if (ipp.le.nvlsta) then
-      if (ihslag(ipp).ge.1) iokhis = 1
-    else
-      if ((ipp-nvlsta).ne.ilpd .and. ihslag(ipp-nvlsta).eq.2) iokhis = 1
-    endif
+      ! Pour l'instant on fait des chrono sur toutes les variables Stat. Lag.
+      ! et sur tout les capteurs
 
-    if (iokhis.eq.1) then
+      if (ihslag(ivarl).eq. 2) then
+        do iel = 1, ncel
 
-      if(irangp.le.0) then
-!           --> nom du fichier
-        NOMFIC = ' '
-        nomfic = emphis
-        call verlon (nomfic,ii1,ii2,lpos)
-        !==========
-
-        if ( ipas.eq.1 ) then
-          if ( ipp.le.nvlsta ) then
-            nenvar = nomlag(ipp)
-          else
-            nenvar = nomlav(ipp-nvlsta)
-          endif
-        else
-          if ( ipp.le.nvlsta ) then
-            WRITE(NENVAR,'(A8,A4,I3)')                            &
-                     NOMLAG(IPP),'_grp',ICLA
-          else
-            WRITE(NENVAR,'(A8,A4,I3)')                            &
-                     NOMLAV(IPP-NVLSTA),'_grp',ICLA
-          endif
-        endif
-        call verlon(nenvar,inam1,inam2,lpos)
-        !==========
-        call undscr(inam1,inam2,nenvar)
-        !==========
-        NOMFIC(II2+1:II2+4)='Lag_'
-        nomfic(ii2+4+1:ii2+4+lpos) = nenvar(inam1:inam2)
-        ii2 = ii2+4+lpos
-        NOMFIC(II2+1:II2+1) = '.'
-        ii2 = ii2+1
-        nenvar = exthis
-        call verlon(nenvar,inam1,inam2,lpos)
-        !==========
-        call undscr(inam1,inam2,nenvar)
-        !==========
-        nomfic(ii2+1:ii2+lpos) = nenvar(inam1:inam2)
-        ii2 = ii2+lpos
-!             --> ouverture
-        open ( unit=impli2, file=nomfic (ii1:ii2),                &
-               STATUS='UNKNOWN', FORM='FORMATTED',                &
-               ACCESS='SEQUENTIAL')
-!             --> entete
-        write(impli2,100)
-        write(impli2,101)
-        write(impli2,102) nomlag(ipp)
-        write(impli2,100)
-        write(impli2,103)
-        write(impli2,104)
-        write(impli2,103)
-      endif
-
-      do ii=1,ncapt
-        if (irangp.lt.0 .or.                                      &
-          irangp.eq.ndrcap(ii)) then
-          xyztmp(1) = xyzcen(1,nodcap(ii))
-          xyztmp(2) = xyzcen(2,nodcap(ii))
-          xyztmp(3) = xyzcen(3,nodcap(ii))
-        endif
-        if (irangp.ge.0) then
-          lng = 3
-          call parbcr(ndrcap(ii), lng , xyztmp)
-            !==========
-        endif
-        if(irangp.le.0) then
-          write(impli2,105) ii,                                   &
-                            xyztmp(1), xyztmp(2), xyztmp(3)
-        endif
-      enddo
-
-      if(irangp.le.0) then
-
-        write(impli2,103)
-        write(impli2,106) nbpdte
-        write(impli2,103)
-
-        write(impli2,103)
-        write(impli2,107)
-        write(impli2,103)
-
-        write(impli2,100)
-        write(impli2,103)
-
-!             --> boucle sur les differents enregistrements
-!                et les variables
-        rewind(impli1)
-        do ii = 1, nbpdte
-          do ipp2 = 1, 2*nvlsta
-
-            iok2 = 0
-            if (ipp2.le.nvlsta) then
-              if (ihslag(ipp2).ge.1) iok2 = 1
+          if (ivarl.ne.ilfv) then
+            if (statis(iel, ilpd1).gt.seuil) then
+              moytmp(iel) =   stativ(iel, ivarl)/statis(iel, ilpd1)     &
+                            -(statis(iel, ivarl)/statis(iel, ilpd1)     &
+                              *statis(iel, ivarl)/statis(iel, ilpd1))
             else
-              if (ihslag(ipp2-nvlsta).eq.2) iok2 = 1
+              moytmp(iel) = zero
             endif
+          else
+            if (statis(iel, ilpd1).gt.seuil .and. npst.gt.0) then
+              dmoy = statis(iel, ivarl) /(dble(npst)*volume(iel))
+              moytmp(iel) =  stativ(iel, ivarl) / (dble(npst) * volume(iel))  &
+                            -dmoy*dmoy
 
-            if (iok2.eq.1) then
-
-              read(impli1) jtcabs, xtcabs, (varcap(icap),icap=1,nbcap(ipp2))
-
-              if (ipp2.eq.ipp) then
-                write(impli2,1000) &
-                     jtcabs, xtcabs, (varcap(icap),icap=1,nbcap(ipp))
-              endif
-
+            else if (statis(iel, ilpd1).gt.seuil .and. iplas.ge.idstnt) then
+              dmoy =  statis(iel, ivarl) / volume(iel)
+              moytmp(iel) = stativ(iel, ilfv) / volume(iel) -dmoy*dmoy
+            else
+              moytmp(iel) = zero
             endif
-
-          enddo
+          endif
+          moytmp(iel) = sqrt(max(zero, moytmp(iel)))
         enddo
 
-!         --> fermeture fichier
-        close(impli2)
+        do icap = 1, ncapt
+          if (irangp.lt.0) then
+            varcap(icap) = moytmp(nodcap(icap))
+          else
+            call parhis(nodcap(icap), ndrcap(icap), moytmp, varcap(icap))
+            !==========
+          endif
+        enddo
+        ncap = ncapt
+
+        if (irangp.le.0 .and. ncap.gt.0) then
+          tplnum = nptpl + (ipas-1)*2*nvlsta + il + nvlsta
+          call tplwri(tplnum, tplfmt, ncap, ntcabs, ttcabs, varcap)
+          !==========
+        endif
 
       endif
-
-    endif
-
-  enddo
+    enddo
 
   enddo
+
+  deallocate(moytmp)
 
 endif
 
 !===============================================================================
-! 5. EN CAS DE SAUVEGARDE FINALE, DESTRUCTION DU TMP
+! 4. Close output
 !===============================================================================
 
-!MO      IF(MODHIS.EQ.2) THEN
-!MO        NOMFIC = ' '
-!MO        NOMFIC = EMPHIS
-!MO        CALL VERLON ( NOMFIC,II1,II2,LPOS)
-!MOC !==========
-!MO        NOMFIC(II2+1:II2+8) = 'hist.tmp'
-!MO        II2 = II2+8
-!MO        LPOS = LPOS+8
-!MOC
-!MO        NENVAR = ' '
-!MO        NENVAR = 'rm '
-!MO        NENVAR(4:4+LPOS) = NOMFIC ( II1:II2 )
-!MO        CALL SYSTEM(NENVAR)
-!MOC !==========
-!MO      ENDIF
+if (modhis.eq.2) then
+
+  if (irangp.le.0 .and. ncapt.gt.0) then
+
+    ! --> nombre de pas de temps enregistres
+
+    do ipas  = 1, 1+nbclst
+
+      do ipp = 1, 2*nvlsta
+        tplnum = nptpl + (ipas-1)*2*nvlsta + ipp
+        call tplend(tplnum, tplfmt)
+        !==========
+      enddo
+    enddo
+
+  endif
+
+endif
 
 !===============================================================================
-! 6. AFFICHAGES
+! 5. End
 !===============================================================================
-
- 100  FORMAT ('# ---------------------------------------------------')
- 101  FORMAT ('#      FICHIER HISTORIQUE EN TEMPS')
- 102  FORMAT ('#      VARIABLE    ',A16)
- 103  FORMAT ('# ')
- 104  FORMAT ('#      POSITION DES CAPTEURS (colonne)')
- 105  FORMAT ('# ',I6,')',3(1X,E14.7))
- 106  FORMAT ('#      NOMBRE D''ENREGISTREMENTS :',I7)
- 107  format (                                                          &
-'# COLONNE 1       : NUMERO DU PAS DE TEMPS ',/,            &
-'#         2       : TEMPS PHYSIQUE (ou No pas de temps*DTREF ',/,&
-'#                               en pas de temps non uniforme)',/,&
-'#         3 A 100 : VALEUR AUX CAPTEURS')
- 1000 format ( 1(1x,i7,1x),101(1x,e14.7))
 
 return
-
-!----
-! FIN
-!----
-
 end subroutine

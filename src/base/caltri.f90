@@ -162,7 +162,7 @@ maxelt = max(ncelet,nfac,nfabor)
 
 !---> CALCULS GEOMETRIQUES
 
-!     (MEMCLG remplit directement pointe.h)
+!     (MEMCLG remplit directement pointe.f90)
 call memclg                                                       &
 !==========
  ( idebia , idebra ,                                              &
@@ -209,7 +209,7 @@ call initi2                                                       &
 
 if (iilagr.gt.0) then
 
-!--> Calcul de LNDNOD (lagran.h)
+!--> Calcul de LNDNOD (lagran.f90)
 
 !   Tableau NCELET de travail entier
   iiwork = idebia
@@ -247,7 +247,7 @@ call memtri                                                       &
    ifinia , ifinra )
 
 !     Reservations complementaires pour Matisse
-!       On remplit un pointeur dans matiss.h, pour eviter de charger
+!       On remplit un pointeur dans matiss.f90, pour eviter de charger
 !       les arguments par des tableaux specifiques a Matisse.
 
 if (imatis.eq.1) then
@@ -314,7 +314,7 @@ call memla1                                                       &
     ifinia , ifinra )
 
 !===============================================================================
-! 4.3 TESTS ELEMENTAIRES : APPEL A TESTEL.F
+! 4.3 TESTS ELEMENTAIRES : appel a testel.f90
 !===============================================================================
 
 if (iverif.eq.1) then
@@ -1240,12 +1240,9 @@ call pstvar                                                       &
 ! 22. HISTORIQUES
 !===============================================================================
 
-! ON STOCKE SUR TMP SI ON A DECIDE DE LE FAIRE ET QUE C'EST LE MOMENT
-! ON SAUVE SI ON A DECIDE DE LE FAIRE, QUE C'EST LE MOMENT ET
-!   QUE CE N'EST PAS LE DERNIER PAS DE TEMPS
+if (nthist.gt.0 .and. itrale.gt.0) then
+  if (mod(ntcabs,nthist).eq.0) then
 
-if(nthist.gt.0 .and. itrale.gt.0) then
-  if(mod(ntcabs,nthist).eq.0) then
     modhis = 0
     if(nthsav.gt.0) then
       if(mod(ntcabs,nthsav).lt.nthist ) modhis = 1
@@ -1262,32 +1259,18 @@ if(nthist.gt.0 .and. itrale.gt.0) then
     endif
     if (ntcabs.eq.ntmabs) modhis=0
 
-    call ecrhis                                                   &
+    call ecrhis(ndim, ncelet, ncel, modhis, xyzcen, ra)
     !==========
-   (ifinia , ifinra , ndim   , ncelet , ncel,                     &
-    modhis ,                                                      &
-    ia     ,                                                      &
-    xyzcen ,                                                      &
-    ra     )
 
     if (iilagr.gt.0) then
-      call laghis                                                 &
+      call laghis(ndim, ncelet, ncel, modhis, nvlsta,             &
       !==========
-     (ifinia , ifinra , ndim   , ncelet , ncel,                   &
-      modhis , nvlsta ,                                           &
-      ia     ,                                                    &
-      xyzcen , volume ,                                           &
-      ra(istatc) , ra(istatv) ,                                   &
-      ra     )
+                  xyzcen, volume, ra(istatc), ra(istatv))
     endif
 
     if (ihistr.eq.1) then
-      call strhis                                                 &
+      call strhis(modhis)
       !==========
-     (ifinia , ifinra , ncelet , ncel,                            &
-      modhis ,                                                    &
-      ia     ,                                                    &
-      ra     )
     endif
 
   endif
@@ -1384,34 +1367,20 @@ endif
 call dmtmps(tecrf1)
 !==========
 
-! ICI ON SAUVE LES HISTORIQUES (SI ON EN A STOCKE)
+! Ici on sauve les historiques (si on en a stocke)
 
 modhis = 2
-call ecrhis                                                       &
+call ecrhis(ndim, ncelet, ncel, modhis, xyzcen, ra)
 !==========
-(  ifinia , ifinra , ndim   , ncelet , ncel,                      &
-   modhis ,                                                       &
-   ia     ,                                                       &
-   xyzcen ,                                                       &
-   ra     )
 
 if (iilagr.gt.0) then
-    call laghis                                                   &
-    !==========
-   (ifinia , ifinra , ndim   , ncelet , ncel,                     &
-    modhis , nvlsta ,                                             &
-    ia     ,                                                      &
-    xyzcen , volume ,                                             &
-    ra(istatc) , ra(istatv) ,                                     &
-    ra     )
+  call laghis(ndim, ncelet, ncel, modhis , nvlsta,                &
+  !==========
+              xyzcen, volume, ra(istatc), ra(istatv))
 endif
 if (ihistr.eq.1) then
-  call strhis                                                     &
+  call strhis(modhis)
   !==========
- (ifinia , ifinra , ncelet , ncel,                                &
-  modhis ,                                                        &
-  ia     ,                                                        &
-  ra     )
 endif
 
 !     LE CAS ECHEANT, ON LIBERE LES STRUCTURES C DU MODULE THERMIQUE 1D
