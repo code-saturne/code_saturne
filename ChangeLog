@@ -1,4 +1,13 @@
 * 07/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Extendend variable names to avoid truncation in convergence summary.
+  modified files:
+    src/base/calhyd.f90
+    src/base/codits.f90
+    src/base/invers.f90
+    src/base/resolp.f90
+    src/cfbl/cfcdts.f90
+
+* 07/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Added C API to handle probes.
   This allows not writing to a temporary file anymore and enabling both
   the legacy .dat (XmGrace) format and CSV files.

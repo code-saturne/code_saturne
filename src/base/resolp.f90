@@ -387,7 +387,7 @@ if(irnpnw.ne.1) then
 
   if(iwarni(ipriph).ge.2) then
     chaine = nomvar(ipp)
-    write(nfecra,1300)chaine(1:8) ,rnormp(iphas)
+    write(nfecra,1300)chaine(1:16) ,rnormp(iphas)
   endif
   dervar(ipp) = rnormp(iphas)
   nbivar(ipp) = 0
@@ -396,7 +396,7 @@ else
 
   if(iwarni(ipriph).ge.2) then
     chaine = nomvar(ipp)
-    write(nfecra,1300)chaine(1:8) ,rnormp(iphas)
+    write(nfecra,1300)chaine(1:16) ,rnormp(iphas)
   endif
   dervar(ipp) = rnormp(iphas)
   nbivar(ipp) = 0
@@ -890,11 +890,11 @@ if (imgr(ipriph).gt.0) then
   iagmax = iagmx0(ipriph)
   nagmax = nagmx0(ipriph)
   npstmg = ncpmgr(ipriph)
-  lchain = 8
+  lchain = 16
 
   call clmlga                                                     &
   !==========
- ( chaine(1:8) ,     lchain ,                                     &
+ ( chaine(1:16) ,   lchain ,                                     &
    ncelet , ncel   , nfac   ,                                     &
    isym   , iagmax , nagmax , npstmg , iwarnp ,                   &
    ngrmax , ncegrm ,                                              &
@@ -955,7 +955,7 @@ do 100 isweep = 1, nswmpr
   call prodsc(ncelet,ncel,isqrt,smbr,smbr,residu)
   if (iwarni(ipriph).ge.2) then
      chaine = nomvar(ipp)
-     write(nfecra,1400)chaine(1:8),isweep,residu
+     write(nfecra,1400)chaine(1:16),isweep,residu
   endif
   if (isweep.eq.1) rnsmbr(ipp) = residu
 
@@ -1057,7 +1057,7 @@ do 100 isweep = 1, nswmpr
 
   call invers                                                     &
   !==========
- ( chaine(1:8)     , idebia , idebra ,                            &
+ ( chaine(1:16)    , idebia , idebra ,                            &
    isym   , ipol   , ireslp , nitmap , imgrp  ,                   &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
@@ -1276,7 +1276,7 @@ do 100 isweep = 1, nswmpr
 
 if(iwarni(ipriph).ge.2) then
    chaine = nomvar(ipp)
-   write( nfecra,1600)chaine(1:8),nswmpr
+   write( nfecra,1600)chaine(1:16),nswmpr
 endif
 
  101  continue
@@ -1300,8 +1300,8 @@ endif
 
 if (imgr(ipriph).gt.0) then
   chaine = nomvar(ipp)
-  lchain = 8
-  call dsmlga(chaine(1:8), lchain)
+  lchain = 16
+  call dsmlga(chaine(1:16), lchain)
   !==========
 endif
 
@@ -1311,22 +1311,22 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1300 format(1X,A8,' : RESIDU DE NORMALISATION =', E14.6)
- 1400 format(1X,A8,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6)
+ 1300 format(1X,A16,' : RESIDU DE NORMALISATION =', E14.6)
+ 1400 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6)
  1600 format(                                                           &
 '@                                                            ',/,&
-'@ @@ ATTENTION : ',A8 ,' ETAPE DE PRESSION                   ',/,&
+'@ @@ ATTENTION : ', A16,' ETAPE DE PRESSION                  ',/,&
 '@    =========                                               ',/,&
 '@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,&
 '@                                                            '  )
 
 #else
 
- 1300 format(1X,A8,' : NORMED RESIDUALS = ', E14.6)
- 1400 format(1X,A8,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6)
+ 1300 format(1X,A16,' : NORMED RESIDUALS = ', E14.6)
+ 1400 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6)
  1600 format(                                                           &
 '@'                                                            ,/,&
-'@ @@ WARNING: ',A8 ,' PRESSURE STEP '                         ,/,&
+'@ @@ WARNING: ', A16,' PRESSURE STEP '                        ,/,&
 '@    ========'                                                ,/,&
 '@  Maximum number of iterations ',I10   ,' reached'           ,/,&
 '@'                                                              )

@@ -204,7 +204,7 @@ double precision ra(*)
 ! Local variables
 
 character*80     chaine
-character*8      cnom
+character*16     cnom
 integer          idebia, idebra
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
@@ -222,7 +222,7 @@ idebra = idbra0
 
 ! NOMS
 chaine = nomvar(ipp)
-cnom   = chaine(1:8)
+cnom   = chaine(1:16)
 
 ! MATRICE A PRIORI SYMETRIQUE ( = 1)
 isym  = 1
@@ -451,19 +451,19 @@ call prodsc(ncelet,ncel,isqrt,smbrp,smbrp,residu)
 
 if( residu.le.epsrsp*rnorm ) then
    if(iwarnp.ge.1) then
-      write( nfecra,1000) cnom,isweep,residu,rnorm
+      write(nfecra,1000) cnom,isweep,residu,rnorm
    endif
    goto 200
 endif
 
 if(iwarnp.ge.3) then
-   write( nfecra,1000) cnom,isweep,residu,rnorm
+   write(nfecra,1000) cnom,isweep,residu,rnorm
 endif
 
  100  continue
 
 if(iwarnp.ge.2) then
-   write( nfecra,1100)cnom, nswmod
+   write(nfecra,1100) cnom, nswmod
 endif
 
 !===============================================================================
@@ -521,10 +521,10 @@ endif
 !--------
 
  1000 format (                                                          &
- 1X,A8,' : CV-DIF-TS',I5,' IT - RES= ',E12.5,' NORME= ', E12.5)
+ 1X,A16,' : CV-DIF-TS',I5,' IT - RES= ',E12.5,' NORME= ', E12.5)
  1100 format (                                                          &
 '@                                                            ',/,&
-'@ @@ ATTENTION : ',A8 ,' CONVECTION-DIFFUSION-TERMES SOURCES ',/,&
+'@ @@ ATTENTION : ',A16 ,' CONVECTION-DIFFUSION-TERMES SOURCES ',/,&
 '@    =========                                               ',/,&
 '@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,&
 '@                                                            '  )

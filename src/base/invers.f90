@@ -110,7 +110,7 @@ implicit none
 
 ! Arguments
 
-character*8      cnom
+character*16     cnom
 integer          idbia0 , idbra0
 integer          isym   , ipol   , ireslp , nitmap
 integer          imgrp  , ncymxp , nitmfp
@@ -173,9 +173,9 @@ elseif(imgrp.eq.0) then
  ( cnom   , lnom   , ncelet , ncel   , nfac   ,                   &
    isym   , ireslp , ipol   , nitmap , iinvpe ,                   &
    iwarnp , niterf , epsilp , rnorm  , residu ,                   &
-!                 ------                     ------
+!           ------                     ------
    ifacel , dam    , xam    , smbrp  , vx     )
-!                                   -----
+!                             -----
 
   else
     write(nfecra,1000) cnom, ireslp
