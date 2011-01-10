@@ -1,5 +1,10 @@
+* 10/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Field component names are separated by spaces instead of null-characters.
+  modified files:
+    src/fvm/fvm_to_med.c
+
 * 07/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
-  Extendend variable names to avoid truncation in convergence summary.
+  Extended variable names to avoid truncation in convergence summary.
   modified files:
     src/base/calhyd.f90
     src/base/codits.f90

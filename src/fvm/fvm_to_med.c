@@ -1074,6 +1074,11 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
                   "Component %s", ij_asym[i_dim]);
       }
 
+      for (i = 0; i < name_size; i++) {
+        if (component_name[i] == '\0')
+          component_name[i] = ' ';
+      }
+
       component_name[name_size] = '\0';
       units_name[name_size] = '\0';
 
