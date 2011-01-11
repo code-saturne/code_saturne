@@ -1,3 +1,8 @@
+* 10/01/2011 - Cyril Baudry <cyril.baudry@edf.fr>
+  Separate the test about the unsteady/steady algorithm in a new function.
+  modified script:
+    gui/Pages/OutputControlView.py
+
 * 10/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Field component names are separated by spaces instead of null-characters.
   modified files:

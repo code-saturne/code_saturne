@@ -301,19 +301,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelHisto.addItem(self.tr("Monitoring points file every 'x' second(s)"), 'Frequency_h_x')
 
         # Hide time frequency (in s) when calculation is steady
-
-        from Pages.SteadyManagementModel import SteadyManagementModel        
-
-        if SteadyManagementModel(self.case).getSteadyFlowManagement() == 'on':
+        if self.isSteady() != 1:
             self.modelPostProcessing.disableItem(3)
             self.modelHisto.disableItem(3)
-
-        else:
-            from Pages.TimeStepModel import TimeStepModel
-
-            if TimeStepModel(self.case).getTimePassing() == 2:
-                self.modelPostProcessing.disableItem(3)
-                self.modelHisto.disableItem(3)
 
         # Model for QTableView
 
@@ -798,6 +788,21 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.modelMeshes.disableItem(str_model='11')
             self.modelMeshes.disableItem(str_model='12')
         return ale
+
+    def isSteady(self):
+        """
+        """
+        steady = 1
+        from Pages.SteadyManagementModel import SteadyManagementModel
+
+        if SteadyManagementModel(self.case).getSteadyFlowManagement() == 'on':
+            steady = 0
+        else:
+            from Pages.TimeStepModel import TimeStepModel
+            if TimeStepModel(self.case).getTimePassing() == 2:
+                steady = 0
+
+        return steady
 
 
     def tr(self, text):
