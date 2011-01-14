@@ -82,7 +82,6 @@
 #include "cs_base.h"
 #include "cs_base_fortran.h"
 #include "cs_benchmark.h"
-#include "cs_base.h"
 #include "cs_calcium.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"

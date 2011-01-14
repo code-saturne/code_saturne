@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -39,61 +39,57 @@ subroutine invers &
    ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! -------
 
-! APPEL AUX ROUTINE D'INVERSION DE SYSTEMES LINEAIRE
-!  MULTIGRILLE + GRADCO OU JACOBI OU BI-CGSTAB
-!  GRADCO
-!  JACOBI
-!  BI-CGSTAB
-!  ON SUPPOSE VX INITIALISE EN ENTREE
+! Call linear system resolution:
+! - multigrid + -conjugate gradient or Jacobi or Bi-CGstab)
+! - Jacobi
+! - Bi-CGstab
+! we assume vx in initialized on input.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! cnom             ! a  ! <-- ! nom de la variable                             !
+! cnom             ! a  ! <-- ! variable name                                  !
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! isym             ! e  ! <-- ! indicateur = 1 matrice sym                     !
-!                  !    !     !            = 2 matrice non sym                 !
-! ipol             ! e  ! <-- ! degre du polynome pour precond                 !
-!                  !    !     !         (0 -> diagonal)                        !
-! ireslp           ! e  ! <-- ! indicateur = 0 gradco                          !
-!                  !    !     !            = 1 jacobi                          !
-!                  !    !     !            = 2 cgstab                          !
-! nitmap           ! e  ! <-- ! nombre max d'iter pour resol iterativ          !
-! imgrp            ! e  ! <-- ! indicateur = 0 pas de multigrille              !
-! ncymxp           ! e  ! <-- ! nombre de cycles max pour multigrille          !
-! nitmfp           ! e  ! <-- ! nombre d iter sur maillage fin                 !
+! isym             ! e  ! <-- ! flag = 1: symmetric matrix                     !
+!                  !    !     !        2: non-symmetric matrix                 !
+! ipol             ! e  ! <-- ! polynomial degree for preconditioning          !
+!                  !    !     !   (0 <-- diagonal)                             !
+! ireslp           ! e  ! <-- ! solver type: 0 conjugate gradient              !
+!                  !    !     !              1 Jacobi                          !
+!                  !    !     !              2 CG-stab                         !
+! nitmap           ! e  ! <-- ! max number of iterations for soultion          !
+! imgrp            ! e  ! <-- ! 1 for multigrid, 0 otherwise                   !
+! ncymxp           ! e  ! <-- ! max. number of multigrid cycles                !
+! nitmfp           ! e  ! <-- ! number of equivalent iterations on fine mesh   !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
-! niterf           ! e  ! --> ! nombre d'iterations effectuees                 !
-!                  !    !     !  (non multigrille)                             !
-! icycle           ! e  ! --> ! nombre de cycles mgm effectues                 !
-! iinvpe           ! e  ! <-- ! indicateur pour annuler les increment          !
-!                  !    !     ! en periodicite de rotation (=2) ou             !
-!                  !    !     ! pour les echanger normalement de               !
-!                  !    !     ! maniere scalaire (=1)                          !
-! epsilp           ! r  ! <-- ! precision pour resol iter                      !
-! rnorm            ! r  ! <-- ! normalisation du residu                        !
-! residu           ! r  ! --> ! residu final non norme                         !
+! nfecra           ! e  ! <-- ! standart output unit                           !
+! niterf           ! e  ! --> ! number of iterations done (non-multigrid)      !
+! icycle           ! e  ! --> ! number of multigrid cycles done                !
+! iinvpe           ! e  ! <-- ! flag to cancel increments in rotational        !
+!                  !    !     ! periodicity (=2) or to exchange them normally  !
+!                  !    !     ! in a scalar fashion (=1)                       !
+! epsilp           ! r  ! <-- ! precision for iterative resolution             !
+! rnorm            ! r  ! <-- ! residue normalization                          !
+! residu           ! r  ! --> ! final non-normalized residue                   !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! dam(ncelet       ! tr ! <-- ! diagonale (maillage fin si mgm)                !
-! xam(nfac,isym    ! tr ! <-- ! extradiagonale (maillage fin si mgm)           !
-! smbrp(ncelet     ! tr ! <-- ! second membre (maillage fin si mgm)            !
-! vx   (ncelet     ! tr ! <-- ! solution du systeme                            !
-! w1,2,3,4,5,6     ! tr ! --- ! auxiliaires de travail                         !
-!      (ncelet     !    !     !                                                !
+! dam(ncelet       ! tr ! <-- ! diagonal (fine mesh if multigrid)              !
+! xam(nfac,isym    ! tr ! <-- ! extradiagonal (fine mesh if multigrid)         !
+! smbrp(ncelet     ! tr ! <-- ! right hand side (fine mesh if multigrid)       !
+! vx(ncelet)       ! tr ! <-- ! system solution                                !
+! w1,2,3,4,5,6     ! tr ! --- ! auxiliary arrays                               !
+!   (ncelet)       !    !     !                                                !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -173,9 +169,9 @@ elseif(imgrp.eq.0) then
  ( cnom   , lnom   , ncelet , ncel   , nfac   ,                   &
    isym   , ireslp , ipol   , nitmap , iinvpe ,                   &
    iwarnp , niterf , epsilp , rnorm  , residu ,                   &
-!           ------                     ------
+   !        ------                     ------
    ifacel , dam    , xam    , smbrp  , vx     )
-!                             -----
+    !                         -----
 
   else
     write(nfecra,1000) cnom, ireslp
@@ -196,7 +192,7 @@ endif
 #endif
 
 !----
-! FIN
+! End
 !----
 
 return

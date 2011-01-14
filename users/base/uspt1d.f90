@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -198,11 +198,11 @@ ifbt1d = 0
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-if(1.eq.1) return
+if (1.eq.1) return
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-if(iappel.eq.1.or.iappel.eq.2) then
+if (iappel.eq.1.or.iappel.eq.2) then
 
 !===============================================================================
 ! Faces determining with the 1-D thermic module:
@@ -218,14 +218,13 @@ if(iappel.eq.1.or.iappel.eq.2) then
 !     the start or restarting computation.
 !
 !     A total similarity is required to continue with the previous computation.
-!     Regarding the test case on ifpt1d, it is necessary that the array will be
-!     arranged in increasing order
-!               (as following : ifpt1d(jj) > ifpt1d(ii) si jj > ii).
+!     Regarding the test case on ifpt1d, it is necessary that the array be
+!     arranged in increasing order (ifpt1d(jj) > ifpt1d(ii) if jj > ii).
 !
 !     If it is impossible, contact the developer team to deactivate this test.
 !===============================================================================
 
-  CALL GETFBR('3',NLELT,LSTELT)
+  call getfbr('3', nlelt, lstelt)
   !==========
 
   do ilelt = 1, nlelt
@@ -240,7 +239,7 @@ if(iappel.eq.1.or.iappel.eq.2) then
 endif
 
 if (iappel.eq.1) then
-   nfpt1d = ifbt1d
+  nfpt1d = ifbt1d
 endif
 
 !===============================================================================
@@ -270,15 +269,15 @@ endif
 !     An exact similarity is necessary to continue with the previous computation.
 !===============================================================================
 if (iappel.eq.2) then
-   if(iphas.eq.1) then
-      do ii = 1, nfpt1d
-        ifac = ifpt1d(ii)
-        nppt1d(ii) = 8
-        eppt1d(ii) = 0.01144d0
-        rgpt1d(ii) = 1.d0
-        tppt1d(ii) = 25.d0
-      enddo
-   endif
+  if (iphas.eq.1) then
+    do ii = 1, nfpt1d
+      ifac = ifpt1d(ii)
+      nppt1d(ii) = 8
+      eppt1d(ii) = 0.01144d0
+      rgpt1d(ii) = 1.d0
+      tppt1d(ii) = 25.d0
+    enddo
+  endif
 endif
 !===============================================================================
 ! Padding of the wall exterior boundary conditions:
@@ -286,7 +285,8 @@ endif
 !
 !     iclt1d(ii): boundary condition type
 !     ----------
-!                  iclt1d(ii) = 1: dirichlet's condition ,  with exchange coefficient
+!                  iclt1d(ii) = 1: dirichlet condition,
+!                                  with exchange coefficient
 !                  iclt1d(ii) = 3: flux condition
 !
 !     tept1d(ii): exterior temperature
@@ -298,28 +298,29 @@ endif
 !                 (ii)th border face with the 1-D thermic module (s)
 !===============================================================================
 if (iappel.eq.3) then
-   if(iphas.eq.1) then
-      do ii = 1, nfpt1d
-         iclt1d(ii) = 1
-! Physical parameters
-         ifac = ifpt1d(ii)
-         if (cdgfbo(2,ifac).le.0.025d0) then
-           iclt1d(ii) = 3
-           fept1d(ii) = -1.d4
-         else
-           iclt1d(ii) = 3
-           fept1d(ii) =  1.d4
-         endif
-         xlmt1d(ii) = 31.5d0
-         rcpt1d(ii) = 3.5d6
-         dtpt1d(ii) = 0.3d0
-      enddo
-   endif
+  if (iphas.eq.1) then
+    do ii = 1, nfpt1d
+      iclt1d(ii) = 1
+      ! Physical parameters
+      ifac = ifpt1d(ii)
+      if (cdgfbo(2,ifac).le.0.025d0) then
+        iclt1d(ii) = 3
+        fept1d(ii) = -1.d4
+      else
+        iclt1d(ii) = 3
+        fept1d(ii) =  1.d4
+      endif
+      xlmt1d(ii) = 31.5d0
+      rcpt1d(ii) = 3.5d6
+      dtpt1d(ii) = 0.3d0
+    enddo
+  endif
 endif
 
 !===============================================================================
-! END of the uspt1d subroutine =====================================================
+! End of the uspt1d subroutine
 !===============================================================================
+
 return
 end subroutine
 

@@ -1,3 +1,12 @@
+* 10/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Cosmetic, comment, and translation updates.
+  modified files:
+    src/apps/cs_solver.c
+    src/base/invers.f90
+    src/base/optcal.f90
+    users/base/usproj.f90
+    users/base/uspt1d.f90
+
 * 10/01/2011 - Cyril Baudry <cyril.baudry@edf.fr>
   Separate the test about the unsteady/steady algorithm in a new function.
   modified script:

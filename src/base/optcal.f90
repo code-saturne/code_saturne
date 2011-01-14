@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2010 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -55,7 +55,7 @@ module optcal
   !    =1 variable, =0 constant
   !     sert lors des lectures de fichier suite pour eviter d'ecraser
   !     la valeur fournie par la valeur de l'ancien calcul.
-  integer, save :: irovar(nphsmx),ivivar(nphsmx)
+  integer, save :: irovar(nphsmx), ivivar(nphsmx)
 
   ! Schema en temps
 
@@ -270,9 +270,10 @@ module optcal
 
   ! Option pas de temps
   !   idtvar : pas de temps variable
-  !     = 0 : pas de temps constant
-  !     = 1 : pas de temps uniforme en espace et variable en temps
-  !     = 2 : pas de temps variable en espace et variable en temps
+  !     = -1 : algorithme stationaire
+  !     =  0 : pas de temps constant
+  !     =  1 : pas de temps uniforme en espace et variable en temps
+  !     =  2 : pas de temps variable en espace et variable en temps
   !   iptlro : limitation du pas de temps liee aux effets de densite
   !     = 0 : non
   !     = 1 : oui
