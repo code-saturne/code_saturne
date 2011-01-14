@@ -92,6 +92,7 @@ endif
 cs_solver_SOURCES =
 cs_solver_LDADD = libsaturne.la $(LTLIBINTL) \
 $(top_builddir)/src/mei/libmei.la \
+$(top_builddir)/src/fvm/libfvm_filters.la \
 $(top_builddir)/src/fvm/libfvm.la \
 $(top_builddir)/src/bft/libbft.la \
 $(LDFLAGS_PLE) $(LIBS_PLE) \

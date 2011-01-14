@@ -80,9 +80,10 @@ fvm_writer_priv.h
 
 # Library source files
 
-lib_LTLIBRARIES = libfvm.la
+lib_LTLIBRARIES = libfvm.la libfvm_filters.la
 noinst_LTLIBRARIES =
 libfvm_la_LIBADD =
+libfvm_filters_la_LIBADD =
 
 libfvm_la_SOURCES = \
 fvm_block_dist.c \
@@ -114,24 +115,27 @@ fvm_point_location.c \
 fvm_selector.c \
 fvm_selector_postfix.c \
 fvm_tesselation.c \
+fvm_trace.c \
+fvm_triangulate.c
+
+libfvm_filters_la_SOURCES = \
 fvm_to_ensight.c \
 fvm_to_ensight_case.c \
 fvm_to_ensight_v1.c \
-fvm_trace.c \
-fvm_triangulate.c \
 fvm_writer.c \
 fvm_writer_helper.c
 
 if HAVE_CGNS
 noinst_LTLIBRARIES += libfvm_cgns.la
-libfvm_la_LIBADD += libfvm_cgns.la
+libfvm_filters_la_LIBADD += libfvm_cgns.la
 libfvm_cgns_la_SOURCES = fvm_to_cgns.c
 endif
 
 if HAVE_MED
 noinst_LTLIBRARIES += libfvm_med.la
-libfvm_la_LIBADD += libfvm_med.la
+libfvm_filters_la_LIBADD += libfvm_med.la
 libfvm_med_la_SOURCES = fvm_to_med.c
 endif
 
-libfvm_la_LDFLAGS = -no-undefined -version-info 0:0:0
+libfvm_la_LDFLAGS = -no-undefined
+libfvm_filters_la_LDFLAGS = -no-undefined

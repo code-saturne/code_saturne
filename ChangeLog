@@ -1,3 +1,10 @@
+* 14/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Format filters moved to libfvm_filters so as to remove dependency
+  of partitioner and unit tests to optional libraries.
+  modified files:
+    src/apps/Makefile.am
+    src/fvm/Makefile.am
+
 * 10/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Cosmetic, comment, and translation updates.
   modified files:
