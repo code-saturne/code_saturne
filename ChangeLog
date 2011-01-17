@@ -1,3 +1,8 @@
+* 17/01/2010 - David Monfort <david.monfort@edf.fr>
+  Upgrade version number to 2.0.1
+  modified script:
+    configure.ac
+
 * 17/12/2010 - David Monfort <david.monfort@edf.fr>
   Update the compilation flags detection according to Subversion trunk.
   modified script:
