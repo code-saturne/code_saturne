@@ -49,7 +49,7 @@ class package:
         self.tmpdir = 'tmp_Saturne'
         self.srcdir = 'src_saturne'
 
-        self.ld = "@CC@"
+        self.ld = "@CS_LD@"
         self.cppflags = "@CPPFLAGS@ @PLE_CPPFLAGS@"
         self.ldflags = "@PLE_LDFLAGS@"
         self.libs = "-lsaturne -lmei -lfvm_filters -lfvm -lbft @PLE_LIBS@"

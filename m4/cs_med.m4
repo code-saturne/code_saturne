@@ -28,6 +28,7 @@ AC_DEFUN([CS_AC_TEST_MED], [
 
 cs_have_med=no
 cs_have_med_headers=no
+cs_have_med_link_cxx=no
 
 AC_ARG_WITH(med,
             [AS_HELP_STRING([--with-med=PATH],
@@ -61,29 +62,6 @@ AC_ARG_WITH(med-lib,
                MED_LDFLAGS="-L$with_med/lib"
              fi])
 
-AC_ARG_WITH(med-dep-libs,
-            [AS_HELP_STRING([--with-med-dep-libs=LIBS],
-                            [specify comma-separated list of libraries
-                             (in the same form as if they were passed to the
-                             linker with -l) in case C++ or Fortran libraries
-                             are needed by MED and not linked automatically])],
-            [if test "x$with_med" = "xcheck"; then
-               with_med=yes
-             fi],
-            [])
-
-AC_ARG_WITH(med-dep-dirs,
-            [AS_HELP_STRING([--with-med-dep-dirs=DIRS],
-                            [specify comma-separated list of directories
-                             (in the same form as if they were passed to the
-                             linker with -L) in case C++ or Fortran libraries
-                             are needed by MED and not linked automatically])],
-            [if test "x$with_med" = "xcheck"; then
-               with_med=yes
-             fi],
-            [])
-
-
 if test "x$with_med" != "xno" -a "x$cs_have_hdf5" = "xno"; then
   if test "x$with_med" = "xcheck"; then
     with_med=no
@@ -94,13 +72,6 @@ if test "x$with_med" != "xno" -a "x$cs_have_hdf5" = "xno"; then
 fi
 
 if test "x$with_med" != "xno" ; then
-
-# Starting with MED 2.3.2, C++ libraries may be necessary to link with MED;
-# we could use AC_LANG_PUSH(C++) before linking tests and then follow with
-# AC_LANG_POP(C++), but this does not tell us if we should switch to linking
-# with the C++ compiler (in addition, we might have to link with the Fortran
-# librairies also). So we use --with-med-dep-libs and --with-med-dep-dirs
-# to set those options manually instead.
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
@@ -154,9 +125,25 @@ if test "x$with_med" != "xno" ; then
                  [ AC_DEFINE([HAVE_MED], 1, [MED file support])
                    cs_have_med=yes
                  ], 
-                 [ AC_MSG_WARN([no MED file support with C only API])
+                 [ AC_MSG_WARN([no MED file support with C only link])
                  ],
                  )
+
+    if test "x$cs_have_med" = "xno"; then
+  
+      # try linking with C++ in case of static MED library
+
+      AC_LANG_PUSH(C++)
+      AC_CHECK_LIB(med, MEDfamCr, 
+                   [ AC_DEFINE([HAVE_MED], 1, [MED file support])
+                     cs_have_med=yes; cs_have_med_link_cxx=yes
+                   ], 
+                   [ AC_MSG_WARN([no MED file support])
+                   ],
+                   )
+      AC_LANG_POP(C++)
+
+    fi
 
     if test "x$cs_have_med" = "xno" ; then
       if test "x$with_med" != "xcheck" ; then

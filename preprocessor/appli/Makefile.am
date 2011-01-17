@@ -30,13 +30,20 @@ AM_LDFLAGS =
 
 bin_PROGRAMS = cs_preprocess
 
+if HAVE_LINK_CXX
+# Dummy C++ source to cause C++ linking.
+nodist_EXTRA_cs_preprocess_SOURCES = dummy.cxx
+cs_preprocess_LINK = $(CXXLINK)
+else
+cs_preprocess_LINK = $(LINK)
+endif
+
 cs_preprocess_CPPFLAGS = $(AM_CPPFLAGS) \
 $(HDF5_CPPFLAGS) $(MED_CPPFLAGS) $(CGNS_CPPFLAGS)
 
 cs_preprocess_SOURCES = \
 ecs_cmd.c \
 ecs_main.c
-
 
 noinst_HEADERS = \
 ecs_cmd.h \

@@ -1,7 +1,20 @@
 * 17/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Use C++ wrapper to link with MED library if necessary.
+  This avoids requiring the definition of MED dependency
+  libraries, which could interfere with libtool in cases
+  mixing static and dynamic libraries and cross-compilation.
+  modified files:
+    Makefile.am
+    configure.ac
+    bin/cs_package.py.in
+    m4/cs_med.m4
+    preprocessor/appli/Makefile.am
+    src/apps/Makefile.am
+
+* 17/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add missing -lfvm_filters to Python compilation command.
   modified files:
-    bin/cs_package.py
+    bin/cs_package.py.in
 
 * 17/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Set minimal MED version to 2.3.4 (from 2.3.2)

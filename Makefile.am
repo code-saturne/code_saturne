@@ -104,6 +104,12 @@ ACLOCAL_AMFLAGS = -I m4
 # through Makefile targets rather than through configure, and
 # cites its own automate and autoheader as examples.
 
+if HAVE_LINK_CXX
+CS_LD=$(CXX)
+else
+CS_LD=$(CC)
+endif
+
 edit_python = sed \
 	-e 's|@cs_python[@]|$(cs_python)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g'
@@ -122,6 +128,7 @@ edit_config = sed \
 	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
 	-e 's|@syrthes_prefix[@]|$(syrthes_prefix)|g' \
 	-e 's|@CC[@]|$(CC)|g' \
+	-e 's|@CS_LD[@]|$(CS_LD)|g' \
 	-e 's|@PLE_CPPFLAGS[@]|$(PLE_CPPFLAGS)|g' \
 	-e 's|@PLE_LDFLAGS[@]|$(PLE_LDFLAGS)|g' \
 	-e 's|@PLE_LIBS[@]|$(PLE_LIBS)|g' \

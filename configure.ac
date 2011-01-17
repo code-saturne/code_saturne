@@ -421,6 +421,13 @@ AM_CONDITIONAL(HAVE_PARTITIONER, test x$cs_have_partitioner = xyes)
 
 unset cs_have_partitioner
 
+# Check if we need to force link with C++
+cs_have_link_cxx=no
+if test x$cs_have_med_link_cxx = xyes ; then
+  cs_have_link_cxx=yes
+fi
+AM_CONDITIONAL(HAVE_LINK_CXX, test x$cs_have_link_cxx = xyes)
+
 #------------------------------------------------------------------------------
 # Enables Code_Saturne preprocessor
 #------------------------------------------------------------------------------

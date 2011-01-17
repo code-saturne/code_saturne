@@ -75,6 +75,14 @@ libsaturne_la_LDFLAGS = -no-undefined -version 0:0:0
 
 bin_PROGRAMS = cs_solver
 
+if HAVE_LINK_CXX
+# Dummy C++ source to cause C++ linking.
+nodist_EXTRA_cs_solver_SOURCES = dummy.cxx
+cs_solver_LINK = $(CXXLINK)
+else
+cs_solver_LINK = $(LINK)
+endif
+
 # Code_Saturne IO utility program
 
 bin_PROGRAMS += cs_io_dump
