@@ -52,7 +52,7 @@ class package:
         self.ld = "@CC@"
         self.cppflags = "@CPPFLAGS@ @PLE_CPPFLAGS@"
         self.ldflags = "@PLE_LDFLAGS@"
-        self.libs = "-lsaturne -lmei -lfvm -lbft @PLE_LIBS@"
+        self.libs = "-lsaturne -lmei -lfvm_filters -lfvm -lbft @PLE_LIBS@"
         self.deplibs = "@LDFLAGS@ @LIBS@ @FCLIBS@"
 
         self.prefix = "@prefix@"
