@@ -1,21 +1,20 @@
 dnl----------------------------------------------------------------------------
-dnl   This file is part of the Code_Saturne Kernel, element of the
-dnl   Code_Saturne CFD tool.
+dnl   This file is part of the Code_Saturne CFD tool.
 dnl
 dnl   Copyright (C) 2010 EDF S.A., France
 dnl
-dnl   The Code_Saturne Kernel is free software; you can redistribute it
+dnl   The Code_Saturne CFD tool is free software; you can redistribute it
 dnl   and/or modify it under the terms of the GNU General Public License
 dnl   as published by the Free Software Foundation; either version 2 of
 dnl   the License, or (at your option) any later version.
 dnl
-dnl   The Code_Saturne Kernel is distributed in the hope that it will be
+dnl   The Code_Saturne CFD tool is distributed in the hope that it will be
 dnl   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 dnl   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 dnl   GNU General Public License for more details.
 dnl
 dnl   You should have received a copy of the GNU General Public Licence
-dnl   along with the Code_Saturne Preprocessor; if not, write to the
+dnl   along with the Code_Saturne CFD tool; if not, write to the
 dnl   Free Software Foundation, Inc.,
 dnl   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 dnl-----------------------------------------------------------------------------
@@ -139,28 +138,15 @@ if test "x$with_med" != "xno" ; then
 [[#if !defined(MED_NUM_MAJEUR)
 # error MED_NUM_MAJEUR not defined
 #endif
+#if MED_NUM_MAJEUR == 2 && MED_NUM_MINEUR == 3 && MED_NUM_RELEASE < 3
+# error MED version > 2.3.4 required
+#endif
 ]])],
                     [AC_MSG_RESULT([MED >= 2.3.4 headers found])
                      cs_have_med_headers=yes
                     ],
                     [AC_MSG_RESULT([MED >= 2.3.4 headers not found])
                     ])
-
-  if test "x$cs_have_med_headers" = "xno"; then
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-[[#include <med.h>]],
-[[med_int med_int_test = 1;
-#if defined(MED_VERSION)  /* Only with MED 2.2.x */
-# error MED version 2 (MED_VERSION) obsolete
-#endif
-]])],
-                    [AC_MSG_RESULT([compatible MED headers found])
-                     cs_have_med_headers=yes
-                    ],
-                    [AC_MSG_RESULT([compatible MED headers not found])
-                    ])
-
-  fi # end of test on cs_have_med_headers
 
   if test "x$cs_have_med_headers" = "xyes"; then
 
@@ -171,21 +157,6 @@ if test "x$with_med" != "xno" ; then
                  [ AC_MSG_WARN([no MED file support with C only API])
                  ],
                  )
-
-    if test "x$cs_have_med" = "xno"; then
-  
-      # try with libmed instead of libmedC to work around MED 2.3.2 bug
-
-      MED_LIBS=`echo $MED_LIBS | sed -e 's/-lmedC/-lmed/'`
-      LIBS="${MED_LIBS} ${HDF5_LIBS} ${saved_LIBS}"
-
-      AC_CHECK_LIB(med, MEDfamCr, 
-                   [ AC_DEFINE([HAVE_MED], 1, [MED file support])
-                     cs_have_med=yes
-                   ], 
-                   [],
-                   )
-    fi
 
     if test "x$cs_have_med" = "xno" ; then
       if test "x$with_med" != "xcheck" ; then

@@ -1,3 +1,8 @@
+* 17/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Set minimal MED version to 2.3.4 (from 2.3.2)
+  modified files:
+    m4/cs_med.m4
+
 * 14/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Format filters moved to libfvm_filters so as to remove dependency
   of partitioner and unit tests to optional libraries.
