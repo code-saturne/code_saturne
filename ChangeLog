@@ -1,3 +1,25 @@
+* 17/01/2011 - François Jusserand <francois.jusserand@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Add the "Milieu" library to Code_Saturne repository.
+  This library is a intended to be SALOME component between Code_Aster and
+  Code_Saturne when coupling the two codes. It might be removed in a near future
+  if we move some "Milieu" capabilities into both codes.
+  modified scripts:
+    configure.ac
+    salome/Makefile.am
+    sbin/rmb
+  added files:
+    salome/libmilieu
+    salome/libmilieu/communication.c
+    salome/libmilieu/communication.h
+    salome/libmilieu/donnees.c
+    salome/libmilieu/donnees.h
+    salome/libmilieu/Makefile.am
+    salome/libmilieu/runmilieu.c
+    salome/libmilieu/runmilieu.h
+    salome/libmilieu/utilitaires.c
+    salome/libmilieu/utilitaires.h
+
 * 17/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Add the CFD Proxy library to Code_Saturne repository.

@@ -838,7 +838,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  preprocessor/pre-post/Makefile preprocessor/util/Makefile
                  preprocessor/tools/Makefile
                  salome/Makefile
-                 salome/cfd_proxy/Makefile
+                 salome/cfd_proxy/Makefile salome/libmilieu/Makefile
                  src/Makefile      src/apps/Makefile src/gui/Makefile
                  src/bft/Makefile  src/fvm/Makefile  src/mei/Makefile
                  src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
