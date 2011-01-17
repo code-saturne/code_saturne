@@ -118,6 +118,18 @@ mei_test_LDFLAGS =
 mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
         $(top_builddir)/src/bft/libbft.la -lm
 
+# CFD Proxy tests
+
+check_PROGRAMS += \
+cfd_proxy_unit_test
+
+cfd_proxy_unit_test_SOURCES = cfd_proxy_unit_test.c
+cfd_proxy_unit_test_CPPFLAGS = -I$(top_srcdir)/salome/cfd_proxy \
+        $(MPI_CPPFLAGS) $(SALOME_KERNEL_CPPFLAGS)
+cfd_proxy_unit_test_LDFLAGS = $(MPI_LDFLAGS) $(SALOME_KERNEL_LDFLAGS)
+cfd_proxy_unit_test_LDADD = $(top_builddir)/salome/cfd_proxy/libcfdproxy.la \
+        $(MPI_LIBS) -lm
+
 # Uncomment for tests execution at "make check"
 #TESTS=$(check_PROGRAMS)
 

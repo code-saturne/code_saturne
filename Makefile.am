@@ -32,7 +32,11 @@ if HAVE_INTERNAL_PLE
 PLE = libple
 endif
 
-SUBDIRS = $(PLE) $(PREPRO) src libsyrcs po doc $(GUI) tests
+if HAVE_SALOME_KERNEL
+SALOME = salome
+endif
+
+SUBDIRS = $(PLE) $(PREPRO) src libsyrcs $(SALOME) po doc $(GUI) tests
 
 MAINTAINERCLEANFILES = \
 aclocal.m4 \
