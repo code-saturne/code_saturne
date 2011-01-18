@@ -34,15 +34,15 @@ AC_ARG_WITH(salome-kernel,
                             [specify prefix directory for SALOME kernel])],
             [if test "x$withval" = "x"; then
                if test -z "$KERNEL_ROOT_DIR"; then
-                 with_salome_kernel=$KERNEL_ROOT_DIR
-               else
                  with_salome_kernel=yes
+               else
+                 with_salome_kernel=$KERNEL_ROOT_DIR
                fi
              fi],
             [if test -z "$KERNEL_ROOT_DIR"; then
-               with_salome_kernel=$KERNEL_ROOT_DIR
-             else
                with_salome_kernel=check
+             else
+               with_salome_kernel=$KERNEL_ROOT_DIR
              fi])
 
 AC_ARG_WITH(salome-kernel-include,
@@ -94,7 +94,7 @@ if test "x$with_salome_kernel" != "xno" ; then
                     [cs_have_salome_kernel=yes
                      AC_MSG_RESULT([compatible SALOME kernel found])],
                     [cs_have_salome_kernel=no
-                     if test "x$with_libxml2" != "xcheck" ; then
+                     if test "x$with_salome_kernel" != "xcheck" ; then
                        AC_MSG_FAILURE([SALOME support is requested, but test for SALOME failed!])
                      else
                        AC_MSG_WARN([no SALOME support])
