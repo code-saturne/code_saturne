@@ -1,3 +1,8 @@
+* 18/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct possible memory leak in case of matrix deep copy.
+  modified files:
+    src/main/cs_matrix.c
+
 * 17/01/2011 - François Jusserand <francois.jusserand@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Add the "Milieu" library to Code_Saturne repository.
