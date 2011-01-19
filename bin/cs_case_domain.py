@@ -1193,18 +1193,6 @@ class domain(base_domain):
 
         res_matisse = os.path.join(self.exec_dir, 'resuMatisse')
         if os.path.isfile(res_matisse):
-            matisse = get_command_output('grep -i matisse '
-                                         + os.path.join(self.data_dir,
-                                                        self.param))
-            if date != None and len(matisse) > 0:
-                # Add the date to the first line of resuMatisse
-                f = open(res_matisse, 'r')
-                s = f.read()
-                f.close()
-                f = open(res_matisse, 'w')
-                f.write('Date of the case                                       : ' + date + '\n')
-                f.write(s)
-                f.close()
             self.copy_result('resuMatisse')
 
 #-------------------------------------------------------------------------------

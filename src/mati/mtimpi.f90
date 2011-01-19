@@ -57,6 +57,7 @@ use matiss
 use cstphy
 use entsor
 use optcal
+use parall
 
 !===============================================================================
 
@@ -67,8 +68,10 @@ implicit none
 ! Local variables
 
 character*15     name
-integer          kechrg, kergrs, keclgr, kergch, keciel
-integer          ii    , iphas
+integer :: kechrg, kergrs, keclgr, kergch, keciel
+integer :: ii, iphas
+integer, dimension(8) :: dateval
+
 double precision djechr, djercl, djeclr, djerch
 double precision hbdtoi
 double precision tsor0 , dbm   , cxsd
@@ -85,18 +88,26 @@ double precision ureel , betmat, hrfmat, richar
 ! --- Ouverture du fichier
 !       (il sera ferme au dernier pas de temps par mtproj)
 
-name='resuMatisse'
+if (irangp.le.0) then
+  name='resuMatisse'
+else
+  name='/dev/null'
+endif
+
 open(unit=impmat,file=name, form='formatted', status='unknown', err=900)
 goto 950
 
 !   - En cas d'erreur : message et stop
 
  900  write (0, 9998) name
-write (nfecra, 9999) name
+write(nfecra, 9999) name
 call csexit (1)
 !==========
  950  continue
 
+call date_and_time(values=dateval)
+write(impmat, 2095) dateval(3), dateval(2), dateval(1), &
+                    dateval(5), dateval(6), dateval(7)
 
 ! --- Ecriture des donnees geometriques
 
@@ -380,6 +391,8 @@ endif
 
 ! --- Geometrie
 
+ 2095 format(' Date du cas : ', &
+             i2, '/', i2, '/', i2, ' - ', i2, 'h', i2, 'm', i2, 's', /)
  2096 format(' Concept d''entrepot                                   ', &
  '  :',A6)
  2097 format(' Hauteur du réseau de conteneurs                       ', &
