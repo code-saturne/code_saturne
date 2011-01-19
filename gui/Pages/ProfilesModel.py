@@ -94,48 +94,6 @@ class ProfilesModel(Model):
         return value
 
 
-    def updateOutputFiles(self, vlist):
-        """
-        Update the list of the USER_OUTPUT_FILES variable with the profiles.
-        """
-        for file in self.getProfilesLabelsList():
-            [lab, t, l, f, x1, y1, z1, x2, y2, z2] = self.getProfileData(file)
-            files = file + "_*" + ".dat"
-            file += ".dat"
-            if int(f) == -1:
-                if files in vlist: vlist.remove(files)
-                if file not in vlist: vlist.append(file)
-            elif int(f) != -1:
-                if file in vlist: vlist.remove(file)
-                if files not in vlist: vlist.append(files)
-        return vlist
-
-
-    def __updateBatchScriptFile(self):
-        """
-        Update the backup file if it's ready to run.
-        """
-        key = self.case['computer']
-        if key:
-            if not self.case['batchScript'][key]:
-                return
-
-            from Pages.BatchRunningModel import BatchRunningModel
-            batch = BatchRunningModel(self.case)
-            batch.initializeBatchScriptFile()
-
-            if batch.dicoValues['USER_OUTPUT_FILES']:
-                v = string.split(batch.dicoValues['USER_OUTPUT_FILES'])
-            else:
-                v = []
-
-            vlist = self.updateOutputFiles(v)
-
-            batch.dicoValues['USER_OUTPUT_FILES'] = string.join(vlist, " ")
-            batch.updateBatchScriptFile('USER_OUTPUT_FILES')
-            del BatchRunningModel
-
-
     def getVariablesAndVolumeProperties(self):
         """
         Creates a dictionnary to connect name and label from
@@ -262,7 +220,6 @@ class ProfilesModel(Model):
         node.xmlSetData('output_frequency', freq)
         node['title'] = title
         self.__setCoordinates(label, x1, y1, z1, x2, y2, z2)
-        self.__updateBatchScriptFile()
 
 
     def replaceProfile(self, old_label, label, title, list, freq, x1, y1, z1, x2, y2, z2):
@@ -293,9 +250,6 @@ class ProfilesModel(Model):
             node['title'] = title
             self.__setCoordinates(label, x1, y1, z1, x2, y2, z2)
 
-            if old_label != label:
-                self.__updateBatchScriptFile()
-
 
     def deleteProfile(self, label):
         """
@@ -307,7 +261,6 @@ class ProfilesModel(Model):
         node = self.node_prof.xmlGetNode('profile', label=label_xml)
         if node:
             node.xmlRemoveNode()
-            self.__updateBatchScriptFile()
 
 
     def getProfileData(self, label):

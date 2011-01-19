@@ -21,4 +21,4 @@
 cd $LS_SUBCWD
 
 # Launch runcase script
-./runcase
+./scriptname

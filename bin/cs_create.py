@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009  EDF
+#   Copyright (C) 2009-2011  EDF
 #
 #   The Code_Saturne Preprocessor is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -60,7 +60,7 @@ def process_cmd_line(argv, pkg):
                       metavar="<study>",
                       help="create a new study")
 
-    parser.add_option("-c", "--case", dest="cases_name", type="string",
+    parser.add_option("-c", "--case", dest="case_names", type="string",
                       metavar="<case>", action="append",
                       help="create a new case")
 
@@ -84,40 +84,35 @@ def process_cmd_line(argv, pkg):
                       action="store_const", const=2, dest="verbose",
                       help="dump study creation parameters")
 
-    parser.add_option("--nsat", dest="n_sat", type="int",
-                      metavar="<nsat>",
-                      help="specify the number of instances")
-
-    parser.add_option("--nsyr", dest="n_syr", type="int",
-                      metavar="<nsyr>",
-                      help="specify the number of SYRTHES instances")
+    parser.add_option("--syrthes", dest="syr_case_names", type="string",
+                      metavar="<syr_cases>", action="append",
+                      help="create new SYRTHES case(s).")
 
     parser.set_defaults(use_gui=True)
     parser.set_defaults(use_ref=True)
     parser.set_defaults(study_name=os.path.basename(os.getcwd()))
-    parser.set_defaults(cases_name=[])
+    parser.set_defaults(case_names=[])
     parser.set_defaults(copy=None)
     parser.set_defaults(verbose=1)
     parser.set_defaults(n_sat=1)
-    parser.set_defaults(n_syr=0)
+    parser.set_defaults(syr_case_names=[])
 
     (options, args) = parser.parse_args(argv)
 
-    if options.cases_name == []:
+    if options.case_names == []:
         if len(args) > 0:
-            options.cases_name = args
+            options.case_names = args
         else:
-            options.cases_name = ["CASE1"]
+            options.case_names = ["CASE1"]
 
     return Study(pkg,
                  options.study_name,
-                 options.cases_name,
+                 options.case_names,
+                 options.syr_case_names,
                  options.copy,
                  options.use_gui,
                  options.use_ref,
-                 options.verbose,
-                 options.n_sat,
-                 options.n_syr)
+                 options.verbose)
 
 
 #-------------------------------------------------------------------------------
@@ -189,9 +184,8 @@ def comments(filename, use_gui):
 
 class Study:
 
-
-    def __init__(self, package, name, cases, copy, use_gui, use_ref,
-                 verbose, n_sat, n_syr):
+    def __init__(self, package, name, cases, syr_case_names,
+                 copy, use_gui, use_ref, verbose):
         """
         Initialize the structure for a study.
         """
@@ -201,17 +195,21 @@ class Study:
         self.package = package
 
         self.name = name
-        self.cases = []
-        for c in cases:
-            self.cases.append(string.upper(c))
         self.copy = copy
         if self.copy is not None:
             self.copy = os.path.abspath(self.copy)
         self.use_gui = use_gui
         self.use_ref = use_ref
         self.verbose = verbose
-        self.n_sat = n_sat
-        self.n_syr = n_syr
+
+        self.cases = []
+        for c in cases:
+            self.cases.append(c)
+        self.n_sat = len(cases)
+
+        self.syr_case_names = []
+        for c in syr_case_names:
+            self.syr_case_names.append(c)
 
 
     def create(self):
@@ -229,14 +227,180 @@ class Study:
             os.mkdir('MESH')
             os.mkdir('POST')
 
-        # Creating cases
+        # Creating Code_Saturne cases
         repbase = os.getcwd()
         for c in self.cases:
             os.chdir(repbase)
-            self.createCase(c)
+            self.create_case(c)
+
+        # Creating SYRTHES cases
+        if len(self.syr_case_names) > 0:
+            config = ConfigParser.ConfigParser()
+            config.read([self.package.get_configfile(),
+                         os.path.expanduser('~/.' + self.package.configfile)])
+            if config.has_option('install', 'syrthes'):
+                self.create_syrthes_cases(repbase)
+
+            elif (len(self.package.syrthes_prefix) > 0):
+                self.create_syrthes3_cases(repbase)
+
+            else:
+                sys.stderr.write("Cannot locate SYRTHES installation.")
+                sys.exit(1)
+
+        # Creating coupling structure
+        if len(self.cases) + len(self.syr_case_names) > 0:
+            self.create_coupling(repbase)
 
 
-    def createCase(self, casename):
+    def create_syrthes3_cases(self, repbase):
+        """
+        Create and initialize SYRTHES 3 case directories.
+        """
+
+        syr_home = self.package.syrthes_prefix
+
+        for s in self.syr_case_names:
+            c = os.path.join(repbase, s)
+            data_syr = os.path.join(c, 'DATA')
+            src_syr = os.path.join(c, 'SRC')
+            src_ref_syr = os.path.join(syr_home, 'data')
+            os.mkdir(c)
+            os.mkdir(data_syr)
+            os.mkdir(src_syr)
+            data_ref_syr = os.path.join(data_syr, 'REFERENCE')
+            shutil.copytree(src_ref_syr, data_ref_syr)
+            users_ref_syr = os.path.join(src_syr, 'REFERENCE')
+            shutil.copytree(os.path.join(syr_home, 'usr'), users_ref_syr)
+
+
+    def create_syrthes_cases(self, repbase):
+        """
+        Create and initialize SYRTHES case directories.
+        """
+
+        try:
+            config = ConfigParser.ConfigParser()
+            config.read([self.package.get_configfile(),
+                         os.path.expanduser('~/.' + self.package.configfile)])
+            syr_datapath = os.path.join(config.get('install', 'syrthes'),
+                                        os.path.join('share', 'syrthes'))
+            sys.path.insert(0, syr_datapath)
+            import syrthes
+        except Exception:
+            sys.stderr.write("SYRTHES create case: Cannot locate SYRTHES installation.\n")
+            sys.exit(1)
+
+        for s in self.syr_case_names:
+            os.chdir(repbase)
+            retval = syrthes.create_syrcase(s)
+            if retval > 0:
+                sys.stderr.write("Cannot create SYRTHES case: '%s'\n" % s)
+                sys.exit(1)
+
+
+    def create_coupling(self, repbase):
+        """
+        Create structure to enable code coupling.
+        """
+
+        if self.verbose > 0:
+            sys.stdout.write("  o Creating coupling features ...\n")
+
+        dict_str = ""
+        e_pkg = re.compile('PACKAGE')
+        e_dom = re.compile('DOMAIN')
+
+        solver_name = self.package.name
+        if solver_name == 'code_saturne':
+            solver_name = 'Code_Saturne'
+        elif solver_name =='neptune_cfd':
+            solver_name = 'NEPTUNE_CFD'
+
+        for c in self.cases:
+
+            template = \
+"""
+    {'solver': 'PACKAGE',
+     'domain': 'DOMAIN',
+     'script': 'runcase',
+     'n_procs': None,
+     'n_procs_min': 1,
+     'n_procs_max': None},
+"""
+            template = re.sub(e_pkg, solver_name, template)
+            template = re.sub(e_dom, c, template)
+
+            dict_str += template
+
+        for c in self.syr_case_names:
+
+            if (len(self.package.syrthes_prefix) > 0):
+                template = \
+"""
+    {'solver': 'SYRTHES 3',
+     'domain': 'DOMAIN',
+     'script': 'syrthes.data',
+     'echo_comm': None,        # verbosity if integer (> -1)
+     'coupled_apps': None},    # list of domain names more than 1
+"""
+            else:
+                template = \
+"""
+    {'solver': 'SYRTHES',
+     'domain': 'DOMAIN',
+     'script': 'syrthes.data',
+     'n_procs': None,
+     'n_procs_min': 1,
+     'n_procs_max': None,
+     'opt' = ''}               # Additional SYRTHES options
+"""
+            template = re.sub(e_dom, c, template)
+            dict_str += template
+
+        # Result directory for coupling execution
+
+        resu = os.path.join(repbase, 'RESU_COUPLING')
+        os.mkdir(resu)
+
+        datadir = self.package.pkgdatadir
+        try:
+            shutil.copy(os.path.join(datadir, 'runcase_coupling'), repbase)
+        except:
+            sys.stderr.write("Cannot copy runcase_coupling script: " + \
+                             os.path.join(datadir, 'runcase_coupling') + ".\n")
+            sys.exit(1)
+
+        runcase = os.path.join(repbase, 'runcase_coupling')
+        runcase_tmp = runcase + '.tmp'
+
+        e_dir = re.compile('CASEDIRNAME')
+        e_apps = re.compile('APP_DICTS')
+
+        fd  = open(runcase, 'r')
+        fdt = open(runcase_tmp,'w')
+
+        for line in fd:
+            line = re.sub(e_dir, repbase, line)
+            line = re.sub(e_apps, dict_str, line)
+            fdt.write(line)
+
+        fd.close()
+        fdt.close()
+
+        shutil.move(runcase_tmp, runcase)
+        make_executable(runcase)
+
+        config = ConfigParser.ConfigParser()
+        config.read([self.package.get_configfile(),
+                     os.path.expanduser('~/.' + self.package.configfile)])
+
+        if config.has_option('install', 'batch'):
+            self.get_batch_file(config.get('install', 'batch'),
+                                distrep = repbase,
+                                mode = 1)
+
+    def create_case(self, casename):
         """
         Create a case for a Code_Saturne study.
         """
@@ -255,119 +419,68 @@ class Study:
 
         os.chdir(casename)
 
-        # Loop for dependency on the number of instances of Code_Saturne
+        # Data directory
 
-        for i in range(self.n_sat):
+        data = 'DATA'
+        os.mkdir(data)
 
-            # Data directory
+        if self.use_ref:
 
-            if self.n_sat == 1:
-                data = 'DATA'
-            else:
-                data = 'DATA.%(inst)d' % { 'inst' : i+1 }
+            thch_distpath = os.path.join(data_distpath, 'thch')
+            thch          = os.path.join(data, 'THCH')
+            os.mkdir(thch)
+            for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE', 'meteo']:
+                shutil.copy(os.path.join(thch_distpath, f), thch)
 
-            os.mkdir(data)
+        if self.use_gui:
 
-            if self.use_ref:
+            csguiname = self.package.guiname
+            csguiscript = os.path.join(datadir, csguiname)
 
-                thch_distpath = os.path.join(data_distpath, 'thch')
-                thch          = os.path.join(data, 'THCH')
-                os.mkdir(thch)
-                for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE',
-                          'meteo']:
-                    abs_f = os.path.join(thch_distpath, f)
-                    if os.path.isfile(abs_f):
-                        shutil.copy(abs_f, thch)
+            shutil.copy(csguiscript, data)
+            make_executable(os.path.join(data, csguiname))
 
-            if self.use_gui:
+        # User source files directory
 
-                csguiname = self.package.guiname
-                csguiscript = os.path.join(datadir, csguiname)
+        src = 'SRC'
+        os.mkdir(src)
 
-                shutil.copy(csguiscript, data)
-                make_executable(os.path.join(data, csguiname))
+        if self.use_ref:
 
-            # User source files directory
+            users = os.path.join(src, 'REFERENCE')
+            shutil.copytree(users_distpath, users)
 
-            if self.n_sat == 1:
-                src = 'SRC'
-            else:
-                src = 'SRC.%(inst)d' % { 'inst' : i+1 }
+            for file in ['usini1.f90','usalin.f90']:
+                f = os.path.join(users, 'base', file)
+                comments(f, self.use_gui)
 
-            os.mkdir(src)
+        # Copy data and source files from another case
 
-            if self.use_ref:
+        if self.copy is not None:
 
-                users = os.path.join(src, 'REFERENCE')
-                shutil.copytree(users_distpath, users)
+            # Data files
 
-                for file in ['usini1.f90','usalin.f90']:
-                    f = os.path.join(users, 'base', file)
-                    if os.path.isfile(f):
-                        comments(f, self.use_gui)
+            ref_data = os.path.join(self.copy, data)
+            data_files = os.listdir(ref_data)
 
-            # Copy data and source files from another case
+            for f in data_files:
+                abs_f = os.path.join(ref_data, f)
+                if os.path.isfile(abs_f) and \
+                       f not in [self.package.guiname,
+                                 'preprocessor_output']:
+                    shutil.copy(os.path.join(ref_data, abs_f), data)
 
-            if self.copy is not None:
+            # Source files
 
-                ref_data = os.path.join(self.copy, data)
-                data_files = os.listdir(ref_data)
-                for f in data_files:
-                    abs_f = os.path.join(ref_data, f)
-                    if os.path.isfile(abs_f) and \
-                            f not in [self.package.guiname,
-                                      'preprocessor_output']:
-                        shutil.copy(os.path.join(ref_data, abs_f), data)
+            ref_src = os.path.join(self.copy, src)
+            src_files = os.listdir(ref_src)
 
+            c_files = fnmatch.filter(src_files, '*.c')
+            h_files = fnmatch.filter(src_files, '*.h')
+            f_files = fnmatch.filter(src_files, '*.[fF]90')
 
-                ref_src = os.path.join(self.copy, src)
-                src_files = os.listdir(ref_src)
-
-                c_files = fnmatch.filter(src_files, '*.c')
-                cxx_files = fnmatch.filter(src_files, '*.cxx')
-                cpp_files = fnmatch.filter(src_files, '*.cpp')
-                h_files = fnmatch.filter(src_files, '*.h')
-                hxx_files = fnmatch.filter(src_files, '*.hxx')
-                hpp_files = fnmatch.filter(src_files, '*.hpp')
-                f_files = fnmatch.filter(src_files, '*.[fF]90')
-
-                for f in c_files + h_files + f_files + \
-                        cxx_files + cpp_files + hxx_files + hpp_files:
-                    shutil.copy(os.path.join(ref_src, f), src)
-
-
-        # Loop for dependency on the number of instances of SYRTHES
-
-        for i in range(self.n_syr):
-
-            # Data directory
-
-            if self.n_syr == 1:
-                data_syr = 'DATA_SYR'
-            else:
-                data_syr = 'DATA_SYR.%(inst)d' % { 'inst' : i+1 }
-
-            os.mkdir(data_syr)
-
-            if self.use_ref:
-                data_ref_syr = os.path.join(data_syr, 'REFERENCE')
-                shutil.copytree(os.path.join(self.package.syrthes_prefix,
-                                             'data'),
-                                data_ref_syr)
-
-            # User source files directory
-
-            if self.n_syr == 1:
-                src_syr = 'SRC_SYR'
-            else:
-                src_syr = 'SRC_SYR.%(inst)d' % { 'inst' : i+1 }
-
-            os.mkdir(src_syr)
-
-            if self.use_ref:
-                users_syr = os.path.join(src_syr, 'REFERENCE')
-                shutil.copytree(os.path.join(self.package.syrthes_prefix, 'usr'),
-                                users_syr)
+            for f in c_files + h_files + f_files:
+                shutil.copy(os.path.join(ref_src, f), src)
 
         # Results directory (only one for all instances)
 
@@ -408,32 +521,54 @@ class Study:
                      os.path.expanduser('~/.' + self.package.configfile)])
 
         if config.has_option('install', 'batch'):
+            self.get_batch_file(config.get('install', 'batch'),
+                                distrep = script,
+                                mode = 0)
 
-            batchfile = 'batch.' + config.get('install', 'batch')
 
-            shutil.copy(os.path.join(self.package.get_batchdir(), batchfile),
-                        os.path.join(scripts, 'batch'))
+    def get_batch_file(self, batchsys, distrep, mode):
+        """
+        Retrieve batch file for the current system
+        Update batch file for the study
+        mode = 0 (runcase) ; mode = 1 (coupling)
+        """
 
-            kwd = re.compile('nameandcase')
+        batchfile = 'batch.' + batchsys
 
+        shutil.copy(os.path.join(self.package.get_batchdir(), batchfile),
+                    os.path.join(distrep, 'batch'))
+
+        kwd1 = re.compile('nameandcase')
+        kwd2 = re.compile('scriptname')
+
+        if (mode == 0):
             studycasename = string.lower(self.name) + string.lower(casename)
-            # In the cluster, names are limited to 15 caracters
-            studycasename = studycasename[:15]
+            scriptname = 'runcase'
+        elif (mode == 1):
+            studycasename = string.lower(self.name) + 'coupling'
+            scriptname = 'runcase_coupling'
+        else:
+            sys.stderr.write('Unknown mode for updating batch file.\n')
+            sys.exit(1)
 
-            batchfile = os.path.join(scripts, 'batch')
-            batchfile_tmp = batchfile + '.tmp'
+        # In the cluster, names are limited to 15 caracters
+        studycasename = studycasename[:15]
 
-            fd  = open(batchfile, 'r')
-            fdt = open(batchfile_tmp,'w')
+        batchfile = os.path.join(distrep, 'batch')
+        batchfile_tmp = batchfile + '.tmp'
 
-            for line in fd:
-                line = re.sub(kwd, repbase, line)
-                fdt.write(line)
+        fd  = open(batchfile, 'r')
+        fdt = open(batchfile_tmp, 'w')
 
-            fd.close()
-            fdt.close()
+        for line in fd:
+            line = re.sub(kwd1, studycasename, line)
+            line = re.sub(kwd2, scriptname, line)
+            fdt.write(line)
 
-            shutil.move(batchfile_tmp, batchfile)
+        fd.close()
+        fdt.close()
+
+        shutil.move(batchfile_tmp, batchfile)
 
 
     def dump(self):
@@ -450,12 +585,15 @@ class Study:
         print("Copy references:", self.use_ref)
         if self.n_sat > 1:
             print("Number of instances:", self.n_sat)
-        if self.n_syr > 0:
-            print("Number of SYRTHES instances:", self.n_syr)
+        if self.syr_case_names != None:
+            print("SYRTHES instances:")
+            for c in self.syr_case_names:
+                print("  " + c)
         print()
 
+
 #-------------------------------------------------------------------------------
-# Main
+# Creation of the study directory
 #-------------------------------------------------------------------------------
 
 def main(argv, pkg):
@@ -476,6 +614,11 @@ def main(argv, pkg):
 
     if study.verbose > 1:
         study.dump()
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:], None)
+
 
 #-------------------------------------------------------------------------------
 # End

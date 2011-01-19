@@ -471,7 +471,8 @@ _read_cell_rank(cs_mesh_t       *mesh,
                 _mesh_reader_t  *mr,
                 long             echo)
 {
-  char file_name[32]; /* more than enough for "domain_number_<n_ranks>" */
+  char file_name[64]; /* more than enough for
+                         "partition/domain_number_<n_ranks>" */
   size_t  i;
   cs_io_sec_header_t  header;
 
@@ -487,11 +488,15 @@ _read_cell_rank(cs_mesh_t       *mesh,
     return;
 
 #if (_CS_STDC_VERSION < 199901L)
-  sprintf(file_name, "domain_number_%d", cs_glob_n_ranks);
+  sprintf(file_name,
+          "partition%cdomain_number_%d",
+          CS_DIR_SEPARATOR, cs_glob_n_ranks);
 #else
-  snprintf(file_name, 32, "domain_number_%d", cs_glob_n_ranks);
+  snprintf(file_name, 64,
+           "partition%cdomain_number_%d",
+           CS_DIR_SEPARATOR, cs_glob_n_ranks);
 #endif
-  file_name[31] = '\0'; /* Just in case; processor counts would need to be
+  file_name[63] = '\0'; /* Just in case; processor counts would need to be
                            in the exa-range for this to be necessary. */
 
   /* Test if file exists */

@@ -19,4 +19,4 @@
 cd $PBS_O_WORKDIR
 
 # Launch runcase script
-./runcase
+./scriptname

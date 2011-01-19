@@ -9,7 +9,7 @@
     <x>0</x>
     <y>0</y>
     <width>250</width>
-    <height>397</height>
+    <height>237</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -19,7 +19,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox" >
      <property name="title" >
-      <string>Data files selection</string>
+      <string>User data files selection</string>
      </property>
      <layout class="QGridLayout" >
       <item row="0" column="0" colspan="4" >
@@ -102,93 +102,6 @@
       </item>
       <item row="1" column="3" >
        <widget class="QToolButton" name="buttonDeleteData" >
-        <property name="minimumSize" >
-         <size>
-          <width>25</width>
-          <height>25</height>
-         </size>
-        </property>
-        <property name="toolTip" >
-         <string>Revome from selection</string>
-        </property>
-        <property name="text" >
-         <string/>
-        </property>
-        <property name="icon" >
-         <iconset resource="resources_pages.qrc" >
-          <normaloff>:/new/prefix1/icons/22x22/user-trash-full.png</normaloff>:/new/prefix1/icons/22x22/user-trash-full.png</iconset>
-        </property>
-        <property name="iconSize" >
-         <size>
-          <width>22</width>
-          <height>22</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="groupBoxResults" >
-     <property name="title" >
-      <string>Results files</string>
-     </property>
-     <layout class="QGridLayout" >
-      <item row="0" column="0" colspan="3" >
-       <widget class="QListView" name="viewResu" >
-        <property name="maximumSize" >
-         <size>
-          <width>16777215</width>
-          <height>100</height>
-         </size>
-        </property>
-        <property name="alternatingRowColors" >
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0" >
-       <spacer>
-        <property name="orientation" >
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0" >
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="1" column="1" >
-       <widget class="QToolButton" name="buttonAddResu" >
-        <property name="minimumSize" >
-         <size>
-          <width>25</width>
-          <height>25</height>
-         </size>
-        </property>
-        <property name="toolTip" >
-         <string>New user result file</string>
-        </property>
-        <property name="text" >
-         <string/>
-        </property>
-        <property name="icon" >
-         <iconset resource="resources_pages.qrc" >
-          <normaloff>:/new/prefix1/icons/22x22/document-new.png</normaloff>:/new/prefix1/icons/22x22/document-new.png</iconset>
-        </property>
-        <property name="iconSize" >
-         <size>
-          <width>22</width>
-          <height>22</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2" >
-       <widget class="QToolButton" name="buttonDeleteResu" >
         <property name="minimumSize" >
          <size>
           <width>25</width>

@@ -72,7 +72,6 @@ class case:
                  case_dir,
                  domains,
                  syr_domains = None,
-                 results_by_suffix = True,
                  exec_preprocess = True,
                  exec_partition = True,
                  exec_solver = True):
@@ -81,55 +80,65 @@ class case:
 
         self.package = package
 
-        # Names, directories, and files in case structure
-
-        (self.study_dir, self.name) = os.path.split(case_dir)
-
-        self.case_dir = case_dir
-
-        self.data_dir = os.path.join(self.case_dir, 'DATA')
-        self.result_dir = os.path.join(self.case_dir, 'RESU')
-        self.src_dir = os.path.join(self.case_dir, 'SRC')
-        self.script_dir = os.path.join(self.case_dir, 'SCRIPTS')
-
-        self.results_by_suffix = results_by_suffix
-        self.results_suffix = None
-
-        self.mesh_dir = os.path.join(self.study_dir, 'MESH')
-
-        # Associate case domains and set case directory
+        # Ensure we have tuples or lists to simplify later tests
 
         if type(domains) == tuple or  type(domains) == list:
             self.domains = domains
         else:
             self.domains = (domains,)
 
-        if len(self.domains) == 1:
-            self.domains[0].set_case_dir(self.case_dir)
-        else:
-            d_tag = 0
-            for d in self.domains:
-                d_tag += 1
-                d.set_tag(d_tag)
-                d.set_case_dir(self.case_dir)
-
-        # Syrthes coupling
-
         if syr_domains == None:
             self.syr_domains = ()
-        elif type(syr_domains) == tuple or  type(syr_domains) == list:
-                self.syr_domains = syr_domains
+        elif type(syr_domains) == tuple or type(syr_domains) == list:
+            self.syr_domains = syr_domains
         else:
             self.syr_domains = (syr_domains,)
 
-        if len(self.syr_domains) == 1:
-            self.syr_domains[0].set_case_dir(self.case_dir)
+        # Check names in case of multiple domains
+
+        n_domains = len(self.domains) + len(self.syr_domains)
+
+        if n_domains > 1:
+            err_str = 'In case of multiple domains (i.e. code coupling), ' \
+                + 'each domain must have a name.\n'
+            for d in self.domains:
+                if d.name == None:
+                    raise RunCaseError(err_str)
+            for d in self.syr_domains:
+                if d.name == None:
+                    raise RunCaseError(err_str)
+
+        # Names, directories, and files in case structure:
+        # test if we are using a master runcase or a single runcase,
+        # associate case domains and set case directory
+
+        self.case_dir = case_dir
+
+        self.script_dir = os.path.join(self.case_dir, 'SCRIPTS')
+        self.result_dir = None
+
+        if (os.path.isdir(os.path.join(case_dir, 'DATA')) and n_domains == 1):
+            # Simple domain case from standard directory structure
+            (self.study_dir, self.name) = os.path.split(case_dir)
+            if len(self.domains) == 1:
+                self.domains[0].name = None
+            elif len(self.syr_domains) == 1:
+                self.syr_domains[0].name = None
+
         else:
-            d_tag = 0
-            for sd in self.syr_domains:
-                d_tag += 1
-                sd.set_tag(d_tag)
-                sd.set_case_dir(self.case_dir)
+            # Coupling or single domain run from coupling script
+            self.study_dir = case_dir
+            self.name = os.path.split(case_dir)[1]
+            self.script_dir = self.case_dir
+
+        for d in self.domains:
+            d.set_case_dir(self.case_dir)
+        for d in self.syr_domains:
+            d.set_case_dir(self.case_dir)
+
+        # Mesh directory for default study structure
+
+        self.mesh_dir = os.path.join(self.study_dir, 'MESH')
 
         # Working directory
 
@@ -145,8 +154,7 @@ class case:
 
         # Date or other name
 
-        self.date = None
-        self.suffix = None
+        self.run_id = None
 
         # Error reporting
         self.error = ''
@@ -194,7 +202,7 @@ class case:
             sys.stdout.write(msg)
         else:
             for d in self.domains:
-                msg = ' ' + name + ' domain ' + str(d.tag) + ' on ' \
+                msg = ' ' + name + ' domain ' + d.name + ' on ' \
                     + str(d.n_procs) + ' process(es).\n'
                 sys.stdout.write(msg)
 
@@ -207,7 +215,7 @@ class case:
             sys.stdout.write(msg)
         else:
             for d in self.syr_domains:
-                msg = ' SYRTHES domain ' + str(d.tag) + ' on ' \
+                msg = ' SYRTHES domain ' + d.name + ' on ' \
                     + str(d.n_procs) + ' processes.\n'
                 sys.stdout.write(msg)
 
@@ -360,8 +368,11 @@ class case:
         """
 
         if self.exec_prefix != None:
-            names = os.path.split(self.case_dir)
-            exec_dir_name = os.path.split(names[0])[1] + '.' + names[1]
+            if self.case_dir != self.study_dir:
+                study_name = os.path.split(self.study_dir)[1]
+                exec_dir_name = study_name + '.' + self.name
+            else:
+                exec_dir_name = self.name
             exec_dir_name += '.' + exec_basename
             self.exec_dir = os.path.join(self.exec_prefix, exec_dir_name)
         else:
@@ -425,25 +436,24 @@ class case:
     #---------------------------------------------------------------------------
 
     def set_result_dir(self, name):
-        """
-        If suffix = true, add suffix to all names in result dir.
-        Otherwise, create subdirectory
-        """
 
-        if self.results_by_suffix == True:
-            self.results_suffix = name
+        r = os.path.join(self.case_dir, 'RESU')
 
+        if os.path.isdir(r):
+            self.result_dir = os.path.join(r, name)
         else:
-            self.result_dir = os.path.join(self.case_dir, 'RESU', name)
+            r += '_COUPLING'
+            if os.path.isdir(r):
+                self.result_dir = os.path.join(r, name)
 
         if not os.path.isdir(self.result_dir):
             os.mkdir(self.result_dir)
 
         for d in self.domains:
-            d.set_result_dir(name, self.results_by_suffix)
+            d.set_result_dir(name, self.result_dir)
 
         for d in self.syr_domains:
-            d.set_result_dir(name, self.results_by_suffix)
+            d.set_result_dir(name, self.result_dir)
 
     #---------------------------------------------------------------------------
 
@@ -479,34 +489,32 @@ class case:
         hline =  '  ----------------------------------------------------\n'
 
         s.write(dhline)
-        s.write('  Start time       : ' + date + '\n')
-        s.write(hline)
-        s.write('    Solver          : ' + self.package.bindir + '\n')
-        s.write('    Preprocessor    : ' + preprocessor + '\n')
-        s.write('    Partitioner     : ' + partitioner + '\n')
-        s.write(hline)
-        s.write('    SYRTHES         : ' + self.package.syrthes_prefix + '\n')
-        if homard_prefix != None:
-            s.write('    HOMARD          : ' + homard_prefix + '\n')
-        s.write(hline)
-        s.write('    MPI path        : ' + mpi_lib.bindir + '\n')
-        if len(mpi_lib.type) > 0:
-            s.write('    MPI type        : ' + mpi_lib.type + '\n')
-        s.write(hline)
-        s.write('    User            : ' + exec_env.user  + '\n')
+        s.write('Start time       : ' + date + '\n')
         s.write(dhline)
-        s.write('    Machine         : ' + s_uname  + '\n')
-        s.write('    N Procs         : ' + str(n_procs)  + '\n')
+        s.write('  Solver         : ' + self.package.exec_prefix + '\n')
+        s.write(hline)
+        s.write('  SYRTHES        : ' + self.package.syrthes_prefix + '\n')
+        if homard_prefix != None:
+            s.write('  HOMARD          : ' + homard_prefix + '\n')
+        s.write(hline)
+        s.write('  MPI path       : ' + mpi_lib.bindir + '\n')
+        if len(mpi_lib.type) > 0:
+            s.write('  MPI type       : ' + mpi_lib.type + '\n')
+        s.write(hline)
+        s.write('  User           : ' + exec_env.user  + '\n')
+        s.write(hline)
+        s.write('  Machine        : ' + s_uname  + '\n')
+        s.write('  N Procs        : ' + str(n_procs)  + '\n')
         if r.manager == None and r.hosts_list != None:
-            s.write('    Processors      :')
+            s.write('  Processors     :')
             for p in r.hosts_list:
                 s.write(' ' + p)
             s.write('\n')
-        s.write(dhline)
-        s.write('    Case dir.       : ' + self.name + '\n')
-        s.write('    Exec. dir.      : ' + self.exec_dir + '\n')
+        s.write(hline)
+        s.write('  Case dir.      : ' + self.name + '\n')
+        s.write('  Exec. dir.     : ' + self.exec_dir + '\n')
         if self.exec_solver:
-            s.write('    Executable      : ' + solver + '\n')
+            s.write('  Executable     : ' + solver + '\n')
             s.write(hline)
 
         s.close()
@@ -548,27 +556,44 @@ class case:
         s_path = os.path.join(self.exec_dir, 'summary')
         s = open(s_path, 'a')
 
-        s.write('    Preprocessing   : ' + preprocess + '\n')
-        s.write('    Partitioning    : ' + partition + '\n')
-        s.write('    Calculation     : ' + solver + '\n')
+        s.write('  Preprocessing  : ' + preprocess + '\n')
+        s.write('  Partitioning   : ' + partition + '\n')
+        s.write('  Calculation    : ' + solver + '\n')
 
-        s.write(hline)
-        s.write('  Finish time      : ' + date + '\n')
+        s.write(dhline)
+        s.write('Finish time      : ' + date + '\n')
         s.write(dhline)
 
         s.close()
 
     #---------------------------------------------------------------------------
 
-    def copy_result(self, src):
+    def copy_log(self, name):
         """
-        Retrieve result from the execution directory
+        Retrieve single log file from the execution directory
         """
+
+        if self.result_dir == self.exec_dir:
+            return
+
+        src = os.path.join(self.exec_dir, name)
+        dest = os.path.join(self.result_dir, name)
+
+        if os.path.isfile(src):
+            shutil.copy2(src, dest)
+            if self.error == '':
+                os.remove(src)
+
+    #---------------------------------------------------------------------------
+
+    def copy_script(self):
+        """
+        Retrieve script from the execution directory
+        """
+
+        src = sys.argv[0]
 
         dest = os.path.join(self.result_dir, os.path.basename(src))
-
-        if (self.results_suffix != None):
-            dest += '.' + self.results_suffix
 
         # Copy single file
 
@@ -692,7 +717,7 @@ class case:
 
         for d in self.syr_domains:
             if d.coupling_mode == 'MPI':
-                s_args = d.solver_args(app_id=app_id)
+                s_args = d.solver_args()
                 if len(cmd) > 0:
                     cmd += ' : '
                 cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
@@ -725,7 +750,7 @@ class case:
 
         for d in self.syr_domains:
             if d.coupling_mode == 'MPI':
-                s_args = d.solver_args(app_id=app_id)
+                s_args = d.solver_args()
                 cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
                     + ' ' + s_args[1] + s_args[2] + '\n'
                 e.write(cmd)
@@ -771,12 +796,15 @@ class case:
         for d in self.syr_domains:
             nr += d.n_procs
             e.write(test_pf + str(nr) + test_sf)
-            s_args = d.solver_args(app_id=app_id)
+            s_args = d.solver_args()
             e.write('  cd ' + s_args[0] + '\n')
-            try:
-                e.write('  ' + s_args[1] + s_args[2] + ' $@ > ' + d.log_file + ' 2>&1\n')
-            except AttributeError:
+            if 'compile_and_link' in dir(d):  # For SYRTHES 3
                 e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
+            else: # TODO: Check if we have --log option for SYRTHES 4
+                try:
+                    e.write('  ' + s_args[1] + s_args[2] + ' $@ > ' + d.log_file + '2>&1\n')
+                except AttributeError:
+                    e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
             if app_id == 0:
                 test_pf = 'el' + test_pf
             app_id += 1
@@ -1116,19 +1144,19 @@ fi
         if src != None:
             if type(src) == tuple:
                 for s in src:
-                    p = os.path.join(self.script_dir, s + '.' + self.suffix)
+                    p = os.path.join(self.script_dir, s + '.' + self.run_id)
                     if os.path.isfile(p):
                         src_tmp_name = p
 
             else:
-                p = os.path.join(self.script_dir, src + '.' + self.suffix)
+                p = os.path.join(self.script_dir, src + '.' + self.run_id)
                 if os.path.isfile(p):
                     src_tmp_name = p
 
         try:
             if dest != None:
                 dest_tmp_name = os.path.join(self.script_dir,
-                                             dest + '.' + self.suffix)
+                                             dest + '.' + self.run_id)
                 if src_tmp_name == None:
                     scripts_tmp = open(dest_tmp_name, 'w')
                     scripts_tmp.write(self.exec_dir + '\n')
@@ -1148,7 +1176,7 @@ fi
                      n_procs = None,
                      hosts_list = None,
                      mpi_environment = None,
-                     suffix = None):
+                     run_id = None):
 
         """
         Prepare data for calculation.
@@ -1160,14 +1188,11 @@ fi
 
         # General values
 
-        now = datetime.datetime.now()
-
-        self.date = now.strftime('%m%d%H%M')
-
-        if suffix == None:
-            self.suffix = self.date
+        if run_id == None:
+            now = datetime.datetime.now()
+            self.run_id = now.strftime('%Y%m%d-%H%M')
         else:
-            self.suffix = suffix
+            self.run_id = run_id
 
         for d in self.domains:
 
@@ -1180,7 +1205,7 @@ fi
 
         # Now that all domains are defined, set result copy mode
 
-        self.set_result_dir(self.suffix)
+        self.set_result_dir(self.run_id)
 
         # Before creating or generating file, create stage 'marker' file.
 
@@ -1188,12 +1213,12 @@ fi
 
         # Create working directory (reachable by all the processors)
 
-        self.mk_exec_dir(self.suffix)
+        self.mk_exec_dir(self.run_id)
 
         # Copy script before changing to the working directory
         # (as after that, the relative path will not be up to date).
 
-        self.copy_result(sys.argv[0])
+        self.copy_script()
 
         os.chdir(self.exec_dir)
 
@@ -1222,13 +1247,28 @@ fi
             + '                      ' + self.package.name + ' is running\n' \
             + '                      ***********************\n' \
             + '\n' \
-            + ' Working directory (to be periodically cleaned):\n' \
-            + '   ' +  str(self.exec_dir) + '\n\n' \
-            + ' Kernel version:  ' + self.package.version + '\n' \
-            + ' Preprocessor:    ' + self.package.get_preprocessor() + '\n\n'
+            + ' Version: ' + self.package.version + '\n' \
+            + ' Path:    ' + self.package.exec_prefix + '\n\n' \
+            + ' Result directory:\n' \
+            + '   ' +  str(self.result_dir) + '\n\n'
+
+        if self.exec_dir != self.result_dir:
+            msg += ' Working directory (to be periodically cleaned):\n' \
+                + '   ' +  str(self.exec_dir) + '\n'
+
+        msg += '\n'
+
         sys.stdout.write(msg)
 
         self.print_procs_distribution()
+
+        # Prepare SYRTHES domains
+        # (possible now that the exact number of processors is known)
+
+        for d in self.syr_domains:
+            if 'compile_and_link' in dir(d):  # For SYRTHES 3
+                d.compile_and_link()
+            d.prepare_data()
 
         # Compile user subroutines if necessary.
 
@@ -1242,7 +1282,7 @@ fi
                 if d.needs_compile() == True:
                     need_compile = True
 
-            if need_compile == True or len(self.syr_domains) > 0:
+            if need_compile == True:
 
                 msg = \
                     " ****************************************\n" \
@@ -1251,9 +1291,6 @@ fi
                 sys.stdout.write(msg)
 
                 for d in self.domains:
-                    d.compile_and_link()
-
-                for d in self.syr_domains:
                     d.compile_and_link()
 
         # Setup data
@@ -1272,12 +1309,8 @@ fi
                 d.copy_preprocessor_output_data()
 
         if self.exec_solver:
-
             for d in self.domains:
                 d.copy_solver_data()
-
-            for d in self.syr_domains:
-                d.copy_data()
 
         sys.stdout.write('\n'
                          ' ***************************\n'
@@ -1293,6 +1326,8 @@ fi
                     self.error = d.error
             for d in self.syr_domains:
                 d.preprocess()
+                if len(d.error) > 0:
+                    self.error = d.error
 
         if self.exec_partition:
             for d in self.domains:
@@ -1304,7 +1339,8 @@ fi
                 if len(d.error) > 0:
                     self.error = d.error
 
-        s_path = self.generate_solver_script(exec_env)
+        if self.exec_solver:
+            s_path = self.generate_solver_script(exec_env)
 
         # Rename temporary file to indicate new status
 
@@ -1332,7 +1368,7 @@ fi
 
     #---------------------------------------------------------------------------
 
-    def run_partitioner(self, suffix = None):
+    def run_partitioner(self, run_id = None):
 
         """
         Run partitioner.
@@ -1357,11 +1393,11 @@ fi
 
         retcode = 0
 
-        if suffix != None:
-            self.suffix = suffix
+        if run_id != None:
+            self.run_id = run_id
 
         if self.exec_dir == None:
-            self.define_exec_dir(self.suffix)
+            self.define_exec_dir(self.run_id)
             self.set_exec_dir(self.exec_dir)
 
         os.chdir(self.exec_dir)
@@ -1413,7 +1449,7 @@ fi
 
     #---------------------------------------------------------------------------
 
-    def run_solver(self, suffix = None):
+    def run_solver(self, run_id = None):
 
         """
         Run solver proper.
@@ -1422,11 +1458,11 @@ fi
         if not self.exec_solver:
             return 0
 
-        if suffix != None:
-            self.suffix = suffix
+        if run_id != None:
+            self.run_id = run_id
 
         if self.exec_dir == None:
-            self.define_exec_dir(self.suffix)
+            self.define_exec_dir(self.run_id)
             self.set_exec_dir(self.exec_dir)
 
         os.chdir(self.exec_dir)
@@ -1463,11 +1499,12 @@ fi
         if retcode != 0:
             self.error = 'solver'
             err_str = \
-                name + ' solver script exited with status ' \
+                ' solver script exited with status ' \
                 + str(retcode) + '.\n\n'
             sys.stderr.write(err_str)
 
         if self.error == 'solver':
+
             if len(self.syr_domains) > 0:
                 err_str = \
                     'Error running the coupled calculation.\n\n' \
@@ -1479,6 +1516,13 @@ fi
                     'Error running the calculation.\n\n' \
                     'Check ' + name + ' log (listing) and error* files for details.\n\n'
             sys.stderr.write(err_str)
+
+            # Update error status for domains
+
+            for d in self.domains:
+                d.error = self.error
+            for d in self.syr_domains:
+                d.error = self.error
 
         # Indicate status using temporary file for SALOME.
 
@@ -1494,21 +1538,21 @@ fi
     #---------------------------------------------------------------------------
 
     def save_results(self,
-                     suffix = None):
+                     run_id = None):
 
         """
         Save calcultation results from execution directory to result
         directory.
         """
 
-        if suffix != None:
-            self.suffix = suffix
+        if run_id != None:
+            self.run_id = run_id
 
         if self.exec_dir == None:
-            self.define_exec_dir(self.suffix)
+            self.define_exec_dir(self.run_id)
             self.set_exec_dir(self.exec_dir)
 
-        self.set_result_dir(self.suffix)
+        self.set_result_dir(self.run_id)
 
         os.chdir(self.exec_dir)
 
@@ -1521,6 +1565,19 @@ fi
                          '  Saving calculation results\n'
                          ' ****************************\n\n')
 
+        self.summary_finalize()
+        self.copy_log('summary')
+
+        n_domains = len(self.domains) + len(self.syr_domains)
+        if n_domains > 1 and self.error == '':
+            dir_files = os.listdir(self.exec_dir)
+            for f in ['run_solver.sh', 'mpmd_configfile', 'mpmd_exec.sh']:
+                if f in dir_files:
+                    try:
+                        os.remove(f)
+                    except Exception:
+                        pass
+
         if self.exec_preprocess:
             for d in self.domains:
                 d.copy_preprocessor_results()
@@ -1531,14 +1588,17 @@ fi
 
         if self.exec_solver:
             for d in self.domains:
-                d.copy_solver_results(self.date)
+                d.copy_solver_results()
 
             for d in self.syr_domains:
                 d.copy_results()
 
-        self.summary_finalize()
+        # Remove directories if empty
 
-        self.copy_result(os.path.join(self.exec_dir, 'summary'))
+        try:
+            os.removedirs(self.exec_dir)
+        except Exception:
+            pass
 
         # Remove the Salome temporary file
 
@@ -1551,7 +1611,7 @@ fi
             hosts_list = None,
             mpi_environment = None,
             exec_prefix = None,
-            suffix = None,
+            run_id = None,
             prepare_data = True,
             run_solver = True,
             save_results = True):
@@ -1583,8 +1643,8 @@ fi
         if tmpdir != None:
             self.exec_prefix = os.path.join(tmpdir, self.package.tmpdir)
 
-        if suffix != None:
-            self.suffix = suffix
+        if run_id != None:
+            self.run_id = run_id
 
         try:
             retcode = 0
@@ -1601,7 +1661,7 @@ fi
                 self.save_results()
 
         finally:
-            if self.suffix != None:
+            if self.run_id != None:
                 self.update_scripts_tmp(('preparing',
                                          'ready',
                                          'runningstd',

@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009-2010  EDF
+#   Copyright (C) 2009-2011  EDF
 #
 #   Code_Saturne is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -29,9 +29,11 @@ import sys
 import shutil
 import stat
 
+import cs_config
 import cs_compile
 
 from cs_exec_environment import run_command
+
 
 #===============================================================================
 # Constants
@@ -86,6 +88,7 @@ class base_domain:
 
     def __init__(self,
                  package,
+                 name = None,             # domain name
                  n_procs = None,          # recommended number of processes
                  n_procs_min = 1,         # min. number of processes
                  n_procs_max = None):     # max. number of processes
@@ -98,13 +101,11 @@ class base_domain:
 
         self.case_dir = None
 
-        self.tag = None # used for multiple domains only
+        self.name = name # used for multiple domains only
 
         self.data_dir = None
         self.result_dir = None
         self.src_dir = None
-
-        self.result_suffix = None
 
         self.mesh_dir = None
 
@@ -132,30 +133,18 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
-    def set_tag(self, tag):
-
-        # Subdirectory or suffix in case of multiple domains
-        # (must be called before set_case_dir)
-
-        self.tag = str(tag)
-
-    #---------------------------------------------------------------------------
-
     def set_case_dir(self, case_dir):
 
         # Names, directories, and files in case structure
 
-        study_dir = os.path.split(case_dir)[0]
-
         self.case_dir = case_dir
+
+        if self.name != None:
+            self.case_dir = os.path.join(self.case_dir, self.name)
 
         self.data_dir = os.path.join(self.case_dir, 'DATA')
         self.result_dir = os.path.join(self.case_dir, 'RESU')
         self.src_dir = os.path.join(self.case_dir, 'SRC')
-
-        if (self.tag != None):
-            self.data_dir += '.' + self.tag
-            self.src_dir += '.' + self.tag
 
     #---------------------------------------------------------------------------
 
@@ -166,29 +155,27 @@ class base_domain:
         else:
             self.exec_dir = os.path.join(self.case_dir, 'RESU', exec_dir)
 
-        if self.tag != None:
-            self.exec_dir = os.path.join(self.exec_dir, self.tag)
+        if self.name != None:
+            self.exec_dir = os.path.join(self.exec_dir, self.name)
 
         if not os.path.isdir(self.exec_dir):
             os.makedirs(self.exec_dir)
 
     #---------------------------------------------------------------------------
 
-    def set_result_dir(self, name, by_suffix=True):
+    def set_result_dir(self, name, given_dir = None):
         """
         If suffix = true, add suffix to all names in result dir.
         Otherwise, create subdirectory
         """
 
-        if by_suffix == True:
-            self.result_dir = os.path.join(self.case_dir, 'RESU')
-            self.result_suffix = name
-
-        else:
+        if given_dir == None:
             self.result_dir = os.path.join(self.case_dir, 'RESU', name)
-            if (self.tag != None):
-                self.result_dir = os.path.join(self.result_dir,
-                                               self.tag)
+        else:
+            self.result_dir = given_dir
+
+        if self.name != None:
+            self.result_dir = os.path.join(self.result_dir, self.name)
 
         if not os.path.isdir(self.result_dir):
             os.makedirs(self.result_dir)
@@ -231,40 +218,39 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
-    def copy_result(self, name, destname=None):
+    def copy_result(self, name, purge=False):
         """
-        Copy a file or directory to the results directory.
+        Copy a file or directory to the results directory,
+        optionally removing it from the source.
         """
 
         # Determine absolute source and destination names
 
         if os.path.isabs(name):
             src = name
+            dest = os.path.join(self.result_dir, os.path.basename(name))
         else:
             src = os.path.join(self.exec_dir, name)
+            dest = os.path.join(self.result_dir, name)
 
-        if destname == None:
-            dest = os.path.basename(name)
-        else:
-            dest = destname
+        # If source and destination are identical, return
 
-        if not os.path.isabs(dest):
-            dest = os.path.join(self.result_dir, dest)
-            if (self.result_suffix != None):
-                if (self.tag != None):
-                    dest += '.' + self.tag
-                dest += '.' + self.result_suffix
+        if src == dest:
+            return
 
         # Copy single file
 
         if os.path.isfile(src):
             shutil.copy2(src, dest)
+            if purge:
+                os.remove(src)
 
         # Copy single directory (possibly recursive)
         # Unkike os.path.copytree, the destination directory
         # may already exist.
 
         elif os.path.isdir(src):
+
             if not os.path.isdir(dest):
                 os.mkdir(dest)
             list = os.listdir(src)
@@ -276,37 +262,30 @@ class base_domain:
                 elif os.path.isdir(f_src):
                     self.copy_result(f_src, f_dest)
 
+            if purge:
+                shutil.rmtree(src)
+
     #---------------------------------------------------------------------------
 
-    def copy_results_to_dir(self, names, dirname):
+    def purge_result(self, name):
         """
-        Copy result files to a given directory (a subdirectory
-        of the results directory if a relative path is given).
+        Remove a file or directory from execution directory.
         """
 
-        if os.path.isabs(dirname):
-            dirpath = dirname
+        # Determine absolute name
+
+        if os.path.isabs(name):
+            f = name
         else:
-            dirpath = os.path.join(self.result_dir, dirname)
-            if (self.result_suffix != None):
-                if (self.tag != None):
-                    dirpath += '.' + self.tag
-                dirpath += '.' + self.result_suffix
+            f = os.path.join(self.exec_dir, name)
 
-        if not os.path.isdir(dirpath):
-            os.mkdir(dirpath)
+        # Remove file or directory
 
-        for name in names:
-            if os.path.isabs(name):
-                src = name
-                dest = os.path.join(dirpath, os.path.basename(name))
-            else:
-                src = os.path.join(self.exec_dir, name)
-                dest = os.path.join(dirpath, name)
-            if os.path.isfile(src):
-                shutil.copy2(src, dest)
-            elif os.path.isdir(src):
-                self.copy_result(src, dest)
+        if os.path.isfile(f):
+            os.remove(f)
+
+        elif os.path.isdir(f):
+            shutil.rmtree(f)
 
     #---------------------------------------------------------------------------
 
@@ -347,6 +326,7 @@ class domain(base_domain):
 
     def __init__(self,
                  package,
+                 name = None,                 # domain name
                  n_procs = None,              # recommended number of processes
                  n_procs_min = None,          # min. number of processes
                  n_procs_max = None,          # max. number of processes
@@ -362,15 +342,17 @@ class domain(base_domain):
                  thermochemistry_data = None, # file name
                  meteo_data = None,           # meteo. profileFile name
                  user_input_files = None,     # file name or names
-                 user_output_files = None,    # file or directory name or names
+                 user_scratch_files = None,   # file or directory name or names
                  lib_add = None,              # linker command-line options
                  adaptation = None):          # HOMARD adaptation script
 
-        base_domain.__init__(self, package, n_procs, n_procs_min, n_procs_max)
+        base_domain.__init__(self, package,
+                             name,
+                             n_procs,
+                             n_procs_min,
+                             n_procs_max)
 
-        # Names, directories, and files in case structure
-
-        self.result_suffix = None
+        # Directories, and files in case structure
 
         self.restart_input_dir = None
         self.mesh_input = None
@@ -411,7 +393,7 @@ class domain(base_domain):
         self.meteo_data = meteo_data
 
         self.user_input_files = user_input_files
-        self.user_output_files = user_output_files
+        self.user_scratch_files = user_scratch_files
 
         self.lib_add = lib_add
 
@@ -427,10 +409,10 @@ class domain(base_domain):
 
     def for_domain_str(self):
 
-        if self.tag == None:
+        if self.name == None:
             return ''
         else:
-            return 'for domain ' + str(self.tag)
+            return 'for domain ' + str(self.name)
 
     #---------------------------------------------------------------------------
 
@@ -442,7 +424,7 @@ class domain(base_domain):
 
         self.restart_input_dir = os.path.join(self.data_dir, 'restart')
         self.mesh_input = os.path.join(self.data_dir, 'mesh_input')
-        self.partition_input = os.path.join(self.data_dir, 'partition_input')
+        self.partition_input = os.path.join(self.data_dir, 'partition')
 
     #---------------------------------------------------------------------------
 
@@ -523,53 +505,25 @@ class domain(base_domain):
 
             # Add header files to list so as not to forget to copy them
 
-            src_files = src_files + ( fnmatch.filter(dir_files, '*.h')
-                                    + fnmatch.filter(dir_files, '*.hxx')
-                                    + fnmatch.filter(dir_files, '*.hpp'))
+            src_files = src_files + (  fnmatch.filter(dir_files, '*.h')
+                                     + fnmatch.filter(dir_files, '*.hxx')
+                                     + fnmatch.filter(dir_files, '*.hpp'))
 
-            # Copy source files to result directory
+            exec_src = os.path.join(self.exec_dir, self.package.srcdir)
 
-            if self.exec_dir != self.result_dir:
+            # Copy source files to execution directory
 
-                copy_dir = os.path.join(self.result_dir, 'SRC')
-                if (self.result_suffix != None):
-                    if (self.tag != None):
-                        copy_dir += '.' + self.tag
-                    copy_dir += '.' + self.result_suffix
-
-                os.makedirs(copy_dir)
-
-                for f in src_files:
-                    src_file = os.path.join(self.src_dir, f)
-                    dest_file = os.path.join(copy_dir, f)
-                    shutil.copy2(src_file, dest_file)
-                    try:
-                        oldmode = (os.stat(dest_file)).stmode
-                        newmode = oldmode & (stat.IRUSR | stat.IRGRP | stat.IROTH)
-                        os.chmod(dest_file, newmode)
-                    except Exception:
-                        pass
-
-                # Copy source files to execution directory
-
-            if (self.exec_dir != self.result_dir):
-                exec_src = os.path.join(self.exec_dir, self.package.srcdir)
-                os.mkdir(exec_src)
-                for f in src_files:
-                    src_file = os.path.join(self.src_dir, f)
-                    dest_file = os.path.join(exec_src, f)
-                    shutil.copy2(src_file, dest_file)
+            os.mkdir(exec_src)
+            for f in src_files:
+                src_file = os.path.join(self.src_dir, f)
+                dest_file = os.path.join(exec_src, f)
+                shutil.copy2(src_file, dest_file)
 
             log_name = os.path.join(self.exec_dir, 'compile.log')
             log = open(log_name, 'w')
 
-            # Note: src_dir and copy_dir should contain identical source files,
-            #       but we prefer to use the copied version, so that if the
-            #       source is later modified, possible debug information in an
-            #       executable file will reference the correct (saved) version.
-
             retval = cs_compile.compile_and_link(self.package,
-                                                 copy_dir,
+                                                 exec_src,
                                                  self.exec_dir,
                                                  self.lib_add,
                                                  keep_going=True,
@@ -577,12 +531,15 @@ class domain(base_domain):
                                                  stderr=log)
 
             log.close()
-            self.copy_result(log_name)
 
             if retval == 0:
                 self.solver_path = os.path.join(self.exec_dir,
                                                 self.package.solver)
             else:
+                # In case of error, copy source to results directory now,
+                # as no calculation is possible, then rais exception
+                for f in [self.package.srcdir, 'compile.log']:
+                    self.copy_result(f)
                 raise RunCaseError('Compile or link error.')
 
     #---------------------------------------------------------------------------
@@ -593,7 +550,6 @@ class domain(base_domain):
         """
         from cs_check_consistency import check_consistency
         return check_consistency(self.param, self.src_dir, self.n_procs)
-
 
     #---------------------------------------------------------------------------
 
@@ -632,7 +588,7 @@ class domain(base_domain):
         for mesh in self.meshes:
 
             if mesh is None:
-                err_str = 'Preprocessing stage is asked but no mesh is given'
+                err_str = 'Preprocessing stage required but no mesh is given'
                 raise RunCaseError(err_str)
 
             if (type(mesh) == tuple):
@@ -710,10 +666,13 @@ class domain(base_domain):
         if self.n_procs < 2:
             self.exec_partition = False
         elif self.exec_partition == False and self.partition_input != None:
-            partition = os.path.join(self.partition_input,
-                                     'domain_number_' + str(self.n_procs))
+            part_name = 'domain_number_' + str(self.n_procs)
+            partition = os.path.join(self.partition_input, part_name)
             if os.path.isfile(partition):
-                self.symlink(partition)
+                part_dir = os.path.join(self.exec_dir, 'partition')
+                if not os.path.isdir(part_dir):
+                    os.mkdir(part_dir)
+                self.symlink(partition, os.path.join(part_dir, part_name))
             else:
                 w_str = \
                     'Warning: no partitioning file is available\n' \
@@ -856,7 +815,7 @@ class domain(base_domain):
         Tests if the partitioner is available and partitioning is defined.
         """
 
-        if (self.exec_partition == False or self.partition_n_procs == None):
+        if (self.exec_partition == False):
             return
 
         partitioner = self.package.get_partitioner()
@@ -1005,12 +964,8 @@ class domain(base_domain):
         if self.mode_args != None:
             args += ' ' + self.mode_args
 
-        if 'app_id' in kw:
-            if self.tag == None:
-                args += ' --mpi --app-name ' + os.path.basename(self.case_dir)
-            else:
-                args += ' --mpi --app-name ' + os.path.basename(self.case_dir) \
-                    + '.' + self.tag
+        if self.name != None:
+            args += ' --mpi --app-name ' + self.name
         elif self.n_procs > 1:
             args += ' --mpi'
 
@@ -1030,19 +985,44 @@ class domain(base_domain):
     def copy_preprocessor_results(self):
         """
         Retrieve preprocessor results from the execution directory
+        and remove preprocessor input files if necessary.
         """
 
-        if self.exec_dir == self.result_dir and self.result_suffix == None:
-            return
+        # Determine if we should purge the execution directory
 
-        dir_files = os.listdir(self.exec_dir)
+        purge = True
+        if self.error == 'preprocess':
+            purge = False
+
+        # Remove input data if necessary
+
+        if purge:
+            for mesh in self.meshes:
+                if mesh is None:
+                    pass
+                elif (type(mesh) == tuple):
+                    mesh = mesh[0]
+                try:
+                    # Special case for meshes in EnSight format
+                    base, ext = os.path.splitext(mesh)
+                    m = os.path.join(self.exec_dir, mesh)
+                    if ext == '.case':
+                        f = open(os.path.join(self.exec_dir, mesh))
+                        text = f.read(4096) # Should be largely sufficient
+                        f.close()
+                        l = re.search('^model:.*$', text, re.MULTILINE)
+                        g = (l.group()).split()[1]
+                        os.remove(os.path.join(self.exec_dir, g))
+                    os.remove(m)
+                except Exception:
+                    pass
 
         # Copy log file(s) first
 
         if len(self.meshes) == 1:
             f = os.path.join(self.exec_dir, 'preprocessor.log')
             if os.path.isfile(f):
-                self.copy_result(f)
+                self.copy_result(f, purge)
         else:
             mesh_id = 0
             for m in self.meshes:
@@ -1050,14 +1030,21 @@ class domain(base_domain):
                 f = os.path.join(self.exec_dir,
                                  'preprocessor_%02d.log' % (mesh_id))
                 if os.path.isfile(f):
-                    self.copy_result(f)
+                    self.copy_result(f, purge)
 
-        # copy output if required
+        # Copy output if required (only purge if we have no further
+        # errors, as it may be necessary for future debugging).
+
+        if self.error != '':
+            purge = False
+
+        f = os.path.join(self.exec_dir, 'mesh_input')
 
         if not self.exec_solver:
-            f = os.path.join(self.exec_dir, 'mesh_input')
             if os.path.isfile(f) or os.path.isdir(f):
-                self.copy_result(f, 'mesh_output')
+                self.copy_result(f, purge)
+        elif purge:
+            self.purge_result(f)
 
     #---------------------------------------------------------------------------
 
@@ -1066,156 +1053,148 @@ class domain(base_domain):
         Retrieve partition results from the execution directory
         """
 
-        if self.exec_dir == self.result_dir and self.result_suffix == None:
-            return
+        # Determine if we should purge the execution directory
 
-        dir_files = os.listdir(self.exec_dir)
+        purge = True
+        if self.error == 'partition':
+            purge = False
 
-        # Copy log file first
+        # Copy log file first.
 
         f = os.path.join(self.exec_dir, 'partition.log')
         if os.path.isfile(f):
-            self.copy_result(f)
+            self.copy_result(f, purge)
 
-        # copy output if required
+        # Copy output if required (only purge if we have no further
+        # errors, as it may be necessary for future debugging).
+
+        if self.error != '':
+            purge = False
+
+        d = os.path.join(self.exec_dir, 'partition')
 
         if not self.exec_solver:
+            if os.path.isdir(d):
+                self.copy_result(d, purge)
+        elif purge:
+            self.purge_result(d)
 
-            part_files = fnmatch.filter(dir_files, 'domain_number_*')
-            self.copy_results_to_dir(part_files, 'partition_output')
+        # Purge mesh_input if it was used solely by the partitioner
+
+        if not (self.exec_preprocess or self.exec_solver):
+            if self.error == '':
+                self.purge_result('mesh_input')
 
     #---------------------------------------------------------------------------
 
-    def copy_solver_results(self, date=None):
+    def copy_solver_results(self):
         """
         Retrieve solver results from the execution directory
         """
 
-        if self.exec_dir == self.result_dir and self.result_suffix == None:
-            return
+        # Determine all files present in execution directory
 
         dir_files = os.listdir(self.exec_dir)
 
-        # Copy log files first
+        # Determine if we should purge the execution directory
+
+        valid_dir = False
+        purge = True
+
+        if self.error != '':
+            purge = False
+
+        # Determine patterns from previous stages to ignore or possibly remove
+
+        purge_list = []
+
+        for f in ['mesh_input', 'partition', 'restart']:
+            if f in dir_files:
+                purge_list.append(f)
+
+        # Determine files from this stage to ignore or to possibly remove
+
+        for f in [self.package.solver, 'run_solver.sh']:
+            if f in dir_files:
+                purge_list.append(f)
+        purge_list.extend(fnmatch.filter(dir_files, 'core*'))
+
+        if self.user_scratch_files != None:
+            for f in self.user_scratch_files:
+                purge_list.exend = fnmatch.filter(dir_files, f)
+
+        for f in purge_list:
+            dir_files.remove(f)
+            if purge:
+                self.purge_result(f)
+
+        if len(purge_list) > 0:
+            valid_dir = True
+
+        # Copy user sources, compile log, and xml file if present
+
+        for f in [self.package.srcdir, 'compile.log', self.param]:
+            if f in dir_files:
+                valid_dir = True
+                self.copy_result(f, purge)
+                dir_files.remove(f)
+
+        # Copy log files
 
         log_files = fnmatch.filter(dir_files, 'listing*')
+        log_files.extend(fnmatch.filter(dir_files, '*.log'))
         log_files.extend(fnmatch.filter(dir_files, 'error*'))
 
         for f in log_files:
-            self.copy_result(f)
+            self.copy_result(f, purge)
+            dir_files.remove(f)
 
-        # Copy checkpoint files second (in case of full disk,
+        if (len(log_files) > 0):
+            valid_dir = True
+
+        # Copy checkpoint files (in case of full disk, copying them
+        # before other large data such as postprocessing output
         # increases chances of being able to continue).
 
-        self.copy_result('checkpoint')
+        cpt = 'checkpoint'
+        if cpt in dir_files:
+            valid_dir = True
+            self.copy_result(cpt, purge)
+            dir_files.remove(cpt)
 
-        # User files
+        # Now copy all other files
 
-        if self.user_output_files != None:
-            import glob
-            user_files = []
-            for pattern in self.user_output_files:
-                for f in glob.glob(pattern):
-                    user_files.append(f)
-            if len(user_files) > 0:
-                self.copy_results_to_dir(user_files, 'RES_USER')
+        if not valid_dir:
+            return
 
-        # Parameter or similar data files
-
-        if self.param != None:
-            self.copy_result(self.param)
-
-        if self.thermochemistry_data != None:
-            self.copy_result(self.thermochemistry_data)
-
-        if self.meteo_data != None:
-            self.copy_result(self.meteo_data)
-
-        # Plot history (including user history) files
-
-        self.copy_result('monitoring')
-        history_files = fnmatch.filter(dir_files, 'ush*')
-        if len(history_files) > 0:
-            self.copy_results_to_dir(history_files, 'monitoring')
-
-        post_list = fnmatch.filter(dir_files, '*.ensight')
-        post_list.extend(fnmatch.filter(dir_files, '*.med'))
-        post_list.extend(fnmatch.filter(dir_files, '*.cgns'))
-
-        # Retrieve output mesh if available.
-
-        self.copy_result('mesh_output')
-
-        # Retrieve postprocessor output.
-
-        # We handle both files and directories here; *.ensight
-        # files are always directories, and *.med or *.cgns files
-        # are always regular files, but the user could define
-        # an output directory with a .med extension, especially if
-        # there are many separate *.med files.
-
-        # Directories in the form dir.extension (for example chr.ensight)
-        # are copied to DIR.SUFFIX, or DIR.extension (for example
-        # CHR.SUFFIX or CHR.ensight) depending on the suffix behavior
-
-        for p in post_list:
-
-            p_abs = os.path.join(self.exec_dir, p)
-
-            if os.path.isfile(p_abs):
-                self.copy_result(p_abs)
-
-            elif os.path.isdir(p_abs):
-                p_base, p_ext = os.path.splitext(p)
-                p_dest = os.path.join(self.result_dir, p_base.upper()) \
-                    + p_ext.upper()
-                if self.result_suffix != None:
-                    if (self.tag != None):
-                        p_dest += '.' + self.tag
-                    p_dest += '.' + self.result_suffix
-
-                self.copy_result(p_abs, p_dest)
-
-        # Handle solver-specific postprocessing output
-
-        radiative_files = fnmatch.filter(dir_files, 'bord*')
-        if len(radiative_files) > 0:
-            self.copy_results_to_dir(radiative_files, 'CHR')
-
-        lagr_files = fnmatch.filter(dir_files, 'deplacement*')
-        lagr_files.extend(fnmatch.filter(dir_files, 'trajectoire*'))
-        lagr_files.extend(fnmatch.filter(dir_files, 'frontiere*'))
-        lagr_files.extend(fnmatch.filter(dir_files, 'debug*'))
-        if len(lagr_files) > 0:
-            self.copy_results_to_dir(lagr_files, 'LAGR')
-
-        # Matisse output files
-
-        res_matisse = os.path.join(self.exec_dir, 'resuMatisse')
-        if os.path.isfile(res_matisse):
-            self.copy_result('resuMatisse')
+        for f in dir_files:
+            self.copy_result(f, purge)
 
 #-------------------------------------------------------------------------------
+
+# SYRTHES 3 coupling
 
 class syrthes3_domain(base_domain):
 
     def __init__(self,
+                 package,
+                 name = None,
                  echo_comm = None,             # coupling verbosity
                  coupling_mode = 'MPI',        # 'MPI' or 'sockets'
                  coupled_apps = None):         # coupled domain names
                                                # if n_domains > 1
 
 
-        base_domain.__init__(self, package, 1, 1, 1)
+        base_domain.__init__(self, package, name, 1, 1, 1)
 
         self.log_file = 'syrthes.log'
 
-        # Names, directories, and files in case structure
+        # Directories, and files in case structure
+
         self.data_dir = None
         self.result_dir = None
         self.src_dir = None
-        self.result_suffix = None
-        self.echo_comm = None
+        self.echo_comm = echo_comm
 
         self.set_coupling_mode(coupling_mode)
 
@@ -1229,12 +1208,12 @@ class syrthes3_domain(base_domain):
 
         # Names, directories, and files in case structure
 
-        self.data_dir = os.path.join(case_dir, 'DATA_SYR')
-        self.src_dir = os.path.join(case_dir, 'SRC_SYR')
+        # No RESU dir for SYRTHES 3 case, as toplevel RESU_COUPLING
+        # is used in coupled case, and the script does not handle
+        # standalone SYRTHES 3 calculations (which require a different
+        # executable)
 
-        if (self.tag != None):
-            self.data_dir += '.' + self.tag
-            self.src_dir += '.' + self.tag
+        self.result_dir = None
 
     #---------------------------------------------------------------------------
 
@@ -1244,18 +1223,12 @@ class syrthes3_domain(base_domain):
         coupling_modes = ('MPI', 'sockets')
         if coupling_mode not in coupling_modes:
             err_str = \
-                'SYRTHES3 coupling mode "' + coupling_mode + '" unknown.\n' \
+                'SYRTHES3 coupling mode "' + str(coupling_mode) + '" unknown.\n' \
                 + 'Allowed modes: ' + str(coupling_modes) + '.\n'
             raise RunCaseError(err_str)
 
         # Coupling mode
         self.coupling_mode = coupling_mode
-
-    #---------------------------------------------------------------------------
-
-    def set_verbosity(self, verbosity):
-
-        self.echo_comm = verbosity
 
     #---------------------------------------------------------------------------
 
@@ -1279,58 +1252,220 @@ class syrthes3_domain(base_domain):
 
             src_files = src_files + fnmatch.filter(dir_files, '*.h')
 
-            # Copy source files to result directory
+            # Copy source files to execution directory
 
-            copy_dir = os.path.join(self.result_dir, 'SRC_SYRTHES')
-            if (self.result_suffix != None):
-                if (self.tag != None):
-                    copy_dir += '.' + self.tag
-                copy_dir += '.' + self.result_suffix
-
-            os.makedirs(copy_dir)
+            exec_src = os.path.join(self.exec_dir, 'src')
+            os.mkdir(exec_src)
 
             for f in src_files:
                 src_file = os.path.join(self.src_dir, f)
-                dest_file = os.path.join(copy_dir, f)
+                dest_file = os.path.join(exec_src, f)
                 shutil.copy2(src_file, dest_file)
-                try:
-                    oldmode = (os.stat(dest_file)).stmode
-                    newmode = oldmode & (stat.IRUSR | stat.IRGRP | stat.IROTH)
-                    os.chmod(dest_file, newmode)
-                except Exception:
-                    pass
 
-            # Copy source files to execution directory
-
-            if (self.exec_dir != self.result_dir):
-                exec_src = os.path.join(self.exec_dir, 'src_syrthes')
-                os.mkdir(exec_src)
-                for f in src_files:
-                    src_file = os.path.join(self.src_dir, f)
-                    dest_file = os.path.join(exec_src, f)
-                    shutil.copy2(src_file, dest_file)
-
-        log_name = os.path.join(self.exec_dir, 'compile_syrthes.log')
+        log_name = os.path.join(self.exec_dir, 'compile.log')
         log = open(log_name, 'w')
 
-        # Note: src_dir and copy_dir should contain identical source files,
-        #       but we prefer to use the copied version, so that if the
-        #       source is later modified, possible debug information in an
-        #       executable file will reference the correct (saved) version.
-
         retval = cs_compile.compile_and_link_syrthes(self.package,
-                                                     copy_dir,
+                                                     exec_src,
                                                      self.exec_dir,
                                                      stdout=log,
                                                      stderr=log)
 
         log.close()
-        self.copy_result(log_name)
 
         if retval != 0:
+            # In case of error, copy source to results directory now,
+            # as no calculation is possible, then raise exception.
+            for f in [self.package.srcdir, 'compile.log']:
+                self.copy_result(f)
             raise RunCaseError('Compile or link error.')
 
         self.solver_path = os.path.join(self.exec_dir, 'syrthes')
+
+    #---------------------------------------------------------------------------
+
+    def solver_args(self, **kw):
+        """
+        Returns a tuple indicating SYRTHES's working directory,
+        executable path, and associated command-line arguments.
+        """
+
+        wd = self.exec_dir              # Working directory
+        exec_path = self.solver_path    # Executable
+
+        # Build kernel command-line arguments
+
+        args = ' --log syrthes.log'
+        if self.echo_comm != None:
+            args += ' --echo-comm ' + str(self.echo_comm)
+
+        if self.coupling_mode == 'MPI':
+            args += ' --app-name ' + os.path.basename(self.case_dir)
+            if self.coupled_apps != None:
+                args += ' --comm-mpi ' + any_to_str(self.coupled_apps)
+            else:
+                args += ' --comm-mpi '
+
+        elif self.coupling_mode == 'sockets':
+            if 'host_port' in kw:
+                args += ' --comm-socket ' + any_to_str(kw['host_port'])
+
+        # handled directly
+
+        # Adjust for Valgrind if used
+
+        if self.valgrind != None:
+            args = self.solver_path + ' ' + args
+            exec_path = self.valgrind
+
+        return wd, exec_path, args
+
+    #---------------------------------------------------------------------------
+
+    def prepare_data(self):
+        """
+        Copy data to the execution directory
+        """
+
+        cwd = os.getcwd()
+        os.chdir(self.exec_dir)
+
+        syrthes_env = os.path.join(self.data_dir, 'syrthes.env')
+
+        cmd = self.package.get_runcase_script('runcase_syrthes')
+        cmd += ' -copy-data -syrthes-env=' + syrthes_env
+
+        if run_command(cmd) != 0:
+            raise RunCaseError
+
+        os.chdir(cwd)
+
+    #---------------------------------------------------------------------------
+
+    def preprocess(self):
+        """
+        Empty for SYRTHES 3
+        """
+        pass
+
+    #---------------------------------------------------------------------------
+
+    def preprocess(self):
+        """
+        Run preprocessing stages (empty for SYRTHES 3)
+        """
+
+        return
+
+    #---------------------------------------------------------------------------
+
+    def copy_results(self):
+        """
+        Retrieve results from the execution directory
+        """
+
+        dir_files = os.listdir(self.src_dir)
+
+        purge = True
+        if self.error != '':
+            purge = False
+
+        # Copy user sources, compile log, and execution log if present
+
+        for f in ['src', 'compile.log', 'syrthes.log']:
+            if f in dir_files:
+                self.copy_result(f, purge)
+                dir_files.remove(f)
+
+        if self.exec_dir == self.result_dir:
+            return
+
+        cwd = os.getcwd()
+        os.chdir(self.exec_dir)
+
+        cmd = self.package.get_runcase_script('runcase_syrthes') \
+            + ' -copy-results -result-dir=' + self.result_dir
+
+        if run_command(cmd) != 0:
+            raise RunCaseError
+
+        os.chdir(cwd)
+
+#-------------------------------------------------------------------------------
+
+# SYRTHES 4 coupling
+
+class syrthes_domain(base_domain):
+
+    def __init__(self,
+                 package,
+                 cmd_line = None,     # Command line to define optional syrthes4 behaviour
+                 name = None,
+                 param = 'syrthes.data',
+                 log_file = None,
+                 n_procs = None,
+                 n_procs_min = 1,
+                 n_procs_max = None,
+                 n_procs_radiation = None):
+
+        base_domain.__init__(self,
+                             package,
+                             name,
+                             n_procs,
+                             n_procs_min,
+                             n_procs_max)
+
+        self.n_procs_radiation = n_procs_radiation
+
+        # Additional parameters for Code_Saturne/SYRTHES coupling
+        # Directories, and files in case structure
+
+        self.cmd_line = cmd_line
+        self.param = param
+
+        self.logfile = log_file
+        if self.logfile == None:
+            self.logfile = 'syrthes.log'
+
+        self.case_dir = None
+        self.exec_dir = None
+        self.data_dir = None
+        self.src_dir = None
+        self.result_dir = None
+        self.echo_comm = None
+
+        self.set_coupling_mode('MPI')
+
+        # Generation of SYRTHES case deferred until we know how
+        # many processors are really required
+
+        self.syrthes_case = None
+
+    #---------------------------------------------------------------------------
+
+    def set_case_dir(self, case_dir):
+
+        base_domain.set_case_dir(self, case_dir)
+
+        # Names, directories, and files in case structure
+
+        self.data_dir = self.case_dir
+        self.src_dir = self.case_dir
+
+    #---------------------------------------------------------------------------
+
+    def set_coupling_mode(self, coupling_mode):
+
+        # Check that coupling mode is either 'MPI' or 'sockets'
+        coupling_modes = ('MPI')
+        if coupling_mode not in coupling_modes:
+            err_str = \
+                'SYRTHES4 coupling mode "' + str(coupling_mode) + '" unknown.\n' \
+                + 'Allowed modes: ' + str(coupling_modes) + '.\n'
+            raise RunCaseError(err_str)
+
+        # Coupling mode
+        self.coupling_mode = coupling_mode
 
     #---------------------------------------------------------------------------
 
@@ -1341,31 +1476,21 @@ class syrthes3_domain(base_domain):
         else:
             self.exec_dir = os.path.join(self.case_dir, 'RESU', exec_dir)
 
-        if self.tag != None:
-            self.exec_dir = os.path.join(self.exec_dir, 'SYR_' + self.tag)
+        self.exec_dir = os.path.join(self.exec_dir, self.name)
 
         if not os.path.isdir(self.exec_dir):
             os.mkdir(self.exec_dir)
 
     #---------------------------------------------------------------------------
 
-    def set_result_dir(self, name, by_suffix=True):
-        """
-        If suffix = true, add suffix to all names in result dir.
-        Otherwise, create subdirectory
-        """
+    def set_result_dir(self, name, given_dir = None):
 
-        if by_suffix == True:
-            self.result_dir = os.path.join(self.case_dir, 'RESU', 'RESU_SYR')
-            self.result_dir += '.' + name
-
+        if given_dir == None:
+            self.result_dir = os.path.join(self.result_dir,
+                                           'RESU_' + self.name,
+                                           name)
         else:
-            self.result_dir = os.path.join(self.case_dir,
-                                           'RESU',
-                                           name,
-                                           'RESU_SYR')
-        if (self.tag != None):
-            self.result_dir += '.' + self.tag
+            self.result_dir = os.path.join(given_dir, self.name)
 
         if not os.path.isdir(self.result_dir):
             os.makedirs(self.result_dir)
@@ -1384,21 +1509,19 @@ class syrthes3_domain(base_domain):
         # Build kernel command-line arguments
 
         args = ''
-        if self.echo_comm != None:
-            args += ' --echo-comm ' + str(self.echo_comm)
+
+        args += ' -d ' + self.syrthes_case.data_file
+        args += ' -n ' + str(self.syrthes_case.n_procs)
+
+        if self.syrthes_case.n_procs_ray > 0:
+            args += ' -r ' + str(self.n_procs_ray)
 
         if self.coupling_mode == 'MPI':
-            args += ' --app-name SYRTHES.' + os.path.basename(self.case_dir)
-            if self.coupled_apps != None:
-                args += ' --comm-mpi ' + any_to_str(self.coupled_apps)
-            else:
-                args += ' --comm-mpi ' + os.path.basename(self.case_dir)
 
-        elif self.coupling_mode == 'sockets':
-            if 'host_port' in kw:
-                args += ' --comm-socket ' + any_to_str(kw['host_port'])
+            args += ' --name ' + self.name
 
-        # handled directly
+        # Output to a logfile
+        # args += ' --log ' + self.logfile
 
         # Adjust for Valgrind if used
 
@@ -1410,27 +1533,109 @@ class syrthes3_domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def copy_data(self):
+    def prepare_data(self):
         """
+        Fill SYRTHES domain structure
         Copy data to the execution directory
+        Compile and link syrthes executable
         """
 
-        syrthes_env = os.path.join(self.data_dir, 'syrthes.env')
+        # Build command-line arguments
 
-        cmd = self.package.get_runcase_script('runcase_syrthes')
-        cmd += ' -copy-data -syrthes-env=' + syrthes_env
+        args = '-d ' + os.path.join(self.case_dir, self.param)
+        args += ' -l ' + self.logfile
+        args += ' --name ' + self.name
 
-        if run_command(cmd) != 0:
-            raise RunCaseError
+        if self.n_procs != None and self.n_procs != 1:
+            args += ' -n ' + str(self.n_procs)
+
+        if self.n_procs_radiation > 0:
+            args += ' -r ' + str(self.n_procs_radiation)
+
+        if self.data_dir != None:
+            args += ' --data-dir ' + str(self.data_dir)
+
+        if self.src_dir != None:
+            args += ' --src-dir ' + str(self.src_dir)
+
+        if self.exec_dir != None:
+            args += ' --exec-dir ' + str(self.exec_dir)
+
+        if self.cmd_line != None and len(self.cmd_line) > 0:
+            args += ' ' + self.cmd_line
+
+        # Define syrthes case structure
+
+        try:
+            config = ConfigParser.ConfigParser()
+            config.read([self.package.get_configfile(),
+                         os.path.expanduser('~/.' + self.package.configfile)])
+            syr_datapath = os.path.join(config.get('install', 'syrthes'),
+                                        os.path.join('share', 'syrthes'))
+            sys.path.insert(0, syr_datapath)
+            import syrthes
+        except Exception:
+            raise RunCaseError("Cannot locate SYRTHES installation.\n")
+            sys.exit(1)
+
+        self.syrthes_case = syrthes.process_cmd_line(args.split())
+
+        # Read data file and store parameters
+
+        self.syrthes_case.read_data_file()
+
+        # Build exec_srcdir
+
+        exec_srcdir = os.path.join(self.exec_dir, 'src')
+        os.makedirs(exec_srcdir)
+
+        # Handle interpreted functions
+
+        self.syrthes_case.interpret_func(dest = exec_srcdir)
+
+        # Preparation of the execution directory and compile and link executable
+
+        compile_logname = os.path.join(self.exec_dir, 'compile.log')
+
+        retval = self.syrthes_case.prepare_run(exec_srcdir, compile_logname)
+
+        self.copy_result(compile_logname)
+
+        if retval != 0:
+            err_str = '\n   Error during the SYRTHES preparation step\n'
+            if retval == 1:
+                err_str += '   Error during data copy\n'
+            elif retval == 2:
+                err_str += '   Error during syrthes compilation and link\n'
+                # Copy source to results directory, as no run is possible
+                for f in ['src', 'compile.log']:
+                    self.copy_result(f)
+            raise RunCaseError(err_str)
+
+        # Set executable
+
+        self.solver_path = os.path.join(self.exec_dir, 'syrthes')
 
     #---------------------------------------------------------------------------
 
     def preprocess(self):
         """
-        Run preprocessing stages (empty for Syrthes3)
+        Read syrthes.data file
+        Partition mesh for parallel run if required by user
         """
 
-        return
+        # Sumary of the parameters
+        self.syrthes_case.dump()
+
+        # Initialize output file if needed
+        self.syrthes_case.logfile_init()
+
+        # Pre-processing (including partitioning only if SYRTHES
+        # computation is done in parallel)
+        retval = self.syrthes_case.preprocessing()
+        if retval != 0:
+            err_str = '\n  Error during the SYRTHES preprocessing step\n'
+            raise RunCaseError(err_str)
 
     #---------------------------------------------------------------------------
 
@@ -1439,19 +1644,15 @@ class syrthes3_domain(base_domain):
         Retrieve results from the execution directory
         """
 
-        if self.exec_dir == self.result_dir and self.result_suffix == None:
+        if self.exec_dir == self.result_dir:
             return
 
-        cmd = self.package.get_runcase_script('runcase_syrthes') \
-            + ' -copy-results -result-dir=' + self.result_dir
-
-        if self.result_suffix != None:
-            if self.tag != None:
-                cmd += '.' + self.tag
-            cmd += '.' + self.result_suffix
-
-        if run_command(cmd) != 0:
-            raise RunCaseError
+        retval = self.syrthes_case.save_results(save_dir = self.result_dir,
+                                                horodat = False,
+                                                overwrite = True)
+        if retval != 0:
+            err_str = '\n   Error saving SYRTHES results\n'
+            raise RunCaseError(err_str)
 
 #-------------------------------------------------------------------------------
 # End

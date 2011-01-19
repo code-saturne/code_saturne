@@ -1979,6 +1979,8 @@ _write_output(fvm_gnum_t  n_g_cells,
   cs_io_t *fh = NULL;
   fvm_datatype_t datatype_gnum = FVM_DATATYPE_NULL;
   fvm_datatype_t datatype_int = FVM_DATATYPE_NULL;
+
+  const char dir[] = "partition";
   const char magic_string[] = "Domain partitioning, R0";
 
   if (sizeof(int) == 4)
@@ -1997,6 +1999,16 @@ _write_output(fvm_gnum_t  n_g_cells,
     assert(0);
   }
 
+  /* Create directory if required */
+
+  if (cs_glob_rank_id < 1) {
+    if (bft_file_isdir(dir) != 1) {
+      if (bft_file_mkdir_default(dir) != 0)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("The partitioning directory cannot be created"));
+    }
+  }
+
   /* Open file */
 
   for (i = n_ranks, n_ranks_size = 1;
@@ -2004,10 +2016,12 @@ _write_output(fvm_gnum_t  n_g_cells,
        i /= 10, n_ranks_size += 1);
 
   BFT_MALLOC(filename,
-             strlen("domain_number_") + n_ranks_size + 1,
+             strlen(dir) + strlen("domain_number_") + n_ranks_size + 2,
              char);
 
-  sprintf(filename, "domain_number_%d", n_ranks);
+  sprintf(filename,
+          "%s%cdomain_number_%d",
+          dir, CS_DIR_SEPARATOR, n_ranks);
 
 #if defined(HAVE_MPI)
   fh = cs_io_initialize(filename,

@@ -34,4 +34,4 @@
 cd $LOADL_STEP_INITDIR
 
 # Launch runcase script
-./runcase
+./scriptname

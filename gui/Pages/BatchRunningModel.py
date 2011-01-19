@@ -118,7 +118,6 @@ class BatchRunningModel(Model):
         self.dicoValues['THERMOCHEMISTRY_DATA'] = None
         self.dicoValues['METEO_DATA'] = None
         self.dicoValues['USER_INPUT_FILES'] = None
-        self.dicoValues['USER_OUTPUT_FILES'] = None
         self.dicoValues['N_PROCS'] = None
         self.dicoValues['PARTITION_LIST'] = None
         self.dicoValues['PARAMETERS'] = None
@@ -301,16 +300,6 @@ class BatchRunningModel(Model):
         self.dicoValues['REORIENT'] = sdm.getReorientCommand()
         self.dicoValues['PARAMETERS'] = os.path.basename(self.case['xmlfile'])
 
-        # User 1D profiles are loaded as user result files
-
-        if prm.getProfilesLabelsList():
-            if self.dicoValues['USER_OUTPUT_FILES']:
-                v = self.dicoValues['USER_OUTPUT_FILES']
-            else:
-                v = []
-            vlist = prm.updateOutputFiles(v)
-            self.dicoValues['USER_OUTPUT_FILES'] = vlist
-
         # Specific data file for specific physics
 
         model = CoalCombustionModel(self.case).getCoalCombustionModel()
@@ -434,7 +423,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         "HOSTS_LIST=None\n"\
         "PARTITION_LIST=None\n"\
         "USER_INPUT_FILES=['data']\n"\
-        "USER_OUTPUT_FILES=['titi']\n"\
         "CS_TMP_PREFIX='/home/toto'\n"\
         "MESHES=None\n"\
         "REORIENT=False\n"\
@@ -572,7 +560,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         'PBS_nodes': '1',
         'MESHES': ['mail1.des', 'mail2.des', 'mail3.des'],
         'PBS_JOB_NAME': '',
-        'USER_OUTPUT_FILES': ['titi'],
         'PARAMETERS': 'NEW.xml',
         'N_PROCS': 2,
         'USER_INPUT_FILES': ['data'],

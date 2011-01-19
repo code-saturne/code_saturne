@@ -144,7 +144,7 @@ edit_config = sed \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g'
 
-bin/code_saturne bin/runcase: Makefile
+bin/code_saturne bin/runcase bin/runcase_coupling: Makefile
 	rm -f $@ $@.tmp
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
@@ -161,9 +161,10 @@ bin/cs_package.py: Makefile
 bin/code_saturne: $(srcdir)/bin/code_saturne.in 
 bin/cs_package.py: $(srcdir)/bin/cs_package.py.in 
 bin/runcase: $(srcdir)/bin/runcase.in 
+bin/runcase_coupling: $(srcdir)/bin/runcase_coupling.in 
 
 CLEANFILES = $(edit_scripts)
-EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase.in
+EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase.in bin/runcase_coupling.in
 
 # Install binary scripts
 
@@ -180,6 +181,7 @@ dist_pkgpython_PYTHON = \
 bin/__init__.py \
 bin/cs_case.py \
 bin/cs_case_domain.py \
+bin/cs_case_coupling.py \
 bin/cs_check_consistency.py \
 bin/cs_check_mesh.py \
 bin/cs_compile.py \
@@ -194,6 +196,7 @@ bin/cs_script.py
 
 nodist_pkgdata_DATA = \
 bin/runcase \
+bin/runcase_coupling \
 bin/SaturneGUI
 
 dist_pkgdata_SCRIPTS = \

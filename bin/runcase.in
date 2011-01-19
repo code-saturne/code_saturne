@@ -81,16 +81,16 @@ REORIENT = False
 #   METEO_DATA='meteo'
 
 # Additional input files found in the DATA subdirectory may be defined in
-# the USER_INPUT_FILES list. Similarly, additional output files to
-# retrieve can be defined in USER_OUTPUT_FILES, for example:
-#   USER_OUTPOUT_FILES = ['plot1.dat', 'plot2.dump']
+# the USER_INPUT_FILES list. Similarly, output files that do not
+# need to be retrieved can be defined in USER_SCRATCH_FILES, for example:
+#   USER_SCRATCH_FILES = ['*.tmp', 'fort.*']
 
 # By default, the corresponding values are set to None.
 
 THERMOCHEMISTRY_DATA = None
 METEO_DATA = None
 USER_INPUT_FILES = None
-USER_OUTPUT_FILES = None
+USER_SCRATCH_FILES = None
 
 # Number of MPI processes associated with the whole calculation (auto if none).
 
@@ -107,13 +107,13 @@ N_PROCS_MAX = None
 # PARTITION_LIST defines the partitionings that will be built
 # if EXEC_SOLVER is set to False and EXEC_PARTITION to True (see below).
 # For example, PARTITION_LIST = (128, 256) will produce files
-# 'domain_number_128' and 'domain_number_256' in RESU/PARTITION_OUTPUT.
+# 'domain_number_128' and 'domain_number_256' in RESU/partition.
 
 # PARTITION_OPTS may contain other partitioner options, for example
 #   PARTITION_OPTS = '--scotch --no-perio'; by default, it is set to None.
 
 PARTITION_LIST = None
-PARTITION_OPTS = None
+PARTITION_OPTS = "--scotch"
 
 # Solver options
 
@@ -144,7 +144,7 @@ HOSTS_LIST = None
 # Calculation stages to execute.
 # If EXEC_SOLVER is set to False, the Preprocessor's preprocessor_output file
 # is copied in RESU, and the Partitioner's output is copied in a
-# PARTITION_OUTPUT directory in RESU. Note also that when partitioning
+# partition directory in RESU. Note also that when partitioning
 # with no solver execution, the number of processors required is not known
 # in advance, so the PARTITION_LIST variable above must also be defined.
 
@@ -190,7 +190,7 @@ if __name__ == '__main__':
                thermochemistry_data = THERMOCHEMISTRY_DATA,
                meteo_data = METEO_DATA,
                user_input_files = USER_INPUT_FILES,
-               user_output_files = USER_OUTPUT_FILES,
+               user_scratch_files = USER_SCRATCH_FILES,
                n_procs = N_PROCS,
                n_procs_min = N_PROCS_MIN,
                n_procs_max = N_PROCS_MAX,
@@ -199,30 +199,22 @@ if __name__ == '__main__':
     if VALGRIND != None:
         d.valgrind = VALGRIND
 
-    # Possible SYRTHES coupling
-
-    if os.path.isdir(os.path.join(casedir, 'DATA_SYR')):
-        sd = syrthes3_domain(echo_comm = None,        # coupling verbosity
-                             coupling_mode = 'MPI',   # 'MPI' or 'sockets'
-                             coupled_apps = None)     # coupled domain names
-                                                      # if n_domains > 1
-    else:
-        sd = None
-
     # Now handle case for the corresponding calculation domain(s).
 
     case = case(package(),
                 casedir,
                 d,
-                sd,
-                results_by_suffix = False,
+                syr_domains = None,
                 exec_preprocess = EXEC_PREPROCESS,
                 exec_partition = EXEC_PARTITION,
                 exec_solver = EXEC_SOLVER)
 
-    # Select suffix (define if only running the solver or saving results)
+    # Select run id
+    # (usually date+time; defined automatically when preparing data, but we need
+    # to set this so as to match an existing run when only running the solver or
+    # saving results with previously prepared data)
 
-    suffix = None
+    run_id = None
 
     # Force MPI environment if mpi_environment != None
 
@@ -256,7 +248,7 @@ if __name__ == '__main__':
              hosts_list=HOSTS_LIST,
              mpi_environment=mpi_env,
              exec_prefix=CS_TMP_PREFIX,
-             suffix=suffix,
+             run_id=run_id,
              prepare_data=True,
              run_solver=True,
              save_results=True)

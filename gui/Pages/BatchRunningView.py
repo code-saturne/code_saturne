@@ -73,13 +73,13 @@ log = logging.getLogger("BatchRunningView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Popup window class: Data and results user files
+# Popup window class: Data user files
 #-------------------------------------------------------------------------------
 
 
 class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogForm):
     """
-    Class for data and results user files
+    Class for data user files
     """
     def __init__(self, parent, default):
         """
@@ -101,29 +101,20 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
         rows = 0
         columns = 1
         self.modelData = QListModel(rows, columns)
-        self.modelResu = QListModel(rows, columns)
 
         # associated with views.
         self.viewData.setModel(self.modelData)
-        self.viewResu.setModel(self.modelResu)
 
         self.viewData.setItemDelegate(DataDelegate(self, self.default['data_path']))
-        self.viewResu.setItemDelegate(ResuDelegate(self))
-
         # Connections
         self.connect(self.buttonNewData, SIGNAL("clicked()"), self.slotAddData)
         self.connect(self.buttonAddData, SIGNAL("clicked()"), self.slotNewData)
-        self.connect(self.buttonAddResu, SIGNAL("clicked()"), self.slotNewResu)
         self.connect(self.buttonDeleteData, SIGNAL("clicked()"), self.slotDeleteData)
-        self.connect(self.buttonDeleteResu, SIGNAL("clicked()"), self.slotDeleteResu)
 
         # Previous values
         if self.default['data'] != None:
             for item in self.default['data']:
                 self.setFileData(item)
-        if self.default['results'] != None:
-            for item in self.default['results']:
-                self.setFileResu(item)
 
 
     def setFileData(self, item):
@@ -137,19 +128,6 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
         else:
             std_item = QStandardItem(QString(item))
             self.modelData.appendRow(std_item)
-
-
-    def setFileResu(self, item):
-        # Verify that the input is not already in the QListView
-        indexList = self.modelResu.search(QString(item))
-
-        if indexList:
-            title = self.tr("Warning")
-            msg   = self.tr("%s is already in the list." % str(item))
-            QMessageBox.warning(self, title, msg)
-        else:
-            std_item = QStandardItem(QString(item))
-            self.modelResu.appendRow(std_item)
 
 
     @pyqtSignature("")
@@ -176,14 +154,6 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
 
 
     @pyqtSignature("")
-    def slotNewResu(self):
-        std_item = QStandardItem(QString(""))
-        self.modelResu.appendRow(std_item)
-        index = self.modelResu.indexFromItem(std_item)
-        self.viewResu.edit(index)
-
-
-    @pyqtSignature("")
     def slotDeleteData(self):
         """
         Delete the selection from the listbox (one by one).
@@ -191,16 +161,6 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
         index = self.viewData.currentIndex()
         if index.isValid():
             self.modelData.removeRow(index.row())
-
-
-    @pyqtSignature("")
-    def slotDeleteResu(self):
-        """
-        Delete the selection from the listbox (one by one).
-        """
-        index = self.viewResu.currentIndex()
-        if index.isValid():
-            self.modelResu.removeRow(index.row())
 
 
     def get_result(self):
@@ -220,11 +180,6 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
             index = self.modelData.index(row, column, QModelIndex())
             qstring = index.data(Qt.DisplayRole).toString()
             self.result['data'].append(str(qstring))
-
-        for row in range(self.modelResu.rowCount()):
-            index = self.modelResu.index(row, column, QModelIndex())
-            qstring = index.data(Qt.DisplayRole).toString()
-            self.result['results'].append(str(qstring))
 
         QDialog.accept(self)
 
@@ -312,49 +267,6 @@ class DataDelegate(QItemDelegate):
             QMessageBox.information(self.parent, title, msg)
 
         model.setData(index, QVariant(item), Qt.DisplayRole)
-
-
-class ResuDelegate(QItemDelegate):
-    def __init__(self, parent=None):
-        super(ResuDelegate, self).__init__(parent)
-        self.parent = parent
-
-
-    def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
-        vd = RegExpValidator(editor, QRegExp("[_A-Za-z0-9\-\*\!\?\.]*"))
-        editor.setValidator(vd)
-        editor.setFrame(False)
-        self.connect(editor, SIGNAL("returnPressed()"), self.commitAndCloseEditor)
-        editor.setCursorPosition(0)
-        return editor
-
-
-    def commitAndCloseEditor(self):
-        editor = self.sender()
-        if isinstance(editor, QLineEdit):
-            self.emit(SIGNAL("commitData(QWidget*)"), editor)
-            self.emit(SIGNAL("closeEditor(QWidget*)"), editor)
-
-
-    def setEditorData(self, editor, index):
-        text = index.model().data(index, Qt.DisplayRole).toString()
-        editor.setText(text)
-
-
-    def setModelData(self, editor, model, index):
-        if not editor.isModified():
-            return
-
-        item = editor.text()
-
-        if model.search(item):
-            model.removeRow(index.row())
-            title = self.tr("Warning")
-            msg   = self.tr("%s is already in the list." % str(item))
-            QMessageBox.warning(self.parent, title, msg)
-        else:
-            model.setData(index, QVariant(item), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -496,8 +408,8 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelExecPrepro.addItem(self.tr("Use existing DATA/mesh_input"), 'False')
 
         self.modelExecPartit.addItem(self.tr("Run the partitioner"), 'True')
-        self.modelExecPartit.addItem(self.tr("Use existing domain_number_<p> file in DATA/partition_input/\n"\
-                                             "if present, unoptimized partition otherwise"), 'False')
+        self.modelExecPartit.addItem(self.tr("Use existing DATA/partition/domain_number_<p>\n"\
+                                             "if present, space-filling curve otherwise"), 'False')
 
         self.modelExecKernel.addItem(self.tr("Setup data and run the calculation"), 'True')
         self.modelExecKernel.addItem(self.tr("Do not setup data and run the calculation"), 'False')
@@ -904,12 +816,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
     @pyqtSignature("")
     def slotUserFiles(self):
         """
-        Input 'USER_INPUT_FILES' and 'USER_OUTPUT_FILES'
+        Input 'USER_INPUT_FILES'
         """
         default = {}
         default['data_path'] = self.case['data_path']
         default['data']      = self.mdl.dicoValues['USER_INPUT_FILES']
-        default['results']   = self.mdl.dicoValues['USER_OUTPUT_FILES']
         log.debug("slotUserFiles -> %s" % str(default))
 
         dialog = BatchRunningUserFilesDialogView(self, default)
@@ -918,9 +829,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             result = dialog.get_result()
             log.debug("slotUserFiles -> %s" % str(result))
             self.mdl.dicoValues['USER_INPUT_FILES']  = result['data']
-            self.mdl.dicoValues['USER_OUTPUT_FILES'] = result['results']
             self.mdl.updateBatchScriptFile('USER_INPUT_FILES')
-            self.mdl.updateBatchScriptFile('USER_OUTPUT_FILES')
 
 
     @pyqtSignature("")
