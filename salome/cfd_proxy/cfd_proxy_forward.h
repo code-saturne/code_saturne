@@ -1,6 +1,6 @@
 #ifndef _CFD_PROXY_FORWARD_H_
 #define _CFD_PROXY_FORWARD_H_
- 
+
 //============================================================================
 //
 //     This file is part of the Code_Saturne CFD tool.
