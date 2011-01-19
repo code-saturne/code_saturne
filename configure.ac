@@ -448,22 +448,6 @@ AM_CONDITIONAL(HAVE_PREPROCESSOR, test x$cs_have_prepro = xyes)
 AC_SUBST(cs_have_prepro)
 
 #------------------------------------------------------------------------------
-# Enables Code_Saturne graphical user interface
-#------------------------------------------------------------------------------
-
-AC_ARG_ENABLE(gui, [AS_HELP_STRING([--disable-gui],
-                                   [disable the Graphical User Interface])],
-  [
-    case "${enableval}" in
-      yes) cs_have_gui=yes ;;
-      no)  cs_have_gui=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-gui]) ;;
-    esac
-  ],
-  [ cs_have_gui=yes ]
-)
-
-#------------------------------------------------------------------------------
 # Checks for Python support.
 #------------------------------------------------------------------------------
 
@@ -485,13 +469,23 @@ unset cs_python_basename
 cs_python=${PYTHON}
 AC_SUBST(cs_python)
 
-if test "x$cs_have_gui" = xyes; then
-  cs_python_version="2.4"
-else
-  cs_python_version="2.3"
-fi
+AM_PATH_PYTHON(["2.4"])
 
-AM_PATH_PYTHON([$cs_python_version])
+#------------------------------------------------------------------------------
+# Enables Code_Saturne graphical user interface
+#------------------------------------------------------------------------------
+
+AC_ARG_ENABLE(gui, [AS_HELP_STRING([--disable-gui],
+                                   [disable the Graphical User Interface])],
+  [
+    case "${enableval}" in
+      yes) cs_have_gui=yes ;;
+      no)  cs_have_gui=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-gui]) ;;
+    esac
+  ],
+  [ cs_have_gui=yes ]
+)
 
 #------------------------------------------------------------------------------
 # Checks for PyQt support.

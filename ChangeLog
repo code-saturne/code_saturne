@@ -1,4 +1,10 @@
 * 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minimum Python version raised from 2.3 to 2.4.
+  modified files:
+    configure.ac
+    bin/cs_exec_environment.py
+
+* 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct index variable in loop on Lagrangian probes.
   modified files:
     src/lagr/laghis.f90

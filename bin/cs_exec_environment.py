@@ -23,17 +23,11 @@
 import datetime
 import fnmatch
 import os.path
+import subprocess
 import sys
 import tempfile
 
 python_version = sys.version[:3]
-
-try:
-    import subprocess        # Python 2.4+
-    have_subprocess = True
-except ImportError:
-    import popen2            # Python 2.3-
-    have_subprocess = False
 
 from optparse import OptionParser
 
@@ -73,26 +67,13 @@ def run_command(cmd, echo = False, stdout = sys.stdout, stderr = sys.stderr):
     if echo == True:
         stdout.write(cmd + '\n')
 
-    if have_subprocess == True:
-        p = subprocess.Popen(cmd,
-                             shell=True,
-                             stdout=stdout,
-                             stderr=stderr)
-        p.communicate()
-        returncode = p.returncode
+    p = subprocess.Popen(cmd,
+                         shell=True,
+                         stdout=stdout,
+                         stderr=stderr)
+    p.communicate()
 
-    else:
-        p = popen2.Popen3(cmd, capturestderr=True)
-        returncode = p.wait()
-        output = (p.fromchild.read(), p.childerr.read())
-        if len(output[0]) > 0:
-            stdout.write(output[0])
-        if len(output[1]) > 0:
-            stderr.write(output[1])
-        p.fromchild.close()
-        p.childerr.close()
-
-    return returncode
+    return p.returncode
 
 #-------------------------------------------------------------------------------
 
@@ -100,26 +81,16 @@ def get_command_output(cmd):
     """
     Run a command and return it's standard output.
     """
-    if have_subprocess == True:
-        p = subprocess.Popen(cmd,
-                             shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        output = p.communicate()
-        if p.returncode != 0:
-            sys.stderr.write(output[1] + '\n')
-            return ''
-        else:
-            return output[0]
-
+    p = subprocess.Popen(cmd,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    output = p.communicate()
+    if p.returncode != 0:
+        sys.stderr.write(output[1] + '\n')
+        return ''
     else:
-        p = popen2.Popen3(cmd, capturestderr=True)
-        returncode = p.wait()
-        if returncode != 0:
-            sys.stderr.write(p.childerr.read())
-            return ''
-        else:
-            return p.fromchild.read()
+        return output[0]
 
 #-------------------------------------------------------------------------------
 
@@ -127,17 +98,11 @@ def get_command_outputs(cmd):
     """
     Run a command and return it's standard and error outputs.
     """
-    if have_subprocess == True:
-        p = subprocess.Popen(cmd,
-                             shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT)
-        return p.communicate()[0]
-
-    else:
-        p = popen2.Popen4(cmd)
-        returncode = p.wait()
-        return p.fromchild.read()
+    p = subprocess.Popen(cmd,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
+    return p.communicate()[0]
 
 #-------------------------------------------------------------------------------
 
