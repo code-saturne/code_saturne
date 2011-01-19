@@ -61,6 +61,22 @@ AC_ARG_WITH(salome-kernel-include,
                fi
              fi])
 
+AC_ARG_WITH(salome-kernel-idl,
+            [AS_HELP_STRING([--with-salome-kernel-idl=PATH],
+                            [specify directory for SALOME_KERNEL IDL files])],
+            [if test "x$with_salome_kernel" = "xcheck"; then
+               with_salome_kernel=yes
+             fi
+             SALOME_KERNEL_IDL="-L$with_salome_kernel_idl"],
+            [if test "x$with_salome_kernel" != "xno" ; then
+               if test "x$with_salome_kernel" != "xyes" \
+	               -a "x$with_salome_kernel" != "xcheck"; then
+                 SALOME_KERNEL_IDL="-I$with_salome_kernel/idl/salome"
+               else
+                 SALOME_KERNEL_IDL="-I/usr/idl/salome"
+               fi
+             fi])
+
 AC_ARG_WITH(salome-kernel-lib,
             [AS_HELP_STRING([--with-salome-kernel-lib=PATH],
                             [specify directory for SALOME_KERNEL library])],

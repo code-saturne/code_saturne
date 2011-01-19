@@ -1,3 +1,27 @@
+* 19/01/2011 - David Monfort <david.monfort@edf.fr>
+  Modify the SALOME module build in a Code_Saturne'ish way. The module build
+  is not yet activated by default.
+  modified scripts:
+    config/make_common_starter.am
+    config/salome_module.mk
+    configure.ac
+    m4/cs_salome.m4
+    salome/fsi_coupling
+    salome/fsi_coupling/idl
+    salome/fsi_coupling/idl/FSI.idl
+    salome/fsi_coupling/idl/Makefile.am
+    salome/fsi_coupling/Makefile.am
+    salome/fsi_coupling/resources
+    salome/fsi_coupling/resources/Makefile.am
+    salome/fsi_coupling/src
+    salome/fsi_coupling/src/FSI_ASTER
+    salome/fsi_coupling/src/FSI_ASTER/Makefile.am
+    salome/fsi_coupling/src/FSI_MILIEU
+    salome/fsi_coupling/src/FSI_MILIEU/Makefile.am
+    salome/fsi_coupling/src/FSI_SATURNE
+    salome/fsi_coupling/src/FSI_SATURNE/Makefile.am
+    salome/fsi_coupling/src/Makefile.am
+
 * 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove white space leading to bug in some cases with MPICH2/mpmd.
   modified files:

@@ -841,6 +841,13 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
                  libsyrcs/Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
+                 salome/fsi_coupling/Makefile
+                 salome/fsi_coupling/idl/Makefile
+                 salome/fsi_coupling/resources/Makefile
+                 salome/fsi_coupling/src/Makefile
+                 salome/fsi_coupling/src/FSI_ASTER/Makefile
+                 salome/fsi_coupling/src/FSI_MILIEU/Makefile
+                 salome/fsi_coupling/src/FSI_SATURNE/Makefile
                  doc/Makefile doc/style/csvers.tex
                  doc/howto/Makefile doc/howto/graphics/Makefile
                  doc/developper/Makefile doc/developper/graphics/Makefile

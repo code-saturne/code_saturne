@@ -1,15 +1,37 @@
+#------------------------------------------------------------------------------
+#   This file is part of the Code_Saturne Kernel, element of the
+#   Code_Saturne CFD tool.
+#
+#   Copyright (C) 2011 EDF S.A., France
+#
+#   The Code_Saturne Kernel is free software; you can redistribute it
+#   and/or modify it under the terms of the GNU General Public License
+#   as published by the Free Software Foundation; either version 2 of
+#   the License, or (at your option) any later version.
+#
+#   The Code_Saturne Kernel is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public Licence
+#   along with the Code_Saturne Kernel; if not, write to the
+#   Free Software Foundation, Inc.,
+#   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#-------------------------------------------------------------------------------
 
-include $(top_srcdir)/adm_local/make_common_starter.am
+include $(top_srcdir)/config/salome_module.mk
 
-AM_CFLAGS=$(SALOME_INCLUDES) -fexceptions
+MODULE_NAME = FSI
 
-lib_LTLIBRARIES= libFSI_MILIEUEngine.la
-salomeinclude_HEADERS= FSI_MILIEU.hxx
+AM_CFLAGS = $(SALOME_INCLUDES) -fexceptions
 
-libFSI_MILIEUEngine_la_SOURCES      = FSI_MILIEU.cxx 
+salomelib_LTLIBRARIES = libFSI_MILIEUEngine.la
+salomeinclude_HEADERS = FSI_MILIEU.hxx
+
+libFSI_MILIEUEngine_la_SOURCES = FSI_MILIEU.cxx 
 nodist_libFSI_MILIEUEngine_la_SOURCES =
-libFSI_MILIEUEngine_la_CXXFLAGS = -I$(top_builddir)/idl  $(SALOME_INCLUDES) -I$(top_srcdir)/salome/libmilieu
-libFSI_MILIEUEngine_la_FFLAGS = $(SALOME_INCLUDES) -fexceptions -I$(top_srcdir)/salome/libmilieu
-libFSI_MILIEUEngine_la_LIBADD   = $(top_builddir)/salome/libmilieu/libmilieu.la -L$(top_builddir)/idl -lSalomeIDLFSI ${SALOME_LIBS} $(FLIBS)
+libFSI_MILIEUEngine_la_CXXFLAGS = -I$(top_builddir)/salome/fsi_coupling/idl  $(SALOME_INCLUDES) -I$(top_srcdir)/salome/libmilieu
+libFSI_MILIEUEngine_la_LIBADD  = $(top_builddir)/salome/libmilieu/libmilieu.la $(top_builddir)/salome/fsi_coupling/idl/libSalomeIDLFSI.la $(SALOME_LIBS)
 libFSI_MILIEUEngine_la_LDFLAGS = 
 
