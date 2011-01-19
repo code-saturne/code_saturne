@@ -154,12 +154,12 @@ if (ipass.eq.1) then
     do ipp = 1, 2*nvlsta
 
       if (ipp .le. nvlsta) then
-        ivarl = (ipas-1)*nvlsta+il
+        ivarl = (ipas-1)*nvlsta+ipp
         ilpd1 = (ipas-1)*nvlsta+ilpd
         ilfv1 = (ipas-1)*nvlsta+ilfv
         icla  = ipas -1
       else
-        ivarl = (ipas-1)*nvlsta+(il-nvlsta)
+        ivarl = (ipas-1)*nvlsta+(ipp-nvlsta)
         ilpd1 = (ipas-1)*nvlsta+ilpd
         ilfv1 = (ipas-1)*nvlsta+ilfv
         icla  = ipas -1
