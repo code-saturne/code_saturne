@@ -1,3 +1,12 @@
+* 19/01/2011 - François Jusserand <francois.jusserand@edf.fr>
+               Julien Berland <julien-j.berland@edf.fr>
+               David Monfort <david.monfort@edf.fr>
+  Add the YACSGEN script for the creation of the fluid-structure interaction
+  module (SALOME) between Code_Saturne and Code_Aster.
+  added files:
+    extras/salome
+    extras/salome/fsi_yacsgen.py
+
 * 18/01/2011 - David Monfort <david.monfort@edf.fr>
   Fix the SALOME detection.
   modified script:
