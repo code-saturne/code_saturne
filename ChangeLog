@@ -1,11 +1,15 @@
 * 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Do not use gettext on empty string, as this returns translation info.
+  modified files:
+    src/base/cs_coupling.c
+
+* 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Date is added to Matisse result file directly by Fortran code,
   where was previously added by the script.
   modified files:
     bin/cs_case_domain.py
     src/mati/mtimpi.f90
 
-* 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
 * 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow "--mpi" argument with empty following coupled apps list
   in syrcs, to simplify common case with just 1 CFD/SYRTHES coupling.

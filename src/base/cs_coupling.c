@@ -163,12 +163,12 @@ cs_coupling_discover_mpi_apps(const char  *app_name)
                                              i);
         int sync_type = (ai.status & PLE_COUPLING_NO_SYNC) ? 0 : 1;
         if (i == app_id)
-          is_local = local_add;
+          is_local = _(local_add);
         bft_printf(_("  %d; type:      \"%s\"%s\n"
                      "     case name: \"%s\"\n"
                      "     lead rank: %d; n_ranks: %d\n"
                      "     %s\n\n"),
-                   i+1, ai.app_type, _(is_local),
+                   i+1, ai.app_type, is_local,
                    ai.app_name, ai.root_rank, ai.n_ranks,
                    _(sync_name[sync_type]));
       }
