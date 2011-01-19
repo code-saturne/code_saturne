@@ -1,4 +1,9 @@
 * 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove white space leading to bug in some cases with MPICH2/mpmd.
+  modified files:
+    bin/cs_exec_environment.py
+
+* 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct typo leading to bug in some cases with MPICH2/mpmd.
   modified files:
     bin/cs_exec_environment.py

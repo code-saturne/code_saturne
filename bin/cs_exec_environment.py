@@ -646,7 +646,7 @@ class mpi_environment:
                 mpdtrace + ' > /dev/null 2>&1\n' \
                 + 'if test $? != 0 ; then ' + self.mpiboot + ' ; fi'
             self.mpihalt = \
-                'listjobs = `' + mpdlistjobs + ' | wc -l`\n' \
+                'listjobs=`' + mpdlistjobs + ' | wc -l`\n' \
                 + 'if test $listjobs = 0 ; then ' + self.mpihalt + ' ; fi'
 
         # Info commands
