@@ -1,3 +1,9 @@
+* 19/01/2011 - David Monfort <david.monfort@edf.fr>
+  Remove the -pedantic option from the CXXFLAGS to avoid compilation erros in
+  the fluid-structure interaction SALOME module.
+  modified script:
+    config/cs_auto_flags.sh
+
 * 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Do not use gettext on empty string, as this returns translation info.
   modified files:
