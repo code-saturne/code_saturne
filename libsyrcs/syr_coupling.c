@@ -242,7 +242,7 @@ syr_coupling_initialize(int               coupling_id,
   coupling->cs_rank = NULL;
 
 #ifdef HAVE_MPI
-  if (cs_app_name != NULL)
+  if (comm_type == SYR_COMM_TYPE_MPI)
     syr_mpi_appinfo(cs_app_name, &root_rank, &n_ranks);
 #endif
 

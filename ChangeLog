@@ -1,4 +1,12 @@
 * 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow "--mpi" argument with empty following coupled apps list
+  in syrcs, to simplify common case with just 1 CFD/SYRTHES coupling.
+  modified files:
+    syr_coupling.c
+    syr_cs.c
+    syr_defs.c
+
+* 19/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Minimum Python version raised from 2.3 to 2.4.
   modified files:
     configure.ac

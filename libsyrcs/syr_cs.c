@@ -336,6 +336,14 @@ main(int argc,
 
 #ifdef HAVE_MPI
     else if (strcmp(s, "--comm-mpi") == 0) {
+
+      if (type_comm == SYR_COMM_TYPE_SOCKET) {
+        syr_cs_loc_aidelc(argv[0], argerr);
+        ple_error(__FILE__, __LINE__, 0,
+                  "Il n'est pas possible de melanger des couplages\n"
+                  "utilisant des \"sockets\" et MPI.\n");
+      }
+
       type_comm = SYR_COMM_TYPE_MPI;
 
       while (numarg + 1 < argc && *(argv[numarg + 1]) != '-') {
@@ -346,10 +354,26 @@ main(int argc,
         nbr_cas_sat++;
       }
 
+      if (nbr_cas_sat == 0) {
+        PLE_REALLOC(app_sat, 1, char *);
+        PLE_REALLOC(sock_str, 1, char *);
+        app_sat[nbr_cas_sat] = NULL;
+        sock_str[nbr_cas_sat] = NULL;
+        nbr_cas_sat = 1;
+      }
+
     }
 #endif
 #ifdef HAVE_SOCKET
     else if (strcmp(s, "--comm-socket") == 0) {
+
+      if (type_comm == SYR_COMM_TYPE_MPI) {
+        syr_cs_loc_aidelc(argv[0], argerr);
+        ple_error(__FILE__, __LINE__, 0,
+                  "Il n'est pas possible de melanger des couplages\n"
+                  "utilisant des \"sockets\" et MPI.\n");
+      }
+
       type_comm = SYR_COMM_TYPE_SOCKET;
 
       while (numarg + 1 < argc && *(argv[numarg + 1]) != '-') {

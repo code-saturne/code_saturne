@@ -447,10 +447,23 @@ syr_mpi_appinfo(const char  *app_name,
 
     for (i = 0; i < n_apps; i++) {
 
+      int match = 0;
+
       const ple_coupling_mpi_set_info_t
         ai = ple_coupling_mpi_set_get_info(syr_glob_coupling_world, i);
 
-      if (!strcmp(ai.app_name, app_name)) {
+      /* If app name not given, assume any non-SYRTHES application
+         is a CFD code (so as to allow packages based on Code_Saturne but
+         using their own identities) */
+
+      if (app_name != NULL) {
+        if (!strcmp(ai.app_name, app_name))
+          match = 1;
+      }
+      else if (strncmp(ai.app_type, "SYRTHES", 7)) 
+        match = 1;
+
+      if (match) {
 
         *root_rank = ai.root_rank;
         *n_ranks = ai.n_ranks;
