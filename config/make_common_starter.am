@@ -1,0 +1,33 @@
+
+# Standard directory for installation
+salomeincludedir   = $(includedir)/salome
+libdir             = $(prefix)/lib/salome
+bindir             = $(prefix)/bin/salome
+salomescriptdir    = $(bindir)
+salomepythondir    = $(prefix)/lib/python$(PYTHON_VERSION)/site-packages/salome
+
+# Directory for installing idl files
+salomeidldir       = $(prefix)/idl/salome
+
+# Directory for installing resource files
+salomeresdir       = $(prefix)/share/salome/resources/${MODULE_NAME}
+
+# Directories for installing admin files
+admlocaldir       = $(prefix)/adm_local
+admlocalunixdir     = $(admlocaldir)/unix
+admlocalm4dir        = $(admlocaldir)/unix/config_files
+
+# Shared modules installation directory
+sharedpkgpythondir =$(pkgpythondir)/shared_modules
+
+# Documentation directory
+salomedocdir             = $(prefix)/share/doc/salome/gui/${MODULE_NAME}
+
+IDL_INCLUDES = -I$(KERNEL_ROOT_DIR)/idl/salome
+KERNEL_LIBS= -L$(KERNEL_ROOT_DIR)/lib/salome -lSalomeContainer -lOpUtil -lSalomeDSCContainer -lSalomeDSCSuperv -lSalomeDatastream -lSalomeDSCSupervBasic -lCalciumC
+KERNEL_INCLUDES= -I$(KERNEL_ROOT_DIR)/include/salome $(OMNIORB_INCLUDES) $(BOOST_CPPFLAGS)
+
+SALOME_LIBS= ${KERNEL_LIBS}
+SALOME_IDL_LIBS= -L$(KERNEL_ROOT_DIR)/lib/salome -lSalomeIDLKernel
+SALOME_INCLUDES= ${KERNEL_INCLUDES}
+
