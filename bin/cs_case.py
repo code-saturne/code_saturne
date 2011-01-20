@@ -457,6 +457,25 @@ class case:
 
     #---------------------------------------------------------------------------
 
+    def get_syrthes_path(self):
+
+        """
+        Get SYRTHES path.
+        """
+        syr_path = 'None'
+        try:
+            config = ConfigParser.ConfigParser()
+            config.read([self.package.get_configfile(),
+                         os.path.expanduser('~/.' + self.package.configfile)])
+            syr_path = os.path.join(config.get('install', 'syrthes'))
+        except Exception:
+            if (len(self.package.syrthes_prefix) > 0):
+                syr_path = self.package.syrthes_prefix
+
+        return syr_path
+
+    #---------------------------------------------------------------------------
+
     def summary_init(self, exec_env):
 
         """
@@ -493,7 +512,9 @@ class case:
         s.write(dhline)
         s.write('  Solver         : ' + self.package.exec_prefix + '\n')
         s.write(hline)
-        s.write('  SYRTHES        : ' + self.package.syrthes_prefix + '\n')
+        syr_path = None
+        if len(self.syr_domains) > 0:
+            s.write('  SYRTHES        : ' + self.get_syrthes_path() + '\n')
         if homard_prefix != None:
             s.write('  HOMARD          : ' + homard_prefix + '\n')
         s.write(hline)

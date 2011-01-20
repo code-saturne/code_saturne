@@ -62,9 +62,9 @@ APP_DICTS
 # directory the calculation will run. If set to None, a default directory
 # will be used (architecture dependent). If a value is specified,
 # the temporary directory will be of the form:
-#  <EXEC_PREFIX_DIR>/tmp_Saturne/<STUDY>.<CASE>.<DATE>
+#  <exec_prefix_dir>/tmp_Saturne/<study>.<case>.<date>
 
-EXEC_PREFIX_DIR = casedir
+EXEC_PREFIX_DIR = None
 
 # Optional list of hosts (if not using a batch system).
 

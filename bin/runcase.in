@@ -204,7 +204,6 @@ if __name__ == '__main__':
     case = case(package(),
                 casedir,
                 d,
-                syr_domains = None,
                 exec_preprocess = EXEC_PREPROCESS,
                 exec_partition = EXEC_PARTITION,
                 exec_solver = EXEC_SOLVER)

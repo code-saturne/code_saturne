@@ -1,4 +1,11 @@
 * 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor consistency improvements for handling of coupled cases.
+  modified scripts:
+    bin/cs_case.py
+    bin/runcase.in
+    bin/runcase_coupling.in
+
+* 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix: allow creation of a SYRTHES4 case when SYRTHES3 is configured.
   modified script:
     bin/cs_create.py
