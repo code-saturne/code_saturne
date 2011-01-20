@@ -249,7 +249,7 @@ class Study:
                 sys.exit(1)
 
         # Creating coupling structure
-        if len(self.cases) + len(self.syr_case_names) > 0:
+        if len(self.cases) + len(self.syr_case_names) > 1:
             self.create_coupling(repbase)
 
 
