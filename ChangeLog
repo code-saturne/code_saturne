@@ -1,4 +1,9 @@
 * 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Do not output extra mesh postprocessing info with multiple mesh files.
+  modified files:
+    gui/Pages/SolutionVerifView.py
+
+* 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Formatting improvements and typo corrections.
   modified files:
     libsyrcs/syr_defs.c

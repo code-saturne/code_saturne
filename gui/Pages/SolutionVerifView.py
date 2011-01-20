@@ -136,12 +136,9 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
             cmd += ' ' + self.__getPostCommand()
 
-            # Only info for Preprocessing when a single mesh is read,
-            # but also allow individual parts to appear in case of
-            # multiple meshes.
+            # Limit postprocessing output to errors and info.
 
-            if len(nodeList) == 1:
-                cmd += ' --info'
+            cmd += ' --info'
 
             cmd += ' --case preprocess'
             if len(nodeList) > 1:
