@@ -1,4 +1,9 @@
 * 19/01/2011 - David Monfort <david.monfort@edf.fr>
+  Fix the case creation for NEPTUNE_CFD package.
+  modified script:
+    bin/cs_create.py
+
+* 19/01/2011 - David Monfort <david.monfort@edf.fr>
   Modify the SALOME module build in a Code_Saturne'ish way. The module build
   is not yet activated by default.
   modified scripts:

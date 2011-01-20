@@ -430,7 +430,9 @@ class Study:
             thch          = os.path.join(data, 'THCH')
             os.mkdir(thch)
             for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE', 'meteo']:
-                shutil.copy(os.path.join(thch_distpath, f), thch)
+                abs_f = os.path.join(thch_distpath, f)
+                if os.path.isfile(abs_f):
+                    shutil.copy(abs_f, thch)
 
         if self.use_gui:
 
@@ -452,7 +454,8 @@ class Study:
 
             for file in ['usini1.f90','usalin.f90']:
                 f = os.path.join(users, 'base', file)
-                comments(f, self.use_gui)
+                if os.path.isfile(f):
+                    comments(f, self.use_gui)
 
         # Copy data and source files from another case
 
@@ -476,10 +479,15 @@ class Study:
             src_files = os.listdir(ref_src)
 
             c_files = fnmatch.filter(src_files, '*.c')
+            cxx_files = fnmatch.filter(src_files, '*.cxx')
+            cpp_files = fnmatch.filter(src_files, '*.cpp')
             h_files = fnmatch.filter(src_files, '*.h')
+            hxx_files = fnmatch.filter(src_files, '*.hxx')
+            hpp_files = fnmatch.filter(src_files, '*.hpp')
             f_files = fnmatch.filter(src_files, '*.[fF]90')
 
-            for f in c_files + h_files + f_files:
+            for f in c_files + h_files + f_files + \
+                    cxx_files + cpp_files + hxx_files + hpp_files:
                 shutil.copy(os.path.join(ref_src, f), src)
 
         # Results directory (only one for all instances)
