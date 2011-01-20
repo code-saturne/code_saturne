@@ -212,6 +212,23 @@ class Study:
             self.syr_case_names.append(c)
 
 
+    def get_syrthes_version(self):
+        """
+        Get available SYRTHES version.
+        """
+        syrthes_version = None
+
+        config = ConfigParser.ConfigParser()
+        config.read([self.package.get_configfile(),
+                     os.path.expanduser('~/.' + self.package.configfile)])
+        if config.has_option('install', 'syrthes'):
+            syrthes_version = 4
+        elif (len(self.package.syrthes_prefix) > 0):
+            syrthes_version = 3
+
+        return syrthes_version
+
+
     def create(self):
         """
         Create a study.
@@ -235,15 +252,11 @@ class Study:
 
         # Creating SYRTHES cases
         if len(self.syr_case_names) > 0:
-            config = ConfigParser.ConfigParser()
-            config.read([self.package.get_configfile(),
-                         os.path.expanduser('~/.' + self.package.configfile)])
-            if config.has_option('install', 'syrthes'):
+            syrthes_version = self.get_syrthes_version()
+            if syrthes_version == 4:
                 self.create_syrthes_cases(repbase)
-
-            elif (len(self.package.syrthes_prefix) > 0):
+            elif syrthes_version == 3:
                 self.create_syrthes3_cases(repbase)
-
             else:
                 sys.stderr.write("Cannot locate SYRTHES installation.")
                 sys.exit(1)
@@ -333,9 +346,7 @@ class Study:
 
             dict_str += template
 
-        for c in self.syr_case_names:
-
-            if (len(self.package.syrthes_prefix) > 0):
+            if self.get_syrthes_version() == 3:
                 template = \
 """
     {'solver': 'SYRTHES 3',

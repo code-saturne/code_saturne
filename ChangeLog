@@ -1,3 +1,8 @@
+* 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix: allow creation of a SYRTHES4 case when SYRTHES3 is configured.
+  modified script:
+    bin/cs_create.py
+
 * 20/01/2011 - David Monfort <david.monfort@edf.fr>
   Fix a test on the count of the number of coupled cases.
   modified script:
