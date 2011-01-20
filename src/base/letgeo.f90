@@ -158,7 +158,7 @@ inodal = 0
 ! 1.  OUVERTURE
 !===============================================================================
 
-OPEN (FILE=FICGEO,UNIT=IMPGEO,FORM='formatted')
+open (file=ficgeo, unit=impgeo, form='formatted')
 
 
 !===============================================================================
@@ -171,18 +171,17 @@ jdim = 3
 read (impgeo,1100)  jcel, jfac, jfabor, jpoint
 
 if (jdim.ne.ndim.or.jcel .ne.ncel ) then
-  WRITE(NFECRA,2010) '  JDIM',JDIM,'  JCEL',JCEL ,                &
-                     '  NDIM',NDIM,'  NCEL',NCEL
+  write(nfecra,2010) '  jdim',jdim,'  jcel',jcel ,                &
+                     '  ndim',ndim,'  ncel',ncel
   iok = iok + 1
 endif
 if (jfac  .ne.nfac  .or.jfabor.ne.nfabor) then
-  WRITE(NFECRA,2010) '  JFAC',JFAC  ,'JFABOR',JFABOR,             &
-                     '  NFAC',NFAC  ,'NFABOR',NFABOR
+  write(nfecra,2010) '  jfac',jfac  ,'jfabor',jfabor,             &
+                     '  nfac',nfac  ,'nfabor',nfabor
   iok = iok + 1
 endif
-if (jpoint.ne.nnod  ) then
-  WRITE(NFECRA,2011) 'JPOINT',JPOINT,                             &
-                     'NNOD  ',NNOD
+if (jpoint.ne.nnod) then
+  write(nfecra,2011) 'jpoint',jpoint,'nnod  ',nnod
   iok = iok + 1
 endif
 
@@ -191,13 +190,13 @@ read (impgeo,   *)
 read (impgeo,1100) jtetra,jpyram,jprism,jhexae
 
 if (jtetra.ne.ntetra.or.jpyram.ne.npyram) then
-  WRITE(NFECRA,2010) 'JTETRA',JTETRA,'JPYRAM',JPYRAM,             &
-                     'NTETRA',NTETRA,'NPYRAM',NPYRAM
+  write(nfecra,2010) 'jtetra',jtetra,'jpyram',jpyram,             &
+                     'ntetra',ntetra,'npyram',npyram
   iok = iok + 1
 endif
 if (jprism.ne.nprism.or.jhexae.ne.nhexae) then
-  WRITE(NFECRA,2010) 'JPRISM',JPRISM,'JHEXAE',JHEXAE,             &
-                     'NPRISM',NPRISM,'NHEXAE',NHEXAE
+  write(nfecra,2010) 'jprism',jprism,'jhexae',jhexae,             &
+                     'nprism',nprism,'nhexae',nhexae
   iok = iok + 1
 endif
 
@@ -206,8 +205,8 @@ read (impgeo,   *)
 read (impgeo,1100)  jprffb, jfafbr
 
 if (jprffb.ne.nprfml.or.jfafbr.ne.nfml  ) then
-  WRITE(NFECRA,2010) 'JPRFFB',JPRFFB,'JFAFBR',JFAFBR,             &
-                     'NPRFML',NPRFML,'NFML  ',NFML
+  write(nfecra,2010) 'jprffb',jprffb,'jfafbr',jfafbr,             &
+                     'nprfml',nprfml,'nfml  ',nfml
   iok = iok + 1
 endif
 
@@ -387,7 +386,7 @@ ii2 = 0
 read(impgeo,*,err=9000)
 read(impgeo,*,err=9000)
 do n1 = 1,nfabor
-  READ(IMPGEO,'(20I10)',ERR=9000)                                 &
+  read(impgeo,'(20i10)',err=9000)                                 &
        nn, ipnfbr(nn), (nodfbr(ii1),ii1=ii2+1,ii2+ipnfbr(nn))
   ii2 = ii2 + ipnfbr(nn)
 enddo
@@ -397,7 +396,7 @@ ii2 = 0
 read(impgeo,*,err=9000)
 read(impgeo,*,err=9000)
 do n1 = 1,nfac
-  READ(IMPGEO,'(20I10)',ERR=9000)                                 &
+  read(impgeo,'(20i10)',err=9000)                                 &
        nn, ipnfac(nn), (nodfac(ii1),ii1=ii2+1,ii2+ipnfac(nn))
   ii2 = ii2 + ipnfac(nn)
 enddo

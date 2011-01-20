@@ -460,7 +460,7 @@ syr_mpi_appinfo(const char  *app_name,
         if (!strcmp(ai.app_name, app_name))
           match = 1;
       }
-      else if (strncmp(ai.app_type, "SYRTHES", 7)) 
+      else if (strncmp(ai.app_type, "SYRTHES", 7))
         match = 1;
 
       if (match) {

@@ -270,7 +270,7 @@ module optcal
 
   ! Option pas de temps
   !   idtvar : pas de temps variable
-  !     = -1 : algorithme stationaire
+  !     = -1 : algorithme stationnaire
   !     =  0 : pas de temps constant
   !     =  1 : pas de temps uniforme en espace et variable en temps
   !     =  2 : pas de temps variable en espace et variable en temps

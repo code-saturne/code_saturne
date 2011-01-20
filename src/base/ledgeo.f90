@@ -100,7 +100,7 @@ lndfbr = 0
 
 !---> Ouverture
 
-OPEN (FILE=FICGEO,UNIT=IMPGEO,FORM='formatted',ERR=9000)
+open (file=ficgeo, unit=impgeo, form='formatted', err=9000)
 
 !---> Ecriture avec rubrique ... avant
 

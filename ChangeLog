@@ -1,4 +1,12 @@
 * 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Formatting improvements and typo corrections.
+  modified files:
+    libsyrcs/syr_defs.c
+    src/base/optcal.f90
+    src/base/ledgeo.f90
+    src/base/letgeo.f90
+
+* 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor consistency improvements for handling of coupled cases.
   modified scripts:
     bin/cs_case.py
