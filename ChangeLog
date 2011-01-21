@@ -1,4 +1,9 @@
 * 21/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove unused local variables.
+  modified files:
+    src/base/majgeo.f90
+
+* 21/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Replaced array in ia by array in mesh structure.
   removed files:
     src/base/memcbr.f90
