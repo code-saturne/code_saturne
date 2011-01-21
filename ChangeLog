@@ -1,4 +1,9 @@
 * 21/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Updated TODO file.
+  modified files:
+    TODO
+
+* 21/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove unused local variables.
   modified files:
     src/base/majgeo.f90

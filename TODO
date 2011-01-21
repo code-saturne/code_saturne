@@ -47,12 +47,9 @@ IHM
 * Quand on ne visite pas la page des physiques particulieres, meme si on n'a 
   rien a y faire, le code plante et demande de remplir usipph.
 
-* Modifier les tests sur les couleurs pour ne pas etre oblige de definir toutes
-  les faces dans l'interface (si on les definit dans le noyau)
-
 * Pb des "d" quand on rentre des 1.D0 par megarde
 
-* Phys part, Matisse, suivi des evolutions du noyau (CL de sortie, ...)
+* Phys part, suivi des evolutions du noyau (CL de sortie, ...)
 
 * Blinder le cas ou on change le nombre de variables dans usini1 (scalaire de plus
   ou changement de modele de turb). A priori, il y a seulement a relire nscaus
@@ -60,9 +57,6 @@ IHM
 
 BASE
 ----
-* Adapter la gestion des familles de faces internes si celles-ci n'existaient pas
-  (notamment en cas de renumerotation ou de decoupages des faces gauches)
-
 * Modifier les commentaires des routines utilisant le selector, rajouter
   MAXELT et LSTELT aux autres routines usts* et traiter proprement usdpst.F
 
@@ -71,9 +65,6 @@ BASE
 
 * Ordre 2 en temps en v2f -> terme en f_barre a modifier (il est en RTP et pas
   RTPA donc ne doit pas etre extrapole mais interpole)
-
-* Dans jacobi et gradco (et bicgstab ?) on compare le residu en racine
-  carree, alors que ce n'est pas nécessaire. Gain en temps ?
 
 * Loi de paroi + pb du jet impactant
 
@@ -97,12 +88,12 @@ BASE
   comme k est mauvais est decroit moins vite en paroi, on n'a moins ce
   probleme.
   On peut modifier clptur de la maniere suivante :
-  si y+(uk) < YPLULI, alors on recalcule u*=SQRT(nu*u_tau/y) et y+=y.u*/nu
-  ... a verifier qu'alors y+(u*) est toujours < YPLULI ?
-  ... a replacer dans le contexte du travail sur YPLULI ?
+  si y+(uk) < ypluli, alors on recalcule u*=sqrt(nu*u_tau/y) et y+=y.u*/nu
+  ... a verifier qu'alors y+(u*) est toujours < ypluli ?
+  ... a replacer dans le contexte du travail sur ypluli ?
 
 * Evaluer et renforcer la robustesse vis-a-vis des ss-prg utilisateurs
-  -> par ex uselrc peut etre appele sans avoir ete mis dans FORT.
+  -> par ex uselrc peut etre appele sans avoir ete mis dans SRC.
   -> cf. mail FA du 01/03/06
 
 * Rajouter dans ustsns un exemple de forcage de debit. Ne pas utiliser la
@@ -125,14 +116,11 @@ BASE
 * PARCOM et PERCOM de CLVOLC peut-etre redondants par rapport a
   cs_maillage_grd_calc
 
-* Dans ECRHIS, les fichiers .hst sont reecrits entierement au moment du dump
-  du fichier hst.tmp. Il suffirait de ne rajouter que ce qui est nouveau ...
-
 * Unifier les boucles de sous-iterations ALE et U/P. La boucle U/P doit etre remontee
   pour pouvoir impliciter les CL (notamment pour MIGAL). Attention a ce qui est remis
   aux anciennes valeurs en fin de boucle. Pour l'instant, dans le cas U/P on met la
-  nouvelle pression dans RTPA, alors que dans le cas ALE on remet au contraire tous les
-  RTPA dans RTP et on reprend l'ancien flux de masse.
+  nouvelle pression dans rtpa, alors que dans le cas ALE on remet au contraire tous les
+  rtpa dans rtp et on reprend l'ancien flux de masse.
 
 * Changer distyp et distpr pour utiliser l'algorithme stationnaire ?
 
@@ -148,17 +136,17 @@ COGZ
 
 LAGR
 ----
-* ICONFO est dimensionne en dur à 100 dans 3 sous-programmes (lagcel, lagnex, lagnwc)
+* iconfo est dimensionne en dur à 100 dans 3 sous-programmes (lagcel, lagnex, lagnwc)
   -> centraliser son dimensionnement et tester si le nb de sommets est > à 100.
 
-* Prevoir le cas ILAGR=2 pour INEEDY (i.e. forces de paroi)
+* Prevoir le cas ilagr=2 pour ineedy (i.e. forces de paroi)
 
 ELEC
 ----
-* uselrc n'est pas standard. Il est activé par IELCOR=1 et pas seulement par le fait
-  de le placer dans FORT -> eliminer le test sur IELCOR dans scalai.F. Il faudrait 
-  cependant conserver un IELCOR dans uselrc pour activer le recalage par defaut prevu
-  dans uselrc sans avoir a placer le ss-prg dans FORT. Attention, uselrc est commun
+* uselrc n'est pas standard. Il est activé par ielcor=1 et pas seulement par le fait
+  de le placer dans fort -> eliminer le test sur ielcor dans scalai.f90. Il faudrait 
+  cependant conserver un ielcor dans uselrc pour activer le recalage par defaut prevu
+  dans uselrc sans avoir a placer le ss-prg dans SRC. Attention, uselrc est commun
   a Joule et Arcs électriques.
 
 CFBL
@@ -176,15 +164,15 @@ ALE
     qui necessiterait de connaitre le gradient de w) -> au pire le changer
     en ne reconstruisant pas a ces points la
 
-* Compatibilite avec le compressible (equation sur rho, IFLMB0 pour inimas
+* Compatibilite avec le compressible (equation sur rho, iflmb0 pour inimas
     dans cfmsfl et cfmsgs ?)
 
 * Dans le cas de sous-iterations ALE implicite, on doit aussi stocker les CL
-  de P et U car dans condli on fait des appels a GRDCEL pour calculer les CL
+  de P et U car dans condli on fait des appels a grdcel pour calculer les CL
   reelles. Sinon, on ne revient pas exactement a l'etat precedent ... mais
   est-ce grave (seule la reconstruction est modifiee) ?
   De meme, au premier pas de temps d'une suite de calcul, a cause de l'iteration
-  d'initialisation ALE, les CL utilisees pour le GRDCEL avec ou sans ALE ne sont
+  d'initialisation ALE, les CL utilisees pour le grdcel avec ou sans ALE ne sont
   pas les memes ... mais la encore, est-ce grave ?
 
 * Evaluer la necessite de combiner les boucles P/U avec implicitation des CL et les
@@ -253,14 +241,14 @@ BASE
 
 * Utilisation de gradrc/gradmc suivant les termes.
 
-* Plantage si VISLS0=0 car division par HINT dans clptur
+* Plantage si visls0=0 car division par hint dans clptur
 
 * Entrer lambda et rho cp separement ? Coherence avec l'interface ?
 
-* Voir si on peut modifier vissec pour entrer directement W7, W8, W9 et 
+* Voir si on peut modifier vissec pour entrer directement w7, w8, w9 et 
   eviter une double recopie.
 
-* Dans le test de pente, le terme DPDXA est reconstruit avec un gradient, donc il fait
+* Dans le test de pente, le terme dpdxa est reconstruit avec un gradient, donc il fait
   intervenir des points plus lointains que C, U et D. On peut donc imaginer une variation
   de la fonction entre U, C et D qui implique un passage en upwind mais que le test soit
   compense par les valeurs en UU et DD et que du coup le passage en upwind ne se fasse pas.
@@ -273,10 +261,10 @@ BASE
 * Reperage des capteurs d'historiques qui sont hors domaine. On pourra se baser sur les
   developpements de FVM et d'interpolation de maillage. On pourra ainsi definir une part
   Ensight nodale et la visualiser. On peut reflechir a cette methode pour extraire des
-  points autrement que par FINDPT (qui est lourd  en temps calcul si le nb de pts devient
+  points autrement que par findpt (qui est lourd  en temps calcul si le nb de pts devient
   grand ... mais seulement dans ce cas !!).
 
-* IRCFLU : separer la convection de la diffusion.
+* ircflu : separer la convection de la diffusion.
 
 * Estimateurs d'erreur :
  - refaire une analyse du temps CPU
@@ -287,20 +275,14 @@ BASE
    temps pour donner une valeur plus proche ?
  - coherence avec iphydr, ordre en temps, ...
 
-* Prevoir un arret base sur le temps physique, pas juste sur NTCABS
-  (def d'un TTMABS ; en debut de pdt on regarde si TTCBAS>TTMABS et si oui on fixe
-   NTMABS=NTCABS, le reste est alors inchange. Si TTMABS<0 on ne teste pas)
-   -> attention a certaines periodicite comme la periodicite de sortie des fichiers
-      suite. 
+* Prevoir un arret base sur le temps physique, pas juste sur ntcabs
+  (def d'un ttmabs ; en debut de pdt on regarde si ttcbas > ttmabs et si oui on fixe
+   ntmabs=ntcabs, le reste est alors inchange. Si ttmabs < 0 on ne teste pas)
 
 * Et si on decoupait et reorganisait bilsc2.f90 ?
 
-* Pb de IPUCOU et Rij avec la periodicite de rotation a cause de la viscos orthotrope
+* Pb de ipucou et Rij avec la periodicite de rotation a cause de la viscos orthotrope
   (a priori OK donc en SSG qui a une viscos scalaire)
-
-* On pourrait peut etre economiser une vingtaine de percom/parcom en 
-  modifiant un peu visdyn (moins elegant, a ne faire 
-  que si il y a un gain effectif)
 
 * Dans vissec, le calcul du terme en div(u) a partir du flux de masse 
   (en n+theta) et de rho extrapole risque de n'etre pas coherent 
@@ -318,9 +300,9 @@ BASE
 * Interet et maturite du modele "strain stress lag" 
 
 * Dans le cas d'un voisinage etendu traite separement (en parallele), les communications
-  necessitent un PARCVE en plus des PARCOM et PERCOM. Ces appels sont integres dans les
-  routines CFLITR, CGRDMC et CLMGRD. Or pour le cas du filtre LES, la communication du volume
-  des cellules pourrait n'etre faite qu'une fois dans CLVOLC, a condition que le voisinage
+  necessitent un parcve en plus des synsca ou parcom/percom. Ces appels sont integres dans les
+  routines cflitr, cgrdmc et clmgrd. Or pour le cas du filtre LES, la communication du volume
+  des cellules pourrait n'etre faite qu'une fois dans clvolc, a condition que le voisinage
   etendu y soit bien defini.
 
 * Supprimer les dépendances croises entre cs_mesh.* et cs_ext_neighborhood.*,
@@ -342,7 +324,7 @@ LAGR
   la vitesse limite theorique.
 
 * Sous-programme de gestion des forces exterieurs (type gravite)
-  et bien sur adapter lagcou et TSFEXT en consequence
+  et bien sur adapter lagcou et tsfext en consequence
 
 * Le traitement de la vitesse du fluide vu lors d'un rebond est une inversion de la 
   composante normale et une conservation de la compos tangentielle
@@ -363,7 +345,7 @@ LAGR
 RAYT
 ----
 * Analyser la pertinence et la complexite des suites en rayonnement d'un calcul
-  sans rayonnement (notamment faire intervenir ISUIRD dans le test autour de raypar
+  sans rayonnement (notamment faire intervenir isuird dans le test autour de raypar
   dans raycli).
 
 
@@ -382,8 +364,8 @@ REMARQUES POUR MEMOIRE
 
 * Augmenter le nbre d'arg dans usthht (si utile)
 
-* Dans les TS de masse, les tableaux SMACEL sont dimensionnes a NCETSM*NVAR. Or
-  NVAR concerne toutes les variables de toutes les phases ... surdimensionne.
+* Dans les TS de masse, les tableaux smacel sont dimensionnes a ncetsm*nvar. Or
+  nvar concerne toutes les variables de toutes les phases ... surdimensionne.
   Mais a priori insoluble autrement !
 
 * On utilise pour le moment une approche "explicite" pour la 
