@@ -132,7 +132,7 @@ integer          iresds, iresas, nitmds, nitmas
 
 !===============================================================================
 
-! INITIALISATIONS
+! Initialization
 
 lnom = len(cnom)
 
@@ -142,7 +142,7 @@ niterf = 0
 idebia = idbia0
 idebra = idbra0
 
-! RESOLUTION
+! Resolution
 
 if( imgrp.eq.1 ) then
 
@@ -171,7 +171,7 @@ elseif(imgrp.eq.0) then
    iwarnp , niterf , epsilp , rnorm  , residu ,                   &
    !        ------                     ------
    ifacel , dam    , xam    , smbrp  , vx     )
-    !                         -----
+   !                          -----
 
   else
     write(nfecra,1000) cnom, ireslp
@@ -183,11 +183,11 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1000 format('INVERS APPELE POUR ',A8,' AVEC IRESOL = ', I10)
+ 1000 format('invers appele pour ', a16, ' avec iresol = ', i10)
 
 #else
 
- 1000 format('INVERS CALLED FOR ',A8,' WITH IRESOL = ', I10)
+ 1000 format('invers called for ', a16, ' with iresol = ', i10)
 
 #endif
 

@@ -1,4 +1,9 @@
 * 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve logging format.
+  modified routines:
+    src/base/invers.f90
+
+* 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Partial French translation update.
   modified files:
     po/fr.po
