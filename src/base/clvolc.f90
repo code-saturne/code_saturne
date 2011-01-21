@@ -126,16 +126,12 @@ if (irangp.ge.0.or.iperio.eq.1) then
 endif
 
 !     En ALE, on passe plusieurs fois ici.
-!     Au premier passage (avant calculs) on ecrit, on teste et on s'arrete
-!       si pb.
+!     Au premier passage (avant calculs) on ecrit, mais on ne teste pas,
+!       le test ayant ete deja effectue en amont.
 !     Aux passages suivants, on n'ecrit pas, on teste et on finit le pas
 !       de temps si pb.
 if (ipass.eq.1) then
   write(nfecra,1000) volmin, volmax, voltot
-  if (volmin.le.0.d0) then
-    write(nfecra,1002)
-    call csexit (1)
-  endif
 else
   if (volmin.le.0.d0) then
     write(nfecra,1001) volmin, volmax, voltot
@@ -143,6 +139,7 @@ else
     ntmabs = ntcabs
   endif
 endif
+
 !===============================================================================
 ! 5. FIN
 !===============================================================================

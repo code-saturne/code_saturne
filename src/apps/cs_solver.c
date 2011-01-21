@@ -417,7 +417,8 @@ cs_run(void)
     /* Check that mesh seems valid */
 
     cs_mesh_quantities_check_vol(cs_glob_mesh,
-                                 cs_glob_mesh_quantities);
+                                 cs_glob_mesh_quantities,
+                                 (opts.verif ? 1 : 0));
 
     /* Allocate Fortran working arrays */
 

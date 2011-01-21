@@ -1,4 +1,12 @@
 * 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow negative element volumes in mesh verification mode.
+  modified files:
+    src/apps/cs_solver.c
+    src/base/clvolc.f90
+    src/base/cs_mesh_quantities.c
+    src/base/cs_mesh_quantities.h
+
+* 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve logging format.
   modified routines:
     src/base/invers.f90

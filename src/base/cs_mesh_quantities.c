@@ -1201,11 +1201,13 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
  * parameters:
  *   mesh            <-- pointer to mesh structure
  *   mesh_quantities <-- pointer to mesh quantities structure
+ *   allow_error     <-- 1 if errors are allowed, 0 otherwise
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
-                             const cs_mesh_quantities_t  *mesh_quantities)
+                             const cs_mesh_quantities_t  *mesh_quantities,
+                             int                          allow_error)
 {
   cs_int_t  cell_id;
 
@@ -1227,13 +1229,22 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
 
   /* Exit with error */
 
-  if (error_count > 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("  %llu cells have a Negative volume.\n"
-                " Run mesh quality check for post-processing output.\n"
-                " In case of mesh joining, this may be due to overly "
-                " agressive joining parameters."),
-              (unsigned long long)error_count);
+  if (error_count > 0) {
+    const char fmt[]
+      = N_("  %llu cells have a Negative volume.\n"
+           " Run mesh quality check for post-processing output.\n"
+           " In case of mesh joining, this may be due to overly "
+           " agressive joining parameters.");
+
+    if (allow_error) {
+      cs_base_warn(__FILE__, __LINE__);
+      bft_printf(_(fmt), (unsigned long long)error_count);
+      bft_printf("\n\n");
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(fmt), (unsigned long long)error_count);
+  }
 }
 
 /*----------------------------------------------------------------------------

@@ -192,11 +192,13 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
  * parameters:
  *   mesh            <-- pointer to mesh structure
  *   mesh_quantities <-- pointer to mesh quantities structure
+ *   allow_error     <-- 1 if errors are allowed, 0 otherwise
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
-                             const cs_mesh_quantities_t  *mesh_quantities);
+                             const cs_mesh_quantities_t  *mesh_quantities,
+                             int                          allow_error);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_mesh_quantities_t structure
