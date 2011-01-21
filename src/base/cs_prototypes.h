@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -446,6 +446,7 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_int_t   *nsom,    /* <-- number of vertices */
  const cs_int_t   *lndfac,  /* <-- interior face -> vertices array size */
  const cs_int_t   *lndfbr,  /* <-- boundary face -> vertices array size */
+ const cs_int_t   *ncelbr,  /* <-- number of boundary cells */
  const cs_int_t   *ncelgb,  /* <-- global number of cells */
  const cs_int_t   *nfacgb,  /* <-- global number of interior faces */
  const cs_int_t   *nfbrgb,  /* <-- global number of boundary faces */
@@ -456,21 +457,22 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_int_t   *ngrpb,   /* <-- number of boundary face groups */
  const cs_int_t   *idxfi,   /* <-- interior face group/thread start/end ids */
  const cs_int_t   *idxfb,   /* <-- boundary face group/thread start/end ids */
- const cs_int_t    ifacel[],  /* --> interior faces -> cells connectivity */
- const cs_int_t    ifabor[],  /* --> boundary faces -> cells connectivity */
- const cs_int_t    ifmfbr[],  /* --> boundary face families */
- const cs_int_t    ifmcel[],  /* --> cell families */
- const cs_int_t    iprfml[],  /* --> list of family properties */
- const cs_int_t    ipnfac[],  /* --> interior faces -> vertices index */
- const cs_int_t    nodfac[],  /* --> interior faces -> vertices connectivity */
- const cs_int_t    ipnfbr[],  /* --> boundary faces -> vertices index */
- const cs_int_t    nodfbr[],  /* --> boundary faces -> vertices connectivity */
- const cs_real_t   xyzcen[],  /* --> cell centers */
- const cs_real_t   surfac[],  /* --> interior face surface vectors */
- const cs_real_t   surfbo[],  /* --> boundary face surface vectors */
- const cs_real_t   cdgfac[],  /* --> interior face centers */
- const cs_real_t   cdgfbo[],  /* --> boundary face centers */
- const cs_real_t   xyznod[],  /* --> vertex coordinates */
+ const cs_int_t    ifacel[],  /* <-- interior faces -> cells connectivity */
+ const cs_int_t    ifabor[],  /* <-- boundary faces -> cells connectivity */
+ const cs_int_t    ifmfbr[],  /* <-- boundary face families */
+ const cs_int_t    ifmcel[],  /* <-- cell families */
+ const cs_int_t    iprfml[],  /* <-- list of family properties */
+ const cs_int_t    ipnfac[],  /* <-- interior faces -> vertices index */
+ const cs_int_t    nodfac[],  /* <-- interior faces -> vertices connectivity */
+ const cs_int_t    ipnfbr[],  /* <-- boundary faces -> vertices index */
+ const cs_int_t    nodfbr[],  /* <-- boundary faces -> vertices connectivity */
+ const cs_int_t    icelbr[],  /* <-- list of boundary cells */
+ const cs_real_t   xyzcen[],  /* <-- cell centers */
+ const cs_real_t   surfac[],  /* <-- interior face surface vectors */
+ const cs_real_t   surfbo[],  /* <-- boundary face surface vectors */
+ const cs_real_t   cdgfac[],  /* <-- interior face centers */
+ const cs_real_t   cdgfbo[],  /* <-- boundary face centers */
+ const cs_real_t   xyznod[],  /* <-- vertex coordinates */
  const cs_real_t   volume[]   /* <-- cell volumes */
 );
 

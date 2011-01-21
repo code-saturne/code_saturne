@@ -106,7 +106,6 @@ integer          idebia , idebra
 integer          ifinia , ifinra , idbia1 , idbra1, idbia2
 integer          iditia, iditra
 integer          ifnia1 , ifnra1 , ifnia2 , ifnia3, ifnra2
-integer          jcelbr
 integer          iiii
 
 integer          modhis, iappel, modntl, iisuit, iwarn0
@@ -172,26 +171,11 @@ call memclg                                                       &
 idebia = ifinia
 idebra = ifinra
 
-
 call cregeo                                                       &
 !==========
  ( idebia , idebra ,                                              &
    ia     ,                                                       &
    ra     )
-
-
-
-!---> CALCUL DE JCELBR (=NCELBR) et REMPLISSAGE DE IA(IICELB)
-!         directement en passant par le pointeur et IA.
-!         (c'est pas bien, mais c'est mieux qu'avant)
-
-iicelb = idebia
-call memcbr                                                       &
-!==========
- ( iicelb , ncelet , ncel   , nfabor ,                            &
-   jcelbr , ifinia ,                                              &
-   ifabor ,                                                       &
-   ia     )
 
 !---> La memoire sera conservee jusqu'a la fin.
 idebia = ifinia
@@ -204,7 +188,6 @@ idebra = ifinra
 call initi2                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   jcelbr ,                                                       &
    ia     , ra     )
 
 if (iilagr.gt.0) then
@@ -362,13 +345,13 @@ if (isuite.eq.1) then
    ra(icoefa) , ra(icoefb) , ra(ifrcx ) ,                         &
    ra     )
 
-!     En ALE, il faut recalculer les parametres geometriques
+  ! Using ALE, geometric parameters must be recalculated
   if (iale.eq.1) then
 
     do inod = 1, nnod
       do idim = 1, ndim
-        xyznod(idim,inod) = ra(ixyzn0+(inod-1)*ndim+idim-1)       &
-             + ra(idepal+(idim-1)*nnod+inod-1)
+        xyznod(idim,inod) =   ra(ixyzn0+(inod-1)*ndim+idim-1)     &
+                            + ra(idepal+(idim-1)*nnod+inod-1)
       enddo
     enddo
 
@@ -760,11 +743,10 @@ if (ivrtex.eq.1) then
 
 !  On met une valeur factice a certains parametres non utilise en IAPPEL=1
 
-  call memvor                                                     &
+  call memvor(idbia1, idbra1, iappel, nfabor, ifinia, ifinra)
   !==========
- ( idbia1 , idbra1 , iappel , nfabor , ifinia , ifinra )
 
-  call vorin0( nfabor , ia(iirepv) )
+  call vorin0(nfabor, ia(iirepv))
   !==========
 
   ils    = ifinia
@@ -890,7 +872,7 @@ endif
 
  100  continue
 
-if(inpdt0.eq.0 .and. itrale.gt.0) then
+if (inpdt0.eq.0 .and. itrale.gt.0) then
   ntcabs = ntcabs + 1
   if(idtvar.eq.0.or.idtvar.eq.1) then
     ttcabs = ttcabs + ra(idt)
@@ -942,7 +924,7 @@ if(inpdt0.eq.0 .and. itrale.gt.0) then
 call calmom                                                       &
 !==========
      ( ifinia , ifinra , ncel   , ncelet ,                        &
-       ia     ,                                 &
+       ia     ,                                                   &
        ra(irtp  ) , ra(idt   ) , ra(ipropc) ,                     &
        ra     )
 endif
@@ -1010,7 +992,7 @@ if (imatis.eq.1 .and. itrale.gt.0) then
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    ia(iiitep),                                                    &
-   ia     ,                                                       &
+   ia        ,                                                    &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &

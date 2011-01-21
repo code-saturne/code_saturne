@@ -262,10 +262,11 @@ cs_run(void)
 
   cs_join_all();
 
-  /* Initialize ghost cells and other parallelism-related structures */
+  /* Initialize extended connectivity, ghost cells and other
+     parallelism-related structures */
 
   cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder);
-  cs_mesh_init_parall(cs_glob_mesh);
+  cs_mesh_update_auxiliary(cs_glob_mesh);
 
   /* Possible geometry modification */
 
@@ -384,6 +385,7 @@ cs_run(void)
                               &(cs_glob_mesh->n_vertices),
                               &(cs_glob_mesh->i_face_vtx_connect_size),
                               &(cs_glob_mesh->b_face_vtx_connect_size),
+                              &(cs_glob_mesh->n_b_cells),
                               &n_g_cells,
                               &n_g_i_faces,
                               &n_g_b_faces,
@@ -403,6 +405,7 @@ cs_run(void)
                               cs_glob_mesh->i_face_vtx_lst,
                               cs_glob_mesh->b_face_vtx_idx,
                               cs_glob_mesh->b_face_vtx_lst,
+                              cs_glob_mesh->b_cells,
                               cs_glob_mesh_quantities->cell_cen,
                               cs_glob_mesh_quantities->i_face_normal,
                               cs_glob_mesh_quantities->b_face_normal,

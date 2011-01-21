@@ -210,7 +210,7 @@ call cgdcel                                                       &
  ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivar   ,          &
    imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
    iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
-   ifacel , ifabor , ia(iicelb) , ia(iisymp) ,                    &
+   ifacel , ifabor , icelbr , ia(iisymp) ,                        &
    volume , surfac , surfbo , ra(isrfbn) , ra(ipond),             &
    ra(idist) , ra(idistb) , ra(idijpf) , ra(idiipb) , ra(idofij) ,&
    fextx  , fexty  , fextz  ,                                     &

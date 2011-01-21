@@ -84,6 +84,10 @@ module mesh
   integer, dimension(:), pointer :: ifmcel
   integer, dimension(:,:), pointer :: iprfml
 
+  ! icelbr : list of cells adjacent to boundary faces
+
+  integer, dimension(:), pointer :: icelbr
+
   ! xyzcen : cell centers
   ! surfac : interior faces surface vectors
   ! surfbo : boundary faces surface vectors

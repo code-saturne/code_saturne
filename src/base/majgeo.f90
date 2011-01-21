@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2010 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -28,49 +28,50 @@
 subroutine majgeo &
 !================
 
- ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2 ,           &
-   lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 , &
-   nthdi2 , nthdb2 , ngrpi2 , ngrpb2 , idxfi  , idxfb  , &
-   iface2 , ifabo2 , ifmfb2 , ifmce2 , iprfm2,           &
-   ipnfa2 , nodfa2 , ipnfb2 , nodfb2 ,                   &
-   xyzce2 , surfa2 , surfb2 , cdgfa2 , cdgfb2 , xyzno2 , &
-   volum2                                                &
+ ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2  ,                   &
+   lndfa2 , lndfb2 , ncelb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 , &
+   nthdi2 , nthdb2 , ngrpi2 , ngrpb2 , idxfi  , idxfb  ,          &
+   iface2 , ifabo2 , ifmfb2 , ifmce2 , iprfm2 ,                   &
+   ipnfa2 , nodfa2 , ipnfb2 , nodfb2 , icelb2 ,                   &
+   xyzce2 , surfa2 , surfb2 , cdgfa2 , cdgfb2 , xyzno2 ,          &
+   volum2                                                         &
 )
 
 !===============================================================================
-! FONCTION :
-! ---------
+! Purpose:
+! -------
 
-! PASSAGE DES DIMENSIONS DU MAILLAGE DU C AU FORTRAN.
+! Pass mesh information from C to Fortran and compute additional Fortran arrays
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncel2            ! e  ! <-- ! nombre de cellules                             !
-! ncele2           ! e  ! <-- ! nombre d'elements halo compris                 !
-! nfac2            ! e  ! <-- ! nombre de faces internes                       !
-! nfabo2           ! e  ! <-- ! nombre de faces de bord                        !
-! nsom2            ! e  ! <-- ! nombre de sommets                              !
-! lndfa2           ! e  ! <-- ! taille de lndfac                               !
-! lndfb2           ! e  ! <-- ! taille de lndfbr                               !
-! ncelg2           ! e  ! <-- ! nombre global de cellules                      !
-! nfacg2           ! e  ! <-- ! nombre global de faces internes                !
-! nfbrg2           ! e  ! <-- ! nombre global de faces de bord                 !
-! nsomg2           ! e  ! <-- ! nombre global de sommets                       !
-! nthdi2           ! e  ! <-- ! nb. max de threads par groupe de faces inter   !
-! nthdb2           ! e  ! <-- ! nb. max de threads par groupe de faces de bord !
-! ngrpi2           ! e  ! <-- ! nb. groupes de faces interieures               !
-! ngrpb2           ! e  ! <-- ! nb. groupes de faces de bord                   !
-! idxfi            ! e  ! <-- ! index pour faces internes                      !
-! idxfb            ! e  ! <-- ! index pour faces de bord                       !
+! ncel2            ! i  ! <-- ! nombre de cellules                             !
+! ncele2           ! i  ! <-- ! nombre d'elements halo compris                 !
+! nfac2            ! i  ! <-- ! nombre de faces internes                       !
+! nfabo2           ! i  ! <-- ! nombre de faces de bord                        !
+! nsom2            ! i  ! <-- ! nombre de sommets                              !
+! lndfa2           ! i  ! <-- ! taille de lndfac                               !
+! lndfb2           ! i  ! <-- ! taille de lndfbr                               !
+! ncelb2           ! i  ! <-- ! number of boundary cells
+! ncelg2           ! i  ! <-- ! nombre global de cellules                      !
+! nfacg2           ! i  ! <-- ! nombre global de faces internes                !
+! nfbrg2           ! i  ! <-- ! nombre global de faces de bord                 !
+! nsomg2           ! i  ! <-- ! nombre global de sommets                       !
+! nthdi2           ! i  ! <-- ! nb. max de threads par groupe de faces inter   !
+! nthdb2           ! i  ! <-- ! nb. max de threads par groupe de faces de bord !
+! ngrpi2           ! i  ! <-- ! nb. groupes de faces interieures               !
+! ngrpb2           ! i  ! <-- ! nb. groupes de faces de bord                   !
+! idxfi            ! i  ! <-- ! index pour faces internes                      !
+! idxfb            ! i  ! <-- ! index pour faces de bord                       !
+! icelbr           ! i  ! <-- ! boundary cell list                             !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -91,6 +92,7 @@ implicit none
 
 integer, intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
 integer, intent(in) :: lndfa2, lndfb2
+integer, intent(in) :: ncelb2
 integer, intent(in) :: ncelg2, nfacg2 , nfbrg2, nsomg2
 integer, intent(in) :: nthdi2, nthdb2
 integer, intent(in) :: ngrpi2, ngrpb2
@@ -105,6 +107,7 @@ integer, dimension(nfac2+1), target :: ipnfa2
 integer, dimension(lndfa2), target :: nodfa2
 integer, dimension(nfabo2+1), target :: ipnfb2
 integer, dimension(lndfb2), target :: nodfb2
+integer, dimension(ncelb2), target :: icelb2
 
 double precision, dimension(3,ncele2), target :: xyzce2
 double precision, dimension(3,nfac2), target :: surfa2, cdgfa2
@@ -114,20 +117,16 @@ double precision, dimension(ncele2), target :: volum2
 
 ! Local variables
 
-integer          ii, jj
+integer  ii, jj, iel, ifac
 
 !===============================================================================
 
 !===============================================================================
-! 1. MISE A JOUR DU NOMBRE DE CELLULES
+! 1. Update number of cells, faces, and vertices
 !===============================================================================
 
 ncel = ncel2
 ncelet = ncele2
-
-!===============================================================================
-! 2. MISE A JOUR DU NOMBRE DES FACES
-!===============================================================================
 
 nfac = nfac2
 nfabor = nfabo2
@@ -135,21 +134,19 @@ nfabor = nfabo2
 lndfac = lndfa2
 lndfbr = lndfb2
 
-!     On remplit maintenant NDIMFB
+! Now update ndimfb
 if (nfabor.eq.0) then
   ndimfb = 1
 else
   ndimfb = nfabor
 endif
 
-!===============================================================================
-! 3. MISE A JOUR DU NOMBRE DES SOMMETS
-!===============================================================================
-
 nnod = nsom2
 
+ncelbr = ncelb2
+
 !===============================================================================
-! 4. MISE A JOUR DES TAILLES GLOBALES
+! 2. Global sizes
 !===============================================================================
 
 ncelgb = ncelg2
@@ -158,14 +155,14 @@ nfbrgb = nfbrg2
 nsomgb = nsomg2
 
 !===============================================================================
-! 5. INITIALISATION DES INFORMATIONS SUR LES THREADS
+! 3. Initialization of thread information
 !===============================================================================
 
 call init_fortran_omp(nfac, nfabor, &
                       nthdi2, nthdb2, ngrpi2, ngrpb2, idxfi, idxfb)
 
 !===============================================================================
-! 6. DEFINITION DES POINTEURS SUR LA STRUCTURE MAILLAGE
+! 4. Define pointers on mesh structure
 !===============================================================================
 
 ifacel => iface2(1:2,1:nfac)
@@ -180,7 +177,13 @@ nodfac => nodfa2(1:lndfac)
 ipnfbr => ipnfb2(1:nfabor+1)
 nodfbr => nodfb2(1:lndfbr)
 
+icelbr => icelb2(1:ncelbr)
+
 xyzcen => xyzce2(1:3,1:ncelet)
+
+!===============================================================================
+! 5. Define pointers on mesh quantities
+!===============================================================================
 
 surfac => surfa2(1:3,1:nfac)
 surfbo => surfb2(1:3,1:nfabor)
@@ -190,6 +193,8 @@ cdgfbo => cdgfb2(1:3,1:nfabor)
 xyznod => xyzno2(1:3,1:nnod)
 
 volume => volum2(1:ncelet)
+
+!===============================================================================
 
 return
 end subroutine

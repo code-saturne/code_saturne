@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -99,7 +99,6 @@ typedef struct {
   cs_int_t   *b_face_vtx_idx;      /* Boundary faces -> vertices index */
   cs_int_t   *b_face_vtx_lst;      /* Boundary faces -> vertices connectivity */
 
-
   /* Global dimension */
 
   fvm_gnum_t   n_g_cells;          /* Global number of cells */
@@ -135,6 +134,11 @@ typedef struct {
 
   cs_numbering_t  *i_face_numbering; /* Interior face numbering info */
   cs_numbering_t  *b_face_numbering; /* Boundary face numbering info */
+
+  /* Re-computable connectivity features */
+
+  cs_int_t   n_b_cells;             /* Number of boundary cells */
+  cs_int_t  *b_cells;               /* Boundary cell list */
 
   /* Extended neighborhood features */
 
@@ -373,15 +377,16 @@ void
 cs_mesh_order_vertices(cs_mesh_t  *const mesh);
 
 /*----------------------------------------------------------------------------
- * Compute global number of elements (cells, vertices, internal and border
- * faces) and sync cell family.
+ * Compute or update mesh structure members the depend on other members,
+ * but whose results may be reused, such as global number of elements
+ * (cells, vertices, internal and border faces) and sync cell family.
  *
  * parameters:
  *   mesh   <->  pointer to a cs_mesh_t structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_init_parall(cs_mesh_t  *mesh);
+cs_mesh_update_auxiliary(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Creation and initialization of halo structures.

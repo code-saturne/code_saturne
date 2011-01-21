@@ -1,3 +1,21 @@
+* 21/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Replaced array in ia by array in mesh structure.
+  removed files:
+    src/base/memcbr.f90
+  modified files:
+    src/apps/cs_solver.c
+    src/base/caltri.f90
+    src/base/cs_mesh.c
+    src/base/cs_mesh.h
+    src/base/cs_prototypes.h
+    src/base/grdcel.f90
+    src/base/iniini.f90
+    src/base/initi2.f90
+    src/base/majgeo.f90
+    src/base/Makefile.am
+    src/base/mesh.f90
+    src/base/pointe.f90
+
 * 20/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow negative element volumes in mesh verification mode.
   modified files:

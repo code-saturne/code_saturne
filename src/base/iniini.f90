@@ -593,7 +593,6 @@ enddo
 
 ! --- Geometrie
 
-iicelb = 0
 isrfan = 0
 isrfbn = 0
 idist  = 0

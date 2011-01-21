@@ -2165,6 +2165,11 @@ cs_mesh_create(void)
   mesh->n_cells_with_ghosts = 0;
   mesh->halo = NULL;
 
+  /* Extended connectivity and neighborhood */
+
+  mesh->n_b_cells = 0;
+  mesh->b_cells = NULL;
+
   mesh->cell_cells_idx = NULL;
   mesh->cell_cells_lst = NULL;
   mesh->gcell_vtx_idx = NULL;
@@ -2262,6 +2267,9 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
 
   if (mesh->n_init_perio > 0)
     mesh->periodicity = fvm_periodicity_destroy(mesh->periodicity);
+
+  if (mesh->b_cells != NULL)
+    BFT_FREE(mesh->b_cells);
 
   if (mesh->cell_cells_idx != NULL) {
     BFT_FREE(mesh->cell_cells_idx);
@@ -2516,15 +2524,16 @@ cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Compute global number of elements (cells, vertices, internal and border
- * faces) and sync cell family.
+ * Compute or update mesh structure members the depend on other members,
+ * but whose results may be reused, such as global number of elements
+ * (cells, vertices, internal and border faces) and sync cell family.
  *
  * parameters:
  *   mesh  <->  pointer to a cs_mesh_t structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_init_parall(cs_mesh_t  *mesh)
+cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
 {
 
 #if defined(HAVE_MPI)
@@ -2575,6 +2584,36 @@ cs_mesh_init_parall(cs_mesh_t  *mesh)
   /* Sync cell family array (also in case of periodicity) */
 
   _sync_cell_fam(mesh);
+
+  /* Number of boundary cells */
+
+  {
+    fvm_lnum_t n_b_cells = 0;
+    _Bool *flag = NULL;
+
+    BFT_MALLOC(flag, mesh->n_cells, _Bool);
+
+    for (i = 0; i < mesh->n_cells; i++)
+      flag[i] = false;
+
+    for (i = 0; i < mesh->n_b_faces; i++)
+      flag[mesh->b_face_cells[i] - 1] = true;
+
+    for (i = 0, n_b_cells = 0; i < mesh->n_cells; i++) {
+      if (flag[i] == true)
+        n_b_cells++;
+    }
+
+    mesh->n_b_cells = n_b_cells;
+    BFT_MALLOC(mesh->b_cells, mesh->n_b_cells, cs_int_t);
+
+    for (i = 0, n_b_cells = 0; i < mesh->n_cells; i++) {
+      if (flag[i] == true)
+        mesh->b_cells[n_b_cells++] = i + 1;
+    }
+
+    BFT_FREE(flag);
+  }
 }
 
 /*----------------------------------------------------------------------------

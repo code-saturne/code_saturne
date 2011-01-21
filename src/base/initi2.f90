@@ -29,7 +29,6 @@ subroutine initi2 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   jcelbr ,                                                       &
    ia     , ra     )
 
 !===============================================================================
@@ -45,7 +44,6 @@ subroutine initi2 &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! jcelbr           ! e  ! <-- ! nombre d'elements ayant au moins une           !
 ! ia(*)            ! tr ! --- ! tableau de travail pour les entiers            !
 ! ra(*)            ! tr ! --- ! tableau de travail pour les reels              !
 !__________________!____!_____!________________________________________________!
@@ -93,17 +91,7 @@ idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 2. DIMENSIONS DE dimens.h :    MLG ET NON ORTH
-!===============================================================================
-
-!---> COMMON GEOMET
-
-! --- DEDUCTION DES AUTRES DIMENSIONS MLG ET NON ORTH
-
-ncelbr   = jcelbr
-
-!===============================================================================
-! 3. TABLEAUX DE cstphy.h
+! 3. TABLEAUX DE cstphy.f90
 !===============================================================================
 
 !---> COMMON TURBUL
@@ -113,7 +101,7 @@ ncelbr   = jcelbr
 write(nfecra,1000)
 
 do iphas = 1, nphas
-  if(almax(iphas).le.0.d0) then
+  if (almax(iphas).le.0.d0) then
     almax(iphas) = voltot**.333d0
     write(nfecra,1100) iphas,almax(iphas)
     write(nfecra,1102)
