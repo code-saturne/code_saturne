@@ -24,6 +24,7 @@
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
+$(FCMODINCLUDE)$(top_builddir)/src/base \
 $(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =

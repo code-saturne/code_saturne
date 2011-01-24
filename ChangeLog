@@ -1,3 +1,19 @@
+* 24/01/2011 - David Monfort <david.monfort@edf.fr>
+  Add Fortran flags to find modules in order to check the subroutine
+  interfaces with Intel compilers.
+  modified scripts:
+    src/atmo/Makefile.am
+    src/base/Makefile.am
+    src/cfbl/Makefile.am
+    src/cogz/Makefile.am
+    src/cplv/Makefile.am
+    src/elec/Makefile.am
+    src/fuel/Makefile.am
+    src/lagr/Makefile.am
+    src/mati/Makefile.am
+    src/pprt/Makefile.am
+    src/rayt/Makefile.am
+
 * 24/01/2011 - Mathieu Guingo <mathieu.guingo@edf.fr>
   Fix some Lagrangian calls due to the removing of the mesh-related arguments.
   modified routine:
