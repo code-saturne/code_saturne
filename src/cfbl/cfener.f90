@@ -663,7 +663,7 @@ iphydp = 0
 call grdcel                                                       &
 !==========
  ( idebia , ifinra ,                                              &
-   nphas  ,
+   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
