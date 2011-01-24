@@ -2535,10 +2535,10 @@ cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
 void
 cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
 {
+  fvm_lnum_t  i;
 
 #if defined(HAVE_MPI)
 
-  cs_int_t  i;
   fvm_gnum_t  n_g_elts[4], max_elt_num[4];
 
   if (cs_glob_n_ranks <= 1)

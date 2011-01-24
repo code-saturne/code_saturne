@@ -1,3 +1,8 @@
+* 24/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix compilation error without MPI.
+  modified files:
+    src/base/cs_mesh.c
+
 * 21/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Updated TODO file.
   modified files:
