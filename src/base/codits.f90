@@ -398,7 +398,7 @@ if(abs(thetex).gt.epzero) then
    pvara  , pvara  ,  coefap , coefbp , cofafp , cofbfp ,         &
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
-!        ------
+   !----
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 endif
@@ -466,7 +466,7 @@ do 100 isweep = 1, nswmod
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
-!        ------
+   !----
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
@@ -507,15 +507,11 @@ do 100 isweep = 1, nswmod
 
   call invers                                                     &
   !==========
- ( cnom   , idebia , idebra ,                                     &
-   isym   , ipol   , ireslq , nitmap , imgrp  ,                   &
+ ( cnom   , isym   , ipol   , ireslq , nitmap , imgrp  ,          &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &
-   ia     ,                                                       &
-   dam    , xam    , smbrp  , dpvar  ,                            &
-   w3     , w4     , w5     , w6     , w7     , w8     ,          &
-   ra     )
+   dam    , xam    , smbrp  , dpvar  )
 
 
   nbivar(ipp) = niterf
@@ -607,7 +603,7 @@ if (iescap.gt.0) then
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
-!        ------
+   !----
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 

@@ -28,15 +28,11 @@
 subroutine invers &
 !================
 
- ( cnom   , idbia0 , idbra0 ,                                     &
-   isym   , ipol   , ireslp , nitmap , imgrp  ,                   &
+ ( cnom   , isym   , ipol   , ireslp , nitmap , imgrp  ,          &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &
-   ia     ,                                                       &
-   dam    , xam    , smbrp  , vx     ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   ra     )
+   dam    , xam    , smbrp  , vx     )
 
 !===============================================================================
 ! Purpose:
@@ -54,8 +50,6 @@ subroutine invers &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! cnom             ! a  ! <-- ! variable name                                  !
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! isym             ! e  ! <-- ! flag = 1: symmetric matrix                     !
 !                  !    !     !        2: non-symmetric matrix                 !
 ! ipol             ! e  ! <-- ! polynomial degree for preconditioning          !
@@ -77,14 +71,10 @@ subroutine invers &
 ! epsilp           ! r  ! <-- ! precision for iterative resolution             !
 ! rnorm            ! r  ! <-- ! residue normalization                          !
 ! residu           ! r  ! --> ! final non-normalized residue                   !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dam(ncelet       ! tr ! <-- ! diagonal (fine mesh if multigrid)              !
 ! xam(nfac,isym    ! tr ! <-- ! extradiagonal (fine mesh if multigrid)         !
 ! smbrp(ncelet     ! tr ! <-- ! right hand side (fine mesh if multigrid)       !
 ! vx(ncelet)       ! tr ! <-- ! system solution                                !
-! w1,2,3,4,5,6     ! tr ! --- ! auxiliary arrays                               !
-!   (ncelet)       !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -107,26 +97,18 @@ implicit none
 ! Arguments
 
 character*16     cnom
-integer          idbia0 , idbra0
 integer          isym   , ipol   , ireslp , nitmap
 integer          imgrp  , ncymxp , nitmfp
 integer          iwarnp , nfecra
 integer          niterf , icycle , iinvpe
 double precision epsilp , rnorm  , residu
 
-integer          ia(*)
-
 double precision dam(ncelet), xam(nfac ,2)
 double precision smbrp(ncelet)
 double precision vx(ncelet)
-double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
-double precision w5(ncelet),w6(ncelet)
-double precision ra(*)
-
 
 ! Local variables
 
-integer          idebia, idebra
 integer          lnom
 integer          iresds, iresas, nitmds, nitmas
 
@@ -138,9 +120,6 @@ lnom = len(cnom)
 
 icycle = 0
 niterf = 0
-
-idebia = idbia0
-idebra = idbra0
 
 ! Resolution
 

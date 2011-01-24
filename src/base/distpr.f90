@@ -276,15 +276,11 @@ do isweep = 0, nswrsy
 
   call invers                                                     &
   !==========
- ( nomvar(ipp)     , idebia , idebra ,                            &
-   isym   , ipol   , ireslp , nitmay , imgrpy ,                   &
+ ( nomvar(ipp)     , isym   , ipol   , ireslp , nitmay , imgrpy , &
    ncymxp , nitmfp ,                                              &
    iwarny , nfecra , niterf , icycle , iinvpe ,                   &
    epsily , rnorm  , residu ,                                     &
-   ia     ,                                                       &
-   dam    , xam    , smbdp  , rtpdp  ,                            &
-   w3     , w4     , w5     , w6     , w8     , w9     ,          &
-   ra     )
+   dam    , xam    , smbdp  , rtpdp  )
 
   nittot = nittot + niterf
   do iel = 1, ncel

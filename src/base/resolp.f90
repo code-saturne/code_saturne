@@ -1057,15 +1057,11 @@ do 100 isweep = 1, nswmpr
 
   call invers                                                     &
   !==========
- ( chaine(1:16)    , idebia , idebra ,                            &
-   isym   , ipol   , ireslp , nitmap , imgrp  ,                   &
+ ( chaine(1:16)    , isym   , ipol   , ireslp , nitmap , imgrp  , &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnormp(iphas)   , residu ,                            &
-   ia     ,                                                       &
-   dam    , xam    , smbr   , drtp   ,                            &
-   w3     , w4     , w5     , w6     , w8     , w9     ,          &
-   ra     )
+   dam    , xam    , smbr   , drtp   )
 
   nbivar(ipp) = nbivar(ipp) + niterf
   if(abs(rnormp(iphas)).gt.0.d0) then

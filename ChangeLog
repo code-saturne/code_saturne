@@ -1,4 +1,14 @@
 * 24/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove unnecessary arguments to invers.
+  modified files:
+    src/base/calhyd.f90
+    src/base/codits.f90
+    src/base/distpr.f90
+    src/base/invers.f90
+    src/base/resolp.f90
+    src/cfbl/cfcdts.f90
+
+* 24/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix compilation error without MPI.
   modified files:
     src/base/cs_mesh.c

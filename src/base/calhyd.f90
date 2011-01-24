@@ -368,7 +368,7 @@ do isweep = 1, nswmpr
 
   call prodsc(ncelet,ncel,isqrt,smbr,smbr,residu)
   if (iwarni(ipriph).ge.2) then
-     CHAINE = 'PresHydr'
+     chaine = 'PresHydr'
      write(nfecra,1400)chaine(1:16),isweep,residu
   endif
 
@@ -386,7 +386,7 @@ do isweep = 1, nswmpr
     drtp(iel) = 0.d0
   enddo
 
-  CHAINE = 'PresHydr'
+  chaine = 'PresHydr'
   nitmap = nitmax(ipriph)
   imgrp  = imgr  (ipriph)
   ncymap = ncymax(ipriph)
@@ -397,15 +397,11 @@ do isweep = 1, nswmpr
 
   call invers                                                     &
   !==========
- ( chaine(1:16)    , idebia , idebra ,                            &
-   isym   , ipol   , ireslp , nitmap , imgrp  ,                   &
+ ( chaine(1:16)    , isym   , ipol   , ireslp , nitmap , imgrp  , &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &
-   ia     ,                                                       &
-   dam    , xam    , smbr   , drtp   ,                            &
-   w3     , w4     , w5     , w6     , w8     , w9     ,          &
-   ra     )
+   dam    , xam    , smbr   , drtp   )
 
 
   if( isweep.eq.nswmpr ) then
@@ -460,7 +456,7 @@ enddo
 ! --- Boucle de reconstruction : fin
 
 if(iwarni(ipriph).ge.2) then
-   CHAINE = 'PresHydr'
+   chaine = 'PresHydr'
    write( nfecra,1600)chaine(1:16),nswmpr
 endif
 
@@ -472,7 +468,7 @@ endif
 !===============================================================================
 
 if (imgr(ipriph).gt.0) then
-  CHAINE = 'PresHydr'
+  chaine = 'PresHydr'
   lchain = 16
   call dsmlga(chaine(1:16), lchain)
   !==========
