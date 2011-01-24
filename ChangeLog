@@ -1,4 +1,13 @@
 * 24/01/2011 - David Monfort <david.monfort@edf.fr>
+  Do not define the total pressure pointer with the compressible module and
+  add relevant test when missing. The XML reader is not protected yet, uiprop
+  routine, however it shouldn't be an issue until the combustion module
+  setup is available within the graphical interface.
+  modified routine:
+    src/base/typecl.f90
+    src/base/varpos.f90
+
+* 24/01/2011 - David Monfort <david.monfort@edf.fr>
   Add missing loop on the phase number while initializing compressible
   variables.
   modified routine:
