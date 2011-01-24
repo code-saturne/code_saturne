@@ -1,3 +1,9 @@
+* 24/01/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix a missing pointer update for post-processing variables in the gas
+  combustion module.
+  modified routine:
+    src/cogz/coprop.f90
+
 * 24/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove unnecessary arguments to invers.
   modified files:
