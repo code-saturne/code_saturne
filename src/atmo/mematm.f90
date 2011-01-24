@@ -28,7 +28,7 @@
 subroutine mematm &
 !================
 
- ( idbia0 , idbra0 , ifinia , ifinra , ra )
+ ( idbia0 , idbra0 , ifinia , ifinra )
 !===============================================================================
 !  FONCTION
 !  --------
@@ -69,7 +69,6 @@ implicit none
 ! Arguments
 
 integer          idbia0, idbra0, ifinia, ifinra
-double precision ra(*)
 
 ! Local variables
 

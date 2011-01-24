@@ -29,11 +29,12 @@ subroutine cttssc &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , nckpdp , ncesmp ,          &
+   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
    iscal  ,                                                       &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   izfppp , ia     ,                            &
+   izfppp ,                                                       &
+   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
@@ -58,7 +59,6 @@ subroutine cttssc &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! nckpdp           ! e  ! <-- ! nbr de coef du tenseur de pdc (3 ou 6          !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! itypfb(nfabor    ! te ! --> ! type des faces de bord                         !
@@ -77,8 +77,7 @@ subroutine cttssc &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ckupdc(ncepdp    ! tr ! <-- ! tableau de travail pour pdc                    !
-!     , nckpdp)    !    !     !                                                !
+! ckupdc(ncepdp,6) ! tr ! <-- ! tableau de travail pour pdc                    !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
@@ -122,7 +121,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          ncepdp , nckpdp , ncesmp
+integer          ncepdp , ncesmp
 integer          iscal
 
 integer          itypfb(nfabor,nphas)
@@ -135,7 +134,7 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ckupdc(ncepdp,nckpdp), smacel(ncesmp,nvar)
+double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision viscf(nfac), viscb(nfabor)
 double precision xam(nfac,2)

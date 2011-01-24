@@ -1145,6 +1145,7 @@ if (iisuit.eq.1) then
     call lagout                                                   &
     !==========
  ( ifinia , ifinra ,                                              &
+   lndnod ,                                                       &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &

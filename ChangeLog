@@ -1,4 +1,19 @@
 * 24/01/2011 - David Monfort <david.monfort@edf.fr>
+  Fix numerous errors due to the recent API refactoring.
+  modified routines:
+    src/atmo/mematm.f90
+    src/base/caltri.f90
+    src/base/tridim.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfqdmv.f90
+    src/cfbl/memcfm.f90
+    src/ctwr/cttssc.f90
+    src/elec/eltssc.f90
+    src/lagr/diverv.f90
+    src/lagr/lagpoi.f90
+    src/pprt/ppphyv.f90
+
+* 24/01/2011 - David Monfort <david.monfort@edf.fr>
   Add Fortran flags to find modules in order to check the subroutine
   interfaces with Intel compilers.
   modified scripts:

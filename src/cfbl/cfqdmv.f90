@@ -322,6 +322,7 @@ extrap = extrag(ipriph)
 call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
+   nphas  ,                                                       &
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -455,6 +456,7 @@ if( (itytur(iphas).eq.2 .or. iturb(iphas).eq.50                   &
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
+   nphas  ,                                                       &
    ikiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &

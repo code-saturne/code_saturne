@@ -172,7 +172,7 @@ call grdcel                                                       &
   ux     , coefax , coefbx ,                                      &
   w1     , w4     , w5     ,                                      &
   w6     , w7     , w8     ,                                      &
-  ia     )
+  ra     )
 
 !===============================================================================
 ! 2. Calcul du gradient de VY DANS W2

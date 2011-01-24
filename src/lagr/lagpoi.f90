@@ -284,6 +284,7 @@ iphydp = 0
 call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
+   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &

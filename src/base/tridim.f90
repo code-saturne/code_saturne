@@ -1560,7 +1560,6 @@ do while (iterns.le.nterup)
       call memcfm &
       !==========
     ( idbia1 , idbra1 ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
       idtr   , iviscf , iviscb , idam   , ixam   ,                   &
       idrtp  , ismbr  , irovsd ,                                     &
       iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &
