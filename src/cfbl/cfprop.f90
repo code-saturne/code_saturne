@@ -226,23 +226,27 @@ if ( ippmod(icompf).ge.0 ) then
 !     NB : Seuls les 8 premiers caracteres du nom seront repris dans le
 !          listing le plus detaille
 
-!-->  chaleur specifique a volume constant
-  if(icv   (iphas).gt.0) then
-    ipp = ipppro(ipproc(icv   (iphas)))
-    NOMVAR(IPP)   = 'Specific Heat Cst Vol'
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = 0
-  endif
+  do iphas = 1, nphas
 
-!-->  viscosite laminaire
-  if(iviscv(iphas).gt.0) then
-    ipp = ipppro(ipproc(iviscv(iphas)))
-    NOMVAR(IPP)   = 'Volume Viscosity'
-    ichrvr(ipp)   = 0
-    ilisvr(ipp)   = 0
-    ihisvr(ipp,1) = 0
-  endif
+    !-->  chaleur specifique a volume constant
+    if(icv   (iphas).gt.0) then
+      ipp = ipppro(ipproc(icv   (iphas)))
+      nomvar(ipp)   = 'Specific Heat Cst Vol'
+      ichrvr(ipp)   = 0
+      ilisvr(ipp)   = 0
+      ihisvr(ipp,1) = 0
+    endif
+
+    !-->  viscosite laminaire
+    if(iviscv(iphas).gt.0) then
+      ipp = ipppro(ipproc(iviscv(iphas)))
+      nomvar(ipp)   = 'Volume Viscosity'
+      ichrvr(ipp)   = 0
+      ilisvr(ipp)   = 0
+      ihisvr(ipp,1) = 0
+    endif
+
+  enddo
 
 endif
 

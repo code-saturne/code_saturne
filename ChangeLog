@@ -1,3 +1,9 @@
+* 24/01/2011 - David Monfort <david.monfort@edf.fr>
+  Add missing loop on the phase number while initializing compressible
+  variables.
+  modified routine:
+    src/cfbl/cfprop.f90
+
 * 24/01/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix a missing pointer update for post-processing variables in the gas
   combustion module.
