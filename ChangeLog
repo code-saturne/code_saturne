@@ -1,3 +1,8 @@
+* 24/01/2011 - Mathieu Guingo <mathieu.guingo@edf.fr>
+  Fix some Lagrangian calls due to the removing of the mesh-related arguments.
+  modified routine:
+    src/base/caltri.f90
+
 * 24/01/2011 - David Monfort <david.monfort@edf.fr>
   Do not define the total pressure pointer with the compressible module and
   add relevant test when missing. The XML reader is not protected yet, uiprop

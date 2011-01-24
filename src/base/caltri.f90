@@ -939,7 +939,6 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
   call memla2                                                     &
   !==========
  ( ifinia , ifinra ,                                              &
-   nfabor , ncelet , nfac   ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    iindep , iibord , iettpa , iauxl  , iauxl2 ,                   &
    itaup  , iitlag , ipiil  ,                                     &
@@ -954,6 +953,7 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
   call lagune                                                     &
   !==========
  ( ilagia , ilagra ,                                              &
+   lndnod ,                                                       &
    nvar   , nscal  , nphas  ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
