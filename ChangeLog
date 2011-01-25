@@ -1,3 +1,8 @@
+* 25/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Do not force partitioning to SCOTCH in runcase template.
+  modified scripts:
+    bin/runcase.in
+
 * 24/01/2011 - David Monfort <david.monfort@edf.fr>
   Fix numerous errors due to the recent API refactoring.
   modified routines:
@@ -54,6 +59,22 @@
   combustion module.
   modified routine:
     src/cogz/coprop.f90
+
+* 24/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor cleanup and loggig improvements in mesh joining.
+  When faces are selected but no intersections are detected,
+  an additional joining type (NULL) is considered, so that the
+  algorithm exists earlier and the mesh modification flag
+  is not set.
+  modified files:
+    po/fr.po
+    src/base/cs_join.c
+    src/base/cs_join_intersect.c
+    src/base/cs_join_intersect.h
+    src/base/cs_join_merge.c
+    src/base/cs_join_update.c
+    src/base/cs_join_util.c
+    src/base/cs_join_util.h
 
 * 24/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove unnecessary arguments to invers.
