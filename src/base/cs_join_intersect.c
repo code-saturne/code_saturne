@@ -2288,19 +2288,23 @@ cs_join_inter_set_create(cs_int_t  init_size)
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_inter_set_t structure.
  *
- * parameter:
- *   inter_set <-> a pointer to the inter_set_t structure to destroy
+ * parameters:
+ *   inter_set <-- a pointer to the inter_set_t structure to destroy
+ *
+ * returns:
+ *   a NULL pointer.
  *---------------------------------------------------------------------------*/
 
-void
-cs_join_inter_set_destroy(cs_join_inter_set_t  **inter_set)
+cs_join_inter_set_t *
+cs_join_inter_set_destroy(cs_join_inter_set_t  *inter_set)
 {
-  if (inter_set != NULL) {
-    if (*inter_set != NULL) {
-      BFT_FREE((*inter_set)->inter_lst);
-      BFT_FREE(*inter_set);
-    }
-  }
+  if (inter_set == NULL)
+    return inter_set;
+
+  BFT_FREE(inter_set->inter_lst);
+  BFT_FREE(inter_set);
+
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -2556,23 +2560,26 @@ cs_join_inter_edges_define(const cs_join_edges_t      *edges,
  * Destroy an cs_join_inter_edges_t structure.
  *
  * parameters:
- *   inter_edges <-> pointer to cs_join_inter_edges_t structure to destroy
+ *   inter_edges <-> cs_join_inter_edges_t structure to destroy
+ *
+ * returns:
+ *  a NULL pointer
  *---------------------------------------------------------------------------*/
 
-void
-cs_join_inter_edges_destroy(cs_join_inter_edges_t  **inter_edges)
+cs_join_inter_edges_t *
+cs_join_inter_edges_destroy(cs_join_inter_edges_t  *inter_edges)
 {
-  if (inter_edges != NULL) {
-    cs_join_inter_edges_t  *ie = *inter_edges;
-    if (ie != NULL) {
-      BFT_FREE(ie->index);
-      BFT_FREE(ie->edge_gnum);
-      BFT_FREE(ie->vtx_lst);
-      BFT_FREE(ie->vtx_glst);
-      BFT_FREE(ie->abs_lst);
-      BFT_FREE(*inter_edges);
-    }
-  }
+  if (inter_edges == NULL)
+    return inter_edges;
+
+  BFT_FREE(inter_edges->index);
+  BFT_FREE(inter_edges->edge_gnum);
+  BFT_FREE(inter_edges->vtx_lst);
+  BFT_FREE(inter_edges->vtx_glst);
+  BFT_FREE(inter_edges->abs_lst);
+  BFT_FREE(inter_edges);
+
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -3439,7 +3446,7 @@ cs_join_intersect_update_struct(int                      verbosity,
     BFT_FREE(edge_gnum);
     BFT_FREE(edge_order);
 
-    cs_join_inter_edges_destroy(&_inter_edges);
+    _inter_edges = cs_join_inter_edges_destroy(_inter_edges);
 
   } /* End if re-order necessary */
 
@@ -3562,14 +3569,13 @@ cs_join_intersect_edges(cs_join_param_t         param,
                         cs_join_eset_t        **vtx_eset,
                         cs_join_inter_set_t   **inter_set)
 {
-  fvm_lnum_t  i, j, k;
+  cs_int_t  i, j, k;
   double  clock_start, clock_end, cpu_start, cpu_end;
   double  abs_e1[2], abs_e2[2];
 
-  cs_join_type_t  join_type = CS_JOIN_TYPE_CONFORMING;
-  fvm_lnum_t  n_inter = 0;
-  fvm_lnum_t  n_inter_detected = 0, n_real_inter = 0, n_trivial_inter = 0;
-  fvm_gnum_t  n_g_inter[3] = {0, 0, 0};
+  cs_join_type_t  join_type = CS_JOIN_TYPE_CONFORM;
+  cs_int_t  n_inter = 0;
+  cs_int_t  n_inter_detected = 0, n_real_inter = 0, n_trivial_inter = 0;
   cs_join_inter_set_t  *_inter_set = NULL;
   cs_join_eset_t  *_vtx_eset = NULL;
 
@@ -3635,10 +3641,10 @@ cs_join_intersect_edges(cs_join_param_t         param,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
       if (param.verbosity > 2 && n_inter > 0) {
 
-        fvm_lnum_t  v1e1 = edges->def[2*e1_id] - 1;
-        fvm_lnum_t  v2e1 = edges->def[2*e1_id+1] - 1;
-        fvm_lnum_t  v1e2 = edges->def[2*e2_id] - 1;
-        fvm_lnum_t  v2e2 = edges->def[2*e2_id+1] - 1;
+        cs_int_t  v1e1 = edges->def[2*e1_id] - 1;
+        cs_int_t  v2e1 = edges->def[2*e1_id+1] - 1;
+        cs_int_t  v1e2 = edges->def[2*e2_id] - 1;
+        cs_int_t  v2e2 = edges->def[2*e2_id+1] - 1;
 
         bft_printf("\n Intersection: E1 (%u) [%u - %u] / E2 (%u) [%u - %u]\n",
                    edges->gnum[e1_id], mesh->vertices[v1e1].gnum,
@@ -3674,8 +3680,8 @@ cs_join_intersect_edges(cs_join_param_t         param,
         }
         else {
 
-          if (join_type == CS_JOIN_TYPE_CONFORMING)
-            join_type = CS_JOIN_TYPE_NON_CONFORMING;
+          if (join_type == CS_JOIN_TYPE_CONFORM)
+            join_type = CS_JOIN_TYPE_NO_CONFORM;
 
           _add_inter(e1_id, e2_id, abs_e1[k], abs_e2[k], _inter_set);
 
@@ -3689,58 +3695,22 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
   n_real_inter = n_inter_detected - n_trivial_inter;
 
-  if (n_inter_detected == 0)
-    join_type = CS_JOIN_TYPE_NULL;
-
   /* Order and delete redundant equivalences */
 
   cs_join_eset_clean(&_vtx_eset);
 
-  /* Synchronize join_type and counts */
-
-  n_g_inter[0] = n_inter_detected;
-  n_g_inter[1] = n_trivial_inter;
-  n_g_inter[2] = n_real_inter;
-
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-
-    int  tag = (int)join_type;
-    int  sync_tag = tag;
-    fvm_gnum_t tmp_inter[3];
-
-    MPI_Allreduce(&tag, &sync_tag, 1, MPI_INT, MPI_MAX, cs_glob_mpi_comm);
-
-    join_type = sync_tag;
-
-    MPI_Allreduce(n_g_inter, tmp_inter, 3, FVM_MPI_GNUM, MPI_SUM,
-                  cs_glob_mpi_comm);
-
-    for (i = 0; i < 3; i++)
-      n_g_inter[i] = tmp_inter[i];
-  }
-#endif
-
   if (param.verbosity > 0) {
 
     bft_printf(_("\n"
-                 "  Global number of intersections detected: %12lu\n"
+                 "  Number of local intersections detected: %12lu\n"
                  "    Vertex-Vertex intersections:    %12lu\n"
                  "    Other intersections:            %12lu\n"),
-               (unsigned long long)n_g_inter[0],
-               (unsigned long long)n_g_inter[1],
-               (unsigned long long)n_g_inter[2]);
+               n_inter_detected, n_trivial_inter, n_real_inter);
 
     if (param.verbosity > 1) {
-      bft_printf(_("\n"
-                   "    Local number of intersections detected: %10d\n"
-                   "      Vertex-Vertex intersections:          %10d\n"
-                   "      Other intersections:                  %10d\n"),
-                 (int)n_inter_detected, (int)n_trivial_inter,
-                 (int)n_real_inter);
-      bft_printf(_("\n  Local number of edge-edge intersection warnings: %9d\n"),
+      bft_printf(_("\n  Local number of edge-edge intersection warnings:%9d\n"),
                  _n_inter_tolerance_warnings);
-      bft_printf(_("\n  Local number of equivalences between vertices: %9d\n"),
+      bft_printf(_("\n  Local number of equivalences between vertices:%9d\n"),
                  _vtx_eset->n_equiv);
     }
 

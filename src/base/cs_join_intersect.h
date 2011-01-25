@@ -121,12 +121,15 @@ cs_join_inter_set_create(cs_int_t  init_size);
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_inter_set_t structure.
  *
- * parameters:
- *   inter_set <-> a pointer to the inter_set_t structure to destroy
+ * parameter:
+ *   inter_set <-- a pointer to the inter_set_t structure to destroy
+ *
+ * returns:
+ *  a NULL pointer.
  *---------------------------------------------------------------------------*/
 
-void
-cs_join_inter_set_destroy(cs_join_inter_set_t  **inter_set);
+cs_join_inter_set_t *
+cs_join_inter_set_destroy(cs_join_inter_set_t  *inter_set);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_join_inter_set_t structure.
@@ -175,11 +178,14 @@ cs_join_inter_edges_define(const cs_join_edges_t      *edges,
  * Destroy an cs_join_inter_edges_t structure.
  *
  * parameters:
- *   inter_edges <-> pointer to cs_join_inter_edges_t structure to destroy
+ *   inter_edges  <--  cs_join_inter_edges_t structure to dump
+ *
+ * returns:
+ *  a NULL pointer
  *---------------------------------------------------------------------------*/
 
-void
-cs_join_inter_edges_destroy(cs_join_inter_edges_t  **inter_edges);
+cs_join_inter_edges_t *
+cs_join_inter_edges_destroy(cs_join_inter_edges_t   *inter_edges);
 
 /*----------------------------------------------------------------------------
  * Find non-trivial equivalences between vertices sharing the same edges.

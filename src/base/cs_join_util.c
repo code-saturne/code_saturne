@@ -249,9 +249,9 @@ _destroy_join_sync(cs_join_sync_t   **sync)
 {
   cs_join_sync_t  *_sync = *sync;
 
-  if (_sync->array != NULL)
+  if (_sync->n_elts > 0)
     BFT_FREE(_sync->array);
-  if (_sync->ranks != NULL)
+  if (_sync->n_ranks > 0)
     BFT_FREE(_sync->ranks);
   BFT_FREE(_sync->index);
 

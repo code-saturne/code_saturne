@@ -496,12 +496,9 @@ _build_join_structures(cs_join_t            *this_join,
  *                             other in their tolerance
  *   p_inter_edges        -->  structure storing the definition of new vertices
  *                             on initial edges
- *
- * returns:
- *   type of joining detected
  *---------------------------------------------------------------------------*/
 
-static cs_join_type_t
+static void
 _intersect_edges(cs_join_t               *this_join,
                  cs_join_mesh_t          *work_jmesh,
                  const cs_join_edges_t   *work_join_edges,
@@ -512,7 +509,7 @@ _intersect_edges(cs_join_t               *this_join,
                  cs_join_inter_edges_t  **p_inter_edges)
 {
   double  clock_start, clock_end, cpu_start, cpu_end;
-  cs_join_type_t  join_type = CS_JOIN_TYPE_NULL;
+  cs_join_type_t  join_type;
 
   fvm_gnum_t  n_g_new_vertices = 0;
   cs_join_inter_edges_t  *inter_edges = NULL;
@@ -547,25 +544,35 @@ _intersect_edges(cs_join_t               *this_join,
   cs_join_inter_set_dump(inter_set, work_join_edges, work_jmesh);
 #endif
 
-  if (join_type == CS_JOIN_TYPE_NULL) {
+  /* Synchronize join_type */
 
-    bft_printf(_("\n  Joining operation is null.\n"));
-    bft_printf_flush();
+#if defined(HAVE_MPI)
+  if (n_ranks > 1) {
 
-    cs_join_inter_set_destroy(&inter_set);
+    int  tag = (join_type == CS_JOIN_TYPE_CONFORM ? 0 : 1);
+    int  sync_tag = tag;
+
+    MPI_Allreduce(&tag, &sync_tag, 1, MPI_INT, MPI_MAX, cs_glob_mpi_comm);
+
+    if (sync_tag == 0)
+      join_type = CS_JOIN_TYPE_CONFORM;
+    else
+      join_type = CS_JOIN_TYPE_NO_CONFORM;
 
   }
-  else if (join_type == CS_JOIN_TYPE_CONFORMING) {
+#endif
+
+  if (join_type == CS_JOIN_TYPE_CONFORM) {
 
     bft_printf(_("\n  Joining operation is conforming.\n"));
     bft_printf_flush();
 
-    cs_join_inter_set_destroy(&inter_set);
+    inter_set = cs_join_inter_set_destroy(inter_set);
 
   }
   else {
 
-    assert(join_type == CS_JOIN_TYPE_NON_CONFORMING);
+    assert(join_type == CS_JOIN_TYPE_NO_CONFORM);
 
     bft_printf(_("\n  Joining operation is non-conforming.\n"));
     bft_printf_flush();
@@ -582,7 +589,7 @@ _intersect_edges(cs_join_t               *this_join,
                                 &vtx_eset);
 
     inter_edges = cs_join_inter_edges_define(work_join_edges, inter_set);
-    cs_join_inter_set_destroy(&inter_set);
+    inter_set = cs_join_inter_set_destroy(inter_set);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump structures after inter. */
     cs_join_inter_edges_dump(inter_edges, work_join_edges, work_jmesh);
@@ -610,7 +617,7 @@ _intersect_edges(cs_join_t               *this_join,
                                       work_jmesh,
                                       &inter_edges);
 
-      cs_join_inter_edges_destroy(&sync_block);
+      sync_block = cs_join_inter_edges_destroy(sync_block);
 
       cs_join_mesh_sync_vertices(work_jmesh);
 
@@ -625,7 +632,7 @@ _intersect_edges(cs_join_t               *this_join,
                                  inter_edges,
                                  vtx_eset);
 
-  } /* non conforming joining operation */
+  } /* no conform joining operation */
 
   /* Order and delete redundant equivalences */
 
@@ -656,7 +663,6 @@ _intersect_edges(cs_join_t               *this_join,
   cs_join_inter_edges_dump(inter_edges, work_join_edges, work_jmesh);
 #endif
 
-  return join_type;
 }
 
 #if defined(HAVE_MPI)
@@ -954,11 +960,13 @@ _prepare_update_after_merge(cs_join_t          *this_join,
  *  init_max_vtx_gnum    <--  initial max. global numbering for vertices
  *  n_g_new_vertices     <--  global number of vertices created with the
  *                            intersection of edges
- *  vtx_eset             <->  structure storing equivalences between vertices
+ *  rank_face_gnum_index <--  index on face global numering to determine the
+ *                            related rank
+ *  vtx_equiv_set        <--  structure storing equivalences between vertices
  *                            Two vertices are equivalent if they are each
- *                            other in their tolerance; freed here after use
- *  inter_edges          <->  structure storing the definition of new vertices
- *                            on initial edges; freed here after use
+ *                            other in their tolerance
+ *  inter_edges          <--  structure storing the definition of new vertices
+ *                            on initial edges.
  *  p_work_jmesh         <->  pointer to a cs_join_mesh_t structure
  *  p_work_join_edges    <->  pointer to a cs_join_edges_t structure
  *  p_local_jmesh        <->  pointer to a cs_join_mesh_t structure
@@ -970,8 +978,8 @@ _merge_vertices(cs_join_t                *this_join,
                 cs_int_t                  n_iwm_vertices,
                 fvm_gnum_t                init_max_vtx_gnum,
                 fvm_gnum_t                n_g_new_vertices,
-                cs_join_eset_t          **vtx_eset,
-                cs_join_inter_edges_t   **inter_edges,
+                cs_join_eset_t           *vtx_eset,
+                cs_join_inter_edges_t    *inter_edges,
                 cs_join_mesh_t          **p_work_jmesh,
                 cs_join_edges_t         **p_work_join_edges,
                 cs_join_mesh_t          **p_local_jmesh,
@@ -1013,9 +1021,9 @@ _merge_vertices(cs_join_t                *this_join,
   cs_join_merge_vertices(param,
                          new_max_vtx_gnum,
                          work_jmesh,
-                         *vtx_eset);
+                         vtx_eset);
 
-  cs_join_eset_destroy(vtx_eset);
+  cs_join_eset_destroy(&vtx_eset);
 
   /*  Keep the evolution of vertex global numbering.
       Update work and local structures after vertex merge */
@@ -1027,7 +1035,7 @@ _merge_vertices(cs_join_t                *this_join,
                               rank_face_gnum_index,
                               &work_jmesh,
                               &work_join_edges,
-                              inter_edges,
+                              &inter_edges,
                               &local_jmesh,
                               &o2n_vtx_gnum); /* Defined by slice in // */
 
@@ -1035,7 +1043,7 @@ _merge_vertices(cs_join_t                *this_join,
 
   BFT_FREE(iwm_vtx_gnum);
 
-  cs_join_inter_edges_destroy(inter_edges);
+  inter_edges = cs_join_inter_edges_destroy(inter_edges);
 
   /* Post if required and level of verbosity is reached */
 
@@ -1062,7 +1070,7 @@ _merge_vertices(cs_join_t                *this_join,
                                   local_jmesh,
                                   mesh);
 
-  /* Clean meshes after update (empty edges, degenerate edges,  ...) */
+  /* Clean meshes after update (empty edges, degenerated edges,  ...) */
 
   cs_join_mesh_clean(work_jmesh, param.verbosity);
   cs_join_mesh_clean(local_jmesh, param.verbosity);
@@ -1514,7 +1522,6 @@ cs_join_all(void)
   double  clock_start, clock_end, cpu_start, cpu_end;
   double  full_clock_start, full_clock_end, full_cpu_start, full_cpu_end;
 
-  cs_join_type_t  join_type = CS_JOIN_TYPE_NULL;
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_builder_t  *mesh_builder = cs_glob_mesh_builder;
 
@@ -1657,15 +1664,14 @@ cs_join_all(void)
       if (join_param.perio_type != FVM_PERIODICITY_NULL)
         init_max_vtx_gnum += this_join->selection->n_g_vertices;
 
-      join_type
-        = _intersect_edges(this_join,
-                           work_jmesh,
-                           work_join_edges,
-                           &edge_edge_visibility, /* free during this step */
-                           init_max_vtx_gnum,
-                           &n_g_new_vertices,
-                           &vtx_eset,
-                           &inter_edges);
+      _intersect_edges(this_join,
+                       work_jmesh,
+                       work_join_edges,
+                       &edge_edge_visibility, /* free during this step */
+                       init_max_vtx_gnum,
+                       &n_g_new_vertices,
+                       &vtx_eset,
+                       &inter_edges);
 
       /*
          Merge vertices from equivalences found between vertices.
@@ -1675,22 +1681,16 @@ cs_join_all(void)
          local structure update after the merge step.
       */
 
-      if (join_type != CS_JOIN_TYPE_NULL)
-        _merge_vertices(this_join,
-                        n_iwm_vertices,
-                        init_max_vtx_gnum,
-                        n_g_new_vertices,
-                        &vtx_eset,        /* free during this step */
-                        &inter_edges,     /* free during this step */
-                        &work_jmesh,
-                        &work_join_edges,
-                        &local_jmesh,
-                        mesh);
-
-      else {
-        cs_join_eset_destroy(&vtx_eset);
-        cs_join_inter_edges_destroy(&inter_edges);
-      }
+      _merge_vertices(this_join,
+                      n_iwm_vertices,
+                      init_max_vtx_gnum,
+                      n_g_new_vertices,
+                      vtx_eset,         /* free during this step */
+                      inter_edges,      /* free during this step */
+                      &work_jmesh,
+                      &work_join_edges,
+                      &local_jmesh,
+                      mesh);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
     _dump_mesh(join_param.num, "MeshAfterMerge", mesh);
@@ -1702,14 +1702,13 @@ cs_join_all(void)
          Update cs_mesh_t structure.
       */
 
-      if (join_type != CS_JOIN_TYPE_NULL)
-        _split_faces(this_join,
-                     work_join_edges,
-                     work_face_normal,
-                     &work_jmesh,
-                     local_jmesh,
-                     mesh,
-                     mesh_builder);
+      _split_faces(this_join,
+                   work_join_edges,
+                   work_face_normal,
+                   &work_jmesh,
+                   local_jmesh,
+                   mesh,
+                   mesh_builder);
 
       /* Free memory */
 
@@ -1758,8 +1757,7 @@ cs_join_all(void)
 
     /* Set mesh modification flag */
 
-    if (join_type != CS_JOIN_TYPE_NULL)
-      mesh->modified = 1;
+    mesh->modified = 1;
 
   } /* End of loop on joinings */
 

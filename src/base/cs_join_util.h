@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2011 EDF S.A., France
+ *     Copyright (C) 2008-2009 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -66,9 +66,8 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_JOIN_TYPE_NULL,
-  CS_JOIN_TYPE_CONFORMING,
-  CS_JOIN_TYPE_NON_CONFORMING
+  CS_JOIN_TYPE_CONFORM,
+  CS_JOIN_TYPE_NO_CONFORM
 
 } cs_join_type_t;
 

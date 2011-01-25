@@ -113,7 +113,7 @@ N_PROCS_MAX = None
 #   PARTITION_OPTS = '--scotch --no-perio'; by default, it is set to None.
 
 PARTITION_LIST = None
-PARTITION_OPTS = None
+PARTITION_OPTS = "--scotch"
 
 # Solver options
 

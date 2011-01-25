@@ -4853,7 +4853,6 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
   cs_int_t  connect_shift = 0;
   cs_int_t  max_connect = 0, b_size = 10, i_size = 10;
   cs_int_t  n_b_clean_faces = 0, n_i_clean_faces = 0;
-  fvm_gnum_t  n_g_clean_faces[2] = {0, 0};
   cs_int_t  *b_clean_faces = NULL, *i_clean_faces = NULL;
   cs_int_t  *kill = NULL, *connect = NULL;
 
@@ -4994,24 +4993,29 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
   BFT_REALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_idx[mesh->n_i_faces]-1,
               cs_int_t);
 
-  n_g_clean_faces[0] = n_i_clean_faces;
-  n_g_clean_faces[1] = n_b_clean_faces;
+  if (param.verbosity > 0) { /* Post-treat clean faces */
+
+    fvm_gnum_t  gbuf[2], buf[2];
+    fvm_gnum_t  n_g_i_clean_faces = 0, n_g_b_clean_faces = 0;
+
+    buf[0] = n_i_clean_faces;
+    buf[1] = n_b_clean_faces;
 
 #if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {
-      fvm_gnum_t  buf[2];
-      MPI_Allreduce(n_g_clean_faces, buf, 2, FVM_MPI_GNUM, MPI_SUM,
-                    cs_glob_mpi_comm);
-      n_g_clean_faces[0] = buf[0];
-      n_g_clean_faces[1] = buf[1];
+      MPI_Allreduce(buf, gbuf, 2, FVM_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
+
+      buf[0] = gbuf[0];
+      buf[1] = gbuf[1];
     }
 #endif
 
-  if (param.verbosity > 0) { /* Post-treat clean faces */
+    n_g_i_clean_faces = buf[0];
+    n_g_b_clean_faces = buf[1];
 
     if (param.verbosity > 1) { /* Post-process clean faces */
 
-      if (n_g_clean_faces[0] > 0 || n_g_clean_faces[1] > 0) {
+      if (n_g_i_clean_faces > 0 || n_g_b_clean_faces > 0) {
 
         BFT_REALLOC(i_clean_faces, n_i_clean_faces, cs_int_t);
         BFT_REALLOC(b_clean_faces, n_b_clean_faces, cs_int_t);
@@ -5029,16 +5033,13 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
 
     } /* verbosity > 1 */
 
-    bft_printf(_("\n  Mesh cleaning done for degenerate faces.\n"
+    bft_printf(_("\n  Mesh cleaning done for degenerated faces.\n"
                  "    Global number of cleaned interior faces: %8u\n"
                  "    Global number of cleaned border faces:   %8u\n"),
-               n_g_clean_faces[0], n_g_clean_faces[1]);
+               n_g_i_clean_faces, n_g_b_clean_faces);
     bft_printf_flush();
 
   } /* verbosity > 0 */
-
-  if (n_g_clean_faces[0] + n_g_clean_faces[1] > 0)
-    mesh->modified = 1;
 
   /* Free memory */
 
