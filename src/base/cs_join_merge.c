@@ -2717,7 +2717,7 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
 
     } /* End of loop on edges */
 
-    inter_edges = cs_join_inter_edges_destroy(inter_edges);
+    cs_join_inter_edges_destroy(&inter_edges);
     inter_edges = new_inter_edges;
 
     inter_edges->max_sub_size = 0;
