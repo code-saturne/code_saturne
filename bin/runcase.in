@@ -258,7 +258,7 @@ fi
 #
 N_SYRTHES_COUPLINGS=0
 if [ -f "${SRC}/ussyrc.f90" ] ; then
-  N_SYRTHES_COUPLINGS=`grep -e ^' ' ${SRC}/ussyrc.f90 | grep -i -c defsyr`
+  N_SYRTHES_COUPLINGS=`grep -v '^ *\t*!' ${SRC}/ussyrc.f90 | grep -i -c defsyr`
 fi
 if [ ! -z "$PARAM" ] ; then
   var=$DATA/$PARAM
