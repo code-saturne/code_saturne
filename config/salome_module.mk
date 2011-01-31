@@ -41,7 +41,7 @@ sharedpkgpythondir = ${salomepythondir}/shared_modules
 # Documentation directory
 salomedocdir       = ${datarootdir}/doc/salome/gui/${MODULE_NAME}
 
-IDL_INCLUDES = $(SALOME_KERNEL_IDL)
+IDL_INCLUDES = $(SALOME_KERNEL_IDL) $(SALOME_GUI_IDL)
 KERNEL_LIBS = $(SALOME_KERNEL_LDFLAGS) -lSalomeContainer -lOpUtil -lSalomeDSCContainer -lSalomeDSCSuperv -lSalomeDatastream -lSalomeDSCSupervBasic -lCalciumC
 KERNEL_INCLUDES= $(SALOME_KERNEL_CPPFLAGS) $(OMNIORB_INCLUDES) $(BOOST_CPPFLAGS)
 

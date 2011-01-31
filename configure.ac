@@ -408,7 +408,7 @@ CS_AC_TEST_ADF
 CS_AC_TEST_CCM
 CS_AC_TEST_ZLIB
 CS_AC_TEST_SYRTHES
-CS_AC_TEST_SALOME_KERNEL
+CS_AC_TEST_SALOME
 
 cs_have_partitioner=no
 if test x$cs_have_parmetis = xyes -o x$cs_have_metis = xyes ; then
@@ -552,6 +552,31 @@ fi
 
 AC_SUBST(PYUIC4)
 AC_SUBST(PYRCC4)
+
+#------------------------------------------------------------------------------
+# Checks for Qt tools.
+#------------------------------------------------------------------------------
+
+AC_ARG_WITH(qt4-exec, [AS_HELP_STRING([--with-qt4-exec=PATH],
+                                        [specify prefix directory for Qt4 developper tools (lrelease and moc)])],
+                        [QT4_EXE=${withval}],
+                        [QT4_EXE=none])dnl
+
+# Test for Qt4 developper tools
+if test "x$cs_have_gui" = "xyes" ; then
+
+  AC_PATH_PROG([LRELEASE], [lrelease], ["no"], [${QT4_EXE}:$PATH])
+  AC_PATH_PROG([MOC], [moc], ["no"], [${QT4_EXE}:$PATH])
+
+  if test "x$LRELEASE" = "xno" -o "x$MOC" = "xno" ; then
+    AC_MSG_FAILURE([cannot find Qt4 dev tools, Graphical User Interface cannot be installed])
+    cs_have_gui=no
+  fi
+
+fi
+
+AC_SUBST(LRELEASE)
+AC_SUBST(MOC)
 
 AM_CONDITIONAL(HAVE_GUI, [test "x$cs_have_gui" = "xyes"])
 AC_SUBST(cs_have_gui)
