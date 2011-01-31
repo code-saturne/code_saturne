@@ -1,4 +1,4 @@
-* 25/01/2011 - Mathieu Guingo <mathieu.guingo@edf.fr>
+* 31/01/2011 - Mathieu Guingo <mathieu.guingo@edf.fr>
   Fix several issues in the modelling of the interaction between a particle
   and a wall (some related to the particles velocity and kinetic energy).
   modified routine:
