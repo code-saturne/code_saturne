@@ -1,4 +1,7 @@
 * 31/01/2011 - David Monfort <david.monfort@edf.fr>
+  Remove spurious .pyc files in the CFDSTUDY module.
+
+* 31/01/2011 - David Monfort <david.monfort@edf.fr>
                Martine Paolillo <martine.paolillo@edf.fr>
                Alexandre Douce <alexandre.douce@edf.fr>
   Add the CFDSTUDY module to plug Code_Saturne graphical interface into the
