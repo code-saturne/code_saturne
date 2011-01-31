@@ -1,3 +1,9 @@
+* 25/01/2011 - Mathieu Guingo <mathieu.guingo@edf.fr>
+  Fix several issues in the modelling of the interaction between a particle
+  and a wall (some related to the particles velocity and kinetic energy).
+  modified routine:
+    users/base/uslabo.f90
+
 * 25/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor cleanup and logging improvements in mesh joining.
   When faces are selected but no intersections are detected,
