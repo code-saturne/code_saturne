@@ -1,4 +1,9 @@
 * 31/01/2011 - David Monfort <david.monfort@edf.fr>
+  Fix the call to the CS_AC_ENABLE_PTHREAD m4 function in omniORB detection.
+  modified script:
+    m4/cs_omniorb.m4
+
+* 31/01/2011 - David Monfort <david.monfort@edf.fr>
   Fix the detection of SALOME GUI module (due to the use of AM_CONDITIONAL).
   modified script:
     m4/cs_salome.m4
