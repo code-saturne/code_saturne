@@ -152,119 +152,6 @@ class StandardItemModelProfile(QStandardItemModel):
         return self.dataProfile[row][0]
 
 #-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
-
-class DragListView(QListView):
-    def __init__(self, parent=None):
-        QListView.__init__(self, parent)
-        self.setObjectName("DragList")
-        self.setAlternatingRowColors(True)
-        self.setDragEnabled(True)
-        self.setAcceptDrops(True)
-        self.setDragDropOverwriteMode(False)
-        self.setDragDropMode(QAbstractItemView.DragDrop)
-
-
-#    def dragEnterEvent(self,event):
-#        if event.mimeData().hasFormat("application/x-ics"):
-#            if event.source() in self.children():
-#                event.setDropAction(Qt.MoveAction)
-#                event.accept()
-#            else:
-#                event.acceptProposedAction()
-#
-#        elif event.mimeData().hasText():
-#            event.acceptProposedAction()
-#        else:
-#            event.ignore()
-
-#    def dragMoveEvent(self,event):
-#        event.ignore()
-#
-#    def dragLeaveEvent(self,event):
-#        event.accept()
-#        print("1 drag leave")
-#
-#    def dropEvent(self,event):
-#        event.acceptProposedAction()
-#        print("1 drag drop")
-
-
-#    def mouseMoveEvent(self, event):
-#        self.QtBaseClass.mousePressEvent(self, event)
-#        if self.enable_drag:
-#            if event.buttons() & Qt.LeftButton != Qt.LeftButton:
-#                return
-#            if (event.pos() - self._drag_start_position).manhattanLength() < \
-#                                            QApplication.startDragDistance():
-#                return
-#            self.start_drag(self._drag_start_position)
-#
-#
-#    def dragEnterEvent(self, event):
-#        if event.mimeData().hasFormat("text/uri-list"):
-#            event.acceptProposedAction()
-#
-#    def dragMoveEvent(self, event):
-#        event.acceptProposedAction()
-#
-#
-#    def dropEvent(self, event):
-#        files = self._get_r_ok_files(event)
-#        if files:
-#            try:
-#                event.setDropAction(Qt.CopyAction)
-#                if self.files_dropped(files, event):
-#                    event.accept()
-#            except Exception, e:
-#                Error("There was an error processing the dropped files.", e)
-#                raise e
-
-
-class DropListView(QListView):
-    def __init__(self, parent=None):
-        QListView.__init__(self, parent)
-        self.setObjectName("DragList")
-        self.setAlternatingRowColors(True)
-        self.setDragEnabled(True)
-        self.setAcceptDrops(True)
-        self.setDragDropOverwriteMode(False)
-        self.setDragDropMode(QAbstractItemView.DragDrop)
-
-
-#    def dragEnterEvent(self,event):
-#        if event.mimeData().hasFormat("application/x-ics"):
-#            print("1")
-#            if event.source() in self.children():
-#                event.setDropAction(Qt.MoveAction)
-#                event.accept()
-#            else:
-#                event.acceptProposedAction()
-#
-#        elif event.mimeData().hasText():
-#            print("2")
-#            event.acceptProposedAction()
-#        else:
-#            print("3")
-#            event.ignore()
-
-#    def dragMoveEvent(self,event):
-#        event.ignore()
-#
-#    def dragLeaveEvent(self,event):
-#        event.accept()
-#        print("2 drag leave")
-
-#    def dropEvent(self,event):
-#        if event.mimeData().hasText():
-#            text = event.mimeData().text()
-#            self.model().append(text)
-#            event.acceptProposedAction()
-#        else:
-#            event.ignore()
-
-#-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
 
@@ -295,18 +182,22 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         # QListView layout
         self.gridlayout1 = QGridLayout(self.widgetDrag)
         self.gridlayout1.setMargin(0)
-        self.DragList = DragListView(self.widgetDrag)
+        self.DragList = QListView(self.widgetDrag)
         self.gridlayout1.addWidget(self.DragList,0,0,1,1)
 
         self.gridlayout2 = QGridLayout(self.widgetDrop)
         self.gridlayout2.setMargin(0)
-        self.DropList = DropListView(self.widgetDrop)
+        self.DropList = QListView(self.widgetDrop)
         self.gridlayout2.addWidget(self.DropList,0,0,1,1)
 
         self.modelDrag = QStringListModel()
         self.modelDrop = QStringListModel()
         self.DragList.setModel(self.modelDrag)
         self.DropList.setModel(self.modelDrop)
+        self.DragList.setAlternatingRowColors(True)
+        self.DragList.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.DropList.setAlternatingRowColors(True)
+        self.DropList.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         # Combo items
         self.modelFreq = ComboModel(self.comboBoxFreq, 2, 1)
@@ -314,11 +205,13 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.modelFreq.addItem(self.tr("at each 'n' time steps"), "frequency")
 
         # Connections
-        self.connect(self.treeViewProfile,  SIGNAL("pressed(const QModelIndex &)"), self.slotSelectProfile)
-        self.connect(self.pushButtonAdd,    SIGNAL("clicked()"), self.slotAddProfile)
-        self.connect(self.pushButtonEdit,   SIGNAL("clicked()"), self.slotEditProfile)
-        self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.slotDeleteProfile)
-        self.connect(self.comboBoxFreq,     SIGNAL("activated(const QString&)"), self.slotFrequencyType)
+        self.connect(self.treeViewProfile,       SIGNAL("pressed(const QModelIndex &)"), self.slotSelectProfile)
+        self.connect(self.pushButtonAdd,         SIGNAL("clicked()"), self.slotAddProfile)
+        self.connect(self.pushButtonEdit,        SIGNAL("clicked()"), self.slotEditProfile)
+        self.connect(self.pushButtonDelete,      SIGNAL("clicked()"), self.slotDeleteProfile)
+        self.connect(self.pushButtonAddVar,      SIGNAL("clicked()"), self.slotAddVarProfile)
+        self.connect(self.pushButtonSuppressVar, SIGNAL("clicked()"), self.slotDeleteVarProfile)
+        self.connect(self.comboBoxFreq,          SIGNAL("activated(const QString&)"), self.slotFrequencyType)
 
         # Validators
         validatorFreq = IntValidator(self.lineEditFreq, min=0)
@@ -576,6 +469,27 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.modelDrop.setStringList(QStringList())
         liste = [QString(s) for s in liste]
         self.modelDrop.setStringList(liste)
+
+
+    @pyqtSignature("")
+    def slotAddVarProfile(self):
+        """
+        Add a new var from list to profile
+        """
+        if (self.DragList.currentIndex().row() >=0) :
+            liste = self.modelDrop.stringList()
+            var = self.modelDrag.stringList()[self.DragList.currentIndex().row()]
+            if var not in liste :
+                liste.append(var)
+            self.modelDrop.setStringList(liste)
+
+
+    @pyqtSignature("")
+    def slotDeleteVarProfile(self):
+        """
+        Supress a var from profile
+        """
+        self.modelDrop.removeRows(self.DropList.currentIndex().row(), 1)
 
 
     def __eraseEntries(self):

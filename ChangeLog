@@ -1,3 +1,15 @@
+* 31/01/2011 - Cyril Baudry <cyril.baudry@edf.fr>
+  Replace the drag'n drop feature in the graphical interface by a more
+  intuitive add/remove mechanism for the profile and time average pages.
+  added file:
+    gui/Pages/icons/32x32/go-previous.png
+  modified routines:
+    gui/Pages/ProfilesForm.ui
+    gui/Pages/ProfilesView.py
+    gui/Pages/resources_pages.qrc
+    gui/Pages/TimeAveragesForm.ui
+    gui/Pages/TimeAveragesView.py
+
 * 31/01/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix minor issues in the latest developments of the scripts for code
   coupling.
