@@ -346,6 +346,8 @@ class Study:
 
             dict_str += template
 
+        for c in self.syr_case_names:
+
             if self.get_syrthes_version() == 3:
                 template = \
 """
@@ -364,7 +366,7 @@ class Study:
      'n_procs': None,
      'n_procs_min': 1,
      'n_procs_max': None,
-     'opt' = ''}               # Additional SYRTHES options
+     'opt' : ''}               # Additional SYRTHES options
 """
             template = re.sub(e_dom, c, template)
             dict_str += template

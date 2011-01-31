@@ -1589,10 +1589,6 @@ class syrthes_domain(base_domain):
         exec_srcdir = os.path.join(self.exec_dir, 'src')
         os.makedirs(exec_srcdir)
 
-        # Handle interpreted functions
-
-        self.syrthes_case.interpret_func(dest = exec_srcdir)
-
         # Preparation of the execution directory and compile and link executable
 
         compile_logname = os.path.join(self.exec_dir, 'compile.log')

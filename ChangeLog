@@ -1,3 +1,10 @@
+* 31/01/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix minor issues in the latest developments of the scripts for code
+  coupling.
+  modified scripts:
+    bin/cs_case_domain.py
+    bin/cs_create.py
+
 * 31/01/2011 - Mathieu Guingo <mathieu.guingo@edf.fr>
   Fix several issues in the modelling of the interaction between a particle
   and a wall (some related to the particles velocity and kinetic energy).
