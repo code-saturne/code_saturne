@@ -1,3 +1,105 @@
+* 31/01/2011 - David Monfort <david.monfort@edf.fr>
+               Martine Paolillo <martine.paolillo@edf.fr>
+               Alexandre Douce <alexandre.douce@edf.fr>
+  Add the CFDSTUDY module to plug Code_Saturne graphical interface into the
+  SALOME platform.
+  modified script:
+    configure.ac
+  added files:
+    salome/cfd_study
+    salome/cfd_study/idl
+    salome/cfd_study/idl/CFDSTUDY_Gen.idl
+    salome/cfd_study/idl/Makefile.am
+    salome/cfd_study/Makefile.am
+    salome/cfd_study/resources
+    salome/cfd_study/resources/CaseAdd.png
+    salome/cfd_study/resources/CaseEdit.png
+    salome/cfd_study/resources/CaseInProcess.png
+    salome/cfd_study/resources/Case.png
+    salome/cfd_study/resources/CaseRun.png
+    salome/cfd_study/resources/CFDSTUDYCatalog.xml
+    salome/cfd_study/resources/CFDSTUDY.png
+    salome/cfd_study/resources/CheckCompilation.png
+    salome/cfd_study/resources/Copy.png
+    salome/cfd_study/resources/Delete.png
+    salome/cfd_study/resources/Document.png
+    salome/cfd_study/resources/EditableDocument.png
+    salome/cfd_study/resources/EditFile.png
+    salome/cfd_study/resources/ExecSATURNE.png
+    salome/cfd_study/resources/Executable.png
+    salome/cfd_study/resources/FolderLinked.png
+    salome/cfd_study/resources/Folder.png
+    salome/cfd_study/resources/FolderVirtual.png
+    salome/cfd_study/resources/InfoCFDSTUDY.png
+    salome/cfd_study/resources/LaunchGUI.png
+    salome/cfd_study/resources/LaunchGUIwithOptions.png
+    salome/cfd_study/resources/Link.png
+    salome/cfd_study/resources/Makefile.am
+    salome/cfd_study/resources/MED_Module_Convert.png
+    salome/cfd_study/resources/MED_Module.png
+    salome/cfd_study/resources/mesh_group.png
+    salome/cfd_study/resources/mesh.png
+    salome/cfd_study/resources/mesh_tree_group.png
+    salome/cfd_study/resources/mesh_tree_mesh.png
+    salome/cfd_study/resources/MoveFile.png
+    salome/cfd_study/resources/MoveFolder.png
+    salome/cfd_study/resources/NewTreeCreate.png
+    salome/cfd_study/resources/OpenedFolder.png
+    salome/cfd_study/resources/RunScript.png
+    salome/cfd_study/resources/SalomeApp.xml
+    salome/cfd_study/resources/SaveAs.png
+    salome/cfd_study/resources/Save.png
+    salome/cfd_study/resources/SetTreeLocation.png
+    salome/cfd_study/resources/SMESH_Module_Export.png
+    salome/cfd_study/resources/SMESH_Module.png
+    salome/cfd_study/resources/Study.png
+    salome/cfd_study/resources/TmpFile.png
+    salome/cfd_study/resources/UnknownDocument.png
+    salome/cfd_study/resources/UpdateObjBrowser.png
+    salome/cfd_study/resources/ViewFile.png
+    salome/cfd_study/resources/VISU_Module_Export.png
+    salome/cfd_study/resources/VISU_Module.png
+    salome/cfd_study/resources/VISU_Plot_Export.png
+    salome/cfd_study/resources/VISU_Plot.png
+    salome/cfd_study/src
+    salome/cfd_study/src/CFDSTUDY
+    salome/cfd_study/src/CFDSTUDY/CFDSTUDY.py
+    salome/cfd_study/src/CFDSTUDYGUI
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.pyc
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_Agents.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_Agents.pyc
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_CommandMgr.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_CommandMgr.pyc
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_Commons.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_Commons.pyc
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DataModel.pyc
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DesktopMgr.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DesktopMgr.pyc
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.pyc
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ProcessMgr.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ProcessMgr.pyc
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI.pyc
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_QProcessDialog.ui
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_SolverGUI.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_SolverGUI.pyc
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_images.ts
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDY_msg_en.ts
+    salome/cfd_study/src/CFDSTUDYGUI/CopyDialog.ui
+    salome/cfd_study/src/CFDSTUDYGUI/DefineLinkDialog.ui
+    salome/cfd_study/src/CFDSTUDYGUI/ECSConversionDialog.ui
+    salome/cfd_study/src/CFDSTUDYGUI/EnvSettingsDialog.ui
+    salome/cfd_study/src/CFDSTUDYGUI/GUIActivationDialog.ui
+    salome/cfd_study/src/CFDSTUDYGUI/InfoDialog.ui
+    salome/cfd_study/src/CFDSTUDYGUI/Makefile.am
+    salome/cfd_study/src/CFDSTUDYGUI/RunCaseDialog.ui
+    salome/cfd_study/src/CFDSTUDYGUI/SetTreeLocationDialog.ui
+    salome/cfd_study/src/CFDSTUDY/Makefile.am
+    salome/cfd_study/src/Makefile.am
+
 * 31/01/2011 - Cyril Baudry <cyril.baudry@edf.fr>
   Replace the drag'n drop feature in the graphical interface by a more
   intuitive add/remove mechanism for the profile and time average pages.
