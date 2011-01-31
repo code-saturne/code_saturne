@@ -20,4 +20,8 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-SUBDIRS = cfd_proxy libmilieu
+if HAVE_SALOME_GUI
+CFDSTUDY = cfd_study
+endif
+
+SUBDIRS = $(CFDSTUDY) cfd_proxy libmilieu fsi_coupling
