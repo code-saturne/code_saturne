@@ -27,9 +27,7 @@ dnl-----------------------------------------------------------------------------
 AC_DEFUN([CS_AC_TEST_SALOME], [
 
 CS_AC_TEST_SALOME_KERNEL
-
-AS_IF([test $cs_have_salome_kernel = yes],
-       [CS_AC_TEST_SALOME_GUI])
+CS_AC_TEST_SALOME_GUI
 
 AS_IF([test $cs_have_salome_kernel = yes -o $cs_have_salome_gui = yes],
       [CS_AC_TEST_OMNIORB
