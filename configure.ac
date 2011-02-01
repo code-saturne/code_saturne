@@ -884,6 +884,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  doc/developper/Makefile doc/developper/graphics/Makefile
                  doc/install/Makefile
                  doc/refcard/Makefile doc/refcard/graphics/Makefile
+                 doc/salome/Makefile
                  doc/theory/Makefile doc/theory/graphics/Makefile
                  doc/tutorial/Makefile doc/tutorial/graphics/Makefile
                  doc/user/Makefile doc/user/graphics/Makefile

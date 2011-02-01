@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2011 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -20,20 +20,34 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-#SUBDIRS = developper howto install refcard theory tutorial user
+include $(top_srcdir)/config/salome_module.mk
 
-if HAVE_SPHINX
-SALOME = salome
-endif
+MODULE_NAME = CFDSTUDY
 
-SUBDIRS = refcard theory tutorial user developper $(SALOME)
+RSTFILES = \
+index.rst \
+intro.rst \
+tutorial/saturne.rst \
+tutorials.rst
 
-DIST_SUBDIRS = $(SUBDIRS) howto install
+SPHINXBUILD = sphinx-build
+SPHINXOPTS = -d .doctrees $(srcdir)
 
-EXTRA_DIST = \
-style/csdoc.sty \
-style/csindex.sty \
-style/csmacros.sty \
-style/csvers.tex.in \
-style/logocs.png \
-style/logoedf.png
+EXTRA_DIST = images tutorial html
+
+html-local:
+	$(SPHINXBUILD) -b html $(SPHINXOPTS) html
+
+latex:
+	$(SPHINXBUILD) -b latex $(SPHINXOPTS) latex
+
+clean-local:
+	-rm -rf html latex .doctrees
+
+install-data-local:
+#	$(INSTALL) -d $(DESTDIR)$(salomedocdir)
+	$(MKDIR_P) $(DESTDIR)$(salomedocdir)
+	if test -d "html"; then cp -rf html/* $(DESTDIR)$(salomedocdir); fi;
+
+uninstall-local:
+	-rm -rf $(DESTDIR)$(salomedocdir)/*
