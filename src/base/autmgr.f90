@@ -118,7 +118,7 @@ double precision w1(ncelfe), w2(ncelfe)
 
 ! Local variables
 
-double precision critr, epslon
+double precision critr, epslon, xaf1, xaf2
 
 integer          ncelg, ncelgg, icel, ifac , ifac1, icelg
 integer          nfacn,nfacnr,npass,npasmx
@@ -213,7 +213,11 @@ do while (npass .lt. npasmx)
     if (i.le.ncelf .and. j.le.ncelf) then
 
       inditt = 0
-      critr  = (daf(i)/indic(i))*(daf(j)/indic(j))/(xaf(ifac,1)*xaf(ifac,isym))
+      xaf1 = xaf(ifac,1)
+      xaf2 = xaf(ifac,isym)
+      xaf1 = max(-xaf1,1.d-15)
+      xaf2 = max(-xaf2,1.d-15)
+      critr  = (daf(i)/indic(i))*(daf(j)/indic(j))/(xaf1*xaf2)
 
       if (critr.lt.(1.d0-epslon) .and. irscel(i)*irscel(j).le.0) then
 

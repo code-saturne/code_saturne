@@ -1,3 +1,9 @@
+* 01/02/2011 - Jérôme Laviéville <jerome-marcel.lavieville@edf.fr>
+  Modify a test in the multigrid algorithm to account for possible zeros on
+  the extra-diagonal of the matrix in NEPTUNE_CFD.
+  modified routine:
+    src/base/autmgr.f90
+
 * 31/01/2011 - David Monfort <david.monfort@edf.fr>
   Fix the call to the CS_AC_ENABLE_PTHREAD m4 function in omniORB detection.
   modified script:
