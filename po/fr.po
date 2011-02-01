@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-01-20 19:53+0100\n"
+"POT-Creation-Date: 2011-02-01 11:52+0100\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5261,6 +5261,7 @@ msgid ""
 "definition.\n"
 msgstr ""
 
+#, c-format
 msgid ""
 "\n"
 "  Global number of intersections detected: %12lu\n"
@@ -5272,6 +5273,7 @@ msgstr ""
 "    Intersections sommet-sommet :     %12lu\n"
 "    Autres intersections :            %12lu\n"
 
+#, c-format
 msgid ""
 "\n"
 "    Local number of intersections detected: %10d\n"
@@ -5283,6 +5285,7 @@ msgstr ""
 "      Intersections sommet-sommet :     %10d\n"
 "      Autres intersections :            %10d\n"
 
+#, c-format
 msgid ""
 "\n"
 "  Local number of edge-edge intersection warnings: %9d\n"
@@ -5290,6 +5293,7 @@ msgstr ""
 "\n"
 "  Nombre local d'avertissements pour intersections arête-arête: %9d\n"
 
+#, c-format
 msgid ""
 "\n"
 "  Local number of equivalences between vertices: %9d\n"
