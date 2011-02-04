@@ -236,7 +236,7 @@
              <widget class="QSpinBox" name="spinBoxProcs" >
               <property name="maximumSize" >
                <size>
-                <width>50</width>
+                <width>150</width>
                 <height>16777215</height>
                </size>
               </property>
@@ -244,7 +244,7 @@
                <number>1</number>
               </property>
               <property name="maximum" >
-               <number>32</number>
+               <number>32768</number>
               </property>
              </widget>
             </item>

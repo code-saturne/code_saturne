@@ -1,8 +1,6 @@
-* 25/01/2010 - Yvan Fournier <yvan.fournier@edf.fr>
-  Make detection of SYRTHES couplings through the ussyrc user
-  subroutine more robust relative to whitespace.
-  modified scripts:
-    bin/runcase.in
+* 04/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow a higher number of processors in the GUI.
+    gui/Pages/BatchRunningForm.ui
 
 * 17/01/2010 - David Monfort <david.monfort@edf.fr>
   Upgrade version number to 2.0.1
