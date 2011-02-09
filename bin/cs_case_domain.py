@@ -1121,7 +1121,7 @@ class domain(base_domain):
 
         if self.user_scratch_files != None:
             for f in self.user_scratch_files:
-                purge_list.exend = fnmatch.filter(dir_files, f)
+                purge_list.extend = fnmatch.filter(dir_files, f)
 
         for f in purge_list:
             dir_files.remove(f)
