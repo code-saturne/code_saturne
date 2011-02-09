@@ -281,7 +281,7 @@ class base_domain:
 
         # Remove file or directory
 
-        if os.path.isfile(f):
+        if os.path.isfile(f) or os.path.islink(f):
             os.remove(f)
 
         elif os.path.isdir(f):

@@ -1,4 +1,8 @@
 * 09/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fixed bug coausing removal of contents of symbolic links.
+    bin/cs_case_domain.py
+
+* 09/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct typo leading to error when cleaning user scratch files.
   modified scripts:
     bin/cs_case_domain.py
