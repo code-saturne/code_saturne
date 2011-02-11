@@ -7,7 +7,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2008 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -35,7 +35,7 @@
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/Users/saturne/opt/bft-1.0.8/arch/Darwin
+BFT_HOME        =/Users/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/Darwin
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/Users/saturne/opt/fvm-0.12.0/arch/Darwin
+FVM_HOME        =/Users/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/Darwin
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -110,7 +110,7 @@ PREPROCFLAGS    =
 # C compiler
 #-----------
 
-CCOMP                  = /Users/saturne/opt/mpich-1.2.7p1/bin/mpicc
+CCOMP                  = mpicc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -131,7 +131,7 @@ CCOMPFLAGSVERS         = -v
 #-----------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77
+FTNCOMP                = mpif77
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -151,7 +151,7 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /Users/saturne/opt/mpich-1.2.7p1/bin/mpif77
+LDEDL           = $(FTNCOMP)
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
@@ -204,11 +204,8 @@ LIBEF    =-L/Users/saturne/opt/efence-2.1.14/arch/Darwin/lib -lefence
 #
 # The file lists below correspond to different optimization levels
 #
-#  Temporarily, gradmc is compiled with O1 to bypass a potential optimization bug
-#       with gcc 3.3.2 (resolved with 3.3.3)
-#
 
 LISTE_OPT_PART1 = gradco.F gradrc.F jacobi.F prcpol.F promav.F cs_matrix.c cs_sles.c
 LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
-LISTE_OPT_PART3 = gradmc.F
+LISTE_OPT_PART3 =
 

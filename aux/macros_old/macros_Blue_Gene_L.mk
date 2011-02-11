@@ -7,7 +7,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2008 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -40,7 +40,7 @@ BGL_SYS  = /bgl/BlueLight/ppcfloor/bglsys
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/gpfs2/home/saturne/opt/bft-1.0.8/arch/bgl
+BFT_HOME        =/gpfs2/home/saturne/opt/bft-1.1/arch/bgl
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -48,7 +48,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/gpfs2/home/saturne/opt/fvm-0.12.0/arch/bgl
+FVM_HOME        =/gpfs2/home/saturne/opt/fvm-0.15/arch/bgl
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm

@@ -29,18 +29,13 @@
 #
 #============================================================================
 #
-# Macros for Makefile under Blue Gene/P
-#######################################
+# Macros for Makefile under IBM iDataPlex cluster
+#################################################
 #
-# System paths
-#-------------
-
-BGL_SYS  = /bgsys/drivers/ppcfloor/comm
-
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/gpfs/home/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/bgp
+BFT_HOME        =/home/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/ivanoe
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -48,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/gpfs/home/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/bgp
+FVM_HOME        =/home/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/ivanoe
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -61,16 +56,15 @@ MPI             =1
 MPE             =0
 MPE_COMM        =0
 
-# For Blue Gene MPI
-MPI_HOME        =
-MPI_INC         = -I$(BGL_SYS)/include
+#Les bibliothèques MPI sont directement appelées par mpicc et mpif77
+MPI_INC         =
 MPI_LIB         =
 
 # Macros for Sockets
 #-------------------
 
 # Sockets support
-SOCKET          =0
+SOCKET          =1
 SOCKET_INC      =
 SOCKET_LIB      =
 
@@ -80,20 +74,20 @@ SOCKET_LIB      =
 # XML support
 XML             =1
 
-XML_HOME = /gpfs/home/saturne/opt/libxml2-2.3.32/arch/bgp
+XML_HOME =
 
-XML_INC  =-I$(XML_HOME)/include/libxml2
-XML_LIB  =-L$(XML_HOME)/lib -lxml2
+XML_INC  =-I/usr/include/libxml2
+XML_LIB  =-lxml2
 
 # Macros for BLAS
 #----------------
 
 # BLAS support
 BLAS            =1
-ESSL            =1 # IBM ESSL library with BLAS extension
-BLAS_INC        =-I/opt/ibmmath/essl/4.3/include
-BLAS_CFLAGS     =-D_CS_HAVE_ESSL
-BLAS_LDFLAGS    =
+BLAS_HOME       =/logiciels/intel/composerxe-2011.0.084/mkl
+BLAS_INC        =-I$(BLAS_HOME)/include
+BLAS_CFLAGS     =-D_CS_HAVE_MKL
+BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
 
 # Macros for gettext
 #-------------------
@@ -115,56 +109,52 @@ PREPROCFLAGS    =
 # C compiler
 #-----------
 
-CCOMP                  = bgxlc
+CCOMP                  = mpicc
 
-CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=450d -qtune=450
-#CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
-#CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qsource -qlist
+CCOMPFLAGSDEF          = -fpic -std=c99 -strict-ansi -Wall -Wcheck -Wmissing-prototypes \
+                         -Wuninitialized -Wshadow -funsigned-char -Wpointer-arith
 
-CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O3
-CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O3 -qhot
-CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O3 -qhot
-CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O3 -qhot
+CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O
+CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2
+CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O2
+CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O0
 CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0
-CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g
-CCOMPFLAGSPROF         = -pg
-CCOMPFLAGSVERS         = -v
+CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -O0 -traceback -w2 -Wp64 -ftrapuv
+CCOMPFLAGSPROF         = -p
+CCOMPFLAGSVERS         = -V
 
 
 # Fortran compiler
 #-----------------
-#  Profiling gprof : -pg -a
+#  Profiling gprof : -p
 
-FTNCOMP                = bgxlf
+FTNCOMP                = mpif77
 
-FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname
-#FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
-#FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname -qsource -qlist
+FTNCOMPFLAGSDEF        = -fpic -warn
 
-FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O3
-FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O3 -qhot
-FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O3 -qhot
-FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O3 -qhot
+FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O1
+FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O2
+FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O3
+FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O0
 FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF) -O0
-FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g
-FTNCOMPFLAGSPROF       = -pg
-FTNCOMPFLAGSVERS       = -v
+FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g -O0 -traceback -check all -fpe0 -ftrapuv
+FTNCOMPFLAGSPROF       = -p
+FTNCOMPFLAGSVERS       = -V
 
-FTNPREPROCOPT          = -WF,
+FTNPREPROCOPT          =
 
 # Linker
 #-------
 
 # Linker
 
-LDEDL           = bgxlf_r -qflttrap=enable:overflow:zerodivide
-#LDEDL           = bgxlf_r -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
-LDEDLFLAGS      = -O3
-LDEDLFLAGSLO    = -O0
-LDEDLFLAGSDBG   = -g
-LDEDLFLAGSPROF  = -pg
-LDEDLFLAGSVERS  = -v
-LDEDLRPATH      =
+LDEDL           = $(FTNCOMP)
+LDEDLFLAGS      = -O -nofor_main
+LDEDLFLAGSLO    = -O0 -nofor_main
+LDEDLFLAGSDBG   = -g -nofor_main
+LDEDLFLAGSPROF  = -p
+LDEDLFLAGSVERS  = -V
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,
 
 
 # Set preprocessor variables
@@ -177,19 +167,9 @@ VARDEF          = -D_POSIX_SOURCE
 # Libraries to link against
 #--------------------------
 
-# Zlib used by HDF5
-ZLIB     = -L/bgsys/local/tools_ibm/lib -lz
-
-# IBM libraries
-#SYSLIBS  = -L/bgsys/drivers/ppcfloor/comm/lib -lmpich.cnk -ldcmfcoll.cnk -ldcmf.cnk -L/bgsys/drivers/ppcfloor/runtime/SPI -lSPI.cna -lrt -lpthread
-SYSLIBS  = -L/bgsys/drivers/ppcfloor/comm/lib -lmpich.cnk -ldcmfcoll.cnk /bgsys/local/fixes/libdcmf.cnk.a -L/bgsys/drivers/ppcfloor/runtime/SPI -lSPI.cna -lrt -lpthread
-MASS     = -L/opt/ibmcmp/xlmass/bg/4.4/bglib -lmass -lmassv
-ESSL     = -L/opt/ibmmath/essl/4.3/lib -lesslbg -lesslsmpbg
-TRACE    = /bgsys/local/tools_ibm/lib/libmpitrace.a
-
 # Base libraries (always used)
 
-LIBBASIC = $(ZLIB) -Wl,--allow-multiple-definition $(MASS) $(ESSL) $(TRACE) $(SYSLIBS)
+LIBBASIC = $(BFT_LDFLAGS) $(FVM_LDFLAGS) -lm -lpthread
 
 # Libraries in production mode
 
@@ -205,7 +185,7 @@ LIBDBG   =
 
 # Library in ElectricFence (malloc debugger) mode
 
-LIBEF    =
+LIBEF    =-lefence
 
 # Optional lists of files to compile with specific options
 #---------------------------------------------------------
@@ -216,8 +196,8 @@ LIBEF    =
 #
 # 70% cpu promav gradrc gradco prodsc
 # 10% cpu jacobi prcpol bilsc2 ;
-#    option -qhot recommended for these subroutines
-#    for others, we prefer O3, less risky, but slightly slower
+#    option O3 recommended for these subroutines
+#    for others, we prefer O2, less risky, but slightly slower
 #
 # The file lists below correspond to different optimization levels
 #

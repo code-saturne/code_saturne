@@ -7,7 +7,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2008 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -29,13 +29,13 @@
 #
 #============================================================================
 #
-# Macros for Makefile under Linux x86_64
-########################################
+# Macros for Makefile under Clamart 2 cluster
+#############################################
 #
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.0.8/arch/Linux_x86_64
+BFT_HOME        =/home/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/clamart2
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.12.0/arch/Linux_x86_64
+FVM_HOME        =/home/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/clamart2
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -57,7 +57,7 @@ MPE             =0
 MPE_COMM        =0
 
 # For Open MPI on saturne
-MPI_HOME        =/home/saturne/opt/openmpi-1.2.6/arch/Linux_x86_64
+MPI_HOME        =/home/logiciels/openmpi_intel
 MPI_INC         =-I$(MPI_HOME)/include
 MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 
@@ -85,10 +85,10 @@ XML_LIB  =-lxml2
 
 # BLAS support
 BLAS            =1
-BLAS_HOME       =
-BLAS_INC        =-I/usr/include
-BLAS_CFLAGS     =-D_CS_HAVE_CBLAS
-BLAS_LDFLAGS    =-lcblas -latlas
+BLAS_HOME       =/logiciels/intel/Compiler/11.1/046/mkl
+BLAS_INC        =-I$(BLAS_HOME)/include
+BLAS_CFLAGS     =-D_CS_HAVE_MKL
+BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
 
 # Macros for gettext
 #-------------------
@@ -110,39 +110,37 @@ PREPROCFLAGS    =
 # C compiler
 #-----------
 
-CCOMP                  = /home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/bin/gcc
+CCOMP                  = /home/logiciels/intel/Compiler/11.1/046/bin/intel64/icc
 
-CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
-                         -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
-                         -Wstrict-prototypes -Wmissing-prototypes \
-                         -Wmissing-declarations -Wnested-externs -Wno-uninitialized
+CCOMPFLAGSDEF          = -fpic -std=c99 -strict-ansi -Wall -Wcheck -Wmissing-prototypes \
+                         -Wuninitialized -Wshadow -funsigned-char -Wpointer-arith
 
-CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O -Wno-unused
+CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O
 CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2
 CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O2
 CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O0
 CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0
-CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g3
-CCOMPFLAGSPROF         = -pg
-CCOMPFLAGSVERS         = -v
+CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -O0 -traceback -w2 -Wp64 -ftrapuv
+CCOMPFLAGSPROF         = -p
+CCOMPFLAGSVERS         = -V
 
 
 # Fortran compiler
 #-----------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/bin/gfortran
+FTNCOMP                = /home/logiciels/intel/Compiler/11.1/046/bin/intel64/ifort
 
-FTNCOMPFLAGSDEF        = -I.
+FTNCOMPFLAGSDEF        = -fpic -warn
 
 FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O1
 FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O2
 FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O0
 FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF) -O0
-FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g
-FTNCOMPFLAGSPROF       = -pg
-FTNCOMPFLAGSVERS       = -v
+FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g -O0 -traceback -check all -fpe0 -ftrapuv
+FTNCOMPFLAGSPROF       = -p
+FTNCOMPFLAGSVERS       = -V
 
 FTNPREPROCOPT          =
 
@@ -152,12 +150,12 @@ FTNPREPROCOPT          =
 # Linker
 
 LDEDL           = $(FTNCOMP)
-LDEDLFLAGS      = -O
-LDEDLFLAGSLO    = -O0
-LDEDLFLAGSDBG   = -g
-LDEDLFLAGSPROF  = -pg
-LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/lib64:
+LDEDLFLAGS      = -O -nofor_main
+LDEDLFLAGSLO    = -O0 -nofor_main
+LDEDLFLAGSDBG   = -g -nofor_main
+LDEDLFLAGSPROF  = -p
+LDEDLFLAGSVERS  = -V
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,
 
 
 # Set preprocessor variables
@@ -204,11 +202,8 @@ LIBEF    =-lefence
 #
 # The file lists below correspond to different optimization levels
 #
-#  Temporarily, gradmc is compiled with O1 to bypass a potential optimization bug
-#       with gcc 3.3.2 (resolved with 3.3.3)
-#
 
 LISTE_OPT_PART1 = gradco.F gradrc.F jacobi.F prcpol.F promav.F cs_matrix.c cs_sles.c
 LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
-LISTE_OPT_PART3 = gradmc.F
+LISTE_OPT_PART3 =
 

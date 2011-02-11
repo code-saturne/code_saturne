@@ -7,7 +7,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2008 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -29,24 +29,24 @@
 #
 #============================================================================
 #
-# Macros for Makefile under Linux x86_64
-########################################
+# Macros for Makefile under Bull Novascale
+##########################################
 #
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.0.8/arch/Linux_x86_64
+BFT_HOME        =/home/cont002/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/platine
 
 BFT_INC         =-I$(BFT_HOME)/include
-BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft -Wl,-rpath -Wl,$(BFT_HOME)/lib
+BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.12.0/arch/Linux_x86_64
+FVM_HOME        =/home/cont002/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/platine
 
 FVM_INC         =-I$(FVM_HOME)/include
-FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm -Wl,-rpath -Wl,$(FVM_HOME)/lib
+FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
 
 # Macros for MPI
 #---------------
@@ -56,6 +56,9 @@ MPI             =1
 MPE             =0
 MPE_COMM        =0
 
+#Les bibliothèques MPI sont directement appelées par mpicc et mpif77
+MPI_INC         =
+MPI_LIB         =
 
 # Macros for Sockets
 #-------------------
@@ -80,11 +83,11 @@ XML_LIB  =-lxml2
 #----------------
 
 # BLAS support
-BLAS            =0
-BLAS_HOME       =
-BLAS_INC        =
-BLAS_CFLAGS     =
-BLAS_LDFLAGS    =
+BLAS            =1
+BLAS_HOME       =/applications/intel/cmkl/10.0.1.014
+BLAS_INC        =-I$(BLAS_HOME)/include
+BLAS_CFLAGS     =-D_CS_HAVE_MKL
+BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
 
 # Macros for gettext
 #-------------------
@@ -106,39 +109,37 @@ PREPROCFLAGS    =
 # C compiler
 #-----------
 
-CCOMP                  = /usr/local/mpichgm-1.2.6.14b-64b/bin/mpicc
+CCOMP                  = mpicc
 
-CCOMPFLAGSDEF          = -ansi -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
-                         -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
-                         -Wstrict-prototypes -Wmissing-prototypes \
-                         -Wmissing-declarations -Wnested-externs -Wno-uninitialized
+CCOMPFLAGSDEF          = -fpic -std=c99 -strict-ansi -Wall -Wcheck -Wmissing-prototypes \
+                         -Wuninitialized -Wshadow -funsigned-char -Wpointer-arith \
+                         -mtune=itanium2-p9000
 
-CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O -Wno-unused
-CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O2
-CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O2
-CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O2
-CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O0
-CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g3
-CCOMPFLAGSPROF         = -pg
-CCOMPFLAGSVERS         = -v
-
+CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O2
+CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O3
+CCOMPFLAGSOPTPART2     = $(CCOMPFLAGSDEF) -O3
+CCOMPFLAGSOPTPART3     = $(CCOMPFLAGSDEF) -O3
+CCOMPFLAGSLO           = $(CCOMPFLAGSDEF) -O1
+CCOMPFLAGSDBG          = $(CCOMPFLAGSDEF) -g -O0 -traceback -w2 -Wp64 -ftrapuv
+CCOMPFLAGSPROF         = -p
+CCOMPFLAGSVERS         = -V
 
 # Fortran compiler
 #-----------------
-#  Profiling gprof : -pg -a
+#  Profiling gprof : -p
 
-FTNCOMP                = /usr/local/mpichgm-1.2.6.14b-64b/bin/mpif77
+FTNCOMP                = mpif77
 
-FTNCOMPFLAGSDEF        = -fno-silent -I.
+FTNCOMPFLAGSDEF        = -fpic -mtune=itanium2-p9000 -warn
 
-FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O1
-FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O2
-FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O6
-FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O0
-FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF) -O0
-FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g
-FTNCOMPFLAGSPROF       = -pg
-FTNCOMPFLAGSVERS       = -v
+FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O2
+FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O3
+FTNCOMPFLAGSOPTPART2   = $(FTNCOMPFLAGSDEF) -O3
+FTNCOMPFLAGSOPTPART3   = $(FTNCOMPFLAGSDEF) -O3
+FTNCOMPFLAGSLO         = $(FTNCOMPFLAGSDEF) -O1
+FTNCOMPFLAGSDBG        = $(FTNCOMPFLAGSDEF) -g -O0 -traceback -check all -fpe0 -ftrapuv
+FTNCOMPFLAGSPROF       = -p
+FTNCOMPFLAGSVERS       = -V
 
 FTNPREPROCOPT          =
 
@@ -147,13 +148,13 @@ FTNPREPROCOPT          =
 
 # Linker
 
-LDEDL           = /usr/local/mpichgm-1.2.6.14b-64b/bin/mpif77
-LDEDLFLAGS      = -O
-LDEDLFLAGSLO    = -O0
-LDEDLFLAGSDBG   = -g
-LDEDLFLAGSPROF  = -pg
-LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,
+LDEDL           = $(FTNCOMP)
+LDEDLFLAGS      = -O -nofor_main
+LDEDLFLAGSLO    = -O0 -nofor_main
+LDEDLFLAGSDBG   = -g -nofor_main
+LDEDLFLAGSPROF  = -p
+LDEDLFLAGSVERS  = -V
+LDEDLRPATH      = -Wl,-rpath -Wl,
 
 
 # Set preprocessor variables
@@ -168,7 +169,7 @@ VARDEF          = -D_POSIX_SOURCE
 
 # Base libraries (always used)
 
-LIBBASIC = $(BFT_LDFLAGS) $(FVM_LDFLAGS) -lm -lpthread
+LIBBASIC = $(BFT_LDFLAGS) $(FVM_LDFLAGS) -lm
 
 # Libraries in production mode
 
@@ -200,11 +201,8 @@ LIBEF    =-lefence
 #
 # The file lists below correspond to different optimization levels
 #
-#  Temporarily, gradmc is compiled with O1 to bypass a potential optimization bug
-#       with gcc 3.3.2 (resolved with 3.3.3)
-#
 
 LISTE_OPT_PART1 = gradco.F gradrc.F jacobi.F prcpol.F promav.F cs_matrix.c cs_sles.c
 LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
-LISTE_OPT_PART3 = gradmc.F
+LISTE_OPT_PART3 =
 

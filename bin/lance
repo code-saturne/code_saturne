@@ -113,33 +113,29 @@
 #
 # ------------------------------------------------------------------
 #
-#                  BATCH FILE (AIX, Loadlever)
-#                  ===========================
+#                  BATCH FILE (Loadlever)
+#                  ======================
 #
-#@ shell = /bin/sh
+#@ shell = /bin/bash
 #
 #@ job_name = nometcas
 #
-#@ job_type = parallel
-#@ cpus = 128
+#@ job_type = mpich
+#@ node = 2
+#@ tasks_per_node = 6
 #@ node_usage = not_shared
+#@ class = standard
 #
 #@ network.MPI = csss,shared,US
 #@ bulkxfer = oui
 #
 #@ wall_clock_limit = 00:20:00
-#@ account_no = z001
 #
-#@ output = $(job_name).$(schedd_host).$(jobid).out
-#@ error  = $(job_name).$(schedd_host).$(jobid).err
+#@ output = $(job_name).$(jobid).out
+#@ error  = $(job_name).$(jobid).err
 #@ notification = never
 #
 #@ queue
-# suggested environment settings:
-#  export MP_EAGER_LIMIT=65536
-#  export MP_SHARED_MEMORY=oui
-#  export MEMORY_AFFINITY=MCM
-#  export MP_TASK_AFFINITY=MCM
 #
 ########################################################################
 #
@@ -250,6 +246,13 @@ export CS_HOME
 # Installation parameters
 #
 . $CS_HOME/bin/cs_profile
+#
+if [ "$NOM_ARCH" = "titane" ] ; then
+  module load gcc/4.4.0 # some gcc path necessary for icc in bach mode
+elif [ "$NOM_ARCH" = "ivanoe" ] ; then
+  module load intel_compilers/12.0.0.084
+  module load intel_mpi/4.0.1.007
+fi
 #
 # Library compatibility check
 if [ ! -f ${CS_HOME}/bin/macros_${NOM_ARCH}.mk ]
@@ -365,6 +368,10 @@ if [ -f "$TMPDIR/machines" ] ; then   # with batch system at Univ. Manchester
    MPIHOSTS="$TMPDIR/machines"
 elif [ ! -z "$PBS_NODEFILE" ] ; then  # with PBS batch system
    MPIHOSTS="$PBS_NODEFILE"
+elif [ ! -z "$LSB_MCPU_HOSTS" ] ; then
+   \rm -f $RUN/hostsfile
+   echo $LSB_MCPU_HOSTS | awk '{ for (ii = 1; ii < NF+1; ii+=2) nn = ii+1; { for (jj = 1; jj < $nn; jj++ ) print $ii }}' >> $RUN/hostsfile
+   MPIHOSTS="$RUN/hostsfile"
 elif [ ! -z "$LSB_HOSTS" ] ; then     # with LSF batch system
    \rm -f $RUN/hostsfile
    echo $LSB_HOSTS | awk '{ for (ii = 1; ii < NF+1; ++ii) print $ii }' >> $RUN/hostsfile
@@ -379,7 +386,7 @@ fi
 # Check number of processors
 if [ -z  "${NOMBRE_DE_PROCESSEURS}" ] ; then
   if [ ! -z  "${NSLOTS}" ] ; then
-    # for batch sytem at University of Manchester
+    # for Sun Grid Engine
     NOMBRE_DE_PROCESSEURS=$NSLOTS
   elif [ ! -z "${SLURM_NPROCS}" ] ; then
     # for LSF batch system with Slurm
@@ -387,8 +394,11 @@ if [ -z  "${NOMBRE_DE_PROCESSEURS}" ] ; then
   elif [ ! -z "${LSB_HOSTS}" ] ; then
     # for LSF batch system without Slurm
     NOMBRE_DE_PROCESSEURS=`echo $LSB_HOSTS | wc -w`
+  elif [ ! -z "${LOADL_TOTAL_TASKS}" ] ; then
+    # for IBM Tivoli LoadLeveler
+    NOMBRE_DE_PROCESSEURS=$LOADL_TOTAL_TASKS
   elif [ ! -z  "${MPIHOSTS}" ] ; then
-    # for batch sytme on MFEE cluster or whenever MPIHOSTS is defined
+    # where MPIHOSTS is defined
     NOMBRE_DE_PROCESSEURS=`cat $MPIHOSTS | wc -l`
   else
     NOMBRE_DE_PROCESSEURS=1
@@ -511,17 +521,14 @@ if [ $NOMBRE_DE_PROCESSEURS -gt 1 ] ; then
     export PATH=${CS_MPI_PATH}:$PATH
   fi
 #
-  if [ "$NOM_ARCH" = "OSF1" ] ; then 
-    MPIRUN="prun -n ${NOMBRE_DE_PROCESSEURS} -stv"
-#
-  elif [ "$NOM_ARCH" = "Linux_CCRT" ] ; then
-    MPIRUN="mpirun -srun"
-#
-  elif [ "$NOM_ARCH" = "Linux_IA64" ] ; then
+  if [ "$NOM_ARCH" = "platine" ] ; then
     MPIRUN="srun -n ${NOMBRE_DE_PROCESSEURS}"
 #
-  elif [ "$NOM_ARCH" = "Linux_Ch" ] ; then 
-    MPIRUN="mpirun -np ${NOMBRE_DE_PROCESSEURS} -machinefile $PBS_NODEFILE"
+  elif [ "$NOM_ARCH" = "titane" ] ; then 
+    MPIRUN="mpirun -n ${NOMBRE_DE_PROCESSEURS}"
+#
+  elif [ "$NOM_ARCH" = "ivanoe" ] ; then
+    MPIRUN="mpirun -f ${LOADL_HOSTFILE} -np ${LOADL_TOTAL_TASKS}"
 #
   else 
     if [ -d "$CS_MPI_PATH" ] ; then 

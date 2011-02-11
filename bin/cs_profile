@@ -7,7 +7,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2008 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -32,67 +32,58 @@
 # Architecture
   NOM_ARCH=`uname -s`
   if [ "$NOM_ARCH" = "Linux" ] ; then
-    if [ "`hostname | cut -c1-6`" = "tantal" ] ; then
-      NOM_ARCH=Linux_CCRT
-    elif [ "`uname -m`" = "ia64" ] ; then
-      NOM_ARCH=Linux_IA64
-    elif [ "`domainname 2>/dev/null`" = "cluster-chatou" ] ; then
-      NOM_ARCH=Linux_Ch
-    elif [ -d /bgl/BlueLight/ppcfloor ] ; then
-      NOM_ARCH=Blue_Gene_L
+    if [ $(grep -c "Calibre 7" /etc/issue) -ne 0 ] ; then
+      NOM_ARCH=calibre7
+    elif [ $(grep -c "Calibre 5" /etc/issue) -ne 0 ] ; then
+      NOM_ARCH=calibre5
     elif [ -d /bgsys/drivers/ppcfloor ] ; then
       NOM_ARCH=Blue_Gene_P
-    else
-      MACHINE=`uname -m`
-      case "$MACHINE" in
-        *86)    NOM_ARCH=Linux ;;
-        x86_64) NOM_ARCH=Linux_x86_64 ;; 
-        ia64)   NOM_ARCH=Linux_IA64 ;; 
-        *)      NOM_ARCH=Linux_$MACHINE ;;
-      esac
+    elif [ "`hostname | cut -c1-6`" = "titane" ] ; then
+      NOM_ARCH=titane
+    elif [ "`hostname | cut -c1-7`" = "platine" ] ; then
+      NOM_ARCH=platine
+    elif [ "`hostname | cut -c1-5`" = "clala" -o "`hostname`" = "clay1pfr" ] ; then
+      NOM_ARCH=clamart2
+    elif [ "`hostname | cut -c1-4`" = "noec" -o "`hostname | cut -c 1-7`" = "noeuser" ] ; then
+      NOM_ARCH=ivanoe
     fi
   fi
 
 # Code_Saturne version
 
-  if [ "$NOM_ARCH" = "Linux_CCRT" -o "$NOM_ARCH" = "Linux_IA64" ] ; then 
-    CS_ROOT=/home/cont002/saturne
-  elif [ "$NOM_ARCH" = "Blue_Gene_L" ] ; then 
-    CS_ROOT=/gpfs2/home/saturne
+  if [ "$NOM_ARCH" = "titane" -o "$NOM_ARCH" = "platine" ] ; then 
+    CS_ROOT=/home/cont002/saturne/Code_Saturne/1.3
   elif [ "$NOM_ARCH" = "Blue_Gene_P" ] ; then 
-    CS_ROOT=/gpfs/home/saturne
+    CS_ROOT=/gpfs/home/saturne/Code_Saturne/1.3
+  elif [ "$NOM_ARCH" = "calibre7" ] ; then
+    CS_ROOT=/netdata/saturne/Code_Saturne/1.3
   else
-    CS_ROOT=/home/saturne
+    CS_ROOT=/home/saturne/Code_Saturne/1.3
   fi
-  CS_HOME=${CS_ROOT}/Noyau/ncs-1.3.3
-  ECS_HOME=${CS_ROOT}/Enveloppe/ecs-1.3.3
-  CSGUI_HOME=${CS_ROOT}/Interface/ics-1.3.3
-  SYRCS_HOME=${CS_ROOT}/opt/syr_cs-2.1.1
-#
+  CS_HOME=${CS_ROOT}/Noyau/ncs-1.3.4
+  ECS_HOME=${CS_ROOT}/Enveloppe/ecs-1.3.4
+  CSGUI_HOME=${CS_ROOT}/Interface/ics-1.3.4
+  SYRCS_HOME=${CS_ROOT}/opt/syr_cs-2.1.2
+
   if [ "$NOM_ARCH" = "Linux" -a -d /home/prevalcs/HOMARD ] ; then
     CSHOMARD_HOME=/home/prevalcs/HOMARD
   else
     CSHOMARD_HOME=
   fi
-#
+
 # Path 
   PATH=$CS_HOME/bin:$ECS_HOME/bin:$PATH
-
-# Libraries for the GUI (if necessary)
-  if [ -d ${CS_ROOT}/opt/libxml2-2.6.19/arch/${NOM_ARCH}/lib ] ; then
-    LD_LIBRARY_PATH=$CS_ROOT/opt/libxml2-2.6.19/arch/$NOM_ARCH/lib:$LD_LIBRARY_PATH
-  fi
 
 # Export variables
   export NOM_ARCH CS_ROOT CS_HOME ECS_HOME CSGUI_HOME
   export SYRCS_HOME CSHOMARD_HOME
-  export PATH LD_LIBRARY_PATH
+  export PATH
 
 # Paths and libraries for MPI
-  if [ "$NOM_ARCH" = "Linux" -o "$NOM_ARCH" = "Linux_x86_64" ] ; then
-    CS_MPI_PATH=/home/saturne/opt/openmpi-1.2.6/arch/$NOM_ARCH/bin
-  elif [ "$NOM_ARCH" = "Linux_Ch" ] ; then
-    CS_MPI_PATH=/usr/local/mpichgm-1.2.6.14b-64b/bin
+  if [ "$NOM_ARCH" = "calibre7" ] ; then
+    CS_MPI_PATH=/usr/lib/openmpi/bin
+  elif [ "$NOM_ARCH" = "calibre5" ] ; then
+    CS_MPI_PATH=/home/saturne/opt/openmpi-1.4/arch/$NOM_ARCH/bin
   else
     CS_MPI_PATH=
   fi

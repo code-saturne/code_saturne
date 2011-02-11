@@ -1,3 +1,30 @@
+* 11/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Updated install environment to preferentially use named machines.
+  This also includes replacing the /home/saturne install prefix
+  by /home/saturne/Code_Saturne/1.3, and bumping the version number
+  to 1.3.4.
+  modified files:
+    bin/cs_profile
+    bin/lance
+    bin/macros_Darwin.mk
+    bin/macros_Linux.mk
+    bin/Makefile
+    bin/macros_Blue_Gene_P.mk
+    doc/style/csdoc.sty
+  added files:
+    bin/macros_calibre5.mk
+    bin/macros_calibre7.mk
+    bin/macros_clamart2.mk
+    bin/macros_ivanoe.mk
+    bin/macros_platine.mk
+    bin/macros_titane.mk
+  moved files:
+    bin/macros_Linux_Ch.mk moved to aux/macros_old/
+    bin/macros_Blue_Gene_L.mk moved to aux/macros_old/
+  removed files:
+    bin/macros_Linux_x86_64.mk
+    bin/macros_Linux_IA64.mk
+
 * 10/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Correctly determine MPI rank on Open MPI versions > 1.2.
   modified script:

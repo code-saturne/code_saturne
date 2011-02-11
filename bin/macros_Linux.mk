@@ -7,7 +7,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2008 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -35,7 +35,7 @@
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.0.8/arch/Linux
+BFT_HOME        =/home/saturne/opt/bft-1.1/arch/Linux
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.12.0/arch/Linux
+FVM_HOME        =/home/saturne/opt/fvm-0.15/arch/Linux
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -57,7 +57,7 @@ MPE             =0
 MPE_COMM        =0
 
 # For Open MPI on saturne
-MPI_HOME        =/home/saturne/opt/openmpi-1.2.6/arch/Linux
+MPI_HOME        =/usr/lib/openmpi
 MPI_INC         =-I$(MPI_HOME)/include
 MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 
@@ -110,7 +110,7 @@ PREPROCFLAGS    =
 # C compiler
 #-----------
 
-CCOMP                  = /home/saturne/opt/gcc-4.3.1/arch/Linux/bin/gcc
+CCOMP                  = gcc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -131,7 +131,7 @@ CCOMPFLAGSVERS         = -v
 #-----------------
 #  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.3.1/arch/Linux/bin/gfortran
+FTNCOMP                = gfortran
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -157,7 +157,7 @@ LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.3.1/arch/Linux/lib:
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,:
 
 
 # Set preprocessor variables
@@ -188,7 +188,7 @@ LIBDBG   =
 
 # Library in ElectricFence (malloc debugger) mode
 
-LIBEF    =-L/home/saturne/opt/efence-2.1.14/arch/Linux/lib -lefence
+LIBEF    =-lefence
 
 # Optional lists of files to compile with specific options
 #---------------------------------------------------------
@@ -203,12 +203,8 @@ LIBEF    =-L/home/saturne/opt/efence-2.1.14/arch/Linux/lib -lefence
 #    for others, we prefer O2, less risky, but slightly slower
 #
 # The file lists below correspond to different optimization levels
-#
-#  Temporarily, gradmc is compiled with O1 to bypass a potential optimization bug
-#       with gcc 3.3.2 (resolved with 3.3.3)
-#
 
 LISTE_OPT_PART1 = gradco.F gradrc.F jacobi.F prcpol.F promav.F cs_matrix.c cs_sles.c
 LISTE_OPT_PART2 = prodsc.F prods2.F prods3.F cs_blas.c cs_benchmark.c
-LISTE_OPT_PART3 = gradmc.F
+LISTE_OPT_PART3 =
 
