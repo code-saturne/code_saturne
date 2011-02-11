@@ -8,7 +8,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2008 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -61,13 +61,15 @@ elif [ "$SCAMPI_PROCESS_PARAM" != "" ] ; then
 
 # For MPICH2 (it also provides the mpiexec command)
 elif [ "$PMI_RANK" != "" ] ; then
-  MPI_RANK="$PMI_RANK" 
+  MPI_RANK="$PMI_RANK"
 
 # For Open MPI (it also provides the mpiexec command)
-elif [ "$OMPI_MCA_ns_nds_vpid" != "" ] ; then
+elif [ "$OMPI_MCA_ns_nds_vpid" != "" ] ; then # Open MPI 1.2
   MPI_RANK="$OMPI_MCA_ns_nds_vpid"
+elif [ "$OMPI_COMM_WORLD_RANK" != "" ] ; then # Open MPI 1.3
+  MPI_RANK="$OMPI_COMM_WORLD_RANK"
 
-# For LAM 7.1 (an appscheme can also be used)
+# For LAM 7.1 (an appschema can also be used)
 elif [ "$LAMRANK" != "" ] ; then
   MPI_RANK="$LAMRANK"
 
