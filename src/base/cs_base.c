@@ -558,10 +558,6 @@ void cs_base_mem_init
 
   /* Initialisation du comptage mémoire */
 
-#if defined(_CS_ARCH_Linux)
-  bft_mem_usage_set_options(BFT_MEM_USAGE_TRACK_PR_SIZE |
-                            BFT_MEM_USAGE_TRACK_ALLOC_SIZE);
-#endif
   bft_mem_usage_init();
 
   /* Initialisation de la gestion mémoire */
@@ -600,21 +596,19 @@ void cs_base_mem_fin
 )
 {
   int        ind_bil, itot;
-  cs_real_t  valreal[4];
+  cs_real_t  valreal[2];
 
 #if defined(_CS_HAVE_MPI)
   int                imax, imin;
-  cs_mpi_real_int_t  val_in[4], val_min[4], val_max[4];
-  cs_real_t          val_somme[4];
-  cs_int_t           ind_min[4];
+  cs_mpi_real_int_t  val_in[2], val_min[2], val_max[2];
+  cs_real_t          val_somme[2];
+  cs_int_t           ind_min[2];
 #endif
 
-  cs_int_t   ind_val[4] = {1, 1, 1, 1};
+  cs_int_t   ind_val[2] = {1, 1};
   char       unite[]    = {'k', 'm', 'g', 't', 'p'};
 
   const char  * type_bil[] = {N_("Total memory used:                       "),
-                              N_("Memory reported by C library:            "),
-                              N_("Memory allocated in heap:                "),
                               N_("Theoretical instrumented dynamic memory: ")};
 
   /* Bilan mémoire */
@@ -622,36 +616,31 @@ void cs_base_mem_fin
   bft_printf(_("\nMemory use summary:\n\n"));
 
   valreal[0] = (cs_real_t) bft_mem_usage_max_pr_size();
-  valreal[1] = (cs_real_t) bft_mem_usage_max_alloc_size();
-  valreal[2] = (cs_real_t) bft_mem_usage_max_heap_size();
-  valreal[3] = (cs_real_t) bft_mem_size_max();
+  valreal[1] = (cs_real_t) bft_mem_size_max();
 
   /* On ignorera les mesures non cohérentes */
 
-  if (valreal[2] < valreal[1] || valreal[2] < valreal[3])
-    ind_val[2] = 0;
-
-  for (ind_bil = 0 ; ind_bil < 4 ; ind_bil++) {
+  for (ind_bil = 0 ; ind_bil < 2 ; ind_bil++) {
     if (valreal[ind_bil] < 1.0)
       ind_val[ind_bil] = 0;
   }
 
 #if defined(_CS_HAVE_MPI)
   if (cs_glob_base_nbr > 1) {
-    MPI_Reduce (ind_val, ind_min, 4, CS_MPI_INT, MPI_MIN,
+    MPI_Reduce (ind_val, ind_min, 2, CS_MPI_INT, MPI_MIN,
                 0, cs_glob_base_mpi_comm);
-    MPI_Reduce (valreal, val_somme, 4, CS_MPI_REAL, MPI_SUM,
+    MPI_Reduce (valreal, val_somme, 2, CS_MPI_REAL, MPI_SUM,
                 0, cs_glob_base_mpi_comm);
-    for (ind_bil = 0 ; ind_bil < 4 ; ind_bil++) {
+    for (ind_bil = 0 ; ind_bil < 2 ; ind_bil++) {
       val_in[ind_bil].val = valreal[ind_bil];
       val_in[ind_bil].rang = cs_glob_base_rang;
     }
-    MPI_Reduce (&val_in, &val_min, 4, CS_MPI_REAL_INT, MPI_MINLOC,
+    MPI_Reduce (&val_in, &val_min, 2, CS_MPI_REAL_INT, MPI_MINLOC,
                 0, cs_glob_base_mpi_comm);
-    MPI_Reduce (&val_in, &val_max, 4, CS_MPI_REAL_INT, MPI_MAXLOC,
+    MPI_Reduce (&val_in, &val_max, 2, CS_MPI_REAL_INT, MPI_MAXLOC,
                 0, cs_glob_base_mpi_comm);
     if (cs_glob_base_rang == 0) {
-      for (ind_bil = 0 ; ind_bil < 4 ; ind_bil++) {
+      for (ind_bil = 0 ; ind_bil < 2 ; ind_bil++) {
         ind_val[ind_bil]  = ind_min[ind_bil];
         valreal[ind_bil] = val_somme[ind_bil];
       }
@@ -662,7 +651,7 @@ void cs_base_mem_fin
 
   /* Traitement semblable pour les diverses méthodes d'instrumentation */
 
-  for (ind_bil = 0 ; ind_bil < 4 ; ind_bil++) {
+  for (ind_bil = 0 ; ind_bil < 2 ; ind_bil++) {
 
     /* Si une méthode d'instrumentation fournit un résultat
        qui semble cohérent, on l'affiche */
