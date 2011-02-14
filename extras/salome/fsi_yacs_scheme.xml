@@ -1,0 +1,457 @@
+<proc>
+  <!-- -->
+  <!-- declaration des types utilises (declaration inutile au 08/04/08 ?) -->
+  <objref name="CALCIUM_integer"/>
+  <objref name="CALCIUM_double"/>
+  <objref name="CALCIUM_string"/>
+  <!-- -->
+  <!-- -->
+  <!-- il est recommande de generer 1 container par code -->
+
+  <container name="FSI_ASTER">
+    <property name="workingdir" value= "AST_WORKINGDIR"/>
+  </container>
+
+  <container name="FSI_MILIEU">
+    <property name="workingdir" value= "COCAS_WORKINGDIR"/>
+  </container>
+
+  <container name="FSI_CFD">
+    <property name="workingdir" value= "CFD_WORKINGDIR"/>
+  </container>
+
+  <!-- -->
+  <!-- creation du service solid_service lie a Code_Aster (ne pas utiliser le nom "aster" reserve par YACS => "caster") -->
+  <service name="solid_service" >
+    <component>FSI_ASTER</component>
+
+    <!-- op0103 = programme aster agissant comme point d'entree de YACS  -->
+    <method>op0103</method>
+    <load container="FSI_ASTER"/>
+
+    <!-- Si Aster => a laisser tel quel obligatoirement-->
+    <inport name="jdc" type="string"/>
+
+    <!-- fort.20 = file aster pour le .mail -->
+    <inport name="fort:20" type="file"/>
+
+    <!-- definition des variables Aster echangees via un "call cp****" dans les SSP fortran -->
+    <outstream name="DEPAST" type="CALCIUM_double"/>
+    <outstream name="VITAST" type="CALCIUM_double"/>
+    <outstream name="DTAST" type="CALCIUM_double"/>
+    <instream name="DTCALC" type="CALCIUM_double"/>
+    <instream name="NB_DYN" type="CALCIUM_integer"/>
+    <instream name="NB_FOR" type="CALCIUM_integer"/>
+    <instream name="COONOD" type="CALCIUM_double"/>
+    <instream name="COOFAC" type="CALCIUM_double"/>
+    <instream name="COLNOD"  type="CALCIUM_integer"/>
+    <instream name="COLFAC" type="CALCIUM_integer"/>
+    <instream name="NBPDTM" type="CALCIUM_integer"/>
+    <instream name="NBSSIT" type="CALCIUM_integer"/>
+    <instream name="EPSILO" type="CALCIUM_double"/>
+    <instream name="ISYNCP" type="CALCIUM_integer"/>
+    <instream name="NTCHRO" type="CALCIUM_integer"/>
+    <instream name="TTINIT" type="CALCIUM_double"/>
+    <instream name="PDTREF" type="CALCIUM_double"/>
+    <instream name="FORAST" type="CALCIUM_double"/>
+    <instream name="ICVAST" type="CALCIUM_integer"/>
+  </service>
+
+  <inline name="ljdc" >
+    <script>
+      <code>f=open(comm)</code>
+      <code>jdc=f.read()</code>
+      <code>f.close()</code>
+    </script>
+    <inport name="comm" type="string"/>
+    <outport name="jdc" type="string"/>
+  </inline>
+
+  <!-- creation du service inter_service relie a milieu  -->
+  <service name="inter_service" >
+    <component>FSI_MILIEU</component>
+    <!-- inter_run = programme milieu agissant comme point d'entree de YACS  -->
+    <method>inter_run</method>
+    <load container="FSI_MILIEU"/>
+
+    <!-- definition des variables de type 'inport'  -->
+    <inport name="NBPDTM" type="int"/>
+    <inport name="NBSSIT" type="int"/>
+    <inport name="ISYNCP" type="int"/>
+    <inport name="NTCHR" type="int"/>
+    <inport name="DTREF" type="double"/>
+    <inport name="TTINIT" type="double"/>
+    <inport name="EPSILO" type="double"/>
+    <!-- definition des variables echangees -->
+    <!-- outstream -->
+    <!-- double -->
+    <outstream name="DTCALC" type="CALCIUM_double"/>
+    <outstream name="EPSILO" type="CALCIUM_double"/>
+    <outstream name="TTINIT" type="CALCIUM_double"/>
+    <outstream name="PDTREF" type="CALCIUM_double"/>
+    <outstream name="DEPSAT" type="CALCIUM_double"/>
+    <outstream name="FORAST" type="CALCIUM_double"/>
+    <!-- integer -->
+    <outstream name="NBPDTM" type="CALCIUM_integer"/>
+    <outstream name="NBSSIT" type="CALCIUM_integer"/>
+    <outstream name="ISYNCP" type="CALCIUM_integer"/>
+    <outstream name="NTCHRO" type="CALCIUM_integer"/>
+    <outstream name="ICVEXT" type="CALCIUM_integer"/>
+    <outstream name="ICVAST" type="CALCIUM_integer"/>
+    <outstream name="NB_DYN" type="CALCIUM_integer"/>
+    <outstream name="NB_FOR" type="CALCIUM_integer"/>
+    <!-- instream -->
+    <!-- double -->
+    <instream name="ALMAXI" type="CALCIUM_double"/>
+    <instream name="DTSAT" type="CALCIUM_double"/>
+    <instream name="DTAST" type="CALCIUM_double"/>
+    <instream name="DEPAST" type="CALCIUM_double"/>
+    <instream name="VITAST" type="CALCIUM_double"/>
+    <instream name="FORSAT" type="CALCIUM_double"/>
+    <!-- integer -->
+    <instream name="DONGEO" type="CALCIUM_integer"/>
+    <instream name="ICV" type="CALCIUM_integer"/>
+  </service>
+
+  <!-- creation du service fluid_service relie a milieu  -->
+  <service name="fluid_service" >
+    <component>FSI_SATURNE</component>
+    <!-- inter_run = programme milieu agissant comme point d'entree de YACS  -->
+    <method>spawn_run</method>
+    <load container="FSI_CFD"/>
+
+    <!-- definition des ports -->
+    <inport name="exec_dir" type="string"/>
+    <inport name="optional_launcher" type="string"/>
+    <inport name="executable" type="string"/>
+    <inport name="args" type="string"/>
+    <outport name="retval" type='long' />
+    <!-- definition des variables echangees -->
+    <!-- outstream -->
+    <!-- double -->
+    <outstream name="DTSAT" type="CALCIUM_double"/>
+    <outstream name="FORSAT" type="CALCIUM_double"/>
+    <outstream name="ALMAXI" type="CALCIUM_double"/>
+    <outstream name="COONOD" type="CALCIUM_double"/>
+    <outstream name="COOFAC" type="CALCIUM_double"/>
+    <!-- integer -->
+    <outstream name="ICV" type="CALCIUM_integer"/>
+    <outstream name="DONGEO" type="CALCIUM_integer"/>
+    <outstream name="COLNOD" type="CALCIUM_integer"/>
+    <outstream name="COLFAC" type="CALCIUM_integer"/>
+    <!-- instream -->
+    <!-- double -->
+    <instream name="DEPSAT" type="CALCIUM_double"/>
+    <instream name="EPSILO" type="CALCIUM_double"/>
+    <instream name="DTCALC" type="CALCIUM_double"/>
+    <instream name="TTINIT" type="CALCIUM_double"/>
+    <instream name="PDTREF" type="CALCIUM_double"/>
+    <!-- integer -->
+    <instream name="NBPDTM" type="CALCIUM_integer"/>
+    <instream name="NBSSIT" type="CALCIUM_integer"/>
+    <instream name="ISYNCP" type="CALCIUM_integer"/>
+    <instream name="NTCHRO" type="CALCIUM_integer"/>
+    <instream name="ICVEXT" type="CALCIUM_integer"/>
+  </service>
+  <!-- fin de la creation des services  -->
+  <!-- Declarations des correspondances entre les variables echangees pour le couplage Code_Saturne/Code_Aster -->
+  <!-- sens de definition des variables 'from'->'to' : on traite les variables sortantes -->
+  <!-- chaque service defini plus haut est un 'node' -->
+  <!-- chaque stream designant la variable est un 'port' -->
+
+  <!-- traitement du service inter_service -->
+  <!-- -->
+  <!-- variables "double" -->
+  <!-- -->
+  <!-- dtcalc -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>DTCALC</fromport>
+    <tonode>solid_service</tonode><toport>DTCALC</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>DTCALC</fromport>
+    <tonode>fluid_service</tonode><toport>DTCALC</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- epsilo -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>EPSILO</fromport>
+    <tonode>solid_service</tonode><toport>EPSILO</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>EPSILO</fromport>
+    <tonode>fluid_service</tonode><toport>EPSILO</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- ttinit -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>TTINIT</fromport>
+    <tonode>solid_service</tonode><toport>TTINIT</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>TTINIT</fromport>
+    <tonode>fluid_service</tonode><toport>TTINIT</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- pdtref -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>PDTREF</fromport>
+    <tonode>solid_service</tonode><toport>PDTREF</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>PDTREF</fromport>
+    <tonode>fluid_service</tonode><toport>PDTREF</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- depsat -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>DEPSAT</fromport>
+    <tonode>fluid_service</tonode><toport>DEPSAT</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- forast -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>FORAST</fromport>
+    <tonode>solid_service</tonode><toport>FORAST</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <!-- variables "integer" -->
+  <!-- -->
+  <!-- nbpdtm -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>NBPDTM</fromport>
+    <tonode>solid_service</tonode><toport>NBPDTM</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>NBPDTM</fromport>
+    <tonode>fluid_service</tonode><toport>NBPDTM</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- nbssit -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>NBSSIT</fromport>
+    <tonode>solid_service</tonode><toport>NBSSIT</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>NBSSIT</fromport>
+    <tonode>fluid_service</tonode><toport>NBSSIT</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- isyncp -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>ISYNCP</fromport>
+    <tonode>solid_service</tonode><toport>ISYNCP</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>ISYNCP</fromport>
+    <tonode>fluid_service</tonode><toport>ISYNCP</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- ntchro -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>NTCHRO</fromport>
+    <tonode>solid_service</tonode><toport>NTCHRO</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>NTCHRO</fromport>
+    <tonode>fluid_service</tonode><toport>NTCHRO</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- icvext -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>ICVEXT</fromport>
+    <tonode>fluid_service</tonode><toport>ICVEXT</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- icvast -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>ICVAST</fromport>
+    <tonode>solid_service</tonode><toport>ICVAST</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- nb_dyn -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>NB_DYN</fromport>
+    <tonode>solid_service</tonode><toport>NB_DYN</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- nb_for -->
+  <stream>
+    <fromnode>inter_service</fromnode><fromport>NB_FOR</fromport>
+    <tonode>solid_service</tonode><toport>NB_FOR</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <!-- -->
+  <!-- traitement du service fluid_service -->
+  <!-- -->
+  <!-- variables "double" -->
+  <!-- -->
+  <!-- dtsat -->
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>DTSAT</fromport>
+    <tonode>inter_service</tonode><toport>DTSAT</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- forsat -->
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>FORSAT</fromport>
+    <tonode>inter_service</tonode><toport>FORSAT</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- almaxi -->
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>ALMAXI</fromport>
+    <tonode>inter_service</tonode><toport>ALMAXI</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- coonod -->
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>COONOD</fromport>
+    <tonode>solid_service</tonode><toport>COONOD</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- coofac -->
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>COOFAC</fromport>
+    <tonode>solid_service</tonode><toport>COOFAC</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <!-- variables "integer" -->
+  <!-- -->
+  <!-- icv -->
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>ICV</fromport>
+    <tonode>inter_service</tonode><toport>ICV</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- dongeo -->
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>DONGEO</fromport>
+    <tonode>inter_service</tonode><toport>DONGEO</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- dongeo -->
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>COLNOD</fromport>
+    <tonode>solid_service</tonode><toport>COLNOD</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- dongeo -->
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>COLFAC</fromport>
+    <tonode>solid_service</tonode><toport>COLFAC</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <!-- -->
+  <!-- traitement du service solid_service -->
+  <!-- -->
+  <!-- variables "double" -->
+  <!-- -->
+  <!-- depast -->
+  <stream>
+    <fromnode>solid_service</fromnode><fromport>DEPAST</fromport>
+    <tonode>inter_service</tonode><toport>DEPAST</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- vitast -->
+  <stream>
+    <fromnode>solid_service</fromnode><fromport>VITAST</fromport>
+    <tonode>inter_service</tonode><toport>VITAST</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- dtast -->
+  <stream>
+    <fromnode>solid_service</fromnode><fromport>DTAST</fromport>
+    <tonode>inter_service</tonode><toport>DTAST</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+  <!-- -->
+  <!-- pas de variables de type "integer" en sortie de solid_service -->
+  <!-- -->
+
+  <datalink>
+    <fromnode>ljdc</fromnode><fromport>jdc</fromport>
+    <tonode>solid_service</tonode><toport>jdc</toport>
+  </datalink>
+
+  <!-- Code_Aster mesh, to be read from fort.20 file (previously defined)) -->
+  <parameter>
+    <tonode>solid_service</tonode> <toport>fort:20</toport>
+    <value><objref>AST_MAIL</objref> </value>
+  </parameter>
+  <!-- -->
+  <!-- -->
+  <!-- Indication des parametres necessaires a Code_Saturne -->
+  <parameter>
+    <tonode>fluid_service</tonode> <toport>exec_dir</toport>
+    <value><string>CFD_WORKINGDIR</string></value>
+  </parameter>
+  <parameter>
+    <tonode>fluid_service</tonode> <toport>optional_launcher</toport>
+    <value><string>CFD_PROXY_OPT_LAUNCH</string></value>
+  </parameter>
+  <parameter>
+    <tonode>fluid_service</tonode> <toport>executable</toport>
+    <value><string>CFD_PROXY_EXEC</string></value>
+  </parameter>
+  <parameter>
+    <tonode>fluid_service</tonode> <toport>args</toport>
+    <value><string>CFD_PROXY_ARGS</string></value>
+  </parameter>
+  <!-- -->
+  <!-- -->
+  <!-- Indication des parametres necessaires a inter_cs_ast -->
+  <parameter>
+    <tonode>inter_service</tonode> <toport>NBPDTM</toport>
+    <value><int>NBPDTM_IN</int></value>
+  </parameter>
+  <parameter>
+    <tonode>inter_service</tonode> <toport>NBSSIT</toport>
+    <value><int>NBSSIT_IN</int></value>
+  </parameter>
+  <parameter>
+    <tonode>inter_service</tonode> <toport>ISYNCP</toport>
+    <value><int>ISYNCP_IN</int></value>
+  </parameter>
+  <parameter>
+    <tonode>inter_service</tonode> <toport>NTCHR</toport>
+    <value><int>NTCHR_IN</int></value>
+  </parameter>
+  <parameter>
+    <tonode>inter_service</tonode> <toport>DTREF</toport>
+    <value><double>DTREF_IN</double></value>
+  </parameter>
+  <parameter>
+    <tonode>inter_service</tonode> <toport>TTINIT</toport>
+    <value><double>TTINIT_IN</double></value>
+  </parameter>
+  <parameter>
+    <tonode>inter_service</tonode> <toport>EPSILO</toport>
+    <value><double>EPSILO_IN</double></value>
+  </parameter>
+  <parameter>
+    <tonode>ljdc</tonode><toport>comm</toport>
+    <value><string>COMM_FNAME_IN</string> </value>
+  </parameter>
+
+</proc>

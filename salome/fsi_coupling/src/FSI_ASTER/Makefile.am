@@ -24,4 +24,16 @@ include $(top_srcdir)/config/salome_module.mk
 
 MODULE_NAME = FSI
 
-salomepython_PYTHON= FSI_ASTER.py
+edit_python = sed \
+	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g'
+
+FSI_ASTER.py: Makefile
+	rm -f $@ $@.tmp
+	srcdir=''; \
+	test -f ./$@.in || srcdir=$(srcdir)/; \
+	$(edit_python) $${srcdir}$@.in >$@.tmp
+	mv $@.tmp $@
+
+FSI_ASTER.py: $(srcdir)/FSI_ASTER.py.in 
+
+nodist_salomepython_PYTHON= FSI_ASTER.py

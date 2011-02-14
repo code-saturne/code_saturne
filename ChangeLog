@@ -1,3 +1,22 @@
+* 14/02/2011 - David Monfort <david.monfort@edf.fr>
+  Add Code_Aster coupling study management.
+  added scripts:
+     bin/runcase_aster.in
+     extras/salome/fsi_appli_config.xml.in
+     extras/salome/fsi_yacs_scheme.xml
+  added routine:
+     salome/fsi_coupling/src/FSI_ASTER/FSI_ASTER.py.in
+  removed routine:
+     salome/fsi_coupling/src/FSI_ASTER/FSI_ASTER.py
+  modified scripts:
+     bin/cs_create.py
+     configure.ac
+     extras/code_saturne.cfg
+     extras/salome/fsi_yacsgen.py
+     m4/cs_salome.m4
+     Makefile.am
+     salome/fsi_coupling/src/FSI_ASTER/Makefile.am
+
 * 09/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fixed bug coausing removal of contents of symbolic links.
     bin/cs_case_domain.py

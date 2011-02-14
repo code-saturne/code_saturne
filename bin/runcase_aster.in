@@ -1,0 +1,157 @@
+#!/bin/sh
+#============================================================================
+#
+#     This file is part of the Code_Saturne Kernel, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 2010-2011 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne Kernel is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne Kernel is distributed in the hope that it will be
+#     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#============================================================================
+#
+echo  "  ********************************************"
+echo  "      Code_Saturne / Code_Aster coupling      "
+echo  "  ********************************************"
+echo
+#
+# Parameters common to Code_Saturne and Code_Aster
+#
+NBPDTM=10
+NBSSIT=1
+ISYNCP=0
+NTCHR=10
+DTREF=0.0001
+TTINIT=0.0
+EPSILO=0.00001
+#
+# Code_Saturne parameters
+#
+SAT_NAME=CASENAME
+#
+SAT_PARAM=
+SAT_MESH=
+#
+# Code_Aster parameters
+#
+AST_NAME=ASTERNAME
+#
+AST_COMM=
+AST_MESH=
+#
+# =====================================================
+# Initialization
+# =====================================================
+#
+USER=`whoami`
+DATE=`date '+%m%d%H%M'`
+#
+STUDY=CASEDIRNAME
+TMP_PREFIX=/tmp
+WORKDIR=tmp_COCAS
+#
+# Code_Saturne installation parameters
+#
+prefix=@prefix@
+bindir=@bindir@
+pkgdatadir=@pkgdatadir@
+#
+# SALOME
+#
+salomeroot=@ROOT_SALOME@
+salomekernelbindir=@KERNEL_ROOT_DIR@/bin/salome
+#
+# =====================================================
+# Starting calculation
+# =====================================================
+#
+echo
+echo  "  ********************************************"
+echo  "               Starting calculation           "
+echo  "  ********************************************"
+echo
+#
+# Working directory
+#
+RUN=$TMP_PREFIX/$DATE
+mkdir -p $RUN
+cd $RUN
+#
+# Creating YACS coupling scheme
+# =============================
+#
+echo "Creating YACS coupling scheme"
+#
+awk '{
+       gsub(/AST_WORKINGDIR/,"'"$AST_WORKDIR"'",$0);
+       gsub(/COCAS_WORKINGDIR/,"'"$COCAS_WORKDIR"'",$0);
+       gsub(/CFD_WORKINGDIR/,"'"$CFD_PROXY_WORKDIR"'",$0);
+       gsub(/AST_MAIL/,"'"$MESH_AST_GLOB_NAME"'",$0);
+       gsub(/CFD_PROXY_EXEC/,"'"$CFD_PROXY_EXE"'",$0);
+       gsub(/CFD_PROXY_ARGS/,"'"$CFD_ARGS"'",$0);
+       gsub(/CFD_PROXY_OPT_LAUNCH/,"'"$CFD_LAUNCH"'",$0);
+       gsub(/NBPDTM_IN/,"'"$NBPDTM"'",$0);
+       gsub(/NBSSIT_IN/,"'"$NBSSIT"'",$0);
+       gsub(/ISYNCP_IN/,"'"$ISYNCP"'",$0);
+       gsub(/NTCHR_IN/,"'"$NTCHR"'",$0);
+       gsub(/DTREF_IN/,"'"$DTREF"'",$0);
+       gsub(/TTINIT_IN/,"'"$TTINIT"'",$0);
+       gsub(/EPSILO_IN/,"'"$EPSILO"'",$0);
+       gsub(/COMM_FNAME_IN/,"'"$STUDY/AST_NAME/$CMD_AST"'",$0);
+       print
+    }' \
+    ${pkgdatadir}/salome/fsi_yacs_scheme.xml > fsi_yacs_scheme.xml
+#
+# Creating SALOME application
+# ===========================
+#
+appli=$RUN/appli
+#
+$salomekernelbindir/appli_gen.py --prefix=$appli --config=$pkgdatadir/salome/fsi_appli_config.xml
+#
+# Kill any existing Salome jobs
+#
+localexec=$RUN/localexec
+echo '#!/bin/sh' > $localexec
+echo 'export ROOT_SALOME='$salomeroot >> $localexec
+echo 'appli='$appli >> $localexec
+echo '$appli/runSession killSalome.py' >> $localexec
+echo 'unset PYTHONHOME' >> $localexec
+echo '$appli/runAppli -t' >> $localexec
+echo '$appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml' >> $localexec
+echo "exit \$?" >> $localexec
+chmod 700 $localexec
+#
+echo
+echo  "  ********************************************"
+echo  "               End of calculation            "
+echo  "  ********************************************"
+echo
+#
+# =====================================================
+# End of calculation, copying results...
+# =====================================================
+#
+echo "Copying results in $STUDY/RESU_COUPLING/$SUFFIX"
+#
+cd $STUDY/RESU_COUPLING
+#
+# Create a specific directory in 'RESU'
+#
+#mkdir $DATE

@@ -142,7 +142,10 @@ edit_config = sed \
 	-e 's|@FCLIBS[@]|$(FCLIBS)|g' \
 	-e 's|@USE_NLS[@]|$(USE_NLS)|g' \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
-	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g'
+	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g' \
+	-e 's|@KERNEL_ROOT_DIR[@]|$(KERNEL_ROOT_DIR)|g' \
+	-e 's|@ROOT_SALOME[@]|$(ROOT_SALOME)|g' \
+	-e 's|@SALOME_VERSION[@]|$(SALOME_VERSION)|g'
 
 bin/code_saturne bin/runcase bin/runcase_coupling: Makefile
 	rm -f $@ $@.tmp
@@ -151,7 +154,7 @@ bin/code_saturne bin/runcase bin/runcase_coupling: Makefile
 	$(edit_python) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
 
-bin/cs_package.py: Makefile
+bin/cs_package.py bin/runcase_aster: Makefile
 	rm -f $@ $@.tmp
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
@@ -161,6 +164,7 @@ bin/cs_package.py: Makefile
 bin/code_saturne: $(srcdir)/bin/code_saturne.in 
 bin/cs_package.py: $(srcdir)/bin/cs_package.py.in 
 bin/runcase: $(srcdir)/bin/runcase.in 
+bin/runcase_aster: $(srcdir)/bin/runcase_aster.in 
 bin/runcase_coupling: $(srcdir)/bin/runcase_coupling.in 
 
 CLEANFILES = $(edit_scripts)
@@ -196,6 +200,7 @@ bin/cs_script.py
 
 nodist_pkgdata_DATA = \
 bin/runcase \
+bin/runcase_aster \
 bin/runcase_coupling \
 bin/SaturneGUI
 
@@ -249,6 +254,15 @@ extras/bash_completion/code_saturne
 
 sysconf_DATA = \
 extras/code_saturne.cfg
+
+# Install SALOME related files
+
+salomedir = ${pkgdatadir}/salome
+salome_DATA = \
+extras/salome/fsi_yacs_scheme.xml
+
+nodist_salome_DATA = \
+extras/salome/fsi_appli_config.xml
 
 # Finish user files installation
 # - tag with the package version number

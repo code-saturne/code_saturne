@@ -29,10 +29,16 @@ AC_DEFUN([CS_AC_TEST_SALOME], [
 CS_AC_TEST_SALOME_KERNEL
 CS_AC_TEST_SALOME_GUI
 
+
 AS_IF([test $cs_have_salome_kernel = yes -o $cs_have_salome_gui = yes],
       [CS_AC_TEST_OMNIORB
        CS_AC_TEST_CORBA
-       CS_AC_TEST_BOOST])
+       CS_AC_TEST_BOOST
+       AC_SUBST(ROOT_SALOME)
+       AC_SUBST(KERNEL_ROOT_DIR)
+       AC_SUBST(GUI_ROOT_DIR)
+       AC_SUBST(YACS_ROOT_DIR)
+       AC_SUBST(SALOME_VERSION, [`basename $KERNEL_ROOT_DIR|sed -e 's/KERNEL_//' -`])])
 
 CS_AC_TEST_SPHINX
 

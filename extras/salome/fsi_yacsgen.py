@@ -29,10 +29,7 @@ from module_generator import ASTERComponent, CPPComponent
 
 asterdir = "### TO BE MODIFIED - asterdir ###"
 asterpyt = "### TO BE MODIFIED - asterpyt ###"
-asterarg = ["salome_aster",
-            "-memjeveux", "64",
-            "-mxmemdy", "64",
-            "-rep_outils", "### TO BE MODIFIED - asteroutil ###"]
+asterarg = ["### TO BE MODIFIED - asterarg ###"]
 
 cfdproxyinc = "-I$(top_srcdir)/salome/cfd_proxy"
 cfdproxylib = "$(top_builddir)/salome/cfd_proxy/libcfdproxy.la"

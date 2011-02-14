@@ -7,13 +7,51 @@ import SALOME
 import linecache
 import shutil
 
-sys.path=sys.path+['### TO BE MODIFIED - asterpyt ###']
+# Trick so that one doesn't have to set the PYTHONPATH variable
+cspath = '@pkgpythondir@'
+if os.path.isdir(cspath) and not cspath in sys.path:
+    sys.path.insert(0, cspath)
+
+import ConfigParser
+from cs_package import package
+
+config = ConfigParser.ConfigParser()
+pkg = package()
+config.read([pkg.get_configfile(), os.path.expanduser('~/.' + pkg.configfile)])
+
+# Code_Aster installation directory
+if not config.has_option('install', 'aster') and not config.has_option('install', 'aster_vers'):
+  sys.stderr.write("Cannot locate Code_Aster installation.\n")
+  sys.exit(1)
+else:
+  aster_dir = os.path.join(config.get('install', 'aster'),
+                           config.get('install', 'aster_vers'))
+
+# Code_Aster Python library files
+if config.has_option('install', 'aster_bibpyt'):
+  sys.path.insert(0, config.get('install', 'aster_bibpyt'))
+else:
+  sys.path.insert(0, os.path.join(aster_dir, 'bibpyt'))
+
+# Code_Aster tools location
+if config.has_option('install', 'aster_outils'):
+  aster_outils = config.get('install', 'aster_outils')
+else:
+  aster_outils = os.path.join(config.get('install', 'aster'), 'outils')
+
+# Code_Aster command line arguments
+if config.has_option('install', 'aster_args'):
+  aster_args = config.get('install', 'aster_args')
+else:
+  aster_args = ["salome_aster",
+                "-memjeveux", "64",
+                "-mxmemdy", "64",
+                "-rep_outils", aster_outils]
+
 import aster
 import Accas
 import Cata.cata
 from Execution.E_SUPERV import SUPERV
-
-aster_dir="### TO BE MODIFIED - asterdir ###"
 
 try:
   import numpy
@@ -33,7 +71,7 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
   '''
   def __init__ ( self, orb, poa, contID, containerName, instanceName, interfaceName ):
     dsccalcium.PyDSCComponent.__init__(self, orb, poa,contID,containerName,instanceName,interfaceName)
-    self.argv=['salome_aster','-memjeveux','64','-mxmemdy','64','-rep_outils','### TO BE MODIFIED - asteroutil ###']
+    self.argv = aster_args
     #modif pour aster 9.0
     if hasattr(self,"init_timer"):
       self.init_timer()

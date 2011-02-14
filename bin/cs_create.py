@@ -88,6 +88,10 @@ def process_cmd_line(argv, pkg):
                       metavar="<syr_cases>", action="append",
                       help="create new SYRTHES case(s).")
 
+    parser.add_option("--aster", dest="ast_case_name", type="string",
+                      metavar="<ast_case>",
+                      help="create a new Code_Aster case.")
+
     parser.set_defaults(use_gui=True)
     parser.set_defaults(use_ref=True)
     parser.set_defaults(study_name=os.path.basename(os.getcwd()))
@@ -96,6 +100,7 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(verbose=1)
     parser.set_defaults(n_sat=1)
     parser.set_defaults(syr_case_names=[])
+    parser.set_defaults(ast_case_name=None)
 
     (options, args) = parser.parse_args(argv)
 
@@ -109,6 +114,7 @@ def process_cmd_line(argv, pkg):
                  options.study_name,
                  options.case_names,
                  options.syr_case_names,
+                 options.ast_case_name,
                  options.copy,
                  options.use_gui,
                  options.use_ref,
@@ -184,7 +190,7 @@ def comments(filename, use_gui):
 
 class Study:
 
-    def __init__(self, package, name, cases, syr_case_names,
+    def __init__(self, package, name, cases, syr_case_names, ast_case_name,
                  copy, use_gui, use_ref, verbose):
         """
         Initialize the structure for a study.
@@ -210,6 +216,8 @@ class Study:
         self.syr_case_names = []
         for c in syr_case_names:
             self.syr_case_names.append(c)
+
+        self.ast_case_name = ast_case_name
 
 
     def get_syrthes_version(self):
@@ -261,6 +269,18 @@ class Study:
                 sys.stderr.write("Cannot locate SYRTHES installation.")
                 sys.exit(1)
 
+        # Creating Code_Aster case
+        if self.ast_case_name is not None:
+            config = ConfigParser.ConfigParser()
+            config.read([self.package.get_configfile(),
+                         os.path.expanduser('~/.' + self.package.configfile)])
+            if config.has_option('install', 'aster'):
+                self.create_aster_case(repbase)
+
+            else:
+                sys.stderr.write("Cannot locate Code_Aster installation.")
+                sys.exit(1)
+
         # Creating coupling structure
         if len(self.cases) + len(self.syr_case_names) > 1:
             self.create_coupling(repbase)
@@ -310,6 +330,57 @@ class Study:
             if retval > 0:
                 sys.stderr.write("Cannot create SYRTHES case: '%s'\n" % s)
                 sys.exit(1)
+
+
+    def create_aster_case(self, repbase):
+        """
+        Create and initialize Code_Aster case directory.
+        """
+
+        if self.verbose > 0:
+            sys.stdout.write("  o Creating Code_Aster case  '%s'...\n" %
+                             self.ast_case_name)
+
+        c = os.path.join(repbase, self.ast_case_name)
+        os.mkdir(c)
+
+        # All the following should be merged with create_coupling asap.
+
+        resu = os.path.join(repbase, 'RESU_COUPLING')
+        os.mkdir(resu)
+
+        datadir = self.package.pkgdatadir
+        try:
+            shutil.copy(os.path.join(datadir, 'runcase_aster'),
+                        os.path.join(repbase, 'runcase_coupling'))
+        except:
+            sys.stderr.write("Cannot copy runcase_coupling script: " + \
+                             os.path.join(datadir, 'runcase_coupling') + ".\n")
+            sys.exit(1)
+
+        runcase = os.path.join(repbase, 'runcase_coupling')
+        runcase_tmp = runcase + '.tmp'
+
+        kwd1 = re.compile('CASEDIRNAME')
+        kwd2 = re.compile('CASENAME')
+        kwd3 = re.compile('ASTERNAME')
+
+        runcase_tmp = runcase + '.tmp'
+
+        fd  = open(runcase, 'r')
+        fdt = open(runcase_tmp,'w')
+
+        for line in fd:
+            line = re.sub(kwd1, repbase, line)
+            line = re.sub(kwd2, self.cases[0], line)
+            line = re.sub(kwd3, self.ast_case_name, line)
+            fdt.write(line)
+
+        fd.close()
+        fdt.close()
+
+        shutil.move(runcase_tmp, runcase)
+        make_executable(runcase)
 
 
     def create_coupling(self, repbase):
@@ -412,6 +483,7 @@ class Study:
             self.get_batch_file(config.get('install', 'batch'),
                                 distrep = repbase,
                                 mode = 1)
+
 
     def create_case(self, casename):
         """
@@ -610,6 +682,8 @@ class Study:
             print("SYRTHES instances:")
             for c in self.syr_case_names:
                 print("  " + c)
+        if self.ast_case_name != None:
+            print("Code_Aster instance:", self.ast_case_name)
         print()
 
 
