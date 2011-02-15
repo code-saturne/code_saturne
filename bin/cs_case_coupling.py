@@ -195,7 +195,7 @@ def coupling(package,
 
     c = case(package,
              casedir,
-             sat_domains,
+             sat_domains + nep_domains,
              syr_domains,
              exec_preprocess = exec_preprocess,
              exec_partition = exec_partition,
