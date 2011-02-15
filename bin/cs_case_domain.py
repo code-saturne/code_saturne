@@ -1245,6 +1245,7 @@ class syrthes3_domain(base_domain):
                      + fnmatch.filter(dir_files, '*.[fF]'))
 
         copy_dir = None
+        exec_src = None
 
         if len(src_files) > 0:
 

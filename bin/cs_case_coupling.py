@@ -143,9 +143,45 @@ def coupling(package,
             use_syrthes = True
             syr_domains.append(dom)
 
-        elif (d.get('solver') == 'Neptune'):
-            err_str = 'Neptune code coupling not handled yet.\n'
-            raise RunCaseError(err_str)
+        elif (d.get('solver') == 'NEPTUNE_CFD'):
+
+            try:
+                runcase = os.path.join(os.getcwd(),
+                                       d.get('domain'),
+                                       'SCRIPTS',
+                                       d.get('script'))
+
+                execfile(runcase)
+                druncase = locals()
+
+            except Exception:
+                err_str = 'Cannot read NEPTUNE_CFD script: ' + runcase
+                raise RunCaseError(err_str)
+
+            dom = domain(package,
+                         name = d.get('domain'),
+                         meshes = druncase.get('MESHES'),
+                         mesh_dir = druncase.get('MESHDIR'),
+                         reorient = druncase.get('REORIENT'),
+                         partition_list = druncase.get('PARTITION_LIST'),
+                         partition_opts = druncase.get('PARTITION_OPTS'),
+                         param = druncase.get('PARAMETERS'),
+                         mode_args = druncase.get('CHECK_ARGS'),
+                         logging_args = druncase.get('OUTPUT_ARGS'),
+                         thermochemistry_data = druncase.get('THERMOCHEMISTRY_DATA'),
+                         meteo_data = druncase.get('METEO_DATA'),
+                         user_input_files = druncase.get('USER_INPUT_FILES'),
+                         user_scratch_files = druncase.get('USER_SCRATCH_FILES'),
+                         n_procs = d.get('n_procs'),
+                         n_procs_min = d.get('n_procs_min'),
+                         n_procs_max = d.get('n_procs_max'),
+                         n_procs_partition = None)
+
+            if druncase.get('VALGRIND') != None:
+                dom.valgrind = druncase.get('VALGRIND')
+
+            use_neptune = True
+            nep_domains.append(dom)
 
         elif (d.get('solver') == 'Code_Aster' or d.get('solver') == 'Aster'):
             err_str = 'Code_Aster code coupling not handled yet.\n'

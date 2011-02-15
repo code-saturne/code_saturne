@@ -1,3 +1,11 @@
+* 15/02/2011 - Cyril Baudry <cyril.baudry@edf.fr>
+  Minor adaptations so as to handle NEPTUNE_CFD / SYRTHES coupling.
+  modified scripts:
+     bin/cs_case_coupling.py
+     bin/cs_case_domain.py
+     bin/cs_compile.py
+     bin/runcase_coupling.in
+
 * 14/02/2011 - David Monfort <david.monfort@edf.fr>
   Add Code_Aster coupling study management.
   added scripts:

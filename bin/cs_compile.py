@@ -293,7 +293,7 @@ def compile_and_link_syrthes(pkg, srcdir, destdir,
         cmd = cmd + " -o " + exec_name
         if (len(f_files)) > 0:
           cmd = cmd + " *.o"
-        cmd = cmd + " -L" + pkg.libdir
+        cmd = cmd + " -L" + pkg.libdir + " " + pkg.ldflags
         cmd = cmd + " -lsyrcs"
         cmd = cmd + " " + build_syrthes.ldflags
         cmd = cmd + " " + build_syrthes.libs

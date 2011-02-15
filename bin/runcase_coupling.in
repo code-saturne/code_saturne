@@ -29,9 +29,6 @@ import sys
 # Trick so that one doesn't have to set the PYTHONPATH variable
 sys.path.insert(0, '@pkgpythondir@')
 
-import cs_config
-import cs_check_consistency
-
 from cs_package import package
 from cs_exec_environment import *
 from cs_case import *
