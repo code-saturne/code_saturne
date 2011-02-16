@@ -172,8 +172,12 @@ EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase.in bin/runcas
 
 # Install binary scripts
 
+if HAVE_SALOME_KERNEL
+CS_SALOME_WRAPPER = bin/cs_salome_wrapper
+endif
+
 nodist_bin_SCRIPTS = \
-bin/code_saturne
+bin/code_saturne $(CS_SALOME_WRAPPER)
 
 # Install Python library
 

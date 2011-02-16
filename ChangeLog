@@ -1,4 +1,13 @@
 * 16/02/2011 - David Monfort <david.monfort@edf.fr>
+  Add a shell wrapper to hide SALOME environment so as to be able to run
+  code_saturne or runcase scripts.
+  added script:
+     bin/cs_salome_wrapper.in
+  modified scripts:
+     configure.ac
+     Makefile.am
+
+* 16/02/2011 - David Monfort <david.monfort@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Fix a couple of issues related to batch queue management.
   modified files:
