@@ -111,6 +111,7 @@ QMeiEditorView.py \
 ReferenceValuesModel.py \
 ReferenceValuesView.py \
 SalomeHandler.py \
+ScriptRunningModel.py \
 SolutionDomainModel.py \
 SolutionDomainView.py \
 SolutionVerifView.py \
@@ -139,7 +140,6 @@ AnalysisFeaturesForm.ui \
 AtmosphericFlowsForm.ui \
 BatchRunningAdvancedOptionsDialogForm.ui \
 BatchRunningForm.ui \
-BatchRunningPBSJobManagementDialogForm.ui \
 BatchRunningUserFilesDialogForm.ui \
 BodyForcesForm.ui \
 BoundaryConditionsCoalInletForm.ui \

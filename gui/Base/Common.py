@@ -37,6 +37,9 @@ This module defines global constant.
 
 import os.path
 
+from optparse import OptionParser
+import ConfigParser
+
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
@@ -58,6 +61,19 @@ from cs_package import package
 cs_check_syntax = package().get_check_syntax()
 if not os.path.isfile(cs_check_syntax):
     cs_check_syntax = None
+
+# Test if a batch system is available
+
+config = ConfigParser.ConfigParser()
+config.read([package().get_configfile(),
+             os.path.expanduser('~/.' + package().configfile)])
+
+cs_batch_type = None
+if config.has_option('install', 'batch'):
+    cs_batch_type = config.get('install', 'batch')
+
+del(config)
+
 
 #-------------------------------------------------------------------------------
 # End of Common

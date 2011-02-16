@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2010 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -30,7 +30,6 @@
 """
 This module contains the following classes and function:
 - BatchRunningUserFilesDialogView
-- BatchRunningPBSJobManagementDialogView
 - BatchRunningAdvancedOptionsDialogView
 - BatchRunningView
 """
@@ -42,6 +41,7 @@ This module contains the following classes and function:
 import os, sys
 import string, types
 import logging
+import subprocess
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -56,12 +56,13 @@ from PyQt4.QtGui  import *
 
 from Pages.BatchRunningForm import Ui_BatchRunningForm
 from Pages.BatchRunningUserFilesDialogForm import Ui_BatchRunningUserFilesDialogForm
-from Pages.BatchRunningPBSJobManagementDialogForm import Ui_BatchRunningPBSJobManagementDialogForm
 from Pages.BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedOptionsDialogForm
 
+from Base.Common import cs_batch_type
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
-from Pages.BatchRunningModel import RuncaseModel, BatchRunningModel
+from Pages.BatchRunningModel import BatchModel, BatchRunningModel
+from Pages.ScriptRunningModel import ScriptModel, ScriptRunningModel
 from Pages.LocalizationModel import LocalizationModel, Zone
 
 #-------------------------------------------------------------------------------
@@ -135,7 +136,7 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
         """
         Add data users files input in entries in the good list.
         """
-        title = self.tr("Search user data files.")
+        title = self.tr("Select user data files.")
         filetypes = self.tr("User data files (*);;""All Files (*)")
         list = QFileDialog.getOpenFileNames(self,
                                             title,
@@ -267,104 +268,6 @@ class DataDelegate(QItemDelegate):
             QMessageBox.information(self.parent, title, msg)
 
         model.setData(index, QVariant(item), Qt.DisplayRole)
-
-
-#-------------------------------------------------------------------------------
-# Popup window class: Cluster job management
-#-------------------------------------------------------------------------------
-
-
-class BatchRunningPBSJobManagementDialogView(QDialog, Ui_BatchRunningPBSJobManagementDialogForm):
-    """
-    Advanced dialog
-    """
-    def __init__(self, parent, default):
-        """
-        Constructor
-        """
-        QDialog.__init__(self, parent)
-
-        Ui_BatchRunningPBSJobManagementDialogForm.__init__(self)
-        self.setupUi(self)
-
-        self.setWindowTitle(self.tr("PBS job management"))
-
-        self.default = default
-        self.result  = self.default.copy()
-
-        # Validators
-        validatorJobName  = RegExpValidator(self.lineEditJobName, QRegExp("[_A-Za-z0-9]*"))
-        validatorNodes    = IntValidator(self.lineEditNodes, min=1)
-        validatorCPUNodes = IntValidator(self.lineEditCPUNodes, min=1, max=32)
-        validatorHours    = IntValidator(self.lineEditHours, min=0, max=999)
-        validatorMinutes  = IntValidator(self.lineEditMinutes, min=0, max=59)
-        validatorSeconds  = IntValidator(self.lineEditSeconds, min=0, max=59)
-
-        self.lineEditJobName.setValidator(validatorJobName)
-        self.lineEditNodes.setValidator(validatorNodes)
-        self.lineEditCPUNodes.setValidator(validatorCPUNodes)
-
-        self.lineEditHours.setValidator(validatorHours)
-        self.lineEditMinutes.setValidator(validatorMinutes)
-        self.lineEditSeconds.setValidator(validatorSeconds)
-
-        # Previous values
-        self.job_name     = self.default['PBS_JOB_NAME']
-        self.cluster_node = self.default['PBS_nodes']
-        self.cluster_ppn  = self.default['PBS_ppn']
-        L = string.split(self.default['PBS_walltime'], ":")
-        self.h_cput = L[0]
-        self.m_cput = L[1]
-        self.s_cput = L[2]
-
-        self.lineEditJobName.setText(QString(self.job_name))
-        self.lineEditNodes.setText(QString(str(self.cluster_node)))
-
-        self.lineEditCPUNodes.setText(QString(str(self.cluster_ppn)))
-        self.lineEditHours.setText(QString(str(self.h_cput)))
-        self.lineEditMinutes.setText(QString(str(self.m_cput)))
-        self.lineEditSeconds.setText(QString(str(self.s_cput)))
-
-
-    def get_result(self):
-        """
-        Method to get the result
-        """
-        return self.result
-
-
-    def accept(self):
-        """
-        Method called when user clicks 'OK'
-        """
-        self.result['PBS_JOB_NAME'] = str(self.lineEditJobName.text())
-        if self.lineEditNodes.validator().state == QValidator.Acceptable:
-            self.result['PBS_nodes'] = str(self.lineEditNodes.text())
-        if self.lineEditCPUNodes.validator().state == QValidator.Acceptable:
-            self.result['PBS_ppn']  = str(self.lineEditCPUNodes.text())
-        if self.lineEditCPUNodes.validator().state == QValidator.Acceptable and \
-            self.lineEditMinutes.validator().state == QValidator.Acceptable and \
-            self.lineEditSeconds.validator().state == QValidator.Acceptable:
-            h_cput = str(self.lineEditHours.text())
-            m_cput = str(self.lineEditMinutes.text())
-            s_cput = str(self.lineEditSeconds.text())
-            self.result['PBS_walltime'] = h_cput + ":" + m_cput + ":" + s_cput
-
-        QDialog.accept(self)
-
-
-    def reject(self):
-        """
-        Method called when user clicks 'Cancel'
-        """
-        QDialog.reject(self)
-
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 
 #-------------------------------------------------------------------------------
@@ -536,7 +439,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
     def setArgCsVerif(self):
         """
-        Put CHECK_ARGS option from "lance" file.
+        Put CHECK_ARGS option from "runcase" file.
         """
         if self.default['CHECK_ARGS'] == '--quality' or self.default['CHECK_ARGS'] == '-q':
             self.arg_cs_verif = 'mesh_quality'
@@ -724,43 +627,153 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.setupUi(self)
 
         self.case = case
-        RuncaseModel(self.case)
+        BatchModel(self.case)
+        ScriptModel(self.case)
 
-        # Combo model
+        # Batch info
 
-        self.modelArchi = ComboModel(self.comboBoxArchi, 3, 1)
-        self.modelArchi.addItem(self.tr("Workstation"),                   'station')
-        self.modelArchi.addItem(self.tr("Cluster with PBS queue system"), 'pbs')
-        self.modelArchi.addItem(self.tr("Cluster with LSF queue system"), 'lsf')
-        self.modelArchi.addItem(self.tr("Cluster with SGE queue system"), 'sge')
-        self.modelArchi.disableItem(str_model='lsf')
-        self.modelArchi.disableItem(str_model='sge')
+        self.labelBatch.hide()
+        self.toolButtonSearchBatch.hide()
+        self.labelBatchName.hide()
+
+        self.hideBatchInfo()
+
+        self.labelNProcs.hide()
+        self.spinBoxNProcs.hide()
+
+        self.class_list = None
+
+        self.case['batch_type'] = cs_batch_type
+
+        if self.case['batch_type'] != None:
+
+            self.groupBoxArchi.setTitle("Job and script files")
+            self.labelBatch.show()
+            self.toolButtonSearchBatch.show()
+
+            validatorSimpleName = RegExpValidator(self.lineEditJobName,
+                                                  QRegExp("[_A-Za-z0-9]*"))
+            self.lineEditJobName.setValidator(validatorSimpleName)
+            self.lineEditJobGroup.setValidator(validatorSimpleName)
+            self.pushButtonRunSubmit.setText("Submit job")
 
         # Connections
 
-        self.connect(self.comboBoxArchi, SIGNAL("activated(const QString &)"), self.slotBatchCalculation)
-        self.connect(self.toolButtonSearch, SIGNAL("clicked()"), self.slotSearchBatchScriptFile)
-        self.connect(self.spinBoxProcs, SIGNAL("valueChanged(int)"), self.slotParallelComputing)
+        if self.case['batch_type'] != None:
+            self.connect(self.lineEditJobName, SIGNAL("textChanged(const QString &)"),
+                         self.slotJobName)
+            self.connect(self.spinBoxNodes, SIGNAL("valueChanged(int)"),
+                         self.slotJobNodes)
+            self.connect(self.spinBoxPpn, SIGNAL("valueChanged(int)"),
+                         self.slotJobPpn)
+            self.connect(self.spinBoxProcs, SIGNAL("valueChanged(int)"),
+                         self.slotJobProcs)
+            self.connect(self.spinBoxDays, SIGNAL("valueChanged(int)"),
+                         self.slotJobWallTime)
+            self.connect(self.spinBoxHours, SIGNAL("valueChanged(int)"),
+                         self.slotJobWallTime)
+            self.connect(self.spinBoxMinutes, SIGNAL("valueChanged(int)"),
+                         self.slotJobWallTime)
+            self.connect(self.spinBoxSeconds, SIGNAL("valueChanged(int)"),
+                         self.slotJobWallTime)
+            self.connect(self.comboBoxClass, SIGNAL("activated(const QString&)"),
+                         self.slotClass)
+            self.connect(self.lineEditJobGroup, SIGNAL("textChanged(const QString &)"),
+                         self.slotJobGroup)
+
+        else:
+            self.connect(self.spinBoxNProcs, SIGNAL("valueChanged(int)"), self.slotParallelComputing)
+
+        self.connect(self.toolButtonSearchBatch, SIGNAL("clicked()"), self.slotSearchBatchFile)
+        self.connect(self.toolButtonSearchScript, SIGNAL("clicked()"), self.slotSearchScriptFile)
         self.connect(self.toolButtonFiles, SIGNAL("clicked()"), self.slotUserFiles)
         self.connect(self.toolButtonAdvanced, SIGNAL("clicked()"), self.slotAdvancedOptions)
-        self.connect(self.pushButtonRun, SIGNAL("clicked()"), self.slotBatchRunning)
+        self.connect(self.pushButtonRunSubmit, SIGNAL("clicked()"), self.slotBatchRunning)
 
         # initialize Widgets
 
-        if self.case['computer'] == "":
-            key = 'station'
-            self.case['computer'] = key
-            self.modelArchi.setItem(str_model=key)
-            self.slotBatchCalculation(self.tr('Workstation'))
+        if self.case['batch_type'] != None:
             if self.case['scripts_path']:
-                if "runcase" in os.listdir(self.case['scripts_path']):
-                    if key in self.case['batchScript']:
-                        self.case['batchScript'][key] = "runcase"
-                        self.displayBatchScriptInfo()
-                        setGreenColor(self.toolButtonSearch, False)
-        else:
-            self.modelArchi.setItem(str_model=self.case['computer'])
-            self.slotBatchCalculation(self.modelArchi.dicoM2V[self.case['computer']])
+                if 'runcase_batch' in os.listdir(self.case['scripts_path']):
+                    self.case['batch'] = 'runcase_batch'
+                    self.displayBatchInfo()
+                    setGreenColor(self.toolButtonSearchBatch, False)
+                else:
+                    setGreenColor(self.toolButtonSearchBatch, True)
+
+        # Check if the script file name is already defined
+
+        self.groupBoxScript.hide()
+        self.labelScript.setEnabled(True)
+
+        if self.case['scripts_path']:
+            if "runcase" in os.listdir(self.case['scripts_path']):
+                self.case['script'] = "runcase"
+                self.displayScriptInfo()
+                setGreenColor(self.toolButtonSearchScript, False)
+            else:
+                setGreenColor(self.toolButtonSearchScript, True)
+
+
+    @pyqtSignature("const QString &")
+    def slotJobName(self, v):
+        """
+        Increment, decrement and colorize the input argument entry
+        """
+        if self.lineEditJobName.validator().state == QValidator.Acceptable:
+            self.jmdl.dictValues['job_name'] = str(v)
+            self.jmdl.updateBatchFile('job_name')
+
+
+    @pyqtSignature("int")
+    def slotJobNodes(self, v):
+        """
+        Increment, decrement and colorize the input argument entry
+        """
+        self.jmdl.dictValues['job_nodes'] = str(self.spinBoxNodes.text())
+        self.jmdl.updateBatchFile('job_nodes')
+
+    @pyqtSignature("int")
+    def slotJobPpn(self, v):
+        """
+        Increment, decrement and colorize the input argument entry
+        """
+        self.jmdl.dictValues['job_ppn']  = str(self.spinBoxPpn.text())
+        self.jmdl.updateBatchFile('job_ppn')
+
+    @pyqtSignature("int")
+    def slotJobProcs(self, v):
+        """
+        Increment, decrement and colorize the input argument entry
+        """
+        self.jmdl.dictValues['job_procs']  = str(self.spinBoxProcs.text())
+        self.jmdl.updateBatchFile('job_procs')
+
+    @pyqtSignature("")
+    def slotJobWallTime(self):
+
+        h_cput = self.spinBoxDays.value()*24 + self.spinBoxHours.value()
+        m_cput = self.spinBoxMinutes.value()
+        s_cput = self.spinBoxSeconds.value()
+        self.jmdl.dictValues['job_walltime'] = h_cput*3600 + m_cput*60 + s_cput
+        self.jmdl.updateBatchFile('job_walltime')
+
+    @pyqtSignature("")
+    def slotClass(self):
+
+        self.jmdl.dictValues['job_class'] = str(self.comboBoxClass.currentText())
+        if len(self.jmdl.dictValues['job_class']) > 0:
+            self.jmdl.updateBatchFile('job_class')
+
+
+    @pyqtSignature("const QString &")
+    def slotJobGroup(self, v):
+        """
+        Increment, decrement and colorize the input argument entry
+        """
+        if self.lineEditJobName.validator().state == QValidator.Acceptable:
+            self.jmdl.dictValues['job_group'] = str(v)
+            self.jmdl.updateBatchFile('job_group')
 
 
     @pyqtSignature("int")
@@ -768,49 +781,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        self.mdl.dicoValues['N_PROCS'] = v
-        self.mdl.updateBatchScriptFile('N_PROCS')
-
-
-    @pyqtSignature("")
-    def pbsJobManagement(self):
-        """
-        Get PBS card informations.
-        """
-        default = {}
-        list = ['PBS_JOB_NAME', 'PBS_nodes', 'PBS_ppn', 'PBS_walltime']
-        for opt in list:
-            default[opt] = self.mdl.dicoValues[opt]
-        log.debug("pbsJobManagement -> %s" % str(default))
-
-        dialog = BatchRunningPBSJobManagementDialogView(self, default)
-
-        if dialog.exec_():
-            result = dialog.get_result()
-            log.debug("pbsJobManagement -> %s" % str(result))
-            for option in list:
-                self.mdl.dicoValues[option] = result[option]
-
-        self.mdl.updateBatchScriptFile()
-
-    @pyqtSignature("")
-    def lsfJobManagement(self):
-        """
-        Get LSF card informations
-        """
-        pass
-##        default = {}
-##        default['job_name'] = self.mdl.dicoValues['PBS_JOB_NAME']
-##        default['NQS_cput'] =
-##        default['NQS_cpuT'] =
-##        windowTitle = self.tr("CaThy")
-##        dialog = LSFJobManagementDialog(self.myPage, title=t.CATHY, default=default)
-##
-##        self.job_name = dialog.result['job_name']
-##        self.NQS_cpult = dialog.result['NQS_cput']
-##        self.NQS_cpulT = dialog.result['NQS_cpuT'] + dialog.result['NQS_cput']
-##
-##        self.mdl.updateBatchScriptFile()
+        self.mdl.dictValues['N_PROCS'] = v
+        self.mdl.updateScriptFile('N_PROCS')
 
 
     @pyqtSignature("")
@@ -820,7 +792,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         default = {}
         default['data_path'] = self.case['data_path']
-        default['data']      = self.mdl.dicoValues['USER_INPUT_FILES']
+        default['data']      = self.mdl.dictValues['USER_INPUT_FILES']
         log.debug("slotUserFiles -> %s" % str(default))
 
         dialog = BatchRunningUserFilesDialogView(self, default)
@@ -828,8 +800,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotUserFiles -> %s" % str(result))
-            self.mdl.dicoValues['USER_INPUT_FILES']  = result['data']
-            self.mdl.updateBatchScriptFile('USER_INPUT_FILES')
+            self.mdl.dictValues['USER_INPUT_FILES']  = result['data']
+            self.mdl.updatedScriptFile('USER_INPUT_FILES')
 
 
     @pyqtSignature("")
@@ -841,7 +813,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         list = ['CS_TMP_PREFIX', 'EXEC_PREPROCESS', 'EXEC_PARTITION', 'EXEC_SOLVER',
                 'PARTITION_LIST', 'VALGRIND', 'CHECK_ARGS', 'OUTPUT_ARGS', ]
         for option in list:
-            default[option] = self.mdl.dicoValues[option]
+            default[option] = self.mdl.dictValues[option]
         log.debug("slotAdvancedOptions result = %s "%str(default))
 
         dialog = BatchRunningAdvancedOptionsDialogView(self, default)
@@ -850,8 +822,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             result = dialog.get_result()
             log.debug("slotAdvancedOptions result = %s "%str(result))
             for option in list:
-                self.mdl.dicoValues[option] = result[option]
-                self.mdl.updateBatchScriptFile(option)
+                self.mdl.dictValues[option] = result[option]
+                self.mdl.updateScriptFile(option)
 
 
     @pyqtSignature("")
@@ -865,13 +837,13 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
             title = self.tr("Warning")
             msg   = self.tr("The current case must be saved before "\
-                            "Code_Saturne batch running.")
+                            "running the Code_Saturne script.")
             QMessageBox.information(self, title, msg)
             return
 #        if self.case.saved() == "no":
 #            self.case.xmlSaveDocument()
-#            self.mdl.dicoValues['PARAMETERS'] = os.path.basename(self.case['xmlfile'])
-#            self.mdl.updateBatchScriptFile('PARAMETERS')
+#            self.mdl.dictValues['PARAMETERS'] = os.path.basename(self.case['xmlfile'])
+#            self.mdl.updateScriptFile('PARAMETERS')
 
         # Test 2: have we a mesh?
 
@@ -896,16 +868,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         # Test 4: verify if boundary definition exists
 
-##        if not GuiParam.matisse:
-##            from DefineBoundaryRegionsModel import DefBCModel
-##            groupList = DefBCModel(self.case).getListLabel()
-##            if not groupList:
-##                if self.case['no_boundary_conditions'] == False:
-##                    title = self.tr("Warning")
-##                    msg   = self.tr("No boundary definition declared.\n\n")
-##                    QMessageBox.warning(self, title, msg)
-##                    self.case['no_boundary_conditions'] = True
-
         if not GuiParam.matisse:
             bd = LocalizationModel('BoundaryZone', self.case)
             if not bd.getZones():
@@ -917,28 +879,22 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         # Command line building
 
-        key = self.case['computer']
+        key = self.case['batch_type']
 
-        script = os.path.join(self.case['scripts_path'], self.case['batchScript'][key])
-        batch1 = os.path.join(self.case['scripts_path'], "batch.log")
-        batch2 = batch1 + '~'
+        batch = os.path.join(self.case['scripts_path'], self.case['batch'])
+        script = os.path.join(self.case['scripts_path'], self.case['script'])
 
-        if key == 'station':
-            try:
-                os.rename(batch1, batch2)
-            except:
-                pass
-            cmd = 'nice nohup ' + script + ' | tee ' + batch1 + ' &'
-# FIXME: Work in progress
-##            dialog = CalculationDialog(self.master, title=t.BATCH, stbar=self.stbar,
-##                                       script, batch1)
-##            cmd = 'nice nohup ' + script + 'dialog' + ' &'
-        elif key == 'pbs':
-            #cmd = 'qsub ' + script + ' ' + self.case['batchScript'][key] + ' &'
-            cmd = 'qsub ' + script
-        elif key == 'lsf':
-            cmd = 'bsub ' + script + ' ' + self.case['batchScript'][key] + ' &'
-        elif key == 'sge':
+        if key == None:
+            cmd = 'nice nohup ' + script + ' | tee ' + script + '.log &'
+        elif key[0:3] == 'CCC':
+            cmd = 'qsub ' + batch
+        elif key[0:5] == 'LOADL':
+            cmd = 'llsubmit ' + batch
+        elif key[0:3] == 'LSF':
+            cmd = 'bsub < ' + script + ' ' + self.case['batch'] + ' &'
+        elif key[0:3] == 'PBS' or key[0:3] == 'SGE':
+            cmd = 'qsub ' + batch
+        else
             pass
 
         if self.case['salome']:
@@ -948,90 +904,265 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             os.system(cmd)
 
 
-    def displayBatchScriptInfo(self):
+    def getCommandOutput(self, cmd):
+        """
+        Run a command and return it's standard output.
+        """
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        lines = []
+        while True:
+            l = p.stdout.readline()
+            lines.append(l.strip())
+            if len(l) == 0 and p.poll() != None:
+                break
+        output = p.communicate()
+
+        if p.returncode == 0:
+            return lines
+
+
+    def getClassList(self):
         """
         Layout of the second part of this page.
         """
-        self.groupBoxBatch.show()
 
-        self.labelJob.hide()
-        self.toolButtonJob.hide()
+        self.class_list = []
+
+        try:
+
+            if self.case['batch_type'][0:3] == 'CCC':
+                output = self.getCommandOutput('class')
+                ignore = True
+                for l in output[1:]:
+                    if len(l) == 0:
+                        break
+                    else:
+                        self.class_list.append(l.split(' ')[0])
+
+            elif self.case['batch_type'][0:2] == 'LOADL':
+                output = self.getCommandOutput('llclass')
+                ignore = True
+                for l in output:
+                    if l[0:3] == '---':
+                        ignore = not ignore
+                    elif ignore == False:
+                        self.class_list.append(l.split(' ')[0])
+
+            elif self.case['batch_type'][0:3] == 'LSF':
+                output = self.getCommandOutput('bqueues')
+                ignore = True
+                for l in output[1:]:
+                    if len(l) == 0:
+                        break
+                    else:
+                        self.class_list.append(l.split(' ')[0])
+
+            elif self.case['batch_type'][0:3] == 'PBS':
+                output = self.getCommandOutput('qstat -q')
+                ignore = True
+                for l in output:
+                    if l[0:3] == '---':
+                        ignore = not ignore
+                    elif ignore == False:
+                        self.class_list.append(l.split(' ')[0])
+
+            elif self.case['batch_type'][0:3] == 'SGE':
+                output = self.getCommandOutput('qconf -sc')
+                for l in output:
+                    if l[0:1] != '#':
+                        self.class_list.append(l.split(' ')[0])
+
+        except Exception:
+            pass
+
+
+    def hideBatchInfo(self):
+        """
+        hide all batch info before displaying a selected subset
+        """
+
+        self.groupBoxJob.hide()
+
+        self.labelJobName.hide()
+        self.lineEditJobName.hide()
+        self.labelNodes.hide()
+        self.spinBoxNodes.hide()
+        self.labelPpn.hide()
+        self.spinBoxPpn.hide()
+        self.labelProcs.hide()
+        self.spinBoxProcs.hide()
+        self.labelClass.hide()
+        self.labelWTime.hide()
+        self.spinBoxDays.hide()
+        self.labelDays.hide()
+        self.spinBoxHours.hide()
+        self.labelHours.hide()
+        self.spinBoxMinutes.hide()
+        self.labelMinutes.hide()
+        self.spinBoxSeconds.hide()
+        self.labelSeconds.hide()
+        self.comboBoxClass.hide()
+        self.labelJobGroup.hide()
+        self.lineEditJobGroup.hide()
+
+
+    def displayBatchInfo(self):
+        """
+        Layout of the second part of this page.
+        """
+        if hasattr(self, 'jmdl'):
+            del self.jmdl
+        self.jmdl = BatchRunningModel(self.case)
+        self.jmdl.readBatchFile()
+
+        self.job_name     = self.jmdl.dictValues['job_name']
+        self.job_nodes = self.jmdl.dictValues['job_nodes']
+        self.job_ppn  = self.jmdl.dictValues['job_ppn']
+        self.job_procs = self.jmdl.dictValues['job_procs']
+        self.job_walltime = self.jmdl.dictValues['job_walltime']
+        self.job_class  = self.jmdl.dictValues['job_class']
+        self.job_group  = self.jmdl.dictValues['job_group']
+
+        name = self.case['batch']
+        self.labelBatchName.show()
+        self.labelBatchName.setText(QString(name))
+
+        if self.job_name != None:
+            self.labelJobName.show()
+            self.lineEditJobName.setText(QString(self.job_name))
+            self.lineEditJobName.show()
+
+        if self.job_nodes != None:
+            self.labelNodes.show()
+            self.spinBoxNodes.setValue(int(self.job_nodes))
+            self.spinBoxNodes.show()
+
+        if self.job_ppn != None:
+            self.labelPpn.show()
+            self.spinBoxPpn.setValue(int(self.job_ppn))
+            self.spinBoxPpn.show()
+
+        if self.job_procs != None:
+            self.labelProcs.show()
+            self.spinBoxProcs.setValue(int(self.job_procs))
+            self.spinBoxProcs.show()
+
+        if self.job_walltime != None:
+            seconds = self.job_walltime
+            minutes = seconds / 60
+            hours = minutes / 60
+            days = hours / 24
+            seconds = seconds % 60
+            minutes = minutes % 60
+            hours = hours % 24
+            self.spinBoxDays.setValue(days)
+            self.spinBoxHours.setValue(hours)
+            self.spinBoxMinutes.setValue(minutes)
+            self.spinBoxSeconds.setValue(seconds)
+            self.labelWTime.show()
+            self.spinBoxDays.show()
+            self.labelDays.show()
+            self.spinBoxHours.show()
+            self.labelHours.show()
+            self.spinBoxMinutes.show()
+            self.labelMinutes.show()
+            self.spinBoxSeconds.show()
+            self.labelSeconds.show()
+
+        if self.job_class != None:
+
+            # Only one pass here
+            if self.class_list == None:
+                self.getClassList()
+                if len(self.class_list) > 0:
+                    for c in self.class_list:
+                        self.comboBoxClass.addItem(self.tr(c), QVariant(c))
+                else:
+                    c = self.job_class
+                    self.comboBoxClass.addItem(self.tr(c), QVariant(c))
+
+            # All passes
+            try:
+                index = self.class_list.index(self.job_class)
+                self.comboBoxClass.setCurrentIndex(index)
+            except Exception:
+                if len(self.class_list) > 0:
+                    self.job_class = self.class_list[0]
+            self.labelClass.show()
+            self.comboBoxClass.show()
+
+        if self.job_group != None:
+            self.labelJobGroup.show()
+            self.lineEditJobGroup.show()
+
+        # Show Job management box
+
+        if self.case['batch_type'][0:2] == 'LOADL':
+            self.groupBoxJob.setTitle("Load Leveler job parameters")
+        elif self.case['batch_type'][0:3] == 'LSF':
+            self.groupBoxJob.setTitle("LSF job parameters")
+        elif self.case['batch_type'][0:3] == 'PBS':
+            self.groupBoxJob.setTitle("PBS job parameters")
+        elif self.case['batch_type'][0:3] == 'SGE':
+            self.groupBoxJob.setTitle("Sun Grid Engine job parameters")
+        else:
+            self.groupBoxJob.setTitle("Batch job parameters")
+
+        self.groupBoxJob.show()
+
+        # Update file
+
+        self.jmdl.updateBatchFile()
+
+
+    def displayScriptInfo(self):
+        """
+        Layout of the second part of this page.
+        """
 
         if hasattr(self, 'mdl'):
             del self.mdl
-        self.mdl = BatchRunningModel(self.case)
-        self.mdl.readBatchScriptFile()
+        self.mdl = ScriptRunningModel(self.case)
+        self.mdl.readScriptFile()
 
-        self.labelFilename.show()
-        self.computer = self.modelArchi.dicoV2M[str(self.comboBoxArchi.currentText())]
-        name = self.case['batchScript'][self.computer]
-        self.labelFilename.setText(QString(name))
+        self.labelScriptName.show()
 
-        if self.case['computer'] == 'station':
-            if GuiParam.matisse :
-                self.labelFiles.show()
-                self.toolButtonFiles.show()
-                self.labelProcs.hide()
-                self.spinBoxProcs.hide()
-            else:
-                self.labelFiles.show()
-                self.toolButtonFiles.show()
-                self.labelProcs.show()
-                self.spinBoxProcs.show()
+        name = self.case['script']
+        self.labelScriptName.setText(QString(name))
+
+        if GuiParam.matisse :
+            self.labelFiles.show()
+            self.toolButtonFiles.show()
+            self.labelNProcs.hide()
+            self.spinBoxNProcs.hide()
         else:
-            self.labelProcs.hide()
-            self.spinBoxProcs.hide()
-            self.labelJob.show()
-            self.toolButtonJob.show()
-            if self.case['computer'] == "pbs":
-                self.connect(self.toolButtonJob, SIGNAL("clicked()"), self.pbsJobManagement)
-            if self.case['computer'] == "lsf":
-                self.connect(self.toolButtonJob, SIGNAL("clicked()"), self.lsfJobManagement)
-            if self.case['computer'] == "sge":
-                pass
+            self.labelFiles.show()
+            self.toolButtonFiles.show()
+            if self.case['batch_type'][0:3] == None:
+                self.labelNProcs.show()
+                self.spinBoxNProcs.show()
 
-#            self.lineBatch1.show()
-#            self.labelAdvanced.show()
-#            self.toolButtonAdvanced.show()
+        self.groupBoxScript.show()
 
-        dico = self.mdl.dicoValues
+        dico = self.mdl.dictValues
 
-        if not isinstance(dico['N_PROCS'], int):
-            dico['N_PROCS'] = 1
-        if self.case['computer'] == 'station':
-            self.spinBoxProcs.setValue(dico['N_PROCS'])
-
-        self.mdl.updateBatchScriptFile()
-
-
-    @pyqtSignature("const QString &")
-    def slotBatchCalculation(self, text):
-        """
-        1) Look if the batch script file name is allready known
-        for the current computer
-        2) Display the apropriate frame for the selected computer
-        """
-        log.debug("slotBatchCalculation -> %s" % str(text))
-        self.groupBoxBatch.hide()
-
-        key = self.modelArchi.dicoV2M[str(text)]
-        self.case['computer'] = key
-        log.debug("slotBatchCalculation -> %s" % key)
-
-        self.labelLauncher.setEnabled(True)
-
-        if key in self.case['batchScript'] and self.case['batchScript'][key]:
-            self.displayBatchScriptInfo()
-            setGreenColor(self.toolButtonSearch, False)
+        if self.case['batch_type'] == None:
+            if not isinstance(dico['N_PROCS'], int):
+                dico['N_PROCS'] = 1
+            self.spinBoxNProcs.setValue(dico['N_PROCS'])
         else:
-            self.labelFilename.hide()
-            setGreenColor(self.toolButtonSearch, True)
+            dico['N_PROCS'] = None
+
+        self.mdl.updateScriptFile()
 
 
     @pyqtSignature("")
-    def slotSearchBatchScriptFile(self):
+    def slotSearchBatchFile(self):
         """
-        Open a FileDialog in order to search the batch script file
+        Open a FileDialog in order to search the batch command file
         in the system file.
         """
         file_name = ""
@@ -1039,27 +1170,55 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             path = self.case['scripts_path']
         else:
             path = os.getcwd()
-        title = self.tr("Search the batch script")
+        title = self.tr("Select the batch script")
         filetypes = self.tr("All Files (*)")
         file_name = QFileDialog.getOpenFileName(self, title, path, filetypes)
         file_name = str(file_name)
 
         if file_name:
             launcher = os.path.basename(file_name)
-            setGreenColor(self.toolButtonSearch, False)
+            setGreenColor(self.toolButtonSearchBatch, False)
 
             if self.case['scripts_path'] == os.path.dirname(file_name):
-
-                self.computer = self.modelArchi.dicoV2M[str(self.comboBoxArchi.currentText())]
-                key = self.computer
-                if key in self.case['batchScript']:
-                    self.case['batchScript'][key] = launcher
-                else:
-                    print("Warning: slotSearchBatchScriptFile\n Error with key:", key)
-                self.displayBatchScriptInfo()
+                self.case['batch'] = launcher
+                self.hideBatchInfo()
+                self.displayBatchInfo()
             else:
                 title = self.tr("Warning")
-                msg   = self.tr("The new batch script file is not in scripts "\
+                msg   = self.tr("The new batch file is not in scripts "\
+                                "directory given in the 'Identity and paths' "\
+                                "section.\n\n" + \
+                                "Verify the existence and location of these files, "\
+                                "and the 'Identity and Pathes' section")
+                QMessageBox.warning(self, title, msg)
+
+
+    @pyqtSignature("")
+    def slotSearchScriptFile(self):
+        """
+        Open a FileDialog in order to select the script file
+        in the system file.
+        """
+        file_name = ""
+        if self.case['scripts_path'] and os.path.isdir(self.case['scripts_path']):
+            path = self.case['scripts_path']
+        else:
+            path = os.getcwd()
+        title = self.tr("Select the script")
+        filetypes = self.tr("All Files (*)")
+        file_name = QFileDialog.getOpenFileName(self, title, path, filetypes)
+        file_name = str(file_name)
+
+        if file_name:
+            launcher = os.path.basename(file_name)
+            setGreenColor(self.toolButtonSearchScript, False)
+
+            if self.case['scripts_path'] == os.path.dirname(file_name):
+                self.case['script'] = launcher
+                self.displayScriptInfo()
+            else:
+                title = self.tr("Warning")
+                msg   = self.tr("The new script file is not in scripts "\
                                 "directory given in the 'Identity and paths' "\
                                 "section.\n\n" + \
                                 "Verify the existence and location of these files, "\

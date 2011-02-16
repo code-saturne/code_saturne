@@ -1,4 +1,21 @@
 * 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Handle multiple batch systems through the GUI depending on the configuration file.
+  added files:
+    gui/Pages/ScriptRunningModel.py
+  removed files:
+    gui/Pages/BatchRunningPBSJobManagementDialogForm.ui
+  modified files:
+    gui/Base/Common.py
+    gui/Base/MainView.py
+    gui/Base/QtPage.py
+    gui/Base/XMLengine.py
+    gui/Pages/BatchRunningForm.ui
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/BatchRunningView.py
+    gui/Pages/Makefile.am
+    gui/Pages/SolutionDomainModel.py
+
+* 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Replace n_procs with n_procs_weight for cs_case_domain objects.
   modified scripts:
     cs_case_coupling.py

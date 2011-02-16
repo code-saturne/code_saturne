@@ -87,19 +87,21 @@ class Dico:
         """
         self.data = {}
 
-        self.data['new']                    = ""
-        self.data['saved']                  = "yes"
-        self.data['xmlfile']                = ""
-        self.data['mesh_path']              = ""
-        self.data['user_src_path']          = ""
-        self.data['data_path']              = ""
-        self.data['resu_path']              = ""
-        self.data['scripts_path']           = ""
-        self.data['relevant_subdir']        = "no"
-        self.data['case_path']              = ""
-        self.data['batchScript']            = {}
-        self.data['backupBatchScript']      = {}
-        self.data['computer']               = ""
+        self.data['new']              = ""
+        self.data['saved']            = "yes"
+        self.data['xmlfile']          = ""
+        self.data['mesh_path']        = ""
+        self.data['user_src_path']    = ""
+        self.data['data_path']        = ""
+        self.data['resu_path']        = ""
+        self.data['scripts_path']     = ""
+        self.data['relevant_subdir']  = "no"
+        self.data['case_path']        = ""
+        self.data['batch']            = ""
+        self.data['backupBatch']      = False
+        self.data['script']           = ""
+        self.data['backupScript']     = False
+        self.data['batch_type']       = ""
         self.data['no_boundary_conditions'] = False
         self.data['salome']                 = False
 

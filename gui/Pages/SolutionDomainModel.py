@@ -226,21 +226,19 @@ class SolutionDomainModel(MeshModel, Model):
         return defvalue
 
 
-    def _updateBatchScriptFile(self, keyword):
+    def _updateScriptFile(self, keyword):
         """
         Update, for keyword, the backup file if it's ready to run.
         """
         self.isInList(keyword,('MESHES',
                                'REORIENT'))
-        key = self.case['computer']
-        if key:
-            if not self.case['batchScript'][key]: return
+        if not self.case['script']: return
 
-            from Pages.BatchRunningModel import BatchRunningModel
-            batch = BatchRunningModel(self.case)
-            batch.initializeBatchScriptFile()
-            batch.updateBatchScriptFile(keyword)
-            del BatchRunningModel
+        from Pages.ScriptRunningModel import ScriptRunningModel
+        script = ScriptRunningModel(self.case)
+        script.initializeScriptFile()
+        script.updateScriptFile(keyword)
+        del ScriptRunningModel
 
 
 #To follow : private methods to get or put faces
@@ -430,7 +428,7 @@ class SolutionDomainModel(MeshModel, Model):
             self.isInList(format, MeshModel().ext.values())
 
         self.node_meshes.xmlInitNode('mesh', name=mesh, format=format)
-        self._updateBatchScriptFile('MESHES')
+        self._updateScriptFile('MESHES')
 
 
     def delMesh(self, mesh):
@@ -442,7 +440,7 @@ class SolutionDomainModel(MeshModel, Model):
         for node in nodeList:
             if node['name'] == mesh:
                 node.xmlRemoveNode()
-        self._updateBatchScriptFile('MESHES')
+        self._updateScriptFile('MESHES')
 
 
     def getMeshList(self):
@@ -484,7 +482,7 @@ class SolutionDomainModel(MeshModel, Model):
         self.isGreater(num, 0)
 
         self.node_meshes.xmlGetNode('mesh', name=mesh)['num'] = num
-        self._updateBatchScriptFile('MESHES')
+        self._updateScriptFile('MESHES')
 
 
     def getMeshNumber(self, mesh):
@@ -509,7 +507,7 @@ class SolutionDomainModel(MeshModel, Model):
             del self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_cel']
         else:
             self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_cel'] = grp_cel
-        self._updateBatchScriptFile('MESHES')
+        self._updateScriptFile('MESHES')
 
 
     def getMeshGroupCells(self, mesh):
@@ -530,7 +528,7 @@ class SolutionDomainModel(MeshModel, Model):
             del self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_fac']
         else:
             self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_fac'] = grp_fac
-        self._updateBatchScriptFile('MESHES')
+        self._updateScriptFile('MESHES')
 
 
     def getMeshGroupFaces(self, mesh):
@@ -610,7 +608,7 @@ class SolutionDomainModel(MeshModel, Model):
         """
         self.isOnOff(status)
         self.node_orient['status'] = status
-        self._updateBatchScriptFile('REORIENT')
+        self._updateScriptFile('REORIENT')
 
 
     def getSimCommStatus(self):

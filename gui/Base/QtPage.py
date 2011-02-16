@@ -301,7 +301,7 @@ class IntValidator(QtGui.QIntValidator):
         elif min == vmin and max < vmax:
             msg = self.tr("The integer value must be lower than or equal to %i" % max)
         elif min > vmin and max < vmax:
-            msg = self.tr("The integer value must be between than or equal to %i and %i" % (min, max))
+            msg = self.tr("The integer value must be between %i and %i" % (min, max))
 
         self.parent.setStatusTip(QtCore.QString(msg))
 
