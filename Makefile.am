@@ -229,7 +229,9 @@ data/thch/meteo
 
 batchdir = ${pkgdatadir}/batch
 batch_DATA = \
-extras/batch/batch.LL \
+extras/batch/batch.CCC \
+extras/batch/batch.LOADL \
+extras/batch/batch.LOADL_BG \
 extras/batch/batch.LSF \
 extras/batch/batch.PBS \
 extras/batch/batch.SGE

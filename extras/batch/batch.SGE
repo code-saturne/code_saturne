@@ -1,21 +1,24 @@
 #-------------------------------------------------------------------------------
 #
-# Batch options for Sun Grid Engine (example: University of Manchester MACE)
+# Batch options for Sun Grid Engine (Oracle Grid Engine, Open Grid Engine, ...)
 # =================================
 #
-# set the name of the job
-##$ -N nameandcase
+#$ -pe mpi* 4
+#$ -l h_rt=1:00:00
 #
-# request between 2 and 4 slots
-##$ -pe mpich 2-4
+#$ -j y
+#$ -N nameandcase
 #
-#   can use -o dirname to redirect stdout
-#   can use -e dirname to redirect stderr
-
-#  Export these environment variables
-##$ -v MPI_HOME
-
-#set -x
+# -pe         : program_environment  min_slots[-max_slots]
+# -l h_rt=    : wall clock time (hh:mm:ss)
+# -q queue    : queue name
+# -N name     : job name
+# -o dir/file : redirect standard output
+# -e dir/file : redirect standard error
+# -j y        : to combine standard output and error
+#
+# Note that the program environment defined by the -pe option is site-specific;
+# wildcards are allowed. "qconf -spl" will return a list of valid pe's.
 #
 #-------------------------------------------------------------------------------
 

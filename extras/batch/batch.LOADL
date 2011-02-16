@@ -1,0 +1,39 @@
+#-------------------------------------------------------------------------------
+#
+# Batch options for IBM LoadLeveler (example: IVANOE IBM iDataPlex cluster)
+# =================================
+#
+# To obtain all available options, run the LoadLeveler GUI,
+# "xloadl", choose the "build job" option; select options,
+# then select "save". Options and their matching syntax
+# may then be inferred from the saved file.
+#
+# @ shell = /bin/bash
+#
+# @ job_name = nameandcase
+#
+# @ job_type = mpich
+#
+# @ node = 128
+# @ tasks_per_node = 6
+# @ node_usage = not_shared
+#
+# @ wall_clock_limit = 00:25:00, 00:20:00
+#
+# @ output = $(job_name).$(jobid).out
+# @ error  = $(job_name).$(jobid).err
+# @ notification = never
+#
+# @ queue
+#
+# Other LoadLeveler arguments or variants: (use "@" to define):
+#   wall_clock_limit = <hard_limit>, <soft_limit>
+#   class = <class_name>
+#
+#-------------------------------------------------------------------------------
+
+# Change to submission drectory
+cd $LOADL_STEP_INITDIR
+
+# Launch runcase script
+./scriptname

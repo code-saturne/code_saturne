@@ -1,3 +1,17 @@
+* 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Updated batch file templates.
+  added scripts:
+    extras/batch/batch.CCC
+    extras/batch/batch.LOADL
+    extras/batch/batch.LOADL_BG
+  removed scripts:
+    extras/batch/batch.LL
+    extras/batch/batch.MOAB
+  modified scripts:
+    extras/batch/batch.LSF
+    extras/batch/batch.PBS
+    extras/batch/batch.SGE
+
 * 15/02/2011 - Cyril Baudry <cyril.baudry@edf.fr>
   Minor adaptations so as to handle NEPTUNE_CFD / SYRTHES coupling.
   modified scripts:
@@ -26,7 +40,8 @@
      salome/fsi_coupling/src/FSI_ASTER/Makefile.am
 
 * 09/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
-  Fixed bug coausing removal of contents of symbolic links.
+  Fixed bug causing removal of contents of symbolic links.
+  modified scripts:
     bin/cs_case_domain.py
 
 * 09/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
