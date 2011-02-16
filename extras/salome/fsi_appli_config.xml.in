@@ -4,6 +4,6 @@
     <module name="KERNEL" gui="no" path="@KERNEL_ROOT_DIR@"/>
     <module name="GUI"    gui="no" path="@GUI_ROOT_DIR@"/>
     <module name="YACS"   gui="no" path="@YACS_ROOT_DIR@"/>
-    <module name="FSI"             path="@prefix@"/>
+    <module name="FSI"    gui="no" path="@prefix@"/>
   </modules>
 </application>

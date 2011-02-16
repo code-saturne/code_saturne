@@ -16,7 +16,7 @@
     <property name="workingdir" value= "COCAS_WORKINGDIR"/>
   </container>
 
-  <container name="FSI_CFD">
+  <container name="FSI_SATURNE">
     <property name="workingdir" value= "CFD_WORKINGDIR"/>
   </container>
 
