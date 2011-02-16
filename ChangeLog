@@ -1,4 +1,13 @@
 * 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Replace n_procs with n_procs_weight for cs_case_domain objects.
+  modified scripts:
+    cs_case_coupling.py
+    cs_case_domain.py
+    cs_create.py
+    runcase.in
+    runcase_coupling.in
+
+* 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve batch environment support.
   modified scripts:
     bin/cs_exec_environment.py

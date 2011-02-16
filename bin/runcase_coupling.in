@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # mpi_env.mpiexec = mpiexec, mpirun, or equivalent command
     # mpi_env.mpiexec_opts = mpiexec command options
     # mpi_env.mpiexec_args = option to pass arguments (usually None, or -args)
-    # mpi_env.mpiexec_exe = option to define executable (usually None, of -exe)
+    # mpi_env.mpiexec_exe = option to define executable (usually None, or -exe)
     # mpi_env.mpiexec_n = option to define number of ranks (e.g. ' -n ', ' -np ')
     # mpi_env.gen_hostsfile = shell command to generate hostsfile if required
     # mpi_env.del_hostsfile = shell command to delete hostsfile if required

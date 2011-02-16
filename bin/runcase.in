@@ -94,13 +94,11 @@ USER_SCRATCH_FILES = None
 
 # Number of MPI processes associated with the whole calculation (auto if none).
 
-# Warning: when coupling with SYRTHES or Code_Saturne, each calculation domain
-#          will use distinct sets of processors, so make sure to reserve a
-#          sufficiently high number of processors when using resource manager.
+# Warning: this value should be set to None ignored when running under a batch
+#          system/resource manager, unless a different number of processes than
+#          the number allocated is required.
 
 N_PROCS = None
-N_PROCS_MIN = 1
-N_PROCS_MAX = None
 
 # Partition options (if separate run from resolution)
 
@@ -187,9 +185,6 @@ if __name__ == '__main__':
                meteo_data = METEO_DATA,
                user_input_files = USER_INPUT_FILES,
                user_scratch_files = USER_SCRATCH_FILES,
-               n_procs = N_PROCS,
-               n_procs_min = N_PROCS_MIN,
-               n_procs_max = N_PROCS_MAX,
                n_procs_partition = None)
 
     if VALGRIND != None:
@@ -227,7 +222,7 @@ if __name__ == '__main__':
     # mpi_env.mpiexec = mpiexec, mpirun, or equivalent command
     # mpi_env.mpiexec_opts = mpiexec command options
     # mpi_env.mpiexec_args = option to pass arguments (usually None, or -args)
-    # mpi_env.mpiexec_exe = option to define executable (usually None, of -exe)
+    # mpi_env.mpiexec_exe = option to define executable (usually None, or -exe)
     # mpi_env.mpiexec_n = option to define number of ranks (e.g. ' -n ', ' -np ')
     # mpi_env.gen_hostsfile = shell command to generate hostsfile if required
     # mpi_env.del_hostsfile = shell command to delete hostsfile if required
@@ -240,7 +235,7 @@ if __name__ == '__main__':
 
     # Execute script
 
-    case.run(n_procs=None,
+    case.run(n_procs=N_PROCS,
              mpi_environment=mpi_env,
              exec_prefix=CS_TMP_PREFIX,
              run_id=run_id,

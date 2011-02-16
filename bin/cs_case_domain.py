@@ -89,7 +89,7 @@ class base_domain:
     def __init__(self,
                  package,
                  name = None,             # domain name
-                 n_procs = None,          # recommended number of processes
+                 n_procs_weight = None,   # recommended number of processes
                  n_procs_min = 1,         # min. number of processes
                  n_procs_max = None):     # max. number of processes
 
@@ -116,7 +116,7 @@ class base_domain:
 
         # Execution and debugging options
 
-        self.n_procs = n_procs
+        self.n_procs = n_procs_weight
         self.n_procs_min = max(1, n_procs_min)
         self.n_procs_max = n_procs_max
 
@@ -327,7 +327,7 @@ class domain(base_domain):
     def __init__(self,
                  package,
                  name = None,                 # domain name
-                 n_procs = None,              # recommended number of processes
+                 n_procs_weight = None,       # recommended number of processes
                  n_procs_min = None,          # min. number of processes
                  n_procs_max = None,          # max. number of processes
                  n_procs_partition = None,    # n. processes for partitioner
@@ -348,7 +348,7 @@ class domain(base_domain):
 
         base_domain.__init__(self, package,
                              name,
-                             n_procs,
+                             n_procs_weight,
                              n_procs_min,
                              n_procs_max)
 
@@ -1404,7 +1404,7 @@ class syrthes_domain(base_domain):
                  name = None,
                  param = 'syrthes.data',
                  log_file = None,
-                 n_procs = None,
+                 n_procs_weight = None,
                  n_procs_min = 1,
                  n_procs_max = None,
                  n_procs_radiation = None):
@@ -1412,7 +1412,7 @@ class syrthes_domain(base_domain):
         base_domain.__init__(self,
                              package,
                              name,
-                             n_procs,
+                             n_procs_weight,
                              n_procs_min,
                              n_procs_max)
 

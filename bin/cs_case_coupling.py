@@ -94,7 +94,7 @@ def coupling(package,
                          meteo_data = druncase.get('METEO_DATA'),
                          user_input_files = druncase.get('USER_INPUT_FILES'),
                          user_scratch_files = druncase.get('USER_SCRATCH_FILES'),
-                         n_procs = d.get('n_procs'),
+                         n_procs_weight = d.get('n_procs_weight'),
                          n_procs_min = d.get('n_procs_min'),
                          n_procs_max = d.get('n_procs_max'),
                          n_procs_partition = None)
@@ -129,7 +129,7 @@ def coupling(package,
                                      cmd_line = d.get('opt'),
                                      name = d.get('domain'),
                                      param = d.get('script'),
-                                     n_procs = d.get('n_procs'),
+                                     n_procs_weight = d.get('n_procs_weight'),
                                      n_procs_min = d.get('n_procs_min'),
                                      n_procs_max = d.get('n_procs_max'))
 
@@ -137,7 +137,7 @@ def coupling(package,
                 err_str = 'Cannot create SYRTHES domain. Opt = ' + d.get('opt') + '\n'
                 err_str += ' domain = ' + d.get('domain')
                 err_str += ' script = ' + d.get('script') + '\n'
-                err_str += ' n_procs = ' + str(d.get('n_procs')) + '\n'
+                err_str += ' n_procs_weight = ' + str(d.get('n_procs_weight')) + '\n'
                 raise RunCaseError(err_str)
 
             use_syrthes = True

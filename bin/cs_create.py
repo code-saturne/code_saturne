@@ -408,7 +408,7 @@ class Study:
     {'solver': 'PACKAGE',
      'domain': 'DOMAIN',
      'script': 'runcase',
-     'n_procs': None,
+     'n_procs_weight': None,
      'n_procs_min': 1,
      'n_procs_max': None},
 """
@@ -434,7 +434,7 @@ class Study:
     {'solver': 'SYRTHES',
      'domain': 'DOMAIN',
      'script': 'syrthes.data',
-     'n_procs': None,
+     'n_procs_weight': None,
      'n_procs_min': 1,
      'n_procs_max': None,
      'opt' : ''}               # Additional SYRTHES options
