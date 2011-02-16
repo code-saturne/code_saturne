@@ -170,7 +170,7 @@ class BatchRunningModel(Model):
         batch_lines = self.batch_lines
 
         for i in range(len(batch_lines)):
-            if batch_lines[i][0:5] == '#BSUB':
+            if batch_lines[i][0:5] == '#MSUB':
                 batch_args = self.preParse(batch_lines[i][5:])
                 tok = batch_args.split()
                 kw = tok[0]

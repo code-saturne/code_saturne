@@ -894,7 +894,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             cmd = 'bsub < ' + script + ' ' + self.case['batch'] + ' &'
         elif key[0:3] == 'PBS' or key[0:3] == 'SGE':
             cmd = 'qsub ' + batch
-        else
+        else:
             pass
 
         if self.case['salome']:
