@@ -1,3 +1,11 @@
+* 16/02/2011 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Fix a couple of issues related to batch queue management.
+  modified files:
+    bin/cs_create.py
+    gui/Pages/BatchRunningForm.ui
+    gui/Pages/BatchRunningView.py
+
 * 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Handle multiple batch systems through the GUI depending on the configuration file.
   added files:

@@ -482,7 +482,8 @@ class Study:
         if config.has_option('install', 'batch'):
             self.get_batch_file(config.get('install', 'batch'),
                                 distrep = repbase,
-                                mode = 1)
+                                casename = 'coupling',
+                                scriptname = 'runcase_coupling')
 
 
     def create_case(self, casename):
@@ -615,11 +616,12 @@ class Study:
 
         if config.has_option('install', 'batch'):
             self.get_batch_file(config.get('install', 'batch'),
-                                distrep = script,
-                                mode = 0)
+                                distrep = scripts,
+                                casename = casename,
+                                scriptname = 'runcase')
 
 
-    def get_batch_file(self, batchsys, distrep, mode):
+    def get_batch_file(self, batchsys, distrep, casename, scriptname):
         """
         Retrieve batch file for the current system
         Update batch file for the study
@@ -629,25 +631,17 @@ class Study:
         batchfile = 'batch.' + batchsys
 
         shutil.copy(os.path.join(self.package.get_batchdir(), batchfile),
-                    os.path.join(distrep, 'batch'))
+                    os.path.join(distrep, 'runcase_batch'))
 
         kwd1 = re.compile('nameandcase')
         kwd2 = re.compile('scriptname')
 
-        if (mode == 0):
-            studycasename = string.lower(self.name) + string.lower(casename)
-            scriptname = 'runcase'
-        elif (mode == 1):
-            studycasename = string.lower(self.name) + 'coupling'
-            scriptname = 'runcase_coupling'
-        else:
-            sys.stderr.write('Unknown mode for updating batch file.\n')
-            sys.exit(1)
+        studycasename = string.lower(self.name) + string.lower(casename)
 
         # In the cluster, names are limited to 15 caracters
         studycasename = studycasename[:15]
 
-        batchfile = os.path.join(distrep, 'batch')
+        batchfile = os.path.join(distrep, 'runcase_batch')
         batchfile_tmp = batchfile + '.tmp'
 
         fd  = open(batchfile, 'r')

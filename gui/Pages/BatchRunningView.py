@@ -1096,6 +1096,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         if self.job_group != None:
             self.labelJobGroup.show()
+            self.lineEditJobGroup.setText(QString(self.job_group))
             self.lineEditJobGroup.show()
 
         # Show Job management box

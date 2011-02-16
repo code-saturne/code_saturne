@@ -479,7 +479,7 @@ p, li { white-space: pre-wrap; }
          </layout>
         </item>
         <item row="5" column="0" >
-         <widget class="QLabel" name="labelGroup" >
+         <widget class="QLabel" name="labelJobGroup" >
           <property name="text" >
            <string>Group</string>
           </property>
