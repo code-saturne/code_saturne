@@ -117,6 +117,7 @@ class batch_info:
         """
 
         self.batch_type = None
+        self.submit_dir = None
         self.job_file = None
         self.job_name = None
         self.job_id = None
@@ -127,6 +128,7 @@ class batch_info:
         s = os.getenv('LSB_JOBID') # LSF
         if s != None:
             self.batch_type = 'LSF'
+            self.submit_dir = os.getenv('LS_SUBCWDIR')
             self.job_file = os.getenv('LSB_JOBFILENAME')
             self.job_name = os.getenv('LSB_JOBNAME')
             self.job_id = os.getenv('LSB_BATCH_JID')
@@ -136,6 +138,7 @@ class batch_info:
             s = os.getenv('PBS_JOBID') # PBS
             if s != None:
                 self.batch_type = 'PBS'
+                self.submit_dir = os.getenv('PBS_O_WORKDIR')
                 self.job_name = os.getenv('PBS_JOBNAME')
                 self.job_id = os.getenv('PBS_JOBID')
                 self.queue = os.getenv('PBS_QUEUE')
@@ -144,11 +147,17 @@ class batch_info:
             s = os.getenv('LOADL_JOB_NAME') # LoadLeveler
             if s != None:
                 self.batch_type = 'LOADL'
+                self.job_file = os.getenv('LOADL_STEP_COMMAND')
+                self.submit_dir = os.getenv('LOADL_STEP_INITDIR')
+                self.job_name = os.getenv('LOADL_JOB_NAME')
+                self.job_id = os.getenv('LOADL_STEP_ID')
+                self.queue = os.getenv('LOADL_STEP_CLASS')
 
         if self.batch_type == None:
             s = os.getenv('SGE_TASK_ID') # Sun Grid Engine
             if s != None:
                 self.batch_type = 'SGE'
+                self.submit_dir = os.getenv('SGE_O_WORKDIR')
                 self.job_name = os.getenv('JOB_NAME')
                 self.job_id = os.getenv('JOB_ID')
                 self.queue = os.getenv('QUEUE')
@@ -229,17 +238,27 @@ class resource_info(batch_info):
                 s = os.getenv('LSB_HOSTS')
                 if s != None:
                     hl = s.split(' ')
-                    self.n_procs = len(hl)
-                    self.n_nodes = 1
-                    for i in range(self.n_nodes - 1):
-                        if hl[i] != hl[i+1]:
-                            self.n_nodes += 1
+                    self.n_procs_from_hosts_list(hl, True)
 
         # Test for IBM LoadLeveler.
 
         if self.manager == None and self.batch_type == 'LOADL':
-            s = os.getenv('LOADL_PROCESSOR_LIST')
-            self.manager = 'LOADL'
+            s = os.getenv('LOADL_TOTAL_TASKS')
+            if s == None:
+                s = os.getenv('LOADL_BG_SIZE')
+            if s != None:
+                self.manager = 'LOADL'
+                self.n_procs = int(s)
+            else:
+                s = os.getenv('LOADL_PROCESSOR_LIST')
+                if s != None:
+                    self.manager = 'LOADL'
+                    hl = s.split(' ')
+                    self.n_procs_from_hosts_list(hl, True)
+            s = os.getenv('LOADL_HOSTFILE')
+            if s != None:
+                self.manager = 'LOADL'
+                self.hosts_file = s
 
         # Test for TORQUE or PBS Pro.
 
@@ -247,7 +266,7 @@ class resource_info(batch_info):
             s = os.getenv('PBS_NODEFILE')
             if s != None:
                 self.manager = 'PBS'
-                self.n_procs_from_hosts_file(s)
+                self.hosts_file = s
 
         # Test for Oracle Grid Engine.
 
@@ -263,14 +282,17 @@ class resource_info(batch_info):
                 s += '/machines'
                 if os.path.isfile(s):
                     s.manager = 'SGE'
-                    self.n_procs_from_hosts_file(s)
                     self.hosts_file = '$TMPDIR/machines'
             else:
                 s = os.getenv('PE_HOSTFILE')
                 if s != None:
                     self.hosts_file = s
 
-        self.hosts_list = self.get_hosts_list()
+        # Check hosts file presence
+
+        if self.hosts_file != None:
+            if not os.path.isfile(self.hosts_file):
+                self.hosts_file = None
 
         # Determine number of processors from hosts file or list
 
@@ -282,7 +304,7 @@ class resource_info(batch_info):
                     self.n_procs += 1
                 f.close()
             elif self.hosts_list != None:
-                self.n_procs = len(self.hosts_list)
+                self.n_procs_from_hosts_list(self.hosts_list)
 
         # Check and possibly set number of processes
 
@@ -312,6 +334,33 @@ class resource_info(batch_info):
 
     #---------------------------------------------------------------------------
 
+    def n_procs_from_hosts_list(self, hosts_list, is_copy=False):
+
+        """
+        Determine number of processors and nodes from hosts list.
+        """
+
+        self.n_procs = len(hosts_list)
+        self.n_nodes = 1
+
+        # If the hosts list is not already a copy, build one so
+        # that sorting will not alter the original list.
+
+        if is_copy == False:
+            hl = []
+            for s in hosts_list:
+                hl.append(s)
+        else:
+            hl = hosts_list
+
+        hl.sort()
+
+        for i in range(self.n_procs - 1):
+            if hl[i] != hl[i+1]:
+                self.n_nodes += 1
+
+    #---------------------------------------------------------------------------
+
     def get_hosts_list(self):
 
         """
@@ -320,9 +369,14 @@ class resource_info(batch_info):
 
         hosts_list = None
 
+        # Hosts list may already have been defined by constructor
+
+        if self.hosts_list != None:
+            hosts_list = self.hosts_list
+
         # Check for resource manager and eventual hostsfile
 
-        if self.manager == 'SLURM':
+        elif self.manager == 'SLURM':
             hosts_list = []
             s = os.getenv('SLURM_NODELIST')
             if s != None:
@@ -370,7 +424,9 @@ class resource_info(batch_info):
 
         if self.hosts_file == None:
 
-            if self.hosts_list != None:
+            hosts_list = self.get_hosts_list()
+
+            if hosts_list != None:
                 if wdir != None:
                     hosts_file = os.path.join(wdir, 'hostsfile')
                 else:
@@ -379,7 +435,7 @@ class resource_info(batch_info):
                 # If number of procs not specified, determine it by list
                 if self.n_procs == None or self.n_procs < 1:
                     n_procs = 0
-                    for host in self.hosts_list:
+                    for host in hosts_list:
                         f.write(host + '\n')
                         n_procs += 1
                 # If the number of procs is known, use only beginning of list
@@ -389,7 +445,7 @@ class resource_info(batch_info):
                 else:
                     proc_count = 0
                     while proc_count < self.n_procs:
-                        for host in self.hosts_list:
+                        for host in hosts_list:
                             if proc_count < self.n_procs:
                                 f.write(host + '\n')
                                 proc_count += 1
@@ -426,6 +482,7 @@ class mpi_environment:
         self.del_hostsfile = None
         self.mpiboot = None
         self.mpihalt = None
+        self.mpiexec_opts = None
         self.mpiexec = None
         self.mpiexec_opts = None
         self.mpiexec_n = None
@@ -613,7 +670,8 @@ class mpi_environment:
 
         elif pm == 'gforker':
             hosts = False
-            if resource_info.hosts_list != None:
+            hostslist = resource_info.get_hosts_list()
+            if hostslist != None:
                 hosts = True
             else:
                 hostsfile = resource_info.get_hosts_file(wdir)

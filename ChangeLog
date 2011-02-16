@@ -1,4 +1,9 @@
 * 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve batch environment support.
+  modified scripts:
+    bin/cs_exec_environment.py
+
+* 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove hosts list from main runcase arguments and add mpiexec_opts to
   MPI execution environment.
   modified scripts:
