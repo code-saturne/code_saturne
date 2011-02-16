@@ -1,4 +1,10 @@
 * 16/02/2011 - David Monfort <david.monfort@edf.fr>
+  Cosmetic modifications in the Code_Aster coupling.
+  modified files:
+     extras/salome/fsi_appli_config.xml.in
+     extras/salome/fsi_yacs_scheme.xml
+
+* 16/02/2011 - David Monfort <david.monfort@edf.fr>
   Add a shell wrapper to hide SALOME environment so as to be able to run
   code_saturne or runcase scripts.
   added script:
