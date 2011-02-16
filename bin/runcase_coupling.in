@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009-2010  EDF
+#   Copyright (C) 2009-2011  EDF
 #
 #   Code_Saturne is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -63,10 +63,6 @@ APP_DICTS
 
 EXEC_PREFIX_DIR = None
 
-# Optional list of hosts (if not using a batch system).
-
-HOSTS_LIST = None
-
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
@@ -101,6 +97,7 @@ if __name__ == '__main__':
 
     # mpi_env.bindir = path to mpi binaries
     # mpi_env.mpiexec = mpiexec, mpirun, or equivalent command
+    # mpi_env.mpiexec_opts = mpiexec command options
     # mpi_env.mpiexec_args = option to pass arguments (usually None, or -args)
     # mpi_env.mpiexec_exe = option to define executable (usually None, of -exe)
     # mpi_env.mpiexec_n = option to define number of ranks (e.g. ' -n ', ' -np ')
@@ -116,7 +113,6 @@ if __name__ == '__main__':
     # Execute script
 
     case.run(n_procs=None,
-             hosts_list=HOSTS_LIST,
              mpi_environment=mpi_env,
              exec_prefix=EXEC_PREFIX_DIR,
              run_id=run_id,

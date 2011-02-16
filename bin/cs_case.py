@@ -680,6 +680,8 @@ class case:
         mpi_cmd_args = ''
         if d.partition_n_procs > 1 and mpi_env.mpiexec != None:
             mpi_cmd = mpi_env.mpiexec
+            if mpi_env.mpiexec_opts != None:
+                mpi_cmd += ' ' + mpi_env.mpiexec_opts
             if mpi_env.mpiexec_n != None:
                 mpi_cmd += mpi_env.mpiexec_n + str(n_procs)
             mpi_cmd += ' '
@@ -1050,6 +1052,8 @@ fi
         mpi_cmd_args = ''
         if n_procs > 1 and mpi_env.mpiexec != None:
             mpi_cmd = mpi_env.mpiexec
+            if mpi_env.mpiexec_opts != None:
+                mpi_cmd += ' ' + mpi_env.mpiexec_opts
             if mpiexec_mpmd == False:
                 if mpi_env.mpiexec_n != None:
                     mpi_cmd += mpi_env.mpiexec_n + str(n_procs)
@@ -1195,7 +1199,6 @@ fi
 
     def prepare_data(self,
                      n_procs = None,
-                     hosts_list = None,
                      mpi_environment = None,
                      run_id = None):
 
@@ -1246,8 +1249,7 @@ fi
         # Determine execution environment.
 
         exec_env = cs_exec_environment.exec_environment(self.exec_dir,
-                                                        n_procs,
-                                                        hosts_list)
+                                                        n_procs)
 
         # Set user MPI environment if required.
 
@@ -1629,7 +1631,6 @@ fi
 
     def run(self,
             n_procs = None,
-            hosts_list = None,
             mpi_environment = None,
             exec_prefix = None,
             run_id = None,
@@ -1671,7 +1672,6 @@ fi
             retcode = 0
             if prepare_data == True:
                 retcode = self.prepare_data(n_procs,
-                                            hosts_list,
                                             mpi_environment)
                 if retcode == 0:
                     retcode = self.run_partitioner()

@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009-2010  EDF
+#   Copyright (C) 2009-2011  EDF
 #
 #   Code_Saturne is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -176,7 +176,7 @@ class resource_info(batch_info):
 
     #---------------------------------------------------------------------------
 
-    def __init__(self, n_procs = None, hosts_list = None):
+    def __init__(self, n_procs = None):
 
         """
         Get execution resources information.
@@ -271,18 +271,6 @@ class resource_info(batch_info):
                     self.hosts_file = s
 
         self.hosts_list = self.get_hosts_list()
-
-        # Set an optional list of hosts if we are not running under
-        # a resource manager.
-
-        if hosts_list != None:
-            if self.manager != None:
-                sys.stderr.write('Warning:\n'
-                                 + '   Host list will be ignored because a'
-                                 + ' resource manager (' + self.manager
-                                 + ') is in use.\n\n')
-            else:
-                self.hosts_list = hosts_list
 
         # Determine number of processors from hosts file or list
 
@@ -439,6 +427,7 @@ class mpi_environment:
         self.mpiboot = None
         self.mpihalt = None
         self.mpiexec = None
+        self.mpiexec_opts = None
         self.mpiexec_n = None
         self.mpiexec_exe = None
         self.mpiexec_args = None
@@ -1011,7 +1000,7 @@ class exec_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init__(self, wdir=None, n_procs=None, hosts_list=None):
+    def __init__(self, wdir=None, n_procs=None):
         """
         Returns Execution environment.
         """
@@ -1025,7 +1014,7 @@ class exec_environment:
         if self.wdir == None:
             self.wdir = os.getcwd()
 
-        self.resources = resource_info(n_procs, hosts_list)
+        self.resources = resource_info(n_procs)
 
         self.mpi_env = None
 

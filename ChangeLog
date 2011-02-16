@@ -1,4 +1,13 @@
 * 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove hosts list from main runcase arguments and add mpiexec_opts to
+  MPI execution environment.
+  modified scripts:
+    bin/cs_case.py
+    bin/cs_exec_environment.py
+    bin/runcase.in
+    bin/runcase_coupling.in
+
+* 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Updated batch file templates.
   added scripts:
     extras/batch/batch.CCC
