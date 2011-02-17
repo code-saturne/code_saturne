@@ -315,6 +315,22 @@ main(int argc,
   atexit(syr_mpi_exit_force);
 #endif
 
+  /* Redirect output if necessary (pre-analyze command line) */
+
+  numarg = 0;
+
+  while (++numarg < argc) {
+    s = argv[numarg];
+    if (strcmp(s, "--log") == 0)
+      log_name = syr_cs_loc_argstr(++numarg, argc, argv, &argerr);
+  }
+
+  if (log_name != NULL) {
+    FILE *log_ptr = freopen(log_name, "w", stdout);
+    if (log_ptr != NULL)
+      dup2(fileno(log_ptr), fileno(stderr));
+  }
+
   /* ---------------------------- */
   /* Parse command-line arguments */
   /* ---------------------------- */
@@ -411,14 +427,6 @@ main(int argc,
     syr_cs_loc_aidelc(argv[0], argerr);
     ple_error(__FILE__, __LINE__, 0,
               "Erreur lors de la lecture de la ligne de commande.\n");
-  }
-
-  /* Redirect output if necessary */
-
-  if (log_name != NULL) {
-    FILE *log_ptr = freopen(log_name, "w", stdout);
-    if (log_ptr != NULL)
-      dup2(fileno(log_ptr), fileno(stderr));
   }
 
   /* ----------------------------------------*/

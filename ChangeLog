@@ -1,4 +1,10 @@
 * 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Pre-parse command-line in libsyrcs so as to redirect output to log
+  file before any logging is done.
+  modified files:
+    libsyrcs/syr_cs.c
+
+* 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   GUI: fix error opening manuals due to missing package() argument.
   modified files:
     gui/Bases/MainView.py
