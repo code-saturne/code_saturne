@@ -573,7 +573,7 @@ rmb.sh_lance"
    chmod    u+x aux/$fich
  done
 # Executable files in sbin
- listesbin="gettextize"
+ listesbin="backup gettextize"
  for fich in $listesbin  ; do 
    chmod    u+x sbin/$fich
  done
