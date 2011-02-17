@@ -4,7 +4,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -869,6 +869,7 @@ class MainView(QMainWindow, Ui_MainForm):
         open a manual
         """
         try:
+            from cs_package import package
             import cs_info
         except:
             QMessageBox.warning(self, 'Code_Saturne Interface',
@@ -876,7 +877,7 @@ class MainView(QMainWindow, Ui_MainForm):
             return
         argv_info = ['--guide']
         argv_info.append(manual)
-        cs_info.main(argv_info)
+        cs_info.main(argv_info, package())
 
 
     @pyqtSignature("")

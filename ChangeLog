@@ -1,4 +1,9 @@
 * 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI: fix error opening manuals due to missing package() argument.
+  modified files:
+    gui/Bases/MainView.py
+
+* 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove unused variable to avoid compiler warning.
   modified files:
     src/fvm/fvm_selector.c
