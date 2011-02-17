@@ -1,5 +1,11 @@
+* 17/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update format and library documentation links.
+  modified file:
+    doc/user/saturne1.tex
+
 * 04/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow a higher number of processors in the GUI.
+  modified file:
     gui/Pages/BatchRunningForm.ui
 
 * 17/01/2010 - David Monfort <david.monfort@edf.fr>
