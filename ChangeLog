@@ -1,3 +1,9 @@
+* 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct tooltip scope and remove use of color in tooltip so as to avoid
+  readability issues with certain color themes.
+  modified files:
+    gui/Pages/BatchRunningForm.ui
+
 * 16/02/2011 - David Monfort <david.monfort@edf.fr>
   Cosmetic modifications in the Code_Aster coupling.
   modified files:
