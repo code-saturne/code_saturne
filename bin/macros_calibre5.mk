@@ -94,23 +94,16 @@ BLAS_LDFLAGS    =-lcblas -latlas
 #-------------------
 
 # gettext support
-NLS             =0
+NLS             =1
 
 # Set CS_LANG to FR to have French translation
-CS_LANG         =
-
-
-# Preprocessor
-#-------------
-
-PREPROC         =
-PREPROCFLAGS    =
+CS_LANG         =FR
 
 
 # C compiler
 #-----------
 
-CCOMP                  = /home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/bin/gcc
+CCOMP                  = /home/saturne/opt/gcc-4.4/arch/Linux_x86_64/bin/gcc
 
 CCOMPFLAGSDEF          = -std=c99 -funsigned-char -pedantic -W -Wall -Wshadow \
                          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
@@ -129,9 +122,8 @@ CCOMPFLAGSVERS         = -v
 
 # Fortran compiler
 #-----------------
-#  Profiling gprof : -pg -a
 
-FTNCOMP                = /home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/bin/gfortran
+FTNCOMP                = /home/saturne/opt/gcc-4.4/arch/Linux_x86_64/bin/gfortran
 
 FTNCOMPFLAGSDEF        = -I.
 
@@ -149,21 +141,17 @@ FTNPREPROCOPT          =
 # Linker
 #-------
 
-# Linker
-
 LDEDL           = $(FTNCOMP)
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
 LDEDLFLAGSPROF  = -pg
 LDEDLFLAGSVERS  = -v
-LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.3.1/arch/Linux_x86_64/lib64:
+LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,/home/saturne/opt/gcc-4.4/arch/Linux_x86_64/lib64:
 
 
 # Set preprocessor variables
 #---------------------------
-#
-# _POSIX_SOURCE          : POSIX standard functions
 
 VARDEF          = -D_POSIX_SOURCE
 

@@ -35,7 +35,7 @@
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/home/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/calibre7
+BFT_HOME        =/netdata/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/calibre7
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/home/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/calibre7
+FVM_HOME        =/netdata/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/calibre7
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -56,7 +56,7 @@ MPI             =1
 MPE             =0
 MPE_COMM        =0
 
-# For Open MPI on saturne
+# For Open MPI
 MPI_HOME        =/usr/lib/openmpi
 MPI_INC         =-I$(MPI_HOME)/include
 MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
@@ -94,17 +94,10 @@ BLAS_LDFLAGS    =-lcblas -latlas
 #-------------------
 
 # gettext support
-NLS             =0
+NLS             =1
 
 # Set CS_LANG to FR to have French translation
-CS_LANG         =
-
-
-# Preprocessor
-#-------------
-
-PREPROC         =
-PREPROCFLAGS    =
+CS_LANG         =FR
 
 
 # C compiler
@@ -129,7 +122,6 @@ CCOMPFLAGSVERS         = -v
 
 # Fortran compiler
 #-----------------
-#  Profiling gprof : -pg -a
 
 FTNCOMP                = gfortran
 
@@ -149,8 +141,6 @@ FTNPREPROCOPT          =
 # Linker
 #-------
 
-# Linker
-
 LDEDL           = $(FTNCOMP)
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
@@ -162,8 +152,6 @@ LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,:
 
 # Set preprocessor variables
 #---------------------------
-#
-# _POSIX_SOURCE          : POSIX standard functions
 
 VARDEF          = -D_POSIX_SOURCE
 
@@ -188,7 +176,7 @@ LIBDBG   =
 
 # Library in ElectricFence (malloc debugger) mode
 
-LIBEF    =-lefence
+LIBEF    =
 
 # Optional lists of files to compile with specific options
 #---------------------------------------------------------

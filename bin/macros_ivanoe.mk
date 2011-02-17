@@ -56,7 +56,7 @@ MPI             =1
 MPE             =0
 MPE_COMM        =0
 
-#Les bibliothèques MPI sont directement appelées par mpicc et mpif77
+# We use MPI wrappers, so nothing to add here
 MPI_INC         =
 MPI_LIB         =
 
@@ -64,7 +64,7 @@ MPI_LIB         =
 #-------------------
 
 # Sockets support
-SOCKET          =1
+SOCKET          =0
 SOCKET_INC      =
 SOCKET_LIB      =
 
@@ -99,13 +99,6 @@ NLS             =0
 CS_LANG         =
 
 
-# Preprocessor
-#-------------
-
-PREPROC         =
-PREPROCFLAGS    =
-
-
 # C compiler
 #-----------
 
@@ -126,7 +119,6 @@ CCOMPFLAGSVERS         = -V
 
 # Fortran compiler
 #-----------------
-#  Profiling gprof : -p
 
 FTNCOMP                = mpif77
 
@@ -146,8 +138,6 @@ FTNPREPROCOPT          =
 # Linker
 #-------
 
-# Linker
-
 LDEDL           = $(FTNCOMP)
 LDEDLFLAGS      = -O -nofor_main
 LDEDLFLAGSLO    = -O0 -nofor_main
@@ -159,8 +149,6 @@ LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,
 
 # Set preprocessor variables
 #---------------------------
-#
-# _POSIX_SOURCE          : POSIX standard functions
 
 VARDEF          = -D_POSIX_SOURCE
 
@@ -185,7 +173,7 @@ LIBDBG   =
 
 # Library in ElectricFence (malloc debugger) mode
 
-LIBEF    =-lefence
+LIBEF    =
 
 # Optional lists of files to compile with specific options
 #---------------------------------------------------------

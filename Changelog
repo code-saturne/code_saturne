@@ -1,4 +1,17 @@
 * 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Updated Makefile macro files.
+  modified files:
+    bin/macros_Blue_Gene_P.mk
+    bin/macros_calibre5.mk
+    bin/macros_calibre7.mk
+    bin/macros_clamart2.mk
+    bin/macros_Darwin.mk
+    bin/macros_ivanoe.mk
+    bin/macros_Linux.mk
+    bin/macros_platine.mk
+    bin/macros_titane.mk
+
+* 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Corrected typo in options list.
   modified files:
     src/base/cs_opts.c

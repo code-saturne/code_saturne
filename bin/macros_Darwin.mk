@@ -56,7 +56,7 @@ MPI             =1
 MPE             =0
 MPE_COMM        =0
 
-# For MPICH on saturne
+# We use MPI wrappers, so nothing to add here
 MPI_HOME        =
 MPI_INC         =
 MPI_LIB         =
@@ -100,13 +100,6 @@ NLS             =0
 CS_LANG         =
 
 
-# Preprocessor
-#-------------
-
-PREPROC         =
-PREPROCFLAGS    =
-
-
 # C compiler
 #-----------
 
@@ -129,7 +122,6 @@ CCOMPFLAGSVERS         = -v
 
 # Fortran compiler
 #-----------------
-#  Profiling gprof : -pg -a
 
 FTNCOMP                = mpif77
 
@@ -149,8 +141,6 @@ FTNPREPROCOPT          =
 # Linker
 #-------
 
-# Linker
-
 LDEDL           = $(FTNCOMP)
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
@@ -162,8 +152,6 @@ LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,:
 
 # Set preprocessor variables
 #---------------------------
-#
-# _POSIX_SOURCE          : POSIX standard functions
 
 VARDEF          = -D_POSIX_SOURCE
 
@@ -188,7 +176,7 @@ LIBDBG   =
 
 # Library in ElectricFence (malloc debugger) mode
 
-LIBEF    =-L/Users/saturne/opt/efence-2.1.14/arch/Darwin/lib -lefence
+LIBEF    =
 
 # Optional lists of files to compile with specific options
 #---------------------------------------------------------

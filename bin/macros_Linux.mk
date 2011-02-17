@@ -35,7 +35,7 @@
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/home/saturne/opt/bft-1.1/arch/Linux
+BFT_HOME        =/home/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/Linux
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/home/saturne/opt/fvm-0.15/arch/Linux
+FVM_HOME        =/home/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/Linux
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -100,13 +100,6 @@ NLS             =0
 CS_LANG         =
 
 
-# Preprocessor
-#-------------
-
-PREPROC         =
-PREPROCFLAGS    =
-
-
 # C compiler
 #-----------
 
@@ -129,7 +122,6 @@ CCOMPFLAGSVERS         = -v
 
 # Fortran compiler
 #-----------------
-#  Profiling gprof : -pg -a
 
 FTNCOMP                = gfortran
 
@@ -149,8 +141,6 @@ FTNPREPROCOPT          =
 # Linker
 #-------
 
-# Linker
-
 LDEDL           = $(FTNCOMP)
 LDEDLFLAGS      = -O
 LDEDLFLAGSLO    = -O0
@@ -162,8 +152,6 @@ LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,:
 
 # Set preprocessor variables
 #---------------------------
-#
-# _POSIX_SOURCE          : POSIX standard functions
 
 VARDEF          = -D_POSIX_SOURCE
 
@@ -188,7 +176,7 @@ LIBDBG   =
 
 # Library in ElectricFence (malloc debugger) mode
 
-LIBEF    =-lefence
+LIBEF    =
 
 # Optional lists of files to compile with specific options
 #---------------------------------------------------------

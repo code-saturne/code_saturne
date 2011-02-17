@@ -35,7 +35,7 @@
 # System paths
 #-------------
 
-BGL_SYS  = /bgsys/drivers/ppcfloor/comm
+BGP_SYS  = /bgsys/drivers/ppcfloor/comm
 
 # Macros for BFT
 #---------------
@@ -63,7 +63,7 @@ MPE_COMM        =0
 
 # For Blue Gene MPI
 MPI_HOME        =
-MPI_INC         = -I$(BGL_SYS)/include
+MPI_INC         = -I$(BGP_SYS)/include
 MPI_LIB         =
 
 # Macros for Sockets
@@ -90,7 +90,6 @@ XML_LIB  =-L$(XML_HOME)/lib -lxml2
 
 # BLAS support
 BLAS            =1
-ESSL            =1 # IBM ESSL library with BLAS extension
 BLAS_INC        =-I/opt/ibmmath/essl/4.3/include
 BLAS_CFLAGS     =-D_CS_HAVE_ESSL
 BLAS_LDFLAGS    =
@@ -105,21 +104,12 @@ NLS             =0
 CS_LANG         =
 
 
-# Preprocessor
-#-------------
-
-PREPROC         =
-PREPROCFLAGS    =
-
-
 # C compiler
 #-----------
 
 CCOMP                  = bgxlc
 
 CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=450d -qtune=450
-#CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
-#CCOMPFLAGSDEF          = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qsource -qlist
 
 CCOMPFLAGS             = $(CCOMPFLAGSDEF) -O3
 CCOMPFLAGSOPTPART1     = $(CCOMPFLAGSDEF) -O3 -qhot
@@ -133,13 +123,10 @@ CCOMPFLAGSVERS         = -v
 
 # Fortran compiler
 #-----------------
-#  Profiling gprof : -pg -a
 
 FTNCOMP                = bgxlf
 
 FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname
-#FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
-#FTNCOMPFLAGSDEF        = -g -qmaxmem=-1 -qarch=450d -qtune=450 -qextname -qsource -qlist
 
 FTNCOMPFLAGS           = $(FTNCOMPFLAGSDEF) -O3
 FTNCOMPFLAGSOPTPART1   = $(FTNCOMPFLAGSDEF) -O3 -qhot
@@ -155,10 +142,7 @@ FTNPREPROCOPT          = -WF,
 # Linker
 #-------
 
-# Linker
-
 LDEDL           = bgxlf_r -qflttrap=enable:overflow:zerodivide
-#LDEDL           = bgxlf_r -qflttrap=enable:overflow:zerodivide -qsigtrap=xl_trcedump
 LDEDLFLAGS      = -O3
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
@@ -169,8 +153,6 @@ LDEDLRPATH      =
 
 # Set preprocessor variables
 #---------------------------
-#
-# _POSIX_SOURCE          : POSIX standard functions
 
 VARDEF          = -D_POSIX_SOURCE
 
@@ -181,11 +163,9 @@ VARDEF          = -D_POSIX_SOURCE
 ZLIB     = -L/bgsys/local/tools_ibm/lib -lz
 
 # IBM libraries
-#SYSLIBS  = -L/bgsys/drivers/ppcfloor/comm/lib -lmpich.cnk -ldcmfcoll.cnk -ldcmf.cnk -L/bgsys/drivers/ppcfloor/runtime/SPI -lSPI.cna -lrt -lpthread
 SYSLIBS  = -L/bgsys/drivers/ppcfloor/comm/lib -lmpich.cnk -ldcmfcoll.cnk /bgsys/local/fixes/libdcmf.cnk.a -L/bgsys/drivers/ppcfloor/runtime/SPI -lSPI.cna -lrt -lpthread
 MASS     = -L/opt/ibmcmp/xlmass/bg/4.4/bglib -lmass -lmassv
 ESSL     = -L/opt/ibmmath/essl/4.3/lib -lesslbg -lesslsmpbg
-TRACE    = /bgsys/local/tools_ibm/lib/libmpitrace.a
 
 # Base libraries (always used)
 

@@ -56,16 +56,16 @@ MPI             =1
 MPE             =0
 MPE_COMM        =0
 
-# For Open MPI on saturne
+# For Open MPI
 MPI_HOME        =/home/logiciels/openmpi_intel
 MPI_INC         =-I$(MPI_HOME)/include
-MPI_LIB         =-pthread -L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
+MPI_LIB         =-L$(MPI_HOME)/lib -lmpi -lopen-rte -lopen-pal -ldl -Wl,--export-dynamic -lnsl -lutil -lm -ldl
 
 # Macros for Sockets
 #-------------------
 
 # Sockets support
-SOCKET          =1
+SOCKET          =0
 SOCKET_INC      =
 SOCKET_LIB      =
 
@@ -97,14 +97,7 @@ BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmk
 NLS             =0
 
 # Set CS_LANG to FR to have French translation
-CS_LANG         =
-
-
-# Preprocessor
-#-------------
-
-PREPROC         =
-PREPROCFLAGS    =
+CS_LANG         =FR
 
 
 # C compiler
@@ -127,7 +120,6 @@ CCOMPFLAGSVERS         = -V
 
 # Fortran compiler
 #-----------------
-#  Profiling gprof : -pg -a
 
 FTNCOMP                = /home/logiciels/intel/Compiler/11.1/046/bin/intel64/ifort
 
@@ -147,8 +139,6 @@ FTNPREPROCOPT          =
 # Linker
 #-------
 
-# Linker
-
 LDEDL           = $(FTNCOMP)
 LDEDLFLAGS      = -O -nofor_main
 LDEDLFLAGSLO    = -O0 -nofor_main
@@ -160,8 +150,6 @@ LDEDLRPATH      = -rdynamic -Wl,-rpath -Wl,
 
 # Set preprocessor variables
 #---------------------------
-#
-# _POSIX_SOURCE          : POSIX standard functions
 
 VARDEF          = -D_POSIX_SOURCE
 
