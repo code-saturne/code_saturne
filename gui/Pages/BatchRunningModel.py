@@ -254,16 +254,16 @@ class BatchRunningModel(Model):
                             val = self.dictValues['job_procs']
                         elif kw == 'wall_clock_limit':
                             wt = self.dictValues['job_walltime']
-                            val = '%d:%02d:%02d' % (str(wt/3600),
-                                                    str((wt%3600)/60),
-                                                    str(wt%60))
+                            val = '%d:%02d:%02d' % (wt/3600,
+                                                    (wt%3600)/60,
+                                                    wt%60)
                         elif kw == 'class':
                             val = self.dictValues['job_class']
                         elif kw == 'group':
                             val = self.dictValues['job_group']
                         else:
                             continue
-                    batch_lines[i] = '# @ ' + kw + ' = ' + str(val) + '\n'
+                        batch_lines[i] = '# @ ' + kw + ' = ' + str(val) + '\n'
                 except Exception:
                     pass
 
@@ -386,9 +386,9 @@ class BatchRunningModel(Model):
                             +  ':ppn=' + self.dictValues['job_ppn'] + ch
                     elif arg[0:12] == '-l walltime=':
                         wt = self.dictValues['job_walltime']
-                        s_wt = '%d:%02d:%02d' % (str(wt/3600),
-                                                 str((wt%3600)/60),
-                                                 str(wt%60))
+                        s_wt = '%d:%02d:%02d' % (wt/3600,
+                                                 (wt%3600)/60,
+                                                 wt%60)
                         ch = ' -l walltime=' + s_wt + ch
                     elif arg[0:2] == '-q':
                         ch = ' -q ' + self.dictValues['job_class'] + ch
@@ -460,9 +460,9 @@ class BatchRunningModel(Model):
                             pass
                     elif arg[0:8] == '-l h_rt=':
                         wt = self.dictValues['job_walltime']
-                        s_wt = '%d:%02d:%02d' % (str(wt/3600),
-                                                 str((wt%3600)/60),
-                                                 str(wt%60))
+                        s_wt = '%d:%02d:%02d' % (wt/3600,
+                                                 (wt%3600)/60,
+                                                 wt%60)
                         ch = ' -l h_rt=' + s_wt + ch
                     elif arg[0:2] == '-q':
                         ch = ' -q ' + self.dictValues['job_class'] + ch

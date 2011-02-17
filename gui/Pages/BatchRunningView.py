@@ -1134,17 +1134,15 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         name = self.case['script']
         self.labelScriptName.setText(QString(name))
 
-        if GuiParam.matisse :
-            self.labelFiles.show()
-            self.toolButtonFiles.show()
+        self.labelFiles.show()
+        self.toolButtonFiles.show()
+
+        if not GuiParam.matisse and self.case['batch_type'] == None:
+            self.labelNProcs.show()
+            self.spinBoxNProcs.show()
+        else:
             self.labelNProcs.hide()
             self.spinBoxNProcs.hide()
-        else:
-            self.labelFiles.show()
-            self.toolButtonFiles.show()
-            if self.case['batch_type'][0:3] == None:
-                self.labelNProcs.show()
-                self.spinBoxNProcs.show()
 
         self.groupBoxScript.show()
 

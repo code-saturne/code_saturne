@@ -1,3 +1,10 @@
+* 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI: Correct wall-clock time parsing bug in batch handling and improve
+  visibility update for number of processes in interactive case.
+  modified files:
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/BatchRunningView.py
+
 * 16/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct tooltip scope and remove use of color in tooltip so as to avoid
   readability issues with certain color themes.
