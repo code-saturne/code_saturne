@@ -184,7 +184,7 @@ _arg_env_help(const char  *name)
     (e, _(" -q, --quality     verifications\n"
           "                   -1: no tests activated (default)\n"
           "                    0: only the initialization is tested\n"
-          "                    1 à 5: elementary tests are activated\n"));
+          "                    1 to 5: elementary tests are activated\n"));
   fprintf
     (e, _(" -cwf              <criterion> cut warped faces\n"
           "                    -post: activate the post-processing related\n"

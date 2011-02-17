@@ -1,3 +1,14 @@
+* 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Corrected typo in options list.
+  modified files:
+    src/base/cs_opts.c
+    po/fr.po
+
+* 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Updated LaTeX style so as to compile on current environments.
+  modified files:
+    doc/style/csdoc.sty
+
 * 11/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Updated install environment to preferentially use named machines.
   This also includes replacing the /home/saturne install prefix
