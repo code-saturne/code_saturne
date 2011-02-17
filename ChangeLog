@@ -1,4 +1,9 @@
 * 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove unused variable to avoid compiler warning.
+  modified files:
+    src/fvm/fvm_selector.c
+
+* 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   GUI: Correct wall-clock time parsing bug in batch handling and improve
   visibility update for number of processes in interactive case.
   modified files:

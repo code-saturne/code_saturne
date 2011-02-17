@@ -1059,7 +1059,6 @@ fvm_selector_get_gc_list(fvm_selector_t  *this_selector,
   int  c_id, gc_id;
   const fvm_selector_postfix_t *pf = NULL;
   fvm_selector_t  *ts = this_selector;
-  fvm_lnum_t  i;
 
   assert(this_selector != NULL);
 
