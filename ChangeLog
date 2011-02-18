@@ -1,3 +1,8 @@
+* 18/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update MPI environment for legacy runcase.
+  modified file:
+    bin/runcase_mpi_env
+
 * 17/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Update format and library documentation links.
   modified file:

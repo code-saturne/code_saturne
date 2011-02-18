@@ -4,7 +4,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2010 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -30,7 +30,7 @@
 # PROCESSOR_LIST environment variables, as well as other system-specific
 # environment variables.
 #
-if [ -f "$TMPDIR/machines" ] ; then     # Univ Manchester queueing system
+if [ -f "$TMPDIR/machines" ] ; then     # Sun Grid Engine queueing system
    MPIHOSTS="$TMPDIR/machines"
 elif [ ! -z "$PBS_NODEFILE" ] ; then    # PBS queueing system
    MPIHOSTS="$PBS_NODEFILE"
@@ -88,20 +88,20 @@ if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
 # Temporarily set the architecture name (for EDF purposes)
   NOM_ARCH=`uname -s`
   if [ "$NOM_ARCH" = "Linux" ] ; then
-    if [ "`domainname 2>/dev/null`" = "cluster-chatou" ] ; then
-      NOM_ARCH=Linux_Ch
-    elif [ -d /bgl/BlueLight/ppcfloor ] ; then
-      NOM_ARCH=Blue_Gene_L
+    if [ $(grep -c "Calibre 7" /etc/issue) -ne 0 ] ; then
+      NOM_ARCH=calibre7
+    elif [ $(grep -c "Calibre 5" /etc/issue) -ne 0 ] ; then
+      NOM_ARCH=calibre5
     elif [ -d /bgsys/drivers/ppcfloor ] ; then
       NOM_ARCH=Blue_Gene_P
-    else
-      MACHINE=`uname -m`
-      case "$MACHINE" in
-        *86)    NOM_ARCH=Linux ;;
-        x86_64) NOM_ARCH=Linux_x86_64 ;;
-        ia64)   NOM_ARCH=Linux_IA64 ;;
-        *)      NOM_ARCH=Linux_$MACHINE ;;
-      esac
+    elif [ "`hostname | cut -c1-6`" = "titane" ] ; then
+      NOM_ARCH=titane
+    elif [ "`hostname | cut -c1-7`" = "platine" ] ; then
+      NOM_ARCH=platine
+    elif [ "`hostname | cut -c1-5`" = "clala" -o "`hostname`" = "clay1pfr" ] ; then
+      NOM_ARCH=clamart2
+    elif [ "`hostname | cut -c1-4`" = "noec" -o "`hostname | cut -c 1-7`" = "noeuser" ] ; then
+      NOM_ARCH=ivanoe
     fi
   fi
 # Default values
@@ -112,17 +112,14 @@ if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
     export PATH=${CS_MPI_PATH}:$PATH
   fi
 #
-  if [ "$NOM_ARCH" = "OSF1" ] ; then
-    MPIRUN="prun -n ${NUMBER_OF_PROCESSORS} -stv"
+  if [ "$NOM_ARCH" = "ivanoe" ] ; then
+    MPIRUN="mpirun -f ${LOADL_HOSTFILE} -np ${LOADL_TOTAL_TASKS}"
 #
-  elif [ "$NOM_ARCH" = "Linux_CCRT" ] ; then
-    MPIRUN="mpirun -srun"
-#
-  elif [ "$NOM_ARCH" = "Linux_IA64" ] ; then
+  elif [ "$NOM_ARCH" = "platine" ] ; then
     MPIRUN="srun -n ${NUMBER_OF_PROCESSORS}"
 #
-  elif [ "$NOM_ARCH" = "Linux_Ch" ] ; then
-    MPIRUN="mpirun -np ${NUMBER_OF_PROCESSORS} -machinefile $PBS_NODEFILE"
+  elif [ "$NOM_ARCH" = "titane" ] ; then
+    MPIRUN="mpirun -n ${NUMBER_OF_PROCESSORS}"
 #
   elif [ "$NOM_ARCH" = "AIX" ] ; then
     MPIRUN="poe"
@@ -151,7 +148,7 @@ if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
         fi
       elif [ -f "${CS_MPI_PATH}/mpichversion" ] ; then # For MPICH
         MPIRUN="${CS_MPI_PATH}/mpirun -np ${NUMBER_OF_PROCESSORS}"
-        if [ ! -z "$TMPDIR/machines" ] ; then          # For Univ Manchester queueing system
+        if [ ! -z "$TMPDIR/machines" ] ; then          # For Sun Grid Engine
           MPIRUN="$MPIRUN -machinefile $TMPDIR/machines"
         elif [ ! -z "$MPIHOSTS" ] ; then
           MPIRUN="$MPIRUN -machinefile $MPIHOSTS"
