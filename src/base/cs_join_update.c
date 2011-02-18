@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2010 EDF S.A., France
+ *     Copyright (C) 2008-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -3425,7 +3425,7 @@ _sync_family_combinations(int   *n_fam,
 
   for (rank_id = cs_glob_rank_id, n_ranks = cs_glob_n_ranks, rank_mult = 1;
        n_ranks > 1;
-       rank_id /= 2, n_ranks /= 2, rank_mult *= 2) {
+       rank_id /= 2, n_ranks = (n_ranks+1)/2, rank_mult *= 2) {
 
     /* Even ranks receive and merge */
 
@@ -3475,7 +3475,7 @@ _sync_family_combinations(int   *n_fam,
             if (cmp == 0)
               j += 1;
           }
-          else if (cmp < 0) {
+          else if (cmp > 0) {
             for (k = 0; k < n1; k++)
               fam_new[idx_new[n_fam_new] + k] = fam_recv[idx_recv[j] + k];
             idx_new[n_fam_new + 1] = idx_new[n_fam_new] + n1;

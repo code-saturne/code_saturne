@@ -1,4 +1,10 @@
 * 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix 2 bugs leading to locking or crash in mesh joining during
+  synchronization of mesh element families.
+  modified files:
+    src/base/cs_join_update.c
+
+* 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Pre-parse command-line in libsyrcs so as to redirect output to log
   file before any logging is done.
   modified files:
