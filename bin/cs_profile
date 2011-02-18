@@ -80,9 +80,7 @@
   export PATH
 
 # Paths and libraries for MPI
-  if [ "$NOM_ARCH" = "calibre7" ] ; then
-    CS_MPI_PATH=/usr/lib/openmpi/bin
-  elif [ "$NOM_ARCH" = "calibre5" ] ; then
+  if [ "$NOM_ARCH" = "calibre5" ] ; then
     CS_MPI_PATH=/home/saturne/opt/openmpi-1.4/arch/$NOM_ARCH/bin
   else
     CS_MPI_PATH=

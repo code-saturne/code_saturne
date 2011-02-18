@@ -56,8 +56,8 @@
 # TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
 ########################################################################
 #
-#                  BATCH FILE FOR THE CCRT (Platine under LSF)
-#                  ===========================================
+#                  BATCH FILE FOR THE CCRT (Titane or Platine under LSF)
+#                  =====================================================
 #
 #BSUB -n 2
 #BSUB -W 00:05  
@@ -73,8 +73,8 @@
 #
 # ------------------------------------------------------------------
 #
-#                  BATCH FILE FOR THE Chatou CLUSTER (PBS)
-#                  =======================================
+#                  BATCH FILE FOR THE Clamart2 CLUSTER (PBS)
+#                  =========================================
 #
 #PBS -l nodes=4:ppn=2,walltime=1:00:00,mem=320mb
 #PBS -j eo -N nometcas
@@ -91,8 +91,8 @@
 #
 # ------------------------------------------------------------------
 #
-#                  BATCH FILE (University of Manchester Cluster)
-#                  =============================================
+#                  BATCH FILE (Sun Grid Engine)
+#                  ============================
 #
 # set the name of the job
 ##$ -N nometcas
@@ -125,9 +125,6 @@
 #@ tasks_per_node = 6
 #@ node_usage = not_shared
 #@ class = standard
-#
-#@ network.MPI = csss,shared,US
-#@ bulkxfer = oui
 #
 #@ wall_clock_limit = 00:20:00
 #
@@ -521,7 +518,10 @@ if [ $NOMBRE_DE_PROCESSEURS -gt 1 ] ; then
     export PATH=${CS_MPI_PATH}:$PATH
   fi
 #
-  if [ "$NOM_ARCH" = "platine" ] ; then
+  if [ "$NOM_ARCH" = "calibre7" ] ; then
+    MPIRUN="mpiexec.openmpi -n ${NOMBRE_DE_PROCESSEURS}"
+#
+  elif [ "$NOM_ARCH" = "platine" ] ; then
     MPIRUN="srun -n ${NOMBRE_DE_PROCESSEURS}"
 #
   elif [ "$NOM_ARCH" = "titane" ] ; then 
@@ -554,7 +554,7 @@ if [ $NOMBRE_DE_PROCESSEURS -gt 1 ] ; then
         fi
       elif [ -f "${CS_MPI_PATH}/mpichversion" ] ; then   # With MPICH
         MPIRUN="${CS_MPI_PATH}/mpirun -np ${NOMBRE_DE_PROCESSEURS}" 
-        if [ ! -z "$TMPDIR/machines" ] ; then   # With batch at Univ. Manchester
+        if [ ! -z "$TMPDIR/machines" ] ; then   # With Sun Grid Engine
           MPIRUN="$MPIRUN -machinefile $TMPDIR/machines"
         elif [ ! -z "$MPIHOSTS" ] ; then
           MPIRUN="$MPIRUN -machinefile $MPIHOSTS"
