@@ -1,4 +1,9 @@
-* 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+* 18/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix missing update of n_procs to n_procs_weight in NEPTUNE_CFD coupling.
+  modified files:
+    bin/cs_case_coupling.py
+
+* 18/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix 2 bugs leading to locking or crash in mesh joining during
   synchronization of mesh element families.
   modified files:

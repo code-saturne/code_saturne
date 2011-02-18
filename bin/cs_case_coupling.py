@@ -172,7 +172,7 @@ def coupling(package,
                          meteo_data = druncase.get('METEO_DATA'),
                          user_input_files = druncase.get('USER_INPUT_FILES'),
                          user_scratch_files = druncase.get('USER_SCRATCH_FILES'),
-                         n_procs = d.get('n_procs'),
+                         n_procs_weight = d.get('n_procs_weight'),
                          n_procs_min = d.get('n_procs_min'),
                          n_procs_max = d.get('n_procs_max'),
                          n_procs_partition = None)
