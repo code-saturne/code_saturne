@@ -1,3 +1,8 @@
+* 21/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct array size bug in libsyrcs leading to crashes in parallel.
+  modified files:
+    libsyrcs/syr_coupling.c
+
 * 18/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Update MPI environment for legacy runcase.
   modified file:

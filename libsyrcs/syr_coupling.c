@@ -393,7 +393,7 @@ syr_coupling_receive_bc_mesh(syr_coupling_t  *coupling,
 
     strncpy(sec_name_cmp, sec_name, SYR_COMM_L_SEC_NAME);
     sec_name_cmp[SYR_COMM_L_SEC_NAME] = '\0';
-    max_msg_size = 0;
+    max_msg_size = msg_size;
 
     for (proc_id = 1; proc_id < n_ranks; proc_id++) {
 
