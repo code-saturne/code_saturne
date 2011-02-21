@@ -376,7 +376,10 @@ class case:
             exec_dir_name += '.' + exec_basename
             self.exec_dir = os.path.join(self.exec_prefix, exec_dir_name)
         else:
-            self.exec_dir = os.path.join(self.case_dir, 'RESU', exec_basename)
+            r = os.path.join(self.case_dir, 'RESU')
+            if len(self.domains) + len(self.syr_domains) > 1:
+                r += '_COUPLING'
+            self.exec_dir = os.path.join(r, exec_basename)
 
     #---------------------------------------------------------------------------
 

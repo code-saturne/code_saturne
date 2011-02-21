@@ -1,3 +1,13 @@
+* 21/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  In coupled case, run in RESU_COUPLING and not RESU by default.
+  modified files:
+    bin/cs_case.py
+
+* 21/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct array size bug in libsyrcs leading to crashes in parallel.
+  modified files:
+    libsyrcs/syr_coupling.c
+
 * 18/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix missing update of n_procs to n_procs_weight in NEPTUNE_CFD coupling.
   modified files:
