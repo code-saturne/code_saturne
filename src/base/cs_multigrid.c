@@ -136,12 +136,14 @@ typedef struct _cs_multigrid_info_t {
   unsigned long long   coarse_size[3];      /* Coarse grid size:
                                                [min, max, total] */
 
-  unsigned             n_iterations[3][4];  /* Number of iterations for
+  unsigned             n_cycles[3];         /* Number of cycles for
+                                               system resolution:
+                                               [min, max, total] */
+  unsigned             n_iterations[3][3];  /* Number of iterations for
                                                system resolution:
                                                  [last, min, max]
-                                                 [finest, coarsest, total,
-                                                  fine grid equivalent] */
-  unsigned long long   n_iterations_tot[4]; /* Total accumulated number of
+                                                 [finest, coarsest, total] */
+  unsigned long long   n_iterations_tot[3]; /* Total accumulated number of
                                                iterations:
                                                  [finest, coarsest, total,
                                                   fine grid equivalent] */
@@ -222,12 +224,11 @@ _multigrid_info_init(cs_multigrid_info_t *info,
   for (i = 0; i < 3; i++) {
     info->n_levels[i] = 0;
     info->coarse_size[i] = 0;
-    for (j = 0; j < 4; j++)
+    info->n_cycles[i] = 0;
+    for (j = 0; j < 3; j++)
       info->n_iterations[i][j] = 0;
-  }
-
-  for (i = 0; i < 4; i++)
     info->n_iterations_tot[i] = 0;
+  }
 
   for (i = 0; i < 2; i++) {
     info->wt_tot[i] = 0.0;
@@ -276,12 +277,10 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
   int n_it_c_max = this_info->n_iterations[2][1];
   int n_it_t_min = this_info->n_iterations[1][2];
   int n_it_t_max = this_info->n_iterations[2][2];
-  int n_it_e_min = this_info->n_iterations[1][3];
-  int n_it_e_max = this_info->n_iterations[2][3];
   int n_it_f_mean = (int)(this_info->n_iterations_tot[0] / n_solves_denom);
   int n_it_c_mean = (int)(this_info->n_iterations_tot[1] / n_solves_denom);
   int n_it_t_mean = (int)(this_info->n_iterations_tot[2] / n_solves_denom);
-  int n_it_e_mean = (int)(this_info->n_iterations_tot[3] / n_solves_denom);
+  int n_cy_mean = (int)(this_info->n_cycles[2] / n_solves_denom);
 
   bft_printf(_("\n"
                "Summary of multigrid for \"%s\":\n\n"),
@@ -314,6 +313,10 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
                "    minimum:                        %llu\n"
                "    maximum:                        %llu\n"
                "    mean:                           %llu\n"
+               "  Number of cycles:\n"
+               "    minimum:                        %d\n"
+               "    maximum:                        %d\n"
+               "    mean:                           %d\n"
                "  Number of iterations:\n"
                "    on finest grid:\n"
                "      minimum:                      %d\n"
@@ -327,18 +330,14 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
                "      minimum:                      %d\n"
                "      maximum:                      %d\n"
                "      mean:                         %d\n"
-               "    equivalent (total weighted by number of cells) :\n"
-               "      minimum:                      %d\n"
-               "      maximum:                      %d\n"
-               "      mean:                         %d\n"
                "  Associated times (construction, resolution)\n"
                "    total elapsed:                  %12.3f  %12.3f\n"),
              n_builds, n_solves, n_lv_min, n_lv_max, n_lv_mean,
              c_size_min, c_size_max, c_size_mean,
+             this_info->n_cycles[0], this_info->n_cycles[1], n_cy_mean,
              n_it_f_min, n_it_f_max, n_it_f_mean,
              n_it_c_min, n_it_c_max, n_it_c_mean,
              n_it_t_min, n_it_t_max, n_it_t_mean,
-             n_it_e_min, n_it_e_max, n_it_e_mean,
              this_info->wt_tot[0], this_info->wt_tot[1]);
 
 #if defined(HAVE_MPI)
@@ -629,7 +628,7 @@ _cs_multigrid_post_function(cs_int_t   hierarchy_id,
   const char name_prefix[] = "mg";
   const char *base_name = NULL;
 
-  /* Return if necessary structures inconsistant or have been destroyed */
+  /* Return if necessary structures inconsistent or have been destroyed */
 
   if (hierarchy_id < cs_glob_multigrid_n_systems)
     mg = cs_glob_multigrid_systems[hierarchy_id];
@@ -1044,7 +1043,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
   coarsest_level = mg->n_levels - 1;
 
   /* In theory, one should increase precision on coarsest mesh,
-     but in practice, it more efficient to have a lower precision */
+     but in practice, it is more efficient to have a lower precision */
   /* c_precision = precision * 0.01; */
   c_precision = precision;
 
@@ -1413,7 +1412,7 @@ _multigrid_solve(const char         *var_name,
                  void               *aux_vectors)
 {
   int ii;
-  unsigned _n_iter[4] = {0, 0, 0, 0};
+  unsigned _n_iter[3] = {0, 0, 0};
 
   fvm_lnum_t n_cells = 0;
 
@@ -1523,9 +1522,8 @@ _multigrid_solve(const char         *var_name,
       _n_iter[2] += n_level_iter[ii];
     }
 
-    _n_iter[3] = (int)(  it_count_num
-                       / cs_grid_get_n_g_cells(mg->grid_hierarchy[0]));
-    *n_iter = _n_iter[3];
+    *n_iter = (cs_int_t)(  it_count_num
+                         / cs_grid_get_n_g_cells(mg->grid_hierarchy[0]));
 
     if (_aux_vectors != aux_vectors)
       BFT_FREE(_aux_vectors);
@@ -1544,11 +1542,17 @@ _multigrid_solve(const char         *var_name,
   mg_info->type[1] = ascent_smoother_type;
   mg_info->type[2] = coarse_solver_type;
 
-  for (ii = 0; ii < 4; ii++)
+  for (ii = 0; ii < 3; ii++)
     mg_info->n_iterations[0][ii] = _n_iter[ii];
 
+  mg_info->n_cycles[2] += *n_cycles;
+
   if (mg_info->n_solves > 0) {
-    for (ii = 0; ii < 4; ii++) {
+    if (mg_info->n_cycles[0] > (unsigned)(*n_cycles))
+      mg_info->n_cycles[0] = *n_cycles;
+    if (mg_info->n_cycles[1] < (unsigned)(*n_cycles))
+      mg_info->n_cycles[1] = *n_cycles;
+    for (ii = 0; ii < 3; ii++) {
       if (mg_info->n_iterations[1][ii] > _n_iter[ii])
         mg_info->n_iterations[1][ii] = _n_iter[ii];
       if (mg_info->n_iterations[2][ii] < _n_iter[ii])
@@ -1556,13 +1560,15 @@ _multigrid_solve(const char         *var_name,
     }
   }
   else {
-    for (ii = 0; ii < 4; ii++) {
+    mg_info->n_cycles[0] = *n_cycles;
+    mg_info->n_cycles[1] = *n_cycles;
+    for (ii = 0; ii < 3; ii++) {
       mg_info->n_iterations[1][ii] = _n_iter[ii];
       mg_info->n_iterations[2][ii] = _n_iter[ii];
     }
   }
 
-  for (ii = 0; ii < 4; ii++)
+  for (ii = 0; ii < 3; ii++)
     mg_info->n_iterations_tot[ii] += _n_iter[ii];
 
   /* Update number of resolutions and timing data */
@@ -1682,7 +1688,7 @@ void CS_PROCF(clmlga, CLMLGA)
 
     else if (grid_lv >= *ngrmax) {
       cs_base_warn(__FILE__, __LINE__);
-      bft_printf(_(" CLMLGA: maximum number of coarse grids (%d)\n"
+      bft_printf(_(" clmlga: maximum number of coarse grids (%d)\n"
                    "         reached for \"%s\".\n"),
                  (int)(*ngrmax), var_name);
       break;

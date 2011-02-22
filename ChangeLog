@@ -1,4 +1,9 @@
 * 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Log number of cycles instead of equivalent iterations for multigrid.
+  modified files:
+   src/base/cs_multigrid.c
+
+* 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Enable build with MED 3.0 (based on 2.9) as well as with MED 2.3.
   modified files:
    configure.ac
