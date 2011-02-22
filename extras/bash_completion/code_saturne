@@ -34,16 +34,15 @@ _code_saturne() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Possible commands except "help", as given by "code_saturne help"
-    cmds="check_consistency check_mesh"
-    cmds="${cmds} compile config create gui info"
+    cmds="check_consistency check_mesh compile config create gui info"
 
     # Help and Case options
     local helpOpts="-h --help"
     local caseOpts="-c --case"
 
     # Readers and guides
-    local readers="evince gpdf kpdf xpdf acroread"
-    local guides="refcard theory tutorial user"
+    local readers="okular evince kpdf gpdf xpdf acroread"
+    local guides="refcard user theory tutorial developper"
 
     # Boolean values
     local isCmd=0
@@ -90,25 +89,25 @@ _code_saturne() {
             case ${prev} in
                 -d|--dest)   _filedir -d; return 0;;
                 -s|--source) _filedir -d; return 0;;
-                *) cmdOpts="-t --test -f --force -s --source -d --dest \
-                     --opt-libs --syrthes";;
+                *) cmdOpts="-t --test -f --force -k -keep-going \
+                     -s --source -d --dest --opt-libs --syrthes";;
             esac
             ;;
         create)
             case ${prev} in
                 -c|--case)     COMPREPLY=( ); return 0;;
                 -s|--study)    COMPREPLY=( ); return 0;;
-                --nsat|--nsyr) COMPREPLY=( ); return 0;;
+                --syrthes|--aster) COMPREPLY=( ); return 0;;
                 --copy-from)   _filedir -d; return 0;;
                 *) cmdOpts="-s --study -c --case -n --nogui --noref --copy-from \
-                     --nsat --nsyr -q --quiet -v --verbose";;
+                     --syrthes --aster -q --quiet -v --verbose";;
             esac
             ;;
         gui)
             case ${prev} in
                 -f|--file)  _filedir; return 0;;
                 -b|--batch) COMPREPLY=( ); return 0;;
-                *) cmdOpts="-f --file -b --batch -n --new -m --matisse \
+                *) cmdOpts="-f --file -b --batch -n --new \
                      --no-tree -z --no-splash";;
             esac
             ;;
@@ -148,6 +147,7 @@ _code_saturne() {
 
         # Take out alternatives and mutually exclusives
         case $optBase in
+            --aster)         cmdOpts=${cmdOpts/ --syrthes / } ;;
             -b)              cmdOpts=${cmdOpts/ --batch / } ;;
             --batch)         cmdOpts=${cmdOpts/ -b / }
                              cmdOpts=${cmdOpts/ --new / };;
@@ -159,8 +159,8 @@ _code_saturne() {
             --file)          cmdOpts=${cmdOpts/ -f / } ;;
             -g)              cmdOpts=${cmdOpts/ --guide / } ;;
             --guide)         cmdOpts=${cmdOpts/ -g / } ;;
-            -m)              cmdOpts=${cmdOpts/ --matisse / } ;;
-            --matisse)       cmdOpts=${cmdOpts/ -m / } ;;
+            -k)              cmdOpts=${cmdOpts/ --keep-going / } ;;
+            --keep-going)    cmdOpts=${cmdOpts/ -k / } ;;
             -n)
                 case ${cmd} in
                     check_consistency) cmdOpts=${cmdOpts/ --nproc / } ;;
@@ -169,6 +169,7 @@ _code_saturne() {
             --new)           cmdOpts=${cmdOpts/ -n / }
                              cmdOpts=${cmdOpts/ --batch / }
                              cmdOpts=${cmdOpts/ --file / } ;;
+            --no-splash)     cmdOpts=${cmdOpts/ -z / } ;;
             --nproc)         cmdOpts=${cmdOpts/ -n / } ;;
             --opt-libs)      cmdOpts=${cmdOpts/ --syrthes / } ;;
             -p)              cmdOpts=${cmdOpts/ --param / } ;;
@@ -184,11 +185,16 @@ _code_saturne() {
                 esac ;;
             --source)        cmdOpts=${cmdOpts/ -s / } ;;
             --study)         cmdOpts=${cmdOpts/ -s / } ;;
-            --syrthes)       cmdOpts=${cmdOpts/ --opt-libs / } ;;
+            --syrthes)
+                case ${cmd} in
+                    compile) cmdOpts=${cmdOpts/ --opt-libs / } ;;
+                    create)  cmdOpts=${cmdOpts/ --aster / } ;;
+                esac ;;
             -t)              cmdOpts=${cmdOpts/ --test / } ;;
             --test)          cmdOpts=${cmdOpts/ -t / } ;;
             -v)              cmdOpts=${cmdOpts/ --verbose / } ;;
             --verbose)       cmdOpts=${cmdOpts/ -v / } ;;
+            -z)              cmdOpts=${cmdOpts/ --no-splash / } ;;
         esac
 
     done
@@ -216,8 +222,8 @@ _cs_solver() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    options="--solcom --mpi --mpi-io -q --quality --benchmark \
-             --log --logp -p --param --syr-socket"
+    options="--app-name --benchmark --log --logp --mpi --mpi-io \
+             -p --param -q --quality --solcom --syr-socket"
 
     local versOpts="--version"
     local helpOpts="-h --help"
@@ -236,6 +242,7 @@ _cs_solver() {
     fi
 
     case "${prev}" in
+        --app-name) COMPREPLY=( ); return 0;;
         --benchmark)  COMPREPLY=( $(compgen -W "--mpitrace" -- ${cur}) ); return 0;;
         --log)  COMPREPLY=( $(compgen -W "0 1" -- ${cur}) ); return 0;;
         --logp) COMPREPLY=( $(compgen -W "-1 0 1" -- ${cur}) ); return 0;;
@@ -309,7 +316,7 @@ _cs_partition() {
     fi
 
     case "${prev}" in
-        --log)  COMPREPLY=( $(compgen -W "0 1" -- ${cur}) ); return 0;;
+        --)  COMPREPLY=( $(compgen -W "0 1" -- ${cur}) ); return 0;;
         --logp) COMPREPLY=( $(compgen -W "-1 0 1" -- ${cur}) ); return 0;;
         --mpi-io) COMPREPLY=( $(compgen -W "off eo ip" -- ${cur}) ); return 0;;
     esac
@@ -366,6 +373,10 @@ _cs_io_dump() {
     if [[ ${prev} == @(-h|--help|-v|--version) ]]; then
         return 0
     fi
+
+    case "${prev}" in
+        --f-format|--location|--section|--threshold) COMPREPLY=( ); return 0;;
+    esac
 
     # Take out options already given
     for (( i=1; i<=$COMP_CWORD-1; ++i ))

@@ -1,4 +1,14 @@
 * 22/02/2011 - David Monfort <david.monfort@edf.fr>
+  Update the bash completion script according to the new script options.
+  modified file:
+    extras/bash_completion/code_saturne
+
+* 22/02/2011 - David Monfort <david.monfort@edf.fr>
+  Forgot to remove cs_plot_probes.py from Makefile.am targets.
+  modified script:
+    Makefile.am
+
+* 22/02/2011 - David Monfort <david.monfort@edf.fr>
   Minor modifications.
   modified scripts:
     bin/cs_case_domain.py
