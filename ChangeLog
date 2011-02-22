@@ -1,3 +1,8 @@
+* 22/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add missing initialization (removed in previous optimization) for Bi-CGSTAB.
+  modified file:
+    src/base/cs_sles.c
+
 * 22/02/2011 - David Monfort <david.monfort@edf.fr>
   Fix a bug in the XML creation when defining several classes of coal.
   modified routine:
