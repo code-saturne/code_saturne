@@ -423,7 +423,7 @@ ecs_table_post__ecr_val(const ecs_tab_int_t  *tab_val,
 
     ecs_int_t    ind;
 
-    med_type_champ type_champ_med = MED_INT32;
+    med_field_type type_champ_med = MED_INT32;
     med_err        ret_med        = 0;
 
     /* Création du champ si première instance */
@@ -431,31 +431,47 @@ ecs_table_post__ecr_val(const ecs_tab_int_t  *tab_val,
     if (ecs_post_med__test_champ_liste(nom_table,
                                        cas_post->cas_med) == false) {
 
-      char   nom_champ_med[MED_TAILLE_NOM + 1];
-      char  *nom_comp_med;
-      char  *uni_comp_med;
+      char  nom_champ_med[MED_NAME_SIZE + 1];
+      char  nom_comp_med[MED_SNAME_SIZE + 1];
+      char  uni_comp_med[MED_SNAME_SIZE + 1];
 
       /* Nom du champ */
 
-      strncpy(nom_champ_med, nom_table, MED_TAILLE_NOM);
-      nom_champ_med[MED_TAILLE_NOM] = '\0';
+      strncpy(nom_champ_med, nom_table, MED_NAME_SIZE);
+      nom_champ_med[MED_NAME_SIZE] = '\0';
 
       if (ecs_post_med__test_champ_liste(nom_table,
                                          cas_post->cas_med) == false) {
 
+#if ECS_MED_VERSION == 3
+
+        char nom_maillage_med[MED_NAME_SIZE + 1];
+        char dtunit[MED_LNAME_SIZE + 1];
+
+        for (ind = 0; ind < (ecs_int_t)(MED_NAME_SIZE); ind++)
+          nom_maillage_med[ind] = ' ';
+        strncpy(nom_maillage_med, nom_table, MED_NAME_SIZE);
+        nom_maillage_med[MED_NAME_SIZE] = '\0';
+
+        for (ind = 0; ind < (ecs_int_t)(MED_LNAME_SIZE); ind++)
+          dtunit[ind] = ' ';
+        dtunit[MED_LNAME_SIZE] = '\0';
+
+#endif
+
         /* Nom et unite */
 
-        ECS_MALLOC(nom_comp_med, MED_TAILLE_PNOM + 1, char);
-        ECS_MALLOC(uni_comp_med, MED_TAILLE_PNOM + 1, char);
-        for (ind = 0; ind < (ecs_int_t)(MED_TAILLE_PNOM); ind++)
+        for (ind = 0; ind < (ecs_int_t)(MED_SNAME_SIZE); ind++)
           nom_comp_med[ind] = ' ', uni_comp_med[ind] = ' ';
-        nom_comp_med[MED_TAILLE_PNOM] = '\0';
-        uni_comp_med[MED_TAILLE_PNOM] = '\0';
+        nom_comp_med[MED_SNAME_SIZE] = '\0';
+        uni_comp_med[MED_SNAME_SIZE] = '\0';
 
         ecs_post_med__ajoute_champ_liste(nom_table, cas_post->cas_med);
 
         if (sizeof(med_int) == 8)
           type_champ_med = MED_INT64;
+
+#if ECS_MED_VERSION == 2
 
         ret_med = MEDchampCr(cas_post->cas_med->fid,
                              nom_champ_med,
@@ -464,14 +480,23 @@ ecs_table_post__ecr_val(const ecs_tab_int_t  *tab_val,
                              uni_comp_med,
                              1);
 
+#else
+
+        ret_med = MEDfieldCr(cas_post->cas_med->fid,
+                             nom_champ_med,
+                             type_champ_med,
+                             1,
+                             nom_comp_med,
+                             uni_comp_med,
+                             dtunit,
+                             nom_maillage_med);
+#endif
+
         if (ret_med != 0)
           ecs_error(__FILE__, __LINE__, 0,
                     _("MED: error writing file \"%s\".\n"
                       "Error creating field \"%s\"\n"),
                     cas_post->cas_med->nom_fic, nom_champ_med);
-
-        ECS_FREE(nom_comp_med);
-        ECS_FREE(uni_comp_med);
 
       }
     }

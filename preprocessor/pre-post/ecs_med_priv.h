@@ -10,7 +10,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -71,7 +71,17 @@ extern "C" {
 #undef PACKAGE_VERSION
 #undef VERSION
 
+#undef HAVE_MPI /* For MED 2.9 */
+
 #include <med.h>
+
+#undef PACKAGE
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
 
 #ifdef __cplusplus
 }
@@ -95,6 +105,47 @@ extern "C" {
 /*============================================================================
  *                       Définition de macros
  *============================================================================*/
+
+/* Med version */
+
+#if !defined(MED_NUM_MAJEUR)
+#define MED_NUM_MAJEUR 2
+#define MED_NUM_MINEUR 3
+#endif
+
+#if !defined(MED_MAJOR_NUM)
+#define MED_MAJOR_NUM MED_NUM_MAJEUR
+#define MED_MINOR_NUM MED_NUM_MINEUR
+#endif
+
+#if MED_MAJOR_NUM == 2 && MED_MINOR_NUM < 9
+#define ECS_MED_VERSION 2
+#else
+#define ECS_MED_VERSION 3
+#endif
+
+/* Map MED 2 to MED3 names */
+
+#if ECS_MED_VERSION == 2
+
+#define MED_NAME_SIZE MED_TAILLE_NOM
+#define MED_SNAME_SIZE MED_TAILLE_PNOM
+#define MED_LNAME_SIZE MED_TAILLE_LNOM
+#define MED_COMMENT_SIZE MED_TAILLE_DESC
+
+#define MED_CELL MED_MAILLE
+#define MED_POLYGON MED_POLYGONE
+#define MED_POLYHEDRON MED_POLYEDRE
+#define MED_DESCENDING_EDGE MED_ARETE
+#define MED_DESCENDING_FACE MED_FACE
+
+#define med_axis_type med_repere
+#define med_bool med_booleen
+#define med_mesh_type med_maillage
+#define med_geometry_type med_geometrie_element
+#define med_entity_type med_entite_maillage
+#define med_field_type med_type_champ
+#endif
 
 /* Definition des éléments */
 /*=========================*/
@@ -121,13 +172,13 @@ extern "C" {
 
 typedef struct {
 
-  char                   *nom_maillage;      /* Nom du maillage MED */
-  char                    nom_maillage_med[MED_TAILLE_NOM + 1];  /* Nom MED */
+  char               *nom_maillage;      /* Nom du maillage MED */
+  char                nom_maillage_med[MED_NAME_SIZE + 1];  /* Nom MED */
 
-  ecs_int_t               dim_entite;        /* Dimension entité max. */
-  ecs_int_t               nbr_typ_ele;       /* Nombre de types d'éléments */
-  ecs_int_t              *nbr_ele_typ;       /* Nombre d'éléments par type */
-  med_geometrie_element  *med_typ;           /* Types MED des élements */
+  ecs_int_t           dim_entite;        /* Dimension entité max. */
+  ecs_int_t           nbr_typ_ele;       /* Nombre de types d'éléments */
+  ecs_int_t          *nbr_ele_typ;       /* Nombre d'éléments par type */
+  med_geometry_type  *med_typ;           /* Types MED des élements */
 
 } ecs_med_maillage_t;
 
@@ -137,7 +188,9 @@ struct _ecs_med_t {
 
   char                  *nom_cas;         /* Nom du cas */
   char                  *nom_fic;         /* Nom du fichier MED */
+
   med_idt                fid;             /* Identificateur de fichier MED */
+  med_int                version[3];      /* MED version used to write file */
 
   ecs_int_t              nbr_var;         /* Nombre de variables */
   char                 **nom_var;         /* Noms des variables */
@@ -150,11 +203,11 @@ struct _ecs_med_t {
 
 typedef struct {
 
-  med_geometrie_element  med_typ;     /* Type MED de l'element */
-  ecs_elt_typ_t          ecs_typ;     /* Type ECS de l'element */
-  ecs_int_t              order;       /* Ordre    de l'element */
-                                      /* Liste des numeros de sommet ECS */
-  ecs_int_t              num_som[ECS_MED_NBR_MAX_SOM];
+  med_geometry_type   med_typ;     /* Type MED de l'element */
+  ecs_elt_typ_t       ecs_typ;     /* Type ECS de l'element */
+  ecs_int_t           order;       /* Ordre    de l'element */
+                                   /* Liste des numeros de sommet ECS */
+  ecs_int_t           num_som[ECS_MED_NBR_MAX_SOM];
 
 } ecs_fic_med_init_elt_t;
 

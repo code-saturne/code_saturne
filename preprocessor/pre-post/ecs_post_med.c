@@ -121,6 +121,9 @@ ecs_post_med__cree_cas(const char  *nom_cas)
 
   cas_med->fid = 0;
 
+  for (ind = 0; ind < 3; ind++)  /* Useful for read only */
+    cas_med->version[ind] = 0;
+
   return cas_med;
 }
 
@@ -141,10 +144,17 @@ ecs_post_med__detruit_cas(ecs_med_t  *cas_med)
     /* Destruction du cas */
 
     if (cas_med->fid != 0) {
+#if ECS_MED_VERSION == 2
       if (MEDfermer(cas_med->fid) != 0)
         ecs_error(__FILE__, __LINE__, 0,
                   _("MED: error closing file \"%s\"."),
                   cas_med->nom_fic);
+#else
+      if (MEDfileClose(cas_med->fid) != 0)
+        ecs_error(__FILE__, __LINE__, 0,
+                  _("MED: error closing file \"%s\"."),
+                  cas_med->nom_fic);
+#endif
     }
 
     ECS_FREE(cas_med->nom_cas);
@@ -187,12 +197,18 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
                               const ecs_int_t   dim_m,
                               ecs_med_t        *cas_med)
 {
-  ecs_int_t             ind;
-  ecs_int_t             lng_nom_maillage;
+  int         ind;
+  ecs_int_t   lng_nom_maillage;
 
-  ecs_med_maillage_t  * maillage_med;
+  ecs_med_maillage_t  *maillage_med;
 
-  char  desc_maillage_med[MED_TAILLE_DESC + 1] = "";
+  char  desc_maillage_med[MED_COMMENT_SIZE + 1] = "";
+
+#if ECS_MED_VERSION == 3
+  char  dtunit[MED_LNAME_SIZE + 1];
+  char  axisname[MED_SNAME_SIZE*3 + 1];
+  char  axisunit[MED_SNAME_SIZE*3 + 1];
+#endif
 
   med_err      ret_med = 0;
 
@@ -204,13 +220,43 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
   /* Create MED file if not done yet */
 
   if (cas_med->fid == 0) {
+
+#if ECS_MED_VERSION == 2
     cas_med->fid = MEDouvrir(cas_med->nom_fic, MED_CREATION);
+#else
+    cas_med->fid = MEDfileOpen(cas_med->nom_fic, MED_ACC_CREAT);
+#endif
+
     if (cas_med->fid < 0)
       ecs_error(__FILE__, __LINE__, 0,
                 _("MED: error opening file \"%s\"."),
                 cas_med->nom_fic);
+
     printf("  %s %s\n", _("Creating file:"), cas_med->nom_fic);
   }
+
+  /* Initialize strings */
+
+  for (ind = 0; ind < MED_COMMENT_SIZE; ind++)
+    desc_maillage_med[ind] = ' ';
+  desc_maillage_med[MED_COMMENT_SIZE] = '\0';
+
+#if ECS_MED_VERSION == 3
+  for (ind = 0; ind < MED_LNAME_SIZE; ind++)
+    dtunit[ind] = ' ';
+  dtunit[MED_LNAME_SIZE] = '\0';
+  for (ind = 0; ind < MED_SNAME_SIZE*3; ind++) {
+    axisname[ind] = ' ';
+    axisunit[ind] = ' ';
+  }
+  axisname[0] = 'x';
+  axisname[MED_SNAME_SIZE] = 'y';
+  axisname[MED_SNAME_SIZE*2] = 'z';
+  axisname[MED_SNAME_SIZE*3] = '\0';
+  for (ind = 0; ind < 3; ind++)
+    axisunit[ind * MED_SNAME_SIZE] = 'm';
+  axisunit[MED_SNAME_SIZE*3] = '\0';
+#endif
 
   /* Vérification que le maillage n'a pas déjà été défini */
 
@@ -233,7 +279,7 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
   ECS_MALLOC(maillage_med->nom_maillage, lng_nom_maillage + 1, char);
   strcpy(maillage_med->nom_maillage, nom_maillage);
 
-  strncpy(maillage_med->nom_maillage_med, nom_maillage, MED_TAILLE_NOM);
+  strncpy(maillage_med->nom_maillage_med, nom_maillage, MED_NAME_SIZE);
 
   for (ind = 0; ind < lng_nom_maillage; ind++) {
     if (maillage_med->nom_maillage_med[ind] == ' ')
@@ -242,13 +288,13 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
       maillage_med->nom_maillage_med[ind]
         = tolower(maillage_med->nom_maillage_med[ind]);
   }
-  for (ind = lng_nom_maillage; ind < MED_TAILLE_NOM; ind++)
+  for (ind = lng_nom_maillage; ind < MED_NAME_SIZE; ind++)
     maillage_med->nom_maillage_med[ind] = '\0';
-  maillage_med->nom_maillage_med[MED_TAILLE_NOM] = '\0';
+  maillage_med->nom_maillage_med[MED_NAME_SIZE] = '\0';
 
   /* BUG: En théorie, on devrait utiliser
      maillage_med->dim_entite = dim_entite;
-     mais L'API MED est incohérente */
+     mais L'API MED 2.x est incohérente */
 
   maillage_med->dim_entite = 3;
   maillage_med->nbr_typ_ele = 0;
@@ -263,11 +309,29 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
 
   /* Initialisation du maillage */
 
+#if ECS_MED_VERSION == 2
+
   ret_med = MEDmaaCr(cas_med->fid,
                      maillage_med->nom_maillage_med,
                      (med_int)(maillage_med->dim_entite),
                      MED_NON_STRUCTURE,
                      desc_maillage_med);
+
+#else
+
+  ret_med = MEDmeshCr(cas_med->fid,
+                      maillage_med->nom_maillage_med,
+                      (med_int)3,
+                      (med_int)(maillage_med->dim_entite),
+                      MED_UNSTRUCTURED_MESH,
+                      desc_maillage_med,
+                      dtunit,
+                      MED_SORT_DTIT,
+                      MED_CARTESIAN,
+                      axisname,
+                      axisunit);
+
+#endif
 
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -275,9 +339,13 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
                 "Name of mesh to create: \"%s\"\n"),
               cas_med->nom_fic, maillage_med->nom_maillage_med, (int)3);
 
+#if ECS_MED_VERSION == 2
+
   ret_med = MEDdimEspaceCr(cas_med->fid,
                            maillage_med->nom_maillage_med,
                            (med_int)3);
+
+#endif
 
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -302,7 +370,7 @@ ecs_post_med__test_champ_liste(const char  *nom_champ,
 
   for (ind = 0;
        ind < cas_med->nbr_var
-         && strncmp(nom_champ, cas_med->nom_var[ind], MED_TAILLE_NOM) != 0;
+         && strncmp(nom_champ, cas_med->nom_var[ind], MED_NAME_SIZE) != 0;
        ind++);
 
   if (ind < cas_med->nbr_var)
@@ -328,9 +396,9 @@ ecs_post_med__ajoute_champ_liste(const char  *nom_champ,
 
   cas_med->nbr_var += 1;
   ECS_REALLOC(cas_med->nom_var, cas_med->nbr_var, char *);
-  ECS_MALLOC(cas_med->nom_var[cas_med->nbr_var - 1], MED_TAILLE_NOM + 1, char);
-  strncpy(cas_med->nom_var[cas_med->nbr_var - 1], nom_champ, MED_TAILLE_NOM);
-  cas_med->nom_var[cas_med->nbr_var - 1][MED_TAILLE_NOM] = '\0';
+  ECS_MALLOC(cas_med->nom_var[cas_med->nbr_var - 1], MED_NAME_SIZE + 1, char);
+  strncpy(cas_med->nom_var[cas_med->nbr_var - 1], nom_champ, MED_NAME_SIZE);
+  cas_med->nom_var[cas_med->nbr_var - 1][MED_NAME_SIZE] = '\0';
 }
 
 /*----------------------------------------------------------------------------*/

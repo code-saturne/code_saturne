@@ -944,6 +944,9 @@ echo " CCM support: "$cs_have_ccm""
 echo " HDF (Hierarchical Data Format) support: "$cs_have_hdf5""
 echo " CGNS (CFD General Notation System) support: "$cs_have_cgns""
 echo " MED (Model for Exchange of Data) support: "$cs_have_med""
+if (test x$cs_have_med = xyes) ; then
+  echo "   MED MPI I/O support: "$cs_have_med_mpi""
+fi
 echo " SYRTHES 3 coupling support: "$cs_have_syrthes""
 echo " IP socket support (for SYRTHES 3 or CFD_Proxy): "$cs_have_socket""
 echo " Dynamic loader support (for YACS): "$cs_have_dlloader""

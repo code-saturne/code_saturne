@@ -59,31 +59,7 @@
  *  Fichiers `include' publics  du  paquetage global "MED"
  *----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#undef PACKAGE
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-
-#include <med.h>
-
-#undef PACKAGE
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-
-#ifdef __cplusplus
-}
-#endif
+#include "ecs_med_priv.h"
 
 
 /*----------------------------------------------------------------------------
@@ -313,8 +289,8 @@ ecs_loc_table_post_med__ecr_fam(const char           *prefixe_nom_fam,
   /* Déclarations des variables pour MED */
   /*-------------------------------------*/
 
-  char        nom_fam_med[MED_TAILLE_NOM + 1];
-  char        str_num_fam_med[MED_TAILLE_NOM + 1];
+  char        nom_fam_med[MED_NAME_SIZE + 1];
+  char        str_num_fam_med[MED_NAME_SIZE + 1];
   char      * grp_nom_med;
   char      * ptr_grp_nom_med;
 
@@ -337,18 +313,18 @@ ecs_loc_table_post_med__ecr_fam(const char           *prefixe_nom_fam,
 
   sprintf(str_num_fam_med, "%d", (int)num_fam_med);
 
-  assert (MED_TAILLE_NOM > 3);
+  assert (MED_NAME_SIZE > 3);
 
-  strncpy(nom_fam_med, prefixe_nom_fam, MED_TAILLE_NOM - 3);
+  strncpy(nom_fam_med, prefixe_nom_fam, MED_NAME_SIZE - 3);
   strncat(nom_fam_med, str_num_fam_med,
-          MED_TAILLE_NOM - strlen(prefixe_nom_fam));
-  nom_fam_med[MED_TAILLE_NOM] = '\0';
+          MED_NAME_SIZE - strlen(prefixe_nom_fam));
+  nom_fam_med[MED_NAME_SIZE] = '\0';
 
 
   /* Création des groupes MED */
 
   if (nbr_grp_med > 0)
-    ECS_MALLOC(grp_nom_med, MED_TAILLE_LNOM  * nbr_grp_med + 1, char);
+    ECS_MALLOC(grp_nom_med, MED_LNAME_SIZE  * nbr_grp_med + 1, char);
   else
     grp_nom_med = NULL;
 
@@ -358,14 +334,14 @@ ecs_loc_table_post_med__ecr_fam(const char           *prefixe_nom_fam,
        ipropr < tab_nom_descr.nbr;
        ipropr++) {
 
-    ptr_grp_nom_med = grp_nom_med + (MED_TAILLE_LNOM*nbr_grp_med);
+    ptr_grp_nom_med = grp_nom_med + (MED_LNAME_SIZE*nbr_grp_med);
     ind = 0;
-    while (   ind < MED_TAILLE_LNOM
+    while (   ind < MED_LNAME_SIZE
            && tab_nom_descr.val[ipropr][ind] != '\0') {
       ptr_grp_nom_med[ind] = tab_nom_descr.val[ipropr][ind];
       ind++;
     }
-    while (ind < MED_TAILLE_LNOM)
+    while (ind < MED_LNAME_SIZE)
       ptr_grp_nom_med[ind++] = ' ';
 
     nbr_grp_med++;
@@ -377,6 +353,8 @@ ecs_loc_table_post_med__ecr_fam(const char           *prefixe_nom_fam,
 
   /* Appel à la fonction d'écriture MED */
 
+#if ECS_MED_VERSION == 2
+
   ret_med = MEDfamCr(cas_med->fid,
                      nom_maillage_med,
                      nom_fam_med,
@@ -387,6 +365,17 @@ ecs_loc_table_post_med__ecr_fam(const char           *prefixe_nom_fam,
                      0,
                      grp_nom_med,
                      nbr_grp_med);
+
+#else
+
+  ret_med = MEDfamilyCr(cas_med->fid,
+                        nom_maillage_med,
+                        nom_fam_med,
+                        num_fam_med,
+                        0,
+                        grp_nom_med);
+
+#endif
 
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -422,8 +411,8 @@ ecs_table_post_med__ecr_famille(const char           *nom_maillage,
   /* Declarations des variables pour MED */
   /*-------------------------------------*/
 
-  char        nom_fam_med[MED_TAILLE_NOM + 1];
-  char        str_num_fam_med[MED_TAILLE_NOM + 1];
+  char        nom_fam_med[MED_NAME_SIZE + 1];
+  char        str_num_fam_med[MED_NAME_SIZE + 1];
 
   med_int     num_fam_med;
 
@@ -454,10 +443,12 @@ ecs_table_post_med__ecr_famille(const char           *nom_maillage,
 
   sprintf(str_num_fam_med, "%d", num_fam_med);
 
-  assert(strlen("FAMILLE_") + strlen(str_num_fam_med) <= MED_TAILLE_NOM);
+  assert(strlen("FAMILLE_") + strlen(str_num_fam_med) <= MED_NAME_SIZE);
 
   strcpy(nom_fam_med, "FAMILLE_");
   strcat(nom_fam_med, str_num_fam_med);
+
+#if ECS_MED_VERSION == 2
 
   ret_med = MEDfamCr(cas_med->fid,
                      maillage_med->nom_maillage_med,
@@ -469,6 +460,17 @@ ecs_table_post_med__ecr_famille(const char           *nom_maillage,
                      0,
                      NULL,
                      0);
+
+#else
+
+  ret_med = MEDfamilyCr(cas_med->fid,
+                        maillage_med->nom_maillage_med,
+                        nom_fam_med,
+                        num_fam_med,
+                        0,
+                        NULL);
+
+#endif
 
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,
@@ -524,9 +526,8 @@ ecs_table_post_med__ecr_som(const char         *nom_maillage,
   /* Declarations des variables pour MED */
   /*-------------------------------------*/
 
-  char      *nom_coo_med;
-  char      *uni_coo_med;
-
+  char       nom_coo_med[3*MED_SNAME_SIZE + 1];
+  char       uni_coo_med[3*MED_SNAME_SIZE + 1];
 
   med_err    ret_med = 0;
 
@@ -553,16 +554,14 @@ ecs_table_post_med__ecr_som(const char         *nom_maillage,
   /* Noms et unites des coordonnees */
   /*--------------------------------*/
 
-  ECS_MALLOC(nom_coo_med, 3 * MED_TAILLE_PNOM + 1, char);
-  ECS_MALLOC(uni_coo_med, 3 * MED_TAILLE_PNOM + 1, char);
-  for (ind = 0; ind < (ecs_int_t)(3 * MED_TAILLE_PNOM); ind++)
+  for (ind = 0; ind < (ecs_int_t)(3 * MED_SNAME_SIZE); ind++)
     nom_coo_med[ind] = ' ', uni_coo_med[ind] = ' ';
-  nom_coo_med[MED_TAILLE_PNOM * 3] = '\0';
-  uni_coo_med[MED_TAILLE_PNOM * 3] = '\0';
+  nom_coo_med[MED_SNAME_SIZE * 3] = '\0';
+  uni_coo_med[MED_SNAME_SIZE * 3] = '\0';
 
   nom_coo_med[0] = 'x';
-  nom_coo_med[MED_TAILLE_PNOM    ] = 'y';
-  nom_coo_med[MED_TAILLE_PNOM * 2] = 'z';
+  nom_coo_med[MED_SNAME_SIZE    ] = 'y';
+  nom_coo_med[MED_SNAME_SIZE * 2] = 'z';
 
   /* Familles MED */
   /*--------------*/
@@ -583,6 +582,8 @@ ecs_table_post_med__ecr_som(const char         *nom_maillage,
                                                 3,
                                                 &bool_libere_coo_noe);
 
+#if ECS_MED_VERSION == 2
+
   ret_med = MEDnoeudsEcr(cas_med->fid,
                          maillage_med->nom_maillage_med,
                          (med_int)3,
@@ -598,14 +599,23 @@ ecs_table_post_med__ecr_som(const char         *nom_maillage,
                          fam_noe_med,
                          nbr_noe_med);
 
+#else
+
+  ret_med = MEDmeshNodeCoordinateWr(cas_med->fid,
+                                    maillage_med->nom_maillage_med,
+                                    MED_NO_DT,
+                                    MED_NO_IT,
+                                    0.0,
+                                    MED_FULL_INTERLACE,
+                                    nbr_noe_med,
+                                    coo_noe_med);
+#endif
+
   if (ret_med != 0)
     ecs_error(__FILE__, __LINE__, 0,
               _("MED: error writing file \"%s\".\n"
                 "Error writing coordinates."),
               cas_med->nom_fic);
-
-  ECS_FREE(nom_coo_med);
-  ECS_FREE(uni_coo_med);
 
   ECS_FREE(fam_noe_med);
 
@@ -651,7 +661,7 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
   /* Declarations des variables pour MED */
   /*-------------------------------------*/
 
-  med_geometrie_element  typ_geo_med;
+  med_geometry_type  typ_geo_med;
 
   med_err            ret_med = 0;
 
@@ -748,7 +758,7 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
     /* Cas de éléments "classiques" (non polygonaux/polyédriques) */
     /*------------------------------------------------------------*/
 
-    if (typ_geo_med != MED_POLYGONE && typ_geo_med != MED_POLYEDRE) {
+    if (typ_geo_med != MED_POLYGON && typ_geo_med != MED_POLYHEDRON) {
 
       /* Prise en compte des définitions des connectivités MED */
       /*-------------------------------------------------------*/
@@ -771,6 +781,8 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
 
       nbr_ele_med = (med_int)nbr_elt_typ_geo;
 
+#if ECS_MED_VERSION == 2
+
       ret_med = MEDconnEcr(cas_med->fid,
                            maillage_med->nom_maillage_med,
                            mdim_med,
@@ -780,6 +792,21 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
                            MED_MAILLE,
                            typ_geo_med,
                            MED_NOD);
+
+#else
+
+      ret_med = MEDmeshElementConnectivityWr(cas_med->fid,
+                                             maillage_med->nom_maillage_med,
+                                             MED_NO_DT,
+                                             MED_NO_IT,
+                                             0.0,
+                                             MED_CELL,
+                                             typ_geo_med,
+                                             MED_NODAL,
+                                             MED_FULL_INTERLACE,
+                                             nbr_ele_med,
+                                             connect_med);
+#endif
 
       if (ret_med != 0)
         ecs_error(__FILE__, __LINE__, 0,
@@ -793,7 +820,7 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
     /* Cas de éléments polygonaux */
     /*----------------------------*/
 
-    else if (typ_geo_med == MED_POLYGONE) {
+    else if (typ_geo_med == MED_POLYGON) {
 
       nbr_som_med =   def_pos_tab[cpt_elt + nbr_elt_typ_geo]
                     - def_pos_tab[cpt_elt];
@@ -809,6 +836,8 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
       for (ind = 0; ind < (size_t)nbr_som_med; ind++)
         connect_med[ind] = def_val_tab[pos_elt + ind];
 
+#if ECS_MED_VERSION == 2
+
       ret_med = MEDpolygoneConnEcr(cas_med->fid,
                                    maillage_med->nom_maillage_med,
                                    index_med,
@@ -816,6 +845,21 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
                                    connect_med,
                                    MED_MAILLE,
                                    MED_NOD);
+
+#else
+
+      ret_med = MEDmeshPolygonWr(cas_med->fid,
+                                 maillage_med->nom_maillage_med,
+                                 MED_NO_DT,
+                                 MED_NO_IT,
+                                 0.0,
+                                 MED_CELL,
+                                 MED_NODAL,
+                                 (med_int)(nbr_elt_typ_geo + 1),
+                                 index_med,
+                                 connect_med);
+
+#endif
 
       if (ret_med != 0)
         ecs_error(__FILE__, __LINE__, 0,
@@ -830,7 +874,7 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
     /* Cas de éléments polyèdriques */
     /*------------------------------*/
 
-    else if (typ_geo_med == MED_POLYEDRE) {
+    else if (typ_geo_med == MED_POLYHEDRON) {
 
       /* Convention : définition nodale cellule->sommets avec numéros de
          premiers sommets répétés en fin de liste pour marquer la fin
@@ -919,6 +963,8 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
 
       assert(isom == (size_t)nbr_som_med);
 
+#if ECS_MED_VERSION == 2
+
       ret_med = MEDpolyedreConnEcr(cas_med->fid,
                                    maillage_med->nom_maillage_med,
                                    index_med,
@@ -927,6 +973,22 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
                                    index_med[nbr_elt_typ_geo],
                                    connect_med,
                                    MED_NOD);
+
+#else
+
+      ret_med = MEDmeshPolyhedronWr(cas_med->fid,
+                                    maillage_med->nom_maillage_med,
+                                    MED_NO_DT,
+                                    MED_NO_IT,
+                                    0.0,
+                                    MED_CELL,
+                                    MED_NODAL,
+                                    (med_int)(nbr_elt_typ_geo + 1),
+                                    index_f_med,
+                                    index_f_med[nbr_elt_typ_geo],
+                                    index_med,
+                                    connect_med);
+#endif
 
       if (ret_med != 0)
         ecs_error(__FILE__, __LINE__, 0,
@@ -943,21 +1005,33 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
     /* Familles MED des éléments */
     /*---------------------------*/
 
-    if (typ_geo_med != MED_POLYGONE && typ_geo_med != MED_POLYEDRE) {
+#if ECS_MED_VERSION == 2
 
-      ret_med = MEDfamEcr(cas_med->fid,
-                          maillage_med->nom_maillage_med,
-                          fam_ele_med + cpt_elt,
-                          nbr_elt_typ_geo,
-                          MED_MAILLE,
-                          typ_geo_med);
+    ret_med = MEDfamEcr(cas_med->fid,
+                        maillage_med->nom_maillage_med,
+                        fam_ele_med + cpt_elt,
+                        nbr_elt_typ_geo,
+                        MED_MAILLE,
+                        typ_geo_med);
 
-      if (ret_med != 0)
-        ecs_error(__FILE__, __LINE__, 0,
-                  _("MED: error writing file \"%s\".\n"
-                    "Error writing families."),
-                  cas_med->nom_fic);
-    }
+#else
+
+    ret_med = MEDmeshEntityFamilyNumberWr(cas_med->fid,
+                                          maillage_med->nom_maillage_med,
+                                          MED_NO_DT,
+                                          MED_NO_IT,
+                                          MED_CELL,
+                                          typ_geo_med,
+                                          nbr_elt_typ_geo,
+                                          fam_ele_med + cpt_elt);
+
+#endif
+
+    if (ret_med != 0)
+      ecs_error(__FILE__, __LINE__, 0,
+                _("MED: error writing file \"%s\".\n"
+                  "Error writing families."),
+                cas_med->nom_fic);
 
     cpt_elt += nbr_elt_typ_geo;
   }
@@ -1007,7 +1081,7 @@ ecs_table_post_med__cpt_elt_typ(const ecs_tab_int_t  *tab_elt_typ_geo,
 
   maillage_med->nbr_typ_ele = cpt_typ_med;
   ECS_MALLOC(maillage_med->nbr_ele_typ, cpt_typ_med, ecs_int_t);
-  ECS_MALLOC(maillage_med->med_typ,     cpt_typ_med, med_geometrie_element);
+  ECS_MALLOC(maillage_med->med_typ,     cpt_typ_med, med_geometry_type);
 
   /* Mise à jour de la structure maillage_med */
 
@@ -1063,11 +1137,14 @@ ecs_table_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
   /*-------------------------------------*/
 
   char   *nom_champ_med;
-  char    nom_unite_dt_med[MED_TAILLE_NOM + 1] = "";
+
+#if ECS_MED_VERSION == 2
+  char    nom_unite_dt_med[MED_NAME_SIZE + 1] = "";
   char    profil_med_nopfl[] = MED_NOPFL;
   char    locname_med_nogauss[] = MED_NOGAUSS;
+#endif
 
-  med_geometrie_element  typ_geo_med;
+  med_geometry_type  typ_geo_med;
 
   med_int   ityp_med;
   med_int  *val_med;
@@ -1111,7 +1188,7 @@ ecs_table_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
     if (cpt_elt + nbr_elt_typ_geo > nbr_elt)
       break;
 
-    if (typ_geo_med != MED_POLYGONE && typ_geo_med != MED_POLYEDRE) {
+    if (typ_geo_med != MED_POLYGON && typ_geo_med != MED_POLYHEDRON) {
 
       /* On écrit les valeurs correspondant à ce type géométrique */
 
@@ -1120,6 +1197,8 @@ ecs_table_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
                                                1,
                                                nbr_elt_typ_geo,
                                                &bool_libere_val);
+
+#if ECS_MED_VERSION == 2
 
       ret_med = MEDchampEcr(cas_med->fid,
                             maillage_med->nom_maillage_med,
@@ -1137,6 +1216,22 @@ ecs_table_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
                             nom_unite_dt_med,
                             0.0,
                             MED_NONOR);
+
+#else
+
+      ret_med = MEDfieldValueWr(cas_med->fid,
+                                nom_champ_med,
+                                MED_NO_DT,
+                                MED_NO_IT,
+                                0.0,
+                                MED_CELL,
+                                typ_geo_med,
+                                MED_FULL_INTERLACE,
+                                MED_ALL_CONSTITUENT,
+                                nbr_elt_typ_geo,
+                                (unsigned char *)(val_med));
+
+#endif
 
       if (ret_med != 0)
         ecs_error(__FILE__, __LINE__, 0,
