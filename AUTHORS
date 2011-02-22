@@ -4,7 +4,7 @@ refers to the time when that contributor was active in the project,
 and does not necessarily correspond to his or her present affiliation.
 
 
-Code_Saturne is copyright (C) 1998-2010 EDF S.A., France
+Code_Saturne is copyright (C) 1998-2011 EDF S.A., France
 
 
 Major contributions to the Code_Saturne Kernel have been provided by
@@ -12,13 +12,13 @@ Major contributions to the Code_Saturne Kernel have been provided by
 Alain Escaich         (EDF, Chatou, France)
 Alexandre Douce       (EDF, Chatou, France)
 Carole Vit            (INCKA, Boulogne-Billancourt, France)
-Céline Béchaud        (EDF, Chatou, France)
+CÃ©line BÃ©chaud        (EDF, Chatou, France)
 David Monfort         (EDF, Chatou, France)
-Éric Quemerais        (INCKA, Boulogne-Billancourt, France)
-Frédéric Archambeau   (EDF, Chatou, France)
+Ã‰ric Quemerais        (INCKA, Boulogne-Billancourt, France)
+FrÃ©dÃ©ric Archambeau   (EDF, Chatou, France)
 Jean-Luc Rousset      (EDF, Chatou, France)
-Jérôme Bonelle        (EDF, Chatou, France)
-Jérôme Lavieville     (EDF, Chatou, France)
+JÃ©rÃ´me Bonelle        (EDF, Chatou, France)
+JÃ©rÃ´me Lavieville     (EDF, Chatou, France)
 Marc Boucker          (EDF, Chatou, France)
 Marc Sakiz            (EDF, Chatou, France)
 Mehdi Ouraou          (INCKA, Boulogne-Billancourt, France)
@@ -28,7 +28,7 @@ Pierre Plion          (EDF, Chatou, France)
 Sofiane Benhamadouche (EDF, Chatou, France)
 Sophie Bosse          (EDF, Chatou, France)
 Thomas Pasutto        (EDF, Chatou, France)
-Valérie Guimet        (CS-SI, Le Plessis Robinson, France)
+ValÃ©rie Guimet        (CS-SI, Le Plessis Robinson, France)
 Yvan Fournier         (EDF, Chatou, France)
 
 
@@ -37,16 +37,17 @@ Other contributors to the Code_Saturne Kernel include
 Alexandre Davroux     (EDF, Chatou, France)
 Bertrand Carissimo    (EDF, Chatou, France)
 Brigitte Gest         (EDF, Chatou, France)
+Bruno Delhom          (INCKA, Boulogne-Billancourt, France)
 Clarisse Delalondre   (EDF, Chatou, France)
 Cyril Baudry          (ENSIL, Limoges, France)
 Emmanuel Lemoine      (INCKA, Boulogne-Billancourt, France)
 Fabien Huvelin        (EDF, Chatou, France)
-François Jusserand    (EDF, Chatou, France)
+FranÃ§ois Jusserand    (EDF, Chatou, France)
 Isabelle Rupp         (EDF, Chatou, France)
-Jérôme Lucas          (INCKA, Boulogne-Billancourt, France)
+JÃ©rÃ´me Lucas          (INCKA, Boulogne-Billancourt, France)
 Juan Uribe            (University of Manchester, United Kingdom)
 Maya Milliez          (EDF, Chatou, France)
-Michaël Tartar        (INCKA, Boulogne-Billancourt, France)
+MichaÃ«l Tartar        (INCKA, Boulogne-Billancourt, France)
 Richard Howard        (EDF, Chatou, France)
 Sylvestre Ledru       (INRIA, Rocquencourt, France)
 Ugo Schuck            (EDF, Chatou, France)
@@ -59,7 +60,7 @@ trajectory tracking (cs_lagrang.c routine)
 
 The Code_Saturne Kernel may contain code by Wes Petersen
 (ETHZ, Zurich, Switzerland) for random number generation
-(zufall.F routine)
+(zufall.f90 routine)
 
 Part of the work of the Mathematical Expression Interpreter library
 is based in part on previous work by Tom Niemann (http://epaperpress.com/)
@@ -68,12 +69,6 @@ project, may be used freely without reference to the author.";
 and the hashtable implementation is based on 
 http://www.liafa.jussieu.fr/~carton/Enseignement/C/Licence/LicenceInfo/Td09/hachage.c
 from olivier.carton@liafa.jussieu.fr
-
-The BFT (Basic Functions and Tools) work is based in part
-on previous work by Yvan Fournier (EDF) from 1999 to 2004
-and Didier Poizat (CS-SI) from 1999 to 2000 on the "Enveloppe
-Code_Saturne" software (Code_Saturne CFD code's pre/post-processing
-module).
 
 
 The following people should also be thanked for cooperating
@@ -84,13 +79,13 @@ the code.
 Christelle Vurpillot  (EDF, Chatou, France)
 Dominique Laurence    (EDF, Chatou, France)
 Dominique Thai-Van    (EDF, Chatou, France)
-Élisabeth Longatte Lacazedieu (EDF, Chatou, France)
-Étienne Decossin      (EDF, Chatou, France)
-Jean-Benoît Ritz      (EDF, Chatou, France)
+Ã‰lisabeth Longatte Lacazedieu (EDF, Chatou, France)
+Ã‰tienne Decossin      (EDF, Chatou, France)
+Jean-BenoÃ®t Ritz      (EDF, Chatou, France)
 Jean-Daniel Mattei    (EDF, Chatou, France)
-Jean-Marc Hérard      (EDF, Chatou, France)
+Jean-Marc HÃ©rard      (EDF, Chatou, France)
 Jean-Pierre Minier    (EDF, Chatou, France)
-Loïc Balestre         (Xanth Informatique, Issy les Moulineaux, France)
+LoÃ¯c Balestre         (Xanth Informatique, Issy les Moulineaux, France)
 Ludovis Maas          (INCKA, Boulogne-Billancourt, France)
 Matthieu Guillaud     (INCKA, Boulogne-Billancourt, France)
 Matthieu Leclair      (EDF, Chatou, France)
@@ -107,40 +102,31 @@ However, if you feel you have been misplaced in the list, or completely
 forgotten, please contact saturne-support@edf.fr so we can update it.
 
 
+Preprocessor
+============
 
-Main Authors
-------------
+Major contributions to the Code_Saturne Preprocessor have been provided by
+David Monfort         (EDF, Chatou, France)
+Didier Poizat         (CS-SI, Le Plessis Robinson, France)
+FrÃ©dÃ©ric Archambeau   (EDF, Chatou, France)
+Yvan Fournier         (EDF, Chatou, France)
 
-Didier Poizat
-Yvan Fournier	<yvan.fournier@edf.fr>
+Other contributors to the Code_Saturne Preprocessor include
+Ã‰ric Quemerais        (INCKA, Boulogne-Billancourt, France)
 
-Initial work by Didier Poizat (CS-SI) from 1999 to 2000, initial specs
-by Yvan Fournier (EDF) in 1999, continued developpement and maintenance
-by Yvan Fournier from 2000-2007.
-
-Contributors
-------------
-
-Periodicity:
- David Monfort		 <david.monfort@edf.fr>
-
-Comet Design reader:
-  Eric Quemerai		 <eric.quemerai@incka.fr>
- 
-Extended ghost cells:
-  Frédéric Archambeau	<frederic.archambeau@edf.fr>
 
 CFDSTUDY
 ========
 
 Major contributions to CFDSTUDY have been provided by
-Douce Alexandre       (EDF, Chatou, France)
-Paolillo Martine      (EDF, Clamart, France)
+Alexandre Douce       (EDF, Chatou, France)
+Martine Paolillo      (EDF, Clamart, France)
 
 Other contributors to CFDSTUDY include
-Borodin Alexander     (Open Cascade, Nizhny Novgorod, Russie)
-Coqueret Damien       (Open Cascade, Lyon, France)
-Fournier Yvan         (EDF, Chatou, France)
-Geimer Nicolas        (Open Cascade, Clamart, France)
-Monfort David         (EDF, Chatou, France)
-Rahuel Jean           (Open Cascade, Guyancourt, France)
+Alexander Borodin     (Open Cascade, Nizhny Novgorod, Russie)
+Damien Coqueret       (Open Cascade, Lyon, France)
+David Monfort         (EDF, Chatou, France)
+Jean Rahuel           (Open Cascade, Guyancourt, France)
+Nicolas Geimer        (Open Cascade, Clamart, France)
+Yvan Fournier         (EDF, Chatou, France)
+

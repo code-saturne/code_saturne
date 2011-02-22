@@ -1,4 +1,9 @@
 * 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update authors list.
+  modified file:
+    AUTHORS
+
+* 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   GUI: fix batch parsing for Sun Grid engine.
   modified file:
     gui/Pages/BatchRunningModel.py
