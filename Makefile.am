@@ -124,6 +124,8 @@ edit_config = sed \
 	-e 's|@bindir[@]|$(bindir)|g' \
 	-e 's|@includedir[@]|$(includedir)|g' \
 	-e 's|@libdir[@]|$(libdir)|g' \
+	-e 's|@pythondir[@]|$(pythondir)|g' \
+	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
 	-e 's|@datarootdir[@]|$(datarootdir)|g' \
 	-e 's|@datadir[@]|$(datadir)|g' \
 	-e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
@@ -142,7 +144,11 @@ edit_config = sed \
 	-e 's|@FCLIBS[@]|$(FCLIBS)|g' \
 	-e 's|@USE_NLS[@]|$(USE_NLS)|g' \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
+	-e 's|@PACKAGE_TARNAME[@]|$(PACKAGE_TARNAME)|g' \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g' \
+	-e 's|@PACKAGE_STRING[@]|$(PACKAGE_STRING)|g' \
+	-e 's|@PACKAGE_BUGREPORT[@]|$(PACKAGE_BUGREPORT)|g' \
+	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
 	-e 's|@KERNEL_ROOT_DIR[@]|$(KERNEL_ROOT_DIR)|g' \
 	-e 's|@ROOT_SALOME[@]|$(ROOT_SALOME)|g' \
 	-e 's|@SALOME_VERSION[@]|$(SALOME_VERSION)|g'

@@ -29,4 +29,4 @@ sbin/unittests.py
 # Install data
 
 nobase_pkgpython_DATA = \
-$(srcdir)/Base/icons/SplashScreen/logocs.png
+$(srcdir)/Base/icons/splashscreen.png

@@ -55,7 +55,7 @@ m4_define([cs_version_extra], [-alpha1])
 m4_define([cs_version_string],
           [cs_major_version.cs_minor_version.cs_release_version@&t@cs_version_extra])
 
-AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr])
+AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr],[],[http://www.code-saturne.org])
 AC_CONFIG_SRCDIR([src/apps/cs_solver.c])
 
 # Use the config directory for libtool stuff ...

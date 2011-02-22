@@ -1,3 +1,18 @@
+* 22/02/2011 - David Monfort <david.monfort@edf.fr>
+  Adapt the main interface script so as to use it with NEPTUNE_CFD.
+  added file:
+     gui/Base/icons/splashscreen.png
+  removed file:
+     gui/Base/icons/SplashScreen
+     gui/Base/icons/SplashScreen/logocs.png
+  modified scripts:
+     bin/cs_gui.py
+     bin/cs_package.py.in
+     configure.ac
+     gui/Base/Common.py
+     gui/Makefile.am
+     Makefile.am
+
 * 22/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
   Update French dictionnary.
   modified file:

@@ -53,9 +53,6 @@ XML_DOC_VERSION = "2.0"
 
 LABEL_LENGTH_MAX = 32
 
-base_path = os.path.dirname(os.path.abspath(__file__))
-icon_base_path = os.path.join(base_path, 'icons')
-
 # Test if MEI syntax checking is available
 from cs_package import package
 cs_check_syntax = package().get_check_syntax()

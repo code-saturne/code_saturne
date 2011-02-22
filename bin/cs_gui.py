@@ -3,7 +3,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -38,8 +38,7 @@ import os, sys, string
 from optparse import OptionParser
 
 if not hasattr(sys, 'version_info') or sys.version_info <= (2, 4, 0, 'final'):
-    raise SystemExit("Graphical users interface of Code_Saturne "\
-                     "requires python 2.4 or later.")
+    raise SystemExit("Graphical user interface requires python 2.4 or later.")
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -55,22 +54,13 @@ except ImportError:
 
 
 if map(int, string.split(QT_VERSION_STR, ".")) < [4, 3, 0]:
-    raise SystemExit("Graphical users interface of Code_Saturne "\
-                     "requires Qt 4.3 or later (found %s)." % QT_VERSION_STR)
+    raise SystemExit("Graphical user interface requires Qt 4.3 or later "\
+                     "(found %s)." % QT_VERSION_STR)
 
 
 if map(int, string.split(PYQT_VERSION_STR, ".")) < [4, 3, 0]:
-    raise SystemExit("Graphical users interface of Code_Saturne "\
-                     "requires PyQt 4.3 or later (found %s)." % PYQT_VERSION_STR)
-
-#-------------------------------------------------------------------------------
-# Application modules import
-#-------------------------------------------------------------------------------
-
-from Base.Common import icon_base_path
-from Base.MainView import MainView
-
-from cs_package import package
+    raise SystemExit("Graphical user interface requires PyQt 4.3 or later "\
+                     "(found %s)." % PYQT_VERSION_STR)
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
@@ -147,23 +137,33 @@ def main(argv, pkg):
     """
     Start Qt and a session of the application.
     """
+
+    # Test the package name to know which modules have to be imported
+    if pkg.name == 'code_saturne':
+        from Base.MainView import MainView
+        icons_path = os.path.join(pkg.pkgpythondir, 'Base', 'icons')
+    else:
+        from core.MainView import MainView
+        icons_path = os.path.join(pkg.pkgpythondir, 'core', 'icons')
+
     case, spl, matisse, batch_window, batch_file, tree_window, read_only \
        = process_cmd_line(argv)
 
     app = QApplication(argv)
-    app.setOrganizationName("EDF R&D")
-    app.setOrganizationDomain("www.code_saturne.org")
-    app.setApplicationName("Code_Saturne GUI")
+    app.setOrganizationName("EDF S.A.")
+    app.setOrganizationDomain(pkg.url)
+    app.setApplicationName(pkg.name)
     #app.setWindowIcon(QIcon(":/icon.png"))
     app.connect(app, SIGNAL("lastWindowClosed()"), app, SLOT("quit()"))
 
     if spl:
         app.setOverrideCursor(QCursor(Qt.WaitCursor))
-        pixmap = QPixmap('%s/SplashScreen/logocs.png' % icon_base_path)
+        pixmap = QPixmap('%s/splashscreen.png' % icons_path)
         splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
         splash.setMask(pixmap.mask()) # this is usefull if the splashscreen is not a regular ractangle...
         splash.show()
-        splash.showMessage('GUI %s starting...' % package().version,
+        splash.showMessage("%(name)s %(vers)s starting..." \
+                           % {'name': pkg.name, 'vers':pkg.version},
                            Qt.AlignHCenter | Qt.AlignVCenter, Qt.black)
         app.processEvents()
         QTimer.singleShot(1500, splash.hide)

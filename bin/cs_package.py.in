@@ -37,8 +37,12 @@ class package:
 
     def __init__(self):
 
-        self.name="@PACKAGE_NAME@"
-        self.version="@PACKAGE_VERSION@"
+        self.name = "@PACKAGE_NAME@"
+        self.tarname = "@PACKAGE_TARNAME@"
+        self.version = "@PACKAGE_VERSION@"
+        self.string = "@PACKAGE_STRING@"
+        self.bugreport = "@PACKAGE_BUGREPORT@"
+        self.url = "@PACKAGE_URL@"
 
         self.preprocessor = "cs_preprocess"
         self.partitioner = "cs_partition"
@@ -60,6 +64,8 @@ class package:
         self.bindir = "@bindir@"
         self.includedir = "@includedir@"
         self.libdir = "@libdir@"
+        self.pythondir = "@pythondir@"
+        self.pkgpythondir = "@pkgpythondir@"
         self.datarootdir = "@datarootdir@"
         self.datadir = "@datadir@"
         self.pkgdatadir = "@pkgdatadir@"
