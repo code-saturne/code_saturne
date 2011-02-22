@@ -1,4 +1,9 @@
 * 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI: fix batch parsing for Sun Grid engine.
+  modified file:
+    gui/Pages/BatchRunningModel.py
+
+* 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix a mesh-numbering dependancy (and number-of-processors dependancy) in the
   choice of the face at which one takes the reference presure, when the user
   defined a free outlet boundary condition.

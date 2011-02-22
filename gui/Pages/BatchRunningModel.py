@@ -364,6 +364,7 @@ class BatchRunningModel(Model):
                             self.dictValues['job_class'] = arg.split()[1]
                     index = string.rfind(batch_args, ' -')
 
+
     def updateBatchPBS(self):
         """
         Update the PBS batch file from dictionary self.dictValues.
@@ -406,7 +407,7 @@ class BatchRunningModel(Model):
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:2] == '#$':
-                batch_args = ' ' + self.preParse(batch_lines[i][4:])
+                batch_args = ' ' + self.preParse(batch_lines[i][2:])
                 index = string.rfind(batch_args, ' -')
                 while index > -1:
                     arg = batch_args[index+1:]
@@ -443,7 +444,7 @@ class BatchRunningModel(Model):
         for i in range(len(batch_lines)):
             if batch_lines[i][0:2] == '#$':
                 ch = '\n'
-                batch_args = ' ' + self.preParse(batch_lines[i][4:])
+                batch_args = ' ' + self.preParse(batch_lines[i][2:])
                 index = string.rfind(batch_args, ' -')
                 while index > -1:
                     arg = batch_args[index+1:]
@@ -454,7 +455,7 @@ class BatchRunningModel(Model):
                         try:
                             arg_tmp = arg[3:].split(' ')
                             ch = ' -pe ' + arg_tmp[1] + ' ' \
-                                + str(self.dictValues['job_procs'])
+                                + str(self.dictValues['job_procs']) + ch
                         except Exception:
                             pass
                     elif arg[0:8] == '-l h_rt=':
