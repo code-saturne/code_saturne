@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -290,10 +290,10 @@ class CoalCombustionModel(Variables, Model):
         Delete properties for one coal
         """
         baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                     "Ga_DV1", "Ga_DV2", "Ga_HET"]
+                     "Ga_DV1", "Ga_DV2", "Ga_HET_O2"]
         if self.getCoalCombustionModel() == 'coal_homo2':
             baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                         "Ga_DV1", "Ga_DV2", "Ga_HET", "Ga_SEC"]
+                         "Ga_DV1", "Ga_DV2", "Ga_HET_O2", "Ga_SEC"]
         #
         # Remove coal classes
         nodeList = self.node_coal.xmlGetNodeList('property')
@@ -456,10 +456,10 @@ class CoalCombustionModel(Variables, Model):
         """
         # create new properties
         baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                     "Ga_DV1", "Ga_DV2", "Ga_HET"]
+                     "Ga_DV1", "Ga_DV2", "Ga_HET_O2"]
         if self.getCoalCombustionModel() == 'coal_homo2':
             baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                         "Ga_DV1", "Ga_DV2", "Ga_HET", "Ga_SEC"]
+                         "Ga_DV1", "Ga_DV2", "Ga_HET_O2", "Ga_SEC"]
         for baseName in baseNames:
             for classe in range(classesNumber - coalClassesNumber, classesNumber):
                 name = '%s%2.2i' % (baseName, classe+1)
@@ -472,10 +472,10 @@ class CoalCombustionModel(Variables, Model):
         Create class of model properties
         """
         baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                     "Ga_DV1", "Ga_DV2", "Ga_HET"]
+                     "Ga_DV1", "Ga_DV2", "Ga_HET_O2"]
         if self.getCoalCombustionModel() == 'coal_homo2':
             baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                         "Ga_DV1", "Ga_DV2", "Ga_HET", "Ga_SEC"]
+                         "Ga_DV1", "Ga_DV2", "Ga_HET_O2", "Ga_SEC"]
         #
         # Rename other classes
         nodeList = self.node_coal.xmlGetNodeList('property')
@@ -525,6 +525,11 @@ class CoalCombustionModel(Variables, Model):
             name = '%s%2.2i' % (baseNames[i], classNum)
             self.setNewModelScalar(self.node_coal, name)
 
+        NPE = NumericalParamEquatModel(self.case)
+        for node in self.node_coal.xmlGetChildNodeList('scalar'):
+            NPE.setBlendingFactor(node['label'], 0.)
+            NPE.setScheme(node['label'], 'upwind')
+            NPE.setFluxReconstruction(node['label'], 'off')
 
     def setCoalCombustionModel(self, model):
         """
@@ -677,16 +682,17 @@ class CoalCombustionModel(Variables, Model):
         self.isInt(classeNumber)
 
         classNum = 0
-        for coal in range(0, coalNumber):
-            classNum += thermoChemistryModel.getCoals().getClassesNumberList()[coal]
+        if (coalNumber >= 1) :
+            for coal in range(0, coalNumber - 1):
+                classNum += thermoChemistryModel.getCoals().getClassesNumberList()[coal]
         classNum += classeNumber
 
         classesNumber = sum(thermoChemistryModel.getCoals().getClassesNumberList())
         baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                     "Ga_DV1", "Ga_DV2", "Ga_HET"]
+                     "Ga_DV1", "Ga_DV2", "Ga_HET_O2"]
         if self.getCoalCombustionModel() == 'coal_homo2':
             baseNames = ["Temp_CP", "Frm_CP", "Rho_CP", "Dia_CK", "Ga_DCH",
-                         "Ga_DV1", "Ga_DV2", "Ga_HET", "Ga_SEC"]
+                         "Ga_DV1", "Ga_DV2", "Ga_HET_O2", "Ga_SEC"]
         #
         # Remove coal classes
         nodeList = self.node_coal.xmlGetNodeList('property')
@@ -775,7 +781,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH01" name="Ga_DCH01"/>
                     <property label="Ga_DV101" name="Ga_DV101"/>
                     <property label="Ga_DV201" name="Ga_DV201"/>
-                    <property label="Ga_HET01" name="Ga_HET01"/>
+                    <property label="Ga_HET_O201" name="Ga_HET_O201"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
             </pulverized_coal>'''
 
@@ -827,7 +833,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH01" name="Ga_DCH01"/>
                     <property label="Ga_DV101" name="Ga_DV101"/>
                     <property label="Ga_DV201" name="Ga_DV201"/>
-                    <property label="Ga_HET01" name="Ga_HET01"/>
+                    <property label="Ga_HET_O201" name="Ga_HET_O201"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
                     <scalar label="NP_CP02" name="NP_CP02" type="model">
                             <flux_reconstruction status="off"/>
@@ -854,7 +860,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH02" name="Ga_DCH02"/>
                     <property label="Ga_DV102" name="Ga_DV102"/>
                     <property label="Ga_DV202" name="Ga_DV202"/>
-                    <property label="Ga_HET02" name="Ga_HET02"/>
+                    <property label="Ga_HET_O202" name="Ga_HET_O202"/>
             </pulverized_coal>'''
 
         assert model.node_coal == self.xmlNodeFromString(doc),\
@@ -906,7 +912,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH01" name="Ga_DCH01"/>
                     <property label="Ga_DV101" name="Ga_DV101"/>
                     <property label="Ga_DV201" name="Ga_DV201"/>
-                    <property label="Ga_HET01" name="Ga_HET01"/>
+                    <property label="Ga_HET_O201" name="Ga_HET_O201"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
                     <scalar label="NP_CP03" name="NP_CP03" type="model">
                             <flux_reconstruction status="off"/>
@@ -933,7 +939,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH02" name="Ga_DCH02"/>
                     <property label="Ga_DV102" name="Ga_DV102"/>
                     <property label="Ga_DV202" name="Ga_DV202"/>
-                    <property label="Ga_HET02" name="Ga_HET02"/>
+                    <property label="Ga_HET_O202" name="Ga_HET_O202"/>
                     <scalar label="NP_CP04" name="NP_CP04" type="model">
                             <flux_reconstruction status="off"/>
                     </scalar>
@@ -959,7 +965,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH03" name="Ga_DCH03"/>
                     <property label="Ga_DV103" name="Ga_DV103"/>
                     <property label="Ga_DV203" name="Ga_DV203"/>
-                    <property label="Ga_HET03" name="Ga_HET03"/>
+                    <property label="Ga_HET_O203" name="Ga_HET_O203"/>
                     <scalar label="NP_CP02" name="NP_CP02" type="model"/>
                     <scalar label="XCH_CP02" name="XCH_CP02" type="model"/>
                     <scalar label="XCK_CP02" name="XCK_CP02" type="model"/>
@@ -971,7 +977,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH04" name="Ga_DCH04"/>
                     <property label="Ga_DV104" name="Ga_DV104"/>
                     <property label="Ga_DV204" name="Ga_DV204"/>
-                    <property label="Ga_HET04" name="Ga_HET04"/>
+                    <property label="Ga_HET_O204" name="Ga_HET_O204"/>
                 </pulverized_coal>'''
 
         assert model.node_coal == self.xmlNodeFromString(doc),\
@@ -1024,7 +1030,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH01" name="Ga_DCH01"/>
                     <property label="Ga_DV101" name="Ga_DV101"/>
                     <property label="Ga_DV201" name="Ga_DV201"/>
-                    <property label="Ga_HET01" name="Ga_HET01"/>
+                    <property label="Ga_HET_O201" name="Ga_HET_O201"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
                     <scalar label="NP_CP02" name="NP_CP02" type="model">
                             <flux_reconstruction status="off"/>
@@ -1045,7 +1051,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH02" name="Ga_DCH02"/>
                     <property label="Ga_DV102" name="Ga_DV102"/>
                     <property label="Ga_DV202" name="Ga_DV202"/>
-                    <property label="Ga_HET02" name="Ga_HET02"/>
+                    <property label="Ga_HET_O202" name="Ga_HET_O202"/>
                     <scalar label="NP_CP04" name="NP_CP04" type="model">
                             <flux_reconstruction status="off"/>
                     </scalar>
@@ -1071,7 +1077,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH04" name="Ga_DCH04"/>
                     <property label="Ga_DV104" name="Ga_DV104"/>
                     <property label="Ga_DV204" name="Ga_DV204"/>
-                    <property label="Ga_HET04" name="Ga_HET04"/>
+                    <property label="Ga_HET_O204" name="Ga_HET_O204"/>
                 </pulverized_coal>'''
 
         assert model.node_coal == self.xmlNodeFromString(doc),\
@@ -1124,7 +1130,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH01" name="Ga_DCH01"/>
                     <property label="Ga_DV101" name="Ga_DV101"/>
                     <property label="Ga_DV201" name="Ga_DV201"/>
-                    <property label="Ga_HET01" name="Ga_HET01"/>
+                    <property label="Ga_HET_O201" name="Ga_HET_O201"/>
                     <property label="ntLuminance_4PI" name="ntLuminance_4PI"/>
                     <scalar label="Fr_MV102" name="Fr_MV102" type="model">
                             <flux_reconstruction status="off"/>
@@ -1139,7 +1145,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH03" name="Ga_DCH03"/>
                     <property label="Ga_DV103" name="Ga_DV103"/>
                     <property label="Ga_DV203" name="Ga_DV203"/>
-                    <property label="Ga_HET03" name="Ga_HET03"/>
+                    <property label="Ga_HET_O203" name="Ga_HET_O203"/>
                     <scalar label="NP_CP04" name="NP_CP04" type="model">
                             <flux_reconstruction status="off"/>
                     </scalar>
@@ -1165,7 +1171,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH04" name="Ga_DCH04"/>
                     <property label="Ga_DV104" name="Ga_DV104"/>
                     <property label="Ga_DV204" name="Ga_DV204"/>
-                    <property label="Ga_HET04" name="Ga_HET04"/>
+                    <property label="Ga_HET_O204" name="Ga_HET_O204"/>
                     <scalar label="NP_CP02" name="NP_CP02" type="model"/>
                     <scalar label="XCH_CP02" name="XCH_CP02" type="model"/>
                     <scalar label="XCK_CP02" name="XCK_CP02" type="model"/>
@@ -1177,7 +1183,7 @@ class CoalCombustionModelTestCase(ModelTest):
                     <property label="Ga_DCH02" name="Ga_DCH02"/>
                     <property label="Ga_DV102" name="Ga_DV102"/>
                     <property label="Ga_DV202" name="Ga_DV202"/>
-                    <property label="Ga_HET02" name="Ga_HET02"/>
+                    <property label="Ga_HET_O202" name="Ga_HET_O202"/>
             </pulverized_coal>'''
 
         assert model.node_coal == self.xmlNodeFromString(doc),\
