@@ -162,12 +162,12 @@ integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip,ir23ip
 integer          ikiph , iepiph, iphiph, ifbiph, iomgip
 integer          iprnew, kphas, iii
 integer          irangd, iclipr, iiptot
-integer          itrois, ifadir, nfadir
+integer          ifadir
 double precision pref, epsrgp, climgp, extrap, coefup
 double precision diipbx, diipby, diipbz
 double precision flumbf, flumty(ntypmx)
-double precision ro0iph, p0iph, pr0iph, xxp0, xyp0, xzp0
-double precision xyzref(3)
+double precision ro0iph, p0iph, pr0iph, xxp0, xyp0, xzp0, d0, d0min
+double precision xyzref(4) ! xyzref(3) + coefup for broadcast
 
 integer          ipass
 data             ipass /0/
@@ -602,18 +602,44 @@ do iphas = 1, nphas
     enddo
   endif
 
-! ifrslb = first free standard outlet face (icodcl not modified)
+! ifrslb = closest free standard outlet face to xyzp0 (icodcl not modified)
 ! itbslb = max of ifrslb on all ranks, standard outlet face presence indicator
 
+! Even when the user has not chosen xyzp0 (and it is thus at the
+! origin), we choose the face whose center is closest to it, so
+! as to be mesh numbering (and partitioning) independent.
+
+  d0min = rinfin
+
   ifrslb(iphas) = 0
-  do ii = ifinty(isolib,iphas), idebty(isolib,iphas), -1
+
+  ideb = idebty(isolib,iphas)
+  ifin = ifinty(isolib,iphas)
+
+  do ii = ideb, ifin
     ifac = itrifb(ii,iphas)
-    if (icodcl(ifac,ipriph).eq.0)                                 &
-         ifrslb(iphas) = ifac
+    if (icodcl(ifac,ipriph).eq.0) then
+      d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
+           + (cdgfbo(2,ifac)-xyp0)**2  &
+           + (cdgfbo(3,ifac)-xzp0)**2
+      if (d0.lt.d0min) then
+        ifrslb(iphas) = ifac
+        d0min = d0
+      endif
+    endif
   enddo
+
+  ! If we have free outlet faces, irangd and itbslb(iphas) will
+  ! contain respectively the rank having the boundary face whose
+  ! center is closest to xyzp0, and the local number of that face
+  ! on that rank (also equal to ifrslb(iphas) on that rank).
+  ! If we do not have free outlet faces, than itbslb(iphas) = 0
+  ! (as it was initialized that way on all ranks).
+
   itbslb(iphas) = ifrslb(iphas)
+  irangd = irangp
   if (irangp.ge.0) then
-     call parcmx (itbslb(iphas))
+    call parfpt(itbslb(iphas), irangd, d0min)
   endif
 
   if ((itbslb(iphas).gt.0) .and. (iprnew.eq.1)) then
@@ -737,114 +763,87 @@ do iphas = 1, nphas
     enddo
   endif
 
-! ---> Pression de recalage (unique, meme s'il y a plusieurs sorties)
-!     En cas de prise en compte de la pression hydrostatique, on cherche
-!     la face de reference
+! ---> Reference pressure (unique, even if there are multiple outlets)
+!     In case we account for the hydrostatic pressure, we search for the
+!     reference face.
 
-!   Determination de la pression P I' unique en parallele
-!     S'il y a des faces de sortie libre, on cherche le premier
-!     proc sur lequel il y en a.
+!   Determine a unique P I' pressure in parallel
+!     if there are free outlet faces, we have determined that the rank
+!     with the outlet face closest to xyzp0 is irangd.
 
 !     We also retrieve the coordinates of the reference point, so as to
 !     calculate pref later on.
 
   if (itbslb(iphas).gt.0) then
 
-    if (irangp.ge.0) then
+    ! If irangd is the local rank, we assign PI' to coefup
+    ! (this is always the case in serial mode)
 
-!     Indicateur de sorties locales et pointeur sur la premiere face
-!       S'il y a des sorties libres standards quelque part
-!         et s'il n'y en a pas en local, on affecte a IRANGD la valeur -1
-      if(ifrslb(iphas).le.0) then
-        irangd = -1
-!         et s'il y en a en local, on affecte a IRANGD la valeur IRANGP
-      else
-        irangd = irangp
-      endif
-
-!     Valeur de P I'
-!         on prend le numero du dernier proc sur lequel il y en a
-      call parcmx(irangd)
-!         si c'est le proc courant, on affecte P I' a COEFUP
-      if (irangp.eq.irangd) then
-        coefup = coefu(ifrslb(iphas),1)
-        if (iphydr.eq.1) isostd(nfabor+1,iphas) = ifrslb(iphas)
-!         sinon on affecte 0 a COEFUP
-      else
-        coefup = 0.d0
-      endif
-!         la somme sur les procs de COEFUP donne donc P I', disponible
-!            pour tous les procs (c'est plus simple qu'un bcast pour
-!            lequel il faudrait au prealable que tous les proc sachent
-!            quel proc envoie).
-      call parsom(coefup)
-
-!     Reference de pression pour les sorties
-      if (irangp.eq.irangd) then
-        xyzref(1) = cdgfbo(1,ifrslb(iphas))
-        xyzref(2) = cdgfbo(2,ifrslb(iphas))
-        xyzref(3) = cdgfbo(3,ifrslb(iphas))
-      else
-        xyzref(1) = 0.d0
-        xyzref(2) = 0.d0
-        xyzref(3) = 0.d0
-      endif
-      itrois = 3
-      call parrsm(itrois,xyzref)
-
-!   Determination de la pression P I' unique en sequentiel
-!     on repere la premiere face de sortie libre standard
-!                       et on affecte PI' a COEFUP
-
-    else
-
-      coefup = coefu(ifrslb(iphas),1)
-      if (iphydr.eq.1) isostd(nfabor+1,iphas) = ifrslb(iphas)
+    if (irangp.eq.irangd) then
       xyzref(1) = cdgfbo(1,ifrslb(iphas))
       xyzref(2) = cdgfbo(2,ifrslb(iphas))
       xyzref(3) = cdgfbo(3,ifrslb(iphas))
+      xyzref(4) = coefu(ifrslb(iphas),1) ! coefup
+      if (iphydr.eq.1) isostd(nfabor+1,iphas) = ifrslb(iphas)
     endif
 
-!     Si l'utilisateur n'a rien specifie, on met IXYZP0 a 2 pour mettre
-!     a jour le point de reference
+    ! Broadcast coefup and pressure reference
+    ! from irangd to all other ranks.
+    if (irangp.ge.0) then
+      inb = 4
+      call parbcr(irangd, inb, xyzref)
+    endif
+
+    coefup = xyzref(4)
+    xyzref(4) = 0.d0
+
+    ! If the user has not specified anything, we set ixyzp0 to 2 so as
+    ! to update the reference point.
+
     if (ixyzp0(iphas).eq.-1) ixyzp0(iphas) = 2
 
   elseif (ixyzp0(iphas).lt.0) then
-!     S'il n'y a pas de faces de sortie, on cherche des Dirichlets
-!     eventuels specifies par l'utilisateur pour y localiser
-!     le point de reference.
+
+    ! If there are no outlet faces, we search for possible Dirichlets
+    ! specified by the user so as to locate the reference point.
+    ! As before, we chose the face closest to xyzp0 so as to
+    ! be mesh numbering (and partitioning) independent.
+
+    d0min = rinfin
+
     ifadir = -1
-    irangd = -1
     do ifac = 1, nfabor
       if (icodcl(ifac,ipriph).eq.1) then
-        ifadir = ifac
-        irangd = irangp
+        d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
+             + (cdgfbo(2,ifac)-xyp0)**2  &
+             + (cdgfbo(3,ifac)-xzp0)**2
+        if (d0.lt.d0min) then
+          ifadir = ifac
+          d0min = d0
+        endif
       endif
     enddo
-    nfadir = ifadir
-    if (irangp.ge.0) call parcmx(nfadir)
-    if (nfadir.gt.0) then
-!     on met IXYZP0 a 2 pour mettre a jour le point de reference
+
+    irangd = irangp
+    if (irangp.ge.0) call parfpt(ifadir, irangd, d0min)
+
+    if (ifadir.gt.0) then
+
+      ! on met ixyzp0 a 2 pour mettre a jour le point de reference
       ixyzp0(iphas) = 2
-!     en parallele on prend le numero du dernier proc sur lequel il y en a
-      if (irangp.ge.0) then
-        call parcmx(irangd)
-        if (irangp.eq.irangd) then
-          xyzref(1) = cdgfbo(1,ifadir)
-          xyzref(2) = cdgfbo(2,ifadir)
-          xyzref(3) = cdgfbo(3,ifadir)
-        else
-          xyzref(1) = 0.d0
-          xyzref(2) = 0.d0
-          xyzref(3) = 0.d0
-        endif
-        itrois = 3
-        call parrsm(itrois,xyzref)
-      else
+
+      if (irangp.eq.irangd) then
         xyzref(1) = cdgfbo(1,ifadir)
         xyzref(2) = cdgfbo(2,ifadir)
         xyzref(3) = cdgfbo(3,ifadir)
       endif
+
+      ! Broadcast xyzref from irangd to all other ranks.
+      if (irangp.ge.0) then
+         inb = 3
+         call parbcr(irangd, inb, xyzref)
+      endif
+
     endif
 
   endif
