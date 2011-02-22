@@ -1,3 +1,8 @@
+* 22/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update French dictionnary.
+  modified file:
+    po/fr.po
+
 * 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Log number of cycles instead of equivalent iterations for multigrid.
   modified files:

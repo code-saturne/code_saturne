@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-02-22 14:02+0100\n"
+"POT-Creation-Date: 2011-02-22 14:28+0100\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2217,6 +2217,10 @@ msgstr ""
 "Erreur à la lecture du fichier de maillage I-deas :\n"
 "à la ligne %d du fichier \"%s\".\n"
 "Le dataset \"%d\" contenant la définition des éléments n'a pas été trouvé."
+
+#, c-format
+msgid "MED: error checking file version \"%s\"."
+msgstr "MED : échec à la vérification de la version du fichier \"%s\"."
 
 #, c-format
 msgid ""
@@ -6567,6 +6571,10 @@ msgid ""
 "    minimum:                        %llu\n"
 "    maximum:                        %llu\n"
 "    mean:                           %llu\n"
+"  Number of cycles:\n"
+"    minimum:                        %d\n"
+"    maximum:                        %d\n"
+"    mean:                           %d\n"
 "  Number of iterations:\n"
 "    on finest grid:\n"
 "      minimum:                      %d\n"
@@ -6577,10 +6585,6 @@ msgid ""
 "      maximum:                      %d\n"
 "      mean:                         %d\n"
 "    total on grids:\n"
-"      minimum:                      %d\n"
-"      maximum:                      %d\n"
-"      mean:                         %d\n"
-"    equivalent (total weighted by number of cells) :\n"
 "      minimum:                      %d\n"
 "      maximum:                      %d\n"
 "      mean:                         %d\n"
@@ -6597,6 +6601,10 @@ msgstr ""
 "    minimal :                       %llu\n"
 "    maximal :                       %llu\n"
 "    moyen :                         %llu\n"
+"  Nombre de cycles :\n"
+"    minimal :                       %d\n"
+"    maximal :                       %d\n"
+"    moyen :                         %d\n"
 "  Nombre d'itérations :\n"
 "    sur grille la plus fine :\n"
 "      minimal :                     %d\n"
@@ -6607,10 +6615,6 @@ msgstr ""
 "      maximal :                     %d\n"
 "      moyen :                       %d\n"
 "    total sur les grilles :\n"
-"      minimal :                     %d\n"
-"      maximal :                     %d\n"
-"      moyen :                       %d\n"
-"    équivalent (total pondéré par le nombre de cellules) :\n"
 "      minimal :                     %d\n"
 "      maximal :                     %d\n"
 "      moyen :                       %d\n"
@@ -9057,23 +9061,23 @@ msgstr ""
 
 #, c-format
 msgid "The given time step value should be >= 0, and not %d\n"
-msgstr ""
+msgstr "la valeur du pas de temps fournie devrait être >= 0, et non %d\n"
 
 #, c-format
 msgid "The given time step value should be >= %d, and not %d\n"
-msgstr ""
+msgstr "la valeur du pas de temps fournie devrait être >= %d, et non %d\n"
 
 #, c-format
 msgid "Data of dimension %d not handled"
-msgstr ""
+msgstr "Données de dimension %d non gérées"
 
 #, c-format
 msgid "The given time step value should be >= 0, and not %d.\n"
-msgstr ""
+msgstr "la valeur du pas de temps fournie devrait être >= 0, et non %d.\n"
 
 #, c-format
 msgid "The given time step value should be >= %d, and not %d.\n"
-msgstr ""
+msgstr "la valeur du pas de temps fournie devrait être >= %d, et non %d.\n"
 
 #, c-format
 msgid ""
@@ -9111,7 +9115,21 @@ msgstr ""
 
 #, c-format
 msgid ""
+"MEDmeshCr() failed to create a new med_mesh.\n"
+"Associated med_mesh name: \"%s\"\n"
+"Associated writer name: \"%s\"\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "MEDfamCr() failed to create family %dfor a new med_mesh.\n"
+"Associated med_mesh name: \"%s\"\n"
+"Associated writer name: \"%s\"\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"MEDfamilyCr() failed to create family %dfor a new med_mesh.\n"
 "Associated med_mesh name: \"%s\"\n"
 "Associated writer name: \"%s\"\n"
 msgstr ""
@@ -9139,7 +9157,38 @@ msgstr ""
 
 #, c-format
 msgid ""
+"MEDmeshNodeCoordinateWr() failed to write coords.\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh: \"%s\"\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "MEDfamEcr() failed to write family numbers:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+"Associated MED geometrical element: \"%i\"\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"MEDmeshEntityFamilyNumberWr() failed to write family numbers:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+"Associated MED geometrical element: \"%i\"\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"MEDconnEcr() failed to write connectivity:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+"Associated MED geometrical element: \"%i\"\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"MEDmeshElementConnectivityWr() failed to write connectivity:\n"
 "Associated writer: \"%s\"\n"
 "Associated med_mesh_name: \"%s\"\n"
 "Associated MED geometrical element: \"%i\"\n"
@@ -9162,7 +9211,21 @@ msgstr ""
 
 #, c-format
 msgid ""
+"MEDmeshPolygonWr() failed to write connectivity:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "MEDpolyedreConnEcr() failed to write connectivity:\n"
+"Associated writer: \"%s\"\n"
+"Associated med_mesh_name: \"%s\"\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"MEDmeshPolyhedronWr() failed to write connectivity:\n"
 "Associated writer: \"%s\"\n"
 "Associated med_mesh_name: \"%s\"\n"
 msgstr ""
@@ -9175,19 +9238,43 @@ msgid ""
 "MEDouvrir() failed to open file: %s\n"
 "Associated writer: \"%s\"\n"
 msgstr ""
+"MEDouvrir() n'a pas pu ouvrir le fichier : %s\n"
+"Gestionnaire associé : \"%s\"\n"
+
+#, c-format
+msgid ""
+"MEDfileOpen() failed to open file: %s\n"
+"Associated writer: \"%s\"\n"
+msgstr ""
+"MEDfileOpen() n'a pas pu ouvrir le fichier : %s\n"
+"Gestionnaire associé : \"%s\"\n"
 
 #, c-format
 msgid "MEDfermer() failed to close file \"%s\"\n"
-msgstr ""
+msgstr "MEDfermer() n'a pas pu fermer le fichier \"%s\"\n"
+
+#, c-format
+msgid "MEDfileClose() failed to close file \"%s\"\n"
+msgstr "MEDfileClose() n'a pas pu fermer le fichier \"%s\"\n"
 
 #, c-format
 msgid ""
 "MEDouvrir() failed to re-open file: %s\n"
 "Associated writer: \"%s\"\n"
 msgstr ""
+"MEDouvrir() n'a pas pu réouvrir le fichier : %s\n"
+"Gestionnaire associé : \"%s\"\n"
+
+#, c-format
+msgid ""
+"MEDfileOpen() failed to re-open file: %s\n"
+"Associated writer: \"%s\"\n"
+msgstr ""
+"MEDfileOpen() n'a pas pu réouvrir le fichier : %s\n"
+"Gestionnaire associé : \"%s\"\n"
 
 msgid "Mesh name required to continue.\n"
-msgstr ""
+msgstr "Un nom de maillage est nécessaire pour continuer.\n"
 
 #, c-format
 msgid ""
@@ -9195,6 +9282,9 @@ msgid ""
 "Mesh: \"%s\"\n"
 "Writer: \"%s\"\n"
 msgstr ""
+"MED doit avoir une connectivité.\n"
+"Maillage : \"%s\"\n"
+"Gestionnaire : \"%s\"\n"
 
 #, c-format
 msgid ""
@@ -9202,6 +9292,9 @@ msgid ""
 "Mesh: \"%s\"\n"
 "Writer: \"%s\"\n"
 msgstr ""
+"MED doit avoir des entités.\n"
+"Maillage : \"%s\"\n"
+"Gestionnaire : \"%s\"\n"
 
 #, c-format
 msgid ""
