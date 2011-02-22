@@ -1,4 +1,10 @@
 * 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Enable build with CGNS 3.1 as well as CGNS 2.5.
+  modified files:
+    preprocessor/pre-post/ecs_pre_cgns.c
+    src/fvm/fvm_to_cgns.c
+
+* 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update stdint.h/stdbool.h replacement macros with new autoconf recommendations.
   modified files:
     libple/src/ple_config_defs.h

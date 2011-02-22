@@ -7,7 +7,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2005-2010  EDF
+  Copyright (C) 2005-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -111,6 +111,10 @@ extern "C" {
 
 #if !defined (CGNS_ENUMF)
 #define CGNS_ENUMF(e) e
+#endif
+
+#if CGNS_VERSION < 3100
+#define cgsize_t int
 #endif
 
 /*============================================================================
@@ -576,7 +580,7 @@ _add_zone(const fvm_nodal_t           *mesh,
           fvm_gnum_t                   n_g_vertices)
 {
   int zone_index;
-  fvm_lnum_t  zone_sizes[3];
+  cgsize_t    zone_sizes[3];
 
   fvm_gnum_t  n_g_entities = 0;
   fvm_gnum_t  n_g_tesselated_elements = 0;
@@ -817,7 +821,7 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
   MPI_Datatype  mpi_datatype;
   CGNS_ENUMT(DataType_t)  cgns_datatype;
 
-  int  idx_start = 0, idx_end = 0;
+  cgsize_t  idx_start = 0, idx_end = 0;
   int zone_index = 1;
   fvm_lnum_t  n_extra_vertices = 0;
   fvm_gnum_t  n_g_extra_vertices = 0;
@@ -1045,7 +1049,7 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
 {
   int  coord_index;
   fvm_lnum_t  i, j;
-  fvm_lnum_t  idx_start, idx_end;
+  cgsize_t  idx_start, idx_end;
   CGNS_ENUMT(DataType_t)  cgns_datatype;
 
   int  zone_index = 1;
@@ -1238,9 +1242,11 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
       elt_end   = *global_counter + global_num_end - 1;
 
       if (global_connect_s != NULL) {
-        int *_global_connect_s = (int *)global_connect_s;
-        if (sizeof(int) < sizeof(fvm_gnum_t)) {
-          int i = 0, n = (elt_end + 1 - elt_start)*section->stride;
+        cgsize_t *_global_connect_s = (cgsize_t *)global_connect_s;
+        if (sizeof(cgsize_t) != sizeof(fvm_gnum_t)) {
+          cgsize_t i = 0, n = (elt_end + 1 - elt_start)*section->stride;
+          if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+            BFT_MALLOC(_global_connect_s, n, cgsize_t);
           for (i = 0; i < n; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
@@ -1274,6 +1280,8 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
                                              elt_end,
                                              _global_connect_s);
 #endif /* (CGNS_VERSION >= 3000) */
+        if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+          BFT_FREE(_global_connect_s);
       }
 
       if (retval != CG_OK)
@@ -1338,7 +1346,16 @@ _export_connect_l(const fvm_writer_section_t  *export_section,
   elt_start = 1 + *global_counter;
   elt_end   = section->n_elements + *global_counter;
 
-  if (section->vertex_num != NULL)
+  if (section->vertex_num != NULL) {
+    cgsize_t *_vertex_num = NULL;
+    const cgsize_t *vertex_num = (const cgsize_t *)section->vertex_num;
+    if (sizeof(cgsize_t) != sizeof(fvm_lnum_t)) {
+      cgsize_t i = 0, n = (elt_end + 1 - elt_start)*section->stride;
+      BFT_MALLOC(_vertex_num, n, cgsize_t);
+      vertex_num = _vertex_num;
+      for (i = 0; i < n; i++)
+        _vertex_num[i] = section->vertex_num[i];
+    }
     retval = cg_section_write(writer->index,
                               base->index,
                               zone_index,
@@ -1347,8 +1364,11 @@ _export_connect_l(const fvm_writer_section_t  *export_section,
                               elt_start,
                               elt_end,
                               0, /* unsorted boundary elements */
-                              section->vertex_num,
+                              vertex_num,
                               &section_index);
+    if (_vertex_num != NULL)
+      BFT_FREE(_vertex_num);
+  }
 
   if (retval != CG_OK)
     bft_error(__FILE__, __LINE__, 0,
@@ -1536,9 +1556,11 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
         global_idx_s[(global_num_end - global_num_start)] / stride;
 
       if (global_connect_s != NULL) {
-        int *_global_connect_s = (int *)global_connect_s;
-        if (sizeof(int) < sizeof(fvm_gnum_t)) {
+        cgsize_t *_global_connect_s = (cgsize_t *)global_connect_s;
+        if (sizeof(cgsize_t) != sizeof(fvm_gnum_t)) {
           int i = 0, n = (elt_end + 1 - elt_start)*stride;
+          if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+            BFT_MALLOC(_global_connect_s, n, cgsize_t);
           for (i = 0; i < n; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
@@ -1572,6 +1594,8 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
                                              elt_end,
                                              _global_connect_s);
 #endif /* (CGNS_VERSION >= 3000) */
+        if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+          BFT_FREE(_global_connect_s);
       }
 
       if (retval != CG_OK)
@@ -1682,9 +1706,11 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
     elt_end = *global_counter + sub_element_idx[end_id];
 
     if (vertex_num != NULL) {
-      int *_vertex_num = (int *)vertex_num;
-      if (sizeof(int) < sizeof(fvm_lnum_t)) {
+      cgsize_t *_vertex_num = (cgsize_t *)vertex_num;
+      if (sizeof(cgsize_t) != sizeof(fvm_lnum_t)) {
         int i = 0, n = (elt_end + 1 - elt_start)*stride;
+        if (sizeof(cgsize_t) > sizeof(fvm_lnum_t))
+          BFT_MALLOC(_vertex_num, n, cgsize_t);
         for (i = 0; i < n; i++)
           _vertex_num[i] = vertex_num[i];
       }
@@ -1716,8 +1742,10 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
                                            section_index,
                                            elt_start,
                                            elt_end,
-                                          _vertex_num);
+                                           _vertex_num);
 #endif /* (CGNS_VERSION >= 3000) */
+      if (sizeof(cgsize_t) > sizeof(fvm_lnum_t))
+        BFT_FREE(_vertex_num);
     }
 
     if (retval != CG_OK)
@@ -1863,11 +1891,13 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
       elt_end   = *global_counter + global_num_end - 1;
 
       if (global_connect_s != NULL) {
-        int *_global_connect_s = (int *)global_connect_s;
-        if (sizeof(int) < sizeof(fvm_gnum_t)) {
+        cgsize_t *_global_connect_s = (cgsize_t *)global_connect_s;
+        if (sizeof(cgsize_t) != sizeof(fvm_gnum_t)) {
           int i = 0, j = 0, n = elt_end + 1 - elt_start;
           for (i = 0; i < n; i++)
             j += global_connect_s[j] - CGNS_ENUMV(NGON_n) + 1;
+          if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+            BFT_MALLOC(_global_connect_s, j, cgsize_t);
           for (i = 0; i < j; i++)
             _global_connect_s[i] = global_connect_s[i];
         }
@@ -1901,6 +1931,8 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
                                              elt_end,
                                              _global_connect_s);
 #endif /* (CGNS_VERSION >= 3000) */
+        if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+          BFT_FREE(_global_connect_s);
       }
 
       if (retval != CG_OK)
@@ -1956,7 +1988,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
   fvm_lnum_t  connect_size = 0;
   fvm_gnum_t  elt_start = 0, elt_end = 0;
-  fvm_lnum_t  *connect = NULL;
+  cgsize_t  *connect = NULL;
 
   const  int  zone_index = 1; /* We always use zone index = 1 */
   const fvm_writer_section_t *current_section = export_section;
@@ -1973,7 +2005,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
   BFT_MALLOC(connect,
              section->n_elements + section->connectivity_size,
-             fvm_lnum_t);
+             cgsize_t);
 
   for (j = 0; j < section->n_elements; j++) {
     connect[connect_size++]
@@ -2063,7 +2095,7 @@ _export_field_e(const fvm_writer_section_t      *export_list,
 
   for (i = 0 ; i < output_dim ; i++) {
 
-    int partial_write_idx_start = 1;
+    cgsize_t partial_write_idx_start = 1;
 
     for (current_section = export_list;
          current_section != NULL;
@@ -2086,7 +2118,8 @@ _export_field_e(const fvm_writer_section_t      *export_list,
 
           int field_index;
           int retval = CG_OK;
-          int partial_write_idx_end = partial_write_idx_start + output_size - 1;
+          cgsize_t partial_write_idx_end
+            = partial_write_idx_start + output_size - 1;
 
           const int  shift = FVM_CGNS_NAME_SIZE + 1;
           const int  zone_index = 1; /* We always work on index zone = 1 */
@@ -2174,7 +2207,7 @@ _export_field_n(const fvm_nodal_t               *mesh,
 
   for (i = 0 ; i < output_dim ; i++) {
 
-    int partial_write_idx_start = 1;
+    cgsize_t partial_write_idx_start = 1;
 
     while (fvm_writer_field_helper_step_n(helper,
                                           mesh,
@@ -2193,7 +2226,8 @@ _export_field_n(const fvm_nodal_t               *mesh,
 
         int field_index;
         int retval = CG_OK;
-        int partial_write_idx_end = partial_write_idx_start + output_size - 1;
+        cgsize_t partial_write_idx_end
+          = partial_write_idx_start + output_size - 1;
 
         const int  shift = FVM_CGNS_NAME_SIZE + 1;
         const int  zone_index = 1; /* We always work on index zone = 1 */
@@ -2240,7 +2274,7 @@ static void
 _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
 {
   int     base_id, j, name_len;
-  int     dim[2];
+  cgsize_t dim[2];
 
   double *time_values = NULL;
   int    *time_steps = NULL;
@@ -2349,7 +2383,7 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
       dim[0] = FVM_CGNS_NAME_SIZE;
       dim[1] = sol_id;
 
-      BFT_MALLOC(sol_names, dim[0] * dim[1] , char );
+      BFT_MALLOC(sol_names, dim[0] * dim[1] , char);
 
       for (j = 0; j < dim[0] * dim[1]; j++)
         sol_names[j] = ' ';

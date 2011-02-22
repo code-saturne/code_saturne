@@ -7,7 +7,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -125,6 +125,9 @@ extern "C" {
 #define CS_CG_ENUM(e) e
 #endif
 
+#if CGNS_VERSION < 3100
+#define cgsize_t int
+#endif
 
 /*============================================================================
  * Définitions de structures locales
@@ -153,7 +156,7 @@ typedef struct {
   CS_CG_ENUM(GridLocation_t)   support;             /* Support associé        */
   CS_CG_ENUM(PointSetType_t)   ptset_type;          /* Type de liste          */
   int              npnts;                           /* Nombre de points       */
-  int             *pnts;                            /* Liste de points        */
+  cgsize_t        *pnts;                            /* Liste de points        */
 } ecs_loc_cgns_boco_t;
 
 
@@ -163,12 +166,12 @@ typedef struct {
 
   char           nom[ECS_CGNS_TAILLE_NOM + 1];      /* Nom de la section      */
   CS_CG_ENUM(ElementType_t)  type;                  /* Type élément           */
-  int            num_elt_deb;                       /* Numéro premier élement */
-  int            num_elt_fin;                       /* Numéro dernier élement */
+  cgsize_t       num_elt_deb;                       /* Numéro premier élement */
+  cgsize_t       num_elt_fin;                       /* Numéro dernier élement */
   int            nbr_brd;                           /* Nbr. éléments de bord  */
   int            parent;                            /* 0 si pas de parents,
                                                        1 sinon                */
-  int           *elems;                             /* Connect. temporaire    */
+  cgsize_t      *elems;                             /* Connect. temporaire    */
 } ecs_loc_cgns_section_t;
 
 
@@ -180,7 +183,7 @@ typedef struct {
   CS_CG_ENUM(ZoneType_t)      type;               /* Type de la zone         */
   int             nbr_som;                        /* Nombre de sommets       */
   int             nbr_cel;                        /* Nombre de cellules      */
-  int             taille[3*3];                    /* Indices maximaux pour
+  cgsize_t        taille[3*3];                    /* Indices maximaux pour
                                                      les sommets, cellules,
                                                      et cellules de bord     */
   int             nbr_sections;                   /* Nombre de sections      */
@@ -651,7 +654,6 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
     ptr_zone->num_elt_fin = INT_MIN;
     ptr_zone->renum = NULL;
 
-
     /* Informations principales sur la zone */
 
     if (   cg_zone_read(num_fic, num_base, num_zone, ptr_zone->nom,
@@ -714,9 +716,13 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
         nbr_som_loc = ptr_zone->taille[0] * ptr_zone->taille[1];
         nbr_cel_loc = ptr_zone->taille[2] * ptr_zone->taille[3];
 
-        printf(_("\n      %d (%d x %d) vertices; %d (%d x %d) cells\n"),
-               (int)nbr_som_loc, ptr_zone->taille[0], ptr_zone->taille[1],
-               (int)nbr_cel_loc, ptr_zone->taille[2], ptr_zone->taille[3]);
+        printf(_("\n      %lu (%lu x %lu) vertices; %lu (%lu x %lu) cells\n"),
+               (unsigned long)nbr_som_loc,
+               (unsigned long)ptr_zone->taille[0],
+               (unsigned long)ptr_zone->taille[1],
+               (unsigned long)nbr_cel_loc,
+               (unsigned long)ptr_zone->taille[2],
+               (unsigned long)ptr_zone->taille[3]);
       }
       else if (base_maillage->dim_entite == 3) {
         nbr_som_loc =   ptr_zone->taille[0] * ptr_zone->taille[1]
@@ -724,19 +730,24 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
         nbr_cel_loc =   ptr_zone->taille[3] * ptr_zone->taille[4]
                       * ptr_zone->taille[5];
 
-        printf(_("\n      %d (%d x %d x %d) vertices;"
-                 " %d (%d x %d x %d) cells\n"),
-               (int)nbr_som_loc, ptr_zone->taille[0], ptr_zone->taille[1],
-               ptr_zone->taille[2], (int)nbr_cel_loc, ptr_zone->taille[3],
-               ptr_zone->taille[4], ptr_zone->taille[5]);
+        printf(_("\n      %lu (%lu x %lu x %lu) vertices;"
+                 " %lu (%lu x %lu x %lu) cells\n"),
+               (unsigned long)nbr_som_loc,
+               (unsigned long)ptr_zone->taille[0],
+               (unsigned long)ptr_zone->taille[1],
+               (unsigned long)ptr_zone->taille[2],
+               (unsigned long)nbr_cel_loc,
+               (unsigned long)ptr_zone->taille[3],
+               (unsigned long)ptr_zone->taille[4],
+               (unsigned long)ptr_zone->taille[5]);
       }
     }
     else {
       nbr_som_loc = ptr_zone->taille[0];
       nbr_cel_loc = ptr_zone->taille[1];
 
-      printf(_("\n      %d vertices; %d cells\n"),
-             (int)nbr_som_loc, (int)nbr_cel_loc);
+      printf(_("\n      %lu vertices; %lu cells\n"),
+             (unsigned long)nbr_som_loc, (unsigned long)nbr_cel_loc);
     }
 
     ptr_zone->nbr_som = nbr_som_loc;
@@ -775,11 +786,11 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
       CS_CG_ENUM(GridLocation_t)         location;
       CS_CG_ENUM(GridConnectivityType_t) connect_type;
       CS_CG_ENUM(PointSetType_t)         ptset_type;
-      int                                npnts;
+      cgsize_t                           npnts;
       CS_CG_ENUM(ZoneType_t)             donor_zonetype;
       CS_CG_ENUM(PointSetType_t)         donor_ptset_type;
       CS_CG_ENUM(DataType_t)             donor_datatype;
-      int                                ndata_donor;
+      cgsize_t                           ndata_donor;
 
       for (ind_conn = 0; ind_conn < nconns; ind_conn++) {
 
@@ -852,9 +863,10 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
           ptr_section->elems = NULL;
 
           printf(_("      Section %2d: \"%s\";\n"
-                   "                   (indices %d to %d, type \"%s\")\n"),
+                   "                   (indices %lu to %lu, type \"%s\")\n"),
                  num_section, ptr_section->nom,
-                 ptr_section->num_elt_deb, ptr_section->num_elt_fin,
+                 (unsigned long)ptr_section->num_elt_deb,
+                 (unsigned long)ptr_section->num_elt_fin,
                  ElementTypeName[ptr_section->type]);
 
           ptr_zone->num_elt_deb = ECS_MIN(ptr_section->num_elt_deb,
@@ -942,13 +954,13 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
   int         num_zone;
 
   int         nbocos;
-  int         npnts;
+  cgsize_t    npnts;
 
   CS_CG_ENUM(BCType_t)        bocotype;
   CS_CG_ENUM(GridLocation_t)  GridLocation;
   CS_CG_ENUM(PointSetType_t)  ptset_type;
   int                         NormalIndex[3];
-  int                         NormalListFlag;
+  cgsize_t                    NormalListFlag;
   CS_CG_ENUM(DataType_t)      NormalDataType;
   int                         ndataset;
 
@@ -1104,9 +1116,9 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
 
         if (   ptset_type == CS_CG_ENUM(PointRange)
             || ptset_type == CS_CG_ENUM(ElementRange))
-          ECS_MALLOC((tab_boco_loc[ind_boco_glob]).pnts, npnts * 3, int);
+          ECS_MALLOC((tab_boco_loc[ind_boco_glob]).pnts, npnts * 3, cgsize_t);
         else
-          ECS_MALLOC((tab_boco_loc[ind_boco_glob]).pnts, npnts, int);
+          ECS_MALLOC((tab_boco_loc[ind_boco_glob]).pnts, npnts, cgsize_t);
 
         if (NormalListFlag > 0) {
           if (NormalDataType == CS_CG_ENUM(RealSingle))
@@ -1198,8 +1210,8 @@ ecs_loc_pre_cgns__lit_som(ecs_maillage_t             *maillage,
   int         num_base;
   int         num_zone;
   int         phys_dim;
-  int         irmin[3];
-  int         irmax[3];
+  cgsize_t    irmin[3];
+  cgsize_t    irmax[3];
 
   int        *ind_som_deb;
 
@@ -1416,7 +1428,7 @@ ecs_loc_pre_cgns__marque_som(const ecs_loc_cgns_base_t  *base_maillage,
                              ecs_loc_cgns_zone_t        *ptr_zone,
                              CS_CG_ENUM(PointSetType_t)  ptset_type,
                              int                         npnts,
-                             int                        *pnts,
+                             cgsize_t                   *pnts,
                              ecs_int_t                  *indic_som)
 {
 
@@ -2073,10 +2085,10 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
   int         num_base;
   int         num_section;
   int         num_zone;
-  int         taille_loc;
+  cgsize_t    taille_loc;
 
-  int        *ptr_ele;
-  int        *parentdata;
+  cgsize_t   *ptr_ele;
+  cgsize_t   *parentdata;
 
   int         ret = 0;
 
@@ -2150,13 +2162,13 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
       if (ret == CG_OK) {
 
-        ECS_MALLOC(ptr_section->elems, taille_loc, int);
+        ECS_MALLOC(ptr_section->elems, taille_loc, cgsize_t);
 
         if (ptr_section->parent > 0)
           ECS_MALLOC(parentdata,
                      (  ptr_section->num_elt_fin
                       - ptr_section->num_elt_deb + 1) * 4,
-                     int);
+                     cgsize_t);
         else
           parentdata = NULL;
 
