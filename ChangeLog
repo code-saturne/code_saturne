@@ -1,3 +1,15 @@
+* 22/02/2011 - David Monfort <david.monfort@edf.fr>
+  Remove the now useless "code_saturne plot_probes" command since the probes
+  now have only one first column for either the time-step number of the time
+  value (it was only a wrapper aroun xmgrace -nxy $file).
+  removed file:
+    bin/cs_plot_probes.py
+  modified files:
+    bin/cs_script.py
+    doc/manpages/code_saturne.1
+    doc/refcard/refcard.tex
+    extras/bash_completion/code_saturne
+
 * 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update authors list.
   modified file:

@@ -37,8 +37,7 @@ class master_script:
                          'config':self.config,
                          'create':self.create,
                          'gui':self.gui,
-                         'info':self.info,
-                         'plot_probes':self.plot_probes}
+                         'info':self.info}
 
     def execute(self):
 
@@ -76,7 +75,6 @@ Topics:
   create
   gui
   info
-  plot_probes
 
 Options:
   -h, --help  show this help message and exit"""
@@ -110,10 +108,6 @@ Options:
     def info(self, options = None):
         import cs_info
         cs_info.main(options, self.package)
-
-    def plot_probes(self, options = None):
-        import cs_plot_probes
-        cs_plot_probes.main(options, self.package)
 
 #-------------------------------------------------------------------------------
 # End

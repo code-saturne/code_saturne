@@ -34,7 +34,7 @@ _code_saturne() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Possible commands except "help", as given by "code_saturne help"
-    cmds="check_consistency check_mesh plot_probes"
+    cmds="check_consistency check_mesh"
     cmds="${cmds} compile config create gui info"
 
     # Help and Case options
@@ -123,12 +123,6 @@ _code_saturne() {
                     return 0
                     ;;
                 *) cmdOpts="-r --reader -g --guide --version"
-            esac
-            ;;
-        plot_probes)
-            case ${prev} in
-                plot_probes) _filedir "dat";;
-                *) return 0;;
             esac
             ;;
         *)
