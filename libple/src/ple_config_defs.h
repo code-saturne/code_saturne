@@ -9,7 +9,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2010  EDF
+  Copyright (C) 2005-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -36,7 +36,7 @@
 #ifdef __cplusplus
 extern "C" {
 #if 0
-} /* Fake brace to force back Emacs auto-indentation back to column 0 */
+} /* Fake brace to force Emacs auto-indentation back to column 0 */
 #endif
 #endif /* __cplusplus */
 
@@ -104,7 +104,7 @@ extern "C" {
 #  ifdef __cplusplus
 typedef bool _Bool;
 #  else
-typedef unsigned char _Bool;
+    define _Bool signed char;
 #  endif
 # endif
 # define bool _Bool

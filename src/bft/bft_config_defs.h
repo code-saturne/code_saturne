@@ -9,7 +9,7 @@
   This file is part of the "Base Functions and Types" library, intended to
   simplify and enhance portability, memory and I/O use for scientific codes.
 
-  Copyright (C) 2004-2009  EDF
+  Copyright (C) 2004-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -44,7 +44,6 @@ extern "C" {
  *============================================================================*/
 
 #if defined(ENABLE_NLS)
-
 #  include <libintl.h>
 #  define _(String) dgettext(PACKAGE,String)
 #  ifdef gettext_noop
@@ -52,9 +51,7 @@ extern "C" {
 #  else
 #    define N_(String) String
 #  endif /* gettext_noop */
-
 #else
-
 #  define _(String) (String)
 #  define N_(String) String
 #  define textdomain(String) (String)
@@ -62,7 +59,6 @@ extern "C" {
 #  define dgettext(Domain,String) (String)
 #  define dcgettext(Domain,String,Type) (String)
 #  define bindtextdomain(Domain,Directory) (Domain)
-
 #endif
 
 /*============================================================================
@@ -108,19 +104,20 @@ extern "C" {
 
 /* C99 _Bool type */
 
-#ifdef __cplusplus
-typedef bool _Bool;
+#if HAVE_STDBOOL_H
+# include <stdbool.h>
 #else
-# if HAVE_STDBOOL_H
-#  include <stdbool.h>
-# else
-#  if !HAVE__BOOL
-typedef unsigned char _Bool;
+# if !HAVE__BOOL
+#  ifdef __cplusplus
+typedef bool _Bool;
+#  else
+    define _Bool signed char;
 #  endif
 # endif
 # define bool _Bool
 # define false 0
 # define true 1
+# define __bool_true_false_are_defined 1
 #endif
 
 /* int32_t type */

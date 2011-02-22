@@ -1,3 +1,10 @@
+* 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update stdint.h/stdbool.h replacement macros with new autoconf recommendations.
+  modified files:
+    libple/src/ple_config_defs.h
+    src/bft/bft_config_defs.h
+    src/fvm/fvm_config_defs.h
+
 * 21/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   In coupled case, run in RESU_COUPLING and not RESU by default.
   modified files:
