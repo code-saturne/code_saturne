@@ -47,7 +47,6 @@ import Base.Toolbox as Tool
 from Pages.SolutionDomainModel import MeshModel, SolutionDomainModel
 from Pages.CoalCombustionModel import CoalCombustionModel
 from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
-from Pages.ProfilesModel import ProfilesModel
 from Base.XMLvariables import Variables, Model
 
 #-------------------------------------------------------------------------------
@@ -217,7 +216,6 @@ class ScriptRunningModel(Model):
 
         sdm = SolutionDomainModel(self.case)
         mm = MeshModel()
-        prm = ProfilesModel(self.case)
 
         # MESHES
         self.dictValues['MESHES'] = []

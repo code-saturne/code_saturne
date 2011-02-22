@@ -1,4 +1,10 @@
-* 22/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+* 22/02/2011 - Cyril Baudry <cyril.baudry@edf.fr>
+  Remove unused modules import.
+  modified routines:
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/ScriptRunningModel.py
+
+* 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add missing initialization (removed in previous optimization) for Bi-CGSTAB.
   modified file:
     src/base/cs_sles.c
@@ -23,7 +29,7 @@
     gui/Makefile.am
     Makefile.am
 
-* 22/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+* 22/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update French dictionnary.
   modified file:
     po/fr.po
