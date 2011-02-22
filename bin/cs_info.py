@@ -121,7 +121,7 @@ def launch_manual(reader, m, pkg):
                  "kde-open",       # KDE 4
                  "exo-open"]       # Xfce
 
-    readers = ["evince", "gpdf", "kpdf", "xpdf", "acroread"]
+    readers = ["okular", "evince", "kpdf", "gpdf", "xpdf", "acroread"]
 
     manual = os.path.join(pkg.pdfdir, m) + '.pdf'
 
