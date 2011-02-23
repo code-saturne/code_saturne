@@ -28,6 +28,7 @@
 
 #-------------------------------------------------------------------------------
 
+import os
 from optparse import OptionParser
 
 #-------------------------------------------------------------------------------
@@ -120,6 +121,13 @@ class config:
         self.python = "@PYTHON@"
         self.pyuic4 = "@PYUIC4@"
         self.pyrcc4 = "@PYRCC4@"
+
+        # SALOME-related information
+
+        self.have_salome = "@cs_have_salome_kernel@"
+        self.salome_kernel = "@KERNEL_ROOT_DIR@"
+        self.salome_root = "@ROOT_SALOME@"
+        self.salome_version = "@SALOME_VERSION@"
 
         # Setup the optionnal features
 

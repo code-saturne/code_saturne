@@ -37,7 +37,8 @@ class master_script:
                          'config':self.config,
                          'create':self.create,
                          'gui':self.gui,
-                         'info':self.info}
+                         'info':self.info,
+                         'salome':self.salome}
 
     def execute(self):
 
@@ -75,6 +76,7 @@ Topics:
   create
   gui
   info
+  salome
 
 Options:
   -h, --help  show this help message and exit"""
@@ -108,6 +110,10 @@ Options:
     def info(self, options = None):
         import cs_info
         cs_info.main(options, self.package)
+
+    def salome(self, options = None):
+        import cs_salome
+        cs_salome.main(options, self.package)
 
 #-------------------------------------------------------------------------------
 # End

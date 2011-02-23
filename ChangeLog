@@ -1,4 +1,14 @@
 * 23/02/2011 - David Monfort <david.monfort@edf.fr>
+  Add a SALOME command to the main Code_Saturne script so as to launch the
+  SALOME platform with the CFDSTUDY module enabled.
+  modified scripts:
+    bin/cs_salome.py
+    bin/cs_config.py.in
+    bin/cs_script.py
+    extras/bash_completion/code_saturne
+    Makefile.am
+
+* 23/02/2011 - David Monfort <david.monfort@edf.fr>
   Use precious variable (AC_ARG_VAR) instead of AC_ARG_WITH definitions for
   PYTHON and Qt/PyQt-related variables.
   modified scripts:

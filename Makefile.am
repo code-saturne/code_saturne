@@ -206,6 +206,7 @@ bin/cs_create.py \
 bin/cs_exec_environment.py \
 bin/cs_gui.py \
 bin/cs_info.py \
+bin/cs_salome.py \
 bin/cs_script.py
 
 # Install user scripts

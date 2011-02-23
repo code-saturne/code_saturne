@@ -34,7 +34,7 @@ _code_saturne() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Possible commands except "help", as given by "code_saturne help"
-    cmds="check_consistency check_mesh compile config create gui info"
+    cmds="check_consistency check_mesh compile config create gui info salome"
 
     # Help and Case options
     local helpOpts="-h --help"
