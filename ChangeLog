@@ -1,4 +1,15 @@
 * 23/02/2011 - David Monfort <david.monfort@edf.fr>
+  Use precious variable (AC_ARG_VAR) instead of AC_ARG_WITH definitions for
+  PYTHON and Qt/PyQt-related variables.
+  modified scripts:
+    bin/code_saturne.in
+    bin/cs_config.py.in
+    bin/runcase_coupling.in
+    bin/runcase.in
+    configure.ac
+    Makefile.am
+
+* 23/02/2011 - David Monfort <david.monfort@edf.fr>
   Fix the (unused) Homard adaption function.
   modified script:
     bin/cs_case.py

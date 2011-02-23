@@ -115,7 +115,7 @@ CS_LD=$(CC)
 endif
 
 edit_python = sed \
-	-e 's|@cs_python[@]|$(cs_python)|g' \
+	-e 's|@PYTHON[@]|$(PYTHON)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g'
 
 edit_config = sed \
@@ -135,6 +135,9 @@ edit_config = sed \
 	-e 's|@syrthes_prefix[@]|$(syrthes_prefix)|g' \
 	-e 's|@CC[@]|$(CC)|g' \
 	-e 's|@CS_LD[@]|$(CS_LD)|g' \
+	-e 's|@PYTHON[@]|$(PYTHON)|g' \
+	-e 's|@PYUIC4[@]|$(PYUIC4)|g' \
+	-e 's|@PYRCC4[@]|$(PYRCC4)|g' \
 	-e 's|@PLE_CPPFLAGS[@]|$(PLE_CPPFLAGS)|g' \
 	-e 's|@PLE_LDFLAGS[@]|$(PLE_LDFLAGS)|g' \
 	-e 's|@PLE_LIBS[@]|$(PLE_LIBS)|g' \

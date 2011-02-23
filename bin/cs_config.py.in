@@ -117,7 +117,7 @@ class config:
 
         # Python-related information
 
-        self.python = "@cs_python@"
+        self.python = "@PYTHON@"
         self.pyuic4 = "@PYUIC4@"
         self.pyrcc4 = "@PYRCC4@"
 

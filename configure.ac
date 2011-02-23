@@ -451,24 +451,7 @@ AC_SUBST(cs_have_prepro)
 # Checks for Python support.
 #------------------------------------------------------------------------------
 
-AC_ARG_WITH(python, [AS_HELP_STRING([--with-python=PYTHON],
-                                    [specify a Python interpreter])],
-                         [cs_python=${withval}],
-                         [cs_python=python])dnl
-
-cs_python_basename=`basename ${cs_python}`
-if test "x${cs_python_basename}" != "x${cs_python}" ; then
-  cs_python_dirname=`dirname ${cs_python}`
-  AC_PATH_PROG([PYTHON], [${cs_python_basename}], ["no"], [${cs_python_dirname}])
-  unset cs_python_dirname
-else
-  AC_PATH_PROG([PYTHON], [${cs_python}], ["no"])
-fi
-unset cs_python_basename
-
-cs_python=${PYTHON}
-AC_SUBST(cs_python)
-
+AC_ARG_VAR([PYTHON], [the Python interpreter])
 AM_PATH_PYTHON(["2.4"])
 
 #------------------------------------------------------------------------------
@@ -490,11 +473,6 @@ AC_ARG_ENABLE(gui, [AS_HELP_STRING([--disable-gui],
 #------------------------------------------------------------------------------
 # Checks for PyQt support.
 #------------------------------------------------------------------------------
-
-AC_ARG_WITH(pyqt4-exec, [AS_HELP_STRING([--with-pyqt4-exec=PATH],
-                                        [specify prefix directory for PyQt4 developper tools (pyuic4 and pyrcc4)])],
-                        [PYQT4_EXE=${withval}],
-                        [PYQT4_EXE=none])dnl
 
 # Test for PyQt4
 if test "x$cs_have_gui" = "xyes" ; then
@@ -525,58 +503,47 @@ fi
 # Test for PyQt4 developper tools
 if test "x$cs_have_gui" = "xyes" ; then
 
-  if test "x${PYQT4_EXE}" = "xnone" ; then
-
-    # Try to find PyQt4 tools through Python interpreter
-    prog="[import os, sys
+  # Try to find PyQt4 tools through Python interpreter
+  prog="[import os, sys
 from PyQt4.QtCore import QCoreApplication
 app = QCoreApplication([])
 path = app.applicationDirPath()
 sys.stdout.write(path)]"
 
-    PYPATH=`${PYTHON} -c "${prog}"`
+  PYPATH=`${PYTHON} -c "${prog}"`
 
-  else
-    PYPATH=${PYQT4_EXE}
-  fi
+  AC_ARG_VAR([PYUIC4], [PyQt4 user interfaces compiler])
+  AC_ARG_VAR([PYRCC4], [PyQt4 resources compiler])
 
-  AC_PATH_PROG([PYUIC4], [pyuic4], ["no"], [${PYPATH}:$PATH])
-  AC_PATH_PROG([PYRCC4], [pyrcc4], ["no"], [${PYPATH}:$PATH])
+  AC_PATH_PROG([PYUIC4], [pyuic4], [], [${PYPATH}:$PATH])
+  AC_PATH_PROG([PYRCC4], [pyrcc4], [], [${PYPATH}:$PATH])
 
-  if test "x$PYUIC4" = "xno" -o "x$PYRCC4" = "xno" ; then
+  if test -z "$ac_cv_path_PYUIC4" -o -z "$ac_cv_path_PYRCC4"; then
     AC_MSG_FAILURE([cannot find PyQt4 dev tools, Graphical User Interface cannot be installed])
     cs_have_gui=no
   fi
 
 fi
 
-AC_SUBST(PYUIC4)
-AC_SUBST(PYRCC4)
-
 #------------------------------------------------------------------------------
 # Checks for Qt tools.
 #------------------------------------------------------------------------------
 
-AC_ARG_WITH(qt4-exec, [AS_HELP_STRING([--with-qt4-exec=PATH],
-                                        [specify prefix directory for Qt4 developper tools (lrelease and moc)])],
-                        [QT4_EXE=${withval}],
-                        [QT4_EXE=none])dnl
-
 # Test for Qt4 developper tools
 if test "x$cs_have_gui" = "xyes" ; then
 
-  AC_PATH_PROG([LRELEASE], [lrelease], ["no"], [${QT4_EXE}:$PATH])
-  AC_PATH_PROG([MOC], [moc], ["no"], [${QT4_EXE}:$PATH])
+  AC_ARG_VAR([LRELEASE], [Qt message files generator])
+  AC_ARG_VAR([MOC], [Qt meta objects compiler])
 
-  if test "x$LRELEASE" = "xno" -o "x$MOC" = "xno" ; then
+  AC_PATH_PROG([LRELEASE], [lrelease])
+  AC_PATH_PROG([MOC], [moc])
+
+  if test "$LRELEASE" = : -o "$MOC" = : ; then
     AC_MSG_FAILURE([cannot find Qt4 dev tools, Graphical User Interface cannot be installed])
     cs_have_gui=no
   fi
 
 fi
-
-AC_SUBST(LRELEASE)
-AC_SUBST(MOC)
 
 AM_CONDITIONAL(HAVE_GUI, [test "x$cs_have_gui" = "xyes"])
 AC_SUBST(cs_have_gui)
