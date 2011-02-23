@@ -48,14 +48,14 @@ def adaptation(adaptation, saturne_script, case_dir):
 
     if adaptation == '-help':
         cmd += ' -help'
-        run_command(cmd)
+        cs_exec_environment.run_command(cmd)
         sys.exit(0)
     else:
         homard_options=' -v'
         cmd += ' -Saturne_Script ' + saturne_script + ' ' + case_dir
         cmd += ' -Pilotage_Adaptation ' + adaptation + homard_options
 
-    if run_command(cmd) != 0:
+    if cs_exec_environment.run_command(cmd) != 0:
         sys.exit(0)
 
 #===============================================================================

@@ -1,3 +1,8 @@
+* 23/02/2011 - David Monfort <david.monfort@edf.fr>
+  Fix the (unused) Homard adaption function.
+  modified script:
+    bin/cs_case.py
+
 * 23/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Rename CS_TMP_PREFIX, EXEC_PREFIX_DIR, and tmpdir in a consistent manner
   to SCRATCHDIR.
