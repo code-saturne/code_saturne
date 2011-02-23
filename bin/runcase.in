@@ -150,13 +150,13 @@ EXEC_SOLVER = True
 
 HOMARD_PREFIX = None
 
-# CS_TMP_PREFIX variable allows the user to specify in which temporary
+# SCRATCHDIR variable allows the user to specify in which temporary
 # directory the calculation will run. If set to None, a default directory
 # will be used (architecture dependent). If a value is specified,
 # the temporary directory will be of the form:
-#  <CS_TMP_PREFIX>/tmp_Saturne/<STUDY>.<CASE>.<DATE>
+#  <SCRATCHDIR>/tmp_Saturne/<STUDY>.<CASE>.<DATE>
 
-CS_TMP_PREFIX = None
+SCRATCHDIR = None
 
 # VALGRIND enables running of the solver through Valgrind if this
 # memory-checking tool is available. In this case, it should
@@ -237,7 +237,7 @@ if __name__ == '__main__':
 
     case.run(n_procs=N_PROCS,
              mpi_environment=mpi_env,
-             exec_prefix=CS_TMP_PREFIX,
+             exec_prefix=SCRATCHDIR,
              run_id=run_id,
              prepare_data=True,
              run_solver=True,

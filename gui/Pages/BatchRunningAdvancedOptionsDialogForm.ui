@@ -32,12 +32,12 @@
       <widget class="QLabel" name="label" >
        <property name="text" >
         <string>Prefix of temporary execution
- directory (CS_TMP_PREFIX)</string>
+ directory (SCRATCHDIR)</string>
        </property>
       </widget>
      </item>
      <item row="0" column="1" >
-      <widget class="QComboBox" name="comboBoxCSTMPPREFIX" />
+      <widget class="QComboBox" name="comboBoxSCRATCHDIR" />
      </item>
      <item row="0" column="2" >
       <widget class="QLineEdit" name="lineEdit" />
@@ -67,20 +67,7 @@
       </widget>
      </item>
      <item row="2" column="1" colspan="3" >
-      <widget class="QComboBox" name="comboBox_2" >
-       <property name="sizePolicy" >
-        <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize" >
-        <size>
-         <width>490</width>
-         <height>40</height>
-        </size>
-       </property>
-      </widget>
+      <widget class="QComboBox" name="comboBox_2" />
      </item>
      <item row="3" column="0" >
       <widget class="QLabel" name="label_4" >

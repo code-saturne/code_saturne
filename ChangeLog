@@ -1,3 +1,15 @@
+* 23/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Rename CS_TMP_PREFIX, EXEC_PREFIX_DIR, and tmpdir in a consistent manner
+  to SCRATCHDIR.
+  modified files:
+    bin/cs_case.py
+    bin/runcase_coupling.in
+    bin/runcase.in
+    extras/code_saturne.cfg
+    gui/Pages/BatchRunningAdvancedOptionsDialogForm.ui
+    gui/Pages/BatchRunningView.py
+    gui/Pages/ScriptRunningModel.py
+
 * 22/02/2011 - David Monfort <david.monfort@edf.fr>
   Update the bash completion script according to the new script options.
   modified file:

@@ -295,7 +295,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.lineEdit.setReadOnly(True)
 
         # Combo models
-        self.modelCSTMPPREFIX  = ComboModel(self.comboBoxCSTMPPREFIX, 2, 1)
+        self.modelSCRATCHDIR   = ComboModel(self.comboBoxSCRATCHDIR, 2, 1)
         self.modelExecPrepro   = ComboModel(self.comboBox, 2, 1)
         self.modelExecPartit   = ComboModel(self.comboBox_2, 2, 1)
         self.modelExecKernel   = ComboModel(self.comboBox_3, 2, 1)
@@ -304,15 +304,15 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelCSOUT2       = ComboModel(self.comboBox_7, 3, 1)
 
         # Combo items
-        self.modelCSTMPPREFIX.addItem(self.tr("automatic"), 'automatic')
-        self.modelCSTMPPREFIX.addItem(self.tr("prescribed"), 'prescribed')
+        self.modelSCRATCHDIR.addItem(self.tr("automatic"), 'automatic')
+        self.modelSCRATCHDIR.addItem(self.tr("prescribed"), 'prescribed')
 
         self.modelExecPrepro.addItem(self.tr("Run the preprocessor"), 'True')
         self.modelExecPrepro.addItem(self.tr("Use existing DATA/mesh_input"), 'False')
 
         self.modelExecPartit.addItem(self.tr("Run the partitioner"), 'True')
-        self.modelExecPartit.addItem(self.tr("Use existing DATA/partition/domain_number_<p>\n"\
-                                             "if present, space-filling curve otherwise"), 'False')
+        self.modelExecPartit.addItem(self.tr("Use existing DATA/partition/domain_number_<p> "\
+                                             "or space-filling curve"), 'False')
 
         self.modelExecKernel.addItem(self.tr("Setup data and run the calculation"), 'True')
         self.modelExecKernel.addItem(self.tr("Do not setup data and run the calculation"), 'False')
@@ -328,7 +328,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelCSOUT2.addItem(self.tr("to listing_n<p>"), 'listing')
 
         # connections
-        self.connect(self.comboBoxCSTMPPREFIX, SIGNAL("activated(const QString&)"), self.slotCSTMPPREFIX)
+        self.connect(self.comboBoxSCRATCHDIR, SIGNAL("activated(const QString&)"), self.slotSCRATCHDIR)
         self.connect(self.toolButton, SIGNAL("clicked()"), self.slotSearchDirectory)
         self.connect(self.comboBox, SIGNAL("activated(const QString&)"), self.slotExePrepro)
         self.connect(self.comboBox_2, SIGNAL("activated(const QString&)"), self.slotExePartit)
@@ -341,18 +341,18 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.connect(self.comboBox_7, SIGNAL("activated(const QString&)"), self.slotArgCsOutput)
 
         # Previous values
-        self.dir_name = self.default['CS_TMP_PREFIX']
+        self.dir_name = self.default['SCRATCHDIR']
         if self.dir_name == None:
             self.dir_name = ""
         self.lineEdit.setText(QString(self.dir_name))
         if self.dir_name == "":
             self.lineEdit.setEnabled(False)
             self.toolButton.setEnabled(False)
-            self.modelCSTMPPREFIX.setItem(str_model='automatic')
+            self.modelSCRATCHDIR.setItem(str_model='automatic')
         else:
             self.lineEdit.setEnabled(True)
             self.toolButton.setEnabled(True)
-            self.modelCSTMPPREFIX.setItem(str_model='prescribed')
+            self.modelSCRATCHDIR.setItem(str_model='prescribed')
 
         self.exe_prepro = self.default['EXEC_PREPROCESS']
         self.modelExecPrepro.setItem(str_model=str(self.exe_prepro))
@@ -380,12 +380,12 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
 
     @pyqtSignature("const QString &")
-    def slotCSTMPPREFIX(self, text):
+    def slotSCRATCHDIR(self, text):
         """
-        Select mode for CS_TMP_PREFIX.
+        Select mode for SCRATCHDIR.
         """
-        if self.modelCSTMPPREFIX.dicoV2M[str(text)] == 'prescribed':
-            self.dir_name = self.default['CS_TMP_PREFIX']
+        if self.modelSCRATCHDIR.dicoV2M[str(text)] == 'prescribed':
+            self.dir_name = self.default['SCRATCHDIR']
             self.lineEdit.setEnabled(True)
             self.toolButton.setEnabled(True)
             setGreenColor(self.toolButton, True)
@@ -578,7 +578,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         if len(plist) > 0:
             partition_tuple = tuple(plist)
 
-        self.result['CS_TMP_PREFIX']   = self.dir_name
+        self.result['SCRATCHDIR']   = self.dir_name
         self.result['EXEC_PREPROCESS'] = self.exe_prepro
         self.result['EXEC_PARTITION']  = self.exe_partit
         self.result['EXEC_SOLVER']     = self.exe_kernel
@@ -810,7 +810,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Ask one popup for advanced specifications
         """
         default = {}
-        list = ['CS_TMP_PREFIX', 'EXEC_PREPROCESS', 'EXEC_PARTITION', 'EXEC_SOLVER',
+        list = ['SCRATCHDIR', 'EXEC_PREPROCESS', 'EXEC_PARTITION', 'EXEC_SOLVER',
                 'PARTITION_LIST', 'VALGRIND', 'CHECK_ARGS', 'OUTPUT_ARGS', ]
         for option in list:
             default[option] = self.mdl.dictValues[option]

@@ -1645,10 +1645,10 @@ fi
         Main script.
         """
 
-        tmpdir = None
+        scratchdir = None
 
         if exec_prefix != None:
-            tmpdir = exec_prefix
+            scratchdir = exec_prefix
         else:
             # Read the possible config files
 
@@ -1661,12 +1661,12 @@ fi
             config.read([self.package.get_configfile(),
                          os.path.expanduser('~/.' + self.package.configfile)])
 
-            if config.has_option('run', 'tmpdir'):
-                tmpdir = os.path.expanduser(config.get('run', 'tmpdir'))
-                tmpdir = os.path.expandvars(tmpdir)
+            if config.has_option('run', 'scratchdir'):
+                scratchdir = os.path.expanduser(config.get('run', 'scratchdir'))
+                scratchdir = os.path.expandvars(scratchdir)
 
-        if tmpdir != None:
-            self.exec_prefix = os.path.join(tmpdir, self.package.tmpdir)
+        if scratchdir != None:
+            self.exec_prefix = os.path.join(scratchdir, self.package.scratchdir)
 
         if run_id != None:
             self.run_id = run_id

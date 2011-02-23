@@ -117,7 +117,7 @@ class ScriptRunningModel(Model):
         self.dictValues['EXEC_PARTITION'] = True
         self.dictValues['EXEC_SOLVER'] = True
 
-        self.dictValues['CS_TMP_PREFIX'] = None
+        self.dictValues['SCRATCHDIR'] = None
         self.dictValues['VALGRIND'] = None
 
         if self.case['salome']:
@@ -338,7 +338,7 @@ class ScriptRunningModelTestCase(unittest.TestCase):
         "HOSTS_LIST=None\n"\
         "PARTITION_LIST=None\n"\
         "USER_INPUT_FILES=['data']\n"\
-        "CS_TMP_PREFIX='/home/toto'\n"\
+        "SCRATCHDIR='/home/toto'\n"\
         "MESHES=None\n"\
         "REORIENT=False\n"\
         "EXEC_PREPROCESS=True\n"\
@@ -460,7 +460,7 @@ class ScriptRunningModelTestCase(unittest.TestCase):
         'N_PROCS': 2,
         'USER_INPUT_FILES': ['data'],
         'REORIENT': True,
-        'CS_TMP_PREFIX': '/home/toto',
+        'SCRATCHDIR': '/home/toto',
         'EXEC_PREPROCESS':True,
         'EXEC_PARTITION':True,
         'EXEC_SOLVER':True,

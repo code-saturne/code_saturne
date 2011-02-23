@@ -55,13 +55,13 @@ domains = [
 APP_DICTS
     ]
 
-# EXEC_PREFIX_DIR variable allows the user to specify in which temporary
+# SCRATCHDIR variable allows the user to specify in which temporary
 # directory the calculation will run. If set to None, a default directory
 # will be used (architecture dependent). If a value is specified,
 # the temporary directory will be of the form:
-#  <exec_prefix_dir>/tmp_Saturne/<study>.<case>.<date>
+#  <SCRATCHDIR>/tmp_Saturne/<study>.<case>.<date>
 
-EXEC_PREFIX_DIR = None
+SCRATCHDIR = None
 
 #-------------------------------------------------------------------------------
 
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     case.run(n_procs=None,
              mpi_environment=mpi_env,
-             exec_prefix=EXEC_PREFIX_DIR,
+             exec_prefix=SCRATCHDIR,
              run_id=run_id,
              prepare_data=True,
              run_solver=True,
