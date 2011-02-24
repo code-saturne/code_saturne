@@ -900,17 +900,19 @@ do iphas = 1, nphas
 
   if (ixyzp0(iphas).eq.2) then
     ixyzp0(iphas) = 1
-    iiptot = ipproc(iprtot(iphas))
     xxp0 = xyzref(1) - xyzp0(1,iphas)
     xyp0 = xyzref(2) - xyzp0(2,iphas)
     xzp0 = xyzref(3) - xyzp0(3,iphas)
     xyzp0(1,iphas) = xyzref(1)
     xyzp0(2,iphas) = xyzref(2)
     xyzp0(3,iphas) = xyzref(3)
-    do iel = 1, ncelet
-      propce(iel,iiptot) = propce(iel,iiptot)                     &
-           - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
-    enddo
+    if (ippmod(icompf).lt.0) then
+      iiptot = ipproc(iprtot(iphas))
+      do iel = 1, ncelet
+        propce(iel,iiptot) = propce(iel,iiptot)       &
+             - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+      enddo
+    endif
     if (itbslb(iphas).gt.0) then
       write(nfecra,8000)iphas,xxp0,xyp0,xzp0
       do ifac = 1, nfabor

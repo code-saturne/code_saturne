@@ -18,6 +18,15 @@
   modified file:
     gui/Pages/BatchRunningForm.ui
 
+* 24/01/2011 - David Monfort <david.monfort@edf.fr>
+  Do not define the total pressure pointer with the compressible module and
+  add relevant test when missing. The XML reader is not protected yet, uiprop
+  routine, however it shouldn't be an issue until the combustion module
+  setup is available within the graphical interface.
+  modified routine:
+    src/base/typecl.f90
+    src/base/varpos.f90
+
 * 24/01/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
   Fix a missing pointer update for post-processing variables in the gas
   combustion module.

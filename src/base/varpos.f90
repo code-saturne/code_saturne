@@ -882,10 +882,13 @@ if(ipass.eq.3) then
     ipproc(ifour (iphas)) = iprop
     ipppst                = ipppst + 1
     ipppro(iprop)         = ipppst
-    iprop                 = iprop  + 1
-    ipproc(iprtot(iphas)) = iprop
-    ipppst                = ipppst + 1
-    ipppro(iprop)         = ipppst
+
+    if (ippmod(icompf).lt.0) then
+      iprop                 = iprop  + 1
+      ipproc(iprtot(iphas)) = iprop
+      ipppst                = ipppst + 1
+      ipppro(iprop)         = ipppst
+    endif
 
     if(icp(iphas).gt.0) then
       iprop                 = iprop + 1
