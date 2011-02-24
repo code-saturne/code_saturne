@@ -391,6 +391,11 @@ if ( ippmod(icolwc).ge.0 ) then
   nsalpp = iprop - ipropp
   nsalto = iprop
 
+! ----  On renvoie IPROPP au cas ou d'autres proprietes devraient
+!         etre numerotees ensuite
+
+  ipropp = iprop
+
 
 ! ---> Positionnement dans le tableau PROPCE
 

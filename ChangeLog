@@ -18,6 +18,12 @@
   modified file:
     gui/Pages/BatchRunningForm.ui
 
+* 24/01/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+  Fix a missing pointer update for post-processing variables in the gas
+  combustion module.
+  modified routine:
+    src/cogz/coprop.f90
+
 * 18/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct possible memory leak in case of matrix deep copy.
   modified files:
