@@ -1,3 +1,8 @@
+* 23/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add missing rename from tmpdir to scratchdir.
+  modified files:
+    bin/cs_package.py.in
+
 * 23/02/2011 - David Monfort <david.monfort@edf.fr>
   Add a SALOME command to the main Code_Saturne script so as to launch the
   SALOME platform with the CFDSTUDY module enabled.

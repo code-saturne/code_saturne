@@ -50,7 +50,7 @@ class package:
         self.check_syntax = "cs_check_syntax"
         self.guiname = "SaturneGUI"
         self.configfile = "code_saturne.cfg"
-        self.tmpdir = 'tmp_Saturne'
+        self.scratchdir = 'tmp_Saturne'
         self.srcdir = 'src_saturne'
 
         self.ld = "@CS_LD@"
