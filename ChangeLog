@@ -1,3 +1,8 @@
+* 22/02/2011 - David Monfort <david.monfort@edf.fr>
+  Fix a bug in the XML creation when defining several classes of coal.
+  modified routine:
+    gui/Pages/CoalCombustionModel.py
+
 * 21/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct array size bug in libsyrcs leading to crashes in parallel.
   modified files:
