@@ -111,12 +111,15 @@ class CoalCombustionModel(Variables, Model):
         if m != "off" and m not in coalCombustionList:
             coalCombustionList = ('off',)
 
-        if self.node_turb['model'] not in ('k-epsilon',
-                                           'k-epsilon-PL',
-                                           'Rij-epsilon',
-                                           'Rij-SSG',
-                                           'v2f-phi',
-                                           'k-omega-SST'):
+        if self.node_turb != None :
+            if self.node_turb['model'] not in ('k-epsilon',
+                                               'k-epsilon-PL',
+                                               'Rij-epsilon',
+                                               'Rij-SSG',
+                                               'v2f-phi',
+                                               'k-omega-SST'):
+                coalCombustionList = ('off',)
+        else:
             coalCombustionList = ('off',)
 
         return coalCombustionList
