@@ -18,6 +18,12 @@
   modified file:
     gui/Pages/BatchRunningForm.ui
 
+* 25/01/2011 - Mathieu Guingo <mathieu.guingo@edf.fr>
+  Fix several issues in the modelling of the interaction between a particle
+  and a wall (some related to the particles velocity and kinetic energy).
+  modified routine:
+    users/base/uslabo.f90
+
 * 24/01/2011 - David Monfort <david.monfort@edf.fr>
   Do not define the total pressure pointer with the compressible module and
   add relevant test when missing. The XML reader is not protected yet, uiprop

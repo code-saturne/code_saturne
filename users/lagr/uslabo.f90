@@ -290,7 +290,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
+integer          idebia, idebra, depch
 integer          ip , nfin , kzone , n1 , icha, iok
 
 double precision aa
@@ -322,6 +322,10 @@ iok = 0
 !--> number of the treated particle
 
 ip = nbpt
+
+!--> indicator of mass flux calculation
+
+depch = 1
 
 !--> Zone of the boundary face to be treated
 
@@ -465,8 +469,7 @@ else if (iusclb(kzone).eq.idepo3) then
   enddo
 
 !===============================================================================
-! 6. Deposition of the particle with attachment force,
-!    the velocity is conserved, and reentrainment is possible
+! 6. Deposition of the particle with DLVO deposition conditions
 !===============================================================================
 
 else if (iusclb(kzone).eq.idepfa) then
@@ -478,14 +481,17 @@ else if (iusclb(kzone).eq.idepfa) then
   vyn = ettp(ip,jvp)*ynn
   wzn = ettp(ip,jwp)*znn
 
-  energ = 0.5d0*ettp(ip,jmp)*(uxn*uxn+vyn*vyn+wzn*wzn)
+  energ = 0.5d0*ettp(ip,jmp)*(uxn+vyn+wzn)**2
 
   energt   = 3.34d-12*ettp(ip,jdp)
 
   if ( energ .ge. energt )then
 
+! The particle deposits:
+
     isuivi = 0
-    itepa(ip,jisor) = ifabor(kface)
+    itepa(ip,jisor) = -itepa(ip,jisor)
+
     ettp(ip,jxp) = xk
     ettp(ip,jyp) = yk
     ettp(ip,jzp) = zk
@@ -500,11 +506,44 @@ else if (iusclb(kzone).eq.idepfa) then
 
   else
 
-    isuivi = 0
-    itepa(ip,jisor) = indep(ip)
-    ettp(ip,jxp) = ettpa(ip,jxp)
-    ettp(ip,jyp) = ettpa(ip,jyp)
-    ettp(ip,jzp) = ettpa(ip,jzp)
+! The particle does not deposit:
+! It 'rebounds' on the energy barrier:
+
+  isuivi = 1
+  itepa(ip,jisor) = ifabor(kface)
+
+!  The mass flux is not calculated
+!
+    depch = 0
+
+!-->Modification of the starting point
+
+  ettpa(ip,jxp) = xk
+  ettpa(ip,jyp) = yk
+  ettpa(ip,jzp) = zk
+
+  if (iensi1.eq.1) then
+     nfin = 0
+     call enslag                                                 &
+          !==========
+          ( idebia, idebra  ,                                        &
+          nbpmax , nvp    , nvp1   , nvep   , nivep  ,             &
+          nfin   , ip     ,                                        &
+          itepa  ,                                                 &
+          ettpa  , tepa   , ra)
+  endif
+  
+  !-->Modification of the arrival point
+  !   (the absolute value is intended to avoid the negative scalar products
+  !  that may occur due to computer round-off error
+  
+  aa = 2.d0 * abs( (xq-xk)*xnn + (yq-yk)*ynn + (zq-zk)*znn )
+  
+  ettp(ip,jxp) = xq - aa*xnn
+  ettp(ip,jyp) = yq - aa*ynn
+  ettp(ip,jzp) = zq - aa*znn
+  
+  !--> Modification of the particle velocity at the arrival point
 
 !-->Modification of the particle velocity at the impaction point
 !   (like an elastic rebound)
@@ -517,15 +556,17 @@ else if (iusclb(kzone).eq.idepfa) then
     vitpar(ip,2) = vitpar(ip,2) - aa*ynn
     vitpar(ip,3) = vitpar(ip,3) - aa*znn
 
-!--> FIXME: (the flow velocity must not be cancelled)
+  !--> Modification of the velocity of the flow seen at the arrival point
 
     aa = abs( (vitflu(ip,1)*xnn                                   &
              + vitflu(ip,2)*ynn                                   &
              + vitflu(ip,3)*znn) ) * 2.d0
 
-    vitflu(ip,1) = 0.d0
-    vitflu(ip,2) = 0.d0
-    vitflu(ip,3) = 0.d0
+  vitflu(ip,1) = vitflu(ip,1) - aa*xnn
+  vitflu(ip,2) = vitflu(ip,2) - aa*ynn
+  vitflu(ip,3) = vitflu(ip,3) - aa*znn
+
+
   endif
 
 !===============================================================================
@@ -881,13 +922,14 @@ if ( iensi3.eq.1 ) then
   if ( iusclb(kzone).eq.irebol .or.                               &
        iusclb(kzone).eq.idepo1 .or.                               &
        iusclb(kzone).eq.idepo2 .or.                               &
-       iusclb(kzone).eq.idepo3      ) then
+       iusclb(kzone).eq.idepo3 .or.                               &
+       iusclb(kzone).eq.idepfa ) then
 
     if (inbrbd.eq.1) then
       parbor(kface,inbr) = parbor(kface,inbr) + tepa(ip,jrpoi)
     endif
 
-    if (iflmbd.eq.1) then
+    if (iflmbd.eq.1 .and. depch.eq.1) then
         parbor(kface,iflm) = parbor(kface,iflm)                   &
      + ( tepa(ip,jrpoi) * ettp(ip,jmp) /surfbn(kface) )
     endif
