@@ -197,19 +197,10 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.modelDrop = QStringListModel()
         self.listViewDrag.setModel(self.modelDrag)
         self.listViewDrop.setModel(self.modelDrop)
-
-        # Drag ...
-        self.listViewDrag.setDragDropMode(QAbstractItemView.DragOnly)
-        self.listViewDrop.setDragDropOverwriteMode(False)
         self.listViewDrag.setAlternatingRowColors(True)
-        self.listViewDrag.setDragEnabled(True)
-        #self.listViewDrag.setAcceptDrops(True)
-        # ... and Drop
-        self.listViewDrop.setDragDropMode(QAbstractItemView.DragDrop)
+        self.listViewDrag.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.listViewDrop.setAlternatingRowColors(True)
-        self.listViewDrop.setAcceptDrops(True)
-        self.listViewDrop.setDragEnabled(True)
-        self.listViewDrop.setDragDropOverwriteMode(False)
+        self.listViewDrop.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         self.modelIMOOLD  = ComboModel(self.comboBoxIMOOLD, 3, 1)
         self.modelIMOOLD.addItem(self.tr('automatic'), 'automatic')
@@ -220,6 +211,8 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.connect(self.pushButtonAdd,    SIGNAL("clicked()"), self.slotAddAverage)
         self.connect(self.pushButtonEdit,   SIGNAL("clicked()"), self.slotEditAverage)
         self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.slotdeleteTimeAverage)
+        self.connect(self.pushButtonAddVar,      SIGNAL("clicked()"), self.slotAddVarAverage)
+        self.connect(self.pushButtonSuppressVar, SIGNAL("clicked()"), self.slotDeleteVarAverage)
         self.connect(self.treeViewAverage,  SIGNAL("pressed(const QModelIndex &)"), self.slotSelectAverage)
         self.connect(self.lineEditStart, SIGNAL("textChanged(const QString &)"), self.slotStart)
         self.connect(self.comboBoxIMOOLD, SIGNAL("activated(const QString&)"), self.slotRestartChoice)
@@ -499,6 +492,26 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
 
         liste = [QString(s) for s in idfmom.replace('>','').replace('<','').split('*')]
         self.modelDrop.setStringList(liste)
+
+
+    @pyqtSignature("")
+    def slotAddVarAverage(self):
+        """
+        Add a new var from list to profile
+        """
+        if (self.listViewDrag.currentIndex().row() >=0) :
+            liste = self.modelDrop.stringList()
+            var = self.modelDrag.stringList()[self.listViewDrag.currentIndex().row()]
+            liste.append(var)
+            self.modelDrop.setStringList(liste)
+
+
+    @pyqtSignature("")
+    def slotDeleteVarAverage(self):
+        """
+        Supress a var from profile
+        """
+        self.modelDrop.removeRows(self.listViewDrop.currentIndex().row(), 1)
 
 
     def __eraseEntries(self):
