@@ -3,22 +3,22 @@
   modified files:
     libsyrcs/syr_coupling.c
 
-* 18/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+* 18/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update MPI environment for legacy runcase.
   modified file:
     bin/runcase_mpi_env
 
-* 17/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+* 17/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update format and library documentation links.
   modified file:
     doc/user/saturne1.tex
 
-* 04/02/2010 - Yvan Fournier <yvan.fournier@edf.fr>
+* 04/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow a higher number of processors in the GUI.
   modified file:
     gui/Pages/BatchRunningForm.ui
 
-* 17/01/2010 - David Monfort <david.monfort@edf.fr>
+* 17/01/2011 - David Monfort <david.monfort@edf.fr>
   Upgrade version number to 2.0.1
   modified script:
     configure.ac
