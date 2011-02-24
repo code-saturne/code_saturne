@@ -646,6 +646,14 @@ _destroy_coeff_native(cs_matrix_coeff_native_t **coeff)
 {
   if (coeff != NULL && *coeff !=NULL) {
 
+    cs_matrix_coeff_native_t  *mc = *coeff;
+
+    if (mc->_xa != NULL)
+      BFT_FREE(mc->_xa);
+
+    if (mc->_da != NULL)
+      BFT_FREE(mc->_da);
+
     BFT_FREE(*coeff);
 
   }
